@@ -35,8 +35,7 @@ module.exports = {
       {
         test: /\.(js|jsx)$/,
         include: [
-          path.resolve(__dirname, 'public'),
-          path.resolve(__dirname, 'src/aics-image-viewer/components')
+          path.resolve(__dirname, 'public')
         ],
         exclude: /node_modules/,
         use: 'babel-loader'

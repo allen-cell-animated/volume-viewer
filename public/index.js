@@ -2,7 +2,7 @@ import {
     AICSview3d,
     AICSvolumeDrawable,
     AICSmakeVolumes
-} from '../src/aics-image-viewer/viewer3d';
+} from '../src';
 
 let el = document.getElementById("volume-viewer");
 let view3D = new AICSview3d(el);

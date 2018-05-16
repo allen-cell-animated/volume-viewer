@@ -14,8 +14,6 @@ module.exports = merge(common, {
     port: 9020
   },
   plugins: [
-    new CopyWebpackPlugin([
-      {from:'public'} 
-  ]), 
+    new CopyWebpackPlugin('public'), 
   ]
 });
