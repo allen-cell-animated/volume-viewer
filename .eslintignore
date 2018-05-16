@@ -1,0 +1,6 @@
+public/
+dist/
+src/webvr/
+src/aics-image-viewer/src/webvr/
+src/aics-image-viewer/shared/utils/webgl-debug.js
+src/aics-image-viewer/viewer3d/MarchingCubes.js
