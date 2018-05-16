@@ -6,9 +6,7 @@
   "scripts": {
     "build": "webpack --config webpack.library.js",
     "dev": "webpack-dev-server --open --config webpack.dev.js",
-    "lint": "eslint --config ./.eslintrc --ignore-path ./.eslintignore --ext .jsx --ext .js ./",
-    "build-iv": "webpack --config webpack.config.js",
-    "start": "npm run build-iv && node ./server.js -p 9020"
+    "lint": "eslint --config ./.eslintrc --ignore-path ./.eslintignore --ext .jsx --ext .js ./"
   },
   "author": "Daniel Toloudis",
   "license": "ISC",
