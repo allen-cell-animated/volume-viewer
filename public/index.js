@@ -1,6 +1,7 @@
 import {
     AICSview3d,
-    AICSvolumeDrawable
+    AICSvolumeDrawable,
+    AICSmakeVolumes
 } from '../src/aics-image-viewer/viewer3d';
 
 let el = document.getElementById("volume-viewer");
@@ -9,6 +10,8 @@ let view3D = new AICSview3d(el);
 function onChannelDataReady() {
     console.log("Got channel data");
 }
+
+// PREPARE SOME TEST DATA TO TRY TO DISPLAY A VOLUME.
 let imgdata = {
     "width": 306,
     "height": 494,
@@ -38,11 +41,28 @@ let imgdata = {
     "status": "OK",
     "version": "0.0.0",
     "aicsImageVersion": "0.3.0"
+};
+
+var channelVolumes = [];
+for (var i = 0; i < imgdata.channels; ++i) {
+  //var sv = AICSchannel.createTorus(this.imageInfo.tile_width, this.imageInfo.tile_height, this.z, 12, 6);
+  //var sv = AICSchannel.createCylinder(this.imageInfo.tile_width, this.imageInfo.tile_height, this.z, 16, 16);
+  if (i % 2 === 0) {
+
+    var sv = AICSmakeVolumes.createSphere(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 16);
+    channelVolumes.push(sv);
+  }
+  else{
+    var sv = AICSmakeVolumes.createTorus(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 16, 6);
+    channelVolumes.push(sv);
+
+  }
 }
 
 function loadImageData(jsondata, volumedata) {
     view3D.resize();
+    jsondata.volumedata = volumedata;
     const aimg = new AICSvolumeDrawable(jsondata, "test");
     view3D.setImage(aimg, onChannelDataReady);
 }
-loadImageData(imgdata);
+loadImageData(imgdata, channelVolumes);

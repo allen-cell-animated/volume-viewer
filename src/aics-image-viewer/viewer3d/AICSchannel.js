@@ -85,6 +85,69 @@ AICSchannel.prototype.unpackVolume = function(options)
   }
 };
 
+
+// give the channel fresh volume data and initialize from that data
+AICSchannel.prototype.setFromVolumeData = function(bitsArray, options) {
+  this.volumeData = bitsArray;
+  this.packToAtlas(options);
+  this.loaded = true;
+  this.histogram = new Histogram(this.volumeData);
+
+  this.lutGenerator_auto2();
+  // this.lut = this.linear_data_range_generator();
+  // this.lutControlPoints = [{x:0, opacity:0, color:"gray"}, {x:255, opacity:1.0, color:"gray"}];
+};
+
+
+// given this.volumeData, let's unpack it into a flat textureatlas and fill up this.imgData.
+AICSchannel.prototype.packToAtlas = function(options)
+{
+  // big assumptions:
+  // atlassize is a perfect multiple of volumesize in both x and y
+  // options.atlasSize[0] % options.volumeSize[0] == 0
+  // options.atlasSize[1] % options.volumeSize[1] == 0
+  // and num slices <= num possible slices in atlas.
+  // (options.atlasSize[0]/options.volumeSize[0]) * (options.atlasSize[1]/options.volumeSize[1]) >= options.volumeSize[2]
+  if ((options.atlasSize[0] % options.volumeSize[0] !== 0) ||
+    (options.atlasSize[1] % options.volumeSize[1] !== 0) || 
+    ((options.atlasSize[0]/options.volumeSize[0]) * (options.atlasSize[1]/options.volumeSize[1]) < options.volumeSize[2]) ) {
+    console.log("ERROR - atlas and volume dims are inconsistent");
+    console.log(options);
+  }
+
+  this.imgData = {
+    width: options.atlasSize[0],
+    height: options.atlasSize[1],
+    data: new Uint8Array(options.atlasSize[0]* options.atlasSize[1])
+  };
+  this.imgData.data.fill(0);
+
+  // deposit slices one by one into the imgData.data from volData.
+  var volimgdata = this.imgData.data;
+
+  var x = options.volumeSize[0], y = options.volumeSize[1], z = options.volumeSize[2];
+
+  var num_xtiles = this.imgData.width / x;
+  var atlasrow = this.imgData.width;
+  var tilex = 0, tiley = 0, tileoffset = 0, tilerowoffset = 0;
+  for (var i = 0; i < z; ++i) {
+    // tile offset
+    tilex = i % num_xtiles;
+    tiley = Math.floor(i / num_xtiles);
+    tileoffset = tilex*x + (tiley*y)*atlasrow;
+    for (var j = 0; j < y; ++j) {
+      tilerowoffset = j * atlasrow;
+      for (var k = 0; k < x; ++k) {
+        // y-1-j instead of j to flip the y coordinates.
+        volimgdata[tileoffset + tilerowoffset + k] = this.volumeData[i*(x*y) + (y-1-j)*(x) + k];
+      }
+    }
+  }
+
+  // this.debugDraw();
+
+};
+
 AICSchannel.prototype.setLut = function(lut, controlPoints) {
   if (!this.loaded) {
     return;

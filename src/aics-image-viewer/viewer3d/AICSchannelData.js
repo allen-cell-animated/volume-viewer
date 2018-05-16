@@ -246,15 +246,29 @@ AICSchannelData.prototype.load = function(onAllChannelsLoaded, onChannelLoaded) 
   this.onChannelLoadedCallback = onChannelLoaded || nop;
   this.onAllChannelsLoadedCallback = onAllChannelsLoaded || nop;
 
-  var nch = this.options.channelAtlases.length;
 
   //console.log("BEGIN DOWNLOAD DATA");
-  for (var i = 0; i < nch; ++i) {
-    this.loadBatch(
-      this.options.channelAtlases[i].url,
-      this.options.channelAtlases[i].channelIndices,
-      this.onChannelLoaded);
+  if (this.options.channelAtlases) {
+    var nch = this.options.channelAtlases.length;
+
+    //console.log("BEGIN DOWNLOAD DATA");
+    for (var i = 0; i < nch; ++i) {
+      this.loadBatch(
+        this.options.channelAtlases[i].url,
+        this.options.channelAtlases[i].channelIndices,
+        this.onChannelLoaded);
+    }
   }
+  else if (this.options.channelVolumes) {
+    // one volume per channel. this is an array of UInt8Arrays and the UInt8Array is a 3d xyz volume!
+    for (var i = 0; i < this.options.channelVolumes.length; ++i) {
+      this.channels[i].setFromVolumeData(this.options.channelVolumes[i], this.options);
+      if (this.onChannelLoaded) {
+        this.onChannelLoaded.call(this, [i]);
+      }
+    }
+  }
+
 };
 
 AICSchannelData.prototype.getHistogram = function(channelIndex) {

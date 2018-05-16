@@ -1,7 +1,7 @@
 {
-  "name": "aics-image-viewer-app",
-  "version": "1.0.5",
-  "description": "web view of ome tif, czi, and tif z-stacks",
+  "name": "volume-viewer",
+  "version": "1.0.0",
+  "description": "volume renderer for ome tif, czi, and tif z-stacks",
   "main": "dist/index.js",
   "scripts": {
     "build": "webpack --config webpack.library.js",
@@ -16,26 +16,11 @@
     "@polymer/polymer": "^2.2.0",
     "babel-polyfill": "^6.23.0",
     "command-line-args": "^2.1.6",
-    "d3": "^4.11.0",
-    "immutability-helper": "^2.4.0",
     "jquery": "^3.2.1",
     "lodash": "^4.17.4",
-    "material-design-icons": "^3.0.1",
-    "material-ui": "^0.19.2",
     "morgan": "^1.9.0",
-    "prop-types": "^15.5.10",
-    "react": "^15.5.4",
-    "react-color": "^2.13.8",
-    "react-dom": "^15.5.4",
-    "react-nouislider": "^2.0.1",
-    "react-photo-gallery": "^6.0.5",
-    "react-polymer": "^4.1.0",
-    "reactcss": "^1.2.3",
-    "roboto-fontface": "^0.8.0",
     "three": "^0.91.0",
-    "url-search-params": "^0.10.0",
-    "@webcomponents/webcomponentsjs": "^1.0.19",
-    "whatwg-fetch": "^2.0.3"
+    "@webcomponents/webcomponentsjs": "^1.0.19"
   },
   "devDependencies": {
     "babel-core": "^6.25.0",
