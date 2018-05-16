@@ -817,29 +817,45 @@ AICSvolumeDrawable.prototype.getChannel = function(channelIndex) {
 };
 
 AICSvolumeDrawable.prototype.loadChannels = function(onAllChannelsLoaded, onChannelLoaded) {
-  var channelurls = [];
-  var locationHeader = this.imageInfo.locationHeader || '';
-  for (var i = 0; i < this.imageInfo.images.length; ++i) {
-    var imgdesc = this.imageInfo.images[i];
-    var batch = imgdesc.channels;
-
-    // load channel data at "data range" - every channel rescaled to its min/max
-    channelurls.push({
-      url: locationHeader + imgdesc.name,
-      channelIndices: batch
-    });
-  }
-
-  // request each channel.
-  //console.log("REQUEST ATLAS TEXTURES");
   var channel_count = this.ch;
-  this.channelData = new AICSchannelData({
-    count: channel_count,
-    atlasSize:[this.imageInfo.atlas_width, this.imageInfo.atlas_height],
-    volumeSize:[this.imageInfo.tile_width, this.imageInfo.tile_height, this.z],
-    channelAtlases:channelurls,
-    channelNames:this.channel_names
-  }, this.redraw);
+
+  // channelData options has either channelVolumes or channelAtlases
+  // channelVolumes is an array of length channel_count, of xyz volume per channel.
+  if (this.imageInfo.volumedata) {
+    this.channelData = new AICSchannelData({
+      count: channel_count,
+      atlasSize:[this.imageInfo.atlas_width, this.imageInfo.atlas_height],
+      volumeSize:[this.imageInfo.tile_width, this.imageInfo.tile_height, this.z],
+      channelVolumes:this.imageInfo.volumedata,
+      channelNames:this.channel_names
+    }, this.redraw);
+  
+  }
+  else {
+    var channelurls = [];
+    var locationHeader = this.imageInfo.locationHeader || '';
+    for (var i = 0; i < this.imageInfo.images.length; ++i) {
+      var imgdesc = this.imageInfo.images[i];
+      var batch = imgdesc.channels;
+  
+      // load channel data at "data range" - every channel rescaled to its min/max
+      channelurls.push({
+        url: locationHeader + imgdesc.name,
+        channelIndices: batch
+      });
+    }
+  
+    // request each channel.
+    //console.log("REQUEST ATLAS TEXTURES");
+    this.channelData = new AICSchannelData({
+      count: channel_count,
+      atlasSize:[this.imageInfo.atlas_width, this.imageInfo.atlas_height],
+      volumeSize:[this.imageInfo.tile_width, this.imageInfo.tile_height, this.z],
+      channelAtlases:channelurls,
+      channelNames:this.channel_names
+    }, this.redraw);
+  
+  }
 
   // fires onAllChannelsLoaded when all channel data is done.
   // fires onChannelLoaded when each channel is done
