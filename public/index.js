@@ -63,6 +63,11 @@ function loadImageData(jsondata, volumedata) {
     view3D.resize();
     jsondata.volumedata = volumedata;
     const aimg = new AICSvolumeDrawable(jsondata, "test");
+    view3D.setCameraMode('3D');
     view3D.setImage(aimg, onChannelDataReady);
-}
+    aimg.setUniform(
+        "DENSITY", 0.1, true, true);
+    aimg.setUniform(
+        "BRIGHTNESS", 1.0, true, true);
+    }
 loadImageData(imgdata, channelVolumes);
