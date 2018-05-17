@@ -166,6 +166,12 @@ export class AICSthreeJsPanel {
     this.camera.updateProjectionMatrix();
 
     this.effect.setSize( w,h );
+
+    this.perspectiveControls.handleResize();
+    this.orthoControlsZ.handleResize();
+    this.orthoControlsY.handleResize();
+    this.orthoControlsX.handleResize();
+
     this.mousedown = false;
   }
 

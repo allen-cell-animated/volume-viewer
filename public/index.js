@@ -81,6 +81,7 @@ function loadImageData(jsondata, volumedata) {
     view3D.setImage(aimg, onChannelDataReady);
     aimg.setDensity(0.1);
     aimg.setBrightness(1.0);
+    view3D.resize(null, 300, 300);
 }
 
 loadImageData(imgdata, channelVolumes);
