@@ -939,4 +939,22 @@ AICSvolumeDrawable.prototype.updateChannelColor = function(channelIndex, colorrg
   this.updateMeshColors();
 };
 
+AICSvolumeDrawable.prototype.setDensity = function(density, no_redraw) {
+  if (no_redraw) {
+    this.setUniformNoRerender("DENSITY", density);
+  }
+  else {
+    this.setUniform("DENSITY", density);
+  }
+};
+AICSvolumeDrawable.prototype.setBrightness = function(brightness, no_redraw) {
+  if (no_redraw) {
+    this.setUniformNoRerender("BRIGHTNESS", brightness);
+  }
+  else {
+    this.setUniform("BRIGHTNESS", brightness);
+  }
+};
+
+
 export default AICSvolumeDrawable;

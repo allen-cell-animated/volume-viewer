@@ -27,6 +27,21 @@ let imgdata = {
     "pixel_size_x": 0.065,
     "pixel_size_y": 0.065,
     "pixel_size_z": 0.29,
+    // "images" is now optional and could be replaced with "volumedata"
+    // where volumedata is an array of channels, where each channel is a flat Uint8Array of xyz data
+    // according to tile_width*tile_height*tiles (first row of first plane is the first data in 
+    // the layout, then second row of first plane, etc)
+    // atlas_width === cols*tile_width
+    // atlas_height === rows*tile_height
+    // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048 
+    // and ideally a power of 2.
+    // tiles <= rows*cols, tiles is number of z slices
+    // width := original full size image width
+    // height := original full size image height
+
+    // (an alternate volumedata input format could be "atlasdata" where the data is laid out as
+    // a pre-tiled atlas image ready for upload. Arguably this data layout is an implementation-
+    // specific detail / optimization that clients don't need to know about)
     "images": [{
         "name": "AICS-10_5_5.ome.tif_atlas_0.png",
         "channels": [0, 1, 2]
@@ -48,12 +63,11 @@ for (var i = 0; i < imgdata.channels; ++i) {
   //var sv = AICSchannel.createTorus(this.imageInfo.tile_width, this.imageInfo.tile_height, this.z, 12, 6);
   //var sv = AICSchannel.createCylinder(this.imageInfo.tile_width, this.imageInfo.tile_height, this.z, 16, 16);
   if (i % 2 === 0) {
-
     var sv = AICSmakeVolumes.createSphere(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 16);
     channelVolumes.push(sv);
   }
   else{
-    var sv = AICSmakeVolumes.createTorus(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 16, 6);
+    var sv = AICSmakeVolumes.createTorus(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 32, 8);
     channelVolumes.push(sv);
 
   }
@@ -65,9 +79,8 @@ function loadImageData(jsondata, volumedata) {
     const aimg = new AICSvolumeDrawable(jsondata, "test");
     view3D.setCameraMode('3D');
     view3D.setImage(aimg, onChannelDataReady);
-    aimg.setUniform(
-        "DENSITY", 0.1, true, true);
-    aimg.setUniform(
-        "BRIGHTNESS", 1.0, true, true);
-    }
+    aimg.setDensity(0.1);
+    aimg.setBrightness(1.0);
+}
+
 loadImageData(imgdata, channelVolumes);
