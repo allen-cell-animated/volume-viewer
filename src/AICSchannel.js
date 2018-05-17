@@ -59,7 +59,10 @@ AICSchannel.prototype.setBits = function(bitsArray, w, h) {
   // this.lutControlPoints = [{x:0, opacity:0, color:"gray"}, {x:255, opacity:1.0, color:"gray"}];
 };
 
-// let's rearrange voldata into a 3d array.
+// let's rearrange voldata into a 3d array.  
+// it is assumed to be coming in as a flat Uint8Array of size options.volumeSize[0]*[1]*[2] 
+// with x*y*z layout (first row of first plane is the first data in the layout, 
+// then second row of first plane, etc)
 AICSchannel.prototype.unpackVolume = function(options)
 {
   var volimgdata = this.imgData.data;
