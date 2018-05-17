@@ -1,9 +1,10 @@
 {
   "name": "volume-viewer",
-  "version": "1.0.2",
+  "version": "1.0.1",
   "description": "volume renderer for ome tif, czi, and tif z-stacks",
   "main": "dist/index.js",
   "scripts": {
+    "prepublish": "npm run build",
     "build": "webpack --config webpack.library.js",
     "dev": "webpack-dev-server --open --config webpack.dev.js",
     "lint": "eslint --config ./.eslintrc --ignore-path ./.eslintignore --ext .jsx --ext .js ./"
@@ -25,7 +26,6 @@
     "babel-preset-react": "^6.24.1",
     "clean-webpack-plugin": "^0.1.16",
     "copy-webpack-plugin": "^4.5.1",
-    "css-loader": "^0.28.7",
     "eslint": "^4.10.0",
     "eslint-plugin-react": "^7.4.0",
     "html-webpack-plugin": "^2.30.1",

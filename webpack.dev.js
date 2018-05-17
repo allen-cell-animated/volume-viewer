@@ -1,4 +1,3 @@
-const webpack = require('webpack');
 const merge = require('webpack-merge');
 const common = require('./webpack.common');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
@@ -14,6 +13,6 @@ module.exports = merge(common, {
     port: 9020
   },
   plugins: [
-    new CopyWebpackPlugin(['public']), 
+    new CopyWebpackPlugin(['public'])
   ]
 });

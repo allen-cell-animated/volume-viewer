@@ -28,38 +28,17 @@ module.exports = {
     new webpack.IgnorePlugin(/vertx/)
   ],
   resolve: {
-    extensions: ['.js', '.jsx']
+    extensions: ['.js']
   },
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/,
+        test: /\.js$/,
         include: [
           path.resolve(__dirname, 'public')
         ],
         exclude: /node_modules/,
         use: 'babel-loader'
-      },
-      {
-        test: /\.scss$/,
-        use: [
-          'style-loader',
-          'css-loader',
-          'sass-loader'
-        ]
-      },
-      {
-        test: /\.css$/,
-        use: [
-          'style-loader',
-          'css-loader'
-        ]
-      },
-      {
-        test: /\.(woff|woff2|eot|ttf|otf|svg)$/,
-        use: [
-          'file-loader?name=material-design-icons/iconfont/[name].[ext]'
-        ]
       },
       {
         test: /Worker\.js$/,
