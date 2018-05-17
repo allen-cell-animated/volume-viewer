@@ -4,3 +4,5 @@ dist/
 .idea/
 imageviewer/
 environment.txt
+npm-debug.log
+
