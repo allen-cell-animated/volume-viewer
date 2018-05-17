@@ -2,3 +2,14 @@ src/
 .babelrc
 .docker
 DEV.md
+node_modules/
+.babelrc
+.eslintignore
+.eslintrc
+.gitignore
+.npmignore
+CONTRIBUTING.md
+DEV.md
+package-log.json
+webpack.dev.js
+webpack.library.js
