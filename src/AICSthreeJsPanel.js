@@ -4,10 +4,8 @@ export class AICSthreeJsPanel {
   constructor(parentElement) {
     this.canvas = document.createElement('canvas');
     this.canvas.setAttribute('id', 'cellViewCanvas');
-    this.canvas.height=300;
-    this.canvas.width=300;
-    // this.canvas.height=parentElement.offsetHeight;
-    // this.canvas.width=parentElement.offsetWidth;
+    this.canvas.height=parentElement.offsetHeight;
+    this.canvas.width=parentElement.offsetWidth;
     parentElement.appendChild(this.canvas);
 
 
