@@ -9,6 +9,7 @@
 - supports ome.tif, .tif, and .czi provided they are self contained z stacks.
 - note: the files will be placed in a temporary "cache" folder which should be periodically cleaned out.
 
+
 ## Publishing
 * Requires that you are listed as a maintainer for this npm module
 
