@@ -816,7 +816,7 @@ AICSvolumeDrawable.prototype.getChannel = function(channelIndex) {
   return this.channelData.channels[channelIndex];
 };
 
-AICSvolumeDrawable.prototype.loadChannels = function(onAllChannelsLoaded, onChannelLoaded) {
+AICSvolumeDrawable.prototype.setupChannels = function(onAllChannelsLoaded, onChannelLoaded) {
   var channel_count = this.ch;
 
   // channelData options has either channelVolumes or channelAtlases
@@ -956,5 +956,17 @@ AICSvolumeDrawable.prototype.setBrightness = function(brightness, no_redraw) {
   }
 };
 
+// ASSUMES that this.channelData.options is already set and incoming data is consistent with it
+AICSvolumeDrawable.prototype.setChannelDataFromAtlas = function(channelIndex, atlasdata, atlaswidth, atlasheight) {
+  this.channelData.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight);
+  this.channelData.channels[channelIndex].unpackVolume(this.channelData.options);  
+  this.channelData.onChannelLoaded.call(this.channelData, [channelIndex]);
+};
+
+// ASSUMES that this.channelData.options is already set and incoming data is consistent with it
+AICSvolumeDrawable.prototype.setChannelDataFromVolume = function(channelIndex, volumedata) {
+  this.channelData.channels[channelIndex].setFromVolumeData(volumeData, this.channelData.options);
+  this.channelData.onChannelLoaded.call(this.channelData, [channelIndex]);
+};
 
 export default AICSvolumeDrawable;

@@ -1,7 +1,8 @@
 import {
     AICSview3d,
     AICSvolumeDrawable,
-    AICSmakeVolumes
+    AICSmakeVolumes,
+    AICSvolumeLoader
 } from '../src';
 
 let el = document.getElementById("volume-viewer");
@@ -77,6 +78,19 @@ function loadImageData(jsondata, volumedata) {
     view3D.resize();
     jsondata.volumedata = volumedata;
     const aimg = new AICSvolumeDrawable(jsondata, "test");
+
+    // if we have some url to prepend to the atlas file names, do it now.
+    var locationHeader = jsondata.locationHeader || '';
+    for (var i = 0; i < jsondata.images.length; ++i) {
+      jsondata.images[i].name = locationHeader + jsondata.images[i].name;
+    }
+    
+    AICSvolumeLoader.loadVolumeAtlasData(jsondata.images, (url, channelIndex, atlasdata, atlaswidth, atlasheight) => {
+        console.log("Got atlas data " + channelIndex);
+        aimg.setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight);
+        aimg.fuse();
+    });
+
     view3D.setCameraMode('3D');
     view3D.setImage(aimg, onChannelDataReady);
     aimg.setDensity(0.1);
