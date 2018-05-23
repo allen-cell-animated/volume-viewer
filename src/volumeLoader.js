@@ -43,7 +43,7 @@ AICSvolumeLoader.loadVolumeAtlasData = function (imageArray, callback) {
                 var ctx = canvas.getContext("2d");
                 ctx.globalCompositeOperation = "copy";
                 ctx.globalAlpha = 1.0;
-                ctx.drawImage(img, 0, 0, w, h);
+                ctx.drawImage(event.target, 0, 0, w, h);
                 // getImageData returns rgba.
                 // optimize: collapse rgba to single channel arrays
                 var iData = ctx.getImageData(0, 0, w, h);

@@ -76,6 +76,7 @@ for (var i = 0; i < imgdata.channels; ++i) {
 
 function loadImageData(jsondata, volumedata) {
     view3D.resize();
+    
     jsondata.volumedata = volumedata;
     const aimg = new AICSvolumeDrawable(jsondata, "test");
 
@@ -85,17 +86,26 @@ function loadImageData(jsondata, volumedata) {
       jsondata.images[i].name = locationHeader + jsondata.images[i].name;
     }
     
-    AICSvolumeLoader.loadVolumeAtlasData(jsondata.images, (url, channelIndex, atlasdata, atlaswidth, atlasheight) => {
-        console.log("Got atlas data " + channelIndex);
-        aimg.setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight);
-        aimg.fuse();
-    });
+    view3D.setImage(aimg, onChannelDataReady);
+
+    if (volumedata) {
+        for (var i = 0; i < volumedata.length; ++i) {
+            aimg.setChannelDataFromVolume(i, volumedata[i]);
+        }
+    }
+    else {
+        AICSvolumeLoader.loadVolumeAtlasData(jsondata.images, (url, channelIndex, atlasdata, atlaswidth, atlasheight) => {
+            //console.log("Got atlas data " + channelIndex);
+            aimg.setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight);
+        });
+    }
 
     view3D.setCameraMode('3D');
-    view3D.setImage(aimg, onChannelDataReady);
     aimg.setDensity(0.1);
     aimg.setBrightness(1.0);
+
     view3D.resize(null, 300, 300);
 }
 
-loadImageData(imgdata, channelVolumes);
+loadImageData(imgdata);
+//loadImageData(imgdata, channelVolumes);

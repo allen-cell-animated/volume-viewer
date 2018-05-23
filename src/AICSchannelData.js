@@ -245,30 +245,6 @@ AICSchannelData.prototype.onChannelLoaded = function(batch) {
 AICSchannelData.prototype.load = function(onAllChannelsLoaded, onChannelLoaded) {
   this.onChannelLoadedCallback = onChannelLoaded || nop;
   this.onAllChannelsLoadedCallback = onAllChannelsLoaded || nop;
-
-
-  //console.log("BEGIN DOWNLOAD DATA");
-  if (this.options.channelAtlases) {
-    var nch = this.options.channelAtlases.length;
-
-    //console.log("BEGIN DOWNLOAD DATA");
-    for (var i = 0; i < nch; ++i) {
-      this.loadBatch(
-        this.options.channelAtlases[i].url,
-        this.options.channelAtlases[i].channelIndices,
-        this.onChannelLoaded);
-    }
-  }
-  else if (this.options.channelVolumes) {
-    // one volume per channel. this is an array of UInt8Arrays and the UInt8Array is a 3d xyz volume!
-    for (var i = 0; i < this.options.channelVolumes.length; ++i) {
-      this.channels[i].setFromVolumeData(this.options.channelVolumes[i], this.options);
-      if (this.onChannelLoaded) {
-        this.onChannelLoaded.call(this, [i]);
-      }
-    }
-  }
-
 };
 
 AICSchannelData.prototype.getHistogram = function(channelIndex) {
@@ -298,6 +274,9 @@ AICSchannelData.prototype.fuse = function(combination, fuseMethod) {
   if (this.useSingleThread || !window.Worker) {
     // console.log("SINGLE THREADED");
     this.singleThreadedFuse(combination);
+    if (this.redraw) {
+      this.redraw();
+    }
     return;
   }
 
@@ -330,7 +309,7 @@ AICSchannelData.prototype.singleThreadedFuse = function(combination) {
   // explore some faster ways to fuse here...
 
   var ar,ag,ab,c,r,g,b,channeldata;
-  var x, i, cx, fx;
+  var x, i, cx, fx, idx;
   var cl = combination.length;
 
   var npx4 = this.height*this.width*4;
