@@ -123,6 +123,13 @@ function AICSvolumeDrawable(imageInfo) {
     bmax: new THREE.Vector3(0.5, 0.5, 0.5)
   };
 
+  this.channelData = new AICSchannelData({
+    count: this.num_channels,
+    atlasSize:[this.imageInfo.atlas_width, this.imageInfo.atlas_height],
+    volumeSize:[this.imageInfo.tile_width, this.imageInfo.tile_height, this.z],
+    channelNames:this.channel_names
+  }, this.redraw);
+
   this.uniforms = {
     'iResolution': {
       type:'v2',
@@ -816,50 +823,10 @@ AICSvolumeDrawable.prototype.getChannel = function(channelIndex) {
   return this.channelData.channels[channelIndex];
 };
 
-AICSvolumeDrawable.prototype.loadChannels = function(onAllChannelsLoaded, onChannelLoaded) {
-  var channel_count = this.ch;
-
-  // channelData options has either channelVolumes or channelAtlases
-  // channelVolumes is an array of length channel_count, of xyz volume per channel.
-  if (this.imageInfo.volumedata) {
-    this.channelData = new AICSchannelData({
-      count: channel_count,
-      atlasSize:[this.imageInfo.atlas_width, this.imageInfo.atlas_height],
-      volumeSize:[this.imageInfo.tile_width, this.imageInfo.tile_height, this.z],
-      channelVolumes:this.imageInfo.volumedata,
-      channelNames:this.channel_names
-    }, this.redraw);
-  
-  }
-  else {
-    var channelurls = [];
-    var locationHeader = this.imageInfo.locationHeader || '';
-    for (var i = 0; i < this.imageInfo.images.length; ++i) {
-      var imgdesc = this.imageInfo.images[i];
-      var batch = imgdesc.channels;
-  
-      // load channel data at "data range" - every channel rescaled to its min/max
-      channelurls.push({
-        url: locationHeader + imgdesc.name,
-        channelIndices: batch
-      });
-    }
-  
-    // request each channel.
-    //console.log("REQUEST ATLAS TEXTURES");
-    this.channelData = new AICSchannelData({
-      count: channel_count,
-      atlasSize:[this.imageInfo.atlas_width, this.imageInfo.atlas_height],
-      volumeSize:[this.imageInfo.tile_width, this.imageInfo.tile_height, this.z],
-      channelAtlases:channelurls,
-      channelNames:this.channel_names
-    }, this.redraw);
-  
-  }
-
-  // fires onAllChannelsLoaded when all channel data is done.
-  // fires onChannelLoaded when each channel is done
-  this.channelData.load(onAllChannelsLoaded, onChannelLoaded);
+AICSvolumeDrawable.prototype.setChannelCallbacks = function(allChannelsLoadedCb, channelLoadedCb) {
+  // fires allChannelsLoadedCb when all channel data is done.
+  // fires channelLoadedCb when each channel is done
+  this.channelData.setCallbacks(allChannelsLoadedCb, channelLoadedCb);
 };
 
 AICSvolumeDrawable.prototype.saveChannelIsosurface = function(channelIndex, type) {
@@ -956,5 +923,17 @@ AICSvolumeDrawable.prototype.setBrightness = function(brightness, no_redraw) {
   }
 };
 
+// ASSUMES that this.channelData.options is already set and incoming data is consistent with it
+AICSvolumeDrawable.prototype.setChannelDataFromAtlas = function(channelIndex, atlasdata, atlaswidth, atlasheight) {
+  this.channelData.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight);
+  this.channelData.channels[channelIndex].unpackVolume(this.channelData.options);  
+  this.channelData.onChannelLoaded.call(this.channelData, [channelIndex]);
+};
+
+// ASSUMES that this.channelData.options is already set and incoming data is consistent with it
+AICSvolumeDrawable.prototype.setChannelDataFromVolume = function(channelIndex, volumeData) {
+  this.channelData.channels[channelIndex].setFromVolumeData(volumeData, this.channelData.options);
+  this.channelData.onChannelLoaded.call(this.channelData, [channelIndex]);
+};
 
 export default AICSvolumeDrawable;

@@ -51,7 +51,8 @@ export class AICSview3d {
     this.image.setResolution(this.canvas3d);
 
     this.onChannelDataReadyCallback = onChannelDataReadyCallback;
-    this.image.loadChannels(this.onAllChannelsLoaded.bind(this), this.onChannelLoaded.bind(this));
+
+    this.image.setChannelCallbacks(this.onAllChannelsLoaded.bind(this), this.onChannelLoaded.bind(this));
 
     this.canvas3d.animate_funcs.push(this.preRender.bind(this));
     this.canvas3d.animate_funcs.push(img.onAnimate.bind(img));
