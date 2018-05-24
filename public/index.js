@@ -14,35 +14,31 @@ function onChannelDataReady() {
 
 // PREPARE SOME TEST DATA TO TRY TO DISPLAY A VOLUME.
 let imgdata = {
+    // width := original full size image width
     "width": 306,
+    // height := original full size image height
     "height": 494,
     "channels": 9,
     "channel_names": ["DRAQ5", "EGFP", "Hoechst 33258", "TL Brightfield", "SEG_STRUCT", "SEG_Memb", "SEG_DNA", "CON_Memb", "CON_DNA"],
     "rows": 7,
     "cols": 10,
+    // tiles <= rows*cols, tiles is number of z slices
     "tiles": 65,
     "tile_width": 204,
     "tile_height": 292,
+
+    // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048 
+    // and ideally a power of 2.
+
+    // atlas_width === cols*tile_width
     "atlas_width": 2040,
+    // atlas_height === rows*tile_height
     "atlas_height": 2044,
+
     "pixel_size_x": 0.065,
     "pixel_size_y": 0.065,
     "pixel_size_z": 0.29,
-    // "images" is now optional and could be replaced with "volumedata"
-    // where volumedata is an array of channels, where each channel is a flat Uint8Array of xyz data
-    // according to tile_width*tile_height*tiles (first row of first plane is the first data in 
-    // the layout, then second row of first plane, etc)
-    // atlas_width === cols*tile_width
-    // atlas_height === rows*tile_height
-    // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048 
-    // and ideally a power of 2.
-    // tiles <= rows*cols, tiles is number of z slices
-    // width := original full size image width
-    // height := original full size image height
 
-    // (an alternate volumedata input format could be "atlasdata" where the data is laid out as
-    // a pre-tiled atlas image ready for upload. Arguably this data layout is an implementation-
-    // specific detail / optimization that clients don't need to know about)
     "images": [{
         "name": "AICS-10_5_5.ome.tif_atlas_0.png",
         "channels": [0, 1, 2]
@@ -61,8 +57,6 @@ let imgdata = {
 
 var channelVolumes = [];
 for (var i = 0; i < imgdata.channels; ++i) {
-  //var sv = AICSchannel.createTorus(this.imageInfo.tile_width, this.imageInfo.tile_height, this.z, 12, 6);
-  //var sv = AICSchannel.createCylinder(this.imageInfo.tile_width, this.imageInfo.tile_height, this.z, 16, 16);
   if (i % 2 === 0) {
     var sv = AICSmakeVolumes.createSphere(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 16);
     channelVolumes.push(sv);
@@ -91,12 +85,15 @@ function loadImageData(jsondata, volumedata) {
     // get data into the image
     if (volumedata) {
         for (var i = 0; i < volumedata.length; ++i) {
+            // where each volumedata element is a flat Uint8Array of xyz data
+            // according to jsondata.tile_width*jsondata.tile_height*jsondata.tiles
+            // (first row of first plane is the first data in 
+            // the layout, then second row of first plane, etc)
             aimg.setChannelDataFromVolume(i, volumedata[i]);
         }
     }
     else {
         AICSvolumeLoader.loadVolumeAtlasData(jsondata.images, (url, channelIndex, atlasdata, atlaswidth, atlasheight) => {
-            //console.log("Got atlas data " + channelIndex);
             aimg.setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight);
         });
     }
@@ -108,5 +105,6 @@ function loadImageData(jsondata, volumedata) {
     view3D.resize(null, 300, 300);
 }
 
+// switch the uncommented line to test with volume data or atlas data
 loadImageData(imgdata);
 //loadImageData(imgdata, channelVolumes);
