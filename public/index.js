@@ -77,7 +77,6 @@ for (var i = 0; i < imgdata.channels; ++i) {
 function loadImageData(jsondata, volumedata) {
     view3D.resize();
     
-    jsondata.volumedata = volumedata;
     const aimg = new AICSvolumeDrawable(jsondata, "test");
 
     // if we have some url to prepend to the atlas file names, do it now.
@@ -86,8 +85,10 @@ function loadImageData(jsondata, volumedata) {
       jsondata.images[i].name = locationHeader + jsondata.images[i].name;
     }
     
+    // tell the viewer about the image
     view3D.setImage(aimg, onChannelDataReady);
 
+    // get data into the image
     if (volumedata) {
         for (var i = 0; i < volumedata.length; ++i) {
             aimg.setChannelDataFromVolume(i, volumedata[i]);

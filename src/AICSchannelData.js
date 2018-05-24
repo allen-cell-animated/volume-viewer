@@ -127,63 +127,6 @@ AICSchannelData.prototype.setupWorkers = function() {
   }
 };
 
-// download channel data
-AICSchannelData.prototype.loadBatch = function(url, batch, callback) {
-  var me = this;
-  // using Image is just a trick to download the bits as a png.
-  // the Image will never be used again.
-  var img = new Image;
-  img.onerror = function() {
-    alert("CAN NOT LOAD " + url);
-  };
-  img.onload = function() {
-    //console.log("GOT ch " + me.src);
-    // extract pixels by drawing to canvas
-    var canvas = document.createElement('canvas');
-    // nice thing about this is i can downsample here
-    // var w = Math.floor(img.naturalWidth*me.scale);
-    // var h = Math.floor(img.naturalHeight*me.scale);
-    var w = Math.floor(me.width*me.scale);
-    var h = Math.floor(me.height*me.scale);
-    canvas.setAttribute('width', w);
-    canvas.setAttribute('height', h);
-    var ctx = canvas.getContext("2d");
-    ctx.globalCompositeOperation = "copy";
-    ctx.globalAlpha = 1.0;
-    ctx.drawImage(img, 0, 0, w, h);
-    // getImageData returns rgba.
-    // optimize: collapse rgba to single channel arrays
-    var iData = ctx.getImageData(0, 0, w, h);
-
-    var channelsBits = [];
-    // allocate channels in batch
-    for (var i = 0; i < Math.min(batch.length, 4); ++i) {
-      channelsBits.push(new Uint8Array(w*h));
-    }
-    // extract the data
-    for (var i = 0; i < w*h; i++) {
-      for (var j = 0; j < Math.min(batch.length, 4); ++j) {
-        channelsBits[j][i] = iData.data[i*4+j];
-      }
-    }
-
-    // done with img, iData, and canvas now.
-
-    for (var i = 0; i < Math.min(batch.length, 4); ++i) {
-      me.channels[batch[i]].setBits(channelsBits[i], w, h);
-      me.channels[batch[i]].unpackVolume(me.options);
-    }
-
-    if (callback) {
-      callback.call(me, batch);
-    }
-
-    delete me.requests[url];
-  };
-  img.crossOrigin = 'Anonymous';
-  img.src = url;
-  this.requests[url] = img;
-};
 
 // batch is array containing which channels were just loaded
 AICSchannelData.prototype.onChannelLoaded = function(batch) {
@@ -242,9 +185,9 @@ AICSchannelData.prototype.onChannelLoaded = function(batch) {
   }
 };
 
-AICSchannelData.prototype.load = function(onAllChannelsLoaded, onChannelLoaded) {
-  this.onChannelLoadedCallback = onChannelLoaded || nop;
-  this.onAllChannelsLoadedCallback = onAllChannelsLoaded || nop;
+AICSchannelData.prototype.setCallbacks = function(allChannelsLoadedCb, channelLoadedCb) {
+  this.onChannelLoadedCallback = channelLoadedCb || nop;
+  this.onAllChannelsLoadedCallback = allChannelsLoadedCb || nop;
 };
 
 AICSchannelData.prototype.getHistogram = function(channelIndex) {

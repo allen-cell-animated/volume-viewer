@@ -823,10 +823,10 @@ AICSvolumeDrawable.prototype.getChannel = function(channelIndex) {
   return this.channelData.channels[channelIndex];
 };
 
-AICSvolumeDrawable.prototype.setupChannels = function(onAllChannelsLoaded, onChannelLoaded) {
-  // fires onAllChannelsLoaded when all channel data is done.
-  // fires onChannelLoaded when each channel is done
-  this.channelData.load(onAllChannelsLoaded, onChannelLoaded);
+AICSvolumeDrawable.prototype.setChannelCallbacks = function(allChannelsLoadedCb, channelLoadedCb) {
+  // fires allChannelsLoadedCb when all channel data is done.
+  // fires channelLoadedCb when each channel is done
+  this.channelData.setCallbacks(allChannelsLoadedCb, channelLoadedCb);
 };
 
 AICSvolumeDrawable.prototype.saveChannelIsosurface = function(channelIndex, type) {
