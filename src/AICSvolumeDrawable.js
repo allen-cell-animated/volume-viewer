@@ -1,5 +1,7 @@
 import AICSchannelData from './AICSchannelData.js';
 import FileSaver from './FileSaver.js';
+import { getColorByChannelIndex } from './constants/colors.js';
+import { defaultMaterialSettings } from './constants/materials.js';
 
 import './MarchingCubes.js';
 import NaiveSurfaceNets from './NaiveSurfaceNets.js';
@@ -26,82 +28,27 @@ function AICSvolumeDrawable(imageInfo) {
   this.z = imageInfo.tiles;
   this.t = 1;
 
-  this.ch = imageInfo.channels;
-  this.num_channels = this.ch;
 
-  var channel_colors_default_map = {
-    "CMDRP": [190, 68, 171],
-    "EGFP": [189, 211, 75],
-    "H3342": [61, 155, 169],
-    "Bright_100": [128, 128, 128],
-    "SEG_STRUCT": [255, 255, 255],
-    "SEG_Memb": [239, 27, 45],
-    "CON_Memb": [238, 77, 245],
-    "CON_DNA": [96, 255, 255]
-  };
+  this.num_channels = imageInfo.channels;
+  
+  this.channel_names = this.imageInfo.channel_names.slice();
+  this.channel_colors_default = imageInfo.channel_colors ? imageInfo.channel_colors.slice() : this.channel_names.map((name, index) => getColorByChannelIndex(index));
+  this.channel_colors = this.channel_colors_default.slice();
 
-  var channel_colors_default = [
-    [128, 0, 0],
-    [0, 128, 0],
-    [0, 0, 128],
-    [128, 128, 128],
-    [128, 128, 0],
-    [128, 0, 128],
-    [0, 128, 128],
-    [255, 0, 0],
-    [0, 255, 0],
-    [0, 0, 255],
-    [255, 255, 255],
-    [255, 255, 0],
-    [255, 0, 255],
-    [0, 255, 255]
-  ];
-
-  // TODO accept channel colors from viewData.
-  this.original_channel_colors = channel_colors_default.slice(0, Math.min(this.num_channels, channel_colors_default.length));
-  var diff = this.num_channels - this.original_channel_colors.length;
-  for (var i = 0; i < diff; i++) {
-    this.original_channel_colors.push([0,0,0]);
-  }
-
-  this.channel_names = [];
-  for (var i = 0; i < this.num_channels; i++) {
-    this.channel_names[i] = this.imageInfo.channel_names[i];
-  }
-
-  // update channel colors with channel name presets
-  for (var i = 0; i < this.num_channels; i++) {
-    if (channel_colors_default_map.hasOwnProperty(this.channel_names[i])) {
-      this.original_channel_colors[i] = channel_colors_default_map[this.channel_names[i]].slice();
-    }
-  }
-
-  this.channel_colors = [];
-  for (let i = 0; i < this.num_channels; i++) {
-    // take copy of original channel color
-    this.channel_colors.push(this.original_channel_colors[i].slice());
-  }
-
-
-  this.fusion = [];
-  for (let i = 0; i < this.num_channels; i++) {
-    let col = this.channel_colors[i];
+  this.fusion = this.channel_colors.map((col, index) => {
+    let rgbColor;
     // take copy of original channel color
     if (col[0] === 0 && col[1] === 0 && col[2] === 0) {
-      this.fusion.push({
-        chIndex: i,
-        lut:[],
-        rgbColor: 0
-      });
+      rgbColor = 0;
     } else {
-      this.fusion.push({
-        chIndex: i,
-        lut:[],
-        rgbColor: [col[0], col[1], col[2]]
-      });
+      rgbColor = [col[0], col[1], col[2]];
     }
-  }
-
+    return {
+      chIndex: index,
+      lut:[],
+      rgbColor: rgbColor
+    };
+  });
 
   this.sceneRoot = new THREE.Object3D();//create an empty container
 
@@ -376,7 +323,7 @@ function AICSvolumeDrawable(imageInfo) {
     '    if (col.x*col.w > C.x) { C.x = col.x*col.w; }',
     '    if (col.y*col.w > C.y) { C.y = col.y*col.w; }',
     '    if (col.z*col.w > C.z) { C.z = col.z*col.w; }',
-    '    C.w = 1.0;', // this is unjustified
+    '    if (col.w > C.w) { C.w = col.w; }',
     '    return C;',
     '}',
     
@@ -625,16 +572,22 @@ AICSvolumeDrawable.prototype.updateMeshColors = function() {
 };
 
 AICSvolumeDrawable.prototype.createMaterialForChannel = function(channelIndex, alpha, transp) {
-  let rgb = this.fusion[channelIndex].rgbColor;
-  if (rgb === 0) {
-    rgb = this.channel_colors[channelIndex];
-  }
+  let rgb = this.channel_colors[channelIndex];
   const col = (rgb[0] << 16) | (rgb[1] << 8) | (rgb[2]);
-  const material = new THREE.MeshPhongMaterial( { color: col, specular: 0x161616, shininess: 40, opacity: alpha, transparent:transp, side:THREE.DoubleSide, depthWrite: !transp, flatShading: false } );
+  const material = new THREE.MeshPhongMaterial({
+    color: new THREE.Color(col),
+    shininess: defaultMaterialSettings.shininess,
+    specular: new THREE.Color(defaultMaterialSettings.specularColor),
+    opacity: alpha,
+    transparent: (alpha < 0.9)
+  });
   return material;
 };
 
 AICSvolumeDrawable.prototype.generateIsosurfaceGeometry = function(channelIndex, isovalue) {
+  if (!this.channelData) {
+    return [];
+  }
   const volumedata = this.channelData.channels[channelIndex].volumeData;
 
   const marchingcubes = true;
@@ -660,12 +613,12 @@ AICSvolumeDrawable.prototype.generateIsosurfaceGeometry = function(channelIndex,
     return geometries;
   }
   else {
-    var result = NaiveSurfaceNets.SurfaceNets(
+    var result = NaiveSurfaceNets.surfaceNets(
       volumedata,
       [this.imageInfo.tile_width, this.imageInfo.tile_height, this.z],
       isovalue
     );
-    return NaiveSurfaceNets.ConstructTHREEGeometry(result);
+    return NaiveSurfaceNets.constructTHREEGeometry(result);
   }
 
 };
@@ -686,16 +639,23 @@ AICSvolumeDrawable.prototype.createMeshForChannel = function(channelIndex, isova
   return theObject;
 };
 
-AICSvolumeDrawable.prototype.updateIsovalue = function(channel, value) {
+AICSvolumeDrawable.prototype.updateIsovalue = function(channel, value, opacity) {
   if (!this.meshrep[channel]) {
     return;
   }
 
   this.destroyIsosurface(channel);
 
-  this.meshrep[channel] = this.createMeshForChannel(channel, value, 1.0, false);
+  this.meshrep[channel] = this.createMeshForChannel(channel, value, opacity, false);
 
   this.meshRoot.add(this.meshrep[channel]);
+};
+
+AICSvolumeDrawable.prototype.getIsovalue = function(channel) {
+  if (!this.meshrep[channel]) {
+    return undefined;
+  }
+  return this.meshrep[channel].userData.isovalue;
 };
 
 AICSvolumeDrawable.prototype.updateOpacity = function(channel, value) {
@@ -897,12 +857,15 @@ AICSvolumeDrawable.prototype.setVolumeChannelEnabled = function(channelIndex, en
 };
 
 AICSvolumeDrawable.prototype.updateChannelColor = function(channelIndex, colorrgba) {
+  if (!this.channel_colors[channelIndex]) {
+    return;
+  }
   this.channel_colors[channelIndex] = colorrgba;
   // if volume channel is zero'ed out, then don't update it until it is switched on again.
   if (this.fusion[channelIndex].rgbColor !== 0) {
     this.fusion[channelIndex].rgbColor = colorrgba;
+    this.fuse();
   }
-  this.fuse();
   this.updateMeshColors();
 };
 

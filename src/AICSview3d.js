@@ -1,9 +1,12 @@
 import {AICSthreeJsPanel} from './AICSthreeJsPanel.js';
+import lightSettings from './constants/lights.js';
+
 export class AICSview3d {
   constructor(parentElement) {
     this.canvas3d = new AICSthreeJsPanel(parentElement);
     this.redraw = this.redraw.bind(this);
     this.scene = null;
+    this.backgroundColor = 0x000000;
 
     // a light source...
     //this.light = null;
@@ -17,14 +20,9 @@ export class AICSview3d {
   }
 
   preRender() {
-    const HEADLIGHT_OFFSET_FACTOR_X = 0.6;
-    const HEADLIGHT_OFFSET_FACTOR_Y = 0.9;
-    // distance from camera to origin
-    const len = this.canvas3d.camera.position.length();
-    let updelta = new THREE.Vector3().copy(this.canvas3d.camera.up).multiplyScalar(len * HEADLIGHT_OFFSET_FACTOR_Y);
-    let leftdelta = new THREE.Vector3().crossVectors(this.canvas3d.camera.up, this.canvas3d.camera.getWorldDirection(new THREE.Vector3())).multiplyScalar(len * HEADLIGHT_OFFSET_FACTOR_X);
-    let p = new THREE.Vector3().add(this.canvas3d.camera.position).add(updelta).add(leftdelta);
-    this.headLight.position.set( p.x, p.y, p.z );
+    if (this.scene.getObjectByName('lightContainer')) {
+      this.scene.getObjectByName('lightContainer').rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
+    }
   };
 
   redraw() {
@@ -60,64 +58,56 @@ export class AICSview3d {
 
   buildScene() {
     this.scene = new THREE.Scene();
-
-    //this.light = new THREE.PointLight(0xFFFFFF, 1, 100);
-    //this.scene.add(this.light);
     this.canvas3d.scene = this.scene;
+
     this.oldScale = new THREE.Vector3(0.5, 0.5, 0.5);
     this.currentScale = new THREE.Vector3(0.5, 0.5, 0.5);
-    this.canvas3d.renderer.setClearColor(0x000000, 1.000);
 
-    this.headLight = new THREE.DirectionalLight( 0xffffff );
-    this.headLight.position.set( 0.0, 0.0, 1 );
-    this.scene.add( this.headLight );
+    // background color
+    this.canvas3d.renderer.setClearColor(this.backgroundColor, 1.000);
 
-    let ambientLight = new THREE.AmbientLight( 0x080808 );
-    this.scene.add( ambientLight );
+    this.lightContainer = new THREE.Object3D();
+    this.lightContainer.name = 'lightContainer';
 
-    ///////////////////////////////
-    // Proof of concept of rendering a mesh model
-    // TODO needs lighting/material
+    this.ambientLight = new THREE.AmbientLight(lightSettings.ambientLightSettings.color, lightSettings.ambientLightSettings.intensity);
+    this.lightContainer.add(this.ambientLight);
 
-    // if (!me.segmentationMesh) {
-    //   var onProgress = function(xhr) {
-    //       if (xhr.lengthComputable) {
-    //           var percentComplete = xhr.loaded / xhr.total * 100;
-    //           console.log(Math.round(percentComplete, 2) + '% downloaded');
-    //       }
-    //   };
-    //
-    //   var onError = function(xhr) {};
-    //
-    //   var loader = new THREE.OBJLoader(/*manager*/);
-    //   loader.load('/src/shaders/Cell4mito_Collada_lowRes_1.obj', function(object) {
-    //
-    // 		var bbox = new THREE.Box3().setFromObject(object);
-    // 		var s = bbox.size();
-    //
-    //
-    //       object.traverse(function(child) {
-    //           if (child instanceof THREE.Mesh) {
-    // 						// for consistency need to set vertex colors to this color too,
-    // 						// because of polyShaderMaterial expects vertex color attrib.
-    // 						child.material = new THREE.MeshBasicMaterial({
-    // 								color : 0xffff00
-    // 						});
-    //             //child.material = me.volumeObject.polyShaderMaterial;
-    // 						// scale down and center on 0,0,0
-    // 						child.position.set(-1, -1, 1);
-    //
-    // 						child.scale.set(1.0/s.x, 1.0/s.y, 1.0/s.z);
-    // 						me.segmentationMesh = me.volumeObject.addMeshObject(child, true);
-    // 						me.scene.add(child);
-    //           }
-    //       });
-    // 			//object.material = me.volumeObject.polyShaderMaterial;
-    //
-    //
-    //
-    //   }, onProgress, onError);
-    // }
+    // key light
+    this.spotLight = new THREE.SpotLight(lightSettings.spotlightSettings.color, lightSettings.spotlightSettings.intensity);
+    this.spotLight.position.set(
+        lightSettings.spotlightSettings.position.x,
+        lightSettings.spotlightSettings.position.y,
+        lightSettings.spotlightSettings.position.z
+    );
+    this.spotLight.target = new THREE.Object3D();  // this.substrate;
+    this.spotLight.angle = lightSettings.spotlightSettings.angle;
+
+
+    this.lightContainer.add(this.spotLight);
+
+    // reflect light
+    this.reflectedLight = new THREE.DirectionalLight(lightSettings.reflectedLightSettings.color);
+    this.reflectedLight.position.set(
+        lightSettings.reflectedLightSettings.position.x,
+        lightSettings.reflectedLightSettings.position.y,
+        lightSettings.reflectedLightSettings.position.z
+    );
+    this.reflectedLight.castShadow = lightSettings.reflectedLightSettings.castShadow;
+    this.reflectedLight.intensity = lightSettings.reflectedLightSettings.intensity;
+    this.lightContainer.add(this.reflectedLight);
+
+    // fill light
+    this.fillLight = new THREE.DirectionalLight(lightSettings.fillLightSettings.color);
+    this.fillLight.position.set(
+        lightSettings.fillLightSettings.position.x,
+        lightSettings.fillLightSettings.position.y,
+        lightSettings.fillLightSettings.position.z
+    );
+    this.fillLight.castShadow = lightSettings.fillLightSettings.castShadow;
+    this.fillLight.intensity = lightSettings.fillLightSettings.intensity;
+    this.lightContainer.add(this.fillLight);
+
+    this.scene.add(this.lightContainer);
   };
 
   setCameraMode(mode) {
@@ -151,6 +141,11 @@ export class AICSview3d {
 
     for (var j = 0; j < batch.length; ++j) {
       var idx = batch[j];
+
+      // if an isosurface was created before the channel data arrived, we need to re-calculate it now.
+      if (this.image.meshrep[idx]) {
+        this.image.updateIsovalue(idx, this.image.getIsovalue(idx));
+      }
       if (this.onChannelDataReadyCallback) {
         this.onChannelDataReadyCallback(idx);
       }
