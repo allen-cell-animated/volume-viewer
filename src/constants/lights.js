@@ -1,4 +1,4 @@
-export const spotlightSettings = {
+const spotlightSettings = Object.freeze({
     angle: 6 * THREE.Math.DEG2RAD,
     castShadow: false,
     color: 0xffffff,
@@ -8,15 +8,15 @@ export const spotlightSettings = {
         y: 3.5,
         z: 7
     }
-};
+});
 
 
-export const ambientLightSettings = {
+const ambientLightSettings = Object.freeze({
     color: 0xffffff,
     intensity: 0.6
-};
+});
 
-export const reflectedLightSettings = {
+const reflectedLightSettings = Object.freeze({
     castShadow: false,
     color: 0xFF88AA,
     intensity: 0.2,
@@ -25,9 +25,9 @@ export const reflectedLightSettings = {
         y: -5,
         z: 0
     }
-};
+});
 
-export const fillLightSettings = {
+const fillLightSettings = Object.freeze({
     castShadow: false,
     color: 0xe8d1a9,
     intensity: 0.15,
@@ -36,7 +36,7 @@ export const fillLightSettings = {
         y: 0.2,
         z: 1.5
     }
-};
+});
 
 export default {
     spotlightSettings,

@@ -31,9 +31,9 @@ function AICSvolumeDrawable(imageInfo) {
 
   this.num_channels = imageInfo.channels;
   
-  this.channel_names = this.imageInfo.channel_names.map(x => x);
-  this.channel_colors_default = imageInfo.channel_colors? imageInfo.channel_colors.map(x => x): this.channel_names.map((name, index) => getColorByChannelIndex(index));
-  this.channel_colors = this.channel_colors_default.map(x => x);
+  this.channel_names = this.imageInfo.channel_names.slice();
+  this.channel_colors_default = imageInfo.channel_colors ? imageInfo.channel_colors.slice() : this.channel_names.map((name, index) => getColorByChannelIndex(index));
+  this.channel_colors = this.channel_colors_default.slice();
 
   this.fusion = this.channel_colors.map((col, index) => {
     let rgbColor;

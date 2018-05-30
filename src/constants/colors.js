@@ -39,5 +39,5 @@ export const defaultColors = [
 ];
 
 export const getColorByChannelIndex = (index) => {
-    return defaultColors[index] ? defaultColors[index] : [141, 163, 192];
+    return defaultColors[index] || [141, 163, 192];
 };
