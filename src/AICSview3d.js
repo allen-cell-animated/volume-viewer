@@ -38,19 +38,15 @@ export class AICSview3d {
     }
   }
 
-  setImage(img, onChannelDataReadyCallback) {
+  setImage(img) {
     this.destroyImage();
 
     this.image = img;
-    this.image.redraw = this.redraw;
+    this.image.redraw = this.redraw.bind(this);
 
     this.scene.add(img.sceneRoot);
 
     this.image.setResolution(this.canvas3d);
-
-    this.onChannelDataReadyCallback = onChannelDataReadyCallback;
-
-    this.image.setChannelCallbacks(this.onAllChannelsLoaded.bind(this), this.onChannelLoaded.bind(this));
 
     this.canvas3d.animate_funcs.push(this.preRender.bind(this));
     this.canvas3d.animate_funcs.push(img.onAnimate.bind(img));
@@ -130,27 +126,6 @@ export class AICSview3d {
     if (this.image) {
       this.image.setResolution(this.canvas3d);
     }
-  };
-
-  onAllChannelsLoaded() {
-  };
-
-  onChannelLoaded(batch) {
-    // any channels not yet loaded must just be set to 0 color for this fuse.
-    this.image.fuse();
-
-    for (var j = 0; j < batch.length; ++j) {
-      var idx = batch[j];
-
-      // if an isosurface was created before the channel data arrived, we need to re-calculate it now.
-      if (this.image.meshrep[idx]) {
-        this.image.updateIsovalue(idx, this.image.getIsovalue(idx));
-      }
-      if (this.onChannelDataReadyCallback) {
-        this.onChannelDataReadyCallback(idx);
-      }
-    }
-
   };
 
 }

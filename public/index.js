@@ -79,9 +79,6 @@ function loadImageData(jsondata, volumedata) {
       jsondata.images[i].name = locationHeader + jsondata.images[i].name;
     }
     
-    // tell the viewer about the image
-    view3D.setImage(aimg, onChannelDataReady);
-
     // get data into the image
     if (volumedata) {
         for (var i = 0; i < volumedata.length; ++i) {
@@ -98,6 +95,8 @@ function loadImageData(jsondata, volumedata) {
         });
     }
 
+    // tell the viewer about the image
+    view3D.setImage(aimg);
     view3D.setCameraMode('3D');
     aimg.setDensity(0.1);
     aimg.setBrightness(1.0);

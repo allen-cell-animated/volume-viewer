@@ -75,7 +75,7 @@ function AICSvolumeDrawable(imageInfo) {
     atlasSize:[this.imageInfo.atlas_width, this.imageInfo.atlas_height],
     volumeSize:[this.imageInfo.tile_width, this.imageInfo.tile_height, this.z],
     channelNames:this.channel_names
-  }, this.redraw);
+  }, this.redraw, this.onChannelLoaded.bind(this));
 
   this.uniforms = {
     'iResolution': {
@@ -463,7 +463,6 @@ function AICSvolumeDrawable(imageInfo) {
   var cy = 0.0;
   this.sceneRoot.position.set(cx,cy,cz);
   this.maxSteps = 256;
-
 }
 
 AICSvolumeDrawable.prototype.resetSampleRate = function() {
@@ -783,10 +782,22 @@ AICSvolumeDrawable.prototype.getChannel = function(channelIndex) {
   return this.channelData.channels[channelIndex];
 };
 
-AICSvolumeDrawable.prototype.setChannelCallbacks = function(allChannelsLoadedCb, channelLoadedCb) {
-  // fires allChannelsLoadedCb when all channel data is done.
-  // fires channelLoadedCb when each channel is done
-  this.channelData.setCallbacks(allChannelsLoadedCb, channelLoadedCb);
+AICSvolumeDrawable.prototype.onChannelLoaded = function(batch) {
+  // any channels not yet loaded must just be set to 0 color for this fuse.
+  this.fuse();
+
+  for (var j = 0; j < batch.length; ++j) {
+    var idx = batch[j];
+
+    // if an isosurface was created before the channel data arrived, we need to re-calculate it now.
+    if (this.meshrep[idx]) {
+      this.updateIsovalue(idx, this.getIsovalue(idx));
+    }
+    if (this.onChannelDataReadyCallback) {
+      this.onChannelDataReadyCallback(idx);
+    }
+  }
+
 };
 
 AICSvolumeDrawable.prototype.saveChannelIsosurface = function(channelIndex, type) {
