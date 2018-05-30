@@ -245,6 +245,6 @@ function ConstructTHREEGeometry(surfaceNetResult) {
 }
 
 export default {
-    SurfaceNets: SurfaceNets,
-    ConstructTHREEGeometry: ConstructTHREEGeometry
+    surfaceNets: SurfaceNets,
+    constructTHREEGeometry: ConstructTHREEGeometry
 };

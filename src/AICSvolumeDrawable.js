@@ -613,12 +613,12 @@ AICSvolumeDrawable.prototype.generateIsosurfaceGeometry = function(channelIndex,
     return geometries;
   }
   else {
-    var result = NaiveSurfaceNets.SurfaceNets(
+    var result = NaiveSurfaceNets.surfaceNets(
       volumedata,
       [this.imageInfo.tile_width, this.imageInfo.tile_height, this.z],
       isovalue
     );
-    return NaiveSurfaceNets.ConstructTHREEGeometry(result);
+    return NaiveSurfaceNets.constructTHREEGeometry(result);
   }
 
 };
