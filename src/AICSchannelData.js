@@ -1,8 +1,6 @@
 import AICSchannel from './AICSchannel.js';
 import MyWorker from './AICSfuseWorker';
 
-function nop() {}
-
 // This is the owner of all channel data (a whole multi channel tiff stack expressed as a series of 8bit texture atlases)
 function AICSchannelData(options, redraw, channelLoadedCb) {
   // resize the image by this factor! (depend on device type cpu capabilities?)
@@ -56,7 +54,7 @@ function AICSchannelData(options, redraw, channelLoadedCb) {
   this.setupWorkers();
 
   // callback for batch observer (channel data arrives in sets of 3 packed into rgb of a png file)
-  this.onChannelLoadedCallback = channelLoadedCb || nop;
+  this.onChannelLoadedCallback = channelLoadedCb || function() {};
 };
 
 AICSchannelData.prototype.cleanup = function() {
