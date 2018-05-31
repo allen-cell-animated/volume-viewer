@@ -1,6 +1,6 @@
 {
   "name": "volume-viewer",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "volume renderer for ome tif, czi, and tif z-stacks",
   "main": "dist/index.js",
   "scripts": {
