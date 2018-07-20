@@ -12,9 +12,6 @@ function AICSchannelData(options, redraw, channelLoadedCb) {
   // function to call when image is ready to redraw
   this.redraw = redraw;
 
-  // track requests made so they can be cleaned up / aborted
-  this.requests = {};
-
   // channel data stored here
   this.channels = [];
   for (var i = 0; i < options.count; ++i) {
@@ -58,12 +55,6 @@ function AICSchannelData(options, redraw, channelLoadedCb) {
 };
 
 AICSchannelData.prototype.cleanup = function() {
-  // try not to call the onload callbacks for requested images
-  for (var i in this.requests) {
-    this.requests[i].onload = null;
-    this.requests[i].src = '';
-  }
-
   if (this.workers && this.workers.length > 0) {
     for (var i = 0; i < this.workers.length; ++i) {
       this.workers[i].onmessage = null;
