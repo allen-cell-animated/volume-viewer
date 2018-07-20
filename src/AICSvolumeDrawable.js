@@ -270,6 +270,9 @@ function AICSvolumeDrawable(imageInfo) {
     '  float t = z-zfloor;', //mod(z, 1.0);',
     '  vec4 slice0Color = texture2D(tex, o0);',
     '  vec4 slice1Color = texture2D(tex, o1);',
+    // NOTE we could premultiply the mask in the fuse function,
+    // but that is slower to update the maskAlpha value than here in the shader.
+    // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?
     '  float slice0Mask = texture2D(textureAtlasMask, o0).x;',
     '  float slice1Mask = texture2D(textureAtlasMask, o1).x;',
     '  float maskVal = mix(slice0Mask, slice1Mask, t);',
@@ -934,6 +937,10 @@ AICSvolumeDrawable.prototype.appendEmptyChannel = function(name, color) {
   this.channelData.loaded = false;
 
   return idx;
+};
+
+AICSvolumeDrawable.prototype.setChannelAsMask = function(channelIndex) {
+  return this.channelData.setChannelAsMask(channelIndex);
 };
 
 export default AICSvolumeDrawable;

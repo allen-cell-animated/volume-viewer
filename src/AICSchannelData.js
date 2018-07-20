@@ -117,28 +117,6 @@ AICSchannelData.prototype.setupWorkers = function() {
 
 // batch is array containing which channels were just loaded
 AICSchannelData.prototype.onChannelLoaded = function(batch) {
-
-  // see if cell shape mask was loaded.
-  // DO THIS BEFORE PASSING DATA TO WORKERS
-  // TODO: maybe masking can be part of the fuse evaluation on CPU rather than on GPU.
-  // would save texture memory and gpu speed!
-  for (var j = 0; j < batch.length; ++j) {
-    var idx = batch[j];
-    var n = this.channels[idx].name;
-    // TODO: make channel layout here data-driven. (specify a channel name
-    // for the cell mask, such as tag:cell_mask_channel="SEG_Memb")
-    if (n === "SEG_Memb") {
-      var datacopy = this.channels[idx].imgData.data.buffer.slice(0);
-      var maskData = {data:new Uint8Array(datacopy), width:this.width, height:this.height};
-      this.maskTexture.image = maskData;
-      this.maskTexture.needsUpdate = true;
-      this.maskChannelLoaded = true;
-      this.maskChannelIndex = idx;
-      break;
-    }
-  }
-
-
   var npx = this.height*this.width;
   // pass channel data to workers
   for (var i = 0; i < this.workersCount; ++i) {
@@ -285,6 +263,20 @@ AICSchannelData.prototype.singleThreadedFuse = function(combination) {
   this.fusedTexture.needsUpdate = true;
 
   //console.log("END");
+};
+
+// currently only one channel can be selected to participate as a mask
+AICSchannelData.prototype.setChannelAsMask = function(idx) {
+  if (!this.channels[idx] || !this.channels[idx].loaded) {
+    return false;
+  }
+  var datacopy = this.channels[idx].imgData.data.buffer.slice(0);
+  var maskData = {data:new Uint8Array(datacopy), width:this.width, height:this.height};
+  this.maskTexture.image = maskData;
+  this.maskTexture.needsUpdate = true;
+  this.maskChannelLoaded = true;
+  this.maskChannelIndex = idx;
+  return true;
 };
 
 export default AICSchannelData;
