@@ -910,4 +910,23 @@ AICSvolumeDrawable.prototype.setChannelDataFromVolume = function(channelIndex, v
   this.channelData.onChannelLoaded.call(this.channelData, [channelIndex]);
 };
 
+// add a new channel ready to receive data from one of the setChannelDataFrom* calls
+// name and color will be defaulted if not provided
+AICSvolumeDrawable.prototype.appendEmptyChannel = function(name, color) {
+  let idx = this.num_channels;
+  let chname = name  || "channel_"+idx;
+  let chcolor = color || getColorByChannelIndex(idx);
+  this.num_channels += 1;
+  this.channel_names.push(chname);
+  this.channel_colors_default.push(chcolor);
+  this.channel_colors.push(chcolor);
+  this.fusion.push({
+    chIndex: idx,
+    lut:[],
+    rgbColor: chcolor
+  });
+  this.channelData.channels.push(new AICSchannel(chname));
+  return idx;
+};
+
 export default AICSvolumeDrawable;
