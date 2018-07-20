@@ -775,7 +775,7 @@ AICSvolumeDrawable.prototype.cleanup = function() {
 };
 
 AICSvolumeDrawable.prototype.channelNames = function() {
-  return this.imageInfo.channel_names;
+  return this.channel_names;
 };
 
 AICSvolumeDrawable.prototype.getChannel = function(channelIndex) {
@@ -912,6 +912,7 @@ AICSvolumeDrawable.prototype.setChannelDataFromVolume = function(channelIndex, v
 
 // add a new channel ready to receive data from one of the setChannelDataFrom* calls
 // name and color will be defaulted if not provided
+// TODO: decide if this should update imageInfo or not. For now, leave imageInfo alone as the "original" data
 AICSvolumeDrawable.prototype.appendEmptyChannel = function(name, color) {
   let idx = this.num_channels;
   let chname = name  || "channel_"+idx;
@@ -926,6 +927,9 @@ AICSvolumeDrawable.prototype.appendEmptyChannel = function(name, color) {
     rgbColor: chcolor
   });
   this.channelData.channels.push(new AICSchannel(chname));
+  this.channelData.options.count += 1;
+  this.channelData.options.channelNames.push(chname);
+
   return idx;
 };
 
