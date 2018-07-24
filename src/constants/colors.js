@@ -40,8 +40,9 @@ export const defaultColors = [
 
 // 0 <= (h, s, v) <= 1
 // returns 0 <= (r, g, b) <= 255 rounded to nearest integer
+// you can also pass in just one arg as an object of {h, s, v} props.
 function HSVtoRGB(h, s, v) {
-    var r, g, b, i, f, p, q, t;
+    let r, g, b, i, f, p, q, t;
     if (arguments.length === 1) {
         s = h.s, v = h.v, h = h.h;
     }
