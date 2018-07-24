@@ -13,7 +13,7 @@ const AICSvolumeLoader = {};
 //     "channels": [6, 7, 8]
 // }],
 // returns a map(imageurl : Image object)
-// this can be used to cancel the download requests.
+// this should be used to cancel the download requests, for example if you need to destroy the image before all data has arrived.
 // as requests arrive, the callback will be called per image, not per channel
 AICSvolumeLoader.loadVolumeAtlasData = function (imageArray, callback) {
     var numImages = imageArray.length;

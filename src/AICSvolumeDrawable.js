@@ -270,6 +270,9 @@ function AICSvolumeDrawable(imageInfo) {
     '  float t = z-zfloor;', //mod(z, 1.0);',
     '  vec4 slice0Color = texture2D(tex, o0);',
     '  vec4 slice1Color = texture2D(tex, o1);',
+    // NOTE we could premultiply the mask in the fuse function,
+    // but that is slower to update the maskAlpha value than here in the shader.
+    // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?
     '  float slice0Mask = texture2D(textureAtlasMask, o0).x;',
     '  float slice1Mask = texture2D(textureAtlasMask, o1).x;',
     '  float maskVal = mix(slice0Mask, slice1Mask, t);',
@@ -775,7 +778,7 @@ AICSvolumeDrawable.prototype.cleanup = function() {
 };
 
 AICSvolumeDrawable.prototype.channelNames = function() {
-  return this.imageInfo.channel_names;
+  return this.channel_names;
 };
 
 AICSvolumeDrawable.prototype.getChannel = function(channelIndex) {
@@ -908,6 +911,36 @@ AICSvolumeDrawable.prototype.setChannelDataFromAtlas = function(channelIndex, at
 AICSvolumeDrawable.prototype.setChannelDataFromVolume = function(channelIndex, volumeData) {
   this.channelData.channels[channelIndex].setFromVolumeData(volumeData, this.channelData.options);
   this.channelData.onChannelLoaded.call(this.channelData, [channelIndex]);
+};
+
+// add a new channel ready to receive data from one of the setChannelDataFrom* calls
+// name and color will be defaulted if not provided
+// TODO: decide if this should update imageInfo or not. For now, leave imageInfo alone as the "original" data
+AICSvolumeDrawable.prototype.appendEmptyChannel = function(name, color) {
+  let idx = this.num_channels;
+  let chname = name  || "channel_"+idx;
+  let chcolor = color || getColorByChannelIndex(idx);
+  this.num_channels += 1;
+  this.channel_names.push(chname);
+  this.channel_colors_default.push(chcolor);
+  this.channel_colors.push(chcolor);
+  this.fusion.push({
+    chIndex: idx,
+    lut:[],
+    rgbColor: chcolor
+  });
+
+  this.channelData.channels.push(new AICSchannel(chname));
+  this.channelData.options.count += 1;
+  this.channelData.options.channelNames.push(chname);
+
+  this.channelData.loaded = false;
+
+  return idx;
+};
+
+AICSvolumeDrawable.prototype.setChannelAsMask = function(channelIndex) {
+  return this.channelData.setChannelAsMask(channelIndex);
 };
 
 export default AICSvolumeDrawable;

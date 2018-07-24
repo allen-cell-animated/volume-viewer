@@ -38,6 +38,35 @@ export const defaultColors = [
     [87, 249, 235]
 ];
 
+// 0 <= (h, s, v) <= 1
+// returns 0 <= (r, g, b) <= 255 rounded to nearest integer
+// you can also pass in just one arg as an object of {h, s, v} props.
+function HSVtoRGB(h, s, v) {
+    let r, g, b, i, f, p, q, t;
+    if (arguments.length === 1) {
+        s = h.s, v = h.v, h = h.h;
+    }
+    i = Math.floor(h * 6);
+    f = h * 6 - i;
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    return {
+        r: Math.round(r * 255),
+        g: Math.round(g * 255),
+        b: Math.round(b * 255)
+    };
+}
+  
+// if index exceeds defaultColors start choosing random ones
 export const getColorByChannelIndex = (index) => {
-    return defaultColors[index] || [141, 163, 192];
+    return defaultColors[index] || HSVtoRGB(Math.random(), Math.random()*0.5 + 0.5, Math.random()*0.5 + 0.5);
 };
