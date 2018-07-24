@@ -14,9 +14,7 @@ module.exports = {
   },
   plugins: [
     new webpack.ProvidePlugin({
-      THREE: 'three',
-      jQuery: 'jquery',
-      $: 'jquery'
+      THREE: 'three'
     })
   ],
   devtool: 'cheap-module-source-map',

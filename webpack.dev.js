@@ -27,10 +27,7 @@ module.exports = {
             APP_VERSION: JSON.stringify(require("./package.json").version)
         }),
         new webpack.ProvidePlugin({
-            d3: 'd3',
-            THREE: 'three',
-            jQuery: 'jquery',
-            $: 'jquery'
+            THREE: 'three'
         }),
         // ignores a webcomponents dependency on a server side module since this is for front end only.
         // see: https://github.com/webcomponents/webcomponentsjs/issues/794
