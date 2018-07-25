@@ -930,11 +930,7 @@ AICSvolumeDrawable.prototype.appendEmptyChannel = function(name, color) {
     rgbColor: chcolor
   });
 
-  this.channelData.channels.push(new AICSchannel(chname));
-  this.channelData.options.count += 1;
-  this.channelData.options.channelNames.push(chname);
-
-  this.channelData.loaded = false;
+  this.channelData.appendEmptyChannel(chname);
 
   return idx;
 };

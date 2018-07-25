@@ -279,4 +279,11 @@ AICSchannelData.prototype.setChannelAsMask = function(idx) {
   return true;
 };
 
+AICSchannelData.prototype.appendEmptyChannel = function(chname) {
+  this.channels.push(new AICSchannel(chname));
+  this.options.count += 1;
+
+  this.loaded = false;
+};
+
 export default AICSchannelData;
