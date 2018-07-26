@@ -148,7 +148,6 @@ export class AICSthreeJsPanel {
   }
 
   resize(comp, w, h, ow, oh, eOpts) {
-    console.log("GOT onresize IN ThreeJsPanel");
     var aspect = w / h;
 
     this.perspectiveControls.aspect = aspect;
