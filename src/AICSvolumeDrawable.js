@@ -650,7 +650,7 @@ AICSvolumeDrawable.prototype.updateIsovalue = function(channel, value) {
   }
 
   // find the current isosurface opacity.
-  let opacity;
+  let opacity = 1;
   if (this.meshrep[channel].material) {
     opacity = this.meshrep[channel].material.opacity;
   }
