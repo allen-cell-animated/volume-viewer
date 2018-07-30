@@ -641,9 +641,25 @@ AICSvolumeDrawable.prototype.createMeshForChannel = function(channelIndex, isova
   return theObject;
 };
 
-AICSvolumeDrawable.prototype.updateIsovalue = function(channel, value, opacity) {
+AICSvolumeDrawable.prototype.updateIsovalue = function(channel, value) {
   if (!this.meshrep[channel]) {
     return;
+  }
+  if (this.meshrep[channel].userData.isovalue === value) {
+    return;
+  }
+
+  // find the current isosurface opacity.
+  let opacity = 1;
+  if (this.meshrep[channel].material) {
+    opacity = this.meshrep[channel].material.opacity;
+  }
+  else {
+    this.meshrep[channel].traverse(function(child) {
+      if (child instanceof THREE.Mesh) {
+        opacity = child.material.opacity;
+      }
+    });
   }
 
   this.destroyIsosurface(channel);
@@ -930,11 +946,7 @@ AICSvolumeDrawable.prototype.appendEmptyChannel = function(name, color) {
     rgbColor: chcolor
   });
 
-  this.channelData.channels.push(new AICSchannel(chname));
-  this.channelData.options.count += 1;
-  this.channelData.options.channelNames.push(chname);
-
-  this.channelData.loaded = false;
+  this.channelData.appendEmptyChannel(chname);
 
   return idx;
 };
