@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "prepublish": "npm run build",
+    "build-docs": "node node_modules/documentation/bin/documentation.js readme src/AICSview3d.js src/AICSvolumeDrawable.js src/AICSmakeVolumes.js src/volumeLoader.js --section=API --shallow",
     "build": "webpack --config webpack.library.js",
     "dev": "webpack-dev-server --open --config webpack.dev.js",
     "lint": "eslint --config ./.eslintrc --ignore-path ./.eslintignore --ext .jsx --ext .js ./"

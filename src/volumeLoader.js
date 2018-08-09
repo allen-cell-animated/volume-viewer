@@ -1,20 +1,35 @@
-
+/**
+ * @class
+ */
 const AICSvolumeLoader = {};
 
-// load volume as an array of atlases defining per channel data
-// imageArray: [{
-//     "name": "AICS-10_5_5.ome.tif_atlas_0.png",
-//     "channels": [0, 1, 2]
-// }, {
-//     "name": "AICS-10_5_5.ome.tif_atlas_1.png",
-//     "channels": [3, 4, 5]
-// }, {
-//     "name": "AICS-10_5_5.ome.tif_atlas_2.png",
-//     "channels": [6, 7, 8]
-// }],
-// returns a map(imageurl : Image object)
-// this should be used to cancel the download requests, for example if you need to destroy the image before all data has arrived.
-// as requests arrive, the callback will be called per image, not per channel
+/**
+ * @callback PerChannelCallback
+ * @param {string} imageurl
+ * @param {number} channelindex
+ * @param {Uint8Array} atlasdata 
+ * @param {number} atlaswidth
+ * @param {number} atlasheight
+ */
+
+/**
+ * load per-channel volume data from a batch of image files containing the volume slices tiled across the images
+ * @param {Array.<{name:string, channels:Array.<number>}>} imageArray 
+ * @param {PerChannelCallback} callback Per-channel callback.  Called when each channel's atlased volume data is loaded
+ * @returns {Object.<string, Image>} a map(imageurl : Image object) that should be used to cancel the download requests,
+ * for example if you need to destroy the image before all data has arrived.
+ * as requests arrive, the callback will be called per image, not per channel
+ * @example loadVolumeAtlasData([{
+ *     "name": "AICS-10_5_5.ome.tif_atlas_0.png",
+ *     "channels": [0, 1, 2]
+ * }, {
+ *     "name": "AICS-10_5_5.ome.tif_atlas_1.png",
+ *     "channels": [3, 4, 5]
+ * }, {
+ *     "name": "AICS-10_5_5.ome.tif_atlas_2.png",
+ *     "channels": [6, 7, 8]
+ * }], mycallback);
+ */
 AICSvolumeLoader.loadVolumeAtlasData = function (imageArray, callback) {
     var numImages = imageArray.length;
 
