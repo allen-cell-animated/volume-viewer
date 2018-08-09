@@ -8,10 +8,6 @@ import {
 let el = document.getElementById("volume-viewer");
 let view3D = new AICSview3d(el);
 
-function onChannelDataReady() {
-    console.log("Got channel data");
-}
-
 // PREPARE SOME TEST DATA TO TRY TO DISPLAY A VOLUME.
 let imgdata = {
     // width := original full size image width
@@ -30,6 +26,7 @@ let imgdata = {
     // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048 
     // and ideally a power of 2.
 
+    // These are the pixel dimensions of the png files in "images" below.
     // atlas_width === cols*tile_width
     "atlas_width": 2040,
     // atlas_height === rows*tile_height
@@ -55,6 +52,7 @@ let imgdata = {
     "aicsImageVersion": "0.3.0"
 };
 
+// generate some raw volume data
 var channelVolumes = [];
 for (var i = 0; i < imgdata.channels; ++i) {
   if (i % 2 === 0) {
@@ -73,12 +71,9 @@ function loadImageData(jsondata, volumedata) {
     
     const aimg = new AICSvolumeDrawable(jsondata, "test");
 
-    // if we have some url to prepend to the atlas file names, do it now.
-    var locationHeader = jsondata.locationHeader || '';
-    for (var i = 0; i < jsondata.images.length; ++i) {
-      jsondata.images[i].name = locationHeader + jsondata.images[i].name;
-    }
-    
+    // tell the viewer about the image
+    view3D.setImage(aimg);
+
     // get data into the image
     if (volumedata) {
         for (var i = 0; i < volumedata.length; ++i) {
@@ -95,8 +90,6 @@ function loadImageData(jsondata, volumedata) {
         });
     }
 
-    // tell the viewer about the image
-    view3D.setImage(aimg);
     view3D.setCameraMode('3D');
     aimg.setDensity(0.1);
     aimg.setBrightness(1.0);
