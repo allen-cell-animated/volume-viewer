@@ -88,11 +88,49 @@ export class AICSthreeJsPanel {
     this.orthoControlsZ.staticMoving = true;
     this.orthoControlsZ.enabled = false;
 
-
     this.camera = this.perspectiveCamera;
     this.controls = this.perspectiveControls;
 
     this.effect = this.renderer;
+
+    this.setupAxisHelper();
+  }
+
+  setupAxisHelper() {
+    // set up axis widget.
+
+    this.showAxis = false;
+
+    // size of axes in px.
+    this.axisScale = 50.0;
+    // offset from bottom left corner in px.
+    this.axisOffset = [66.0, 66.0];
+    
+    this.axisHelperScene = new THREE.Scene();
+
+    this.axisHelperObject = new THREE.Object3D();
+    this.axisHelperObject.name = 'axisHelperParentObject';
+
+    var axisCubeMaterial = new THREE.MeshBasicMaterial({
+      color : 0xAEACAD
+    });
+
+    var axisCube = new THREE.BoxGeometry(this.axisScale/5, this.axisScale/5, this.axisScale/5);
+    var axisCubeMesh = new THREE.Mesh(axisCube, axisCubeMaterial);
+    this.axisHelperObject.add(axisCubeMesh);
+
+    var axisHelper = new THREE.AxesHelper( this.axisScale );
+    this.axisHelperObject.add( axisHelper );
+
+    this.axisHelperScene.add(this.axisHelperObject);
+
+    this.axisCamera = new THREE.OrthographicCamera( 0, this.getWidth(), this.getHeight(), 0, 0.001, this.axisScale * 4.0 );
+    this.axisCamera.position.z = 1.0;
+    this.axisCamera.up.x = 0.0;
+    this.axisCamera.up.y = 1.0;
+    this.axisCamera.up.z = 0.0;
+    this.axisCamera.lookAt( new THREE.Vector3(0,0,0) );
+    this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale*2.0);
   }
 
   setAutoRotate(rotate) {
@@ -125,20 +163,24 @@ export class AICSthreeJsPanel {
       case ('X'):
         this.replaceCamera(this.orthographicCameraX);
         this.replaceControls(this.orthoControlsX);
+        this.axisHelperObject.rotation.set(0, Math.PI*0.5, 0);
         break;
       case('XZ'):
       case('Y'):
         this.replaceCamera(this.orthographicCameraY);
         this.replaceControls(this.orthoControlsY);
+        this.axisHelperObject.rotation.set(Math.PI*0.5, 0, 0);
         break;
       case('XY'):
       case('Z'):
         this.replaceCamera(this.orthographicCameraZ);
         this.replaceControls(this.orthoControlsZ);
-        break;
+        this.axisHelperObject.rotation.set(0, 0, 0);
+      break;
       default:
         this.replaceCamera(this.perspectiveCamera);
         this.replaceControls(this.perspectiveControls);
+        this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
         break;
     }
   }
@@ -164,6 +206,12 @@ export class AICSthreeJsPanel {
 
     this.camera.updateProjectionMatrix();
 
+    this.axisCamera.left = 0;
+    this.axisCamera.right = w;
+    this.axisCamera.top = h;
+    this.axisCamera.bottom = 0;
+    this.axisCamera.updateProjectionMatrix();
+
     this.effect.setSize( w,h );
 
     this.perspectiveControls.handleResize();
@@ -188,6 +236,11 @@ export class AICSthreeJsPanel {
 
   render() {
     this.effect.render(this.scene, this.camera);
+    if (this.showAxis) {
+      this.effect.autoClear = false;
+      this.effect.render(this.axisHelperScene, this.axisCamera);
+      this.effect.autoClear = true;
+    }
   }
 
   doAnimate() {
@@ -204,6 +257,12 @@ export class AICSthreeJsPanel {
       }
     }
     this.render();
+
+    // update the axis helper in case the view was rotated
+    if (!this.camera.isOrthographicCamera) {
+      this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
+    }
+
     //this.anaglyph.render(this.scene, this.camera);
     //this.controls.update();
     if (this.effect.requestAnimationFrame) {

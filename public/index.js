@@ -107,3 +107,18 @@ function loadImageData(jsondata, volumedata) {
 // switch the uncommented line to test with volume data or atlas data
 loadImageData(imgdata);
 //loadImageData(imgdata, channelVolumes);
+
+var xbtn = document.getElementById("X");
+xbtn.addEventListener("click", ()=>{view3D.setCameraMode('X');});
+var ybtn = document.getElementById("Y");
+ybtn.addEventListener("click", ()=>{view3D.setCameraMode('Y');});
+var zbtn = document.getElementById("Z");
+zbtn.addEventListener("click", ()=>{view3D.setCameraMode('Z');});
+var d3btn = document.getElementById("3D");
+d3btn.addEventListener("click", ()=>{view3D.setCameraMode('3D');});
+var isRot = false;
+var rotbtn = document.getElementById("rotbtn");
+rotbtn.addEventListener("click", ()=>{isRot = !isRot; view3D.setAutoRotate(isRot)});
+var isAxis = false;
+var axisbtn = document.getElementById("axisbtn");
+axisbtn.addEventListener("click", ()=>{isAxis = !isAxis; view3D.setShowAxis(isAxis)});
