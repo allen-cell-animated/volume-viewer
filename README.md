@@ -1,7 +1,13 @@
 # AICS Volume Viewer
 
 This is a WebGL canvas-based volume viewer. It can display multichannel volume data of 8-bit intensity values.
-Volume data is provided to the core 3d viewer in two parts.  The first part is via a json object containing dimensions and other metadata.  The second part is the volume data itself, delivered to the viewer in one of two formats: texture atlases (png files containing volume slices tiled across the 2d image), or raw Uint8Arrays of 3d volume data (one Uint8Array per channel).
+Volume data is provided to the core 3d viewer in two parts.  The first part is via a json object containing dimensions and other metadata.  The second part is the volume data itself.
+
+There are two ways to deliver volume data to the viewer:
+
+* raw Uint8Arrays of 3d volume data (one Uint8Array per channel). ( ```AICSvolumeDrawable.setChannelDataFromVolume``` )
+
+* texture atlases (png files or Uint8Arrays containing volume slices tiled across a 2d image) ( ```AICSvolumeDrawable.setChannelDataFromAtlas``` )
 
 # Example
 
