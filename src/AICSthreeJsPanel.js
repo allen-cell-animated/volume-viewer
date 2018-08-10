@@ -176,7 +176,7 @@ export class AICSthreeJsPanel {
         this.replaceCamera(this.orthographicCameraZ);
         this.replaceControls(this.orthoControlsZ);
         this.axisHelperObject.rotation.set(0, 0, 0);
-      break;
+        break;
       default:
         this.replaceCamera(this.perspectiveCamera);
         this.replaceControls(this.perspectiveControls);
