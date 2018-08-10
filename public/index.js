@@ -69,7 +69,7 @@ for (var i = 0; i < imgdata.channels; ++i) {
 function loadImageData(jsondata, volumedata) {
     view3D.resize();
     
-    const aimg = new AICSvolumeDrawable(jsondata, "test");
+    const aimg = new AICSvolumeDrawable(jsondata);
 
     // tell the viewer about the image
     view3D.setImage(aimg);
