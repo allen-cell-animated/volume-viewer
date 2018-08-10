@@ -1,7 +1,13 @@
 import {AICSthreeJsPanel} from './AICSthreeJsPanel.js';
 import lightSettings from './constants/lights.js';
 
+/**
+ * @class
+ */
 export class AICSview3d {
+  /**
+   * @param {HTMLElement} parentElement the 3d display will try to fill the parent element.
+   */
   constructor(parentElement) {
     this.canvas3d = new AICSthreeJsPanel(parentElement);
     this.redraw = this.redraw.bind(this);
@@ -25,6 +31,9 @@ export class AICSview3d {
     }
   };
 
+  /**
+   * Force a redraw.  This is generally not needed because of constant redraws in the main animation loop.
+   */
   redraw() {
     this.canvas3d.rerender();
   };
@@ -38,6 +47,10 @@ export class AICSview3d {
     }
   }
 
+  /**
+   * Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will destroy any prior existing image.
+   * @param {AICSvolumeDrawable} img 
+   */
   setImage(img) {
     this.destroyImage();
 
@@ -106,6 +119,10 @@ export class AICSview3d {
     this.scene.add(this.lightContainer);
   };
 
+  /**
+   * Change the camera projection to look along an axis, or to view in a 3d perspective camera.
+   * @param {string} mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X, or "XZ" or "Y".  3D is a perspective view, and all the others are orthographic projections
+   */
   setCameraMode(mode) {
     this.canvas3d.switchViewMode(mode);
     if (this.image && mode === '3D') {
@@ -114,10 +131,23 @@ export class AICSview3d {
     }
   };
 
+  /**
+   * Enable or disable a turntable rotation mode. The display will continuously spin about the vertical screen axis.
+   * @param {boolean} autorotate 
+   */
   setAutoRotate(autorotate) {
     this.canvas3d.setAutoRotate(autorotate);
   };
 
+  /**
+   * Notify the view that it has been resized.  This will automatically be connected to the window when the AICSview3d is created.
+   * @param {HTMLElement=} comp Ignored.
+   * @param {number=} w Width, or parent element's offsetWidth if not specified. 
+   * @param {number=} h Height, or parent element's offsetHeight if not specified.
+   * @param {number=} ow Ignored.
+   * @param {number=} oh Ignored.
+   * @param {Object=} eOpts Ignored.
+   */
   resize(comp, w, h, ow, oh, eOpts) {
     w = w || this.parentEl.offsetWidth;
     h = h || this.parentEl.offsetHeight;

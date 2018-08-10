@@ -9,6 +9,55 @@ import './STLBinaryExporter.js';
 
 import 'three/examples/js/exporters/GLTFExporter.js';
 
+/**
+ * Provide dimensions of the volume data, including dimensions for texture atlas data in which the volume z slices
+ * are tiled across a single large 2d image plane.
+ * @typedef {Object} imageInfo
+ * @property {string} name Base name of image
+ * @property {string} version schema version preferably in semver format.
+ * @property {number} width Width of original volumetric data prior to downsampling
+ * @property {number} height Height of original volumetric data prior to downsampling
+ * @property {number} channels Number of channels
+ * @property {number} tiles Number of tiles, which must be equal to the number of z-slices in original volumetric data
+ * @property {number} pixel_size_x Size of pixel in volumetric data to be rendered, in x-dimension, unitless
+ * @property {number} pixel_size_y Size of pixel in volumetric data to be rendered, in y-dimension, unitless
+ * @property {number} pixel_size_z Size of pixel in volumetric data to be rendered, in z-dimension, unitless
+ * @property {Array.<string>} channel_names Names of each of the channels to be rendered, in order. Unique identifier expected
+ * @property {number} rows Number of rows in tile array in each image.  Note tiles <= rows*cols
+ * @property {number} cols Number of columns in tile array in each image.  Note tiles <= rows*cols
+ * @property {number} tile_width Width of each tile in volumetric dataset to be rendered, in pixels
+ * @property {number} tile_height Height of each tile in volumetric dataset to be rendered, in pixels
+ * @property {number} atlas_width Total width of image containing all the tiles, in pixels.  Note atlas_width === cols*tile_width
+ * @property {number} atlas_height Total height of image containing all the tiles, in pixels. Note atlas_height === rows*tile_height
+ * @example let imgdata = {
+  "width": 306,
+  "height": 494,
+  "channels": 9,
+  "channel_names": ["DRAQ5", "EGFP", "Hoechst 33258", "TL Brightfield", "SEG_STRUCT", "SEG_Memb", "SEG_DNA", "CON_Memb", "CON_DNA"],
+  "rows": 7,
+  "cols": 10,
+  "tiles": 65,
+  "tile_width": 204,
+  "tile_height": 292,
+  // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048 
+  // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
+  "atlas_width": 2040,
+  "atlas_height": 2044,
+  "pixel_size_x": 0.065,
+  "pixel_size_y": 0.065,
+  "pixel_size_z": 0.29,
+  "name": "AICS-10_5_5",
+  "status": "OK",
+  "version": "0.0.0",
+  "aicsImageVersion": "0.3.0"
+  };
+ */
+
+/**
+ * A renderable multichannel volume image with 8-bits per channel intensity values.
+ * @class
+ * @param {imageInfo} imageInfo 
+ */
 function AICSvolumeDrawable(imageInfo) {
   this.imageInfo = imageInfo;
   this.name = imageInfo.name;
@@ -523,6 +572,13 @@ AICSvolumeDrawable.prototype.setResolution = function(viewObj) {
 };
 
 // TODO handle this differently in 3D mode vs 2D mode?
+/**
+ * Set clipping range (between 0 and 1) for a given axis.
+ * @param {number} axis 0, 1, or 2 for x, y, or z axis
+ * @param {number} minval 0..1, should be less than maxval
+ * @param {number} maxval 0..1, should be greater than minval 
+ * @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
+ */
 AICSvolumeDrawable.prototype.setAxisClip = function(axis, minval, maxval, isOrthoAxis) {
   this.bounds.bmax[axis] = maxval;
   this.bounds.bmin[axis] = minval;
@@ -641,6 +697,11 @@ AICSvolumeDrawable.prototype.createMeshForChannel = function(channelIndex, isova
   return theObject;
 };
 
+/**
+ * If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
+ * @param {number} channel 
+ * @param {number} value 
+ */
 AICSvolumeDrawable.prototype.updateIsovalue = function(channel, value) {
   if (!this.meshrep[channel]) {
     return;
@@ -669,6 +730,11 @@ AICSvolumeDrawable.prototype.updateIsovalue = function(channel, value) {
   this.meshRoot.add(this.meshrep[channel]);
 };
 
+/**
+ * 
+ * @param {number} channel 
+ * @return {number} the isovalue for this channel or undefined if this channel does not have an isosurface created
+ */
 AICSvolumeDrawable.prototype.getIsovalue = function(channel) {
   if (!this.meshrep[channel]) {
     return undefined;
@@ -676,6 +742,11 @@ AICSvolumeDrawable.prototype.getIsovalue = function(channel) {
   return this.meshrep[channel].userData.isovalue;
 };
 
+/**
+ * Set opacity for isosurface
+ * @param {number} channel 
+ * @param {number} value Opacity
+ */
 AICSvolumeDrawable.prototype.updateOpacity = function(channel, value) {
   if (!this.meshrep[channel]) {
     return;
@@ -695,10 +766,22 @@ AICSvolumeDrawable.prototype.updateOpacity = function(channel, value) {
   }
 };
 
+/**
+ * 
+ * @param {number} channel 
+ * @return true if there is currently a mesh isosurface for this channel
+ */
 AICSvolumeDrawable.prototype.hasIsosurface = function(channel) {
   return (!!this.meshrep[channel]);
 };
 
+/**
+ * If an isosurface is not already created, then create one.  Otherwise do nothing.
+ * @param {number} channel 
+ * @param {number} value isovalue
+ * @param {number=} alpha Opacity
+ * @param {boolean=} transp render surface as transparent object
+ */
 AICSvolumeDrawable.prototype.createIsosurface = function(channel, value, alpha, transp) {
   if (!this.meshrep[channel]) {
     if (alpha === undefined) {
@@ -793,6 +876,9 @@ AICSvolumeDrawable.prototype.cleanup = function() {
   this.channelData.maskTexture.dispose();
 };
 
+/**
+ * @return a reference to the list of channel names
+ */
 AICSvolumeDrawable.prototype.channelNames = function() {
   return this.channel_names;
 };
@@ -819,6 +905,11 @@ AICSvolumeDrawable.prototype.onChannelLoaded = function(batch) {
 
 };
 
+/**
+ * Save a channel's isosurface as a triangle mesh to either STL or GLTF2 format.  File will be named automatically, using image name and channel name.
+ * @param {number} channelIndex 
+ * @param {string} type Either 'GLTF' or 'STL'
+ */
 AICSvolumeDrawable.prototype.saveChannelIsosurface = function(channelIndex, type) {
   if (!this.meshrep[channelIndex]) {
     return;
@@ -873,7 +964,11 @@ AICSvolumeDrawable.prototype.exportGLTF = function( input, fname ) {
   }, options );
 };
 
-
+/**
+ * Hide or display volume data for a channel
+ * @param {number} channelIndex 
+ * @param {boolean} enabled 
+ */
 AICSvolumeDrawable.prototype.setVolumeChannelEnabled = function(channelIndex, enabled) {
   // flip the color to the "null" value
   this.fusion[channelIndex].rgbColor = enabled ? this.channel_colors[channelIndex] : 0;
@@ -886,6 +981,11 @@ AICSvolumeDrawable.prototype.setVolumeChannelEnabled = function(channelIndex, en
   }
 };
 
+/**
+ * Set the color for a channel
+ * @param {number} channelIndex 
+ * @param {Array.<number>} colorrgba [r,g,b]
+ */
 AICSvolumeDrawable.prototype.updateChannelColor = function(channelIndex, colorrgba) {
   if (!this.channel_colors[channelIndex]) {
     return;
@@ -899,6 +999,11 @@ AICSvolumeDrawable.prototype.updateChannelColor = function(channelIndex, colorrg
   this.updateMeshColors();
 };
 
+/**
+ * Set the global density of the volume data
+ * @param {number} density Roughly equivalent to opacity, or how translucent or opaque the volume is
+ * @param {boolean=} no_redraw Set to true to delay re-rendering. Otherwise ignore.
+ */
 AICSvolumeDrawable.prototype.setDensity = function(density, no_redraw) {
   if (no_redraw) {
     this.setUniformNoRerender("DENSITY", density);
@@ -907,6 +1012,12 @@ AICSvolumeDrawable.prototype.setDensity = function(density, no_redraw) {
     this.setUniform("DENSITY", density);
   }
 };
+
+/**
+ * Set the global brightness of the volume data
+ * @param {number} brightness Roughly speaking, an intensity multiplier on the whole volume
+ * @param {boolean=} no_redraw Set to true to delay re-rendering. Otherwise ignore.
+ */
 AICSvolumeDrawable.prototype.setBrightness = function(brightness, no_redraw) {
   if (no_redraw) {
     this.setUniformNoRerender("BRIGHTNESS", brightness);
@@ -916,7 +1027,13 @@ AICSvolumeDrawable.prototype.setBrightness = function(brightness, no_redraw) {
   }
 };
 
-// ASSUMES that this.channelData.options is already set and incoming data is consistent with it
+/**
+ * Assign volume data via a 2d array containing the z slices as tiles across it.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
+ * @param {number} channelIndex 
+ * @param {Uint8Array} atlasdata 
+ * @param {number} atlaswidth 
+ * @param {number} atlasheight 
+ */
 AICSvolumeDrawable.prototype.setChannelDataFromAtlas = function(channelIndex, atlasdata, atlaswidth, atlasheight) {
   this.channelData.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight);
   this.channelData.channels[channelIndex].unpackVolume(this.channelData.options);  
@@ -924,14 +1041,23 @@ AICSvolumeDrawable.prototype.setChannelDataFromAtlas = function(channelIndex, at
 };
 
 // ASSUMES that this.channelData.options is already set and incoming data is consistent with it
+/**
+ * Assign volume data as a 3d array ordered x,y,z. The xy size must be equal to tilewidth*tileheight from the imageInfo used to construct this AICSvolumeDrawable.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
+ * @param {number} channelIndex 
+ * @param {Uint8Array} volumeData 
+ */
 AICSvolumeDrawable.prototype.setChannelDataFromVolume = function(channelIndex, volumeData) {
   this.channelData.channels[channelIndex].setFromVolumeData(volumeData, this.channelData.options);
   this.channelData.onChannelLoaded.call(this.channelData, [channelIndex]);
 };
 
-// add a new channel ready to receive data from one of the setChannelDataFrom* calls
-// name and color will be defaulted if not provided
 // TODO: decide if this should update imageInfo or not. For now, leave imageInfo alone as the "original" data
+/**
+ * Add a new channel ready to receive data from one of the setChannelDataFrom* calls.
+ * Name and color will be defaulted if not provided. For now, leave imageInfo alone as the "original" data
+ * @param {string} name 
+ * @param {Array.<number>} color [r,g,b]
+ */
 AICSvolumeDrawable.prototype.appendEmptyChannel = function(name, color) {
   let idx = this.num_channels;
   let chname = name  || "channel_"+idx;
@@ -951,6 +1077,10 @@ AICSvolumeDrawable.prototype.appendEmptyChannel = function(name, color) {
   return idx;
 };
 
+/**
+ * Assign a channel index as a mask channel (will multiply its color against the entire visible volume)
+ * @param {number} channelIndex 
+ */
 AICSvolumeDrawable.prototype.setChannelAsMask = function(channelIndex) {
   return this.channelData.setChannelAsMask(channelIndex);
 };

@@ -1,9 +1,53 @@
-# AICS Image Viewer
+# AICS Volume Viewer
 
-This is a browser based volume viewer built with React and WebGL (Three.js).
-Volume data is provided to the core 3d viewer via a json file containing dimensions and other metadata, and texture atlases (png files containing volume slices tiled across the 2d image).
-Therefore the texture atlases must be prepared in advance before loading into this viewer.
-There is a server component (aics-image-viewer-service) that can open OME-TIFF, TIFF, and CZI files and generate texture atlases for viewing.  Currently the server component is required.  The viewer sends Allen Institute file paths to the server component, which opens the files and caches the texture atlases, returning the server path to that data.
+This is a WebGL canvas-based volume viewer. It can display multichannel volume data of 8-bit intensity values.
+Volume data is provided to the core 3d viewer in two parts.  The first part is via a json object containing dimensions and other metadata.  The second part is the volume data itself.
+
+The volume-viewer package exposes two key modules:
+* ```AICSview3d``` is the viewing component that contains a canvas and supports zoom/pan/rotate interaction with the volume.
+* ```AICSvolumeDrawable``` is the class that holds the volume data and information about how to present it.
+
+It also provides the following two utility modules:
+* ```AICSvolumeLoader``` is a convenience class for downloading and unpacking texture atlases into a AICSvolumeDrawable.
+* ```AICSmakeVolumes``` is a convenience module for creating simple test volume data
+
+There are two ways to deliver volume data to the viewer:
+* raw Uint8Arrays of 3d volume data (one Uint8Array per channel). ( ```AICSvolumeDrawable.setChannelDataFromVolume``` )
+* texture atlases (png files or Uint8Arrays containing volume slices tiled across a 2d image) ( ```AICSvolumeDrawable.setChannelDataFromAtlas``` )
+
+
+# Example
+
+See public/index.js for a working example.  (```npm install; npm run dev``` will run that code) The basic code to get the volume viewer up and running is as follows:
+```javascript
+import {AICSview3d, AICSvolumeDrawable, AICSvolumeLoader, AICSmakeVolumes} from 'volume-viewer';
+
+// find a div that will hold the viewer
+const el = document.getElementById("volume-viewer");
+
+// create the viewer.  it will try to fill the parent element.
+const view3D = new AICSview3d(el);
+
+// create a volume image with dimensions passed in via jsondata
+const aimg = new AICSvolumeDrawable(jsondata);
+
+// tell the viewer about the image
+view3D.setImage(aimg);
+
+// load volume data into the image.  volumedata here is an array of Uint8Arrays.  
+// each element in volumedata is a flattened 3d volume stored in xyz order in a Uint8Array.
+// Intensities must have been be scaled to fit in uint8.
+for (let i = 0; i < volumedata.length; ++i) {
+    aimg.setChannelDataFromVolume(i, volumedata[i]);
+}
+
+// set some viewing parameters
+view3D.setCameraMode('3D');
+aimg.setDensity(0.1);
+aimg.setBrightness(1.0);
+```
+
+# Acknowledgements
 
 The volume shader itself is a heavily modified version of one that has its origins in [Bisque](http://bioimage.ucsb.edu/bisque).
 
@@ -45,4 +89,3 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 The views and conclusions contained in the software and documentation
 are those of the authors and should not be interpreted as representing
 official policies, either expressed or implied, of the Regents of the University of California.
-

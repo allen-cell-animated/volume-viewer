@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "prepublish": "npm run build",
+    "build-docs": "node node_modules/documentation/bin/documentation.js build src/AICSview3d.js src/AICSvolumeDrawable.js src/AICSmakeVolumes.js src/volumeLoader.js -f html -o docs --shallow",
     "build": "webpack --config webpack.library.js",
     "dev": "webpack-dev-server --open --config webpack.dev.js",
     "lint": "eslint --config ./.eslintrc --ignore-path ./.eslintignore --ext .jsx --ext .js ./"
@@ -23,6 +24,7 @@
     "babel-preset-react": "^6.24.1",
     "clean-webpack-plugin": "^0.1.16",
     "copy-webpack-plugin": "^4.5.1",
+    "documentation": "^8.1.0",
     "eslint": "^4.10.0",
     "eslint-plugin-react": "^7.4.0",
     "html-webpack-plugin": "^2.30.1",
