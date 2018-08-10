@@ -573,11 +573,11 @@ AICSvolumeDrawable.prototype.setResolution = function(viewObj) {
 
 // TODO handle this differently in 3D mode vs 2D mode?
 /**
- * Set clipping range (between )
+ * Set clipping range (between 0 and 1) for a given axis.
  * @param {number} axis 0, 1, or 2 for x, y, or z axis
  * @param {number} minval 0..1, should be less than maxval
  * @param {number} maxval 0..1, should be greater than minval 
- * @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the 
+ * @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
  */
 AICSvolumeDrawable.prototype.setAxisClip = function(axis, minval, maxval, isOrthoAxis) {
   this.bounds.bmax[axis] = maxval;
