@@ -132,6 +132,14 @@ export class AICSview3d {
   };
 
   /**
+   * Enable or disable 3d axis display at lower left.
+   * @param {boolean} autorotate 
+   */
+  setShowAxis(showAxis) {
+    this.canvas3d.showAxis = showAxis;
+  };
+
+  /**
    * Enable or disable a turntable rotation mode. The display will continuously spin about the vertical screen axis.
    * @param {boolean} autorotate 
    */
