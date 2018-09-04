@@ -262,6 +262,9 @@ export class AICSthreeJsPanel {
     if (!this.camera.isOrthographicCamera) {
       this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
     }
+    else {
+      this.orthoScale = this.controls.scale;
+    }
 
     //this.anaglyph.render(this.scene, this.camera);
     //this.controls.update();
