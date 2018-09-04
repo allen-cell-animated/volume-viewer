@@ -29,6 +29,10 @@ export class AICSview3d {
     if (this.scene.getObjectByName('lightContainer')) {
       this.scene.getObjectByName('lightContainer').rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
     }
+    // keep the ortho scale up to date.
+    if (this.image && this.canvas3d.camera.isOrthographicCamera) {
+      this.image.setUniformNoRerender('orthoScale', this.canvas3d.controls.scale);
+    }
   };
 
   /**
