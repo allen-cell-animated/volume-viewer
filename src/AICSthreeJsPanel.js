@@ -121,8 +121,6 @@ export class AICSthreeJsPanel {
     this.renderer.vr.enabled = true;
     document.body.appendChild( WEBVR.createButton( this.renderer ) );
 
-    this.effect = this.renderer;
-
     this.setupAxisHelper();
   }
 
@@ -242,7 +240,7 @@ export class AICSthreeJsPanel {
     this.axisCamera.bottom = 0;
     this.axisCamera.updateProjectionMatrix();
 
-    this.effect.setSize( w,h );
+    this.renderer.setSize( w,h );
 
     this.perspectiveControls.handleResize();
     this.orthoControlsZ.handleResize();
@@ -265,11 +263,11 @@ export class AICSthreeJsPanel {
   }
 
   render() {
-    this.effect.render(this.scene, this.camera);
+    this.renderer.render(this.scene, this.camera);
     if (this.showAxis) {
-      this.effect.autoClear = false;
-      this.effect.render(this.axisHelperScene, this.axisCamera);
-      this.effect.autoClear = true;
+      this.renderer.autoClear = false;
+      this.renderer.render(this.axisHelperScene, this.axisCamera);
+      this.renderer.autoClear = true;
     }
   }
 
@@ -301,8 +299,8 @@ export class AICSthreeJsPanel {
 
     //this.anaglyph.render(this.scene, this.camera);
     //this.controls.update();
-    if (this.effect.requestAnimationFrame) {
-      this.animationID = this.effect.requestAnimationFrame(function() {
+    if (this.renderer.requestAnimationFrame) {
+      this.animationID = this.renderer.requestAnimationFrame(function() {
         me.doAnimate();
       });
     }
