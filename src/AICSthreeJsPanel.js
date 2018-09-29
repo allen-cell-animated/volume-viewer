@@ -1,5 +1,9 @@
 import AICStrackballControls from './AICStrackballControls.js';
 
+import "./vr/ViveController.js";
+import WEBVR from "./vr/WebVR.js";
+import "./threejsObjLoader.js";
+
 export class AICSthreeJsPanel {
   constructor(parentElement) {
     this.canvas = document.createElement('canvas');
@@ -8,6 +12,7 @@ export class AICSthreeJsPanel {
     this.canvas.width=parentElement.offsetWidth;
     parentElement.appendChild(this.canvas);
 
+    this.scene = new THREE.Scene();
 
     this.zooming = false;
     this.animate_funcs = [];
@@ -26,6 +31,28 @@ export class AICSthreeJsPanel {
 
     this.clock = new THREE.Clock();
 
+    // VR controllers
+    this.controller1 = new THREE.ViveController( 0 );
+    this.controller1.standingMatrix = this.renderer.vr.getStandingMatrix();
+    this.scene.add( this.controller1 );
+    this.controller2 = new THREE.ViveController( 1 );
+    this.controller2.standingMatrix = this.renderer.vr.getStandingMatrix();
+    this.scene.add( this.controller2 );
+    // load the VR controller geometry
+    var that = this;
+    var loader = new THREE.OBJLoader();
+    loader.setPath( 'assets/' );
+    loader.load( 'vr_controller_vive_1_5.obj', function ( object ) {
+      var loader = new THREE.TextureLoader();
+      loader.setPath( 'assets/' );
+      var controller = object.children[ 0 ];
+      controller.material.map = loader.load( 'onepointfive_texture.png' );
+      controller.material.specularMap = loader.load( 'onepointfive_spec.png' );
+      that.controller1.add( object.clone() );
+      that.controller2.add( object.clone() );
+    } );
+   
+   
     var scale = 0.5;
     this.orthoScale = scale;
     var cellPos = new THREE.Vector3(0,0,0);
@@ -90,6 +117,9 @@ export class AICSthreeJsPanel {
 
     this.camera = this.perspectiveCamera;
     this.controls = this.perspectiveControls;
+
+    this.renderer.vr.enabled = true;
+    document.body.appendChild( WEBVR.createButton( this.renderer ) );
 
     this.effect = this.renderer;
 
@@ -247,6 +277,9 @@ export class AICSthreeJsPanel {
     var me = this;
     var delta = this.clock.getDelta();
     //console.log("DT="+delta);
+    this.controller1.update(delta);
+    this.controller2.update(delta);
+
     this.controls.update(delta);
     if(this.onAnimate) {
       this.onAnimate();

@@ -70,8 +70,7 @@ export class AICSview3d {
   };
 
   buildScene() {
-    this.scene = new THREE.Scene();
-    this.canvas3d.scene = this.scene;
+    this.scene = this.canvas3d.scene;
 
     this.oldScale = new THREE.Vector3(0.5, 0.5, 0.5);
     this.currentScale = new THREE.Vector3(0.5, 0.5, 0.5);
