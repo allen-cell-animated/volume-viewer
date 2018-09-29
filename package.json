@@ -14,7 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "babel-polyfill": "^6.23.0",
-    "three": "^0.91.0"
+    "three": "^0.97.0"
   },
   "devDependencies": {
     "babel-core": "^6.25.0",

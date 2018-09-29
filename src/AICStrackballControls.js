@@ -109,16 +109,6 @@ var AICStrackballControls = function ( object, domElement ) {
 
   };
 
-  this.handleEvent = function ( event ) {
-
-    if ( typeof this[ event.type ] === 'function' ) {
-
-      this[ event.type ]( event );
-
-    }
-
-  };
-
   var getMouseOnScreen = ( function () {
 
     var vector = new THREE.Vector2();
@@ -519,6 +509,8 @@ var AICStrackballControls = function ( object, domElement ) {
 
     if ( _this.enabled === false ) return;
 
+    if ( _this.noZoom === true ) return;
+
     event.preventDefault();
     event.stopPropagation();
 
@@ -549,6 +541,8 @@ var AICStrackballControls = function ( object, domElement ) {
   function touchstart( event ) {
 
     if ( _this.enabled === false ) return;
+    
+    event.preventDefault();
 
     switch ( event.touches.length ) {
 
@@ -628,11 +622,13 @@ var AICStrackballControls = function ( object, domElement ) {
 
   function contextmenu( event ) {
 
+    if ( _this.enabled === false ) return;
+
     event.preventDefault();
 
   }
 
-  this.dispose = function() {
+  this.dispose = function () {
 
     this.domElement.removeEventListener( 'contextmenu', contextmenu, false );
     this.domElement.removeEventListener( 'mousedown', mousedown, false );
