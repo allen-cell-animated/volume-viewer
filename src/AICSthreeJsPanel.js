@@ -118,10 +118,41 @@ export class AICSthreeJsPanel {
     this.camera = this.perspectiveCamera;
     this.controls = this.perspectiveControls;
 
-    this.renderer.vr.enabled = true;
+    //this.renderer.vr.enabled = true;
     document.body.appendChild( WEBVR.createButton( this.renderer ) );
 
+    window.addEventListener( 'vrdisplaypresentchange', () =>  {
+      const device = that.renderer.vr.getDevice();
+      if ( (device && !device.isPresenting) || !device ) {
+        console.log("LEFT VR");
+        that.renderer.vr.enabled = false;
+        that.resetPerspectiveCamera();
+      }
+      else {
+        console.log("ENTERED VR");
+        that.renderer.vr.enabled = true;
+        that.controls.enabled = false;
+      }
+    
+    } );
+
     this.setupAxisHelper();
+  }
+
+  resetPerspectiveCamera() {
+    var aspect = this.getWidth() / this.getHeight();
+
+    this.perspectiveCamera = new THREE.PerspectiveCamera(this.fov, aspect, 0.001, 20);
+    this.perspectiveCamera.position.x = 0.0;
+    this.perspectiveCamera.position.y = 0.0;
+    this.perspectiveCamera.position.z = 5.0;
+    this.perspectiveCamera.up.x = 0.0;
+    this.perspectiveCamera.up.y = 1.0;
+    this.perspectiveCamera.up.z = 0.0;
+    this.switchViewMode('3D');
+    this.controls.object = this.perspectiveCamera;
+    this.controls.enabled = true;
+    this.controls.reset();
   }
 
   setupAxisHelper() {
@@ -271,14 +302,25 @@ export class AICSthreeJsPanel {
     }
   }
 
+  handleController(controller, index, delta) {
+    controller.update();
+    // check state and do the stuff.
+  }
+
   doAnimate() {
-    var me = this;
+    //var me = this;
     var delta = this.clock.getDelta();
     //console.log("DT="+delta);
-    this.controller1.update(delta);
-    this.controller2.update(delta);
 
-    this.controls.update(delta);
+    const device = this.renderer.vr.getDevice();
+    if ( (device && !device.isPresenting) || !device ) {
+      this.controls.update(delta);
+    }
+    else {
+      this.handleController(this.controller1, 0, delta);
+      this.handleController(this.controller2, 1, delta);
+    }
+
     if(this.onAnimate) {
       this.onAnimate();
     }
@@ -297,25 +339,24 @@ export class AICSthreeJsPanel {
       this.orthoScale = this.controls.scale;
     }
 
-    //this.anaglyph.render(this.scene, this.camera);
-    //this.controls.update();
-    if (this.renderer.requestAnimationFrame) {
-      this.animationID = this.renderer.requestAnimationFrame(function() {
-        me.doAnimate();
-      });
-    }
-    else {
-      this.animationID = requestAnimationFrame(function() {
-        me.doAnimate();
-      });
-    }
+    // if (this.renderer.requestAnimationFrame) {
+    //   this.animationID = this.renderer.requestAnimationFrame(function() {
+    //     me.doAnimate();
+    //   });
+    // }
+    // else {
+    //   this.animationID = requestAnimationFrame(function() {
+    //     me.doAnimate();
+    //   });
+    // }
   }
 
   rerender() {
     this.needs_render = true;
-    if(!this.animationID) {
-      this.doAnimate();
-    }
+    this.renderer.setAnimationLoop(this.doAnimate.bind(this));
+    // if(!this.animationID) {
+    //   this.doAnimate();
+    // }
   }
 
   stoprender() {
