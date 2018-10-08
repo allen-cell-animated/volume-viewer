@@ -67,6 +67,42 @@ export class AICSview3d {
 
     this.canvas3d.animate_funcs.push(this.preRender.bind(this));
     this.canvas3d.animate_funcs.push(img.onAnimate.bind(img));
+
+    this.setupVRControls();
+
+  };
+
+  setupVRControls() {
+    this.currentChannel = -1;
+    const VRcycleChannels = this.VRcycleChannels.bind(this);
+    const VRtoggleMaxProject = this.VRtoggleMaxProject.bind(this);
+    // this.canvas3d.controller2.addEventListener('triggerup', function(){
+    //   console.log("trigger 2");
+    //   cycleChannelsForVR();
+    // });
+    this.canvas3d.controller1.addEventListener('triggerup', function(){
+      console.log("trigger 1");
+      VRcycleChannels();
+    });
+    this.canvas3d.controller1.addEventListener('menuup', function(){
+      VRtoggleMaxProject();
+    });
+
+  };
+
+  VRtoggleMaxProject() {
+    this.image.uniforms.maxProject.value = (this.image.uniforms.maxProject.value + 1) % 2;
+  }; 
+
+  VRcycleChannels() {
+    this.currentChannel++;
+    if (this.currentChannel >= this.image.num_channels) {
+      this.currentChannel = 0;
+    }
+    for (let i = 0; i < this.image.num_channels; ++i ) {
+      this.image.setVolumeChannelEnabled(i, i === this.currentChannel);
+    }
+    this.image.fuse();
   };
 
   buildScene() {
