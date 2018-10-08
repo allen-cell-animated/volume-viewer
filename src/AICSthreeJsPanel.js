@@ -32,6 +32,7 @@ export class AICSthreeJsPanel {
     this.clock = new THREE.Clock();
 
     // VR controllers
+    // TODO FIXME This code is HTC Vive-specific.  Find a generic controller model to use instead!
     this.controller1 = new THREE.ViveController( 0 );
     this.controller1.standingMatrix = this.renderer.vr.getStandingMatrix();
     //this.scene.add( this.controller1 );
@@ -344,28 +345,14 @@ export class AICSthreeJsPanel {
     else {
       this.orthoScale = this.controls.scale;
     }
-
-    // if (this.renderer.requestAnimationFrame) {
-    //   this.animationID = this.renderer.requestAnimationFrame(function() {
-    //     me.doAnimate();
-    //   });
-    // }
-    // else {
-    //   this.animationID = requestAnimationFrame(function() {
-    //     me.doAnimate();
-    //   });
-    // }
   }
 
   rerender() {
     this.needs_render = true;
     this.renderer.setAnimationLoop(this.doAnimate.bind(this));
-    // if(!this.animationID) {
-    //   this.doAnimate();
-    // }
   }
 
   stoprender() {
-    //this.needs_render = false;
+    this.renderer.setAnimationLoop(null);
   }
 }
