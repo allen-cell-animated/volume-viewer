@@ -34,10 +34,10 @@ export class AICSthreeJsPanel {
     // VR controllers
     this.controller1 = new THREE.ViveController( 0 );
     this.controller1.standingMatrix = this.renderer.vr.getStandingMatrix();
-    this.scene.add( this.controller1 );
+    //this.scene.add( this.controller1 );
     this.controller2 = new THREE.ViveController( 1 );
     this.controller2.standingMatrix = this.renderer.vr.getStandingMatrix();
-    this.scene.add( this.controller2 );
+    //this.scene.add( this.controller2 );
     // load the VR controller geometry
     var that = this;
     var loader = new THREE.OBJLoader();
@@ -122,21 +122,28 @@ export class AICSthreeJsPanel {
     document.body.appendChild( WEBVR.createButton( this.renderer ) );
 
     window.addEventListener( 'vrdisplaypresentchange', () =>  {
-      const device = that.renderer.vr.getDevice();
-      if ( (device && !device.isPresenting) || !device ) {
-        console.log("LEFT VR");
-        that.renderer.vr.enabled = false;
-        that.resetPerspectiveCamera();
-      }
-      else {
+      if (that.isVR()) {
         console.log("ENTERED VR");
+        that.scene.add(that.controller1);
+        that.scene.add(that.controller2);
         that.renderer.vr.enabled = true;
         that.controls.enabled = false;
       }
-    
+      else {
+        console.log("LEFT VR");
+        that.scene.remove(that.controller1);
+        that.scene.remove(that.controller2);
+        that.renderer.vr.enabled = false;
+        that.resetPerspectiveCamera();
+      }    
     } );
 
     this.setupAxisHelper();
+  }
+
+  isVR() {
+    const vrdevice = this.renderer.vr.getDevice();
+    return (vrdevice && vrdevice.isPresenting);
   }
 
   resetPerspectiveCamera() {
@@ -312,13 +319,12 @@ export class AICSthreeJsPanel {
     var delta = this.clock.getDelta();
     //console.log("DT="+delta);
 
-    const vrdevice = this.renderer.vr.getDevice();
-    if ( (vrdevice && !vrdevice.isPresenting) || !vrdevice ) {
-      this.controls.update(delta);
-    }
-    else {
+    if (this.isVR()) {
       this.handleController(this.controller1, 0, delta);
       this.handleController(this.controller2, 1, delta);
+    }
+    else {
+      this.controls.update(delta);
     }
 
     if(this.onAnimate) {
