@@ -612,11 +612,15 @@ AICSvolumeDrawable.prototype.onAnimate = function(canvas) {
 
   const isVR = canvas.isVR();
   if (isVR) {
+    // raise cell to about 1 meter.
+    this.sceneRoot.position.y = 1.0;
+    
     this.cubeMesh.material.depthWrite = true;
     this.cubeMesh.material.transparent = false;
     this.cubeMesh.material.depthTest = true;
   }
   else {
+    this.sceneRoot.position.y = 0.0;
     this.cubeMesh.material.depthWrite = false;
     this.cubeMesh.material.transparent = true;
     this.cubeMesh.material.depthTest = false;
