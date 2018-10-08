@@ -609,6 +609,18 @@ AICSvolumeDrawable.prototype.onAnimate = function(canvas) {
   mi.getInverse(mvm);
 
   this.setUniform('inverseModelViewMatrix', mi, true, true);
+
+  const isVR = canvas.isVR();
+  if (isVR) {
+    this.cubeMesh.material.depthWrite = true;
+    this.cubeMesh.material.transparent = false;
+    this.cubeMesh.material.depthTest = true;
+  }
+  else {
+    this.cubeMesh.material.depthWrite = false;
+    this.cubeMesh.material.transparent = true;
+    this.cubeMesh.material.depthTest = false;
+  }
 };
 
 AICSvolumeDrawable.prototype.updateMeshColors = function() {
