@@ -66,6 +66,36 @@ for (var i = 0; i < imgdata.channels; ++i) {
   }
 }
 
+function setupVRControls() {
+    // this.canvas3d.controller2.addEventListener('triggerup', function(){
+    //   console.log("trigger 2");
+    //   cycleChannelsForVR();
+    // });
+    view3d.canvas3d.controller1.addEventListener('triggerup', function() {
+      //console.log("trigger 1");
+      VRcycleChannels();
+    });
+    view3d.canvas3d.controller1.addEventListener('menuup', function() {
+      VRtoggleMaxProject();
+    });
+}
+
+function VRtoggleMaxProject() {
+    view3d.image.uniforms.maxProject.value = (view3d.image.uniforms.maxProject.value + 1) % 2;
+}; 
+
+var vrCurrentChannel = -1;
+function VRcycleChannels() {
+    vrCurrentChannel++;
+    if (vrCurrentChannel >= view3d.image.num_channels) {
+        vrCurrentChannel = 0;
+    }
+    for (let i = 0; i < view3d.image.num_channels; ++i ) {
+        view3d.image.setVolumeChannelEnabled(i, i === vrCurrentChannel);
+    }
+    view3d.image.fuse();
+};
+
 function loadImageData(jsondata, volumedata) {
     view3D.resize();
     
@@ -115,3 +145,4 @@ rotbtn.addEventListener("click", ()=>{isRot = !isRot; view3D.setAutoRotate(isRot
 var isAxis = false;
 var axisbtn = document.getElementById("axisbtn");
 axisbtn.addEventListener("click", ()=>{isAxis = !isAxis; view3D.setShowAxis(isAxis)});
+

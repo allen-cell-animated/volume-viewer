@@ -2,6 +2,7 @@ import AICStrackballControls from './AICStrackballControls.js';
 
 import "./vr/ViveController.js";
 import WEBVR from "./vr/WebVR.js";
+import vrObjectControls from './vr/vrObjectControls.js';
 import "./threejsObjLoader.js";
 
 export class AICSthreeJsPanel {
@@ -35,6 +36,8 @@ export class AICSthreeJsPanel {
     // TODO FIXME This code is HTC Vive-specific.  Find a generic controller model to use instead!
     this.controller1 = new THREE.ViveController( 0 );
     this.controller1.standingMatrix = this.renderer.vr.getStandingMatrix();
+    this.vrRotateControls0 = new vrObjectControls(this.controller1, null);
+
     //this.scene.add( this.controller1 );
     this.controller2 = new THREE.ViveController( 1 );
     this.controller2.standingMatrix = this.renderer.vr.getStandingMatrix();
@@ -52,7 +55,17 @@ export class AICSthreeJsPanel {
       that.controller1.add( object.clone() );
       that.controller2.add( object.clone() );
     } );
-   
+
+    // this.controller1.addEventListener('triggerdown', function() {
+    //   that.VRrotate = true;
+    //   that.VRrotateStart = new THREE.Vector3().copy(that.controller1.position);
+    //   //console.log("Trigger 0 Clicked");
+    // });
+    // this.controller1.addEventListener('triggerup', function() {
+    //   that.VRrotate = false;
+    //   //console.log("Trigger 0 Unclicked");
+    // });
+
    
     var scale = 0.5;
     this.orthoScale = scale;
@@ -132,6 +145,7 @@ export class AICSthreeJsPanel {
       }
       else {
         console.log("LEFT VR");
+        that.vrRotateControls0.resetObject();
         that.scene.remove(that.controller1);
         that.scene.remove(that.controller2);
         that.renderer.vr.enabled = false;
@@ -140,6 +154,10 @@ export class AICSthreeJsPanel {
     } );
 
     this.setupAxisHelper();
+  }
+
+  setVRObject(obj) {
+    this.vrRotateControls0.object = obj;
   }
 
   isVR() {
@@ -313,6 +331,11 @@ export class AICSthreeJsPanel {
   handleController(controller, index, delta) {
     controller.update();
     // check state and do the stuff.
+
+    // controller 1 trigger drag to rotate
+    if (index === 0) {
+      this.vrRotateControls0.update();
+    }
   }
 
   doAnimate() {
