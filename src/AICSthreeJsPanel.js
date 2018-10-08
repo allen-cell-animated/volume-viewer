@@ -312,8 +312,8 @@ export class AICSthreeJsPanel {
     var delta = this.clock.getDelta();
     //console.log("DT="+delta);
 
-    const device = this.renderer.vr.getDevice();
-    if ( (device && !device.isPresenting) || !device ) {
+    const vrdevice = this.renderer.vr.getDevice();
+    if ( (vrdevice && !vrdevice.isPresenting) || !vrdevice ) {
       this.controls.update(delta);
     }
     else {
