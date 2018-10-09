@@ -70,28 +70,38 @@ function VRtoggleMaxProject() {
     view3D.image.uniforms.maxProject.value = (view3D.image.uniforms.maxProject.value + 1) % 2;
 }; 
 
-var vrCurrentChannel = -1;
-function VRcycleChannels() {
-    vrCurrentChannel++;
-    if (vrCurrentChannel >= view3D.image.num_channels) {
-        vrCurrentChannel = 0;
+var vrCurrentChannel1 = -1;
+var vrCurrentChannel2 = -1;
+function VRcycleChannels1() {
+    vrCurrentChannel1++;
+    if (vrCurrentChannel1 >= view3D.image.num_channels) {
+        vrCurrentChannel1 = 0;
     }
     for (let i = 0; i < view3D.image.num_channels; ++i ) {
-        view3D.image.setVolumeChannelEnabled(i, i === vrCurrentChannel);
+        view3D.image.setVolumeChannelEnabled(i, i === vrCurrentChannel1 || i === vrCurrentChannel2);
+    }
+    view3D.image.fuse();
+};
+function VRcycleChannels2() {
+    vrCurrentChannel2++;
+    if (vrCurrentChannel2 >= view3D.image.num_channels) {
+        vrCurrentChannel2 = 0;
+    }
+    for (let i = 0; i < view3D.image.num_channels; ++i ) {
+        view3D.image.setVolumeChannelEnabled(i, i === vrCurrentChannel1 || i === vrCurrentChannel2);
     }
     view3D.image.fuse();
 };
 
 let vrthumb = false;
 function setupVRControls() {
-    // view3D.canvas3d.controller1.addEventListener('triggerup', function() {
-    //   VRcycleChannels();
-    // });
     view3D.canvas3d.controller1.addEventListener('menuup', function() {
-      //VRtoggleMaxProject();
-      VRcycleChannels();
+        VRcycleChannels1();
+      });
+    view3D.canvas3d.controller2.addEventListener('menuup', function() {
+        VRcycleChannels2();
     });
-    view3D.canvas3d.controller1.addEventListener('thumbpaddown', function() {
+        view3D.canvas3d.controller1.addEventListener('thumbpaddown', function() {
         //console.log('th d');
 vrthumb = true;
     });
