@@ -66,35 +66,50 @@ for (var i = 0; i < imgdata.channels; ++i) {
   }
 }
 
-function setupVRControls() {
-    // this.canvas3d.controller2.addEventListener('triggerup', function(){
-    //   console.log("trigger 2");
-    //   cycleChannelsForVR();
-    // });
-    view3d.canvas3d.controller1.addEventListener('triggerup', function() {
-      //console.log("trigger 1");
-      VRcycleChannels();
-    });
-    view3d.canvas3d.controller1.addEventListener('menuup', function() {
-      VRtoggleMaxProject();
-    });
-}
-
 function VRtoggleMaxProject() {
-    view3d.image.uniforms.maxProject.value = (view3d.image.uniforms.maxProject.value + 1) % 2;
+    view3D.image.uniforms.maxProject.value = (view3D.image.uniforms.maxProject.value + 1) % 2;
 }; 
 
 var vrCurrentChannel = -1;
 function VRcycleChannels() {
     vrCurrentChannel++;
-    if (vrCurrentChannel >= view3d.image.num_channels) {
+    if (vrCurrentChannel >= view3D.image.num_channels) {
         vrCurrentChannel = 0;
     }
-    for (let i = 0; i < view3d.image.num_channels; ++i ) {
-        view3d.image.setVolumeChannelEnabled(i, i === vrCurrentChannel);
+    for (let i = 0; i < view3D.image.num_channels; ++i ) {
+        view3D.image.setVolumeChannelEnabled(i, i === vrCurrentChannel);
     }
-    view3d.image.fuse();
+    view3D.image.fuse();
 };
+
+let vrthumb = false;
+function setupVRControls() {
+    // view3D.canvas3d.controller1.addEventListener('triggerup', function() {
+    //   VRcycleChannels();
+    // });
+    view3D.canvas3d.controller1.addEventListener('menuup', function() {
+      //VRtoggleMaxProject();
+      VRcycleChannels();
+    });
+    view3D.canvas3d.controller1.addEventListener('thumbpaddown', function() {
+        //console.log('th d');
+vrthumb = true;
+    });
+    view3D.canvas3d.controller1.addEventListener('thumbpadup', function() {
+       // console.log('th u');
+        vrthumb = false;
+    });
+      view3D.canvas3d.controller1.addEventListener('axischanged', function(obj) {
+        //console.log(obj.axes);
+        if (vrthumb) {
+            //console.log('th set');
+            view3D.image.setBrightness(0.5*(obj.axes[0]+1.0));
+            view3D.image.setDensity(0.5*(obj.axes[1]+1.0));
+    
+        }
+    });
+}
+
 
 function loadImageData(jsondata, volumedata) {
     view3D.resize();
@@ -125,6 +140,7 @@ function loadImageData(jsondata, volumedata) {
     aimg.setBrightness(1.0);
 
     view3D.resize(null, 300, 300);
+    setupVRControls();
 }
 
 // switch the uncommented line to test with volume data or atlas data
