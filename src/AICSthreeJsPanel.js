@@ -36,11 +36,13 @@ export class AICSthreeJsPanel {
     // TODO FIXME This code is HTC Vive-specific.  Find a generic controller model to use instead!
     this.controller1 = new THREE.ViveController( 0 );
     this.controller1.standingMatrix = this.renderer.vr.getStandingMatrix();
-    this.vrRotateControls0 = new vrObjectControls(this.controller1, null);
 
     //this.scene.add( this.controller1 );
     this.controller2 = new THREE.ViveController( 1 );
     this.controller2.standingMatrix = this.renderer.vr.getStandingMatrix();
+
+    this.vrRotateControls0 = new vrObjectControls(this.controller1, this.controller2, null);
+
     //this.scene.add( this.controller2 );
     // load the VR controller geometry
     var that = this;
