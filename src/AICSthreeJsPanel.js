@@ -7,11 +7,17 @@ import "./threejsObjLoader.js";
 
 export class AICSthreeJsPanel {
   constructor(parentElement) {
+    this.containerdiv = document.createElement('div');
+    this.containerdiv.setAttribute('id', 'cellViewContainerDiv');
+    this.containerdiv.style.position = 'relative';
+
     this.canvas = document.createElement('canvas');
     this.canvas.setAttribute('id', 'cellViewCanvas');
     this.canvas.height=parentElement.offsetHeight;
     this.canvas.width=parentElement.offsetWidth;
-    parentElement.appendChild(this.canvas);
+
+    this.containerdiv.appendChild(this.canvas);
+    parentElement.appendChild(this.containerdiv);
 
     this.scene = new THREE.Scene();
 
@@ -58,17 +64,6 @@ export class AICSthreeJsPanel {
       that.controller2.add( object.clone() );
     } );
 
-    // this.controller1.addEventListener('triggerdown', function() {
-    //   that.VRrotate = true;
-    //   that.VRrotateStart = new THREE.Vector3().copy(that.controller1.position);
-    //   //console.log("Trigger 0 Clicked");
-    // });
-    // this.controller1.addEventListener('triggerup', function() {
-    //   that.VRrotate = false;
-    //   //console.log("Trigger 0 Unclicked");
-    // });
-
-   
     var scale = 0.5;
     this.orthoScale = scale;
     var cellPos = new THREE.Vector3(0,0,0);
@@ -135,7 +130,24 @@ export class AICSthreeJsPanel {
     this.controls = this.perspectiveControls;
 
     //this.renderer.vr.enabled = true;
-    document.body.appendChild( WEBVR.createButton( this.renderer ) );
+    window.addEventListener( 'vrdisplaypointerrestricted', ()=>{
+      var pointerLockElement = that.renderer.domElement;
+      if ( pointerLockElement && typeof(pointerLockElement.requestPointerLock) === 'function' ) {
+        pointerLockElement.requestPointerLock();
+      }
+    }, false );
+		window.addEventListener( 'vrdisplaypointerunrestricted', ()=>{
+      var currentPointerLockElement = document.pointerLockElement;
+      var expectedPointerLockElement = that.renderer.domElement;
+      if ( currentPointerLockElement && currentPointerLockElement === expectedPointerLockElement && typeof(document.exitPointerLock) === 'function' ) {
+        document.exitPointerLock();
+      }
+    }, false );
+    this.vrButton = WEBVR.createButton( this.renderer );
+    //this.vrButton.style.display = 'none'; // '' + (x + this.canvas.width - this.vrButton.scrollWidth) + 'px';
+    this.vrButton.style.left = 'auto';//null; // '' + (x + this.canvas.width - this.vrButton.scrollWidth) + 'px';
+    this.vrButton.style.right = '0px'; // '' + (x + this.canvas.width - this.vrButton.scrollWidth) + 'px';
+    this.containerdiv.appendChild(this.vrButton);
 
     window.addEventListener( 'vrdisplaypresentchange', () =>  {
       if (that.isVR()) {
@@ -277,6 +289,9 @@ export class AICSthreeJsPanel {
   }
 
   resize(comp, w, h, ow, oh, eOpts) {
+    this.containerdiv.style.width = '' + w + 'px';
+    this.containerdiv.style.height = '' + h + 'px';
+
     var aspect = w / h;
 
     this.perspectiveControls.aspect = aspect;
@@ -307,6 +322,9 @@ export class AICSthreeJsPanel {
     this.orthoControlsX.handleResize();
 
     this.mousedown = false;
+
+    this.vrButton.style.left = null; // '' + (x + this.canvas.width - this.vrButton.scrollWidth) + 'px';
+    this.vrButton.style.right = '0px'; // '' + (x + this.canvas.width - this.vrButton.scrollWidth) + 'px';
   }
 
   setClearColor(color, alpha) {
