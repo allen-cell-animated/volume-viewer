@@ -112,6 +112,9 @@ var WEBVR = {
 
 			renderer.vr.setDevice( null );
 
+			console.log("WebVR not found");
+			button = null;
+
 		}
 
 		function stylizeElement( element ) {
@@ -197,6 +200,9 @@ var WEBVR = {
 			return button;
 
 		} else {
+
+			console.log("WebVR not supported");
+			return null;
 
 			var message = document.createElement( 'a' );
 			message.href = 'https://webvr.info';

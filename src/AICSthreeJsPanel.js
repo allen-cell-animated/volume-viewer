@@ -111,7 +111,6 @@ export class AICSthreeJsPanel {
     this.orthoControlsY.staticMoving = true;
     this.orthoControlsY.enabled = false;
 
-
     this.orthographicCameraZ = new THREE.OrthographicCamera( -scale*aspect, scale*aspect, scale, -scale, 0.001, 20 );
     this.orthographicCameraZ.position.z = 1.0;
     this.orthographicCameraZ.up.x = 0.0;
@@ -144,10 +143,11 @@ export class AICSthreeJsPanel {
       }
     }, false );
     this.vrButton = WEBVR.createButton( this.renderer );
-    //this.vrButton.style.display = 'none'; // '' + (x + this.canvas.width - this.vrButton.scrollWidth) + 'px';
-    this.vrButton.style.left = 'auto';//null; // '' + (x + this.canvas.width - this.vrButton.scrollWidth) + 'px';
-    this.vrButton.style.right = '0px'; // '' + (x + this.canvas.width - this.vrButton.scrollWidth) + 'px';
-    this.containerdiv.appendChild(this.vrButton);
+    if (this.vrButton) {
+      this.vrButton.style.left = 'auto';
+      this.vrButton.style.right = '0px';
+      this.containerdiv.appendChild(this.vrButton);
+    }
 
     window.addEventListener( 'vrdisplaypresentchange', () =>  {
       if (that.isVR()) {
@@ -322,9 +322,6 @@ export class AICSthreeJsPanel {
     this.orthoControlsX.handleResize();
 
     this.mousedown = false;
-
-    this.vrButton.style.left = null; // '' + (x + this.canvas.width - this.vrButton.scrollWidth) + 'px';
-    this.vrButton.style.right = '0px'; // '' + (x + this.canvas.width - this.vrButton.scrollWidth) + 'px';
   }
 
   setClearColor(color, alpha) {
