@@ -6,7 +6,10 @@ export class vrObjectControls {
 
         this.trigger1Down = this.controller1.getButtonState('trigger');
         this.trigger2Down = this.controller2.getButtonState('trigger');
-
+        
+        // really only used once per update() call.
+        this.scale = new THREE.Vector3();
+        this.previousDist = null;
     }
 
     update() {
@@ -27,6 +30,9 @@ export class vrObjectControls {
         }    
         if (this.object && zooming) {
             this.VRzoom = true;
+
+            this.scale.copy(this.object.scale);
+
             const p1 = new THREE.Vector3().setFromMatrixPosition(this.controller1.matrix);
             const p2 = new THREE.Vector3().setFromMatrixPosition(this.controller2.matrix);
             const dist = p1.distanceTo(p2);
@@ -35,17 +41,26 @@ export class vrObjectControls {
                 this.VRzoomdist = dist;
             }
 
-            let zoomFactor = dist / this.VRzoomdist;
+            let deltaStretch = 1.0;
+            if (this.previousDist !== null && dist !== 0) {
+                deltaStretch = dist / this.previousDist;
+            }
+            this.previousDist = dist;
+            this.scale.multiplyScalar(deltaStretch);
+
+            //let zoomFactor = dist / this.VRzoomdist;
 
             const ZOOM_MAX = 2.0;
             const ZOOM_MIN = 0.25;
-            this.object.scale.x = Math.min(ZOOM_MAX, Math.max( this.object.scale.x*zoomFactor, ZOOM_MIN));
-            this.object.scale.y = Math.min(ZOOM_MAX, Math.max( this.object.scale.y*zoomFactor, ZOOM_MIN));
-            this.object.scale.z = Math.min(ZOOM_MAX, Math.max( this.object.scale.z*zoomFactor, ZOOM_MIN));
+            this.object.scale.x = Math.min(ZOOM_MAX, Math.max( this.scale.x, ZOOM_MIN));
+            this.object.scale.y = Math.min(ZOOM_MAX, Math.max( this.scale.y, ZOOM_MIN));
+            this.object.scale.z = Math.min(ZOOM_MAX, Math.max( this.scale.z, ZOOM_MIN));
         }
         else {
             this.VRzoom = false;
+            this.previousDist = null;
         }
+
         if (this.object && this.VRrotate) {
             // dist from last pose position in x and z.
             var pos = new THREE.Vector3().setFromMatrixPosition(theController.matrix);
