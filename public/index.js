@@ -124,36 +124,47 @@ function VRtoggleMesh() {
     //view3D.image.setVolumeChannelEnabled(vrCurrentChannel1, !isoMode);
 };
 
-let vrthumb = false;
+let vrthumb = true;
+function VRaxes(obj) {
+    //console.log(obj.axes);
+    // ignore events precisely at 0,0?
+    if (obj.axes[0] === 0 && obj.axes[1] === 0) {
+        return;
+    }
+    if (vrthumb) {
+        //console.log('th set');
+        if (isoMode) {
+            view3D.image.updateIsovalue(vrCurrentChannel1, (obj.axes[0]+1.0)*128);
+        }
+        else {
+            // 0..1
+            const x = 0.5*(obj.axes[0]+1.0);
+            const y = 0.5*(obj.axes[1]+1.0);
+            view3D.image.setBrightness(x);
+            view3D.image.setDensity(y);    
+        }
+
+    }
+}
+
 function setupVRControls() {
     view3D.canvas3d.controller1.addEventListener('menuup', function() {
         VRcycleChannels1();
       });
     view3D.canvas3d.controller2.addEventListener('menuup', function() {
-        //VRcycleChannels2();
-        VRtoggleMesh();
+        VRcycleChannels2();
+        //VRtoggleMesh();
     });
-        view3D.canvas3d.controller1.addEventListener('thumbpaddown', function() {
-        //console.log('th d');
-vrthumb = true;
-    });
-    view3D.canvas3d.controller1.addEventListener('thumbpadup', function() {
-       // console.log('th u');
-        vrthumb = false;
-    });
+//         view3D.canvas3d.controller1.addEventListener('thumbpaddown', function() {
+//         //console.log('th d');
+// vrthumb = true;
+//     });
+//     view3D.canvas3d.controller1.addEventListener('thumbpadup', function() {
+//        // console.log('th u');
+//         vrthumb = false;
+//     });
       view3D.canvas3d.controller1.addEventListener('axischanged', function(obj) {
-        //console.log(obj.axes);
-        if (vrthumb) {
-            //console.log('th set');
-            if (isoMode) {
-                view3D.image.updateIsovalue(vrCurrentChannel1, (obj.axes[0]+1.0)*128);
-            }
-            else {
-                view3D.image.setBrightness(0.5*(obj.axes[0]+1.0));
-                view3D.image.setDensity(0.5*(obj.axes[1]+1.0));    
-            }
-    
-        }
+          VRaxes(obj);
     });
 }
 
