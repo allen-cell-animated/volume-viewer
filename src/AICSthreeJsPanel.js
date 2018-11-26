@@ -39,7 +39,8 @@ export class AICSthreeJsPanel {
     this.clock = new THREE.Clock();
 
     // VR controllers
-    // TODO FIXME This code is HTC Vive-specific.  Find a generic controller model to use instead!
+    // TODO This code is HTC Vive-specific.  Find a generic controller model to use instead!
+    // (...when WebVR has proliferated further and more hand controllers are in play...)
     this.controller1 = new THREE.ViveController( 0 );
     this.controller1.standingMatrix = this.renderer.vr.getStandingMatrix();
 
@@ -156,10 +157,11 @@ export class AICSthreeJsPanel {
         that.scene.add(that.controller2);
         that.renderer.vr.enabled = true;
         that.controls.enabled = false;
+        that.vrRotateControls0.onEnterVR();
       }
       else {
         console.log("LEFT VR");
-        that.vrRotateControls0.resetObject();
+        that.vrRotateControls0.onLeaveVR();
         that.scene.remove(that.controller1);
         that.scene.remove(that.controller2);
         that.renderer.vr.enabled = false;
@@ -170,15 +172,15 @@ export class AICSthreeJsPanel {
     this.setupAxisHelper();
   }
 
-  setVRObject(obj) {
-    this.vrRotateControls0.object = obj;
+  setVRObject(img) {
+    this.vrRotateControls0.setObject(img);
   }
 
   isVR() {
     const vrdevice = this.renderer.vr.getDevice();
     return (vrdevice && vrdevice.isPresenting);
   }
-
+  
   resetPerspectiveCamera() {
     var aspect = this.getWidth() / this.getHeight();
 

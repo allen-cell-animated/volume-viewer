@@ -66,109 +66,6 @@ for (var i = 0; i < imgdata.channels; ++i) {
   }
 }
 
-function VRtoggleMaxProject() {
-    view3D.image.uniforms.maxProject.value = (view3D.image.uniforms.maxProject.value + 1) % 2;
-}; 
-
-var vrCurrentChannel1 = -1;
-var vrCurrentChannel2 = -1;
-function VRcycleChannels1() {
-    // destroy old iso.
-    if (view3D.image.hasIsosurface(vrCurrentChannel1)) {
-            view3D.image.destroyIsosurface(vrCurrentChannel1);
-      }
-
-    vrCurrentChannel1++;
-    if (vrCurrentChannel1 >= view3D.image.num_channels) {
-        vrCurrentChannel1 = 0;
-    }
-    if (isoMode) {
-        if (!view3D.image.hasIsosurface(vrCurrentChannel1)) {
-                view3D.image.createIsosurface(vrCurrentChannel1, 75, 1.0);
-          }
-    
-    }
-    else {
-        for (let i = 0; i < view3D.image.num_channels; ++i ) {
-            view3D.image.setVolumeChannelEnabled(i, i === vrCurrentChannel1 || i === vrCurrentChannel2);
-        }
-        view3D.image.fuse();
-    }
-};
-function VRcycleChannels2() {
-    vrCurrentChannel2++;
-    if (vrCurrentChannel2 >= view3D.image.num_channels) {
-        vrCurrentChannel2 = 0;
-    }
-    for (let i = 0; i < view3D.image.num_channels; ++i ) {
-        view3D.image.setVolumeChannelEnabled(i, i === vrCurrentChannel1 || i === vrCurrentChannel2);
-    }
-    view3D.image.fuse();
-};
-
-let isoMode = false;
-function VRtoggleMesh() {
-    isoMode = !isoMode;
-    const index = vrCurrentChannel1;
-    if (view3D.image.hasIsosurface(index)) {
-        if (!isoMode) {
-            view3D.image.destroyIsosurface(index);
-        }
-      }
-      else {
-        if (isoMode) {
-            view3D.image.createIsosurface(index, 75, 1.0);
-        }
-      }
-    view3D.image.cubeMesh.visible = !isoMode;
-    //view3D.image.setVolumeChannelEnabled(vrCurrentChannel1, !isoMode);
-};
-
-let vrthumb = true;
-function VRaxes(obj) {
-    //console.log(obj.axes);
-    // ignore events precisely at 0,0?
-    if (obj.axes[0] === 0 && obj.axes[1] === 0) {
-        return;
-    }
-    if (vrthumb) {
-        //console.log('th set');
-        if (isoMode) {
-            view3D.image.updateIsovalue(vrCurrentChannel1, (obj.axes[0]+1.0)*128);
-        }
-        else {
-            // 0..1
-            const x = 0.5*(obj.axes[0]+1.0);
-            const y = 0.5*(obj.axes[1]+1.0);
-            view3D.image.setBrightness(x);
-            view3D.image.setDensity(y);    
-        }
-
-    }
-}
-
-function setupVRControls() {
-    view3D.canvas3d.controller1.addEventListener('menuup', function() {
-        VRcycleChannels1();
-      });
-    view3D.canvas3d.controller2.addEventListener('menuup', function() {
-        VRcycleChannels2();
-        //VRtoggleMesh();
-    });
-//         view3D.canvas3d.controller1.addEventListener('thumbpaddown', function() {
-//         //console.log('th d');
-// vrthumb = true;
-//     });
-//     view3D.canvas3d.controller1.addEventListener('thumbpadup', function() {
-//        // console.log('th u');
-//         vrthumb = false;
-//     });
-      view3D.canvas3d.controller1.addEventListener('axischanged', function(obj) {
-          VRaxes(obj);
-    });
-}
-
-
 function loadImageData(jsondata, volumedata) {
     view3D.resize();
     
@@ -198,9 +95,6 @@ function loadImageData(jsondata, volumedata) {
     aimg.setBrightness(1.0);
 
     view3D.resize(null, 300, 300);
-    setupVRControls();
-    VRcycleChannels1();
-    //VRtoggleMesh();
 }
 
 // switch the uncommented line to test with volume data or atlas data

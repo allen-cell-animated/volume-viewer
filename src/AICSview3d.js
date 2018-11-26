@@ -68,7 +68,7 @@ export class AICSview3d {
 
     this.canvas3d.animate_funcs.push(this.preRender.bind(this));
     this.canvas3d.animate_funcs.push(img.onAnimate.bind(img));
-    this.canvas3d.setVRObject(img.sceneRoot);
+    this.canvas3d.setVRObject(img);
   };
 
   buildScene() {
