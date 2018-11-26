@@ -38,33 +38,6 @@ export class AICSthreeJsPanel {
 
     this.clock = new THREE.Clock();
 
-    // VR controllers
-    // TODO This code is HTC Vive-specific.  Find a generic controller model to use instead!
-    // (...when WebVR has proliferated further and more hand controllers are in play...)
-    this.controller1 = new THREE.ViveController( 0 );
-    this.controller1.standingMatrix = this.renderer.vr.getStandingMatrix();
-
-    //this.scene.add( this.controller1 );
-    this.controller2 = new THREE.ViveController( 1 );
-    this.controller2.standingMatrix = this.renderer.vr.getStandingMatrix();
-
-    this.vrRotateControls0 = new vrObjectControls(this.controller1, this.controller2, null);
-
-    //this.scene.add( this.controller2 );
-    // load the VR controller geometry
-    var that = this;
-    var loader = new THREE.OBJLoader();
-    loader.setPath( 'assets/' );
-    loader.load( 'vr_controller_vive_1_5.obj', function ( object ) {
-      var loader = new THREE.TextureLoader();
-      loader.setPath( 'assets/' );
-      var controller = object.children[ 0 ];
-      controller.material.map = loader.load( 'onepointfive_texture.png' );
-      controller.material.specularMap = loader.load( 'onepointfive_spec.png' );
-      that.controller1.add( object.clone() );
-      that.controller2.add( object.clone() );
-    } );
-
     var scale = 0.5;
     this.orthoScale = scale;
     var cellPos = new THREE.Vector3(0,0,0);
@@ -129,6 +102,37 @@ export class AICSthreeJsPanel {
     this.camera = this.perspectiveCamera;
     this.controls = this.perspectiveControls;
 
+    this.initVR();
+
+    this.setupAxisHelper();
+  }
+
+  initVR() {
+    // VR controllers
+    // TODO This code is HTC Vive-specific.  Find a generic controller model to use instead!
+    // (...when WebVR has proliferated further and more hand controllers are in play...)
+    this.controller1 = new THREE.ViveController( 0 );
+    this.controller1.standingMatrix = this.renderer.vr.getStandingMatrix();
+
+    this.controller2 = new THREE.ViveController( 1 );
+    this.controller2.standingMatrix = this.renderer.vr.getStandingMatrix();
+
+    this.vrRotateControls0 = new vrObjectControls(this.controller1, this.controller2, null);
+
+    // load the VR controller geometry
+    var that = this;
+    var loader = new THREE.OBJLoader();
+    loader.setPath( 'assets/' );
+    loader.load( 'vr_controller_vive_1_5.obj', function ( object ) {
+      var loader = new THREE.TextureLoader();
+      loader.setPath( 'assets/' );
+      var controller = object.children[ 0 ];
+      controller.material.map = loader.load( 'onepointfive_texture.png' );
+      controller.material.specularMap = loader.load( 'onepointfive_spec.png' );
+      that.controller1.add( object.clone() );
+      that.controller2.add( object.clone() );
+    } );
+
     //this.renderer.vr.enabled = true;
     window.addEventListener( 'vrdisplaypointerrestricted', ()=>{
       var pointerLockElement = that.renderer.domElement;
@@ -136,13 +140,14 @@ export class AICSthreeJsPanel {
         pointerLockElement.requestPointerLock();
       }
     }, false );
-		window.addEventListener( 'vrdisplaypointerunrestricted', ()=>{
+    window.addEventListener( 'vrdisplaypointerunrestricted', ()=>{
       var currentPointerLockElement = document.pointerLockElement;
       var expectedPointerLockElement = that.renderer.domElement;
       if ( currentPointerLockElement && currentPointerLockElement === expectedPointerLockElement && typeof(document.exitPointerLock) === 'function' ) {
         document.exitPointerLock();
       }
     }, false );
+
     this.vrButton = WEBVR.createButton( this.renderer );
     if (this.vrButton) {
       this.vrButton.style.left = 'auto';
@@ -169,7 +174,6 @@ export class AICSthreeJsPanel {
       }    
     } );
 
-    this.setupAxisHelper();
   }
 
   setVRObject(img) {
