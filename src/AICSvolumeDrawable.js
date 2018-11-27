@@ -998,6 +998,15 @@ AICSvolumeDrawable.prototype.setVolumeChannelEnabled = function(channelIndex, en
 };
 
 /**
+ * Is a the volume data for a channel being shown?
+ * @param {number} channelIndex 
+ */
+AICSvolumeDrawable.prototype.isVolumeChannelEnabled = function(channelIndex) {
+  // the zero value for the fusion rgbColor is the indicator that a channel is hidden.
+  return this.fusion[channelIndex].rgbColor !== 0;
+};
+
+/**
  * Set the color for a channel
  * @param {number} channelIndex 
  * @param {Array.<number>} colorrgba [r,g,b]
@@ -1030,6 +1039,13 @@ AICSvolumeDrawable.prototype.setDensity = function(density, no_redraw) {
 };
 
 /**
+ * Get the global density of the volume data
+ */
+AICSvolumeDrawable.prototype.getDensity = function() {
+  return this.uniforms["DENSITY"].value;
+};
+
+/**
  * Set the global brightness of the volume data
  * @param {number} brightness Roughly speaking, an intensity multiplier on the whole volume
  * @param {boolean=} no_redraw Set to true to delay re-rendering. Otherwise ignore.
@@ -1041,6 +1057,13 @@ AICSvolumeDrawable.prototype.setBrightness = function(brightness, no_redraw) {
   else {
     this.setUniform("BRIGHTNESS", brightness);
   }
+};
+
+/**
+ * Get the global brightness of the volume data
+ */
+AICSvolumeDrawable.prototype.getBrightness = function() {
+  return this.uniforms["BRIGHTNESS"].value;
 };
 
 /**
