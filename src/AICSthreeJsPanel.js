@@ -3,6 +3,10 @@ import AICStrackballControls from './AICStrackballControls.js';
 import WEBVR from "./vr/WebVR.js";
 import vrObjectControls from './vr/vrObjectControls.js';
 
+const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
+const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
+const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
+
 export class AICSthreeJsPanel {
   constructor(parentElement) {
     this.containerdiv = document.createElement('div');
@@ -45,8 +49,8 @@ export class AICSthreeJsPanel {
 
     this.fov = 20;
 
-    this.perspectiveCamera = new THREE.PerspectiveCamera(this.fov, aspect, 0.001, 20);
-    this.perspectiveCamera.position.z = 5.0;
+    this.perspectiveCamera = new THREE.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
+    this.perspectiveCamera.position.z = DEFAULT_PERSPECTIVE_CAMERA_DISTANCE;
     this.perspectiveCamera.up.x = 0.0;
     this.perspectiveCamera.up.y = 1.0;
     this.perspectiveCamera.up.z = 0.0;
@@ -172,10 +176,10 @@ export class AICSthreeJsPanel {
   resetPerspectiveCamera() {
     var aspect = this.getWidth() / this.getHeight();
 
-    this.perspectiveCamera = new THREE.PerspectiveCamera(this.fov, aspect, 0.001, 20);
+    this.perspectiveCamera = new THREE.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
     this.perspectiveCamera.position.x = 0.0;
     this.perspectiveCamera.position.y = 0.0;
-    this.perspectiveCamera.position.z = 5.0;
+    this.perspectiveCamera.position.z = DEFAULT_PERSPECTIVE_CAMERA_DISTANCE;
     this.perspectiveCamera.up.x = 0.0;
     this.perspectiveCamera.up.y = 1.0;
     this.perspectiveCamera.up.z = 0.0;
