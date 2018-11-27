@@ -1,6 +1,8 @@
 const path = require('path');
 const webpack = require('webpack');
 
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+
 module.exports = {
   entry: './src/index.js',
   output: {
@@ -15,7 +17,12 @@ module.exports = {
   plugins: [
     new webpack.ProvidePlugin({
       THREE: 'three'
-    })
+    }),
+    new CopyWebpackPlugin([
+      {from:'public/assets/vr_controller_vive_1_5.obj', to:'assets/'},
+      {from:'public/assets/onepointfive_spec.png', to:'assets/'},
+      {from:'public/assets/onepointfive_texture.png', to:'assets/'}
+    ])
   ],
   devtool: 'cheap-module-source-map',
   module: {
