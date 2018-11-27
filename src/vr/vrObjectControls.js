@@ -40,8 +40,39 @@ export class vrObjectControls {
         this.scene = scene;
     }
 
-    setObject(obj) {
+    pushObjectState(obj) {
         this.object = obj;
+
+        // push the density, brightness, and enabled state of channels.
+        this.vrRestoreState = {
+            brightness: this.object.getBrightness(),
+            density: this.object.getDensity(),
+            enabled: []
+        };
+        for (let i = 0; i < this.object.num_channels; ++i ) {
+            this.vrRestoreState.enabled.push(this.object.isVolumeChannelEnabled(i));
+        }
+    }
+
+    popObjectState(obj) {
+        // obj is currently expected to be the same as this.object, the obj that was passed in to pushObjectState
+
+        // reset our volume object
+        this.object.sceneRoot.quaternion.setFromAxisAngle(new THREE.Vector3(0,0,1), 0.0);
+        // pop density, brightness, and enabled state of channels.
+        if (this.vrRestoreState) {
+            this.object.setBrightness(this.vrRestoreState.brightness);
+            this.object.setDensity(this.vrRestoreState.density);
+            for (let i = 0; i < this.object.num_channels; ++i ) {
+                this.object.setVolumeChannelEnabled(i, this.vrRestoreState.enabled[i]);
+            }
+            this.object.fuse();
+    
+            this.vrRestoreState = null;
+        }
+
+        // tell the VR controls to forget about this object
+        this.object = null;
     }
 
     onEnterVR() {

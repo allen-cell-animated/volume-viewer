@@ -71,13 +71,10 @@ export class AICSview3d {
     this.canvas3d.animate_funcs.push(this.preRender.bind(this));
     this.canvas3d.animate_funcs.push(img.onAnimate.bind(img));
     this.canvas3d.onEnterVRCallback = () => {
-      // tell the VR controls to control this.image
-      this.canvas3d.vrControls.object = img;
+      this.canvas3d.vrControls.pushObjectState(this.image);
     };
     this.canvas3d.onLeaveVRCallback = () => {
-      // tell the VR controls to forget about this.image, and reset our image
-      this.canvas3d.vrControls.object = null;
-      this.image.sceneRoot.quaternion.setFromAxisAngle(new THREE.Vector3(0,0,1), 0.0);
+      this.canvas3d.vrControls.popObjectState(this.image);
     };
   };
 
