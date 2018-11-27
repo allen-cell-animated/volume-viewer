@@ -1,5 +1,8 @@
 import "./ViveController.js";
 import "../threejsObjLoader.js";
+import VRControllerObj from "../assets/vr_controller_vive_1_5.obj";
+import VRControllerTexture from "../assets/onepointfive_texture.png";
+import VRControllerSpecularTexture from "../assets/onepointfive_spec.png";
 
 export class vrObjectControls {
     constructor(renderer, scene, object) {
@@ -26,13 +29,13 @@ export class vrObjectControls {
         // load the VR controller geometry
         var that = this;
         var loader = new THREE.OBJLoader();
-        loader.setPath( 'assets/' );
-        loader.load( 'vr_controller_vive_1_5.obj', function ( object ) {
+        //loader.setPath( 'assets/' );
+        loader.load( VRControllerObj, function ( object ) {
             var txloader = new THREE.TextureLoader();
-            txloader.setPath( 'assets/' );
+            //txloader.setPath( 'assets/' );
             var controller = object.children[ 0 ];
-            controller.material.map = txloader.load( 'onepointfive_texture.png' );
-            controller.material.specularMap = txloader.load( 'onepointfive_spec.png' );
+            controller.material.map = txloader.load( VRControllerTexture );
+            controller.material.specularMap = txloader.load( VRControllerSpecularTexture );
             that.controller1.add( object.clone() );
             that.controller2.add( object.clone() );
         } );
