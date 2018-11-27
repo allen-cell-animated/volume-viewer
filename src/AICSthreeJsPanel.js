@@ -6,11 +6,11 @@ import vrObjectControls from './vr/vrObjectControls.js';
 export class AICSthreeJsPanel {
   constructor(parentElement) {
     this.containerdiv = document.createElement('div');
-    this.containerdiv.setAttribute('id', 'cellViewContainerDiv');
+    this.containerdiv.setAttribute('id', 'volumeViewerContainerDiv');
     this.containerdiv.style.position = 'relative';
 
     this.canvas = document.createElement('canvas');
-    this.canvas.setAttribute('id', 'cellViewCanvas');
+    this.canvas.setAttribute('id', 'volumeViewerCanvas');
     this.canvas.height=parentElement.offsetHeight;
     this.canvas.width=parentElement.offsetWidth;
 
@@ -40,7 +40,7 @@ export class AICSthreeJsPanel {
 
     var scale = 0.5;
     this.orthoScale = scale;
-    var cellPos = new THREE.Vector3(0,0,0);
+    var pos = new THREE.Vector3(0,0,0);
     var aspect = this.getWidth() / this.getHeight();
 
     this.fov = 20;
@@ -62,7 +62,7 @@ export class AICSthreeJsPanel {
     this.orthographicCameraX.up.x = 0.0;
     this.orthographicCameraX.up.y = 0.0;
     this.orthographicCameraX.up.z = 1.0;
-    this.orthographicCameraX.lookAt( cellPos );
+    this.orthographicCameraX.lookAt( pos );
     this.orthoControlsX = new AICStrackballControls(this.orthographicCameraX, this.canvas);
     this.orthoControlsX.noRotate = true;
     this.orthoControlsX.scale = scale;
@@ -76,7 +76,7 @@ export class AICSthreeJsPanel {
     this.orthographicCameraY.up.x = 0.0;
     this.orthographicCameraY.up.y = 0.0;
     this.orthographicCameraY.up.z = 1.0;
-    this.orthographicCameraY.lookAt( cellPos );
+    this.orthographicCameraY.lookAt( pos );
     this.orthoControlsY = new AICStrackballControls(this.orthographicCameraY, this.canvas);
     this.orthoControlsY.noRotate = true;
     this.orthoControlsY.scale = scale;
@@ -90,7 +90,7 @@ export class AICSthreeJsPanel {
     this.orthographicCameraZ.up.x = 0.0;
     this.orthographicCameraZ.up.y = 1.0;
     this.orthographicCameraZ.up.z = 0.0;
-    this.orthographicCameraZ.lookAt( cellPos );
+    this.orthographicCameraZ.lookAt( pos );
     this.orthoControlsZ = new AICStrackballControls(this.orthographicCameraZ, this.canvas);
     this.orthoControlsZ.noRotate = true;
     this.orthoControlsZ.scale = scale;

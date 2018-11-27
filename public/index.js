@@ -115,4 +115,3 @@ rotbtn.addEventListener("click", ()=>{isRot = !isRot; view3D.setAutoRotate(isRot
 var isAxis = false;
 var axisbtn = document.getElementById("axisbtn");
 axisbtn.addEventListener("click", ()=>{isAxis = !isAxis; view3D.setShowAxis(isAxis)});
-
