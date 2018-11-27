@@ -1,9 +1,7 @@
 import AICStrackballControls from './AICStrackballControls.js';
 
-import "./vr/ViveController.js";
 import WEBVR from "./vr/WebVR.js";
 import vrObjectControls from './vr/vrObjectControls.js';
-import "./threejsObjLoader.js";
 
 export class AICSthreeJsPanel {
   constructor(parentElement) {
@@ -23,6 +21,8 @@ export class AICSthreeJsPanel {
 
     this.zooming = false;
     this.animate_funcs = [];
+    this.onEnterVRCallback = null;
+    this.onLeaveVRCallback = null;
     this.mousedown = false;
     this.needs_render = true;
 
@@ -109,29 +109,7 @@ export class AICSthreeJsPanel {
 
   initVR() {
     // VR controllers
-    // TODO This code is HTC Vive-specific.  Find a generic controller model to use instead!
-    // (...when WebVR has proliferated further and more hand controllers are in play...)
-    this.controller1 = new THREE.ViveController( 0 );
-    this.controller1.standingMatrix = this.renderer.vr.getStandingMatrix();
-
-    this.controller2 = new THREE.ViveController( 1 );
-    this.controller2.standingMatrix = this.renderer.vr.getStandingMatrix();
-
-    this.vrRotateControls0 = new vrObjectControls(this.controller1, this.controller2, null);
-
-    // load the VR controller geometry
-    var that = this;
-    var loader = new THREE.OBJLoader();
-    loader.setPath( 'assets/' );
-    loader.load( 'vr_controller_vive_1_5.obj', function ( object ) {
-      var loader = new THREE.TextureLoader();
-      loader.setPath( 'assets/' );
-      var controller = object.children[ 0 ];
-      controller.material.map = loader.load( 'onepointfive_texture.png' );
-      controller.material.specularMap = loader.load( 'onepointfive_spec.png' );
-      that.controller1.add( object.clone() );
-      that.controller2.add( object.clone() );
-    } );
+    this.vrControls = new vrObjectControls(this.renderer, this.scene, null);
 
     //this.renderer.vr.enabled = true;
     window.addEventListener( 'vrdisplaypointerrestricted', ()=>{
@@ -155,36 +133,42 @@ export class AICSthreeJsPanel {
       this.containerdiv.appendChild(this.vrButton);
     }
 
+    var that = this;
     window.addEventListener( 'vrdisplaypresentchange', () =>  {
       if (that.isVR()) {
-        console.log("ENTERED VR");
-        that.scene.add(that.controller1);
-        that.scene.add(that.controller2);
-        that.renderer.vr.enabled = true;
-        that.controls.enabled = false;
-        that.vrRotateControls0.onEnterVR();
+        that.onEnterVR();
       }
       else {
-        console.log("LEFT VR");
-        that.vrRotateControls0.onLeaveVR();
-        that.scene.remove(that.controller1);
-        that.scene.remove(that.controller2);
-        that.renderer.vr.enabled = false;
-        that.resetPerspectiveCamera();
-      }    
+        that.onLeaveVR();
+      }
     } );
-
-  }
-
-  setVRObject(img) {
-    this.vrRotateControls0.setObject(img);
   }
 
   isVR() {
     const vrdevice = this.renderer.vr.getDevice();
     return (vrdevice && vrdevice.isPresenting);
   }
-  
+
+  onEnterVR() {
+    console.log("ENTERED VR");
+    this.renderer.vr.enabled = true;
+    this.controls.enabled = false;
+    if (this.onEnterVRCallback) {
+      this.onEnterVRCallback();
+    }
+    this.vrControls.onEnterVR();
+  }
+
+  onLeaveVR() {
+    console.log("LEFT VR");
+    this.vrControls.onLeaveVR();
+    if (this.onLeaveVRCallback) {
+      this.onLeaveVRCallback();
+    }
+    this.renderer.vr.enabled = false;
+    this.resetPerspectiveCamera();
+  }
+
   resetPerspectiveCamera() {
     var aspect = this.getWidth() / this.getHeight();
 
@@ -351,24 +335,13 @@ export class AICSthreeJsPanel {
     }
   }
 
-  handleController(controller, index, delta) {
-    controller.update();
-    // check state and do the stuff.
-
-    // controller 1 trigger drag to rotate
-    if (index === 0) {
-      this.vrRotateControls0.update();
-    }
-  }
-
   doAnimate() {
     //var me = this;
     var delta = this.clock.getDelta();
     //console.log("DT="+delta);
 
     if (this.isVR()) {
-      this.handleController(this.controller1, 0, delta);
-      this.handleController(this.controller2, 1, delta);
+      this.vrControls.update(delta);
     }
     else {
       this.controls.update(delta);

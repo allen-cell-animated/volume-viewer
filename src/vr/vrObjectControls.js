@@ -1,7 +1,16 @@
+import "./ViveController.js";
+import "../threejsObjLoader.js";
+
 export class vrObjectControls {
-    constructor(controller1, controller2, object) {
-        this.controller1 = controller1;
-        this.controller2 = controller2;
+    constructor(renderer, scene, object) {
+        // TODO This code is HTC Vive-specific.  Find a generic controller model to use instead!
+        // (...when WebVR has proliferated further and more hand controllers are in play...)
+        this.controller1 = new THREE.ViveController( 0 );
+        this.controller1.standingMatrix = renderer.vr.getStandingMatrix();
+
+        this.controller2 = new THREE.ViveController( 1 );
+        this.controller2.standingMatrix = renderer.vr.getStandingMatrix();
+
         this.object = object;
 
         this.trigger1Down = this.controller1.getButtonState('trigger');
@@ -13,6 +22,22 @@ export class vrObjectControls {
 
         // one channel index per hand
         this.currentChannel = [0,-1];
+
+        // load the VR controller geometry
+        var that = this;
+        var loader = new THREE.OBJLoader();
+        loader.setPath( 'assets/' );
+        loader.load( 'vr_controller_vive_1_5.obj', function ( object ) {
+            var txloader = new THREE.TextureLoader();
+            txloader.setPath( 'assets/' );
+            var controller = object.children[ 0 ];
+            controller.material.map = txloader.load( 'onepointfive_texture.png' );
+            controller.material.specularMap = txloader.load( 'onepointfive_spec.png' );
+            that.controller1.add( object.clone() );
+            that.controller2.add( object.clone() );
+        } );
+
+        this.scene = scene;
     }
 
     setObject(obj) {
@@ -20,6 +45,10 @@ export class vrObjectControls {
     }
 
     onEnterVR() {
+        // add controllers to 3d scene
+        this.scene.add(this.controller1);
+        this.scene.add(this.controller2);
+
         this.onMenu1 = (function() {
             this.cycleChannels(0);
         }).bind(this);
@@ -37,7 +66,9 @@ export class vrObjectControls {
     onLeaveVR() {
         this.controller1.removeEventListener('menuup', this.onMenu1);
         this.controller2.removeEventListener('menuup', this.onMenu2);
-        this.resetObject();
+        // remove controllers from 3d scene
+        this.scene.remove(this.controller1);
+        this.scene.remove(this.controller2);
     }
 
     onAxisChange(obj) {
@@ -72,7 +103,11 @@ export class vrObjectControls {
         this.object.fuse();
     };
 
-    update() {
+    update(deltaT) {
+        // must calle update on the controllers, first!
+        this.controller1.update();
+        this.controller2.update();
+  
         const isTrigger1Down = this.controller1.getButtonState('trigger');
         const isTrigger2Down = this.controller2.getButtonState('trigger');
         const rotating = (isTrigger1Down && !isTrigger2Down) || (isTrigger2Down && !isTrigger1Down);
@@ -153,11 +188,6 @@ export class vrObjectControls {
         this.wasZooming = zooming;
     }
 
-    resetObject() {
-        if (this.object) {
-            this.object.sceneRoot.quaternion.setFromAxisAngle(new THREE.Vector3(0,0,1), 0.0);
-        }
-    }
 };
 
 export default vrObjectControls;
