@@ -112,40 +112,42 @@ export class AICSthreeJsPanel {
   }
 
   initVR() {
-    // VR controllers
-    this.vrControls = new vrObjectControls(this.renderer, this.scene, null);
-
-    //this.renderer.vr.enabled = true;
-    window.addEventListener( 'vrdisplaypointerrestricted', ()=>{
-      var pointerLockElement = that.renderer.domElement;
-      if ( pointerLockElement && typeof(pointerLockElement.requestPointerLock) === 'function' ) {
-        pointerLockElement.requestPointerLock();
-      }
-    }, false );
-    window.addEventListener( 'vrdisplaypointerunrestricted', ()=>{
-      var currentPointerLockElement = document.pointerLockElement;
-      var expectedPointerLockElement = that.renderer.domElement;
-      if ( currentPointerLockElement && currentPointerLockElement === expectedPointerLockElement && typeof(document.exitPointerLock) === 'function' ) {
-        document.exitPointerLock();
-      }
-    }, false );
 
     this.vrButton = WEBVR.createButton( this.renderer );
     if (this.vrButton) {
       this.vrButton.style.left = 'auto';
       this.vrButton.style.right = '0px';
       this.containerdiv.appendChild(this.vrButton);
+
+      // VR controllers
+      this.vrControls = new vrObjectControls(this.renderer, this.scene, null);
+
+      window.addEventListener( 'vrdisplaypointerrestricted', ()=>{
+        var pointerLockElement = that.renderer.domElement;
+        if ( pointerLockElement && typeof(pointerLockElement.requestPointerLock) === 'function' ) {
+          pointerLockElement.requestPointerLock();
+        }
+      }, false );
+      window.addEventListener( 'vrdisplaypointerunrestricted', ()=>{
+        var currentPointerLockElement = document.pointerLockElement;
+        var expectedPointerLockElement = that.renderer.domElement;
+        if ( currentPointerLockElement && currentPointerLockElement === expectedPointerLockElement && typeof(document.exitPointerLock) === 'function' ) {
+          document.exitPointerLock();
+        }
+      }, false );
+
+      var that = this;
+      window.addEventListener( 'vrdisplaypresentchange', () =>  {
+        if (that.isVR()) {
+          that.onEnterVR();
+        }
+        else {
+          that.onLeaveVR();
+        }
+      } );
+  
     }
 
-    var that = this;
-    window.addEventListener( 'vrdisplaypresentchange', () =>  {
-      if (that.isVR()) {
-        that.onEnterVR();
-      }
-      else {
-        that.onLeaveVR();
-      }
-    } );
   }
 
   isVR() {
@@ -160,12 +162,16 @@ export class AICSthreeJsPanel {
     if (this.onEnterVRCallback) {
       this.onEnterVRCallback();
     }
-    this.vrControls.onEnterVR();
+    if (this.vrControls) {
+      this.vrControls.onEnterVR();
+    }
   }
 
   onLeaveVR() {
     console.log("LEFT VR");
-    this.vrControls.onLeaveVR();
+    if (this.vrControls) {
+      this.vrControls.onLeaveVR();
+    }
     if (this.onLeaveVRCallback) {
       this.onLeaveVRCallback();
     }
@@ -344,7 +350,7 @@ export class AICSthreeJsPanel {
     var delta = this.clock.getDelta();
     //console.log("DT="+delta);
 
-    if (this.isVR()) {
+    if (this.isVR() && this.vrControls) {
       this.vrControls.update(delta);
     }
     else {
