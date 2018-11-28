@@ -116,7 +116,8 @@ export class AICSthreeJsPanel {
     this.vrButton = WEBVR.createButton( this.renderer );
     if (this.vrButton) {
       this.vrButton.style.left = 'auto';
-      this.vrButton.style.right = '0px';
+      this.vrButton.style.right = '5px';
+      this.vrButton.style.bottom = '5px';
       this.containerdiv.appendChild(this.vrButton);
 
       // VR controllers
