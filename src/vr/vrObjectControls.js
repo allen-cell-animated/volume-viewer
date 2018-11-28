@@ -27,18 +27,14 @@ export class vrObjectControls {
         this.currentChannel = [0,-1];
 
         // load the VR controller geometry
-        var that = this;
         var loader = new THREE.OBJLoader();
-        //loader.setPath( 'assets/' );
-        loader.load( VRControllerObj, function ( object ) {
-            var txloader = new THREE.TextureLoader();
-            //txloader.setPath( 'assets/' );
-            var controller = object.children[ 0 ];
-            controller.material.map = txloader.load( VRControllerTexture );
-            controller.material.specularMap = txloader.load( VRControllerSpecularTexture );
-            that.controller1.add( object.clone() );
-            that.controller2.add( object.clone() );
-        } );
+        var object = loader.parse(VRControllerObj);
+        var txloader = new THREE.TextureLoader();
+        var controller = object.children[ 0 ];
+        controller.material.map = txloader.load( VRControllerTexture );
+        controller.material.specularMap = txloader.load( VRControllerSpecularTexture );
+        this.controller1.add( object.clone() );
+        this.controller2.add( object.clone() );
 
         this.scene = scene;
     }
