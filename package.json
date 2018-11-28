@@ -3,6 +3,11 @@
   "version": "1.0.13",
   "description": "volume renderer for ome tif, czi, and tif z-stacks",
   "main": "dist/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
   "scripts": {
     "prepublish": "npm run build",
     "build-docs": "node node_modules/documentation/bin/documentation.js build src/AICSview3d.js src/AICSvolumeDrawable.js src/AICSmakeVolumes.js src/volumeLoader.js -f html -o docs --shallow",
