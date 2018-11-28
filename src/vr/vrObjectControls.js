@@ -1,8 +1,8 @@
 import "./ViveController.js";
 import "../threejsObjLoader.js";
-import VRControllerObj from "../assets/vr_controller_vive_1_5.obj";
-import VRControllerTexture from "../assets/onepointfive_texture.png";
-import VRControllerSpecularTexture from "../assets/onepointfive_spec.png";
+import VRControllerObj from "../../assets/vr_controller_vive_1_5.obj";
+import VRControllerTexture from "../../assets/onepointfive_texture.png";
+import VRControllerSpecularTexture from "../../assets/onepointfive_spec.png";
 
 export class vrObjectControls {
     constructor(renderer, scene, object) {

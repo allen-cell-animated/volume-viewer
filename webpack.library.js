@@ -40,8 +40,12 @@ module.exports = {
         use: 'worker-loader?inline=true'
       },
       {
-        test: /\.(png|obj)$/,
-        use: ['file-loader']
+        test: /\.(obj)$/,
+        use: ['raw-loader?inline=true']
+      },
+      {
+        test: /\.(png)$/,
+        use: ['url-loader?inline=true']
       }
     ]
   }
