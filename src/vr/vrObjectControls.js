@@ -134,7 +134,7 @@ export class vrObjectControls {
     };
 
     update(deltaT) {
-        // must calle update on the controllers, first!
+        // must call update on the controllers, first!
         this.controller1.update();
         this.controller2.update();
   
