@@ -631,15 +631,15 @@ AICSvolumeDrawable.prototype.updateMeshColors = function() {
   for (var i = 0; i < this.num_channels; ++i) {
     if (this.meshrep[i]) {
       var rgb = this.channel_colors[i];
-      var c = [rgb[0]/255.0, rgb[1]/255.0, rgb[2]/255.0];
+      const c = (rgb[0] << 16) | (rgb[1] << 8) | (rgb[2]);
 
       this.meshrep[i].traverse(function(child) {
         if (child instanceof THREE.Mesh) {
-          child.material.color = c;
+          child.material.color = new THREE.Color(c);
         }
       });
       if (this.meshrep[i].material) {
-        this.meshrep[i].material.color = c;
+        this.meshrep[i].material.color = new THREE.Color(c);
       }
     }
   }
