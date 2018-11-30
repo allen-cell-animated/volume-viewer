@@ -52,9 +52,12 @@ module.exports = {
                 use: 'worker-loader?inline=true'
             },
             {
-                test: /\.html$/,
-                exclude: /index\.html/,
-                use: ['polymer-webpack-loader']
+                test: /\.(obj)$/,
+                use: ['raw-loader?inline=true']
+            },
+            {
+                test: /\.(png)$/,
+                use: ['url-loader?inline=true']
             }
         ]
     }

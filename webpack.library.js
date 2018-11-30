@@ -31,6 +31,14 @@ module.exports = {
       {
         test: /Worker\.js$/,
         use: 'worker-loader?inline=true'
+      },
+      {
+        test: /\.(obj)$/,
+        use: ['raw-loader?inline=true']
+      },
+      {
+        test: /\.(png)$/,
+        use: ['url-loader?inline=true']
       }
     ]
   }

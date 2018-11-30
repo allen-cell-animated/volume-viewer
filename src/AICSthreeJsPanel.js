@@ -1,16 +1,32 @@
 import AICStrackballControls from './AICStrackballControls.js';
 
+import WEBVR from "./vr/WebVR.js";
+import vrObjectControls from './vr/vrObjectControls.js';
+
+const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
+const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
+const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
+
 export class AICSthreeJsPanel {
   constructor(parentElement) {
+    this.containerdiv = document.createElement('div');
+    this.containerdiv.setAttribute('id', 'volumeViewerContainerDiv');
+    this.containerdiv.style.position = 'relative';
+
     this.canvas = document.createElement('canvas');
-    this.canvas.setAttribute('id', 'cellViewCanvas');
+    this.canvas.setAttribute('id', 'volumeViewerCanvas');
     this.canvas.height=parentElement.offsetHeight;
     this.canvas.width=parentElement.offsetWidth;
-    parentElement.appendChild(this.canvas);
 
+    this.containerdiv.appendChild(this.canvas);
+    parentElement.appendChild(this.containerdiv);
+
+    this.scene = new THREE.Scene();
 
     this.zooming = false;
     this.animate_funcs = [];
+    this.onEnterVRCallback = null;
+    this.onLeaveVRCallback = null;
     this.mousedown = false;
     this.needs_render = true;
 
@@ -28,13 +44,13 @@ export class AICSthreeJsPanel {
 
     var scale = 0.5;
     this.orthoScale = scale;
-    var cellPos = new THREE.Vector3(0,0,0);
+    var pos = new THREE.Vector3(0,0,0);
     var aspect = this.getWidth() / this.getHeight();
 
     this.fov = 20;
 
-    this.perspectiveCamera = new THREE.PerspectiveCamera(this.fov, aspect, 0.001, 20);
-    this.perspectiveCamera.position.z = 5.0;
+    this.perspectiveCamera = new THREE.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
+    this.perspectiveCamera.position.z = DEFAULT_PERSPECTIVE_CAMERA_DISTANCE;
     this.perspectiveCamera.up.x = 0.0;
     this.perspectiveCamera.up.y = 1.0;
     this.perspectiveCamera.up.z = 0.0;
@@ -50,7 +66,7 @@ export class AICSthreeJsPanel {
     this.orthographicCameraX.up.x = 0.0;
     this.orthographicCameraX.up.y = 0.0;
     this.orthographicCameraX.up.z = 1.0;
-    this.orthographicCameraX.lookAt( cellPos );
+    this.orthographicCameraX.lookAt( pos );
     this.orthoControlsX = new AICStrackballControls(this.orthographicCameraX, this.canvas);
     this.orthoControlsX.noRotate = true;
     this.orthoControlsX.scale = scale;
@@ -64,7 +80,7 @@ export class AICSthreeJsPanel {
     this.orthographicCameraY.up.x = 0.0;
     this.orthographicCameraY.up.y = 0.0;
     this.orthographicCameraY.up.z = 1.0;
-    this.orthographicCameraY.lookAt( cellPos );
+    this.orthographicCameraY.lookAt( pos );
     this.orthoControlsY = new AICStrackballControls(this.orthographicCameraY, this.canvas);
     this.orthoControlsY.noRotate = true;
     this.orthoControlsY.scale = scale;
@@ -73,13 +89,12 @@ export class AICSthreeJsPanel {
     this.orthoControlsY.staticMoving = true;
     this.orthoControlsY.enabled = false;
 
-
     this.orthographicCameraZ = new THREE.OrthographicCamera( -scale*aspect, scale*aspect, scale, -scale, 0.001, 20 );
     this.orthographicCameraZ.position.z = 1.0;
     this.orthographicCameraZ.up.x = 0.0;
     this.orthographicCameraZ.up.y = 1.0;
     this.orthographicCameraZ.up.z = 0.0;
-    this.orthographicCameraZ.lookAt( cellPos );
+    this.orthographicCameraZ.lookAt( pos );
     this.orthoControlsZ = new AICStrackballControls(this.orthographicCameraZ, this.canvas);
     this.orthoControlsZ.noRotate = true;
     this.orthoControlsZ.scale = scale;
@@ -91,9 +106,94 @@ export class AICSthreeJsPanel {
     this.camera = this.perspectiveCamera;
     this.controls = this.perspectiveControls;
 
-    this.effect = this.renderer;
+    this.initVR();
 
     this.setupAxisHelper();
+  }
+
+  initVR() {
+
+    this.vrButton = WEBVR.createButton( this.renderer );
+    if (this.vrButton) {
+      this.vrButton.style.left = 'auto';
+      this.vrButton.style.right = '5px';
+      this.vrButton.style.bottom = '5px';
+      this.containerdiv.appendChild(this.vrButton);
+
+      // VR controllers
+      this.vrControls = new vrObjectControls(this.renderer, this.scene, null);
+
+      window.addEventListener( 'vrdisplaypointerrestricted', ()=>{
+        var pointerLockElement = that.renderer.domElement;
+        if ( pointerLockElement && typeof(pointerLockElement.requestPointerLock) === 'function' ) {
+          pointerLockElement.requestPointerLock();
+        }
+      }, false );
+      window.addEventListener( 'vrdisplaypointerunrestricted', ()=>{
+        var currentPointerLockElement = document.pointerLockElement;
+        var expectedPointerLockElement = that.renderer.domElement;
+        if ( currentPointerLockElement && currentPointerLockElement === expectedPointerLockElement && typeof(document.exitPointerLock) === 'function' ) {
+          document.exitPointerLock();
+        }
+      }, false );
+
+      var that = this;
+      window.addEventListener( 'vrdisplaypresentchange', () =>  {
+        if (that.isVR()) {
+          that.onEnterVR();
+        }
+        else {
+          that.onLeaveVR();
+        }
+      } );
+  
+    }
+
+  }
+
+  isVR() {
+    const vrdevice = this.renderer.vr.getDevice();
+    return (vrdevice && vrdevice.isPresenting);
+  }
+
+  onEnterVR() {
+    console.log("ENTERED VR");
+    this.renderer.vr.enabled = true;
+    this.controls.enabled = false;
+    if (this.onEnterVRCallback) {
+      this.onEnterVRCallback();
+    }
+    if (this.vrControls) {
+      this.vrControls.onEnterVR();
+    }
+  }
+
+  onLeaveVR() {
+    console.log("LEFT VR");
+    if (this.vrControls) {
+      this.vrControls.onLeaveVR();
+    }
+    if (this.onLeaveVRCallback) {
+      this.onLeaveVRCallback();
+    }
+    this.renderer.vr.enabled = false;
+    this.resetPerspectiveCamera();
+  }
+
+  resetPerspectiveCamera() {
+    var aspect = this.getWidth() / this.getHeight();
+
+    this.perspectiveCamera = new THREE.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
+    this.perspectiveCamera.position.x = 0.0;
+    this.perspectiveCamera.position.y = 0.0;
+    this.perspectiveCamera.position.z = DEFAULT_PERSPECTIVE_CAMERA_DISTANCE;
+    this.perspectiveCamera.up.x = 0.0;
+    this.perspectiveCamera.up.y = 1.0;
+    this.perspectiveCamera.up.z = 0.0;
+    this.switchViewMode('3D');
+    this.controls.object = this.perspectiveCamera;
+    this.controls.enabled = true;
+    this.controls.reset();
   }
 
   setupAxisHelper() {
@@ -190,6 +290,9 @@ export class AICSthreeJsPanel {
   }
 
   resize(comp, w, h, ow, oh, eOpts) {
+    this.containerdiv.style.width = '' + w + 'px';
+    this.containerdiv.style.height = '' + h + 'px';
+
     var aspect = w / h;
 
     this.perspectiveControls.aspect = aspect;
@@ -212,7 +315,7 @@ export class AICSthreeJsPanel {
     this.axisCamera.bottom = 0;
     this.axisCamera.updateProjectionMatrix();
 
-    this.effect.setSize( w,h );
+    this.renderer.setSize( w,h );
 
     this.perspectiveControls.handleResize();
     this.orthoControlsZ.handleResize();
@@ -235,19 +338,26 @@ export class AICSthreeJsPanel {
   }
 
   render() {
-    this.effect.render(this.scene, this.camera);
+    this.renderer.render(this.scene, this.camera);
     if (this.showAxis) {
-      this.effect.autoClear = false;
-      this.effect.render(this.axisHelperScene, this.axisCamera);
-      this.effect.autoClear = true;
+      this.renderer.autoClear = false;
+      this.renderer.render(this.axisHelperScene, this.axisCamera);
+      this.renderer.autoClear = true;
     }
   }
 
   doAnimate() {
-    var me = this;
+    //var me = this;
     var delta = this.clock.getDelta();
     //console.log("DT="+delta);
-    this.controls.update(delta);
+
+    if (this.isVR() && this.vrControls) {
+      this.vrControls.update(delta);
+    }
+    else {
+      this.controls.update(delta);
+    }
+
     if(this.onAnimate) {
       this.onAnimate();
     }
@@ -265,29 +375,14 @@ export class AICSthreeJsPanel {
     else {
       this.orthoScale = this.controls.scale;
     }
-
-    //this.anaglyph.render(this.scene, this.camera);
-    //this.controls.update();
-    if (this.effect.requestAnimationFrame) {
-      this.animationID = this.effect.requestAnimationFrame(function() {
-        me.doAnimate();
-      });
-    }
-    else {
-      this.animationID = requestAnimationFrame(function() {
-        me.doAnimate();
-      });
-    }
   }
 
   rerender() {
     this.needs_render = true;
-    if(!this.animationID) {
-      this.doAnimate();
-    }
+    this.renderer.setAnimationLoop(this.doAnimate.bind(this));
   }
 
   stoprender() {
-    //this.needs_render = false;
+    this.renderer.setAnimationLoop(null);
   }
 }

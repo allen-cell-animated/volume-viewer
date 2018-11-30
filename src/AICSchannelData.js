@@ -156,12 +156,13 @@ AICSchannelData.prototype.getHistogram = function(channelIndex) {
 AICSchannelData.prototype.fuse = function(combination, fuseMethod) {
   fuseMethod = fuseMethod || "m";
 
-  // if none of the channels in the combination are loaded, but the cell mask is, then show the cell mask only.
+  // we can fuse if we have any loaded channels that are showing. 
   var canFuse = false;
   for (var i = 0; i < combination.length; ++i) {
     var c = combination[i];
     var idx = c.chIndex;
     if (c.rgbColor && this.channels[idx].loaded) {
+      // set the lut in this fuse combination.
       c.lut = this.channels[idx].lut;
       canFuse = true;
       //break;

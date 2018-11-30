@@ -44,6 +44,9 @@ export class AICSview3d {
 
   destroyImage() {
     if (this.image) {
+      this.canvas3d.onLeaveVR();
+      this.canvas3d.onEnterVRCallback = null;
+      this.canvas3d.onLeaveVRCallback = null;
       this.canvas3d.animate_funcs = [];
       this.scene.remove(this.image.sceneRoot);
       this.image.cleanup();
@@ -67,11 +70,16 @@ export class AICSview3d {
 
     this.canvas3d.animate_funcs.push(this.preRender.bind(this));
     this.canvas3d.animate_funcs.push(img.onAnimate.bind(img));
+    this.canvas3d.onEnterVRCallback = () => {
+      this.canvas3d.vrControls.pushObjectState(this.image);
+    };
+    this.canvas3d.onLeaveVRCallback = () => {
+      this.canvas3d.vrControls.popObjectState(this.image);
+    };
   };
 
   buildScene() {
-    this.scene = new THREE.Scene();
-    this.canvas3d.scene = this.scene;
+    this.scene = this.canvas3d.scene;
 
     this.oldScale = new THREE.Vector3(0.5, 0.5, 0.5);
     this.currentScale = new THREE.Vector3(0.5, 0.5, 0.5);
