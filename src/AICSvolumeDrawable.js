@@ -17,6 +17,9 @@ function AICSvolumeDrawable(imageInfo, requestPathTrace) {
 
   this.onChannelDataReadyCallback = null;
 
+  this.maskChannelIndex = -1;
+  this.maskAlpha = 1.0;
+
   this.channel_colors = this.volume.channel_colors_default.slice();
 
   this.fusion = this.channel_colors.map((col, index) => {
@@ -459,6 +462,7 @@ AICSvolumeDrawable.prototype.setChannelAsMask = function(channelIndex) {
   if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
     return false;
   }
+  this.maskChannelIndex = channelIndex;
   return this.volumeRendering.setChannelAsMask(channelIndex);
 };
 
@@ -467,6 +471,7 @@ AICSvolumeDrawable.prototype.setChannelAsMask = function(channelIndex) {
  * @param {number} maskAlpha 
  */
 AICSvolumeDrawable.prototype.setMaskAlpha = function(maskAlpha) {
+  this.maskAlpha = maskAlpha;
   this.volumeRendering.setMaskAlpha(maskAlpha);
 };
 
@@ -533,6 +538,8 @@ AICSvolumeDrawable.prototype.setVolumeRendering = function(is_pathtrace) {
 
   this.PT = is_pathtrace;
 
+  this.setChannelAsMask(this.maskChannelIndex);
+  this.setMaskAlpha(this.maskAlpha);
   this.setScale(this.volume.scale);
   this.setBrightness(this.getBrightness());
   this.setDensity(this.getDensity());
