@@ -5,3 +5,4 @@ src/src/webvr/
 src/shared/utils/webgl-debug.js
 src/MarchingCubes.js
 src/NaiveSurfaceNets.js
+docs/

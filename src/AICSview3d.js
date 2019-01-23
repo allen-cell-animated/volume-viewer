@@ -9,13 +9,11 @@ export class AICSview3d {
    * @param {HTMLElement} parentElement the 3d display will try to fill the parent element.
    */
   constructor(parentElement) {
-    this.canvas3d = new AICSthreeJsPanel(parentElement);
+    this.canvas3d = new AICSthreeJsPanel(parentElement, true);
+    //this.canvas3d = new AICSthreeJsPanel(parentElement);
     this.redraw = this.redraw.bind(this);
     this.scene = null;
     this.backgroundColor = 0x000000;
-
-    // a light source...
-    //this.light = null;
 
     this.loaded = false;
     let that = this;
@@ -25,13 +23,15 @@ export class AICSview3d {
     this.buildScene();
   }
 
+  // prerender should be called on every redraw and should be the first thing done.
   preRender() {
     if (this.scene.getObjectByName('lightContainer')) {
       this.scene.getObjectByName('lightContainer').rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
     }
     // keep the ortho scale up to date.
     if (this.image && this.canvas3d.camera.isOrthographicCamera) {
-      this.image.setUniformNoRerender('orthoScale', this.canvas3d.controls.scale);
+      this.image.setOrthoScale(this.canvas3d.controls.scale);
+      //this.image.setUniformNoRerender('orthoScale', this.canvas3d.controls.scale);
     }
   };
 
@@ -42,40 +42,58 @@ export class AICSview3d {
     this.canvas3d.rerender();
   };
 
-  destroyImage() {
+  unsetImage() {
     if (this.image) {
+      this.canvas3d.removeControlHandlers();
       this.canvas3d.onLeaveVR();
       this.canvas3d.onEnterVRCallback = null;
       this.canvas3d.onLeaveVRCallback = null;
       this.canvas3d.animate_funcs = [];
       this.scene.remove(this.image.sceneRoot);
-      this.image.cleanup();
-      this.image = null;
     }
+    return this.image;
   }
 
   /**
-   * Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will destroy any prior existing image.
+   * Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will return any prior existing image.
    * @param {AICSvolumeDrawable} img 
    */
   setImage(img) {
-    this.destroyImage();
+    const oldImage = this.unsetImage();
 
     this.image = img;
-    this.image.redraw = this.redraw.bind(this);
 
     this.scene.add(img.sceneRoot);
 
     this.image.setResolution(this.canvas3d);
 
+    var that = this;
+    this.image.onChannelDataReadyCallback = function() {
+        // ARTIFICIALLY ENABLE ONLY THE FIRST 3 CHANNELS
+        for (let i = 0; i < that.image.num_channels; ++i) {
+          that.image.setVolumeChannelEnabled(i, (i<3));
+        }
+    };
+
+    this.canvas3d.setControlHandlers(this.image);
+
     this.canvas3d.animate_funcs.push(this.preRender.bind(this));
     this.canvas3d.animate_funcs.push(img.onAnimate.bind(img));
     this.canvas3d.onEnterVRCallback = () => {
-      this.canvas3d.vrControls.pushObjectState(this.image);
+      if (this.canvas3d.vrControls) {
+        this.canvas3d.vrControls.pushObjectState(this.image);
+      }
     };
     this.canvas3d.onLeaveVRCallback = () => {
-      this.canvas3d.vrControls.popObjectState(this.image);
+      if (this.canvas3d.vrControls) {
+        this.canvas3d.vrControls.popObjectState(this.image);
+      }
     };
+
+    // start draw loop
+    this.canvas3d.rerender();
+
+    return oldImage;
   };
 
   buildScene() {
@@ -157,6 +175,13 @@ export class AICSview3d {
    */
   setAutoRotate(autorotate) {
     this.canvas3d.setAutoRotate(autorotate);
+
+    if (autorotate) {
+      this.image.onStartControls();
+    }
+    else {
+      this.image.onEndControls();
+    }  
   };
 
   /**
@@ -178,4 +203,59 @@ export class AICSview3d {
     }
   };
 
+  updateDensity(density) {
+    this.image.setDensity(density/100.0);
+  };
+
+  updateShadingMethod(isbrdf) {
+    this.image.updateShadingMethod(isbrdf);
+  };
+
+  updateShowLights(showlights) {
+
+  }
+
+  updateActiveChannels() {
+    this.image.fuse();
+  }
+
+  updateLuts() {
+    this.image.updateLuts();
+  }
+
+  updateMaterial() {
+    this.image.updateMaterial();
+  }
+  
+  updateExposure(e) {
+    this.image.setBrightness(e);
+  }
+
+  updateCamera(fov, focalDistance, apertureSize) {
+    const cam = this.canvas3d.perspectiveCamera;
+    cam.fov = fov;
+    this.canvas3d.fov = fov;
+    cam.updateProjectionMatrix();
+
+    this.image.onCameraChanged(fov, focalDistance, apertureSize);
+  }
+
+  updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
+    this.image.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
+  }
+
+  updateLights(state) {
+    this.image.updateLights(state);
+  }
+
+  setPathTrace(isPT) {
+    if (isPT && this.canvas3d.hasWebGL2) {
+      this.image.setVolumeRendering(isPT);
+    }
+    else {
+      this.image.setVolumeRendering(false);
+    }
+    this.image.setResolution(this.canvas3d);  
+    this.setAutoRotate(this.canvas3d.controls.autoRotate);
+  }
 }
