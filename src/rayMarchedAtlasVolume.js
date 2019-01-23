@@ -124,7 +124,7 @@ export default class RayMarchedAtlasVolume {
 
     // TODO brightness and exposure should be the same thing?
     setBrightness(brightness) {
-        this.setUniform("BRIGHTNESS", brightness);
+        this.setUniform("BRIGHTNESS", brightness + 1.0);
     }
       
     setAxisClip(axis, minval, maxval, isOrthoAxis) {
