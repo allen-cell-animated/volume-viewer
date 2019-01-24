@@ -42,15 +42,19 @@ export class vrObjectControls {
     pushObjectState(obj) {
         this.object = obj;
 
+
         // push the density, brightness, and enabled state of channels.
         this.vrRestoreState = {
             brightness: this.object.getBrightness(),
             density: this.object.getDensity(),
+            isPathTrace: this.object.PT,
             enabled: []
         };
         for (let i = 0; i < this.object.num_channels; ++i ) {
             this.vrRestoreState.enabled.push(this.object.isVolumeChannelEnabled(i));
         }
+        // NO PATHTRACING IN VR MODE!
+        this.object.setVolumeRendering(false);
     }
 
     popObjectState(obj) {
@@ -68,7 +72,7 @@ export class vrObjectControls {
                 for (let i = 0; i < this.object.num_channels; ++i ) {
                     this.object.setVolumeChannelEnabled(i, this.vrRestoreState.enabled[i]);
                 }
-                this.object.fuse();
+                this.object.setVolumeRendering(this.vrRestoreState.isPathTrace);
             }
     
             this.vrRestoreState = null;

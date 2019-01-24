@@ -249,7 +249,7 @@ export class AICSview3d {
   }
 
   setPathTrace(isPT) {
-    if (isPT && this.canvas3d.hasWebGL2) {
+    if (isPT && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
       this.image.setVolumeRendering(isPT);
     }
     else {
