@@ -12,6 +12,7 @@
     "prepublish": "npm run build",
     "build-docs": "node node_modules/documentation/bin/documentation.js build src/AICSview3d.js src/AICSvolumeDrawable.js src/AICSmakeVolumes.js src/volumeLoader.js -f html -o docs --shallow",
     "build": "webpack --config webpack.library.js",
+    "build-demo": "webpack --config webpack.demo.js",
     "dev": "webpack-dev-server --open --config webpack.dev.js",
     "lint": "eslint --config ./.eslintrc --ignore-path ./.eslintignore --ext .jsx --ext .js ./",
     "test": "mocha --opts mocha.opts src/**/test/*.js"
