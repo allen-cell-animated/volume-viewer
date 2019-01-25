@@ -513,6 +513,11 @@ AICSvolumeDrawable.prototype.updateLights = function(state) {
   this.PT && this.pathTracedVolume.updateLights(state);
 };
 
+AICSvolumeDrawable.prototype.setPixelSamplingRate = function(value) {
+  this.volumeRendering.setPixelSamplingRate(value);
+};
+
+
 AICSvolumeDrawable.prototype.setVolumeRendering = function(is_pathtrace) {
   if (is_pathtrace === this.PT) {
     return;
@@ -551,5 +556,6 @@ AICSvolumeDrawable.prototype.setVolumeRendering = function(is_pathtrace) {
 
   this.fuse();
 };
+
 
 export default AICSvolumeDrawable;

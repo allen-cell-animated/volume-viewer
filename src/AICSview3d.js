@@ -204,11 +204,15 @@ export class AICSview3d {
   };
 
   updateDensity(density) {
-    this.image.setDensity(density/100.0);
+    if (this.image) {
+      this.image.setDensity(density/100.0);
+    }
   };
 
   updateShadingMethod(isbrdf) {
-    this.image.updateShadingMethod(isbrdf);
+    if (this.image) {
+      this.image.updateShadingMethod(isbrdf);
+    }
   };
 
   updateShowLights(showlights) {
@@ -216,19 +220,27 @@ export class AICSview3d {
   }
 
   updateActiveChannels() {
-    this.image.fuse();
+    if (this.image) {
+      this.image.fuse();
+    }
   }
 
   updateLuts() {
-    this.image.updateLuts();
+    if (this.image) {
+      this.image.updateLuts();
+    }
   }
 
   updateMaterial() {
-    this.image.updateMaterial();
+    if (this.image) {
+      this.image.updateMaterial();
+    }
   }
   
   updateExposure(e) {
-    this.image.setBrightness(e);
+    if (this.image) {
+      this.image.setBrightness(e);
+    }
   }
 
   updateCamera(fov, focalDistance, apertureSize) {
@@ -237,25 +249,40 @@ export class AICSview3d {
     this.canvas3d.fov = fov;
     cam.updateProjectionMatrix();
 
-    this.image.onCameraChanged(fov, focalDistance, apertureSize);
+    if (this.image) {
+      this.image.onCameraChanged(fov, focalDistance, apertureSize);
+    }
   }
 
   updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
-    this.image.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
+    if (this.image) {
+      this.image.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
+    }
   }
 
   updateLights(state) {
-    this.image.updateLights(state);
+    if (this.image) {
+      this.image.updateLights(state);
+    }
+  }
+
+  updatePixelSamplingRate(value) {
+    if (this.image) {
+      this.image.setPixelSamplingRate(value);
+    }
   }
 
   setPathTrace(isPT) {
-    if (isPT && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
-      this.image.setVolumeRendering(isPT);
+    if (this.image) {
+      if (isPT && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
+        this.image.setVolumeRendering(isPT);
+      }
+      else {
+        this.image.setVolumeRendering(false);
+      }
+      this.image.setResolution(this.canvas3d);  
+      this.setAutoRotate(this.canvas3d.controls.autoRotate);
     }
-    else {
-      this.image.setVolumeRendering(false);
-    }
-    this.image.setResolution(this.canvas3d);  
-    this.setAutoRotate(this.canvas3d.controls.autoRotate);
   }
-}
+};
+

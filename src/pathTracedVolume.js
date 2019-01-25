@@ -391,6 +391,7 @@ export default class PathTracedVolume {
     setPixelSamplingRate(rate) {
       this.pixelSamplingRate = rate;
       this.setResolution(this.fullTargetResolution.x, this.fullTargetResolution.y);
+      this.sampleCounter = 0;
     }
 
     setDensity(density) {

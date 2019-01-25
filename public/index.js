@@ -90,6 +90,8 @@ const myState = {
     ymax: 1.0,
     zmax: 1.0,
 
+    samplingRate: 0.25,
+
     isPT: false
 };
 let gui = null;
@@ -118,6 +120,9 @@ function setupGui() {
     });
     cameragui.add(myState, "fov").max(90.0).min(0.0).step(0.001).onChange(function (value) {
         view3D.updateCamera(myState.fov, myState.focal_distance, myState.aperture);
+    });
+    cameragui.add(myState, "samplingRate").max(1.0).min(0.1).step(0.001).onChange(function (value) {
+        view3D.updatePixelSamplingRate(value);
     });
 
     var clipping = gui.addFolder("Clipping Box");

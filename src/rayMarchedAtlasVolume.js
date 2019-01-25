@@ -117,6 +117,9 @@ export default class RayMarchedAtlasVolume {
         this.setUniform('iResolution', new THREE.Vector2(x, y));
     }
 
+    setPixelSamplingRate(value) {
+    }
+
     setDensity(density) {
         this.setUniform("DENSITY", density);
     }
