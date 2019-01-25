@@ -58,7 +58,7 @@ export default class MeshVolume {
             0.5 * scale.z));
     }
 
-    setResolution(viewObj) {
+    setResolution(x, y) {
     }
 
     setOrthoThickness(value) {

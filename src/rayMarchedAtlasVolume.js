@@ -113,9 +113,8 @@ export default class RayMarchedAtlasVolume {
         this.setUniform('orthoScale', value);
     }
 
-    setResolution(viewObj) {
-        const res = new THREE.Vector2(viewObj.getWidth(), viewObj.getHeight());
-        this.setUniform('iResolution', res);
+    setResolution(x, y) {
+        this.setUniform('iResolution', new THREE.Vector2(x, y));
     }
 
     setDensity(density) {

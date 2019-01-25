@@ -10,6 +10,9 @@ export default class PathTracedVolume {
         this.volume = volume;
         this.viewChannels = [-1, -1, -1, -1];
 
+        // scale factor is a huge optimization.  Maybe use 1/dpi scale
+        this.pixelSamplingRate = 0.25;
+
         this.pathTracingUniforms = pathTracingUniforms();
 
         // create volume texture
@@ -375,16 +378,19 @@ export default class PathTracedVolume {
 
     }
 
-    setResolution(viewObj) {
-        const res = new THREE.Vector2(viewObj.getWidth(), viewObj.getHeight());
-        // scale factor is a huge optimization.  Maybe use 1/dpi scale
-        const scale = 0.25;
-        const x = Math.floor(res.x * scale);
-        const y = Math.floor(res.y * scale);
-        this.pathTracingUniforms.uResolution.value.x = x;
-        this.pathTracingUniforms.uResolution.value.y = y;
-        this.pathTracingRenderTarget.setSize(x, y);
-        this.screenTextureRenderTarget.setSize(x, y);
+    setResolution(x, y) {
+        this.fullTargetResolution = new THREE.Vector2(x, y);
+        const nx = Math.floor(x * this.pixelSamplingRate);
+        const ny = Math.floor(y * this.pixelSamplingRate);
+        this.pathTracingUniforms.uResolution.value.x = nx;
+        this.pathTracingUniforms.uResolution.value.y = ny;
+        this.pathTracingRenderTarget.setSize(nx, ny);
+        this.screenTextureRenderTarget.setSize(nx, ny);
+    }
+
+    setPixelSamplingRate(rate) {
+      this.pixelSamplingRate = rate;
+      this.setResolution(this.fullTargetResolution.x, this.fullTargetResolution.y);
     }
 
     setDensity(density) {

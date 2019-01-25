@@ -137,8 +137,10 @@ AICSvolumeDrawable.prototype.setOrthoScale = function(value) {
 };
 
 AICSvolumeDrawable.prototype.setResolution = function(viewObj) {
-  this.volumeRendering.setResolution(viewObj);
-  this.meshVolume.setResolution(viewObj);
+  const x = viewObj.getWidth();
+  const y = viewObj.getHeight();
+  this.volumeRendering.setResolution(x, y);
+  this.meshVolume.setResolution(x, y);
 };
 
 // TODO handle this differently in 3D mode vs 2D mode?
