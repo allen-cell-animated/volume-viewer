@@ -44,7 +44,9 @@ export class AICSview3d {
 
   destroyImage() {
     if (this.image) {
-      this.canvas3d.onLeaveVR();
+      if (this.canvas3d.isVR()) {
+        this.canvas3d.onLeaveVR();
+      }
       this.canvas3d.onEnterVRCallback = null;
       this.canvas3d.onLeaveVRCallback = null;
       this.canvas3d.animate_funcs = [];
@@ -71,10 +73,14 @@ export class AICSview3d {
     this.canvas3d.animate_funcs.push(this.preRender.bind(this));
     this.canvas3d.animate_funcs.push(img.onAnimate.bind(img));
     this.canvas3d.onEnterVRCallback = () => {
-      this.canvas3d.vrControls.pushObjectState(this.image);
+      if (this.canvas3d.vrControls) {
+        this.canvas3d.vrControls.pushObjectState(this.image);
+      }
     };
     this.canvas3d.onLeaveVRCallback = () => {
-      this.canvas3d.vrControls.popObjectState(this.image);
+      if (this.canvas3d.vrControls) {
+        this.canvas3d.vrControls.popObjectState(this.image);
+      }
     };
   };
 
