@@ -13,7 +13,7 @@ let view3D = new AICSview3d(el);
 
 // TODO FIX ME : run this code after we know that the page has rendered, 
 // so that the view3D can get size from el
-view3D.resize(null, 300, 300);
+view3D.resize(null, 600, 600);
 
 // PREPARE SOME TEST DATA TO TRY TO DISPLAY A VOLUME.
 let imgdata = {
@@ -391,7 +391,21 @@ function loadImageData(jsondata, volumedata) {
         });
     }
     showChannelUI(aimg);
-    view3D.resize(null, 300, 300);
+    view3D.resize(null, 600, 600);
+}
+
+function fetchImage(url) {
+    fetch(url)
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(myJson) {
+        // prefix all the names in myJson.images
+        // myJson.images.forEach(function(element) {
+        //     element.name = dataset.prefixdir + element.name;
+        // });        
+        loadImageData(myJson);
+    });    
 }
 
 var xbtn = document.getElementById("X");
@@ -423,5 +437,6 @@ if (view3D.canvas3d.hasWebGL2) {
 
 setupGui();
 // switch the uncommented line to test with volume data or atlas data
-loadImageData(imgdata);
+//loadImageData(imgdata);
 //loadImageData(imgdata, channelVolumes);
+fetchImage("AICS-12_881_atlas.json");
