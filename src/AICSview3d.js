@@ -45,7 +45,9 @@ export class AICSview3d {
   unsetImage() {
     if (this.image) {
       this.canvas3d.removeControlHandlers();
-      this.canvas3d.onLeaveVR();
+      if (this.canvas3d.isVR()) {
+        this.canvas3d.onLeaveVR();
+      }
       this.canvas3d.onEnterVRCallback = null;
       this.canvas3d.onLeaveVRCallback = null;
       this.canvas3d.animate_funcs = [];

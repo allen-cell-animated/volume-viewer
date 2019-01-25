@@ -198,9 +198,9 @@ export class AICSthreeJsPanel {
     console.log("LEFT VR");
     if (this.vrControls) {
       this.vrControls.onLeaveVR();
-    }
-    if (this.onLeaveVRCallback) {
-      this.onLeaveVRCallback();
+      if (this.onLeaveVRCallback) {
+        this.onLeaveVRCallback();
+      }
     }
     this.renderer.vr.enabled = false;
   }
