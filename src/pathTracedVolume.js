@@ -401,10 +401,7 @@ export default class PathTracedVolume {
 
     // TODO brightness and exposure should be the same thing?
     setBrightness(brightness) {
-      // convert to an exposure value
-      //brightness = brightness*  20/1000;
-      //brightness = 1.0 / brightness;
-      //brightness = brightness - 0.2;
+        // convert to an exposure value
         if (brightness === 1.0) {
              brightness = 0.999;
         }

@@ -10,7 +10,6 @@ export class AICSview3d {
    */
   constructor(parentElement) {
     this.canvas3d = new AICSthreeJsPanel(parentElement, true);
-    //this.canvas3d = new AICSthreeJsPanel(parentElement);
     this.redraw = this.redraw.bind(this);
     this.scene = null;
     this.backgroundColor = 0x000000;
@@ -31,7 +30,6 @@ export class AICSview3d {
     // keep the ortho scale up to date.
     if (this.image && this.canvas3d.camera.isOrthographicCamera) {
       this.image.setOrthoScale(this.canvas3d.controls.scale);
-      //this.image.setUniformNoRerender('orthoScale', this.canvas3d.controls.scale);
     }
   };
 

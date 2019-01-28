@@ -101,12 +101,6 @@ export default class RayMarchedAtlasVolume {
         this.cubeMesh.scale.copy(new THREE.Vector3(scale.x,
           scale.y,
           scale.z));
-
-        // duplicated in doRender ?
-        //this.cubeMesh.updateMatrixWorld(true);
-        //var mi = new THREE.Matrix4();
-        //mi.getInverse(this.cubeMesh.matrixWorld);
-        //this.setUniform('inverseModelViewMatrix', mi, true, true);
     }
 
     setOrthoScale(value) {

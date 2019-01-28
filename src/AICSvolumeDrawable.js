@@ -72,15 +72,6 @@ function AICSvolumeDrawable(imageInfo, requestPathTrace) {
   this.maxSteps = 256;
 
   this.setScale(this.volume.scale);
-
-  // // create one intensity lut per channel
-  // this.lut = new Array(this.volume.num_channels);
-  // for (let i = 0; i < this.volume.num_channels; ++i) {
-  //   this.lut[i] = new Uint8Array(256);
-  //   for (let j = 0; j < 256; ++j) {
-  //     this.lut[i][j] = j;
-  //   }
-  // }
 }
 
 /**
@@ -123,14 +114,6 @@ AICSvolumeDrawable.prototype.setScale = function(scale) {
   this.meshVolume.setScale(scale);
   this.volumeRendering.setScale(scale);
 };
-
-//AICSvolumeDrawable.prototype.setUniform = function(name, value) {
-//  this.rayMarchedAtlasVolume.setUniform(name, value);
-//};
-
-//AICSvolumeDrawable.prototype.setUniformNoRerender = function(name, value) {
-//  this.rayMarchedAtlasVolume.setUniform(name, value);
-//};
 
 AICSvolumeDrawable.prototype.setOrthoScale = function(value) {
   this.volumeRendering.setOrthoScale(value);
@@ -237,9 +220,6 @@ AICSvolumeDrawable.prototype.fuse = function() {
   if (!this.volume) {
     return;
   }
-  //if (!this.volume.loaded) {
-  //	return;
-  //}
 
   if (this.PT) {
     this.pathTracedVolume.updateActiveChannels(this);
@@ -305,8 +285,6 @@ AICSvolumeDrawable.prototype.getChannel = function(channelIndex) {
 AICSvolumeDrawable.prototype.onChannelLoaded = function(batch) {
   this.volumeRendering.onChannelData(batch);
   this.meshVolume.onChannelData(batch);
-
-  //this.fuse();
 
   // let the outside world have a chance
   if (this.onChannelDataReadyCallback) {
