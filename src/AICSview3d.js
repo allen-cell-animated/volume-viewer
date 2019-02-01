@@ -202,6 +202,10 @@ export class AICSview3d {
     }
   };
 
+  /**
+   * Set the volume scattering density
+   * @param {number} density 0..100 UI slider value
+   */
   updateDensity(density) {
     if (this.image) {
       this.image.setDensity(density/100.0);
@@ -218,30 +222,49 @@ export class AICSview3d {
 
   }
 
+  /**
+   * Notify the view that the set of active volume channels has been modified.
+   */
   updateActiveChannels() {
     if (this.image) {
       this.image.fuse();
     }
   }
 
+  /**
+   * Notify the view that transfer function lookup table data has been modified.
+   */
   updateLuts() {
     if (this.image) {
       this.image.updateLuts();
     }
   }
 
+  /**
+   * Notify the view that color and appearance settings have been modified.
+   */
   updateMaterial() {
     if (this.image) {
       this.image.updateMaterial();
     }
   }
   
+  /**
+   * Increase or decrease the overall brightness of the rendered image
+   * @param {number} e 0..1
+   */
   updateExposure(e) {
     if (this.image) {
       this.image.setBrightness(e);
     }
   }
 
+  /**
+   * Set camera focus properties.
+   * @param {number} fov Vertical field of view in degrees 
+   * @param {number} focalDistance view-space units for center of focus 
+   * @param {number} apertureSize view-space units for radius of camera aperture
+   */
   updateCamera(fov, focalDistance, apertureSize) {
     const cam = this.canvas3d.perspectiveCamera;
     cam.fov = fov;
@@ -253,24 +276,45 @@ export class AICSview3d {
     }
   }
 
+  /**
+   * Set clipping range (between 0 and 1) for the current volume.
+   * @param {number} xmin 0..1, should be less than xmax
+   * @param {number} xmax 0..1, should be greater than xmin 
+   * @param {number} ymin 0..1, should be less than ymax
+   * @param {number} ymax 0..1, should be greater than ymin 
+   * @param {number} zmin 0..1, should be less than zmax
+   * @param {number} zmax 0..1, should be greater than zmin 
+   */
   updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
     if (this.image) {
       this.image.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
     }
   }
 
+  /**
+   * Update lights
+   * @param {Array} state array of Lights
+   */
   updateLights(state) {
     if (this.image) {
       this.image.updateLights(state);
     }
   }
 
+  /**
+   * Set a sampling rate to trade performance for quality.
+   * @param {number} value (+epsilon..1) 1 is max quality, ~0.1 for lowest quality and highest speed
+   */
   updatePixelSamplingRate(value) {
     if (this.image) {
       this.image.setPixelSamplingRate(value);
     }
   }
 
+  /**
+   * Switch between single pass ray-marched volume rendering and progressive path traced rendering.
+   * @param {boolean} isPT true for progressive path trace, false for single pass ray march
+   */
   setPathTrace(isPT) {
     if (this.image) {
       if (isPT && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {

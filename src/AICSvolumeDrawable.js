@@ -126,9 +126,9 @@ AICSvolumeDrawable.prototype.setResolution = function(viewObj) {
   this.meshVolume.setResolution(x, y);
 };
 
-// TODO handle this differently in 3D mode vs 2D mode?
 /**
- * Set clipping range (between 0 and 1) for a given axis.
+ * Set clipping range (between 0 and 1) for a given axis. 
+ * Calling this allows the rendering to compensate for changes in thickness in orthographic views that affect how bright the volume is.
  * @param {number} axis 0, 1, or 2 for x, y, or z axis
  * @param {number} minval 0..1, should be less than maxval
  * @param {number} maxval 0..1, should be greater than minval 
@@ -489,6 +489,15 @@ AICSvolumeDrawable.prototype.onCameraChanged = function(fov, focalDistance, aper
   this.PT && this.pathTracedVolume.updateCamera(fov, focalDistance, apertureSize);
 };
 
+/**
+ * Set clipping range (between 0 and 1) for the entire volume.
+ * @param {number} xmin 0..1, should be less than xmax
+ * @param {number} xmax 0..1, should be greater than xmin 
+ * @param {number} ymin 0..1, should be less than ymax
+ * @param {number} ymax 0..1, should be greater than ymin 
+ * @param {number} zmin 0..1, should be less than zmax
+ * @param {number} zmax 0..1, should be greater than zmin 
+ */
 AICSvolumeDrawable.prototype.updateClipRegion = function(xmin, xmax, ymin, ymax, zmin, zmax) {
   this.volumeRendering.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
 };
