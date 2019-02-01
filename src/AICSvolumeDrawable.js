@@ -490,7 +490,7 @@ AICSvolumeDrawable.prototype.onCameraChanged = function(fov, focalDistance, aper
 };
 
 AICSvolumeDrawable.prototype.updateClipRegion = function(xmin, xmax, ymin, ymax, zmin, zmax) {
-  this.PT && this.pathTracedVolume.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
+  this.volumeRendering.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
 };
 
 AICSvolumeDrawable.prototype.updateLights = function(state) {

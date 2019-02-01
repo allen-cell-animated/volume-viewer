@@ -151,6 +151,16 @@ export default class RayMarchedAtlasVolume {
         this.setUniform('AABB_CLIP_MAX', this.bounds.bmax);
     }
 
+    // 0..1
+    updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
+        this.bounds = {
+            bmin: new THREE.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
+            bmax: new THREE.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5)
+        };
+        this.setUniform('AABB_CLIP_MIN', this.bounds.bmin);
+        this.setUniform('AABB_CLIP_MAX', this.bounds.bmax);
+    }
+
     setChannelAsMask(channelIndex) {
         if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
           return false;
