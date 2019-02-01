@@ -9,13 +9,10 @@ export class AICSview3d {
    * @param {HTMLElement} parentElement the 3d display will try to fill the parent element.
    */
   constructor(parentElement) {
-    this.canvas3d = new AICSthreeJsPanel(parentElement);
+    this.canvas3d = new AICSthreeJsPanel(parentElement, true);
     this.redraw = this.redraw.bind(this);
     this.scene = null;
     this.backgroundColor = 0x000000;
-
-    // a light source...
-    //this.light = null;
 
     this.loaded = false;
     let that = this;
@@ -25,13 +22,14 @@ export class AICSview3d {
     this.buildScene();
   }
 
+  // prerender should be called on every redraw and should be the first thing done.
   preRender() {
     if (this.scene.getObjectByName('lightContainer')) {
       this.scene.getObjectByName('lightContainer').rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
     }
     // keep the ortho scale up to date.
     if (this.image && this.canvas3d.camera.isOrthographicCamera) {
-      this.image.setUniformNoRerender('orthoScale', this.canvas3d.controls.scale);
+      this.image.setOrthoScale(this.canvas3d.controls.scale);
     }
   };
 
@@ -42,8 +40,9 @@ export class AICSview3d {
     this.canvas3d.rerender();
   };
 
-  destroyImage() {
+  unsetImage() {
     if (this.image) {
+      this.canvas3d.removeControlHandlers();
       if (this.canvas3d.isVR()) {
         this.canvas3d.onLeaveVR();
       }
@@ -51,24 +50,32 @@ export class AICSview3d {
       this.canvas3d.onLeaveVRCallback = null;
       this.canvas3d.animate_funcs = [];
       this.scene.remove(this.image.sceneRoot);
-      this.image.cleanup();
-      this.image = null;
     }
+    return this.image;
   }
 
   /**
-   * Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will destroy any prior existing image.
+   * Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will return any prior existing image.
    * @param {AICSvolumeDrawable} img 
    */
   setImage(img) {
-    this.destroyImage();
+    const oldImage = this.unsetImage();
 
     this.image = img;
-    this.image.redraw = this.redraw.bind(this);
 
     this.scene.add(img.sceneRoot);
 
     this.image.setResolution(this.canvas3d);
+
+    var that = this;
+    this.image.onChannelDataReadyCallback = function() {
+        // ARTIFICIALLY ENABLE ONLY THE FIRST 3 CHANNELS
+        for (let i = 0; i < that.image.num_channels; ++i) {
+          that.image.setVolumeChannelEnabled(i, (i<3));
+        }
+    };
+
+    this.canvas3d.setControlHandlers(this.image);
 
     this.canvas3d.animate_funcs.push(this.preRender.bind(this));
     this.canvas3d.animate_funcs.push(img.onAnimate.bind(img));
@@ -82,6 +89,11 @@ export class AICSview3d {
         this.canvas3d.vrControls.popObjectState(this.image);
       }
     };
+
+    // start draw loop
+    this.canvas3d.rerender();
+
+    return oldImage;
   };
 
   buildScene() {
@@ -139,13 +151,12 @@ export class AICSview3d {
 
   /**
    * Change the camera projection to look along an axis, or to view in a 3d perspective camera.
-   * @param {string} mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X, or "XZ" or "Y".  3D is a perspective view, and all the others are orthographic projections
+   * @param {string} mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X", or "XZ" or "Y".  3D is a perspective view, and all the others are orthographic projections
    */
   setCameraMode(mode) {
     this.canvas3d.switchViewMode(mode);
-    if (this.image && mode === '3D') {
-      // reset ortho thickness when mode changes to 3D.
-      this.image.setOrthoThickness(1.0);
+    if (this.image) {
+      this.image.setIsOrtho(mode !== '3D');
     }
   };
 
@@ -163,6 +174,13 @@ export class AICSview3d {
    */
   setAutoRotate(autorotate) {
     this.canvas3d.setAutoRotate(autorotate);
+
+    if (autorotate) {
+      this.image.onStartControls();
+    }
+    else {
+      this.image.onEndControls();
+    }  
   };
 
   /**
@@ -184,4 +202,130 @@ export class AICSview3d {
     }
   };
 
-}
+  /**
+   * Set the volume scattering density
+   * @param {number} density 0..100 UI slider value
+   */
+  updateDensity(density) {
+    if (this.image) {
+      this.image.setDensity(density/100.0);
+    }
+  };
+
+  updateShadingMethod(isbrdf) {
+    if (this.image) {
+      this.image.updateShadingMethod(isbrdf);
+    }
+  };
+
+  updateShowLights(showlights) {
+
+  }
+
+  /**
+   * Notify the view that the set of active volume channels has been modified.
+   */
+  updateActiveChannels() {
+    if (this.image) {
+      this.image.fuse();
+    }
+  }
+
+  /**
+   * Notify the view that transfer function lookup table data has been modified.
+   */
+  updateLuts() {
+    if (this.image) {
+      this.image.updateLuts();
+    }
+  }
+
+  /**
+   * Notify the view that color and appearance settings have been modified.
+   */
+  updateMaterial() {
+    if (this.image) {
+      this.image.updateMaterial();
+    }
+  }
+  
+  /**
+   * Increase or decrease the overall brightness of the rendered image
+   * @param {number} e 0..1
+   */
+  updateExposure(e) {
+    if (this.image) {
+      this.image.setBrightness(e);
+    }
+  }
+
+  /**
+   * Set camera focus properties.
+   * @param {number} fov Vertical field of view in degrees 
+   * @param {number} focalDistance view-space units for center of focus 
+   * @param {number} apertureSize view-space units for radius of camera aperture
+   */
+  updateCamera(fov, focalDistance, apertureSize) {
+    const cam = this.canvas3d.perspectiveCamera;
+    cam.fov = fov;
+    this.canvas3d.fov = fov;
+    cam.updateProjectionMatrix();
+
+    if (this.image) {
+      this.image.onCameraChanged(fov, focalDistance, apertureSize);
+    }
+  }
+
+  /**
+   * Set clipping range (between 0 and 1) for the current volume.
+   * @param {number} xmin 0..1, should be less than xmax
+   * @param {number} xmax 0..1, should be greater than xmin 
+   * @param {number} ymin 0..1, should be less than ymax
+   * @param {number} ymax 0..1, should be greater than ymin 
+   * @param {number} zmin 0..1, should be less than zmax
+   * @param {number} zmax 0..1, should be greater than zmin 
+   */
+  updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
+    if (this.image) {
+      this.image.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
+    }
+  }
+
+  /**
+   * Update lights
+   * @param {Array} state array of Lights
+   */
+  updateLights(state) {
+    if (this.image) {
+      this.image.updateLights(state);
+    }
+  }
+
+  /**
+   * Set a sampling rate to trade performance for quality.
+   * @param {number} value (+epsilon..1) 1 is max quality, ~0.1 for lowest quality and highest speed
+   */
+  updatePixelSamplingRate(value) {
+    if (this.image) {
+      this.image.setPixelSamplingRate(value);
+    }
+  }
+
+  /**
+   * Switch between single pass ray-marched volume rendering and progressive path traced rendering.
+   * @param {boolean} isPT true for progressive path trace, false for single pass ray march
+   */
+  setPathTrace(isPT) {
+    if (this.image) {
+      if (isPT && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
+        this.image.setVolumeRendering(isPT);
+      }
+      else {
+        this.image.setVolumeRendering(false);
+      }
+      this.image.setResolution(this.canvas3d);  
+      this.setAutoRotate(this.canvas3d.controls.autoRotate);
+    }
+  }
+};
+

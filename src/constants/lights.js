@@ -10,7 +10,6 @@ const spotlightSettings = Object.freeze({
     }
 });
 
-
 const ambientLightSettings = Object.freeze({
     color: 0xffffff,
     intensity: 0.6

@@ -8,7 +8,7 @@ const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
 const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 
 export class AICSthreeJsPanel {
-  constructor(parentElement) {
+  constructor(parentElement, useWebGL2) {
     this.containerdiv = document.createElement('div');
     this.containerdiv.setAttribute('id', 'volumeViewerContainerDiv');
     this.containerdiv.style.position = 'relative';
@@ -17,6 +17,8 @@ export class AICSthreeJsPanel {
     this.canvas.setAttribute('id', 'volumeViewerCanvas');
     this.canvas.height=parentElement.offsetHeight;
     this.canvas.width=parentElement.offsetWidth;
+    
+    this.canvas.style.backgroundColor = "black";
 
     this.containerdiv.appendChild(this.canvas);
     parentElement.appendChild(this.containerdiv);
@@ -27,18 +29,40 @@ export class AICSthreeJsPanel {
     this.animate_funcs = [];
     this.onEnterVRCallback = null;
     this.onLeaveVRCallback = null;
-    this.mousedown = false;
     this.needs_render = true;
 
-    this.renderer = new THREE.WebGLRenderer({
-      canvas: this.canvas,
-      preserveDrawingBuffer : true,
-      alpha: true,
-      premultipliedAlpha: false,
-      sortObjects: true
-    });
-    this.renderer.setPixelRatio( window.devicePixelRatio );
-    this.renderer.state.setBlending(THREE.NormalBlending);
+    this.hasWebGL2 = false;
+    if (useWebGL2) {
+      let context = this.canvas.getContext( 'webgl2' );
+      if (context) {
+        this.hasWebGL2 = true;
+        this.renderer = new THREE.WebGLRenderer({
+          context: context,
+          canvas: this.canvas,
+          preserveDrawingBuffer : true,
+          alpha: true,
+          premultipliedAlpha: false,
+          sortObjects: true
+        });
+        //this.renderer.autoClear = false;
+        // set pixel ratio to 0.25 or 0.5 to render at lower res.
+        this.renderer.setPixelRatio( window.devicePixelRatio );
+        this.renderer.state.setBlending(THREE.NormalBlending);
+        //required by WebGL 2.0 for rendering to FLOAT textures
+        this.renderer.context.getExtension('EXT_color_buffer_float');  
+      }
+    }
+    if (!this.hasWebGL2) {
+      this.renderer = new THREE.WebGLRenderer({
+        canvas: this.canvas,
+        preserveDrawingBuffer : true,
+        alpha: true,
+        premultipliedAlpha: false,
+        sortObjects: true
+      });
+      this.renderer.setPixelRatio( window.devicePixelRatio );
+      this.renderer.state.setBlending(THREE.NormalBlending);
+    }
 
     this.clock = new THREE.Clock();
 
@@ -144,6 +168,8 @@ export class AICSthreeJsPanel {
         }
         else {
           that.onLeaveVR();
+          that.resetPerspectiveCamera();
+
         }
       } );
   
@@ -177,7 +203,6 @@ export class AICSthreeJsPanel {
       }
     }
     this.renderer.vr.enabled = false;
-    this.resetPerspectiveCamera();
   }
 
   resetPerspectiveCamera() {
@@ -251,8 +276,24 @@ export class AICSthreeJsPanel {
     }
     // disable the old, install the new.
     this.controls.enabled = false;
+
+    // detach old control change handlers
+    this.removeControlHandlers();
+
     this.controls = newControls;
     this.controls.enabled = true;
+
+    // re-install existing control change handlers on new controls
+    if (this.controlStartHandler) {
+      this.controls.addEventListener('start', this.controlStartHandler);  
+    }
+    if (this.controlChangeHandler) {
+      this.controls.addEventListener('change', this.controlChangeHandler);
+    }
+    if (this.controlEndHandler) {
+      this.controls.addEventListener('end', this.controlEndHandler);    
+    }
+
     this.controls.update();
   }
 
@@ -290,6 +331,9 @@ export class AICSthreeJsPanel {
   }
 
   resize(comp, w, h, ow, oh, eOpts) {
+
+    this.w = w;
+    this.h = h;
     this.containerdiv.style.width = '' + w + 'px';
     this.containerdiv.style.height = '' + h + 'px';
 
@@ -321,8 +365,6 @@ export class AICSthreeJsPanel {
     this.orthoControlsZ.handleResize();
     this.orthoControlsY.handleResize();
     this.orthoControlsX.handleResize();
-
-    this.mousedown = false;
   }
 
   setClearColor(color, alpha) {
@@ -339,6 +381,7 @@ export class AICSthreeJsPanel {
 
   render() {
     this.renderer.render(this.scene, this.camera);
+    // overlay
     if (this.showAxis) {
       this.renderer.autoClear = false;
       this.renderer.render(this.axisHelperScene, this.axisCamera);
@@ -346,7 +389,7 @@ export class AICSthreeJsPanel {
     }
   }
 
-  doAnimate() {
+  onAnimationLoop() {
     //var me = this;
     var delta = this.clock.getDelta();
     //console.log("DT="+delta);
@@ -358,9 +401,7 @@ export class AICSthreeJsPanel {
       this.controls.update(delta);
     }
 
-    if(this.onAnimate) {
-      this.onAnimate();
-    }
+    // do whatever we have to do before the main render of this.scene
     for(var i = 0; i < this.animate_funcs.length; i++) {
       if(this.animate_funcs[i]) {
         this.animate_funcs[i](this);
@@ -379,10 +420,40 @@ export class AICSthreeJsPanel {
 
   rerender() {
     this.needs_render = true;
-    this.renderer.setAnimationLoop(this.doAnimate.bind(this));
+    this.renderer.setAnimationLoop(this.onAnimationLoop.bind(this));
   }
 
   stoprender() {
     this.renderer.setAnimationLoop(null);
   }
+
+  removeControlHandlers() {
+    if (this.controlStartHandler) {
+      this.controls.removeEventListener('start', this.controlStartHandler);
+    }
+    if (this.controlChangeHandler) {
+        this.controls.removeEventListener('change', this.controlChangeHandler);
+    }
+    if (this.controlEndHandler) {
+        this.controls.removeEventListener('end', this.controlEndHandler);
+    }
+  }
+
+  setControlHandlers(image) {
+    this.removeControlHandlers();
+
+    if (image.onStartControls) {
+      this.controlStartHandler = image.onStartControls.bind(image);
+      this.controls.addEventListener('start', this.controlStartHandler);  
+    }
+    if (image.onChangeControls) {
+      this.controlChangeHandler = image.onChangeControls.bind(image);
+      this.controls.addEventListener('change', this.controlChangeHandler);
+    }
+    if (image.onEndControls) {
+      this.controlEndHandler = image.onEndControls.bind(image);
+      this.controls.addEventListener('end', this.controlEndHandler);    
+    }
+  }
+
 }
