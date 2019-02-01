@@ -122,21 +122,23 @@ export default class MeshVolume {
           return;
         }
       
-        // find the current isosurface opacity.
+        // find the current isosurface opacity and color.
         let opacity = 1;
+        let color = new THREE.Color();
         if (this.meshrep[channel].material) {
           opacity = this.meshrep[channel].material.opacity;
+          color = this.meshrep[channel].material.color;
         }
         else {
           this.meshrep[channel].traverse(function(child) {
             if (child instanceof THREE.Mesh) {
               opacity = child.material.opacity;
+              color = child.material.color;
             }
           });
         }
         this.destroyIsosurface(channel);
-// TODO get color in there
-        this.meshrep[channel] = this.createMeshForChannel(channel, value, opacity, false);
+        this.meshrep[channel] = this.createMeshForChannel(channel, color.toArray(), value, opacity, false);
       
         this.meshRoot.add(this.meshrep[channel]);
     }
@@ -171,7 +173,7 @@ export default class MeshVolume {
         return (!!this.meshrep[channel]);
     }
 
-    createIsosurface(channel, value, alpha, transp) {
+    createIsosurface(channel, color, value, alpha, transp) {
         if (!this.meshrep[channel]) {
           if (alpha === undefined) {
             alpha = 1.0;
@@ -179,7 +181,7 @@ export default class MeshVolume {
           if (transp === undefined) {
             transp = (alpha < 0.9);
           }
-          this.meshrep[channel] = this.createMeshForChannel(channel, value, alpha, transp);
+          this.meshrep[channel] = this.createMeshForChannel(channel, color, value, alpha, transp);
           this.meshRoot.add(this.meshrep[channel]);
         }
     }

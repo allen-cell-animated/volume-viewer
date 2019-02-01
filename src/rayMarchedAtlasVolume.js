@@ -122,15 +122,30 @@ export default class RayMarchedAtlasVolume {
     setBrightness(brightness) {
         this.setUniform("BRIGHTNESS", brightness + 1.0);
     }
-      
+    
+    setIsOrtho(isOrthoAxis) {
+        this.setUniform('isOrtho', isOrthoAxis ? 1.0 : 0.0);
+    }
+
+    setGamma(gmin, glevel, gmax) {
+        this.setUniform('GAMMA_MIN', gmin);
+        this.setUniform('GAMMA_MAX', gmax);
+        this.setUniform('GAMMA_SCALE', glevel);
+    }
+
+    setMaxProjectMode(isMaxProject) {
+        this.setUniform('maxProject', isMaxProject ? 1 : 0);
+    }
+
     setAxisClip(axis, minval, maxval, isOrthoAxis) {
         this.bounds.bmax[axis] = maxval;
         this.bounds.bmin[axis] = minval;
 
         if (isOrthoAxis) {
           const thicknessPct = maxval - minval;
-          this.setUniform('orthoThickness', thicknessPct);
+          this.setOrthoThickness(thicknessPct);
         }
+        // else don't set? use previous value?
       
         this.setUniform('AABB_CLIP_MIN', this.bounds.bmin);
         this.setUniform('AABB_CLIP_MAX', this.bounds.bmax);

@@ -181,7 +181,7 @@ export default class PathTracedVolume {
               'void main()',
               '{',
                 'vec4 pixelColor = texture(tTexture0, vUv);',
-                // TODO TONE MAP!!!!!!
+
                 'pixelColor.rgb = XYZtoRGB(pixelColor.rgb);',
       
                 //'pixelColor.rgb = pow(pixelColor.rgb, vec3(1.0/2.2));',
@@ -399,7 +399,7 @@ export default class PathTracedVolume {
         this.sampleCounter = 0;
     }
 
-    // TODO brightness and exposure should be the same thing?
+    // TODO brightness and exposure should be the same thing? or gamma?
     setBrightness(brightness) {
         // convert to an exposure value
         if (brightness === 1.0) {

@@ -151,13 +151,12 @@ export class AICSview3d {
 
   /**
    * Change the camera projection to look along an axis, or to view in a 3d perspective camera.
-   * @param {string} mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X, or "XZ" or "Y".  3D is a perspective view, and all the others are orthographic projections
+   * @param {string} mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X", or "XZ" or "Y".  3D is a perspective view, and all the others are orthographic projections
    */
   setCameraMode(mode) {
     this.canvas3d.switchViewMode(mode);
-    if (this.image && mode === '3D') {
-      // reset ortho thickness when mode changes to 3D.
-      this.image.setOrthoThickness(1.0);
+    if (this.image) {
+      this.image.setIsOrtho(mode !== '3D');
     }
   };
 

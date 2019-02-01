@@ -137,14 +137,36 @@ AICSvolumeDrawable.prototype.setResolution = function(viewObj) {
 AICSvolumeDrawable.prototype.setAxisClip = function(axis, minval, maxval, isOrthoAxis) {
   this.bounds.bmax[axis] = maxval;
   this.bounds.bmin[axis] = minval;
-
+ 
   !this.PT && this.meshVolume.setAxisClip(axis, minval, maxval, isOrthoAxis);
   this.volumeRendering.setAxisClip(axis, minval, maxval, isOrthoAxis);
+};
+
+/**
+ * Tell this image that it needs to be drawn in an orthographic mode
+ * @param {boolean} isOrtho is this an orthographic projection or a perspective view
+ */
+AICSvolumeDrawable.prototype.setIsOrtho = function(isOrtho) {
+  !this.PT && this.rayMarchedAtlasVolume.setIsOrtho(isOrtho);
 };
 
 AICSvolumeDrawable.prototype.setOrthoThickness = function(value) {
   !this.PT && this.meshVolume.setOrthoThickness(value);
   this.volumeRendering.setOrthoThickness(value);
+};
+
+/**
+ * Set parameters for gamma curve for volume rendering.
+ * @param {number} gmin 0..1
+ * @param {number} glevel 0..1, should be <= gmax and >= gmin
+ * @param {number} gmax 0..1, should be > gmin and >= glevel
+ */
+AICSvolumeDrawable.prototype.setGamma = function(gmin, glevel, gmax) {
+  !this.PT && this.rayMarchedAtlasVolume.setGamma(gmin, glevel, gmax);
+};
+
+AICSvolumeDrawable.prototype.setMaxProjectMode = function(isMaxProject) {
+  !this.PT && this.rayMarchedAtlasVolume.setMaxProjectMode(isMaxProject);
 };
 
 AICSvolumeDrawable.prototype.onAnimate = function(canvas) {
@@ -165,8 +187,6 @@ AICSvolumeDrawable.prototype.onAnimate = function(canvas) {
   // TODO confirm sequence
   this.volumeRendering.doRender(canvas);
   !this.PT && this.meshVolume.doRender(canvas);
-
-
 };
 
 /**
@@ -213,7 +233,15 @@ AICSvolumeDrawable.prototype.hasIsosurface = function(channel) {
  * @param {boolean=} transp render surface as transparent object
  */
 AICSvolumeDrawable.prototype.createIsosurface = function(channel, value, alpha, transp) {
-  this.meshVolume.createIsosurface(channel, value, alpha, transp);
+  this.meshVolume.createIsosurface(channel, this.channel_colors[channel], value, alpha, transp);
+};
+
+/**
+ * If an isosurface exists for this channel, destroy it now. Don't just hide it - assume we can free up some resources.
+ * @param {number} channel 
+ */
+AICSvolumeDrawable.prototype.destroyIsosurface = function(channel) {
+  this.meshVolume.destroyIsosurface(channel);
 };
 
 AICSvolumeDrawable.prototype.fuse = function() {
@@ -240,30 +268,8 @@ AICSvolumeDrawable.prototype.updateLuts = function() {
 };
 
 AICSvolumeDrawable.prototype.setVoxelSize = function(values) {
-  // basic error check.  bail out if we get something bad.
-  if (!values.length || values.length < 3) {
-    return;
-  }
-
-  // only set the data if it is > 0.  zero is not an allowed value.
-  if (values[0] > 0) {
-    this.pixel_size[0] = values[0];
-  }
-  if (values[1] > 0) {
-    this.pixel_size[1] = values[1];
-  }
-  if (values[2] > 0) {
-    this.pixel_size[2] = values[2];
-  }
-
-  var physSizeMin = Math.min(this.pixel_size[0], Math.min(this.pixel_size[1], this.pixel_size[2]));
-  var pixelsMax = Math.max(this.imageInfo.width, Math.max(this.imageInfo.height,this.z));
-  var sx = this.pixel_size[0]/physSizeMin * this.imageInfo.width/pixelsMax;
-  var sy = this.pixel_size[1]/physSizeMin * this.imageInfo.height/pixelsMax;
-  var sz = this.pixel_size[2]/physSizeMin * this.z/pixelsMax;
-
-  this.setScale(new THREE.Vector3(sx,sy,sz));
-
+  this.volume.setVoxelSize(values);
+  this.setScale(this.volume.scale);
 };
 
 AICSvolumeDrawable.prototype.cleanup = function() {
@@ -502,6 +508,7 @@ AICSvolumeDrawable.prototype.setVolumeRendering = function(is_pathtrace) {
   }
 
   // remove old 3d object from scene
+  is_pathtrace && this.sceneRoot.remove(this.meshVolume.get3dObject());
   this.sceneRoot.remove(this.volumeRendering.get3dObject());
 
   // destroy old resources.
@@ -530,6 +537,7 @@ AICSvolumeDrawable.prototype.setVolumeRendering = function(is_pathtrace) {
   this.setDensity(this.getDensity());
 
   // add new 3d object to scene
+  !this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());
   this.sceneRoot.add(this.volumeRendering.get3dObject());
 
   this.fuse();
