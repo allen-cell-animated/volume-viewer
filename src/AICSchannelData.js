@@ -1,4 +1,4 @@
-import MyWorker from './AICSfuseWorker';
+import FuseWorker from './FuseWorker';
 
 // This is the owner of the fused RGBA volume texture atlas, and the mask texture atlas.
 // This module is responsible for updating the fused texture, given the read-only volume channel data.
@@ -95,7 +95,7 @@ AICSchannelData.prototype.setupWorkers = function() {
 
   this.workers = [];
   for (var index = 0; index < this.workersCount; index++) {
-    var worker = new MyWorker();
+    var worker = new FuseWorker();
     worker.onmessage = onWorkEnded;
     worker.onerror = function(e) {
       alert('Error: Line ' + e.lineno + ' in ' + e.filename + ': ' + e.message);
