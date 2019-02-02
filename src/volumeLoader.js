@@ -1,7 +1,7 @@
 /**
  * @class
  */
-const AICSvolumeLoader = {};
+const VolumeLoader = {};
 
 /**
  * @callback PerChannelCallback
@@ -30,7 +30,7 @@ const AICSvolumeLoader = {};
  *     "channels": [6, 7, 8]
  * }], mycallback);
  */
-AICSvolumeLoader.loadVolumeAtlasData = function (imageArray, callback) {
+VolumeLoader.loadVolumeAtlasData = function (imageArray, callback) {
     var numImages = imageArray.length;
 
     var requests = {};
@@ -90,4 +90,4 @@ AICSvolumeLoader.loadVolumeAtlasData = function (imageArray, callback) {
     return requests;
 };
 
-export default AICSvolumeLoader;
+export default VolumeLoader;

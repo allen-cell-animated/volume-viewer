@@ -8,7 +8,7 @@ The volume-viewer package exposes two key modules:
 * ```VolumeDrawable``` is the class that holds the volume data and information about how to present it.
 
 It also provides the following two utility modules:
-* ```AICSvolumeLoader``` is a convenience class for downloading and unpacking texture atlases into a VolumeDrawable.
+* ```VolumeLoader``` is a convenience class for downloading and unpacking texture atlases into a VolumeDrawable.
 * ```VolumeMaker``` is a convenience module for creating simple test volume data
 
 There are two ways to deliver volume data to the viewer:
@@ -20,7 +20,7 @@ There are two ways to deliver volume data to the viewer:
 
 See public/index.js for a working example.  (```npm install; npm run dev``` will run that code) The basic code to get the volume viewer up and running is as follows:
 ```javascript
-import {View3d, VolumeDrawable, AICSvolumeLoader, VolumeMaker} from 'volume-viewer';
+import {View3d, VolumeDrawable, VolumeLoader, VolumeMaker} from 'volume-viewer';
 
 // find a div that will hold the viewer
 const el = document.getElementById("volume-viewer");

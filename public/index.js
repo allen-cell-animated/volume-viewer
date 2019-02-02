@@ -2,7 +2,7 @@ import {
     View3d,
     VolumeDrawable,
     VolumeMaker,
-    AICSvolumeLoader,
+    VolumeLoader,
     Light,
     AREA_LIGHT,
     SKY_LIGHT
@@ -381,7 +381,7 @@ function loadImageData(jsondata, volumedata) {
         }
     }
     else {
-        AICSvolumeLoader.loadVolumeAtlasData(jsondata.images, (url, channelIndex, atlasdata, atlaswidth, atlasheight) => {
+        VolumeLoader.loadVolumeAtlasData(jsondata.images, (url, channelIndex, atlasdata, atlaswidth, atlasheight) => {
             aimg.setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight);
             aimg.volume.channels[channelIndex].lutGenerator_auto2();
             if (aimg.volume.loaded) {
