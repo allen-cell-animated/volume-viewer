@@ -1,6 +1,6 @@
 const THREE = require("three");
 
-import AICSchannel from './AICSchannel.js';
+import Channel from './Channel.js';
 
 import { getColorByChannelIndex } from './constants/colors.js';
 
@@ -88,7 +88,7 @@ function Volume(imageInfo) {
 
   this.channels = [];
   for (var i = 0; i < this.num_channels; ++i) {
-    this.channels.push(new AICSchannel(this.channel_names[i]));
+    this.channels.push(new Channel(this.channel_names[i]));
   }
 
   this.setVoxelSize(this.pixel_size);
@@ -199,7 +199,7 @@ Volume.prototype.appendEmptyChannel = function(name, color) {
   this.channel_names.push(chname);
   this.channel_colors_default.push(chcolor);
 
-  this.channels.push(new AICSchannel(chname));
+  this.channels.push(new Channel(chname));
 
   return idx;
 };

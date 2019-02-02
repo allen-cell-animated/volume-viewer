@@ -42,18 +42,18 @@ function Histogram(data) {
 }
 
 // Data and processing for a single channel
-function AICSchannel(name) {
+function Channel(name) {
   this.loaded = false;
   this.imgData = null;
   this.name = name;
 }
 
-AICSchannel.prototype.getIntensity = function(x,y,z) {
+Channel.prototype.getIntensity = function(x,y,z) {
   return this.volumeData[x + y*(this.dims[0]) + z*(this.dims[0]*this.dims[1])];
 };
 
 // how to index into tiled texture atlas
-AICSchannel.prototype.getIntensityFromAtlas = function(x,y,z) {
+Channel.prototype.getIntensityFromAtlas = function(x,y,z) {
   const num_xtiles = this.imgData.width / this.dims[0];
   const tilex = z % num_xtiles;
   const tiley = Math.floor(z / num_xtiles);
@@ -63,7 +63,7 @@ AICSchannel.prototype.getIntensityFromAtlas = function(x,y,z) {
 
 // give the channel fresh data and initialize from that data
 // data is formatted as a texture atlas where each tile is a z slice of the volume
-AICSchannel.prototype.setBits = function(bitsArray, w, h) {
+Channel.prototype.setBits = function(bitsArray, w, h) {
   this.imgData = {data:bitsArray, width:w, height:h};
   this.loaded = true;
   this.histogram = new Histogram(bitsArray);
@@ -77,7 +77,7 @@ AICSchannel.prototype.setBits = function(bitsArray, w, h) {
 // it is assumed to be coming in as a flat Uint8Array of size x*y*z 
 // with x*y*z layout (first row of first plane is the first data in the layout, 
 // then second row of first plane, etc)
-AICSchannel.prototype.unpackVolumeFromAtlas = function(x, y, z)
+Channel.prototype.unpackVolumeFromAtlas = function(x, y, z)
 {
   var volimgdata = this.imgData.data;
 
@@ -104,7 +104,7 @@ AICSchannel.prototype.unpackVolumeFromAtlas = function(x, y, z)
 
 
 // give the channel fresh volume data and initialize from that data
-AICSchannel.prototype.setFromVolumeData = function(bitsArray, vx, vy, vz, ax, ay) {
+Channel.prototype.setFromVolumeData = function(bitsArray, vx, vy, vz, ax, ay) {
   this.dims = [vx, vy, vz];
   this.volumeData = bitsArray;
   this.packToAtlas(vx, vy, vz, ax, ay);
@@ -118,7 +118,7 @@ AICSchannel.prototype.setFromVolumeData = function(bitsArray, vx, vy, vz, ax, ay
 
 
 // given this.volumeData, let's unpack it into a flat textureatlas and fill up this.imgData.
-AICSchannel.prototype.packToAtlas = function(vx, vy, vz, ax, ay)
+Channel.prototype.packToAtlas = function(vx, vy, vz, ax, ay)
 {
   // big assumptions:
   // atlassize is a perfect multiple of volumesize in both x and y
@@ -166,7 +166,7 @@ AICSchannel.prototype.packToAtlas = function(vx, vy, vz, ax, ay)
 
 };
 
-AICSchannel.prototype.setLut = function(lut, controlPoints) {
+Channel.prototype.setLut = function(lut, controlPoints) {
   if (!this.loaded) {
     return;
   }
@@ -176,7 +176,7 @@ AICSchannel.prototype.setLut = function(lut, controlPoints) {
   }
 };
 
-AICSchannel.prototype.lutGenerator_windowLevel = function(wnd, lvl) {
+Channel.prototype.lutGenerator_windowLevel = function(wnd, lvl) {
   if (!this.loaded) {
     return;
   }
@@ -206,7 +206,7 @@ AICSchannel.prototype.lutGenerator_windowLevel = function(wnd, lvl) {
   ];
 };
 
-AICSchannel.prototype.lutGenerator_fullRange = function() {
+Channel.prototype.lutGenerator_fullRange = function() {
   if (!this.loaded) {
     return;
   }
@@ -228,7 +228,7 @@ AICSchannel.prototype.lutGenerator_fullRange = function() {
   ];
 };
 
-AICSchannel.prototype.lutGenerator_dataRange = function() {
+Channel.prototype.lutGenerator_dataRange = function() {
   if (!this.loaded) {
     return;
   }
@@ -258,7 +258,7 @@ AICSchannel.prototype.lutGenerator_dataRange = function() {
   ];
 };
 
-AICSchannel.prototype.lutGenerator_bestFit = function() {
+Channel.prototype.lutGenerator_bestFit = function() {
   if (!this.loaded) {
     return;
   }
@@ -311,7 +311,7 @@ AICSchannel.prototype.lutGenerator_bestFit = function() {
 };
 
 // attempt to redo imagej's Auto
-AICSchannel.prototype.lutGenerator_auto2 = function() {
+Channel.prototype.lutGenerator_auto2 = function() {
   if (!this.loaded) {
     return;
   }
@@ -362,7 +362,7 @@ AICSchannel.prototype.lutGenerator_auto2 = function() {
 
 };
 
-AICSchannel.prototype.lutGenerator_auto = function() {
+Channel.prototype.lutGenerator_auto = function() {
   if (!this.loaded) {
     return;
   }
@@ -409,7 +409,7 @@ AICSchannel.prototype.lutGenerator_auto = function() {
   ];
 };
 
-AICSchannel.prototype.lutGenerator_equalize = function() {
+Channel.prototype.lutGenerator_equalize = function() {
   if (!this.loaded) {
     return;
   }
@@ -467,4 +467,4 @@ AICSchannel.prototype.lutGenerator_equalize = function() {
   }
 };
 
-export default AICSchannel;
+export default Channel;
