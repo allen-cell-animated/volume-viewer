@@ -2,7 +2,7 @@ import FuseWorker from './FuseWorker';
 
 // This is the owner of the fused RGBA volume texture atlas, and the mask texture atlas.
 // This module is responsible for updating the fused texture, given the read-only volume channel data.
-function AICSchannelData(atlasX, atlasY, redraw) {
+function FusedChannelData(atlasX, atlasY, redraw) {
 
   // function to call when image is ready to redraw
   this.redraw = redraw;
@@ -40,7 +40,7 @@ function AICSchannelData(atlasX, atlasY, redraw) {
   this.setupWorkers();
 };
 
-AICSchannelData.prototype.cleanup = function() {
+FusedChannelData.prototype.cleanup = function() {
   if (this.workers && this.workers.length > 0) {
     for (var i = 0; i < this.workers.length; ++i) {
       this.workers[i].onmessage = null;
@@ -55,7 +55,7 @@ AICSchannelData.prototype.cleanup = function() {
 
 };
 
-AICSchannelData.prototype.setupWorkers = function() {
+FusedChannelData.prototype.setupWorkers = function() {
   if (this.useSingleThread || !window.Worker) {
     this.workersCount = 0;
     return;
@@ -107,7 +107,7 @@ AICSchannelData.prototype.setupWorkers = function() {
 
 // batch is array containing which channels were just loaded
 // channels is the array containing the channel data.
-AICSchannelData.prototype.onChannelLoaded = function(batch, channels) {
+FusedChannelData.prototype.onChannelLoaded = function(batch, channels) {
   if (this.useSingleThread || !window.Worker) {
     return;
   }
@@ -135,11 +135,11 @@ AICSchannelData.prototype.onChannelLoaded = function(batch, channels) {
   }
 };
 
-AICSchannelData.prototype.getHistogram = function(channelIndex) {
+FusedChannelData.prototype.getHistogram = function(channelIndex) {
   return this.channels[channelIndex].imgData ? this.channels[channelIndex].imgData.histogram : [];
 };
 
-AICSchannelData.prototype.fuse = function(combination, fuseMethod, channels) {
+FusedChannelData.prototype.fuse = function(combination, fuseMethod, channels) {
   fuseMethod = fuseMethod || "m";
 
   // we can fuse if we have any loaded channels that are showing. 
@@ -194,7 +194,7 @@ AICSchannelData.prototype.fuse = function(combination, fuseMethod, channels) {
 };
 
 // sum over [{chIndex, rgbColor}]
-AICSchannelData.prototype.singleThreadedFuse = function(combination, channels) {
+FusedChannelData.prototype.singleThreadedFuse = function(combination, channels) {
   //console.log("BEGIN");
 
   // explore some faster ways to fuse here...
@@ -255,7 +255,7 @@ AICSchannelData.prototype.singleThreadedFuse = function(combination, channels) {
 };
 
 // currently only one channel can be selected to participate as a mask
-AICSchannelData.prototype.setChannelAsMask = function(idx, channel) {
+FusedChannelData.prototype.setChannelAsMask = function(idx, channel) {
   if (!channel || !channel.loaded) {
     return false;
   }
@@ -268,4 +268,4 @@ AICSchannelData.prototype.setChannelAsMask = function(idx, channel) {
   return true;
 };
 
-export default AICSchannelData;
+export default FusedChannelData;
