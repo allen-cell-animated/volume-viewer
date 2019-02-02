@@ -4,7 +4,7 @@ import lightSettings from './constants/lights.js';
 /**
  * @class
  */
-export class AICSview3d {
+export class View3d {
   /**
    * @param {HTMLElement} parentElement the 3d display will try to fill the parent element.
    */
@@ -184,7 +184,7 @@ export class AICSview3d {
   };
 
   /**
-   * Notify the view that it has been resized.  This will automatically be connected to the window when the AICSview3d is created.
+   * Notify the view that it has been resized.  This will automatically be connected to the window when the View3d is created.
    * @param {HTMLElement=} comp Ignored.
    * @param {number=} w Width, or parent element's offsetWidth if not specified. 
    * @param {number=} h Height, or parent element's offsetHeight if not specified.

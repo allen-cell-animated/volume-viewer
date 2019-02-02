@@ -1,5 +1,5 @@
 import {
-    AICSview3d,
+    View3d,
     VolumeDrawable,
     AICSmakeVolumes,
     AICSvolumeLoader,
@@ -9,7 +9,7 @@ import {
 } from '../src';
 
 let el = document.getElementById("volume-viewer");
-let view3D = new AICSview3d(el);
+let view3D = new View3d(el);
 
 // TODO FIX ME : run this code after we know that the page has rendered, 
 // so that the view3D can get size from el

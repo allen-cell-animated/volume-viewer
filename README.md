@@ -4,7 +4,7 @@ This is a WebGL canvas-based volume viewer. It can display multichannel volume d
 Volume data is provided to the core 3d viewer in two parts.  The first part is via a json object containing dimensions and other metadata.  The second part is the volume data itself.
 
 The volume-viewer package exposes two key modules:
-* ```AICSview3d``` is the viewing component that contains a canvas and supports zoom/pan/rotate interaction with the volume.
+* ```View3d``` is the viewing component that contains a canvas and supports zoom/pan/rotate interaction with the volume.
 * ```VolumeDrawable``` is the class that holds the volume data and information about how to present it.
 
 It also provides the following two utility modules:
@@ -20,13 +20,13 @@ There are two ways to deliver volume data to the viewer:
 
 See public/index.js for a working example.  (```npm install; npm run dev``` will run that code) The basic code to get the volume viewer up and running is as follows:
 ```javascript
-import {AICSview3d, VolumeDrawable, AICSvolumeLoader, AICSmakeVolumes} from 'volume-viewer';
+import {View3d, VolumeDrawable, AICSvolumeLoader, AICSmakeVolumes} from 'volume-viewer';
 
 // find a div that will hold the viewer
 const el = document.getElementById("volume-viewer");
 
 // create the viewer.  it will try to fill the parent element.
-const view3D = new AICSview3d(el);
+const view3D = new View3d(el);
 
 // create a volume image with dimensions passed in via jsondata
 const aimg = new VolumeDrawable(jsondata);
