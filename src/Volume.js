@@ -53,167 +53,167 @@ import { getColorByChannelIndex } from './constants/colors.js';
  * @class
  * @param {imageInfo} imageInfo 
  */
-function Volume(imageInfo) {
-  this.imageInfo = imageInfo;
-  this.name = imageInfo.name;
+export default class Volume {
+  constructor(imageInfo) {
+    this.imageInfo = imageInfo;
+    this.name = imageInfo.name;
 
-  // clean up some possibly bad data.
-  this.imageInfo.pixel_size_x = imageInfo.pixel_size_x || 1.0;
-  this.imageInfo.pixel_size_y = imageInfo.pixel_size_y || 1.0;
-  this.imageInfo.pixel_size_z = imageInfo.pixel_size_z || 1.0;
+    // clean up some possibly bad data.
+    this.imageInfo.pixel_size_x = imageInfo.pixel_size_x || 1.0;
+    this.imageInfo.pixel_size_y = imageInfo.pixel_size_y || 1.0;
+    this.imageInfo.pixel_size_z = imageInfo.pixel_size_z || 1.0;
 
-  this.pixel_size = [
-    this.imageInfo.pixel_size_x,
-    this.imageInfo.pixel_size_y,
-    this.imageInfo.pixel_size_z
-  ];
-  this.x = imageInfo.tile_width;
-  this.y = imageInfo.tile_height;
-  this.z = imageInfo.tiles;
-  this.t = 1;
+    this.pixel_size = [
+      this.imageInfo.pixel_size_x,
+      this.imageInfo.pixel_size_y,
+      this.imageInfo.pixel_size_z
+    ];
+    this.x = imageInfo.tile_width;
+    this.y = imageInfo.tile_height;
+    this.z = imageInfo.tiles;
+    this.t = 1;
 
-  this.num_channels = imageInfo.channels;
-  
-  this.channel_names = this.imageInfo.channel_names.slice();
-  this.channel_colors_default = imageInfo.channel_colors ? imageInfo.channel_colors.slice() : this.channel_names.map((name, index) => getColorByChannelIndex(index));
-  // fill in gaps
-  if (this.channel_colors_default.length < this.num_channels) {
-    for(let i = this.channel_colors_default.length-1; i < this.num_channels; ++i) {
-      this.channel_colors_default[i] = getColorByChannelIndex(i);
+    this.num_channels = imageInfo.channels;
+    
+    this.channel_names = this.imageInfo.channel_names.slice();
+    this.channel_colors_default = imageInfo.channel_colors ? imageInfo.channel_colors.slice() : this.channel_names.map((name, index) => getColorByChannelIndex(index));
+    // fill in gaps
+    if (this.channel_colors_default.length < this.num_channels) {
+      for(let i = this.channel_colors_default.length-1; i < this.num_channels; ++i) {
+        this.channel_colors_default[i] = getColorByChannelIndex(i);
+      }
+    }
+
+    this.atlasSize = [this.imageInfo.atlas_width, this.imageInfo.atlas_height];
+    this.volumeSize = [this.x, this.y, this.z];
+
+    this.channels = [];
+    for (var i = 0; i < this.num_channels; ++i) {
+      this.channels.push(new Channel(this.channel_names[i]));
+    }
+
+    this.setVoxelSize(this.pixel_size);
+  }
+
+  setScale(scale) {
+    this.scale = scale;
+    this.currentScale = scale.clone();
+  }
+
+  setVoxelSize(values) {
+    // basic error check.  bail out if we get something bad.
+    if (!values.length || values.length < 3) {
+      return;
+    }
+
+    // only set the data if it is > 0.  zero is not an allowed value.
+    if (values[0] > 0) {
+      this.pixel_size[0] = values[0];
+    }
+    if (values[1] > 0) {
+      this.pixel_size[1] = values[1];
+    }
+    if (values[2] > 0) {
+      this.pixel_size[2] = values[2];
+    }
+
+    var physSizeMin = Math.min(this.pixel_size[0], Math.min(this.pixel_size[1], this.pixel_size[2]));
+    var pixelsMax = Math.max(this.imageInfo.width, Math.max(this.imageInfo.height,this.z));
+    var sx = this.pixel_size[0]/physSizeMin * this.imageInfo.width/pixelsMax;
+    var sy = this.pixel_size[1]/physSizeMin * this.imageInfo.height/pixelsMax;
+    var sz = this.pixel_size[2]/physSizeMin * this.z/pixelsMax;
+
+    // this works because image was scaled down in x and y but not z.
+    // so use original x and y dimensions from imageInfo.
+    this.physicalSize = new THREE.Vector3(
+      this.imageInfo.width * this.pixel_size[0],
+      this.imageInfo.height * this.pixel_size[1],
+      this.z * this.pixel_size[2]
+    );
+    const m = Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
+    // Compute the volume's max extent - scaled to max dimension.
+    this.normalizedPhysicalSize = new THREE.Vector3().copy(this.physicalSize).multiplyScalar(1.0/m);
+
+    this.setScale(new THREE.Vector3(sx,sy,sz));
+    // console.log("scale " + sx + "," + sy + "," + sz);
+    // console.log("nps " + this.normalizedPhysicalSize.x + "," + this.normalizedPhysicalSize.y + "," + this.normalizedPhysicalSize.z);
+  }
+
+  cleanup() {
+  }
+
+  /**
+   * @return a reference to the list of channel names
+   */
+  channelNames() {
+    return this.channel_names;
+  }
+
+  getChannel(channelIndex) {
+    return this.channels[channelIndex];
+  }
+
+  onChannelLoaded(batch) {
+    // check to see if all channels are now loaded, and fire an event(?)
+    if (this.channels.every(function(element,index,array) {return element.loaded;})) {
+      this.loaded = true;
     }
   }
 
-  this.atlasSize = [this.imageInfo.atlas_width, this.imageInfo.atlas_height];
-  this.volumeSize = [this.x, this.y, this.z];
-
-  this.channels = [];
-  for (var i = 0; i < this.num_channels; ++i) {
-    this.channels.push(new Channel(this.channel_names[i]));
+  /**
+   * Assign volume data via a 2d array containing the z slices as tiles across it.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
+   * @param {number} channelIndex 
+   * @param {Uint8Array} atlasdata 
+   * @param {number} atlaswidth 
+   * @param {number} atlasheight 
+   */
+  setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight) {
+    this.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight);
+    this.channels[channelIndex].unpackVolumeFromAtlas(this.x, this.y, this.z);  
+    this.onChannelLoaded([channelIndex]);
   }
 
-  this.setVoxelSize(this.pixel_size);
-}
-
-Volume.prototype.setScale = function(scale) {
-  this.scale = scale;
-  this.currentScale = scale.clone();
-};
-
-
-Volume.prototype.setVoxelSize = function(values) {
-  // basic error check.  bail out if we get something bad.
-  if (!values.length || values.length < 3) {
-    return;
+  // ASSUMES that this.channelData.options is already set and incoming data is consistent with it
+  /**
+   * Assign volume data as a 3d array ordered x,y,z. The xy size must be equal to tilewidth*tileheight from the imageInfo used to construct this Volume.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
+   * @param {number} channelIndex 
+   * @param {Uint8Array} volumeData 
+   */
+  setChannelDataFromVolume(channelIndex, volumeData) {
+    this.channels[channelIndex].setFromVolumeData(volumeData, this.x, this.y, this.z, this.atlasSize[0], this.atlasSize[1]);
+    this.onChannelLoaded([channelIndex]);
   }
 
-  // only set the data if it is > 0.  zero is not an allowed value.
-  if (values[0] > 0) {
-    this.pixel_size[0] = values[0];
+  // TODO: decide if this should update imageInfo or not. For now, leave imageInfo alone as the "original" data
+  /**
+   * Add a new channel ready to receive data from one of the setChannelDataFrom* calls.
+   * Name and color will be defaulted if not provided. For now, leave imageInfo alone as the "original" data
+   * @param {string} name 
+   * @param {Array.<number>} color [r,g,b]
+   */
+  appendEmptyChannel(name, color) {
+    let idx = this.num_channels;
+    let chname = name  || "channel_"+idx;
+    let chcolor = color || getColorByChannelIndex(idx);
+    this.num_channels += 1;
+    this.channel_names.push(chname);
+    this.channel_colors_default.push(chcolor);
+
+    this.channels.push(new Channel(chname));
+
+    return idx;
   }
-  if (values[1] > 0) {
-    this.pixel_size[1] = values[1];
+
+  /**
+   * Get a value from the volume data
+   * @return {number} the intensity value from the given channel at the given xyz location
+   * @param {number} c The channel index
+   * @param {number} x 
+   * @param {number} y 
+   * @param {number} z 
+   */
+  getIntensity(c, x, y, z) {
+      return this.channels[c].getIntensity(x, y, z);
   }
-  if (values[2] > 0) {
-    this.pixel_size[2] = values[2];
-  }
 
-  var physSizeMin = Math.min(this.pixel_size[0], Math.min(this.pixel_size[1], this.pixel_size[2]));
-  var pixelsMax = Math.max(this.imageInfo.width, Math.max(this.imageInfo.height,this.z));
-  var sx = this.pixel_size[0]/physSizeMin * this.imageInfo.width/pixelsMax;
-  var sy = this.pixel_size[1]/physSizeMin * this.imageInfo.height/pixelsMax;
-  var sz = this.pixel_size[2]/physSizeMin * this.z/pixelsMax;
-
-  // this works because image was scaled down in x and y but not z.
-  // so use original x and y dimensions from imageInfo.
-  this.physicalSize = new THREE.Vector3(
-    this.imageInfo.width * this.pixel_size[0],
-    this.imageInfo.height * this.pixel_size[1],
-    this.z * this.pixel_size[2]
-  );
-  const m = Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
-  // Compute the volume's max extent - scaled to max dimension.
-  this.normalizedPhysicalSize = new THREE.Vector3().copy(this.physicalSize).multiplyScalar(1.0/m);
-
-  this.setScale(new THREE.Vector3(sx,sy,sz));
-  // console.log("scale " + sx + "," + sy + "," + sz);
-  // console.log("nps " + this.normalizedPhysicalSize.x + "," + this.normalizedPhysicalSize.y + "," + this.normalizedPhysicalSize.z);
 };
-
-Volume.prototype.cleanup = function() {
-};
-
-/**
- * @return a reference to the list of channel names
- */
-Volume.prototype.channelNames = function() {
-  return this.channel_names;
-};
-
-Volume.prototype.getChannel = function(channelIndex) {
-  return this.channels[channelIndex];
-};
-
-Volume.prototype.onChannelLoaded = function(batch) {
-  // check to see if all channels are now loaded, and fire an event(?)
-  if (this.channels.every(function(element,index,array) {return element.loaded;})) {
-    this.loaded = true;
-  }
-};
-
-/**
- * Assign volume data via a 2d array containing the z slices as tiles across it.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
- * @param {number} channelIndex 
- * @param {Uint8Array} atlasdata 
- * @param {number} atlaswidth 
- * @param {number} atlasheight 
- */
-Volume.prototype.setChannelDataFromAtlas = function(channelIndex, atlasdata, atlaswidth, atlasheight) {
-  this.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight);
-  this.channels[channelIndex].unpackVolumeFromAtlas(this.x, this.y, this.z);  
-  this.onChannelLoaded([channelIndex]);
-};
-
-// ASSUMES that this.channelData.options is already set and incoming data is consistent with it
-/**
- * Assign volume data as a 3d array ordered x,y,z. The xy size must be equal to tilewidth*tileheight from the imageInfo used to construct this Volume.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
- * @param {number} channelIndex 
- * @param {Uint8Array} volumeData 
- */
-Volume.prototype.setChannelDataFromVolume = function(channelIndex, volumeData) {
-  this.channels[channelIndex].setFromVolumeData(volumeData, this.x, this.y, this.z, this.atlasSize[0], this.atlasSize[1]);
-  this.onChannelLoaded([channelIndex]);
-};
-
-// TODO: decide if this should update imageInfo or not. For now, leave imageInfo alone as the "original" data
-/**
- * Add a new channel ready to receive data from one of the setChannelDataFrom* calls.
- * Name and color will be defaulted if not provided. For now, leave imageInfo alone as the "original" data
- * @param {string} name 
- * @param {Array.<number>} color [r,g,b]
- */
-Volume.prototype.appendEmptyChannel = function(name, color) {
-  let idx = this.num_channels;
-  let chname = name  || "channel_"+idx;
-  let chcolor = color || getColorByChannelIndex(idx);
-  this.num_channels += 1;
-  this.channel_names.push(chname);
-  this.channel_colors_default.push(chcolor);
-
-  this.channels.push(new Channel(chname));
-
-  return idx;
-};
-
-/**
- * Get a value from the volume data
- * @return {number} the intensity value from the given channel at the given xyz location
- * @param {number} c The channel index
- * @param {number} x 
- * @param {number} y 
- * @param {number} z 
- */
-Volume.prototype.getIntensity = function(c, x, y, z) {
-    return this.channels[c].getIntensity(x, y, z);
-};
-
-export default Volume;
