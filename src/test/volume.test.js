@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import Volume from '../Volume.js';
-import AICSmakeVolumes from '../AICSmakeVolumes.js';
+import VolumeMaker from '../VolumeMaker.js';
 
 // PREPARE SOME TEST DATA TO TRY TO DISPLAY A VOLUME.
 const testimgdata = {
@@ -81,14 +81,14 @@ describe("test volume", () => {
         });
 
         it("loaded channel data", () => {
-            const conedata = AICSmakeVolumes.createCone(v.x, v.y, v.z, v.x/8, v.z);
+            const conedata = VolumeMaker.createCone(v.x, v.y, v.z, v.x/8, v.z);
 
             v.setChannelDataFromVolume(0, conedata);
             
             const c0 = v.getChannel(0);
             checkChannelDataConstruction(c0, 0, testimgdata);
 
-            const spheredata = AICSmakeVolumes.createSphere(v.x, v.y, v.z, v.z/4);
+            const spheredata = VolumeMaker.createSphere(v.x, v.y, v.z, v.z/4);
 
             v.setChannelDataFromVolume(1, spheredata);
             

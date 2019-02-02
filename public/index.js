@@ -1,7 +1,7 @@
 import {
     View3d,
     VolumeDrawable,
-    AICSmakeVolumes,
+    VolumeMaker,
     AICSvolumeLoader,
     Light,
     AREA_LIGHT,
@@ -236,11 +236,11 @@ function setupGui() {
 var channelVolumes = [];
 for (var i = 0; i < imgdata.channels; ++i) {
   if (i % 2 === 0) {
-    var sv = AICSmakeVolumes.createSphere(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 16);
+    var sv = VolumeMaker.createSphere(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 16);
     channelVolumes.push(sv);
   }
   else{
-    var sv = AICSmakeVolumes.createTorus(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 32, 8);
+    var sv = VolumeMaker.createTorus(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 32, 8);
     channelVolumes.push(sv);
 
   }
