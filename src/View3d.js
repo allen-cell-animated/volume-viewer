@@ -1,4 +1,4 @@
-import {AICSthreeJsPanel} from './AICSthreeJsPanel.js';
+import {ThreeJsPanel} from './ThreeJsPanel.js';
 import lightSettings from './constants/lights.js';
 
 /**
@@ -9,7 +9,7 @@ export class View3d {
    * @param {HTMLElement} parentElement the 3d display will try to fill the parent element.
    */
   constructor(parentElement) {
-    this.canvas3d = new AICSthreeJsPanel(parentElement, true);
+    this.canvas3d = new ThreeJsPanel(parentElement, true);
     this.redraw = this.redraw.bind(this);
     this.scene = null;
     this.backgroundColor = 0x000000;

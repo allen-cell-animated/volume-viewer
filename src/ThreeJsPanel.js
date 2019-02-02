@@ -7,7 +7,7 @@ const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
 const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 
-export class AICSthreeJsPanel {
+export class ThreeJsPanel {
   constructor(parentElement, useWebGL2) {
     this.containerdiv = document.createElement('div');
     this.containerdiv.setAttribute('id', 'volumeViewerContainerDiv');

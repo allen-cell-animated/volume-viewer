@@ -337,7 +337,7 @@ export function rayMarchingShaderUniforms() {
     },
     'orthoScale': {
         type: 'f',
-        value: 0.5 // needs to come from AICSthreeJsPanel's setting
+        value: 0.5 // needs to come from ThreeJsPanel's setting
     },
     'AABB_CLIP_MIN': {
         type: 'v3',
