@@ -9,7 +9,7 @@ import PathTracedVolume from './pathTracedVolume.js';
  * @class
  * @param {imageInfo} imageInfo 
  */
-function AICSvolumeDrawable(imageInfo, requestPathTrace) {
+function VolumeDrawable(imageInfo, requestPathTrace) {
   this.PT = !!requestPathTrace;
 
   // THE VOLUME DATA
@@ -81,7 +81,7 @@ function AICSvolumeDrawable(imageInfo, requestPathTrace) {
  * @param {number} atlaswidth 
  * @param {number} atlasheight 
  */
-AICSvolumeDrawable.prototype.setChannelDataFromAtlas = function(channelIndex, atlasdata, atlaswidth, atlasheight) {
+VolumeDrawable.prototype.setChannelDataFromAtlas = function(channelIndex, atlasdata, atlaswidth, atlasheight) {
   this.volume.setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight);
   this.onChannelLoaded([channelIndex]);
 };
@@ -91,21 +91,21 @@ AICSvolumeDrawable.prototype.setChannelDataFromAtlas = function(channelIndex, at
  * @param {number} channelIndex 
  * @param {Uint8Array} volumeData 
  */
-AICSvolumeDrawable.prototype.setChannelDataFromVolume = function(channelIndex, volumeData) {
+VolumeDrawable.prototype.setChannelDataFromVolume = function(channelIndex, volumeData) {
   this.volume.setChannelDataFromVolume(channelIndex, volumeData);
   this.onChannelLoaded([channelIndex]);
 };
 
-AICSvolumeDrawable.prototype.resetSampleRate = function() {
+VolumeDrawable.prototype.resetSampleRate = function() {
   this.steps = this.maxSteps / 2;
 };
 
-AICSvolumeDrawable.prototype.setMaxSampleRate = function(qual) {
+VolumeDrawable.prototype.setMaxSampleRate = function(qual) {
   this.maxSteps = qual;
   this.setUniform('maxSteps', qual);
 };
 
-AICSvolumeDrawable.prototype.setScale = function(scale) {
+VolumeDrawable.prototype.setScale = function(scale) {
 
   this.scale = scale;
 
@@ -115,11 +115,11 @@ AICSvolumeDrawable.prototype.setScale = function(scale) {
   this.volumeRendering.setScale(scale);
 };
 
-AICSvolumeDrawable.prototype.setOrthoScale = function(value) {
+VolumeDrawable.prototype.setOrthoScale = function(value) {
   this.volumeRendering.setOrthoScale(value);
 };
 
-AICSvolumeDrawable.prototype.setResolution = function(viewObj) {
+VolumeDrawable.prototype.setResolution = function(viewObj) {
   const x = viewObj.getWidth();
   const y = viewObj.getHeight();
   this.volumeRendering.setResolution(x, y);
@@ -134,7 +134,7 @@ AICSvolumeDrawable.prototype.setResolution = function(viewObj) {
  * @param {number} maxval 0..1, should be greater than minval 
  * @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
  */
-AICSvolumeDrawable.prototype.setAxisClip = function(axis, minval, maxval, isOrthoAxis) {
+VolumeDrawable.prototype.setAxisClip = function(axis, minval, maxval, isOrthoAxis) {
   this.bounds.bmax[axis] = maxval;
   this.bounds.bmin[axis] = minval;
  
@@ -146,11 +146,11 @@ AICSvolumeDrawable.prototype.setAxisClip = function(axis, minval, maxval, isOrth
  * Tell this image that it needs to be drawn in an orthographic mode
  * @param {boolean} isOrtho is this an orthographic projection or a perspective view
  */
-AICSvolumeDrawable.prototype.setIsOrtho = function(isOrtho) {
+VolumeDrawable.prototype.setIsOrtho = function(isOrtho) {
   !this.PT && this.rayMarchedAtlasVolume.setIsOrtho(isOrtho);
 };
 
-AICSvolumeDrawable.prototype.setOrthoThickness = function(value) {
+VolumeDrawable.prototype.setOrthoThickness = function(value) {
   !this.PT && this.meshVolume.setOrthoThickness(value);
   this.volumeRendering.setOrthoThickness(value);
 };
@@ -161,15 +161,15 @@ AICSvolumeDrawable.prototype.setOrthoThickness = function(value) {
  * @param {number} glevel 0..1, should be <= gmax and >= gmin
  * @param {number} gmax 0..1, should be > gmin and >= glevel
  */
-AICSvolumeDrawable.prototype.setGamma = function(gmin, glevel, gmax) {
+VolumeDrawable.prototype.setGamma = function(gmin, glevel, gmax) {
   !this.PT && this.rayMarchedAtlasVolume.setGamma(gmin, glevel, gmax);
 };
 
-AICSvolumeDrawable.prototype.setMaxProjectMode = function(isMaxProject) {
+VolumeDrawable.prototype.setMaxProjectMode = function(isMaxProject) {
   !this.PT && this.rayMarchedAtlasVolume.setMaxProjectMode(isMaxProject);
 };
 
-AICSvolumeDrawable.prototype.onAnimate = function(canvas) {
+VolumeDrawable.prototype.onAnimate = function(canvas) {
   // TODO: this is inefficient, as this work is duplicated by threejs.
   // we need camera matrix up to date before giving the 3d objects a chance to use it.
   canvas.camera.updateMatrixWorld(true);
@@ -194,7 +194,7 @@ AICSvolumeDrawable.prototype.onAnimate = function(canvas) {
  * @param {number} channel 
  * @param {number} value 
  */
-AICSvolumeDrawable.prototype.updateIsovalue = function(channel, value) {
+VolumeDrawable.prototype.updateIsovalue = function(channel, value) {
   this.meshVolume.updateIsovalue(channel, value);
 };
 
@@ -203,7 +203,7 @@ AICSvolumeDrawable.prototype.updateIsovalue = function(channel, value) {
  * @param {number} channel 
  * @return {number} the isovalue for this channel or undefined if this channel does not have an isosurface created
  */
-AICSvolumeDrawable.prototype.getIsovalue = function(channel) {
+VolumeDrawable.prototype.getIsovalue = function(channel) {
   return this.meshVolume.getIsovalue(channel);
 };
 
@@ -212,7 +212,7 @@ AICSvolumeDrawable.prototype.getIsovalue = function(channel) {
  * @param {number} channel 
  * @param {number} value Opacity
  */
-AICSvolumeDrawable.prototype.updateOpacity = function(channel, value) {
+VolumeDrawable.prototype.updateOpacity = function(channel, value) {
   this.meshVolume.updateOpacity(channel, value);
 };
 
@@ -221,7 +221,7 @@ AICSvolumeDrawable.prototype.updateOpacity = function(channel, value) {
  * @param {number} channel 
  * @return true if there is currently a mesh isosurface for this channel
  */
-AICSvolumeDrawable.prototype.hasIsosurface = function(channel) {
+VolumeDrawable.prototype.hasIsosurface = function(channel) {
   return this.meshVolume.hasIsosurface(channel);
 };
 
@@ -232,7 +232,7 @@ AICSvolumeDrawable.prototype.hasIsosurface = function(channel) {
  * @param {number=} alpha Opacity
  * @param {boolean=} transp render surface as transparent object
  */
-AICSvolumeDrawable.prototype.createIsosurface = function(channel, value, alpha, transp) {
+VolumeDrawable.prototype.createIsosurface = function(channel, value, alpha, transp) {
   this.meshVolume.createIsosurface(channel, this.channel_colors[channel], value, alpha, transp);
 };
 
@@ -240,11 +240,11 @@ AICSvolumeDrawable.prototype.createIsosurface = function(channel, value, alpha, 
  * If an isosurface exists for this channel, destroy it now. Don't just hide it - assume we can free up some resources.
  * @param {number} channel 
  */
-AICSvolumeDrawable.prototype.destroyIsosurface = function(channel) {
+VolumeDrawable.prototype.destroyIsosurface = function(channel) {
   this.meshVolume.destroyIsosurface(channel);
 };
 
-AICSvolumeDrawable.prototype.fuse = function() {
+VolumeDrawable.prototype.fuse = function() {
   if (!this.volume) {
     return;
   }
@@ -258,21 +258,21 @@ AICSvolumeDrawable.prototype.fuse = function() {
 
 };
 
-AICSvolumeDrawable.prototype.updateMaterial = function() {
+VolumeDrawable.prototype.updateMaterial = function() {
   this.PT && this.pathTracedVolume.updateMaterial(this);
 };
 
-AICSvolumeDrawable.prototype.updateLuts = function() {
+VolumeDrawable.prototype.updateLuts = function() {
   this.PT && this.pathTracedVolume.updateLuts(this);
   !this.PT && this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
 };
 
-AICSvolumeDrawable.prototype.setVoxelSize = function(values) {
+VolumeDrawable.prototype.setVoxelSize = function(values) {
   this.volume.setVoxelSize(values);
   this.setScale(this.volume.scale);
 };
 
-AICSvolumeDrawable.prototype.cleanup = function() {
+VolumeDrawable.prototype.cleanup = function() {
   this.meshVolume.cleanup();
   this.volumeRendering.cleanup();
 };
@@ -280,15 +280,15 @@ AICSvolumeDrawable.prototype.cleanup = function() {
 /**
  * @return a reference to the list of channel names
  */
-AICSvolumeDrawable.prototype.channelNames = function() {
+VolumeDrawable.prototype.channelNames = function() {
   return this.channel_names;
 };
 
-AICSvolumeDrawable.prototype.getChannel = function(channelIndex) {
+VolumeDrawable.prototype.getChannel = function(channelIndex) {
   return this.volume.getChannel(channelIndex);
 };
 
-AICSvolumeDrawable.prototype.onChannelLoaded = function(batch) {
+VolumeDrawable.prototype.onChannelLoaded = function(batch) {
   this.volumeRendering.onChannelData(batch);
   this.meshVolume.onChannelData(batch);
 
@@ -303,7 +303,7 @@ AICSvolumeDrawable.prototype.onChannelLoaded = function(batch) {
  * @param {number} channelIndex 
  * @param {string} type Either 'GLTF' or 'STL'
  */
-AICSvolumeDrawable.prototype.saveChannelIsosurface = function(channelIndex, type) {
+VolumeDrawable.prototype.saveChannelIsosurface = function(channelIndex, type) {
   this.meshVolume.saveChannelIsosurface(channelIndex, type, this.name);
 };
 
@@ -312,7 +312,7 @@ AICSvolumeDrawable.prototype.saveChannelIsosurface = function(channelIndex, type
  * @param {number} channelIndex 
  * @param {boolean} enabled 
  */
-AICSvolumeDrawable.prototype.setVolumeChannelEnabled = function(channelIndex, enabled) {
+VolumeDrawable.prototype.setVolumeChannelEnabled = function(channelIndex, enabled) {
   // flip the color to the "null" value
   this.fusion[channelIndex].rgbColor = enabled ? this.channel_colors[channelIndex] : 0;
   // if all are nulled out, then hide the volume element from the scene.
@@ -329,7 +329,7 @@ AICSvolumeDrawable.prototype.setVolumeChannelEnabled = function(channelIndex, en
  * @return {boolean} Is volume data visible for this channel?
  * @param {number} channelIndex 
  */
-AICSvolumeDrawable.prototype.isVolumeChannelEnabled = function(channelIndex) {
+VolumeDrawable.prototype.isVolumeChannelEnabled = function(channelIndex) {
   // the zero value for the fusion rgbColor is the indicator that a channel is hidden.
   return this.fusion[channelIndex].rgbColor !== 0;
 };
@@ -339,7 +339,7 @@ AICSvolumeDrawable.prototype.isVolumeChannelEnabled = function(channelIndex) {
  * @param {number} channelIndex 
  * @param {Array.<number>} colorrgb [r,g,b]
  */
-AICSvolumeDrawable.prototype.updateChannelColor = function(channelIndex, colorrgb) {
+VolumeDrawable.prototype.updateChannelColor = function(channelIndex, colorrgb) {
   if (!this.channel_colors[channelIndex]) {
     return;
   }
@@ -353,7 +353,7 @@ AICSvolumeDrawable.prototype.updateChannelColor = function(channelIndex, colorrg
 };
 
 // TODO remove this from public interface?
-AICSvolumeDrawable.prototype.updateMeshColors = function() {
+VolumeDrawable.prototype.updateMeshColors = function() {
   this.meshVolume.updateMeshColors(this.channel_colors);
 };
 
@@ -362,7 +362,7 @@ AICSvolumeDrawable.prototype.updateMeshColors = function() {
  * @return {Array.<number>} The color as array of [r,g,b]
  * @param {number} channelIndex 
  */
-AICSvolumeDrawable.prototype.getChannelColor = function(channelIndex) {
+VolumeDrawable.prototype.getChannelColor = function(channelIndex) {
   return this.channel_colors[channelIndex];
 };
 
@@ -374,7 +374,7 @@ AICSvolumeDrawable.prototype.getChannelColor = function(channelIndex) {
  * @param {Array.<number>} emissivergb [r,g,b]
  * @param {number} roughness
  */
-AICSvolumeDrawable.prototype.updateChannelMaterial = function(channelIndex, colorrgb, specularrgb, emissivergb, roughness) {
+VolumeDrawable.prototype.updateChannelMaterial = function(channelIndex, colorrgb, specularrgb, emissivergb, roughness) {
   if (!this.channel_colors[channelIndex]) {
     return;
   }
@@ -389,7 +389,7 @@ AICSvolumeDrawable.prototype.updateChannelMaterial = function(channelIndex, colo
  * @param {number} density Roughly equivalent to opacity, or how translucent or opaque the volume is
  * @param {boolean=} no_redraw Set to true to delay re-rendering. Otherwise ignore.
  */
-AICSvolumeDrawable.prototype.setDensity = function(density) {
+VolumeDrawable.prototype.setDensity = function(density) {
   this.density = density;
   this.volumeRendering.setDensity(density);
 };
@@ -397,7 +397,7 @@ AICSvolumeDrawable.prototype.setDensity = function(density) {
 /**
  * Get the global density of the volume data
  */
-AICSvolumeDrawable.prototype.getDensity = function() {
+VolumeDrawable.prototype.getDensity = function() {
   return this.density;
 };
 
@@ -406,7 +406,7 @@ AICSvolumeDrawable.prototype.getDensity = function() {
  * @param {number} brightness Roughly speaking, an intensity multiplier on the whole volume
  * @param {boolean=} no_redraw Set to true to delay re-rendering. Otherwise ignore.
  */
-AICSvolumeDrawable.prototype.setBrightness = function(brightness) {
+VolumeDrawable.prototype.setBrightness = function(brightness) {
   this.brightness = brightness;
   this.volumeRendering.setBrightness(brightness);
 };
@@ -414,7 +414,7 @@ AICSvolumeDrawable.prototype.setBrightness = function(brightness) {
 /**
  * Get the global brightness of the volume data
  */
-AICSvolumeDrawable.prototype.getBrightness = function() {
+VolumeDrawable.prototype.getBrightness = function() {
   return this.brightness;
 };
 
@@ -424,7 +424,7 @@ AICSvolumeDrawable.prototype.getBrightness = function() {
  * @param {string} name 
  * @param {Array.<number>} color [r,g,b]
  */
-AICSvolumeDrawable.prototype.appendEmptyChannel = function(name, color) {
+VolumeDrawable.prototype.appendEmptyChannel = function(name, color) {
   let idx = this.num_channels;
   let chcolor = color || getColorByChannelIndex(idx);
   this.channel_colors.push(chcolor);
@@ -444,7 +444,7 @@ AICSvolumeDrawable.prototype.appendEmptyChannel = function(name, color) {
  * Assign a channel index as a mask channel (will multiply its color against the entire visible volume)
  * @param {number} channelIndex 
  */
-AICSvolumeDrawable.prototype.setChannelAsMask = function(channelIndex) {
+VolumeDrawable.prototype.setChannelAsMask = function(channelIndex) {
   if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
     return false;
   }
@@ -456,7 +456,7 @@ AICSvolumeDrawable.prototype.setChannelAsMask = function(channelIndex) {
  * Set a multiplier for how much of the mask channel to mask out the background
  * @param {number} maskAlpha 
  */
-AICSvolumeDrawable.prototype.setMaskAlpha = function(maskAlpha) {
+VolumeDrawable.prototype.setMaskAlpha = function(maskAlpha) {
   this.maskAlpha = maskAlpha;
   this.volumeRendering.setMaskAlpha(maskAlpha);
 };
@@ -469,23 +469,23 @@ AICSvolumeDrawable.prototype.setMaskAlpha = function(maskAlpha) {
  * @param {number} y 
  * @param {number} z 
  */
-AICSvolumeDrawable.prototype.getIntensity = function(c, x, y, z) {
+VolumeDrawable.prototype.getIntensity = function(c, x, y, z) {
   return this.volume.getIntensity(c, x, y, z);
 };
 
-AICSvolumeDrawable.prototype.onStartControls = function() {
+VolumeDrawable.prototype.onStartControls = function() {
   this.PT && this.pathTracedVolume.onStartControls();
 };
 
-AICSvolumeDrawable.prototype.onChangeControls = function() {
+VolumeDrawable.prototype.onChangeControls = function() {
   this.PT && this.pathTracedVolume.onChangeControls();
 };
 
-AICSvolumeDrawable.prototype.onEndControls = function() {
+VolumeDrawable.prototype.onEndControls = function() {
   this.PT && this.pathTracedVolume.onEndControls();
 };
 
-AICSvolumeDrawable.prototype.onCameraChanged = function(fov, focalDistance, apertureSize) {
+VolumeDrawable.prototype.onCameraChanged = function(fov, focalDistance, apertureSize) {
   this.PT && this.pathTracedVolume.updateCamera(fov, focalDistance, apertureSize);
 };
 
@@ -498,20 +498,20 @@ AICSvolumeDrawable.prototype.onCameraChanged = function(fov, focalDistance, aper
  * @param {number} zmin 0..1, should be less than zmax
  * @param {number} zmax 0..1, should be greater than zmin 
  */
-AICSvolumeDrawable.prototype.updateClipRegion = function(xmin, xmax, ymin, ymax, zmin, zmax) {
+VolumeDrawable.prototype.updateClipRegion = function(xmin, xmax, ymin, ymax, zmin, zmax) {
   this.volumeRendering.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
 };
 
-AICSvolumeDrawable.prototype.updateLights = function(state) {
+VolumeDrawable.prototype.updateLights = function(state) {
   this.PT && this.pathTracedVolume.updateLights(state);
 };
 
-AICSvolumeDrawable.prototype.setPixelSamplingRate = function(value) {
+VolumeDrawable.prototype.setPixelSamplingRate = function(value) {
   this.volumeRendering.setPixelSamplingRate(value);
 };
 
 
-AICSvolumeDrawable.prototype.setVolumeRendering = function(is_pathtrace) {
+VolumeDrawable.prototype.setVolumeRendering = function(is_pathtrace) {
   if (is_pathtrace === this.PT) {
     return;
   }
@@ -553,4 +553,4 @@ AICSvolumeDrawable.prototype.setVolumeRendering = function(is_pathtrace) {
 };
 
 
-export default AICSvolumeDrawable;
+export default VolumeDrawable;

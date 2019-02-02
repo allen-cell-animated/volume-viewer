@@ -1,6 +1,6 @@
 import {
     AICSview3d,
-    AICSvolumeDrawable,
+    VolumeDrawable,
     AICSmakeVolumes,
     AICSvolumeLoader,
     Light,
@@ -365,7 +365,7 @@ function showChannelUI(img) {
 function loadImageData(jsondata, volumedata) {
     view3D.resize();
     
-    const aimg = new AICSvolumeDrawable(jsondata, myState.isPT);
+    const aimg = new VolumeDrawable(jsondata, myState.isPT);
 
     // tell the viewer about the image AFTER it's loaded
     //view3D.setImage(aimg);

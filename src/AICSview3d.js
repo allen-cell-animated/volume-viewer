@@ -56,7 +56,7 @@ export class AICSview3d {
 
   /**
    * Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will return any prior existing image.
-   * @param {AICSvolumeDrawable} img 
+   * @param {VolumeDrawable} img 
    */
   setImage(img) {
     const oldImage = this.unsetImage();
