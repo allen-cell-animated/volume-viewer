@@ -1,4 +1,4 @@
-import AICSvolume from './AICSvolume.js';
+import Volume from './Volume.js';
 import { getColorByChannelIndex } from './constants/colors.js';
 import MeshVolume from './meshVolume.js';
 import RayMarchedAtlasVolume from './rayMarchedAtlasVolume.js';
@@ -13,7 +13,7 @@ function VolumeDrawable(imageInfo, requestPathTrace) {
   this.PT = !!requestPathTrace;
 
   // THE VOLUME DATA
-  this.volume = new AICSvolume(imageInfo);
+  this.volume = new Volume(imageInfo);
 
   this.onChannelDataReadyCallback = null;
 
@@ -87,7 +87,7 @@ VolumeDrawable.prototype.setChannelDataFromAtlas = function(channelIndex, atlasd
 };
 
 /**
- * Assign volume data as a 3d array ordered x,y,z. The xy size must be equal to tilewidth*tileheight from the imageInfo used to construct this AICSvolume.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
+ * Assign volume data as a 3d array ordered x,y,z. The xy size must be equal to tilewidth*tileheight from the imageInfo used to construct this Volume.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
  * @param {number} channelIndex 
  * @param {Uint8Array} volumeData 
  */

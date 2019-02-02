@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import AICSvolume from '../AICSvolume.js';
+import Volume from '../Volume.js';
 import AICSmakeVolumes from '../AICSmakeVolumes.js';
 
 // PREPARE SOME TEST DATA TO TRY TO DISPLAY A VOLUME.
@@ -74,7 +74,7 @@ function checkChannelDataConstruction(c, index, imgdata) {
 describe("test volume", () => {
     describe("creation", () => {
 
-        const v = new AICSvolume(testimgdata);
+        const v = new Volume(testimgdata);
 
         it("is created", () => {
             checkVolumeConstruction(v, testimgdata);

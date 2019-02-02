@@ -53,7 +53,7 @@ import { getColorByChannelIndex } from './constants/colors.js';
  * @class
  * @param {imageInfo} imageInfo 
  */
-function AICSvolume(imageInfo) {
+function Volume(imageInfo) {
   this.imageInfo = imageInfo;
   this.name = imageInfo.name;
 
@@ -94,13 +94,13 @@ function AICSvolume(imageInfo) {
   this.setVoxelSize(this.pixel_size);
 }
 
-AICSvolume.prototype.setScale = function(scale) {
+Volume.prototype.setScale = function(scale) {
   this.scale = scale;
   this.currentScale = scale.clone();
 };
 
 
-AICSvolume.prototype.setVoxelSize = function(values) {
+Volume.prototype.setVoxelSize = function(values) {
   // basic error check.  bail out if we get something bad.
   if (!values.length || values.length < 3) {
     return;
@@ -139,21 +139,21 @@ AICSvolume.prototype.setVoxelSize = function(values) {
   // console.log("nps " + this.normalizedPhysicalSize.x + "," + this.normalizedPhysicalSize.y + "," + this.normalizedPhysicalSize.z);
 };
 
-AICSvolume.prototype.cleanup = function() {
+Volume.prototype.cleanup = function() {
 };
 
 /**
  * @return a reference to the list of channel names
  */
-AICSvolume.prototype.channelNames = function() {
+Volume.prototype.channelNames = function() {
   return this.channel_names;
 };
 
-AICSvolume.prototype.getChannel = function(channelIndex) {
+Volume.prototype.getChannel = function(channelIndex) {
   return this.channels[channelIndex];
 };
 
-AICSvolume.prototype.onChannelLoaded = function(batch) {
+Volume.prototype.onChannelLoaded = function(batch) {
   // check to see if all channels are now loaded, and fire an event(?)
   if (this.channels.every(function(element,index,array) {return element.loaded;})) {
     this.loaded = true;
@@ -167,7 +167,7 @@ AICSvolume.prototype.onChannelLoaded = function(batch) {
  * @param {number} atlaswidth 
  * @param {number} atlasheight 
  */
-AICSvolume.prototype.setChannelDataFromAtlas = function(channelIndex, atlasdata, atlaswidth, atlasheight) {
+Volume.prototype.setChannelDataFromAtlas = function(channelIndex, atlasdata, atlaswidth, atlasheight) {
   this.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight);
   this.channels[channelIndex].unpackVolumeFromAtlas(this.x, this.y, this.z);  
   this.onChannelLoaded([channelIndex]);
@@ -175,11 +175,11 @@ AICSvolume.prototype.setChannelDataFromAtlas = function(channelIndex, atlasdata,
 
 // ASSUMES that this.channelData.options is already set and incoming data is consistent with it
 /**
- * Assign volume data as a 3d array ordered x,y,z. The xy size must be equal to tilewidth*tileheight from the imageInfo used to construct this AICSvolume.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
+ * Assign volume data as a 3d array ordered x,y,z. The xy size must be equal to tilewidth*tileheight from the imageInfo used to construct this Volume.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
  * @param {number} channelIndex 
  * @param {Uint8Array} volumeData 
  */
-AICSvolume.prototype.setChannelDataFromVolume = function(channelIndex, volumeData) {
+Volume.prototype.setChannelDataFromVolume = function(channelIndex, volumeData) {
   this.channels[channelIndex].setFromVolumeData(volumeData, this.x, this.y, this.z, this.atlasSize[0], this.atlasSize[1]);
   this.onChannelLoaded([channelIndex]);
 };
@@ -191,7 +191,7 @@ AICSvolume.prototype.setChannelDataFromVolume = function(channelIndex, volumeDat
  * @param {string} name 
  * @param {Array.<number>} color [r,g,b]
  */
-AICSvolume.prototype.appendEmptyChannel = function(name, color) {
+Volume.prototype.appendEmptyChannel = function(name, color) {
   let idx = this.num_channels;
   let chname = name  || "channel_"+idx;
   let chcolor = color || getColorByChannelIndex(idx);
@@ -212,8 +212,8 @@ AICSvolume.prototype.appendEmptyChannel = function(name, color) {
  * @param {number} y 
  * @param {number} z 
  */
-AICSvolume.prototype.getIntensity = function(c, x, y, z) {
+Volume.prototype.getIntensity = function(c, x, y, z) {
     return this.channels[c].getIntensity(x, y, z);
 };
 
-export default AICSvolume;
+export default Volume;
