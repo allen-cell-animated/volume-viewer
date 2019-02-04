@@ -1,8 +1,8 @@
 import Volume from './Volume.js';
 import { getColorByChannelIndex } from './constants/colors.js';
-import MeshVolume from './meshVolume.js';
-import RayMarchedAtlasVolume from './rayMarchedAtlasVolume.js';
-import PathTracedVolume from './pathTracedVolume.js';
+import MeshVolume from './MeshVolume.js';
+import RayMarchedAtlasVolume from './RayMarchedAtlasVolume.js';
+import PathTracedVolume from './PathTracedVolume.js';
 
 /**
  * A renderable multichannel volume image with 8-bits per channel intensity values.
