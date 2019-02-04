@@ -1,4 +1,4 @@
-import { Light, AREA_LIGHT, SKY_LIGHT } from "../light";
+import { Light, AREA_LIGHT, SKY_LIGHT } from "../Light";
 
 // threejs passthrough vertex shader for fullscreen quad
 export const pathTracingVertexShaderSrc = `

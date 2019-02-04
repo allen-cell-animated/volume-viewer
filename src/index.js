@@ -1,14 +1,14 @@
-import {AICSview3d} from './AICSview3d.js';
-import AICSvolumeDrawable from './AICSvolumeDrawable.js';
-import AICSmakeVolumes from './AICSmakeVolumes.js';
-import AICSvolumeLoader from './volumeLoader.js';
-import {Light, AREA_LIGHT, SKY_LIGHT} from './light.js';
+import {View3d} from './View3d.js';
+import VolumeDrawable from './VolumeDrawable.js';
+import VolumeMaker from './VolumeMaker.js';
+import VolumeLoader from './VolumeLoader.js';
+import {Light, AREA_LIGHT, SKY_LIGHT} from './Light.js';
 
 export {
-  AICSview3d,
-  AICSvolumeDrawable,
-  AICSmakeVolumes,
-  AICSvolumeLoader,
+  View3d,
+  VolumeDrawable,
+  VolumeMaker,
+  VolumeLoader,
   Light,
   AREA_LIGHT,
   SKY_LIGHT

@@ -1,15 +1,15 @@
 import {
-    AICSview3d,
-    AICSvolumeDrawable,
-    AICSmakeVolumes,
-    AICSvolumeLoader,
+    View3d,
+    VolumeDrawable,
+    VolumeMaker,
+    VolumeLoader,
     Light,
     AREA_LIGHT,
     SKY_LIGHT
 } from '../src';
 
 let el = document.getElementById("volume-viewer");
-let view3D = new AICSview3d(el);
+let view3D = new View3d(el);
 
 // TODO FIX ME : run this code after we know that the page has rendered, 
 // so that the view3D can get size from el
@@ -236,11 +236,11 @@ function setupGui() {
 var channelVolumes = [];
 for (var i = 0; i < imgdata.channels; ++i) {
   if (i % 2 === 0) {
-    var sv = AICSmakeVolumes.createSphere(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 16);
+    var sv = VolumeMaker.createSphere(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 16);
     channelVolumes.push(sv);
   }
   else{
-    var sv = AICSmakeVolumes.createTorus(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 32, 8);
+    var sv = VolumeMaker.createTorus(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 32, 8);
     channelVolumes.push(sv);
 
   }
@@ -365,7 +365,7 @@ function showChannelUI(img) {
 function loadImageData(jsondata, volumedata) {
     view3D.resize();
     
-    const aimg = new AICSvolumeDrawable(jsondata, myState.isPT);
+    const aimg = new VolumeDrawable(jsondata, myState.isPT);
 
     // tell the viewer about the image AFTER it's loaded
     //view3D.setImage(aimg);
@@ -381,7 +381,7 @@ function loadImageData(jsondata, volumedata) {
         }
     }
     else {
-        AICSvolumeLoader.loadVolumeAtlasData(jsondata.images, (url, channelIndex, atlasdata, atlaswidth, atlasheight) => {
+        VolumeLoader.loadVolumeAtlasData(jsondata.images, (url, channelIndex, atlasdata, atlaswidth, atlasheight) => {
             aimg.setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight);
             aimg.volume.channels[channelIndex].lutGenerator_auto2();
             if (aimg.volume.loaded) {

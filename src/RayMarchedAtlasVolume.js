@@ -1,4 +1,4 @@
-import AICSchannelData from './AICSchannelData.js';
+import FusedChannelData from './FusedChannelData.js';
 import { 
     rayMarchingVertexShaderSrc, 
     rayMarchingFragmentShaderSrc, 
@@ -38,7 +38,7 @@ export default class RayMarchedAtlasVolume {
         this.setUniform("ATLAS_Y", volume.imageInfo.rows);
         this.setUniform("SLICES", volume.z);
       
-        this.channelData = new AICSchannelData(
+        this.channelData = new FusedChannelData(
             volume.imageInfo.atlas_width, 
             volume.imageInfo.atlas_height
         );

@@ -1,15 +1,15 @@
-import {AICSthreeJsPanel} from './AICSthreeJsPanel.js';
+import {ThreeJsPanel} from './ThreeJsPanel.js';
 import lightSettings from './constants/lights.js';
 
 /**
  * @class
  */
-export class AICSview3d {
+export class View3d {
   /**
    * @param {HTMLElement} parentElement the 3d display will try to fill the parent element.
    */
   constructor(parentElement) {
-    this.canvas3d = new AICSthreeJsPanel(parentElement, true);
+    this.canvas3d = new ThreeJsPanel(parentElement, true);
     this.redraw = this.redraw.bind(this);
     this.scene = null;
     this.backgroundColor = 0x000000;
@@ -56,7 +56,7 @@ export class AICSview3d {
 
   /**
    * Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will return any prior existing image.
-   * @param {AICSvolumeDrawable} img 
+   * @param {VolumeDrawable} img 
    */
   setImage(img) {
     const oldImage = this.unsetImage();
@@ -184,7 +184,7 @@ export class AICSview3d {
   };
 
   /**
-   * Notify the view that it has been resized.  This will automatically be connected to the window when the AICSview3d is created.
+   * Notify the view that it has been resized.  This will automatically be connected to the window when the View3d is created.
    * @param {HTMLElement=} comp Ignored.
    * @param {number=} w Width, or parent element's offsetWidth if not specified. 
    * @param {number=} h Height, or parent element's offsetHeight if not specified.

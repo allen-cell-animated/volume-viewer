@@ -1,4 +1,4 @@
-import AICStrackballControls from './AICStrackballControls.js';
+import TrackballControls from './TrackballControls.js';
 
 import WEBVR from "./vr/WebVR.js";
 import vrObjectControls from './vr/vrObjectControls.js';
@@ -7,7 +7,7 @@ const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
 const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 
-export class AICSthreeJsPanel {
+export class ThreeJsPanel {
   constructor(parentElement, useWebGL2) {
     this.containerdiv = document.createElement('div');
     this.containerdiv.setAttribute('id', 'volumeViewerContainerDiv');
@@ -78,7 +78,7 @@ export class AICSthreeJsPanel {
     this.perspectiveCamera.up.x = 0.0;
     this.perspectiveCamera.up.y = 1.0;
     this.perspectiveCamera.up.z = 0.0;
-    this.perspectiveControls = new AICStrackballControls(this.perspectiveCamera, this.canvas);
+    this.perspectiveControls = new TrackballControls(this.perspectiveCamera, this.canvas);
     this.perspectiveControls.rotateSpeed = 4.0/window.devicePixelRatio;
     this.perspectiveControls.autoRotate = false;
     this.perspectiveControls.staticMoving = true;
@@ -91,7 +91,7 @@ export class AICSthreeJsPanel {
     this.orthographicCameraX.up.y = 0.0;
     this.orthographicCameraX.up.z = 1.0;
     this.orthographicCameraX.lookAt( pos );
-    this.orthoControlsX = new AICStrackballControls(this.orthographicCameraX, this.canvas);
+    this.orthoControlsX = new TrackballControls(this.orthographicCameraX, this.canvas);
     this.orthoControlsX.noRotate = true;
     this.orthoControlsX.scale = scale;
     this.orthoControlsX.scale0 = scale;
@@ -105,7 +105,7 @@ export class AICSthreeJsPanel {
     this.orthographicCameraY.up.y = 0.0;
     this.orthographicCameraY.up.z = 1.0;
     this.orthographicCameraY.lookAt( pos );
-    this.orthoControlsY = new AICStrackballControls(this.orthographicCameraY, this.canvas);
+    this.orthoControlsY = new TrackballControls(this.orthographicCameraY, this.canvas);
     this.orthoControlsY.noRotate = true;
     this.orthoControlsY.scale = scale;
     this.orthoControlsY.scale0 = scale;
@@ -119,7 +119,7 @@ export class AICSthreeJsPanel {
     this.orthographicCameraZ.up.y = 1.0;
     this.orthographicCameraZ.up.z = 0.0;
     this.orthographicCameraZ.lookAt( pos );
-    this.orthoControlsZ = new AICStrackballControls(this.orthographicCameraZ, this.canvas);
+    this.orthoControlsZ = new TrackballControls(this.orthographicCameraZ, this.canvas);
     this.orthoControlsZ.noRotate = true;
     this.orthoControlsZ.scale = scale;
     this.orthoControlsZ.scale0 = scale;
