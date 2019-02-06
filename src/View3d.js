@@ -311,6 +311,32 @@ export class View3d {
     }
   }
 
+  updateMaskAlpha(value) {
+    if (this.image) {
+      this.image.setMaskAlpha(value);
+    }
+  }
+  
+  setVolumeChannelEnabled(channel, enabled) {
+    if (this.image) {
+      this.image.setVolumeChannelEnabled(channel, enabled);
+    }
+  }
+
+  /**
+   * Set the material for a channel
+   * @param {number} channelIndex 
+   * @param {Array.<number>} colorrgb [r,g,b]
+   * @param {Array.<number>} specularrgb [r,g,b]
+   * @param {Array.<number>} emissivergb [r,g,b]
+   * @param {number} roughness
+   */
+  updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, roughness) {
+    if (this.image) {
+      this.image.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, roughness);
+    }
+  }
+
   /**
    * Switch between single pass ray-marched volume rendering and progressive path traced rendering.
    * @param {boolean} isPT true for progressive path trace, false for single pass ray march

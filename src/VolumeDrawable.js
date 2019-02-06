@@ -1,4 +1,3 @@
-import Volume from './Volume.js';
 import { getColorByChannelIndex } from './constants/colors.js';
 import MeshVolume from './MeshVolume.js';
 import RayMarchedAtlasVolume from './RayMarchedAtlasVolume.js';
@@ -11,11 +10,11 @@ import PathTracedVolume from './PathTracedVolume.js';
  */
 export default class VolumeDrawable {
 
-  constructor(imageInfo, requestPathTrace) {
+  constructor(volume, requestPathTrace) {
     this.PT = !!requestPathTrace;
 
     // THE VOLUME DATA
-    this.volume = new Volume(imageInfo);
+    this.volume = volume;
 
     this.onChannelDataReadyCallback = null;
 

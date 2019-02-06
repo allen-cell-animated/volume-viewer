@@ -1,5 +1,6 @@
 import {
     View3d,
+    Volume,
     VolumeDrawable,
     VolumeMaker,
     VolumeLoader,
@@ -109,7 +110,7 @@ function setupGui() {
         view3D.updateDensity(value);
     });
     gui.add(myState, "maskAlpha").max(1.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.image.setMaskAlpha(value);
+        view3D.updateMaskAlpha(value);
     });
 
     var cameragui = gui.addFolder("Camera");
@@ -257,7 +258,7 @@ dat.GUI.prototype.removeFolder = function (name) {
     this.onResize();
 }
 
-function showChannelUI(img) {
+function showChannelUI(volume) {
 
     if (myState && myState.channelFolderNames) {
         for (var i = 0; i < myState.channelFolderNames.length; ++i) {
@@ -265,14 +266,14 @@ function showChannelUI(img) {
         }
     }
     
-    myState.infoObj = img.volume.imageInfo;
+    myState.infoObj = volume.imageInfo;
 
     myState.infoObj.channelGui = [];
 
     myState.channelFolderNames = []
     for (var i = 0; i < myState.infoObj.channels; ++i) {
         myState.infoObj.channelGui.push({
-            colorD: img.volume.channel_colors_default[i],
+            colorD: volume.channel_colors_default[i],
             colorS: [0, 0, 0],
             colorE: [0, 0, 0],
             window: 1.0,
@@ -282,7 +283,7 @@ function showChannelUI(img) {
             // this doesn't give good results currently but is an example of a per-channel button callback
             autoIJ: (function(j) {
                 return function() {
-                    view3D.image.volume.channels[j].lutGenerator_auto2();
+                    volume.channels[j].lutGenerator_auto2();
                     view3D.updateLuts();
                 }
             })(i)
@@ -291,13 +292,13 @@ function showChannelUI(img) {
         myState.channelFolderNames.push("Channel " + myState.infoObj.channel_names[i]);
         f.add(myState.infoObj.channelGui[i], "enabled").onChange(function (j) {
             return function (value) {
-                view3D.image.setVolumeChannelEnabled(j, value ? true : false);
+                view3D.setVolumeChannelEnabled(j, value ? true : false);
                 view3D.updateActiveChannels();
             };
         }(i));
         f.addColor(myState.infoObj.channelGui[i], "colorD").name("Diffuse").onChange(function (j) {
             return function (value) {
-                view3D.image.updateChannelMaterial(
+                view3D.updateChannelMaterial(
                     j,
                     myState.infoObj.channelGui[j].colorD,
                     myState.infoObj.channelGui[j].colorS,
@@ -309,7 +310,7 @@ function showChannelUI(img) {
         }(i));
         f.addColor(myState.infoObj.channelGui[i], "colorS").name("Specular").onChange(function (j) {
             return function (value) {
-                view3D.image.updateChannelMaterial(
+                view3D.updateChannelMaterial(
                     j,
                     myState.infoObj.channelGui[j].colorD,
                     myState.infoObj.channelGui[j].colorS,
@@ -321,7 +322,7 @@ function showChannelUI(img) {
         }(i));
         f.addColor(myState.infoObj.channelGui[i], "colorE").name("Emissive").onChange(function (j) {
             return function (value) {
-                view3D.image.updateChannelMaterial(
+                view3D.updateChannelMaterial(
                     j,
                     myState.infoObj.channelGui[j].colorD,
                     myState.infoObj.channelGui[j].colorS,
@@ -333,21 +334,21 @@ function showChannelUI(img) {
         }(i));
         f.add(myState.infoObj.channelGui[i], "window").max(1.0).min(0.0).step(0.001).onChange(function (j) {
                 return function (value) {
-                    view3D.image.volume.channels[j].lutGenerator_windowLevel(value, myState.infoObj.channelGui[j].level);
+                    volume.channels[j].lutGenerator_windowLevel(value, myState.infoObj.channelGui[j].level);
                     view3D.updateLuts();
                 }
             }(i));
 
         f.add(myState.infoObj.channelGui[i], "level").max(1.0).min(0.0).step(0.001).onChange(function (j) {
                 return function (value) {
-                    view3D.image.volume.channels[j].lutGenerator_windowLevel(myState.infoObj.channelGui[j].window, value);
+                    volume.channels[j].lutGenerator_windowLevel(myState.infoObj.channelGui[j].window, value);
                     view3D.updateLuts();
                 }
             }(i));
         //f.add(myState.infoObj.channelGui[i], 'autoIJ');
         f.add(myState.infoObj.channelGui[i], "roughness").max(100.0).min(0.0).onChange(function (j) {
                 return function (value) {
-                    view3D.image.updateChannelMaterial(
+                    view3D.updateChannelMaterial(
                         j,
                         myState.infoObj.channelGui[j].colorD,
                         myState.infoObj.channelGui[j].colorS,
@@ -365,7 +366,8 @@ function showChannelUI(img) {
 function loadImageData(jsondata, volumedata) {
     view3D.resize();
     
-    const aimg = new VolumeDrawable(jsondata, myState.isPT);
+    const vol = new Volume(jsondata);
+    const aimg = new VolumeDrawable(vol, myState.isPT);
 
     // tell the viewer about the image AFTER it's loaded
     //view3D.setImage(aimg);
@@ -377,11 +379,15 @@ function loadImageData(jsondata, volumedata) {
             // according to jsondata.tile_width*jsondata.tile_height*jsondata.tiles
             // (first row of first plane is the first data in 
             // the layout, then second row of first plane, etc)
+            vol.setChannelDataFromVolume(i, volumedata[i]);
+
             aimg.setChannelDataFromVolume(i, volumedata[i]);
         }
     }
     else {
         VolumeLoader.loadVolumeAtlasData(jsondata.images, (url, channelIndex, atlasdata, atlaswidth, atlasheight) => {
+            vol.setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight);
+
             aimg.setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight);
             aimg.volume.channels[channelIndex].lutGenerator_auto2();
             if (aimg.volume.loaded) {
@@ -399,8 +405,10 @@ function loadImageData(jsondata, volumedata) {
             }
         });
     }
-    showChannelUI(aimg);
+    showChannelUI(vol);
     view3D.resize(null, 600, 600);
+
+    return vol;
 }
 
 function fetchImage(url) {
