@@ -1,9 +1,14 @@
 import {
-    pathTracingFragmentShaderSrc, 
-    pathTracingUniforms, 
-    pathTracingVertexShaderSrc
+  pathTracingFragmentShaderSrc, 
+  pathTracingUniforms, 
+  pathTracingVertexShaderSrc
 } from './constants/volumePTshader.js';
-  
+import {
+  denoiseFragmentShaderSrc, 
+  denoiseShaderUniforms, 
+  denoiseVertexShaderSrc
+} from './constants/denoiseShader.js';
+
 export default class PathTracedVolume {
     constructor(volume) {
         // need?
@@ -238,7 +243,17 @@ export default class PathTracedVolume {
             depthTest: false
           });
 
+          this.denoiseShaderUniforms = denoiseShaderUniforms();
+          this.screenOutputDenoiseMaterial = new THREE.ShaderMaterial({
+            uniforms: this.denoiseShaderUniforms,
+            vertexShader: denoiseVertexShaderSrc,
+            fragmentShader: denoiseFragmentShaderSrc,
+            depthWrite: false,
+            depthTest: false
+          });
+
           this.screenOutputMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;
+          this.screenOutputDenoiseMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;
 
           this.screenOutputMesh = new THREE.Mesh(this.screenOutputGeometry, this.screenOutputMaterial);
 
@@ -319,6 +334,16 @@ export default class PathTracedVolume {
             (scr.w - scr.z) / this.pathTracingUniforms.uResolution.value.y
         );
 
+        const denoiseLerpC = 0.33 * (Math.max(this.sampleCounter - 1, 1.0) * 0.035);
+        if (denoiseLerpC > 0.0 && denoiseLerpC < 1.0) {
+          this.screenOutputDenoiseMaterial.uniforms.gDenoiseLerpC.value = denoiseLerpC;
+          this.screenOutputMesh.material = this.screenOutputDenoiseMaterial;
+        } else {
+          this.screenOutputMesh.material = this.screenOutputMaterial;
+        }
+        this.screenOutputDenoiseMaterial.uniforms.gDenoisePixelSize.value.x = this.pathTracingUniforms.uResolution.value.x;
+        this.screenOutputDenoiseMaterial.uniforms.gDenoisePixelSize.value.y = this.pathTracingUniforms.uResolution.value.y;
+
         // RENDERING in 3 steps
 
         // STEP 1
@@ -384,6 +409,12 @@ export default class PathTracedVolume {
         const ny = Math.floor(y * this.pixelSamplingRate);
         this.pathTracingUniforms.uResolution.value.x = nx;
         this.pathTracingUniforms.uResolution.value.y = ny;
+
+        // TODO optimization: scale this value down when nx,ny is small.  For now can leave it at 3 (a 7x7 pixel filter).
+        const denoiseFilterR = 3;
+        this.screenOutputDenoiseMaterial.uniforms.gDenoiseWindowRadius.value = denoiseFilterR;
+        this.screenOutputDenoiseMaterial.uniforms.gDenoiseInvWindowArea.value = 1.0 / ((2.0 * denoiseFilterR + 1.0) * (2.0 * denoiseFilterR + 1.0));
+
         this.pathTracingRenderTarget.setSize(nx, ny);
         this.screenTextureRenderTarget.setSize(nx, ny);
     }
@@ -569,7 +600,8 @@ export default class PathTracedVolume {
       }
     
       updateExposure(e) {
-        this.screenOutputMaterial.uniforms.gInvExposure.value = (1.0/(1.0-e)) - 1.0;//2.0 - (1.0/e);// 1.0 / (1.0 - e);
+        this.screenOutputMaterial.uniforms.gInvExposure.value = (1.0/(1.0-e)) - 1.0;
+        this.screenOutputDenoiseMaterial.uniforms.gInvExposure.value = (1.0/(1.0-e)) - 1.0;
         this.sampleCounter = 0.0;
       }
       
