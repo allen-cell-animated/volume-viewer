@@ -279,6 +279,8 @@ function showChannelUI(volume) {
             window: 1.0,
             level: 0.5,
             roughness: 0.0,
+            isovalue: 128, // actual intensity value
+            isosurface: false,
             enabled: true,
             // this doesn't give good results currently but is an example of a per-channel button callback
             autoIJ: (function(j) {
@@ -296,6 +298,22 @@ function showChannelUI(volume) {
                 view3D.updateActiveChannels();
             };
         }(i));
+        f.add(myState.infoObj.channelGui[i], "isosurface").onChange(function (j) {
+            return function (value) {
+                if (value) {
+                    view3D.createIsosurface(volume, j, myState.infoObj.channelGui[j].isovalue, 1.0);
+                }
+                else {
+                    view3D.clearIsosurface(volume, j);
+                }
+            };
+        }(i));
+        f.add(myState.infoObj.channelGui[i], "isovalue").max(255).min(0).step(1).onChange(function (j) {
+            return function (value) {
+                view3D.updateIsosurface(volume, j, value);
+            }
+        }(i));
+
         f.addColor(myState.infoObj.channelGui[i], "colorD").name("Diffuse").onChange(function (j) {
             return function (value) {
                 view3D.updateChannelMaterial(

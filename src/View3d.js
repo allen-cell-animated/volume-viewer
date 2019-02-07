@@ -92,11 +92,26 @@ export class View3d {
   }
 
   createIsosurface(volume, channel, isovalue, alpha) {
-    this.image.createIsosurface(channel, isovalue, alpha, alpha < 0.95);
+    if (!this.image) {
+      return;
+    }
+    if (this.image.hasIsosurface(channel)) {
+      this.image.updateIsovalue(channel, isovalue);
+    }
+    else {
+      this.image.createIsosurface(channel, isovalue, alpha, alpha < 0.95);
+    }
+  }
+
+  hasIsosurface(volume, channel) {
+    return this.image.hasIsosurface(channel);
   }
 
   // isovalue, color, opacity ?
   updateIsosurface(volume, channel, isovalue) {
+    if (!this.image || !this.image.hasIsosurface(channel)) {
+      return;
+    }
     this.image.updateIsovalue(channel, isovalue);
   }
   
