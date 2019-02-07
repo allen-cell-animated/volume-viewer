@@ -42,6 +42,12 @@ export default class RayMarchedAtlasVolume {
             volume.imageInfo.atlas_width, 
             volume.imageInfo.atlas_height
         );
+        // tell channelData about the channels that are already present, one at a time.
+        for (let i = 0; i < this.volume.channels.length; ++i) {
+            if (this.volume.getChannel(i).loaded) {
+                this.channelData.onChannelLoaded([i], this.volume.channels);
+            }
+        }
     }
 
     cleanup() {

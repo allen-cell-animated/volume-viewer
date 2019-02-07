@@ -283,7 +283,7 @@ function showChannelUI(volume) {
             // this doesn't give good results currently but is an example of a per-channel button callback
             autoIJ: (function(j) {
                 return function() {
-                    volume.channels[j].lutGenerator_auto2();
+                    volume.getChannel(j).lutGenerator_auto2();
                     view3D.updateLuts();
                 }
             })(i)
@@ -334,14 +334,14 @@ function showChannelUI(volume) {
         }(i));
         f.add(myState.infoObj.channelGui[i], "window").max(1.0).min(0.0).step(0.001).onChange(function (j) {
                 return function (value) {
-                    volume.channels[j].lutGenerator_windowLevel(value, myState.infoObj.channelGui[j].level);
+                    volume.getChannel(j).lutGenerator_windowLevel(value, myState.infoObj.channelGui[j].level);
                     view3D.updateLuts();
                 }
             }(i));
 
         f.add(myState.infoObj.channelGui[i], "level").max(1.0).min(0.0).step(0.001).onChange(function (j) {
                 return function (value) {
-                    volume.channels[j].lutGenerator_windowLevel(myState.infoObj.channelGui[j].window, value);
+                    volume.getChannel(j).lutGenerator_windowLevel(myState.infoObj.channelGui[j].window, value);
                     view3D.updateLuts();
                 }
             }(i));
@@ -367,7 +367,7 @@ function loadImageData(jsondata, volumedata) {
     view3D.resize();
     
     const vol = new Volume(jsondata);
-    const aimg = new VolumeDrawable(vol, myState.isPT);
+    //const aimg = new VolumeDrawable(vol, myState.isPT);
 
     // tell the viewer about the image AFTER it's loaded
     //view3D.setImage(aimg);
@@ -381,22 +381,30 @@ function loadImageData(jsondata, volumedata) {
             // the layout, then second row of first plane, etc)
             vol.setChannelDataFromVolume(i, volumedata[i]);
 
-            aimg.setChannelDataFromVolume(i, volumedata[i]);
+            view3D.removeAllVolumes();
+            view3D.addVolume(vol);
+
+            view3D.setVolumeChannelAsMask(vol, mask_channel_index);
+            view3D.updateActiveChannels();
+            view3D.updateLuts();
+            view3D.updateLights(myState.lights);
+            view3D.updateDensity(myState.density);
+            view3D.updateExposure(myState.exposure);
         }
     }
     else {
         VolumeLoader.loadVolumeAtlasData(jsondata.images, (url, channelIndex, atlasdata, atlaswidth, atlasheight) => {
             vol.setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight);
 
-            aimg.setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight);
-            aimg.volume.channels[channelIndex].lutGenerator_auto2();
-            if (aimg.volume.loaded) {
-                // tell the viewer about the image
-                const old_img = view3D.setImage(aimg);
-                if (old_img) {
-                    old_img.cleanup();
-                }
-                aimg.setChannelAsMask(mask_channel_index);
+            vol.channels[channelIndex].lutGenerator_auto2();
+
+            if (vol.loaded) {
+                view3D.setVolumeRenderMode(myState.isPT ? 1 : 0);
+
+                view3D.removeAllVolumes();
+                view3D.addVolume(vol);
+
+                view3D.setVolumeChannelAsMask(vol, mask_channel_index);
                 view3D.updateActiveChannels();
                 view3D.updateLuts();
                 view3D.updateLights(myState.lights);

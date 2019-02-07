@@ -93,6 +93,8 @@ export default class Volume {
     }
 
     this.setVoxelSize(this.pixel_size);
+
+    this.volumeDataObservers = [];
   }
 
   setScale(scale) {
@@ -158,6 +160,9 @@ export default class Volume {
     if (this.channels.every(function(element,index,array) {return element.loaded;})) {
       this.loaded = true;
     }
+    for (let i = 0; i < this.volumeDataObservers.length; ++i) {
+      this.volumeDataObservers[i].onVolumeData(this, batch);
+    }
   }
 
   /**
@@ -214,6 +219,23 @@ export default class Volume {
    */
   getIntensity(c, x, y, z) {
       return this.channels[c].getIntensity(x, y, z);
+  }
+
+  addVolumeDataObserver(o) {
+    this.volumeDataObservers.push(o);
+  }
+
+  removeVolumeDataObserver(o) {
+    if (o) {
+      let i = this.volumeDataObservers.indexOf(o);
+      if (i !== -1) {
+        this.volumeDataObservers.splice(i, 1);
+      }
+    }
+  }
+
+  removeAllVolumeDataObservers() {
+    this.volumeDataObservers = [];
   }
 
 };

@@ -1,5 +1,6 @@
 import {ThreeJsPanel} from './ThreeJsPanel.js';
 import lightSettings from './constants/lights.js';
+import VolumeDrawable from './VolumeDrawable.js';
 
 /**
  * @class
@@ -52,6 +53,55 @@ export class View3d {
       this.scene.remove(this.image.sceneRoot);
     }
     return this.image;
+  }
+
+  /**
+   * Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will return any prior existing image.
+   * @param {Volume} volume 
+   */
+  addVolume(volume) {
+    volume.addVolumeDataObserver(this);
+    this.setImage(new VolumeDrawable(volume, this.volumeRenderMode === 1));
+  }
+
+  removeVolume(volume) {
+    const oldImage = this.unsetImage();
+    if (oldImage) {
+      oldImage.cleanup();
+    }
+    // assert oldImage.volume === volume!
+    volume.removeVolumeDataObserver(this);
+  }
+
+  removeAllVolumes() {
+    const oldImage = this.unsetImage();
+    if (oldImage) {
+      oldImage.volume.removeVolumeDataObserver(this);
+      oldImage.cleanup();
+    }
+  }
+
+  // channels is an array of channel indices for which new data just arrived.
+  onVolumeData(volume, channels) {
+    // todo get image for volume (this.volumes.indexof?)
+    this.image.onChannelLoaded(channels);
+  }
+
+  setVolumeChannelAsMask(volume, mask_channel_index) {
+    this.image.setChannelAsMask(mask_channel_index);
+  }
+
+  createIsosurface(volume, channel, isovalue, alpha) {
+    this.image.createIsosurface(channel, isovalue, alpha, alpha < 0.95);
+  }
+
+  // isovalue, color, opacity ?
+  updateIsosurface(volume, channel, isovalue) {
+    this.image.updateIsovalue(channel, isovalue);
+  }
+  
+  clearIsosurface(volume, channel) {
+    this.image.destroyIsosurface(channel);
   }
 
   /**
@@ -342,6 +392,7 @@ export class View3d {
    * @param {number} isPT 0 for single pass ray march, 1 for progressive path trace
    */
   setVolumeRenderMode(isPT) {
+    this.volumeRenderMode = isPT;
     if (this.image) {
       if (isPT === 1 && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
         this.image.setVolumeRendering(true);
