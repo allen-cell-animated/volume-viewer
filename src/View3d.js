@@ -339,12 +339,12 @@ export class View3d {
 
   /**
    * Switch between single pass ray-marched volume rendering and progressive path traced rendering.
-   * @param {boolean} isPT true for progressive path trace, false for single pass ray march
+   * @param {number} isPT 0 for single pass ray march, 1 for progressive path trace
    */
-  setPathTrace(isPT) {
+  setVolumeRenderMode(isPT) {
     if (this.image) {
-      if (isPT && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
-        this.image.setVolumeRendering(isPT);
+      if (isPT === 1 && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
+        this.image.setVolumeRendering(true);
       }
       else {
         this.image.setVolumeRendering(false);

@@ -445,7 +445,7 @@ if (view3D.canvas3d.hasWebGL2) {
     //var ptbtn = document.getElementById("ptbtn");
     ptbtn.addEventListener("click", ()=>{
         myState.isPT = !myState.isPT; 
-        view3D.setPathTrace(myState.isPT);
+        view3D.setVolumeRenderMode(myState.isPT ? 1 : 0);
         view3D.updateLights(myState.lights);
     });
 }
