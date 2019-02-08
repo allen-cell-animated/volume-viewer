@@ -69,8 +69,10 @@ export class View3d {
     if (oldImage) {
       oldImage.cleanup();
     }
-    // assert oldImage.volume === volume!
-    volume.removeVolumeDataObserver(this);
+    if (volume) {
+      // assert oldImage.volume === volume!
+      volume.removeVolumeDataObserver(this);
+    }
   }
 
   removeAllVolumes() {
