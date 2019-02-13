@@ -10,8 +10,11 @@ export class View3d {
   /**
    * @param {HTMLElement} parentElement the 3d display will try to fill the parent element.
    */
-  constructor(parentElement) {
-    this.canvas3d = new ThreeJsPanel(parentElement, true);
+  constructor(parentElement, options) {
+    options = options || { useWebGL2: true };
+    if (options.useWebGL2 === undefined) { options.useWebGL2 = true; }
+
+    this.canvas3d = new ThreeJsPanel(parentElement, options.useWebGL2);
     this.redraw = this.redraw.bind(this);
     this.scene = null;
     this.backgroundColor = 0x000000;
