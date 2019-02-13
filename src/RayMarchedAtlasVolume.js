@@ -131,6 +131,9 @@ export default class RayMarchedAtlasVolume {
     
     setIsOrtho(isOrthoAxis) {
         this.setUniform('isOrtho', isOrthoAxis ? 1.0 : 0.0);
+        if (!isOrthoAxis) {
+            this.setOrthoThickness(1.0);
+        }
     }
 
     setGamma(gmin, glevel, gmax) {

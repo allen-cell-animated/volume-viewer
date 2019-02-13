@@ -1,6 +1,7 @@
 import {ThreeJsPanel} from './ThreeJsPanel.js';
 import lightSettings from './constants/lights.js';
 import VolumeDrawable from './VolumeDrawable.js';
+import {Light, AREA_LIGHT, SKY_LIGHT} from './Light.js';
 
 /**
  * @class
@@ -93,6 +94,12 @@ export class View3d {
     this.image.setChannelAsMask(mask_channel_index);
   }
 
+  setVoxelSize(volume, values) {
+    if (this.image) {
+      this.image.setVoxelSize(values);
+    }
+  }
+
   createIsosurface(volume, channel, isovalue, alpha) {
     if (!this.image) {
       return;
@@ -116,9 +123,26 @@ export class View3d {
     }
     this.image.updateIsovalue(channel, isovalue);
   }
+
+  // isosurface opacity only?
+  updateOpacity(volume, channel, opacity) {
+    if (!this.image) {
+      return;
+    }
+    this.image.updateOpacity(channel, opacity);
+  }
   
   clearIsosurface(volume, channel) {
     this.image.destroyIsosurface(channel);
+  }
+
+  /**
+   * Save a channel's isosurface as a triangle mesh to either STL or GLTF2 format.  File will be named automatically, using image name and channel name.
+   * @param {number} channelIndex 
+   * @param {string} type Either 'GLTF' or 'STL'
+   */
+  saveChannelIsosurface(volume, channelIndex, type) {
+    this.image.saveChannelIsosurface(channelIndex, type);
   }
 
   /**
@@ -171,6 +195,8 @@ export class View3d {
 
     // background color
     this.canvas3d.renderer.setClearColor(this.backgroundColor, 1.000);
+
+    this.lights = [new Light(SKY_LIGHT), new Light(AREA_LIGHT)];
 
     this.lightContainer = new THREE.Object3D();
     this.lightContainer.name = 'lightContainer';
@@ -289,6 +315,18 @@ export class View3d {
 
   }
 
+  setGamma(gmin, glevel, gmax) {
+    if (this.image) {
+      this.image.setGamma(gmin, glevel, gmax);
+    }
+  }
+
+  setMaxProjectMode(isMaxProject) {
+    if (this.image) {
+      this.image.setMaxProjectMode(isMaxProject);
+    }
+  }
+
   /**
    * Notify the view that the set of active volume channels has been modified.
    */
@@ -359,10 +397,27 @@ export class View3d {
   }
 
   /**
+   * Set clipping range (between 0 and 1) for a given axis. 
+   * Calling this allows the rendering to compensate for changes in thickness in orthographic views that affect how bright the volume is.
+   * @param {number} axis 0, 1, or 2 for x, y, or z axis
+   * @param {number} minval 0..1, should be less than maxval
+   * @param {number} maxval 0..1, should be greater than minval 
+   * @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
+   */
+  setAxisClip(axis, minval, maxval, isOrthoAxis) {
+    if (this.image) {
+      this.image.setAxisClip(axis, minval, maxval, isOrthoAxis);
+    }
+  }
+
+  /**
    * Update lights
    * @param {Array} state array of Lights
    */
   updateLights(state) {
+    // TODO flesh this out
+    this.lights = state;
+
     if (this.image) {
       this.image.updateLights(state);
     }
@@ -405,6 +460,17 @@ export class View3d {
   }
 
   /**
+   * Set the color for a channel
+   * @param {number} channelIndex 
+   * @param {Array.<number>} colorrgb [r,g,b]
+   */
+  updateChannelColor(channelIndex, colorrgb) {
+    if (this.image) {
+      this.image.updateChannelColor(channelIndex, colorrgb);
+    }
+  }
+
+  /**
    * Switch between single pass ray-marched volume rendering and progressive path traced rendering.
    * @param {number} isPT 0 for single pass ray march, 1 for progressive path trace
    */
@@ -413,6 +479,7 @@ export class View3d {
     if (this.image) {
       if (isPT === 1 && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
         this.image.setVolumeRendering(true);
+        this.image.updateLights(this.lights);
       }
       else {
         this.image.setVolumeRendering(false);
