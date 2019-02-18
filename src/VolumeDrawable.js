@@ -320,28 +320,6 @@ export default class VolumeDrawable {
     return this.brightness;
   }
 
-  /**
-   * Add a new channel ready to receive data from one of the setChannelDataFrom* calls.
-   * Name and color will be defaulted if not provided. For now, leave imageInfo alone as the "original" data
-   * @param {string} name 
-   * @param {Array.<number>} color [r,g,b]
-   */
-  appendEmptyChannel(name, color) {
-    let idx = this.num_channels;
-    let chcolor = color || getColorByChannelIndex(idx);
-    this.channel_colors.push(chcolor);
-    this.fusion.push({
-      chIndex: idx,
-      lut:[],
-      rgbColor: chcolor
-    });
-
-    this.meshVolume.appendEmptyChannel(chname);
-    this.volumeRendering.appendEmptyChannel(chname);
-
-    return idx;
-  }
-
   setChannelAsMask(channelIndex) {
     if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
       return false;

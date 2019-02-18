@@ -46,9 +46,6 @@ export default class MeshVolume {
           }
     }
 
-    appendEmptyChannel(name) {
-    }
-
     setScale(scale) {
 
         this.scale = scale;

@@ -96,10 +96,6 @@ export default class RayMarchedAtlasVolume {
         this.channelData.onChannelLoaded(batch, this.volume.channels);
     }
 
-    appendEmptyChannel(name) {
-        this.channelData.appendEmptyChannel(name);
-    }
-
     setScale(scale) {
 
         this.scale = scale;
