@@ -88,10 +88,8 @@ export class View3d {
    * Remove all volume images from the viewer.
    */
   removeAllVolumes() {
-    const oldImage = this.unsetImage();
-    if (oldImage) {
-      oldImage.volume.removeVolumeDataObserver(this);
-      oldImage.cleanup();
+    if (this.image) {
+      this.removeVolume(this.image.volume);
     }
   }
 
