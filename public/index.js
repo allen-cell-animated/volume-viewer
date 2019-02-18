@@ -63,6 +63,7 @@ const mask_channel_index = imgdata.channel_names.indexOf("SEG_Memb");
 
 const myState = {
     file: "",
+    volume: null,
     density: 4.0,
     maskAlpha: 1.0,
     exposure: 0.75,
@@ -107,10 +108,10 @@ function setupGui() {
     //gui = new dat.GUI({autoPlace:false, width:200});
 
     gui.add(myState, "density").max(100.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateDensity(value);
+        view3D.updateDensity(myState.volume, value);
     });
     gui.add(myState, "maskAlpha").max(1.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateMaskAlpha(value);
+        view3D.updateMaskAlpha(myState.volume, value);
     });
 
     var cameragui = gui.addFolder("Camera");
@@ -132,22 +133,22 @@ function setupGui() {
 
     var clipping = gui.addFolder("Clipping Box");
     clipping.add(myState, "xmin").max(1.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateClipRegion(myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
+        view3D.updateClipRegion(myState.volume, myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
     });
     clipping.add(myState, "xmax").max(1.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateClipRegion(myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
+        view3D.updateClipRegion(myState.volume, myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
     });
     clipping.add(myState, "ymin").max(1.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateClipRegion(myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
+        view3D.updateClipRegion(myState.volume, myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
     });
     clipping.add(myState, "ymax").max(1.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateClipRegion(myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
+        view3D.updateClipRegion(myState.volume, myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
     });
     clipping.add(myState, "zmin").max(1.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateClipRegion(myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
+        view3D.updateClipRegion(myState.volume, myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
     });
     clipping.add(myState, "zmax").max(1.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateClipRegion(myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
+        view3D.updateClipRegion(myState.volume, myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
     });
 
     var lighting = gui.addFolder("Lighting");
@@ -286,7 +287,7 @@ function showChannelUI(volume) {
             autoIJ: (function(j) {
                 return function() {
                     volume.getChannel(j).lutGenerator_auto2();
-                    view3D.updateLuts();
+                    view3D.updateLuts(volume);
                 }
             })(i)
         });
@@ -294,8 +295,8 @@ function showChannelUI(volume) {
         myState.channelFolderNames.push("Channel " + myState.infoObj.channel_names[i]);
         f.add(myState.infoObj.channelGui[i], "enabled").onChange(function (j) {
             return function (value) {
-                view3D.setVolumeChannelEnabled(j, value ? true : false);
-                view3D.updateActiveChannels();
+                view3D.setVolumeChannelEnabled(volume, j, value ? true : false);
+                view3D.updateActiveChannels(volume);
             };
         }(i));
         f.add(myState.infoObj.channelGui[i], "isosurface").onChange(function (j) {
@@ -316,64 +317,64 @@ function showChannelUI(volume) {
 
         f.addColor(myState.infoObj.channelGui[i], "colorD").name("Diffuse").onChange(function (j) {
             return function (value) {
-                view3D.updateChannelMaterial(
+                view3D.updateChannelMaterial(volume,
                     j,
                     myState.infoObj.channelGui[j].colorD,
                     myState.infoObj.channelGui[j].colorS,
                     myState.infoObj.channelGui[j].colorE,
                     myState.infoObj.channelGui[j].roughness
                 );
-                view3D.updateMaterial();
+                view3D.updateMaterial(volume);
             };
         }(i));
         f.addColor(myState.infoObj.channelGui[i], "colorS").name("Specular").onChange(function (j) {
             return function (value) {
-                view3D.updateChannelMaterial(
+                view3D.updateChannelMaterial(volume,
                     j,
                     myState.infoObj.channelGui[j].colorD,
                     myState.infoObj.channelGui[j].colorS,
                     myState.infoObj.channelGui[j].colorE,
                     myState.infoObj.channelGui[j].roughness
                 );
-                view3D.updateMaterial();
+                view3D.updateMaterial(volume);
             };
         }(i));
         f.addColor(myState.infoObj.channelGui[i], "colorE").name("Emissive").onChange(function (j) {
             return function (value) {
-                view3D.updateChannelMaterial(
+                view3D.updateChannelMaterial(volume,
                     j,
                     myState.infoObj.channelGui[j].colorD,
                     myState.infoObj.channelGui[j].colorS,
                     myState.infoObj.channelGui[j].colorE,
                     myState.infoObj.channelGui[j].roughness
                 );
-                view3D.updateMaterial();
+                view3D.updateMaterial(volume);
             };
         }(i));
         f.add(myState.infoObj.channelGui[i], "window").max(1.0).min(0.0).step(0.001).onChange(function (j) {
                 return function (value) {
                     volume.getChannel(j).lutGenerator_windowLevel(value, myState.infoObj.channelGui[j].level);
-                    view3D.updateLuts();
+                    view3D.updateLuts(volume);
                 }
             }(i));
 
         f.add(myState.infoObj.channelGui[i], "level").max(1.0).min(0.0).step(0.001).onChange(function (j) {
                 return function (value) {
                     volume.getChannel(j).lutGenerator_windowLevel(myState.infoObj.channelGui[j].window, value);
-                    view3D.updateLuts();
+                    view3D.updateLuts(volume);
                 }
             }(i));
         //f.add(myState.infoObj.channelGui[i], 'autoIJ');
         f.add(myState.infoObj.channelGui[i], "roughness").max(100.0).min(0.0).onChange(function (j) {
                 return function (value) {
-                    view3D.updateChannelMaterial(
+                    view3D.updateChannelMaterial(volume,
                         j,
                         myState.infoObj.channelGui[j].colorD,
                         myState.infoObj.channelGui[j].colorS,
                         myState.infoObj.channelGui[j].colorE,
                         myState.infoObj.channelGui[j].roughness
                     );
-                    view3D.updateMaterial();
+                    view3D.updateMaterial(volume);
                 }
             }(i));
 
@@ -385,10 +386,11 @@ function loadImageData(jsondata, volumedata) {
     view3D.resize();
     
     const vol = new Volume(jsondata);
-    //const aimg = new VolumeDrawable(vol, myState.isPT);
+    myState.volume = vol;
 
     // tell the viewer about the image AFTER it's loaded
-    //view3D.setImage(aimg);
+    //view3D.removeAllVolumes();
+    //view3D.addVolume(vol);
 
     // get data into the image
     if (volumedata) {
@@ -403,10 +405,10 @@ function loadImageData(jsondata, volumedata) {
             view3D.addVolume(vol);
 
             view3D.setVolumeChannelAsMask(vol, mask_channel_index);
-            view3D.updateActiveChannels();
-            view3D.updateLuts();
+            view3D.updateActiveChannels(vol);
+            view3D.updateLuts(vol);
             view3D.updateLights(myState.lights);
-            view3D.updateDensity(myState.density);
+            view3D.updateDensity(vol, myState.density);
             view3D.updateExposure(myState.exposure);
         }
     }
@@ -423,10 +425,10 @@ function loadImageData(jsondata, volumedata) {
                 view3D.addVolume(vol);
 
                 view3D.setVolumeChannelAsMask(vol, mask_channel_index);
-                view3D.updateActiveChannels();
-                view3D.updateLuts();
+                view3D.updateActiveChannels(vol);
+                view3D.updateLuts(vol);
                 view3D.updateLights(myState.lights);
-                view3D.updateDensity(myState.density);
+                view3D.updateDensity(vol, myState.density);
                 view3D.updateExposure(myState.exposure);
             }
         });
@@ -448,7 +450,7 @@ function fetchImage(url) {
         //     element.name = dataset.prefixdir + element.name;
         // });        
         loadImageData(myJson);
-    });    
+    });
 }
 
 var xbtn = document.getElementById("X");
