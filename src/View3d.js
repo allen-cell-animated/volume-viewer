@@ -9,6 +9,7 @@ import {Light, AREA_LIGHT, SKY_LIGHT} from './Light.js';
 export class View3d {
   /**
    * @param {HTMLElement} parentElement the 3d display will try to fill the parent element.
+   * @param {Object} options This is an optional param. The only option is currently boolean {useWebGL2:true} which defaults to true.
    */
   constructor(parentElement, options) {
     options = options || { useWebGL2: true };
@@ -60,7 +61,7 @@ export class View3d {
   }
 
   /**
-   * Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will return any prior existing image.
+   * Add a new volume image to the viewer.  (The viewer currently only supports a single image at a time - adding repeatedly, without removing in between, is a potential resource leak)
    * @param {Volume} volume 
    */
   addVolume(volume) {
@@ -68,6 +69,10 @@ export class View3d {
     this.setImage(new VolumeDrawable(volume, this.volumeRenderMode === 1));
   }
 
+  /**
+   * Remove a volume image from the viewer.  This will clean up the View3D's resources for the current volume
+   * @param {Volume} volume 
+   */
   removeVolume(volume) {
     const oldImage = this.unsetImage();
     if (oldImage) {
@@ -79,6 +84,9 @@ export class View3d {
     }
   }
 
+  /**
+   * Remove all volume images from the viewer.
+   */
   removeAllVolumes() {
     const oldImage = this.unsetImage();
     if (oldImage) {
@@ -93,16 +101,33 @@ export class View3d {
     this.image.onChannelLoaded(channels);
   }
 
+  /**
+   * Assign a channel index as a mask channel (will multiply its color against the entire visible volume)
+   * @param {Object} volume 
+   * @param {number} mask_channel_index 
+   */
   setVolumeChannelAsMask(volume, mask_channel_index) {
     this.image.setChannelAsMask(mask_channel_index);
   }
 
+  /**
+   * Set voxel dimensions - controls volume scaling. For example, the physical measurements of the voxels from a biological data set
+   * @param {Object} volume 
+   * @param {number} values Array of x,y,z floating point values for the physical voxel size scaling
+   */
   setVoxelSize(volume, values) {
     if (this.image) {
       this.image.setVoxelSize(values);
     }
   }
 
+  /**
+   * If an isosurface is not already created, then create one.  Otherwise do nothing.
+   * @param {Object} volume 
+   * @param {number} channel 
+   * @param {number} isovalue isovalue
+   * @param {number=} alpha Opacity
+   */
   createIsosurface(volume, channel, isovalue, alpha) {
     if (!this.image) {
       return;
@@ -115,11 +140,22 @@ export class View3d {
     }
   }
 
+  /**
+   * Is an isosurface already created for this channel?
+   * @param {Object} volume 
+   * @param {number} channel 
+   * @return true if there is currently a mesh isosurface for this channel
+   */
   hasIsosurface(volume, channel) {
     return this.image.hasIsosurface(channel);
   }
 
-  // isovalue, color, opacity ?
+  /**
+   * If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
+   * @param {Object} volume 
+   * @param {number} channel 
+   * @param {number} isovalue
+   */
   updateIsosurface(volume, channel, isovalue) {
     if (!this.image || !this.image.hasIsosurface(channel)) {
       return;
@@ -127,7 +163,12 @@ export class View3d {
     this.image.updateIsovalue(channel, isovalue);
   }
 
-  // isosurface opacity only?
+  /**
+   * Set opacity for isosurface
+   * @param {Object} volume 
+   * @param {number} channel 
+   * @param {number} opacity Opacity
+   */
   updateOpacity(volume, channel, opacity) {
     if (!this.image) {
       return;
@@ -135,12 +176,18 @@ export class View3d {
     this.image.updateOpacity(channel, opacity);
   }
   
+  /**
+   * If an isosurface exists for this channel, hide it now
+   * @param {Object} volume 
+   * @param {number} channel 
+   */
   clearIsosurface(volume, channel) {
     this.image.destroyIsosurface(channel);
   }
 
   /**
    * Save a channel's isosurface as a triangle mesh to either STL or GLTF2 format.  File will be named automatically, using image name and channel name.
+   * @param {Object} volume 
    * @param {number} channelIndex 
    * @param {string} type Either 'GLTF' or 'STL'
    */
@@ -148,10 +195,7 @@ export class View3d {
     this.image.saveChannelIsosurface(channelIndex, type);
   }
 
-  /**
-   * Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will return any prior existing image.
-   * @param {VolumeDrawable} img 
-   */
+  // Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will return any prior existing image.
   setImage(img) {
     const oldImage = this.unsetImage();
 
@@ -300,31 +344,45 @@ export class View3d {
 
   /**
    * Set the volume scattering density
+   * @param {Object} volume 
    * @param {number} density 0..100 UI slider value
    */
-  updateDensity(density) {
+  updateDensity(volume, density) {
     if (this.image) {
       this.image.setDensity(density/100.0);
     }
   };
 
-  updateShadingMethod(isbrdf) {
+  /**
+   * Set the shading method - applies to pathtraced render mode only
+   * @param {Object} volume 
+   * @param {number} isbrdf true for brdf model, false for isotropic phase function model
+   */
+  updateShadingMethod(volume, isbrdf) {
     if (this.image) {
       this.image.updateShadingMethod(isbrdf);
     }
   };
 
-  updateShowLights(showlights) {
-
-  }
-
-  setGamma(gmin, glevel, gmax) {
+  /**
+   * Set gamma levels: this affects the transparency and brightness of the single pass ray march volume render
+   * @param {Object} volume 
+   * @param {number} gmin 
+   * @param {number} glevel 
+   * @param {number} gmax 
+   */
+  setGamma(volume, gmin, glevel, gmax) {
     if (this.image) {
       this.image.setGamma(gmin, glevel, gmax);
     }
   }
 
-  setMaxProjectMode(isMaxProject) {
+  /**
+   * Set max projection on or off - applies to single pass raymarch render mode only
+   * @param {Object} volume 
+   * @param {boolean} isMaxProject true for max project, false for regular volume ray march integration 
+   */
+  setMaxProjectMode(volume, isMaxProject) {
     if (this.image) {
       this.image.setMaxProjectMode(isMaxProject);
     }
@@ -332,8 +390,9 @@ export class View3d {
 
   /**
    * Notify the view that the set of active volume channels has been modified.
+   * @param {Object} volume
    */
-  updateActiveChannels() {
+  updateActiveChannels(volume) {
     if (this.image) {
       this.image.fuse();
     }
@@ -341,8 +400,9 @@ export class View3d {
 
   /**
    * Notify the view that transfer function lookup table data has been modified.
+   * @param {Object} volume
    */
-  updateLuts() {
+  updateLuts(volume) {
     if (this.image) {
       this.image.updateLuts();
     }
@@ -350,8 +410,9 @@ export class View3d {
 
   /**
    * Notify the view that color and appearance settings have been modified.
+   * @param {Object} volume
    */
-  updateMaterial() {
+  updateMaterial(volume) {
     if (this.image) {
       this.image.updateMaterial();
     }
@@ -385,7 +446,8 @@ export class View3d {
   }
 
   /**
-   * Set clipping range (between 0 and 1) for the current volume.
+   * Set clipping range (between 0 and 1, relative to bounds) for the current volume.
+   * @param {Object} volume
    * @param {number} xmin 0..1, should be less than xmax
    * @param {number} xmax 0..1, should be greater than xmin 
    * @param {number} ymin 0..1, should be less than ymax
@@ -393,7 +455,7 @@ export class View3d {
    * @param {number} zmin 0..1, should be less than zmax
    * @param {number} zmax 0..1, should be greater than zmin 
    */
-  updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
+  updateClipRegion(volume, xmin, xmax, ymin, ymax, zmin, zmax) {
     if (this.image) {
       this.image.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
     }
@@ -402,12 +464,13 @@ export class View3d {
   /**
    * Set clipping range (between 0 and 1) for a given axis. 
    * Calling this allows the rendering to compensate for changes in thickness in orthographic views that affect how bright the volume is.
+   * @param {Object} volume
    * @param {number} axis 0, 1, or 2 for x, y, or z axis
    * @param {number} minval 0..1, should be less than maxval
    * @param {number} maxval 0..1, should be greater than minval 
    * @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
    */
-  setAxisClip(axis, minval, maxval, isOrthoAxis) {
+  setAxisClip(volume, axis, minval, maxval, isOrthoAxis) {
     if (this.image) {
       this.image.setAxisClip(axis, minval, maxval, isOrthoAxis);
     }
@@ -436,13 +499,24 @@ export class View3d {
     }
   }
 
-  updateMaskAlpha(value) {
+  /**
+   * Set the opacity of the mask channel
+   * @param {Object} volume
+   * @param {number} value (0..1) 0 for full transparent, 1 for fully opaque
+   */
+  updateMaskAlpha(volume, value) {
     if (this.image) {
       this.image.setMaskAlpha(value);
     }
   }
   
-  setVolumeChannelEnabled(channel, enabled) {
+  /**
+   * Show / hide volume channels
+   * @param {Object} volume
+   * @param {number} channel
+   * @param {boolean} enabled
+   */
+  setVolumeChannelEnabled(volume, channel, enabled) {
     if (this.image) {
       this.image.setVolumeChannelEnabled(channel, enabled);
     }
@@ -450,13 +524,14 @@ export class View3d {
 
   /**
    * Set the material for a channel
+   * @param {Object} volume
    * @param {number} channelIndex 
    * @param {Array.<number>} colorrgb [r,g,b]
    * @param {Array.<number>} specularrgb [r,g,b]
    * @param {Array.<number>} emissivergb [r,g,b]
    * @param {number} roughness
    */
-  updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, roughness) {
+  updateChannelMaterial(volume, channelIndex, colorrgb, specularrgb, emissivergb, roughness) {
     if (this.image) {
       this.image.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, roughness);
     }
@@ -464,10 +539,11 @@ export class View3d {
 
   /**
    * Set the color for a channel
+   * @param {Object} volume
    * @param {number} channelIndex 
    * @param {Array.<number>} colorrgb [r,g,b]
    */
-  updateChannelColor(channelIndex, colorrgb) {
+  updateChannelColor(volume, channelIndex, colorrgb) {
     if (this.image) {
       this.image.updateChannelColor(channelIndex, colorrgb);
     }
@@ -475,12 +551,12 @@ export class View3d {
 
   /**
    * Switch between single pass ray-marched volume rendering and progressive path traced rendering.
-   * @param {number} isPT 0 for single pass ray march, 1 for progressive path trace
+   * @param {number} mode 0 for single pass ray march, 1 for progressive path trace
    */
-  setVolumeRenderMode(isPT) {
-    this.volumeRenderMode = isPT;
+  setVolumeRenderMode(mode) {
+    this.volumeRenderMode = mode;
     if (this.image) {
-      if (isPT === 1 && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
+      if (mode === 1 && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
         this.image.setVolumeRendering(true);
         this.image.updateLights(this.lights);
       }
