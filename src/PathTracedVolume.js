@@ -316,16 +316,19 @@ export default class PathTracedVolume {
         canvas.perspectiveCamera.updateMatrixWorld(true);
         const cam = canvas.perspectiveCamera;
 
+        let mydir = new THREE.Vector3();
+        mydir = cam.getWorldDirection(mydir);
+        let myup = new THREE.Vector3().copy(cam.up);
+        // don't rotate this vector.  we are using translation as the pivot point of the object, and THEN rotating.
+        let mypos = new THREE.Vector3().copy(cam.position)
+        
         // apply volume translation and rotation:
         // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
         const m = new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromEuler(this.rotation).inverse());
-        let mydir = new THREE.Vector3();
-        mydir = cam.getWorldDirection(mydir);
+        mypos.applyMatrix4(m);
+        mypos.sub(this.translation);
+        myup.applyMatrix4(m);
         mydir.applyMatrix4(m);
-        let myup = new THREE.Vector3().copy(cam.up).applyMatrix4(m);
-        // don't rotate this vector.  we are using translation as the pivot point of the object, and THEN rotating.
-        let mypos = new THREE.Vector3().copy(cam.position).sub(this.translation);
-        //mypos.applyMatrix4(m);
 
         this.pathTracingUniforms.gCamera.value.m_from.copy(mypos);
         this.pathTracingUniforms.gCamera.value.m_N.copy(mydir);
