@@ -203,14 +203,6 @@ export class View3d {
 
     this.image.setResolution(this.canvas3d);
 
-    var that = this;
-    this.image.onChannelDataReadyCallback = function() {
-        // ARTIFICIALLY ENABLE ONLY THE FIRST 3 CHANNELS
-        for (let i = 0; i < that.image.num_channels; ++i) {
-          that.image.setVolumeChannelEnabled(i, (i<3));
-        }
-    };
-
     this.canvas3d.setControlHandlers(this.image);
 
     this.canvas3d.animate_funcs.push(this.preRender.bind(this));
