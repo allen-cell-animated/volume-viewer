@@ -415,10 +415,12 @@ export default class PathTracedVolume {
 
     setTranslation(vec3xyz) {
       this.translation.copy(vec3xyz);
+      this.sampleCounter = 0;
     }
 
     setRotation(eulerXYZ) {
       this.rotation.copy(eulerXYZ);
+      this.sampleCounter = 0;
     }
 
     setOrthoScale(value) {

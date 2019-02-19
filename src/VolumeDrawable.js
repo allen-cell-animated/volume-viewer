@@ -73,8 +73,8 @@ export default class VolumeDrawable {
 
     this.setScale(this.volume.scale);
     // apply the volume's default transformation
-    this.setTranslation(this.volume.getTranslation());
-    this.setRotation(this.volume.getRotation());
+    this.setTranslation(new THREE.Vector3().fromArray(this.volume.getTranslation()));
+    this.setRotation(new THREE.Euler().fromArray(this.volume.getRotation()));
   }
 
   resetSampleRate() {

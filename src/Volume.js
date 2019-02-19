@@ -242,26 +242,25 @@ export default class Volume {
       return this.channels[c].getIntensity(x, y, z);
   }
 
-  getTransform() {
-    return new THREE.Matrix4().compose(
-      this.getTranslation(),
-      new THREE.Quaternion().setFromEuler(this.getRotation()),
-      new THREE.Vector3(1,1,1)
-    );
-  }
-
+  /**
+   * Return the intrinsic rotation associated with this volume (radians)
+   * @return {Array.<number>} the xyz Euler angles (radians)
+   */
   getRotation() {
     // default axis order is XYZ
-    return new THREE.Euler().fromArray(this.imageInfo.transform.rotation);
+    return this.imageInfo.transform.rotation;
   }
 
+  /**
+   * Return the intrinsic translation (pivot center delta) associated with this volume, in normalized volume units
+   * @return {Array.<number>} the xyz translation in normalized volume units
+   */
   getTranslation() {
     // ASSUME: translation is in original image voxels.
     // account for pixel_size and normalized scaling in the threejs volume representation we're using
     const m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
     const pixelSizeVec = new THREE.Vector3().fromArray(this.pixel_size);
-    console.log(new THREE.Vector3().fromArray(this.imageInfo.transform.translation).multiply(pixelSizeVec).multiplyScalar(m));
-    return new THREE.Vector3().fromArray(this.imageInfo.transform.translation).multiply(pixelSizeVec).multiplyScalar(m);
+    return new THREE.Vector3().fromArray(this.imageInfo.transform.translation).multiply(pixelSizeVec).multiplyScalar(m).toArray();
   }
 
   addVolumeDataObserver(o) {

@@ -51,7 +51,8 @@ const myState = {
     isPT: false,
 
     isTurntable: false,
-    isAxisShowing: false
+    isAxisShowing: false,
+    isAligned: true
 
 };
 let gui = null;
@@ -409,6 +410,12 @@ var rotbtn = document.getElementById("rotbtn");
 rotbtn.addEventListener("click", ()=>{myState.isTurntable = !myState.isTurntable; view3D.setAutoRotate(myState.isTurntable)});
 var axisbtn = document.getElementById("axisbtn");
 axisbtn.addEventListener("click", ()=>{myState.isAxisShowing = !myState.isAxisShowing; view3D.setShowAxis(myState.isAxisShowing)});
+var alignbtn = document.getElementById("xfbtn");
+alignbtn.addEventListener("click", ()=>{
+    myState.isAligned = !myState.isAligned; 
+    view3D.setVolumeTranslation(myState.volume, myState.isAligned ? myState.volume.getTranslation() : [0,0,0]); 
+    view3D.setVolumeRotation(myState.volume, myState.isAligned ? myState.volume.getRotation() : [0,0,0]);
+});
 
 if (view3D.canvas3d.hasWebGL2) {
     var ptbtn = document.getElementById("ptbtn");
