@@ -371,6 +371,9 @@ function loadImageData(jsondata, volumedata) {
                 view3D.updateLights(myState.lights);
                 view3D.updateDensity(vol, myState.density);
                 view3D.updateExposure(myState.exposure);
+
+                // view3D.setVolumeTranslation(vol, [0.25, 0.0, 0.0]);
+                // view3D.setVolumeRotation(vol, [0,0,-3.14159265/8.0]);
             }
         });
     }

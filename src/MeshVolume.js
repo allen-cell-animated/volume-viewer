@@ -13,7 +13,12 @@ export default class MeshVolume {
         this.volume = volume;
 
         this.meshRoot = new THREE.Object3D();//create an empty container
-        this.meshRoot.name = "Mesh Surface Container";
+        this.meshRoot.name = "Mesh Surface Group";
+
+        // handle transform ordering for giving the meshroot a rotation about a pivot point
+        this.meshPivot = new THREE.Group();
+        this.meshPivot.name = "MeshContainerNode";
+        this.meshPivot.add(this.meshRoot);
 
         this.meshrep = [];
 
@@ -33,7 +38,7 @@ export default class MeshVolume {
     }
 
     get3dObject() {
-        return this.meshRoot;
+        return this.meshPivot;
     }
 
     onChannelData(batch) {
@@ -53,6 +58,14 @@ export default class MeshVolume {
         this.meshRoot.scale.copy(new THREE.Vector3(0.5 * scale.x,
             0.5 * scale.y,
             0.5 * scale.z));
+    }
+
+    setTranslation(vec3xyz) {
+      this.meshRoot.position.copy(vec3xyz);
+    }
+
+    setRotation(quaternion) {
+      this.meshPivot.rotation.copy(quaternion);
     }
 
     setResolution(x, y) {
@@ -271,7 +284,7 @@ export default class MeshVolume {
             false, false, true,
             volumedata
           );
-          effect.position.set( 0, 0, 0 );
+          effect.position.copy(this.meshRoot.position);
           effect.scale.set( 0.5 * this.scale.x, 0.5 * this.scale.y, 0.5 * this.scale.z );
           effect.isovalue = isovalue;
           var geometries = effect.generateGeometry();

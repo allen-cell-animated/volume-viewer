@@ -14,6 +14,9 @@ export default class VolumeDrawable {
 
     this.onChannelDataReadyCallback = null;
 
+    this.translation = new THREE.Vector3(0,0,0);
+    this.rotation = new THREE.Euler();
+
     this.maskChannelIndex = -1;
     this.maskAlpha = 1.0;
 
@@ -69,6 +72,9 @@ export default class VolumeDrawable {
     this.maxSteps = 256;
 
     this.setScale(this.volume.scale);
+    // apply the volume's default transformation
+    this.setTranslation(this.volume.getTranslation());
+    this.setRotation(this.volume.getRotation());
   }
 
   resetSampleRate() {
@@ -392,6 +398,10 @@ export default class VolumeDrawable {
       }
     }
 
+    // ensure transforms on new volume representation are up to date
+    this.volumeRendering.setTranslation(this.translation);
+    this.volumeRendering.setRotation(this.rotation);
+  
     this.PT = is_pathtrace;
 
     this.setChannelAsMask(this.maskChannelIndex);
@@ -405,6 +415,18 @@ export default class VolumeDrawable {
     this.sceneRoot.add(this.volumeRendering.get3dObject());
 
     this.fuse();
+  }
+
+  setTranslation(xyz) {
+    this.translation.copy(xyz);
+    this.volumeRendering.setTranslation(this.translation);
+    this.meshVolume.setTranslation(this.translation);
+  }
+
+  setRotation(eulerXYZ) {
+    this.rotation.copy(eulerXYZ);
+    this.volumeRendering.setRotation(this.rotation);
+    this.meshVolume.setRotation(this.rotation);
   }
 
 };
