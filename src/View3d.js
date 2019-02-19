@@ -120,7 +120,7 @@ export class View3d {
   }
 
   /**
-   * If an isosurface is not already created, then create one.  Otherwise do nothing.
+   * If an isosurface is not already created, then create one.  Otherwise change the isovalue of the existing isosurface.
    * @param {Object} volume 
    * @param {number} channel 
    * @param {number} isovalue isovalue
