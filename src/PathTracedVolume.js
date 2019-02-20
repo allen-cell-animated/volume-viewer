@@ -16,7 +16,7 @@ export default class PathTracedVolume {
         this.viewChannels = [-1, -1, -1, -1];
 
         // scale factor is a huge optimization.  Maybe use 1/dpi scale
-        this.pixelSamplingRate = 0.25;
+        this.pixelSamplingRate = 0.75;
 
         this.pathTracingUniforms = pathTracingUniforms();
 
