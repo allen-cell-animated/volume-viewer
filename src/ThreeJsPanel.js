@@ -86,7 +86,7 @@ export class ThreeJsPanel {
     this.perspectiveControls.enabled = true; //turn off mouse moments by setting to false
 
     this.orthographicCameraX = new THREE.OrthographicCamera( -scale*aspect, scale*aspect, scale, -scale, 0.001, 20 );
-    this.orthographicCameraX.position.x = 1.0;
+    this.orthographicCameraX.position.x = 2.0;
     this.orthographicCameraX.up.x = 0.0;
     this.orthographicCameraX.up.y = 0.0;
     this.orthographicCameraX.up.z = 1.0;
@@ -100,7 +100,7 @@ export class ThreeJsPanel {
     this.orthoControlsX.enabled = false;
 
     this.orthographicCameraY = new THREE.OrthographicCamera( -scale*aspect, scale*aspect, scale, -scale, 0.001, 20 );
-    this.orthographicCameraY.position.y = 1.0;
+    this.orthographicCameraY.position.y = 2.0;
     this.orthographicCameraY.up.x = 0.0;
     this.orthographicCameraY.up.y = 0.0;
     this.orthographicCameraY.up.z = 1.0;
@@ -114,7 +114,7 @@ export class ThreeJsPanel {
     this.orthoControlsY.enabled = false;
 
     this.orthographicCameraZ = new THREE.OrthographicCamera( -scale*aspect, scale*aspect, scale, -scale, 0.001, 20 );
-    this.orthographicCameraZ.position.z = 1.0;
+    this.orthographicCameraZ.position.z = 2.0;
     this.orthographicCameraZ.up.x = 0.0;
     this.orthographicCameraZ.up.y = 1.0;
     this.orthographicCameraZ.up.z = 0.0;
