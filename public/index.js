@@ -13,7 +13,7 @@ let view3D = new View3d(el);
 
 // TODO FIX ME : run this code after we know that the page has rendered, 
 // so that the view3D can get size from el
-view3D.resize(null, 600, 1200);
+view3D.resize(null, 600, 600);
 
 const myState = {
     file: "",
@@ -375,7 +375,7 @@ function loadImageData(jsondata, volumedata) {
         });
     }
     showChannelUI(vol);
-    view3D.resize(null, 600, 1200);
+    view3D.resize(null, 600, 600);
 
     return vol;
 }
