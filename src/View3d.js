@@ -500,7 +500,7 @@ export class View3d {
    * @param {number} value (+epsilon..1) 1 is max quality, ~0.1 for lowest quality and highest speed
    */
   updatePixelSamplingRate(value) {
-    this.pixelSamplingRate = rate;
+    this.pixelSamplingRate = value;
     if (this.image) {
       this.image.setPixelSamplingRate(value);
     }
