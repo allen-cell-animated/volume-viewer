@@ -40,8 +40,8 @@ export class View3d {
       if (this.image && (this.volumeRenderMode === RENDERMODE_PATHTRACE)) {
         // do something!
         // try to reduce pixel scaling in pathtracer.
-        console.log("DROPPING SAMPLING RATE TO " + this.pixelSamplingRate * 0.25);
-        this.updatePixelSamplingRate(this.pixelSamplingRate * 0.25);
+        console.log("DROPPING SAMPLING RATE TO " + this.pixelSamplingRate * 0.75);
+        this.updatePixelSamplingRate(this.pixelSamplingRate * 0.75);
       }
       else if (this.image && (this.volumeRenderMode === RENDERMODE_RAYMARCH)) {
       }
