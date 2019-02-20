@@ -44,6 +44,7 @@ struct Camera {
   vec2 m_invScreen;  // 1/w, 1/h
   float m_focalDistance;
   float m_apertureSize;
+  float m_isOrtho; // 1 or 0
 };
 
 uniform Camera gCamera;
@@ -225,15 +226,18 @@ vec3 rayAt(Ray r, float t) {
 
 Ray GenerateCameraRay(in Camera cam, in vec2 Pixel, in vec2 ApertureRnd)
 {
-  vec2 ScreenPoint;
-
-  ScreenPoint.x = cam.m_screen.x + (cam.m_invScreen.x * Pixel.x);
-  ScreenPoint.y = cam.m_screen.z + (cam.m_invScreen.y * Pixel.y);
-
-  vec3 RayO = cam.m_from;
   // negating ScreenPoint.y flips the up/down direction. depends on whether you want pixel 0 at top or bottom
   // we could also have flipped m_screen and m_invScreen, or cam.m_V?
-  vec3 RayD = normalize(cam.m_N + (ScreenPoint.x * cam.m_U) + (-ScreenPoint.y * cam.m_V));
+  vec2 ScreenPoint = vec2(
+    cam.m_screen.x + (cam.m_invScreen.x * Pixel.x),
+    cam.m_screen.z + (cam.m_invScreen.y * Pixel.y)  
+  );
+  vec3 dxy = (ScreenPoint.x * cam.m_U) + (-ScreenPoint.y * cam.m_V);
+
+  // orthographic camera ray: start at (camera pos + screen point), go in direction N
+  // perspective camera ray: start at camera pos, go in direction (N + screen point)
+  vec3 RayO = cam.m_from + cam.m_isOrtho * dxy;
+  vec3 RayD = normalize(cam.m_N + (1.0 - cam.m_isOrtho) * dxy);
 
   if (cam.m_apertureSize != 0.0f)
   {
@@ -1154,7 +1158,8 @@ export function pathTracingUniforms() {
         m_screen: new THREE.Vector4(),  // left, right, bottom, top
         m_invScreen: new THREE.Vector2(),  // 1/w, 1/h
         m_focalDistance: 0.0,
-        m_apertureSize: 0.0
+        m_apertureSize: 0.0,
+        m_isOrtho: 0.0
       }
     },
     gLights: {

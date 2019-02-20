@@ -124,7 +124,7 @@ export default class VolumeDrawable {
   // Tell this image that it needs to be drawn in an orthographic mode
   // @param {boolean} isOrtho is this an orthographic projection or a perspective view
   setIsOrtho(isOrtho) {
-    !this.PT && this.rayMarchedAtlasVolume.setIsOrtho(isOrtho);
+    this.volumeRendering.setIsOrtho(isOrtho);
   }
 
   setOrthoThickness(value) {
