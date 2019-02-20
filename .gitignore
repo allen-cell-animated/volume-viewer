@@ -1,5 +1,6 @@
 node_modules
 build/
+demo/
 dist/
 .idea/
 imageviewer/

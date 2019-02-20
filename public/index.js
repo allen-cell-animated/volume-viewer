@@ -1,6 +1,6 @@
 import {
     View3d,
-    VolumeDrawable,
+    Volume,
     VolumeMaker,
     VolumeLoader,
     Light,
@@ -15,53 +15,9 @@ let view3D = new View3d(el);
 // so that the view3D can get size from el
 view3D.resize(null, 600, 600);
 
-// PREPARE SOME TEST DATA TO TRY TO DISPLAY A VOLUME.
-let imgdata = {
-    // width := original full size image width
-    "width": 306,
-    // height := original full size image height
-    "height": 494,
-    "channels": 9,
-    "channel_names": ["DRAQ5", "EGFP", "Hoechst 33258", "TL Brightfield", "SEG_STRUCT", "SEG_Memb", "SEG_DNA", "CON_Memb", "CON_DNA"],
-    "rows": 7,
-    "cols": 10,
-    // tiles <= rows*cols, tiles is number of z slices
-    "tiles": 65,
-    "tile_width": 204,
-    "tile_height": 292,
-
-    // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048 
-    // and ideally a power of 2.
-
-    // These are the pixel dimensions of the png files in "images" below.
-    // atlas_width === cols*tile_width
-    "atlas_width": 2040,
-    // atlas_height === rows*tile_height
-    "atlas_height": 2044,
-
-    "pixel_size_x": 0.065,
-    "pixel_size_y": 0.065,
-    "pixel_size_z": 0.29,
-
-    "images": [{
-        "name": "AICS-10_5_5.ome.tif_atlas_0.png",
-        "channels": [0, 1, 2]
-    }, {
-        "name": "AICS-10_5_5.ome.tif_atlas_1.png",
-        "channels": [3, 4, 5]
-    }, {
-        "name": "AICS-10_5_5.ome.tif_atlas_2.png",
-        "channels": [6, 7, 8]
-    }],
-    "name": "AICS-10_5_5",
-    "status": "OK",
-    "version": "0.0.0",
-    "aicsImageVersion": "0.3.0"
-};
-const mask_channel_index = imgdata.channel_names.indexOf("SEG_Memb");
-
 const myState = {
     file: "",
+    volume: null,
     density: 4.0,
     maskAlpha: 1.0,
     exposure: 0.75,
@@ -106,10 +62,10 @@ function setupGui() {
     //gui = new dat.GUI({autoPlace:false, width:200});
 
     gui.add(myState, "density").max(100.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateDensity(value);
+        view3D.updateDensity(myState.volume, value);
     });
     gui.add(myState, "maskAlpha").max(1.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.image.setMaskAlpha(value);
+        view3D.updateMaskAlpha(myState.volume, value);
     });
 
     var cameragui = gui.addFolder("Camera");
@@ -131,22 +87,22 @@ function setupGui() {
 
     var clipping = gui.addFolder("Clipping Box");
     clipping.add(myState, "xmin").max(1.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateClipRegion(myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
+        view3D.updateClipRegion(myState.volume, myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
     });
     clipping.add(myState, "xmax").max(1.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateClipRegion(myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
+        view3D.updateClipRegion(myState.volume, myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
     });
     clipping.add(myState, "ymin").max(1.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateClipRegion(myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
+        view3D.updateClipRegion(myState.volume, myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
     });
     clipping.add(myState, "ymax").max(1.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateClipRegion(myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
+        view3D.updateClipRegion(myState.volume, myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
     });
     clipping.add(myState, "zmin").max(1.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateClipRegion(myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
+        view3D.updateClipRegion(myState.volume, myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
     });
     clipping.add(myState, "zmax").max(1.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateClipRegion(myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
+        view3D.updateClipRegion(myState.volume, myState.xmin, myState.xmax, myState.ymin, myState.ymax, myState.zmin, myState.zmax);
     });
 
     var lighting = gui.addFolder("Lighting");
@@ -232,20 +188,6 @@ function setupGui() {
     });
 }
 
-// generate some raw volume data
-var channelVolumes = [];
-for (var i = 0; i < imgdata.channels; ++i) {
-  if (i % 2 === 0) {
-    var sv = VolumeMaker.createSphere(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 16);
-    channelVolumes.push(sv);
-  }
-  else{
-    var sv = VolumeMaker.createTorus(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 32, 8);
-    channelVolumes.push(sv);
-
-  }
-}
-
 dat.GUI.prototype.removeFolder = function (name) {
     var folder = this.__folders[name];
     if (!folder) {
@@ -257,7 +199,7 @@ dat.GUI.prototype.removeFolder = function (name) {
     this.onResize();
 }
 
-function showChannelUI(img) {
+function showChannelUI(volume) {
 
     if (myState && myState.channelFolderNames) {
         for (var i = 0; i < myState.channelFolderNames.length; ++i) {
@@ -265,25 +207,27 @@ function showChannelUI(img) {
         }
     }
     
-    myState.infoObj = img.volume.imageInfo;
+    myState.infoObj = volume.imageInfo;
 
     myState.infoObj.channelGui = [];
 
     myState.channelFolderNames = []
     for (var i = 0; i < myState.infoObj.channels; ++i) {
         myState.infoObj.channelGui.push({
-            colorD: img.volume.channel_colors_default[i],
+            colorD: volume.channel_colors_default[i],
             colorS: [0, 0, 0],
             colorE: [0, 0, 0],
             window: 1.0,
             level: 0.5,
             roughness: 0.0,
+            isovalue: 128, // actual intensity value
+            isosurface: false,
             enabled: true,
             // this doesn't give good results currently but is an example of a per-channel button callback
             autoIJ: (function(j) {
                 return function() {
-                    view3D.image.volume.channels[j].lutGenerator_auto2();
-                    view3D.updateLuts();
+                    volume.getChannel(j).lutGenerator_auto2();
+                    view3D.updateLuts(volume);
                 }
             })(i)
         });
@@ -291,70 +235,86 @@ function showChannelUI(img) {
         myState.channelFolderNames.push("Channel " + myState.infoObj.channel_names[i]);
         f.add(myState.infoObj.channelGui[i], "enabled").onChange(function (j) {
             return function (value) {
-                view3D.image.setVolumeChannelEnabled(j, value ? true : false);
-                view3D.updateActiveChannels();
+                view3D.setVolumeChannelEnabled(volume, j, value ? true : false);
+                view3D.updateActiveChannels(volume);
             };
         }(i));
+        f.add(myState.infoObj.channelGui[i], "isosurface").onChange(function (j) {
+            return function (value) {
+                if (value) {
+                    view3D.createIsosurface(volume, j, myState.infoObj.channelGui[j].isovalue, 1.0);
+                }
+                else {
+                    view3D.clearIsosurface(volume, j);
+                }
+            };
+        }(i));
+        f.add(myState.infoObj.channelGui[i], "isovalue").max(255).min(0).step(1).onChange(function (j) {
+            return function (value) {
+                view3D.updateIsosurface(volume, j, value);
+            }
+        }(i));
+
         f.addColor(myState.infoObj.channelGui[i], "colorD").name("Diffuse").onChange(function (j) {
             return function (value) {
-                view3D.image.updateChannelMaterial(
+                view3D.updateChannelMaterial(volume,
                     j,
                     myState.infoObj.channelGui[j].colorD,
                     myState.infoObj.channelGui[j].colorS,
                     myState.infoObj.channelGui[j].colorE,
                     myState.infoObj.channelGui[j].roughness
                 );
-                view3D.updateMaterial();
+                view3D.updateMaterial(volume);
             };
         }(i));
         f.addColor(myState.infoObj.channelGui[i], "colorS").name("Specular").onChange(function (j) {
             return function (value) {
-                view3D.image.updateChannelMaterial(
+                view3D.updateChannelMaterial(volume,
                     j,
                     myState.infoObj.channelGui[j].colorD,
                     myState.infoObj.channelGui[j].colorS,
                     myState.infoObj.channelGui[j].colorE,
                     myState.infoObj.channelGui[j].roughness
                 );
-                view3D.updateMaterial();
+                view3D.updateMaterial(volume);
             };
         }(i));
         f.addColor(myState.infoObj.channelGui[i], "colorE").name("Emissive").onChange(function (j) {
             return function (value) {
-                view3D.image.updateChannelMaterial(
+                view3D.updateChannelMaterial(volume,
                     j,
                     myState.infoObj.channelGui[j].colorD,
                     myState.infoObj.channelGui[j].colorS,
                     myState.infoObj.channelGui[j].colorE,
                     myState.infoObj.channelGui[j].roughness
                 );
-                view3D.updateMaterial();
+                view3D.updateMaterial(volume);
             };
         }(i));
         f.add(myState.infoObj.channelGui[i], "window").max(1.0).min(0.0).step(0.001).onChange(function (j) {
                 return function (value) {
-                    view3D.image.volume.channels[j].lutGenerator_windowLevel(value, myState.infoObj.channelGui[j].level);
-                    view3D.updateLuts();
+                    volume.getChannel(j).lutGenerator_windowLevel(value, myState.infoObj.channelGui[j].level);
+                    view3D.updateLuts(volume);
                 }
             }(i));
 
         f.add(myState.infoObj.channelGui[i], "level").max(1.0).min(0.0).step(0.001).onChange(function (j) {
                 return function (value) {
-                    view3D.image.volume.channels[j].lutGenerator_windowLevel(myState.infoObj.channelGui[j].window, value);
-                    view3D.updateLuts();
+                    volume.getChannel(j).lutGenerator_windowLevel(myState.infoObj.channelGui[j].window, value);
+                    view3D.updateLuts(volume);
                 }
             }(i));
         //f.add(myState.infoObj.channelGui[i], 'autoIJ');
         f.add(myState.infoObj.channelGui[i], "roughness").max(100.0).min(0.0).onChange(function (j) {
                 return function (value) {
-                    view3D.image.updateChannelMaterial(
+                    view3D.updateChannelMaterial(volume,
                         j,
                         myState.infoObj.channelGui[j].colorD,
                         myState.infoObj.channelGui[j].colorS,
                         myState.infoObj.channelGui[j].colorE,
                         myState.infoObj.channelGui[j].roughness
                     );
-                    view3D.updateMaterial();
+                    view3D.updateMaterial(volume);
                 }
             }(i));
 
@@ -365,10 +325,12 @@ function showChannelUI(img) {
 function loadImageData(jsondata, volumedata) {
     view3D.resize();
     
-    const aimg = new VolumeDrawable(jsondata, myState.isPT);
+    const vol = new Volume(jsondata);
+    myState.volume = vol;
 
     // tell the viewer about the image AFTER it's loaded
-    //view3D.setImage(aimg);
+    //view3D.removeAllVolumes();
+    //view3D.addVolume(vol);
 
     // get data into the image
     if (volumedata) {
@@ -377,30 +339,45 @@ function loadImageData(jsondata, volumedata) {
             // according to jsondata.tile_width*jsondata.tile_height*jsondata.tiles
             // (first row of first plane is the first data in 
             // the layout, then second row of first plane, etc)
-            aimg.setChannelDataFromVolume(i, volumedata[i]);
+            vol.setChannelDataFromVolume(i, volumedata[i]);
+
+            view3D.removeAllVolumes();
+            view3D.addVolume(vol);
+
+            const mask_channel_index = jsondata.channel_names.indexOf("SEG_Memb");
+            view3D.setVolumeChannelAsMask(vol, mask_channel_index);
+            view3D.updateActiveChannels(vol);
+            view3D.updateLuts(vol);
+            view3D.updateLights(myState.lights);
+            view3D.updateDensity(vol, myState.density);
+            view3D.updateExposure(myState.exposure);
         }
     }
     else {
         VolumeLoader.loadVolumeAtlasData(jsondata.images, (url, channelIndex, atlasdata, atlaswidth, atlasheight) => {
-            aimg.setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight);
-            aimg.volume.channels[channelIndex].lutGenerator_auto2();
-            if (aimg.volume.loaded) {
-                // tell the viewer about the image
-                const old_img = view3D.setImage(aimg);
-                if (old_img) {
-                    old_img.cleanup();
-                }
-                aimg.setChannelAsMask(mask_channel_index);
-                view3D.updateActiveChannels();
-                view3D.updateLuts();
+            vol.setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight);
+
+            vol.channels[channelIndex].lutGenerator_auto2();
+
+            if (vol.loaded) {
+                view3D.setVolumeRenderMode(myState.isPT ? 1 : 0);
+
+                view3D.removeAllVolumes();
+                view3D.addVolume(vol);
+
+                view3D.setVolumeChannelAsMask(vol, jsondata.channel_names.indexOf("SEG_Memb"));
+                view3D.updateActiveChannels(vol);
+                view3D.updateLuts(vol);
                 view3D.updateLights(myState.lights);
-                view3D.updateDensity(myState.density);
+                view3D.updateDensity(vol, myState.density);
                 view3D.updateExposure(myState.exposure);
             }
         });
     }
-    showChannelUI(aimg);
+    showChannelUI(vol);
     view3D.resize(null, 600, 600);
+
+    return vol;
 }
 
 function fetchImage(url) {
@@ -414,7 +391,7 @@ function fetchImage(url) {
         //     element.name = dataset.prefixdir + element.name;
         // });        
         loadImageData(myJson);
-    });    
+    });
 }
 
 var xbtn = document.getElementById("X");
@@ -437,13 +414,68 @@ if (view3D.canvas3d.hasWebGL2) {
     //var ptbtn = document.getElementById("ptbtn");
     ptbtn.addEventListener("click", ()=>{
         myState.isPT = !myState.isPT; 
-        view3D.setPathTrace(myState.isPT);
+        view3D.setVolumeRenderMode(myState.isPT ? 1 : 0);
         view3D.updateLights(myState.lights);
     });
 }
 
 setupGui();
+
 // switch the uncommented line to test with volume data or atlas data
+fetchImage("AICS-12_881_atlas.json");
+// const imgdata = {
+//     // width := original full size image width
+//     "width": 306,
+//     // height := original full size image height
+//     "height": 494,
+//     "channels": 9,
+//     "channel_names": ["DRAQ5", "EGFP", "Hoechst 33258", "TL Brightfield", "SEG_STRUCT", "SEG_Memb", "SEG_DNA", "CON_Memb", "CON_DNA"],
+//     "rows": 7,
+//     "cols": 10,
+//     // tiles <= rows*cols, tiles is number of z slices
+//     "tiles": 65,
+//     "tile_width": 204,
+//     "tile_height": 292,
+
+//     // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048 
+//     // and ideally a power of 2.
+
+//     // These are the pixel dimensions of the png files in "images" below.
+//     // atlas_width === cols*tile_width
+//     "atlas_width": 2040,
+//     // atlas_height === rows*tile_height
+//     "atlas_height": 2044,
+
+//     "pixel_size_x": 0.065,
+//     "pixel_size_y": 0.065,
+//     "pixel_size_z": 0.29,
+
+//     "images": [{
+//         "name": "AICS-10_5_5.ome.tif_atlas_0.png",
+//         "channels": [0, 1, 2]
+//     }, {
+//         "name": "AICS-10_5_5.ome.tif_atlas_1.png",
+//         "channels": [3, 4, 5]
+//     }, {
+//         "name": "AICS-10_5_5.ome.tif_atlas_2.png",
+//         "channels": [6, 7, 8]
+//     }],
+//     "name": "AICS-10_5_5",
+//     "status": "OK",
+//     "version": "0.0.0",
+//     "aicsImageVersion": "0.3.0"
+// }
+// // generate some raw volume data
+// var channelVolumes = [];
+// for (var i = 0; i < imgdata.channels; ++i) {
+//   if (i % 2 === 0) {
+//     var sv = VolumeMaker.createSphere(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 16);
+//     channelVolumes.push(sv);
+//   }
+//   else{
+//     var sv = VolumeMaker.createTorus(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 32, 8);
+//     channelVolumes.push(sv);
+//   }
+// }
 //loadImageData(imgdata);
 //loadImageData(imgdata, channelVolumes);
-fetchImage("AICS-12_881_atlas.json");

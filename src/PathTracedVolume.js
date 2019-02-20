@@ -389,10 +389,6 @@ export default class PathTracedVolume {
 
     }
 
-    appendEmptyChannel(name) {
-      // Do the right thing!
-    }
-
     setScale(scale) {
 
         this.scale = scale;

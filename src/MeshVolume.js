@@ -46,9 +46,6 @@ export default class MeshVolume {
           }
     }
 
-    appendEmptyChannel(name) {
-    }
-
     setScale(scale) {
 
         this.scale = scale;
@@ -138,7 +135,7 @@ export default class MeshVolume {
           });
         }
         this.destroyIsosurface(channel);
-        this.meshrep[channel] = this.createMeshForChannel(channel, color.toArray(), value, opacity, false);
+        this.meshrep[channel] = this.createMeshForChannel(channel, color.clone().multiplyScalar(255).toArray(), value, opacity, false);
       
         this.meshRoot.add(this.meshrep[channel]);
     }

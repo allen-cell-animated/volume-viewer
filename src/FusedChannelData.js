@@ -136,6 +136,10 @@ export default class FusedChannelData {
     }
   }
 
+  appendEmptyChannel(name) {
+    // nothing to do yet
+  }
+
   getHistogram(channelIndex) {
     return this.channels[channelIndex].imgData ? this.channels[channelIndex].imgData.histogram : [];
   }

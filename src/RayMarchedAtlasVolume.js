@@ -42,6 +42,12 @@ export default class RayMarchedAtlasVolume {
             volume.imageInfo.atlas_width, 
             volume.imageInfo.atlas_height
         );
+        // tell channelData about the channels that are already present, one at a time.
+        for (let i = 0; i < this.volume.channels.length; ++i) {
+            if (this.volume.getChannel(i).loaded) {
+                this.channelData.onChannelLoaded([i], this.volume.channels);
+            }
+        }
     }
 
     cleanup() {
@@ -90,10 +96,6 @@ export default class RayMarchedAtlasVolume {
         this.channelData.onChannelLoaded(batch, this.volume.channels);
     }
 
-    appendEmptyChannel(name) {
-        this.channelData.appendEmptyChannel(name);
-    }
-
     setScale(scale) {
 
         this.scale = scale;
@@ -125,6 +127,9 @@ export default class RayMarchedAtlasVolume {
     
     setIsOrtho(isOrthoAxis) {
         this.setUniform('isOrtho', isOrthoAxis ? 1.0 : 0.0);
+        if (!isOrthoAxis) {
+            this.setOrthoThickness(1.0);
+        }
     }
 
     setGamma(gmin, glevel, gmax) {

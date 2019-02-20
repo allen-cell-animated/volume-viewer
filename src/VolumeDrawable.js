@@ -1,21 +1,16 @@
-import Volume from './Volume.js';
 import { getColorByChannelIndex } from './constants/colors.js';
 import MeshVolume from './MeshVolume.js';
 import RayMarchedAtlasVolume from './RayMarchedAtlasVolume.js';
 import PathTracedVolume from './PathTracedVolume.js';
 
-/**
- * A renderable multichannel volume image with 8-bits per channel intensity values.
- * @class
- * @param {imageInfo} imageInfo 
- */
+// A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
 
-  constructor(imageInfo, requestPathTrace) {
+  constructor(volume, requestPathTrace) {
     this.PT = !!requestPathTrace;
 
     // THE VOLUME DATA
-    this.volume = new Volume(imageInfo);
+    this.volume = volume;
 
     this.onChannelDataReadyCallback = null;
 
@@ -76,28 +71,6 @@ export default class VolumeDrawable {
     this.setScale(this.volume.scale);
   }
 
-  /**
-   * Assign volume data via a 2d array containing the z slices as tiles across it.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
-   * @param {number} channelIndex 
-   * @param {Uint8Array} atlasdata 
-   * @param {number} atlaswidth 
-   * @param {number} atlasheight 
-   */
-  setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight) {
-    this.volume.setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight);
-    this.onChannelLoaded([channelIndex]);
-  }
-
-  /**
-   * Assign volume data as a 3d array ordered x,y,z. The xy size must be equal to tilewidth*tileheight from the imageInfo used to construct this Volume.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
-   * @param {number} channelIndex 
-   * @param {Uint8Array} volumeData 
-   */
-  setChannelDataFromVolume(channelIndex, volumeData) {
-    this.volume.setChannelDataFromVolume(channelIndex, volumeData);
-    this.onChannelLoaded([channelIndex]);
-  }
-
   resetSampleRate() {
     this.steps = this.maxSteps / 2;
   }
@@ -128,14 +101,12 @@ export default class VolumeDrawable {
     this.meshVolume.setResolution(x, y);
   }
 
-  /**
-   * Set clipping range (between 0 and 1) for a given axis. 
-   * Calling this allows the rendering to compensate for changes in thickness in orthographic views that affect how bright the volume is.
-   * @param {number} axis 0, 1, or 2 for x, y, or z axis
-   * @param {number} minval 0..1, should be less than maxval
-   * @param {number} maxval 0..1, should be greater than minval 
-   * @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
-   */
+  // Set clipping range (between 0 and 1) for a given axis. 
+  // Calling this allows the rendering to compensate for changes in thickness in orthographic views that affect how bright the volume is.
+  // @param {number} axis 0, 1, or 2 for x, y, or z axis
+  // @param {number} minval 0..1, should be less than maxval
+  // @param {number} maxval 0..1, should be greater than minval 
+  // @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
   setAxisClip(axis, minval, maxval, isOrthoAxis) {
     this.bounds.bmax[axis] = maxval;
     this.bounds.bmin[axis] = minval;
@@ -144,10 +115,8 @@ export default class VolumeDrawable {
     this.volumeRendering.setAxisClip(axis, minval, maxval, isOrthoAxis);
   }
 
-  /**
-   * Tell this image that it needs to be drawn in an orthographic mode
-   * @param {boolean} isOrtho is this an orthographic projection or a perspective view
-   */
+  // Tell this image that it needs to be drawn in an orthographic mode
+  // @param {boolean} isOrtho is this an orthographic projection or a perspective view
   setIsOrtho(isOrtho) {
     !this.PT && this.rayMarchedAtlasVolume.setIsOrtho(isOrtho);
   }
@@ -157,12 +126,10 @@ export default class VolumeDrawable {
     this.volumeRendering.setOrthoThickness(value);
   }
 
-  /**
-   * Set parameters for gamma curve for volume rendering.
-   * @param {number} gmin 0..1
-   * @param {number} glevel 0..1, should be <= gmax and >= gmin
-   * @param {number} gmax 0..1, should be > gmin and >= glevel
-   */
+  // Set parameters for gamma curve for volume rendering.
+  // @param {number} gmin 0..1
+  // @param {number} glevel 0..1
+  // @param {number} gmax 0..1, should be > gmin
   setGamma(gmin, glevel, gmax) {
     !this.PT && this.rayMarchedAtlasVolume.setGamma(gmin, glevel, gmax);
   }
@@ -191,57 +158,30 @@ export default class VolumeDrawable {
     !this.PT && this.meshVolume.doRender(canvas);
   }
 
-  /**
-   * If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
-   * @param {number} channel 
-   * @param {number} value 
-   */
+  // If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
   updateIsovalue(channel, value) {
     this.meshVolume.updateIsovalue(channel, value);
   }
 
-  /**
-   * 
-   * @param {number} channel 
-   * @return {number} the isovalue for this channel or undefined if this channel does not have an isosurface created
-   */
   getIsovalue(channel) {
     return this.meshVolume.getIsovalue(channel);
   }
 
-  /**
-   * Set opacity for isosurface
-   * @param {number} channel 
-   * @param {number} value Opacity
-   */
+  // Set opacity for isosurface
   updateOpacity(channel, value) {
     this.meshVolume.updateOpacity(channel, value);
   }
 
-  /**
-   * 
-   * @param {number} channel 
-   * @return true if there is currently a mesh isosurface for this channel
-   */
   hasIsosurface(channel) {
     return this.meshVolume.hasIsosurface(channel);
   }
 
-  /**
-   * If an isosurface is not already created, then create one.  Otherwise do nothing.
-   * @param {number} channel 
-   * @param {number} value isovalue
-   * @param {number=} alpha Opacity
-   * @param {boolean=} transp render surface as transparent object
-   */
+  // If an isosurface is not already created, then create one.  Otherwise do nothing.
   createIsosurface(channel, value, alpha, transp) {
     this.meshVolume.createIsosurface(channel, this.channel_colors[channel], value, alpha, transp);
   }
 
-  /**
-   * If an isosurface exists for this channel, destroy it now. Don't just hide it - assume we can free up some resources.
-   * @param {number} channel 
-   */
+  // If an isosurface exists for this channel, destroy it now. Don't just hide it - assume we can free up some resources.
   destroyIsosurface(channel) {
     this.meshVolume.destroyIsosurface(channel);
   }
@@ -279,13 +219,6 @@ export default class VolumeDrawable {
     this.volumeRendering.cleanup();
   }
 
-  /**
-   * @return a reference to the list of channel names
-   */
-  channelNames() {
-    return this.channel_names;
-  }
-
   getChannel(channelIndex) {
     return this.volume.getChannel(channelIndex);
   }
@@ -300,20 +233,13 @@ export default class VolumeDrawable {
     }
   }
 
-  /**
-   * Save a channel's isosurface as a triangle mesh to either STL or GLTF2 format.  File will be named automatically, using image name and channel name.
-   * @param {number} channelIndex 
-   * @param {string} type Either 'GLTF' or 'STL'
-   */
+  // Save a channel's isosurface as a triangle mesh to either STL or GLTF2 format.  File will be named automatically, using image name and channel name.
+  // @param {string} type Either 'GLTF' or 'STL'
   saveChannelIsosurface(channelIndex, type) {
     this.meshVolume.saveChannelIsosurface(channelIndex, type, this.name);
   }
 
-  /**
-   * Hide or display volume data for a channel
-   * @param {number} channelIndex 
-   * @param {boolean} enabled 
-   */
+  // Hide or display volume data for a channel
   setVolumeChannelEnabled(channelIndex, enabled) {
     // flip the color to the "null" value
     this.fusion[channelIndex].rgbColor = enabled ? this.channel_colors[channelIndex] : 0;
@@ -326,21 +252,13 @@ export default class VolumeDrawable {
     }
   }
 
-  /**
-   * Is volume data showing for this channel?
-   * @return {boolean} Is volume data visible for this channel?
-   * @param {number} channelIndex 
-   */
   isVolumeChannelEnabled(channelIndex) {
     // the zero value for the fusion rgbColor is the indicator that a channel is hidden.
     return this.fusion[channelIndex].rgbColor !== 0;
   }
 
-  /**
-   * Set the color for a channel
-   * @param {number} channelIndex 
-   * @param {Array.<number>} colorrgb [r,g,b]
-   */
+  // Set the color for a channel
+  // @param {Array.<number>} colorrgb [r,g,b]
   updateChannelColor(channelIndex, colorrgb) {
     if (!this.channel_colors[channelIndex]) {
       return;
@@ -359,23 +277,18 @@ export default class VolumeDrawable {
     this.meshVolume.updateMeshColors(this.channel_colors);
   }
 
-  /**
-   * Get the color for a channel
-   * @return {Array.<number>} The color as array of [r,g,b]
-   * @param {number} channelIndex 
-   */
+  // Get the color for a channel
+  // @return {Array.<number>} The color as array of [r,g,b]
   getChannelColor(channelIndex) {
     return this.channel_colors[channelIndex];
   }
 
-  /**
-   * Set the material for a channel
-   * @param {number} channelIndex 
-   * @param {Array.<number>} colorrgb [r,g,b]
-   * @param {Array.<number>} specularrgb [r,g,b]
-   * @param {Array.<number>} emissivergb [r,g,b]
-   * @param {number} roughness
-   */
+  // Set the material for a channel
+  // @param {number} channelIndex 
+  // @param {Array.<number>} colorrgb [r,g,b]
+  // @param {Array.<number>} specularrgb [r,g,b]
+  // @param {Array.<number>} emissivergb [r,g,b]
+  // @param {number} roughness
   updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, roughness) {
     if (!this.channel_colors[channelIndex]) {
       return;
@@ -386,11 +299,6 @@ export default class VolumeDrawable {
     this.roughness[channelIndex] = roughness;
   }
 
-  /**
-   * Set the global density of the volume data
-   * @param {number} density Roughly equivalent to opacity, or how translucent or opaque the volume is
-   * @param {boolean=} no_redraw Set to true to delay re-rendering. Otherwise ignore.
-   */
   setDensity(density) {
     this.density = density;
     this.volumeRendering.setDensity(density);
@@ -403,49 +311,15 @@ export default class VolumeDrawable {
     return this.density;
   }
 
-  /**
-   * Set the global brightness of the volume data
-   * @param {number} brightness Roughly speaking, an intensity multiplier on the whole volume
-   * @param {boolean=} no_redraw Set to true to delay re-rendering. Otherwise ignore.
-   */
   setBrightness(brightness) {
     this.brightness = brightness;
     this.volumeRendering.setBrightness(brightness);
   }
 
-  /**
-   * Get the global brightness of the volume data
-   */
   getBrightness() {
     return this.brightness;
   }
 
-  /**
-   * Add a new channel ready to receive data from one of the setChannelDataFrom* calls.
-   * Name and color will be defaulted if not provided. For now, leave imageInfo alone as the "original" data
-   * @param {string} name 
-   * @param {Array.<number>} color [r,g,b]
-   */
-  appendEmptyChannel(name, color) {
-    let idx = this.num_channels;
-    let chcolor = color || getColorByChannelIndex(idx);
-    this.channel_colors.push(chcolor);
-    this.fusion.push({
-      chIndex: idx,
-      lut:[],
-      rgbColor: chcolor
-    });
-
-    this.meshVolume.appendEmptyChannel(chname);
-    this.volumeRendering.appendEmptyChannel(chname);
-
-    return idx;
-  }
-
-  /**
-   * Assign a channel index as a mask channel (will multiply its color against the entire visible volume)
-   * @param {number} channelIndex 
-   */
   setChannelAsMask(channelIndex) {
     if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
       return false;
@@ -454,23 +328,11 @@ export default class VolumeDrawable {
     return this.volumeRendering.setChannelAsMask(channelIndex);
   }
 
-  /**
-   * Set a multiplier for how much of the mask channel to mask out the background
-   * @param {number} maskAlpha 
-   */
   setMaskAlpha(maskAlpha) {
     this.maskAlpha = maskAlpha;
     this.volumeRendering.setMaskAlpha(maskAlpha);
   }
 
-  /**
-   * Get a value from the volume data
-   * @return {number} the intensity value from the given channel at the given xyz location
-   * @param {number} c The channel index
-   * @param {number} x 
-   * @param {number} y 
-   * @param {number} z 
-   */
   getIntensity(c, x, y, z) {
     return this.volume.getIntensity(c, x, y, z);
   }
@@ -491,15 +353,6 @@ export default class VolumeDrawable {
     this.PT && this.pathTracedVolume.updateCamera(fov, focalDistance, apertureSize);
   }
 
-  /**
-   * Set clipping range (between 0 and 1) for the entire volume.
-   * @param {number} xmin 0..1, should be less than xmax
-   * @param {number} xmax 0..1, should be greater than xmin 
-   * @param {number} ymin 0..1, should be less than ymax
-   * @param {number} ymax 0..1, should be greater than ymin 
-   * @param {number} zmin 0..1, should be less than zmax
-   * @param {number} zmax 0..1, should be greater than zmin 
-   */
   updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
     this.volumeRendering.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
   }
