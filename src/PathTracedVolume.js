@@ -312,15 +312,15 @@ export default class PathTracedVolume {
         this.pathTracingUniforms.uFrameCounter.value = this.frameCounter;
 
         // CAMERA
-        // force the perspective camera to update its world matrix.
-        canvas.perspectiveCamera.updateMatrixWorld(true);
-        const cam = canvas.perspectiveCamera;
+        // force the camera to update its world matrix.
+        canvas.camera.updateMatrixWorld(true);
+        const cam = canvas.camera;
 
         let mydir = new THREE.Vector3();
         mydir = cam.getWorldDirection(mydir);
         let myup = new THREE.Vector3().copy(cam.up);
         // don't rotate this vector.  we are using translation as the pivot point of the object, and THEN rotating.
-        let mypos = new THREE.Vector3().copy(cam.position)
+        let mypos = new THREE.Vector3().copy(cam.position);
         
         // apply volume translation and rotation:
         // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
@@ -330,13 +330,15 @@ export default class PathTracedVolume {
         myup.applyMatrix4(m);
         mydir.applyMatrix4(m);
 
+        this.pathTracingUniforms.gCamera.value.m_isOrtho = (cam.isOrthographicCamera) ? 1 : 0;
         this.pathTracingUniforms.gCamera.value.m_from.copy(mypos);
         this.pathTracingUniforms.gCamera.value.m_N.copy(mydir);
         this.pathTracingUniforms.gCamera.value.m_U.crossVectors(this.pathTracingUniforms.gCamera.value.m_N, myup).normalize();
         this.pathTracingUniforms.gCamera.value.m_V.crossVectors(this.pathTracingUniforms.gCamera.value.m_U, this.pathTracingUniforms.gCamera.value.m_N).normalize();
 
         // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
-        const Scale = Math.tan((0.5 * cam.fov * 3.14159265 / 180.0));
+        const Scale = (cam.isOrthographicCamera) ? canvas.orthoScale : Math.tan((0.5 * cam.fov * 3.14159265 / 180.0));
+
         const aspect = this.pathTracingUniforms.uResolution.value.x / this.pathTracingUniforms.uResolution.value.y;
         this.pathTracingUniforms.gCamera.value.m_screen.set(
             -Scale * aspect,
@@ -499,6 +501,11 @@ export default class PathTracedVolume {
     }
 
     setOrthoThickness(value) {
+    }
+
+    setIsOrtho(isOrthoAxis) {
+      this.pathTracingUniforms.gCamera.value.m_isOrtho = (isOrthoAxis) ? 1 : 0;
+      this.sampleCounter = 0.0;  
     }
 
     //////////////////////////////////////////

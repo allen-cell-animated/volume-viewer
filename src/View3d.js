@@ -553,6 +553,7 @@ export class View3d {
       else {
         this.image.setVolumeRendering(false);
       }
+      this.image.setIsOrtho(this.canvas3d.camera.isOrthographicCamera);
       this.image.setResolution(this.canvas3d);  
       this.setAutoRotate(this.canvas3d.controls.autoRotate);
     }
