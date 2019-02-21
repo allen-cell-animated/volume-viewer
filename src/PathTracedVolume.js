@@ -15,6 +15,10 @@ export default class PathTracedVolume {
         this.volume = volume;
         this.viewChannels = [-1, -1, -1, -1];
 
+        this.scale = new THREE.Vector3(1,1,1);
+        this.translation = new THREE.Vector3(0,0,0);
+        this.rotation = new THREE.Euler();
+
         // scale factor is a huge optimization.  Maybe use 1/dpi scale
         this.pixelSamplingRate = 0.75;
 
@@ -310,17 +314,33 @@ export default class PathTracedVolume {
         this.pathTracingUniforms.uFrameCounter.value = this.frameCounter;
 
         // CAMERA
-        // force the perspective camera to update its world matrix.
-        canvas.perspectiveCamera.updateMatrixWorld(true);
+        // force the camera to update its world matrix.
+        canvas.camera.updateMatrixWorld(true);
+        const cam = canvas.camera;
 
-        const cam = canvas.perspectiveCamera;
-        this.pathTracingUniforms.gCamera.value.m_from.copy(cam.position);
-        this.pathTracingUniforms.gCamera.value.m_N.subVectors(canvas.controls.target, cam.position).normalize();
-        this.pathTracingUniforms.gCamera.value.m_U.crossVectors(this.pathTracingUniforms.gCamera.value.m_N, cam.up).normalize();
+        let mydir = new THREE.Vector3();
+        mydir = cam.getWorldDirection(mydir);
+        let myup = new THREE.Vector3().copy(cam.up);
+        // don't rotate this vector.  we are using translation as the pivot point of the object, and THEN rotating.
+        let mypos = new THREE.Vector3().copy(cam.position);
+        
+        // apply volume translation and rotation:
+        // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
+        const m = new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromEuler(this.rotation).inverse());
+        mypos.applyMatrix4(m);
+        mypos.sub(this.translation);
+        myup.applyMatrix4(m);
+        mydir.applyMatrix4(m);
+
+        this.pathTracingUniforms.gCamera.value.m_isOrtho = (cam.isOrthographicCamera) ? 1 : 0;
+        this.pathTracingUniforms.gCamera.value.m_from.copy(mypos);
+        this.pathTracingUniforms.gCamera.value.m_N.copy(mydir);
+        this.pathTracingUniforms.gCamera.value.m_U.crossVectors(this.pathTracingUniforms.gCamera.value.m_N, myup).normalize();
         this.pathTracingUniforms.gCamera.value.m_V.crossVectors(this.pathTracingUniforms.gCamera.value.m_U, this.pathTracingUniforms.gCamera.value.m_N).normalize();
 
         // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
-        const Scale = Math.tan((0.5 * cam.fov * 3.14159265 / 180.0));
+        const Scale = (cam.isOrthographicCamera) ? canvas.orthoScale : Math.tan((0.5 * cam.fov * 3.14159265 / 180.0));
+
         const aspect = this.pathTracingUniforms.uResolution.value.x / this.pathTracingUniforms.uResolution.value.y;
         this.pathTracingUniforms.gCamera.value.m_screen.set(
             -Scale * aspect,
@@ -395,6 +415,16 @@ export default class PathTracedVolume {
 
         this.scale = scale;
 
+    }
+
+    setTranslation(vec3xyz) {
+      this.translation.copy(vec3xyz);
+      this.sampleCounter = 0;
+    }
+
+    setRotation(eulerXYZ) {
+      this.rotation.copy(eulerXYZ);
+      this.sampleCounter = 0;
     }
 
     setOrthoScale(value) {
@@ -473,6 +503,11 @@ export default class PathTracedVolume {
     }
 
     setOrthoThickness(value) {
+    }
+
+    setIsOrtho(isOrthoAxis) {
+      this.pathTracingUniforms.gCamera.value.m_isOrtho = (isOrthoAxis) ? 1 : 0;
+      this.sampleCounter = 0.0;  
     }
 
     //////////////////////////////////////////

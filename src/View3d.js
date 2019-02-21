@@ -572,8 +572,32 @@ export class View3d {
         this.image.setVolumeRendering(false);
       }
       this.updatePixelSamplingRate(this.pixelSamplingRate);
+      this.image.setIsOrtho(this.canvas3d.camera.isOrthographicCamera);
       this.image.setResolution(this.canvas3d);  
       this.setAutoRotate(this.canvas3d.controls.autoRotate);
+    }
+  }
+
+
+  /**
+   * 
+   * @param {Object} volume
+   * @param {Array.<number>} xyz 
+   */
+  setVolumeTranslation(volume, xyz) {
+    if (this.image) {
+      this.image.setTranslation(new THREE.Vector3().fromArray(xyz));
+    }
+  }
+
+  /**
+   * 
+   * @param {Object} volume
+   * @param {Array.<number>} eulerXYZ 
+   */
+  setVolumeRotation(volume, eulerXYZ) {
+    if (this.image) {
+      this.image.setRotation(new THREE.Euler().fromArray(eulerXYZ));
     }
   }
 };
