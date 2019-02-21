@@ -35,17 +35,9 @@ export class View3d {
 
   // prerender should be called on every redraw and should be the first thing done.
   preRender() {
-    // if fps just updated and it's too low:
-    if (this.canvas3d.timer.lastFPS < 7 && this.canvas3d.timer.lastFPS > 0 && this.canvas3d.timer.frames === 0) {
-      if (this.image && (this.volumeRenderMode === RENDERMODE_PATHTRACE)) {
-        // do something!
-        // try to reduce pixel scaling in pathtracer.
-        console.log("DROPPING SAMPLING RATE TO " + this.pixelSamplingRate * 0.75);
-        this.updatePixelSamplingRate(this.pixelSamplingRate * 0.75);
-      }
-      else if (this.image && (this.volumeRenderMode === RENDERMODE_RAYMARCH)) {
-      }
-    }
+    // TODO: if fps just updated and it's too low, do something:
+    // if (this.canvas3d.timer.lastFPS < 7 && this.canvas3d.timer.lastFPS > 0 && this.canvas3d.timer.frames === 0) {
+    // }
 
     if (this.scene.getObjectByName('lightContainer')) {
       this.scene.getObjectByName('lightContainer').rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);

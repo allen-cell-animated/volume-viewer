@@ -65,7 +65,6 @@ export class ThreeJsPanel {
       this.renderer.state.setBlending(THREE.NormalBlending);
     }
 
-    this.clock = new THREE.Clock();
     this.timer = new Timing();
 
     var scale = 0.5;
@@ -393,8 +392,8 @@ export class ThreeJsPanel {
 
   onAnimationLoop() {
     // delta is in seconds
-    var delta = this.clock.getDelta();
     this.timer.update();
+    const delta = this.timer.lastFrameMs / 1000.0;
 
     if (this.isVR() && this.vrControls) {
       this.vrControls.update(delta);
