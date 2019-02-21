@@ -373,8 +373,11 @@ function loadImageData(jsondata, volumedata) {
                 view3D.updateDensity(vol, myState.density);
                 view3D.updateExposure(myState.exposure);
 
-                // view3D.setVolumeTranslation(vol, [0.25, 0.0, 0.0]);
-                // view3D.setVolumeRotation(vol, [0,0,-3.14159265/8.0]);
+                // apply a volume transform from an external source:
+                if (jsondata.appData && jsondata.appData.alignTransform) {
+                    view3D.setVolumeTranslation(vol, jsondata.appData.alignTransform.translation);
+                    view3D.setVolumeRotation(vol, jsondata.appData.alignTransform.rotation);
+                }
             }
         });
     }
@@ -390,9 +393,10 @@ function fetchImage(url) {
       return response.json();
     })
     .then(function(myJson) {
-        // prefix all the names in myJson.images
+        // if you need to adjust image paths prior to download, 
+        // now is the time to do it:
         // myJson.images.forEach(function(element) {
-        //     element.name = dataset.prefixdir + element.name;
+        //     element.name = myURLprefix + element.name;
         // });        
         loadImageData(myJson);
     });
