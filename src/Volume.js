@@ -256,11 +256,19 @@ export default class Volume {
    * @return {Array.<number>} the xyz translation in normalized volume units
    */
   getTranslation() {
+    return this.voxelsToWorldSpace(this.imageInfo.transform.translation);
+  }
+
+  /**
+   * Return a translation in normalized volume units, given a translation in image voxels
+   * @return {Array.<number>} the xyz translation in normalized volume units
+   */
+  voxelsToWorldSpace(xyz) {
     // ASSUME: translation is in original image voxels.
     // account for pixel_size and normalized scaling in the threejs volume representation we're using
     const m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
     const pixelSizeVec = new THREE.Vector3().fromArray(this.pixel_size);
-    return new THREE.Vector3().fromArray(this.imageInfo.transform.translation).multiply(pixelSizeVec).multiplyScalar(m).toArray();
+    return new THREE.Vector3().fromArray(xyz).multiply(pixelSizeVec).multiplyScalar(m).toArray();
   }
 
   addVolumeDataObserver(o) {

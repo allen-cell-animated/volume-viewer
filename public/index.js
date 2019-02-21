@@ -375,7 +375,7 @@ function loadImageData(jsondata, volumedata) {
 
                 // apply a volume transform from an external source:
                 if (jsondata.appData && jsondata.appData.alignTransform) {
-                    view3D.setVolumeTranslation(vol, jsondata.appData.alignTransform.translation);
+                    view3D.setVolumeTranslation(vol, vol.voxelsToWorldSpace(jsondata.appData.alignTransform.translation));
                     view3D.setVolumeRotation(vol, jsondata.appData.alignTransform.rotation);
                 }
             }
