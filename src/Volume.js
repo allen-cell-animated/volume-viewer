@@ -24,6 +24,7 @@ import { getColorByChannelIndex } from './constants/colors.js';
  * @property {number} tile_height Height of each tile in volumetric dataset to be rendered, in pixels
  * @property {number} atlas_width Total width of image containing all the tiles, in pixels.  Note atlas_width === cols*tile_width
  * @property {number} atlas_height Total height of image containing all the tiles, in pixels. Note atlas_height === rows*tile_height
+ * @property {Object} transform translation and rotation as arrays of 3 numbers. Translation is in voxels (to be multiplied by pixel_size values). Rotation is Euler angles in radians, appled in XYZ order.
  * @example let imgdata = {
   "width": 306,
   "height": 494,
@@ -44,7 +45,11 @@ import { getColorByChannelIndex } from './constants/colors.js';
   "name": "AICS-10_5_5",
   "status": "OK",
   "version": "0.0.0",
-  "aicsImageVersion": "0.3.0"
+  "aicsImageVersion": "0.3.0",
+  "transform": {
+    "translation": [5, 5, 1],
+    "rotation": [0, 3.14159, 1.57]
+  }
   };
  */
 
@@ -94,6 +99,20 @@ export default class Volume {
 
     this.setVoxelSize(this.pixel_size);
 
+    // make sure a transform is specified
+    if (!this.imageInfo.transform) {
+      this.imageInfo.transform = {
+        translation: [0,0,0],
+        rotation: [0,0,0]
+      }
+    }
+    if (!this.imageInfo.transform.translation) {
+      this.imageInfo.transform.translation = [0,0,0];
+    }
+    if (!this.imageInfo.transform.rotation) {
+      this.imageInfo.transform.rotation = [0,0,0];
+    }
+
     this.volumeDataObservers = [];
   }
 
@@ -102,6 +121,8 @@ export default class Volume {
     this.currentScale = scale.clone();
   }
 
+  // we calculate the physical size of the volume (voxels*pixel_size)
+  // and then normalize to the max physical dimension
   setVoxelSize(values) {
     // basic error check.  bail out if we get something bad.
     if (!values.length || values.length < 3) {
@@ -137,8 +158,8 @@ export default class Volume {
     this.normalizedPhysicalSize = new THREE.Vector3().copy(this.physicalSize).multiplyScalar(1.0/m);
 
     this.setScale(new THREE.Vector3(sx,sy,sz));
-    // console.log("scale " + sx + "," + sy + "," + sz);
-    // console.log("nps " + this.normalizedPhysicalSize.x + "," + this.normalizedPhysicalSize.y + "," + this.normalizedPhysicalSize.z);
+    console.log("scale " + sx + "," + sy + "," + sz);
+    console.log("nps " + this.normalizedPhysicalSize.x + "," + this.normalizedPhysicalSize.y + "," + this.normalizedPhysicalSize.z);
   }
 
   cleanup() {
@@ -219,6 +240,27 @@ export default class Volume {
    */
   getIntensity(c, x, y, z) {
       return this.channels[c].getIntensity(x, y, z);
+  }
+
+  /**
+   * Return the intrinsic rotation associated with this volume (radians)
+   * @return {Array.<number>} the xyz Euler angles (radians)
+   */
+  getRotation() {
+    // default axis order is XYZ
+    return this.imageInfo.transform.rotation;
+  }
+
+  /**
+   * Return the intrinsic translation (pivot center delta) associated with this volume, in normalized volume units
+   * @return {Array.<number>} the xyz translation in normalized volume units
+   */
+  getTranslation() {
+    // ASSUME: translation is in original image voxels.
+    // account for pixel_size and normalized scaling in the threejs volume representation we're using
+    const m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
+    const pixelSizeVec = new THREE.Vector3().fromArray(this.pixel_size);
+    return new THREE.Vector3().fromArray(this.imageInfo.transform.translation).multiply(pixelSizeVec).multiplyScalar(m).toArray();
   }
 
   addVolumeDataObserver(o) {

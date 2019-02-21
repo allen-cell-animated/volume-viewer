@@ -15,9 +15,14 @@ export default class RayMarchedAtlasVolume {
             bmax: new THREE.Vector3(0.5, 0.5, 0.5)
         };
         
+       
         this.cube = new THREE.BoxGeometry(1.0, 1.0, 1.0);
         this.cubeMesh = new THREE.Mesh(this.cube);
         this.cubeMesh.name = "Volume";
+
+        this.cubeTransformNode = new THREE.Group();
+        this.cubeTransformNode.name = "VolumeContainerNode";
+        this.cubeTransformNode.add(this.cubeMesh);
 
         this.uniforms = rayMarchingShaderUniforms();
 
@@ -89,7 +94,7 @@ export default class RayMarchedAtlasVolume {
     }
 
     get3dObject() {
-        return this.cubeMesh;
+        return this.cubeTransformNode;
     }
 
     onChannelData(batch) {
@@ -105,6 +110,14 @@ export default class RayMarchedAtlasVolume {
           scale.z));
     }
 
+    setTranslation(vec3xyz) {
+        this.cubeMesh.position.copy(vec3xyz);
+    }
+
+    setRotation(eulerXYZ) {
+        this.cubeTransformNode.rotation.copy(eulerXYZ);
+    }
+  
     setOrthoScale(value) {
         this.setUniform('orthoScale', value);
     }

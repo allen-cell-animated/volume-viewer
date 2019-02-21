@@ -51,7 +51,8 @@ const myState = {
     isPT: false,
 
     isTurntable: false,
-    isAxisShowing: false
+    isAxisShowing: false,
+    isAligned: true
 
 };
 let gui = null;
@@ -371,6 +372,12 @@ function loadImageData(jsondata, volumedata) {
                 view3D.updateLights(myState.lights);
                 view3D.updateDensity(vol, myState.density);
                 view3D.updateExposure(myState.exposure);
+
+                // apply a volume transform from an external source:
+                if (jsondata.appData && jsondata.appData.alignTransform) {
+                    view3D.setVolumeTranslation(vol, jsondata.appData.alignTransform.translation);
+                    view3D.setVolumeRotation(vol, jsondata.appData.alignTransform.rotation);
+                }
             }
         });
     }
@@ -386,9 +393,10 @@ function fetchImage(url) {
       return response.json();
     })
     .then(function(myJson) {
-        // prefix all the names in myJson.images
+        // if you need to adjust image paths prior to download, 
+        // now is the time to do it:
         // myJson.images.forEach(function(element) {
-        //     element.name = dataset.prefixdir + element.name;
+        //     element.name = myURLprefix + element.name;
         // });        
         loadImageData(myJson);
     });
@@ -406,6 +414,12 @@ var rotbtn = document.getElementById("rotbtn");
 rotbtn.addEventListener("click", ()=>{myState.isTurntable = !myState.isTurntable; view3D.setAutoRotate(myState.isTurntable)});
 var axisbtn = document.getElementById("axisbtn");
 axisbtn.addEventListener("click", ()=>{myState.isAxisShowing = !myState.isAxisShowing; view3D.setShowAxis(myState.isAxisShowing)});
+var alignbtn = document.getElementById("xfbtn");
+alignbtn.addEventListener("click", ()=>{
+    myState.isAligned = !myState.isAligned; 
+    view3D.setVolumeTranslation(myState.volume, myState.isAligned ? myState.volume.getTranslation() : [0,0,0]); 
+    view3D.setVolumeRotation(myState.volume, myState.isAligned ? myState.volume.getRotation() : [0,0,0]);
+});
 
 if (view3D.canvas3d.hasWebGL2) {
     var ptbtn = document.getElementById("ptbtn");
