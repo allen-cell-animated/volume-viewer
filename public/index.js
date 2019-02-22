@@ -5,6 +5,8 @@ import {
     VolumeLoader,
     Light,
     AREA_LIGHT,
+    RENDERMODE_PATHTRACE,
+    RENDERMODE_RAYMARCH,
     SKY_LIGHT
 } from '../src';
 
@@ -361,7 +363,7 @@ function loadImageData(jsondata, volumedata) {
             vol.channels[channelIndex].lutGenerator_auto2();
 
             if (vol.loaded) {
-                view3D.setVolumeRenderMode(myState.isPT ? 1 : 0);
+                view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
 
                 view3D.removeAllVolumes();
                 view3D.addVolume(vol);
@@ -428,7 +430,7 @@ if (view3D.canvas3d.hasWebGL2) {
     //var ptbtn = document.getElementById("ptbtn");
     ptbtn.addEventListener("click", ()=>{
         myState.isPT = !myState.isPT; 
-        view3D.setVolumeRenderMode(myState.isPT ? 1 : 0);
+        view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
         view3D.updateLights(myState.lights);
     });
 }
