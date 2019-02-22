@@ -227,6 +227,10 @@ export default class Volume {
 
     this.channels.push(new Channel(chname));
 
+    for (let i = 0; i < this.volumeDataObservers.length; ++i) {
+      this.volumeDataObservers[i].onVolumeChannelAdded(this, idx);
+    }
+
     return idx;
   }
 

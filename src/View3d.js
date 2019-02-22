@@ -104,9 +104,14 @@ export class View3d {
 
   // channels is an array of channel indices for which new data just arrived.
   onVolumeData(volume, channels) {
-    // todo get image for volume (this.volumes.indexof?)
     this.image.onChannelLoaded(channels);
   }
+
+  // do fixups for when the volume has had a new empty channel added.
+  onVolumeChannelAdded(volume, newChannelIndex) {
+    this.image.onChannelAdded(newChannelIndex);
+  }
+
 
   /**
    * Assign a channel index as a mask channel (will multiply its color against the entire visible volume)
