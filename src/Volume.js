@@ -157,9 +157,8 @@ export default class Volume {
     // Compute the volume's max extent - scaled to max dimension.
     this.normalizedPhysicalSize = new THREE.Vector3().copy(this.physicalSize).multiplyScalar(1.0/m);
 
+    // sx, sy, sz should be same as normalizedPhysicalSize
     this.setScale(new THREE.Vector3(sx,sy,sz));
-    console.log("scale " + sx + "," + sy + "," + sz);
-    console.log("nps " + this.normalizedPhysicalSize.x + "," + this.normalizedPhysicalSize.y + "," + this.normalizedPhysicalSize.z);
   }
 
   cleanup() {
