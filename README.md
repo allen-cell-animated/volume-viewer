@@ -5,22 +5,22 @@ Volume data is provided to the core 3d viewer in two parts.  The first part is v
 
 The volume-viewer package exposes two key modules:
 * ```View3d``` is the viewing component that contains a canvas and supports zoom/pan/rotate interaction with the volume.
-* ```VolumeDrawable``` is the class that holds the volume data and information about how to present it.
+* ```Volume``` is the class that holds the volume data. After initialization, this is generally a read-only holder for raw data.
 
 It also provides the following two utility modules:
-* ```VolumeLoader``` is a convenience class for downloading and unpacking texture atlases into a VolumeDrawable.
+* ```VolumeLoader``` is a convenience class for downloading and unpacking texture atlases into a Volume.
 * ```VolumeMaker``` is a convenience module for creating simple test volume data
 
 There are two ways to deliver volume data to the viewer:
-* raw Uint8Arrays of 3d volume data (one Uint8Array per channel). ( ```VolumeDrawable.setChannelDataFromVolume``` )
-* texture atlases (png files or Uint8Arrays containing volume slices tiled across a 2d image) ( ```VolumeDrawable.setChannelDataFromAtlas``` )
+* raw Uint8Arrays of 3d volume data (one Uint8Array per channel). ( ```Volume.setChannelDataFromVolume``` )
+* texture atlases (png files or Uint8Arrays containing volume slices tiled across a 2d image) ( ```Volume.setChannelDataFromAtlas``` )
 
 
 # Example
 
 See public/index.js for a working example.  (```npm install; npm run dev``` will run that code) The basic code to get the volume viewer up and running is as follows:
 ```javascript
-import {View3d, VolumeDrawable, VolumeLoader, VolumeMaker} from 'volume-viewer';
+import {View3d, Volume, VolumeLoader, VolumeMaker} from 'volume-viewer';
 
 // find a div that will hold the viewer
 const el = document.getElementById("volume-viewer");
@@ -29,10 +29,10 @@ const el = document.getElementById("volume-viewer");
 const view3D = new View3d(el);
 
 // create a volume image with dimensions passed in via jsondata
-const aimg = new VolumeDrawable(jsondata);
+const aimg = new Volume(jsondata);
 
 // tell the viewer about the image
-view3D.setImage(aimg);
+view3D.addVolume(aimg);
 
 // load volume data into the image.  volumedata here is an array of Uint8Arrays.  
 // each element in volumedata is a flattened 3d volume stored in xyz order in a Uint8Array.
@@ -43,8 +43,8 @@ for (let i = 0; i < volumedata.length; ++i) {
 
 // set some viewing parameters
 view3D.setCameraMode('3D');
-aimg.setDensity(0.1);
-aimg.setBrightness(1.0);
+view3D.setDensity(aimg, 0.1);
+view3D.setBrightness(1.0);
 ```
 
 # Acknowledgements
