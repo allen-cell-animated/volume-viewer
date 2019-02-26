@@ -20,7 +20,7 @@ export default class PathTracedVolume {
         this.rotation = new THREE.Euler();
 
         // scale factor is a huge optimization.  Maybe use 1/dpi scale
-        this.pixelSamplingRate = 0.25;
+        this.pixelSamplingRate = 0.75;
 
         this.pathTracingUniforms = pathTracingUniforms();
 
@@ -65,6 +65,8 @@ export default class PathTracedVolume {
         // the window into our 3d world. This camera will not move or rotate for the duration of the app.
         this.quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
+        this.fullTargetResolution = new THREE.Vector2(2, 2);
+        
         this.pathTracingRenderTarget = new THREE.WebGLRenderTarget((2), (2), {
           minFilter: THREE.NearestFilter,
           magFilter: THREE.NearestFilter,

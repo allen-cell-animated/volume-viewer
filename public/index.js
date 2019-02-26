@@ -5,6 +5,8 @@ import {
     VolumeLoader,
     Light,
     AREA_LIGHT,
+    RENDERMODE_PATHTRACE,
+    RENDERMODE_RAYMARCH,
     SKY_LIGHT
 } from '../src';
 
@@ -361,7 +363,7 @@ function loadImageData(jsondata, volumedata) {
             vol.channels[channelIndex].lutGenerator_auto2();
 
             if (vol.loaded) {
-                view3D.setVolumeRenderMode(myState.isPT ? 1 : 0);
+                view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
 
                 view3D.removeAllVolumes();
                 view3D.addVolume(vol);
@@ -374,9 +376,9 @@ function loadImageData(jsondata, volumedata) {
                 view3D.updateExposure(myState.exposure);
 
                 // apply a volume transform from an external source:
-                if (jsondata.appData && jsondata.appData.alignTransform) {
-                    view3D.setVolumeTranslation(vol, jsondata.appData.alignTransform.translation);
-                    view3D.setVolumeRotation(vol, jsondata.appData.alignTransform.rotation);
+                if (jsondata.userData && jsondata.userData.alignTransform) {
+                    view3D.setVolumeTranslation(vol, vol.voxelsToWorldSpace(jsondata.userData.alignTransform.translation));
+                    view3D.setVolumeRotation(vol, jsondata.userData.alignTransform.rotation);
                 }
             }
         });
@@ -428,7 +430,7 @@ if (view3D.canvas3d.hasWebGL2) {
     //var ptbtn = document.getElementById("ptbtn");
     ptbtn.addEventListener("click", ()=>{
         myState.isPT = !myState.isPT; 
-        view3D.setVolumeRenderMode(myState.isPT ? 1 : 0);
+        view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
         view3D.updateLights(myState.lights);
     });
 }

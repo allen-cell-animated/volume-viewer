@@ -157,9 +157,8 @@ export default class Volume {
     // Compute the volume's max extent - scaled to max dimension.
     this.normalizedPhysicalSize = new THREE.Vector3().copy(this.physicalSize).multiplyScalar(1.0/m);
 
+    // sx, sy, sz should be same as normalizedPhysicalSize
     this.setScale(new THREE.Vector3(sx,sy,sz));
-    console.log("scale " + sx + "," + sy + "," + sz);
-    console.log("nps " + this.normalizedPhysicalSize.x + "," + this.normalizedPhysicalSize.y + "," + this.normalizedPhysicalSize.z);
   }
 
   cleanup() {
@@ -227,6 +226,10 @@ export default class Volume {
 
     this.channels.push(new Channel(chname));
 
+    for (let i = 0; i < this.volumeDataObservers.length; ++i) {
+      this.volumeDataObservers[i].onVolumeChannelAdded(this, idx);
+    }
+
     return idx;
   }
 
@@ -256,11 +259,19 @@ export default class Volume {
    * @return {Array.<number>} the xyz translation in normalized volume units
    */
   getTranslation() {
+    return this.voxelsToWorldSpace(this.imageInfo.transform.translation);
+  }
+
+  /**
+   * Return a translation in normalized volume units, given a translation in image voxels
+   * @return {Array.<number>} the xyz translation in normalized volume units
+   */
+  voxelsToWorldSpace(xyz) {
     // ASSUME: translation is in original image voxels.
     // account for pixel_size and normalized scaling in the threejs volume representation we're using
     const m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
     const pixelSizeVec = new THREE.Vector3().fromArray(this.pixel_size);
-    return new THREE.Vector3().fromArray(this.imageInfo.transform.translation).multiply(pixelSizeVec).multiplyScalar(m).toArray();
+    return new THREE.Vector3().fromArray(xyz).multiply(pixelSizeVec).multiplyScalar(m).toArray();
   }
 
   addVolumeDataObserver(o) {

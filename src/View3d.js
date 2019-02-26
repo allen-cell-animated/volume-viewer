@@ -3,6 +3,9 @@ import lightSettings from './constants/lights.js';
 import VolumeDrawable from './VolumeDrawable.js';
 import {Light, AREA_LIGHT, SKY_LIGHT} from './Light.js';
 
+export const RENDERMODE_RAYMARCH = 0;
+export const RENDERMODE_PATHTRACE = 1;
+
 /**
  * @class
  */
@@ -20,6 +23,8 @@ export class View3d {
     this.scene = null;
     this.backgroundColor = 0x000000;
 
+    this.pixelSamplingRate = 0.75;
+
     this.loaded = false;
     let that = this;
     this.parentEl = parentElement;
@@ -30,6 +35,10 @@ export class View3d {
 
   // prerender should be called on every redraw and should be the first thing done.
   preRender() {
+    // TODO: if fps just updated and it's too low, do something:
+    // if (this.canvas3d.timer.lastFPS < 7 && this.canvas3d.timer.lastFPS > 0 && this.canvas3d.timer.frames === 0) {
+    // }
+
     if (this.scene.getObjectByName('lightContainer')) {
       this.scene.getObjectByName('lightContainer').rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
     }
@@ -66,7 +75,7 @@ export class View3d {
    */
   addVolume(volume) {
     volume.addVolumeDataObserver(this);
-    this.setImage(new VolumeDrawable(volume, this.volumeRenderMode === 1));
+    this.setImage(new VolumeDrawable(volume, this.volumeRenderMode === RENDERMODE_PATHTRACE));
   }
 
   /**
@@ -95,9 +104,14 @@ export class View3d {
 
   // channels is an array of channel indices for which new data just arrived.
   onVolumeData(volume, channels) {
-    // todo get image for volume (this.volumes.indexof?)
     this.image.onChannelLoaded(channels);
   }
+
+  // do fixups for when the volume has had a new empty channel added.
+  onVolumeChannelAdded(volume, newChannelIndex) {
+    this.image.onChannelAdded(newChannelIndex);
+  }
+
 
   /**
    * Assign a channel index as a mask channel (will multiply its color against the entire visible volume)
@@ -484,6 +498,7 @@ export class View3d {
    * @param {number} value (+epsilon..1) 1 is max quality, ~0.1 for lowest quality and highest speed
    */
   updatePixelSamplingRate(value) {
+    this.pixelSamplingRate = value;
     if (this.image) {
       this.image.setPixelSamplingRate(value);
     }
@@ -546,13 +561,21 @@ export class View3d {
   setVolumeRenderMode(mode) {
     this.volumeRenderMode = mode;
     if (this.image) {
-      if (mode === 1 && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
+      if (mode === RENDERMODE_PATHTRACE && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
         this.image.setVolumeRendering(true);
         this.image.updateLights(this.lights);
+
+        if (this.canvas3d.vrButton) {
+          this.canvas3d.vrButton.disabled = true;
+        }
       }
       else {
         this.image.setVolumeRendering(false);
+        if (this.canvas3d.vrButton) {
+          this.canvas3d.vrButton.disabled = false;
+        }
       }
+      this.updatePixelSamplingRate(this.pixelSamplingRate);
       this.image.setIsOrtho(this.canvas3d.camera.isOrthographicCamera);
       this.image.setResolution(this.canvas3d);  
       this.setAutoRotate(this.canvas3d.controls.autoRotate);

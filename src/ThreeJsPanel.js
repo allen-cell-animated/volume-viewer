@@ -1,4 +1,5 @@
 import TrackballControls from './TrackballControls.js';
+import Timing from './Timing.js';
 
 import WEBVR from "./vr/WebVR.js";
 import vrObjectControls from './vr/vrObjectControls.js';
@@ -64,7 +65,7 @@ export class ThreeJsPanel {
       this.renderer.state.setBlending(THREE.NormalBlending);
     }
 
-    this.clock = new THREE.Clock();
+    this.timer = new Timing();
 
     var scale = 0.5;
     this.orthoScale = scale;
@@ -390,9 +391,9 @@ export class ThreeJsPanel {
   }
 
   onAnimationLoop() {
-    //var me = this;
-    var delta = this.clock.getDelta();
-    //console.log("DT="+delta);
+    // delta is in seconds
+    this.timer.update();
+    const delta = this.timer.lastFrameMs / 1000.0;
 
     if (this.isVR() && this.vrControls) {
       this.vrControls.update(delta);
