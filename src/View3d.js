@@ -564,9 +564,16 @@ export class View3d {
       if (mode === RENDERMODE_PATHTRACE && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
         this.image.setVolumeRendering(true);
         this.image.updateLights(this.lights);
+
+        if (this.canvas3d.vrButton) {
+          this.canvas3d.vrButton.disabled = true;
+        }
       }
       else {
         this.image.setVolumeRendering(false);
+        if (this.canvas3d.vrButton) {
+          this.canvas3d.vrButton.disabled = false;
+        }
       }
       this.updatePixelSamplingRate(this.pixelSamplingRate);
       this.image.setIsOrtho(this.canvas3d.camera.isOrthographicCamera);
