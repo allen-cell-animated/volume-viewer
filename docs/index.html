@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset='utf-8' />
-  <title>volume-viewer 1.0.16 | Documentation</title>
+  <title>volume-viewer 1.0.17 | Documentation</title>
   <meta name='viewport' content='width=device-width,initial-scale=1'>
   <link href='assets/bass.css' type='text/css' rel='stylesheet' />
   <link href='assets/style.css' type='text/css' rel='stylesheet' />
@@ -15,7 +15,7 @@
       <div id='split-left' class='overflow-auto fs0 height-viewport-100'>
         <div class='py1 px2'>
           <h3 class='mb0 no-anchor'>volume-viewer</h3>
-          <div class='mb1'><code>1.0.16</code></div>
+          <div class='mb1'><code>1.0.17</code></div>
           <input
             placeholder='Filter'
             id='filter-input'
@@ -26,9 +26,9 @@
               
                 
                 <li><a
-                  href='#aicsvolumeloader'
+                  href='#volumeloader'
                   class=" toggle-sibling">
-                  AICSvolumeLoader
+                  VolumeLoader
                   <span class='icon'>▸</span>
                 </a>
                 
@@ -38,7 +38,7 @@
                     <li class='h5'><span>Static members</span></li>
                     
                       <li><a
-                        href='#aicsvolumeloaderloadvolumeatlasdata'
+                        href='#volumeloaderloadvolumeatlasdata'
                         class='regular pre-open'>
                         .loadVolumeAtlasData
                       </a></li>
@@ -54,9 +54,9 @@
               
                 
                 <li><a
-                  href='#aicsmakevolumes'
+                  href='#volumemaker'
                   class=" toggle-sibling">
-                  AICSmakeVolumes
+                  VolumeMaker
                   <span class='icon'>▸</span>
                 </a>
                 
@@ -66,31 +66,31 @@
                     <li class='h5'><span>Static members</span></li>
                     
                       <li><a
-                        href='#aicsmakevolumescreatevolume'
+                        href='#volumemakercreatevolume'
                         class='regular pre-open'>
                         .createVolume
                       </a></li>
                     
                       <li><a
-                        href='#aicsmakevolumescreatesphere'
+                        href='#volumemakercreatesphere'
                         class='regular pre-open'>
                         .createSphere
                       </a></li>
                     
                       <li><a
-                        href='#aicsmakevolumescreatecylinder'
+                        href='#volumemakercreatecylinder'
                         class='regular pre-open'>
                         .createCylinder
                       </a></li>
                     
                       <li><a
-                        href='#aicsmakevolumescreatetorus'
+                        href='#volumemakercreatetorus'
                         class='regular pre-open'>
                         .createTorus
                       </a></li>
                     
                       <li><a
-                        href='#aicsmakevolumescreatecone'
+                        href='#volumemakercreatecone'
                         class='regular pre-open'>
                         .createCone
                       </a></li>
@@ -106,9 +106,9 @@
               
                 
                 <li><a
-                  href='#aicsview3d'
+                  href='#view3d'
                   class=" toggle-sibling">
-                  AICSview3d
+                  View3d
                   <span class='icon'>▸</span>
                 </a>
                 
@@ -119,283 +119,219 @@
                       <li class='h5'><span>Instance members</span></li>
                       
                       <li><a
-                        href='#aicsview3dredraw'
+                        href='#view3dredraw'
                         class='regular pre-open'>
                         #redraw
                       </a></li>
                       
                       <li><a
-                        href='#aicsview3dsetimage'
+                        href='#view3daddvolume'
                         class='regular pre-open'>
-                        #setImage
+                        #addVolume
                       </a></li>
                       
                       <li><a
-                        href='#aicsview3dsetcameramode'
+                        href='#view3dremovevolume'
                         class='regular pre-open'>
-                        #setCameraMode
+                        #removeVolume
                       </a></li>
                       
                       <li><a
-                        href='#aicsview3dsetshowaxis'
+                        href='#view3dremoveallvolumes'
                         class='regular pre-open'>
-                        #setShowAxis
+                        #removeAllVolumes
                       </a></li>
                       
                       <li><a
-                        href='#aicsview3dsetautorotate'
+                        href='#view3dsetvolumechannelasmask'
                         class='regular pre-open'>
-                        #setAutoRotate
+                        #setVolumeChannelAsMask
                       </a></li>
                       
                       <li><a
-                        href='#aicsview3dresize'
+                        href='#view3dsetvoxelsize'
                         class='regular pre-open'>
-                        #resize
+                        #setVoxelSize
                       </a></li>
                       
                       <li><a
-                        href='#aicsview3dupdatedensity'
-                        class='regular pre-open'>
-                        #updateDensity
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsview3dupdateactivechannels'
-                        class='regular pre-open'>
-                        #updateActiveChannels
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsview3dupdateluts'
-                        class='regular pre-open'>
-                        #updateLuts
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsview3dupdatematerial'
-                        class='regular pre-open'>
-                        #updateMaterial
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsview3dupdateexposure'
-                        class='regular pre-open'>
-                        #updateExposure
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsview3dupdatecamera'
-                        class='regular pre-open'>
-                        #updateCamera
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsview3dupdateclipregion'
-                        class='regular pre-open'>
-                        #updateClipRegion
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsview3dupdatelights'
-                        class='regular pre-open'>
-                        #updateLights
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsview3dupdatepixelsamplingrate'
-                        class='regular pre-open'>
-                        #updatePixelSamplingRate
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsview3dsetpathtrace'
-                        class='regular pre-open'>
-                        #setPathTrace
-                      </a></li>
-                      
-                    </ul>
-                  
-                  
-                  
-                </div>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#aicsvolumedrawable'
-                  class=" toggle-sibling">
-                  AICSvolumeDrawable
-                  <span class='icon'>▸</span>
-                </a>
-                
-                <div class='toggle-target display-none'>
-                  
-                  
-                    <ul class='list-reset py1-ul pl1'>
-                      <li class='h5'><span>Instance members</span></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawablesetchanneldatafromatlas'
-                        class='regular pre-open'>
-                        #setChannelDataFromAtlas
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawablesetchanneldatafromvolume'
-                        class='regular pre-open'>
-                        #setChannelDataFromVolume
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawablesetaxisclip'
-                        class='regular pre-open'>
-                        #setAxisClip
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawablesetisortho'
-                        class='regular pre-open'>
-                        #setIsOrtho
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawablesetgamma'
-                        class='regular pre-open'>
-                        #setGamma
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawableupdateisovalue'
-                        class='regular pre-open'>
-                        #updateIsovalue
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawablegetisovalue'
-                        class='regular pre-open'>
-                        #getIsovalue
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawableupdateopacity'
-                        class='regular pre-open'>
-                        #updateOpacity
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawablehasisosurface'
-                        class='regular pre-open'>
-                        #hasIsosurface
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawablecreateisosurface'
+                        href='#view3dcreateisosurface'
                         class='regular pre-open'>
                         #createIsosurface
                       </a></li>
                       
                       <li><a
-                        href='#aicsvolumedrawabledestroyisosurface'
+                        href='#view3dhasisosurface'
                         class='regular pre-open'>
-                        #destroyIsosurface
+                        #hasIsosurface
                       </a></li>
                       
                       <li><a
-                        href='#aicsvolumedrawablechannelnames'
+                        href='#view3dupdateisosurface'
                         class='regular pre-open'>
-                        #channelNames
+                        #updateIsosurface
                       </a></li>
                       
                       <li><a
-                        href='#aicsvolumedrawablesavechannelisosurface'
+                        href='#view3dupdateopacity'
+                        class='regular pre-open'>
+                        #updateOpacity
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dclearisosurface'
+                        class='regular pre-open'>
+                        #clearIsosurface
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dsavechannelisosurface'
                         class='regular pre-open'>
                         #saveChannelIsosurface
                       </a></li>
                       
                       <li><a
-                        href='#aicsvolumedrawablesetvolumechannelenabled'
+                        href='#view3dsetcameramode'
+                        class='regular pre-open'>
+                        #setCameraMode
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dsetshowaxis'
+                        class='regular pre-open'>
+                        #setShowAxis
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dsetautorotate'
+                        class='regular pre-open'>
+                        #setAutoRotate
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dresize'
+                        class='regular pre-open'>
+                        #resize
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dupdatedensity'
+                        class='regular pre-open'>
+                        #updateDensity
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dupdateshadingmethod'
+                        class='regular pre-open'>
+                        #updateShadingMethod
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dsetgamma'
+                        class='regular pre-open'>
+                        #setGamma
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dsetmaxprojectmode'
+                        class='regular pre-open'>
+                        #setMaxProjectMode
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dupdateactivechannels'
+                        class='regular pre-open'>
+                        #updateActiveChannels
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dupdateluts'
+                        class='regular pre-open'>
+                        #updateLuts
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dupdatematerial'
+                        class='regular pre-open'>
+                        #updateMaterial
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dupdateexposure'
+                        class='regular pre-open'>
+                        #updateExposure
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dupdatecamera'
+                        class='regular pre-open'>
+                        #updateCamera
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dupdateclipregion'
+                        class='regular pre-open'>
+                        #updateClipRegion
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dsetaxisclip'
+                        class='regular pre-open'>
+                        #setAxisClip
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dupdatelights'
+                        class='regular pre-open'>
+                        #updateLights
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dupdatepixelsamplingrate'
+                        class='regular pre-open'>
+                        #updatePixelSamplingRate
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dupdatemaskalpha'
+                        class='regular pre-open'>
+                        #updateMaskAlpha
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dsetvolumechannelenabled'
                         class='regular pre-open'>
                         #setVolumeChannelEnabled
                       </a></li>
                       
                       <li><a
-                        href='#aicsvolumedrawableisvolumechannelenabled'
-                        class='regular pre-open'>
-                        #isVolumeChannelEnabled
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawableupdatechannelcolor'
-                        class='regular pre-open'>
-                        #updateChannelColor
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawablegetchannelcolor'
-                        class='regular pre-open'>
-                        #getChannelColor
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawableupdatechannelmaterial'
+                        href='#view3dupdatechannelmaterial'
                         class='regular pre-open'>
                         #updateChannelMaterial
                       </a></li>
                       
                       <li><a
-                        href='#aicsvolumedrawablesetdensity'
+                        href='#view3dupdatechannelcolor'
                         class='regular pre-open'>
-                        #setDensity
+                        #updateChannelColor
                       </a></li>
                       
                       <li><a
-                        href='#aicsvolumedrawablegetdensity'
+                        href='#view3dsetvolumerendermode'
                         class='regular pre-open'>
-                        #getDensity
+                        #setVolumeRenderMode
                       </a></li>
                       
                       <li><a
-                        href='#aicsvolumedrawablesetbrightness'
+                        href='#view3dsetvolumetranslation'
                         class='regular pre-open'>
-                        #setBrightness
+                        #setVolumeTranslation
                       </a></li>
                       
                       <li><a
-                        href='#aicsvolumedrawablegetbrightness'
+                        href='#view3dsetvolumerotation'
                         class='regular pre-open'>
-                        #getBrightness
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawableappendemptychannel'
-                        class='regular pre-open'>
-                        #appendEmptyChannel
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawablesetchannelasmask'
-                        class='regular pre-open'>
-                        #setChannelAsMask
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawablesetmaskalpha'
-                        class='regular pre-open'>
-                        #setMaskAlpha
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawablegetintensity'
-                        class='regular pre-open'>
-                        #getIntensity
-                      </a></li>
-                      
-                      <li><a
-                        href='#aicsvolumedrawableupdateclipregion'
-                        class='regular pre-open'>
-                        #updateClipRegion
+                        #setVolumeRotation
                       </a></li>
                       
                     </ul>
@@ -416,6 +352,86 @@
                 
                 </li>
               
+                
+                <li><a
+                  href='#imageinfo'
+                  class="">
+                  imageInfo
+                  
+                </a>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#volume'
+                  class=" toggle-sibling">
+                  Volume
+                  <span class='icon'>▸</span>
+                </a>
+                
+                <div class='toggle-target display-none'>
+                  
+                  
+                    <ul class='list-reset py1-ul pl1'>
+                      <li class='h5'><span>Instance members</span></li>
+                      
+                      <li><a
+                        href='#volumechannelnames'
+                        class='regular pre-open'>
+                        #channelNames
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumesetchanneldatafromatlas'
+                        class='regular pre-open'>
+                        #setChannelDataFromAtlas
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumesetchanneldatafromvolume'
+                        class='regular pre-open'>
+                        #setChannelDataFromVolume
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumeappendemptychannel'
+                        class='regular pre-open'>
+                        #appendEmptyChannel
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumegetintensity'
+                        class='regular pre-open'>
+                        #getIntensity
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumegetrotation'
+                        class='regular pre-open'>
+                        #getRotation
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumegettranslation'
+                        class='regular pre-open'>
+                        #getTranslation
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumevoxelstoworldspace'
+                        class='regular pre-open'>
+                        #voxelsToWorldSpace
+                      </a></li>
+                      
+                    </ul>
+                  
+                  
+                  
+                </div>
+                
+                </li>
+              
             </ul>
           </div>
           <div class='mt1 h6 quiet'>
@@ -431,8 +447,8 @@
   
   <div class='clearfix'>
     
-    <h3 class='fl m0' id='aicsvolumeloader'>
-      AICSvolumeLoader
+    <h3 class='fl m0' id='volumeloader'>
+      VolumeLoader
     </h3>
     
     
@@ -442,7 +458,7 @@
   
  
   
-    <div class='pre p1 fill-light mt0'>new AICSvolumeLoader()</div>
+    <div class='pre p1 fill-light mt0'>new VolumeLoader()</div>
    
   
   
@@ -468,7 +484,7 @@
     <div class='py1 quiet mt1 prose-big'>Static Members</div>
     <div class="clearfix">
   
-    <div class='border-bottom' id='aicsvolumeloaderloadvolumeatlasdata'>
+    <div class='border-bottom' id='volumeloaderloadvolumeatlasdata'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -579,8 +595,8 @@ as requests arrive, the callback will be called per image, not per channel
   
   <div class='clearfix'>
     
-    <h3 class='fl m0' id='aicsmakevolumes'>
-      AICSmakeVolumes
+    <h3 class='fl m0' id='volumemaker'>
+      VolumeMaker
     </h3>
     
     
@@ -591,7 +607,7 @@ as requests arrive, the callback will be called per image, not per channel
 
  
   
-    <div class='pre p1 fill-light mt0'>new AICSmakeVolumes()</div>
+    <div class='pre p1 fill-light mt0'>new VolumeMaker()</div>
    
   
   
@@ -617,7 +633,7 @@ as requests arrive, the callback will be called per image, not per channel
     <div class='py1 quiet mt1 prose-big'>Static Members</div>
     <div class="clearfix">
   
-    <div class='border-bottom' id='aicsmakevolumescreatevolume'>
+    <div class='border-bottom' id='volumemakercreatevolume'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -703,7 +719,7 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsmakevolumescreatesphere'>
+    <div class='border-bottom' id='volumemakercreatesphere'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -788,7 +804,7 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsmakevolumescreatecylinder'>
+    <div class='border-bottom' id='volumemakercreatecylinder'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -883,7 +899,7 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsmakevolumescreatetorus'>
+    <div class='border-bottom' id='volumemakercreatetorus'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -978,7 +994,7 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsmakevolumescreatecone'>
+    <div class='border-bottom' id='volumemakercreatecone'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -1089,8 +1105,8 @@ as requests arrive, the callback will be called per image, not per channel
   
   <div class='clearfix'>
     
-    <h3 class='fl m0' id='aicsview3d'>
-      AICSview3d
+    <h3 class='fl m0' id='view3d'>
+      View3d
     </h3>
     
     
@@ -1100,7 +1116,7 @@ as requests arrive, the callback will be called per image, not per channel
   
  
   
-    <div class='pre p1 fill-light mt0'>new AICSview3d(parentElement: <a href="https://developer.mozilla.org/docs/Web/HTML/Element">HTMLElement</a>)</div>
+    <div class='pre p1 fill-light mt0'>new View3d(parentElement: <a href="https://developer.mozilla.org/docs/Web/HTML/Element">HTMLElement</a>, options: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</div>
    
   
   
@@ -1125,6 +1141,15 @@ as requests arrive, the callback will be called per image, not per channel
           
         </div>
       
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>options</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    This is an optional param. The only option is currently boolean {useWebGL2:true} which defaults to true.
+
+          </div>
+          
+        </div>
+      
     </div>
   
 
@@ -1142,7 +1167,7 @@ as requests arrive, the callback will be called per image, not per channel
     <div class='py1 quiet mt1 prose-big'>Instance Members</div>
     <div class="clearfix">
   
-    <div class='border-bottom' id='aicsview3dredraw'>
+    <div class='border-bottom' id='view3dredraw'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -1190,11 +1215,11 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsview3dsetimage'>
+    <div class='border-bottom' id='view3daddvolume'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setImage(img)</span>
+            <span class='code strong strong truncate'>addVolume(volume)</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -1202,11 +1227,11 @@ as requests arrive, the callback will be called per image, not per channel
 
   
 
-  <p>Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will return any prior existing image.</p>
+  <p>Add a new volume image to the viewer.  (The viewer currently only supports a single image at a time - adding repeatedly, without removing in between, is a potential resource leak)</p>
 
  
   
-    <div class='pre p1 fill-light mt0'>setImage(img: <a href="#aicsvolumedrawable">AICSvolumeDrawable</a>)</div>
+    <div class='pre p1 fill-light mt0'>addVolume(volume: <a href="#volume">Volume</a>)</div>
    
   
   
@@ -1224,7 +1249,7 @@ as requests arrive, the callback will be called per image, not per channel
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>img</span> <code class='quiet'>(<a href="#aicsvolumedrawable">AICSvolumeDrawable</a>)</code>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="#volume">Volume</a>)</code>
 	    
           </div>
           
@@ -1251,7 +1276,721 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsview3dsetcameramode'>
+    <div class='border-bottom' id='view3dremovevolume'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>removeVolume(volume)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Remove a volume image from the viewer.  This will clean up the View3D's resources for the current volume</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>removeVolume(volume: <a href="#volume">Volume</a>)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="#volume">Volume</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dremoveallvolumes'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>removeAllVolumes()</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Remove all volume images from the viewer.</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>removeAllVolumes()</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dsetvolumechannelasmask'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setVolumeChannelAsMask(volume, mask_channel_index)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Assign a channel index as a mask channel (will multiply its color against the entire visible volume)</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>setVolumeChannelAsMask(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, mask_channel_index: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>mask_channel_index</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dsetvoxelsize'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setVoxelSize(volume, values)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Set voxel dimensions - controls volume scaling. For example, the physical measurements of the voxels from a biological data set</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>setVoxelSize(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, values: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>values</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    Array of x,y,z floating point values for the physical voxel size scaling
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dcreateisosurface'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>createIsosurface(volume, channel, isovalue, alpha?)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>If an isosurface is not already created, then create one.  Otherwise change the isovalue of the existing isosurface.</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>createIsosurface(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, channel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, isovalue: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, alpha: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>channel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>isovalue</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    isovalue
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>alpha</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?)</code>
+	    Opacity
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dhasisosurface'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>hasIsosurface(volume, channel)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Is an isosurface already created for this channel?</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>hasIsosurface(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, channel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): any</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>channel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>any</code>:
+        true if there is currently a mesh isosurface for this channel
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dupdateisosurface'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>updateIsosurface(volume, channel, isovalue)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>updateIsosurface(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, channel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, isovalue: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>channel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>isovalue</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dupdateopacity'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>updateOpacity(volume, channel, opacity)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Set opacity for isosurface</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>updateOpacity(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, channel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, opacity: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>channel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>opacity</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    Opacity
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dclearisosurface'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>clearIsosurface(volume, channel)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>If an isosurface exists for this channel, hide it now</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>clearIsosurface(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, channel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>channel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dsavechannelisosurface'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>saveChannelIsosurface(volume, channelIndex, type)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Save a channel's isosurface as a triangle mesh to either STL or GLTF2 format.  File will be named automatically, using image name and channel name.</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>saveChannelIsosurface(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, type: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>channelIndex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>type</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+	    Either 'GLTF' or 'STL'
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dsetcameramode'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -1313,7 +2052,7 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsview3dsetshowaxis'>
+    <div class='border-bottom' id='view3dsetshowaxis'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -1382,7 +2121,7 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsview3dsetautorotate'>
+    <div class='border-bottom' id='view3dsetautorotate'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -1443,7 +2182,7 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsview3dresize'>
+    <div class='border-bottom' id='view3dresize'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -1455,7 +2194,7 @@ as requests arrive, the callback will be called per image, not per channel
 
   
 
-  <p>Notify the view that it has been resized.  This will automatically be connected to the window when the AICSview3d is created.</p>
+  <p>Notify the view that it has been resized.  This will automatically be connected to the window when the View3d is created.</p>
 
  
   
@@ -1550,11 +2289,11 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsview3dupdatedensity'>
+    <div class='border-bottom' id='view3dupdatedensity'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>updateDensity(density)</span>
+            <span class='code strong strong truncate'>updateDensity(volume, density)</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -1566,7 +2305,7 @@ as requests arrive, the callback will be called per image, not per channel
 
  
   
-    <div class='pre p1 fill-light mt0'>updateDensity(density: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
+    <div class='pre p1 fill-light mt0'>updateDensity(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, density: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
    
   
   
@@ -1581,6 +2320,14 @@ as requests arrive, the callback will be called per image, not per channel
   
     <div class='py1 quiet mt1 prose-big'>Parameters</div>
     <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
       
         <div class='space-bottom0'>
           <div>
@@ -1612,11 +2359,236 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsview3dupdateactivechannels'>
+    <div class='border-bottom' id='view3dupdateshadingmethod'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>updateActiveChannels()</span>
+            <span class='code strong strong truncate'>updateShadingMethod(volume, isbrdf)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Set the shading method - applies to pathtraced render mode only</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>updateShadingMethod(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, isbrdf: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>isbrdf</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    true for brdf model, false for isotropic phase function model
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dsetgamma'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setGamma(volume, gmin, glevel, gmax)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Set gamma levels: this affects the transparency and brightness of the single pass ray march volume render</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>setGamma(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, gmin: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, glevel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, gmax: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>gmin</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>glevel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>gmax</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dsetmaxprojectmode'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setMaxProjectMode(volume, isMaxProject)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Set max projection on or off - applies to single pass raymarch render mode only</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>setMaxProjectMode(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, isMaxProject: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>isMaxProject</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</code>
+	    true for max project, false for regular volume ray march integration
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dupdateactivechannels'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>updateActiveChannels(volume)</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -1628,7 +2600,7 @@ as requests arrive, the callback will be called per image, not per channel
 
  
   
-    <div class='pre p1 fill-light mt0'>updateActiveChannels()</div>
+    <div class='pre p1 fill-light mt0'>updateActiveChannels(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</div>
    
   
   
@@ -1640,6 +2612,19 @@ as requests arrive, the callback will be called per image, not per channel
   
   
 
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
   
 
   
@@ -1660,11 +2645,11 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsview3dupdateluts'>
+    <div class='border-bottom' id='view3dupdateluts'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>updateLuts()</span>
+            <span class='code strong strong truncate'>updateLuts(volume)</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -1676,7 +2661,7 @@ as requests arrive, the callback will be called per image, not per channel
 
  
   
-    <div class='pre p1 fill-light mt0'>updateLuts()</div>
+    <div class='pre p1 fill-light mt0'>updateLuts(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</div>
    
   
   
@@ -1688,6 +2673,19 @@ as requests arrive, the callback will be called per image, not per channel
   
   
 
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
   
 
   
@@ -1708,11 +2706,11 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsview3dupdatematerial'>
+    <div class='border-bottom' id='view3dupdatematerial'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>updateMaterial()</span>
+            <span class='code strong strong truncate'>updateMaterial(volume)</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -1724,7 +2722,7 @@ as requests arrive, the callback will be called per image, not per channel
 
  
   
-    <div class='pre p1 fill-light mt0'>updateMaterial()</div>
+    <div class='pre p1 fill-light mt0'>updateMaterial(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</div>
    
   
   
@@ -1736,6 +2734,19 @@ as requests arrive, the callback will be called per image, not per channel
   
   
 
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
   
 
   
@@ -1756,7 +2767,7 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsview3dupdateexposure'>
+    <div class='border-bottom' id='view3dupdateexposure'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -1818,7 +2829,7 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsview3dupdatecamera'>
+    <div class='border-bottom' id='view3dupdatecamera'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -1898,11 +2909,11 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsview3dupdateclipregion'>
+    <div class='border-bottom' id='view3dupdateclipregion'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax)</span>
+            <span class='code strong strong truncate'>updateClipRegion(volume, xmin, xmax, ymin, ymax, zmin, zmax)</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -1910,11 +2921,11 @@ as requests arrive, the callback will be called per image, not per channel
 
   
 
-  <p>Set clipping range (between 0 and 1) for the current volume.</p>
+  <p>Set clipping range (between 0 and 1, relative to bounds) for the current volume.</p>
 
  
   
-    <div class='pre p1 fill-light mt0'>updateClipRegion(xmin: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, xmax: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, ymin: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, ymax: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, zmin: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, zmax: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
+    <div class='pre p1 fill-light mt0'>updateClipRegion(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, xmin: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, xmax: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, ymin: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, ymax: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, zmin: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, zmax: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
    
   
   
@@ -1929,6 +2940,14 @@ as requests arrive, the callback will be called per image, not per channel
   
     <div class='py1 quiet mt1 prose-big'>Parameters</div>
     <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
       
         <div class='space-bottom0'>
           <div>
@@ -2005,7 +3024,105 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsview3dupdatelights'>
+    <div class='border-bottom' id='view3dsetaxisclip'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setAxisClip(volume, axis, minval, maxval, isOrthoAxis)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Set clipping range (between 0 and 1) for a given axis.
+Calling this allows the rendering to compensate for changes in thickness in orthographic views that affect how bright the volume is.</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>setAxisClip(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, axis: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, minval: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, maxval: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, isOrthoAxis: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>axis</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    0, 1, or 2 for x, y, or z axis
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>minval</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    0..1, should be less than maxval
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>maxval</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    0..1, should be greater than minval
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>isOrthoAxis</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</code>
+	    is this an orthographic projection or just a clipping of the range for perspective view
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dupdatelights'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -2067,7 +3184,7 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsview3dupdatepixelsamplingrate'>
+    <div class='border-bottom' id='view3dupdatepixelsamplingrate'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
@@ -2129,11 +3246,11 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsview3dsetpathtrace'>
+    <div class='border-bottom' id='view3dupdatemaskalpha'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setPathTrace(isPT)</span>
+            <span class='code strong strong truncate'>updateMaskAlpha(volume, value)</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -2141,11 +3258,11 @@ as requests arrive, the callback will be called per image, not per channel
 
   
 
-  <p>Switch between single pass ray-marched volume rendering and progressive path traced rendering.</p>
+  <p>Set the opacity of the mask channel</p>
 
  
   
-    <div class='pre p1 fill-light mt0'>setPathTrace(isPT: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</div>
+    <div class='pre p1 fill-light mt0'>updateMaskAlpha(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, value: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
    
   
   
@@ -2163,530 +3280,7 @@ as requests arrive, the callback will be called per image, not per channel
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>isPT</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</code>
-	    true for progressive path trace, false for single pass ray march
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-</div>
-
-  
-
-  
-</section>
-
-        
-          
-          <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='aicsvolumedrawable'>
-      AICSvolumeDrawable
-    </h3>
-    
-    
-  </div>
-  
-
-  <p>A renderable multichannel volume image with 8-bits per channel intensity values.</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>new AICSvolumeDrawable(imageInfo: imageInfo, requestPathTrace: any)</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>imageInfo</span> <code class='quiet'>(imageInfo)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>requestPathTrace</span> <code class='quiet'>(any)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Instance Members</div>
-    <div class="clearfix">
-  
-    <div class='border-bottom' id='aicsvolumedrawablesetchanneldatafromatlas'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Assign volume data via a 2d array containing the z slices as tiles across it.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>setChannelDataFromAtlas(channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, atlasdata: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>, atlaswidth: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, atlasheight: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channelIndex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>atlasdata</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>atlaswidth</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>atlasheight</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawablesetchanneldatafromvolume'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setChannelDataFromVolume(channelIndex, volumeData)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Assign volume data as a 3d array ordered x,y,z. The xy size must be equal to tilewidth*tileheight from the imageInfo used to construct this AICSvolume.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>setChannelDataFromVolume(channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, volumeData: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>)</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channelIndex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>volumeData</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawablesetaxisclip'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setAxisClip(axis, minval, maxval, isOrthoAxis)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Set clipping range (between 0 and 1) for a given axis.
-Calling this allows the rendering to compensate for changes in thickness in orthographic views that affect how bright the volume is.</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>setAxisClip(axis: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, minval: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, maxval: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, isOrthoAxis: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>axis</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    0, 1, or 2 for x, y, or z axis
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>minval</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    0..1, should be less than maxval
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>maxval</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    0..1, should be greater than minval
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>isOrthoAxis</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</code>
-	    is this an orthographic projection or just a clipping of the range for perspective view
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawablesetisortho'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setIsOrtho(isOrtho)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Tell this image that it needs to be drawn in an orthographic mode</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>setIsOrtho(isOrtho: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>isOrtho</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</code>
-	    is this an orthographic projection or a perspective view
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawablesetgamma'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setGamma(gmin, glevel, gmax)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Set parameters for gamma curve for volume rendering.</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>setGamma(gmin: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, glevel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, gmax: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>gmin</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    0..1
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>glevel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    0..1, should be &#x3C;= gmax and >= gmin
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>gmax</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    0..1, should be > gmin and >= glevel
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawableupdateisovalue'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>updateIsovalue(channel, value)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>updateIsovalue(channel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, value: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
 	    
           </div>
           
@@ -2695,7 +3289,8 @@ Calling this allows the rendering to compensate for changes in thickness in orth
         <div class='space-bottom0'>
           <div>
             <span class='code bold'>value</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
+	    (0..1) 0 for full transparent, 1 for fully opaque
+
           </div>
           
         </div>
@@ -2721,11 +3316,11 @@ Calling this allows the rendering to compensate for changes in thickness in orth
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsvolumedrawablegetisovalue'>
+    <div class='border-bottom' id='view3dsetvolumechannelenabled'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>getIsovalue(channel)</span>
+            <span class='code strong strong truncate'>setVolumeChannelEnabled(volume, channel, enabled)</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -2733,10 +3328,11 @@ Calling this allows the rendering to compensate for changes in thickness in orth
 
   
 
-  
+  <p>Show / hide volume channels</p>
+
  
   
-    <div class='pre p1 fill-light mt0'>getIsovalue(channel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></div>
+    <div class='pre p1 fill-light mt0'>setVolumeChannelEnabled(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, channel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, enabled: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</div>
    
   
   
@@ -2751,491 +3347,18 @@ Calling this allows the rendering to compensate for changes in thickness in orth
   
     <div class='py1 quiet mt1 prose-big'>Parameters</div>
     <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
       
         <div class='space-bottom0'>
           <div>
             <span class='code bold'>channel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>:
-        the isovalue for this channel or undefined if this channel does not have an isosurface created
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawableupdateopacity'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>updateOpacity(channel, value)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Set opacity for isosurface</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>updateOpacity(channel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, value: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>value</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    Opacity
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawablehasisosurface'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>hasIsosurface(channel)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  
- 
-  
-    <div class='pre p1 fill-light mt0'>hasIsosurface(channel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): any</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code>any</code>:
-        true if there is currently a mesh isosurface for this channel
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawablecreateisosurface'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>createIsosurface(channel, value, alpha?, transp?)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>If an isosurface is not already created, then create one.  Otherwise do nothing.</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>createIsosurface(channel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, value: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, alpha: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?, transp: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?)</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>value</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    isovalue
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>alpha</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?)</code>
-	    Opacity
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>transp</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?)</code>
-	    render surface as transparent object
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawabledestroyisosurface'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>destroyIsosurface(channel)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>If an isosurface exists for this channel, destroy it now. Don't just hide it - assume we can free up some resources.</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>destroyIsosurface(channel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawablechannelnames'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>channelNames()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  
- 
-  
-    <div class='pre p1 fill-light mt0'>channelNames(): any</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code>any</code>:
-        a reference to the list of channel names
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawablesavechannelisosurface'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>saveChannelIsosurface(channelIndex, type)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Save a channel's isosurface as a triangle mesh to either STL or GLTF2 format.  File will be named automatically, using image name and channel name.</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>saveChannelIsosurface(channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, type: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channelIndex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>type</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
-	    Either 'GLTF' or 'STL'
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawablesetvolumechannelenabled'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setVolumeChannelEnabled(channelIndex, enabled)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Hide or display volume data for a channel</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>setVolumeChannelEnabled(channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, enabled: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channelIndex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
 	    
           </div>
           
@@ -3270,220 +3393,11 @@ Calling this allows the rendering to compensate for changes in thickness in orth
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsvolumedrawableisvolumechannelenabled'>
+    <div class='border-bottom' id='view3dupdatechannelmaterial'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>isVolumeChannelEnabled(channelIndex)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Is volume data showing for this channel?</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>isVolumeChannelEnabled(channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channelIndex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a></code>:
-        Is volume data visible for this channel?
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawableupdatechannelcolor'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>updateChannelColor(channelIndex, colorrgb)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Set the color for a channel</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>updateChannelColor(channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, colorrgb: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channelIndex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>colorrgb</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</code>
-	    [r,g,b]
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawablegetchannelcolor'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>getChannelColor(channelIndex)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Get the color for a channel</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>getChannelColor(channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channelIndex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></code>:
-        The color as array of 
-[r,g,b]
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawableupdatechannelmaterial'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, roughness)</span>
+            <span class='code strong strong truncate'>updateChannelMaterial(volume, channelIndex, colorrgb, specularrgb, emissivergb, roughness)</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -3495,7 +3409,7 @@ Calling this allows the rendering to compensate for changes in thickness in orth
 
  
   
-    <div class='pre p1 fill-light mt0'>updateChannelMaterial(channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, colorrgb: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>, specularrgb: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>, emissivergb: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>, roughness: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
+    <div class='pre p1 fill-light mt0'>updateChannelMaterial(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, colorrgb: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>, specularrgb: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>, emissivergb: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>, roughness: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
    
   
   
@@ -3510,6 +3424,14 @@ Calling this allows the rendering to compensate for changes in thickness in orth
   
     <div class='py1 quiet mt1 prose-big'>Parameters</div>
     <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
       
         <div class='space-bottom0'>
           <div>
@@ -3575,11 +3497,11 @@ Calling this allows the rendering to compensate for changes in thickness in orth
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsvolumedrawablesetdensity'>
+    <div class='border-bottom' id='view3dupdatechannelcolor'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setDensity(density, no_redraw?)</span>
+            <span class='code strong strong truncate'>updateChannelColor(volume, channelIndex, colorrgb)</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -3587,11 +3509,11 @@ Calling this allows the rendering to compensate for changes in thickness in orth
 
   
 
-  <p>Set the global density of the volume data</p>
+  <p>Set the color for a channel</p>
 
  
   
-    <div class='pre p1 fill-light mt0'>setDensity(density: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, no_redraw: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?)</div>
+    <div class='pre p1 fill-light mt0'>updateChannelColor(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, colorrgb: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</div>
    
   
   
@@ -3609,246 +3531,7 @@ Calling this allows the rendering to compensate for changes in thickness in orth
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>density</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    Roughly equivalent to opacity, or how translucent or opaque the volume is
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>no_redraw</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?)</code>
-	    Set to true to delay re-rendering. Otherwise ignore.
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawablegetdensity'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>getDensity()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Get the global density of the volume data</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>getDensity()</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawablesetbrightness'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setBrightness(brightness, no_redraw?)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Set the global brightness of the volume data</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>setBrightness(brightness: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, no_redraw: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?)</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>brightness</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    Roughly speaking, an intensity multiplier on the whole volume
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>no_redraw</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>?)</code>
-	    Set to true to delay re-rendering. Otherwise ignore.
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawablegetbrightness'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>getBrightness()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Get the global brightness of the volume data</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>getBrightness()</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawableappendemptychannel'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>appendEmptyChannel(name, color)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Add a new channel ready to receive data from one of the setChannelDataFrom* calls.
-Name and color will be defaulted if not provided. For now, leave imageInfo alone as the "original" data</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>appendEmptyChannel(name: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, color: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>name</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
 	    
           </div>
           
@@ -3856,7 +3539,15 @@ Name and color will be defaulted if not provided. For now, leave imageInfo alone
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>color</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</code>
+            <span class='code bold'>channelIndex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>colorrgb</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</code>
 	    [r,g,b]
 
           </div>
@@ -3884,11 +3575,11 @@ Name and color will be defaulted if not provided. For now, leave imageInfo alone
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsvolumedrawablesetchannelasmask'>
+    <div class='border-bottom' id='view3dsetvolumerendermode'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setChannelAsMask(channelIndex)</span>
+            <span class='code strong strong truncate'>setVolumeRenderMode(mode)</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -3896,11 +3587,11 @@ Name and color will be defaulted if not provided. For now, leave imageInfo alone
 
   
 
-  <p>Assign a channel index as a mask channel (will multiply its color against the entire visible volume)</p>
+  <p>Switch between single pass ray-marched volume rendering and progressive path traced rendering.</p>
 
  
   
-    <div class='pre p1 fill-light mt0'>setChannelAsMask(channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
+    <div class='pre p1 fill-light mt0'>setVolumeRenderMode(mode: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
    
   
   
@@ -3918,7 +3609,76 @@ Name and color will be defaulted if not provided. For now, leave imageInfo alone
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>channelIndex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+            <span class='code bold'>mode</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    0 for single pass ray march, 1 for progressive path trace
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dsetvolumetranslation'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setVolumeTranslation(volume, xyz)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  
+ 
+  
+    <div class='pre p1 fill-light mt0'>setVolumeTranslation(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, xyz: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>xyz</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</code>
 	    
           </div>
           
@@ -3945,11 +3705,11 @@ Name and color will be defaulted if not provided. For now, leave imageInfo alone
       </div>
     </div>
   
-    <div class='border-bottom' id='aicsvolumedrawablesetmaskalpha'>
+    <div class='border-bottom' id='view3dsetvolumerotation'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setMaskAlpha(maskAlpha)</span>
+            <span class='code strong strong truncate'>setVolumeRotation(volume, eulerXYZ)</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -3957,11 +3717,10 @@ Name and color will be defaulted if not provided. For now, leave imageInfo alone
 
   
 
-  <p>Set a multiplier for how much of the mask channel to mask out the background</p>
-
+  
  
   
-    <div class='pre p1 fill-light mt0'>setMaskAlpha(maskAlpha: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
+    <div class='pre p1 fill-light mt0'>setVolumeRotation(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, eulerXYZ: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</div>
    
   
   
@@ -3979,77 +3738,7 @@ Name and color will be defaulted if not provided. For now, leave imageInfo alone
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>maskAlpha</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawablegetintensity'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>getIntensity(c, x, y, z)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Get a value from the volume data</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>getIntensity(c: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, x: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, y: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, z: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>c</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    The channel index
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>x</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
 	    
           </div>
           
@@ -4057,131 +3746,8 @@ Name and color will be defaulted if not provided. For now, leave imageInfo alone
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>y</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+            <span class='code bold'>eulerXYZ</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</code>
 	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>z</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>:
-        the intensity value from the given channel at the given xyz location
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='aicsvolumedrawableupdateclipregion'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Set clipping range (between 0 and 1) for the entire volume.</p>
-
- 
-  
-    <div class='pre p1 fill-light mt0'>updateClipRegion(xmin: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, xmax: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, ymin: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, ymax: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, zmin: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, zmax: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
-   
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>xmin</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    0..1, should be less than xmax
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>xmax</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    0..1, should be greater than xmin
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>ymin</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    0..1, should be less than ymax
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>ymax</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    0..1, should be greater than ymin
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>zmin</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    0..1, should be less than zmax
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>zmax</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    0..1, should be greater than zmin
-
           </div>
           
         </div>
@@ -4305,6 +3871,837 @@ Name and color will be defaulted if not provided. For now, leave imageInfo alone
   
 
   
+
+  
+
+  
+</section>
+
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='imageinfo'>
+      imageInfo
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>Provide dimensions of the volume data, including dimensions for texture atlas data in which the volume z slices
+are tiled across a single large 2d image plane.</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>imageInfo</div>
+   
+  
+    <p>
+      Type:
+      <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>
+    </p>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Properties</div>
+    <div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>name</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+          : Base name of image
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>version</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+          : schema version preferably in semver format.
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>width</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+          : Width of original volumetric data prior to downsampling
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>height</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+          : Height of original volumetric data prior to downsampling
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>channels</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+          : Number of channels
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>tiles</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+          : Number of tiles, which must be equal to the number of z-slices in original volumetric data
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>pixel_size_x</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+          : Size of pixel in volumetric data to be rendered, in x-dimension, unitless
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>pixel_size_y</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+          : Size of pixel in volumetric data to be rendered, in y-dimension, unitless
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>pixel_size_z</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+          : Size of pixel in volumetric data to be rendered, in z-dimension, unitless
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>channel_names</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>>)</code>
+          : Names of each of the channels to be rendered, in order. Unique identifier expected
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>rows</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+          : Number of rows in tile array in each image.  Note tiles &#x3C;= rows*cols
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>cols</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+          : Number of columns in tile array in each image.  Note tiles &#x3C;= rows*cols
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>tile_width</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+          : Width of each tile in volumetric dataset to be rendered, in pixels
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>tile_height</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+          : Height of each tile in volumetric dataset to be rendered, in pixels
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>atlas_width</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+          : Total width of image containing all the tiles, in pixels.  Note atlas_width === cols*tile_width
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>atlas_height</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+          : Total height of image containing all the tiles, in pixels. Note atlas_height === rows*tile_height
+
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <span class='code bold'>transform</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
+          : translation and rotation as arrays of 3 numbers. Translation is in voxels (to be multiplied by pixel_size values). Rotation is Euler angles in radians, appled in XYZ order.
+
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Example</div>
+    
+      
+      <pre class='p1 overflow-auto round fill-light'><span class="hljs-keyword">let</span> imgdata = {
+<span class="hljs-string">"width"</span>: <span class="hljs-number">306</span>,
+<span class="hljs-string">"height"</span>: <span class="hljs-number">494</span>,
+<span class="hljs-string">"channels"</span>: <span class="hljs-number">9</span>,
+<span class="hljs-string">"channel_names"</span>: [<span class="hljs-string">"DRAQ5"</span>, <span class="hljs-string">"EGFP"</span>, <span class="hljs-string">"Hoechst 33258"</span>, <span class="hljs-string">"TL Brightfield"</span>, <span class="hljs-string">"SEG_STRUCT"</span>, <span class="hljs-string">"SEG_Memb"</span>, <span class="hljs-string">"SEG_DNA"</span>, <span class="hljs-string">"CON_Memb"</span>, <span class="hljs-string">"CON_DNA"</span>],
+<span class="hljs-string">"rows"</span>: <span class="hljs-number">7</span>,
+<span class="hljs-string">"cols"</span>: <span class="hljs-number">10</span>,
+<span class="hljs-string">"tiles"</span>: <span class="hljs-number">65</span>,
+<span class="hljs-string">"tile_width"</span>: <span class="hljs-number">204</span>,
+<span class="hljs-string">"tile_height"</span>: <span class="hljs-number">292</span>,
+<span class="hljs-comment">// for webgl reasons, it is best for atlas_width and atlas_height to be &lt;= 2048 </span>
+<span class="hljs-comment">// and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.</span>
+<span class="hljs-string">"atlas_width"</span>: <span class="hljs-number">2040</span>,
+<span class="hljs-string">"atlas_height"</span>: <span class="hljs-number">2044</span>,
+<span class="hljs-string">"pixel_size_x"</span>: <span class="hljs-number">0.065</span>,
+<span class="hljs-string">"pixel_size_y"</span>: <span class="hljs-number">0.065</span>,
+<span class="hljs-string">"pixel_size_z"</span>: <span class="hljs-number">0.29</span>,
+<span class="hljs-string">"name"</span>: <span class="hljs-string">"AICS-10_5_5"</span>,
+<span class="hljs-string">"status"</span>: <span class="hljs-string">"OK"</span>,
+<span class="hljs-string">"version"</span>: <span class="hljs-string">"0.0.0"</span>,
+<span class="hljs-string">"aicsImageVersion"</span>: <span class="hljs-string">"0.3.0"</span>,
+<span class="hljs-string">"transform"</span>: {
+<span class="hljs-string">"translation"</span>: [<span class="hljs-number">5</span>, <span class="hljs-number">5</span>, <span class="hljs-number">1</span>],
+<span class="hljs-string">"rotation"</span>: [<span class="hljs-number">0</span>, <span class="hljs-number">3.14159</span>, <span class="hljs-number">1.57</span>]
+}
+};</pre>
+    
+  
+
+  
+
+  
+
+  
+</section>
+
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='volume'>
+      Volume
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>A renderable multichannel volume image with 8-bits per channel intensity values.</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>new Volume(imageInfo: <a href="#imageinfo">imageInfo</a>)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>imageInfo</span> <code class='quiet'>(<a href="#imageinfo">imageInfo</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Instance Members</div>
+    <div class="clearfix">
+  
+    <div class='border-bottom' id='volumechannelnames'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>channelNames()</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  
+ 
+  
+    <div class='pre p1 fill-light mt0'>channelNames(): any</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>any</code>:
+        a reference to the list of channel names
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumesetchanneldatafromatlas'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Assign volume data via a 2d array containing the z slices as tiles across it.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>setChannelDataFromAtlas(channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, atlasdata: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>, atlaswidth: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, atlasheight: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>channelIndex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>atlasdata</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>atlaswidth</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>atlasheight</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumesetchanneldatafromvolume'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setChannelDataFromVolume(channelIndex, volumeData)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Assign volume data as a 3d array ordered x,y,z. The xy size must be equal to tilewidth*tileheight from the imageInfo used to construct this Volume.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>setChannelDataFromVolume(channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, volumeData: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>channelIndex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volumeData</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumeappendemptychannel'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>appendEmptyChannel(name, color)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Add a new channel ready to receive data from one of the setChannelDataFrom* calls.
+Name and color will be defaulted if not provided. For now, leave imageInfo alone as the "original" data</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>appendEmptyChannel(name: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, color: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>name</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>color</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</code>
+	    [r,g,b]
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumegetintensity'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>getIntensity(c, x, y, z)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Get a value from the volume data</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>getIntensity(c: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, x: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, y: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, z: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>c</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    The channel index
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>x</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>y</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>z</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>:
+        the intensity value from the given channel at the given xyz location
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumegetrotation'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>getRotation()</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Return the intrinsic rotation associated with this volume (radians)</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>getRotation(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></code>:
+        the xyz Euler angles (radians)
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumegettranslation'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>getTranslation()</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Return the intrinsic translation (pivot center delta) associated with this volume, in normalized volume units</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>getTranslation(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></code>:
+        the xyz translation in normalized volume units
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumevoxelstoworldspace'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>voxelsToWorldSpace(xyz)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Return a translation in normalized volume units, given a translation in image voxels</p>
+
+ 
+  
+    <div class='pre p1 fill-light mt0'>voxelsToWorldSpace(xyz: any): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></div>
+   
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>xyz</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></code>:
+        the xyz translation in normalized volume units
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+</div>
 
   
 
