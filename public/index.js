@@ -357,9 +357,7 @@ function loadImageData(jsondata, volumedata) {
         }
     }
     else {
-        VolumeLoader.loadVolumeAtlasData(jsondata.images, (url, channelIndex, atlasdata, atlaswidth, atlasheight) => {
-            vol.setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight);
-
+        VolumeLoader.loadVolumeAtlasData(vol, jsondata.images, (url, channelIndex) => {
             vol.channels[channelIndex].lutGenerator_auto2();
 
             if (vol.loaded) {
