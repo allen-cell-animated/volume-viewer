@@ -230,28 +230,31 @@ function showChannelUI(volume) {
             // this doesn't give good results currently but is an example of a per-channel button callback
             autoIJ: (function(j) {
                 return function() {
-                    volume.getChannel(j).lutGenerator_auto2();
+                    const lut = volume.getHistogram(j).lutGenerator_auto2();
+                    volume.setLut(j, lut.lut);
                     view3D.updateLuts(volume);
                 }
             })(i),
             // this doesn't give good results currently but is an example of a per-channel button callback
             auto0: (function(j) {
                 return function() {
-                    volume.getChannel(j).lutGenerator_auto();
+                    const lut = volume.getHistogram(j).lutGenerator_auto();
+                    volume.setLut(j, lut.lut);
                     view3D.updateLuts(volume);
                 }
             })(i),
             // this doesn't give good results currently but is an example of a per-channel button callback
             bestFit: (function(j) {
                 return function() {
-                    volume.getChannel(j).lutGenerator_bestFit();
+                    const lut = volume.getHistogram(j).lutGenerator_bestFit();
+                    volume.setLut(j, lut.lut);
                     view3D.updateLuts(volume);
                 }
             })(i),
             pct50_98: (function(j) {
                 return function() {
-                    const lut = volume.getChannel(j).getHistogram().lutGenerator_percentiles(0.5, 0.998);
-                    volume.getChannel(j).setLut(lut.lut);
+                    const lut = volume.getHistogram(j).lutGenerator_percentiles(0.5, 0.998);
+                    volume.setLut(j, lut.lut);
                     view3D.updateLuts(volume);
                 }
             })(i)

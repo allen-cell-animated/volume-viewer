@@ -246,6 +246,24 @@ export default class Volume {
   }
 
   /**
+   * Get the 256-bin histogram for the given channel
+   * @return {Histogram} the histogram
+   * @param {number} c The channel index
+   */
+  getHistogram(c) {
+    return this.channels[c].getHistogram();
+  }
+
+  /**
+   * Set the lut for the given channel
+   * @param {number} c The channel index
+   * @param {Array.<number>} lut The lut as a 256 element array
+   */
+  setLut(c, lut) {
+    this.channels[c].setLut(lut);
+  }
+
+  /**
    * Return the intrinsic rotation associated with this volume (radians)
    * @return {Array.<number>} the xyz Euler angles (radians)
    */
