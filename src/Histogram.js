@@ -1,6 +1,22 @@
 (function() {if (!Math.clamp) { Math.clamp = function(val,cmin,cmax) {return Math.min(Math.max(cmin, val), cmax);};}})();
 
-// assume data is 8 bit single channel grayscale
+/**
+ * @typedef {Object} ControlPoint
+ * @property {number} x The X Coordinate
+ * @property {number} y The Y Coordinate
+ */
+
+/**
+ * @typedef {Object} Lut
+ * @property {Array.<number>} lut 256 element lookup table as array
+ * @property {Array.<ControlPoint>} controlPoints 
+ */
+
+/**
+ * Builds a histogram with 256 bins from a data array. Assume data is 8 bit single channel grayscale.
+ * @class
+ * @param {Array.<number>} data 
+ */
 export default class Histogram {
   constructor(data) {
     // no more than 2^32 pixels of any one intensity in the data!?!?!
@@ -42,6 +58,12 @@ export default class Histogram {
     }
   }
 
+  /**
+   * Generate a Window/level lookup table
+   * @return {Lut} 
+   * @param {number} wnd
+   * @param {number} lvl 
+   */
   lutGenerator_windowLevel(wnd, lvl) {
     // simple linear mapping for actual range
     var range = wnd * 256;
@@ -50,16 +72,21 @@ export default class Histogram {
     return this.lutGenerator_minMax(b, e);
   }
 
-  //  |
-  //  |
-  // 1|               +---------+-----
-  //  |              /
-  //  |             /
-  //  |            /
-  //  |           /
-  //  |          /
-  // 0+=========+---------------+-----
-  //  0         b    e          1
+  /**
+   * Generate a piecewise linear lookup table that ramps up from 0 to 1 over the b to e domain
+   *  |
+   * 1|               +---------+-----
+   *  |              /
+   *  |             /
+   *  |            /
+   *  |           /
+   *  |          /
+   * 0+=========+---------------+-----
+   *  0         b    e          1
+   * @return {Lut} 
+   * @param {number} b
+   * @param {number} e 
+   */
   lutGenerator_minMax(b, e) {
     var lut = new Uint8Array(256);
     let range = e - b;
@@ -80,10 +107,11 @@ export default class Histogram {
     };
   }
 
+  /**
+   * Generate a straight 0-1 linear identity lookup table
+   * @return {Lut} 
+   */
   lutGenerator_fullRange() {
-    // return a LUT with new values(?)
-    // data type of lut values is out_phys_range (uint8)
-    // length of lut is number of histogram bins (represents the input data range)
     var lut = new Uint8Array(256);
 
     // simple linear mapping for actual range
@@ -100,6 +128,10 @@ export default class Histogram {
     };
   }
 
+  /**
+   * Generate a lookup table over the min to max range of the data values
+   * @return {Lut} 
+   */
   lutGenerator_dataRange() {
     // simple linear mapping for actual range
     var b = this.dataMin;
@@ -107,6 +139,12 @@ export default class Histogram {
     return this.lutGenerator_minMax(b, e);
   }
 
+  /**
+   * Generate a lookup table based on histogram percentiles
+   * @return {Lut} 
+   * @param {number} pmin
+   * @param {number} pmax 
+   */
   lutGenerator_percentiles(pmin, pmax) {
     // e.g. 0.50, 0.983 starts from 50th percentile bucket and ends at 98.3 percentile bucket.
 
@@ -137,6 +175,10 @@ export default class Histogram {
     return this.lutGenerator_minMax(hmin, hmax);
   }
 
+  /**
+   * Generate a 10% / 90% lookup table
+   * @return {Lut} 
+   */
   lutGenerator_bestFit() {
     const pixcount = this.nonzeroPixelCount;
     //const pixcount = this.imgData.data.length;
@@ -164,7 +206,10 @@ export default class Histogram {
     return this.lutGenerator_minMax(hmin, hmax);
   }
 
-  // attempt to redo imagej's Auto
+  /**
+   * Generate a lookup table attempting to replicate ImageJ's "Auto" button
+   * @return {Lut} 
+   */
   lutGenerator_auto2() {
     const AUTO_THRESHOLD = 5000;
     const pixcount = this.nonzeroPixelCount;
@@ -197,6 +242,10 @@ export default class Histogram {
     }
   }
 
+  /**
+   * Generate a lookup table using a percentile of the most commonly occurring value
+   * @return {Lut} 
+   */
   lutGenerator_auto() {
     // simple linear mapping cutting elements with small appearence
     // get 10% threshold
@@ -220,9 +269,11 @@ export default class Histogram {
     return this.lutGenerator_minMax(b, e);
   }
 
+  /**
+   * Generate an "equalized" lookup table
+   * @return {Lut} 
+   */
   lutGenerator_equalize() {
-    var lut = new Uint8Array(256);
-
     var map = [];
     for (var i = 0; i < this.bins.length; ++i) { map[i] = 0; }
 
@@ -234,6 +285,8 @@ export default class Histogram {
 
     var div = map[map.length - 1] - map[0];
     if (div > 0) {
+      var lut = new Uint8Array(256);
+
       // compute lut as if continuous
       for (var i = 0; i < lut.length; ++i) {
         lut[i] = Math.clamp((255)*((map[i]-map[0]) / div), 0, 255);
