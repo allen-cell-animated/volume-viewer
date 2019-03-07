@@ -24,6 +24,7 @@ export class View3d {
     this.backgroundColor = 0x000000;
 
     this.pixelSamplingRate = 0.75;
+    this.exposure = 0.5;
     this.volumeRenderMode = RENDERMODE_RAYMARCH;
 
     this.loaded = false;
@@ -216,7 +217,10 @@ export class View3d {
 
     this.scene.add(img.sceneRoot);
 
+    // new image picks up current settings
     this.image.setResolution(this.canvas3d);
+    this.image.setIsOrtho(this.canvas3d.camera.isOrthographicCamera);
+    this.image.setBrightness(this.exposure);
 
     this.canvas3d.setControlHandlers(this.image);
 
@@ -428,6 +432,7 @@ export class View3d {
    * @param {number} e 0..1
    */
   updateExposure(e) {
+    this.exposure = e;
     if (this.image) {
       this.image.setBrightness(e);
     }

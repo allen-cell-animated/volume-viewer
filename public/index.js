@@ -225,11 +225,36 @@ function showChannelUI(volume) {
             roughness: 0.0,
             isovalue: 128, // actual intensity value
             isosurface: false,
-            enabled: true,
+            // first 3 channels for starters
+            enabled: i < 3,
             // this doesn't give good results currently but is an example of a per-channel button callback
             autoIJ: (function(j) {
                 return function() {
-                    volume.getChannel(j).lutGenerator_auto2();
+                    const lut = volume.getHistogram(j).lutGenerator_auto2();
+                    volume.setLut(j, lut.lut);
+                    view3D.updateLuts(volume);
+                }
+            })(i),
+            // this doesn't give good results currently but is an example of a per-channel button callback
+            auto0: (function(j) {
+                return function() {
+                    const lut = volume.getHistogram(j).lutGenerator_auto();
+                    volume.setLut(j, lut.lut);
+                    view3D.updateLuts(volume);
+                }
+            })(i),
+            // this doesn't give good results currently but is an example of a per-channel button callback
+            bestFit: (function(j) {
+                return function() {
+                    const lut = volume.getHistogram(j).lutGenerator_bestFit();
+                    volume.setLut(j, lut.lut);
+                    view3D.updateLuts(volume);
+                }
+            })(i),
+            pct50_98: (function(j) {
+                return function() {
+                    const lut = volume.getHistogram(j).lutGenerator_percentiles(0.5, 0.998);
+                    volume.setLut(j, lut.lut);
                     view3D.updateLuts(volume);
                 }
             })(i)
@@ -307,7 +332,10 @@ function showChannelUI(volume) {
                     view3D.updateLuts(volume);
                 }
             }(i));
-        //f.add(myState.infoObj.channelGui[i], 'autoIJ');
+        f.add(myState.infoObj.channelGui[i], 'autoIJ');
+        f.add(myState.infoObj.channelGui[i], 'auto0');
+        f.add(myState.infoObj.channelGui[i], 'bestFit');
+        f.add(myState.infoObj.channelGui[i], 'pct50_98');
         f.add(myState.infoObj.channelGui[i], "roughness").max(100.0).min(0.0).onChange(function (j) {
                 return function (value) {
                     view3D.updateChannelMaterial(volume,
@@ -357,9 +385,7 @@ function loadImageData(jsondata, volumedata) {
         }
     }
     else {
-        VolumeLoader.loadVolumeAtlasData(jsondata.images, (url, channelIndex, atlasdata, atlaswidth, atlasheight) => {
-            vol.setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight);
-
+        VolumeLoader.loadVolumeAtlasData(vol, jsondata.images, (url, channelIndex) => {
             vol.channels[channelIndex].lutGenerator_auto2();
 
             if (vol.loaded) {
@@ -367,6 +393,11 @@ function loadImageData(jsondata, volumedata) {
 
                 view3D.removeAllVolumes();
                 view3D.addVolume(vol);
+
+                // first 3 channels for starters
+                for (var ch = 0; ch < vol.num_channels; ++ch) {
+                    view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
+                }
 
                 view3D.setVolumeChannelAsMask(vol, jsondata.channel_names.indexOf("SEG_Memb"));
                 view3D.updateActiveChannels(vol);

@@ -7,13 +7,11 @@ const VolumeLoader = {};
  * @callback PerChannelCallback
  * @param {string} imageurl
  * @param {number} channelindex
- * @param {Uint8Array} atlasdata 
- * @param {number} atlaswidth
- * @param {number} atlasheight
  */
 
 /**
  * load per-channel volume data from a batch of image files containing the volume slices tiled across the images
+ * @param {Volume} volume
  * @param {Array.<{name:string, channels:Array.<number>}>} imageArray 
  * @param {PerChannelCallback} callback Per-channel callback.  Called when each channel's atlased volume data is loaded
  * @returns {Object.<string, Image>} a map(imageurl : Image object) that should be used to cancel the download requests,
@@ -30,7 +28,7 @@ const VolumeLoader = {};
  *     "channels": [6, 7, 8]
  * }], mycallback);
  */
-VolumeLoader.loadVolumeAtlasData = function (imageArray, callback) {
+VolumeLoader.loadVolumeAtlasData = function (volume, imageArray, callback) {
     var numImages = imageArray.length;
 
     var requests = {};
@@ -78,7 +76,8 @@ VolumeLoader.loadVolumeAtlasData = function (imageArray, callback) {
                 // done with img, iData, and canvas now.
 
                 for (var i = 0; i < Math.min(thisbatch.length, 4); ++i) {
-                    callback(url, thisbatch[i], channelsBits[i], w, h);
+                    volume.setChannelDataFromAtlas(thisbatch[i], channelsBits[i], w, h);
+                    callback(url, thisbatch[i]);
                 }
             };
         } (batch);
