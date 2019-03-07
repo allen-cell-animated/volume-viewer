@@ -403,9 +403,11 @@ export default class VolumeDrawable {
     if (is_pathtrace) {
       this.volumeRendering = new PathTracedVolume(this.volume);
       this.pathTracedVolume = this.volumeRendering;
+      this.rayMarchedAtlasVolume = null;
     }
     else {
       this.volumeRendering = new RayMarchedAtlasVolume(this.volume);
+      this.pathTracedVolume = null;
       this.rayMarchedAtlasVolume = this.volumeRendering;
 
       for (var i = 0; i < this.volume.num_channels; ++i) {
