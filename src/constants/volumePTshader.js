@@ -1139,7 +1139,7 @@ export function pathTracingUniforms() {
     gStepSize: { type: "f", value: 1.0 },
     gStepSizeShadow: { type: "f", value: 1.0 },
     gInvAaBbMax: { type: "v3", value: new THREE.Vector3() },
-    g_nChannels: { type: "i", value: 1 },
+    g_nChannels: { type: "i", value: 0 },
     gShadingType: { type: "i", value: 2 },
     gGradientDeltaX: { type: "v3", value: new THREE.Vector3(0.01, 0, 0) },
     gGradientDeltaY: { type: "v3", value: new THREE.Vector3(0, 0.01, 0) },

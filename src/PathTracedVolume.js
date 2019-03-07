@@ -394,21 +394,6 @@ export default class PathTracedVolume {
     }
 
     onChannelData(batch) {
-        const volume = this.volume;
-        // if all channels are loaded...
-        if (volume.loaded) {
-            // TODO set some flag to only run this once????
-            // OR make this code run properly once per channel as channel data arrives
-
-          const nchannels = Math.min(this.volume.num_channels, 4);
-          this.pathTracingUniforms.g_nChannels.value = nchannels;
-          this.viewChannels = [0, 1, 2, 3];
-
-          this.sampleCounter = 0;
-
-          //this.updateActiveChannels();
-        }
-
     }
 
     setScale(scale) {
