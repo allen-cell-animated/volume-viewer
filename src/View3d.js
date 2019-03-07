@@ -25,6 +25,7 @@ export class View3d {
 
     this.pixelSamplingRate = 0.75;
     this.exposure = 0.5;
+    this.volumeRenderMode = RENDERMODE_RAYMARCH;
 
     this.loaded = false;
     let that = this;
@@ -564,9 +565,13 @@ export class View3d {
    * @param {number} mode 0 for single pass ray march, 1 for progressive path trace
    */
   setVolumeRenderMode(mode) {
+    if (mode === this.volumeRenderMode) {
+      return;
+    }
+
     this.volumeRenderMode = mode;
     if (this.image) {
-      if (mode === RENDERMODE_PATHTRACE && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
+      if ((mode === RENDERMODE_PATHTRACE) && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
         this.image.setVolumeRendering(true);
         this.image.updateLights(this.lights);
 
