@@ -445,6 +445,8 @@ export default class PathTracedVolume {
 
         this.pathTracingRenderTarget.setSize(nx, ny);
         this.screenTextureRenderTarget.setSize(nx, ny);
+
+        this.sampleCounter = 0;
     }
 
     setPixelSamplingRate(rate) {
