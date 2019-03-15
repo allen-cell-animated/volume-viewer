@@ -7,6 +7,31 @@ export const RENDERMODE_RAYMARCH = 0;
 export const RENDERMODE_PATHTRACE = 1;
 
 /**
+ * Provide options to control the visual appearance of a Volume
+ * @typedef {Object} VolumeDisplayOptions
+ * @property {Array.<boolean>} enabled array of boolean per channel
+ * @property {Array.<Array.<number>>} color array of rgb per channel
+ * @property {Array.<Array.<number>>} specularColor array of rgb per channel
+ * @property {Array.<Array.<number>>} emissiveColor array of rgb per channel
+ * @property {Array.<number>} roughness array of float per channel
+ * @property {Array.<boolean>} isosurfaceEnabled array of boolean per channel
+ * @property {Array.<number>} isovalue array of number per channel
+ * @property {Array.<number>} isosurfaceOpacity array of number per channel
+ * @property {number} density
+ * @property {Array.<number>} translation xyz
+ * @property {Array.<number>} rotation xyz angles in radians
+ * @property {number} maskChannelIndex
+ * @property {number} maskAlpha
+ * @property {Array.<number>} clipBounds [xmin, xmax, ymin, ymax, zmin, zmax] all range from 0 to 1 as a percentage of the volume on that axis
+ * @property {Array.<number>} scale xyz voxel size scaling
+ * @property {boolean} maxProjection true or false (ray marching)
+ * @property {number} shadingMethod 0 for phase, 1 for brdf, 2 for hybrid (path tracer)
+ * @property {Array.<number>} gamma [min, max, scale]
+ * @example let options = {
+   };
+ */
+
+/**
  * @class
  */
 export class View3d {
@@ -75,9 +100,128 @@ export class View3d {
    * Add a new volume image to the viewer.  (The viewer currently only supports a single image at a time - adding repeatedly, without removing in between, is a potential resource leak)
    * @param {Volume} volume 
    */
-  addVolume(volume) {
+  addVolume(volume, options) {
     volume.addVolumeDataObserver(this);
     this.setImage(new VolumeDrawable(volume, this.volumeRenderMode === RENDERMODE_PATHTRACE));
+    this.setVolumeDisplayOptions(volume, options);
+  }
+
+  /**
+   * 
+   * @param {Object} options 
+   */
+  setViewOptions(options) {
+    // brightness
+    // render mode
+    // pixel sampling rate
+    // lights
+    // camera fov, focaldist, aperture size
+    // autorotate
+    // show axes
+    // camera projection mode
+  }
+
+  ////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+  // MOVE INTO VOLUMEDRAWABLE
+  ////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+  setVolumeDisplayOption(volume, name, value) {
+    let channel = 0;
+    switch(name) {
+      case 'enabled':
+        for (channel = 0; channel < volume.num_channels; ++channel) {
+          this.setVolumeChannelEnabled(volume, channel, value[channel]);
+        }
+      break;
+      case 'color':
+        for (channel = 0; channel < volume.num_channels; ++channel) {
+          this.updateChannelColor(volume, channel, value[channel]);
+        }
+      break;
+      case 'specularColor':
+        // for (channel = 0; channel < volume.num_channels; ++channel) {
+        //   this.setVolumeChannelEnabled(volume, channel, value[channel]);
+        // }
+      break;
+      case 'emissiveColor':
+        // for (channel = 0; channel < volume.num_channels; ++channel) {
+        //   this.setVolumeChannelEnabled(volume, channel, value[channel]);
+        // }
+      break;
+      case 'roughness':
+        // for (channel = 0; channel < volume.num_channels; ++channel) {
+        //   this.setVolumeChannelEnabled(volume, channel, value[channel]);
+        // }
+      break;
+      case 'isosurfaceEnabled':
+        for (channel = 0; channel < volume.num_channels; ++channel) {
+          this.setVolumeChannelEnabled(volume, channel, value[channel]);
+        }
+      break;
+      case 'isovalue':
+        for (channel = 0; channel < volume.num_channels; ++channel) {
+          this.setVolumeChannelEnabled(volume, channel, value[channel]);
+        }
+      break;
+      case 'isosurfaceOpacity':
+        for (channel = 0; channel < volume.num_channels; ++channel) {
+          this.setVolumeChannelEnabled(volume, channel, value[channel]);
+        }
+      break;
+      case 'density':
+        this.updateDensity(volume, value);
+      break;
+      case 'translation':
+        this.setVolumeTranslation(volume, value);
+      break;
+      case 'rotation':
+        this.setVolumeRotation(volume, value);
+      break;
+      case 'maskChannelIndex':
+        this.setVolumeChannelAsMask(volume, value);
+      break;
+      case 'maskAlpha':
+        this.updateMaskAlpha(volume, value);
+      break;
+      case 'clipBounds':
+        this.updateClipRegion(volume, value[0], value[1], value[2], value[3], value[4], value[5]);
+      break;
+      case 'scale':
+        this.setVoxelSize(volume, value);
+      break;
+      case 'maxProjection':
+        this.setMaxProjectMode(volume, value);
+      break;
+      case 'shadingMethod':
+      break;
+      case 'gamma':
+      break;
+      };
+  }
+
+  /**
+   * 
+   * @param {Object} volume
+   * @param {Object} options 
+   */
+  setVolumeDisplayOptions(volume, options) {
+    // for each prop in options:
+    for (var key in options) {
+      // skip loop if the property is from prototype
+      if (!options.hasOwnProperty(key)) continue;
+  
+      var value = options[key];
+      this.setVolumeDisplayOption(volume, key, value);
+    }
+    // issue updates based on what changed.
+
   }
 
   /**
