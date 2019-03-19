@@ -6,8 +6,8 @@ import PathTracedVolume from './PathTracedVolume.js';
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
 
-  constructor(volume, requestPathTrace) {
-    this.PT = !!requestPathTrace;
+  constructor(volume, options) {
+    this.PT = !!options.renderMode;
 
     // THE VOLUME DATA
     this.volume = volume;
@@ -75,6 +75,43 @@ export default class VolumeDrawable {
     // apply the volume's default transformation
     this.setTranslation(new THREE.Vector3().fromArray(this.volume.getTranslation()));
     this.setRotation(new THREE.Euler().fromArray(this.volume.getRotation()));
+  }
+
+  setChannelOptions(channelIndex, options) {
+    if (options.hasOwnProperty("enabled")) {
+      this.setVolumeChannelEnabled(channelIndex, options.enabled);
+    }
+    if (options.hasOwnProperty("color")) {
+      this.updateChannelColor(channelIndex, options.color);
+    }
+    if (options.hasOwnProperty("isosurfaceEnabled")) {
+      const hasIso = this.hasIsosurface(channelIndex);
+      if (hasIso !== options.isosurfaceEnabled) {
+        if (hasIso && !options.isosurfaceEnabled) {
+          this.destroyIsosurface(channelIndex);
+        }
+        else if (!hasIso && options.isosurfaceEnabled) {
+          // isovalue and opacity had better be defined!!!!!
+          this.createIsosurface(channelIndex, options.isovalue, options.isosurfaceOpacity);
+        }  
+      }
+      else if (options.isosurfaceEnabled) {
+        if (options.hasOwnProperty("isovalue")) {
+          this.updateIsovalue(channelIndex, options.isovalue);
+        }
+        if (options.hasOwnProperty("isosurfaceOpacity")) {
+          this.updateOpacity(channelIndex, options.isosurfaceOpacity);
+        }
+      }
+    }
+    else {
+      if (options.hasOwnProperty("isovalue")) {
+        this.updateIsovalue(channelIndex, options.isovalue);
+      }
+      if (options.hasOwnProperty("isosurfaceOpacity")) {
+        this.updateOpacity(channelIndex, options.isosurfaceOpacity);
+      }
+    }
   }
 
   resetSampleRate() {
