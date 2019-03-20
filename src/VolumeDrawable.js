@@ -18,9 +18,12 @@ export default class VolumeDrawable {
     this.rotation = new THREE.Euler();
 
     this.maskChannelIndex = -1;
+
     this.maskAlpha = 1.0;
 
     this.channel_colors = this.volume.channel_colors_default.slice();
+
+    this.channelOptions = new Array(this.volume.num_channels).fill({});
 
     this.fusion = this.channel_colors.map((col, index) => {
       let rgbColor;
@@ -38,7 +41,9 @@ export default class VolumeDrawable {
     });
 
     this.specular = new Array(this.volume.num_channels).fill([0,0,0]);
+
     this.emissive = new Array(this.volume.num_channels).fill([0,0,0]);
+
     this.roughness = new Array(this.volume.num_channels).fill(0);
 
     this.sceneRoot = new THREE.Object3D();//create an empty container
@@ -65,19 +70,62 @@ export default class VolumeDrawable {
       bmax: new THREE.Vector3(0.5, 0.5, 0.5)
     };
 
-    var cx = 0.0;
-    var cz = 0.0;
-    var cy = 0.0;
-    this.sceneRoot.position.set(cx,cy,cz);
-    this.maxSteps = 256;
+    this.sceneRoot.position.set(0, 0, 0);
 
     this.setScale(this.volume.scale);
+
     // apply the volume's default transformation
     this.setTranslation(new THREE.Vector3().fromArray(this.volume.getTranslation()));
     this.setRotation(new THREE.Euler().fromArray(this.volume.getRotation()));
+
+    this.setOptions(options);
+  }
+
+  setOptions(options) {
+    options = options || {};
+    if (options.hasOwnProperty("maskChannelIndex")) {
+      this.setChannelAsMask(options.maskChannelIndex);
+    }
+    if (options.hasOwnProperty("maskAlpha")) {
+      this.setMaskAlpha(options.maskAlpha);
+    }
+    if (options.hasOwnProperty("clipBounds")) {
+      this.bounds = {
+        bmin: new THREE.Vector3(options.clipBounds[0], options.clipBounds[2], options.clipBounds[4]),
+        bmax: new THREE.Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5])
+      };
+      // note: dropping isOrthoAxis argument
+      this.setAxisClip(0, options.clipBounds[0], options.clipBounds[1]);
+      this.setAxisClip(1, options.clipBounds[2], options.clipBounds[3]);
+      this.setAxisClip(2, options.clipBounds[4], options.clipBounds[5]);
+    }
+    if (options.hasOwnProperty("scale")) {
+      this.setScale(options.scale.slice());
+    }
+    if (options.hasOwnProperty("translation")) {
+      this.setTranslation(new THREE.Vector3().fromArray(options.translation));
+    }
+    if (options.hasOwnProperty("rotation")) {
+      this.setRotation(new THREE.Euler().fromArray(options.rotation));
+    }
+
+    if (options.hasOwnProperty("renderMode")) {
+      this.setVolumeRendering(!!options.renderMode);
+    }
+
+    if (options.hasOwnProperty("channels")) {
+      // store channel options here!
+      this.channelOptions = options.channels;
+      this.channelOptions.forEach((channelOptions, channelIndex) => {
+        this.setChannelOptions(channelIndex, channelOptions);
+      });
+    }
   }
 
   setChannelOptions(channelIndex, options) {
+    // merge to current channel options
+    this.channelOptions[channelIndex] = Object.assign(this.channelOptions[channelIndex], options);
+
     if (options.hasOwnProperty("enabled")) {
       this.setVolumeChannelEnabled(channelIndex, options.enabled);
     }
@@ -112,15 +160,6 @@ export default class VolumeDrawable {
         this.updateOpacity(channelIndex, options.isosurfaceOpacity);
       }
     }
-  }
-
-  resetSampleRate() {
-    this.steps = this.maxSteps / 2;
-  }
-
-  setMaxSampleRate(qual) {
-    this.maxSteps = qual;
-    this.setUniform('maxSteps', qual);
   }
 
   setScale(scale) {
@@ -270,6 +309,11 @@ export default class VolumeDrawable {
     this.volumeRendering.onChannelData(batch);
     this.meshVolume.onChannelData(batch);
 
+    for (let j = 0; j < batch.length; ++j) {
+      const idx = batch[j];
+      this.setChannelOptions(idx, this.channelOptions[idx]);
+    }
+  
     // let the outside world have a chance
     if (this.onChannelDataReadyCallback) {
       this.onChannelDataReadyCallback();
@@ -325,7 +369,6 @@ export default class VolumeDrawable {
     // if volume channel is zero'ed out, then don't update it until it is switched on again.
     if (this.fusion[channelIndex].rgbColor !== 0) {
       this.fusion[channelIndex].rgbColor = colorrgb;
-      this.fuse();
     }
     this.meshVolume.updateMeshColors(this.channel_colors);
   }
