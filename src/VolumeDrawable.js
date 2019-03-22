@@ -95,9 +95,9 @@ export default class VolumeDrawable {
         bmax: new THREE.Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5])
       };
       // note: dropping isOrthoAxis argument
-      this.setAxisClip(0, options.clipBounds[0], options.clipBounds[1]);
-      this.setAxisClip(1, options.clipBounds[2], options.clipBounds[3]);
-      this.setAxisClip(2, options.clipBounds[4], options.clipBounds[5]);
+      this.setAxisClip('x', options.clipBounds[0], options.clipBounds[1]);
+      this.setAxisClip('y', options.clipBounds[2], options.clipBounds[3]);
+      this.setAxisClip('z', options.clipBounds[4], options.clipBounds[5]);
     }
     if (options.hasOwnProperty("scale")) {
       this.setScale(options.scale.slice());
@@ -284,6 +284,7 @@ export default class VolumeDrawable {
 
   updateMaterial() {
     this.PT && this.pathTracedVolume.updateMaterial(this);
+    !this.PT && this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
   }
 
   updateLuts() {
