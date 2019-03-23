@@ -116,6 +116,12 @@ export class View3d {
     this.setImage(new VolumeDrawable(volume, options));
   }
 
+  /**
+   * Apply a set of display options to a given channel of a volume
+   * @param {Volume} volume
+   * @param {number} channelIndex the channel index
+   * @param {VolumeChannelDisplayOptions} options
+   */
   setVolumeChannelOptions(volume, channelIndex, options) {
     if (!this.image) {
       return;
@@ -123,6 +129,11 @@ export class View3d {
     this.image.setChannelOptions(channelIndex, options);
   }
 
+  /**
+   * Apply a set of display options to the given volume
+   * @param {Volume} volume
+   * @param {VolumeDisplayOptions} options
+   */
   setVolumeDisplayOptions(volume, options) {
     if (!this.image) {
       return;
