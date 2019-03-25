@@ -32,7 +32,7 @@ export const RENDERMODE_PATHTRACE = 1;
  * @property {Array.<number>} clipBounds [xmin, xmax, ymin, ymax, zmin, zmax] all range from 0 to 1 as a percentage of the volume on that axis
  * @property {Array.<number>} scale xyz voxel size scaling
  * @property {boolean} maxProjection true or false (ray marching)
- * @property {number} renderMethod 0 for raymarch, 1 for pathtrace
+ * @property {number} renderMode 0 for raymarch, 1 for pathtrace
  * @property {number} shadingMethod 0 for phase, 1 for brdf, 2 for hybrid (path tracer)
  * @property {Array.<number>} gamma [min, max, scale]
  * @example let options = {
