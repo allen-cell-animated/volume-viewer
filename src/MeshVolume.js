@@ -7,6 +7,10 @@ import './STLBinaryExporter.js';
 
 import 'three/examples/js/exporters/GLTFExporter.js';
 
+// this cutoff is chosen to have a small buffer of values before the object is treated
+// as transparent for gpu blending and depth testing.
+const ALPHA_THRESHOLD = 0.9;
+
 export default class MeshVolume {
     constructor(volume) {
         // need?
@@ -104,7 +108,7 @@ export default class MeshVolume {
           shininess: defaultMaterialSettings.shininess,
           specular: new THREE.Color(defaultMaterialSettings.specularColor),
           opacity: alpha,
-          transparent: (alpha < 0.9)
+          transparent: (alpha < ALPHA_THRESHOLD)
         });
         return material;
     }
@@ -168,13 +172,13 @@ export default class MeshVolume {
         this.meshrep[channel].traverse(function(child) {
           if (child instanceof THREE.Mesh) {
             child.material.opacity = value;
-            child.material.transparent = (value < 0.9);
+            child.material.transparent = (value < ALPHA_THRESHOLD);
             //child.material.depthWrite = !child.material.transparent;
           }
         });
         if (this.meshrep[channel].material) {
           this.meshrep[channel].material.opacity = value;
-          this.meshrep[channel].material.transparent = (value < 0.9);
+          this.meshrep[channel].material.transparent = (value < ALPHA_THRESHOLD);
           //this.meshrep[channel].material.depthWrite = !this.meshrep[channel].material.transparent;
         }
     }
@@ -186,13 +190,15 @@ export default class MeshVolume {
     createIsosurface(channel, color, value, alpha, transp) {
         if (!this.meshrep[channel]) {
           if (value === undefined) {
+            // 127 is half of the intensity range 0..255
             value = 127;
           }
           if (alpha === undefined) {
+            // 1.0 indicates full opacity, non-transparent
             alpha = 1.0;
           }
           if (transp === undefined) {
-            transp = (alpha < 0.9);
+            transp = (alpha < ALPHA_THRESHOLD);
           }
           this.meshrep[channel] = this.createMeshForChannel(channel, color, value, alpha, transp);
           this.meshRoot.add(this.meshrep[channel]);
