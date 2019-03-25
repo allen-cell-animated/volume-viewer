@@ -185,6 +185,9 @@ export default class MeshVolume {
 
     createIsosurface(channel, color, value, alpha, transp) {
         if (!this.meshrep[channel]) {
+          if (value === undefined) {
+            value = 127;
+          }
           if (alpha === undefined) {
             alpha = 1.0;
           }

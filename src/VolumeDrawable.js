@@ -140,7 +140,15 @@ export default class VolumeDrawable {
         }
         else if (!hasIso && options.isosurfaceEnabled) {
           // isovalue and opacity had better be defined!!!!!
-          this.createIsosurface(channelIndex, options.isovalue, options.isosurfaceOpacity);
+          let isovalue = 127;
+          if (options.hasOwnProperty("isovalue")) {
+            isovalue = options.isovalue;
+          }
+          let isosurfaceOpacity = 1.0;
+          if (options.hasOwnProperty("isosurfaceOpacity")) {
+            isosurfaceOpacity = options.isosurfaceOpacity;
+          }
+          this.createIsosurface(channelIndex, isovalue, isosurfaceOpacity);
         }  
       }
       else if (options.isosurfaceEnabled) {
