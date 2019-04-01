@@ -2,7 +2,7 @@ const path = require('path');
 const webpack = require('webpack');
 
 module.exports = {
-  entry: './src/index.js',
+  entry: ['./src/index.js'],
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'index.js',
@@ -13,6 +13,9 @@ module.exports = {
     extensions: ['.js']
   },
   plugins: [
+    new webpack.DefinePlugin({
+      APP_VERSION: JSON.stringify(require("./package.json").version)
+    }),
     new webpack.ProvidePlugin({
       THREE: 'three'
     })

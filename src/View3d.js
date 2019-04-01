@@ -7,6 +7,39 @@ export const RENDERMODE_RAYMARCH = 0;
 export const RENDERMODE_PATHTRACE = 1;
 
 /**
+ * Provide options to control the visual appearance of a Volume
+ * @typedef {Object} VolumeChannelDisplayOptions
+ * @property {boolean} enabled array of boolean per channel
+ * @property {<Array.<number>} color array of rgb per channel
+ * @property {<Array.<number>} specularColor array of rgb per channel
+ * @property {<Array.<number>} emissiveColor array of rgb per channel
+ * @property {number} roughness array of float per channel
+ * @property {boolean} isosurfaceEnabled array of boolean per channel
+ * @property {number} isovalue array of number per channel
+ * @property {number} isosurfaceOpacity array of number per channel
+ * @example let options = {
+   };
+ */
+/**
+ * Provide options to control the visual appearance of a Volume
+ * @typedef {Object} VolumeDisplayOptions
+ * @property {Array.<VolumeChannelDisplayOptions>} channels array of channel display options
+ * @property {number} density
+ * @property {Array.<number>} translation xyz
+ * @property {Array.<number>} rotation xyz angles in radians
+ * @property {number} maskChannelIndex
+ * @property {number} maskAlpha
+ * @property {Array.<number>} clipBounds [xmin, xmax, ymin, ymax, zmin, zmax] all range from 0 to 1 as a percentage of the volume on that axis
+ * @property {Array.<number>} scale xyz voxel size scaling
+ * @property {boolean} maxProjection true or false (ray marching)
+ * @property {number} renderMode 0 for raymarch, 1 for pathtrace
+ * @property {number} shadingMethod 0 for phase, 1 for brdf, 2 for hybrid (path tracer)
+ * @property {Array.<number>} gamma [min, max, scale]
+ * @example let options = {
+   };
+ */
+
+/**
  * @class
  */
 export class View3d {
@@ -73,13 +106,41 @@ export class View3d {
 
   /**
    * Add a new volume image to the viewer.  (The viewer currently only supports a single image at a time - adding repeatedly, without removing in between, is a potential resource leak)
-   * @param {Volume} volume 
+   * @param {Volume} volume
+   * @param {VolumeDisplayOptions} options
    */
-  addVolume(volume) {
+  addVolume(volume, options) {
     volume.addVolumeDataObserver(this);
-    this.setImage(new VolumeDrawable(volume, this.volumeRenderMode === RENDERMODE_PATHTRACE));
+    options = options || {};
+    options.renderMode = (this.volumeRenderMode === RENDERMODE_PATHTRACE);
+    this.setImage(new VolumeDrawable(volume, options));
   }
 
+  /**
+   * Apply a set of display options to a given channel of a volume
+   * @param {Volume} volume
+   * @param {number} channelIndex the channel index
+   * @param {VolumeChannelDisplayOptions} options
+   */
+  setVolumeChannelOptions(volume, channelIndex, options) {
+    if (!this.image) {
+      return;
+    }
+    this.image.setChannelOptions(channelIndex, options);
+  }
+
+  /**
+   * Apply a set of display options to the given volume
+   * @param {Volume} volume
+   * @param {VolumeDisplayOptions} options
+   */
+  setVolumeDisplayOptions(volume, options) {
+    if (!this.image) {
+      return;
+    }
+    this.image.setOptions(options);
+  }
+  
   /**
    * Remove a volume image from the viewer.  This will clean up the View3D's resources for the current volume
    * @param {Volume} volume 

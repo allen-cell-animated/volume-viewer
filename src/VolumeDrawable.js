@@ -6,8 +6,8 @@ import PathTracedVolume from './PathTracedVolume.js';
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
 
-  constructor(volume, requestPathTrace) {
-    this.PT = !!requestPathTrace;
+  constructor(volume, options) {
+    this.PT = !!options.renderMode;
 
     // THE VOLUME DATA
     this.volume = volume;
@@ -18,9 +18,12 @@ export default class VolumeDrawable {
     this.rotation = new THREE.Euler();
 
     this.maskChannelIndex = -1;
+
     this.maskAlpha = 1.0;
 
     this.channel_colors = this.volume.channel_colors_default.slice();
+
+    this.channelOptions = new Array(this.volume.num_channels).fill({});
 
     this.fusion = this.channel_colors.map((col, index) => {
       let rgbColor;
@@ -38,7 +41,9 @@ export default class VolumeDrawable {
     });
 
     this.specular = new Array(this.volume.num_channels).fill([0,0,0]);
+
     this.emissive = new Array(this.volume.num_channels).fill([0,0,0]);
+
     this.roughness = new Array(this.volume.num_channels).fill(0);
 
     this.sceneRoot = new THREE.Object3D();//create an empty container
@@ -65,25 +70,105 @@ export default class VolumeDrawable {
       bmax: new THREE.Vector3(0.5, 0.5, 0.5)
     };
 
-    var cx = 0.0;
-    var cz = 0.0;
-    var cy = 0.0;
-    this.sceneRoot.position.set(cx,cy,cz);
-    this.maxSteps = 256;
+    this.sceneRoot.position.set(0, 0, 0);
 
     this.setScale(this.volume.scale);
+
     // apply the volume's default transformation
     this.setTranslation(new THREE.Vector3().fromArray(this.volume.getTranslation()));
     this.setRotation(new THREE.Euler().fromArray(this.volume.getRotation()));
+
+    this.setOptions(options);
   }
 
-  resetSampleRate() {
-    this.steps = this.maxSteps / 2;
+  setOptions(options) {
+    options = options || {};
+    if (options.hasOwnProperty("maskChannelIndex")) {
+      this.setChannelAsMask(options.maskChannelIndex);
+    }
+    if (options.hasOwnProperty("maskAlpha")) {
+      this.setMaskAlpha(options.maskAlpha);
+    }
+    if (options.hasOwnProperty("clipBounds")) {
+      this.bounds = {
+        bmin: new THREE.Vector3(options.clipBounds[0], options.clipBounds[2], options.clipBounds[4]),
+        bmax: new THREE.Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5])
+      };
+      // note: dropping isOrthoAxis argument
+      this.setAxisClip('x', options.clipBounds[0], options.clipBounds[1]);
+      this.setAxisClip('y', options.clipBounds[2], options.clipBounds[3]);
+      this.setAxisClip('z', options.clipBounds[4], options.clipBounds[5]);
+    }
+    if (options.hasOwnProperty("scale")) {
+      this.setScale(options.scale.slice());
+    }
+    if (options.hasOwnProperty("translation")) {
+      this.setTranslation(new THREE.Vector3().fromArray(options.translation));
+    }
+    if (options.hasOwnProperty("rotation")) {
+      this.setRotation(new THREE.Euler().fromArray(options.rotation));
+    }
+
+    if (options.hasOwnProperty("renderMode")) {
+      this.setVolumeRendering(!!options.renderMode);
+    }
+
+    if (options.hasOwnProperty("channels")) {
+      // store channel options here!
+      this.channelOptions = options.channels;
+      this.channelOptions.forEach((channelOptions, channelIndex) => {
+        this.setChannelOptions(channelIndex, channelOptions);
+      });
+    }
   }
 
-  setMaxSampleRate(qual) {
-    this.maxSteps = qual;
-    this.setUniform('maxSteps', qual);
+  setChannelOptions(channelIndex, options) {
+    // merge to current channel options
+    this.channelOptions[channelIndex] = Object.assign(this.channelOptions[channelIndex], options);
+
+    if (options.hasOwnProperty("enabled")) {
+      this.setVolumeChannelEnabled(channelIndex, options.enabled);
+    }
+    if (options.hasOwnProperty("color")) {
+      this.updateChannelColor(channelIndex, options.color);
+    }
+    if (options.hasOwnProperty("isosurfaceEnabled")) {
+      const hasIso = this.hasIsosurface(channelIndex);
+      if (hasIso !== options.isosurfaceEnabled) {
+        if (hasIso && !options.isosurfaceEnabled) {
+          this.destroyIsosurface(channelIndex);
+        }
+        else if (!hasIso && options.isosurfaceEnabled) {
+          // 127 is half of the intensity range 0..255
+          let isovalue = 127;
+          if (options.hasOwnProperty("isovalue")) {
+            isovalue = options.isovalue;
+          }
+          // 1.0 is fully opaque
+          let isosurfaceOpacity = 1.0;
+          if (options.hasOwnProperty("isosurfaceOpacity")) {
+            isosurfaceOpacity = options.isosurfaceOpacity;
+          }
+          this.createIsosurface(channelIndex, isovalue, isosurfaceOpacity);
+        }  
+      }
+      else if (options.isosurfaceEnabled) {
+        if (options.hasOwnProperty("isovalue")) {
+          this.updateIsovalue(channelIndex, options.isovalue);
+        }
+        if (options.hasOwnProperty("isosurfaceOpacity")) {
+          this.updateOpacity(channelIndex, options.isosurfaceOpacity);
+        }
+      }
+    }
+    else {
+      if (options.hasOwnProperty("isovalue")) {
+        this.updateIsovalue(channelIndex, options.isovalue);
+      }
+      if (options.hasOwnProperty("isosurfaceOpacity")) {
+        this.updateOpacity(channelIndex, options.isosurfaceOpacity);
+      }
+    }
   }
 
   setScale(scale) {
@@ -208,6 +293,7 @@ export default class VolumeDrawable {
 
   updateMaterial() {
     this.PT && this.pathTracedVolume.updateMaterial(this);
+    !this.PT && this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
   }
 
   updateLuts() {
@@ -233,6 +319,11 @@ export default class VolumeDrawable {
     this.volumeRendering.onChannelData(batch);
     this.meshVolume.onChannelData(batch);
 
+    for (let j = 0; j < batch.length; ++j) {
+      const idx = batch[j];
+      this.setChannelOptions(idx, this.channelOptions[idx]);
+    }
+  
     // let the outside world have a chance
     if (this.onChannelDataReadyCallback) {
       this.onChannelDataReadyCallback();
@@ -288,7 +379,6 @@ export default class VolumeDrawable {
     // if volume channel is zero'ed out, then don't update it until it is switched on again.
     if (this.fusion[channelIndex].rgbColor !== 0) {
       this.fusion[channelIndex].rgbColor = colorrgb;
-      this.fuse();
     }
     this.meshVolume.updateMeshColors(this.channel_colors);
   }
