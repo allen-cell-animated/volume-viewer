@@ -40,7 +40,7 @@ export class ThreeJsPanel {
         this.renderer = new THREE.WebGLRenderer({
           context: context,
           canvas: this.canvas,
-          preserveDrawingBuffer : true,
+          preserveDrawingBuffer: true,
           alpha: true,
           premultipliedAlpha: false,
           sortObjects: true
@@ -56,7 +56,7 @@ export class ThreeJsPanel {
     if (!this.hasWebGL2) {
       this.renderer = new THREE.WebGLRenderer({
         canvas: this.canvas,
-        preserveDrawingBuffer : true,
+        preserveDrawingBuffer: true,
         alpha: true,
         premultipliedAlpha: false,
         sortObjects: true
@@ -134,6 +134,10 @@ export class ThreeJsPanel {
     this.initVR();
 
     this.setupAxisHelper();
+  }
+
+  requestCapture(dataurlcallback) {
+    this.dataurlcallback = dataurlcallback;
   }
 
   initVR() {
@@ -417,6 +421,12 @@ export class ThreeJsPanel {
     else {
       this.orthoScale = this.controls.scale;
     }
+
+    if (this.dataurlcallback) {
+      this.dataurlcallback(this.canvas.toDataURL());
+      this.dataurlcallback = null;
+    }
+
   }
 
   rerender() {

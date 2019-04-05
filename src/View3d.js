@@ -84,6 +84,14 @@ export class View3d {
   };
 
   /**
+   * Capture the contents of this canvas to a data url
+   * @param {Object} dataurlcallback function to call when data url is ready; function accepts dataurl as string arg
+   */
+  capture(dataurlcallback) {
+    return this.canvas3d.requestCapture(dataurlcallback);
+  }
+
+  /**
    * Force a redraw.  This is generally not needed because of constant redraws in the main animation loop.
    */
   redraw() {
