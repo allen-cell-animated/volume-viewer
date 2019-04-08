@@ -465,6 +465,15 @@ if (view3D.canvas3d.hasWebGL2) {
         view3D.updateLights(myState.lights);
     });
 }
+var screenshotbtn = document.getElementById("screenshotbtn");
+screenshotbtn.addEventListener("click", () => {
+    view3D.capture((dataurl) => {
+        const anch = document.createElement('a');
+        anch.href = dataurl;
+        anch.download = "screenshot.png";
+        anch.click();
+    });
+});
 
 setupGui();
 
