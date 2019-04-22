@@ -44,6 +44,7 @@ export default class PathTracedVolume {
             // empty array
             var lutData = new Uint8Array(256).fill(1);
             const lut0 = new THREE.DataTexture(lutData, 256, 1, THREE.RedFormat, THREE.UnsignedByteType);
+            lut0.minFilter = lut0.magFilter = THREE.LinearFilter;
             lut0.needsUpdate = true;
             this.pathTracingUniforms.g_lutTexture.value[i] = lut0;
         }
