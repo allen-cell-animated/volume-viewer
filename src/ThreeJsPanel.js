@@ -30,11 +30,15 @@ export class ThreeJsPanel {
     this.animate_funcs = [];
     this.onEnterVRCallback = null;
     this.onLeaveVRCallback = null;
-    this.needs_render = true;
+
+    // are we in a constant render loop or not?
+    this.inRenderLoop = false;
+    // if we're not in a constant render loop, have we queued any single redraws?
+    this.requestedRender = 0;
 
     this.hasWebGL2 = false;
     if (useWebGL2) {
-      let context = this.canvas.getContext( 'webgl2' );
+      let context = this.canvas.getContext('webgl2');
       if (context) {
         this.hasWebGL2 = true;
         this.renderer = new THREE.WebGLRenderer({
@@ -138,11 +142,12 @@ export class ThreeJsPanel {
 
   requestCapture(dataurlcallback) {
     this.dataurlcallback = dataurlcallback;
+    this.redraw();
   }
 
   initVR() {
 
-    this.vrButton = WEBVR.createButton( this.renderer );
+    this.vrButton = WEBVR.createButton(this.renderer);
     if (this.vrButton) {
       this.vrButton.style.left = 'auto';
       this.vrButton.style.right = '5px';
@@ -401,10 +406,22 @@ export class ThreeJsPanel {
       this.renderer.render(this.axisHelperScene, this.axisCamera);
       this.renderer.autoClear = true;
     }
+
+    if (this.dataurlcallback) {
+      this.dataurlcallback(this.canvas.toDataURL());
+      this.dataurlcallback = null;
+    }
   }
 
   redraw() {
-    this.render();
+    // if we are not in a render loop already
+    if (!this.inRenderLoop) {
+      // if there is currently a queued redraw, cancel it and replace it with a new one.
+      if (this.requestedRender) {
+        cancelAnimationFrame(this.requestedRender);
+      }
+      this.requestedRender = requestAnimationFrame(this.render.bind(this));
+    }
   }
 
   onAnimationLoop() {
@@ -426,16 +443,10 @@ export class ThreeJsPanel {
     } else {
       this.orthoScale = this.controls.scale;
     }
-
-    if (this.dataurlcallback) {
-      this.dataurlcallback(this.canvas.toDataURL());
-      this.dataurlcallback = null;
-    }
-
   }
 
   startRenderLoop() {
-    this.needs_render = true;
+    this.inRenderLoop = true;
     // reset the timer so that the time delta won't go back to the last time we were animating.
     this.timer.begin();
     this.renderer.setAnimationLoop(this.onAnimationLoop.bind(this));
@@ -443,6 +454,12 @@ export class ThreeJsPanel {
 
   stopRenderLoop() {
     this.renderer.setAnimationLoop(null);
+    this.inRenderLoop = false;
+
+    if (this.requestedRender) {
+      cancelAnimationFrame(this.requestedRender);
+      this.requestedRender = 0;
+    }
   }
 
   removeControlHandlers() {
