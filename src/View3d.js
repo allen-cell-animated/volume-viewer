@@ -145,6 +145,7 @@ export class View3d {
       return;
     }
     this.image.setChannelOptions(channelIndex, options);
+    this.redraw();
   }
 
   /**
@@ -157,8 +158,9 @@ export class View3d {
       return;
     }
     this.image.setOptions(options);
+    this.redraw();
   }
-  
+
   /**
    * Remove a volume image from the viewer.  This will clean up the View3D's resources for the current volume
    * @param {Volume} volume 
@@ -201,6 +203,7 @@ export class View3d {
    */
   setVolumeChannelAsMask(volume, mask_channel_index) {
     this.image.setChannelAsMask(mask_channel_index);
+    this.redraw();
   }
 
   /**
@@ -212,6 +215,7 @@ export class View3d {
     if (this.image) {
       this.image.setVoxelSize(values);
     }
+    this.redraw();
   }
 
   /**
@@ -227,10 +231,10 @@ export class View3d {
     }
     if (this.image.hasIsosurface(channel)) {
       this.image.updateIsovalue(channel, isovalue);
-    }
-    else {
+    } else {
       this.image.createIsosurface(channel, isovalue, alpha, alpha < 0.95);
     }
+    this.redraw();
   }
 
   /**
@@ -254,6 +258,7 @@ export class View3d {
       return;
     }
     this.image.updateIsovalue(channel, isovalue);
+    this.redraw();
   }
 
   /**
@@ -267,8 +272,9 @@ export class View3d {
       return;
     }
     this.image.updateOpacity(channel, opacity);
+    this.redraw();
   }
-  
+
   /**
    * If an isosurface exists for this channel, hide it now
    * @param {Object} volume 
@@ -276,6 +282,7 @@ export class View3d {
    */
   clearIsosurface(volume, channel) {
     this.image.destroyIsosurface(channel);
+    this.redraw();
   }
 
   /**
@@ -316,8 +323,8 @@ export class View3d {
       }
     };
 
-    // start draw loop
-    this.canvas3d.startRenderLoop();
+    // redraw if not already in draw loop
+    this.redraw();
 
     return oldImage;
   };
@@ -455,6 +462,7 @@ export class View3d {
     if (this.image) {
       this.image.setResolution(this.canvas3d);
     }
+    this.redraw();
   };
 
   /**
@@ -464,8 +472,9 @@ export class View3d {
    */
   updateDensity(volume, density) {
     if (this.image) {
-      this.image.setDensity(density/100.0);
+      this.image.setDensity(density / 100.0);
     }
+    this.redraw();
   };
 
   /**
@@ -490,6 +499,7 @@ export class View3d {
     if (this.image) {
       this.image.setGamma(gmin, glevel, gmax);
     }
+    this.redraw();
   }
 
   /**
@@ -501,6 +511,7 @@ export class View3d {
     if (this.image) {
       this.image.setMaxProjectMode(isMaxProject);
     }
+    this.redraw();
   }
 
   /**
@@ -542,6 +553,7 @@ export class View3d {
     if (this.image) {
       this.image.setBrightness(e);
     }
+    this.redraw();
   }
 
   /**
@@ -559,6 +571,7 @@ export class View3d {
     if (this.image) {
       this.image.onCameraChanged(fov, focalDistance, apertureSize);
     }
+    this.redraw();
   }
 
   /**
@@ -575,6 +588,7 @@ export class View3d {
     if (this.image) {
       this.image.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
     }
+    this.redraw();
   }
 
   /**
@@ -590,6 +604,7 @@ export class View3d {
     if (this.image) {
       this.image.setAxisClip(axis, minval, maxval, isOrthoAxis);
     }
+    this.redraw();
   }
 
   /**
@@ -625,8 +640,9 @@ export class View3d {
     if (this.image) {
       this.image.setMaskAlpha(value);
     }
+    this.redraw();
   }
-  
+
   /**
    * Show / hide volume channels
    * @param {Object} volume
@@ -711,6 +727,7 @@ export class View3d {
     if (this.image) {
       this.image.setTranslation(new THREE.Vector3().fromArray(xyz));
     }
+    this.redraw();
   }
 
   /**
