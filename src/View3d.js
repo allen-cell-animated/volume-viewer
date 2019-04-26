@@ -1,7 +1,14 @@
-import {ThreeJsPanel} from './ThreeJsPanel.js';
+import {
+  ThreeJsPanel
+} from './ThreeJsPanel.js';
 import lightSettings from './constants/lights.js';
+import FusedChannelData from './FusedChannelData.js';
 import VolumeDrawable from './VolumeDrawable.js';
-import {Light, AREA_LIGHT, SKY_LIGHT} from './Light.js';
+import {
+  Light,
+  AREA_LIGHT,
+  SKY_LIGHT
+} from './Light.js';
 
 export const RENDERMODE_RAYMARCH = 0;
 export const RENDERMODE_PATHTRACE = 1;
@@ -66,6 +73,8 @@ export class View3d {
     window.addEventListener('resize', () => that.resize(null, that.parentEl.offsetWidth, that.parentEl.offsetHeight));
 
     this.buildScene();
+
+    FusedChannelData.onFuseComplete = this.redraw.bind(this);
   }
 
   // prerender should be called on every redraw and should be the first thing done.
@@ -95,7 +104,8 @@ export class View3d {
    * Force a redraw.  This is generally not needed because of constant redraws in the main animation loop.
    */
   redraw() {
-    this.canvas3d.rerender();
+    //this.canvas3d.startRenderLoop();
+    this.canvas3d.redraw();
   };
 
   unsetImage() {
@@ -291,7 +301,7 @@ export class View3d {
     this.image.setIsOrtho(this.canvas3d.camera.isOrthographicCamera);
     this.image.setBrightness(this.exposure);
 
-    this.canvas3d.setControlHandlers(this.image);
+    this.canvas3d.setControlHandlers(this.onStartControls.bind(this), this.onChangeControls.bind(this), this.onEndControls.bind(this));
 
     this.canvas3d.animate_funcs.push(this.preRender.bind(this));
     this.canvas3d.animate_funcs.push(img.onAnimate.bind(img));
@@ -307,10 +317,36 @@ export class View3d {
     };
 
     // start draw loop
-    this.canvas3d.rerender();
+    this.canvas3d.startRenderLoop();
 
     return oldImage;
   };
+
+  onStartControls() {
+    if (this.volumeRenderMode !== RENDERMODE_PATHTRACE) {
+      // TODO: VR display requires a running renderloop 
+      this.canvas3d.startRenderLoop();
+    }
+    if (this.image) {
+      this.image.onStartControls();
+    }
+  }
+
+  onChangeControls() {
+    if (this.image) {
+      this.image.onChangeControls();
+    }
+  }
+
+  onEndControls() {
+    if (this.image) {
+      this.image.onEndControls();
+    }
+    if (this.volumeRenderMode !== RENDERMODE_PATHTRACE) {
+      // TODO: VR display requires a running renderloop 
+      this.canvas3d.stopRenderLoop();
+    }
+  }
 
   buildScene() {
     this.scene = this.canvas3d.scene;
@@ -376,6 +412,7 @@ export class View3d {
     if (this.image) {
       this.image.setIsOrtho(mode !== '3D');
     }
+    this.canvas3d.redraw();
   };
 
   /**
@@ -384,6 +421,7 @@ export class View3d {
    */
   setShowAxis(showAxis) {
     this.canvas3d.showAxis = showAxis;
+    this.canvas3d.redraw();
   };
 
   /**
@@ -394,11 +432,10 @@ export class View3d {
     this.canvas3d.setAutoRotate(autorotate);
 
     if (autorotate) {
-      this.image.onStartControls();
+      this.onStartControls();
+    } else {
+      this.onEndControls();
     }
-    else {
-      this.image.onEndControls();
-    }  
   };
 
   /**
@@ -647,16 +684,19 @@ export class View3d {
         if (this.canvas3d.vrButton) {
           this.canvas3d.vrButton.disabled = true;
         }
-      }
-      else {
+
+        // pathtrace is a continuous rendering mode
+        this.canvas3d.startRenderLoop();
+      } else {
         this.image.setVolumeRendering(false);
         if (this.canvas3d.vrButton) {
           this.canvas3d.vrButton.disabled = false;
         }
+        this.canvas3d.redraw();
       }
       this.updatePixelSamplingRate(this.pixelSamplingRate);
       this.image.setIsOrtho(this.canvas3d.camera.isOrthographicCamera);
-      this.image.setResolution(this.canvas3d);  
+      this.image.setResolution(this.canvas3d);
       this.setAutoRotate(this.canvas3d.controls.autoRotate);
     }
   }
