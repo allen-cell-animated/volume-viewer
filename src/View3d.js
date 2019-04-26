@@ -739,6 +739,6 @@ export class View3d {
     if (this.image) {
       this.image.setRotation(new THREE.Euler().fromArray(eulerXYZ));
     }
+    this.redraw();
   }
 };
-
