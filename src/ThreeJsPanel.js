@@ -172,19 +172,20 @@ export class ThreeJsPanel {
       }, false );
 
       var that = this;
-      window.addEventListener( 'vrdisplaypresentchange', () =>  {
+      window.addEventListener('vrdisplaypresentchange', () => {
         if (that.isVR()) {
+          // VR requires startRenderLoop.
           that.startRenderLoop();
           that.onEnterVR();
-        }
-        else {
+        } else {
           that.onLeaveVR();
           that.resetPerspectiveCamera();
-          // under what conditions:
-          // stopRenderLoop() 
+          // We can't be in pathtracing mode in VR.
+          // When leaving VR, just stop re-rendering until the next user interaction.
+          that.stopRenderLoop();
         }
-      } );
-  
+      });
+
     }
 
   }
