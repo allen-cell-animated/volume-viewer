@@ -101,10 +101,9 @@ export class View3d {
   }
 
   /**
-   * Force a redraw.  This is generally not needed because of constant redraws in the main animation loop.
+   * Force a redraw.
    */
   redraw() {
-    //this.canvas3d.startRenderLoop();
     this.canvas3d.redraw();
   };
 
