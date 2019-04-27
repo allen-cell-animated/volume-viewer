@@ -420,7 +420,8 @@ export class ThreeJsPanel {
       if (this.requestedRender) {
         cancelAnimationFrame(this.requestedRender);
       }
-      this.requestedRender = requestAnimationFrame(this.render.bind(this));
+      this.timer.begin();
+      this.requestedRender = requestAnimationFrame(this.onAnimationLoop.bind(this));
     }
   }
 

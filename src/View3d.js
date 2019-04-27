@@ -353,6 +353,8 @@ export class View3d {
       // TODO: VR display requires a running renderloop 
       this.canvas3d.stopRenderLoop();
     }
+    // force a redraw.  This mainly fixes a bug with the way TrackballControls deals with wheel events.
+    this.redraw();
   }
 
   buildScene() {
