@@ -349,7 +349,8 @@ export class View3d {
     if (this.image) {
       this.image.onEndControls();
     }
-    if (this.volumeRenderMode !== RENDERMODE_PATHTRACE) {
+    // If we are pathtracing or autorotating, then keep rendering. Otherwise stop now.
+    if (this.volumeRenderMode !== RENDERMODE_PATHTRACE && !this.canvas3d.controls.autoRotate) {
       // TODO: VR display requires a running renderloop 
       this.canvas3d.stopRenderLoop();
     }
