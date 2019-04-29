@@ -462,6 +462,8 @@ export class ThreeJsPanel {
       cancelAnimationFrame(this.requestedRender);
       this.requestedRender = 0;
     }
+
+    this.timer.end();
   }
 
   removeControlHandlers() {
