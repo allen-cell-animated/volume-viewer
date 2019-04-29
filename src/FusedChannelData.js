@@ -40,6 +40,10 @@ export default class FusedChannelData {
 
   static onFuseComplete() {}
 
+  static setOnFuseComplete(onFuseComplete) {
+    FusedChannelData.onFuseComplete = onFuseComplete;
+  }
+
   cleanup() {
     if (this.workers && this.workers.length > 0) {
       for (var i = 0; i < this.workers.length; ++i) {

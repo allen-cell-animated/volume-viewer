@@ -74,7 +74,7 @@ export class View3d {
 
     this.buildScene();
 
-    FusedChannelData.onFuseComplete = this.redraw.bind(this);
+    FusedChannelData.setOnFuseComplete(this.redraw.bind(this));
   }
 
   // prerender should be called on every redraw and should be the first thing done.
