@@ -69,29 +69,22 @@ export class ThreeJsPanel {
 
     var scale = 0.5;
     this.orthoScale = scale;
-    var pos = new THREE.Vector3(0,0,0);
+    var pos = new THREE.Vector3(0, 0, 0);
     var aspect = this.getWidth() / this.getHeight();
 
     this.fov = 20;
 
     this.perspectiveCamera = new THREE.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
-    this.perspectiveCamera.position.z = DEFAULT_PERSPECTIVE_CAMERA_DISTANCE;
-    this.perspectiveCamera.up.x = 0.0;
-    this.perspectiveCamera.up.y = 1.0;
-    this.perspectiveCamera.up.z = 0.0;
+    this.resetPerspectiveCamera();
     this.perspectiveControls = new TrackballControls(this.perspectiveCamera, this.canvas);
-    this.perspectiveControls.rotateSpeed = 4.0/window.devicePixelRatio;
+    this.perspectiveControls.rotateSpeed = 4.0 / window.devicePixelRatio;
     this.perspectiveControls.autoRotate = false;
     this.perspectiveControls.staticMoving = true;
     this.perspectiveControls.length = 10;
     this.perspectiveControls.enabled = true; //turn off mouse moments by setting to false
 
-    this.orthographicCameraX = new THREE.OrthographicCamera( -scale*aspect, scale*aspect, scale, -scale, 0.001, 20 );
-    this.orthographicCameraX.position.x = 2.0;
-    this.orthographicCameraX.up.x = 0.0;
-    this.orthographicCameraX.up.y = 0.0;
-    this.orthographicCameraX.up.z = 1.0;
-    this.orthographicCameraX.lookAt( pos );
+    this.orthographicCameraX = new THREE.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
+    this.resetOrthographicCameraX();
     this.orthoControlsX = new TrackballControls(this.orthographicCameraX, this.canvas);
     this.orthoControlsX.noRotate = true;
     this.orthoControlsX.scale = scale;
@@ -100,12 +93,8 @@ export class ThreeJsPanel {
     this.orthoControlsX.staticMoving = true;
     this.orthoControlsX.enabled = false;
 
-    this.orthographicCameraY = new THREE.OrthographicCamera( -scale*aspect, scale*aspect, scale, -scale, 0.001, 20 );
-    this.orthographicCameraY.position.y = 2.0;
-    this.orthographicCameraY.up.x = 0.0;
-    this.orthographicCameraY.up.y = 0.0;
-    this.orthographicCameraY.up.z = 1.0;
-    this.orthographicCameraY.lookAt( pos );
+    this.orthographicCameraY = new THREE.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
+    this.resetOrthographicCameraY();
     this.orthoControlsY = new TrackballControls(this.orthographicCameraY, this.canvas);
     this.orthoControlsY.noRotate = true;
     this.orthoControlsY.scale = scale;
@@ -114,12 +103,8 @@ export class ThreeJsPanel {
     this.orthoControlsY.staticMoving = true;
     this.orthoControlsY.enabled = false;
 
-    this.orthographicCameraZ = new THREE.OrthographicCamera( -scale*aspect, scale*aspect, scale, -scale, 0.001, 20 );
-    this.orthographicCameraZ.position.z = 2.0;
-    this.orthographicCameraZ.up.x = 0.0;
-    this.orthographicCameraZ.up.y = 1.0;
-    this.orthographicCameraZ.up.z = 0.0;
-    this.orthographicCameraZ.lookAt( pos );
+    this.orthographicCameraZ = new THREE.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
+    this.resetOrthographicCameraZ();
     this.orthoControlsZ = new TrackballControls(this.orthographicCameraZ, this.canvas);
     this.orthoControlsZ.noRotate = true;
     this.orthoControlsZ.scale = scale;
@@ -136,13 +121,52 @@ export class ThreeJsPanel {
     this.setupAxisHelper();
   }
 
+  resetPerspectiveCamera() {
+    this.perspectiveCamera.position.x = 0.0;
+    this.perspectiveCamera.position.y = 0.0;
+    this.perspectiveCamera.position.z = DEFAULT_PERSPECTIVE_CAMERA_DISTANCE;
+    this.perspectiveCamera.up.x = 0.0;
+    this.perspectiveCamera.up.y = 1.0;
+    this.perspectiveCamera.up.z = 0.0;
+  }
+
+  resetOrthographicCameraX() {
+    this.orthographicCameraX.position.x = 2.0;
+    this.orthographicCameraX.position.y = 0.0;
+    this.orthographicCameraX.position.z = 0.0;
+    this.orthographicCameraX.up.x = 0.0;
+    this.orthographicCameraX.up.y = 0.0;
+    this.orthographicCameraX.up.z = 1.0;
+    this.orthographicCameraX.lookAt(new THREE.Vector3(0, 0, 0));
+  }
+
+  resetOrthographicCameraY() {
+    this.orthographicCameraY.position.x = 0.0;
+    this.orthographicCameraY.position.y = 2.0;
+    this.orthographicCameraY.position.z = 0.0;
+    this.orthographicCameraY.up.x = 0.0;
+    this.orthographicCameraY.up.y = 0.0;
+    this.orthographicCameraY.up.z = 1.0;
+    this.orthographicCameraY.lookAt(new THREE.Vector3(0, 0, 0));
+  }
+
+  resetOrthographicCameraZ() {
+    this.orthographicCameraZ.position.x = 0.0;
+    this.orthographicCameraZ.position.y = 0.0;
+    this.orthographicCameraZ.position.z = 2.0;
+    this.orthographicCameraZ.up.x = 0.0;
+    this.orthographicCameraZ.up.y = 1.0;
+    this.orthographicCameraZ.up.z = 0.0;
+    this.orthographicCameraZ.lookAt(new THREE.Vector3(0, 0, 0));
+  }
+
   requestCapture(dataurlcallback) {
     this.dataurlcallback = dataurlcallback;
   }
 
   initVR() {
 
-    this.vrButton = WEBVR.createButton( this.renderer );
+    this.vrButton = WEBVR.createButton(this.renderer);
     if (this.vrButton) {
       this.vrButton.style.left = 'auto';
       this.vrButton.style.right = '5px';
@@ -173,7 +197,7 @@ export class ThreeJsPanel {
         }
         else {
           that.onLeaveVR();
-          that.resetPerspectiveCamera();
+          that.resetToPerspectiveCamera();
 
         }
       } );
@@ -210,19 +234,27 @@ export class ThreeJsPanel {
     this.renderer.vr.enabled = false;
   }
 
-  resetPerspectiveCamera() {
+  resetToPerspectiveCamera() {
     var aspect = this.getWidth() / this.getHeight();
 
     this.perspectiveCamera = new THREE.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
-    this.perspectiveCamera.position.x = 0.0;
-    this.perspectiveCamera.position.y = 0.0;
-    this.perspectiveCamera.position.z = DEFAULT_PERSPECTIVE_CAMERA_DISTANCE;
-    this.perspectiveCamera.up.x = 0.0;
-    this.perspectiveCamera.up.y = 1.0;
-    this.perspectiveCamera.up.z = 0.0;
+    this.resetPerspectiveCamera();
     this.switchViewMode('3D');
     this.controls.object = this.perspectiveCamera;
     this.controls.enabled = true;
+    this.controls.reset();
+  }
+
+  resetCamera() {
+    if (this.camera === this.perspectiveCamera) {
+      this.resetPerspectiveCamera();
+    } else if (this.camera === this.orthographicCameraX) {
+      this.resetOrthographicCameraX();
+    } else if (this.camera === this.orthographicCameraY) {
+      this.resetOrthographicCameraY();
+    } else if (this.camera === this.orthographicCameraZ) {
+      this.resetOrthographicCameraZ();
+    }
     this.controls.reset();
   }
 
