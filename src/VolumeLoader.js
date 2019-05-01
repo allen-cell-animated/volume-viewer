@@ -40,11 +40,11 @@ VolumeLoader.loadVolumeAtlasData = function (volume, imageArray, callback) {
         // using Image is just a trick to download the bits as a png.
         // the Image will never be used again.
         var img = new Image;
-        img.onerror = function() {
+        img.onerror = function () {
             console.log("ERROR LOADING " + url);
         };
-        img.onload = function(thisbatch) { 
-            return function(event) {
+        img.onload = function (thisbatch) {
+            return function (event) {
                 //console.log("GOT ch " + me.src);
                 // extract pixels by drawing to canvas
                 var canvas = document.createElement('canvas');
@@ -64,12 +64,12 @@ VolumeLoader.loadVolumeAtlasData = function (volume, imageArray, callback) {
                 var channelsBits = [];
                 // allocate channels in batch
                 for (var i = 0; i < Math.min(thisbatch.length, 4); ++i) {
-                    channelsBits.push(new Uint8Array(w*h));
+                    channelsBits.push(new Uint8Array(w * h));
                 }
                 // extract the data
-                for (var i = 0; i < w*h; i++) {
-                    for (var j = 0; j < Math.min(thisbatch.length, 4); ++j) {
-                        channelsBits[j][i] = iData.data[i*4+j];
+                for (var j = 0; j < Math.min(thisbatch.length, 4); ++j) {
+                    for (var i = 0; i < w * h; i++) {
+                        channelsBits[j][i] = iData.data[i * 4 + j];
                     }
                 }
 
@@ -80,7 +80,7 @@ VolumeLoader.loadVolumeAtlasData = function (volume, imageArray, callback) {
                     callback(url, thisbatch[i]);
                 }
             };
-        } (batch);
+        }(batch);
         img.crossOrigin = 'Anonymous';
         img.src = url;
         requests[url] = img;
