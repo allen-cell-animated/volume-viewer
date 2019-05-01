@@ -1,7 +1,4 @@
-(function() {if (!Math.clamp) { Math.clamp=function(val,cmin,cmax) {return Math.min(Math.max(cmin, val), cmax);};}})();
-
 var channels = [];
-var luts = [];
 var npx = 0;
 
 // sum over [{chIndex, rgbColor}]
@@ -103,12 +100,6 @@ self.onmessage = function(e) {
     if (npx === 0) {
       npx = channels[e.data.channelindex].length;
     }
-    luts[e.data.channelindex] = {
-      e:new Uint8Array(e.data.lutE),
-      f:new Uint8Array(e.data.lutF),
-      t:new Uint8Array(e.data.lutT),
-      d:new Uint8Array(e.data.lutD)
-    };
     if (!self.fused) {
       self.fused = new Uint8Array(npx*4);
       self.workerindex = e.data.workerindex;

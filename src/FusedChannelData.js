@@ -3,10 +3,7 @@ import FuseWorker from './FuseWorker';
 // This is the owner of the fused RGBA volume texture atlas, and the mask texture atlas.
 // This module is responsible for updating the fused texture, given the read-only volume channel data.
 export default class FusedChannelData {
-  constructor(atlasX, atlasY, redraw) {
-
-    // function to call when image is ready to redraw
-    this.redraw = redraw;
+  constructor(atlasX, atlasY) {
 
     // allow for resizing
     this.width = atlasX;
@@ -39,6 +36,12 @@ export default class FusedChannelData {
     this.fuseWorkersWorking = 0;
 
     this.setupWorkers();
+  }
+
+  static onFuseComplete() {}
+
+  static setOnFuseComplete(onFuseComplete) {
+    FusedChannelData.onFuseComplete = onFuseComplete;
   }
 
   cleanup() {
@@ -80,8 +83,8 @@ export default class FusedChannelData {
         me.fusedTexture.image = me.fusedData;
         me.fusedTexture.needsUpdate = true;
         me.fuseWorkersWorking = 0;
-        if (me.redraw) {
-          me.redraw();
+        if (FusedChannelData.onFuseComplete) {
+          FusedChannelData.onFuseComplete();
         }
 
         // if there are any fusion requests in queue, execute the next one now.
@@ -140,19 +143,16 @@ export default class FusedChannelData {
     // nothing to do yet
   }
 
-  getHistogram(channelIndex) {
-    return this.channels[channelIndex].imgData ? this.channels[channelIndex].imgData.histogram : [];
-  }
-
   fuse(combination, fuseMethod, channels) {
     fuseMethod = fuseMethod || "m";
 
     // we can fuse if we have any loaded channels that are showing. 
+    // actually, we can fuse if no channels are showing (but they are loaded), too.
     var canFuse = false;
     for (var i = 0; i < combination.length; ++i) {
       var c = combination[i];
       var idx = c.chIndex;
-      if (c.rgbColor && channels[idx].loaded) {
+      if (channels[idx].loaded) {
         // set the lut in this fuse combination.
         c.lut = channels[idx].lut;
         canFuse = true;
@@ -168,8 +168,8 @@ export default class FusedChannelData {
     if (this.useSingleThread || !window.Worker) {
       // console.log("SINGLE THREADED");
       this.singleThreadedFuse(combination, channels);
-      if (this.redraw) {
-        this.redraw();
+      if (FusedChannelData.onFuseComplete) {
+        FusedChannelData.onFuseComplete();
       }
       return;
     }

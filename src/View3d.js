@@ -1,7 +1,14 @@
-import {ThreeJsPanel} from './ThreeJsPanel.js';
+import {
+  ThreeJsPanel
+} from './ThreeJsPanel.js';
 import lightSettings from './constants/lights.js';
+import FusedChannelData from './FusedChannelData.js';
 import VolumeDrawable from './VolumeDrawable.js';
-import {Light, AREA_LIGHT, SKY_LIGHT} from './Light.js';
+import {
+  Light,
+  AREA_LIGHT,
+  SKY_LIGHT
+} from './Light.js';
 
 export const RENDERMODE_RAYMARCH = 0;
 export const RENDERMODE_PATHTRACE = 1;
@@ -66,6 +73,8 @@ export class View3d {
     window.addEventListener('resize', () => that.resize(null, that.parentEl.offsetWidth, that.parentEl.offsetHeight));
 
     this.buildScene();
+
+    FusedChannelData.setOnFuseComplete(this.redraw.bind(this));
   }
 
   // prerender should be called on every redraw and should be the first thing done.
@@ -92,10 +101,10 @@ export class View3d {
   }
 
   /**
-   * Force a redraw.  This is generally not needed because of constant redraws in the main animation loop.
+   * Force a redraw.
    */
   redraw() {
-    this.canvas3d.rerender();
+    this.canvas3d.redraw();
   };
 
   unsetImage() {
@@ -135,6 +144,7 @@ export class View3d {
       return;
     }
     this.image.setChannelOptions(channelIndex, options);
+    this.redraw();
   }
 
   /**
@@ -147,8 +157,9 @@ export class View3d {
       return;
     }
     this.image.setOptions(options);
+    this.redraw();
   }
-  
+
   /**
    * Remove a volume image from the viewer.  This will clean up the View3D's resources for the current volume
    * @param {Volume} volume 
@@ -191,6 +202,7 @@ export class View3d {
    */
   setVolumeChannelAsMask(volume, mask_channel_index) {
     this.image.setChannelAsMask(mask_channel_index);
+    this.redraw();
   }
 
   /**
@@ -202,6 +214,7 @@ export class View3d {
     if (this.image) {
       this.image.setVoxelSize(values);
     }
+    this.redraw();
   }
 
   /**
@@ -217,10 +230,10 @@ export class View3d {
     }
     if (this.image.hasIsosurface(channel)) {
       this.image.updateIsovalue(channel, isovalue);
-    }
-    else {
+    } else {
       this.image.createIsosurface(channel, isovalue, alpha, alpha < 0.95);
     }
+    this.redraw();
   }
 
   /**
@@ -244,6 +257,7 @@ export class View3d {
       return;
     }
     this.image.updateIsovalue(channel, isovalue);
+    this.redraw();
   }
 
   /**
@@ -257,8 +271,9 @@ export class View3d {
       return;
     }
     this.image.updateOpacity(channel, opacity);
+    this.redraw();
   }
-  
+
   /**
    * If an isosurface exists for this channel, hide it now
    * @param {Object} volume 
@@ -266,6 +281,7 @@ export class View3d {
    */
   clearIsosurface(volume, channel) {
     this.image.destroyIsosurface(channel);
+    this.redraw();
   }
 
   /**
@@ -291,7 +307,7 @@ export class View3d {
     this.image.setIsOrtho(this.canvas3d.camera.isOrthographicCamera);
     this.image.setBrightness(this.exposure);
 
-    this.canvas3d.setControlHandlers(this.image);
+    this.canvas3d.setControlHandlers(this.onStartControls.bind(this), this.onChangeControls.bind(this), this.onEndControls.bind(this));
 
     this.canvas3d.animate_funcs.push(this.preRender.bind(this));
     this.canvas3d.animate_funcs.push(img.onAnimate.bind(img));
@@ -306,11 +322,40 @@ export class View3d {
       }
     };
 
-    // start draw loop
-    this.canvas3d.rerender();
+    // redraw if not already in draw loop
+    this.redraw();
 
     return oldImage;
   };
+
+  onStartControls() {
+    if (this.volumeRenderMode !== RENDERMODE_PATHTRACE) {
+      // TODO: VR display requires a running renderloop 
+      this.canvas3d.startRenderLoop();
+    }
+    if (this.image) {
+      this.image.onStartControls();
+    }
+  }
+
+  onChangeControls() {
+    if (this.image) {
+      this.image.onChangeControls();
+    }
+  }
+
+  onEndControls() {
+    if (this.image) {
+      this.image.onEndControls();
+    }
+    // If we are pathtracing or autorotating, then keep rendering. Otherwise stop now.
+    if (this.volumeRenderMode !== RENDERMODE_PATHTRACE && !this.canvas3d.controls.autoRotate) {
+      // TODO: VR display requires a running renderloop 
+      this.canvas3d.stopRenderLoop();
+    }
+    // force a redraw.  This mainly fixes a bug with the way TrackballControls deals with wheel events.
+    this.redraw();
+  }
 
   buildScene() {
     this.scene = this.canvas3d.scene;
@@ -376,6 +421,7 @@ export class View3d {
     if (this.image) {
       this.image.setIsOrtho(mode !== '3D');
     }
+    this.canvas3d.redraw();
   };
 
   /**
@@ -384,6 +430,7 @@ export class View3d {
    */
   setShowAxis(showAxis) {
     this.canvas3d.showAxis = showAxis;
+    this.canvas3d.redraw();
   };
 
   /**
@@ -394,11 +441,10 @@ export class View3d {
     this.canvas3d.setAutoRotate(autorotate);
 
     if (autorotate) {
-      this.image.onStartControls();
+      this.onStartControls();
+    } else {
+      this.onEndControls();
     }
-    else {
-      this.image.onEndControls();
-    }  
   };
 
   /**
@@ -418,6 +464,7 @@ export class View3d {
     if (this.image) {
       this.image.setResolution(this.canvas3d);
     }
+    this.redraw();
   };
 
   /**
@@ -427,8 +474,9 @@ export class View3d {
    */
   updateDensity(volume, density) {
     if (this.image) {
-      this.image.setDensity(density/100.0);
+      this.image.setDensity(density / 100.0);
     }
+    this.redraw();
   };
 
   /**
@@ -453,6 +501,7 @@ export class View3d {
     if (this.image) {
       this.image.setGamma(gmin, glevel, gmax);
     }
+    this.redraw();
   }
 
   /**
@@ -464,6 +513,7 @@ export class View3d {
     if (this.image) {
       this.image.setMaxProjectMode(isMaxProject);
     }
+    this.redraw();
   }
 
   /**
@@ -505,6 +555,7 @@ export class View3d {
     if (this.image) {
       this.image.setBrightness(e);
     }
+    this.redraw();
   }
 
   /**
@@ -522,6 +573,7 @@ export class View3d {
     if (this.image) {
       this.image.onCameraChanged(fov, focalDistance, apertureSize);
     }
+    this.redraw();
   }
 
   /**
@@ -538,6 +590,7 @@ export class View3d {
     if (this.image) {
       this.image.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
     }
+    this.redraw();
   }
 
   /**
@@ -553,6 +606,7 @@ export class View3d {
     if (this.image) {
       this.image.setAxisClip(axis, minval, maxval, isOrthoAxis);
     }
+    this.redraw();
   }
 
   /**
@@ -588,8 +642,9 @@ export class View3d {
     if (this.image) {
       this.image.setMaskAlpha(value);
     }
+    this.redraw();
   }
-  
+
   /**
    * Show / hide volume channels
    * @param {Object} volume
@@ -647,16 +702,19 @@ export class View3d {
         if (this.canvas3d.vrButton) {
           this.canvas3d.vrButton.disabled = true;
         }
-      }
-      else {
+
+        // pathtrace is a continuous rendering mode
+        this.canvas3d.startRenderLoop();
+      } else {
         this.image.setVolumeRendering(false);
         if (this.canvas3d.vrButton) {
           this.canvas3d.vrButton.disabled = false;
         }
+        this.canvas3d.redraw();
       }
       this.updatePixelSamplingRate(this.pixelSamplingRate);
       this.image.setIsOrtho(this.canvas3d.camera.isOrthographicCamera);
-      this.image.setResolution(this.canvas3d);  
+      this.image.setResolution(this.canvas3d);
       this.setAutoRotate(this.canvas3d.controls.autoRotate);
     }
   }
@@ -671,6 +729,7 @@ export class View3d {
     if (this.image) {
       this.image.setTranslation(new THREE.Vector3().fromArray(xyz));
     }
+    this.redraw();
   }
 
   /**
@@ -682,6 +741,6 @@ export class View3d {
     if (this.image) {
       this.image.setRotation(new THREE.Euler().fromArray(eulerXYZ));
     }
+    this.redraw();
   }
 };
-

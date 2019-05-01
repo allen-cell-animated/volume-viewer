@@ -30,11 +30,15 @@ export class ThreeJsPanel {
     this.animate_funcs = [];
     this.onEnterVRCallback = null;
     this.onLeaveVRCallback = null;
-    this.needs_render = true;
+
+    // are we in a constant render loop or not?
+    this.inRenderLoop = false;
+    // if we're not in a constant render loop, have we queued any single redraws?
+    this.requestedRender = 0;
 
     this.hasWebGL2 = false;
     if (useWebGL2) {
-      let context = this.canvas.getContext( 'webgl2' );
+      let context = this.canvas.getContext('webgl2');
       if (context) {
         this.hasWebGL2 = true;
         this.renderer = new THREE.WebGLRenderer({
@@ -138,11 +142,12 @@ export class ThreeJsPanel {
 
   requestCapture(dataurlcallback) {
     this.dataurlcallback = dataurlcallback;
+    this.redraw();
   }
 
   initVR() {
 
-    this.vrButton = WEBVR.createButton( this.renderer );
+    this.vrButton = WEBVR.createButton(this.renderer);
     if (this.vrButton) {
       this.vrButton.style.left = 'auto';
       this.vrButton.style.right = '5px';
@@ -167,17 +172,20 @@ export class ThreeJsPanel {
       }, false );
 
       var that = this;
-      window.addEventListener( 'vrdisplaypresentchange', () =>  {
+      window.addEventListener('vrdisplaypresentchange', () => {
         if (that.isVR()) {
+          // VR requires startRenderLoop.
+          that.startRenderLoop();
           that.onEnterVR();
-        }
-        else {
+        } else {
           that.onLeaveVR();
           that.resetPerspectiveCamera();
-
+          // We can't be in pathtracing mode in VR.
+          // When leaving VR, just stop re-rendering until the next user interaction.
+          that.stopRenderLoop();
         }
-      } );
-  
+      });
+
     }
 
   }
@@ -290,13 +298,13 @@ export class ThreeJsPanel {
 
     // re-install existing control change handlers on new controls
     if (this.controlStartHandler) {
-      this.controls.addEventListener('start', this.controlStartHandler);  
+      this.controls.addEventListener('start', this.controlStartHandler);
     }
     if (this.controlChangeHandler) {
       this.controls.addEventListener('change', this.controlChangeHandler);
     }
     if (this.controlEndHandler) {
-      this.controls.addEventListener('end', this.controlEndHandler);    
+      this.controls.addEventListener('end', this.controlEndHandler);
     }
 
     this.controls.update();
@@ -385,12 +393,36 @@ export class ThreeJsPanel {
   }
 
   render() {
+    // do whatever we have to do before the main render of this.scene
+    for (var i = 0; i < this.animate_funcs.length; i++) {
+      if (this.animate_funcs[i]) {
+        this.animate_funcs[i](this);
+      }
+    }
+
     this.renderer.render(this.scene, this.camera);
     // overlay
     if (this.showAxis) {
       this.renderer.autoClear = false;
       this.renderer.render(this.axisHelperScene, this.axisCamera);
       this.renderer.autoClear = true;
+    }
+
+    if (this.dataurlcallback) {
+      this.dataurlcallback(this.canvas.toDataURL());
+      this.dataurlcallback = null;
+    }
+  }
+
+  redraw() {
+    // if we are not in a render loop already
+    if (!this.inRenderLoop) {
+      // if there is currently a queued redraw, cancel it and replace it with a new one.
+      if (this.requestedRender) {
+        cancelAnimationFrame(this.requestedRender);
+      }
+      this.timer.begin();
+      this.requestedRender = requestAnimationFrame(this.onAnimationLoop.bind(this));
     }
   }
 
@@ -401,41 +433,37 @@ export class ThreeJsPanel {
 
     if (this.isVR() && this.vrControls) {
       this.vrControls.update(delta);
-    }
-    else {
+    } else {
       this.controls.update(delta);
     }
 
-    // do whatever we have to do before the main render of this.scene
-    for(var i = 0; i < this.animate_funcs.length; i++) {
-      if(this.animate_funcs[i]) {
-        this.animate_funcs[i](this);
-      }
-    }
     this.render();
 
     // update the axis helper in case the view was rotated
     if (!this.camera.isOrthographicCamera) {
       this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
-    }
-    else {
+    } else {
       this.orthoScale = this.controls.scale;
     }
-
-    if (this.dataurlcallback) {
-      this.dataurlcallback(this.canvas.toDataURL());
-      this.dataurlcallback = null;
-    }
-
   }
 
-  rerender() {
-    this.needs_render = true;
+  startRenderLoop() {
+    this.inRenderLoop = true;
+    // reset the timer so that the time delta won't go back to the last time we were animating.
+    this.timer.begin();
     this.renderer.setAnimationLoop(this.onAnimationLoop.bind(this));
   }
 
-  stoprender() {
+  stopRenderLoop() {
     this.renderer.setAnimationLoop(null);
+    this.inRenderLoop = false;
+
+    if (this.requestedRender) {
+      cancelAnimationFrame(this.requestedRender);
+      this.requestedRender = 0;
+    }
+
+    this.timer.end();
   }
 
   removeControlHandlers() {
@@ -443,27 +471,27 @@ export class ThreeJsPanel {
       this.controls.removeEventListener('start', this.controlStartHandler);
     }
     if (this.controlChangeHandler) {
-        this.controls.removeEventListener('change', this.controlChangeHandler);
+      this.controls.removeEventListener('change', this.controlChangeHandler);
     }
     if (this.controlEndHandler) {
-        this.controls.removeEventListener('end', this.controlEndHandler);
+      this.controls.removeEventListener('end', this.controlEndHandler);
     }
   }
 
-  setControlHandlers(image) {
+  setControlHandlers(onstart, onchange, onend) {
     this.removeControlHandlers();
 
-    if (image.onStartControls) {
-      this.controlStartHandler = image.onStartControls.bind(image);
-      this.controls.addEventListener('start', this.controlStartHandler);  
+    if (onstart) {
+      this.controlStartHandler = onstart;
+      this.controls.addEventListener('start', this.controlStartHandler);
     }
-    if (image.onChangeControls) {
-      this.controlChangeHandler = image.onChangeControls.bind(image);
+    if (onchange) {
+      this.controlChangeHandler = onchange;
       this.controls.addEventListener('change', this.controlChangeHandler);
     }
-    if (image.onEndControls) {
-      this.controlEndHandler = image.onEndControls.bind(image);
-      this.controls.addEventListener('end', this.controlEndHandler);    
+    if (onend) {
+      this.controlEndHandler = onend;
+      this.controls.addEventListener('end', this.controlEndHandler);
     }
   }
 
