@@ -743,4 +743,11 @@ export class View3d {
     }
     this.redraw();
   }
+
+  /**
+   * Reset the camera to its default position
+   */
+  resetCamera() {
+    this.canvas3d.resetCamera();
+  }
 };

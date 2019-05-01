@@ -452,6 +452,9 @@ alignbtn.addEventListener("click", ()=>{
     myState.isAligned = !myState.isAligned; 
     view3D.setVolumeTranslation(myState.volume, myState.isAligned ? myState.volume.getTranslation() : [0,0,0]); 
     view3D.setVolumeRotation(myState.volume, myState.isAligned ? myState.volume.getRotation() : [0,0,0]);
+var resetcambtn = document.getElementById("resetcambtn");
+resetcambtn.addEventListener("click", () => {
+    view3D.resetCamera();
 });
 
 if (view3D.canvas3d.hasWebGL2) {
