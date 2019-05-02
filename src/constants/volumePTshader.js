@@ -268,6 +268,7 @@ bool IntersectBox(in Ray R, out float pNearT, out float pFarT)
 }
 
 // assume volume is centered at 0,0,0 so p spans -bounds to + bounds
+// transform p to range from 0,0,0 to 1,1,1 for volume texture sampling.
 vec3 PtoVolumeTex(vec3 p) {
   //return (p-gClippedAaBbMin)*gInvAaBbMax;
   return p*gInvAaBbMax + vec3(0.5, 0.5, 0.5);

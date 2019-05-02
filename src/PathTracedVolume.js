@@ -586,10 +586,12 @@ export default class PathTracedVolume {
     
       updateLuts() {
         for (let i = 0; i < this.pathTracingUniforms.g_nChannels.value; ++i) {
-          this.pathTracingUniforms.g_lutTexture.value[i].image.data.set(this.volume.channels[this.viewChannels[i]].lut);
+          const channel = this.viewChannels[i];
+          this.pathTracingUniforms.g_lutTexture.value[i].image.data.set(this.volume.channels[channel].lut);
           this.pathTracingUniforms.g_lutTexture.value[i].needsUpdate = true;  
     
-          this.pathTracingUniforms.g_intensityMax.value.setComponent(i, this.volume.channels[this.viewChannels[i]].histogram.dataMax / 255.0);
+          this.pathTracingUniforms.g_intensityMax.value.setComponent(i, this.volume.channels[channel].histogram.dataMax / 255.0);
+          this.pathTracingUniforms.g_intensityMin.value.setComponent(i, this.volume.channels[channel].histogram.dataMin / 255.0);
     
         }
     
