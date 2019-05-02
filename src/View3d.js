@@ -63,7 +63,7 @@ export class View3d {
     this.scene = null;
     this.backgroundColor = 0x000000;
 
-    this.pixelSamplingRate = 0.75;
+    this.pixelSamplingRate = 1.0;
     this.exposure = 0.5;
     this.volumeRenderMode = RENDERMODE_RAYMARCH;
 
