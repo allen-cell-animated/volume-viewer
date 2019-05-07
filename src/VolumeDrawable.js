@@ -1,4 +1,3 @@
-import { getColorByChannelIndex } from './constants/colors.js';
 import MeshVolume from './MeshVolume.js';
 import RayMarchedAtlasVolume from './RayMarchedAtlasVolume.js';
 import PathTracedVolume from './PathTracedVolume.js';
