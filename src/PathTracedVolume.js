@@ -20,7 +20,7 @@ export default class PathTracedVolume {
         this.rotation = new THREE.Euler();
 
         // scale factor is a huge optimization.  Maybe use 1/dpi scale
-        this.pixelSamplingRate = 1.0;
+        this.pixelSamplingRate = 0.75;
 
         this.pathTracingUniforms = pathTracingUniforms();
 
