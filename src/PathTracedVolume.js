@@ -446,7 +446,7 @@ export default class PathTracedVolume {
     }
 
     setDensity(density) {
-        this.pathTracingUniforms.gDensityScale.value = density * 100.0;
+        this.pathTracingUniforms.gDensityScale.value = density * 150.0;
         this.sampleCounter = 0;
     }
 
