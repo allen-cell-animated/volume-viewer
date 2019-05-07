@@ -482,7 +482,7 @@ export class View3d {
   /**
    * Set the shading method - applies to pathtraced render mode only
    * @param {Object} volume 
-   * @param {number} isbrdf true for brdf model, false for isotropic phase function model
+   * @param {number} isbrdf 0: brdf, 1: isotropic phase function, 2: mixed
    */
   updateShadingMethod(volume, isbrdf) {
     if (this.image) {

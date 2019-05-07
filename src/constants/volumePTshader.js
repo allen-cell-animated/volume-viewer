@@ -32,6 +32,7 @@ const vec3 BLACK = vec3(0,0,0);
 const vec3 WHITE = vec3(1.0,1.0,1.0);
 const int ShaderType_Brdf = 0;
 const int ShaderType_Phase = 1;
+const int ShaderType_Mixed = 2;
 const float MAX_RAY_LEN = 1500000.0f;
 
 in vec2 vUv;
@@ -1051,19 +1052,19 @@ vec4 CalculateRadiance(inout uvec2 seed) {
     // send ray out from Pe toward light
     switch (gShadingType)
     {
-      case 0:
+      case ShaderType_Brdf:
       {
         Lv += UniformSampleOneLight(ShaderType_Brdf, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);
         break;
       }
-    
-      case 1:
+
+      case ShaderType_Phase:
       {
         Lv += 0.5f * UniformSampleOneLight(ShaderType_Phase, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);
         break;
       }
 
-      case 2:
+      case ShaderType_Mixed:
       {
         //const float GradMag = GradientMagnitude(Pe, volumedata.gradientVolumeTexture[ch]) * (1.0/volumedata.intensityMax[ch]);
         float GradMag = length(gradient);
@@ -1124,6 +1125,10 @@ void main()
 }
 `;
 
+// Must match values in shader code above.
+const ShaderType_Brdf = 0;
+const ShaderType_Phase = 1;
+const ShaderType_Mixed = 2;
 
 export function pathTracingUniforms() {
   return {
@@ -1143,7 +1148,7 @@ export function pathTracingUniforms() {
     gStepSizeShadow: { type: "f", value: 1.0 },
     gInvAaBbMax: { type: "v3", value: new THREE.Vector3() },
     g_nChannels: { type: "i", value: 0 },
-    gShadingType: { type: "i", value: 2 },
+    gShadingType: { type: "i", value: ShaderType_Brdf },
     gGradientDeltaX: { type: "v3", value: new THREE.Vector3(0.01, 0, 0) },
     gGradientDeltaY: { type: "v3", value: new THREE.Vector3(0, 0.01, 0) },
     gGradientDeltaZ: { type: "v3", value: new THREE.Vector3(0, 0, 0.01) },
