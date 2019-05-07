@@ -298,7 +298,7 @@ export function rayMarchingShaderUniforms() {
     },
     'DENSITY': {
         type: 'f',
-        value: 0.0
+        value: 1.0
     },
     'GAMMA_MIN': {
         type: 'f',
