@@ -967,14 +967,19 @@ bool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)
 
   // sigmaT = sigmaA + sigmaS = absorption coeff + scattering coeff = extinction coeff
 
-  // Beer-Lambert law: transmittance T(t) = exp(-sigmaT*t)
+  // Beer-Lambert law: transmittance T(t) = exp(-sigmaT*t)  where t is a distance!
+
   // importance sampling the exponential function to produce a free path distance S
   // the PDF is p(t) = sigmaT * exp(-sigmaT * t)
+  // In a homogeneous volume, 
   // S is the free-path distance = -ln(1-zeta)/sigmaT where zeta is a random variable
-  // density scale 0... S --> 0..inf.  Low density means randomly sized ray paths
-  // density scale inf... S --> 0.   High density means short ray paths!
+  // density scale = 0   => S --> 0..inf.  Low density means randomly sized ray paths
+  // density scale = inf => S --> 0.       High density means short ray paths!
   
   // note that ln(x:0..1) is negative
+
+  // here gDensityScale represents sigmaMax, a majorant of sigmaT
+  // it is a parameter that should be set as close to the max extinction coefficient as possible.
   float S	= -log(rand(seed)) / gDensityScale;  
   
   float Sum		= 0.0f;
@@ -991,6 +996,7 @@ bool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)
   {
     Ps = rayAt(R, MinT);  // R.m_O + MinT * R.m_D;
 
+    // if we exit the volume with no scattering
     if (MinT > MaxT)
       return false;
     
@@ -1001,7 +1007,9 @@ bool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)
     MinT += gStepSize;
   }
 
+  // at this time, MinT - original MinT is the T transmission distance before a scatter event.
   // Ps is the point
+  
   return true;
 }
 

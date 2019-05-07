@@ -474,6 +474,7 @@ export class View3d {
    */
   updateDensity(volume, density) {
     if (this.image) {
+      // rescale to 0..1 
       this.image.setDensity(density / 100.0);
     }
     this.redraw();
