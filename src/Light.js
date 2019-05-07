@@ -18,7 +18,8 @@ export class Light {
         this.m_colorTop = new THREE.Vector3(1,1,1);
         this.m_colorMiddle = new THREE.Vector3(1,1,1);
         this.m_colorBottom = new THREE.Vector3(1,1,1);
-        this.m_T = type; // sky light
+        // type = 1 for sky light, 0 for area light
+        this.m_T = type;
 
         // secondary properties:
         this.m_N = new THREE.Vector3(0,0,1);
