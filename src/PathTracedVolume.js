@@ -569,14 +569,19 @@ export default class PathTracedVolume {
             }
           }
           if (this.maskChannelIndex !== -1 && this.maskAlpha < 1.0) {
+            const maskChannel =this.volume.getChannel(this.maskChannelIndex);
+            //const maskMax = maskChannel.getHistogram().dataMax;
             let maskVal = 1.0;
-            const maskAlpha = this.maskAlpha * this.maskAlpha * this.maskAlpha * this.maskAlpha;
+            const maskAlpha = this.maskAlpha;
             for (var iz = 0; iz < sz; ++iz) {
               for (var iy = 0; iy < sy; ++iy) {
                 for (var ix = 0; ix < sx; ++ix) {
+                  // nonbinary masking
+                  //maskVal = maskChannel.getIntensity(ix,iy,iz) * maskAlpha / maskMax;
+
                   // binary masking
-                  maskVal = this.volume.getChannel(this.maskChannelIndex).getIntensity(ix,iy,iz) > 0 ? 1.0 : 0.0;
-                  maskVal = maskVal * (1-maskAlpha) + 1.0 * maskAlpha;
+                  maskVal = maskChannel.getIntensity(ix,iy,iz) > 0 ? 1.0 : maskAlpha;
+
                   data[i + ix*4 + iy*4*sx + iz*4*sx*sy] *= maskVal;
                 }
               }
