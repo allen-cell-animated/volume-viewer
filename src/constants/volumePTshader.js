@@ -123,12 +123,14 @@ vec3 XYZtoRGB(vec3 xyz) {
   );
 }
 
+// Used to convert from linear RGB to XYZ space
+const mat3 RGB_2_XYZ = (mat3(
+  0.4124564, 0.3575761, 0.1804375,
+  0.2126729, 0.7151522, 0.0721750,
+  0.0193339, 0.1191920, 0.9503041
+));
 vec3 RGBtoXYZ(vec3 rgb) {
-  return vec3(
-    0.412453f*rgb[0] + 0.357580f*rgb[1] + 0.180423f*rgb[2],
-    0.212671f*rgb[0] + 0.715160f*rgb[1] + 0.072169f*rgb[2],
-    0.019334f*rgb[0] + 0.119193f*rgb[1] + 0.950227f*rgb[2]
-  );
+  return rgb * RGB_2_XYZ;
 }
 
 vec3 getUniformSphereSample(in vec2 U)

@@ -182,12 +182,15 @@ export default class PathTracedVolume {
               'in vec2 vUv;',
               'out vec4 out_FragColor;',
       
+              // Used to convert from XYZ to linear RGB space
+              'const mat3 XYZ_2_RGB = (mat3(',
+              '  3.2404542, -1.5371385, -0.4985314,',
+              ' -0.9692660,  1.8760108,  0.0415560,',
+              '  0.0556434, -0.2040259,  1.0572252',
+              '));',
+
               'vec3 XYZtoRGB(vec3 xyz) {',
-                'return vec3(',
-                  '3.240479f*xyz[0] - 1.537150f*xyz[1] - 0.498535f*xyz[2],',
-                  '-0.969256f*xyz[0] + 1.875991f*xyz[1] + 0.041556f*xyz[2],',
-                  '0.055648f*xyz[0] - 0.204043f*xyz[1] + 1.057311f*xyz[2]',
-                ');',
+                'return xyz * XYZ_2_RGB;',
               '}',
       
               'void main()',
