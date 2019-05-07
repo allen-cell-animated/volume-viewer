@@ -475,7 +475,6 @@ var TrackballControls = function ( object, domElement ) {
 
     if ( _state === STATE.ROTATE && ! _this.noRotate ) {
 
-      _movePrev.copy( _moveCurr );
       _moveCurr.copy( getMouseOnCircle( event.pageX, event.pageY ) );
 
     } else if ( _state === STATE.ZOOM && ! _this.noZoom ) {
