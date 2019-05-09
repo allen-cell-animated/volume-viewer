@@ -20,7 +20,7 @@ view3D.resize(null, 600, 600);
 const myState = {
     file: "",
     volume: null,
-    density: 4.0,
+    density: 12.5,
     maskAlpha: 1.0,
     exposure: 0.75,
     aperture: 0.0,
@@ -92,7 +92,7 @@ function setupGui() {
     //gui = new dat.GUI({autoPlace:false, width:200});
 
     gui.add(myState, "density").max(100.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateDensity(myState.volume, value);
+        view3D.updateDensity(myState.volume, value/100.0);
     });
     gui.add(myState, "maskAlpha").max(1.0).min(0.0).step(0.001).onChange(function (value) {
         view3D.updateMaskAlpha(myState.volume, value);
@@ -409,7 +409,7 @@ function loadImageData(jsondata, volumedata) {
             view3D.updateActiveChannels(vol);
             view3D.updateLuts(vol);
             view3D.updateLights(myState.lights);
-            view3D.updateDensity(vol, myState.density);
+            view3D.updateDensity(vol, myState.density/100.0);
             view3D.updateExposure(myState.exposure);
         }
     }
@@ -432,7 +432,7 @@ function loadImageData(jsondata, volumedata) {
                 view3D.updateActiveChannels(vol);
                 view3D.updateLuts(vol);
                 view3D.updateLights(myState.lights);
-                view3D.updateDensity(vol, myState.density);
+                view3D.updateDensity(vol, myState.density/100.0);
                 view3D.updateExposure(myState.exposure);
 
                 // apply a volume transform from an external source:

@@ -470,12 +470,11 @@ export class View3d {
   /**
    * Set the volume scattering density
    * @param {Object} volume 
-   * @param {number} density 0..100 UI slider value
+   * @param {number} density 0..1 UI slider value
    */
   updateDensity(volume, density) {
     if (this.image) {
-      // rescale to 0..1 
-      this.image.setDensity(density / 100.0);
+      this.image.setDensity(density);
     }
     this.redraw();
   };
