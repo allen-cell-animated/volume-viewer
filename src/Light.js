@@ -5,8 +5,8 @@ export class Light {
 
     // type = 1 for sky light, 0 for area light
     constructor(type) {
-        this.m_theta = 3.14159265/4.0;
-        this.m_phi = 0.0;
+        this.m_theta = 14*3.14159265/180.0;
+        this.m_phi = 36*3.14159265/180.0;
         this.m_width = 1.0;
         this.m_height = 1.0;
         this.m_distance = 4.0;
@@ -14,10 +14,11 @@ export class Light {
         this.m_P = new THREE.Vector3();
         this.m_target = new THREE.Vector3();
         this.m_area = 1.0;
-        this.m_color = new THREE.Vector3(10,10,10);
-        this.m_colorTop = new THREE.Vector3(1,1,1);
-        this.m_colorMiddle = new THREE.Vector3(2,2,2);
-        this.m_colorBottom = new THREE.Vector3(1,1,1);
+        this.m_color = new THREE.Vector3(75, 75, 75);
+        this.m_colorTop = new THREE.Vector3(0.3, 0.3, 0.3);
+        this.m_colorMiddle = new THREE.Vector3(0.3, 0.3, 0.3);
+        this.m_colorBottom = new THREE.Vector3(0.3, 0.3, 0.3);
+
         // type = 1 for sky light, 0 for area light
         this.m_T = type;
 
