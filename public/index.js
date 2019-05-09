@@ -415,7 +415,7 @@ function loadImageData(jsondata, volumedata) {
     }
     else {
         VolumeLoader.loadVolumeAtlasData(vol, jsondata.images, (url, channelIndex) => {
-            vol.channels[channelIndex].lutGenerator_auto2();
+            vol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
 
             if (vol.loaded) {
                 view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
