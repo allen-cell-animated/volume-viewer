@@ -20,6 +20,10 @@ export default class VolumeDrawable {
 
     this.maskAlpha = 1.0;
 
+    this.gammaMin = 0.0;
+    this.gammaLevel = 1.0;
+    this.gammaMax = 1.0;
+
     this.channel_colors = this.volume.channel_colors_default.slice();
 
     this.channelOptions = new Array(this.volume.num_channels).fill({});
@@ -221,7 +225,10 @@ export default class VolumeDrawable {
   // @param {number} glevel 0..1
   // @param {number} gmax 0..1, should be > gmin
   setGamma(gmin, glevel, gmax) {
-    !this.PT && this.rayMarchedAtlasVolume.setGamma(gmin, glevel, gmax);
+    this.gammaMin = gmin;
+    this.gammaLevel = glevel;
+    this.gammaMax = gmax;
+    this.volumeRendering.setGamma(gmin, glevel, gmax)
   }
 
   setMaxProjectMode(isMaxProject) {
@@ -515,6 +522,7 @@ export default class VolumeDrawable {
     this.setScale(this.volume.scale);
     this.setBrightness(this.getBrightness());
     this.setDensity(this.getDensity());
+    this.setGamma(this.gammaMin, this.gammaLevel, this.gammaMax);
 
     // add new 3d object to scene
     !this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());

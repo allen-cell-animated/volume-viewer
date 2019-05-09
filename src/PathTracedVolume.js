@@ -420,6 +420,9 @@ export default class PathTracedVolume {
 
     }
 
+    setGamma(gmin, glevel, gmax) {
+    }
+
     setResolution(x, y) {
         this.fullTargetResolution = new THREE.Vector2(x, y);
         const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
