@@ -29,17 +29,17 @@ const myState = {
 
     lights: [new Light(SKY_LIGHT), new Light(AREA_LIGHT)],
 
-    skyTopIntensity: 0.5,
-    skyMidIntensity: 1.25,
-    skyBotIntensity: 0.5,
+    skyTopIntensity: 0.3,
+    skyMidIntensity: 0.3,
+    skyBotIntensity: 0.3,
     skyTopColor: [255, 255, 255],
     skyMidColor: [255, 255, 255],
     skyBotColor: [255, 255, 255],
 
     lightColor: [255, 255, 255],
-    lightIntensity: 50.0,
-    lightTheta: 0.0,
-    lightPhi: 0.0,
+    lightIntensity: 75.0,
+    lightTheta: 14,//deg
+    lightPhi: 36,//deg
 
     xmin: 0.0,
     ymin: 0.0,
@@ -57,6 +57,33 @@ const myState = {
     isAligned: true
 
 };
+
+function initLights() {
+    myState.lights[0].m_colorTop = new THREE.Vector3(
+        myState.skyTopColor[0]/255.0*myState.skyTopIntensity,
+        myState.skyTopColor[1]/255.0*myState.skyTopIntensity,
+        myState.skyTopColor[2]/255.0*myState.skyTopIntensity
+    );
+    myState.lights[0].m_colorMiddle = new THREE.Vector3(
+        myState.skyMidColor[0]/255.0*myState.skyMidIntensity,
+        myState.skyMidColor[1]/255.0*myState.skyMidIntensity,
+        myState.skyMidColor[2]/255.0*myState.skyMidIntensity
+    );
+    myState.lights[0].m_colorBottom = new THREE.Vector3(
+        myState.skyBotColor[0]/255.0*myState.skyBotIntensity,
+        myState.skyBotColor[1]/255.0*myState.skyBotIntensity,
+        myState.skyBotColor[2]/255.0*myState.skyBotIntensity
+    );
+    myState.lights[1].m_theta = myState.lightTheta * 3.14159265 / 180.0;
+    myState.lights[1].m_phi = myState.lightPhi * 3.14159265 / 180.0;
+    myState.lights[1].m_color = new THREE.Vector3(
+        myState.lightColor[0]/255.0*myState.lightIntensity,
+        myState.lightColor[1]/255.0*myState.lightIntensity,
+        myState.lightColor[2]/255.0*myState.lightIntensity
+    );
+    view3D.updateLights(myState.lights);
+}
+
 let gui = null;
 
 function setupGui() {
@@ -189,6 +216,8 @@ function setupGui() {
         );
         view3D.updateLights(myState.lights);
     });
+
+    initLights();
 }
 
 dat.GUI.prototype.removeFolder = function (name) {
