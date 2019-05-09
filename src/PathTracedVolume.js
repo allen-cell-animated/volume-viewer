@@ -192,7 +192,7 @@ export default class PathTracedVolume {
               'vec3 XYZtoRGB(vec3 xyz) {',
                 'return xyz * XYZ_2_RGB;',
               '}',
-      
+
               'void main()',
               '{',
                 'vec4 pixelColor = texture(tTexture0, vUv);',
@@ -202,7 +202,7 @@ export default class PathTracedVolume {
                 //'pixelColor.rgb = pow(pixelColor.rgb, vec3(1.0/2.2));',
                 'pixelColor.rgb = 1.0-exp(-pixelColor.rgb*gInvExposure);',
                 'pixelColor = clamp(pixelColor, 0.0, 1.0);',
-      
+
                 'out_FragColor = pixelColor;', // sqrt(pixelColor);',
                 //'out_FragColor = pow(pixelColor, vec4(1.0/2.2));',
               '}'
@@ -635,6 +635,10 @@ export default class PathTracedVolume {
       }
     
       updateExposure(e) {
+        // 1.0 causes division by zero.
+        if (e > 0.99999) {
+          e = 0.99999;
+        }
         this.screenOutputMaterial.uniforms.gInvExposure.value = (1.0/(1.0-e)) - 1.0;
         this.screenOutputDenoiseMaterial.uniforms.gInvExposure.value = (1.0/(1.0-e)) - 1.0;
         this.sampleCounter = 0.0;
