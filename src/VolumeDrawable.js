@@ -524,6 +524,11 @@ export default class VolumeDrawable {
     this.setDensity(this.getDensity());
     this.setGamma(this.gammaMin, this.gammaLevel, this.gammaMax);
 
+    // reset clip bounds
+    this.setAxisClip('x', this.bounds.bmin.x, this.bounds.bmax.x);
+    this.setAxisClip('y', this.bounds.bmin.y, this.bounds.bmax.y);
+    this.setAxisClip('z', this.bounds.bmin.z, this.bounds.bmax.z);
+
     // add new 3d object to scene
     !this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());
     this.sceneRoot.add(this.volumeRendering.get3dObject());
