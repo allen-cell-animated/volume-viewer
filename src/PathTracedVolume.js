@@ -521,6 +521,10 @@ export default class PathTracedVolume {
         this.sampleCounter = 0.0;
     }
     
+    viewpointMoved() {
+      this.sampleCounter = 0.0;
+    }
+
     updateActiveChannels(image) {
         var ch = [-1, -1, -1, -1];
         var activeChannel = 0;
@@ -648,9 +652,6 @@ export default class PathTracedVolume {
         this.pathTracingUniforms.gCamera.value.m_apertureSize = apertureSize;
         this.pathTracingUniforms.gCamera.value.m_focalDistance = focalDistance;
         
-        const cam = this.canvas3d.perspectiveCamera;
-        cam.fov = fov;
-    
         this.sampleCounter = 0.0;
       }
     
@@ -701,13 +702,6 @@ export default class PathTracedVolume {
             ymax*PhysicalSize.y - 0.5 * PhysicalSize.y, 
             zmax*PhysicalSize.z - 0.5 * PhysicalSize.z
         );
-        this.sampleCounter = 0.0;
-      }
-
-      updateCamera(fov, focalDistance, apertureSize) {
-        this.pathTracingUniforms.gCamera.value.m_apertureSize = apertureSize;
-        this.pathTracingUniforms.gCamera.value.m_focalDistance = focalDistance;
-    
         this.sampleCounter = 0.0;
       }
 };

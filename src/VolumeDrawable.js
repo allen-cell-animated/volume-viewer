@@ -466,6 +466,10 @@ export default class VolumeDrawable {
     this.PT && this.pathTracedVolume.onEndControls();
   }
 
+  onResetCamera() {
+    this.volumeRendering.viewpointMoved();
+  }
+
   onCameraChanged(fov, focalDistance, apertureSize) {
     this.PT && this.pathTracedVolume.updateCamera(fov, focalDistance, apertureSize);
   }
