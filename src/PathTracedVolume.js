@@ -44,6 +44,7 @@ export default class PathTracedVolume {
             // empty array
             var lutData = new Uint8Array(256).fill(1);
             const lut0 = new THREE.DataTexture(lutData, 256, 1, THREE.RedFormat, THREE.UnsignedByteType);
+            lut0.minFilter = lut0.magFilter = THREE.LinearFilter;
             lut0.needsUpdate = true;
             this.pathTracingUniforms.g_lutTexture.value[i] = lut0;
         }
@@ -181,14 +182,17 @@ export default class PathTracedVolume {
               'in vec2 vUv;',
               'out vec4 out_FragColor;',
       
+              // Used to convert from XYZ to linear RGB space
+              'const mat3 XYZ_2_RGB = (mat3(',
+              '  3.2404542, -1.5371385, -0.4985314,',
+              ' -0.9692660,  1.8760108,  0.0415560,',
+              '  0.0556434, -0.2040259,  1.0572252',
+              '));',
+
               'vec3 XYZtoRGB(vec3 xyz) {',
-                'return vec3(',
-                  '3.240479f*xyz[0] - 1.537150f*xyz[1] - 0.498535f*xyz[2],',
-                  '-0.969256f*xyz[0] + 1.875991f*xyz[1] + 0.041556f*xyz[2],',
-                  '0.055648f*xyz[0] - 0.204043f*xyz[1] + 1.057311f*xyz[2]',
-                ');',
+                'return xyz * XYZ_2_RGB;',
               '}',
-      
+
               'void main()',
               '{',
                 'vec4 pixelColor = texture(tTexture0, vUv);',
@@ -198,7 +202,7 @@ export default class PathTracedVolume {
                 //'pixelColor.rgb = pow(pixelColor.rgb, vec3(1.0/2.2));',
                 'pixelColor.rgb = 1.0-exp(-pixelColor.rgb*gInvExposure);',
                 'pixelColor = clamp(pixelColor, 0.0, 1.0);',
-      
+
                 'out_FragColor = pixelColor;', // sqrt(pixelColor);',
                 //'out_FragColor = pow(pixelColor, vec4(1.0/2.2));',
               '}'
@@ -339,7 +343,7 @@ export default class PathTracedVolume {
         this.pathTracingUniforms.gCamera.value.m_V.crossVectors(this.pathTracingUniforms.gCamera.value.m_U, this.pathTracingUniforms.gCamera.value.m_N).normalize();
 
         // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
-        const Scale = (cam.isOrthographicCamera) ? canvas.orthoScale : Math.tan((0.5 * cam.fov * 3.14159265 / 180.0));
+        const Scale = (cam.isOrthographicCamera) ? canvas.orthoScale : Math.tan((0.5 * cam.fov * Math.PI / 180.0));
 
         const aspect = this.pathTracingUniforms.uResolution.value.x / this.pathTracingUniforms.uResolution.value.y;
         this.pathTracingUniforms.gCamera.value.m_screen.set(
@@ -416,10 +420,14 @@ export default class PathTracedVolume {
 
     }
 
+    setGamma(gmin, glevel, gmax) {
+    }
+
     setResolution(x, y) {
         this.fullTargetResolution = new THREE.Vector2(x, y);
-        const nx = Math.floor(x * this.pixelSamplingRate);
-        const ny = Math.floor(y * this.pixelSamplingRate);
+        const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
+        const nx = Math.floor(x * this.pixelSamplingRate / dpr);
+        const ny = Math.floor(y * this.pixelSamplingRate / dpr);
         this.pathTracingUniforms.uResolution.value.x = nx;
         this.pathTracingUniforms.uResolution.value.y = ny;
 
@@ -441,7 +449,7 @@ export default class PathTracedVolume {
     }
 
     setDensity(density) {
-        this.pathTracingUniforms.gDensityScale.value = density * 100.0;
+        this.pathTracingUniforms.gDensityScale.value = density * 150.0;
         this.sampleCounter = 0;
     }
 
@@ -513,6 +521,10 @@ export default class PathTracedVolume {
         this.sampleCounter = 0.0;
     }
     
+    viewpointMoved() {
+      this.sampleCounter = 0.0;
+    }
+
     updateActiveChannels(image) {
         var ch = [-1, -1, -1, -1];
         var activeChannel = 0;
@@ -564,14 +576,19 @@ export default class PathTracedVolume {
             }
           }
           if (this.maskChannelIndex !== -1 && this.maskAlpha < 1.0) {
+            const maskChannel =this.volume.getChannel(this.maskChannelIndex);
+            //const maskMax = maskChannel.getHistogram().dataMax;
             let maskVal = 1.0;
-            const maskAlpha = this.maskAlpha * this.maskAlpha * this.maskAlpha * this.maskAlpha;
+            const maskAlpha = this.maskAlpha;
             for (var iz = 0; iz < sz; ++iz) {
               for (var iy = 0; iy < sy; ++iy) {
                 for (var ix = 0; ix < sx; ++ix) {
+                  // nonbinary masking
+                  //maskVal = maskChannel.getIntensity(ix,iy,iz) * maskAlpha / maskMax;
+
                   // binary masking
-                  maskVal = this.volume.getChannel(this.maskChannelIndex).getIntensity(ix,iy,iz) > 0 ? 1.0 : 0.0;
-                  maskVal = maskVal * (1-maskAlpha) + 1.0 * maskAlpha;
+                  maskVal = maskChannel.getIntensity(ix,iy,iz) > 0 ? 1.0 : maskAlpha;
+
                   data[i + ix*4 + iy*4*sx + iz*4*sx*sy] *= maskVal;
                 }
               }
@@ -585,10 +602,12 @@ export default class PathTracedVolume {
     
       updateLuts() {
         for (let i = 0; i < this.pathTracingUniforms.g_nChannels.value; ++i) {
-          this.pathTracingUniforms.g_lutTexture.value[i].image.data.set(this.volume.channels[this.viewChannels[i]].lut);
+          const channel = this.viewChannels[i];
+          this.pathTracingUniforms.g_lutTexture.value[i].image.data.set(this.volume.channels[channel].lut);
           this.pathTracingUniforms.g_lutTexture.value[i].needsUpdate = true;  
     
-          this.pathTracingUniforms.g_intensityMax.value.setComponent(i, this.volume.channels[this.viewChannels[i]].histogram.dataMax / 255.0);
+          this.pathTracingUniforms.g_intensityMax.value.setComponent(i, this.volume.channels[channel].histogram.dataMax / 255.0);
+          this.pathTracingUniforms.g_intensityMin.value.setComponent(i, this.volume.channels[channel].histogram.dataMin / 255.0);
     
         }
     
@@ -620,6 +639,10 @@ export default class PathTracedVolume {
       }
     
       updateExposure(e) {
+        // 1.0 causes division by zero.
+        if (e > 0.99999) {
+          e = 0.99999;
+        }
         this.screenOutputMaterial.uniforms.gInvExposure.value = (1.0/(1.0-e)) - 1.0;
         this.screenOutputDenoiseMaterial.uniforms.gInvExposure.value = (1.0/(1.0-e)) - 1.0;
         this.sampleCounter = 0.0;
@@ -629,9 +652,6 @@ export default class PathTracedVolume {
         this.pathTracingUniforms.gCamera.value.m_apertureSize = apertureSize;
         this.pathTracingUniforms.gCamera.value.m_focalDistance = focalDistance;
         
-        const cam = this.canvas3d.perspectiveCamera;
-        cam.fov = fov;
-    
         this.sampleCounter = 0.0;
       }
     
@@ -682,13 +702,6 @@ export default class PathTracedVolume {
             ymax*PhysicalSize.y - 0.5 * PhysicalSize.y, 
             zmax*PhysicalSize.z - 0.5 * PhysicalSize.z
         );
-        this.sampleCounter = 0.0;
-      }
-
-      updateCamera(fov, focalDistance, apertureSize) {
-        this.pathTracingUniforms.gCamera.value.m_apertureSize = apertureSize;
-        this.pathTracingUniforms.gCamera.value.m_focalDistance = focalDistance;
-    
         this.sampleCounter = 0.0;
       }
 };

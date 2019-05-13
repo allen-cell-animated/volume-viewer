@@ -470,11 +470,11 @@ export class View3d {
   /**
    * Set the volume scattering density
    * @param {Object} volume 
-   * @param {number} density 0..100 UI slider value
+   * @param {number} density 0..1 UI slider value
    */
   updateDensity(volume, density) {
     if (this.image) {
-      this.image.setDensity(density / 100.0);
+      this.image.setDensity(density);
     }
     this.redraw();
   };
@@ -482,7 +482,7 @@ export class View3d {
   /**
    * Set the shading method - applies to pathtraced render mode only
    * @param {Object} volume 
-   * @param {number} isbrdf true for brdf model, false for isotropic phase function model
+   * @param {number} isbrdf 0: brdf, 1: isotropic phase function, 2: mixed
    */
   updateShadingMethod(volume, isbrdf) {
     if (this.image) {
@@ -749,5 +749,8 @@ export class View3d {
    */
   resetCamera() {
     this.canvas3d.resetCamera();
+    if (this.image) {
+      this.image.onResetCamera();
+    }
   }
 };

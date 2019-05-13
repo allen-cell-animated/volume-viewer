@@ -8,18 +8,18 @@ const CleanWebpackPlugin = require('clean-webpack-plugin');
 module.exports = {
     entry: ['babel-polyfill', './public/index.js'],
     output: {
-        path: path.resolve(__dirname, 'imageviewer'),
-        filename: 'image-viewer-ui.bundle.js',
-        publicPath: '/imageviewer/'
+        path: path.resolve(__dirname, 'volumeviewer'),
+        filename: 'volume-viewer-ui.bundle.js',
+        publicPath: '/volumeviewer/'
     },
     devtool: 'cheap-module-source-map',
     devServer: {
-        publicPath: '/imageviewer/',
-        openPage: 'imageviewer/',
+        publicPath: '/volumeviewer/',
+        openPage: 'volumeviewer/',
         port: 9020
     },
     plugins: [
-        new CleanWebpackPlugin(['imageviewer']),
+        new CleanWebpackPlugin(['volumeviewer']),
         new HtmlWebpackPlugin({
             template: './public/index.html'
         }),

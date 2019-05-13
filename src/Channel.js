@@ -182,4 +182,12 @@ export default class Channel {
     const lut = this.histogram.lutGenerator_equalize();
     this.setLut(lut.lut);
   }
+
+  lutGenerator_percentiles(lo, hi) {
+    if (!this.loaded) {
+      return;
+    }
+    const lut = this.histogram.lutGenerator_percentiles(lo, hi);
+    this.setLut(lut.lut);
+  }
 };

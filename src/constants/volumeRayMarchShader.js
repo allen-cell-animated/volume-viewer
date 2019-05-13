@@ -57,7 +57,8 @@ export const rayMarchingFragmentShaderSrc = [
     '}',
 
     'vec4 luma2Alpha(vec4 color, float vmin, float vmax, float C){',
-    '  float x = max(color[2], max(color[0],color[1]));',
+    '  float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));',
+    //'  float x = max(color[2], max(color[0],color[1]));',
     '  float xi = (x-vmin)/(vmax-vmin);',
     '  xi = clamp(xi,0.0,1.0);',
     '  float y = pow(xi,C);',
@@ -297,7 +298,7 @@ export function rayMarchingShaderUniforms() {
     },
     'DENSITY': {
         type: 'f',
-        value: 0.0
+        value: 1.0
     },
     'GAMMA_MIN': {
         type: 'f',

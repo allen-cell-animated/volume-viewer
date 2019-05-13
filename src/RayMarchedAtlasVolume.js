@@ -135,7 +135,7 @@ export default class RayMarchedAtlasVolume {
 
     // TODO brightness and exposure should be the same thing?
     setBrightness(brightness) {
-        this.setUniform("BRIGHTNESS", brightness + 1.0);
+        this.setUniform("BRIGHTNESS", brightness * 2.0);
     }
     
     setIsOrtho(isOrthoAxis) {
@@ -145,6 +145,9 @@ export default class RayMarchedAtlasVolume {
         }
     }
 
+    viewpointMoved() {
+    }
+  
     setGamma(gmin, glevel, gmax) {
         this.setUniform('GAMMA_MIN', gmin);
         this.setUniform('GAMMA_MAX', gmax);

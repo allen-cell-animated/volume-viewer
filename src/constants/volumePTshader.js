@@ -32,6 +32,7 @@ const vec3 BLACK = vec3(0,0,0);
 const vec3 WHITE = vec3(1.0,1.0,1.0);
 const int ShaderType_Brdf = 0;
 const int ShaderType_Phase = 1;
+const int ShaderType_Mixed = 2;
 const float MAX_RAY_LEN = 1500000.0f;
 
 in vec2 vUv;
@@ -123,12 +124,14 @@ vec3 XYZtoRGB(vec3 xyz) {
   );
 }
 
+// Used to convert from linear RGB to XYZ space
+const mat3 RGB_2_XYZ = (mat3(
+  0.4124564, 0.3575761, 0.1804375,
+  0.2126729, 0.7151522, 0.0721750,
+  0.0193339, 0.1191920, 0.9503041
+));
 vec3 RGBtoXYZ(vec3 rgb) {
-  return vec3(
-    0.412453f*rgb[0] + 0.357580f*rgb[1] + 0.180423f*rgb[2],
-    0.212671f*rgb[0] + 0.715160f*rgb[1] + 0.072169f*rgb[2],
-    0.019334f*rgb[0] + 0.119193f*rgb[1] + 0.950227f*rgb[2]
-  );
+  return rgb * RGB_2_XYZ;
 }
 
 vec3 getUniformSphereSample(in vec2 U)
@@ -268,8 +271,8 @@ bool IntersectBox(in Ray R, out float pNearT, out float pFarT)
 }
 
 // assume volume is centered at 0,0,0 so p spans -bounds to + bounds
+// transform p to range from 0,0,0 to 1,1,1 for volume texture sampling.
 vec3 PtoVolumeTex(vec3 p) {
-  //return (p-gClippedAaBbMin)*gInvAaBbMax;
   return p*gInvAaBbMax + vec3(0.5, 0.5, 0.5);
 }
 
@@ -284,10 +287,10 @@ float GetNormalizedIntensityMax4ch(in vec3 P, out int ch)
   ch = 0;
 
   //intensity = (intensity - g_intensityMin) / (g_intensityMax - g_intensityMin);
-  intensity.x = texture(g_lutTexture[0], vec2(intensity.x, 0.5)).x;
-  intensity.y = texture(g_lutTexture[1], vec2(intensity.y, 0.5)).x;
-  intensity.z = texture(g_lutTexture[2], vec2(intensity.z, 0.5)).x;
-  intensity.w = texture(g_lutTexture[3], vec2(intensity.w, 0.5)).x;
+  intensity.x = texture(g_lutTexture[0], vec2(intensity.x, 0.5)).x / 255.0;
+  intensity.y = texture(g_lutTexture[1], vec2(intensity.y, 0.5)).x / 255.0;
+  intensity.z = texture(g_lutTexture[2], vec2(intensity.z, 0.5)).x / 255.0;
+  intensity.w = texture(g_lutTexture[3], vec2(intensity.w, 0.5)).x / 255.0;
 
   for (int i = 0; i < min(g_nChannels, 4); ++i) {
     if (intensity[i] > maxIn) {
@@ -295,6 +298,7 @@ float GetNormalizedIntensityMax4ch(in vec3 P, out int ch)
       ch = i;
     }
   }
+
   return maxIn;
 }
 
@@ -963,14 +967,19 @@ bool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)
 
   // sigmaT = sigmaA + sigmaS = absorption coeff + scattering coeff = extinction coeff
 
-  // Beer-Lambert law: transmittance T(t) = exp(-sigmaT*t)
+  // Beer-Lambert law: transmittance T(t) = exp(-sigmaT*t)  where t is a distance!
+
   // importance sampling the exponential function to produce a free path distance S
   // the PDF is p(t) = sigmaT * exp(-sigmaT * t)
+  // In a homogeneous volume, 
   // S is the free-path distance = -ln(1-zeta)/sigmaT where zeta is a random variable
-  // density scale 0... S --> 0..inf.  Low density means randomly sized ray paths
-  // density scale inf... S --> 0.   High density means short ray paths!
+  // density scale = 0   => S --> 0..inf.  Low density means randomly sized ray paths
+  // density scale = inf => S --> 0.       High density means short ray paths!
   
   // note that ln(x:0..1) is negative
+
+  // here gDensityScale represents sigmaMax, a majorant of sigmaT
+  // it is a parameter that should be set as close to the max extinction coefficient as possible.
   float S	= -log(rand(seed)) / gDensityScale;  
   
   float Sum		= 0.0f;
@@ -987,6 +996,7 @@ bool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)
   {
     Ps = rayAt(R, MinT);  // R.m_O + MinT * R.m_D;
 
+    // if we exit the volume with no scattering
     if (MinT > MaxT)
       return false;
     
@@ -997,7 +1007,9 @@ bool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)
     MinT += gStepSize;
   }
 
+  // at this time, MinT - original MinT is the T transmission distance before a scatter event.
   // Ps is the point
+  
   return true;
 }
 
@@ -1048,19 +1060,19 @@ vec4 CalculateRadiance(inout uvec2 seed) {
     // send ray out from Pe toward light
     switch (gShadingType)
     {
-      case 0:
+      case ShaderType_Brdf:
       {
         Lv += UniformSampleOneLight(ShaderType_Brdf, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);
         break;
       }
-    
-      case 1:
+
+      case ShaderType_Phase:
       {
         Lv += 0.5f * UniformSampleOneLight(ShaderType_Phase, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);
         break;
       }
 
-      case 2:
+      case ShaderType_Mixed:
       {
         //const float GradMag = GradientMagnitude(Pe, volumedata.gradientVolumeTexture[ch]) * (1.0/volumedata.intensityMax[ch]);
         float GradMag = length(gradient);
@@ -1121,6 +1133,10 @@ void main()
 }
 `;
 
+// Must match values in shader code above.
+const ShaderType_Brdf = 0;
+const ShaderType_Phase = 1;
+const ShaderType_Mixed = 2;
 
 export function pathTracingUniforms() {
   return {
@@ -1140,7 +1156,7 @@ export function pathTracingUniforms() {
     gStepSizeShadow: { type: "f", value: 1.0 },
     gInvAaBbMax: { type: "v3", value: new THREE.Vector3() },
     g_nChannels: { type: "i", value: 0 },
-    gShadingType: { type: "i", value: 2 },
+    gShadingType: { type: "i", value: ShaderType_Brdf },
     gGradientDeltaX: { type: "v3", value: new THREE.Vector3(0.01, 0, 0) },
     gGradientDeltaY: { type: "v3", value: new THREE.Vector3(0, 0.01, 0) },
     gGradientDeltaZ: { type: "v3", value: new THREE.Vector3(0, 0, 0.01) },
