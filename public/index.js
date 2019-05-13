@@ -74,8 +74,8 @@ function initLights() {
         myState.skyBotColor[1]/255.0*myState.skyBotIntensity,
         myState.skyBotColor[2]/255.0*myState.skyBotIntensity
     );
-    myState.lights[1].m_theta = myState.lightTheta * 3.14159265 / 180.0;
-    myState.lights[1].m_phi = myState.lightPhi * 3.14159265 / 180.0;
+    myState.lights[1].m_theta = myState.lightTheta * Math.PI / 180.0;
+    myState.lights[1].m_phi = myState.lightPhi * Math.PI / 180.0;
     myState.lights[1].m_color = new THREE.Vector3(
         myState.lightColor[0]/255.0*myState.lightIntensity,
         myState.lightColor[1]/255.0*myState.lightIntensity,
@@ -188,11 +188,11 @@ function setupGui() {
         view3D.updateLights(myState.lights);
     });
     lighting.add(myState, "lightTheta").max(180.0).min(-180.0).step(1).onChange(function (value) {
-        myState.lights[1].m_theta = value * 3.14159265 / 180.0;
+        myState.lights[1].m_theta = value * Math.PI / 180.0;
         view3D.updateLights(myState.lights);
     });
     lighting.add(myState, "lightPhi").max(180.0).min(0.0).step(1).onChange(function (value) {
-        myState.lights[1].m_phi = value * 3.14159265 / 180.0;
+        myState.lights[1].m_phi = value * Math.PI / 180.0;
         view3D.updateLights(myState.lights);
     });
     lighting.add(myState.lights[1], "m_width").max(100.0).min(0.01).step(0.1).onChange(function (value) {

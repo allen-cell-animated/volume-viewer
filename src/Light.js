@@ -5,8 +5,8 @@ export class Light {
 
     // type = 1 for sky light, 0 for area light
     constructor(type) {
-        this.m_theta = 14*3.14159265/180.0;
-        this.m_phi = 36*3.14159265/180.0;
+        this.m_theta = 14 * Math.PI / 180.0;
+        this.m_phi = 36 * Math.PI / 180.0;
         this.m_width = 1.0;
         this.m_height = 1.0;
         this.m_distance = 4.0;

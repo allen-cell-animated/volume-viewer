@@ -343,7 +343,7 @@ export default class PathTracedVolume {
         this.pathTracingUniforms.gCamera.value.m_V.crossVectors(this.pathTracingUniforms.gCamera.value.m_U, this.pathTracingUniforms.gCamera.value.m_N).normalize();
 
         // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
-        const Scale = (cam.isOrthographicCamera) ? canvas.orthoScale : Math.tan((0.5 * cam.fov * 3.14159265 / 180.0));
+        const Scale = (cam.isOrthographicCamera) ? canvas.orthoScale : Math.tan((0.5 * cam.fov * Math.PI / 180.0));
 
         const aspect = this.pathTracingUniforms.uResolution.value.x / this.pathTracingUniforms.uResolution.value.y;
         this.pathTracingUniforms.gCamera.value.m_screen.set(
