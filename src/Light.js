@@ -29,7 +29,7 @@ export class Light {
         this.update(new THREE.Vector3(0,0,0));
     }
 
-    update(targetPoint) {
+    update(targetPoint, cameraMatrix) {
         this.m_halfWidth = 0.5 * this.m_width;
         this.m_halfHeight = 0.5 * this.m_height;
         this.m_target.copy(targetPoint);
@@ -41,6 +41,13 @@ export class Light {
   
         this.m_P.add(this.m_target);
   
+        if (cameraMatrix) {
+          // We want to treat the lights as positioned relative to the camera, so camera rotations should not move them.  
+          // In other words, when we rotate the camera, it should seem like we are tumbling the volume under fixed lighting.
+          this.m_P.applyMatrix4(cameraMatrix);
+          this.m_target.applyMatrix4(cameraMatrix);
+        }
+        
         // Determine area
         if (this.m_T === AREA_LIGHT) {
           this.m_area = this.m_width * this.m_height;
