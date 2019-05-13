@@ -749,5 +749,8 @@ export class View3d {
    */
   resetCamera() {
     this.canvas3d.resetCamera();
+    if (this.image) {
+      this.image.onResetCamera();
+    }
   }
 };

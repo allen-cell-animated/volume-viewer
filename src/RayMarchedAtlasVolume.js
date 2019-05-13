@@ -145,6 +145,9 @@ export default class RayMarchedAtlasVolume {
         }
     }
 
+    viewpointMoved() {
+    }
+  
     setGamma(gmin, glevel, gmax) {
         this.setUniform('GAMMA_MIN', gmin);
         this.setUniform('GAMMA_MAX', gmax);
