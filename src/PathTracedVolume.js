@@ -322,6 +322,13 @@ export default class PathTracedVolume {
         canvas.camera.updateMatrixWorld(true);
         const cam = canvas.camera;
 
+        // rotate lights with camera, as if we are tumbling the volume with a fixed camera and world lighting.
+        // this code is analogous to this threejs code from View3d.preRender:
+        // this.scene.getObjectByName('lightContainer').rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
+        const mycamxform = cam.matrixWorld.clone();
+        mycamxform.setPosition(new THREE.Vector3(0,0,0));
+        this.updateLightsSecondary(mycamxform);
+
         let mydir = new THREE.Vector3();
         mydir = cam.getWorldDirection(mydir);
         let myup = new THREE.Vector3().copy(cam.up);
@@ -675,13 +682,13 @@ export default class PathTracedVolume {
     
       }
     
-      updateLightsSecondary() {
+      updateLightsSecondary(cameraMatrix) {
         const PhysicalSize = this.volume.normalizedPhysicalSize;
         const bbctr = new THREE.Vector3(PhysicalSize.x*0.5, PhysicalSize.y*0.5, PhysicalSize.z*0.5);
     
         for (let i = 0; i < 2; ++i) {
           let lt = this.pathTracingUniforms.gLights.value[i];
-          lt.update(bbctr);
+          lt.update(bbctr, cameraMatrix);
         }
     
       }
