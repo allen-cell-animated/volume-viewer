@@ -511,7 +511,9 @@ export default class VolumeDrawable {
       this.rayMarchedAtlasVolume = this.volumeRendering;
 
       for (var i = 0; i < this.volume.num_channels; ++i) {
-        this.rayMarchedAtlasVolume.onChannelData([i]);
+        if (this.volume.getChannel(i).loaded) {
+          this.rayMarchedAtlasVolume.onChannelData([i]);
+        }
       }
     }
 
