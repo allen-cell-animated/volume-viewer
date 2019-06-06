@@ -6,7 +6,7 @@ export class Light {
     // type = 1 for sky light, 0 for area light
     constructor(type) {
         this.m_theta = 14 * Math.PI / 180.0;
-        this.m_phi = 36 * Math.PI / 180.0;
+        this.m_phi = 54 * Math.PI / 180.0;
         this.m_width = 1.0;
         this.m_height = 1.0;
         this.m_distance = 4.0;
@@ -35,9 +35,9 @@ export class Light {
         this.m_target.copy(targetPoint);
   
         // Determine light position
-        this.m_P.x = this.m_distance * Math.cos(this.m_phi) * Math.sin(this.m_theta);
-        this.m_P.z = this.m_distance * Math.cos(this.m_phi) * Math.cos(this.m_theta);
-        this.m_P.y = this.m_distance * Math.sin(this.m_phi);
+        this.m_P.x = this.m_distance * Math.sin(this.m_phi) * Math.sin(this.m_theta);
+        this.m_P.z = this.m_distance * Math.sin(this.m_phi) * Math.cos(this.m_theta);
+        this.m_P.y = this.m_distance * Math.cos(this.m_phi);
   
         this.m_P.add(this.m_target);
   
@@ -64,7 +64,14 @@ export class Light {
 
         // Compute orthogonal basis frame
         this.m_N.subVectors(this.m_target, this.m_P).normalize();
-        this.m_U.crossVectors(this.m_N, new THREE.Vector3(0.0, 1.0, 0.0)).normalize();
+        // if N and "up" are parallel, then just choose a different "up"
+        if (this.m_N.y === 1.0 || this.m_N.y === -1.0) {
+          this.m_U.crossVectors(this.m_N, new THREE.Vector3(1.0, 0.0, 0.0)).normalize();
+        }
+        else {
+          // standard "up" vector
+          this.m_U.crossVectors(this.m_N, new THREE.Vector3(0.0, 1.0, 0.0)).normalize();
+        }
         this.m_V.crossVectors(this.m_N, this.m_U).normalize();
     }
 };

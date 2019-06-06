@@ -39,7 +39,7 @@ const myState = {
     lightColor: [255, 255, 255],
     lightIntensity: 75.0,
     lightTheta: 14,//deg
-    lightPhi: 36,//deg
+    lightPhi: 54,//deg
 
     xmin: 0.0,
     ymin: 0.0,
