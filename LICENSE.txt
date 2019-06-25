@@ -1,5 +1,5 @@
 Allen Institute Software License – This software license is the 2-clause BSD license 
-plus clause a third clause that prohibits redistribution for commercial purposes without further permission.
+plus a third clause that prohibits redistribution for commercial purposes without further permission.
 
 Copyright © 2017. Allen Institute. All rights reserved.
 
