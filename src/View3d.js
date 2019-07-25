@@ -752,5 +752,6 @@ export class View3d {
     if (this.image) {
       this.image.onResetCamera();
     }
+    this.redraw();
   }
 };
