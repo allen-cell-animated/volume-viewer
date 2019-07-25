@@ -8,7 +8,7 @@
 
 /**
  * @typedef {Object} Lut
- * @property {Array.<number>} lut 256 element lookup table as array
+ * @property {Array.<number>} lut 256*4 element lookup table as array (maps scalar intensity to a rgb color plus alpha)
  * @property {Array.<ControlPoint>} controlPoints 
  */
 
@@ -88,21 +88,24 @@ export default class Histogram {
    * @param {number} e 
    */
   lutGenerator_minMax(b, e) {
-    var lut = new Uint8Array(256);
+    var lut = new Uint8Array(256*4);
     let range = e - b;
     if (range < 1) {
       range = 256;
     }
-    for (var x = 0; x < lut.length; ++x) {
-      lut[x] = Math.clamp((x - b) * 256 / range, 0, 255);
+    for (var x = 0; x < lut.length/4; ++x) {
+      lut[x*4+0] = 255;
+      lut[x*4+1] = 255;
+      lut[x*4+2] = 255;
+      lut[x*4+3] = Math.clamp((x - b) * 256 / range, 0, 255);
     }
     return {
       lut: lut,
       controlPoints: [
-        {x:0, opacity:0},
-        {x:b, opacity:0},
-        {x:e, opacity:1},
-        {x:255, opacity:1}
+        {x:0, opacity:0, color:[255,255,255]},
+        {x:b, opacity:0, color:[255,255,255]},
+        {x:e, opacity:1, color:[255,255,255]},
+        {x:255, opacity:1, color:[255,255,255]}
       ]
     };
   }
@@ -115,15 +118,18 @@ export default class Histogram {
     var lut = new Uint8Array(256);
 
     // simple linear mapping for actual range
-    for (var x = 0; x < lut.length; ++x) {
-      lut[x] = x;
+    for (var x = 0; x < lut.length/4; ++x) {
+      lut[x*4+0] = 255;
+      lut[x*4+1] = 255;
+      lut[x*4+2] = 255;
+      lut[x*4+3] = x;
     }
 
     return {
       lut: lut,
       controlPoints: [
-        {x:0, opacity:0},
-        {x:255, opacity:1}
+        {x:0, opacity:0, color:[255,255,255]},
+        {x:255, opacity:1, color:[255,255,255]}
       ]
     };
   }
@@ -285,22 +291,25 @@ export default class Histogram {
 
     var div = map[map.length - 1] - map[0];
     if (div > 0) {
-      var lut = new Uint8Array(256);
+      var lut = new Uint8Array(256*4);
 
       // compute lut as if continuous
-      for (var i = 0; i < lut.length; ++i) {
-        lut[i] = Math.clamp((255)*((map[i]-map[0]) / div), 0, 255);
+      for (var i = 0; i < lut.length/4; ++i) {
+        lut[i*4+0] = 255;
+        lut[i*4+1] = 255;
+        lut[i*4+2] = 255;
+        lut[i*4+3] = Math.clamp((255)*((map[i]-map[0]) / div), 0, 255);
       }
       
       // compute control points piecewise linear.
       const lutControlPoints = [
-        {x:0, opacity:0}
+        {x:0, opacity:0, color:[255,255,255]}
       ];
       // read up to the first nonzero.
       var i = 1;
       for (i = 1; i < map.length; ++i) {
         if (map[i] > 0) {
-          lutControlPoints.push({x:i-1, opacity:0});
+          lutControlPoints.push({x:i-1, opacity:0, color:[255,255,255]});
           break;
         }
       }
@@ -311,12 +320,12 @@ export default class Histogram {
         opac = ((map[j]-map[0]) / div);
         if (j % 8 === 0) {
           if (Math.floor(opac*255) !== Math.floor(lastOpac*255)) {
-            lutControlPoints.push({x:j, opacity:opac});
+            lutControlPoints.push({x:j, opacity:opac, color:[255,255,255]});
           }
         }
         lastOpac = opac;
       }
-      lutControlPoints.push({x:255, opacity:1});
+      lutControlPoints.push({x:255, opacity:1, color:[255,255,255]});
 
       return {
         lut: lut,
