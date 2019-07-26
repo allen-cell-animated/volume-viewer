@@ -275,6 +275,7 @@ export default class PathTracedVolume {
           this.pathTracingUniforms.gInvGradientDelta.value = InvGradientDelta; // a voxel count
           this.pathTracingUniforms.gGradientFactor.value = 50.0; // related to voxel counts also
 
+          // TODO: parameterize path step sizes and see if there is a perf tradeoff there
           this.pathTracingUniforms.gStepSize.value = 1.0 * GradientDelta;
           this.pathTracingUniforms.gStepSizeShadow.value = 1.0 * GradientDelta;
 
