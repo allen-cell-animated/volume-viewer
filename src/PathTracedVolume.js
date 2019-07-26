@@ -40,14 +40,12 @@ export default class PathTracedVolume {
         this.maskAlpha = 1.0;
 
         // create Lut textures
-        for (var i = 0; i < 4; ++i) {
-            // empty array
-            var lutData = new Uint8Array(256).fill(1);
-            const lut0 = new THREE.DataTexture(lutData, 256, 1, THREE.RedFormat, THREE.UnsignedByteType);
-            lut0.minFilter = lut0.magFilter = THREE.LinearFilter;
-            lut0.needsUpdate = true;
-            this.pathTracingUniforms.g_lutTexture.value[i] = lut0;
-        }
+        // empty array
+        var lutData = new Uint8Array(256*4*4).fill(1);
+        const lut0 = new THREE.DataTexture(lutData, 256, 4, THREE.RGBAFormat, THREE.UnsignedByteType);
+        lut0.minFilter = lut0.magFilter = THREE.LinearFilter;
+        lut0.needsUpdate = true;
+        this.pathTracingUniforms.g_lutTexture.value = lut0;
 
         this.bounds = {
             bmin: new THREE.Vector3(-0.5, -0.5, -0.5),
@@ -610,13 +608,13 @@ export default class PathTracedVolume {
       updateLuts() {
         for (let i = 0; i < this.pathTracingUniforms.g_nChannels.value; ++i) {
           const channel = this.viewChannels[i];
-          this.pathTracingUniforms.g_lutTexture.value[i].image.data.set(this.volume.channels[channel].lut);
-          this.pathTracingUniforms.g_lutTexture.value[i].needsUpdate = true;  
+          this.pathTracingUniforms.g_lutTexture.value.image.data.set(this.volume.channels[channel].lut, i * 256 * 4);
     
           this.pathTracingUniforms.g_intensityMax.value.setComponent(i, this.volume.channels[channel].histogram.dataMax / 255.0);
           this.pathTracingUniforms.g_intensityMin.value.setComponent(i, this.volume.channels[channel].histogram.dataMin / 255.0);
     
         }
+        this.pathTracingUniforms.g_lutTexture.value.needsUpdate = true;  
     
         this.sampleCounter = 0.0;
       }

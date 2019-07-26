@@ -61,15 +61,14 @@ export default class Histogram {
   /**
    * Generate a Window/level lookup table
    * @return {Lut} 
-   * @param {number} wnd
-   * @param {number} lvl 
+   * @param {number} wnd in 0..1 range
+   * @param {number} lvl in 0..1 range
    */
   lutGenerator_windowLevel(wnd, lvl) {
     // simple linear mapping for actual range
-    var range = wnd * 256;
-    var b = lvl*256 - range*0.5;
-    var e = lvl*256 + range*0.5;
-    return this.lutGenerator_minMax(b, e);
+    var b = lvl - wnd*0.5;
+    var e = lvl + wnd*0.5;
+    return this.lutGenerator_minMax(b*256, e*256);
   }
 
   /**

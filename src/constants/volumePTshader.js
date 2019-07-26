@@ -92,7 +92,9 @@ uniform float gGradientFactor;
 uniform float uShowLights;
 
 // per channel 
-uniform sampler2D g_lutTexture[4];
+// the luttexture is a 256x4 rgba texture
+// each row is a 256 element lookup table.
+uniform sampler2D g_lutTexture;
 uniform vec4 g_intensityMax;
 uniform vec4 g_intensityMin;
 uniform float g_opacity[4];
@@ -279,27 +281,31 @@ vec3 PtoVolumeTex(vec3 p) {
 const float UINT8_MAX = 1.0;//255.0;
 
 // strategy: sample up to 4 channels, and take the post-LUT maximum intensity as the channel that wins
+// we will return the unmapped raw intensity value from the volume so that other luts can be applied again later.
 float GetNormalizedIntensityMax4ch(in vec3 P, out int ch)
 {
   vec4 intensity = UINT8_MAX * texture(volumeTexture, PtoVolumeTex(P));
 
-  float maxIn = 0.0;
-  ch = 0;
-
   //intensity = (intensity - g_intensityMin) / (g_intensityMax - g_intensityMin);
-  intensity.x = texture(g_lutTexture[0], vec2(intensity.x, 0.5)).x / 255.0;
-  intensity.y = texture(g_lutTexture[1], vec2(intensity.y, 0.5)).x / 255.0;
-  intensity.z = texture(g_lutTexture[2], vec2(intensity.z, 0.5)).x / 255.0;
-  intensity.w = texture(g_lutTexture[3], vec2(intensity.w, 0.5)).x / 255.0;
+  vec4 ilut = vec4(0.0, 0.0, 0.0, 0.0);
+  // w in the lut texture is "opacity"
+  ilut.x = texture(g_lutTexture, vec2(intensity.x, 0.5/4.0)).w / 255.0;
+  ilut.y = texture(g_lutTexture, vec2(intensity.y, 1.5/4.0)).w / 255.0;
+  ilut.z = texture(g_lutTexture, vec2(intensity.z, 2.5/4.0)).w / 255.0;
+  ilut.w = texture(g_lutTexture, vec2(intensity.w, 3.5/4.0)).w / 255.0;
 
+  float maxIn = 0.0;
+  float iOut = 0.0;
+  ch = 0;
   for (int i = 0; i < min(g_nChannels, 4); ++i) {
-    if (intensity[i] > maxIn) {
-      maxIn = intensity[i];
+    if (ilut[i] > maxIn) {
+      maxIn = ilut[i];
       ch = i;
+      iOut = intensity[i];
     }
   }
 
-  return maxIn;
+  return iOut;
 }
 
 float GetNormalizedIntensity4ch(vec3 P, int ch)
@@ -308,7 +314,7 @@ float GetNormalizedIntensity4ch(vec3 P, int ch)
   // select channel
   float intensityf = intensity[ch];
   //intensityf = (intensityf - g_intensityMin[ch]) / (g_intensityMax[ch] - g_intensityMin[ch]);
-  //intensityf = texture(g_lutTexture[ch], vec2(intensityf, 0.5)).x;
+  //intensityf = texture(g_lutTexture, vec2(intensityf, (0.5+float(ch))/4.0)).x;
 
   return intensityf;
 }
@@ -328,8 +334,10 @@ vec3 Gradient4ch(vec3 P, int ch)
 
 float GetOpacity(float NormalizedIntensity, int ch)
 {
+  //float o = NormalizedIntensity;
   // apply lut
-  float Intensity = NormalizedIntensity * g_opacity[ch];
+  float o = texture(g_lutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0)).w;
+  float Intensity = o * g_opacity[ch];
   return Intensity;
 }
 
@@ -340,7 +348,9 @@ vec3 GetEmissionN(float NormalizedIntensity, int ch)
 
 vec3 GetDiffuseN(float NormalizedIntensity, int ch)
 {
-  return g_diffuse[ch];
+  vec4 col = texture(g_lutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0));
+  //vec3 col = vec3(1.0, 1.0, 1.0);
+  return col.xyz * g_diffuse[ch];
 }
 
 vec3 GetSpecularN(float NormalizedIntensity, int ch)
@@ -1186,7 +1196,7 @@ export function pathTracingUniforms() {
     
     volumeTexture: { type: "t", value: null },
     // per channel 
-    g_lutTexture: { type: "tv", value: [null, null, null, null] },
+    g_lutTexture: { type: "t", value: null },
     g_intensityMax: { type: "v4", value: new THREE.Vector4(1,1,1,1) },
     g_intensityMin: { type: "v4", value: new THREE.Vector4(0,0,0,0) },
     g_opacity: { type: "1fv", value: [1,1,1,1] },
