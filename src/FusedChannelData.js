@@ -233,10 +233,10 @@ export default class FusedChannelData {
         channeldata = channels[idx].imgData.data;
         for (cx = 0, fx = 0; cx < npx; cx+=1, fx+=4) {
           value = channeldata[cx];
-          lr = lut[value*4+0];
-          lg = lut[value*4+1];
-          lb = lut[value*4+2];
-          opacity = lut[value*4+3] / 255.0;
+          lr = c.lut[value*4+0];
+          lg = c.lut[value*4+1];
+          lb = c.lut[value*4+2];
+          opacity = c.lut[value*4+3] / 255.0;
 
           // what if rgb*opacity > 255?
           ar = fused[fx+0];
