@@ -305,6 +305,7 @@ float GetNormalizedIntensityMax4ch(in vec3 P, out int ch)
     }
   }
 
+  //return maxIn;
   return iOut;
 }
 
@@ -334,9 +335,8 @@ vec3 Gradient4ch(vec3 P, int ch)
 
 float GetOpacity(float NormalizedIntensity, int ch)
 {
-  //float o = NormalizedIntensity;
   // apply lut
-  float o = texture(g_lutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0)).w;
+  float o = texture(g_lutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0)).w / 255.0;
   float Intensity = o * g_opacity[ch];
   return Intensity;
 }
