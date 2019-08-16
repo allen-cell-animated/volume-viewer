@@ -3,7 +3,8 @@
 /**
  * @typedef {Object} ControlPoint
  * @property {number} x The X Coordinate
- * @property {number} y The Y Coordinate
+ * @property {number} opacity The Opacity
+ * @property {string} color The Color
  */
 
 /**
