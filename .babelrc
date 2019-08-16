@@ -1,16 +1,11 @@
 {
   "presets": [
-    [
-      "env",
-      {
-        "targets": {
-          "browsers": [
-            "last 2 versions",
-            "ie >= 10"
-          ]
-        }
-      }
-    ]
+    "@babel/preset-env",
+    "@babel/preset-typescript"
   ],
-  "plugins": ["transform-class-properties"]
+  "env": {
+    "es": {
+      "presets": [["@babel/preset-env", { "modules": false }]]
+    }
+  }
 }
