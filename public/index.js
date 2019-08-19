@@ -298,14 +298,15 @@ function showChannelUI(volume) {
             // this doesn't give good results currently but is an example of a per-channel button callback
             autoIJ: (function(j) {
                 return function() {
-                    //const lut = volume.getHistogram(j).lutGenerator_auto2();
-                    const lut = { lut: makeColorGradient([
-                        {offset:0, color:"black"},
-                        {offset:0.2, color:"black"},
-                        {offset:0.25, color:"red"},
-                        {offset:0.5, color:"orange"},
-                        {offset:1.0, color:"yellow"}])
-                    };
+                    const lut = volume.getHistogram(j).lutGenerator_auto2();
+                    // TODO: get a proper transfer function editor
+                    // const lut = { lut: makeColorGradient([
+                    //     {offset:0, color:"black"},
+                    //     {offset:0.2, color:"black"},
+                    //     {offset:0.25, color:"red"},
+                    //     {offset:0.5, color:"orange"},
+                    //     {offset:1.0, color:"yellow"}])
+                    // };
                     volume.setLut(j, lut.lut);
                     view3D.updateLuts(volume);
                 }
