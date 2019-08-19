@@ -204,7 +204,7 @@ export default class FusedChannelData {
 
     // explore some faster ways to fuse here...
 
-    var ar,ag,ab,c,r,g,b,channeldata;
+    var ar,ag,ab,c,r,g,b,lr, lg, lb, opacity, channeldata;
     var x, i, cx, fx, idx;
     var cl = combination.length;
 

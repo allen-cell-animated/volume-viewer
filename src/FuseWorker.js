@@ -7,7 +7,7 @@ function fuseWorker(combination, fusionType) {
   //console.log("BEGIN WORK");
   // explore some faster ways to fuse here...
 
-  var ar,ag,ab,c,r,g,b,channeldata,lut,idx;
+  var ar,ag,ab,c,r,g,b,lr, lg, lb, opacity, channeldata,lut,idx;
   var x, i, cx, fx;
   var cl = combination.length;
 
@@ -41,9 +41,9 @@ function fuseWorker(combination, fusionType) {
 
         for (cx = 0, fx = 0; cx < npx; cx+=1, fx+=4) {
           value = channeldata[cx];
-          lr = lut[value*4+0];
-          lg = lut[value*4+1];
-          lb = lut[value*4+2];
+          lr = lut[value*4+0];  // 0..255
+          lg = lut[value*4+1];  // 0..255
+          lb = lut[value*4+2];  // 0..255
           opacity = lut[value*4+3] / 255.0;
 
           // what if rgb*opacity > 255?

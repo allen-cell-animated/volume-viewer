@@ -104,7 +104,7 @@ export default class Volume {
       this.imageInfo.transform = {
         translation: [0,0,0],
         rotation: [0,0,0]
-      }
+      };
     }
     if (!this.imageInfo.transform.translation) {
       this.imageInfo.transform.translation = [0,0,0];
