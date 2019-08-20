@@ -81,7 +81,7 @@ export const rayMarchingFragmentShaderSrc = [
     '  float nSlices = float(SLICES);',
     // get location within atlas tile
     // TODO: get loc1 which follows ray to next slice along ray direction
-    '  vec2 loc0 = vec2((pos.x)/ATLAS_X,(1.0 - pos.y)/ATLAS_Y);',
+    '  vec2 loc0 = vec2((pos.x)/ATLAS_X,(pos.y)/ATLAS_Y);',
 
     // interpolate between two slices
 
