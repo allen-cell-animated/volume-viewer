@@ -90,6 +90,7 @@ uniform vec3 gGradientDeltaZ;
 uniform float gInvGradientDelta;
 uniform float gGradientFactor;
 uniform float uShowLights;
+uniform vec3 flipVolume;
 
 // per channel 
 uniform sampler2D g_lutTexture[4];
@@ -272,8 +273,13 @@ bool IntersectBox(in Ray R, out float pNearT, out float pFarT)
 
 // assume volume is centered at 0,0,0 so p spans -bounds to + bounds
 // transform p to range from 0,0,0 to 1,1,1 for volume texture sampling.
+// optionally invert axes
 vec3 PtoVolumeTex(vec3 p) {
-  return p*gInvAaBbMax + vec3(0.5, 0.5, 0.5);
+  vec3 uvw = p*gInvAaBbMax + vec3(0.5, 0.5, 0.5);
+  // if flipVolume = 1, uvw is unchanged.
+  // if flipVolume = -1, uvw = 1 - uvw
+  uvw = (flipVolume*(uvw - 0.5) + 0.5);
+  return uvw;
 }
 
 const float UINT8_MAX = 1.0;//255.0;
@@ -1209,7 +1215,8 @@ export function pathTracingUniforms() {
       new THREE.Vector3(0,0,0)
     ] },
     g_roughness: { type: "1fv", value: [1,1,1,1] },
-    uShowLights: { type:"f", value: 0 }
+    uShowLights: { type: "f", value: 0 },
+    flipVolume: { type: "v3", value: new THREE.Vector3(1,1,1) }
   };
 };
 

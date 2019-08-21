@@ -54,7 +54,11 @@ const myState = {
 
     isTurntable: false,
     isAxisShowing: false,
-    isAligned: true
+    isAligned: true,
+
+    flipX: 1,
+    flipY: 1,
+    flipZ: 1
 
 };
 
@@ -476,6 +480,13 @@ var rotbtn = document.getElementById("rotbtn");
 rotbtn.addEventListener("click", ()=>{myState.isTurntable = !myState.isTurntable; view3D.setAutoRotate(myState.isTurntable)});
 var axisbtn = document.getElementById("axisbtn");
 axisbtn.addEventListener("click", ()=>{myState.isAxisShowing = !myState.isAxisShowing; view3D.setShowAxis(myState.isAxisShowing)});
+var flipxbtn = document.getElementById("flipxbtn");
+flipxbtn.addEventListener("click", ()=>{myState.flipX *= -1; view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);});
+var flipybtn = document.getElementById("flipybtn");
+flipybtn.addEventListener("click", ()=>{myState.flipY *= -1; view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);});
+var flipzbtn = document.getElementById("flipzbtn");
+flipzbtn.addEventListener("click", ()=>{myState.flipZ *= -1; view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);});
+
 var alignbtn = document.getElementById("xfbtn");
 alignbtn.addEventListener("click", ()=>{
     myState.isAligned = !myState.isAligned; 

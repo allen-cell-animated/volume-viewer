@@ -430,6 +430,12 @@ export default class PathTracedVolume {
     setGamma(gmin, glevel, gmax) {
     }
 
+    setFlipAxes(flipX, flipY, flipZ) {
+      this.pathTracingUniforms.flipVolume.value = new THREE.Vector3(flipX, flipY, flipZ);
+      // TODO: only reset if changed!
+      this.sampleCounter = 0;
+    }
+
     setResolution(x, y) {
         this.fullTargetResolution = new THREE.Vector2(x, y);
         const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
