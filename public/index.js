@@ -58,6 +58,45 @@ const myState = {
 
 };
 
+// controlPoints is array of [{offset:number, color:cssstring}]
+// where offset is a value from 0.0 to 1.0, and color is a string encoding a css color value.
+// first and last control points should be at offsets 0 and 1
+// TODO: what if offsets 0 and 1 are not provided?
+// makeColorGradient([
+//    {offset:0, color:"black"},
+//    {offset:0.2, color:"black"},
+//    {offset:0.25, color:"red"},
+//    {offset:0.5, color:"orange"}
+//    {offset:1.0, color:"yellow"}
+//]);
+function makeColorGradient(controlPoints) {
+    const c = document.createElement("canvas");
+    c.style.height = 1;
+    c.style.width = 256;
+    c.height = 1;
+    c.width = 256;
+
+    const ctx = c.getContext("2d");
+    const grd = ctx.createLinearGradient(0, 0, 255, 0);
+    if (!controlPoints.length || controlPoints.length < 1) {
+        console.log("warning: bad control points submitted to makeColorGradient; reverting to linear greyscale gradient");
+        grd.addColorStop(0, "black");
+        grd.addColorStop(1, "white");
+    }
+    else {
+        // what if none at 0 and none at 1?
+        for (let i = 0; i < controlPoints.length; ++i) {
+            grd.addColorStop(controlPoints[i].offset, controlPoints[i].color);
+        }
+    }
+
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, 256, 1);
+    const imgData = ctx.getImageData(0, 0, 256, 1);
+    // console.log(imgData.data);
+    return imgData.data;
+}
+
 function initLights() {
     myState.lights[0].m_colorTop = new THREE.Vector3(
         myState.skyTopColor[0]/255.0*myState.skyTopIntensity,
@@ -260,6 +299,14 @@ function showChannelUI(volume) {
             autoIJ: (function(j) {
                 return function() {
                     const lut = volume.getHistogram(j).lutGenerator_auto2();
+                    // TODO: get a proper transfer function editor
+                    // const lut = { lut: makeColorGradient([
+                    //     {offset:0, color:"black"},
+                    //     {offset:0.2, color:"black"},
+                    //     {offset:0.25, color:"red"},
+                    //     {offset:0.5, color:"orange"},
+                    //     {offset:1.0, color:"yellow"}])
+                    // };
                     volume.setLut(j, lut.lut);
                     view3D.updateLuts(volume);
                 }
