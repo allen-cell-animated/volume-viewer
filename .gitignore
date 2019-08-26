@@ -2,6 +2,7 @@ node_modules
 build/
 demo/
 dist/
+es/
 .idea/
 imageviewer/
 environment.txt
