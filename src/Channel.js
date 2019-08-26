@@ -120,6 +120,7 @@ export default class Channel {
     }
   }
 
+  // lut should be an uint8array of 256*4 elements (256 rgba8 values)
   setLut(lut) {
     this.lut = lut;
   }

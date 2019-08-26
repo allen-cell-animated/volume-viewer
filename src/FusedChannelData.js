@@ -204,7 +204,7 @@ export default class FusedChannelData {
 
     // explore some faster ways to fuse here...
 
-    var ar,ag,ab,c,r,g,b,channeldata;
+    var ar,ag,ab,c,r,g,b,lr, lg, lb, opacity, channeldata;
     var x, i, cx, fx, idx;
     var cl = combination.length;
 
@@ -233,14 +233,18 @@ export default class FusedChannelData {
         channeldata = channels[idx].imgData.data;
         for (cx = 0, fx = 0; cx < npx; cx+=1, fx+=4) {
           value = channeldata[cx];
-          value = c.lut[value];//this.channels[idx].lut[value];
+          lr = c.lut[value*4+0];
+          lg = c.lut[value*4+1];
+          lb = c.lut[value*4+2];
+          opacity = c.lut[value*4+3] / 255.0;
 
+          // what if rgb*opacity > 255?
           ar = fused[fx+0];
-          fused[fx + 0] = Math.max(ar, r * value);
+          fused[fx + 0] = Math.max(ar, r * lr * opacity);
           ag = fused[fx+1];
-          fused[fx + 1] = Math.max(ag, g * value);
+          fused[fx + 1] = Math.max(ag, g * lg * opacity);
           ab = fused[fx+2];
-          fused[fx + 2] = Math.max(ab, b * value);
+          fused[fx + 2] = Math.max(ab, b * lb * opacity);
         }
       }
     }
