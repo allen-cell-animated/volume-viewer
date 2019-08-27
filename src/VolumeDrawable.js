@@ -236,6 +236,7 @@ export default class VolumeDrawable {
     this.flipY = flipY;
     this.flipZ = flipZ;
     this.volumeRendering.setFlipAxes(flipX, flipY, flipZ);
+    this.meshVolume.setFlipAxes(flipX, flipY, flipZ);
   }
 
   setMaxProjectMode(isMaxProject) {
