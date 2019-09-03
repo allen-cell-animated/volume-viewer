@@ -15,7 +15,8 @@ let view3D = new View3d(el);
 
 // TODO FIX ME : run this code after we know that the page has rendered, 
 // so that the view3D can get size from el
-view3D.resize(null, 600, 600);
+const viewersize = [1200, 900];
+view3D.resize(null, viewersize[0], viewersize[1]);
 
 const myState = {
     file: "",
@@ -49,6 +50,8 @@ const myState = {
     zmax: 1.0,
 
     samplingRate: 0.25,
+    primaryRay: 1.0,
+    secondaryRay: 1.0,
 
     isPT: false,
 
@@ -131,10 +134,16 @@ function setupGui() {
     //gui = new dat.GUI({autoPlace:false, width:200});
 
     gui.add(myState, "density").max(100.0).min(0.0).step(0.001).onChange(function (value) {
-        view3D.updateDensity(myState.volume, value/100.0);
+        view3D.updateDensity(myState.volume, value/50.0);
     });
     gui.add(myState, "maskAlpha").max(1.0).min(0.0).step(0.001).onChange(function (value) {
         view3D.updateMaskAlpha(myState.volume, value);
+    });
+    gui.add(myState, "primaryRay").max(40.0).min(1.0).step(0.1).onChange(function (value) {
+        view3D.setRayStepSizes(myState.volume, myState.primaryRay, myState.secondaryRay);
+    });
+    gui.add(myState, "secondaryRay").max(40.0).min(1.0).step(0.1).onChange(function (value) {
+        view3D.setRayStepSizes(myState.volume, myState.primaryRay, myState.secondaryRay);
     });
 
     var cameragui = gui.addFolder("Camera");
@@ -290,7 +299,7 @@ function showChannelUI(volume) {
             colorE: [0, 0, 0],
             window: 1.0,
             level: 0.5,
-            roughness: 0.0,
+            glossiness: 0.0,
             isovalue: 128, // actual intensity value
             isosurface: false,
             // first 3 channels for starters
@@ -366,7 +375,7 @@ function showChannelUI(volume) {
                     myState.infoObj.channelGui[j].colorD,
                     myState.infoObj.channelGui[j].colorS,
                     myState.infoObj.channelGui[j].colorE,
-                    myState.infoObj.channelGui[j].roughness
+                    myState.infoObj.channelGui[j].glossiness
                 );
                 view3D.updateMaterial(volume);
             };
@@ -378,7 +387,7 @@ function showChannelUI(volume) {
                     myState.infoObj.channelGui[j].colorD,
                     myState.infoObj.channelGui[j].colorS,
                     myState.infoObj.channelGui[j].colorE,
-                    myState.infoObj.channelGui[j].roughness
+                    myState.infoObj.channelGui[j].glossiness
                 );
                 view3D.updateMaterial(volume);
             };
@@ -390,7 +399,7 @@ function showChannelUI(volume) {
                     myState.infoObj.channelGui[j].colorD,
                     myState.infoObj.channelGui[j].colorS,
                     myState.infoObj.channelGui[j].colorE,
-                    myState.infoObj.channelGui[j].roughness
+                    myState.infoObj.channelGui[j].glossiness
                 );
                 view3D.updateMaterial(volume);
             };
@@ -412,14 +421,14 @@ function showChannelUI(volume) {
         f.add(myState.infoObj.channelGui[i], 'auto0');
         f.add(myState.infoObj.channelGui[i], 'bestFit');
         f.add(myState.infoObj.channelGui[i], 'pct50_98');
-        f.add(myState.infoObj.channelGui[i], "roughness").max(100.0).min(0.0).onChange(function (j) {
+        f.add(myState.infoObj.channelGui[i], "glossiness").max(100.0).min(0.0).onChange(function (j) {
                 return function (value) {
                     view3D.updateChannelMaterial(volume,
                         j,
                         myState.infoObj.channelGui[j].colorD,
                         myState.infoObj.channelGui[j].colorS,
                         myState.infoObj.channelGui[j].colorE,
-                        myState.infoObj.channelGui[j].roughness
+                        myState.infoObj.channelGui[j].glossiness
                     );
                     view3D.updateMaterial(volume);
                 }
@@ -491,7 +500,8 @@ function loadImageData(jsondata, volumedata) {
         });
     }
     showChannelUI(vol);
-    view3D.resize(null, 600, 600);
+    // TODO this resizing should not be necessary??
+    view3D.resize(null, viewersize[0], viewersize[1]);
 
     return vol;
 }

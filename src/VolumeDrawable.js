@@ -115,6 +115,9 @@ export default class VolumeDrawable {
     if (options.hasOwnProperty("renderMode")) {
       this.setVolumeRendering(!!options.renderMode);
     }
+    if (options.hasOwnProperty("primaryRayStepSize") || options.hasOwnProperty("secondaryRayStepSize")) {
+      this.setRayStepSizes(options.primaryRayStepSize, options.secondaryRayStepSize);
+    }
 
     if (options.hasOwnProperty("channels")) {
       // store channel options here!
@@ -172,6 +175,16 @@ export default class VolumeDrawable {
         this.updateOpacity(channelIndex, options.isosurfaceOpacity);
       }
     }
+  }
+
+  setRayStepSizes(primary, secondary) {
+    if (primary !== undefined) {
+      this.primaryRayStepSize = primary;
+    }
+    if (secondary !== undefined) {
+      this.secondaryRayStepSize = secondary;
+    }
+    this.volumeRendering.setRayStepSizes(this.primaryRayStepSize, this.secondaryRayStepSize);
   }
 
   setScale(scale) {
@@ -534,6 +547,8 @@ export default class VolumeDrawable {
     this.setAxisClip('x', this.bounds.bmin.x, this.bounds.bmax.x);
     this.setAxisClip('y', this.bounds.bmin.y, this.bounds.bmax.y);
     this.setAxisClip('z', this.bounds.bmin.z, this.bounds.bmax.z);
+
+    this.setRayStepSizes(this.primaryRayStepSize, this.secondaryRayStepSize);
 
     // add new 3d object to scene
     !this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());

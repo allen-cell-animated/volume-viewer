@@ -56,6 +56,9 @@ export default class PathTracedVolume {
         this.sampleCounter = 0;
         this.frameCounter = 0;
 
+        this.stepSizePrimaryRayVoxels = 1.0;
+        this.stepSizeSecondaryRayVoxels = 1.0;
+
         this.pathTracingScene = new THREE.Scene();
         this.screenTextureScene = new THREE.Scene();
     
@@ -265,20 +268,18 @@ export default class PathTracedVolume {
 
           this.screenOutputMesh = new THREE.Mesh(this.screenOutputGeometry, this.screenOutputMaterial);
 
-          const GradientDelta = 1.0 / Math.max(sx, Math.max(sy, sz));
-          const InvGradientDelta = 1.0 / GradientDelta; // a voxel count...
+          this.gradientDelta = 1.0 / Math.max(sx, Math.max(sy, sz));
+          const InvGradientDelta = 1.0 / this.gradientDelta; // a voxel count...
 
-          this.pathTracingUniforms.gGradientDeltaX.value = new THREE.Vector3(GradientDelta, 0, 0);
-          this.pathTracingUniforms.gGradientDeltaY.value = new THREE.Vector3(0, GradientDelta, 0);
-          this.pathTracingUniforms.gGradientDeltaZ.value = new THREE.Vector3(0, 0, GradientDelta);
+          this.pathTracingUniforms.gGradientDeltaX.value = new THREE.Vector3(this.gradientDelta, 0, 0);
+          this.pathTracingUniforms.gGradientDeltaY.value = new THREE.Vector3(0, this.gradientDelta, 0);
+          this.pathTracingUniforms.gGradientDeltaZ.value = new THREE.Vector3(0, 0, this.gradientDelta);
           // can this be a per-x,y,z value?
           this.pathTracingUniforms.gInvGradientDelta.value = InvGradientDelta; // a voxel count
           this.pathTracingUniforms.gGradientFactor.value = 50.0; // related to voxel counts also
 
-          // TODO: parameterize path step sizes and see if there is a perf tradeoff there
-          this.pathTracingUniforms.gStepSize.value = 1.0 * GradientDelta;
-          this.pathTracingUniforms.gStepSizeShadow.value = 1.0 * GradientDelta;
-
+          this.setRayStepSizes(1.0, 1.0);
+          
         // bounds will go from 0 to PhysicalSize
         const PhysicalSize = volume.normalizedPhysicalSize;
 
@@ -410,6 +411,20 @@ export default class PathTracedVolume {
 
         this.scale = scale;
 
+    }
+
+    setRayStepSizes(primary, secondary)
+    {
+      // reset render if changed
+      if ((this.stepSizePrimaryRayVoxels !== primary)||(this.stepSizeSecondaryRayVoxels !== secondary)) {
+        this.sampleCounter = 0;
+      }
+      this.stepSizePrimaryRayVoxels = primary;
+      this.stepSizeSecondaryRayVoxels = secondary;
+
+
+      this.pathTracingUniforms.gStepSize.value = this.stepSizePrimaryRayVoxels * this.gradientDelta;
+      this.pathTracingUniforms.gStepSizeShadow.value = this.stepSizeSecondaryRayVoxels * this.gradientDelta;
     }
 
     setTranslation(vec3xyz) {

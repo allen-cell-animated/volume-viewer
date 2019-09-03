@@ -42,6 +42,8 @@ export const RENDERMODE_PATHTRACE = 1;
  * @property {number} renderMode 0 for raymarch, 1 for pathtrace
  * @property {number} shadingMethod 0 for phase, 1 for brdf, 2 for hybrid (path tracer)
  * @property {Array.<number>} gamma [min, max, scale]
+ * @property {number} primaryRayStepSize in voxels
+ * @property {number} secondaryRayStepSize in voxels
  * @example let options = {
    };
  */
@@ -213,6 +215,13 @@ export class View3d {
   setVoxelSize(volume, values) {
     if (this.image) {
       this.image.setVoxelSize(values);
+    }
+    this.redraw();
+  }
+
+  setRayStepSizes(volume, primary, secondary) {
+    if (this.image) {
+      this.image.setRayStepSizes(primary, secondary);
     }
     this.redraw();
   }
