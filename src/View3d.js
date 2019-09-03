@@ -448,6 +448,20 @@ export class View3d {
   };
 
   /**
+   * Invert axes of volume. -1 to invert, +1 NOT to invert.
+   * @param {Object} volume 
+   * @param {number} flipX x axis sense 
+   * @param {number} flipY y axis sense
+   * @param {number} flipZ z axis sense
+   */
+  setFlipVolume(volume, flipX, flipY, flipZ) {
+    if (this.image) {
+      this.image.setFlipAxes(flipX, flipY, flipZ);
+      this.redraw();
+    }
+  }
+
+  /**
    * Notify the view that it has been resized.  This will automatically be connected to the window when the View3d is created.
    * @param {HTMLElement=} comp Ignored.
    * @param {number=} w Width, or parent element's offsetWidth if not specified. 

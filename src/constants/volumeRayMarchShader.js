@@ -39,6 +39,7 @@ export const rayMarchingFragmentShaderSrc = [
     'uniform float orthoThickness;',
     'uniform float orthoScale;',
     'uniform int maxProject;',
+    'uniform vec3 flipVolume;',
 
     // view space to axis-aligned volume box
     'uniform mat4 inverseModelViewMatrix;',
@@ -81,7 +82,11 @@ export const rayMarchingFragmentShaderSrc = [
     '  float nSlices = float(SLICES);',
     // get location within atlas tile
     // TODO: get loc1 which follows ray to next slice along ray direction
-    '  vec2 loc0 = vec2((pos.x)/ATLAS_X,(1.0 - pos.y)/ATLAS_Y);',
+    // when flipvolume = 1:  pos
+    // when flipvolume = -1: 1-pos
+    '  vec2 loc0 = vec2(',
+    '    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,',
+    '    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);',
 
     // interpolate between two slices
 
@@ -92,13 +97,21 @@ export const rayMarchingFragmentShaderSrc = [
     '  float z0  = zfloor;',
     '  float z1 = (zfloor+1.0);',
     '  z1 = clamp(z1, 0.0, nSlices);',
+    '  float t = z-zfloor;', //mod(z, 1.0);',
+
+    // flipped:
+    'if (flipVolume.z == -1.0) {',
+    '    z0 = nSlices - z0;',
+    '    z1 = nSlices - z1;',
+    '    t = 1.0 - t;',
+    '}',
+
     // get slice offsets in texture atlas
     '  vec2 o0 = offsetFrontBack(z0,ATLAS_X,ATLAS_Y);//*pix;',
     '  vec2 o1 = offsetFrontBack(z1,ATLAS_X,ATLAS_Y);//*pix;',
     '  o0 = clamp(o0, 0.0, 1.0) + loc0;',
     '  o1 = clamp(o1, 0.0, 1.0) + loc0;',
 
-    '  float t = z-zfloor;', //mod(z, 1.0);',
     '  vec4 slice0Color = texture2D(tex, o0);',
     '  vec4 slice1Color = texture2D(tex, o1);',
     // NOTE we could premultiply the mask in the fuse function,
@@ -363,6 +376,10 @@ export function rayMarchingShaderUniforms() {
     'maxProject': {
         type: 'i',
         value: 0
+    },
+    'flipVolume': {
+        type: 'v3',
+        value: new THREE.Vector3(1.0, 1.0, 1.0)
     }
   };
 };
