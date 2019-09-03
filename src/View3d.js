@@ -68,7 +68,8 @@ export class View3d {
     this.pixelSamplingRate = 0.75;
     this.exposure = 0.5;
     this.volumeRenderMode = RENDERMODE_RAYMARCH;
-
+    this.renderUpdateListener = null;
+    
     this.loaded = false;
     let that = this;
     this.parentEl = parentElement;
@@ -660,6 +661,9 @@ export class View3d {
    * @param {number} value (+epsilon..1) 1 is max quality, ~0.1 for lowest quality and highest speed
    */
   updatePixelSamplingRate(value) {
+    if (this.pixelSamplingRate === value) {
+      return;
+    }
     this.pixelSamplingRate = value;
     if (this.image) {
       this.image.setPixelSamplingRate(value);
