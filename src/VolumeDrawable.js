@@ -11,6 +11,10 @@ export default class VolumeDrawable {
     // THE VOLUME DATA
     this.volume = volume;
 
+    this.flipX = 1;
+    this.flipY = 1;
+    this.flipZ = 1;
+
     this.onChannelDataReadyCallback = null;
 
     this.translation = new THREE.Vector3(0,0,0);
