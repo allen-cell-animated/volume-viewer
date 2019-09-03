@@ -241,7 +241,15 @@ export default class VolumeDrawable {
     this.gammaMin = gmin;
     this.gammaLevel = glevel;
     this.gammaMax = gmax;
-    this.volumeRendering.setGamma(gmin, glevel, gmax)
+    this.volumeRendering.setGamma(gmin, glevel, gmax);
+  }
+
+  setFlipAxes(flipX, flipY, flipZ) {
+    this.flipX = flipX;
+    this.flipY = flipY;
+    this.flipZ = flipZ;
+    this.volumeRendering.setFlipAxes(flipX, flipY, flipZ);
+    this.meshVolume.setFlipAxes(flipX, flipY, flipZ);
   }
 
   setMaxProjectMode(isMaxProject) {
@@ -553,6 +561,7 @@ export default class VolumeDrawable {
     this.setBrightness(this.getBrightness());
     this.setDensity(this.getDensity());
     this.setGamma(this.gammaMin, this.gammaLevel, this.gammaMax);
+    this.setFlipAxes(this.flipX, this.flipY, this.flipZ);
 
     // reset clip bounds
     this.setAxisClip('x', this.bounds.bmin.x, this.bounds.bmax.x);

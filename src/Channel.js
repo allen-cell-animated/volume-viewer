@@ -57,8 +57,7 @@ export default class Channel {
       for (var j = 0; j < y; ++j) {
         tilerowoffset = j * atlasrow;
         for (var k = 0; k < x; ++k) {
-          // y-1-j instead of j to flip the y coordinates.
-          this.volumeData[i*(x*y) + (y-1-j)*(x) + k] = volimgdata[tileoffset + tilerowoffset + k];
+          this.volumeData[i*(x*y) + (j)*(x) + k] = volimgdata[tileoffset + tilerowoffset + k];
         }
       }
     }
@@ -115,8 +114,7 @@ export default class Channel {
       for (var j = 0; j < y; ++j) {
         tilerowoffset = j * atlasrow;
         for (var k = 0; k < x; ++k) {
-          // y-1-j instead of j to flip the y coordinates.
-          volimgdata[tileoffset + tilerowoffset + k] = this.volumeData[i*(x*y) + (y-1-j)*(x) + k];
+          volimgdata[tileoffset + tilerowoffset + k] = this.volumeData[i*(x*y) + (j)*(x) + k];
         }
       }
     }

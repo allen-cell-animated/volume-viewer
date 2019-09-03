@@ -176,6 +176,10 @@ export default class RayMarchedAtlasVolume {
         this.setUniform('AABB_CLIP_MAX', this.bounds.bmax);
     }
 
+    setFlipAxes(flipX, flipY, flipZ) {
+        this.setUniform('flipVolume', new THREE.Vector3(flipX, flipY, flipZ));
+    }
+
     // 0..1
     updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
         this.bounds = {

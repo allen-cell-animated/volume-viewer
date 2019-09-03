@@ -64,6 +64,12 @@ export default class MeshVolume {
             0.5 * scale.z));
     }
 
+    setFlipAxes(flipX, flipY, flipZ) {
+      this.meshRoot.scale.copy(new THREE.Vector3(0.5 * this.scale.x * flipX,
+        0.5 * this.scale.y * flipY,
+        0.5 * this.scale.z * flipZ));
+    }
+
     setTranslation(vec3xyz) {
       this.meshRoot.position.copy(vec3xyz);
     }
