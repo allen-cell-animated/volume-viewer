@@ -543,6 +543,10 @@ var resetcambtn = document.getElementById("resetcambtn");
 resetcambtn.addEventListener("click", () => {
     view3D.resetCamera();
 });
+var counterspan = document.getElementById("counter");
+view3D.setRenderUpdateListener((count) => {
+    counterspan.innerHTML = ""+count;
+})
 
 if (view3D.canvas3d.hasWebGL2) {
     var ptbtn = document.getElementById("ptbtn");

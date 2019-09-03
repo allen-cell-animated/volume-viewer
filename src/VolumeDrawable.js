@@ -310,6 +310,13 @@ export default class VolumeDrawable {
 
   }
 
+  setRenderUpdateListener(callback) {
+    this.renderUpdateListener = callback;
+    if (this.PT) {
+      this.pathTracedVolume.setRenderUpdateListener(callback);
+    }
+  }
+
   updateMaterial() {
     this.PT && this.pathTracedVolume.updateMaterial(this);
     !this.PT && this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
@@ -517,6 +524,7 @@ export default class VolumeDrawable {
       this.volumeRendering = new PathTracedVolume(this.volume);
       this.pathTracedVolume = this.volumeRendering;
       this.rayMarchedAtlasVolume = null;
+      this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
     }
     else {
       this.volumeRendering = new RayMarchedAtlasVolume(this.volume);
@@ -527,6 +535,9 @@ export default class VolumeDrawable {
         if (this.volume.getChannel(i).loaded) {
           this.rayMarchedAtlasVolume.onChannelData([i]);
         }
+      }
+      if (this.renderUpdateListener) {
+        this.renderUpdateListener(0);
       }
     }
 

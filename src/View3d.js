@@ -186,6 +186,16 @@ export class View3d {
     }
   }
 
+  /**
+   * @param {function} callback a function that will receive the number of render iterations when it changes
+   */
+  setRenderUpdateListener(callback) {
+    this.renderUpdateListener = callback;
+    if (this.image) {
+      this.image.setRenderUpdateListener(callback);
+    }
+  }
+
   // channels is an array of channel indices for which new data just arrived.
   onVolumeData(volume, channels) {
     this.image.onChannelLoaded(channels);
@@ -725,9 +735,10 @@ export class View3d {
       this.image.setIsOrtho(this.canvas3d.camera.isOrthographicCamera);
       this.image.setResolution(this.canvas3d);
       this.setAutoRotate(this.canvas3d.controls.autoRotate);
+      
+      this.image.setRenderUpdateListener(this.renderUpdateListener);
     }
   }
-
 
   /**
    * 
