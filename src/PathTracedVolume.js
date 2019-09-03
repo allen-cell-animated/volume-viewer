@@ -461,7 +461,7 @@ export default class PathTracedVolume {
     setFlipAxes(flipX, flipY, flipZ) {
       this.pathTracingUniforms.flipVolume.value = new THREE.Vector3(flipX, flipY, flipZ);
       // TODO: only reset if changed!
-      this.sampleCounter = 0;
+      this.resetProgress();
     }
 
     setResolution(x, y) {
