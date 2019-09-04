@@ -102,7 +102,7 @@ uniform float g_opacity[4];
 uniform vec3 g_emissive[4];
 uniform vec3 g_diffuse[4];
 uniform vec3 g_specular[4];
-uniform float g_roughness[4];
+uniform float g_glossiness[4];
 
 // compositing / progressive render
 uniform float uFrameCounter;
@@ -364,9 +364,9 @@ vec3 GetSpecularN(float NormalizedIntensity, int ch)
   return g_specular[ch];
 }
 
-float GetRoughnessN(float NormalizedIntensity, int ch)
+float GetGlossinessN(float NormalizedIntensity, int ch)
 {
-  return g_roughness[ch];
+  return g_glossiness[ch];
 }
 
 // a bsdf sample, a sample on a light source, and a randomly chosen light index
@@ -873,14 +873,14 @@ vec3 EstimateDirectLight(int shaderType, float Density, int ch, in Light light, 
 
   vec3 diffuse = GetDiffuseN(Density, ch);
   vec3 specular = GetSpecularN(Density, ch);
-  float roughness = GetRoughnessN(Density, ch);
+  float glossiness = GetGlossinessN(Density, ch);
 
   // can N and Wo be coincident????
   vec3 nu = normalize(cross(N, Wo)); 
   vec3 nv = normalize(cross(N, nu));
 
   // the IoR here is hard coded... and unused!!!!
-  VolumeShader Shader = VolumeShader(shaderType, RGBtoXYZ(diffuse), RGBtoXYZ(specular), 2.5f, roughness, N, nu, nv);
+  VolumeShader Shader = VolumeShader(shaderType, RGBtoXYZ(diffuse), RGBtoXYZ(specular), 2.5f, glossiness, N, nu, nv);
 
   float LightPdf = 1.0f, ShaderPdf = 1.0f;
   
@@ -1224,7 +1224,7 @@ export function pathTracingUniforms() {
       new THREE.Vector3(0,0,0),
       new THREE.Vector3(0,0,0)
     ] },
-    g_roughness: { type: "1fv", value: [1,1,1,1] },
+    g_glossiness: { type: "1fv", value: [1,1,1,1] },
     uShowLights: { type: "f", value: 0 },
     flipVolume: { type: "v3", value: new THREE.Vector3(1,1,1) }
   };

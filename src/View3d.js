@@ -20,7 +20,7 @@ export const RENDERMODE_PATHTRACE = 1;
  * @property {<Array.<number>} color array of rgb per channel
  * @property {<Array.<number>} specularColor array of rgb per channel
  * @property {<Array.<number>} emissiveColor array of rgb per channel
- * @property {number} roughness array of float per channel
+ * @property {number} glossiness array of float per channel
  * @property {boolean} isosurfaceEnabled array of boolean per channel
  * @property {number} isovalue array of number per channel
  * @property {number} isosurfaceOpacity array of number per channel
@@ -701,11 +701,11 @@ export class View3d {
    * @param {Array.<number>} colorrgb [r,g,b]
    * @param {Array.<number>} specularrgb [r,g,b]
    * @param {Array.<number>} emissivergb [r,g,b]
-   * @param {number} roughness
+   * @param {number} glossiness
    */
-  updateChannelMaterial(volume, channelIndex, colorrgb, specularrgb, emissivergb, roughness) {
+  updateChannelMaterial(volume, channelIndex, colorrgb, specularrgb, emissivergb, glossiness) {
     if (this.image) {
-      this.image.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, roughness);
+      this.image.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
     }
   }
 

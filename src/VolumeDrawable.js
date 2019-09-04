@@ -50,7 +50,7 @@ export default class VolumeDrawable {
 
     this.emissive = new Array(this.volume.num_channels).fill([0,0,0]);
 
-    this.roughness = new Array(this.volume.num_channels).fill(0);
+    this.glossiness = new Array(this.volume.num_channels).fill(0);
 
     this.sceneRoot = new THREE.Object3D();//create an empty container
 
@@ -380,7 +380,7 @@ export default class VolumeDrawable {
 
     this.specular[newChannelIndex] = [0,0,0];
     this.emissive[newChannelIndex] = [0,0,0];
-    this.roughness[newChannelIndex] = 0;
+    this.glossiness[newChannelIndex] = 0;
 
   }
 
@@ -438,15 +438,15 @@ export default class VolumeDrawable {
   // @param {Array.<number>} colorrgb [r,g,b]
   // @param {Array.<number>} specularrgb [r,g,b]
   // @param {Array.<number>} emissivergb [r,g,b]
-  // @param {number} roughness
-  updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, roughness) {
+  // @param {number} glossiness
+  updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness) {
     if (!this.channel_colors[channelIndex]) {
       return;
     }
     this.updateChannelColor(channelIndex, colorrgb);
     this.specular[channelIndex] = specularrgb;
     this.emissive[channelIndex] = emissivergb;
-    this.roughness[channelIndex] = roughness;
+    this.glossiness[channelIndex] = glossiness;
   }
 
   setDensity(density) {

@@ -655,7 +655,7 @@ export default class PathTracedVolume {
         this.resetProgress();
       }
     
-      // image is a material interface that supports per-channel color, spec, emissive, roughness
+      // image is a material interface that supports per-channel color, spec, emissive, glossiness
       updateMaterial(image) {
         for (let c = 0; c < this.viewChannels.length; ++c) {
            let i = this.viewChannels[c];
@@ -663,7 +663,7 @@ export default class PathTracedVolume {
             this.pathTracingUniforms.g_diffuse.value[c] = new THREE.Vector3().fromArray(image.getChannelColor(i)).multiplyScalar(1.0/255.0);
             this.pathTracingUniforms.g_specular.value[c] = new THREE.Vector3().fromArray(image.specular[i]).multiplyScalar(1.0/255.0);
             this.pathTracingUniforms.g_emissive.value[c] = new THREE.Vector3().fromArray(image.emissive[i]).multiplyScalar(1.0/255.0);
-            this.pathTracingUniforms.g_roughness.value[c] = image.roughness[i];
+            this.pathTracingUniforms.g_glossiness.value[c] = image.glossiness[i];
           }
         }
         this.resetProgress();        
