@@ -11,14 +11,13 @@ export default class VolumeDrawable {
     // THE VOLUME DATA
     this.volume = volume;
 
-    this.flipX = 1;
-    this.flipY = 1;
-    this.flipZ = 1;
-
     this.onChannelDataReadyCallback = null;
 
     this.translation = new THREE.Vector3(0,0,0);
     this.rotation = new THREE.Euler();
+    this.flipX = 1;
+    this.flipY = 1;
+    this.flipZ = 1;
 
     this.maskChannelIndex = -1;
 
@@ -57,6 +56,8 @@ export default class VolumeDrawable {
 
     this.meshVolume = new MeshVolume(this.volume);
 
+    this.primaryRayStepSize = 1.0;
+    this.secondaryRayStepSize = 1.0;
     if (this.PT) {
       this.volumeRendering = new PathTracedVolume(this.volume);
       this.pathTracedVolume = this.volumeRendering;
