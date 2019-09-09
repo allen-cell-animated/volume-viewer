@@ -6,7 +6,6 @@
   "module": "es/index.js",
   "files": [
     "es",
-    "type-declarations",
     "README.md",
     "package.json"
   ],
@@ -18,7 +17,7 @@
     "dev": "webpack-dev-server --open --config webpack.dev.js",
     "lint": "eslint --config ./.eslintrc --ignore-path ./.eslintignore --ext .jsx --ext .js ./",
     "test": "mocha --opts mocha.opts src/**/test/*.js",
-    "transpileES": "babel src --out-dir es --extensions .ts,.js --ignore src/**/*.test.ts"
+    "transpileES": "babel src --out-dir es --extensions .js --ignore src/**/*.test.js"
   },
   "author": "Daniel Toloudis",
   "license": "MIT",
@@ -29,11 +28,8 @@
     "@babel/cli": "^7.2.3",
     "@babel/core": "~7.2",
     "@babel/preset-env": "~7.3",
-    "@babel/preset-typescript": "~7.1",
     "@types/chai": "~4.1",
     "@types/mocha": "~5.2",
-    "@typescript-eslint/eslint-plugin": "~1.1",
-    "@typescript-eslint/parser": "~1.1",
     "babel-loader": "~8.0",
     "babel-plugin-inline-import": "^3.0.0",
     "babel-plugin-inline-import-data-uri": "^1.0.1",
@@ -52,8 +48,6 @@
     "prettier": "^1.16.1",
     "raw-loader": "^0.5.1",
     "rimraf": "~2.6",
-    "ts-node": "~8.0",
-    "typescript": "~3.2",
     "url-loader": "^1.1.2",
     "webpack": "~4.29",
     "webpack-cli": "~3.2",

@@ -1,6 +1,6 @@
 public/
 demo/
-src/webvr/
 src/MarchingCubes.js
 src/NaiveSurfaceNets.js
 docs/
+es/
