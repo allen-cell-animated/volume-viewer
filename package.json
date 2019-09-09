@@ -14,6 +14,8 @@
     "build-docs": "node node_modules/documentation/bin/documentation.js build src/Histogram.js src/View3d.js src/Volume.js src/VolumeMaker.js src/volumeLoader.js -f html -o docs --shallow",
     "build": "npm run transpileES",
     "build-demo": "webpack --config webpack.demo.js",
+    "clean": "rimraf es/",
+    "format": "prettier --write src/**/*.js",
     "dev": "webpack-dev-server --open --config webpack.dev.js",
     "lint": "eslint --config ./.eslintrc.js --ignore-path ./.eslintignore --ext .jsx --ext .js ./",
     "test": "mocha --opts mocha.opts src/**/test/*.js",
