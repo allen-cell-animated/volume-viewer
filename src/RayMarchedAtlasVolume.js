@@ -110,6 +110,10 @@ export default class RayMarchedAtlasVolume {
           scale.z));
     }
 
+    setRayStepSizes(primary, secondary)
+    {
+    }
+
     setTranslation(vec3xyz) {
         this.cubeMesh.position.copy(vec3xyz);
     }

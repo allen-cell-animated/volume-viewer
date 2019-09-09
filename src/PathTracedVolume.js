@@ -56,6 +56,9 @@ export default class PathTracedVolume {
         this.sampleCounter = 0;
         this.frameCounter = 0;
 
+        this.stepSizePrimaryRayVoxels = 1.0;
+        this.stepSizeSecondaryRayVoxels = 1.0;
+
         this.pathTracingScene = new THREE.Scene();
         this.screenTextureScene = new THREE.Scene();
     
@@ -265,19 +268,17 @@ export default class PathTracedVolume {
 
           this.screenOutputMesh = new THREE.Mesh(this.screenOutputGeometry, this.screenOutputMaterial);
 
-          const GradientDelta = 1.0 / Math.max(sx, Math.max(sy, sz));
-          const InvGradientDelta = 1.0 / GradientDelta; // a voxel count...
+          this.gradientDelta = 1.0 / Math.max(sx, Math.max(sy, sz));
+          const InvGradientDelta = 1.0 / this.gradientDelta; // a voxel count...
 
-          this.pathTracingUniforms.gGradientDeltaX.value = new THREE.Vector3(GradientDelta, 0, 0);
-          this.pathTracingUniforms.gGradientDeltaY.value = new THREE.Vector3(0, GradientDelta, 0);
-          this.pathTracingUniforms.gGradientDeltaZ.value = new THREE.Vector3(0, 0, GradientDelta);
+          this.pathTracingUniforms.gGradientDeltaX.value = new THREE.Vector3(this.gradientDelta, 0, 0);
+          this.pathTracingUniforms.gGradientDeltaY.value = new THREE.Vector3(0, this.gradientDelta, 0);
+          this.pathTracingUniforms.gGradientDeltaZ.value = new THREE.Vector3(0, 0, this.gradientDelta);
           // can this be a per-x,y,z value?
           this.pathTracingUniforms.gInvGradientDelta.value = InvGradientDelta; // a voxel count
           this.pathTracingUniforms.gGradientFactor.value = 50.0; // related to voxel counts also
 
-          // TODO: parameterize path step sizes and see if there is a perf tradeoff there
-          this.pathTracingUniforms.gStepSize.value = 1.0 * GradientDelta;
-          this.pathTracingUniforms.gStepSizeShadow.value = 1.0 * GradientDelta;
+          this.setRayStepSizes(1.0, 1.0);
 
         // bounds will go from 0 to PhysicalSize
         const PhysicalSize = volume.normalizedPhysicalSize;
@@ -296,6 +297,17 @@ export default class PathTracedVolume {
         }
     }
 
+    setRenderUpdateListener(callback) {
+      this.renderUpdateListener = callback;
+    }
+
+    resetProgress() {
+      if (this.sampleCounter != 0 && this.renderUpdateListener) {
+        this.renderUpdateListener(0);
+      }
+      this.sampleCounter = 0;
+    }
+
     setVisible(isVisible) {
         //this.visible = isVisible;
     }
@@ -306,11 +318,14 @@ export default class PathTracedVolume {
         }
 
         if (this.cameraIsMoving) {
-            this.sampleCounter = 0.0;
-            this.frameCounter += 1.0;
+          this.resetProgress();
+          this.frameCounter += 1.0;
         } else {
-            this.sampleCounter += 1.0;
-            this.frameCounter += 1.0;
+          this.sampleCounter += 1.0;
+          this.frameCounter += 1.0;
+          if (this.renderUpdateListener) {
+            this.renderUpdateListener(this.sampleCounter);
+          }
         }
 
         this.pathTracingUniforms.uSampleCounter.value = this.sampleCounter;
@@ -412,14 +427,28 @@ export default class PathTracedVolume {
 
     }
 
+    setRayStepSizes(primary, secondary)
+    {
+      // reset render if changed
+      if ((this.stepSizePrimaryRayVoxels !== primary)||(this.stepSizeSecondaryRayVoxels !== secondary)) {
+        this.resetProgress();
+      }
+      this.stepSizePrimaryRayVoxels = primary;
+      this.stepSizeSecondaryRayVoxels = secondary;
+
+
+      this.pathTracingUniforms.gStepSize.value = this.stepSizePrimaryRayVoxels * this.gradientDelta;
+      this.pathTracingUniforms.gStepSizeShadow.value = this.stepSizeSecondaryRayVoxels * this.gradientDelta;
+    }
+
     setTranslation(vec3xyz) {
       this.translation.copy(vec3xyz);
-      this.sampleCounter = 0;
+      this.resetProgress();
     }
 
     setRotation(eulerXYZ) {
       this.rotation.copy(eulerXYZ);
-      this.sampleCounter = 0;
+      this.resetProgress();
     }
 
     setOrthoScale(value) {
@@ -432,7 +461,7 @@ export default class PathTracedVolume {
     setFlipAxes(flipX, flipY, flipZ) {
       this.pathTracingUniforms.flipVolume.value = new THREE.Vector3(flipX, flipY, flipZ);
       // TODO: only reset if changed!
-      this.sampleCounter = 0;
+      this.resetProgress();
     }
 
     setResolution(x, y) {
@@ -451,18 +480,18 @@ export default class PathTracedVolume {
         this.pathTracingRenderTarget.setSize(nx, ny);
         this.screenTextureRenderTarget.setSize(nx, ny);
 
-        this.sampleCounter = 0;
+        this.resetProgress();
     }
 
     setPixelSamplingRate(rate) {
       this.pixelSamplingRate = rate;
       this.setResolution(this.fullTargetResolution.x, this.fullTargetResolution.y);
-      this.sampleCounter = 0;
+      this.resetProgress();
     }
 
     setDensity(density) {
         this.pathTracingUniforms.gDensityScale.value = density * 150.0;
-        this.sampleCounter = 0;
+        this.resetProgress();
     }
 
     // TODO brightness and exposure should be the same thing? or gamma?
@@ -489,7 +518,7 @@ export default class PathTracedVolume {
             this.bounds.bmax.y*PhysicalSize.y, 
             this.bounds.bmax.z*PhysicalSize.z
         );
-        this.sampleCounter = 0.0;
+        this.resetProgress();
     }
 
     setChannelAsMask(channelIndex) {
@@ -499,14 +528,14 @@ export default class PathTracedVolume {
         if (this.maskChannelIndex !== channelIndex) {
           this.maskChannelIndex = channelIndex;
           this.updateVolumeData4();
-          this.sampleCounter = 0.0;  
+          this.resetProgress();
         }
     }
       
     setMaskAlpha(maskAlpha) {
       this.maskAlpha = maskAlpha;
       this.updateVolumeData4();
-      this.sampleCounter = 0.0;  
+      this.resetProgress();
     }
 
     setOrthoThickness(value) {
@@ -514,7 +543,7 @@ export default class PathTracedVolume {
 
     setIsOrtho(isOrthoAxis) {
       this.pathTracingUniforms.gCamera.value.m_isOrtho = (isOrthoAxis) ? 1 : 0;
-      this.sampleCounter = 0.0;  
+      this.resetProgress();
     }
 
     //////////////////////////////////////////
@@ -530,11 +559,11 @@ export default class PathTracedVolume {
 
     onEndControls() {
         this.cameraIsMoving = false;
-        this.sampleCounter = 0.0;
+        this.resetProgress();
     }
     
     viewpointMoved() {
-      this.sampleCounter = 0.0;
+      this.resetProgress();
     }
 
     updateActiveChannels(image) {
@@ -561,7 +590,7 @@ export default class PathTracedVolume {
         this.viewChannels = ch;
         // update volume data according to channels selected.
         this.updateVolumeData4();
-        this.sampleCounter = 0.0;
+        this.resetProgress();        
         this.updateLuts();
         this.updateMaterial(image);
     
@@ -623,10 +652,10 @@ export default class PathTracedVolume {
         }
         this.pathTracingUniforms.g_lutTexture.value.needsUpdate = true;  
     
-        this.sampleCounter = 0.0;
+        this.resetProgress();
       }
     
-      // image is a material interface that supports per-channel color, spec, emissive, roughness
+      // image is a material interface that supports per-channel color, spec, emissive, glossiness
       updateMaterial(image) {
         for (let c = 0; c < this.viewChannels.length; ++c) {
            let i = this.viewChannels[c];
@@ -634,20 +663,20 @@ export default class PathTracedVolume {
             this.pathTracingUniforms.g_diffuse.value[c] = new THREE.Vector3().fromArray(image.getChannelColor(i)).multiplyScalar(1.0/255.0);
             this.pathTracingUniforms.g_specular.value[c] = new THREE.Vector3().fromArray(image.specular[i]).multiplyScalar(1.0/255.0);
             this.pathTracingUniforms.g_emissive.value[c] = new THREE.Vector3().fromArray(image.emissive[i]).multiplyScalar(1.0/255.0);
-            this.pathTracingUniforms.g_roughness.value[c] = image.roughness[i];
+            this.pathTracingUniforms.g_glossiness.value[c] = image.glossiness[i];
           }
         }
-        this.sampleCounter = 0.0;
+        this.resetProgress();        
       }
 
       updateShadingMethod(brdf) {
         this.pathTracingUniforms.gShadingType.value = brdf;
-        this.sampleCounter = 0.0;
+        this.resetProgress();
       }
     
       updateShowLights(showlights) {
         this.pathTracingUniforms.uShowLights.value = showlights;
-        this.sampleCounter = 0.0;
+        this.resetProgress();
       }
     
       updateExposure(e) {
@@ -657,14 +686,14 @@ export default class PathTracedVolume {
         }
         this.screenOutputMaterial.uniforms.gInvExposure.value = (1.0/(1.0-e)) - 1.0;
         this.screenOutputDenoiseMaterial.uniforms.gInvExposure.value = (1.0/(1.0-e)) - 1.0;
-        this.sampleCounter = 0.0;
+        this.resetProgress();
       }
       
       updateCamera(fov, focalDistance, apertureSize) {
         this.pathTracingUniforms.gCamera.value.m_apertureSize = apertureSize;
         this.pathTracingUniforms.gCamera.value.m_focalDistance = focalDistance;
         
-        this.sampleCounter = 0.0;
+        this.resetProgress();
       }
     
       updateLights(state) {
@@ -683,8 +712,7 @@ export default class PathTracedVolume {
     
         this.updateLightsSecondary();
     
-        this.sampleCounter = 0.0;
-    
+        this.resetProgress();
       }
     
       updateLightsSecondary(cameraMatrix) {
@@ -714,6 +742,6 @@ export default class PathTracedVolume {
             ymax*PhysicalSize.y - 0.5 * PhysicalSize.y, 
             zmax*PhysicalSize.z - 0.5 * PhysicalSize.z
         );
-        this.sampleCounter = 0.0;
+        this.resetProgress();
       }
 };

@@ -20,7 +20,7 @@ export const RENDERMODE_PATHTRACE = 1;
  * @property {<Array.<number>} color array of rgb per channel
  * @property {<Array.<number>} specularColor array of rgb per channel
  * @property {<Array.<number>} emissiveColor array of rgb per channel
- * @property {number} roughness array of float per channel
+ * @property {number} glossiness array of float per channel
  * @property {boolean} isosurfaceEnabled array of boolean per channel
  * @property {number} isovalue array of number per channel
  * @property {number} isosurfaceOpacity array of number per channel
@@ -42,6 +42,8 @@ export const RENDERMODE_PATHTRACE = 1;
  * @property {number} renderMode 0 for raymarch, 1 for pathtrace
  * @property {number} shadingMethod 0 for phase, 1 for brdf, 2 for hybrid (path tracer)
  * @property {Array.<number>} gamma [min, max, scale]
+ * @property {number} primaryRayStepSize in voxels
+ * @property {number} secondaryRayStepSize in voxels
  * @example let options = {
    };
  */
@@ -66,7 +68,8 @@ export class View3d {
     this.pixelSamplingRate = 0.75;
     this.exposure = 0.5;
     this.volumeRenderMode = RENDERMODE_RAYMARCH;
-
+    this.renderUpdateListener = null;
+    
     this.loaded = false;
     let that = this;
     this.parentEl = parentElement;
@@ -184,6 +187,16 @@ export class View3d {
     }
   }
 
+  /**
+   * @param {function} callback a function that will receive the number of render iterations when it changes
+   */
+  setRenderUpdateListener(callback) {
+    this.renderUpdateListener = callback;
+    if (this.image) {
+      this.image.setRenderUpdateListener(callback);
+    }
+  }
+
   // channels is an array of channel indices for which new data just arrived.
   onVolumeData(volume, channels) {
     this.image.onChannelLoaded(channels);
@@ -213,6 +226,13 @@ export class View3d {
   setVoxelSize(volume, values) {
     if (this.image) {
       this.image.setVoxelSize(values);
+    }
+    this.redraw();
+  }
+
+  setRayStepSizes(volume, primary, secondary) {
+    if (this.image) {
+      this.image.setRayStepSizes(primary, secondary);
     }
     this.redraw();
   }
@@ -641,6 +661,9 @@ export class View3d {
    * @param {number} value (+epsilon..1) 1 is max quality, ~0.1 for lowest quality and highest speed
    */
   updatePixelSamplingRate(value) {
+    if (this.pixelSamplingRate === value) {
+      return;
+    }
     this.pixelSamplingRate = value;
     if (this.image) {
       this.image.setPixelSamplingRate(value);
@@ -678,11 +701,11 @@ export class View3d {
    * @param {Array.<number>} colorrgb [r,g,b]
    * @param {Array.<number>} specularrgb [r,g,b]
    * @param {Array.<number>} emissivergb [r,g,b]
-   * @param {number} roughness
+   * @param {number} glossiness
    */
-  updateChannelMaterial(volume, channelIndex, colorrgb, specularrgb, emissivergb, roughness) {
+  updateChannelMaterial(volume, channelIndex, colorrgb, specularrgb, emissivergb, glossiness) {
     if (this.image) {
-      this.image.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, roughness);
+      this.image.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
     }
   }
 
@@ -730,9 +753,10 @@ export class View3d {
       this.image.setIsOrtho(this.canvas3d.camera.isOrthographicCamera);
       this.image.setResolution(this.canvas3d);
       this.setAutoRotate(this.canvas3d.controls.autoRotate);
+      
+      this.image.setRenderUpdateListener(this.renderUpdateListener);
     }
   }
-
 
   /**
    * 

@@ -3,10 +3,10 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const CleanWebpackPlugin = require('clean-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
-    entry: ['babel-polyfill', './public/index.js'],
+    entry: ['./public/index.js'],
     output: {
         path: path.resolve(__dirname, 'volumeviewer'),
         filename: 'volume-viewer-ui.bundle.js',
@@ -19,7 +19,7 @@ module.exports = {
         port: 9020
     },
     plugins: [
-        new CleanWebpackPlugin(['volumeviewer']),
+        new CleanWebpackPlugin(),
         new HtmlWebpackPlugin({
             template: './public/index.html'
         }),

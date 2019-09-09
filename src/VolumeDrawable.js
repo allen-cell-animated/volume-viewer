@@ -15,6 +15,9 @@ export default class VolumeDrawable {
 
     this.translation = new THREE.Vector3(0,0,0);
     this.rotation = new THREE.Euler();
+    this.flipX = 1;
+    this.flipY = 1;
+    this.flipZ = 1;
 
     this.maskChannelIndex = -1;
 
@@ -47,12 +50,14 @@ export default class VolumeDrawable {
 
     this.emissive = new Array(this.volume.num_channels).fill([0,0,0]);
 
-    this.roughness = new Array(this.volume.num_channels).fill(0);
+    this.glossiness = new Array(this.volume.num_channels).fill(0);
 
     this.sceneRoot = new THREE.Object3D();//create an empty container
 
     this.meshVolume = new MeshVolume(this.volume);
 
+    this.primaryRayStepSize = 1.0;
+    this.secondaryRayStepSize = 1.0;
     if (this.PT) {
       this.volumeRendering = new PathTracedVolume(this.volume);
       this.pathTracedVolume = this.volumeRendering;
@@ -115,6 +120,9 @@ export default class VolumeDrawable {
     if (options.hasOwnProperty("renderMode")) {
       this.setVolumeRendering(!!options.renderMode);
     }
+    if (options.hasOwnProperty("primaryRayStepSize") || options.hasOwnProperty("secondaryRayStepSize")) {
+      this.setRayStepSizes(options.primaryRayStepSize, options.secondaryRayStepSize);
+    }
 
     if (options.hasOwnProperty("channels")) {
       // store channel options here!
@@ -172,6 +180,16 @@ export default class VolumeDrawable {
         this.updateOpacity(channelIndex, options.isosurfaceOpacity);
       }
     }
+  }
+
+  setRayStepSizes(primary, secondary) {
+    if (primary !== undefined) {
+      this.primaryRayStepSize = primary;
+    }
+    if (secondary !== undefined) {
+      this.secondaryRayStepSize = secondary;
+    }
+    this.volumeRendering.setRayStepSizes(this.primaryRayStepSize, this.secondaryRayStepSize);
   }
 
   setScale(scale) {
@@ -305,6 +323,13 @@ export default class VolumeDrawable {
 
   }
 
+  setRenderUpdateListener(callback) {
+    this.renderUpdateListener = callback;
+    if (this.PT) {
+      this.pathTracedVolume.setRenderUpdateListener(callback);
+    }
+  }
+
   updateMaterial() {
     this.PT && this.pathTracedVolume.updateMaterial(this);
     !this.PT && this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
@@ -355,7 +380,7 @@ export default class VolumeDrawable {
 
     this.specular[newChannelIndex] = [0,0,0];
     this.emissive[newChannelIndex] = [0,0,0];
-    this.roughness[newChannelIndex] = 0;
+    this.glossiness[newChannelIndex] = 0;
 
   }
 
@@ -413,15 +438,15 @@ export default class VolumeDrawable {
   // @param {Array.<number>} colorrgb [r,g,b]
   // @param {Array.<number>} specularrgb [r,g,b]
   // @param {Array.<number>} emissivergb [r,g,b]
-  // @param {number} roughness
-  updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, roughness) {
+  // @param {number} glossiness
+  updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness) {
     if (!this.channel_colors[channelIndex]) {
       return;
     }
     this.updateChannelColor(channelIndex, colorrgb);
     this.specular[channelIndex] = specularrgb;
     this.emissive[channelIndex] = emissivergb;
-    this.roughness[channelIndex] = roughness;
+    this.glossiness[channelIndex] = glossiness;
   }
 
   setDensity(density) {
@@ -512,6 +537,7 @@ export default class VolumeDrawable {
       this.volumeRendering = new PathTracedVolume(this.volume);
       this.pathTracedVolume = this.volumeRendering;
       this.rayMarchedAtlasVolume = null;
+      this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
     }
     else {
       this.volumeRendering = new RayMarchedAtlasVolume(this.volume);
@@ -522,6 +548,9 @@ export default class VolumeDrawable {
         if (this.volume.getChannel(i).loaded) {
           this.rayMarchedAtlasVolume.onChannelData([i]);
         }
+      }
+      if (this.renderUpdateListener) {
+        this.renderUpdateListener(0);
       }
     }
 
@@ -543,6 +572,8 @@ export default class VolumeDrawable {
     this.setAxisClip('x', this.bounds.bmin.x, this.bounds.bmax.x);
     this.setAxisClip('y', this.bounds.bmin.y, this.bounds.bmax.y);
     this.setAxisClip('z', this.bounds.bmin.z, this.bounds.bmax.z);
+
+    this.setRayStepSizes(this.primaryRayStepSize, this.secondaryRayStepSize);
 
     // add new 3d object to scene
     !this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());
