@@ -1,40 +1,34 @@
 export const fresnelShaderSettings = {
-    bias: 0.4,
-    power: 2.0,
-    scale: 1.0
+  bias: 0.4,
+  power: 2.0,
+  scale: 1.0,
 };
 
 export const defaultMaterialSettings = {
-    shininess: 1000,
-    specularColor: 0x010101
+  shininess: 1000,
+  specularColor: 0x010101,
 };
 
 export const transparentMaterialSettings = {
-    shininess: 1000,
-    specularColor: 0x010101,
-    transparency: {
-        bias: -0.2,
-        power: 2.0,
-        scale: 1.0
-    }
+  shininess: 1000,
+  specularColor: 0x010101,
+  transparency: {
+    bias: -0.2,
+    power: 2.0,
+    scale: 1.0,
+  },
 };
 
 export const ShaderLibrary = {
+  fresnel: {
+    uniforms: {
+      bias: { value: 0.4 },
+      power: { value: 2.0 },
+      scale: { value: 1.0 },
+      uBaseColor: { value: new THREE.Color(0xffffff) },
+    },
 
-    fresnel: {
-
-        uniforms: {
-
-            bias: { value: 0.4 },
-            power: { value: 2.0 },
-            scale: { value: 1.0 },
-            uBaseColor: { value: new THREE.Color(0xFFFFFF) }
-
-        },
-
-        vertexShader:
-
-            `varying vec3 vNormal;
+    vertexShader: `varying vec3 vNormal;
             varying vec3 vI;
 
             void main() {
@@ -51,8 +45,7 @@ export const ShaderLibrary = {
 
             }`,
 
-        fragmentShader:
-            `uniform float bias;
+    fragmentShader: `uniform float bias;
             uniform float power;
             uniform float scale;
             uniform vec3 uBaseColor;
@@ -71,22 +64,21 @@ export const ShaderLibrary = {
                 }
                 gl_FragColor = vec4( uBaseColor, edge );
                 return;
-            }`
+            }`,
+  },
+};
 
-    }
-  };
+export function createShaderMaterial(id) {
+  const shader = ShaderLibrary[id];
 
-  export function createShaderMaterial(id) {
-      const shader = ShaderLibrary[id];
+  const u = THREE.UniformsUtils.clone(shader.uniforms);
+  const vs = shader.vertexShader;
+  const fs = shader.fragmentShader;
 
-      const u = THREE.UniformsUtils.clone(shader.uniforms);
-      const vs = shader.vertexShader;
-      const fs = shader.fragmentShader;
-
-      const material = new THREE.ShaderMaterial({
-          fragmentShader: fs,
-          uniforms: u,
-          vertexShader: vs
-      });
-      return material;
-  }
+  const material = new THREE.ShaderMaterial({
+    fragmentShader: fs,
+    uniforms: u,
+    vertexShader: vs,
+  });
+  return material;
+}

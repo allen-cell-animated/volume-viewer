@@ -1151,22 +1151,21 @@ void main()
 
 // Must match values in shader code above.
 const ShaderType_Brdf = 0;
-const ShaderType_Phase = 1;
-const ShaderType_Mixed = 2;
+// const ShaderType_Phase = 1;
+// const ShaderType_Mixed = 2;
 
 export function pathTracingUniforms() {
   return {
-      
     tPreviousTexture: { type: "t", value: null },
-    
+
     uSampleCounter: { type: "f", value: 0.0 },
     uFrameCounter: { type: "f", value: 1.0 },
-    
+
     uResolution: { type: "v2", value: new THREE.Vector2() },
 
-///////////////////////////
-    gClippedAaBbMin: { type: "v3", value: new THREE.Vector3(0,0,0) },
-    gClippedAaBbMax: { type: "v3", value: new THREE.Vector3(1,1,1) },
+    ///////////////////////////
+    gClippedAaBbMin: { type: "v3", value: new THREE.Vector3(0, 0, 0) },
+    gClippedAaBbMax: { type: "v3", value: new THREE.Vector3(1, 1, 1) },
     gDensityScale: { type: "f", value: 50.0 },
     gStepSize: { type: "f", value: 1.0 },
     gStepSizeShadow: { type: "f", value: 1.0 },
@@ -1187,46 +1186,52 @@ export function pathTracingUniforms() {
         m_U: new THREE.Vector3(),
         m_V: new THREE.Vector3(),
         m_N: new THREE.Vector3(),
-        m_screen: new THREE.Vector4(),  // left, right, bottom, top
-        m_invScreen: new THREE.Vector2(),  // 1/w, 1/h
+        m_screen: new THREE.Vector4(), // left, right, bottom, top
+        m_invScreen: new THREE.Vector2(), // 1/w, 1/h
         m_focalDistance: 0.0,
         m_apertureSize: 0.0,
-        m_isOrtho: 0.0
-      }
+        m_isOrtho: 0.0,
+      },
     },
     gLights: {
-      value: [
-        new Light(SKY_LIGHT), new Light(AREA_LIGHT)
-      ]
+      value: [new Light(SKY_LIGHT), new Light(AREA_LIGHT)],
     },
-    
-    volumeTexture: { type: "t", value: null },
-    // per channel 
-    g_lutTexture: { type: "t", value: null },
-    g_intensityMax: { type: "v4", value: new THREE.Vector4(1,1,1,1) },
-    g_intensityMin: { type: "v4", value: new THREE.Vector4(0,0,0,0) },
-    g_opacity: { type: "1fv", value: [1,1,1,1] },
-    g_emissive: { type: "v3v", value: [
-      new THREE.Vector3(0,0,0),
-      new THREE.Vector3(0,0,0),
-      new THREE.Vector3(0,0,0),
-      new THREE.Vector3(0,0,0)
-    ] },
-    g_diffuse: { type: "v3v", value: [
-      new THREE.Vector3(1,0,0),
-      new THREE.Vector3(0,1,0),
-      new THREE.Vector3(0,0,1),
-      new THREE.Vector3(1,0,1)
-    ] },
-    g_specular: { type: "v3v", value: [
-      new THREE.Vector3(0,0,0),
-      new THREE.Vector3(0,0,0),
-      new THREE.Vector3(0,0,0),
-      new THREE.Vector3(0,0,0)
-    ] },
-    g_glossiness: { type: "1fv", value: [1,1,1,1] },
-    uShowLights: { type: "f", value: 0 },
-    flipVolume: { type: "v3", value: new THREE.Vector3(1,1,1) }
-  };
-};
 
+    volumeTexture: { type: "t", value: null },
+    // per channel
+    g_lutTexture: { type: "t", value: null },
+    g_intensityMax: { type: "v4", value: new THREE.Vector4(1, 1, 1, 1) },
+    g_intensityMin: { type: "v4", value: new THREE.Vector4(0, 0, 0, 0) },
+    g_opacity: { type: "1fv", value: [1, 1, 1, 1] },
+    g_emissive: {
+      type: "v3v",
+      value: [
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, 0),
+      ],
+    },
+    g_diffuse: {
+      type: "v3v",
+      value: [
+        new THREE.Vector3(1, 0, 0),
+        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(0, 0, 1),
+        new THREE.Vector3(1, 0, 1),
+      ],
+    },
+    g_specular: {
+      type: "v3v",
+      value: [
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, 0),
+      ],
+    },
+    g_glossiness: { type: "1fv", value: [1, 1, 1, 1] },
+    uShowLights: { type: "f", value: 0 },
+    flipVolume: { type: "v3", value: new THREE.Vector3(1, 1, 1) },
+  };
+}

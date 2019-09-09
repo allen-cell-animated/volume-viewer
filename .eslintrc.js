@@ -10,7 +10,7 @@ module.exports = {
   },
   "rules": {
     "camelcase": "off",
-    "comma-dangle": 1,
+    "comma-dangle": ["error", "always-multiline"],
     "comma-style": [1, "last"],
     "curly": [1, "multi-line"],
     "eol-last": 1,
