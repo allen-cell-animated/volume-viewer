@@ -68,6 +68,7 @@ export class ThreeJsPanel {
       this.renderer.setPixelRatio( window.devicePixelRatio );
       this.renderer.state.setBlending(THREE.NormalBlending);
     }
+    this.renderer.setSize( parentElement.offsetWidth, parentElement.offsetHeight );
 
     this.timer = new Timing();
 

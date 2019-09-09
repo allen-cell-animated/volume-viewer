@@ -10,13 +10,8 @@ import {
     SKY_LIGHT
 } from '../src';
 
-let el = document.getElementById("volume-viewer");
-let view3D = new View3d(el);
 
-// TODO FIX ME : run this code after we know that the page has rendered, 
-// so that the view3D can get size from el
-const viewersize = [1200, 900];
-view3D.resize(null, viewersize[0], viewersize[1]);
+let view3D = null;
 
 const myState = {
     file: "",
@@ -443,8 +438,6 @@ function showChannelUI(volume) {
 }
 
 function loadImageData(jsondata, volumedata) {
-    view3D.resize();
-    
     const vol = new Volume(jsondata);
     myState.volume = vol;
 
@@ -504,8 +497,6 @@ function loadImageData(jsondata, volumedata) {
         });
     }
     showChannelUI(vol);
-    // TODO this resizing should not be necessary??
-    view3D.resize(null, viewersize[0], viewersize[1]);
 
     return vol;
 }
@@ -525,118 +516,129 @@ function fetchImage(url) {
     });
 }
 
-var xbtn = document.getElementById("X");
-xbtn.addEventListener("click", ()=>{view3D.setCameraMode('X');});
-var ybtn = document.getElementById("Y");
-ybtn.addEventListener("click", ()=>{view3D.setCameraMode('Y');});
-var zbtn = document.getElementById("Z");
-zbtn.addEventListener("click", ()=>{view3D.setCameraMode('Z');});
-var d3btn = document.getElementById("3D");
-d3btn.addEventListener("click", ()=>{view3D.setCameraMode('3D');});
-var rotbtn = document.getElementById("rotbtn");
-rotbtn.addEventListener("click", ()=>{myState.isTurntable = !myState.isTurntable; view3D.setAutoRotate(myState.isTurntable)});
-var axisbtn = document.getElementById("axisbtn");
-axisbtn.addEventListener("click", ()=>{myState.isAxisShowing = !myState.isAxisShowing; view3D.setShowAxis(myState.isAxisShowing)});
-var flipxbtn = document.getElementById("flipxbtn");
-flipxbtn.addEventListener("click", ()=>{myState.flipX *= -1; view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);});
-var flipybtn = document.getElementById("flipybtn");
-flipybtn.addEventListener("click", ()=>{myState.flipY *= -1; view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);});
-var flipzbtn = document.getElementById("flipzbtn");
-flipzbtn.addEventListener("click", ()=>{myState.flipZ *= -1; view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);});
+function main() {
+    let el = document.getElementById("volume-viewer");
+    view3D = new View3d(el);
+    //view3D.resize();
 
-var alignbtn = document.getElementById("xfbtn");
-alignbtn.addEventListener("click", ()=>{
-    myState.isAligned = !myState.isAligned; 
-    view3D.setVolumeTranslation(myState.volume, myState.isAligned ? myState.volume.getTranslation() : [0,0,0]); 
-    view3D.setVolumeRotation(myState.volume, myState.isAligned ? myState.volume.getRotation() : [0,0,0]);
-});
-var resetcambtn = document.getElementById("resetcambtn");
-resetcambtn.addEventListener("click", () => {
-    view3D.resetCamera();
-});
-var counterspan = document.getElementById("counter");
-view3D.setRenderUpdateListener((count) => {
-    counterspan.innerHTML = ""+count;
-})
-
-if (view3D.canvas3d.hasWebGL2) {
-    var ptbtn = document.getElementById("ptbtn");
-    ptbtn.disabled = false;
-    ptbtn.style.disabled = false;
-    //var ptbtn = document.getElementById("ptbtn");
-    ptbtn.addEventListener("click", ()=>{
-        myState.isPT = !myState.isPT; 
-        view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
-        view3D.updateLights(myState.lights);
+    var xbtn = document.getElementById("X");
+    xbtn.addEventListener("click", ()=>{view3D.setCameraMode('X');});
+    var ybtn = document.getElementById("Y");
+    ybtn.addEventListener("click", ()=>{view3D.setCameraMode('Y');});
+    var zbtn = document.getElementById("Z");
+    zbtn.addEventListener("click", ()=>{view3D.setCameraMode('Z');});
+    var d3btn = document.getElementById("3D");
+    d3btn.addEventListener("click", ()=>{view3D.setCameraMode('3D');});
+    var rotbtn = document.getElementById("rotbtn");
+    rotbtn.addEventListener("click", ()=>{myState.isTurntable = !myState.isTurntable; view3D.setAutoRotate(myState.isTurntable)});
+    var axisbtn = document.getElementById("axisbtn");
+    axisbtn.addEventListener("click", ()=>{myState.isAxisShowing = !myState.isAxisShowing; view3D.setShowAxis(myState.isAxisShowing)});
+    var flipxbtn = document.getElementById("flipxbtn");
+    flipxbtn.addEventListener("click", ()=>{myState.flipX *= -1; view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);});
+    var flipybtn = document.getElementById("flipybtn");
+    flipybtn.addEventListener("click", ()=>{myState.flipY *= -1; view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);});
+    var flipzbtn = document.getElementById("flipzbtn");
+    flipzbtn.addEventListener("click", ()=>{myState.flipZ *= -1; view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);});
+    
+    var alignbtn = document.getElementById("xfbtn");
+    alignbtn.addEventListener("click", ()=>{
+        myState.isAligned = !myState.isAligned; 
+        view3D.setVolumeTranslation(myState.volume, myState.isAligned ? myState.volume.getTranslation() : [0,0,0]); 
+        view3D.setVolumeRotation(myState.volume, myState.isAligned ? myState.volume.getRotation() : [0,0,0]);
     });
+    var resetcambtn = document.getElementById("resetcambtn");
+    resetcambtn.addEventListener("click", () => {
+        view3D.resetCamera();
+    });
+    var counterspan = document.getElementById("counter");
+    view3D.setRenderUpdateListener((count) => {
+        counterspan.innerHTML = ""+count;
+    })
+    
+    if (view3D.canvas3d.hasWebGL2) {
+        var ptbtn = document.getElementById("ptbtn");
+        ptbtn.disabled = false;
+        ptbtn.style.disabled = false;
+        //var ptbtn = document.getElementById("ptbtn");
+        ptbtn.addEventListener("click", ()=>{
+            myState.isPT = !myState.isPT; 
+            view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+            view3D.updateLights(myState.lights);
+        });
+    }
+    var screenshotbtn = document.getElementById("screenshotbtn");
+    screenshotbtn.addEventListener("click", () => {
+        view3D.capture((dataurl) => {
+            const anch = document.createElement('a');
+            anch.href = dataurl;
+            anch.download = "screenshot.png";
+            anch.click();
+        });
+    });
+    
+    setupGui();
+    
+    // switch the uncommented line to test with volume data or atlas data
+    fetchImage("AICS-12_881_atlas.json");
+    // const imgdata = {
+    //     // width := original full size image width
+    //     "width": 306,
+    //     // height := original full size image height
+    //     "height": 494,
+    //     "channels": 9,
+    //     "channel_names": ["DRAQ5", "EGFP", "Hoechst 33258", "TL Brightfield", "SEG_STRUCT", "SEG_Memb", "SEG_DNA", "CON_Memb", "CON_DNA"],
+    //     "rows": 7,
+    //     "cols": 10,
+    //     // tiles <= rows*cols, tiles is number of z slices
+    //     "tiles": 65,
+    //     "tile_width": 204,
+    //     "tile_height": 292,
+    
+    //     // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048 
+    //     // and ideally a power of 2.
+    
+    //     // These are the pixel dimensions of the png files in "images" below.
+    //     // atlas_width === cols*tile_width
+    //     "atlas_width": 2040,
+    //     // atlas_height === rows*tile_height
+    //     "atlas_height": 2044,
+    
+    //     "pixel_size_x": 0.065,
+    //     "pixel_size_y": 0.065,
+    //     "pixel_size_z": 0.29,
+    
+    //     "images": [{
+    //         "name": "AICS-10_5_5.ome.tif_atlas_0.png",
+    //         "channels": [0, 1, 2]
+    //     }, {
+    //         "name": "AICS-10_5_5.ome.tif_atlas_1.png",
+    //         "channels": [3, 4, 5]
+    //     }, {
+    //         "name": "AICS-10_5_5.ome.tif_atlas_2.png",
+    //         "channels": [6, 7, 8]
+    //     }],
+    //     "name": "AICS-10_5_5",
+    //     "status": "OK",
+    //     "version": "0.0.0",
+    //     "aicsImageVersion": "0.3.0"
+    // }
+    // // generate some raw volume data
+    // var channelVolumes = [];
+    // for (var i = 0; i < imgdata.channels; ++i) {
+    //   if (i % 2 === 0) {
+    //     var sv = VolumeMaker.createSphere(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 16);
+    //     channelVolumes.push(sv);
+    //   }
+    //   else{
+    //     var sv = VolumeMaker.createTorus(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 32, 8);
+    //     channelVolumes.push(sv);
+    //   }
+    // }
+    //loadImageData(imgdata);
+    //loadImageData(imgdata, channelVolumes);
+    
 }
-var screenshotbtn = document.getElementById("screenshotbtn");
-screenshotbtn.addEventListener("click", () => {
-    view3D.capture((dataurl) => {
-        const anch = document.createElement('a');
-        anch.href = dataurl;
-        anch.download = "screenshot.png";
-        anch.click();
-    });
-});
 
-setupGui();
-
-// switch the uncommented line to test with volume data or atlas data
-fetchImage("AICS-12_881_atlas.json");
-// const imgdata = {
-//     // width := original full size image width
-//     "width": 306,
-//     // height := original full size image height
-//     "height": 494,
-//     "channels": 9,
-//     "channel_names": ["DRAQ5", "EGFP", "Hoechst 33258", "TL Brightfield", "SEG_STRUCT", "SEG_Memb", "SEG_DNA", "CON_Memb", "CON_DNA"],
-//     "rows": 7,
-//     "cols": 10,
-//     // tiles <= rows*cols, tiles is number of z slices
-//     "tiles": 65,
-//     "tile_width": 204,
-//     "tile_height": 292,
-
-//     // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048 
-//     // and ideally a power of 2.
-
-//     // These are the pixel dimensions of the png files in "images" below.
-//     // atlas_width === cols*tile_width
-//     "atlas_width": 2040,
-//     // atlas_height === rows*tile_height
-//     "atlas_height": 2044,
-
-//     "pixel_size_x": 0.065,
-//     "pixel_size_y": 0.065,
-//     "pixel_size_z": 0.29,
-
-//     "images": [{
-//         "name": "AICS-10_5_5.ome.tif_atlas_0.png",
-//         "channels": [0, 1, 2]
-//     }, {
-//         "name": "AICS-10_5_5.ome.tif_atlas_1.png",
-//         "channels": [3, 4, 5]
-//     }, {
-//         "name": "AICS-10_5_5.ome.tif_atlas_2.png",
-//         "channels": [6, 7, 8]
-//     }],
-//     "name": "AICS-10_5_5",
-//     "status": "OK",
-//     "version": "0.0.0",
-//     "aicsImageVersion": "0.3.0"
-// }
-// // generate some raw volume data
-// var channelVolumes = [];
-// for (var i = 0; i < imgdata.channels; ++i) {
-//   if (i % 2 === 0) {
-//     var sv = VolumeMaker.createSphere(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 16);
-//     channelVolumes.push(sv);
-//   }
-//   else{
-//     var sv = VolumeMaker.createTorus(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 32, 8);
-//     channelVolumes.push(sv);
-//   }
-// }
-//loadImageData(imgdata);
-//loadImageData(imgdata, channelVolumes);
+document.body.onload = () => {
+    main();
+}
