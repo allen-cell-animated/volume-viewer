@@ -11,4 +11,3 @@ package-lock.json
 public/
 src/
 webpack.dev.js
-webpack.library.js

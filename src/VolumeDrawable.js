@@ -1,10 +1,9 @@
-import MeshVolume from './MeshVolume.js';
-import RayMarchedAtlasVolume from './RayMarchedAtlasVolume.js';
-import PathTracedVolume from './PathTracedVolume.js';
+import MeshVolume from "./MeshVolume.js";
+import RayMarchedAtlasVolume from "./RayMarchedAtlasVolume.js";
+import PathTracedVolume from "./PathTracedVolume.js";
 
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
-
   constructor(volume, options) {
     this.PT = !!options.renderMode;
 
@@ -13,7 +12,7 @@ export default class VolumeDrawable {
 
     this.onChannelDataReadyCallback = null;
 
-    this.translation = new THREE.Vector3(0,0,0);
+    this.translation = new THREE.Vector3(0, 0, 0);
     this.rotation = new THREE.Euler();
     this.flipX = 1;
     this.flipY = 1;
@@ -41,18 +40,18 @@ export default class VolumeDrawable {
       }
       return {
         chIndex: index,
-        lut:[],
-        rgbColor: rgbColor
+        lut: [],
+        rgbColor: rgbColor,
       };
     });
 
-    this.specular = new Array(this.volume.num_channels).fill([0,0,0]);
+    this.specular = new Array(this.volume.num_channels).fill([0, 0, 0]);
 
-    this.emissive = new Array(this.volume.num_channels).fill([0,0,0]);
+    this.emissive = new Array(this.volume.num_channels).fill([0, 0, 0]);
 
     this.glossiness = new Array(this.volume.num_channels).fill(0);
 
-    this.sceneRoot = new THREE.Object3D();//create an empty container
+    this.sceneRoot = new THREE.Object3D(); //create an empty container
 
     this.meshVolume = new MeshVolume(this.volume);
 
@@ -61,8 +60,7 @@ export default class VolumeDrawable {
     if (this.PT) {
       this.volumeRendering = new PathTracedVolume(this.volume);
       this.pathTracedVolume = this.volumeRendering;
-    }
-    else {
+    } else {
       this.volumeRendering = new RayMarchedAtlasVolume(this.volume);
       this.rayMarchedAtlasVolume = this.volumeRendering;
     }
@@ -75,7 +73,7 @@ export default class VolumeDrawable {
 
     this.bounds = {
       bmin: new THREE.Vector3(-0.5, -0.5, -0.5),
-      bmax: new THREE.Vector3(0.5, 0.5, 0.5)
+      bmax: new THREE.Vector3(0.5, 0.5, 0.5),
     };
 
     this.sceneRoot.position.set(0, 0, 0);
@@ -83,7 +81,9 @@ export default class VolumeDrawable {
     this.setScale(this.volume.scale);
 
     // apply the volume's default transformation
-    this.setTranslation(new THREE.Vector3().fromArray(this.volume.getTranslation()));
+    this.setTranslation(
+      new THREE.Vector3().fromArray(this.volume.getTranslation())
+    );
     this.setRotation(new THREE.Euler().fromArray(this.volume.getRotation()));
 
     this.setOptions(options);
@@ -99,13 +99,21 @@ export default class VolumeDrawable {
     }
     if (options.hasOwnProperty("clipBounds")) {
       this.bounds = {
-        bmin: new THREE.Vector3(options.clipBounds[0], options.clipBounds[2], options.clipBounds[4]),
-        bmax: new THREE.Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5])
+        bmin: new THREE.Vector3(
+          options.clipBounds[0],
+          options.clipBounds[2],
+          options.clipBounds[4]
+        ),
+        bmax: new THREE.Vector3(
+          options.clipBounds[1],
+          options.clipBounds[3],
+          options.clipBounds[5]
+        ),
       };
       // note: dropping isOrthoAxis argument
-      this.setAxisClip('x', options.clipBounds[0], options.clipBounds[1]);
-      this.setAxisClip('y', options.clipBounds[2], options.clipBounds[3]);
-      this.setAxisClip('z', options.clipBounds[4], options.clipBounds[5]);
+      this.setAxisClip("x", options.clipBounds[0], options.clipBounds[1]);
+      this.setAxisClip("y", options.clipBounds[2], options.clipBounds[3]);
+      this.setAxisClip("z", options.clipBounds[4], options.clipBounds[5]);
     }
     if (options.hasOwnProperty("scale")) {
       this.setScale(options.scale.slice());
@@ -120,8 +128,14 @@ export default class VolumeDrawable {
     if (options.hasOwnProperty("renderMode")) {
       this.setVolumeRendering(!!options.renderMode);
     }
-    if (options.hasOwnProperty("primaryRayStepSize") || options.hasOwnProperty("secondaryRayStepSize")) {
-      this.setRayStepSizes(options.primaryRayStepSize, options.secondaryRayStepSize);
+    if (
+      options.hasOwnProperty("primaryRayStepSize") ||
+      options.hasOwnProperty("secondaryRayStepSize")
+    ) {
+      this.setRayStepSizes(
+        options.primaryRayStepSize,
+        options.secondaryRayStepSize
+      );
     }
 
     if (options.hasOwnProperty("channels")) {
@@ -135,7 +149,10 @@ export default class VolumeDrawable {
 
   setChannelOptions(channelIndex, options) {
     // merge to current channel options
-    this.channelOptions[channelIndex] = Object.assign(this.channelOptions[channelIndex], options);
+    this.channelOptions[channelIndex] = Object.assign(
+      this.channelOptions[channelIndex],
+      options
+    );
 
     if (options.hasOwnProperty("enabled")) {
       this.setVolumeChannelEnabled(channelIndex, options.enabled);
@@ -148,8 +165,7 @@ export default class VolumeDrawable {
       if (hasIso !== options.isosurfaceEnabled) {
         if (hasIso && !options.isosurfaceEnabled) {
           this.destroyIsosurface(channelIndex);
-        }
-        else if (!hasIso && options.isosurfaceEnabled) {
+        } else if (!hasIso && options.isosurfaceEnabled) {
           // 127 is half of the intensity range 0..255
           let isovalue = 127;
           if (options.hasOwnProperty("isovalue")) {
@@ -161,9 +177,8 @@ export default class VolumeDrawable {
             isosurfaceOpacity = options.isosurfaceOpacity;
           }
           this.createIsosurface(channelIndex, isovalue, isosurfaceOpacity);
-        }  
-      }
-      else if (options.isosurfaceEnabled) {
+        }
+      } else if (options.isosurfaceEnabled) {
         if (options.hasOwnProperty("isovalue")) {
           this.updateIsovalue(channelIndex, options.isovalue);
         }
@@ -171,8 +186,7 @@ export default class VolumeDrawable {
           this.updateOpacity(channelIndex, options.isosurfaceOpacity);
         }
       }
-    }
-    else {
+    } else {
       if (options.hasOwnProperty("isovalue")) {
         this.updateIsovalue(channelIndex, options.isovalue);
       }
@@ -189,11 +203,13 @@ export default class VolumeDrawable {
     if (secondary !== undefined) {
       this.secondaryRayStepSize = secondary;
     }
-    this.volumeRendering.setRayStepSizes(this.primaryRayStepSize, this.secondaryRayStepSize);
+    this.volumeRendering.setRayStepSizes(
+      this.primaryRayStepSize,
+      this.secondaryRayStepSize
+    );
   }
 
   setScale(scale) {
-
     this.scale = scale;
 
     this.currentScale = scale.clone();
@@ -213,16 +229,16 @@ export default class VolumeDrawable {
     this.meshVolume.setResolution(x, y);
   }
 
-  // Set clipping range (between 0 and 1) for a given axis. 
+  // Set clipping range (between 0 and 1) for a given axis.
   // Calling this allows the rendering to compensate for changes in thickness in orthographic views that affect how bright the volume is.
   // @param {number} axis 0, 1, or 2 for x, y, or z axis
   // @param {number} minval 0..1, should be less than maxval
-  // @param {number} maxval 0..1, should be greater than minval 
+  // @param {number} maxval 0..1, should be greater than minval
   // @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
   setAxisClip(axis, minval, maxval, isOrthoAxis) {
     this.bounds.bmax[axis] = maxval;
     this.bounds.bmin[axis] = minval;
-  
+
     !this.PT && this.meshVolume.setAxisClip(axis, minval, maxval, isOrthoAxis);
     this.volumeRendering.setAxisClip(axis, minval, maxval, isOrthoAxis);
   }
@@ -265,14 +281,13 @@ export default class VolumeDrawable {
     // TODO: this is inefficient, as this work is duplicated by threejs.
     // we need camera matrix up to date before giving the 3d objects a chance to use it.
     canvas.camera.updateMatrixWorld(true);
-    canvas.camera.matrixWorldInverse.getInverse( canvas.camera.matrixWorld );
+    canvas.camera.matrixWorldInverse.getInverse(canvas.camera.matrixWorld);
 
     const isVR = canvas.isVR();
     if (isVR) {
       // raise volume drawable to about 1 meter.
       this.sceneRoot.position.y = 1.0;
-    }
-    else {
+    } else {
       this.sceneRoot.position.y = 0.0;
     }
 
@@ -301,7 +316,13 @@ export default class VolumeDrawable {
 
   // If an isosurface is not already created, then create one.  Otherwise do nothing.
   createIsosurface(channel, value, alpha, transp) {
-    this.meshVolume.createIsosurface(channel, this.channel_colors[channel], value, alpha, transp);
+    this.meshVolume.createIsosurface(
+      channel,
+      this.channel_colors[channel],
+      value,
+      alpha,
+      transp
+    );
   }
 
   // If an isosurface exists for this channel, destroy it now. Don't just hide it - assume we can free up some resources.
@@ -316,11 +337,9 @@ export default class VolumeDrawable {
 
     if (this.PT) {
       this.pathTracedVolume.updateActiveChannels(this);
-    }
-    else {
+    } else {
       this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
     }
-
   }
 
   setRenderUpdateListener(callback) {
@@ -332,12 +351,14 @@ export default class VolumeDrawable {
 
   updateMaterial() {
     this.PT && this.pathTracedVolume.updateMaterial(this);
-    !this.PT && this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
+    !this.PT &&
+      this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
   }
 
   updateLuts() {
     this.PT && this.pathTracedVolume.updateLuts(this);
-    !this.PT && this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
+    !this.PT &&
+      this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
   }
 
   setVoxelSize(values) {
@@ -362,7 +383,7 @@ export default class VolumeDrawable {
       const idx = batch[j];
       this.setChannelOptions(idx, this.channelOptions[idx]);
     }
-  
+
     // let the outside world have a chance
     if (this.onChannelDataReadyCallback) {
       this.onChannelDataReadyCallback();
@@ -370,18 +391,23 @@ export default class VolumeDrawable {
   }
 
   onChannelAdded(newChannelIndex) {
-    this.channel_colors[newChannelIndex] = this.volume.channel_colors_default[newChannelIndex];
+    this.channel_colors[newChannelIndex] = this.volume.channel_colors_default[
+      newChannelIndex
+    ];
 
     this.fusion[newChannelIndex] = {
       chIndex: newChannelIndex,
-      lut:[],
-      rgbColor: [this.channel_colors[newChannelIndex][0], this.channel_colors[newChannelIndex][1], this.channel_colors[newChannelIndex][2]]
+      lut: [],
+      rgbColor: [
+        this.channel_colors[newChannelIndex][0],
+        this.channel_colors[newChannelIndex][1],
+        this.channel_colors[newChannelIndex][2],
+      ],
     };
 
-    this.specular[newChannelIndex] = [0,0,0];
-    this.emissive[newChannelIndex] = [0,0,0];
+    this.specular[newChannelIndex] = [0, 0, 0];
+    this.emissive[newChannelIndex] = [0, 0, 0];
     this.glossiness[newChannelIndex] = 0;
-
   }
 
   // Save a channel's isosurface as a triangle mesh to either STL or GLTF2 format.  File will be named automatically, using image name and channel name.
@@ -393,12 +419,13 @@ export default class VolumeDrawable {
   // Hide or display volume data for a channel
   setVolumeChannelEnabled(channelIndex, enabled) {
     // flip the color to the "null" value
-    this.fusion[channelIndex].rgbColor = enabled ? this.channel_colors[channelIndex] : 0;
+    this.fusion[channelIndex].rgbColor = enabled
+      ? this.channel_colors[channelIndex]
+      : 0;
     // if all are nulled out, then hide the volume element from the scene.
-    if (this.fusion.every((elem)=>(elem.rgbColor === 0))) {
+    if (this.fusion.every(elem => elem.rgbColor === 0)) {
       this.volumeRendering.setVisible(false);
-    }
-    else {
+    } else {
       this.volumeRendering.setVisible(true);
     }
   }
@@ -434,12 +461,18 @@ export default class VolumeDrawable {
   }
 
   // Set the material for a channel
-  // @param {number} channelIndex 
+  // @param {number} channelIndex
   // @param {Array.<number>} colorrgb [r,g,b]
   // @param {Array.<number>} specularrgb [r,g,b]
   // @param {Array.<number>} emissivergb [r,g,b]
   // @param {number} glossiness
-  updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness) {
+  updateChannelMaterial(
+    channelIndex,
+    colorrgb,
+    specularrgb,
+    emissivergb,
+    glossiness
+  ) {
     if (!this.channel_colors[channelIndex]) {
       return;
     }
@@ -471,7 +504,10 @@ export default class VolumeDrawable {
   }
 
   setChannelAsMask(channelIndex) {
-    if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
+    if (
+      !this.volume.channels[channelIndex] ||
+      !this.volume.channels[channelIndex].loaded
+    ) {
       return false;
     }
     this.maskChannelIndex = channelIndex;
@@ -504,7 +540,8 @@ export default class VolumeDrawable {
   }
 
   onCameraChanged(fov, focalDistance, apertureSize) {
-    this.PT && this.pathTracedVolume.updateCamera(fov, focalDistance, apertureSize);
+    this.PT &&
+      this.pathTracedVolume.updateCamera(fov, focalDistance, apertureSize);
   }
 
   updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
@@ -518,7 +555,6 @@ export default class VolumeDrawable {
   setPixelSamplingRate(value) {
     this.volumeRendering.setPixelSamplingRate(value);
   }
-
 
   setVolumeRendering(is_pathtrace) {
     if (is_pathtrace === this.PT) {
@@ -538,8 +574,7 @@ export default class VolumeDrawable {
       this.pathTracedVolume = this.volumeRendering;
       this.rayMarchedAtlasVolume = null;
       this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
-    }
-    else {
+    } else {
       this.volumeRendering = new RayMarchedAtlasVolume(this.volume);
       this.pathTracedVolume = null;
       this.rayMarchedAtlasVolume = this.volumeRendering;
@@ -557,7 +592,7 @@ export default class VolumeDrawable {
     // ensure transforms on new volume representation are up to date
     this.volumeRendering.setTranslation(this.translation);
     this.volumeRendering.setRotation(this.rotation);
-  
+
     this.PT = is_pathtrace;
 
     this.setChannelAsMask(this.maskChannelIndex);
@@ -569,9 +604,9 @@ export default class VolumeDrawable {
     this.setFlipAxes(this.flipX, this.flipY, this.flipZ);
 
     // reset clip bounds
-    this.setAxisClip('x', this.bounds.bmin.x, this.bounds.bmax.x);
-    this.setAxisClip('y', this.bounds.bmin.y, this.bounds.bmax.y);
-    this.setAxisClip('z', this.bounds.bmin.z, this.bounds.bmax.z);
+    this.setAxisClip("x", this.bounds.bmin.x, this.bounds.bmax.x);
+    this.setAxisClip("y", this.bounds.bmin.y, this.bounds.bmax.y);
+    this.setAxisClip("z", this.bounds.bmin.z, this.bounds.bmax.z);
 
     this.setRayStepSizes(this.primaryRayStepSize, this.secondaryRayStepSize);
 
@@ -593,6 +628,4 @@ export default class VolumeDrawable {
     this.volumeRendering.setRotation(this.rotation);
     this.meshVolume.setRotation(this.rotation);
   }
-
-};
-
+}

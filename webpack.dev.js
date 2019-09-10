@@ -10,55 +10,55 @@ module.exports = {
     output: {
         path: path.resolve(__dirname, 'volumeviewer'),
         filename: 'volume-viewer-ui.bundle.js',
-        publicPath: '/volumeviewer/'
+        publicPath: '/volumeviewer/',
     },
     devtool: 'cheap-module-source-map',
     devServer: {
         publicPath: '/volumeviewer/',
         openPage: 'volumeviewer/',
-        port: 9020
+        port: 9020,
     },
     plugins: [
         new CleanWebpackPlugin(),
         new HtmlWebpackPlugin({
-            template: './public/index.html'
+            template: './public/index.html',
         }),
         new webpack.DefinePlugin({
-            APP_VERSION: JSON.stringify(require("./package.json").version)
+            APP_VERSION: JSON.stringify(require("./package.json").version),
         }),
         new webpack.ProvidePlugin({
-            THREE: 'three'
+            THREE: 'three',
         }),
         // ignores a webcomponents dependency on a server side module since this is for front end only.
         // see: https://github.com/webcomponents/webcomponentsjs/issues/794
         new webpack.IgnorePlugin(/vertx/),
-        new CopyWebpackPlugin(['public'])
+        new CopyWebpackPlugin(['public']),
     ],
     resolve: {
-        extensions: ['.js']
+        extensions: ['.js'],
     },
     module: {
         rules: [
             {
                 test: /\.js$/,
                 include: [
-                    path.resolve(__dirname, 'public')
+                    path.resolve(__dirname, 'public'),
                 ],
                 exclude: /node_modules/,
-                use: 'babel-loader'
+                use: 'babel-loader',
             },
             {
                 test: /Worker\.js$/,
-                use: 'worker-loader?inline=true'
+                use: 'worker-loader?inline=true',
             },
             {
                 test: /\.(obj)$/,
-                use: ['raw-loader?inline=true']
+                use: ['raw-loader?inline=true'],
             },
             {
                 test: /\.(png)$/,
-                use: ['url-loader?inline=true']
-            }
-        ]
-    }
+                use: ['url-loader?inline=true'],
+            },
+        ],
+    },
 };
