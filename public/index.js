@@ -705,9 +705,18 @@ function loadImageData(jsondata, volumedata) {
       // the layout, then second row of first plane, etc)
       vol.setChannelDataFromVolume(i, volumedata[i]);
 
+      view3D.setVolumeRenderMode(
+        myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH
+      );
+
       view3D.removeAllVolumes();
       view3D.addVolume(vol);
 
+      // first 3 channels for starters
+      for (var ch = 0; ch < vol.num_channels; ++ch) {
+        view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
+      }
+      
       const mask_channel_index = jsondata.channel_names.indexOf("SEG_Memb");
       view3D.setVolumeChannelAsMask(vol, mask_channel_index);
       view3D.updateActiveChannels(vol);
@@ -781,6 +790,70 @@ function fetchImage(url) {
       // });
       loadImageData(myJson);
     });
+}
+
+function createTestVolume() {
+  const imgdata = {
+    // width := original full size image width
+    width: 64,
+    // height := original full size image height
+    height: 64,
+    channels: 3,
+    channel_names: [
+      "DRAQ5",
+      "EGFP",
+      "SEG_Memb",
+    ],
+    rows: 8,
+    cols: 8,
+    // tiles <= rows*cols, tiles is number of z slices
+    tiles: 64,
+    tile_width: 64,
+    tile_height: 64,
+
+    // These dimensions are used to prepare the raw volume arrays for rendering as tiled texture atlases
+    // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
+    // and ideally a power of 2. (adjust other dimensions accordingly)
+    // atlas_width === cols*tile_width
+    atlas_width: 512,
+    // atlas_height === rows*tile_height
+    atlas_height: 512,
+
+    pixel_size_x: 1,
+    pixel_size_y: 1,
+    pixel_size_z: 1,
+    name: "AICS-10_5_5",
+    status: "OK",
+    version: "0.0.0",
+    aicsImageVersion: "0.3.0",
+  };
+  // generate some raw volume data
+  var channelVolumes = [
+    VolumeMaker.createSphere(
+      imgdata.tile_width,
+      imgdata.tile_height,
+      imgdata.tiles,
+      24
+    ),
+    VolumeMaker.createTorus(
+      imgdata.tile_width,
+      imgdata.tile_height,
+      imgdata.tiles,
+      24,
+      8
+    ),
+    VolumeMaker.createCone(
+      imgdata.tile_width,
+      imgdata.tile_height,
+      imgdata.tiles,
+      24, 
+      24
+    ),
+  ];
+  return {
+    imgdata: imgdata,
+    volumedata: channelVolumes
+  }
 }
 
 function main() {
@@ -889,64 +962,13 @@ function main() {
 
   setupGui();
 
-  // switch the uncommented line to test with volume data or atlas data
-  fetchImage("AICS-12_881_atlas.json");
-  // const imgdata = {
-  //     // width := original full size image width
-  //     "width": 306,
-  //     // height := original full size image height
-  //     "height": 494,
-  //     "channels": 9,
-  //     "channel_names": ["DRAQ5", "EGFP", "Hoechst 33258", "TL Brightfield", "SEG_STRUCT", "SEG_Memb", "SEG_DNA", "CON_Memb", "CON_DNA"],
-  //     "rows": 7,
-  //     "cols": 10,
-  //     // tiles <= rows*cols, tiles is number of z slices
-  //     "tiles": 65,
-  //     "tile_width": 204,
-  //     "tile_height": 292,
-
-  //     // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-  //     // and ideally a power of 2.
-
-  //     // These are the pixel dimensions of the png files in "images" below.
-  //     // atlas_width === cols*tile_width
-  //     "atlas_width": 2040,
-  //     // atlas_height === rows*tile_height
-  //     "atlas_height": 2044,
-
-  //     "pixel_size_x": 0.065,
-  //     "pixel_size_y": 0.065,
-  //     "pixel_size_z": 0.29,
-
-  //     "images": [{
-  //         "name": "AICS-10_5_5.ome.tif_atlas_0.png",
-  //         "channels": [0, 1, 2]
-  //     }, {
-  //         "name": "AICS-10_5_5.ome.tif_atlas_1.png",
-  //         "channels": [3, 4, 5]
-  //     }, {
-  //         "name": "AICS-10_5_5.ome.tif_atlas_2.png",
-  //         "channels": [6, 7, 8]
-  //     }],
-  //     "name": "AICS-10_5_5",
-  //     "status": "OK",
-  //     "version": "0.0.0",
-  //     "aicsImageVersion": "0.3.0"
-  // }
-  // // generate some raw volume data
-  // var channelVolumes = [];
-  // for (var i = 0; i < imgdata.channels; ++i) {
-  //   if (i % 2 === 0) {
-  //     var sv = VolumeMaker.createSphere(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 16);
-  //     channelVolumes.push(sv);
-  //   }
-  //   else{
-  //     var sv = VolumeMaker.createTorus(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 32, 8);
-  //     channelVolumes.push(sv);
-  //   }
-  // }
-  //loadImageData(imgdata);
-  //loadImageData(imgdata, channelVolumes);
+  const loadTestData = true;
+  if (loadTestData) {
+    fetchImage("AICS-12_881_atlas.json");
+  } else {
+    const volumeinfo = createTestVolume();
+    loadImageData(volumeinfo.imgdata, volumeinfo.volumedata);
+  }
 }
 
 document.body.onload = () => {
