@@ -30,6 +30,7 @@
     "@babel/cli": "^7.2.3",
     "@babel/core": "~7.2",
     "@babel/preset-env": "~7.3",
+    "@babel/register": "~7.6.0",
     "@types/chai": "~4.1",
     "@types/mocha": "~5.2",
     "babel-loader": "~8.0",
