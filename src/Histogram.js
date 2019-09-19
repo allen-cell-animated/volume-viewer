@@ -6,6 +6,19 @@
   }
 })();
 
+function controlPointToRGBA(controlPoint) {
+  return [
+    controlPoint.color[0],
+    controlPoint.color[1],
+    controlPoint.color[2],
+    controlPoint.opacity * 255,
+  ];
+}
+
+function lerp(xmin, xmax, a) {
+  return a * (xmax - xmin) + xmin;
+}
+
 /**
  * @typedef {Object} ControlPoint
  * @property {number} x The X Coordinate
@@ -348,5 +361,61 @@ export default class Histogram {
       // just reset to whole range in this case...?
       return this.lutGenerator_fullRange();
     }
+  }
+
+  // @param {Object[]} controlPoints - array of {x:number 0..255, opacity:number 0..1, color:array of 3 numbers 0..255}
+  // @return {Uint8Array} array of length 256*4 representing the rgba values of the gradient
+  lutGenerator_fromControlPoints(controlPoints) {
+    const lut = new Uint8Array(256 * 4).fill(0);
+    if (controlPoints.length === 0) {
+      return { lut: lut, controlPoints: controlPoints };
+    }
+
+    // ensure they are sorted in ascending order of x
+    controlPoints.sort((a, b) => (a.x > b.x ? 1 : -1));
+
+    // special case only one control point.
+    if (controlPoints.length === 1) {
+      const rgba = controlPointToRGBA(controlPoints[0]);
+      // copy val from x to 255.
+      for (let x = controlPoints[0].x; x < 256; ++x) {
+        lut[x * 4 + 0] = rgba[0];
+        lut[x * 4 + 1] = rgba[1];
+        lut[x * 4 + 2] = rgba[2];
+        lut[x * 4 + 3] = rgba[3];
+      }
+      return { lut: lut, controlPoints: controlPoints };
+    }
+
+    let c0 = controlPoints[0];
+    let c1 = controlPoints[1];
+    let color0 = controlPointToRGBA(c0);
+    let color1 = controlPointToRGBA(c1);
+    let lastIndex = 1;
+    let a = 0;
+    // if the first control point is after 0, act like there are 0s going all the way up to it.
+    // or lerp up to the first point?
+    for (let x = c0.x; x < 256; ++x) {
+      if (x > c1.x) {
+        // advance control points
+        c0 = c1;
+        color0 = color1;
+        lastIndex++;
+        if (lastIndex >= controlPoints.length) {
+          // if the last control point is before 255, then we want to continue its value all the way to 255.
+          c1 = { x: 255, color: c1.color, opacity: c1.opacity };
+        } else {
+          c1 = controlPoints[lastIndex];
+        }
+        color1 = controlPointToRGBA(c1);
+      }
+      a = (x - c0.x) / (c1.x - c0.x);
+      // lerp the colors
+      lut[x * 4 + 0] = lerp(color0[0], color1[0], a);
+      lut[x * 4 + 1] = lerp(color0[1], color1[1], a);
+      lut[x * 4 + 2] = lerp(color0[2], color1[2], a);
+      lut[x * 4 + 3] = lerp(color0[3], color1[3], a);
+    }
+    return { lut: lut, controlPoints: controlPoints };
   }
 }
