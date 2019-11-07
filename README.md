@@ -47,6 +47,82 @@ view3D.setDensity(aimg, 0.1);
 view3D.setBrightness(1.0);
 ```
 
+# React example 
+- in `webpack.config.js`
+```JavaScript 
+    plugins: [
+        ...,
+        new webpack.ProvidePlugin({
+            THREE: 'three',
+        }),
+    ],
+    rules: [
+        ...,
+        {
+            test: /Worker\.js$/,
+            use: 'worker-loader?inline=true'
+        }
+    ]
+```
+- in `VolumeViewer.jsx`
+```JavaScript 
+import * as React from "react";
+
+import { View3d, Volume, VolumeLoader, VolumeMaker } from 'volume-viewer';
+
+
+const url = 'https://s3-us-west-2.amazonaws.com/bisque.allencell.org/v1.4.0/Cell-Viewer_Thumbnails/AICS-11/';
+export class VolumeViewer extends React.Component {
+    constructor(props) {
+        super(props);
+        this.volumeViewer = React.createRef();
+
+    }
+
+    componentDidMount() {
+        const ref = this.volumeViewer;
+        if (!ref.current) {
+            return;
+        }
+        const el = ref.current
+        this.view3D = new View3d(el);
+        return fetch(`${url}/AICS-11_3136_atlas.json`)
+            .then((response) => {
+                return response.json();
+            })
+            .then(jsondata => {
+                const aimg = new Volume(jsondata);
+                this.view3D.addVolume(aimg);
+
+             
+                jsondata.images = jsondata.images.map(img => ({ ...img, name: `${url$}${img.name}` }));
+                VolumeLoader.loadVolumeAtlasData(aimg, jsondata.images, (url, channelIndex) => {
+                    aimg.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
+
+                    this.view3D.setVolumeChannelEnabled(aimg, channelIndex, channelIndex < 3);
+                    this.view3D.updateActiveChannels(aimg);
+                    
+                    this.view3D.updateLuts(aimg);
+                });
+                // set some viewing parameters
+                this.view3D.setCameraMode('3D');
+                this.view3D.updateDensity(aimg, 0.05);
+                this.view3D.updateExposure(0.75);
+            })
+
+   
+
+    }
+    render() {
+        return (
+            <div 
+                style={{height: 1000, width: '100%'}}
+                ref={this.volumeViewer}
+            />
+        )
+    }
+    ```
+
 # Acknowledgements
 
 The ray marched volume shader is a heavily modified version of one that has its origins in [Bisque](http://bioimage.ucsb.edu/bisque).
