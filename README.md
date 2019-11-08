@@ -8,7 +8,7 @@ The volume-viewer package exposes two key modules:
 * ```Volume``` is the class that holds the volume data. After initialization, this is generally a read-only holder for raw data.
 
 It also provides the following two utility modules:
-* ```VolumeLoader``` is a convenience class for downloading and unpacking texture atlases into a Volume.
+* ```VolumeLoader``` is a convenience class for downloading and unpacking texture atlases from .png files (up to 3 channels per png) into a Volume.
 * ```VolumeMaker``` is a convenience module for creating simple test volume data
 
 There are two ways to deliver volume data to the viewer:
@@ -29,6 +29,7 @@ const el = document.getElementById("volume-viewer");
 const view3D = new View3d(el);
 
 // create a volume image with dimensions passed in via jsondata
+// this json format is documented in Volume.js as imageInfo
 const aimg = new Volume(jsondata);
 
 // tell the viewer about the image
@@ -39,13 +40,101 @@ view3D.addVolume(aimg);
 // Intensities must have been be scaled to fit in uint8.
 for (let i = 0; i < volumedata.length; ++i) {
     aimg.setChannelDataFromVolume(i, volumedata[i]);
+    // optional: initialize with a lookup table suitable for visualizing noisy biological data
+    aimg.channels[i].lutGenerator_percentiles(0.5, 0.998);
+}
+
+// enable only the first 3 channels
+for (var ch = 0; ch < aimg.num_channels; ++ch) {
+    view3D.setVolumeChannelEnabled(aimg, ch, ch < 3);
 }
 
 // set some viewing parameters
-view3D.setCameraMode('3D');
-view3D.setDensity(aimg, 0.1);
-view3D.setBrightness(1.0);
+view3D.updateDensity(aimg, 0.05);
+view3D.updateExposure(0.75);
+// tell the viewer to update because new data has been added.
+view3D.updateActiveChannels(aimg);
+view3D.updateLuts(aimg);
 ```
+
+# React example 
+- in `webpack.config.js`
+```JavaScript
+    plugins: [
+        ...,
+        new webpack.ProvidePlugin({
+            THREE: 'three',
+        }),
+    ],
+    rules: [
+        ...,
+        {
+            test: /Worker\.js$/,
+            use: 'worker-loader?inline=true'
+        }
+    ]
+```
+- in `VolumeViewer.jsx`
+```JavaScript 
+import * as React from "react";
+
+import { View3d, Volume, VolumeLoader, VolumeMaker } from 'volume-viewer';
+
+
+const url = 'https://s3-us-west-2.amazonaws.com/bisque.allencell.org/v1.4.0/Cell-Viewer_Thumbnails/AICS-11/';
+const volumeToLoad = 'AICS-11_3136_atlas.json';
+export class VolumeViewer extends React.Component {
+    constructor(props) {
+        super(props);
+        this.volumeViewer = React.createRef();
+    }
+
+    componentDidMount() {
+        const ref = this.volumeViewer;
+        if (!ref.current) {
+            return;
+        }
+        const el = ref.current;
+        this.view3D = new View3d(el);
+        // to download a volume encoded as a json plus tiled png images:
+        // this format is documented in Volume.js as imageInfo
+        return fetch(`${url}/${volumeToLoad}`)
+            .then((response) => {
+                return response.json();
+            })
+            .then(jsondata => {
+                // when json file is received, create Volume object
+                const aimg = new Volume(jsondata);
+                // tell the 3d view about it.
+                this.view3D.addVolume(aimg);
+
+                jsondata.images = jsondata.images.map(img => ({ ...img, name: `${url$}${img.name}` }));
+                // download the volume data itself in the form of tiled png files
+                VolumeLoader.loadVolumeAtlasData(aimg, jsondata.images, (url, channelIndex) => {
+                    // initialize each channel as it arrives and tell the view to update.
+                    aimg.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
+
+                    this.view3D.setVolumeChannelEnabled(aimg, channelIndex, channelIndex < 3);
+                    this.view3D.updateActiveChannels(aimg);
+                    
+                    this.view3D.updateLuts(aimg);
+                });
+                // set some initial viewing parameters
+                this.view3D.setCameraMode('3D');
+                this.view3D.updateDensity(aimg, 0.05);
+                this.view3D.updateExposure(0.75);
+            });
+    }
+
+    render() {
+        return (
+            <div 
+                style={{height: 1000, width: '100%'}}
+                ref={this.volumeViewer}
+            />
+        )
+    }
+    ```
 
 # Acknowledgements
 
