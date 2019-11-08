@@ -8,7 +8,7 @@ The volume-viewer package exposes two key modules:
 * ```Volume``` is the class that holds the volume data. After initialization, this is generally a read-only holder for raw data.
 
 It also provides the following two utility modules:
-* ```VolumeLoader``` is a convenience class for downloading and unpacking texture atlases into a Volume.
+* ```VolumeLoader``` is a convenience class for downloading and unpacking texture atlases from .png files (up to 3 channels per png) into a Volume.
 * ```VolumeMaker``` is a convenience module for creating simple test volume data
 
 There are two ways to deliver volume data to the viewer:
@@ -29,6 +29,7 @@ const el = document.getElementById("volume-viewer");
 const view3D = new View3d(el);
 
 // create a volume image with dimensions passed in via jsondata
+// this json format is documented in Volume.js as imageInfo
 const aimg = new Volume(jsondata);
 
 // tell the viewer about the image
@@ -96,6 +97,7 @@ export class VolumeViewer extends React.Component {
         const el = ref.current;
         this.view3D = new View3d(el);
         // to download a volume encoded as a json plus tiled png images:
+        // this format is documented in Volume.js as imageInfo
         return fetch(`${url}/${volumeToLoad}`)
             .then((response) => {
                 return response.json();
