@@ -125,7 +125,7 @@ var WEBVR = {
       element.style.zIndex = "999";
     }
 
-    if ("xr" in navigator) {
+    if ("xr" in navigator && navigator.xr.requestDevice) {
       var button = document.createElement("button");
       button.style.display = "none";
 
