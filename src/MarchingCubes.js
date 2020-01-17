@@ -3,9 +3,15 @@
  * @author mrdoob / http://mrdoob.com
  * Port of http://webglsamples.org/blob/blob.html
  */
-import * as THREE from "three";
+import {
+  BufferAttribute,
+  BufferGeometry,
+  Color,
+  ImmediateRenderObject,
+  NoColors,
+} from "three";
 
-THREE.MarchingCubes = function(
+export default MarchingCubes = function(
   resolution,
   material,
   enableUvs,
@@ -13,7 +19,7 @@ THREE.MarchingCubes = function(
   enableNormals,
   volumeFieldRef
 ) {
-  THREE.ImmediateRenderObject.call(this, material);
+  ImmediateRenderObject.call(this, material);
 
   var scope = this;
 
@@ -195,7 +201,7 @@ THREE.MarchingCubes = function(
 
     // if cube is entirely in/out of the surface - bail, nothing to draw
 
-    var bits = THREE.edgeTable[cubeindex];
+    var bits = edgeTable[cubeindex];
     if (bits === 0) return 0;
 
     var dx = scope.deltaX * scope.stepSizeX,
@@ -293,7 +299,7 @@ THREE.MarchingCubes = function(
 
     // here is where triangles are created
 
-    while (THREE.triTable[cubeindex + i] != -1) {
+    while (triTable[cubeindex + i] != -1) {
       o1 = cubeindex + i;
       o2 = o1 + 1;
       o3 = o1 + 2;
@@ -301,9 +307,9 @@ THREE.MarchingCubes = function(
       posnormtriv(
         vlist,
         nlist,
-        3 * THREE.triTable[o1],
-        3 * THREE.triTable[o2],
-        3 * THREE.triTable[o3],
+        3 * triTable[o1],
+        3 * triTable[o2],
+        3 * triTable[o3],
         renderCallback
       );
 
@@ -656,21 +662,21 @@ THREE.MarchingCubes = function(
     //var normals = [];
 
     var geo_callback = function(object) {
-      var geo = new THREE.BufferGeometry();
+      var geo = new BufferGeometry();
       geo.addAttribute(
         "position",
-        new THREE.BufferAttribute(object.positionArray.slice(), 3)
+        new BufferAttribute(object.positionArray.slice(), 3)
       );
       if (object.enableNormals) {
         geo.addAttribute(
           "normal",
-          new THREE.BufferAttribute(object.normalArray.slice(), 3)
+          new BufferAttribute(object.normalArray.slice(), 3)
         );
       }
       // for ( var i = 0; i < object.count; i ++ ) {
       //
-      // 	var vertex = new THREE.Vector3().fromArray( object.positionArray, i * 3 );
-      // 	var normal = new THREE.Vector3().fromArray( object.normalArray, i * 3 );
+      // 	var vertex = new Vector3().fromArray( object.positionArray, i * 3 );
+      // 	var normal = new Vector3().fromArray( object.normalArray, i * 3 );
       //
       // 	geo.vertices.push( vertex );
       // 	normals.push( normal );
@@ -693,10 +699,10 @@ THREE.MarchingCubes = function(
         // var nb = normals[ b ];
         // var nc = normals[ c ];
         //
-        // var face = new THREE.Face3( a, b, c, [ na, nb, nc ] );
+        // var face = new Face3( a, b, c, [ na, nb, nc ] );
         // geo.faces.push( face );
       }
-      geo.setIndex(new THREE.BufferAttribute(inds, 1));
+      geo.setIndex(new BufferAttribute(inds, 1));
       geoparent.push(geo);
 
       start += nfaces;
@@ -714,10 +720,8 @@ THREE.MarchingCubes = function(
   this.init(resolution, volumeFieldRef);
 };
 
-THREE.MarchingCubes.prototype = Object.create(
-  THREE.ImmediateRenderObject.prototype
-);
-THREE.MarchingCubes.prototype.constructor = THREE.MarchingCubes;
+MarchingCubes.prototype = Object.create(ImmediateRenderObject.prototype);
+MarchingCubes.prototype.constructor = MarchingCubes;
 
 /////////////////////////////////////
 // Marching cubes lookup tables
@@ -727,7 +731,7 @@ THREE.MarchingCubes.prototype.constructor = THREE.MarchingCubes;
 // http://local.wasp.uwa.edu.au/~pbourke/geometry/polygonise/
 // who in turn got them from Cory Gene Bloyd.
 
-THREE.edgeTable = new Int32Array([
+edgeTable = new Int32Array([
   0x0,
   0x109,
   0x203,
@@ -986,7 +990,7 @@ THREE.edgeTable = new Int32Array([
   0x0,
 ]);
 
-THREE.triTable = new Int32Array([
+triTable = new Int32Array([
   -1,
   -1,
   -1,
@@ -5084,3 +5088,5 @@ THREE.triTable = new Int32Array([
   -1,
   -1,
 ]);
+
+export { MarchingCubes, edgeTable, triTable };

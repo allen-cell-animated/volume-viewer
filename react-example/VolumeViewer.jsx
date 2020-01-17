@@ -51,6 +51,222 @@ const myState = {
     flipZ: 1,
 };
 
+function showChannelUI(volume, view3D, gui) {
+    if (myState && myState.channelFolderNames) {
+        for (var i = 0; i < myState.channelFolderNames.length; ++i) {
+            gui.removeFolder(myState.channelFolderNames[i]);
+        }
+    }
+
+    myState.infoObj = volume.imageInfo;
+
+    myState.infoObj.channelGui = [];
+
+    myState.channelFolderNames = [];
+    for (var i = 0; i < myState.infoObj.channels; ++i) {
+        myState.infoObj.channelGui.push({
+            colorD: volume.channel_colors_default[i],
+            colorS: [0, 0, 0],
+            colorE: [0, 0, 0],
+            window: 1.0,
+            level: 0.5,
+            glossiness: 0.0,
+            isovalue: 128, // actual intensity value
+            isosurface: false,
+            // first 3 channels for starters
+            enabled: i < 3,
+            // this doesn't give good results currently but is an example of a per-channel button callback
+            autoIJ: (function (j) {
+                return function () {
+                    const lut = volume.getHistogram(j).lutGenerator_auto2();
+                    // TODO: get a proper transfer function editor
+                    // const lut = { lut: makeColorGradient([
+                    //     {offset:0, color:"black"},
+                    //     {offset:0.2, color:"black"},
+                    //     {offset:0.25, color:"red"},
+                    //     {offset:0.5, color:"orange"},
+                    //     {offset:1.0, color:"yellow"}])
+                    // };
+                    volume.setLut(j, lut.lut);
+                    view3D.updateLuts(volume);
+                };
+            })(i),
+            // this doesn't give good results currently but is an example of a per-channel button callback
+            auto0: (function (j) {
+                return function () {
+                    const lut = volume.getHistogram(j).lutGenerator_auto();
+                    volume.setLut(j, lut.lut);
+                    view3D.updateLuts(volume);
+                };
+            })(i),
+            // this doesn't give good results currently but is an example of a per-channel button callback
+            bestFit: (function (j) {
+                return function () {
+                    const lut = volume.getHistogram(j).lutGenerator_bestFit();
+                    volume.setLut(j, lut.lut);
+                    view3D.updateLuts(volume);
+                };
+            })(i),
+            pct50_98: (function (j) {
+                return function () {
+                    const lut = volume
+                        .getHistogram(j)
+                        .lutGenerator_percentiles(0.5, 0.998);
+                    volume.setLut(j, lut.lut);
+                    view3D.updateLuts(volume);
+                };
+            })(i),
+        });
+        var channelGuiFolder = gui.addFolder("Channel " + myState.infoObj.channel_names[i]);
+        myState.channelFolderNames.push(
+            "Channel " + myState.infoObj.channel_names[i]
+        );
+        channelGuiFolder.add(myState.infoObj.channelGui[i], "enabled").onChange(
+            (function (j) {
+                return function (value) {
+                    view3D.setVolumeChannelEnabled(volume, j, value ? true : false);
+                    view3D.updateActiveChannels(volume);
+                };
+            })(i)
+        );
+        channelGuiFolder.add(myState.infoObj.channelGui[i], "isosurface").onChange(
+            (function (j) {
+                return function (value) {
+                    if (value) {
+                        view3D.createIsosurface(
+                            volume,
+                            j,
+                            myState.infoObj.channelGui[j].isovalue,
+                            1.0
+                        );
+                    } else {
+                        view3D.clearIsosurface(volume, j);
+                    }
+                };
+            })(i)
+        );
+        channelGuiFolder.add(myState.infoObj.channelGui[i], "isovalue")
+            .max(255)
+            .min(0)
+            .step(1)
+            .onChange(
+                (function (j) {
+                    return function (value) {
+                        view3D.updateIsosurface(volume, j, value);
+                    };
+                })(i)
+            );
+
+        channelGuiFolder.addColor(myState.infoObj.channelGui[i], "colorD")
+            .name("Diffuse")
+            .onChange(
+                (function (j) {
+                    return function (value) {
+                        view3D.updateChannelMaterial(
+                            volume,
+                            j,
+                            myState.infoObj.channelGui[j].colorD,
+                            myState.infoObj.channelGui[j].colorS,
+                            myState.infoObj.channelGui[j].colorE,
+                            myState.infoObj.channelGui[j].glossiness
+                        );
+                        view3D.updateMaterial(volume);
+                    };
+                })(i)
+            );
+        channelGuiFolder.addColor(myState.infoObj.channelGui[i], "colorS")
+            .name("Specular")
+            .onChange(
+                (function (j) {
+                    return function (value) {
+                        view3D.updateChannelMaterial(
+                            volume,
+                            j,
+                            myState.infoObj.channelGui[j].colorD,
+                            myState.infoObj.channelGui[j].colorS,
+                            myState.infoObj.channelGui[j].colorE,
+                            myState.infoObj.channelGui[j].glossiness
+                        );
+                        view3D.updateMaterial(volume);
+                    };
+                })(i)
+            );
+        channelGuiFolder.addColor(myState.infoObj.channelGui[i], "colorE")
+            .name("Emissive")
+            .onChange(
+                (function (j) {
+                    return function (value) {
+                        view3D.updateChannelMaterial(
+                            volume,
+                            j,
+                            myState.infoObj.channelGui[j].colorD,
+                            myState.infoObj.channelGui[j].colorS,
+                            myState.infoObj.channelGui[j].colorE,
+                            myState.infoObj.channelGui[j].glossiness
+                        );
+                        view3D.updateMaterial(volume);
+                    };
+                })(i)
+            );
+        channelGuiFolder.add(myState.infoObj.channelGui[i], "window")
+            .max(1.0)
+            .min(0.0)
+            .step(0.001)
+            .onChange(
+                (function (j) {
+                    return function (value) {
+                        volume
+                            .getChannel(j)
+                            .lutGenerator_windowLevel(
+                                value,
+                                myState.infoObj.channelGui[j].level
+                            );
+                        view3D.updateLuts(volume);
+                    };
+                })(i)
+            );
+
+        channelGuiFolder.add(myState.infoObj.channelGui[i], "level")
+            .max(1.0)
+            .min(0.0)
+            .step(0.001)
+            .onChange(
+                (function (j) {
+                    return function (value) {
+                        volume
+                            .getChannel(j)
+                            .lutGenerator_windowLevel(
+                                myState.infoObj.channelGui[j].window,
+                                value
+                            );
+                        view3D.updateLuts(volume);
+                    };
+                })(i)
+            );
+        channelGuiFolder.add(myState.infoObj.channelGui[i], "autoIJ");
+        channelGuiFolder.add(myState.infoObj.channelGui[i], "auto0");
+        channelGuiFolder.add(myState.infoObj.channelGui[i], "bestFit");
+        channelGuiFolder.add(myState.infoObj.channelGui[i], "pct50_98");
+        channelGuiFolder.add(myState.infoObj.channelGui[i], "glossiness")
+            .max(100.0)
+            .min(0.0)
+            .onChange(
+                (function (j) {
+                    return function (value) {
+                        view3D.updateChannelMaterial(
+                            volume,
+                            j,
+                            myState.infoObj.channelGui[j].colorD,
+                            myState.infoObj.channelGui[j].colorS,
+                            myState.infoObj.channelGui[j].colorE,
+                            myState.infoObj.channelGui[j].glossiness
+                        );
+                        view3D.updateMaterial(volume);
+                    };
+                })(i)
+            );
+    }
+}
 
 function setupGui(view3D) {
     let gui = new dat.GUI();
@@ -422,8 +638,14 @@ export class VolumeViewer extends React.Component {
                 this.view3D.setCameraMode("3D");
                 this.view3D.updateDensity(aimg, 0.05);
                 this.view3D.updateExposure(0.75);
+                return aimg;
             })
-            .then(() => this.gui = setupGui(this.view3D))
+            .then((aimg) => {
+                this.gui = setupGui(this.view3D);
+                showChannelUI(aimg, this.view3D, this.gui);
+            }
+            
+            )
             .catch(console.error);
     }
     render() {
