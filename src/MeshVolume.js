@@ -1,3 +1,5 @@
+import * as THREE from "three";
+
 import { defaultMaterialSettings } from "./constants/materials.js";
 
 import FileSaver from "./FileSaver.js";
@@ -5,7 +7,7 @@ import NaiveSurfaceNets from "./NaiveSurfaceNets.js";
 import "./MarchingCubes.js";
 import "./STLBinaryExporter.js";
 
-import "three/examples/js/exporters/GLTFExporter.js";
+import { GLTFExporter } from "./GLTFExporter.js";
 
 // this cutoff is chosen to have a small buffer of values before the object is treated
 // as transparent for gpu blending and depth testing.
@@ -281,7 +283,7 @@ export default class MeshVolume {
 
   // takes a scene or object or array of scenes or objects or both!
   exportGLTF(input, fname) {
-    var gltfExporter = new THREE.GLTFExporter();
+    var gltfExporter = new GLTFExporter();
     var options = {
       // transforms as translate rotate scale?
       trs: false,

@@ -2,7 +2,9 @@
  * @author mrdoob / http://mrdoob.com/
  */
 
-THREE.OBJLoader = (function() {
+import * as THREE from "three";
+
+var OBJLoader = (function() {
   // o object_name | g group_name
   var object_pattern = /^[og]\s*(.+)?/;
   // mtllib file_reference
@@ -671,3 +673,5 @@ THREE.OBJLoader = (function() {
 
   return OBJLoader;
 })();
+
+export default OBJLoader;

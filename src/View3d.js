@@ -1,3 +1,5 @@
+import * as THREE from "three";
+
 import { ThreeJsPanel } from "./ThreeJsPanel.js";
 import lightSettings from "./constants/lights.js";
 import FusedChannelData from "./FusedChannelData.js";

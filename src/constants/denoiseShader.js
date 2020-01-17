@@ -1,6 +1,8 @@
+import { Vector2, UniformsUtils } from "three";
+
 const DENOISE_WINDOW_RADIUS = 3;
 export function denoiseShaderUniforms() {
-  return THREE.UniformsUtils.merge([
+  return UniformsUtils.merge([
     {
       gInvExposure: {
         type: "f",
@@ -35,7 +37,7 @@ export function denoiseShaderUniforms() {
       },
       gDenoisePixelSize: {
         type: "v2",
-        value: new THREE.Vector2(1, 1),
+        value: new Vector2(1, 1),
       },
       tTexture0: {
         type: "t",

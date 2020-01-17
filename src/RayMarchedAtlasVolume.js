@@ -1,3 +1,13 @@
+import {
+  Vector2,
+  Vector3,
+  Group,
+  BoxGeometry,
+  Mesh,
+  ShaderMaterial,
+  Matrix4,
+} from "three";
+
 import FusedChannelData from "./FusedChannelData.js";
 import {
   rayMarchingVertexShaderSrc,
@@ -11,15 +21,15 @@ export default class RayMarchedAtlasVolume {
     this.volume = volume;
 
     this.bounds = {
-      bmin: new THREE.Vector3(-0.5, -0.5, -0.5),
-      bmax: new THREE.Vector3(0.5, 0.5, 0.5),
+      bmin: new Vector3(-0.5, -0.5, -0.5),
+      bmax: new Vector3(0.5, 0.5, 0.5),
     };
 
-    this.cube = new THREE.BoxGeometry(1.0, 1.0, 1.0);
-    this.cubeMesh = new THREE.Mesh(this.cube);
+    this.cube = new BoxGeometry(1.0, 1.0, 1.0);
+    this.cubeMesh = new Mesh(this.cube);
     this.cubeMesh.name = "Volume";
 
-    this.cubeTransformNode = new THREE.Group();
+    this.cubeTransformNode = new Group();
     this.cubeTransformNode.name = "VolumeContainerNode";
     this.cubeTransformNode.add(this.cubeMesh);
 
@@ -29,7 +39,7 @@ export default class RayMarchedAtlasVolume {
     var vtxsrc = rayMarchingVertexShaderSrc;
     var fgmtsrc = rayMarchingFragmentShaderSrc;
 
-    var threeMaterial = new THREE.ShaderMaterial({
+    var threeMaterial = new ShaderMaterial({
       uniforms: this.uniforms,
       vertexShader: vtxsrc,
       fragmentShader: fgmtsrc,
@@ -72,12 +82,12 @@ export default class RayMarchedAtlasVolume {
 
     this.cubeMesh.updateMatrixWorld(true);
 
-    var mvm = new THREE.Matrix4();
+    var mvm = new Matrix4();
     mvm.multiplyMatrices(
       canvas.camera.matrixWorldInverse,
       this.cubeMesh.matrixWorld
     );
-    var mi = new THREE.Matrix4();
+    var mi = new Matrix4();
     mi.getInverse(mvm);
 
     this.setUniform("inverseModelViewMatrix", mi, true, true);
@@ -105,7 +115,7 @@ export default class RayMarchedAtlasVolume {
   setScale(scale) {
     this.scale = scale;
 
-    this.cubeMesh.scale.copy(new THREE.Vector3(scale.x, scale.y, scale.z));
+    this.cubeMesh.scale.copy(new Vector3(scale.x, scale.y, scale.z));
   }
 
   setRayStepSizes(primary, secondary) {}
@@ -123,7 +133,7 @@ export default class RayMarchedAtlasVolume {
   }
 
   setResolution(x, y) {
-    this.setUniform("iResolution", new THREE.Vector2(x, y));
+    this.setUniform("iResolution", new Vector2(x, y));
   }
 
   setPixelSamplingRate(value) {}
@@ -171,14 +181,14 @@ export default class RayMarchedAtlasVolume {
   }
 
   setFlipAxes(flipX, flipY, flipZ) {
-    this.setUniform("flipVolume", new THREE.Vector3(flipX, flipY, flipZ));
+    this.setUniform("flipVolume", new Vector3(flipX, flipY, flipZ));
   }
 
   // 0..1
   updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
     this.bounds = {
-      bmin: new THREE.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
-      bmax: new THREE.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5),
+      bmin: new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
+      bmax: new Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5),
     };
     this.setUniform("AABB_CLIP_MIN", this.bounds.bmin);
     this.setUniform("AABB_CLIP_MAX", this.bounds.bmax);

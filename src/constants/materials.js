@@ -1,3 +1,4 @@
+import { Color, UniformsUtils, ShaderMaterial } from "three";
 export const fresnelShaderSettings = {
   bias: 0.4,
   power: 2.0,
@@ -25,7 +26,7 @@ export const ShaderLibrary = {
       bias: { value: 0.4 },
       power: { value: 2.0 },
       scale: { value: 1.0 },
-      uBaseColor: { value: new THREE.Color(0xffffff) },
+      uBaseColor: { value: new Color(0xffffff) },
     },
 
     vertexShader: `varying vec3 vNormal;
@@ -71,11 +72,11 @@ export const ShaderLibrary = {
 export function createShaderMaterial(id) {
   const shader = ShaderLibrary[id];
 
-  const u = THREE.UniformsUtils.clone(shader.uniforms);
+  const u = UniformsUtils.clone(shader.uniforms);
   const vs = shader.vertexShader;
   const fs = shader.fragmentShader;
 
-  const material = new THREE.ShaderMaterial({
+  const material = new ShaderMaterial({
     fragmentShader: fs,
     uniforms: u,
     vertexShader: vs,

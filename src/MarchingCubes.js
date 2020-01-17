@@ -3,6 +3,7 @@
  * @author mrdoob / http://mrdoob.com
  * Port of http://webglsamples.org/blob/blob.html
  */
+import * as THREE from "three";
 
 THREE.MarchingCubes = function(
   resolution,

@@ -1,0 +1,27 @@
+{
+  "presets": [
+    "@babel/preset-env",
+    "@babel/preset-react",
+  ],
+  "env": {
+    "commonjs": {
+      "presets": [
+        ["@babel/preset-env", {
+          "modules": true
+        }]
+      ]
+    },
+    "es": {
+      "presets": [["@babel/preset-env", { "modules": false }]]
+    }
+  },
+  "plugins": [
+    "@babel/plugin-proposal-class-properties",
+    ["babel-plugin-inline-import", {
+      "extensions": [ ".obj" ]
+    }],
+    ["inline-import-data-uri", {
+      "extensions": [ ".png" ]
+    }]
+  ]
+}

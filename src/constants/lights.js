@@ -1,5 +1,6 @@
+import { Math } from "three";
 const spotlightSettings = Object.freeze({
-  angle: 6 * THREE.Math.DEG2RAD,
+  angle: 6 * Math.DEG2RAD,
   castShadow: false,
   color: 0xffffff,
   intensity: 0.4,

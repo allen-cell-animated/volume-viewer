@@ -1,3 +1,4 @@
+import { Vector2, Vector3, Matrix4 } from "three";
 export const rayMarchingVertexShaderSrc = [
   // switch on high precision floats
   "#ifdef GL_ES",
@@ -290,7 +291,7 @@ export function rayMarchingShaderUniforms() {
   return {
     iResolution: {
       type: "v2",
-      value: new THREE.Vector2(100, 100),
+      value: new Vector2(100, 100),
     },
     CLIP_NEAR: {
       type: "f",
@@ -354,15 +355,15 @@ export function rayMarchingShaderUniforms() {
     },
     AABB_CLIP_MIN: {
       type: "v3",
-      value: new THREE.Vector3(-0.5, -0.5, -0.5),
+      value: new Vector3(-0.5, -0.5, -0.5),
     },
     AABB_CLIP_MAX: {
       type: "v3",
-      value: new THREE.Vector3(0.5, 0.5, 0.5),
+      value: new Vector3(0.5, 0.5, 0.5),
     },
     inverseModelViewMatrix: {
       type: "m4",
-      value: new THREE.Matrix4(),
+      value: new Matrix4(),
     },
     textureAtlas: {
       type: "t",
@@ -378,7 +379,7 @@ export function rayMarchingShaderUniforms() {
     },
     flipVolume: {
       type: "v3",
-      value: new THREE.Vector3(1.0, 1.0, 1.0),
+      value: new Vector3(1.0, 1.0, 1.0),
     },
   };
 }

@@ -1,4 +1,16 @@
 import {
+  Vector2,
+  Vector3,
+  DataTexture3D,
+  Euler,
+  RGBAFormat,
+  Scene,
+  UnsignedByteType,
+  WebGLRenderTarget,
+  UniformsUtils,
+} from "three";
+
+import {
   pathTracingFragmentShaderSrc,
   pathTracingUniforms,
   pathTracingVertexShaderSrc,
@@ -15,9 +27,9 @@ export default class PathTracedVolume {
     this.volume = volume;
     this.viewChannels = [-1, -1, -1, -1];
 
-    this.scale = new THREE.Vector3(1, 1, 1);
-    this.translation = new THREE.Vector3(0, 0, 0);
-    this.rotation = new THREE.Euler();
+    this.scale = new Vector3(1, 1, 1);
+    this.translation = new Vector3(0, 0, 0);
+    this.rotation = new Euler();
 
     // scale factor is a huge optimization.  Maybe use 1/dpi scale
     this.pixelSamplingRate = 0.75;
@@ -30,14 +42,8 @@ export default class PathTracedVolume {
       sz = volume.z;
     const data = new Uint8Array(sx * sy * sz * 4).fill(0);
     // defaults to rgba and unsignedbytetype so dont need to supply format this time.
-    this.volumeTexture = new THREE.DataTexture3D(
-      data,
-      volume.x,
-      volume.y,
-      volume.z
-    );
-    this.volumeTexture.minFilter = this.volumeTexture.magFilter =
-      THREE.LinearFilter;
+    this.volumeTexture = new DataTexture3D(data, volume.x, volume.y, volume.z);
+    this.volumeTexture.minFilter = this.volumeTexture.magFilter = LinearFilter;
     this.volumeTexture.generateMipmaps = false;
 
     this.volumeTexture.needsUpdate = true;
@@ -48,20 +54,14 @@ export default class PathTracedVolume {
     // create Lut textures
     // empty array
     var lutData = new Uint8Array(256 * 4 * 4).fill(1);
-    const lut0 = new THREE.DataTexture(
-      lutData,
-      256,
-      4,
-      THREE.RGBAFormat,
-      THREE.UnsignedByteType
-    );
-    lut0.minFilter = lut0.magFilter = THREE.LinearFilter;
+    const lut0 = new DataTexture(lutData, 256, 4, RGBAFormat, UnsignedByteType);
+    lut0.minFilter = lut0.magFilter = LinearFilter;
     lut0.needsUpdate = true;
     this.pathTracingUniforms.g_lutTexture.value = lut0;
 
     this.bounds = {
-      bmin: new THREE.Vector3(-0.5, -0.5, -0.5),
-      bmax: new THREE.Vector3(0.5, 0.5, 0.5),
+      bmin: new Vector3(-0.5, -0.5, -0.5),
+      bmax: new Vector3(0.5, 0.5, 0.5),
     };
 
     this.cameraIsMoving = false;
@@ -71,38 +71,38 @@ export default class PathTracedVolume {
     this.stepSizePrimaryRayVoxels = 1.0;
     this.stepSizeSecondaryRayVoxels = 1.0;
 
-    this.pathTracingScene = new THREE.Scene();
-    this.screenTextureScene = new THREE.Scene();
+    this.pathTracingScene = new Scene();
+    this.screenTextureScene = new Scene();
 
     // quadCamera is simply the camera to help render the full screen quad (2 triangles),
     // hence the name.  It is an Orthographic camera that sits facing the view plane, which serves as
     // the window into our 3d world. This camera will not move or rotate for the duration of the app.
-    this.quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    this.quadCamera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-    this.fullTargetResolution = new THREE.Vector2(2, 2);
+    this.fullTargetResolution = new Vector2(2, 2);
 
-    this.pathTracingRenderTarget = new THREE.WebGLRenderTarget(2, 2, {
-      minFilter: THREE.NearestFilter,
-      magFilter: THREE.NearestFilter,
-      format: THREE.RGBAFormat,
-      type: THREE.FloatType,
+    this.pathTracingRenderTarget = new WebGLRenderTarget(2, 2, {
+      minFilter: NearestFilter,
+      magFilter: NearestFilter,
+      format: RGBAFormat,
+      type: FloatType,
       depthBuffer: false,
       stencilBuffer: false,
     });
     this.pathTracingRenderTarget.texture.generateMipmaps = false;
 
-    this.screenTextureRenderTarget = new THREE.WebGLRenderTarget(2, 2, {
-      minFilter: THREE.NearestFilter,
-      magFilter: THREE.NearestFilter,
-      format: THREE.RGBAFormat,
-      type: THREE.FloatType,
+    this.screenTextureRenderTarget = new WebGLRenderTarget(2, 2, {
+      minFilter: NearestFilter,
+      magFilter: NearestFilter,
+      format: RGBAFormat,
+      type: FloatType,
       depthBuffer: false,
       stencilBuffer: false,
     });
     this.screenTextureRenderTarget.texture.generateMipmaps = false;
 
     this.screenTextureShader = {
-      uniforms: THREE.UniformsUtils.merge([
+      uniforms: UniformsUtils.merge([
         {
           tTexture0: {
             type: "t",
@@ -145,7 +145,7 @@ export default class PathTracedVolume {
     };
 
     this.screenOutputShader = {
-      uniforms: THREE.UniformsUtils.merge([
+      uniforms: UniformsUtils.merge([
         {
           gInvExposure: {
             type: "f",
@@ -212,13 +212,13 @@ export default class PathTracedVolume {
       ].join("\n"),
     };
 
-    this.pathTracingGeometry = new THREE.PlaneBufferGeometry(2, 2);
+    this.pathTracingGeometry = new PlaneBufferGeometry(2, 2);
 
     // initialize texture.
     this.pathTracingUniforms.volumeTexture.value = this.volumeTexture;
     this.pathTracingUniforms.tPreviousTexture.value = this.screenTextureRenderTarget.texture;
 
-    this.pathTracingMaterial = new THREE.ShaderMaterial({
+    this.pathTracingMaterial = new ShaderMaterial({
       uniforms: this.pathTracingUniforms,
       //defines: pathTracingDefines,
       vertexShader: pathTracingVertexShaderSrc,
@@ -226,15 +226,15 @@ export default class PathTracedVolume {
       depthTest: false,
       depthWrite: false,
     });
-    this.pathTracingMesh = new THREE.Mesh(
+    this.pathTracingMesh = new Mesh(
       this.pathTracingGeometry,
       this.pathTracingMaterial
     );
     this.pathTracingScene.add(this.pathTracingMesh);
 
-    this.screenTextureGeometry = new THREE.PlaneBufferGeometry(2, 2);
+    this.screenTextureGeometry = new PlaneBufferGeometry(2, 2);
 
-    this.screenTextureMaterial = new THREE.ShaderMaterial({
+    this.screenTextureMaterial = new ShaderMaterial({
       uniforms: this.screenTextureShader.uniforms,
       vertexShader: this.screenTextureShader.vertexShader,
       fragmentShader: this.screenTextureShader.fragmentShader,
@@ -244,15 +244,15 @@ export default class PathTracedVolume {
 
     this.screenTextureMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;
 
-    this.screenTextureMesh = new THREE.Mesh(
+    this.screenTextureMesh = new Mesh(
       this.screenTextureGeometry,
       this.screenTextureMaterial
     );
     this.screenTextureScene.add(this.screenTextureMesh);
 
-    this.screenOutputGeometry = new THREE.PlaneBufferGeometry(2, 2);
+    this.screenOutputGeometry = new PlaneBufferGeometry(2, 2);
 
-    this.screenOutputMaterial = new THREE.ShaderMaterial({
+    this.screenOutputMaterial = new ShaderMaterial({
       uniforms: this.screenOutputShader.uniforms,
       vertexShader: this.screenOutputShader.vertexShader,
       fragmentShader: this.screenOutputShader.fragmentShader,
@@ -261,7 +261,7 @@ export default class PathTracedVolume {
     });
 
     this.denoiseShaderUniforms = denoiseShaderUniforms();
-    this.screenOutputDenoiseMaterial = new THREE.ShaderMaterial({
+    this.screenOutputDenoiseMaterial = new ShaderMaterial({
       uniforms: this.denoiseShaderUniforms,
       vertexShader: denoiseVertexShaderSrc,
       fragmentShader: denoiseFragmentShaderSrc,
@@ -272,7 +272,7 @@ export default class PathTracedVolume {
     this.screenOutputMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;
     this.screenOutputDenoiseMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;
 
-    this.screenOutputMesh = new THREE.Mesh(
+    this.screenOutputMesh = new Mesh(
       this.screenOutputGeometry,
       this.screenOutputMaterial
     );
@@ -280,17 +280,17 @@ export default class PathTracedVolume {
     this.gradientDelta = 1.0 / Math.max(sx, Math.max(sy, sz));
     const InvGradientDelta = 1.0 / this.gradientDelta; // a voxel count...
 
-    this.pathTracingUniforms.gGradientDeltaX.value = new THREE.Vector3(
+    this.pathTracingUniforms.gGradientDeltaX.value = new Vector3(
       this.gradientDelta,
       0,
       0
     );
-    this.pathTracingUniforms.gGradientDeltaY.value = new THREE.Vector3(
+    this.pathTracingUniforms.gGradientDeltaY.value = new Vector3(
       0,
       this.gradientDelta,
       0
     );
-    this.pathTracingUniforms.gGradientDeltaZ.value = new THREE.Vector3(
+    this.pathTracingUniforms.gGradientDeltaZ.value = new Vector3(
       0,
       0,
       this.gradientDelta
@@ -304,7 +304,7 @@ export default class PathTracedVolume {
     // bounds will go from 0 to PhysicalSize
     const PhysicalSize = volume.normalizedPhysicalSize;
 
-    this.pathTracingUniforms.gInvAaBbMax.value = new THREE.Vector3(
+    this.pathTracingUniforms.gInvAaBbMax.value = new Vector3(
       1.0 / PhysicalSize.x,
       1.0 / PhysicalSize.y,
       1.0 / PhysicalSize.z
@@ -364,19 +364,19 @@ export default class PathTracedVolume {
     // this code is analogous to this threejs code from View3d.preRender:
     // this.scene.getObjectByName('lightContainer').rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
     const mycamxform = cam.matrixWorld.clone();
-    mycamxform.setPosition(new THREE.Vector3(0, 0, 0));
+    mycamxform.setPosition(new Vector3(0, 0, 0));
     this.updateLightsSecondary(mycamxform);
 
-    let mydir = new THREE.Vector3();
+    let mydir = new Vector3();
     mydir = cam.getWorldDirection(mydir);
-    let myup = new THREE.Vector3().copy(cam.up);
+    let myup = new Vector3().copy(cam.up);
     // don't rotate this vector.  we are using translation as the pivot point of the object, and THEN rotating.
-    let mypos = new THREE.Vector3().copy(cam.position);
+    let mypos = new Vector3().copy(cam.position);
 
     // apply volume translation and rotation:
     // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
-    const m = new THREE.Matrix4().makeRotationFromQuaternion(
-      new THREE.Quaternion().setFromEuler(this.rotation).inverse()
+    const m = new Matrix4().makeRotationFromQuaternion(
+      new Quaternion().setFromEuler(this.rotation).inverse()
     );
     mypos.applyMatrix4(m);
     mypos.sub(this.translation);
@@ -503,7 +503,7 @@ export default class PathTracedVolume {
   setGamma(gmin, glevel, gmax) {}
 
   setFlipAxes(flipX, flipY, flipZ) {
-    this.pathTracingUniforms.flipVolume.value = new THREE.Vector3(
+    this.pathTracingUniforms.flipVolume.value = new Vector3(
       flipX,
       flipY,
       flipZ
@@ -513,7 +513,7 @@ export default class PathTracedVolume {
   }
 
   setResolution(x, y) {
-    this.fullTargetResolution = new THREE.Vector2(x, y);
+    this.fullTargetResolution = new Vector2(x, y);
     const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
     const nx = Math.floor((x * this.pixelSamplingRate) / dpr);
     const ny = Math.floor((y * this.pixelSamplingRate) / dpr);
@@ -560,12 +560,12 @@ export default class PathTracedVolume {
     this.bounds.bmax[axis] = maxval;
     this.bounds.bmin[axis] = minval;
     const PhysicalSize = this.volume.normalizedPhysicalSize;
-    this.pathTracingUniforms.gClippedAaBbMin.value = new THREE.Vector3(
+    this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
       this.bounds.bmin.x * PhysicalSize.x,
       this.bounds.bmin.y * PhysicalSize.y,
       this.bounds.bmin.z * PhysicalSize.z
     );
-    this.pathTracingUniforms.gClippedAaBbMax.value = new THREE.Vector3(
+    this.pathTracingUniforms.gClippedAaBbMax.value = new Vector3(
       this.bounds.bmax.x * PhysicalSize.x,
       this.bounds.bmax.y * PhysicalSize.y,
       this.bounds.bmax.z * PhysicalSize.z
@@ -727,19 +727,13 @@ export default class PathTracedVolume {
     for (let c = 0; c < this.viewChannels.length; ++c) {
       let i = this.viewChannels[c];
       if (i > -1) {
-        this.pathTracingUniforms.g_diffuse.value[
-          c
-        ] = new THREE.Vector3()
+        this.pathTracingUniforms.g_diffuse.value[c] = new Vector3()
           .fromArray(image.getChannelColor(i))
           .multiplyScalar(1.0 / 255.0);
-        this.pathTracingUniforms.g_specular.value[
-          c
-        ] = new THREE.Vector3()
+        this.pathTracingUniforms.g_specular.value[c] = new Vector3()
           .fromArray(image.specular[i])
           .multiplyScalar(1.0 / 255.0);
-        this.pathTracingUniforms.g_emissive.value[
-          c
-        ] = new THREE.Vector3()
+        this.pathTracingUniforms.g_emissive.value[c] = new Vector3()
           .fromArray(image.emissive[i])
           .multiplyScalar(1.0 / 255.0);
         this.pathTracingUniforms.g_glossiness.value[c] = image.glossiness[i];
@@ -779,18 +773,18 @@ export default class PathTracedVolume {
 
   updateLights(state) {
     // 0th light in state array is sphere light
-    this.pathTracingUniforms.gLights.value[0].m_colorTop = new THREE.Vector3().copy(
+    this.pathTracingUniforms.gLights.value[0].m_colorTop = new Vector3().copy(
       state[0].m_colorTop
     );
-    this.pathTracingUniforms.gLights.value[0].m_colorMiddle = new THREE.Vector3().copy(
+    this.pathTracingUniforms.gLights.value[0].m_colorMiddle = new Vector3().copy(
       state[0].m_colorMiddle
     );
-    this.pathTracingUniforms.gLights.value[0].m_colorBottom = new THREE.Vector3().copy(
+    this.pathTracingUniforms.gLights.value[0].m_colorBottom = new Vector3().copy(
       state[0].m_colorBottom
     );
 
     // 1st light in state array is area light
-    this.pathTracingUniforms.gLights.value[1].m_color = new THREE.Vector3().copy(
+    this.pathTracingUniforms.gLights.value[1].m_color = new Vector3().copy(
       state[1].m_color
     );
     this.pathTracingUniforms.gLights.value[1].m_theta = state[1].m_theta;
@@ -806,7 +800,7 @@ export default class PathTracedVolume {
 
   updateLightsSecondary(cameraMatrix) {
     const PhysicalSize = this.volume.normalizedPhysicalSize;
-    const bbctr = new THREE.Vector3(
+    const bbctr = new Vector3(
       PhysicalSize.x * 0.5,
       PhysicalSize.y * 0.5,
       PhysicalSize.z * 0.5
@@ -820,16 +814,16 @@ export default class PathTracedVolume {
 
   updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
     this.bounds = {
-      bmin: new THREE.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
-      bmax: new THREE.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5),
+      bmin: new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
+      bmax: new Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5),
     };
     const PhysicalSize = this.volume.normalizedPhysicalSize;
-    this.pathTracingUniforms.gClippedAaBbMin.value = new THREE.Vector3(
+    this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
       xmin * PhysicalSize.x - 0.5 * PhysicalSize.x,
       ymin * PhysicalSize.y - 0.5 * PhysicalSize.y,
       zmin * PhysicalSize.z - 0.5 * PhysicalSize.z
     );
-    this.pathTracingUniforms.gClippedAaBbMax.value = new THREE.Vector3(
+    this.pathTracingUniforms.gClippedAaBbMax.value = new Vector3(
       xmax * PhysicalSize.x - 0.5 * PhysicalSize.x,
       ymax * PhysicalSize.y - 0.5 * PhysicalSize.y,
       zmax * PhysicalSize.z - 0.5 * PhysicalSize.z

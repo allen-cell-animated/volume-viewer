@@ -1,3 +1,5 @@
+import * as THREE from "three";
+
 import TrackballControls from "./TrackballControls.js";
 import Timing from "./Timing.js";
 

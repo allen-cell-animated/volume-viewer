@@ -1,3 +1,10 @@
+import {
+  DataTexture,
+  LuminanceFormat,
+  UnsignedByteType,
+  ClampToEdgeWrapping,
+  LinearFilter,
+} from "three";
 import FuseWorker from "./FuseWorker";
 
 // This is the owner of the fused RGBA volume texture atlas, and the mask texture atlas.
@@ -12,29 +19,25 @@ export default class FusedChannelData {
     this.fused = new Uint8Array(this.width * this.height * 4);
 
     // webgl texture with the rgba texture atlas for display
-    this.fusedTexture = new THREE.DataTexture(
-      this.fused,
-      this.width,
-      this.height
-    );
+    this.fusedTexture = new DataTexture(this.fused, this.width, this.height);
     this.fusedTexture.generateMipmaps = false;
-    this.fusedTexture.magFilter = THREE.LinearFilter;
-    this.fusedTexture.minFilter = THREE.LinearFilter;
-    this.fusedTexture.wrapS = THREE.ClampToEdgeWrapping;
-    this.fusedTexture.wrapT = THREE.ClampToEdgeWrapping;
+    this.fusedTexture.magFilter = LinearFilter;
+    this.fusedTexture.minFilter = LinearFilter;
+    this.fusedTexture.wrapS = ClampToEdgeWrapping;
+    this.fusedTexture.wrapT = ClampToEdgeWrapping;
 
-    this.maskTexture = new THREE.DataTexture(
+    this.maskTexture = new DataTexture(
       new Uint8Array(this.width * this.height),
       this.width,
       this.height,
-      THREE.LuminanceFormat,
-      THREE.UnsignedByteType
+      LuminanceFormat,
+      UnsignedByteType
     );
     this.maskTexture.generateMipmaps = false;
-    this.maskTexture.magFilter = THREE.LinearFilter;
-    this.maskTexture.minFilter = THREE.LinearFilter;
-    this.maskTexture.wrapS = THREE.ClampToEdgeWrapping;
-    this.maskTexture.wrapT = THREE.ClampToEdgeWrapping;
+    this.maskTexture.magFilter = LinearFilter;
+    this.maskTexture.minFilter = LinearFilter;
+    this.maskTexture.wrapS = ClampToEdgeWrapping;
+    this.maskTexture.wrapT = ClampToEdgeWrapping;
     // for single-channel tightly packed array data:
     this.maskTexture.unpackAlignment = 1;
 

@@ -4,6 +4,8 @@
  * @author mudcube / http://mudcu.be/
  */
 
+import * as THREE from "three";
+
 THREE.STLBinaryExporter = function() {};
 
 THREE.STLBinaryExporter.prototype = {
