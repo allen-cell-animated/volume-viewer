@@ -1,4 +1,4 @@
-import { EventDispatcher, Vector3, Object3D, Euler } from "three";
+import { Vector3, Object3D, Euler } from "three";
 
 import MeshVolume from "./MeshVolume.js";
 import RayMarchedAtlasVolume from "./RayMarchedAtlasVolume.js";

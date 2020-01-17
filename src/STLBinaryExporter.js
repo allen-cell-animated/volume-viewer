@@ -6,10 +6,10 @@
 
 import * as THREE from "three";
 
-THREE.STLBinaryExporter = function() {};
+var STLExporter = function() {};
 
-THREE.STLBinaryExporter.prototype = {
-  constructor: THREE.STLBinaryExporter,
+STLExporter.prototype = {
+  constructor: STLExporter,
 
   parse: (function() {
     var vector = new THREE.Vector3();
@@ -87,3 +87,5 @@ THREE.STLBinaryExporter.prototype = {
     };
   })(),
 };
+
+export { STLExporter };
