@@ -3,15 +3,9 @@
  * @author mrdoob / http://mrdoob.com
  * Port of http://webglsamples.org/blob/blob.html
  */
-import {
-  BufferAttribute,
-  BufferGeometry,
-  Color,
-  ImmediateRenderObject,
-  NoColors,
-} from "three";
+import { BufferAttribute, BufferGeometry, ImmediateRenderObject } from "three";
 
-export default MarchingCubes = function(
+var MarchingCubes = function(
   resolution,
   material,
   enableUvs,
@@ -731,7 +725,7 @@ MarchingCubes.prototype.constructor = MarchingCubes;
 // http://local.wasp.uwa.edu.au/~pbourke/geometry/polygonise/
 // who in turn got them from Cory Gene Bloyd.
 
-edgeTable = new Int32Array([
+const edgeTable = new Int32Array([
   0x0,
   0x109,
   0x203,
@@ -990,7 +984,7 @@ edgeTable = new Int32Array([
   0x0,
 ]);
 
-triTable = new Int32Array([
+const triTable = new Int32Array([
   -1,
   -1,
   -1,
@@ -5090,3 +5084,4 @@ triTable = new Int32Array([
 ]);
 
 export { MarchingCubes, edgeTable, triTable };
+export default MarchingCubes;
