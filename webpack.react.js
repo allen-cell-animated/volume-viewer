@@ -3,7 +3,6 @@ const {
     CleanWebpackPlugin
 } = require('clean-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 const webpack = require('webpack');
@@ -13,14 +12,10 @@ plugins =  [
             new HtmlWebpackPlugin({
                 template: './react-example/index.html',
             }),
-            // new webpack.ProvidePlugin({
-            //     THREE: 'three',
-            // }),
             // ignores a webcomponents dependency on a server side module since this is for front end only.
             // see: https://github.com/webcomponents/webcomponentsjs/issues/794
             new webpack.IgnorePlugin(/vertx/),
-            new CopyWebpackPlugin(['react-example']),
-        ]
+        ];
 
 
 module.exports = {
@@ -45,7 +40,6 @@ module.exports = {
                     loader: "babel-loader"
                 }],
             },
-
             {
                 test: /Worker\.js$/,
                 use: 'worker-loader?inline=true'
