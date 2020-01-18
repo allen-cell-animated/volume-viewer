@@ -89,3 +89,4 @@ STLExporter.prototype = {
 };
 
 export { STLExporter };
+export default STLExporter;

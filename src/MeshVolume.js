@@ -1,10 +1,10 @@
 import {
   Object3D,
+  Vector3,
   Color,
   Mesh,
   Group,
   MeshPhongMaterial,
-  STLBinaryExporter,
 } from "three";
 
 import { defaultMaterialSettings } from "./constants/materials.js";
@@ -12,7 +12,7 @@ import { defaultMaterialSettings } from "./constants/materials.js";
 import FileSaver from "./FileSaver.js";
 import NaiveSurfaceNets from "./NaiveSurfaceNets.js";
 import MarchingCubes from "./MarchingCubes.js";
-import "./STLBinaryExporter.js";
+import STLBinaryExporter from "./STLBinaryExporter.js";
 
 import { GLTFExporter } from "./GLTFExporter.js";
 
