@@ -12,13 +12,9 @@ import {
   InterpolateDiscrete,
   InterpolateLinear,
   LinearFilter,
-  LinearMipmapLinearFilter,
-  LinearMipmapNearestFilter,
   Math as _Math,
   MirroredRepeatWrapping,
   NearestFilter,
-  NearestMipmapLinearFilter,
-  NearestMipmapNearestFilter,
   PropertyBinding,
   RGBAFormat,
   RepeatWrapping,
@@ -26,6 +22,12 @@ import {
   Vector3,
 } from "three";
 
+import {
+  NearestMipMapNearestFilter,
+  NearestMipMapLinearFilter,
+  LinearMipMapNearestFilter,
+  LinearMipMapLinearFilter,
+} from "three/src/constants";
 //------------------------------------------------------------------------------
 // Constants
 //------------------------------------------------------------------------------
@@ -60,14 +62,14 @@ var WEBGL_CONSTANTS = {
 var THREE_TO_WEBGL = {};
 
 THREE_TO_WEBGL[NearestFilter] = WEBGL_CONSTANTS.NEAREST;
-THREE_TO_WEBGL[NearestMipmapNearestFilter] =
+THREE_TO_WEBGL[NearestMipMapNearestFilter] =
   WEBGL_CONSTANTS.NEAREST_MIPMAP_NEAREST;
-THREE_TO_WEBGL[NearestMipmapLinearFilter] =
+THREE_TO_WEBGL[NearestMipMapLinearFilter] =
   WEBGL_CONSTANTS.NEAREST_MIPMAP_LINEAR;
 THREE_TO_WEBGL[LinearFilter] = WEBGL_CONSTANTS.LINEAR;
-THREE_TO_WEBGL[LinearMipmapNearestFilter] =
+THREE_TO_WEBGL[LinearMipMapNearestFilter] =
   WEBGL_CONSTANTS.LINEAR_MIPMAP_NEAREST;
-THREE_TO_WEBGL[LinearMipmapLinearFilter] = WEBGL_CONSTANTS.LINEAR_MIPMAP_LINEAR;
+THREE_TO_WEBGL[LinearMipMapLinearFilter] = WEBGL_CONSTANTS.LINEAR_MIPMAP_LINEAR;
 
 THREE_TO_WEBGL[ClampToEdgeWrapping] = WEBGL_CONSTANTS.CLAMP_TO_EDGE;
 THREE_TO_WEBGL[RepeatWrapping] = WEBGL_CONSTANTS.REPEAT;
@@ -1979,3 +1981,4 @@ GLTFExporter.Utils = {
 };
 
 export { GLTFExporter };
+export default GLTFExporter;
