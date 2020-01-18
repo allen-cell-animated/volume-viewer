@@ -11,7 +11,6 @@ import {
   DoubleSide,
   InterpolateDiscrete,
   InterpolateLinear,
-  LinearFilter,
   Math as _Math,
   MirroredRepeatWrapping,
   NearestFilter,
@@ -23,6 +22,7 @@ import {
 } from "three";
 
 import {
+  LinearFilter,
   NearestMipMapNearestFilter,
   NearestMipMapLinearFilter,
   LinearMipMapNearestFilter,

@@ -1,6 +1,7 @@
 import {
   Vector2,
   Vector3,
+  DataTexture,
   DataTexture3D,
   Euler,
   RGBAFormat,
@@ -8,7 +9,16 @@ import {
   UnsignedByteType,
   WebGLRenderTarget,
   UniformsUtils,
+  OrthographicCamera,
+  FloatType,
+  PlaneBufferGeometry,
+  ShaderMaterial,
+  Mesh,
+  Matrix4,
+  Quaternion,
 } from "three";
+
+import { LinearFilter, NearestFilter } from "three/src/constants";
 
 import {
   pathTracingFragmentShaderSrc,
