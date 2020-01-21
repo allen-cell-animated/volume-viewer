@@ -1,4 +1,11 @@
-import * as THREE from "three";
+import {
+  AmbientLight,
+  Vector3,
+  Object3D,
+  SpotLight,
+  DirectionalLight,
+  Euler,
+} from "three";
 
 import { ThreeJsPanel } from "./ThreeJsPanel.js";
 import lightSettings from "./constants/lights.js";
@@ -388,25 +395,25 @@ export class View3d {
   buildScene() {
     this.scene = this.canvas3d.scene;
 
-    this.oldScale = new THREE.Vector3(0.5, 0.5, 0.5);
-    this.currentScale = new THREE.Vector3(0.5, 0.5, 0.5);
+    this.oldScale = new Vector3(0.5, 0.5, 0.5);
+    this.currentScale = new Vector3(0.5, 0.5, 0.5);
 
     // background color
     this.canvas3d.renderer.setClearColor(this.backgroundColor, 1.0);
 
     this.lights = [new Light(SKY_LIGHT), new Light(AREA_LIGHT)];
 
-    this.lightContainer = new THREE.Object3D();
+    this.lightContainer = new Object3D();
     this.lightContainer.name = "lightContainer";
 
-    this.ambientLight = new THREE.AmbientLight(
+    this.ambientLight = new AmbientLight(
       lightSettings.ambientLightSettings.color,
       lightSettings.ambientLightSettings.intensity
     );
     this.lightContainer.add(this.ambientLight);
 
     // key light
-    this.spotLight = new THREE.SpotLight(
+    this.spotLight = new SpotLight(
       lightSettings.spotlightSettings.color,
       lightSettings.spotlightSettings.intensity
     );
@@ -415,13 +422,13 @@ export class View3d {
       lightSettings.spotlightSettings.position.y,
       lightSettings.spotlightSettings.position.z
     );
-    this.spotLight.target = new THREE.Object3D(); // this.substrate;
+    this.spotLight.target = new Object3D(); // this.substrate;
     this.spotLight.angle = lightSettings.spotlightSettings.angle;
 
     this.lightContainer.add(this.spotLight);
 
     // reflect light
-    this.reflectedLight = new THREE.DirectionalLight(
+    this.reflectedLight = new DirectionalLight(
       lightSettings.reflectedLightSettings.color
     );
     this.reflectedLight.position.set(
@@ -436,7 +443,7 @@ export class View3d {
     this.lightContainer.add(this.reflectedLight);
 
     // fill light
-    this.fillLight = new THREE.DirectionalLight(
+    this.fillLight = new DirectionalLight(
       lightSettings.fillLightSettings.color
     );
     this.fillLight.position.set(
@@ -801,7 +808,7 @@ export class View3d {
    */
   setVolumeTranslation(volume, xyz) {
     if (this.image) {
-      this.image.setTranslation(new THREE.Vector3().fromArray(xyz));
+      this.image.setTranslation(new Vector3().fromArray(xyz));
     }
     this.redraw();
   }
@@ -813,7 +820,7 @@ export class View3d {
    */
   setVolumeRotation(volume, eulerXYZ) {
     if (this.image) {
-      this.image.setRotation(new THREE.Euler().fromArray(eulerXYZ));
+      this.image.setRotation(new Euler().fromArray(eulerXYZ));
     }
     this.redraw();
   }

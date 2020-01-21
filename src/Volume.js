@@ -1,5 +1,4 @@
-import * as THREE from "three";
-
+import { Vector3 } from "three";
 import Channel from "./Channel.js";
 
 import { getColorByChannelIndex } from "./constants/colors.js";
@@ -162,7 +161,7 @@ export default class Volume {
 
     // this works because image was scaled down in x and y but not z.
     // so use original x and y dimensions from imageInfo.
-    this.physicalSize = new THREE.Vector3(
+    this.physicalSize = new Vector3(
       this.imageInfo.width * this.pixel_size[0],
       this.imageInfo.height * this.pixel_size[1],
       this.z * this.pixel_size[2]
@@ -172,12 +171,12 @@ export default class Volume {
       Math.max(this.physicalSize.y, this.physicalSize.z)
     );
     // Compute the volume's max extent - scaled to max dimension.
-    this.normalizedPhysicalSize = new THREE.Vector3()
+    this.normalizedPhysicalSize = new Vector3()
       .copy(this.physicalSize)
       .multiplyScalar(1.0 / m);
 
     // sx, sy, sz should be same as normalizedPhysicalSize
-    this.setScale(new THREE.Vector3(sx, sy, sz));
+    this.setScale(new Vector3(sx, sy, sz));
   }
 
   cleanup() {}
@@ -322,8 +321,8 @@ export default class Volume {
         this.physicalSize.x,
         Math.max(this.physicalSize.y, this.physicalSize.z)
       );
-    const pixelSizeVec = new THREE.Vector3().fromArray(this.pixel_size);
-    return new THREE.Vector3()
+    const pixelSizeVec = new Vector3().fromArray(this.pixel_size);
+    return new Vector3()
       .fromArray(xyz)
       .multiply(pixelSizeVec)
       .multiplyScalar(m)

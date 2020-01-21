@@ -1,4 +1,16 @@
-import * as THREE from "three";
+import {
+  AxesHelper,
+  Vector3,
+  Object3D,
+  Mesh,
+  BoxGeometry,
+  MeshBasicMaterial,
+  OrthographicCamera,
+  PerspectiveCamera,
+  NormalBlending,
+  WebGLRenderer,
+  Scene,
+} from "three";
 
 import TrackballControls from "./TrackballControls.js";
 import Timing from "./Timing.js";
@@ -26,7 +38,7 @@ export class ThreeJsPanel {
     this.containerdiv.appendChild(this.canvas);
     parentElement.appendChild(this.containerdiv);
 
-    this.scene = new THREE.Scene();
+    this.scene = new Scene();
 
     this.zooming = false;
     this.animate_funcs = [];
@@ -43,7 +55,7 @@ export class ThreeJsPanel {
       let context = this.canvas.getContext("webgl2");
       if (context) {
         this.hasWebGL2 = true;
-        this.renderer = new THREE.WebGLRenderer({
+        this.renderer = new WebGLRenderer({
           context: context,
           canvas: this.canvas,
           preserveDrawingBuffer: true,
@@ -54,13 +66,13 @@ export class ThreeJsPanel {
         //this.renderer.autoClear = false;
         // set pixel ratio to 0.25 or 0.5 to render at lower res.
         this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.renderer.state.setBlending(THREE.NormalBlending);
+        this.renderer.state.setBlending(NormalBlending);
         //required by WebGL 2.0 for rendering to FLOAT textures
         this.renderer.context.getExtension("EXT_color_buffer_float");
       }
     }
     if (!this.hasWebGL2) {
-      this.renderer = new THREE.WebGLRenderer({
+      this.renderer = new WebGLRenderer({
         canvas: this.canvas,
         preserveDrawingBuffer: true,
         alpha: true,
@@ -68,7 +80,7 @@ export class ThreeJsPanel {
         sortObjects: true,
       });
       this.renderer.setPixelRatio(window.devicePixelRatio);
-      this.renderer.state.setBlending(THREE.NormalBlending);
+      this.renderer.state.setBlending(NormalBlending);
     }
     this.renderer.setSize(
       parentElement.offsetWidth,
@@ -83,7 +95,7 @@ export class ThreeJsPanel {
 
     this.fov = 20;
 
-    this.perspectiveCamera = new THREE.PerspectiveCamera(
+    this.perspectiveCamera = new PerspectiveCamera(
       this.fov,
       aspect,
       DEFAULT_PERSPECTIVE_CAMERA_NEAR,
@@ -100,7 +112,7 @@ export class ThreeJsPanel {
     this.perspectiveControls.length = 10;
     this.perspectiveControls.enabled = true; //turn off mouse moments by setting to false
 
-    this.orthographicCameraX = new THREE.OrthographicCamera(
+    this.orthographicCameraX = new OrthographicCamera(
       -scale * aspect,
       scale * aspect,
       scale,
@@ -120,7 +132,7 @@ export class ThreeJsPanel {
     this.orthoControlsX.staticMoving = true;
     this.orthoControlsX.enabled = false;
 
-    this.orthographicCameraY = new THREE.OrthographicCamera(
+    this.orthographicCameraY = new OrthographicCamera(
       -scale * aspect,
       scale * aspect,
       scale,
@@ -140,7 +152,7 @@ export class ThreeJsPanel {
     this.orthoControlsY.staticMoving = true;
     this.orthoControlsY.enabled = false;
 
-    this.orthographicCameraZ = new THREE.OrthographicCamera(
+    this.orthographicCameraZ = new OrthographicCamera(
       -scale * aspect,
       scale * aspect,
       scale,
@@ -184,7 +196,7 @@ export class ThreeJsPanel {
     this.orthographicCameraX.up.x = 0.0;
     this.orthographicCameraX.up.y = 0.0;
     this.orthographicCameraX.up.z = 1.0;
-    this.orthographicCameraX.lookAt(new THREE.Vector3(0, 0, 0));
+    this.orthographicCameraX.lookAt(new Vector3(0, 0, 0));
   }
 
   resetOrthographicCameraY() {
@@ -194,7 +206,7 @@ export class ThreeJsPanel {
     this.orthographicCameraY.up.x = 0.0;
     this.orthographicCameraY.up.y = 0.0;
     this.orthographicCameraY.up.z = 1.0;
-    this.orthographicCameraY.lookAt(new THREE.Vector3(0, 0, 0));
+    this.orthographicCameraY.lookAt(new Vector3(0, 0, 0));
   }
 
   resetOrthographicCameraZ() {
@@ -204,7 +216,7 @@ export class ThreeJsPanel {
     this.orthographicCameraZ.up.x = 0.0;
     this.orthographicCameraZ.up.y = 1.0;
     this.orthographicCameraZ.up.z = 0.0;
-    this.orthographicCameraZ.lookAt(new THREE.Vector3(0, 0, 0));
+    this.orthographicCameraZ.lookAt(new Vector3(0, 0, 0));
   }
 
   requestCapture(dataurlcallback) {
@@ -300,7 +312,7 @@ export class ThreeJsPanel {
   resetToPerspectiveCamera() {
     var aspect = this.getWidth() / this.getHeight();
 
-    this.perspectiveCamera = new THREE.PerspectiveCamera(
+    this.perspectiveCamera = new PerspectiveCamera(
       this.fov,
       aspect,
       DEFAULT_PERSPECTIVE_CAMERA_NEAR,
@@ -336,29 +348,29 @@ export class ThreeJsPanel {
     // offset from bottom left corner in px.
     this.axisOffset = [66.0, 66.0];
 
-    this.axisHelperScene = new THREE.Scene();
+    this.axisHelperScene = new Scene();
 
-    this.axisHelperObject = new THREE.Object3D();
+    this.axisHelperObject = new Object3D();
     this.axisHelperObject.name = "axisHelperParentObject";
 
-    var axisCubeMaterial = new THREE.MeshBasicMaterial({
+    var axisCubeMaterial = new MeshBasicMaterial({
       color: 0xaeacad,
     });
 
-    var axisCube = new THREE.BoxGeometry(
+    var axisCube = new BoxGeometry(
       this.axisScale / 5,
       this.axisScale / 5,
       this.axisScale / 5
     );
-    var axisCubeMesh = new THREE.Mesh(axisCube, axisCubeMaterial);
+    var axisCubeMesh = new Mesh(axisCube, axisCubeMaterial);
     this.axisHelperObject.add(axisCubeMesh);
 
-    var axisHelper = new THREE.AxesHelper(this.axisScale);
+    var axisHelper = new AxesHelper(this.axisScale);
     this.axisHelperObject.add(axisHelper);
 
     this.axisHelperScene.add(this.axisHelperObject);
 
-    this.axisCamera = new THREE.OrthographicCamera(
+    this.axisCamera = new OrthographicCamera(
       0,
       this.getWidth(),
       this.getHeight(),
@@ -370,7 +382,7 @@ export class ThreeJsPanel {
     this.axisCamera.up.x = 0.0;
     this.axisCamera.up.y = 1.0;
     this.axisCamera.up.z = 0.0;
-    this.axisCamera.lookAt(new THREE.Vector3(0, 0, 0));
+    this.axisCamera.lookAt(new Vector3(0, 0, 0));
     this.axisCamera.position.set(
       -this.axisOffset[0],
       -this.axisOffset[1],
