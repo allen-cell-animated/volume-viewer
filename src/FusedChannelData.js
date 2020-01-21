@@ -3,8 +3,9 @@ import {
   LuminanceFormat,
   UnsignedByteType,
   ClampToEdgeWrapping,
-  LinearFilter,
 } from "three";
+import { LinearFilter } from "three/src/constants";
+
 import FuseWorker from "./FuseWorker";
 
 // This is the owner of the fused RGBA volume texture atlas, and the mask texture atlas.
