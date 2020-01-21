@@ -17,7 +17,7 @@
     "clean": "rimraf es/",
     "format": "prettier --write src/**/*.js",
     "dev": "webpack-dev-server --open --config webpack.dev.js",
-    "react-example": "webpack-dev-server --config webpack.react.js",
+    "react-example": "webpack-dev-server --config react-example/webpack.react.js",
     "lint": "eslint --config ./.eslintrc.js --ignore-path ./.eslintignore --ext .jsx --ext .js ./",
     "test": "mocha --opts mocha.opts src/**/test/*.js",
     "transpileES": "babel src --out-dir es --extensions .js --ignore src/**/*.test.js"
