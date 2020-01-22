@@ -1,6 +1,7 @@
 import { TextureLoader, Vector3, Matrix4, Quaternion } from "three";
 import ViveController from "./ViveController.js";
-import OBJLoader from "../threejsObjLoader.js";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
+
 import VRControllerObj from "../../assets/vr_controller_vive_1_5.obj";
 import VRControllerTexture from "../../assets/onepointfive_texture.png";
 import VRControllerSpecularTexture from "../../assets/onepointfive_spec.png";
@@ -10,10 +11,10 @@ export class vrObjectControls {
     // TODO This code is HTC Vive-specific.  Find a generic controller model to use instead!
     // (...when WebVR has proliferated further and more hand controllers are in play...)
     this.controller1 = new ViveController(0);
-    this.controller1.standingMatrix = renderer.vr.getStandingMatrix();
+    // this.controller1.standingMatrix = renderer.vr.getStandingMatrix();
 
     this.controller2 = new ViveController(1);
-    this.controller2.standingMatrix = renderer.vr.getStandingMatrix();
+    // this.controller2.standingMatrix = renderer.vr.getStandingMatrix();
 
     this.object = object;
 
