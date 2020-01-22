@@ -60,12 +60,6 @@ view3D.updateLuts(aimg);
 # React example 
 - in `webpack.config.js`
 ```JavaScript
-    plugins: [
-        ...,
-        new webpack.ProvidePlugin({
-            THREE: 'three',
-        }),
-    ],
     rules: [
         ...,
         {
