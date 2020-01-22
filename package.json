@@ -25,7 +25,7 @@
   "author": "Daniel Toloudis",
   "license": "MIT",
   "dependencies": {
-    "three": "^0.99.0"
+    "three": "^0.112.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.2.3",
