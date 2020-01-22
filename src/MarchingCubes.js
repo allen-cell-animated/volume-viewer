@@ -3,6 +3,9 @@
  * @author mrdoob / http://mrdoob.com
  * Port of http://webglsamples.org/blob/blob.html
  */
+
+// MODIFIED 2018 BY DANIELT@ALLENINSTITUTE.ORG TO ACCEPT enableColors, enableNormals, volumeFieldRef options
+
 import { BufferAttribute, BufferGeometry, ImmediateRenderObject } from "three";
 
 var MarchingCubes = function(
@@ -657,12 +660,12 @@ var MarchingCubes = function(
 
     var geo_callback = function(object) {
       var geo = new BufferGeometry();
-      geo.addAttribute(
+      geo.setAttribute(
         "position",
         new BufferAttribute(object.positionArray.slice(), 3)
       );
       if (object.enableNormals) {
-        geo.addAttribute(
+        geo.setAttribute(
           "normal",
           new BufferAttribute(object.normalArray.slice(), 3)
         );
