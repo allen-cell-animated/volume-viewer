@@ -12,10 +12,10 @@ import {
   Scene,
 } from "three";
 
-import TrackballControls from "./TrackballControls.js";
+import { TrackballControls } from "three/examples/jsm/controls/TrackballControls";
 import Timing from "./Timing.js";
 
-import WEBVR from "./vr/WebVR.js";
+import { VRButton } from "./vr/VRButton";
 import vrObjectControls from "./vr/vrObjectControls.js";
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
@@ -68,7 +68,7 @@ export class ThreeJsPanel {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.state.setBlending(NormalBlending);
         //required by WebGL 2.0 for rendering to FLOAT textures
-        this.renderer.context.getExtension("EXT_color_buffer_float");
+        this.renderer.getContext().getExtension("EXT_color_buffer_float");
       }
     }
     if (!this.hasWebGL2) {
@@ -225,15 +225,15 @@ export class ThreeJsPanel {
   }
 
   initVR() {
-    this.vrButton = WEBVR.createButton(this.renderer);
-    if (this.vrButton) {
-      this.vrButton.style.left = "auto";
-      this.vrButton.style.right = "5px";
-      this.vrButton.style.bottom = "5px";
-      this.containerdiv.appendChild(this.vrButton);
+    this.xrButton = VRButton.createButton(this.renderer);
+    if (this.xrButton) {
+      this.xrButton.style.left = "auto";
+      this.xrButton.style.right = "5px";
+      this.xrButton.style.bottom = "5px";
+      this.containerdiv.appendChild(this.xrButton);
 
       // VR controllers
-      this.vrControls = new vrObjectControls(this.renderer, this.scene, null);
+      this.xrControls = new vrObjectControls(this.renderer, this.scene, null);
 
       window.addEventListener(
         "vrdisplaypointerrestricted",
@@ -282,31 +282,30 @@ export class ThreeJsPanel {
   }
 
   isVR() {
-    const vrdevice = this.renderer.vr.getDevice();
-    return vrdevice && vrdevice.isPresenting;
+    return this.renderer.xr.enabled;
   }
 
   onEnterVR() {
     console.log("ENTERED VR");
-    this.renderer.vr.enabled = true;
+    this.renderer.xr.enabled = true;
     this.controls.enabled = false;
     if (this.onEnterVRCallback) {
       this.onEnterVRCallback();
     }
-    if (this.vrControls) {
-      this.vrControls.onEnterVR();
+    if (this.xrControls) {
+      this.xrControls.onEnterVR();
     }
   }
 
   onLeaveVR() {
     console.log("LEFT VR");
-    if (this.vrControls) {
-      this.vrControls.onLeaveVR();
+    if (this.xrControls) {
+      this.xrControls.onLeaveVR();
       if (this.onLeaveVRCallback) {
         this.onLeaveVRCallback();
       }
     }
-    this.renderer.vr.enabled = false;
+    this.renderer.xr.enabled = false;
   }
 
   resetToPerspectiveCamera() {
@@ -504,11 +503,11 @@ export class ThreeJsPanel {
   }
 
   getWidth() {
-    return this.renderer.context.canvas.width;
+    return this.renderer.getContext().canvas.width;
   }
 
   getHeight() {
-    return this.renderer.context.canvas.height;
+    return this.renderer.getContext().canvas.height;
   }
 
   render() {
@@ -552,8 +551,8 @@ export class ThreeJsPanel {
     this.timer.update();
     const delta = this.timer.lastFrameMs / 1000.0;
 
-    if (this.isVR() && this.vrControls) {
-      this.vrControls.update(delta);
+    if (this.isVR() && this.xrControls) {
+      this.xrControls.update(delta);
     } else {
       this.controls.update(delta);
     }
