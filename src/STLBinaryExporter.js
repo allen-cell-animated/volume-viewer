@@ -4,28 +4,29 @@
  * @author mudcube / http://mudcu.be/
  */
 
-THREE.STLBinaryExporter = function() {};
+import { BufferGeometry, Geometry, Matrix3, Vector3 } from "three";
+var STLExporter = function() {};
 
-THREE.STLBinaryExporter.prototype = {
-  constructor: THREE.STLBinaryExporter,
+STLExporter.prototype = {
+  constructor: STLExporter,
 
   parse: (function() {
-    var vector = new THREE.Vector3();
-    var normalMatrixWorld = new THREE.Matrix3();
+    var vector = new Vector3();
+    var normalMatrixWorld = new Matrix3();
 
     return function parse(scene) {
       // We collect objects first, as we may need to convert from BufferGeometry to Geometry
       var objects = [];
       var triangles = 0;
       scene.traverse(function(object) {
-        if (!(object instanceof THREE.Mesh)) return;
+        if (!(object instanceof Mesh)) return;
 
         var geometry = object.geometry;
-        if (geometry instanceof THREE.BufferGeometry) {
-          geometry = new THREE.Geometry().fromBufferGeometry(geometry);
+        if (geometry instanceof BufferGeometry) {
+          geometry = new Geometry().fromBufferGeometry(geometry);
         }
 
-        if (!(geometry instanceof THREE.Geometry)) return;
+        if (!(geometry instanceof Geometry)) return;
         triangles += geometry.faces.length;
 
         objects.push({
@@ -85,3 +86,6 @@ THREE.STLBinaryExporter.prototype = {
     };
   })(),
 };
+
+export { STLExporter };
+export default STLExporter;

@@ -1,5 +1,6 @@
-import "./ViveController.js";
-import "../threejsObjLoader.js";
+import { TextureLoader, Vector3, Matrix4, Quaternion } from "three";
+import ViveController from "./ViveController.js";
+import OBJLoader from "../threejsObjLoader.js";
 import VRControllerObj from "../../assets/vr_controller_vive_1_5.obj";
 import VRControllerTexture from "../../assets/onepointfive_texture.png";
 import VRControllerSpecularTexture from "../../assets/onepointfive_spec.png";
@@ -8,10 +9,10 @@ export class vrObjectControls {
   constructor(renderer, scene, object) {
     // TODO This code is HTC Vive-specific.  Find a generic controller model to use instead!
     // (...when WebVR has proliferated further and more hand controllers are in play...)
-    this.controller1 = new THREE.ViveController(0);
+    this.controller1 = new ViveController(0);
     this.controller1.standingMatrix = renderer.vr.getStandingMatrix();
 
-    this.controller2 = new THREE.ViveController(1);
+    this.controller2 = new ViveController(1);
     this.controller2.standingMatrix = renderer.vr.getStandingMatrix();
 
     this.object = object;
@@ -20,16 +21,16 @@ export class vrObjectControls {
     this.trigger2Down = this.controller2.getButtonState("trigger");
 
     // really only used once per update() call.
-    this.scale = new THREE.Vector3();
+    this.scale = new Vector3();
     this.previousDist = null;
 
     // one channel index per hand
     this.currentChannel = [0, -1];
 
     // load the VR controller geometry
-    var loader = new THREE.OBJLoader();
+    var loader = new OBJLoader();
     var object = loader.parse(VRControllerObj);
-    var txloader = new THREE.TextureLoader();
+    var txloader = new TextureLoader();
     var controller = object.children[0];
     controller.material.map = txloader.load(VRControllerTexture);
     controller.material.specularMap = txloader.load(
@@ -64,7 +65,7 @@ export class vrObjectControls {
     // reset our volume object
     if (this.object) {
       this.object.sceneRoot.quaternion.setFromAxisAngle(
-        new THREE.Vector3(0, 0, 1),
+        new Vector3(0, 0, 1),
         0.0
       );
     }
@@ -169,7 +170,7 @@ export class vrObjectControls {
         (!this.trigger2Down && isTrigger2Down)
       ) {
         this.VRrotate = true;
-        this.VRrotateStartPos = new THREE.Vector3().setFromMatrixPosition(
+        this.VRrotateStartPos = new Vector3().setFromMatrixPosition(
           theController.matrix
         );
       }
@@ -186,12 +187,8 @@ export class vrObjectControls {
 
       this.scale.copy(obj3d.scale);
 
-      const p1 = new THREE.Vector3().setFromMatrixPosition(
-        this.controller1.matrix
-      );
-      const p2 = new THREE.Vector3().setFromMatrixPosition(
-        this.controller2.matrix
-      );
+      const p1 = new Vector3().setFromMatrixPosition(this.controller1.matrix);
+      const p2 = new Vector3().setFromMatrixPosition(this.controller2.matrix);
       const dist = p1.distanceTo(p2);
       if (!this.wasZooming) {
         this.VRzoomStart = 0;
@@ -219,16 +216,16 @@ export class vrObjectControls {
       let obj3d = this.object.sceneRoot;
 
       // dist from last pose position in x and z.
-      var pos = new THREE.Vector3().setFromMatrixPosition(theController.matrix);
+      var pos = new Vector3().setFromMatrixPosition(theController.matrix);
 
       var origin = obj3d.position;
 
-      var v0 = new THREE.Vector3().subVectors(this.VRrotateStartPos, origin);
+      var v0 = new Vector3().subVectors(this.VRrotateStartPos, origin);
       v0 = v0.normalize();
-      var v1 = new THREE.Vector3().subVectors(pos, origin);
+      var v1 = new Vector3().subVectors(pos, origin);
       v1 = v1.normalize();
 
-      var mio = new THREE.Matrix4();
+      var mio = new Matrix4();
       mio.getInverse(obj3d.matrixWorld);
 
       v0 = v0.transformDirection(mio);
@@ -236,7 +233,7 @@ export class vrObjectControls {
       v1 = v1.transformDirection(mio);
       v1 = v1.normalize();
 
-      var q = new THREE.Quaternion();
+      var q = new Quaternion();
       q.setFromUnitVectors(v0, v1);
 
       obj3d.quaternion.multiply(q);

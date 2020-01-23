@@ -1,3 +1,4 @@
+import { Vector3 } from "three";
 export const AREA_LIGHT = 0;
 export const SKY_LIGHT = 1;
 
@@ -10,22 +11,22 @@ export class Light {
     this.m_height = 1.0;
     this.m_distance = 4.0;
     this.m_skyRadius = 1000.0;
-    this.m_P = new THREE.Vector3();
-    this.m_target = new THREE.Vector3();
+    this.m_P = new Vector3();
+    this.m_target = new Vector3();
     this.m_area = 1.0;
-    this.m_color = new THREE.Vector3(75, 75, 75);
-    this.m_colorTop = new THREE.Vector3(0.3, 0.3, 0.3);
-    this.m_colorMiddle = new THREE.Vector3(0.3, 0.3, 0.3);
-    this.m_colorBottom = new THREE.Vector3(0.3, 0.3, 0.3);
+    this.m_color = new Vector3(75, 75, 75);
+    this.m_colorTop = new Vector3(0.3, 0.3, 0.3);
+    this.m_colorMiddle = new Vector3(0.3, 0.3, 0.3);
+    this.m_colorBottom = new Vector3(0.3, 0.3, 0.3);
 
     // type = 1 for sky light, 0 for area light
     this.m_T = type;
 
     // secondary properties:
-    this.m_N = new THREE.Vector3(0, 0, 1);
-    this.m_U = new THREE.Vector3(1, 0, 0);
-    this.m_V = new THREE.Vector3(0, 1, 0);
-    this.update(new THREE.Vector3(0, 0, 0));
+    this.m_N = new Vector3(0, 0, 1);
+    this.m_U = new Vector3(1, 0, 0);
+    this.m_V = new Vector3(0, 1, 0);
+    this.update(new Vector3(0, 0, 0));
   }
 
   update(targetPoint, cameraMatrix) {
@@ -56,7 +57,7 @@ export class Light {
     } else if (this.m_T === SKY_LIGHT) {
       this.m_P.copy(targetPoint);
       // shift by nonzero amount
-      this.m_target.addVectors(this.m_P, new THREE.Vector3(0.0, 0.0, 1.0));
+      this.m_target.addVectors(this.m_P, new Vector3(0.0, 0.0, 1.0));
       this.m_skyRadius = 1000.0 * targetPoint.length() * 2.0;
       this.m_area = 4.0 * Math.PI * Math.pow(this.m_skyRadius, 2.0);
       this.m_areaPdf = 1.0 / this.m_area;
@@ -66,14 +67,10 @@ export class Light {
     this.m_N.subVectors(this.m_target, this.m_P).normalize();
     // if N and "up" are parallel, then just choose a different "up"
     if (this.m_N.y === 1.0 || this.m_N.y === -1.0) {
-      this.m_U
-        .crossVectors(this.m_N, new THREE.Vector3(1.0, 0.0, 0.0))
-        .normalize();
+      this.m_U.crossVectors(this.m_N, new Vector3(1.0, 0.0, 0.0)).normalize();
     } else {
       // standard "up" vector
-      this.m_U
-        .crossVectors(this.m_N, new THREE.Vector3(0.0, 1.0, 0.0))
-        .normalize();
+      this.m_U.crossVectors(this.m_N, new Vector3(0.0, 1.0, 0.0)).normalize();
     }
     this.m_V.crossVectors(this.m_N, this.m_U).normalize();
   }

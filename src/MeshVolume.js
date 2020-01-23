@@ -1,11 +1,20 @@
+import {
+  Object3D,
+  Vector3,
+  Color,
+  Mesh,
+  Group,
+  MeshPhongMaterial,
+} from "three";
+
 import { defaultMaterialSettings } from "./constants/materials.js";
 
 import FileSaver from "./FileSaver.js";
 import NaiveSurfaceNets from "./NaiveSurfaceNets.js";
-import "./MarchingCubes.js";
-import "./STLBinaryExporter.js";
+import MarchingCubes from "./MarchingCubes.js";
+import STLBinaryExporter from "./STLBinaryExporter.js";
 
-import "three/examples/js/exporters/GLTFExporter.js";
+import { GLTFExporter } from "./GLTFExporter.js";
 
 // this cutoff is chosen to have a small buffer of values before the object is treated
 // as transparent for gpu blending and depth testing.
@@ -16,11 +25,11 @@ export default class MeshVolume {
     // need?
     this.volume = volume;
 
-    this.meshRoot = new THREE.Object3D(); //create an empty container
+    this.meshRoot = new Object3D(); //create an empty container
     this.meshRoot.name = "Mesh Surface Group";
 
     // handle transform ordering for giving the meshroot a rotation about a pivot point
-    this.meshPivot = new THREE.Group();
+    this.meshPivot = new Group();
     this.meshPivot.name = "MeshContainerNode";
     this.meshPivot.add(this.meshRoot);
 
@@ -57,13 +66,13 @@ export default class MeshVolume {
     this.scale = scale;
 
     this.meshRoot.scale.copy(
-      new THREE.Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z)
+      new Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z)
     );
   }
 
   setFlipAxes(flipX, flipY, flipZ) {
     this.meshRoot.scale.copy(
-      new THREE.Vector3(
+      new Vector3(
         0.5 * this.scale.x * flipX,
         0.5 * this.scale.y * flipY,
         0.5 * this.scale.z * flipZ
@@ -94,12 +103,12 @@ export default class MeshVolume {
         const c = (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
 
         this.meshrep[i].traverse(function(child) {
-          if (child instanceof THREE.Mesh) {
-            child.material.color = new THREE.Color(c);
+          if (child instanceof Mesh) {
+            child.material.color = new Color(c);
           }
         });
         if (this.meshrep[i].material) {
-          this.meshrep[i].material.color = new THREE.Color(c);
+          this.meshrep[i].material.color = new Color(c);
         }
       }
     }
@@ -107,10 +116,10 @@ export default class MeshVolume {
 
   createMaterialForChannel(rgb, alpha, transp) {
     const col = (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
-    const material = new THREE.MeshPhongMaterial({
-      color: new THREE.Color(col),
+    const material = new MeshPhongMaterial({
+      color: new Color(col),
       shininess: defaultMaterialSettings.shininess,
-      specular: new THREE.Color(defaultMaterialSettings.specularColor),
+      specular: new Color(defaultMaterialSettings.specularColor),
       opacity: alpha,
       transparent: alpha < ALPHA_THRESHOLD,
     });
@@ -121,12 +130,12 @@ export default class MeshVolume {
     const geometries = this.generateIsosurfaceGeometry(channelIndex, isovalue);
     const material = this.createMaterialForChannel(colorrgb, alpha, transp);
 
-    let theObject = new THREE.Object3D();
+    let theObject = new Object3D();
     theObject.name = "Channel" + channelIndex;
     theObject.userData = { isovalue: isovalue };
     // proper scaling will be done in parent object
     for (var i = 0; i < geometries.length; ++i) {
-      let mesh = new THREE.Mesh(geometries[i], material);
+      let mesh = new Mesh(geometries[i], material);
       theObject.add(mesh);
     }
     return theObject;
@@ -142,13 +151,13 @@ export default class MeshVolume {
 
     // find the current isosurface opacity and color.
     let opacity = 1;
-    let color = new THREE.Color();
+    let color = new Color();
     if (this.meshrep[channel].material) {
       opacity = this.meshrep[channel].material.opacity;
       color = this.meshrep[channel].material.color;
     } else {
       this.meshrep[channel].traverse(function(child) {
-        if (child instanceof THREE.Mesh) {
+        if (child instanceof Mesh) {
           opacity = child.material.opacity;
           color = child.material.color;
         }
@@ -182,7 +191,7 @@ export default class MeshVolume {
     }
 
     this.meshrep[channel].traverse(function(child) {
-      if (child instanceof THREE.Mesh) {
+      if (child instanceof Mesh) {
         child.material.opacity = value;
         child.material.transparent = value < ALPHA_THRESHOLD;
         //child.material.depthWrite = !child.material.transparent;
@@ -227,7 +236,7 @@ export default class MeshVolume {
     if (this.meshrep[channel]) {
       this.meshRoot.remove(this.meshrep[channel]);
       this.meshrep[channel].traverse(function(child) {
-        if (child instanceof THREE.Mesh) {
+        if (child instanceof Mesh) {
           child.material.dispose();
           child.geometry.dispose();
         }
@@ -274,14 +283,14 @@ export default class MeshVolume {
   }
 
   exportSTL(input, fname) {
-    var ex = new THREE.STLBinaryExporter();
+    var ex = new STLBinaryExporter();
     var output = ex.parse(input);
     FileSaver.saveBinary(output.buffer, fname + ".stl");
   }
 
   // takes a scene or object or array of scenes or objects or both!
   exportGLTF(input, fname) {
-    var gltfExporter = new THREE.GLTFExporter();
+    var gltfExporter = new GLTFExporter();
     var options = {
       // transforms as translate rotate scale?
       trs: false,
@@ -314,7 +323,7 @@ export default class MeshVolume {
     const marchingcubes = true;
 
     if (marchingcubes) {
-      let effect = new THREE.MarchingCubes(
+      let effect = new MarchingCubes(
         [this.volume.x, this.volume.y, this.volume.z],
         null,
         false,

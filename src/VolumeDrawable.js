@@ -1,3 +1,5 @@
+import { Vector3, Object3D, Euler } from "three";
+
 import MeshVolume from "./MeshVolume.js";
 import RayMarchedAtlasVolume from "./RayMarchedAtlasVolume.js";
 import PathTracedVolume from "./PathTracedVolume.js";
@@ -12,8 +14,8 @@ export default class VolumeDrawable {
 
     this.onChannelDataReadyCallback = null;
 
-    this.translation = new THREE.Vector3(0, 0, 0);
-    this.rotation = new THREE.Euler();
+    this.translation = new Vector3(0, 0, 0);
+    this.rotation = new Euler();
     this.flipX = 1;
     this.flipY = 1;
     this.flipZ = 1;
@@ -51,7 +53,7 @@ export default class VolumeDrawable {
 
     this.glossiness = new Array(this.volume.num_channels).fill(0);
 
-    this.sceneRoot = new THREE.Object3D(); //create an empty container
+    this.sceneRoot = new Object3D(); //create an empty container
 
     this.meshVolume = new MeshVolume(this.volume);
 
@@ -72,8 +74,8 @@ export default class VolumeDrawable {
     //this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());
 
     this.bounds = {
-      bmin: new THREE.Vector3(-0.5, -0.5, -0.5),
-      bmax: new THREE.Vector3(0.5, 0.5, 0.5),
+      bmin: new Vector3(-0.5, -0.5, -0.5),
+      bmax: new Vector3(0.5, 0.5, 0.5),
     };
 
     this.sceneRoot.position.set(0, 0, 0);
@@ -81,10 +83,8 @@ export default class VolumeDrawable {
     this.setScale(this.volume.scale);
 
     // apply the volume's default transformation
-    this.setTranslation(
-      new THREE.Vector3().fromArray(this.volume.getTranslation())
-    );
-    this.setRotation(new THREE.Euler().fromArray(this.volume.getRotation()));
+    this.setTranslation(new Vector3().fromArray(this.volume.getTranslation()));
+    this.setRotation(new Euler().fromArray(this.volume.getRotation()));
 
     this.setOptions(options);
   }
@@ -99,12 +99,12 @@ export default class VolumeDrawable {
     }
     if (options.hasOwnProperty("clipBounds")) {
       this.bounds = {
-        bmin: new THREE.Vector3(
+        bmin: new Vector3(
           options.clipBounds[0],
           options.clipBounds[2],
           options.clipBounds[4]
         ),
-        bmax: new THREE.Vector3(
+        bmax: new Vector3(
           options.clipBounds[1],
           options.clipBounds[3],
           options.clipBounds[5]
@@ -119,10 +119,10 @@ export default class VolumeDrawable {
       this.setScale(options.scale.slice());
     }
     if (options.hasOwnProperty("translation")) {
-      this.setTranslation(new THREE.Vector3().fromArray(options.translation));
+      this.setTranslation(new Vector3().fromArray(options.translation));
     }
     if (options.hasOwnProperty("rotation")) {
-      this.setRotation(new THREE.Euler().fromArray(options.rotation));
+      this.setRotation(new Euler().fromArray(options.rotation));
     }
 
     if (options.hasOwnProperty("renderMode")) {
