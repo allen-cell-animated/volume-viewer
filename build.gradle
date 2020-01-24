@@ -30,7 +30,7 @@ task format(type: NodeTask) {
     dependsOn npmInstall
 
     script = file("${npmBin}/prettier")
-    args = "--write src/**/*.ts".tokenize()
+    args = "--write src/**/*.js".tokenize()
 }
 
 task lint(type: NodeTask) {
@@ -44,19 +44,12 @@ task lint(type: NodeTask) {
 ///////////////////////////
 // Build
 //////////////////////////
-task bundle(type: NodeTask) {
+task demo(type: NodeTask) {
     dependsOn npmInstall
 
     environment = [BABEL_ENV: "es", NODE_ENV: "production"]
-    script = file("${npmBin}/webpack")
-    args = "--config webpack.config.js".tokenize()
-}
-
-task devCSS(type: NodeTask) {
-    dependsOn npmInstall
-
-    script = file("${npmBin}/postcss")
-    args = "src/style.css --output examples/style.css".tokenize()
+    script = file("${npmBin}/webpack-dev-server")
+    args = "--config webpack.demo.js".tokenize()
 }
 
 task transpileES(type: NodeTask) {
@@ -64,7 +57,15 @@ task transpileES(type: NodeTask) {
 
     environment = [BABEL_ENV: "es"]
     script = file("${npmBin}/babel")
-    args = "src --out-dir es --extensions .js --ignore src/**/*.test.ts".tokenize()
+    args = "src --out-dir es --extensions .js --ignore src/**/*.test.js".tokenize()
+}
+
+task reactDemo(type: NodeTask) {
+    dependsOn npmInstall, transpileES
+
+    environment = [BABEL_ENV: "es", NODE_ENV: "production"]
+    script = file("${npmBin}/webpack-dev-server")
+    args = "--config react-example/webpack.react.js".tokenize()
 }
 
 task build {
@@ -72,7 +73,7 @@ task build {
 }
 
 task start(type: NodeTask) {
-    dependsOn devCSS, bundle
+    dependsOn npmInstall
     environment = [NODE_ENV: "dev"]
 
     script = file("${npmBin}/webpack-dev-server")
