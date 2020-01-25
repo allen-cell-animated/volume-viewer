@@ -24,6 +24,9 @@
   },
   "author": "Daniel Toloudis",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "three": "^0.99.0"
   },
