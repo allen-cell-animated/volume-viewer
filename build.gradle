@@ -60,6 +60,14 @@ task transpileES(type: NodeTask) {
     args = "src --out-dir es --extensions .js --ignore src/**/*.test.js".tokenize()
 }
 
+task transpileCommonJs(type: NodeTask) {
+    dependsOn npmInstall
+
+    // environment = [BABEL_ENV: "tsconfig.commonjs.json"]
+    script = file("${npmBin}/babel")
+    args = "src --out-dir lib --extensions .js --ignore src/**/*.test.js".tokenize()
+}
+
 task reactDemo(type: NodeTask) {
     dependsOn npmInstall, transpileES
 
@@ -69,7 +77,7 @@ task reactDemo(type: NodeTask) {
 }
 
 task build {
-    dependsOn transpileES
+    dependsOn transpileES, transpileCommonJs
 }
 
 task start(type: NodeTask) {
