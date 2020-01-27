@@ -6,6 +6,7 @@
   "module": "es/index.js",
   "files": [
     "es",
+    "lib",
     "README.md",
     "package.json"
   ],
