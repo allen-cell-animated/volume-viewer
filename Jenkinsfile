@@ -44,6 +44,8 @@ pipeline {
                 expression { return params.PUBLISH }
             }
             steps {
+                // Make certain working tree is clean; this could not be the case due to classic, unexplainable package-lock.json changes
+                sh "git checkout -- ."
                 sh "./gradlew version -PreleaseType=${params.VERSION}"
                 sh "./gradlew npm_publish"
             }
