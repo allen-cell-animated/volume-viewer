@@ -3,7 +3,9 @@
  * @author Mugen87 / https://github.com/Mugen87
  */
 
-// Modified 2019
+// Modified 2019 danielt@alleninstitute.org
+// -- returns null or no button if XR/VR not supported
+// -- positioned differently so that client code can control positioning more easily
 var VRButton = {
   createButton: function(renderer, options) {
     if (options && options.referenceSpaceType) {
@@ -61,9 +63,7 @@ var VRButton = {
           var sessionInit = {
             optionalFeatures: ["local-floor", "bounded-floor"],
           };
-          navigator.xr
-            .requestSession("immersive-vr", sessionInit)
-            .then(onSessionStarted);
+          navigator.xr.requestSession("immersive-vr", sessionInit).then(onSessionStarted);
         } else {
           currentSession.end();
         }
