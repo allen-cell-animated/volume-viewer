@@ -1,35 +1,30 @@
 import {
-  Vector2,
-  Vector3,
   DataTexture,
   DataTexture3D,
   Euler,
+  FloatType,
+  Matrix4,
+  Mesh,
+  OrthographicCamera,
+  PlaneBufferGeometry,
+  Quaternion,
   RGBAFormat,
   Scene,
-  UnsignedByteType,
-  WebGLRenderTarget,
-  UniformsUtils,
-  OrthographicCamera,
-  FloatType,
-  PlaneBufferGeometry,
   ShaderMaterial,
-  Mesh,
-  Matrix4,
-  Quaternion,
+  UniformsUtils,
+  UnsignedByteType,
+  Vector2,
+  Vector3,
+  WebGLRenderTarget,
 } from "three";
-
 import { LinearFilter, NearestFilter } from "three/src/constants";
 
+import { denoiseFragmentShaderSrc, denoiseShaderUniforms, denoiseVertexShaderSrc } from "./constants/denoiseShader.js";
 import {
   pathTracingFragmentShaderSrc,
   pathTracingUniforms,
   pathTracingVertexShaderSrc,
 } from "./constants/volumePTshader.js";
-import {
-  denoiseFragmentShaderSrc,
-  denoiseShaderUniforms,
-  denoiseVertexShaderSrc,
-} from "./constants/denoiseShader.js";
 
 export default class PathTracedVolume {
   constructor(volume) {
@@ -230,16 +225,13 @@ export default class PathTracedVolume {
 
     this.pathTracingMaterial = new ShaderMaterial({
       uniforms: this.pathTracingUniforms,
-      //defines: pathTracingDefines,
+      // defines: pathTracingDefines,
       vertexShader: pathTracingVertexShaderSrc,
       fragmentShader: pathTracingFragmentShaderSrc,
       depthTest: false,
       depthWrite: false,
     });
-    this.pathTracingMesh = new Mesh(
-      this.pathTracingGeometry,
-      this.pathTracingMaterial
-    );
+    this.pathTracingMesh = new Mesh(this.pathTracingGeometry, this.pathTracingMaterial);
     this.pathTracingScene.add(this.pathTracingMesh);
 
     this.screenTextureGeometry = new PlaneBufferGeometry(2, 2);
@@ -254,10 +246,7 @@ export default class PathTracedVolume {
 
     this.screenTextureMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;
 
-    this.screenTextureMesh = new Mesh(
-      this.screenTextureGeometry,
-      this.screenTextureMaterial
-    );
+    this.screenTextureMesh = new Mesh(this.screenTextureGeometry, this.screenTextureMaterial);
     this.screenTextureScene.add(this.screenTextureMesh);
 
     this.screenOutputGeometry = new PlaneBufferGeometry(2, 2);
@@ -282,29 +271,14 @@ export default class PathTracedVolume {
     this.screenOutputMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;
     this.screenOutputDenoiseMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;
 
-    this.screenOutputMesh = new Mesh(
-      this.screenOutputGeometry,
-      this.screenOutputMaterial
-    );
+    this.screenOutputMesh = new Mesh(this.screenOutputGeometry, this.screenOutputMaterial);
 
     this.gradientDelta = 1.0 / Math.max(sx, Math.max(sy, sz));
     const InvGradientDelta = 1.0 / this.gradientDelta; // a voxel count...
 
-    this.pathTracingUniforms.gGradientDeltaX.value = new Vector3(
-      this.gradientDelta,
-      0,
-      0
-    );
-    this.pathTracingUniforms.gGradientDeltaY.value = new Vector3(
-      0,
-      this.gradientDelta,
-      0
-    );
-    this.pathTracingUniforms.gGradientDeltaZ.value = new Vector3(
-      0,
-      0,
-      this.gradientDelta
-    );
+    this.pathTracingUniforms.gGradientDeltaX.value = new Vector3(this.gradientDelta, 0, 0);
+    this.pathTracingUniforms.gGradientDeltaY.value = new Vector3(0, this.gradientDelta, 0);
+    this.pathTracingUniforms.gGradientDeltaZ.value = new Vector3(0, 0, this.gradientDelta);
     // can this be a per-x,y,z value?
     this.pathTracingUniforms.gInvGradientDelta.value = InvGradientDelta; // a voxel count
     this.pathTracingUniforms.gGradientFactor.value = 50.0; // related to voxel counts also
@@ -343,7 +317,7 @@ export default class PathTracedVolume {
   }
 
   setVisible(isVisible) {
-    //this.visible = isVisible;
+    // this.visible = isVisible;
   }
 
   doRender(canvas) {
@@ -385,37 +359,26 @@ export default class PathTracedVolume {
 
     // apply volume translation and rotation:
     // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
-    const m = new Matrix4().makeRotationFromQuaternion(
-      new Quaternion().setFromEuler(this.rotation).inverse()
-    );
+    const m = new Matrix4().makeRotationFromQuaternion(new Quaternion().setFromEuler(this.rotation).inverse());
     mypos.applyMatrix4(m);
     mypos.sub(this.translation);
     myup.applyMatrix4(m);
     mydir.applyMatrix4(m);
 
-    this.pathTracingUniforms.gCamera.value.m_isOrtho = cam.isOrthographicCamera
-      ? 1
-      : 0;
+    this.pathTracingUniforms.gCamera.value.m_isOrtho = cam.isOrthographicCamera ? 1 : 0;
     this.pathTracingUniforms.gCamera.value.m_from.copy(mypos);
     this.pathTracingUniforms.gCamera.value.m_N.copy(mydir);
     this.pathTracingUniforms.gCamera.value.m_U
       .crossVectors(this.pathTracingUniforms.gCamera.value.m_N, myup)
       .normalize();
     this.pathTracingUniforms.gCamera.value.m_V
-      .crossVectors(
-        this.pathTracingUniforms.gCamera.value.m_U,
-        this.pathTracingUniforms.gCamera.value.m_N
-      )
+      .crossVectors(this.pathTracingUniforms.gCamera.value.m_U, this.pathTracingUniforms.gCamera.value.m_N)
       .normalize();
 
     // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
-    const Scale = cam.isOrthographicCamera
-      ? canvas.orthoScale
-      : Math.tan((0.5 * cam.fov * Math.PI) / 180.0);
+    const Scale = cam.isOrthographicCamera ? canvas.orthoScale : Math.tan((0.5 * cam.fov * Math.PI) / 180.0);
 
-    const aspect =
-      this.pathTracingUniforms.uResolution.value.x /
-      this.pathTracingUniforms.uResolution.value.y;
+    const aspect = this.pathTracingUniforms.uResolution.value.x / this.pathTracingUniforms.uResolution.value.y;
     this.pathTracingUniforms.gCamera.value.m_screen.set(
       -Scale * aspect,
       Scale * aspect,
@@ -444,26 +407,26 @@ export default class PathTracedVolume {
 
     // STEP 1
     // Perform PathTracing and Render(save) into pathTracingRenderTarget
+
     // This is currently rendered as a fullscreen quad with no camera transform in the vertex shader!
     // It is also composited with screenTextureRenderTarget's texture.
     // (Read previous screenTextureRenderTarget to use as a new starting point to blend with)
+    canvas.renderer.setRenderTarget(this.pathTracingRenderTarget);
     canvas.renderer.render(
       this.pathTracingScene,
       this.quadCamera
       // this.pathTracingRenderTarget
     );
 
-    // canvas.renderer.setRenderTarget(this.pathTracingRenderTarget);
-
     // STEP 2
     // Render(copy) the final pathTracingScene output(above) into screenTextureRenderTarget
     // This will be used as a new starting point for Step 1 above
+    canvas.renderer.setRenderTarget(this.screenTextureRenderTarget);
     canvas.renderer.render(
       this.screenTextureScene,
       this.quadCamera
       // this.screenTextureRenderTarget
     );
-    // canvas.renderer.setRenderTarget(this.pathTracingRenderTarget);
 
     // STEP 3
     // Render full screen quad with generated pathTracingRenderTarget in STEP 1 above.
@@ -471,7 +434,8 @@ export default class PathTracedVolume {
     // DMT - this step is handled by the threeJsPanel.
     // tell the threejs panel to use the quadCamera to render this scene.
 
-    //renderer.render( this.screenOutputScene, this.quadCamera );
+    // renderer.render( this.screenOutputScene, this.quadCamera );
+    canvas.renderer.setRenderTarget(null);
   }
 
   get3dObject() {
@@ -486,19 +450,14 @@ export default class PathTracedVolume {
 
   setRayStepSizes(primary, secondary) {
     // reset render if changed
-    if (
-      this.stepSizePrimaryRayVoxels !== primary ||
-      this.stepSizeSecondaryRayVoxels !== secondary
-    ) {
+    if (this.stepSizePrimaryRayVoxels !== primary || this.stepSizeSecondaryRayVoxels !== secondary) {
       this.resetProgress();
     }
     this.stepSizePrimaryRayVoxels = primary;
     this.stepSizeSecondaryRayVoxels = secondary;
 
-    this.pathTracingUniforms.gStepSize.value =
-      this.stepSizePrimaryRayVoxels * this.gradientDelta;
-    this.pathTracingUniforms.gStepSizeShadow.value =
-      this.stepSizeSecondaryRayVoxels * this.gradientDelta;
+    this.pathTracingUniforms.gStepSize.value = this.stepSizePrimaryRayVoxels * this.gradientDelta;
+    this.pathTracingUniforms.gStepSizeShadow.value = this.stepSizeSecondaryRayVoxels * this.gradientDelta;
   }
 
   setTranslation(vec3xyz) {
@@ -516,11 +475,7 @@ export default class PathTracedVolume {
   setGamma(gmin, glevel, gmax) {}
 
   setFlipAxes(flipX, flipY, flipZ) {
-    this.pathTracingUniforms.flipVolume.value = new Vector3(
-      flipX,
-      flipY,
-      flipZ
-    );
+    this.pathTracingUniforms.flipVolume.value = new Vector3(flipX, flipY, flipZ);
     // TODO: only reset if changed!
     this.resetProgress();
   }
@@ -547,10 +502,7 @@ export default class PathTracedVolume {
 
   setPixelSamplingRate(rate) {
     this.pixelSamplingRate = rate;
-    this.setResolution(
-      this.fullTargetResolution.x,
-      this.fullTargetResolution.y
-    );
+    this.setResolution(this.fullTargetResolution.x, this.fullTargetResolution.y);
     this.resetProgress();
   }
 
@@ -587,10 +539,7 @@ export default class PathTracedVolume {
   }
 
   setChannelAsMask(channelIndex) {
-    if (
-      !this.volume.channels[channelIndex] ||
-      !this.volume.channels[channelIndex].loaded
-    ) {
+    if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
       return false;
     }
     if (this.maskChannelIndex !== channelIndex) {
@@ -621,7 +570,7 @@ export default class PathTracedVolume {
   }
 
   onChangeControls() {
-    //this.cameraIsMoving = true;
+    // this.cameraIsMoving = true;
   }
 
   onEndControls() {
@@ -661,7 +610,7 @@ export default class PathTracedVolume {
     this.updateLuts();
     this.updateMaterial(image);
 
-    //console.log(this.pathTracingUniforms);
+    // console.log(this.pathTracingUniforms);
   }
 
   updateVolumeData4() {
@@ -681,26 +630,23 @@ export default class PathTracedVolume {
       for (var iz = 0; iz < sz; ++iz) {
         for (var iy = 0; iy < sy; ++iy) {
           for (var ix = 0; ix < sx; ++ix) {
-            data[
-              i + ix * 4 + iy * 4 * sx + iz * 4 * sx * sy
-            ] = this.volume.getChannel(ch).getIntensity(ix, iy, iz);
+            data[i + ix * 4 + iy * 4 * sx + iz * 4 * sx * sy] = this.volume.getChannel(ch).getIntensity(ix, iy, iz);
           }
         }
       }
       if (this.maskChannelIndex !== -1 && this.maskAlpha < 1.0) {
         const maskChannel = this.volume.getChannel(this.maskChannelIndex);
-        //const maskMax = maskChannel.getHistogram().dataMax;
+        // const maskMax = maskChannel.getHistogram().dataMax;
         let maskVal = 1.0;
         const maskAlpha = this.maskAlpha;
         for (var iz = 0; iz < sz; ++iz) {
           for (var iy = 0; iy < sy; ++iy) {
             for (var ix = 0; ix < sx; ++ix) {
               // nonbinary masking
-              //maskVal = maskChannel.getIntensity(ix,iy,iz) * maskAlpha / maskMax;
+              // maskVal = maskChannel.getIntensity(ix,iy,iz) * maskAlpha / maskMax;
 
               // binary masking
-              maskVal =
-                maskChannel.getIntensity(ix, iy, iz) > 0 ? 1.0 : maskAlpha;
+              maskVal = maskChannel.getIntensity(ix, iy, iz) > 0 ? 1.0 : maskAlpha;
 
               data[i + ix * 4 + iy * 4 * sx + iz * 4 * sx * sy] *= maskVal;
             }
@@ -716,10 +662,7 @@ export default class PathTracedVolume {
   updateLuts() {
     for (let i = 0; i < this.pathTracingUniforms.g_nChannels.value; ++i) {
       const channel = this.viewChannels[i];
-      this.pathTracingUniforms.g_lutTexture.value.image.data.set(
-        this.volume.channels[channel].lut,
-        i * 256 * 4
-      );
+      this.pathTracingUniforms.g_lutTexture.value.image.data.set(this.volume.channels[channel].lut, i * 256 * 4);
 
       this.pathTracingUniforms.g_intensityMax.value.setComponent(
         i,
@@ -735,7 +678,8 @@ export default class PathTracedVolume {
     this.resetProgress();
   }
 
-  // image is a material interface that supports per-channel color, spec, emissive, glossiness
+  // image is a material interface that supports per-channel color, spec,
+  // emissive, glossiness
   updateMaterial(image) {
     for (let c = 0; c < this.viewChannels.length; ++c) {
       let i = this.viewChannels[c];
@@ -770,10 +714,8 @@ export default class PathTracedVolume {
     if (e > 0.99999) {
       e = 0.99999;
     }
-    this.screenOutputMaterial.uniforms.gInvExposure.value =
-      1.0 / (1.0 - e) - 1.0;
-    this.screenOutputDenoiseMaterial.uniforms.gInvExposure.value =
-      1.0 / (1.0 - e) - 1.0;
+    this.screenOutputMaterial.uniforms.gInvExposure.value = 1.0 / (1.0 - e) - 1.0;
+    this.screenOutputDenoiseMaterial.uniforms.gInvExposure.value = 1.0 / (1.0 - e) - 1.0;
     this.resetProgress();
   }
 
@@ -786,20 +728,12 @@ export default class PathTracedVolume {
 
   updateLights(state) {
     // 0th light in state array is sphere light
-    this.pathTracingUniforms.gLights.value[0].m_colorTop = new Vector3().copy(
-      state[0].m_colorTop
-    );
-    this.pathTracingUniforms.gLights.value[0].m_colorMiddle = new Vector3().copy(
-      state[0].m_colorMiddle
-    );
-    this.pathTracingUniforms.gLights.value[0].m_colorBottom = new Vector3().copy(
-      state[0].m_colorBottom
-    );
+    this.pathTracingUniforms.gLights.value[0].m_colorTop = new Vector3().copy(state[0].m_colorTop);
+    this.pathTracingUniforms.gLights.value[0].m_colorMiddle = new Vector3().copy(state[0].m_colorMiddle);
+    this.pathTracingUniforms.gLights.value[0].m_colorBottom = new Vector3().copy(state[0].m_colorBottom);
 
     // 1st light in state array is area light
-    this.pathTracingUniforms.gLights.value[1].m_color = new Vector3().copy(
-      state[1].m_color
-    );
+    this.pathTracingUniforms.gLights.value[1].m_color = new Vector3().copy(state[1].m_color);
     this.pathTracingUniforms.gLights.value[1].m_theta = state[1].m_theta;
     this.pathTracingUniforms.gLights.value[1].m_phi = state[1].m_phi;
     this.pathTracingUniforms.gLights.value[1].m_distance = state[1].m_distance;
@@ -813,11 +747,7 @@ export default class PathTracedVolume {
 
   updateLightsSecondary(cameraMatrix) {
     const PhysicalSize = this.volume.normalizedPhysicalSize;
-    const bbctr = new Vector3(
-      PhysicalSize.x * 0.5,
-      PhysicalSize.y * 0.5,
-      PhysicalSize.z * 0.5
-    );
+    const bbctr = new Vector3(PhysicalSize.x * 0.5, PhysicalSize.y * 0.5, PhysicalSize.z * 0.5);
 
     for (let i = 0; i < 2; ++i) {
       let lt = this.pathTracingUniforms.gLights.value[i];
