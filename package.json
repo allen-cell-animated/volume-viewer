@@ -1,11 +1,12 @@
 {
-  "name": "volume-viewer",
-  "version": "2.0.0-alpha.13",
+  "name": "@aics/volume-viewer",
+  "version": "2.0.1",
   "description": "volume renderer for multichannel 8-bit intensity data stored as 3D arrays",
-  "main": "es/index.js",
+  "main": "lib/index.js",
   "module": "es/index.js",
   "files": [
     "es",
+    "lib",
     "README.md",
     "package.json"
   ],
@@ -24,6 +25,9 @@
   },
   "author": "Daniel Toloudis",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "three": "^0.112.1"
   },

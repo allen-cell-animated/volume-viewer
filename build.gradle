@@ -1,0 +1,98 @@
+plugins {
+    id "com.dorongold.task-tree" version "1.3.1"
+    id "com.moowork.node" version "1.2.0"
+}
+
+wrapper {
+    gradleVersion "5.1"
+    distributionType Wrapper.DistributionType.BIN
+}
+
+node {
+    version = "10.15.0"
+    npmVersion = "6.7.0"
+    download = true
+    nodeModulesDir = file("${project.projectDir}")
+}
+
+ext {
+    npmBin = "${projectDir}/node_modules/.bin"
+}
+
+task clean(type: NodeTask) {
+    dependsOn npmInstall
+
+    script = file("${npmBin}/rimraf")
+    args = "es lib dist".tokenize()
+}
+
+task format(type: NodeTask) {
+    dependsOn npmInstall
+
+    script = file("${npmBin}/prettier")
+    args = "--write src/**/*.js".tokenize()
+}
+
+task lint(type: NodeTask) {
+    dependsOn npmInstall
+
+    script = file("${npmBin}/eslint")
+    args = ["src/**/*.js"]
+}
+
+
+///////////////////////////
+// Build
+//////////////////////////
+task demo(type: NodeTask) {
+    dependsOn npmInstall
+
+    environment = [BABEL_ENV: "es", NODE_ENV: "production"]
+    script = file("${npmBin}/webpack-dev-server")
+    args = "--config webpack.demo.js".tokenize()
+}
+
+task transpileES(type: NodeTask) {
+    dependsOn npmInstall
+
+    environment = [BABEL_ENV: "es"]
+    script = file("${npmBin}/babel")
+    args = "src --out-dir es --extensions .js --ignore src/**/*.test.js".tokenize()
+}
+
+task transpileCommonJs(type: NodeTask) {
+    dependsOn npmInstall
+
+    // environment = [BABEL_ENV: "tsconfig.commonjs.json"]
+    script = file("${npmBin}/babel")
+    args = "src --out-dir lib --extensions .js --ignore src/**/*.test.js".tokenize()
+}
+
+task reactDemo(type: NodeTask) {
+    dependsOn npmInstall, transpileES
+
+    environment = [BABEL_ENV: "es", NODE_ENV: "production"]
+    script = file("${npmBin}/webpack-dev-server")
+    args = "--config react-example/webpack.react.js".tokenize()
+}
+
+task build {
+    dependsOn transpileES, transpileCommonJs
+}
+
+task start(type: NodeTask) {
+    dependsOn npmInstall
+    environment = [NODE_ENV: "dev"]
+
+    script = file("${npmBin}/webpack-dev-server")
+    args = "--config webpack.dev.js".tokenize()
+}
+
+ext {
+    // Default version bump performed by `version` task. Can be overriden by commandline `-PreleaseType` flag.
+    releaseType = project.properties["releaseType"] ?: "patch"
+}
+
+task version(type: NpmTask) {
+    args = "version ${releaseType}".tokenize()
+}
