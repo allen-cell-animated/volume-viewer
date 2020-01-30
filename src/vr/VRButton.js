@@ -3,7 +3,7 @@
  * @author Mugen87 / https://github.com/Mugen87
  */
 
-//Modified 2019
+// Modified 2019
 var VRButton = {
   createButton: function(renderer, options) {
     if (options && options.referenceSpaceType) {
@@ -50,12 +50,13 @@ var VRButton = {
 
       button.onclick = function() {
         if (currentSession === null) {
-          // WebXR's requestReferenceSpace only works if the corresponding feature
-          // was requested at session creation time. For simplicity, just ask for
-          // the interesting ones as optional features, but be aware that the
-          // requestReferenceSpace call will fail if it turns out to be unavailable.
-          // ('local' is always available for immersive sessions and doesn't need to
-          // be requested separately.)
+          // WebXR's requestReferenceSpace only works if the corresponding
+          // feature was requested at session creation time. For simplicity,
+          // just ask for the interesting ones as optional features, but be
+          // aware that the requestReferenceSpace call will fail if it turns out
+          // to be unavailable.
+          // ('local' is always available for immersive sessions and doesn't
+          // need to be requested separately.)
 
           var sessionInit = {
             optionalFeatures: ["local-floor", "bounded-floor"],
@@ -109,7 +110,7 @@ var VRButton = {
 
       stylizeElement(button);
 
-      navigator.getVRDevices("immersive-vr").then(function(supported) {
+      navigator.xr.isSessionSupported("immersive-vr").then(function(supported) {
         supported ? showEnterVR() : showWebXRNotFound();
       });
 
