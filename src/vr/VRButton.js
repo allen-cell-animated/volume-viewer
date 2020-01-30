@@ -35,7 +35,7 @@ var VRButton = {
       button.style.display = "";
 
       button.style.cursor = "pointer";
-      button.style.left = "calc(50% - 50px)";
+      // button.style.left = "calc(50% - 50px)";
       button.style.width = "100px";
 
       button.textContent = "ENTER VR";
@@ -71,10 +71,10 @@ var VRButton = {
     }
 
     function disableButton() {
-      button.style.display = "";
+      button.style.display = "none";
 
       button.style.cursor = "auto";
-      button.style.left = "calc(50% - 75px)";
+      // button.style.left = "calc(50% - 75px)";
       button.style.width = "150px";
 
       button.onmouseenter = null;
@@ -116,14 +116,19 @@ var VRButton = {
 
       return button;
     } else {
+      var messageText = "WEBXR NOT AVAILABLE";
+      if (window.isSecureContext === false) {
+        messageText = "WEBXR NEEDS HTTPS"; // TODO Improve message
+      } else {
+        messageText = "WEBXR NOT AVAILABLE";
+      }
+
+      console.log(messageText);
+      return null;
+
       var message = document.createElement("a");
       message.href = "https://immersiveweb.dev/";
-
-      if (window.isSecureContext === false) {
-        message.innerHTML = "WEBXR NEEDS HTTPS"; // TODO Improve message
-      } else {
-        message.innerHTML = "WEBXR NOT AVAILABLE";
-      }
+      message.innerHTML = messageText;
 
       message.style.left = "calc(50% - 90px)";
       message.style.width = "180px";
