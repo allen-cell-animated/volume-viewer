@@ -12,7 +12,7 @@ import {
   Scene,
 } from "three";
 
-import { TrackballControls } from "three/examples/jsm/controls/TrackballControls";
+import TrackballControls from "./TrackballControls.js";
 import Timing from "./Timing.js";
 
 import { VRButton } from "./vr/VRButton";
@@ -82,10 +82,7 @@ export class ThreeJsPanel {
       this.renderer.setPixelRatio(window.devicePixelRatio);
       this.renderer.state.setBlending(NormalBlending);
     }
-    this.renderer.setSize(
-      parentElement.offsetWidth,
-      parentElement.offsetHeight
-    );
+    this.renderer.setSize(parentElement.offsetWidth, parentElement.offsetHeight);
 
     this.timer = new Timing();
 
@@ -102,29 +99,16 @@ export class ThreeJsPanel {
       DEFAULT_PERSPECTIVE_CAMERA_FAR
     );
     this.resetPerspectiveCamera();
-    this.perspectiveControls = new TrackballControls(
-      this.perspectiveCamera,
-      this.canvas
-    );
+    this.perspectiveControls = new TrackballControls(this.perspectiveCamera, this.canvas);
     this.perspectiveControls.rotateSpeed = 4.0 / window.devicePixelRatio;
     this.perspectiveControls.autoRotate = false;
     this.perspectiveControls.staticMoving = true;
     this.perspectiveControls.length = 10;
     this.perspectiveControls.enabled = true; //turn off mouse moments by setting to false
 
-    this.orthographicCameraX = new OrthographicCamera(
-      -scale * aspect,
-      scale * aspect,
-      scale,
-      -scale,
-      0.001,
-      20
-    );
+    this.orthographicCameraX = new OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraX();
-    this.orthoControlsX = new TrackballControls(
-      this.orthographicCameraX,
-      this.canvas
-    );
+    this.orthoControlsX = new TrackballControls(this.orthographicCameraX, this.canvas);
     this.orthoControlsX.noRotate = true;
     this.orthoControlsX.scale = scale;
     this.orthoControlsX.scale0 = scale;
@@ -132,19 +116,9 @@ export class ThreeJsPanel {
     this.orthoControlsX.staticMoving = true;
     this.orthoControlsX.enabled = false;
 
-    this.orthographicCameraY = new OrthographicCamera(
-      -scale * aspect,
-      scale * aspect,
-      scale,
-      -scale,
-      0.001,
-      20
-    );
+    this.orthographicCameraY = new OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraY();
-    this.orthoControlsY = new TrackballControls(
-      this.orthographicCameraY,
-      this.canvas
-    );
+    this.orthoControlsY = new TrackballControls(this.orthographicCameraY, this.canvas);
     this.orthoControlsY.noRotate = true;
     this.orthoControlsY.scale = scale;
     this.orthoControlsY.scale0 = scale;
@@ -152,19 +126,9 @@ export class ThreeJsPanel {
     this.orthoControlsY.staticMoving = true;
     this.orthoControlsY.enabled = false;
 
-    this.orthographicCameraZ = new OrthographicCamera(
-      -scale * aspect,
-      scale * aspect,
-      scale,
-      -scale,
-      0.001,
-      20
-    );
+    this.orthographicCameraZ = new OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraZ();
-    this.orthoControlsZ = new TrackballControls(
-      this.orthographicCameraZ,
-      this.canvas
-    );
+    this.orthoControlsZ = new TrackballControls(this.orthographicCameraZ, this.canvas);
     this.orthoControlsZ.noRotate = true;
     this.orthoControlsZ.scale = scale;
     this.orthoControlsZ.scale0 = scale;
@@ -239,10 +203,7 @@ export class ThreeJsPanel {
         "vrdisplaypointerrestricted",
         () => {
           var pointerLockElement = that.renderer.domElement;
-          if (
-            pointerLockElement &&
-            typeof pointerLockElement.requestPointerLock === "function"
-          ) {
+          if (pointerLockElement && typeof pointerLockElement.requestPointerLock === "function") {
             pointerLockElement.requestPointerLock();
           }
         },
@@ -356,11 +317,7 @@ export class ThreeJsPanel {
       color: 0xaeacad,
     });
 
-    var axisCube = new BoxGeometry(
-      this.axisScale / 5,
-      this.axisScale / 5,
-      this.axisScale / 5
-    );
+    var axisCube = new BoxGeometry(this.axisScale / 5, this.axisScale / 5, this.axisScale / 5);
     var axisCubeMesh = new Mesh(axisCube, axisCubeMaterial);
     this.axisHelperObject.add(axisCubeMesh);
 
@@ -369,24 +326,13 @@ export class ThreeJsPanel {
 
     this.axisHelperScene.add(this.axisHelperObject);
 
-    this.axisCamera = new OrthographicCamera(
-      0,
-      this.getWidth(),
-      this.getHeight(),
-      0,
-      0.001,
-      this.axisScale * 4.0
-    );
+    this.axisCamera = new OrthographicCamera(0, this.getWidth(), this.getHeight(), 0, 0.001, this.axisScale * 4.0);
     this.axisCamera.position.z = 1.0;
     this.axisCamera.up.x = 0.0;
     this.axisCamera.up.y = 1.0;
     this.axisCamera.up.z = 0.0;
     this.axisCamera.lookAt(new Vector3(0, 0, 0));
-    this.axisCamera.position.set(
-      -this.axisOffset[0],
-      -this.axisOffset[1],
-      this.axisScale * 2.0
-    );
+    this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
 
   setAutoRotate(rotate) {
@@ -452,9 +398,7 @@ export class ThreeJsPanel {
       default:
         this.replaceCamera(this.perspectiveCamera);
         this.replaceControls(this.perspectiveControls);
-        this.axisHelperObject.rotation.setFromRotationMatrix(
-          this.camera.matrixWorldInverse
-        );
+        this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
         break;
     }
   }
@@ -540,9 +484,7 @@ export class ThreeJsPanel {
         cancelAnimationFrame(this.requestedRender);
       }
       this.timer.begin();
-      this.requestedRender = requestAnimationFrame(
-        this.onAnimationLoop.bind(this)
-      );
+      this.requestedRender = requestAnimationFrame(this.onAnimationLoop.bind(this));
     }
   }
 
@@ -561,9 +503,7 @@ export class ThreeJsPanel {
 
     // update the axis helper in case the view was rotated
     if (!this.camera.isOrthographicCamera) {
-      this.axisHelperObject.rotation.setFromRotationMatrix(
-        this.camera.matrixWorldInverse
-      );
+      this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
     } else {
       this.orthoScale = this.controls.scale;
     }
