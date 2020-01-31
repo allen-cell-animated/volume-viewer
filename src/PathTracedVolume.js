@@ -412,21 +412,13 @@ export default class PathTracedVolume {
     // It is also composited with screenTextureRenderTarget's texture.
     // (Read previous screenTextureRenderTarget to use as a new starting point to blend with)
     canvas.renderer.setRenderTarget(this.pathTracingRenderTarget);
-    canvas.renderer.render(
-      this.pathTracingScene,
-      this.quadCamera
-      // this.pathTracingRenderTarget
-    );
+    canvas.renderer.render(this.pathTracingScene, this.quadCamera);
 
     // STEP 2
     // Render(copy) the final pathTracingScene output(above) into screenTextureRenderTarget
     // This will be used as a new starting point for Step 1 above
     canvas.renderer.setRenderTarget(this.screenTextureRenderTarget);
-    canvas.renderer.render(
-      this.screenTextureScene,
-      this.quadCamera
-      // this.screenTextureRenderTarget
-    );
+    canvas.renderer.render(this.screenTextureScene, this.quadCamera);
 
     // STEP 3
     // Render full screen quad with generated pathTracingRenderTarget in STEP 1 above.
