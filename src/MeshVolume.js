@@ -11,11 +11,10 @@ import { defaultMaterialSettings } from "./constants/materials.js";
 
 import FileSaver from "./FileSaver.js";
 import NaiveSurfaceNets from "./NaiveSurfaceNets.js";
-import MarchingCubes from "./MarchingCubes.js";
-import STLBinaryExporter from "./STLBinaryExporter.js";
+import MarchingCubes from "./MarchingCubes";
+import { STLExporter } from "three/examples/jsm/exporters/STLExporter";
 
-import { GLTFExporter } from "./GLTFExporter.js";
-
+import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter";
 // this cutoff is chosen to have a small buffer of values before the object is treated
 // as transparent for gpu blending and depth testing.
 const ALPHA_THRESHOLD = 0.9;
@@ -283,8 +282,8 @@ export default class MeshVolume {
   }
 
   exportSTL(input, fname) {
-    var ex = new STLBinaryExporter();
-    var output = ex.parse(input);
+    var ex = new STLExporter();
+    var output = ex.parse(input, { binary: true });
     FileSaver.saveBinary(output.buffer, fname + ".stl");
   }
 

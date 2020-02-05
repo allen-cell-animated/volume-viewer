@@ -1,6 +1,7 @@
 import { TextureLoader, Vector3, Matrix4, Quaternion } from "three";
 import ViveController from "./ViveController.js";
-import OBJLoader from "../threejsObjLoader.js";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
+
 import VRControllerObj from "../../assets/vr_controller_vive_1_5.obj";
 import VRControllerTexture from "../../assets/onepointfive_texture.png";
 import VRControllerSpecularTexture from "../../assets/onepointfive_spec.png";
@@ -10,10 +11,8 @@ export class vrObjectControls {
     // TODO This code is HTC Vive-specific.  Find a generic controller model to use instead!
     // (...when WebVR has proliferated further and more hand controllers are in play...)
     this.controller1 = new ViveController(0);
-    this.controller1.standingMatrix = renderer.vr.getStandingMatrix();
 
     this.controller2 = new ViveController(1);
-    this.controller2.standingMatrix = renderer.vr.getStandingMatrix();
 
     this.object = object;
 
@@ -33,9 +32,7 @@ export class vrObjectControls {
     var txloader = new TextureLoader();
     var controller = object.children[0];
     controller.material.map = txloader.load(VRControllerTexture);
-    controller.material.specularMap = txloader.load(
-      VRControllerSpecularTexture
-    );
+    controller.material.specularMap = txloader.load(VRControllerSpecularTexture);
     this.controller1.add(object.clone());
     this.controller2.add(object.clone());
 
@@ -64,10 +61,7 @@ export class vrObjectControls {
 
     // reset our volume object
     if (this.object) {
-      this.object.sceneRoot.quaternion.setFromAxisAngle(
-        new Vector3(0, 0, 1),
-        0.0
-      );
+      this.object.sceneRoot.quaternion.setFromAxisAngle(new Vector3(0, 0, 1), 0.0);
     }
     // pop density, brightness, and enabled state of channels.
     if (this.vrRestoreState) {
@@ -75,10 +69,7 @@ export class vrObjectControls {
         this.object.setBrightness(this.vrRestoreState.brightness);
         this.object.setDensity(this.vrRestoreState.density);
         for (let i = 0; i < this.object.num_channels; ++i) {
-          this.object.setVolumeChannelEnabled(
-            i,
-            this.vrRestoreState.enabled[i]
-          );
+          this.object.setVolumeChannelEnabled(i, this.vrRestoreState.enabled[i]);
         }
         this.object.setVolumeRendering(this.vrRestoreState.isPathTrace);
       }
@@ -143,10 +134,7 @@ export class vrObjectControls {
     }
     // this will switch off all channels except this.currentChannels
     for (let i = 0; i < this.object.num_channels; ++i) {
-      this.object.setVolumeChannelEnabled(
-        i,
-        i === this.currentChannel[0] || i === this.currentChannel[1]
-      );
+      this.object.setVolumeChannelEnabled(i, i === this.currentChannel[0] || i === this.currentChannel[1]);
     }
     this.object.fuse();
   }
@@ -158,27 +146,17 @@ export class vrObjectControls {
 
     const isTrigger1Down = this.controller1.getButtonState("trigger");
     const isTrigger2Down = this.controller2.getButtonState("trigger");
-    const rotating =
-      (isTrigger1Down && !isTrigger2Down) ||
-      (isTrigger2Down && !isTrigger1Down);
+    const rotating = (isTrigger1Down && !isTrigger2Down) || (isTrigger2Down && !isTrigger1Down);
     const theController = isTrigger1Down ? this.controller1 : this.controller2;
     const zooming = isTrigger1Down && isTrigger2Down;
 
     if (rotating) {
-      if (
-        (!this.trigger1Down && isTrigger1Down) ||
-        (!this.trigger2Down && isTrigger2Down)
-      ) {
+      if ((!this.trigger1Down && isTrigger1Down) || (!this.trigger2Down && isTrigger2Down)) {
         this.VRrotate = true;
-        this.VRrotateStartPos = new Vector3().setFromMatrixPosition(
-          theController.matrix
-        );
+        this.VRrotateStartPos = new Vector3().setFromMatrixPosition(theController.matrix);
       }
     }
-    if (
-      (this.trigger1Down && !isTrigger1Down) ||
-      (this.trigger2Down && !isTrigger2Down)
-    ) {
+    if ((this.trigger1Down && !isTrigger1Down) || (this.trigger2Down && !isTrigger2Down)) {
       this.VRrotate = false;
     }
     if (this.object && zooming) {
