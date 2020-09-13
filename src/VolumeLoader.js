@@ -33,7 +33,7 @@ VolumeLoader.loadVolumeAtlasData = function(volume, imageArray, callback) {
 
   var requests = {};
   //console.log("BEGIN DOWNLOAD DATA");
-  for (var i = 0; i < numImages; ++i) {
+  for (let i = 0; i < numImages; ++i) {
     var url = imageArray[i].name;
     var batch = imageArray[i].channels;
 
@@ -63,21 +63,21 @@ VolumeLoader.loadVolumeAtlasData = function(volume, imageArray, callback) {
 
         var channelsBits = [];
         // allocate channels in batch
-        for (var i = 0; i < Math.min(thisbatch.length, 4); ++i) {
+        for (let ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
           channelsBits.push(new Uint8Array(w * h));
         }
         // extract the data
         for (var j = 0; j < Math.min(thisbatch.length, 4); ++j) {
-          for (var i = 0; i < w * h; i++) {
-            channelsBits[j][i] = iData.data[i * 4 + j];
+          for (let px = 0; px < w * h; px++) {
+            channelsBits[j][px] = iData.data[px * 4 + j];
           }
         }
 
         // done with img, iData, and canvas now.
 
-        for (var i = 0; i < Math.min(thisbatch.length, 4); ++i) {
-          volume.setChannelDataFromAtlas(thisbatch[i], channelsBits[i], w, h);
-          callback(url, thisbatch[i]);
+        for (let ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
+          volume.setChannelDataFromAtlas(thisbatch[ch], channelsBits[ch], w, h);
+          callback(url, thisbatch[ch]);
         }
       };
     })(batch);

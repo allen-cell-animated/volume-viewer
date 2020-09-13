@@ -1,5 +1,5 @@
 module.exports = {
-  extends: ["prettier"],
+  extends: ["eslint:recommended", "prettier"],
   env: {
     browser: true,
     es6: true,
@@ -11,7 +11,6 @@ module.exports = {
   },
   rules: {
     camelcase: "off",
-    "comma-dangle": ["error", "always-multiline"],
     "comma-style": [1, "last"],
     curly: [1, "multi-line"],
     "eol-last": 1,

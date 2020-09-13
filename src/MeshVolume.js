@@ -241,14 +241,14 @@ export default class MeshVolume {
     } else if (type === "GLTF") {
       // temporarily set other meshreps to invisible
       var prevviz = [];
-      for (var i = 0; i < this.meshrep.length; ++i) {
+      for (let i = 0; i < this.meshrep.length; ++i) {
         if (this.meshrep[i]) {
           prevviz[i] = this.meshrep[i].visible;
           this.meshrep[i].visible = i === channelIndex;
         }
       }
       this.exportGLTF(this.meshRoot, namePrefix + "_" + this.volume.channel_names[channelIndex]);
-      for (var i = 0; i < this.meshrep.length; ++i) {
+      for (let i = 0; i < this.meshrep.length; ++i) {
         if (this.meshrep[i]) {
           this.meshrep[i].visible = prevviz[i];
         }

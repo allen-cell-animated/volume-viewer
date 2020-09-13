@@ -600,7 +600,7 @@ void Blinn_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pd
   if (!SameHemisphere(Wo, wh))
     wh = -wh;
 
-  // Compute incident direction by reflecting about $\wh$
+  // Compute incident direction by reflecting about wh
   Wi = -Wo + 2.f * dot(Wo, wh) * wh;
 
   // Compute PDF for wi from Blinn distribution
@@ -862,11 +862,11 @@ int GetNearestLight(Ray R, out vec3 oLightColor, out vec3 Pl, out float oPdf)
 
 // Wi goes toward light sample and is not necessarily perfect reflection of Wo
 // ^Wi   ^N    ^Wo
-//  \    |    /
-//   \   |   /
-//    \  |  /
-//     \ | /
-//      \|/ Pe = volume sample where scattering occurs
+//  \\    |    //
+//   \\   |   //
+//    \\  |  //
+//     \\ | //
+//      \\|// Pe = volume sample where scattering occurs
 //   ---------
 vec3 EstimateDirectLight(int shaderType, float Density, int ch, in Light light, in LightingSample LS, in vec3 Wo, in vec3 Pe, in vec3 N, inout uvec2 seed)
 {

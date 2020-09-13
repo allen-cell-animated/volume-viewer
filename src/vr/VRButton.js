@@ -126,17 +126,17 @@ var VRButton = {
       console.log(messageText);
       return null;
 
-      var message = document.createElement("a");
-      message.href = "https://immersiveweb.dev/";
-      message.innerHTML = messageText;
+      // var message = document.createElement("a");
+      // message.href = "https://immersiveweb.dev/";
+      // message.innerHTML = messageText;
 
-      message.style.left = "calc(50% - 90px)";
-      message.style.width = "180px";
-      message.style.textDecoration = "none";
+      // message.style.left = "calc(50% - 90px)";
+      // message.style.width = "180px";
+      // message.style.textDecoration = "none";
 
-      stylizeElement(message);
+      // stylizeElement(message);
 
-      return message;
+      // return message;
     }
   },
 };

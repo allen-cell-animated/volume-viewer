@@ -218,7 +218,7 @@ export default class FusedChannelData {
     // explore some faster ways to fuse here...
 
     var ar, ag, ab, c, r, g, b, lr, lg, lb, opacity, channeldata;
-    var x, i, cx, fx, idx;
+    var cx, fx, idx;
     var cl = combination.length;
 
     var npx4 = this.height * this.width * 4;
@@ -226,14 +226,14 @@ export default class FusedChannelData {
 
     var fused = this.fused;
     // init the rgba image
-    for (x = 0; x < npx4; x += 4) {
+    for (let x = 0; x < npx4; x += 4) {
       fused[x + 0] = 0;
       fused[x + 1] = 0;
       fused[x + 2] = 0;
       fused[x + 3] = 255;
     }
     var value = 0;
-    for (i = 0; i < cl; ++i) {
+    for (let i = 0; i < cl; ++i) {
       c = combination[i];
       idx = c.chIndex;
       if (!channels[idx].loaded) {
@@ -262,7 +262,7 @@ export default class FusedChannelData {
       }
     }
     // clamp the rgba image: ensure not over 255.
-    for (var x = 0; x < npx4; x += 4) {
+    for (let x = 0; x < npx4; x += 4) {
       fused[x + 0] = Math.min(fused[x + 0], 255);
       fused[x + 1] = Math.min(fused[x + 1], 255);
       fused[x + 2] = Math.min(fused[x + 2], 255);

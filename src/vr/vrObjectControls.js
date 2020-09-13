@@ -28,13 +28,13 @@ export class vrObjectControls {
 
     // load the VR controller geometry
     var loader = new OBJLoader();
-    var object = loader.parse(VRControllerObj);
+    var object3d = loader.parse(VRControllerObj);
     var txloader = new TextureLoader();
-    var controller = object.children[0];
+    var controller = object3d.children[0];
     controller.material.map = txloader.load(VRControllerTexture);
     controller.material.specularMap = txloader.load(VRControllerSpecularTexture);
-    this.controller1.add(object.clone());
-    this.controller2.add(object.clone());
+    this.controller1.add(object3d.clone());
+    this.controller2.add(object3d.clone());
 
     this.scene = scene;
   }
