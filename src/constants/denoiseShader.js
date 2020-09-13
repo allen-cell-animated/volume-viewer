@@ -18,10 +18,7 @@ export function denoiseShaderUniforms() {
       },
       gDenoiseInvWindowArea: {
         type: "f",
-        value:
-          1.0 /
-          ((2.0 * DENOISE_WINDOW_RADIUS + 1.0) *
-            (2.0 * DENOISE_WINDOW_RADIUS + 1.0)),
+        value: 1.0 / ((2.0 * DENOISE_WINDOW_RADIUS + 1.0) * (2.0 * DENOISE_WINDOW_RADIUS + 1.0)),
       },
       gDenoiseWeightThreshold: {
         type: "f",

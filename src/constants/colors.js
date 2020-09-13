@@ -1,4 +1,8 @@
-export const defaultColors = [[255, 0, 255], [255, 255, 255], [0, 255, 255]];
+export const defaultColors = [
+  [255, 0, 255],
+  [255, 255, 255],
+  [0, 255, 255],
+];
 
 // 0 <= (h, s, v) <= 1
 // returns 0 <= (r, g, b) <= 255 rounded to nearest integer
@@ -49,11 +53,7 @@ var myrand = LCG(123);
 // if index exceeds defaultColors start choosing random ones
 export const getColorByChannelIndex = index => {
   if (!defaultColors[index]) {
-    defaultColors[index] = HSVtoRGB(
-      myrand(),
-      myrand() * 0.5 + 0.5,
-      myrand() * 0.5 + 0.5
-    );
+    defaultColors[index] = HSVtoRGB(myrand(), myrand() * 0.5 + 0.5, myrand() * 0.5 + 0.5);
   }
   return defaultColors[index];
 };

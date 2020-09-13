@@ -67,11 +67,7 @@ export default class Volume {
     this.imageInfo.pixel_size_y = imageInfo.pixel_size_y || 1.0;
     this.imageInfo.pixel_size_z = imageInfo.pixel_size_z || 1.0;
 
-    this.pixel_size = [
-      this.imageInfo.pixel_size_x,
-      this.imageInfo.pixel_size_y,
-      this.imageInfo.pixel_size_z,
-    ];
+    this.pixel_size = [this.imageInfo.pixel_size_x, this.imageInfo.pixel_size_y, this.imageInfo.pixel_size_z];
     this.x = imageInfo.tile_width;
     this.y = imageInfo.tile_height;
     this.z = imageInfo.tiles;
@@ -85,11 +81,7 @@ export default class Volume {
       : this.channel_names.map((name, index) => getColorByChannelIndex(index));
     // fill in gaps
     if (this.channel_colors_default.length < this.num_channels) {
-      for (
-        let i = this.channel_colors_default.length - 1;
-        i < this.num_channels;
-        ++i
-      ) {
+      for (let i = this.channel_colors_default.length - 1; i < this.num_channels; ++i) {
         this.channel_colors_default[i] = getColorByChannelIndex(i);
       }
     }
@@ -145,18 +137,10 @@ export default class Volume {
       this.pixel_size[2] = values[2];
     }
 
-    var physSizeMin = Math.min(
-      this.pixel_size[0],
-      Math.min(this.pixel_size[1], this.pixel_size[2])
-    );
-    var pixelsMax = Math.max(
-      this.imageInfo.width,
-      Math.max(this.imageInfo.height, this.z)
-    );
-    var sx =
-      ((this.pixel_size[0] / physSizeMin) * this.imageInfo.width) / pixelsMax;
-    var sy =
-      ((this.pixel_size[1] / physSizeMin) * this.imageInfo.height) / pixelsMax;
+    var physSizeMin = Math.min(this.pixel_size[0], Math.min(this.pixel_size[1], this.pixel_size[2]));
+    var pixelsMax = Math.max(this.imageInfo.width, Math.max(this.imageInfo.height, this.z));
+    var sx = ((this.pixel_size[0] / physSizeMin) * this.imageInfo.width) / pixelsMax;
+    var sy = ((this.pixel_size[1] / physSizeMin) * this.imageInfo.height) / pixelsMax;
     var sz = ((this.pixel_size[2] / physSizeMin) * this.z) / pixelsMax;
 
     // this works because image was scaled down in x and y but not z.
@@ -166,14 +150,9 @@ export default class Volume {
       this.imageInfo.height * this.pixel_size[1],
       this.z * this.pixel_size[2]
     );
-    const m = Math.max(
-      this.physicalSize.x,
-      Math.max(this.physicalSize.y, this.physicalSize.z)
-    );
+    const m = Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
     // Compute the volume's max extent - scaled to max dimension.
-    this.normalizedPhysicalSize = new Vector3()
-      .copy(this.physicalSize)
-      .multiplyScalar(1.0 / m);
+    this.normalizedPhysicalSize = new Vector3().copy(this.physicalSize).multiplyScalar(1.0 / m);
 
     // sx, sy, sz should be same as normalizedPhysicalSize
     this.setScale(new Vector3(sx, sy, sz));
@@ -315,12 +294,7 @@ export default class Volume {
   voxelsToWorldSpace(xyz) {
     // ASSUME: translation is in original image voxels.
     // account for pixel_size and normalized scaling in the threejs volume representation we're using
-    const m =
-      1.0 /
-      Math.max(
-        this.physicalSize.x,
-        Math.max(this.physicalSize.y, this.physicalSize.z)
-      );
+    const m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
     const pixelSizeVec = new Vector3().fromArray(this.pixel_size);
     return new Vector3()
       .fromArray(xyz)

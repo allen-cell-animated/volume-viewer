@@ -1,12 +1,4 @@
-import {
-  Vector2,
-  Vector3,
-  Group,
-  BoxGeometry,
-  Mesh,
-  ShaderMaterial,
-  Matrix4,
-} from "three";
+import { Vector2, Vector3, Group, BoxGeometry, Mesh, ShaderMaterial, Matrix4 } from "three";
 
 import FusedChannelData from "./FusedChannelData.js";
 import {
@@ -52,10 +44,7 @@ export default class RayMarchedAtlasVolume {
     this.setUniform("ATLAS_Y", volume.imageInfo.rows);
     this.setUniform("SLICES", volume.z);
 
-    this.channelData = new FusedChannelData(
-      volume.imageInfo.atlas_width,
-      volume.imageInfo.atlas_height
-    );
+    this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
     // tell channelData about the channels that are already present, one at a time.
     for (let i = 0; i < this.volume.channels.length; ++i) {
       if (this.volume.getChannel(i).loaded) {
@@ -83,10 +72,7 @@ export default class RayMarchedAtlasVolume {
     this.cubeMesh.updateMatrixWorld(true);
 
     var mvm = new Matrix4();
-    mvm.multiplyMatrices(
-      canvas.camera.matrixWorldInverse,
-      this.cubeMesh.matrixWorld
-    );
+    mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.cubeMesh.matrixWorld);
     var mi = new Matrix4();
     mi.getInverse(mvm);
 
@@ -195,16 +181,10 @@ export default class RayMarchedAtlasVolume {
   }
 
   setChannelAsMask(channelIndex) {
-    if (
-      !this.volume.channels[channelIndex] ||
-      !this.volume.channels[channelIndex].loaded
-    ) {
+    if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
       return false;
     }
-    return this.channelData.setChannelAsMask(
-      channelIndex,
-      this.volume.channels[channelIndex]
-    );
+    return this.channelData.setChannelAsMask(channelIndex, this.volume.channels[channelIndex]);
   }
 
   setMaskAlpha(maskAlpha) {

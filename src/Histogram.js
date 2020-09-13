@@ -7,12 +7,7 @@
 })();
 
 function controlPointToRGBA(controlPoint) {
-  return [
-    controlPoint.color[0],
-    controlPoint.color[1],
-    controlPoint.color[2],
-    controlPoint.opacity * 255,
-  ];
+  return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], controlPoint.opacity * 255];
 }
 
 function lerp(xmin, xmax, a) {

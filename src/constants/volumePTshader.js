@@ -1206,30 +1206,15 @@ export function pathTracingUniforms() {
     g_opacity: { type: "1fv", value: [1, 1, 1, 1] },
     g_emissive: {
       type: "v3v",
-      value: [
-        new Vector3(0, 0, 0),
-        new Vector3(0, 0, 0),
-        new Vector3(0, 0, 0),
-        new Vector3(0, 0, 0),
-      ],
+      value: [new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)],
     },
     g_diffuse: {
       type: "v3v",
-      value: [
-        new Vector3(1, 0, 0),
-        new Vector3(0, 1, 0),
-        new Vector3(0, 0, 1),
-        new Vector3(1, 0, 1),
-      ],
+      value: [new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(0, 0, 1), new Vector3(1, 0, 1)],
     },
     g_specular: {
       type: "v3v",
-      value: [
-        new Vector3(0, 0, 0),
-        new Vector3(0, 0, 0),
-        new Vector3(0, 0, 0),
-        new Vector3(0, 0, 0),
-      ],
+      value: [new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)],
     },
     g_glossiness: { type: "1fv", value: [1, 1, 1, 1] },
     uShowLights: { type: "f", value: 0 },

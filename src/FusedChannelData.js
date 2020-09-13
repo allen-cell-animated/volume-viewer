@@ -1,9 +1,4 @@
-import {
-  DataTexture,
-  LuminanceFormat,
-  UnsignedByteType,
-  ClampToEdgeWrapping,
-} from "three";
+import { DataTexture, LuminanceFormat, UnsignedByteType, ClampToEdgeWrapping } from "three";
 import { LinearFilter } from "three/src/constants";
 
 import FuseWorker from "./FuseWorker";
@@ -89,10 +84,7 @@ export default class FusedChannelData {
     var onWorkEnded = function(e) {
       me.fuseWorkersWorking++;
       // copy e.data.data into fused
-      me.fused.set(
-        e.data.data,
-        Math.floor(e.data.workerindex * (npx / me.workersCount)) * 4
-      );
+      me.fused.set(e.data.data, Math.floor(e.data.workerindex * (npx / me.workersCount)) * 4);
       if (me.fuseWorkersWorking === me.workersCount) {
         me.fusedData = { data: me.fused, width: me.width, height: me.height };
         me.fusedTexture.image = me.fusedData;
@@ -105,11 +97,7 @@ export default class FusedChannelData {
         // if there are any fusion requests in queue, execute the next one now.
         me.isFusing = false;
         if (me.fuseRequested) {
-          me.fuse(
-            me.fuseRequested,
-            me.fuseMethodRequested,
-            me.channelsDataToFuse
-          );
+          me.fuse(me.fuseRequested, me.fuseMethodRequested, me.channelsDataToFuse);
         }
         me.fuseRequested = false;
         me.channelsDataToFuse = null;
@@ -121,9 +109,7 @@ export default class FusedChannelData {
       var worker = new FuseWorker();
       worker.onmessage = onWorkEnded;
       worker.onerror = function(e) {
-        alert(
-          "Error: Line " + e.lineno + " in " + e.filename + ": " + e.message
-        );
+        alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
       };
       this.workers.push(worker);
     }
