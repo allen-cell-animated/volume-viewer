@@ -21,9 +21,6 @@ module.exports = {
     new webpack.DefinePlugin({
       APP_VERSION: JSON.stringify(require("./package.json").version),
     }),
-    new webpack.ProvidePlugin({
-      THREE: "three",
-    }),
     new CopyWebpackPlugin(["public"]),
   ],
   resolve: {

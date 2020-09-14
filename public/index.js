@@ -1,3 +1,5 @@
+import { Vector3 } from "three";
+
 import {
   View3d,
   Volume,
@@ -69,6 +71,7 @@ const myState = {
 //    {offset:0.5, color:"orange"}
 //    {offset:1.0, color:"yellow"}
 //]);
+/*
 function makeColorGradient(controlPoints) {
   const c = document.createElement("canvas");
   c.style.height = 1;
@@ -79,9 +82,7 @@ function makeColorGradient(controlPoints) {
   const ctx = c.getContext("2d");
   const grd = ctx.createLinearGradient(0, 0, 255, 0);
   if (!controlPoints.length || controlPoints.length < 1) {
-    console.log(
-      "warning: bad control points submitted to makeColorGradient; reverting to linear greyscale gradient"
-    );
+    console.log("warning: bad control points submitted to makeColorGradient; reverting to linear greyscale gradient");
     grd.addColorStop(0, "black");
     grd.addColorStop(1, "white");
   } else {
@@ -97,26 +98,26 @@ function makeColorGradient(controlPoints) {
   // console.log(imgData.data);
   return imgData.data;
 }
-
+*/
 function initLights() {
-  myState.lights[0].m_colorTop = new THREE.Vector3(
+  myState.lights[0].m_colorTop = new Vector3(
     (myState.skyTopColor[0] / 255.0) * myState.skyTopIntensity,
     (myState.skyTopColor[1] / 255.0) * myState.skyTopIntensity,
     (myState.skyTopColor[2] / 255.0) * myState.skyTopIntensity
   );
-  myState.lights[0].m_colorMiddle = new THREE.Vector3(
+  myState.lights[0].m_colorMiddle = new Vector3(
     (myState.skyMidColor[0] / 255.0) * myState.skyMidIntensity,
     (myState.skyMidColor[1] / 255.0) * myState.skyMidIntensity,
     (myState.skyMidColor[2] / 255.0) * myState.skyMidIntensity
   );
-  myState.lights[0].m_colorBottom = new THREE.Vector3(
+  myState.lights[0].m_colorBottom = new Vector3(
     (myState.skyBotColor[0] / 255.0) * myState.skyBotIntensity,
     (myState.skyBotColor[1] / 255.0) * myState.skyBotIntensity,
     (myState.skyBotColor[2] / 255.0) * myState.skyBotIntensity
   );
   myState.lights[1].m_theta = (myState.lightTheta * Math.PI) / 180.0;
   myState.lights[1].m_phi = (myState.lightPhi * Math.PI) / 180.0;
-  myState.lights[1].m_color = new THREE.Vector3(
+  myState.lights[1].m_color = new Vector3(
     (myState.lightColor[0] / 255.0) * myState.lightIntensity,
     (myState.lightColor[1] / 255.0) * myState.lightIntensity,
     (myState.lightColor[2] / 255.0) * myState.lightIntensity
@@ -127,6 +128,7 @@ function initLights() {
 let gui = null;
 
 function setupGui() {
+  // eslint-disable-next-line no-undef
   gui = new dat.GUI();
   //gui = new dat.GUI({autoPlace:false, width:200});
 
@@ -152,11 +154,7 @@ function setupGui() {
     .min(1.0)
     .step(0.1)
     .onChange(function(value) {
-      view3D.setRayStepSizes(
-        myState.volume,
-        myState.primaryRay,
-        myState.secondaryRay
-      );
+      view3D.setRayStepSizes(myState.volume, myState.primaryRay, myState.secondaryRay);
     });
   gui
     .add(myState, "secondaryRay")
@@ -164,11 +162,7 @@ function setupGui() {
     .min(1.0)
     .step(0.1)
     .onChange(function(value) {
-      view3D.setRayStepSizes(
-        myState.volume,
-        myState.primaryRay,
-        myState.secondaryRay
-      );
+      view3D.setRayStepSizes(myState.volume, myState.primaryRay, myState.secondaryRay);
     });
 
   var cameragui = gui.addFolder("Camera");
@@ -186,11 +180,7 @@ function setupGui() {
     .min(0.0)
     .step(0.001)
     .onChange(function(value) {
-      view3D.updateCamera(
-        myState.fov,
-        myState.focal_distance,
-        myState.aperture
-      );
+      view3D.updateCamera(myState.fov, myState.focal_distance, myState.aperture);
     });
   cameragui
     .add(myState, "focal_distance")
@@ -198,11 +188,7 @@ function setupGui() {
     .min(0.1)
     .step(0.001)
     .onChange(function(value) {
-      view3D.updateCamera(
-        myState.fov,
-        myState.focal_distance,
-        myState.aperture
-      );
+      view3D.updateCamera(myState.fov, myState.focal_distance, myState.aperture);
     });
   cameragui
     .add(myState, "fov")
@@ -210,11 +196,7 @@ function setupGui() {
     .min(0.0)
     .step(0.001)
     .onChange(function(value) {
-      view3D.updateCamera(
-        myState.fov,
-        myState.focal_distance,
-        myState.aperture
-      );
+      view3D.updateCamera(myState.fov, myState.focal_distance, myState.aperture);
     });
   cameragui
     .add(myState, "samplingRate")
@@ -460,6 +442,7 @@ function setupGui() {
   initLights();
 }
 
+//eslint-disable-next-line no-undef
 dat.GUI.prototype.removeFolder = function(name) {
   var folder = this.__folders[name];
   if (!folder) {
@@ -473,7 +456,7 @@ dat.GUI.prototype.removeFolder = function(name) {
 
 function showChannelUI(volume) {
   if (myState && myState.channelFolderNames) {
-    for (var i = 0; i < myState.channelFolderNames.length; ++i) {
+    for (let i = 0; i < myState.channelFolderNames.length; ++i) {
       gui.removeFolder(myState.channelFolderNames[i]);
     }
   }
@@ -483,7 +466,7 @@ function showChannelUI(volume) {
   myState.infoObj.channelGui = [];
 
   myState.channelFolderNames = [];
-  for (var i = 0; i < myState.infoObj.channels; ++i) {
+  for (let i = 0; i < myState.infoObj.channels; ++i) {
     myState.infoObj.channelGui.push({
       colorD: volume.channel_colors_default[i],
       colorS: [0, 0, 0],
@@ -529,18 +512,14 @@ function showChannelUI(volume) {
       })(i),
       pct50_98: (function(j) {
         return function() {
-          const lut = volume
-            .getHistogram(j)
-            .lutGenerator_percentiles(0.5, 0.998);
+          const lut = volume.getHistogram(j).lutGenerator_percentiles(0.5, 0.998);
           volume.setLut(j, lut.lut);
           view3D.updateLuts(volume);
         };
       })(i),
     });
     var f = gui.addFolder("Channel " + myState.infoObj.channel_names[i]);
-    myState.channelFolderNames.push(
-      "Channel " + myState.infoObj.channel_names[i]
-    );
+    myState.channelFolderNames.push("Channel " + myState.infoObj.channel_names[i]);
     f.add(myState.infoObj.channelGui[i], "enabled").onChange(
       (function(j) {
         return function(value) {
@@ -553,12 +532,7 @@ function showChannelUI(volume) {
       (function(j) {
         return function(value) {
           if (value) {
-            view3D.createIsosurface(
-              volume,
-              j,
-              myState.infoObj.channelGui[j].isovalue,
-              1.0
-            );
+            view3D.createIsosurface(volume, j, myState.infoObj.channelGui[j].isovalue, 1.0);
           } else {
             view3D.clearIsosurface(volume, j);
           }
@@ -635,12 +609,7 @@ function showChannelUI(volume) {
       .onChange(
         (function(j) {
           return function(value) {
-            volume
-              .getChannel(j)
-              .lutGenerator_windowLevel(
-                value,
-                myState.infoObj.channelGui[j].level
-              );
+            volume.getChannel(j).lutGenerator_windowLevel(value, myState.infoObj.channelGui[j].level);
             view3D.updateLuts(volume);
           };
         })(i)
@@ -653,12 +622,7 @@ function showChannelUI(volume) {
       .onChange(
         (function(j) {
           return function(value) {
-            volume
-              .getChannel(j)
-              .lutGenerator_windowLevel(
-                myState.infoObj.channelGui[j].window,
-                value
-              );
+            volume.getChannel(j).lutGenerator_windowLevel(myState.infoObj.channelGui[j].window, value);
             view3D.updateLuts(volume);
           };
         })(i)
@@ -705,9 +669,7 @@ function loadImageData(jsondata, volumedata) {
       // the layout, then second row of first plane, etc)
       vol.setChannelDataFromVolume(i, volumedata[i]);
 
-      view3D.setVolumeRenderMode(
-        myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH
-      );
+      view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
 
       view3D.removeAllVolumes();
       view3D.addVolume(vol);
@@ -716,7 +678,7 @@ function loadImageData(jsondata, volumedata) {
       for (var ch = 0; ch < vol.num_channels; ++ch) {
         view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
       }
-      
+
       const mask_channel_index = jsondata.channel_names.indexOf("SEG_Memb");
       view3D.setVolumeChannelAsMask(vol, mask_channel_index);
       view3D.updateActiveChannels(vol);
@@ -726,51 +688,34 @@ function loadImageData(jsondata, volumedata) {
       view3D.updateExposure(myState.exposure);
     }
   } else {
-    VolumeLoader.loadVolumeAtlasData(
-      vol,
-      jsondata.images,
-      (url, channelIndex) => {
-        vol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
+    VolumeLoader.loadVolumeAtlasData(vol, jsondata.images, (url, channelIndex) => {
+      vol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
 
-        if (vol.loaded) {
-          view3D.setVolumeRenderMode(
-            myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH
-          );
+      if (vol.loaded) {
+        view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
 
-          view3D.removeAllVolumes();
-          view3D.addVolume(vol);
+        view3D.removeAllVolumes();
+        view3D.addVolume(vol);
 
-          // first 3 channels for starters
-          for (var ch = 0; ch < vol.num_channels; ++ch) {
-            view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
-          }
+        // first 3 channels for starters
+        for (var ch = 0; ch < vol.num_channels; ++ch) {
+          view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
+        }
 
-          view3D.setVolumeChannelAsMask(
-            vol,
-            jsondata.channel_names.indexOf("SEG_Memb")
-          );
-          view3D.updateActiveChannels(vol);
-          view3D.updateLuts(vol);
-          view3D.updateLights(myState.lights);
-          view3D.updateDensity(vol, myState.density / 100.0);
-          view3D.updateExposure(myState.exposure);
+        view3D.setVolumeChannelAsMask(vol, jsondata.channel_names.indexOf("SEG_Memb"));
+        view3D.updateActiveChannels(vol);
+        view3D.updateLuts(vol);
+        view3D.updateLights(myState.lights);
+        view3D.updateDensity(vol, myState.density / 100.0);
+        view3D.updateExposure(myState.exposure);
 
-          // apply a volume transform from an external source:
-          if (jsondata.userData && jsondata.userData.alignTransform) {
-            view3D.setVolumeTranslation(
-              vol,
-              vol.voxelsToWorldSpace(
-                jsondata.userData.alignTransform.translation
-              )
-            );
-            view3D.setVolumeRotation(
-              vol,
-              jsondata.userData.alignTransform.rotation
-            );
-          }
+        // apply a volume transform from an external source:
+        if (jsondata.userData && jsondata.userData.alignTransform) {
+          view3D.setVolumeTranslation(vol, vol.voxelsToWorldSpace(jsondata.userData.alignTransform.translation));
+          view3D.setVolumeRotation(vol, jsondata.userData.alignTransform.rotation);
         }
       }
-    );
+    });
   }
   showChannelUI(vol);
 
@@ -799,11 +744,7 @@ function createTestVolume() {
     // height := original full size image height
     height: 64,
     channels: 3,
-    channel_names: [
-      "DRAQ5",
-      "EGFP",
-      "SEG_Memb",
-    ],
+    channel_names: ["DRAQ5", "EGFP", "SEG_Memb"],
     rows: 8,
     cols: 8,
     // tiles <= rows*cols, tiles is number of z slices
@@ -829,31 +770,14 @@ function createTestVolume() {
   };
   // generate some raw volume data
   var channelVolumes = [
-    VolumeMaker.createSphere(
-      imgdata.tile_width,
-      imgdata.tile_height,
-      imgdata.tiles,
-      24
-    ),
-    VolumeMaker.createTorus(
-      imgdata.tile_width,
-      imgdata.tile_height,
-      imgdata.tiles,
-      24,
-      8
-    ),
-    VolumeMaker.createCone(
-      imgdata.tile_width,
-      imgdata.tile_height,
-      imgdata.tiles,
-      24, 
-      24
-    ),
+    VolumeMaker.createSphere(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 24),
+    VolumeMaker.createTorus(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 24, 8),
+    VolumeMaker.createCone(imgdata.tile_width, imgdata.tile_height, imgdata.tiles, 24, 24),
   ];
   return {
     imgdata: imgdata,
-    volumedata: channelVolumes
-  }
+    volumedata: channelVolumes,
+  };
 }
 
 function main() {
@@ -889,45 +813,24 @@ function main() {
   var flipxbtn = document.getElementById("flipxbtn");
   flipxbtn.addEventListener("click", () => {
     myState.flipX *= -1;
-    view3D.setFlipVolume(
-      myState.volume,
-      myState.flipX,
-      myState.flipY,
-      myState.flipZ
-    );
+    view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
   });
   var flipybtn = document.getElementById("flipybtn");
   flipybtn.addEventListener("click", () => {
     myState.flipY *= -1;
-    view3D.setFlipVolume(
-      myState.volume,
-      myState.flipX,
-      myState.flipY,
-      myState.flipZ
-    );
+    view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
   });
   var flipzbtn = document.getElementById("flipzbtn");
   flipzbtn.addEventListener("click", () => {
     myState.flipZ *= -1;
-    view3D.setFlipVolume(
-      myState.volume,
-      myState.flipX,
-      myState.flipY,
-      myState.flipZ
-    );
+    view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
   });
 
   var alignbtn = document.getElementById("xfbtn");
   alignbtn.addEventListener("click", () => {
     myState.isAligned = !myState.isAligned;
-    view3D.setVolumeTranslation(
-      myState.volume,
-      myState.isAligned ? myState.volume.getTranslation() : [0, 0, 0]
-    );
-    view3D.setVolumeRotation(
-      myState.volume,
-      myState.isAligned ? myState.volume.getRotation() : [0, 0, 0]
-    );
+    view3D.setVolumeTranslation(myState.volume, myState.isAligned ? myState.volume.getTranslation() : [0, 0, 0]);
+    view3D.setVolumeRotation(myState.volume, myState.isAligned ? myState.volume.getRotation() : [0, 0, 0]);
   });
   var resetcambtn = document.getElementById("resetcambtn");
   resetcambtn.addEventListener("click", () => {
@@ -944,9 +847,7 @@ function main() {
     ptbtn.style.disabled = false;
     ptbtn.addEventListener("click", () => {
       myState.isPT = !myState.isPT;
-      view3D.setVolumeRenderMode(
-        myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH
-      );
+      view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
       view3D.updateLights(myState.lights);
     });
   }
