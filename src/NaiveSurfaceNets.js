@@ -85,11 +85,7 @@ var SurfaceNets = (function() {
     }
 
     //March over the voxel grid
-    for (
-      x[2] = 0;
-      x[2] < dims[2] - 1;
-      ++x[2], n += dims[0], buf_no ^= 1, R[2] = -R[2]
-    ) {
+    for (x[2] = 0; x[2] < dims[2] - 1; ++x[2], n += dims[0], buf_no ^= 1, R[2] = -R[2]) {
       //m is the pointer into the buffer we are going to use.
       //This is slightly obtuse because javascript does not have good support for packed data structures, so we must use typed arrays :(
       //The contents of the buffer will be the indices of the vertices on the previous x/y slice of the volume
@@ -162,11 +158,7 @@ var SurfaceNets = (function() {
 
           //Add vertex to buffer, store pointer to vertex index in buffer
           buffer[m] = vertices.length;
-          vertices.push([
-            (2.0 * v[0]) / dims[0] - 1.0,
-            (2.0 * v[1]) / dims[1] - 1.0,
-            (2.0 * v[2]) / dims[2] - 1.0,
-          ]);
+          vertices.push([(2.0 * v[0]) / dims[0] - 1.0, (2.0 * v[1]) / dims[1] - 1.0, (2.0 * v[2]) / dims[2] - 1.0]);
 
           //Now we need to add faces together, to do this we just loop over 3 basis components
           for (var i = 0; i < 3; ++i) {
@@ -190,19 +182,9 @@ var SurfaceNets = (function() {
 
             //Remember to flip orientation depending on the sign of the corner.
             if (mask & 1) {
-              faces.push([
-                buffer[m],
-                buffer[m - du],
-                buffer[m - du - dv],
-                buffer[m - dv],
-              ]);
+              faces.push([buffer[m], buffer[m - du], buffer[m - du - dv], buffer[m - dv]]);
             } else {
-              faces.push([
-                buffer[m],
-                buffer[m - dv],
-                buffer[m - du - dv],
-                buffer[m - du],
-              ]);
+              faces.push([buffer[m], buffer[m - dv], buffer[m - du - dv], buffer[m - du]]);
             }
           }
         }

@@ -8,14 +8,7 @@
 
 import { BufferAttribute, BufferGeometry, ImmediateRenderObject } from "three";
 
-var MarchingCubes = function(
-  resolution,
-  material,
-  enableUvs,
-  enableColors,
-  enableNormals,
-  volumeFieldRef
-) {
+var MarchingCubes = function(resolution, material, enableUvs, enableColors, enableNormals, volumeFieldRef) {
   ImmediateRenderObject.call(this, material);
 
   var scope = this;
@@ -152,15 +145,11 @@ var MarchingCubes = function(
     var q3 = q * 3;
 
     if (scope.normal_cache[q3] === 0.0) {
-      scope.normal_cache[q3 + 0] =
-        scope.field[q - 1 * scope.stepSizeX] -
-        scope.field[q + 1 * scope.stepSizeX];
+      scope.normal_cache[q3 + 0] = scope.field[q - 1 * scope.stepSizeX] - scope.field[q + 1 * scope.stepSizeX];
       scope.normal_cache[q3 + 1] =
-        scope.field[q - scope.yd * scope.stepSizeY] -
-        scope.field[q + scope.yd * scope.stepSizeY];
+        scope.field[q - scope.yd * scope.stepSizeY] - scope.field[q + scope.yd * scope.stepSizeY];
       scope.normal_cache[q3 + 2] =
-        scope.field[q - scope.zd * scope.stepSizeZ] -
-        scope.field[q + scope.zd * scope.stepSizeZ];
+        scope.field[q - scope.zd * scope.stepSizeZ] - scope.field[q + scope.zd * scope.stepSizeZ];
     }
   }
 
@@ -301,14 +290,7 @@ var MarchingCubes = function(
       o2 = o1 + 1;
       o3 = o1 + 2;
 
-      posnormtriv(
-        vlist,
-        nlist,
-        3 * triTable[o1],
-        3 * triTable[o2],
-        3 * triTable[o3],
-        renderCallback
-      );
+      posnormtriv(vlist, nlist, 3 * triTable[o1], 3 * triTable[o2], 3 * triTable[o3], renderCallback);
 
       i += 3;
       numtris++;
@@ -660,15 +642,9 @@ var MarchingCubes = function(
 
     var geo_callback = function(object) {
       var geo = new BufferGeometry();
-      geo.setAttribute(
-        "position",
-        new BufferAttribute(object.positionArray.slice(), 3)
-      );
+      geo.setAttribute("position", new BufferAttribute(object.positionArray.slice(), 3));
       if (object.enableNormals) {
-        geo.setAttribute(
-          "normal",
-          new BufferAttribute(object.normalArray.slice(), 3)
-        );
+        geo.setAttribute("normal", new BufferAttribute(object.normalArray.slice(), 3));
       }
       // for ( var i = 0; i < object.count; i ++ ) {
       //

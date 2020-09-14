@@ -619,9 +619,9 @@ export default class PathTracedVolume {
         continue;
       }
 
-      for (var iz = 0; iz < sz; ++iz) {
-        for (var iy = 0; iy < sy; ++iy) {
-          for (var ix = 0; ix < sx; ++ix) {
+      for (let iz = 0; iz < sz; ++iz) {
+        for (let iy = 0; iy < sy; ++iy) {
+          for (let ix = 0; ix < sx; ++ix) {
             data[i + ix * 4 + iy * 4 * sx + iz * 4 * sx * sy] = this.volume.getChannel(ch).getIntensity(ix, iy, iz);
           }
         }
@@ -631,9 +631,9 @@ export default class PathTracedVolume {
         // const maskMax = maskChannel.getHistogram().dataMax;
         let maskVal = 1.0;
         const maskAlpha = this.maskAlpha;
-        for (var iz = 0; iz < sz; ++iz) {
-          for (var iy = 0; iy < sy; ++iy) {
-            for (var ix = 0; ix < sx; ++ix) {
+        for (let iz = 0; iz < sz; ++iz) {
+          for (let iy = 0; iy < sy; ++iy) {
+            for (let ix = 0; ix < sx; ++ix) {
               // nonbinary masking
               // maskVal = maskChannel.getIntensity(ix,iy,iz) * maskAlpha / maskMax;
 

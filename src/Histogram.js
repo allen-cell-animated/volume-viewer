@@ -7,12 +7,7 @@
 })();
 
 function controlPointToRGBA(controlPoint) {
-  return [
-    controlPoint.color[0],
-    controlPoint.color[1],
-    controlPoint.color[2],
-    controlPoint.opacity * 255,
-  ];
+  return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], controlPoint.opacity * 255];
 }
 
 function lerp(xmin, xmax, a) {
@@ -47,17 +42,17 @@ export default class Histogram {
     this.maxBin = 0;
 
     // build up the histogram
-    for (var i = 0; i < data.length; ++i) {
+    for (let i = 0; i < data.length; ++i) {
       this.bins[data[i]]++;
     }
     // track the first and last nonzero bins with at least 1 sample
-    for (var i = 1; i < this.bins.length; i++) {
+    for (let i = 1; i < this.bins.length; i++) {
       if (this.bins[i] > 0) {
         this.dataMin = i;
         break;
       }
     }
-    for (var i = this.bins.length - 1; i >= 1; i--) {
+    for (let i = this.bins.length - 1; i >= 1; i--) {
       if (this.bins[i] > 0) {
         this.dataMax = i;
         break;
@@ -70,7 +65,7 @@ export default class Histogram {
     // get the bin with the most frequently occurring NONZERO value
     this.maxBin = 1;
     let max = this.bins[1];
-    for (var i = 1; i < this.bins.length; i++) {
+    for (let i = 1; i < this.bins.length; i++) {
       if (this.bins[i] > max) {
         this.maxBin = i;
         max = this.bins[i];
@@ -245,13 +240,13 @@ export default class Histogram {
     // this will skip the "zero" bin which contains pixels of zero intensity.
     var hmin = this.bins.length - 1;
     var hmax = 1;
-    for (var i = 1; i < this.bins.length; ++i) {
+    for (let i = 1; i < this.bins.length; ++i) {
       if (this.bins[i] > threshold && this.bins[i] <= limit) {
         hmin = i;
         break;
       }
     }
-    for (var i = this.bins.length - 1; i >= 1; --i) {
+    for (let i = this.bins.length - 1; i >= 1; --i) {
       if (this.bins[i] > threshold && this.bins[i] <= limit) {
         hmax = i;
         break;
@@ -277,13 +272,13 @@ export default class Histogram {
     var th = Math.floor(this.bins[this.maxBin] * PERCENTAGE);
     var b = 0;
     var e = this.bins.length - 1;
-    for (var x = 1; x < this.bins.length; ++x) {
+    for (let x = 1; x < this.bins.length; ++x) {
       if (this.bins[x] > th) {
         b = x;
         break;
       }
     }
-    for (var x = this.bins.length - 1; x >= 1; --x) {
+    for (let x = this.bins.length - 1; x >= 1; --x) {
       if (this.bins[x] > th) {
         e = x;
         break;
@@ -299,13 +294,13 @@ export default class Histogram {
    */
   lutGenerator_equalize() {
     var map = [];
-    for (var i = 0; i < this.bins.length; ++i) {
+    for (let i = 0; i < this.bins.length; ++i) {
       map[i] = 0;
     }
 
     // summed area table?
     map[0] = this.bins[0];
-    for (var i = 1; i < this.bins.length; ++i) {
+    for (let i = 1; i < this.bins.length; ++i) {
       map[i] = map[i - 1] + this.bins[i];
     }
 
@@ -314,7 +309,7 @@ export default class Histogram {
       var lut = new Uint8Array(256 * 4);
 
       // compute lut as if continuous
-      for (var i = 0; i < lut.length / 4; ++i) {
+      for (let i = 0; i < lut.length / 4; ++i) {
         lut[i * 4 + 0] = 255;
         lut[i * 4 + 1] = 255;
         lut[i * 4 + 2] = 255;
@@ -324,7 +319,7 @@ export default class Histogram {
       // compute control points piecewise linear.
       const lutControlPoints = [{ x: 0, opacity: 0, color: [255, 255, 255] }];
       // read up to the first nonzero.
-      var i = 1;
+      let i = 1;
       for (i = 1; i < map.length; ++i) {
         if (map[i] > 0) {
           lutControlPoints.push({

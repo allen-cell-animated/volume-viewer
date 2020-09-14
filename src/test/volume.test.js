@@ -61,10 +61,7 @@ function checkVolumeConstruction(v, imgdata) {
   expect(v.num_channels).to.equal(imgdata.channels);
   expect(v.channels.length).to.equal(imgdata.channels);
 
-  const mx = Math.max(
-    Math.max(v.normalizedPhysicalSize.x, v.normalizedPhysicalSize.y),
-    v.normalizedPhysicalSize.z
-  );
+  const mx = Math.max(Math.max(v.normalizedPhysicalSize.x, v.normalizedPhysicalSize.y), v.normalizedPhysicalSize.z);
   expect(mx).to.equal(1.0);
 
   const epsilon = 0.0000001;
@@ -83,9 +80,7 @@ function checkChannelDataConstruction(c, index, imgdata) {
   expect(c.imgData.width).to.equal(imgdata.atlas_width);
   expect(c.imgData.height).to.equal(imgdata.atlas_height);
   expect(c.imgData.data).to.be.a("Uint8Array");
-  expect(c.imgData.data.length).to.equal(
-    imgdata.atlas_width * imgdata.atlas_height
-  );
+  expect(c.imgData.data.length).to.equal(imgdata.atlas_width * imgdata.atlas_height);
   expect(c.lut).to.be.a("Uint8Array");
   expect(c.lut.length).to.equal(256);
 }
@@ -113,14 +108,7 @@ describe("test volume", () => {
       const c1 = v.getChannel(1);
       checkChannelDataConstruction(c1, 1, testimgdata);
 
-      expect(
-        v.getIntensity(
-          1,
-          Math.floor(v.x / 2),
-          Math.floor(v.y / 2),
-          Math.floor(v.z / 2)
-        )
-      ).to.equal(255);
+      expect(v.getIntensity(1, Math.floor(v.x / 2), Math.floor(v.y / 2), Math.floor(v.z / 2))).to.equal(255);
       expect(v.getIntensity(1, 0, 0, 0)).to.equal(0);
     });
   });

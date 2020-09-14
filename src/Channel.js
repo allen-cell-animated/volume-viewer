@@ -13,9 +13,7 @@ export default class Channel {
   }
 
   getIntensity(x, y, z) {
-    return this.volumeData[
-      x + y * this.dims[0] + z * (this.dims[0] * this.dims[1])
-    ];
+    return this.volumeData[x + y * this.dims[0] + z * (this.dims[0] * this.dims[1])];
   }
 
   // how to index into tiled texture atlas
@@ -23,10 +21,7 @@ export default class Channel {
     const num_xtiles = this.imgData.width / this.dims[0];
     const tilex = z % num_xtiles;
     const tiley = Math.floor(z / num_xtiles);
-    const offset =
-      tilex * this.dims[0] +
-      x +
-      (tiley * this.dims[1] + y) * this.imgData.width;
+    const offset = tilex * this.dims[0] + x + (tiley * this.dims[1] + y) * this.imgData.width;
     return this.imgData.data[offset];
   }
 
@@ -64,8 +59,7 @@ export default class Channel {
       for (var j = 0; j < y; ++j) {
         tilerowoffset = j * atlasrow;
         for (var k = 0; k < x; ++k) {
-          this.volumeData[i * (x * y) + j * x + k] =
-            volimgdata[tileoffset + tilerowoffset + k];
+          this.volumeData[i * (x * y) + j * x + k] = volimgdata[tileoffset + tilerowoffset + k];
         }
       }
     }
@@ -123,9 +117,7 @@ export default class Channel {
       for (var j = 0; j < y; ++j) {
         tilerowoffset = j * atlasrow;
         for (var k = 0; k < x; ++k) {
-          volimgdata[tileoffset + tilerowoffset + k] = this.volumeData[
-            i * (x * y) + j * x + k
-          ];
+          volimgdata[tileoffset + tilerowoffset + k] = this.volumeData[i * (x * y) + j * x + k];
         }
       }
     }

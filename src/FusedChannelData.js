@@ -1,9 +1,4 @@
-import {
-  DataTexture,
-  LuminanceFormat,
-  UnsignedByteType,
-  ClampToEdgeWrapping,
-} from "three";
+import { DataTexture, LuminanceFormat, UnsignedByteType, ClampToEdgeWrapping } from "three";
 import { LinearFilter } from "three/src/constants";
 
 import FuseWorker from "./FuseWorker";
@@ -89,10 +84,7 @@ export default class FusedChannelData {
     var onWorkEnded = function(e) {
       me.fuseWorkersWorking++;
       // copy e.data.data into fused
-      me.fused.set(
-        e.data.data,
-        Math.floor(e.data.workerindex * (npx / me.workersCount)) * 4
-      );
+      me.fused.set(e.data.data, Math.floor(e.data.workerindex * (npx / me.workersCount)) * 4);
       if (me.fuseWorkersWorking === me.workersCount) {
         me.fusedData = { data: me.fused, width: me.width, height: me.height };
         me.fusedTexture.image = me.fusedData;
@@ -105,11 +97,7 @@ export default class FusedChannelData {
         // if there are any fusion requests in queue, execute the next one now.
         me.isFusing = false;
         if (me.fuseRequested) {
-          me.fuse(
-            me.fuseRequested,
-            me.fuseMethodRequested,
-            me.channelsDataToFuse
-          );
+          me.fuse(me.fuseRequested, me.fuseMethodRequested, me.channelsDataToFuse);
         }
         me.fuseRequested = false;
         me.channelsDataToFuse = null;
@@ -121,9 +109,7 @@ export default class FusedChannelData {
       var worker = new FuseWorker();
       worker.onmessage = onWorkEnded;
       worker.onerror = function(e) {
-        alert(
-          "Error: Line " + e.lineno + " in " + e.filename + ": " + e.message
-        );
+        alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
       };
       this.workers.push(worker);
     }
@@ -232,7 +218,7 @@ export default class FusedChannelData {
     // explore some faster ways to fuse here...
 
     var ar, ag, ab, c, r, g, b, lr, lg, lb, opacity, channeldata;
-    var x, i, cx, fx, idx;
+    var cx, fx, idx;
     var cl = combination.length;
 
     var npx4 = this.height * this.width * 4;
@@ -240,14 +226,14 @@ export default class FusedChannelData {
 
     var fused = this.fused;
     // init the rgba image
-    for (x = 0; x < npx4; x += 4) {
+    for (let x = 0; x < npx4; x += 4) {
       fused[x + 0] = 0;
       fused[x + 1] = 0;
       fused[x + 2] = 0;
       fused[x + 3] = 255;
     }
     var value = 0;
-    for (i = 0; i < cl; ++i) {
+    for (let i = 0; i < cl; ++i) {
       c = combination[i];
       idx = c.chIndex;
       if (!channels[idx].loaded) {
@@ -276,7 +262,7 @@ export default class FusedChannelData {
       }
     }
     // clamp the rgba image: ensure not over 255.
-    for (var x = 0; x < npx4; x += 4) {
+    for (let x = 0; x < npx4; x += 4) {
       fused[x + 0] = Math.min(fused[x + 0], 255);
       fused[x + 1] = Math.min(fused[x + 1], 255);
       fused[x + 2] = Math.min(fused[x + 2], 255);

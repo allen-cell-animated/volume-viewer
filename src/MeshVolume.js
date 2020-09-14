@@ -1,11 +1,4 @@
-import {
-  Object3D,
-  Vector3,
-  Color,
-  Mesh,
-  Group,
-  MeshPhongMaterial,
-} from "three";
+import { Object3D, Vector3, Color, Mesh, Group, MeshPhongMaterial } from "three";
 
 import { defaultMaterialSettings } from "./constants/materials.js";
 
@@ -64,18 +57,12 @@ export default class MeshVolume {
   setScale(scale) {
     this.scale = scale;
 
-    this.meshRoot.scale.copy(
-      new Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z)
-    );
+    this.meshRoot.scale.copy(new Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z));
   }
 
   setFlipAxes(flipX, flipY, flipZ) {
     this.meshRoot.scale.copy(
-      new Vector3(
-        0.5 * this.scale.x * flipX,
-        0.5 * this.scale.y * flipY,
-        0.5 * this.scale.z * flipZ
-      )
+      new Vector3(0.5 * this.scale.x * flipX, 0.5 * this.scale.y * flipY, 0.5 * this.scale.z * flipZ)
     );
   }
 
@@ -220,13 +207,7 @@ export default class MeshVolume {
       if (transp === undefined) {
         transp = alpha < ALPHA_THRESHOLD;
       }
-      this.meshrep[channel] = this.createMeshForChannel(
-        channel,
-        color,
-        value,
-        alpha,
-        transp
-      );
+      this.meshrep[channel] = this.createMeshForChannel(channel, color, value, alpha, transp);
       this.meshRoot.add(this.meshrep[channel]);
     }
   }
@@ -256,24 +237,18 @@ export default class MeshVolume {
     }
 
     if (type === "STL") {
-      this.exportSTL(
-        this.meshrep[channelIndex],
-        namePrefix + "_" + this.volume.channel_names[channelIndex]
-      );
+      this.exportSTL(this.meshrep[channelIndex], namePrefix + "_" + this.volume.channel_names[channelIndex]);
     } else if (type === "GLTF") {
       // temporarily set other meshreps to invisible
       var prevviz = [];
-      for (var i = 0; i < this.meshrep.length; ++i) {
+      for (let i = 0; i < this.meshrep.length; ++i) {
         if (this.meshrep[i]) {
           prevviz[i] = this.meshrep[i].visible;
           this.meshrep[i].visible = i === channelIndex;
         }
       }
-      this.exportGLTF(
-        this.meshRoot,
-        namePrefix + "_" + this.volume.channel_names[channelIndex]
-      );
-      for (var i = 0; i < this.meshrep.length; ++i) {
+      this.exportGLTF(this.meshRoot, namePrefix + "_" + this.volume.channel_names[channelIndex]);
+      for (let i = 0; i < this.meshrep.length; ++i) {
         if (this.meshrep[i]) {
           this.meshrep[i].visible = prevviz[i];
         }
@@ -331,11 +306,7 @@ export default class MeshVolume {
         volumedata
       );
       effect.position.copy(this.meshRoot.position);
-      effect.scale.set(
-        0.5 * this.scale.x,
-        0.5 * this.scale.y,
-        0.5 * this.scale.z
-      );
+      effect.scale.set(0.5 * this.scale.x, 0.5 * this.scale.y, 0.5 * this.scale.z);
       effect.isovalue = isovalue;
       var geometries = effect.generateGeometry();
       // TODO: weld vertices and recompute normals if MarchingCubes results in excessive coincident verts
@@ -347,11 +318,7 @@ export default class MeshVolume {
       // }
       return geometries;
     } else {
-      var result = NaiveSurfaceNets.surfaceNets(
-        volumedata,
-        [this.volume.x, this.volume.y, this.volume.z],
-        isovalue
-      );
+      var result = NaiveSurfaceNets.surfaceNets(volumedata, [this.volume.x, this.volume.y, this.volume.z], isovalue);
       return NaiveSurfaceNets.constructTHREEGeometry(result);
     }
   }

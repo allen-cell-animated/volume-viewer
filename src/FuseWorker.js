@@ -19,10 +19,10 @@ function fuseWorker(combination, fusionType) {
   //   fused4[x] = 0xff000000;
   // }
   for (x = 0; x < npx4; x += 4) {
-    fused[x + 0] = 0;
-    fused[x + 1] = 0;
-    fused[x + 2] = 0;
-    fused[x + 3] = 255;
+    self.fused[x + 0] = 0;
+    self.fused[x + 1] = 0;
+    self.fused[x + 2] = 0;
+    self.fused[x + 3] = 255;
   }
   var value = 0;
   if (fusionType === "m") {
@@ -47,12 +47,12 @@ function fuseWorker(combination, fusionType) {
           opacity = lut[value * 4 + 3] / 255.0;
 
           // what if rgb*opacity > 255?
-          ar = fused[fx + 0];
-          fused[fx + 0] = Math.max(ar, r * lr * opacity);
-          ag = fused[fx + 1];
-          fused[fx + 1] = Math.max(ag, g * lg * opacity);
-          ab = fused[fx + 2];
-          fused[fx + 2] = Math.max(ab, b * lb * opacity);
+          ar = self.fused[fx + 0];
+          self.fused[fx + 0] = Math.max(ar, r * lr * opacity);
+          ag = self.fused[fx + 1];
+          self.fused[fx + 1] = Math.max(ag, g * lg * opacity);
+          ab = self.fused[fx + 2];
+          self.fused[fx + 2] = Math.max(ab, b * lb * opacity);
         }
       }
     }
@@ -88,9 +88,9 @@ function fuseWorker(combination, fusionType) {
           opacity = lut[value * 4 + 3] / 255.0;
 
           // what if rgb*opacity > 255?
-          fused[fx + 0] += (r * lr * opacity) / nchans;
-          fused[fx + 1] += (g * lg * opacity) / nchans;
-          fused[fx + 2] += (b * lb * opacity) / nchans;
+          self.fused[fx + 0] += (r * lr * opacity) / nchans;
+          self.fused[fx + 1] += (g * lg * opacity) / nchans;
+          self.fused[fx + 2] += (b * lb * opacity) / nchans;
         }
       }
     }

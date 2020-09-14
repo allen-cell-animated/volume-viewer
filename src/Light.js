@@ -35,10 +35,8 @@ export class Light {
     this.m_target.copy(targetPoint);
 
     // Determine light position
-    this.m_P.x =
-      this.m_distance * Math.sin(this.m_phi) * Math.sin(this.m_theta);
-    this.m_P.z =
-      this.m_distance * Math.sin(this.m_phi) * Math.cos(this.m_theta);
+    this.m_P.x = this.m_distance * Math.sin(this.m_phi) * Math.sin(this.m_theta);
+    this.m_P.z = this.m_distance * Math.sin(this.m_phi) * Math.cos(this.m_theta);
     this.m_P.y = this.m_distance * Math.cos(this.m_phi);
 
     this.m_P.add(this.m_target);

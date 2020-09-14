@@ -1,11 +1,4 @@
-import {
-  AmbientLight,
-  Vector3,
-  Object3D,
-  SpotLight,
-  DirectionalLight,
-  Euler,
-} from "three";
+import { AmbientLight, Vector3, Object3D, SpotLight, DirectionalLight, Euler } from "three";
 
 import { ThreeJsPanel } from "./ThreeJsPanel.js";
 import lightSettings from "./constants/lights.js";
@@ -78,9 +71,7 @@ export class View3d {
     this.loaded = false;
     let that = this;
     this.parentEl = parentElement;
-    window.addEventListener("resize", () =>
-      that.resize(null, that.parentEl.offsetWidth, that.parentEl.offsetHeight)
-    );
+    window.addEventListener("resize", () => that.resize(null, that.parentEl.offsetWidth, that.parentEl.offsetHeight));
 
     this.buildScene();
 
@@ -94,9 +85,7 @@ export class View3d {
     // }
 
     if (this.scene.getObjectByName("lightContainer")) {
-      this.scene
-        .getObjectByName("lightContainer")
-        .rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
+      this.scene.getObjectByName("lightContainer").rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
     }
     // keep the ortho scale up to date.
     if (this.image && this.canvas3d.camera.isOrthographicCamera) {
@@ -381,10 +370,7 @@ export class View3d {
       this.image.onEndControls();
     }
     // If we are pathtracing or autorotating, then keep rendering. Otherwise stop now.
-    if (
-      this.volumeRenderMode !== RENDERMODE_PATHTRACE &&
-      !this.canvas3d.controls.autoRotate
-    ) {
+    if (this.volumeRenderMode !== RENDERMODE_PATHTRACE && !this.canvas3d.controls.autoRotate) {
       // TODO: VR display requires a running renderloop
       this.canvas3d.stopRenderLoop();
     }
@@ -413,10 +399,7 @@ export class View3d {
     this.lightContainer.add(this.ambientLight);
 
     // key light
-    this.spotLight = new SpotLight(
-      lightSettings.spotlightSettings.color,
-      lightSettings.spotlightSettings.intensity
-    );
+    this.spotLight = new SpotLight(lightSettings.spotlightSettings.color, lightSettings.spotlightSettings.intensity);
     this.spotLight.position.set(
       lightSettings.spotlightSettings.position.x,
       lightSettings.spotlightSettings.position.y,
@@ -428,24 +411,18 @@ export class View3d {
     this.lightContainer.add(this.spotLight);
 
     // reflect light
-    this.reflectedLight = new DirectionalLight(
-      lightSettings.reflectedLightSettings.color
-    );
+    this.reflectedLight = new DirectionalLight(lightSettings.reflectedLightSettings.color);
     this.reflectedLight.position.set(
       lightSettings.reflectedLightSettings.position.x,
       lightSettings.reflectedLightSettings.position.y,
       lightSettings.reflectedLightSettings.position.z
     );
-    this.reflectedLight.castShadow =
-      lightSettings.reflectedLightSettings.castShadow;
-    this.reflectedLight.intensity =
-      lightSettings.reflectedLightSettings.intensity;
+    this.reflectedLight.castShadow = lightSettings.reflectedLightSettings.castShadow;
+    this.reflectedLight.intensity = lightSettings.reflectedLightSettings.intensity;
     this.lightContainer.add(this.reflectedLight);
 
     // fill light
-    this.fillLight = new DirectionalLight(
-      lightSettings.fillLightSettings.color
-    );
+    this.fillLight = new DirectionalLight(lightSettings.fillLightSettings.color);
     this.fillLight.position.set(
       lightSettings.fillLightSettings.position.x,
       lightSettings.fillLightSettings.position.y,
@@ -729,22 +706,9 @@ export class View3d {
    * @param {Array.<number>} emissivergb [r,g,b]
    * @param {number} glossiness
    */
-  updateChannelMaterial(
-    volume,
-    channelIndex,
-    colorrgb,
-    specularrgb,
-    emissivergb,
-    glossiness
-  ) {
+  updateChannelMaterial(volume, channelIndex, colorrgb, specularrgb, emissivergb, glossiness) {
     if (this.image) {
-      this.image.updateChannelMaterial(
-        channelIndex,
-        colorrgb,
-        specularrgb,
-        emissivergb,
-        glossiness
-      );
+      this.image.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
     }
   }
 
@@ -771,11 +735,7 @@ export class View3d {
 
     this.volumeRenderMode = mode;
     if (this.image) {
-      if (
-        mode === RENDERMODE_PATHTRACE &&
-        this.canvas3d.hasWebGL2 &&
-        !this.canvas3d.isVR()
-      ) {
+      if (mode === RENDERMODE_PATHTRACE && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
         this.image.setVolumeRendering(true);
         this.image.updateLights(this.lights);
 

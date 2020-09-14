@@ -91,54 +91,43 @@ export default class VolumeDrawable {
 
   setOptions(options) {
     options = options || {};
-    if (options.hasOwnProperty("maskChannelIndex")) {
+    if (Object.hasOwnProperty.call(options, "maskChannelIndex")) {
       this.setChannelAsMask(options.maskChannelIndex);
     }
-    if (options.hasOwnProperty("maskAlpha")) {
+    if (Object.hasOwnProperty.call(options, "maskAlpha")) {
       this.setMaskAlpha(options.maskAlpha);
     }
-    if (options.hasOwnProperty("clipBounds")) {
+    if (Object.hasOwnProperty.call(options, "clipBounds")) {
       this.bounds = {
-        bmin: new Vector3(
-          options.clipBounds[0],
-          options.clipBounds[2],
-          options.clipBounds[4]
-        ),
-        bmax: new Vector3(
-          options.clipBounds[1],
-          options.clipBounds[3],
-          options.clipBounds[5]
-        ),
+        bmin: new Vector3(options.clipBounds[0], options.clipBounds[2], options.clipBounds[4]),
+        bmax: new Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5]),
       };
       // note: dropping isOrthoAxis argument
       this.setAxisClip("x", options.clipBounds[0], options.clipBounds[1]);
       this.setAxisClip("y", options.clipBounds[2], options.clipBounds[3]);
       this.setAxisClip("z", options.clipBounds[4], options.clipBounds[5]);
     }
-    if (options.hasOwnProperty("scale")) {
+    if (Object.hasOwnProperty.call(options, "scale")) {
       this.setScale(options.scale.slice());
     }
-    if (options.hasOwnProperty("translation")) {
+    if (Object.hasOwnProperty.call(options, "translation")) {
       this.setTranslation(new Vector3().fromArray(options.translation));
     }
-    if (options.hasOwnProperty("rotation")) {
+    if (Object.hasOwnProperty.call(options, "rotation")) {
       this.setRotation(new Euler().fromArray(options.rotation));
     }
 
-    if (options.hasOwnProperty("renderMode")) {
+    if (Object.hasOwnProperty.call(options, "renderMode")) {
       this.setVolumeRendering(!!options.renderMode);
     }
     if (
-      options.hasOwnProperty("primaryRayStepSize") ||
-      options.hasOwnProperty("secondaryRayStepSize")
+      Object.hasOwnProperty.call(options, "primaryRayStepSize") ||
+      Object.hasOwnProperty.call(options, "secondaryRayStepSize")
     ) {
-      this.setRayStepSizes(
-        options.primaryRayStepSize,
-        options.secondaryRayStepSize
-      );
+      this.setRayStepSizes(options.primaryRayStepSize, options.secondaryRayStepSize);
     }
 
-    if (options.hasOwnProperty("channels")) {
+    if (Object.hasOwnProperty.call(options, "channels")) {
       // store channel options here!
       this.channelOptions = options.channels;
       this.channelOptions.forEach((channelOptions, channelIndex) => {
@@ -149,18 +138,15 @@ export default class VolumeDrawable {
 
   setChannelOptions(channelIndex, options) {
     // merge to current channel options
-    this.channelOptions[channelIndex] = Object.assign(
-      this.channelOptions[channelIndex],
-      options
-    );
+    this.channelOptions[channelIndex] = Object.assign(this.channelOptions[channelIndex], options);
 
-    if (options.hasOwnProperty("enabled")) {
+    if (Object.hasOwnProperty.call(options, "enabled")) {
       this.setVolumeChannelEnabled(channelIndex, options.enabled);
     }
-    if (options.hasOwnProperty("color")) {
+    if (Object.hasOwnProperty.call(options, "color")) {
       this.updateChannelColor(channelIndex, options.color);
     }
-    if (options.hasOwnProperty("isosurfaceEnabled")) {
+    if (Object.hasOwnProperty.call(options, "isosurfaceEnabled")) {
       const hasIso = this.hasIsosurface(channelIndex);
       if (hasIso !== options.isosurfaceEnabled) {
         if (hasIso && !options.isosurfaceEnabled) {
@@ -168,29 +154,29 @@ export default class VolumeDrawable {
         } else if (!hasIso && options.isosurfaceEnabled) {
           // 127 is half of the intensity range 0..255
           let isovalue = 127;
-          if (options.hasOwnProperty("isovalue")) {
+          if (Object.hasOwnProperty.call(options, "isovalue")) {
             isovalue = options.isovalue;
           }
           // 1.0 is fully opaque
           let isosurfaceOpacity = 1.0;
-          if (options.hasOwnProperty("isosurfaceOpacity")) {
+          if (Object.hasOwnProperty.call(options, "isosurfaceOpacity")) {
             isosurfaceOpacity = options.isosurfaceOpacity;
           }
           this.createIsosurface(channelIndex, isovalue, isosurfaceOpacity);
         }
       } else if (options.isosurfaceEnabled) {
-        if (options.hasOwnProperty("isovalue")) {
+        if (Object.hasOwnProperty.call(options, "isovalue")) {
           this.updateIsovalue(channelIndex, options.isovalue);
         }
-        if (options.hasOwnProperty("isosurfaceOpacity")) {
+        if (Object.hasOwnProperty.call(options, "isosurfaceOpacity")) {
           this.updateOpacity(channelIndex, options.isosurfaceOpacity);
         }
       }
     } else {
-      if (options.hasOwnProperty("isovalue")) {
+      if (Object.hasOwnProperty.call(options, "isovalue")) {
         this.updateIsovalue(channelIndex, options.isovalue);
       }
-      if (options.hasOwnProperty("isosurfaceOpacity")) {
+      if (Object.hasOwnProperty.call(options, "isosurfaceOpacity")) {
         this.updateOpacity(channelIndex, options.isosurfaceOpacity);
       }
     }
@@ -203,10 +189,7 @@ export default class VolumeDrawable {
     if (secondary !== undefined) {
       this.secondaryRayStepSize = secondary;
     }
-    this.volumeRendering.setRayStepSizes(
-      this.primaryRayStepSize,
-      this.secondaryRayStepSize
-    );
+    this.volumeRendering.setRayStepSizes(this.primaryRayStepSize, this.secondaryRayStepSize);
   }
 
   setScale(scale) {
@@ -316,13 +299,7 @@ export default class VolumeDrawable {
 
   // If an isosurface is not already created, then create one.  Otherwise do nothing.
   createIsosurface(channel, value, alpha, transp) {
-    this.meshVolume.createIsosurface(
-      channel,
-      this.channel_colors[channel],
-      value,
-      alpha,
-      transp
-    );
+    this.meshVolume.createIsosurface(channel, this.channel_colors[channel], value, alpha, transp);
   }
 
   // If an isosurface exists for this channel, destroy it now. Don't just hide it - assume we can free up some resources.
@@ -351,14 +328,12 @@ export default class VolumeDrawable {
 
   updateMaterial() {
     this.PT && this.pathTracedVolume.updateMaterial(this);
-    !this.PT &&
-      this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
+    !this.PT && this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
   }
 
   updateLuts() {
     this.PT && this.pathTracedVolume.updateLuts(this);
-    !this.PT &&
-      this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
+    !this.PT && this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
   }
 
   setVoxelSize(values) {
@@ -391,9 +366,7 @@ export default class VolumeDrawable {
   }
 
   onChannelAdded(newChannelIndex) {
-    this.channel_colors[newChannelIndex] = this.volume.channel_colors_default[
-      newChannelIndex
-    ];
+    this.channel_colors[newChannelIndex] = this.volume.channel_colors_default[newChannelIndex];
 
     this.fusion[newChannelIndex] = {
       chIndex: newChannelIndex,
@@ -419,9 +392,7 @@ export default class VolumeDrawable {
   // Hide or display volume data for a channel
   setVolumeChannelEnabled(channelIndex, enabled) {
     // flip the color to the "null" value
-    this.fusion[channelIndex].rgbColor = enabled
-      ? this.channel_colors[channelIndex]
-      : 0;
+    this.fusion[channelIndex].rgbColor = enabled ? this.channel_colors[channelIndex] : 0;
     // if all are nulled out, then hide the volume element from the scene.
     if (this.fusion.every(elem => elem.rgbColor === 0)) {
       this.volumeRendering.setVisible(false);
@@ -466,13 +437,7 @@ export default class VolumeDrawable {
   // @param {Array.<number>} specularrgb [r,g,b]
   // @param {Array.<number>} emissivergb [r,g,b]
   // @param {number} glossiness
-  updateChannelMaterial(
-    channelIndex,
-    colorrgb,
-    specularrgb,
-    emissivergb,
-    glossiness
-  ) {
+  updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness) {
     if (!this.channel_colors[channelIndex]) {
       return;
     }
@@ -504,10 +469,7 @@ export default class VolumeDrawable {
   }
 
   setChannelAsMask(channelIndex) {
-    if (
-      !this.volume.channels[channelIndex] ||
-      !this.volume.channels[channelIndex].loaded
-    ) {
+    if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
       return false;
     }
     this.maskChannelIndex = channelIndex;
@@ -540,8 +502,7 @@ export default class VolumeDrawable {
   }
 
   onCameraChanged(fov, focalDistance, apertureSize) {
-    this.PT &&
-      this.pathTracedVolume.updateCamera(fov, focalDistance, apertureSize);
+    this.PT && this.pathTracedVolume.updateCamera(fov, focalDistance, apertureSize);
   }
 
   updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
