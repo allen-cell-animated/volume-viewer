@@ -1,4 +1,4 @@
-import { Object3D, Vector3, Color, Mesh, Group, MeshPhongMaterial } from "three";
+import { Object3D, Vector3, Color, Mesh, Group, MeshPhongMaterial, Plane, DoubleSide } from "three";
 
 import { defaultMaterialSettings } from "./constants/materials.js";
 
@@ -70,8 +70,8 @@ export default class MeshVolume {
     this.meshRoot.position.copy(vec3xyz);
   }
 
-  setRotation(quaternion) {
-    this.meshPivot.rotation.copy(quaternion);
+  setRotation(eulerXYZ) {
+    this.meshPivot.rotation.copy(eulerXYZ);
   }
 
   setResolution(x, y) {}
@@ -108,6 +108,7 @@ export default class MeshVolume {
       specular: new Color(defaultMaterialSettings.specularColor),
       opacity: alpha,
       transparent: alpha < ALPHA_THRESHOLD,
+      side: DoubleSide,
     });
     return material;
   }
@@ -169,6 +170,43 @@ export default class MeshVolume {
       return undefined;
     }
     return this.meshrep[channel].userData.isovalue;
+  }
+
+  updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
+    // assuming these are 0..1
+    for (let channel = 0; channel < this.meshrep.length; ++channel) {
+      if (!this.meshrep[channel]) {
+        continue;
+      }
+      const planes = [];
+      // up to 6 planes.
+      if (xmin > 0) {
+        planes.push(new Plane(new Vector3(1, 0, 0), this.meshRoot.position.x + (0.5 - xmin) * this.scale.x));
+      }
+      if (ymin > 0) {
+        planes.push(new Plane(new Vector3(0, 1, 0), this.meshRoot.position.y + (0.5 - ymin) * this.scale.y));
+      }
+      if (zmin > 0) {
+        planes.push(new Plane(new Vector3(0, 0, 1), this.meshRoot.position.z + (0.5 - zmin) * this.scale.z));
+      }
+      if (xmax < 1) {
+        planes.push(new Plane(new Vector3(-1, 0, 0), this.meshRoot.position.x + (xmax - 0.5) * this.scale.x));
+      }
+      if (ymax < 1) {
+        planes.push(new Plane(new Vector3(0, -1, 0), this.meshRoot.position.y + (ymax - 0.5) * this.scale.y));
+      }
+      if (zmax < 1) {
+        planes.push(new Plane(new Vector3(0, 0, -1), this.meshRoot.position.z + (zmax - 0.5) * this.scale.z));
+      }
+      this.meshrep[channel].traverse(function(child) {
+        if (child instanceof Mesh) {
+          child.material.clippingPlanes = planes;
+        }
+      });
+      if (this.meshrep[channel].material) {
+        this.meshrep[channel].material.clippingPlanes = planes;
+      }
+    }
   }
 
   updateOpacity(channel, value) {

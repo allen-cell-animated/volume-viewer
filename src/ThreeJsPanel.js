@@ -67,6 +67,7 @@ export class ThreeJsPanel {
         // set pixel ratio to 0.25 or 0.5 to render at lower res.
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.state.setBlending(NormalBlending);
+        this.renderer.localClippingEnabled = true;
         //required by WebGL 2.0 for rendering to FLOAT textures
         this.renderer.getContext().getExtension("EXT_color_buffer_float");
       }
