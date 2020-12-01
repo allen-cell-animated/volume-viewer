@@ -26,6 +26,11 @@ export default class MeshVolume {
     this.meshPivot.add(this.meshRoot);
 
     this.meshrep = [];
+
+    this.bounds = {
+      bmin: new Vector3(-0.5, -0.5, -0.5),
+      bmax: new Vector3(0.5, 0.5, 0.5),
+    };
   }
 
   cleanup() {
@@ -78,7 +83,12 @@ export default class MeshVolume {
 
   setOrthoThickness(value) {}
 
-  setAxisClip(axis, minval, maxval, isOrthoAxis) {}
+  setAxisClip(axis, minval, maxval, isOrthoAxis) {
+    console.log("setAxisClip called");
+    this.bounds.bmax[axis] = maxval;
+    this.bounds.bmin[axis] = minval;
+    this.updateClipFromBounds();
+  }
 
   //////////////////////////////
 
@@ -173,6 +183,20 @@ export default class MeshVolume {
   }
 
   updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
+    this.bounds = {
+      bmin: new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
+      bmax: new Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5),
+    };
+    this.updateClipFromBounds();
+  }
+
+  updateClipFromBounds() {
+    const xmin = this.bounds.bmin.x;
+    const ymin = this.bounds.bmin.y;
+    const zmin = this.bounds.bmin.z;
+    const xmax = this.bounds.bmax.x;
+    const ymax = this.bounds.bmax.y;
+    const zmax = this.bounds.bmax.z;
     // assuming these are 0..1
     for (let channel = 0; channel < this.meshrep.length; ++channel) {
       if (!this.meshrep[channel]) {
@@ -180,23 +204,23 @@ export default class MeshVolume {
       }
       const planes = [];
       // up to 6 planes.
-      if (xmin > 0) {
-        planes.push(new Plane(new Vector3(1, 0, 0), this.meshRoot.position.x + (0.5 - xmin) * this.scale.x));
+      if (xmin > -0.5) {
+        planes.push(new Plane(new Vector3(1, 0, 0), this.meshRoot.position.x + -xmin * this.scale.x));
       }
-      if (ymin > 0) {
-        planes.push(new Plane(new Vector3(0, 1, 0), this.meshRoot.position.y + (0.5 - ymin) * this.scale.y));
+      if (ymin > -0.5) {
+        planes.push(new Plane(new Vector3(0, 1, 0), this.meshRoot.position.y + -ymin * this.scale.y));
       }
-      if (zmin > 0) {
-        planes.push(new Plane(new Vector3(0, 0, 1), this.meshRoot.position.z + (0.5 - zmin) * this.scale.z));
+      if (zmin > -0.5) {
+        planes.push(new Plane(new Vector3(0, 0, 1), this.meshRoot.position.z + -zmin * this.scale.z));
       }
-      if (xmax < 1) {
-        planes.push(new Plane(new Vector3(-1, 0, 0), this.meshRoot.position.x + (xmax - 0.5) * this.scale.x));
+      if (xmax < 0.5) {
+        planes.push(new Plane(new Vector3(-1, 0, 0), this.meshRoot.position.x + xmax * this.scale.x));
       }
-      if (ymax < 1) {
-        planes.push(new Plane(new Vector3(0, -1, 0), this.meshRoot.position.y + (ymax - 0.5) * this.scale.y));
+      if (ymax < 0.5) {
+        planes.push(new Plane(new Vector3(0, -1, 0), this.meshRoot.position.y + ymax * this.scale.y));
       }
-      if (zmax < 1) {
-        planes.push(new Plane(new Vector3(0, 0, -1), this.meshRoot.position.z + (zmax - 0.5) * this.scale.z));
+      if (zmax < 0.5) {
+        planes.push(new Plane(new Vector3(0, 0, -1), this.meshRoot.position.z + zmax * this.scale.z));
       }
       this.meshrep[channel].traverse(function(child) {
         if (child instanceof Mesh) {
