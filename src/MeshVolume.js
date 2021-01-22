@@ -85,7 +85,6 @@ export default class MeshVolume {
   setOrthoThickness(value) {}
 
   setAxisClip(axis, minval, maxval, isOrthoAxis) {
-    console.log("setAxisClip called");
     this.bounds.bmax[axis] = maxval;
     this.bounds.bmin[axis] = minval;
     this.updateClipFromBounds();
