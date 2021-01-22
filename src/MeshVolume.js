@@ -77,6 +77,7 @@ export default class MeshVolume {
 
   setRotation(eulerXYZ) {
     this.meshPivot.rotation.copy(eulerXYZ);
+    this.updateClipFromBounds();
   }
 
   setResolution(x, y) {}
@@ -197,6 +198,9 @@ export default class MeshVolume {
     const xmax = this.bounds.bmax.x;
     const ymax = this.bounds.bmax.y;
     const zmax = this.bounds.bmax.z;
+
+    const euler = this.meshPivot.rotation;
+
     // assuming these are 0..1
     for (let channel = 0; channel < this.meshrep.length; ++channel) {
       if (!this.meshrep[channel]) {
@@ -205,22 +209,22 @@ export default class MeshVolume {
       const planes = [];
       // up to 6 planes.
       if (xmin > -0.5) {
-        planes.push(new Plane(new Vector3(1, 0, 0), this.meshRoot.position.x + -xmin * this.scale.x));
+        planes.push(new Plane(new Vector3(1, 0, 0).applyEuler(euler), this.meshRoot.position.x + -xmin * this.scale.x));
       }
       if (ymin > -0.5) {
-        planes.push(new Plane(new Vector3(0, 1, 0), this.meshRoot.position.y + -ymin * this.scale.y));
+        planes.push(new Plane(new Vector3(0, 1, 0).applyEuler(euler), this.meshRoot.position.y + -ymin * this.scale.y));
       }
       if (zmin > -0.5) {
-        planes.push(new Plane(new Vector3(0, 0, 1), this.meshRoot.position.z + -zmin * this.scale.z));
+        planes.push(new Plane(new Vector3(0, 0, 1).applyEuler(euler), this.meshRoot.position.z + -zmin * this.scale.z));
       }
       if (xmax < 0.5) {
-        planes.push(new Plane(new Vector3(-1, 0, 0), this.meshRoot.position.x + xmax * this.scale.x));
+        planes.push(new Plane(new Vector3(-1, 0, 0).applyEuler(euler), this.meshRoot.position.x + xmax * this.scale.x));
       }
       if (ymax < 0.5) {
-        planes.push(new Plane(new Vector3(0, -1, 0), this.meshRoot.position.y + ymax * this.scale.y));
+        planes.push(new Plane(new Vector3(0, -1, 0).applyEuler(euler), this.meshRoot.position.y + ymax * this.scale.y));
       }
       if (zmax < 0.5) {
-        planes.push(new Plane(new Vector3(0, 0, -1), this.meshRoot.position.z + zmax * this.scale.z));
+        planes.push(new Plane(new Vector3(0, 0, -1).applyEuler(euler), this.meshRoot.position.z + zmax * this.scale.z));
       }
       this.meshrep[channel].traverse(function(child) {
         if (child instanceof Mesh) {
