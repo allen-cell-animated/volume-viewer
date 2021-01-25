@@ -183,6 +183,8 @@ export default class MeshVolume {
   }
 
   updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
+    // incoming values expected to be between 0 and 1.
+    // I shift them here to be between -0.5 and 0.5
     this.bounds = {
       bmin: new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
       bmax: new Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5),
@@ -200,7 +202,6 @@ export default class MeshVolume {
 
     const euler = this.meshPivot.rotation;
 
-    // assuming these are 0..1
     for (let channel = 0; channel < this.meshrep.length; ++channel) {
       if (!this.meshrep[channel]) {
         continue;
