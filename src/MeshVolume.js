@@ -1,4 +1,4 @@
-import { Object3D, Vector3, Color, Mesh, Group, MeshPhongMaterial } from "three";
+import { Object3D, Vector3, Color, Mesh, Group, MeshPhongMaterial, Plane, DoubleSide } from "three";
 
 import { defaultMaterialSettings } from "./constants/materials.js";
 
@@ -26,6 +26,11 @@ export default class MeshVolume {
     this.meshPivot.add(this.meshRoot);
 
     this.meshrep = [];
+
+    this.bounds = {
+      bmin: new Vector3(-0.5, -0.5, -0.5),
+      bmax: new Vector3(0.5, 0.5, 0.5),
+    };
   }
 
   cleanup() {
@@ -70,15 +75,20 @@ export default class MeshVolume {
     this.meshRoot.position.copy(vec3xyz);
   }
 
-  setRotation(quaternion) {
-    this.meshPivot.rotation.copy(quaternion);
+  setRotation(eulerXYZ) {
+    this.meshPivot.rotation.copy(eulerXYZ);
+    this.updateClipFromBounds();
   }
 
   setResolution(x, y) {}
 
   setOrthoThickness(value) {}
 
-  setAxisClip(axis, minval, maxval, isOrthoAxis) {}
+  setAxisClip(axis, minval, maxval, isOrthoAxis) {
+    this.bounds.bmax[axis] = maxval;
+    this.bounds.bmin[axis] = minval;
+    this.updateClipFromBounds();
+  }
 
   //////////////////////////////
 
@@ -108,6 +118,7 @@ export default class MeshVolume {
       specular: new Color(defaultMaterialSettings.specularColor),
       opacity: alpha,
       transparent: alpha < ALPHA_THRESHOLD,
+      side: DoubleSide,
     });
     return material;
   }
@@ -169,6 +180,61 @@ export default class MeshVolume {
       return undefined;
     }
     return this.meshrep[channel].userData.isovalue;
+  }
+
+  updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
+    // incoming values expected to be between 0 and 1.
+    // I shift them here to be between -0.5 and 0.5
+    this.bounds = {
+      bmin: new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
+      bmax: new Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5),
+    };
+    this.updateClipFromBounds();
+  }
+
+  updateClipFromBounds() {
+    const xmin = this.bounds.bmin.x;
+    const ymin = this.bounds.bmin.y;
+    const zmin = this.bounds.bmin.z;
+    const xmax = this.bounds.bmax.x;
+    const ymax = this.bounds.bmax.y;
+    const zmax = this.bounds.bmax.z;
+
+    const euler = this.meshPivot.rotation;
+
+    for (let channel = 0; channel < this.meshrep.length; ++channel) {
+      if (!this.meshrep[channel]) {
+        continue;
+      }
+      const planes = [];
+      // up to 6 planes.
+      if (xmin > -0.5) {
+        planes.push(new Plane(new Vector3(1, 0, 0).applyEuler(euler), this.meshRoot.position.x + -xmin * this.scale.x));
+      }
+      if (ymin > -0.5) {
+        planes.push(new Plane(new Vector3(0, 1, 0).applyEuler(euler), this.meshRoot.position.y + -ymin * this.scale.y));
+      }
+      if (zmin > -0.5) {
+        planes.push(new Plane(new Vector3(0, 0, 1).applyEuler(euler), this.meshRoot.position.z + -zmin * this.scale.z));
+      }
+      if (xmax < 0.5) {
+        planes.push(new Plane(new Vector3(-1, 0, 0).applyEuler(euler), this.meshRoot.position.x + xmax * this.scale.x));
+      }
+      if (ymax < 0.5) {
+        planes.push(new Plane(new Vector3(0, -1, 0).applyEuler(euler), this.meshRoot.position.y + ymax * this.scale.y));
+      }
+      if (zmax < 0.5) {
+        planes.push(new Plane(new Vector3(0, 0, -1).applyEuler(euler), this.meshRoot.position.z + zmax * this.scale.z));
+      }
+      this.meshrep[channel].traverse(function(child) {
+        if (child instanceof Mesh) {
+          child.material.clippingPlanes = planes;
+        }
+      });
+      if (this.meshrep[channel].material) {
+        this.meshrep[channel].material.clippingPlanes = planes;
+      }
+    }
   }
 
   updateOpacity(channel, value) {

@@ -507,6 +507,7 @@ export default class VolumeDrawable {
 
   updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
     this.volumeRendering.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
+    this.meshVolume.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
   }
 
   updateLights(state) {

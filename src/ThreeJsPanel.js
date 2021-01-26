@@ -82,6 +82,7 @@ export class ThreeJsPanel {
       this.renderer.setPixelRatio(window.devicePixelRatio);
       this.renderer.state.setBlending(NormalBlending);
     }
+    this.renderer.localClippingEnabled = true;
     this.renderer.setSize(parentElement.offsetWidth, parentElement.offsetHeight);
 
     this.timer = new Timing();
