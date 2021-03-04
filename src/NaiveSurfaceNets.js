@@ -31,7 +31,7 @@
  */
 
 // MODIFIED 2018 BY DANIELT@ALLENINSTITUTE.ORG TO ACCEPT AN ISOVALUE AND RESCALE VERTEX POSITIONS
-import { BufferGeometry } from "three";
+import { BufferAttribute, BufferGeometry } from "three";
 var SurfaceNets = (function() {
   "use strict";
 
@@ -202,7 +202,9 @@ function ConstructTHREEGeometry(surfaceNetResult) {
   var varray = new Float32Array(result.vertices.length * 3);
   for (var i = 0; i < result.vertices.length; ++i) {
     var v = result.vertices[i];
-    varray.push(v[0], v[1], v[2]);
+    varray[i * 3 + 0] = v[0];
+    varray[i * 3 + 1] = v[1];
+    varray[i * 3 + 2] = v[2];
   }
 
   // count triangles; split quad faces
@@ -221,20 +223,28 @@ function ConstructTHREEGeometry(surfaceNetResult) {
 
   var inds = new Uint32Array(n_triangles * 3);
 
+  let j = 0;
   for (var i = 0; i < result.faces.length; ++i) {
     var f = result.faces[i];
     // note what appears to be inverted winding order.
     // I believe this is related to isosurface < or > testing but have not checked.
     if (f.length === 3) {
-      inds.push(f[2], f[1], f[0]);
+      inds[j++] = f[2];
+      inds[j++] = f[1];
+      inds[j++] = f[0];
     } else if (f.length === 4) {
-      inds.push(f[2], f[1], f[0]);
-      inds.push(f[3], f[2], f[0]);
+      // two triangles: (2,1,0) and (3,2,0)
+      inds[j++] = f[2];
+      inds[j++] = f[1];
+      inds[j++] = f[0];
+      inds[j++] = f[3];
+      inds[j++] = f[2];
+      inds[j++] = f[0];
     }
   }
 
   var geo = new BufferGeometry();
-  geo.addAttribute("position", new BufferAttribute(varray, 3));
+  geo.setAttribute("position", new BufferAttribute(varray, 3, false));
   geo.setIndex(new BufferAttribute(inds, 1));
 
   geo.computeVertexNormals();
