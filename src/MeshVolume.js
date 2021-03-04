@@ -27,6 +27,9 @@ export default class MeshVolume {
 
     this.meshrep = [];
 
+    this.channel_colors = [];
+    this.channel_opacities = [];
+
     this.bounds = {
       bmin: new Vector3(-0.5, -0.5, -0.5),
       bmax: new Vector3(0.5, 0.5, 0.5),
@@ -93,6 +96,10 @@ export default class MeshVolume {
   //////////////////////////////
 
   updateMeshColors(channel_colors) {
+    // stash values here for later changes
+    this.channel_colors = channel_colors;
+
+    // update existing meshes
     for (var i = 0; i < this.volume.num_channels; ++i) {
       if (this.meshrep[i]) {
         var rgb = channel_colors[i];
@@ -124,6 +131,7 @@ export default class MeshVolume {
   }
 
   createMeshForChannel(channelIndex, colorrgb, isovalue, alpha, transp) {
+    // note that if isovalue out of range, this will return an empty array.
     const geometries = this.generateIsosurfaceGeometry(channelIndex, isovalue);
     const material = this.createMaterialForChannel(colorrgb, alpha, transp);
 
@@ -147,30 +155,11 @@ export default class MeshVolume {
     }
 
     // find the current isosurface opacity and color.
-    let opacity = 1;
-    let color = new Color();
-    if (this.meshrep[channel].material) {
-      opacity = this.meshrep[channel].material.opacity;
-      color = this.meshrep[channel].material.color;
-    } else {
-      this.meshrep[channel].traverse(function(child) {
-        if (child instanceof Mesh) {
-          opacity = child.material.opacity;
-          color = child.material.color;
-        }
-      });
-    }
+    let opacity = this.channel_opacities[channel];
+    let color = this.channel_colors[channel];
+
     this.destroyIsosurface(channel);
-    this.meshrep[channel] = this.createMeshForChannel(
-      channel,
-      color
-        .clone()
-        .multiplyScalar(255)
-        .toArray(),
-      value,
-      opacity,
-      false
-    );
+    this.meshrep[channel] = this.createMeshForChannel(channel, color, value, opacity, false);
 
     this.meshRoot.add(this.meshrep[channel]);
   }
@@ -238,6 +227,7 @@ export default class MeshVolume {
   }
 
   updateOpacity(channel, value) {
+    this.channel_opacities[channel] = value;
     if (!this.meshrep[channel]) {
       return;
     }
@@ -274,6 +264,8 @@ export default class MeshVolume {
         transp = alpha < ALPHA_THRESHOLD;
       }
       this.meshrep[channel] = this.createMeshForChannel(channel, color, value, alpha, transp);
+      this.channel_opacities[channel] = alpha;
+      this.channel_colors[channel] = color;
       this.meshRoot.add(this.meshrep[channel]);
     }
   }
