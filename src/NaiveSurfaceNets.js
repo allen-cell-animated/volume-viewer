@@ -31,7 +31,7 @@
  */
 
 // MODIFIED 2018 BY DANIELT@ALLENINSTITUTE.ORG TO ACCEPT AN ISOVALUE AND RESCALE VERTEX POSITIONS
-import { BufferGeometry, Face3, Vector3, Geometry } from "three";
+import { BufferGeometry } from "three";
 var SurfaceNets = (function() {
   "use strict";
 
@@ -199,41 +199,41 @@ var SurfaceNets = (function() {
 function ConstructTHREEGeometry(surfaceNetResult) {
   var result = surfaceNetResult;
 
-  var geometry = new Geometry();
-  geometry.vertices.length = 0;
-  geometry.faces.length = 0;
-
+  var varray = new Float32Array(result.vertices.length * 3);
   for (var i = 0; i < result.vertices.length; ++i) {
     var v = result.vertices[i];
-    geometry.vertices.push(new Vector3(v[0], v[1], v[2]));
+    varray.push(v[0], v[1], v[2]);
   }
 
+  // count triangles; split quad faces
+  let n_triangles = 0;
   for (var i = 0; i < result.faces.length; ++i) {
     var f = result.faces[i];
-    // note what appears to be inverted winding order.
-    // I believe this is related to isosurface < or > testing but have not checked.
     if (f.length === 3) {
-      geometry.faces.push(new Face3(f[2], f[1], f[0]));
+      n_triangles += 1;
     } else if (f.length === 4) {
-      geometry.faces.push(new Face3(f[2], f[1], f[0]));
-      geometry.faces.push(new Face3(f[3], f[2], f[0]));
+      n_triangles += 2;
     } else {
       //Polygon needs to be subdivided...
       console.log("unhandled poly with " + f.length + " vertices");
     }
   }
 
+  var inds = new Uint32Array(n_triangles * 3);
+
+  for (var i = 0; i < result.faces.length; ++i) {
+    var f = result.faces[i];
+    // note what appears to be inverted winding order.
+    // I believe this is related to isosurface < or > testing but have not checked.
+    if (f.length === 3) {
+      inds.push(f[2], f[1], f[0]);
+    } else if (f.length === 4) {
+      inds.push(f[2], f[1], f[0]);
+      inds.push(f[3], f[2], f[0]);
+    }
+  }
+
   var geo = new BufferGeometry();
-  var varray = new Float32Array(geometry.vertices.length * 3);
-  var inds = new Uint32Array(geometry.faces.length * 3);
-  for (i = 0; i < geometry.vertices.length; ++i) {
-    geometry.vertices[i].toArray(varray, i * 3);
-  }
-  for (i = 0; i < geometry.faces.length; ++i) {
-    inds[i * 3 + 0] = geometry.faces[i].a;
-    inds[i * 3 + 1] = geometry.faces[i].b;
-    inds[i * 3 + 2] = geometry.faces[i].c;
-  }
   geo.addAttribute("position", new BufferAttribute(varray, 3));
   geo.setIndex(new BufferAttribute(inds, 1));
 
