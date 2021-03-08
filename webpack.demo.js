@@ -34,10 +34,10 @@ module.exports = {
         exclude: /node_modules/,
         use: "babel-loader",
       },
-      {
-        test: /Worker\.js$/,
-        use: "worker-loader?inline=true",
-      },
+      // {
+      //   test: /Worker\.js$/,
+      //   use: "worker-loader?inline=true",
+      // },
       {
         test: /\.(obj)$/,
         use: ["raw-loader?inline=true"],

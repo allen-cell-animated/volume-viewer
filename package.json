@@ -65,6 +65,7 @@
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.8.0",
-    "worker-loader": "^1.0.0"
+    "worker-loader": "^1.0.0",
+    "worker-plugin": "^5.0.0"
   }
 }

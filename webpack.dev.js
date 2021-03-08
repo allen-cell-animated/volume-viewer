@@ -4,12 +4,13 @@ const path = require("path");
 const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+const WorkerPlugin = require("worker-plugin");
 
 module.exports = {
-  entry: ["./public/index.js"],
+  entry: { bundle: "./public/index.js", FuseWorker: "./src/FuseWorker.js" },
   output: {
     path: path.resolve(__dirname, "volumeviewer"),
-    filename: "volume-viewer-ui.bundle.js",
+    filename: "[name].js",
     publicPath: "/volumeviewer/",
   },
   devtool: "cheap-module-source-map",
@@ -27,6 +28,7 @@ module.exports = {
       APP_VERSION: JSON.stringify(require("./package.json").version),
     }),
     new CopyWebpackPlugin({ patterns: ["public"] }),
+    new WorkerPlugin({ globalObject: "self" }),
   ],
   resolve: {
     extensions: [".js"],
@@ -39,10 +41,10 @@ module.exports = {
         exclude: /node_modules/,
         use: "babel-loader",
       },
-      {
-        test: /Worker\.js$/,
-        use: "worker-loader?inline=true",
-      },
+      // {
+      //   test: /worker\.js$/,
+      //   use: "worker-loader?inline=true",
+      // },
       {
         test: /\.(obj)$/,
         use: ["raw-loader?inline=true"],
