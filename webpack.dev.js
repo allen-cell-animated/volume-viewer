@@ -7,7 +7,7 @@ const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const WorkerPlugin = require("worker-plugin");
 
 module.exports = {
-  entry: { bundle: "./public/index.js", FuseWorker: "./src/FuseWorker.js" },
+  entry: { bundle: "./public/index.js", worker: "./src/FuseWorker.js" },
   output: {
     path: path.resolve(__dirname, "volumeviewer"),
     filename: "[name].js",
@@ -41,10 +41,6 @@ module.exports = {
         exclude: /node_modules/,
         use: "babel-loader",
       },
-      // {
-      //   test: /worker\.js$/,
-      //   use: "worker-loader?inline=true",
-      // },
       {
         test: /\.(obj)$/,
         use: ["raw-loader?inline=true"],

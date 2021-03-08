@@ -6,10 +6,10 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
 module.exports = {
-  entry: ["./public/index.js"],
+  entry: { bundle: "./public/index.js", worker: "./src/FuseWorker.js" },
   output: {
     path: path.resolve(__dirname, "demo"),
-    filename: "image-viewer-ui.bundle.js",
+    filename: "[name].js",
     publicPath: "",
   },
   devtool: "cheap-module-source-map",
@@ -22,6 +22,7 @@ module.exports = {
       APP_VERSION: JSON.stringify(require("./package.json").version),
     }),
     new CopyWebpackPlugin(["public"]),
+    new WorkerPlugin({ globalObject: "self" }),
   ],
   resolve: {
     extensions: [".js"],
@@ -34,10 +35,6 @@ module.exports = {
         exclude: /node_modules/,
         use: "babel-loader",
       },
-      // {
-      //   test: /Worker\.js$/,
-      //   use: "worker-loader?inline=true",
-      // },
       {
         test: /\.(obj)$/,
         use: ["raw-loader?inline=true"],
