@@ -204,7 +204,7 @@ export class vrObjectControls {
       v1 = v1.normalize();
 
       var mio = new Matrix4();
-      mio.getInverse(obj3d.matrixWorld);
+      mio.copy(obj3d.matrixWorld).invert();
 
       v0 = v0.transformDirection(mio);
       v0 = v0.normalize();

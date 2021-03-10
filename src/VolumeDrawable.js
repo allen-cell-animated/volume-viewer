@@ -264,7 +264,8 @@ export default class VolumeDrawable {
     // TODO: this is inefficient, as this work is duplicated by threejs.
     // we need camera matrix up to date before giving the 3d objects a chance to use it.
     canvas.camera.updateMatrixWorld(true);
-    canvas.camera.matrixWorldInverse.getInverse(canvas.camera.matrixWorld);
+
+    canvas.camera.matrixWorldInverse.copy(canvas.camera.matrixWorld).invert();
 
     const isVR = canvas.isVR();
     if (isVR) {

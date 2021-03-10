@@ -74,7 +74,7 @@ export default class RayMarchedAtlasVolume {
     var mvm = new Matrix4();
     mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.cubeMesh.matrixWorld);
     var mi = new Matrix4();
-    mi.getInverse(mvm);
+    mi.copy(mvm).invert();
 
     this.setUniform("inverseModelViewMatrix", mi, true, true);
 
