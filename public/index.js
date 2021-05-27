@@ -517,6 +517,13 @@ function showChannelUI(volume) {
           view3D.updateLuts(volume);
         };
       })(i),
+      segmentation_color: (function(j) {
+        return function() {
+          const lut = volume.getHistogram(j).lutGenerator_labelColors();
+          volume.setLut(j, lut.lut);
+          view3D.updateLuts(volume);
+        };
+      })(i),
     });
     var f = gui.addFolder("Channel " + myState.infoObj.channel_names[i]);
     myState.channelFolderNames.push("Channel " + myState.infoObj.channel_names[i]);
@@ -631,6 +638,7 @@ function showChannelUI(volume) {
     f.add(myState.infoObj.channelGui[i], "auto0");
     f.add(myState.infoObj.channelGui[i], "bestFit");
     f.add(myState.infoObj.channelGui[i], "pct50_98");
+    f.add(myState.infoObj.channelGui[i], "segmentation_color");
     f.add(myState.infoObj.channelGui[i], "glossiness")
       .max(100.0)
       .min(0.0)

@@ -1,3 +1,5 @@
+import { getColorByChannelIndex } from "./constants/colors.js";
+
 (function() {
   if (!Math.clamp) {
     Math.clamp = function(val, cmin, cmax) {
@@ -157,6 +159,38 @@ export default class Histogram {
     var b = this.dataMin;
     var e = this.dataMax;
     return this.lutGenerator_minMax(b, e);
+  }
+
+  /**
+   * Generate a lookup table with a different color per intensity value
+   * @return {Lut}
+   */
+  lutGenerator_labelColors() {
+    const lut = new Uint8Array(256 * 4).fill(0);
+    const controlPoints = [];
+    controlPoints.push({ x: 0, opacity: 0, color: [0, 0, 0] });
+
+    // assumes exactly one bin per intensity value?
+    // skip zero!!!
+    for (let i = 1; i < this.bins.length; ++i) {
+      if (this.bins[i] > 0) {
+        const rgb = getColorByChannelIndex(i);
+
+        lut[i * 4 + 0] = rgb[0];
+        lut[i * 4 + 1] = rgb[1];
+        lut[i * 4 + 2] = rgb[2];
+        lut[i * 4 + 3] = 255;
+        controlPoints.push({ x: i, opacity: 1, color: [rgb[0], rgb[1], rgb[2]] });
+      } else {
+        // add a zero control point?
+        controlPoints.push({ x: i, opacity: 0, color: [0, 0, 0] });
+      }
+    }
+
+    return {
+      lut: lut,
+      controlPoints: controlPoints,
+    };
   }
 
   /**

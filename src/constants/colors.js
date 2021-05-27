@@ -51,6 +51,7 @@ function LCG(s) {
 var myrand = LCG(123);
 
 // if index exceeds defaultColors start choosing random ones
+// returns [r,g,b] 0-255 range
 export const getColorByChannelIndex = index => {
   if (!defaultColors[index]) {
     defaultColors[index] = HSVtoRGB(myrand(), myrand() * 0.5 + 0.5, myrand() * 0.5 + 0.5);
