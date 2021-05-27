@@ -117,8 +117,6 @@ export default class PathTracedVolume {
       ]),
 
       vertexShader: [
-        "#version 300 es",
-
         "precision highp float;",
         "precision highp int;",
 
@@ -132,19 +130,17 @@ export default class PathTracedVolume {
       ].join("\n"),
 
       fragmentShader: [
-        "#version 300 es",
-
         "precision highp float;",
         "precision highp int;",
         "precision highp sampler2D;",
 
         "uniform sampler2D tTexture0;",
         "in vec2 vUv;",
-        "out vec4 out_FragColor;",
+        "//out vec4 out_FragColor;",
 
         "void main()",
         "{",
-        "out_FragColor = texture(tTexture0, vUv);",
+        "pc_fragColor = texture(tTexture0, vUv);",
         "}",
       ].join("\n"),
     };
@@ -164,8 +160,6 @@ export default class PathTracedVolume {
       ]),
 
       vertexShader: [
-        "#version 300 es",
-
         "precision highp float;",
         "precision highp int;",
 
@@ -179,8 +173,6 @@ export default class PathTracedVolume {
       ].join("\n"),
 
       fragmentShader: [
-        "#version 300 es",
-
         "precision highp float;",
         "precision highp int;",
         "precision highp sampler2D;",
@@ -188,7 +180,7 @@ export default class PathTracedVolume {
         "uniform float gInvExposure;",
         "uniform sampler2D tTexture0;",
         "in vec2 vUv;",
-        "out vec4 out_FragColor;",
+        "//out vec4 out_FragColor;",
 
         // Used to convert from XYZ to linear RGB space
         "const mat3 XYZ_2_RGB = (mat3(",
@@ -211,7 +203,7 @@ export default class PathTracedVolume {
         "pixelColor.rgb = 1.0-exp(-pixelColor.rgb*gInvExposure);",
         "pixelColor = clamp(pixelColor, 0.0, 1.0);",
 
-        "out_FragColor = pixelColor;", // sqrt(pixelColor);',
+        "pc_fragColor = pixelColor;", // sqrt(pixelColor);',
         //'out_FragColor = pow(pixelColor, vec4(1.0/2.2));',
         "}",
       ].join("\n"),
@@ -359,7 +351,7 @@ export default class PathTracedVolume {
 
     // apply volume translation and rotation:
     // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
-    const m = new Matrix4().makeRotationFromQuaternion(new Quaternion().setFromEuler(this.rotation).inverse());
+    const m = new Matrix4().makeRotationFromQuaternion(new Quaternion().setFromEuler(this.rotation).invert());
     mypos.applyMatrix4(m);
     mypos.sub(this.translation);
     myup.applyMatrix4(m);

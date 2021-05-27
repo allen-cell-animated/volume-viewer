@@ -3,7 +3,6 @@ import { Light, AREA_LIGHT, SKY_LIGHT } from "../Light";
 
 // threejs passthrough vertex shader for fullscreen quad
 export const pathTracingVertexShaderSrc = `
-#version 300 es
 precision highp float;
 precision highp int;
 out vec2 vUv;
@@ -15,8 +14,6 @@ void main()
 `;
 
 export const pathTracingFragmentShaderSrc = `
-#version 300 es
-
 precision highp float;
 precision highp int;
 precision highp sampler2D;
@@ -37,7 +34,7 @@ const int ShaderType_Mixed = 2;
 const float MAX_RAY_LEN = 1500000.0f;
 
 in vec2 vUv;
-out vec4 out_FragColor;
+//out vec4 out_FragColor;
 
 struct Camera {
   vec3 m_from;
@@ -93,7 +90,7 @@ uniform float gGradientFactor;
 uniform float uShowLights;
 uniform vec3 flipVolume;
 
-// per channel 
+// per channel
 // the luttexture is a 256x4 rgba texture
 // each row is a 256 element lookup table.
 uniform sampler2D g_lutTexture;
@@ -170,9 +167,9 @@ vec2 getConcentricDiskSample(in vec2 U)
   // Map 0..1 to -1..1
   float sx = 2.0 * U.x - 1.0;
   float sy = 2.0 * U.y - 1.0;
-  
+
   // Map square to (r,theta)
-  
+
   // Handle degeneracy at the origin
   if (sx == 0.0 && sy == 0.0)
   {
@@ -209,7 +206,7 @@ vec2 getConcentricDiskSample(in vec2 U)
       theta = 6.0f + sx/r;
     }
   }
-  
+
   theta *= PI_OVER_4;
 
   return vec2(r*cos(theta), r*sin(theta));
@@ -237,7 +234,7 @@ Ray GenerateCameraRay(in Camera cam, in vec2 Pixel, in vec2 ApertureRnd)
   // we could also have flipped m_screen and m_invScreen, or cam.m_V?
   vec2 ScreenPoint = vec2(
     cam.m_screen.x + (cam.m_invScreen.x * Pixel.x),
-    cam.m_screen.z + (cam.m_invScreen.y * Pixel.y)  
+    cam.m_screen.z + (cam.m_invScreen.y * Pixel.y)
   );
   vec3 dxy = (ScreenPoint.x * cam.m_U) + (-ScreenPoint.y * cam.m_V);
 
@@ -381,10 +378,10 @@ struct LightingSample {
 
 LightingSample LightingSample_LargeStep(inout uvec2 seed) {
   return LightingSample(
-    rand(seed), 
+    rand(seed),
     vec2(rand(seed), rand(seed)),
     vec2(rand(seed), rand(seed)),
-    rand(seed), 
+    rand(seed),
     rand(seed)
     );
 }
@@ -791,7 +788,7 @@ float PowerHeuristic(float nf, float fPdf, float ng, float gPdf)
   float g = ng * gPdf;
   // The power heuristic is Veach's MIS balance heuristic except each component is being squared
   // balance heuristic would be f/(f+g) ...?
-  return (f * f) / (f * f + g * g); 
+  return (f * f) / (f * f + g * g);
 }
 
 float MISContribution(float pdf1, float pdf2)
@@ -826,7 +823,7 @@ bool DoesSecondaryRayScatterInVolume(inout Ray R, inout uvec2 seed)
 
     if (MinT > MaxT)
       return false;
-    
+
     intensity = GetNormalizedIntensityMax4ch(Ps, ch);
     SigmaT = gDensityScale * GetOpacity(intensity, ch);
 
@@ -877,24 +874,24 @@ vec3 EstimateDirectLight(int shaderType, float Density, int ch, in Light light, 
   float glossiness = GetGlossinessN(Density, ch);
 
   // can N and Wo be coincident????
-  vec3 nu = normalize(cross(N, Wo)); 
+  vec3 nu = normalize(cross(N, Wo));
   vec3 nv = normalize(cross(N, nu));
 
   // the IoR here is hard coded... and unused!!!!
   VolumeShader Shader = VolumeShader(shaderType, RGBtoXYZ(diffuse), RGBtoXYZ(specular), 2.5f, glossiness, N, nu, nv);
 
   float LightPdf = 1.0f, ShaderPdf = 1.0f;
-  
-  Ray Rl = Ray(vec3(0,0,0), vec3(0,0,1.0), 0.0, MAX_RAY_LEN); 
+
+  Ray Rl = Ray(vec3(0,0,0), vec3(0,0,1.0), 0.0, MAX_RAY_LEN);
   // Rl is ray from light toward Pe in volume, with a max traversal of the distance from Pe to Light sample pos.
   Li = Light_SampleL(light, Pe, Rl, LightPdf, LS);
-  
+
   // Wi: negate ray direction: from volume scatter point toward light...?
   vec3 Wi = -Rl.m_D, P = vec3(0,0,0);
 
   // we will calculate two lighting contributions and combine them by MIS.
 
-  F = Shader_F(Shader,Wo, Wi); 
+  F = Shader_F(Shader,Wo, Wi);
 
   ShaderPdf = Shader_Pdf(Shader, Wo, Wi);
 
@@ -930,7 +927,7 @@ vec3 EstimateDirectLight(int shaderType, float Density, int ch, in Light light, 
         {
           float dotProd = 1.0;
           if (shaderType == ShaderType_Brdf){
-      
+
             // (use abs or clamp here?)
             dotProd = abs(dot(Wi, N));
           }
@@ -960,8 +957,8 @@ vec3 UniformSampleOneLight(int shaderType, float Density, int ch, in vec3 Wo, in
   Light light = gLights[WhichLight];
 
   return float(NUM_LIGHTS) * EstimateDirectLight(shaderType, Density, ch, light, LS, Wo, Pe, N, seed);
-  
-}    
+
+}
 
 bool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)
 {
@@ -979,7 +976,7 @@ bool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)
   // notes, not necessarily coherent:
   // ray march along the ray's projected path and keep an average sigmaT value.
   // The distance is weighted by the intensity at each ray step sample. High intensity increases the apparent distance.
-  // When the distance has become greater than the average sigmaT value given by -log(RandomFloat[0, 1]) / averageSigmaT 
+  // When the distance has become greater than the average sigmaT value given by -log(RandomFloat[0, 1]) / averageSigmaT
   // then that would be considered the interaction position.
 
   // sigmaT = sigmaA + sigmaS = absorption coeff + scattering coeff = extinction coeff
@@ -988,17 +985,17 @@ bool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)
 
   // importance sampling the exponential function to produce a free path distance S
   // the PDF is p(t) = sigmaT * exp(-sigmaT * t)
-  // In a homogeneous volume, 
+  // In a homogeneous volume,
   // S is the free-path distance = -ln(1-zeta)/sigmaT where zeta is a random variable
   // density scale = 0   => S --> 0..inf.  Low density means randomly sized ray paths
   // density scale = inf => S --> 0.       High density means short ray paths!
-  
+
   // note that ln(x:0..1) is negative
 
   // here gDensityScale represents sigmaMax, a majorant of sigmaT
   // it is a parameter that should be set as close to the max extinction coefficient as possible.
-  float S	= -log(rand(seed)) / gDensityScale;  
-  
+  float S	= -log(rand(seed)) / gDensityScale;
+
   float Sum		= 0.0f;
   float SigmaT	= 0.0f; // accumulated extinction along ray march
 
@@ -1007,7 +1004,7 @@ bool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)
 
   int ch = 0;
   float intensity = 0.0;
-  
+
   // ray march until we have traveled S (or hit the maxT of the ray)
   while (Sum < S)
   {
@@ -1016,7 +1013,7 @@ bool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)
     // if we exit the volume with no scattering
     if (MinT > MaxT)
       return false;
-    
+
     intensity = GetNormalizedIntensityMax4ch(Ps, ch);
     SigmaT = gDensityScale * GetOpacity(intensity, ch);
 
@@ -1026,7 +1023,7 @@ bool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)
 
   // at this time, MinT - original MinT is the T transmission distance before a scatter event.
   // Ps is the point
-  
+
   return true;
 }
 
@@ -1038,21 +1035,21 @@ vec4 CalculateRadiance(inout uvec2 seed) {
   vec3 Lv = BLACK, Li = BLACK;
 
   //Ray Re = Ray(vec3(0,0,0), vec3(0,0,1), 0.0, MAX_RAY_LEN);
-  
+
   vec2 UV = vUv*uResolution + vec2(rand(seed), rand(seed));
 
   Ray Re = GenerateCameraRay(gCamera, UV, vec2(rand(seed), rand(seed)));
-  
+
   //return vec4(vUv, 0.0, 1.0);
   //return vec4(0.5*(Re.m_D + 1.0), 1.0);
   //return vec4(Re.m_D, 1.0);
 
-  //Re.m_MinT = 0.0f; 
+  //Re.m_MinT = 0.0f;
   //Re.m_MaxT = MAX_RAY_LEN;
 
   vec3 Pe = vec3(0,0,0), Pl = vec3(0,0,0);
   float lpdf = 0.0;
-  
+
   float alpha = 0.0;
   // find point Pe along ray Re
   if (SampleScatteringEvent(Re, seed, Pe))
@@ -1066,7 +1063,7 @@ vec4 CalculateRadiance(inout uvec2 seed) {
       // set sample pixel value in frame estimate (prior to accumulation)
       return vec4(Li, 1.0);
     }
-    
+
     int ch = 0;
     float D = GetNormalizedIntensityMax4ch(Pe, ch);
 
@@ -1116,7 +1113,7 @@ vec4 CalculateRadiance(inout uvec2 seed) {
 //    if (uShowLights > 0.0) {
 //      int n = GetNearestLight(Ray(Re.m_O, Re.m_D, 0.0f, 1000000.0f), Li, Pl, lpdf);
 //      if (n > -1)
-//        Lv = Li;  
+//        Lv = Li;
 //    }
 
     //Lv = vec3(r,0,0);
@@ -1140,13 +1137,13 @@ void main()
 
   // perform path tracing and get resulting pixel color
   vec4 pixelColor = CalculateRadiance( seed );
-    
+
   vec4 previousColor = texture(tPreviousTexture, vUv);
   if (uSampleCounter < 1.0) {
     previousColor = vec4(0,0,0,0);
   }
 
-  out_FragColor = CumulativeMovingAverage(previousColor, pixelColor, uSampleCounter);
+  pc_fragColor = CumulativeMovingAverage(previousColor, pixelColor, uSampleCounter);
 }
 `;
 

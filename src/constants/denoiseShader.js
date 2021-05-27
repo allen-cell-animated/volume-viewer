@@ -45,8 +45,6 @@ export function denoiseShaderUniforms() {
 }
 
 export const denoiseVertexShaderSrc = `
-#version 300 es
-
 precision highp float;
 precision highp int;
 
@@ -60,8 +58,6 @@ void main()
 `;
 
 export const denoiseFragmentShaderSrc = `
-#version 300 es
-
 precision highp float;
 precision highp int;
 precision highp sampler2D;
@@ -77,7 +73,7 @@ uniform vec2 gDenoisePixelSize;
 
 uniform sampler2D tTexture0;
 in vec2 vUv;
-out vec4 out_FragColor;
+//out vec4 out_FragColor;
 
 // Used to convert from XYZ to linear RGB space
 const mat3 XYZ_2_RGB = (mat3(
@@ -152,6 +148,6 @@ void main()
   clr.rgb = mix(clr.rgb, clr00.rgb, LerpQ);
   clr.rgb = clamp(clr.rgb, 0.0, 1.0);
 
-  out_FragColor = vec4(clr.rgb, clr00.a);
+  pc_fragColor = vec4(clr.rgb, clr00.a);
 }
 `;

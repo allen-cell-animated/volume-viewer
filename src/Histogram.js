@@ -169,6 +169,14 @@ export default class Histogram {
     const lut = new Uint8Array(256 * 4).fill(0);
     const controlPoints = [];
     controlPoints.push({ x: 0, opacity: 0, color: [0, 0, 0] });
+    let lastr = 0;
+    let lastg = 0;
+    let lastb = 0;
+    let lasta = 0;
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    let a = 0;
 
     // assumes exactly one bin per intensity value?
     // skip zero!!!
@@ -180,10 +188,25 @@ export default class Histogram {
         lut[i * 4 + 1] = rgb[1];
         lut[i * 4 + 2] = rgb[2];
         lut[i * 4 + 3] = 255;
-        controlPoints.push({ x: i, opacity: 1, color: [rgb[0], rgb[1], rgb[2]] });
+
+        r = rgb[0];
+        g = rgb[1];
+        b = rgb[2];
+        a = 1;
       } else {
         // add a zero control point?
-        controlPoints.push({ x: i, opacity: 0, color: [0, 0, 0] });
+        r = 0;
+        g = 0;
+        b = 0;
+        a = 0;
+      }
+      // if current control point is same as last one don't add it
+      if (r !== lastr || g !== lastg || b !== lastb || a !== lasta) {
+        controlPoints.push({ x: i, opacity: a, color: [r, g, b] });
+        lastr = r;
+        lastg = g;
+        lastb = b;
+        lasta = a;
       }
     }
 
