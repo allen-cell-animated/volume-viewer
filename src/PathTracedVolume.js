@@ -136,7 +136,6 @@ export default class PathTracedVolume {
 
         "uniform sampler2D tTexture0;",
         "in vec2 vUv;",
-        "//out vec4 out_FragColor;",
 
         "void main()",
         "{",
@@ -180,7 +179,6 @@ export default class PathTracedVolume {
         "uniform float gInvExposure;",
         "uniform sampler2D tTexture0;",
         "in vec2 vUv;",
-        "//out vec4 out_FragColor;",
 
         // Used to convert from XYZ to linear RGB space
         "const mat3 XYZ_2_RGB = (mat3(",

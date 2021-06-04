@@ -34,7 +34,6 @@ const int ShaderType_Mixed = 2;
 const float MAX_RAY_LEN = 1500000.0f;
 
 in vec2 vUv;
-//out vec4 out_FragColor;
 
 struct Camera {
   vec3 m_from;
