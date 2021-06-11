@@ -9,7 +9,7 @@ import { getColorByChannelIndex } from "./constants/colors.js";
 })();
 
 function controlPointToRGBA(controlPoint) {
-  return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], controlPoint.opacity * 255];
+  return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], Math.floor(controlPoint.opacity * 255)];
 }
 
 function lerp(xmin, xmax, a) {
@@ -85,7 +85,7 @@ export default class Histogram {
     // simple linear mapping for actual range
     var b = lvl - wnd * 0.5;
     var e = lvl + wnd * 0.5;
-    return this.lutGenerator_minMax(b * 256, e * 256);
+    return this.lutGenerator_minMax(b * 255, e * 255);
   }
 
   /**
@@ -107,13 +107,13 @@ export default class Histogram {
     var lut = new Uint8Array(256 * 4);
     let range = e - b;
     if (range < 1) {
-      range = 256;
+      range = 255;
     }
     for (var x = 0; x < lut.length / 4; ++x) {
       lut[x * 4 + 0] = 255;
       lut[x * 4 + 1] = 255;
       lut[x * 4 + 2] = 255;
-      lut[x * 4 + 3] = Math.clamp(((x - b) * 256) / range, 0, 255);
+      lut[x * 4 + 3] = Math.clamp(((x - b) * 255) / range, 0, 255);
     }
     return {
       lut: lut,
@@ -131,7 +131,7 @@ export default class Histogram {
    * @return {Lut}
    */
   lutGenerator_fullRange() {
-    var lut = new Uint8Array(256);
+    var lut = new Uint8Array(256 * 4);
 
     // simple linear mapping for actual range
     for (var x = 0; x < lut.length / 4; ++x) {
@@ -365,44 +365,32 @@ export default class Histogram {
     if (div > 0) {
       var lut = new Uint8Array(256 * 4);
 
-      // compute lut as if continuous
-      for (let i = 0; i < lut.length / 4; ++i) {
+      // compute lut and track control points for the piecewise linear sections
+      const lutControlPoints = [{ x: 0, opacity: 0, color: [255, 255, 255] }];
+      lut[0] = 255;
+      lut[1] = 255;
+      lut[2] = 255;
+      lut[3] = 0;
+      let slope = 0;
+      let lastSlope = 0;
+      let opacity = 0;
+      let lastOpacity = 0;
+      for (let i = 1; i < lut.length / 4; ++i) {
         lut[i * 4 + 0] = 255;
         lut[i * 4 + 1] = 255;
         lut[i * 4 + 2] = 255;
-        lut[i * 4 + 3] = Math.clamp(255 * ((map[i] - map[0]) / div), 0, 255);
-      }
+        lastOpacity = opacity;
+        opacity = Math.clamp((map[i] - map[0]) / div, 0, 1);
+        lut[i * 4 + 3] = 255 * opacity;
 
-      // compute control points piecewise linear.
-      const lutControlPoints = [{ x: 0, opacity: 0, color: [255, 255, 255] }];
-      // read up to the first nonzero.
-      let i = 1;
-      for (i = 1; i < map.length; ++i) {
-        if (map[i] > 0) {
-          lutControlPoints.push({
-            x: i - 1,
-            opacity: 0,
-            color: [255, 255, 255],
-          });
-          break;
+        slope = opacity - lastOpacity;
+        // if map[i]-map[i-1] is the same as map[i+1]-map[i] then we are in a linear segment and do not need a new control point
+        if (slope != lastSlope) {
+          lutControlPoints.push({ x: i - 1, opacity: lastOpacity, color: [255, 255, 255] });
+          lastSlope = slope;
         }
       }
 
-      var lastOpac = 0;
-      var opac = 0;
-      for (var j = i; j < map.length; ++j) {
-        opac = (map[j] - map[0]) / div;
-        if (j % 8 === 0) {
-          if (Math.floor(opac * 255) !== Math.floor(lastOpac * 255)) {
-            lutControlPoints.push({
-              x: j,
-              opacity: opac,
-              color: [255, 255, 255],
-            });
-          }
-        }
-        lastOpac = opac;
-      }
       lutControlPoints.push({ x: 255, opacity: 1, color: [255, 255, 255] });
 
       return {

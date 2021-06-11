@@ -82,7 +82,7 @@ function checkChannelDataConstruction(c, index, imgdata) {
   expect(c.imgData.data).to.be.a("Uint8Array");
   expect(c.imgData.data.length).to.equal(imgdata.atlas_width * imgdata.atlas_height);
   expect(c.lut).to.be.a("Uint8Array");
-  expect(c.lut.length).to.equal(256);
+  expect(c.lut.length).to.equal(256 * 4);
 }
 
 describe("test volume", () => {
