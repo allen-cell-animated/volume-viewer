@@ -202,6 +202,9 @@ export default class Histogram {
       }
       // if current control point is same as last one don't add it
       if (r !== lastr || g !== lastg || b !== lastb || a !== lasta) {
+        if (lasta === 0) {
+          controlPoints.push({ x: i - 0.5, opacity: lasta, color: [lastr, lastg, lastb] });
+        }
         controlPoints.push({ x: i, opacity: a, color: [r, g, b] });
         lastr = r;
         lastg = g;
@@ -437,7 +440,7 @@ export default class Histogram {
     // if the first control point is after 0, act like there are 0s going all the way up to it.
     // or lerp up to the first point?
     for (let x = c0.x; x < 256; ++x) {
-      if (x > c1.x) {
+      while (x > c1.x) {
         // advance control points
         c0 = c1;
         color0 = color1;
@@ -451,6 +454,7 @@ export default class Histogram {
         color1 = controlPointToRGBA(c1);
       }
       if (c1.x === c0.x) {
+        // use c1
         a = 1.0;
       } else {
         a = (x - c0.x) / (c1.x - c0.x);

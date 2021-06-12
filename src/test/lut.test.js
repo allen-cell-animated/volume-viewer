@@ -43,6 +43,33 @@ describe("test histogram", () => {
     });
   });
 
+  describe("interpolates opacity across consecutive control points", () => {
+    it("has interpolated opacity correctly", () => {
+      const controlPoints = [
+        { x: 0, color: [255, 255, 255], opacity: 0 },
+        { x: 1, color: [255, 255, 255], opacity: 1.0 },
+        { x: 255, color: [255, 255, 255], opacity: 1.0 },
+      ];
+      const lut = histogram.lutGenerator_fromControlPoints(controlPoints);
+      expect(lut.lut[0 * 4 + 3]).to.equal(0);
+      expect(lut.lut[1 * 4 + 3]).to.equal(255);
+      expect(lut.lut[2 * 4 + 3]).to.equal(255);
+    });
+    it("has interpolated opacity correctly with fractional control point positions", () => {
+      const controlPoints = [
+        { x: 0, color: [255, 255, 255], opacity: 0 },
+        { x: 0.1, color: [255, 255, 255], opacity: 0 },
+        { x: 0.9, color: [255, 255, 255], opacity: 1.0 },
+        { x: 1, color: [255, 255, 255], opacity: 1.0 },
+        { x: 255, color: [255, 255, 255], opacity: 1.0 },
+      ];
+      const lut = histogram.lutGenerator_fromControlPoints(controlPoints);
+      expect(lut.lut[0 * 4 + 3]).to.equal(0);
+      expect(lut.lut[1 * 4 + 3]).to.equal(255);
+      expect(lut.lut[2 * 4 + 3]).to.equal(255);
+    });
+  });
+
   describe("generated lut single control point", () => {
     const controlPoints = [{ x: 127, color: [255, 255, 255], opacity: 1.0 }];
     const lut = histogram.lutGenerator_fromControlPoints(controlPoints);
@@ -62,7 +89,7 @@ describe("test histogram", () => {
 
   describe("generate lut for segmentation data labels", () => {
     // make some data with 3 label values
-    const labeldata = new Uint8Array([1, 1, 1, 2, 2, 2, 4, 4, 4]);
+    const labeldata = new Uint8Array([1, 1, 1, 2, 2, 2, 4, 4, 4, 12, 12, 12]);
     const labelHistogram = new Histogram(labeldata);
 
     const lutObj = labelHistogram.lutGenerator_labelColors();
@@ -72,6 +99,10 @@ describe("test histogram", () => {
       expect(lutObj.lut[2 * 4 + 3]).to.equal(255);
       expect(lutObj.lut[3 * 4 + 3]).to.equal(0);
       expect(lutObj.lut[4 * 4 + 3]).to.equal(255);
+      expect(lutObj.lut[5 * 4 + 3]).to.equal(0);
+      expect(lutObj.lut[11 * 4 + 3]).to.equal(0);
+      expect(lutObj.lut[12 * 4 + 3]).to.equal(255);
+      expect(lutObj.lut[13 * 4 + 3]).to.equal(0);
     });
 
     // reconcile lut with control points
