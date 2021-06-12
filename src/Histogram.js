@@ -380,13 +380,13 @@ export default class Histogram {
         lut[i * 4 + 1] = 255;
         lut[i * 4 + 2] = 255;
         lastOpacity = opacity;
-        opacity = Math.clamp((map[i] - map[0]) / div, 0, 1);
-        lut[i * 4 + 3] = 255 * opacity;
+        opacity = Math.clamp(Math.round(255 * (map[i] - map[0])), 0, 255);
+        lut[i * 4 + 3] = opacity;
 
         slope = opacity - lastOpacity;
         // if map[i]-map[i-1] is the same as map[i+1]-map[i] then we are in a linear segment and do not need a new control point
         if (slope != lastSlope) {
-          lutControlPoints.push({ x: i - 1, opacity: lastOpacity, color: [255, 255, 255] });
+          lutControlPoints.push({ x: i - 1, opacity: lastOpacity / 255.0, color: [255, 255, 255] });
           lastSlope = slope;
         }
       }
