@@ -83,9 +83,9 @@ describe("test histogram", () => {
 
   describe("validate auto generators control points against their Lut", () => {
     // create a random dataset
-    const data = new Uint8Array(16);
-    for (let i = 0; i < 16; ++i) {
-      data[i] = Math.floor(Math.random() * 256);
+    const data = new Uint8Array(1024);
+    for (let i = 0; i < 1024; ++i) {
+      data[i] = Math.clamp(Math.floor(Math.random() * 256), 0, 255);
     }
     const histogram = new Histogram(data);
 
@@ -126,6 +126,27 @@ describe("test histogram", () => {
     });
     it("is consistent for equalize", () => {
       const lut = histogram.lutGenerator_equalize();
+      const secondlut = histogram.lutGenerator_fromControlPoints(lut.controlPoints);
+      expect(lut.lut).to.eql(secondlut.lut);
+    });
+    it("is consistent for a degenerate set of white,0 control points", () => {
+      const lutArr = new Uint8Array(1024);
+      for (let i = 0; i < 1024 / 4; ++i) {
+        lutArr[i * 4 + 0] = 255;
+        lutArr[i * 4 + 1] = 255;
+        lutArr[i * 4 + 2] = 255;
+        lutArr[i * 4 + 3] = 0;
+      }
+      const lut = {
+        lut: lutArr,
+        controlPoints: [
+          { x: 0, color: [255, 255, 255], opacity: 0 },
+          { x: 0, color: [255, 255, 255], opacity: 0 },
+          { x: 4, color: [255, 255, 255], opacity: 0 },
+          { x: 8, color: [255, 255, 255], opacity: 0 },
+          { x: 255, color: [255, 255, 255], opacity: 0 },
+        ],
+      };
       const secondlut = histogram.lutGenerator_fromControlPoints(lut.controlPoints);
       expect(lut.lut).to.eql(secondlut.lut);
     });

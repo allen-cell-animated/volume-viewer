@@ -407,6 +407,7 @@ export default class Histogram {
   // @return {Uint8Array} array of length 256*4 representing the rgba values of the gradient
   lutGenerator_fromControlPoints(controlPoints) {
     const lut = new Uint8Array(256 * 4).fill(0);
+
     if (controlPoints.length === 0) {
       return { lut: lut, controlPoints: controlPoints };
     }
@@ -449,7 +450,11 @@ export default class Histogram {
         }
         color1 = controlPointToRGBA(c1);
       }
-      a = (x - c0.x) / (c1.x - c0.x);
+      if (c1.x === c0.x) {
+        a = 1.0;
+      } else {
+        a = (x - c0.x) / (c1.x - c0.x);
+      }
       // lerp the colors
       lut[x * 4 + 0] = lerp(color0[0], color1[0], a);
       lut[x * 4 + 1] = lerp(color0[1], color1[1], a);
