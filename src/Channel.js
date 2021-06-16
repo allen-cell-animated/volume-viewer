@@ -1,4 +1,5 @@
 import Histogram from "./Histogram";
+import { LUT_ARRAY_LENGTH } from "./Histogram";
 
 // Data and processing for a single channel
 export default class Channel {
@@ -6,6 +7,8 @@ export default class Channel {
     this.loaded = false;
     this.imgData = null;
     this.name = name;
+    this.histogram = new Histogram([]);
+    this.lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
   }
 
   getHistogram() {

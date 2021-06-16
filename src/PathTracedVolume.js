@@ -25,6 +25,7 @@ import {
   pathTracingUniforms,
   pathTracingVertexShaderSrc,
 } from "./constants/volumePTshader.js";
+import { LUT_ARRAY_LENGTH } from "./Histogram.js";
 
 export default class PathTracedVolume {
   constructor(volume) {
@@ -58,7 +59,7 @@ export default class PathTracedVolume {
 
     // create Lut textures
     // empty array
-    var lutData = new Uint8Array(256 * 4 * 4).fill(1);
+    var lutData = new Uint8Array(LUT_ARRAY_LENGTH * 4).fill(1);
     const lut0 = new DataTexture(lutData, 256, 4, RGBAFormat, UnsignedByteType);
     lut0.minFilter = lut0.magFilter = LinearFilter;
     lut0.needsUpdate = true;
@@ -644,7 +645,10 @@ export default class PathTracedVolume {
   updateLuts() {
     for (let i = 0; i < this.pathTracingUniforms.g_nChannels.value; ++i) {
       const channel = this.viewChannels[i];
-      this.pathTracingUniforms.g_lutTexture.value.image.data.set(this.volume.channels[channel].lut, i * 256 * 4);
+      this.pathTracingUniforms.g_lutTexture.value.image.data.set(
+        this.volume.channels[channel].lut,
+        i * LUT_ARRAY_LENGTH
+      );
 
       this.pathTracingUniforms.g_intensityMax.value.setComponent(
         i,
