@@ -1,3 +1,5 @@
+import { getColorByChannelIndex } from "./constants/colors.js";
+
 (function() {
   if (!Math.clamp) {
     Math.clamp = function(val, cmin, cmax) {
@@ -7,7 +9,7 @@
 })();
 
 function controlPointToRGBA(controlPoint) {
-  return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], controlPoint.opacity * 255];
+  return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], Math.floor(controlPoint.opacity * 255)];
 }
 
 function lerp(xmin, xmax, a) {
@@ -83,7 +85,7 @@ export default class Histogram {
     // simple linear mapping for actual range
     var b = lvl - wnd * 0.5;
     var e = lvl + wnd * 0.5;
-    return this.lutGenerator_minMax(b * 256, e * 256);
+    return this.lutGenerator_minMax(b * 255, e * 255);
   }
 
   /**
@@ -105,13 +107,13 @@ export default class Histogram {
     var lut = new Uint8Array(256 * 4);
     let range = e - b;
     if (range < 1) {
-      range = 256;
+      range = 255;
     }
     for (var x = 0; x < lut.length / 4; ++x) {
       lut[x * 4 + 0] = 255;
       lut[x * 4 + 1] = 255;
       lut[x * 4 + 2] = 255;
-      lut[x * 4 + 3] = Math.clamp(((x - b) * 256) / range, 0, 255);
+      lut[x * 4 + 3] = Math.clamp(((x - b) * 255) / range, 0, 255);
     }
     return {
       lut: lut,
@@ -129,7 +131,7 @@ export default class Histogram {
    * @return {Lut}
    */
   lutGenerator_fullRange() {
-    var lut = new Uint8Array(256);
+    var lut = new Uint8Array(256 * 4);
 
     // simple linear mapping for actual range
     for (var x = 0; x < lut.length / 4; ++x) {
@@ -157,6 +159,64 @@ export default class Histogram {
     var b = this.dataMin;
     var e = this.dataMax;
     return this.lutGenerator_minMax(b, e);
+  }
+
+  /**
+   * Generate a lookup table with a different color per intensity value
+   * @return {Lut}
+   */
+  lutGenerator_labelColors() {
+    const lut = new Uint8Array(256 * 4).fill(0);
+    const controlPoints = [];
+    controlPoints.push({ x: 0, opacity: 0, color: [0, 0, 0] });
+    let lastr = 0;
+    let lastg = 0;
+    let lastb = 0;
+    let lasta = 0;
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    let a = 0;
+
+    // assumes exactly one bin per intensity value?
+    // skip zero!!!
+    for (let i = 1; i < this.bins.length; ++i) {
+      if (this.bins[i] > 0) {
+        const rgb = getColorByChannelIndex(i);
+
+        lut[i * 4 + 0] = rgb[0];
+        lut[i * 4 + 1] = rgb[1];
+        lut[i * 4 + 2] = rgb[2];
+        lut[i * 4 + 3] = 255;
+
+        r = rgb[0];
+        g = rgb[1];
+        b = rgb[2];
+        a = 1;
+      } else {
+        // add a zero control point?
+        r = 0;
+        g = 0;
+        b = 0;
+        a = 0;
+      }
+      // if current control point is same as last one don't add it
+      if (r !== lastr || g !== lastg || b !== lastb || a !== lasta) {
+        if (lasta === 0) {
+          controlPoints.push({ x: i - 0.5, opacity: lasta, color: [lastr, lastg, lastb] });
+        }
+        controlPoints.push({ x: i, opacity: a, color: [r, g, b] });
+        lastr = r;
+        lastg = g;
+        lastb = b;
+        lasta = a;
+      }
+    }
+
+    return {
+      lut: lut,
+      controlPoints: controlPoints,
+    };
   }
 
   /**
@@ -308,44 +368,32 @@ export default class Histogram {
     if (div > 0) {
       var lut = new Uint8Array(256 * 4);
 
-      // compute lut as if continuous
-      for (let i = 0; i < lut.length / 4; ++i) {
+      // compute lut and track control points for the piecewise linear sections
+      const lutControlPoints = [{ x: 0, opacity: 0, color: [255, 255, 255] }];
+      lut[0] = 255;
+      lut[1] = 255;
+      lut[2] = 255;
+      lut[3] = 0;
+      let slope = 0;
+      let lastSlope = 0;
+      let opacity = 0;
+      let lastOpacity = 0;
+      for (let i = 1; i < lut.length / 4; ++i) {
         lut[i * 4 + 0] = 255;
         lut[i * 4 + 1] = 255;
         lut[i * 4 + 2] = 255;
-        lut[i * 4 + 3] = Math.clamp(255 * ((map[i] - map[0]) / div), 0, 255);
-      }
+        lastOpacity = opacity;
+        opacity = Math.clamp(Math.round(255 * (map[i] - map[0])), 0, 255);
+        lut[i * 4 + 3] = opacity;
 
-      // compute control points piecewise linear.
-      const lutControlPoints = [{ x: 0, opacity: 0, color: [255, 255, 255] }];
-      // read up to the first nonzero.
-      let i = 1;
-      for (i = 1; i < map.length; ++i) {
-        if (map[i] > 0) {
-          lutControlPoints.push({
-            x: i - 1,
-            opacity: 0,
-            color: [255, 255, 255],
-          });
-          break;
+        slope = opacity - lastOpacity;
+        // if map[i]-map[i-1] is the same as map[i+1]-map[i] then we are in a linear segment and do not need a new control point
+        if (slope != lastSlope) {
+          lutControlPoints.push({ x: i - 1, opacity: lastOpacity / 255.0, color: [255, 255, 255] });
+          lastSlope = slope;
         }
       }
 
-      var lastOpac = 0;
-      var opac = 0;
-      for (var j = i; j < map.length; ++j) {
-        opac = (map[j] - map[0]) / div;
-        if (j % 8 === 0) {
-          if (Math.floor(opac * 255) !== Math.floor(lastOpac * 255)) {
-            lutControlPoints.push({
-              x: j,
-              opacity: opac,
-              color: [255, 255, 255],
-            });
-          }
-        }
-        lastOpac = opac;
-      }
       lutControlPoints.push({ x: 255, opacity: 1, color: [255, 255, 255] });
 
       return {
@@ -362,6 +410,7 @@ export default class Histogram {
   // @return {Uint8Array} array of length 256*4 representing the rgba values of the gradient
   lutGenerator_fromControlPoints(controlPoints) {
     const lut = new Uint8Array(256 * 4).fill(0);
+
     if (controlPoints.length === 0) {
       return { lut: lut, controlPoints: controlPoints };
     }
@@ -391,7 +440,7 @@ export default class Histogram {
     // if the first control point is after 0, act like there are 0s going all the way up to it.
     // or lerp up to the first point?
     for (let x = c0.x; x < 256; ++x) {
-      if (x > c1.x) {
+      while (x > c1.x) {
         // advance control points
         c0 = c1;
         color0 = color1;
@@ -404,7 +453,12 @@ export default class Histogram {
         }
         color1 = controlPointToRGBA(c1);
       }
-      a = (x - c0.x) / (c1.x - c0.x);
+      if (c1.x === c0.x) {
+        // use c1
+        a = 1.0;
+      } else {
+        a = (x - c0.x) / (c1.x - c0.x);
+      }
       // lerp the colors
       lut[x * 4 + 0] = lerp(color0[0], color1[0], a);
       lut[x * 4 + 1] = lerp(color0[1], color1[1], a);

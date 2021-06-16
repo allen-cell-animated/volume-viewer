@@ -18,6 +18,7 @@
     "clean": "rimraf es/",
     "format": "prettier --write src/**/*.js",
     "dev": "webpack-dev-server --open --config webpack.dev.js",
+    "start": "webpack-dev-server --open --config webpack.dev.js",
     "react-example": "webpack-dev-server --config react-example/webpack.react.js",
     "lint": "eslint --config ./.eslintrc.js --ignore-path ./.eslintignore --ext .jsx --ext .js ./",
     "test": "mocha --require @babel/register src/**/test/*.js",
