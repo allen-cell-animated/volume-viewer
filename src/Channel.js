@@ -8,6 +8,7 @@ export default class Channel {
     this.imgData = null;
     this.name = name;
     this.histogram = new Histogram([]);
+
     // intensity remapping lookup table
     this.lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
     // per-intensity color labeling (disabled initially)
@@ -18,15 +19,22 @@ export default class Channel {
 
   combineLuts() {
     const ret = new Uint8Array(LUT_ARRAY_LENGTH);
-    for (let i = 0; i < LUT_ARRAY_LENGTH / 4; ++i) {
-      ret[i * 4 + 0] =
-        this.colorPalette[i * 4 + 0] * this.colorPaletteAlpha + this.lut[i * 4 + 0] * (1.0 - this.colorPaletteAlpha);
-      ret[i * 4 + 1] =
-        this.colorPalette[i * 4 + 1] * this.colorPaletteAlpha + this.lut[i * 4 + 1] * (1.0 - this.colorPaletteAlpha);
-      ret[i * 4 + 2] =
-        this.colorPalette[i * 4 + 2] * this.colorPaletteAlpha + this.lut[i * 4 + 2] * (1.0 - this.colorPaletteAlpha);
-      ret[i * 4 + 3] =
-        this.colorPalette[i * 4 + 3] * this.colorPaletteAlpha + this.lut[i * 4 + 3] * (1.0 - this.colorPaletteAlpha);
+    // a tiny bit faster for the edge cases
+    if (this.colorPaletteAlpha === 1.0) {
+      ret.set(this.colorPalette);
+    } else if (this.colorPaletteAlpha === 0.0) {
+      ret.set(this.lut);
+    } else {
+      for (let i = 0; i < LUT_ARRAY_LENGTH / 4; ++i) {
+        ret[i * 4 + 0] =
+          this.colorPalette[i * 4 + 0] * this.colorPaletteAlpha + this.lut[i * 4 + 0] * (1.0 - this.colorPaletteAlpha);
+        ret[i * 4 + 1] =
+          this.colorPalette[i * 4 + 1] * this.colorPaletteAlpha + this.lut[i * 4 + 1] * (1.0 - this.colorPaletteAlpha);
+        ret[i * 4 + 2] =
+          this.colorPalette[i * 4 + 2] * this.colorPaletteAlpha + this.lut[i * 4 + 2] * (1.0 - this.colorPaletteAlpha);
+        ret[i * 4 + 3] =
+          this.colorPalette[i * 4 + 3] * this.colorPaletteAlpha + this.lut[i * 4 + 3] * (1.0 - this.colorPaletteAlpha);
+      }
     }
     return ret;
   }
