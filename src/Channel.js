@@ -158,6 +158,15 @@ export default class Channel {
     this.lut = lut;
   }
 
+  // palette should be an uint8array of 256*4 elements (256 rgba8 values)
+  setColorPalette(palette) {
+    this.colorPalette = palette;
+  }
+
+  setColorPaletteAlpha(alpha) {
+    this.colorPaletteAlpha = alpha;
+  }
+
   lutGenerator_windowLevel(wnd, lvl) {
     if (!this.loaded) {
       return;

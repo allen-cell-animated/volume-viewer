@@ -520,7 +520,7 @@ function showChannelUI(volume) {
       colorize: (function(j) {
         return function() {
           const lut = volume.getHistogram(j).lutGenerator_labelColors();
-          volume.getChannel(j).colorPalette = lut.lut;
+          volume.setColorPalette(j, lut.lut);
           view3D.updateLuts(volume);
         };
       })(i),
@@ -646,7 +646,7 @@ function showChannelUI(volume) {
       .onChange(
         (function(j) {
           return function(value) {
-            volume.getChannel(j).colorPaletteAlpha = value;
+            volume.setColorPaletteAlpha(value);
             view3D.updateLuts(volume);
           };
         })(i)
