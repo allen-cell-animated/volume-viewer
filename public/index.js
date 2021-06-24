@@ -646,7 +646,7 @@ function showChannelUI(volume) {
       .onChange(
         (function(j) {
           return function(value) {
-            volume.setColorPaletteAlpha(value);
+            volume.setColorPaletteAlpha(j, value);
             view3D.updateLuts(volume);
           };
         })(i)
