@@ -7,7 +7,7 @@ function fuseWorker(combination, fusionType) {
   //console.log("BEGIN WORK");
   // explore some faster ways to fuse here...
 
-  var ar, ag, ab, aa, c, r, g, b, lr, lg, lb, la, opacity, channeldata, lut, idx;
+  var ar, ag, ab, aa, c, lr, lg, lb, la, opacity, channeldata, lut, idx;
   var x, i, cx, fx;
   var cl = combination.length;
 
@@ -33,9 +33,6 @@ function fuseWorker(combination, fusionType) {
         continue;
       }
       if (c.rgbColor) {
-        r = c.rgbColor[0] / 255.0;
-        g = c.rgbColor[1] / 255.0;
-        b = c.rgbColor[2] / 255.0;
         channeldata = channels[idx];
         lut = c.lut;
 
@@ -49,11 +46,11 @@ function fuseWorker(combination, fusionType) {
 
           // what if rgb*opacity > 255?
           ar = self.fused[fx + 0];
-          self.fused[fx + 0] = Math.max(ar, r * lr * opacity);
+          self.fused[fx + 0] = Math.max(ar, lr * opacity);
           ag = self.fused[fx + 1];
-          self.fused[fx + 1] = Math.max(ag, g * lg * opacity);
+          self.fused[fx + 1] = Math.max(ag, lg * opacity);
           ab = self.fused[fx + 2];
-          self.fused[fx + 2] = Math.max(ab, b * lb * opacity);
+          self.fused[fx + 2] = Math.max(ab, lb * opacity);
           aa = self.fused[fx + 3];
           self.fused[fx + 3] = Math.max(aa, la);
         }
@@ -77,9 +74,6 @@ function fuseWorker(combination, fusionType) {
         continue;
       }
       if (c.rgbColor) {
-        r = c.rgbColor[0] / 255.0;
-        g = c.rgbColor[1] / 255.0;
-        b = c.rgbColor[2] / 255.0;
         channeldata = channels[idx];
         lut = c.lut;
 
@@ -92,9 +86,9 @@ function fuseWorker(combination, fusionType) {
           opacity = la / 255.0;
 
           // what if rgb*opacity > 255?
-          self.fused[fx + 0] += (r * lr * opacity) / nchans;
-          self.fused[fx + 1] += (g * lg * opacity) / nchans;
-          self.fused[fx + 2] += (b * lb * opacity) / nchans;
+          self.fused[fx + 0] += (lr * opacity) / nchans;
+          self.fused[fx + 1] += (lg * opacity) / nchans;
+          self.fused[fx + 2] += (lb * opacity) / nchans;
           self.fused[fx + 3] += la / nchans;
         }
       }
