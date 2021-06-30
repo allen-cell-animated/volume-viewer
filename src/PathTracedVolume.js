@@ -590,7 +590,7 @@ export default class PathTracedVolume {
     // update volume data according to channels selected.
     this.updateVolumeData4();
     this.resetProgress();
-    this.updateLuts();
+    this.updateLuts(image);
     this.updateMaterial(image);
 
     // console.log(this.pathTracingUniforms);
@@ -642,13 +642,12 @@ export default class PathTracedVolume {
     this.volumeTexture.needsUpdate = true;
   }
 
-  updateLuts() {
+  updateLuts(image) {
     for (let i = 0; i < this.pathTracingUniforms.g_nChannels.value; ++i) {
       const channel = this.viewChannels[i];
-      this.pathTracingUniforms.g_lutTexture.value.image.data.set(
-        this.volume.channels[channel].lut,
-        i * LUT_ARRAY_LENGTH
-      );
+      const combinedLut = image.getChannel(channel).combineLuts(image.getChannelColor(channel));
+
+      this.pathTracingUniforms.g_lutTexture.value.image.data.set(combinedLut, i * LUT_ARRAY_LENGTH);
 
       this.pathTracingUniforms.g_intensityMax.value.setComponent(
         i,
@@ -670,9 +669,8 @@ export default class PathTracedVolume {
     for (let c = 0; c < this.viewChannels.length; ++c) {
       let i = this.viewChannels[c];
       if (i > -1) {
-        this.pathTracingUniforms.g_diffuse.value[c] = new Vector3()
-          .fromArray(image.getChannelColor(i))
-          .multiplyScalar(1.0 / 255.0);
+        // diffuse color is actually blended into the LUT now.
+        this.pathTracingUniforms.g_diffuse.value[c] = new Vector3(1.0, 1.0, 1.0);
         this.pathTracingUniforms.g_specular.value[c] = new Vector3()
           .fromArray(image.specular[i])
           .multiplyScalar(1.0 / 255.0);
