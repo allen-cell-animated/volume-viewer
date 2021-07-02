@@ -517,10 +517,18 @@ function showChannelUI(volume) {
           view3D.updateLuts(volume);
         };
       })(i),
+      colorizeEnabled: false,
       colorize: (function(j) {
         return function() {
           const lut = volume.getHistogram(j).lutGenerator_labelColors();
           volume.setColorPalette(j, lut.lut);
+          myState.infoObj.channelGui[j].colorizeEnabled = !myState.infoObj.channelGui[j].colorizeEnabled;
+          if (myState.infoObj.channelGui[j].colorizeEnabled) {
+            volume.setColorPaletteAlpha(j, myState.infoObj.channelGui[j].colorizeAlpha);
+          } else {
+            volume.setColorPaletteAlpha(j, 0);
+          }
+
           view3D.updateLuts(volume);
         };
       })(i),
@@ -646,8 +654,10 @@ function showChannelUI(volume) {
       .onChange(
         (function(j) {
           return function(value) {
-            volume.setColorPaletteAlpha(j, value);
-            view3D.updateLuts(volume);
+            if (myState.infoObj.channelGui[j].colorizeEnabled) {
+              volume.setColorPaletteAlpha(j, value);
+              view3D.updateLuts(volume);
+            }
           };
         })(i)
       );
