@@ -16,6 +16,9 @@ function lerp(xmin, xmax, a) {
   return a * (xmax - xmin) + xmin;
 }
 
+const LUT_ENTRIES = 256;
+const LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
+
 /**
  * @typedef {Object} ControlPoint
  * @property {number} x The X Coordinate
@@ -25,7 +28,7 @@ function lerp(xmin, xmax, a) {
 
 /**
  * @typedef {Object} Lut
- * @property {Array.<number>} lut 256*4 element lookup table as array (maps scalar intensity to a rgb color plus alpha)
+ * @property {Array.<number>} lut LUT_ARRAY_LENGTH element lookup table as array (maps scalar intensity to a rgb color plus alpha)
  * @property {Array.<ControlPoint>} controlPoints
  */
 
@@ -104,7 +107,7 @@ export default class Histogram {
    * @param {number} e
    */
   lutGenerator_minMax(b, e) {
-    var lut = new Uint8Array(256 * 4);
+    var lut = new Uint8Array(LUT_ARRAY_LENGTH);
     let range = e - b;
     if (range < 1) {
       range = 255;
@@ -131,7 +134,7 @@ export default class Histogram {
    * @return {Lut}
    */
   lutGenerator_fullRange() {
-    var lut = new Uint8Array(256 * 4);
+    var lut = new Uint8Array(LUT_ARRAY_LENGTH);
 
     // simple linear mapping for actual range
     for (var x = 0; x < lut.length / 4; ++x) {
@@ -166,7 +169,7 @@ export default class Histogram {
    * @return {Lut}
    */
   lutGenerator_labelColors() {
-    const lut = new Uint8Array(256 * 4).fill(0);
+    const lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
     const controlPoints = [];
     controlPoints.push({ x: 0, opacity: 0, color: [0, 0, 0] });
     let lastr = 0;
@@ -366,7 +369,7 @@ export default class Histogram {
 
     var div = map[map.length - 1] - map[0];
     if (div > 0) {
-      var lut = new Uint8Array(256 * 4);
+      var lut = new Uint8Array(LUT_ARRAY_LENGTH);
 
       // compute lut and track control points for the piecewise linear sections
       const lutControlPoints = [{ x: 0, opacity: 0, color: [255, 255, 255] }];
@@ -409,7 +412,7 @@ export default class Histogram {
   // @param {Object[]} controlPoints - array of {x:number 0..255, opacity:number 0..1, color:array of 3 numbers 0..255}
   // @return {Uint8Array} array of length 256*4 representing the rgba values of the gradient
   lutGenerator_fromControlPoints(controlPoints) {
-    const lut = new Uint8Array(256 * 4).fill(0);
+    const lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
 
     if (controlPoints.length === 0) {
       return { lut: lut, controlPoints: controlPoints };
@@ -468,3 +471,5 @@ export default class Histogram {
     return { lut: lut, controlPoints: controlPoints };
   }
 }
+
+export { LUT_ARRAY_LENGTH };

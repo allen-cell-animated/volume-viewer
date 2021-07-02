@@ -5,3 +5,5 @@ docs/
 es/
 webpack.*.js
 babel.config.js
+.eslintrc.js
+

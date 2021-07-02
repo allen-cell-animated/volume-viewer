@@ -2,6 +2,7 @@ import { expect } from "chai";
 
 import Volume from "../Volume.js";
 import VolumeMaker from "../VolumeMaker.js";
+import { LUT_ARRAY_LENGTH } from "../Histogram.js";
 
 // PREPARE SOME TEST DATA TO TRY TO DISPLAY A VOLUME.
 const testimgdata = {
@@ -82,7 +83,7 @@ function checkChannelDataConstruction(c, index, imgdata) {
   expect(c.imgData.data).to.be.a("Uint8Array");
   expect(c.imgData.data.length).to.equal(imgdata.atlas_width * imgdata.atlas_height);
   expect(c.lut).to.be.a("Uint8Array");
-  expect(c.lut.length).to.equal(256 * 4);
+  expect(c.lut.length).to.equal(LUT_ARRAY_LENGTH);
 }
 
 describe("test volume", () => {

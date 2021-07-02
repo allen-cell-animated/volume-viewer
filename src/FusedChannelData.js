@@ -163,7 +163,8 @@ export default class FusedChannelData {
       var idx = c.chIndex;
       if (channels[idx].loaded) {
         // set the lut in this fuse combination.
-        c.lut = channels[idx].lut;
+        // can optimize by calling combineLuts more lazily
+        c.lut = channels[idx].combineLuts(c.rgbColor);
         canFuse = true;
         //break;
       }
@@ -217,7 +218,7 @@ export default class FusedChannelData {
 
     // explore some faster ways to fuse here...
 
-    var ar, ag, ab, c, r, g, b, lr, lg, lb, opacity, channeldata;
+    var ar, ag, ab, aa, c, lr, lg, lb, la, opacity, channeldata;
     var cx, fx, idx;
     var cl = combination.length;
 
@@ -240,24 +241,24 @@ export default class FusedChannelData {
         continue;
       }
       if (c.rgbColor) {
-        r = c.rgbColor[0] / 255.0;
-        g = c.rgbColor[1] / 255.0;
-        b = c.rgbColor[2] / 255.0;
         channeldata = channels[idx].imgData.data;
         for (cx = 0, fx = 0; cx < npx; cx += 1, fx += 4) {
           value = channeldata[cx];
           lr = c.lut[value * 4 + 0];
           lg = c.lut[value * 4 + 1];
           lb = c.lut[value * 4 + 2];
-          opacity = c.lut[value * 4 + 3] / 255.0;
+          la = c.lut[value * 4 + 3];
+          opacity = la / 255.0;
 
           // what if rgb*opacity > 255?
           ar = fused[fx + 0];
-          fused[fx + 0] = Math.max(ar, r * lr * opacity);
+          fused[fx + 0] = Math.max(ar, lr * opacity);
           ag = fused[fx + 1];
-          fused[fx + 1] = Math.max(ag, g * lg * opacity);
+          fused[fx + 1] = Math.max(ag, lg * opacity);
           ab = fused[fx + 2];
-          fused[fx + 2] = Math.max(ab, b * lb * opacity);
+          fused[fx + 2] = Math.max(ab, lb * opacity);
+          aa = fused[fx + 3];
+          fused[fx + 3] = Math.max(aa, la);
         }
       }
     }

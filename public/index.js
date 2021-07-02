@@ -517,13 +517,22 @@ function showChannelUI(volume) {
           view3D.updateLuts(volume);
         };
       })(i),
-      segmentation_color: (function(j) {
+      colorizeEnabled: false,
+      colorize: (function(j) {
         return function() {
           const lut = volume.getHistogram(j).lutGenerator_labelColors();
-          volume.setLut(j, lut.lut);
+          volume.setColorPalette(j, lut.lut);
+          myState.infoObj.channelGui[j].colorizeEnabled = !myState.infoObj.channelGui[j].colorizeEnabled;
+          if (myState.infoObj.channelGui[j].colorizeEnabled) {
+            volume.setColorPaletteAlpha(j, myState.infoObj.channelGui[j].colorizeAlpha);
+          } else {
+            volume.setColorPaletteAlpha(j, 0);
+          }
+
           view3D.updateLuts(volume);
         };
       })(i),
+      colorizeAlpha: 0.0,
     });
     var f = gui.addFolder("Channel " + myState.infoObj.channel_names[i]);
     myState.channelFolderNames.push("Channel " + myState.infoObj.channel_names[i]);
@@ -638,7 +647,20 @@ function showChannelUI(volume) {
     f.add(myState.infoObj.channelGui[i], "auto0");
     f.add(myState.infoObj.channelGui[i], "bestFit");
     f.add(myState.infoObj.channelGui[i], "pct50_98");
-    f.add(myState.infoObj.channelGui[i], "segmentation_color");
+    f.add(myState.infoObj.channelGui[i], "colorize");
+    f.add(myState.infoObj.channelGui[i], "colorizeAlpha")
+      .max(1.0)
+      .min(0.0)
+      .onChange(
+        (function(j) {
+          return function(value) {
+            if (myState.infoObj.channelGui[j].colorizeEnabled) {
+              volume.setColorPaletteAlpha(j, value);
+              view3D.updateLuts(volume);
+            }
+          };
+        })(i)
+      );
     f.add(myState.infoObj.channelGui[i], "glossiness")
       .max(100.0)
       .min(0.0)

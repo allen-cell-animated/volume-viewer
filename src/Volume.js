@@ -271,6 +271,25 @@ export default class Volume {
   }
 
   /**
+   * Set the color palette for the given channel
+   * @param {number} c The channel index
+   * @param {Array.<number>} palette The colors as a 256 element array * RGBA
+   */
+  setColorPalette(c, palette) {
+    this.channels[c].setColorPalette(palette);
+  }
+
+  /**
+   * Set the color palette alpha multiplier for the given channel.
+   * This will blend between the ordinary color lut and this colorPalette lut.
+   * @param {number} c The channel index
+   * @param {number} alpha The alpha value as a number from 0 to 1
+   */
+  setColorPaletteAlpha(c, alpha) {
+    this.channels[c].setColorPaletteAlpha(alpha);
+  }
+
+  /**
    * Return the intrinsic rotation associated with this volume (radians)
    * @return {Array.<number>} the xyz Euler angles (radians)
    */

@@ -1,4 +1,5 @@
 import Histogram from "./Histogram";
+import { LUT_ARRAY_LENGTH } from "./Histogram";
 
 // Data and processing for a single channel
 export default class Channel {
@@ -6,8 +7,48 @@ export default class Channel {
     this.loaded = false;
     this.imgData = null;
     this.name = name;
+    this.histogram = new Histogram([]);
+
+    // intensity remapping lookup table
+    this.lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
+    // per-intensity color labeling (disabled initially)
+    this.colorPalette = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
+    // store in 0..1 range. 1 means fully colorPalette, 0 means fully lut.
+    this.colorPaletteAlpha = 0.0;
   }
 
+  // rgbColor is [0..255, 0..255, 0..255]
+  combineLuts(rgbColor) {
+    const ret = new Uint8Array(LUT_ARRAY_LENGTH);
+    const rgb = [rgbColor[0] / 255.0, rgbColor[1] / 255.0, rgbColor[2] / 255.0];
+    // colorPalette*alpha + rgb*lut*(1-alpha)
+    // a tiny bit faster for the edge cases
+    if (this.colorPaletteAlpha === 1.0) {
+      ret.set(this.colorPalette);
+    } else if (this.colorPaletteAlpha === 0.0) {
+      ret.set(this.lut);
+      for (let i = 0; i < LUT_ARRAY_LENGTH / 4; ++i) {
+        ret[i * 4 + 0] *= rgb[0];
+        ret[i * 4 + 1] *= rgb[1];
+        ret[i * 4 + 2] *= rgb[2];
+      }
+    } else {
+      for (let i = 0; i < LUT_ARRAY_LENGTH / 4; ++i) {
+        ret[i * 4 + 0] =
+          this.colorPalette[i * 4 + 0] * this.colorPaletteAlpha +
+          this.lut[i * 4 + 0] * (1.0 - this.colorPaletteAlpha) * rgb[0];
+        ret[i * 4 + 1] =
+          this.colorPalette[i * 4 + 1] * this.colorPaletteAlpha +
+          this.lut[i * 4 + 1] * (1.0 - this.colorPaletteAlpha) * rgb[1];
+        ret[i * 4 + 2] =
+          this.colorPalette[i * 4 + 2] * this.colorPaletteAlpha +
+          this.lut[i * 4 + 2] * (1.0 - this.colorPaletteAlpha) * rgb[2];
+        ret[i * 4 + 3] =
+          this.colorPalette[i * 4 + 3] * this.colorPaletteAlpha + this.lut[i * 4 + 3] * (1.0 - this.colorPaletteAlpha);
+      }
+    }
+    return ret;
+  }
   getHistogram() {
     return this.histogram;
   }
@@ -126,6 +167,15 @@ export default class Channel {
   // lut should be an uint8array of 256*4 elements (256 rgba8 values)
   setLut(lut) {
     this.lut = lut;
+  }
+
+  // palette should be an uint8array of 256*4 elements (256 rgba8 values)
+  setColorPalette(palette) {
+    this.colorPalette = palette;
+  }
+
+  setColorPaletteAlpha(alpha) {
+    this.colorPaletteAlpha = alpha;
   }
 
   lutGenerator_windowLevel(wnd, lvl) {
