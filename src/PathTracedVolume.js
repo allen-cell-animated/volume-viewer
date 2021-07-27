@@ -670,7 +670,11 @@ export default class PathTracedVolume {
       let i = this.viewChannels[c];
       if (i > -1) {
         // diffuse color is actually blended into the LUT now.
+        const combinedLut = image.getChannel(c).combineLuts(image.getChannelColor(c));
+        this.pathTracingUniforms.g_lutTexture.value.image.data.set(combinedLut, i * LUT_ARRAY_LENGTH);
+        this.pathTracingUniforms.g_lutTexture.value.needsUpdate = true;
         this.pathTracingUniforms.g_diffuse.value[c] = new Vector3(1.0, 1.0, 1.0);
+
         this.pathTracingUniforms.g_specular.value[c] = new Vector3()
           .fromArray(image.specular[i])
           .multiplyScalar(1.0 / 255.0);
