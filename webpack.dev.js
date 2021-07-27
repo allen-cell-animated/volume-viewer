@@ -45,11 +45,13 @@ module.exports = {
       },
       {
         test: /\.(obj)$/,
-        use: ["raw-loader?inline=true"],
+        type: "asset/source",
+        //use: ["raw-loader?inline=true"],
       },
       {
         test: /\.(png)$/,
-        use: ["url-loader?inline=true"],
+        type: "asset/inline",
+        //use: ["url-loader?inline=true"],
       },
     ],
   },
