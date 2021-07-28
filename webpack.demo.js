@@ -15,13 +15,20 @@ module.exports = {
   devtool: "source-map",
   plugins: [
     new CleanWebpackPlugin(),
-    new HtmlWebpackPlugin({
-      template: "./public/index.html",
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: "**/*",
+          context: path.resolve(__dirname, "example-data"),
+        },
+      ],
     }),
     new webpack.DefinePlugin({
       APP_VERSION: JSON.stringify(require("./package.json").version),
     }),
-    new CopyWebpackPlugin(["public"]),
+    new HtmlWebpackPlugin({
+      template: "./public/index.html",
+    }),
   ],
   resolve: {
     extensions: [".js"],
