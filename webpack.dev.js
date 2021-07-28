@@ -36,13 +36,12 @@ module.exports = {
     }),
   ],
   resolve: {
-    extensions: [".js"],
+    extensions: [".js", ".ts"],
   },
   module: {
     rules: [
       {
-        test: /\.js$/,
-        include: [path.resolve(__dirname, "public")],
+        test: /\.(js|ts)$/,
         exclude: /node_modules/,
         use: "babel-loader",
       },

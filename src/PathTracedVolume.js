@@ -25,7 +25,7 @@ import {
   pathTracingUniforms,
   pathTracingVertexShaderSrc,
 } from "./constants/volumePTshader.js";
-import { LUT_ARRAY_LENGTH } from "./Histogram.js";
+import { LUT_ARRAY_LENGTH } from "./Histogram.ts";
 
 export default class PathTracedVolume {
   constructor(volume) {

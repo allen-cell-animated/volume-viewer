@@ -1,7 +1,11 @@
 import { expect } from "chai";
 
-import Histogram from "../Histogram.js";
+import Histogram from "../Histogram.ts";
 import VolumeMaker from "../VolumeMaker.js";
+
+function clamp(val, cmin, cmax) {
+  return Math.min(Math.max(cmin, val), cmax);
+}
 
 describe("test histogram", () => {
   const conedata = VolumeMaker.createCone(128, 128, 128, 24, 128);
@@ -116,7 +120,7 @@ describe("test histogram", () => {
     // create a random dataset
     const data = new Uint8Array(1024);
     for (let i = 0; i < 1024; ++i) {
-      data[i] = Math.clamp(Math.floor(Math.random() * 256), 0, 255);
+      data[i] = clamp(Math.floor(Math.random() * 256), 0, 255);
     }
     const histogram = new Histogram(data);
 

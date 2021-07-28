@@ -1,12 +1,8 @@
 import { getColorByChannelIndex } from "./constants/colors.js";
 
-(function() {
-  if (!Math.clamp) {
-    Math.clamp = function(val, cmin, cmax) {
-      return Math.min(Math.max(cmin, val), cmax);
-    };
-  }
-})();
+function clamp(val: number, cmin: number, cmax: number): number {
+  return Math.min(Math.max(cmin, val), cmax);
+}
 
 function controlPointToRGBA(controlPoint) {
   return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], Math.floor(controlPoint.opacity * 255)];
@@ -38,6 +34,12 @@ const LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
  * @param {Array.<number>} data
  */
 export default class Histogram {
+  private bins: Uint32Array;
+  private dataMin: number;
+  private dataMax: number;
+  private maxBin: number;
+  private nonzeroPixelCount: number;
+
   constructor(data) {
     // no more than 2^32 pixels of any one intensity in the data!?!?!
     this.bins = new Uint32Array(256);
@@ -116,7 +118,7 @@ export default class Histogram {
       lut[x * 4 + 0] = 255;
       lut[x * 4 + 1] = 255;
       lut[x * 4 + 2] = 255;
-      lut[x * 4 + 3] = Math.clamp(((x - b) * 255) / range, 0, 255);
+      lut[x * 4 + 3] = clamp(((x - b) * 255) / range, 0, 255);
     }
     return {
       lut: lut,
@@ -170,7 +172,8 @@ export default class Histogram {
    */
   lutGenerator_labelColors() {
     const lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
-    const controlPoints = [];
+    // TODO specify type for control point
+    const controlPoints:any[] = [];
     controlPoints.push({ x: 0, opacity: 0, color: [0, 0, 0] });
     let lastr = 0;
     let lastg = 0;
@@ -356,7 +359,7 @@ export default class Histogram {
    * @return {Lut}
    */
   lutGenerator_equalize() {
-    var map = [];
+    var map:number[] = [];
     for (let i = 0; i < this.bins.length; ++i) {
       map[i] = 0;
     }
@@ -386,7 +389,7 @@ export default class Histogram {
         lut[i * 4 + 1] = 255;
         lut[i * 4 + 2] = 255;
         lastOpacity = opacity;
-        opacity = Math.clamp(Math.round(255 * (map[i] - map[0])), 0, 255);
+        opacity = clamp(Math.round(255 * (map[i] - map[0])), 0, 255);
         lut[i * 4 + 3] = opacity;
 
         slope = opacity - lastOpacity;
