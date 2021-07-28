@@ -12,7 +12,7 @@ module.exports = {
     filename: "volume-viewer-ui.bundle.js",
     publicPath: "/volumeviewer/",
   },
-  devtool: "cheap-module-source-map",
+  devtool: "source-map",
   devServer: {
     publicPath: "/volumeviewer/",
     openPage: "volumeviewer/",
@@ -20,13 +20,23 @@ module.exports = {
   },
   plugins: [
     new CleanWebpackPlugin(),
-    new HtmlWebpackPlugin({
-      template: "./public/index.html",
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: "public/**/*",
+          globOptions: { ignore: ["index.html"] },
+        },
+      ],
+      //patterns: ["public", "!index.html"],
+      //   { from: "public/**/*", to: path.resolve(__dirname, "volumeviewer"), globOptions: { ignore: ["index.html"] } },
+      // ],
     }),
     new webpack.DefinePlugin({
       APP_VERSION: JSON.stringify(require("./package.json").version),
     }),
-    new CopyWebpackPlugin({ patterns: ["public"] }),
+    new HtmlWebpackPlugin({
+      template: "./public/index.html",
+    }),
   ],
   resolve: {
     extensions: [".js"],
@@ -40,18 +50,12 @@ module.exports = {
         use: "babel-loader",
       },
       {
-        test: /Worker\.js$/,
-        use: "worker-loader?inline=true",
-      },
-      {
         test: /\.(obj)$/,
         type: "asset/source",
-        //use: ["raw-loader?inline=true"],
       },
       {
         test: /\.(png)$/,
         type: "asset/inline",
-        //use: ["url-loader?inline=true"],
       },
     ],
   },

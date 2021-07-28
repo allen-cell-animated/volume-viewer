@@ -12,7 +12,7 @@ module.exports = {
     filename: "image-viewer-ui.bundle.js",
     publicPath: "",
   },
-  devtool: "cheap-module-source-map",
+  devtool: "source-map",
   plugins: [
     new CleanWebpackPlugin(),
     new HtmlWebpackPlugin({
@@ -35,16 +35,12 @@ module.exports = {
         use: "babel-loader",
       },
       {
-        test: /Worker\.js$/,
-        use: "worker-loader?inline=true",
-      },
-      {
         test: /\.(obj)$/,
-        use: ["raw-loader?inline=true"],
+        type: "asset/source",
       },
       {
         test: /\.(png)$/,
-        use: ["url-loader?inline=true"],
+        type: "asset/inline",
       },
     ],
   },

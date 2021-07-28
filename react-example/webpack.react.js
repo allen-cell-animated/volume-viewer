@@ -35,10 +35,6 @@ module.exports = {
           },
         ],
       },
-      {
-        test: /Worker\.js$/,
-        use: "worker-loader?inline=true",
-      },
     ],
   },
   output: {

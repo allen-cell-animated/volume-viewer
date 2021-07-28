@@ -106,7 +106,7 @@ export default class FusedChannelData {
 
     this.workers = [];
     for (var index = 0; index < this.workersCount; index++) {
-      var worker = new FuseWorker();
+      var worker = new Worker(new URL("./FuseWorker.js", import.meta.url));
       worker.onmessage = onWorkEnded;
       worker.onerror = function(e) {
         alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
