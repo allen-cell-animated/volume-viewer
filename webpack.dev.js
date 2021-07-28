@@ -23,13 +23,10 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         {
-          from: "public/**/*",
-          globOptions: { ignore: ["index.html"] },
+          from: "**/*",
+          context: path.resolve(__dirname, "example-data"),
         },
       ],
-      //patterns: ["public", "!index.html"],
-      //   { from: "public/**/*", to: path.resolve(__dirname, "volumeviewer"), globOptions: { ignore: ["index.html"] } },
-      // ],
     }),
     new webpack.DefinePlugin({
       APP_VERSION: JSON.stringify(require("./package.json").version),
