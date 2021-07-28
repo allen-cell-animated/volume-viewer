@@ -50,7 +50,6 @@ module.exports = {
     "prefer-const": ["warn"],
     "prefer-spread": ["warn"],
     "no-var": ["warn"],
-    //"no-unused-vars": [1, { args: "none" }],
     // note you must disable the base rule as it can report incorrect errors
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
