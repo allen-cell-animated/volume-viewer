@@ -58,16 +58,6 @@ view3D.updateLuts(aimg);
 ```
 
 # React example 
-- in `webpack.config.js`
-```JavaScript
-    rules: [
-        ...,
-        {
-            test: /Worker\.js$/,
-            use: 'worker-loader?inline=true'
-        }
-    ]
-```
 - in `VolumeViewer.jsx`
 ```JavaScript 
 import * as React from "react";

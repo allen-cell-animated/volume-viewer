@@ -2,7 +2,7 @@ import { expect } from "chai";
 
 import Volume from "../Volume.js";
 import VolumeMaker from "../VolumeMaker.js";
-import { LUT_ARRAY_LENGTH } from "../Histogram.js";
+import { LUT_ARRAY_LENGTH } from "../Histogram.ts";
 
 // PREPARE SOME TEST DATA TO TRY TO DISPLAY A VOLUME.
 const testimgdata = {

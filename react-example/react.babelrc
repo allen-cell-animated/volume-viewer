@@ -16,7 +16,6 @@
     }
   },
   "plugins": [
-    "@babel/plugin-proposal-class-properties",
     ["babel-plugin-inline-import", {
       "extensions": [ ".obj" ]
     }],
