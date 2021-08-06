@@ -118,7 +118,7 @@ export class VolumeViewer extends React.Component {
             />
         )
     }
-    ```
+```
 
 # Acknowledgements
 
