@@ -173,7 +173,7 @@ export default class Histogram {
   lutGenerator_labelColors() {
     const lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
     // TODO specify type for control point
-    const controlPoints:any[] = [];
+    const controlPoints: any[] = [];
     controlPoints.push({ x: 0, opacity: 0, color: [0, 0, 0] });
     let lastr = 0;
     let lastg = 0;
@@ -226,6 +226,26 @@ export default class Histogram {
   }
 
   /**
+   * Find the bin that contains the percentage of pixels below it
+   * @return {number}
+   * @param {number} pct
+   */
+  findBinOfPercentile(pct) {
+    const pixcount = this.nonzeroPixelCount + this.bins[0];
+    const limit = pixcount * pct;
+
+    var i = 0;
+    var count = 0;
+    for (i = 0; i < this.bins.length; ++i) {
+      count += this.bins[i];
+      if (count > limit) {
+        break;
+      }
+    }
+    return i;
+  }
+
+  /**
    * Generate a lookup table based on histogram percentiles
    * @return {Lut}
    * @param {number} pmin
@@ -236,27 +256,8 @@ export default class Histogram {
 
     const pixcount = this.nonzeroPixelCount + this.bins[0];
     //const pixcount = this.imgData.data.length;
-    const lowlimit = pixcount * pmin;
-    const hilimit = pixcount * pmax;
-
-    var i = 0;
-    var count = 0;
-    for (i = 0; i < this.bins.length; ++i) {
-      count += this.bins[i];
-      if (count > lowlimit) {
-        break;
-      }
-    }
-    var hmin = i;
-
-    count = 0;
-    for (i = 0; i < this.bins.length; ++i) {
-      count += this.bins[i];
-      if (count > hilimit) {
-        break;
-      }
-    }
-    var hmax = i;
+    const hmin = this.findBinOfPercentile(pmin);
+    const hmax = this.findBinOfPercentile(pmax);
 
     return this.lutGenerator_minMax(hmin, hmax);
   }
@@ -359,7 +360,7 @@ export default class Histogram {
    * @return {Lut}
    */
   lutGenerator_equalize() {
-    var map:number[] = [];
+    var map: number[] = [];
     for (let i = 0; i < this.bins.length; ++i) {
       map[i] = 0;
     }
