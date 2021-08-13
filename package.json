@@ -30,7 +30,10 @@
     "access": "public"
   },
   "dependencies": {
-    "three": "^0.137.4"
+    "three": "^0.130.1",
+    "@loaders.gl/core": "^3.0.8",
+    "@loaders.gl/zarr": "^3.0.8",
+    "zarr": "^0.5.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.14.8",
