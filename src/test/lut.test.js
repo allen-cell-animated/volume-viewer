@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import Histogram from "../Histogram.ts";
+import Histogram from "../Histogram";
 import VolumeMaker from "../VolumeMaker.js";
 
 function clamp(val, cmin, cmax) {
