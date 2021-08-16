@@ -143,7 +143,7 @@ const volumeLoader = {
       //console.log(data);
       const metadata = data.metadata.omero;
       const level0 = data.data[0];
-      const level3 = data.data[3];
+      const level3 = data.data[1];
 
       const w = level0.shape[4];
       const h = level0.shape[3];
@@ -185,9 +185,9 @@ const volumeLoader = {
         // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
         atlas_width: atlaswidth,
         atlas_height: atlasheight,
-        pixel_size_x: 0.065,
-        pixel_size_y: 0.065,
-        pixel_size_z: 0.29,
+        pixel_size_x: metadata.pixel_size.x,
+        pixel_size_y: metadata.pixel_size.y,
+        pixel_size_z: metadata.pixel_size.z,
         name: metadata.name,
         status: "OK",
         version: metadata.version,
@@ -204,6 +204,8 @@ const volumeLoader = {
       // now we get the chunks:
       for (let i = 0; i < c; ++i) {
         level3._data.get([0, i, null, null, null]).then((channel) => {
+          const chmin = metadata.channels[i].window.min;
+          const chmax = metadata.channels[i].window.max;
           const npixels = channel.shape[0] * channel.shape[1] * channel.shape[2];
           const xy = channel.shape[1] * channel.shape[2];
           // flatten the 3d array and convert to uint8
@@ -212,7 +214,7 @@ const volumeLoader = {
             const slice = Math.floor(j / xy);
             const yrow = Math.floor(j / channel.shape[2]) - slice * channel.shape[1];
             const xcol = j % channel.shape[2];
-            u8[j] = channel.data[slice][yrow][xcol];
+            u8[j] = ((channel.data[slice][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
           }
           vol.setChannelDataFromVolume(i, u8);
         });
