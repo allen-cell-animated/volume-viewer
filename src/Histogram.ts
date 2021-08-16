@@ -457,7 +457,7 @@ export default class Histogram {
     }
 
     // ensure they are sorted in ascending order of x
-    controlPoints.sort((a, b) => (a.x > b.x ? 1 : a.x < b.x ? -1 : 0));
+    controlPoints.sort((a, b) => a.x - b.x);
 
     // special case only one control point.
     if (controlPoints.length === 1) {
