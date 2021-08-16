@@ -753,6 +753,7 @@ function loadImageData(jsondata, volumedata) {
 }
 
 function fetchImage(url) {
+  console.log("initiating image download");
   // fetch(url)
   //   .then(function (response) {
   //     return response.json();
@@ -766,13 +767,8 @@ function fetchImage(url) {
   //     loadImageData(myJson);
   //   });
 
-  VolumeLoader.loadZarr("z0/image0").then((vol) => {
-    myState.volume = vol;
-    view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
-
-    view3D.removeAllVolumes();
-    view3D.addVolume(vol);
-
+  VolumeLoader.loadZarr("z0/image0", (url, channelindex) => {
+    const vol = myState.volume;
     // first 3 channels for starters
     for (var ch = 0; ch < vol.num_channels; ++ch) {
       vol.channels[ch].lutGenerator_percentiles(0.5, 0.998);
@@ -785,6 +781,15 @@ function fetchImage(url) {
     view3D.updateLights(myState.lights);
     view3D.updateDensity(vol, myState.density / 100.0);
     view3D.updateExposure(myState.exposure);
+    if (vol.loaded) {
+      console.log("all channels loaded");
+    }
+  }).then((vol) => {
+    myState.volume = vol;
+    view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+
+    view3D.removeAllVolumes();
+    view3D.addVolume(vol);
 
     // apply a volume transform from an external source:
     if (vol.imageInfo.userData && vol.imageInfo.userData.alignTransform) {

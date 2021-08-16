@@ -217,6 +217,9 @@ const volumeLoader = {
             u8[j] = ((channel.data[slice][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
           }
           vol.setChannelDataFromVolume(i, u8);
+          if (callback) {
+            callback(url, i);
+          }
         });
         // level3.getRaster({ selection: { c: i, t: 0 } }).then((channel) => {
         //   // flatten the 3d array and convert to uint8
