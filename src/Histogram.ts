@@ -18,8 +18,8 @@ const LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
 /**
  * @typedef {Object} ControlPoint
  * @property {number} x The X Coordinate
- * @property {number} opacity The Opacity
- * @property {string} color The Color
+ * @property {number} opacity The Opacity, from 0 to 1
+ * @property {Array.<number>} color The Color, 3 numbers from 0-255 for r,g,b
  */
 
 /**
