@@ -753,18 +753,48 @@ function loadImageData(jsondata, volumedata) {
 }
 
 function fetchImage(url) {
-  fetch(url)
-    .then(function (response) {
-      return response.json();
-    })
-    .then(function (myJson) {
-      // if you need to adjust image paths prior to download,
-      // now is the time to do it:
-      // myJson.images.forEach(function(element) {
-      //     element.name = myURLprefix + element.name;
-      // });
-      loadImageData(myJson);
-    });
+  // fetch(url)
+  //   .then(function (response) {
+  //     return response.json();
+  //   })
+  //   .then(function (myJson) {
+  //     // if you need to adjust image paths prior to download,
+  //     // now is the time to do it:
+  //     // myJson.images.forEach(function(element) {
+  //     //     element.name = myURLprefix + element.name;
+  //     // });
+  //     loadImageData(myJson);
+  //   });
+
+  VolumeLoader.loadZarr("z0/image0").then((vol) => {
+    myState.volume = vol;
+    view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+
+    view3D.removeAllVolumes();
+    view3D.addVolume(vol);
+
+    // first 3 channels for starters
+    for (var ch = 0; ch < vol.num_channels; ++ch) {
+      vol.channels[ch].lutGenerator_percentiles(0.5, 0.998);
+      view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
+    }
+
+    view3D.setVolumeChannelAsMask(vol, vol.imageInfo.channel_names.indexOf("SEG_Memb"));
+    view3D.updateActiveChannels(vol);
+    view3D.updateLuts(vol);
+    view3D.updateLights(myState.lights);
+    view3D.updateDensity(vol, myState.density / 100.0);
+    view3D.updateExposure(myState.exposure);
+
+    // apply a volume transform from an external source:
+    if (vol.imageInfo.userData && vol.imageInfo.userData.alignTransform) {
+      view3D.setVolumeTranslation(vol, vol.voxelsToWorldSpace(vol.imageInfo.userData.alignTransform.translation));
+      view3D.setVolumeRotation(vol, vol.imageInfo.userData.alignTransform.rotation);
+    }
+
+    console.log(vol);
+    showChannelUI(vol);
+  });
 }
 
 function createTestVolume() {
@@ -892,10 +922,6 @@ function main() {
   });
 
   setupGui();
-
-  VolumeLoader.loadZarr("z0/image0").then((img) => {
-    console.log(img);
-  });
 
   const loadTestData = true;
   if (loadTestData) {

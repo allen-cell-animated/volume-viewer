@@ -152,6 +152,21 @@ const volumeLoader = {
       const z = level0.shape[2];
       const c = level0.shape[1];
       // compute rows and cols and atlas width and ht, given tw and th
+      let nextrows = 1;
+      let nextcols = z;
+      let ratio = (nextcols * tw) / (nextrows * th);
+      let nrows = nextrows;
+      let ncols = nextcols;
+      while (ratio > 1) {
+        nrows = nextrows;
+        ncols = nextcols;
+        nextcols -= 1;
+        nextrows = Math.ceil(z / nextcols);
+        ratio = (nextcols * tw) / (nextrows * th);
+      }
+      const atlaswidth = ncols * tw;
+      const atlasheight = nrows * th;
+
       const chnames: string[] = [];
       for (let i = 0; i < metadata.channels.length; ++i) {
         chnames.push(metadata.channels[i].label);
@@ -161,15 +176,15 @@ const volumeLoader = {
         height: h,
         channels: c,
         channel_names: chnames,
-        rows: 7,
-        cols: 10,
+        rows: nrows,
+        cols: ncols,
         tiles: z,
         tile_width: tw,
         tile_height: th,
         // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
         // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-        atlas_width: 2040,
-        atlas_height: 2044,
+        atlas_width: atlaswidth,
+        atlas_height: atlasheight,
         pixel_size_x: 0.065,
         pixel_size_y: 0.065,
         pixel_size_z: 0.29,
@@ -188,11 +203,24 @@ const volumeLoader = {
 
       // now we get the chunks:
       for (let i = 0; i < c; ++i) {
-        level3.getRaster({ selection: { c: i, t: 0 } }).then((channel) => {
+        level3._data.get([0, i, null, null, null]).then((channel) => {
+          const npixels = channel.shape[0] * channel.shape[1] * channel.shape[2];
+          const xy = channel.shape[1] * channel.shape[2];
           // flatten the 3d array and convert to uint8
-          const u8 = new Uint8Array(channel.data.length);
+          const u8 = new Uint8Array(npixels);
+          for (let j = 0; j < npixels; ++j) {
+            const slice = Math.floor(j / xy);
+            const yrow = Math.floor(j / channel.shape[2]) - slice * channel.shape[1];
+            const xcol = j % channel.shape[2];
+            u8[j] = channel.data[slice][yrow][xcol];
+          }
           vol.setChannelDataFromVolume(i, u8);
         });
+        // level3.getRaster({ selection: { c: i, t: 0 } }).then((channel) => {
+        //   // flatten the 3d array and convert to uint8
+        //   const u8 = new Uint8Array(channel.data.length);
+        //   vol.setChannelDataFromVolume(i, u8);
+        // });
         // level3.get([0, i, null, null, null]).then((channel) => {
         // });
       }
