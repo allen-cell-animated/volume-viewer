@@ -18,8 +18,8 @@ const LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
 /**
  * @typedef {Object} ControlPoint
  * @property {number} x The X Coordinate
- * @property {number} opacity The Opacity
- * @property {string} color The Color
+ * @property {number} opacity The Opacity, from 0 to 1
+ * @property {Array.<number>} color The Color, 3 numbers from 0-255 for r,g,b
  */
 
 /**
@@ -27,6 +27,15 @@ const LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
  * @property {Array.<number>} lut LUT_ARRAY_LENGTH element lookup table as array (maps scalar intensity to a rgb color plus alpha)
  * @property {Array.<ControlPoint>} controlPoints
  */
+type ControlPoint = {
+  x: number;
+  opacity: number;
+  color: [number, number, number];
+};
+type Lut = {
+  lut: Uint8Array;
+  controlPoints: ControlPoint[];
+};
 
 /**
  * Builds a histogram with 256 bins from a data array. Assume data is 8 bit single channel grayscale.
@@ -40,7 +49,7 @@ export default class Histogram {
   private maxBin: number;
   private nonzeroPixelCount: number;
 
-  constructor(data) {
+  constructor(data: Uint8Array) {
     // no more than 2^32 pixels of any one intensity in the data!?!?!
     this.bins = new Uint32Array(256);
     this.bins.fill(0);
@@ -86,10 +95,10 @@ export default class Histogram {
    * @param {number} wnd in 0..1 range
    * @param {number} lvl in 0..1 range
    */
-  lutGenerator_windowLevel(wnd, lvl) {
+  lutGenerator_windowLevel(wnd: number, lvl: number): Lut {
     // simple linear mapping for actual range
-    var b = lvl - wnd * 0.5;
-    var e = lvl + wnd * 0.5;
+    const b = lvl - wnd * 0.5;
+    const e = lvl + wnd * 0.5;
     return this.lutGenerator_minMax(b * 255, e * 255);
   }
 
@@ -108,26 +117,54 @@ export default class Histogram {
    * @param {number} b
    * @param {number} e
    */
-  lutGenerator_minMax(b, e) {
-    var lut = new Uint8Array(LUT_ARRAY_LENGTH);
-    let range = e - b;
-    if (range < 1) {
-      range = 255;
+  lutGenerator_minMax(b: number, e: number): Lut {
+    if (e < b) {
+      // swap
+      const tmp = e;
+      e = b;
+      b = tmp;
     }
-    for (var x = 0; x < lut.length / 4; ++x) {
+    const lut = new Uint8Array(LUT_ARRAY_LENGTH);
+    for (let x = 0; x < lut.length / 4; ++x) {
       lut[x * 4 + 0] = 255;
       lut[x * 4 + 1] = 255;
       lut[x * 4 + 2] = 255;
-      lut[x * 4 + 3] = clamp(((x - b) * 255) / range, 0, 255);
+      if (x > e) {
+        lut[x * 4 + 3] = 255;
+      } else if (x <= b) {
+        lut[x * 4 + 3] = 0;
+      } else {
+        if (e === b) {
+          // singularity. can this be reached?
+          lut[x * 4 + 3] = 255;
+        } else {
+          const a = (x - b) / (e - b);
+          lut[x * 4 + 3] = lerp(0, 255, a);
+        }
+      }
     }
+
+    const controlPoints: ControlPoint[] = [];
+    let startVal = 0;
+    if (b <= 0) {
+      startVal = -b / (e - b);
+    }
+    controlPoints.push({ x: 0, opacity: startVal, color: [255, 255, 255] });
+    if (b > 0) {
+      controlPoints.push({ x: b, opacity: 0, color: [255, 255, 255] });
+    }
+    if (e < 255) {
+      controlPoints.push({ x: e, opacity: 1, color: [255, 255, 255] });
+    }
+    let endVal = 1;
+    if (e >= 255) {
+      endVal = (255 - b) / (e - b);
+    }
+    controlPoints.push({ x: 255, opacity: endVal, color: [255, 255, 255] });
+
     return {
       lut: lut,
-      controlPoints: [
-        { x: 0, opacity: 0, color: [255, 255, 255] },
-        { x: b, opacity: 0, color: [255, 255, 255] },
-        { x: e, opacity: 1, color: [255, 255, 255] },
-        { x: 255, opacity: 1, color: [255, 255, 255] },
-      ],
+      controlPoints: controlPoints,
     };
   }
 
@@ -135,11 +172,11 @@ export default class Histogram {
    * Generate a straight 0-1 linear identity lookup table
    * @return {Lut}
    */
-  lutGenerator_fullRange() {
-    var lut = new Uint8Array(LUT_ARRAY_LENGTH);
+  lutGenerator_fullRange(): Lut {
+    const lut = new Uint8Array(LUT_ARRAY_LENGTH);
 
     // simple linear mapping for actual range
-    for (var x = 0; x < lut.length / 4; ++x) {
+    for (let x = 0; x < lut.length / 4; ++x) {
       lut[x * 4 + 0] = 255;
       lut[x * 4 + 1] = 255;
       lut[x * 4 + 2] = 255;
@@ -159,10 +196,10 @@ export default class Histogram {
    * Generate a lookup table over the min to max range of the data values
    * @return {Lut}
    */
-  lutGenerator_dataRange() {
+  lutGenerator_dataRange(): Lut {
     // simple linear mapping for actual range
-    var b = this.dataMin;
-    var e = this.dataMax;
+    const b = this.dataMin;
+    const e = this.dataMax;
     return this.lutGenerator_minMax(b, e);
   }
 
@@ -170,10 +207,10 @@ export default class Histogram {
    * Generate a lookup table with a different color per intensity value
    * @return {Lut}
    */
-  lutGenerator_labelColors() {
+  lutGenerator_labelColors(): Lut {
     const lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
     // TODO specify type for control point
-    const controlPoints:any[] = [];
+    const controlPoints: ControlPoint[] = [];
     controlPoints.push({ x: 0, opacity: 0, color: [0, 0, 0] });
     let lastr = 0;
     let lastg = 0;
@@ -226,37 +263,35 @@ export default class Histogram {
   }
 
   /**
+   * Find the bin that contains the percentage of pixels below it
+   * @return {number}
+   * @param {number} pct
+   */
+  findBinOfPercentile(pct: number): number {
+    const pixcount = this.nonzeroPixelCount + this.bins[0];
+    const limit = pixcount * pct;
+
+    let i = 0;
+    let count = 0;
+    for (i = 0; i < this.bins.length; ++i) {
+      count += this.bins[i];
+      if (count > limit) {
+        break;
+      }
+    }
+    return i;
+  }
+
+  /**
    * Generate a lookup table based on histogram percentiles
    * @return {Lut}
    * @param {number} pmin
    * @param {number} pmax
    */
-  lutGenerator_percentiles(pmin, pmax) {
+  lutGenerator_percentiles(pmin: number, pmax: number): Lut {
     // e.g. 0.50, 0.983 starts from 50th percentile bucket and ends at 98.3 percentile bucket.
-
-    const pixcount = this.nonzeroPixelCount + this.bins[0];
-    //const pixcount = this.imgData.data.length;
-    const lowlimit = pixcount * pmin;
-    const hilimit = pixcount * pmax;
-
-    var i = 0;
-    var count = 0;
-    for (i = 0; i < this.bins.length; ++i) {
-      count += this.bins[i];
-      if (count > lowlimit) {
-        break;
-      }
-    }
-    var hmin = i;
-
-    count = 0;
-    for (i = 0; i < this.bins.length; ++i) {
-      count += this.bins[i];
-      if (count > hilimit) {
-        break;
-      }
-    }
-    var hmax = i;
+    const hmin = this.findBinOfPercentile(pmin);
+    const hmax = this.findBinOfPercentile(pmax);
 
     return this.lutGenerator_minMax(hmin, hmax);
   }
@@ -265,20 +300,20 @@ export default class Histogram {
    * Generate a 10% / 90% lookup table
    * @return {Lut}
    */
-  lutGenerator_bestFit() {
+  lutGenerator_bestFit(): Lut {
     const pixcount = this.nonzeroPixelCount;
     //const pixcount = this.imgData.data.length;
     const limit = pixcount / 10;
 
-    var i = 0;
-    var count = 0;
+    let i = 0;
+    let count = 0;
     for (i = 1; i < this.bins.length; ++i) {
       count += this.bins[i];
       if (count > limit) {
         break;
       }
     }
-    var hmin = i;
+    const hmin = i;
 
     count = 0;
     for (i = this.bins.length - 1; i >= 1; --i) {
@@ -287,7 +322,7 @@ export default class Histogram {
         break;
       }
     }
-    var hmax = i;
+    const hmax = i;
 
     return this.lutGenerator_minMax(hmin, hmax);
   }
@@ -296,7 +331,7 @@ export default class Histogram {
    * Generate a lookup table attempting to replicate ImageJ's "Auto" button
    * @return {Lut}
    */
-  lutGenerator_auto2() {
+  lutGenerator_auto2(): Lut {
     const AUTO_THRESHOLD = 5000;
     const pixcount = this.nonzeroPixelCount;
     //  const pixcount = this.imgData.data.length;
@@ -304,8 +339,8 @@ export default class Histogram {
     const threshold = pixcount / AUTO_THRESHOLD;
 
     // this will skip the "zero" bin which contains pixels of zero intensity.
-    var hmin = this.bins.length - 1;
-    var hmax = 1;
+    let hmin = this.bins.length - 1;
+    let hmax = 1;
     for (let i = 1; i < this.bins.length; ++i) {
       if (this.bins[i] > threshold && this.bins[i] <= limit) {
         hmin = i;
@@ -331,13 +366,13 @@ export default class Histogram {
    * Generate a lookup table using a percentile of the most commonly occurring value
    * @return {Lut}
    */
-  lutGenerator_auto() {
+  lutGenerator_auto(): Lut {
     // simple linear mapping cutting elements with small appearence
     // get 10% threshold
-    var PERCENTAGE = 0.1;
-    var th = Math.floor(this.bins[this.maxBin] * PERCENTAGE);
-    var b = 0;
-    var e = this.bins.length - 1;
+    const PERCENTAGE = 0.1;
+    const th = Math.floor(this.bins[this.maxBin] * PERCENTAGE);
+    let b = 0;
+    let e = this.bins.length - 1;
     for (let x = 1; x < this.bins.length; ++x) {
       if (this.bins[x] > th) {
         b = x;
@@ -358,8 +393,8 @@ export default class Histogram {
    * Generate an "equalized" lookup table
    * @return {Lut}
    */
-  lutGenerator_equalize() {
-    var map:number[] = [];
+  lutGenerator_equalize(): Lut {
+    const map: number[] = [];
     for (let i = 0; i < this.bins.length; ++i) {
       map[i] = 0;
     }
@@ -370,12 +405,12 @@ export default class Histogram {
       map[i] = map[i - 1] + this.bins[i];
     }
 
-    var div = map[map.length - 1] - map[0];
+    const div = map[map.length - 1] - map[0];
     if (div > 0) {
-      var lut = new Uint8Array(LUT_ARRAY_LENGTH);
+      const lut = new Uint8Array(LUT_ARRAY_LENGTH);
 
       // compute lut and track control points for the piecewise linear sections
-      const lutControlPoints = [{ x: 0, opacity: 0, color: [255, 255, 255] }];
+      const lutControlPoints: ControlPoint[] = [{ x: 0, opacity: 0, color: [255, 255, 255] }];
       lut[0] = 255;
       lut[1] = 255;
       lut[2] = 255;
@@ -414,7 +449,7 @@ export default class Histogram {
 
   // @param {Object[]} controlPoints - array of {x:number 0..255, opacity:number 0..1, color:array of 3 numbers 0..255}
   // @return {Uint8Array} array of length 256*4 representing the rgba values of the gradient
-  lutGenerator_fromControlPoints(controlPoints) {
+  lutGenerator_fromControlPoints(controlPoints: ControlPoint[]): Lut {
     const lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
 
     if (controlPoints.length === 0) {
@@ -422,7 +457,7 @@ export default class Histogram {
     }
 
     // ensure they are sorted in ascending order of x
-    controlPoints.sort((a, b) => (a.x > b.x ? 1 : -1));
+    controlPoints.sort((a, b) => a.x - b.x);
 
     // special case only one control point.
     if (controlPoints.length === 1) {
