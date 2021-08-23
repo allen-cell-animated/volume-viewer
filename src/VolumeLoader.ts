@@ -130,8 +130,16 @@ const volumeLoader = {
    */
   loadZarr: async function (url: string, callback: PerChannelCallback): Promise<Volume> {
     const store = new HTTPStore("http://localhost:9020/example-data/z0.zarr");
-    const data = await openGroup(store, "image0", "r");
+
+    const imagegroup = "image_reduced";
+    const levelToLoad = 0;
+
+    const data = await openGroup(store, imagegroup, "r");
     const allmetadata = await data.attrs.asObject();
+    const numlevels = allmetadata.multiscales[0].datasets.length;
+    // TODO get metadata sizes for each level?  how inefficient is that?
+    // update levelToLoad after we get size info about multiscales?
+
     const metadata = allmetadata.omero;
     // full res info
     const w = metadata.size.width;
@@ -139,13 +147,7 @@ const volumeLoader = {
     const z = metadata.size.z;
     const c = metadata.size.c;
 
-    const numlevels = allmetadata.multiscales[0].datasets.length;
-    // TODO get metadata sizes for each level?  how inefficient is that?
-
-    const levelToLoad = 2;
-
-    // reduced version to load
-    const level = await openArray({ store: store, path: "image0/" + levelToLoad, mode: "r" });
+    const level = await openArray({ store: store, path: imagegroup + "/" + levelToLoad, mode: "r" });
 
     const tw = level.meta.shape[4];
     const th = level.meta.shape[3];
@@ -165,6 +167,7 @@ const volumeLoader = {
     }
     const atlaswidth = ncols * tw;
     const atlasheight = nrows * th;
+    console.log(atlaswidth, atlasheight);
 
     const chnames: string[] = [];
     for (let i = 0; i < metadata.channels.length; ++i) {
@@ -204,17 +207,28 @@ const volumeLoader = {
     for (let i = 0; i < c; ++i) {
       level.get([0, i, null, null, null]).then((channel) => {
         channel = channel as NestedArray<TypedArray>;
-        const chmin = metadata.channels[i].window.min;
-        const chmax = metadata.channels[i].window.max;
         const npixels = channel.shape[0] * channel.shape[1] * channel.shape[2];
-        const xy = channel.shape[1] * channel.shape[2];
-        // flatten the 3d array and convert to uint8
         const u8 = new Uint8Array(npixels);
-        for (let j = 0; j < npixels; ++j) {
-          const slice = Math.floor(j / xy);
-          const yrow = Math.floor(j / channel.shape[2]) - slice * channel.shape[1];
-          const xcol = j % channel.shape[2];
-          u8[j] = ((channel.data[slice][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
+        const xy = channel.shape[1] * channel.shape[2];
+
+        if (channel.dtype === "|u1") {
+          // flatten the 3d array and convert to uint8
+          for (let j = 0; j < npixels; ++j) {
+            const slice = Math.floor(j / xy);
+            const yrow = Math.floor(j / channel.shape[2]) - slice * channel.shape[1];
+            const xcol = j % channel.shape[2];
+            u8[j] = channel.data[slice][yrow][xcol];
+          }
+        } else {
+          const chmin = metadata.channels[i].window.min;
+          const chmax = metadata.channels[i].window.max;
+          // flatten the 3d array and convert to uint8
+          for (let j = 0; j < npixels; ++j) {
+            const slice = Math.floor(j / xy);
+            const yrow = Math.floor(j / channel.shape[2]) - slice * channel.shape[1];
+            const xcol = j % channel.shape[2];
+            u8[j] = ((channel.data[slice][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
+          }
         }
         vol.setChannelDataFromVolume(i, u8);
         if (callback) {
