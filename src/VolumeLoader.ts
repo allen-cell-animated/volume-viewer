@@ -1,6 +1,5 @@
-import { loadZarr } from "@loaders.gl/zarr";
 import "regenerator-runtime";
-import { slice, openArray } from "zarr";
+import { slice, openArray, openGroup, HTTPStore } from "zarr";
 
 import Volume from "./Volume.js";
 
@@ -129,108 +128,98 @@ const volumeLoader = {
    * @param {PerChannelCallback} callback Per-channel callback.  Called when each channel's atlased volume data is loaded
    * @returns {Promise<Volume>}
    */
-  loadZarr: function (url: string, callback: PerChannelCallback): Promise<Volume> {
-    // return openArray({
-    //   store: "http://localhost:9020/example-data/z0.zarr",
-    //   path: "image0/0",
-    //   mode: "r",
-    // }).then((z) => {
-    //   console.log(z);
-    //   return new Volume();
-    // });
+  loadZarr: async function (url: string, callback: PerChannelCallback): Promise<Volume> {
+    const store = new HTTPStore("http://localhost:9020/example-data/z0.zarr");
+    const data = await openGroup(store, "image0", "r");
+    const allmetadata = await data.attrs.asObject();
+    const metadata = allmetadata.omero;
+    // full res info
+    const w = metadata.size.width;
+    const h = metadata.size.height;
+    const z = metadata.size.z;
+    const c = metadata.size.c;
 
-    return loadZarr("http://localhost:9020/example-data/z0.zarr/image0").then((data) => {
-      //console.log(data);
-      const metadata = data.metadata.omero;
-      const level0 = data.data[0];
-      const level3 = data.data[1];
+    const numlevels = allmetadata.multiscales[0].datasets.length;
+    const levelToLoad = 2;
 
-      const w = level0.shape[4];
-      const h = level0.shape[3];
-      const tw = level3.shape[4];
-      const th = level3.shape[3];
-      const z = level0.shape[2];
-      const c = level0.shape[1];
-      // compute rows and cols and atlas width and ht, given tw and th
-      let nextrows = 1;
-      let nextcols = z;
-      let ratio = (nextcols * tw) / (nextrows * th);
-      let nrows = nextrows;
-      let ncols = nextcols;
-      while (ratio > 1) {
-        nrows = nextrows;
-        ncols = nextcols;
-        nextcols -= 1;
-        nextrows = Math.ceil(z / nextcols);
-        ratio = (nextcols * tw) / (nextrows * th);
-      }
-      const atlaswidth = ncols * tw;
-      const atlasheight = nrows * th;
+    // reduced version to load
+    const level = await openArray({ store: store, path: "image0/" + levelToLoad, mode: "r" });
 
-      const chnames: string[] = [];
-      for (let i = 0; i < metadata.channels.length; ++i) {
-        chnames.push(metadata.channels[i].label);
-      }
-      const imgdata = {
-        width: w,
-        height: h,
-        channels: c,
-        channel_names: chnames,
-        rows: nrows,
-        cols: ncols,
-        tiles: z,
-        tile_width: tw,
-        tile_height: th,
-        // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-        // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-        atlas_width: atlaswidth,
-        atlas_height: atlasheight,
-        pixel_size_x: metadata.pixel_size.x,
-        pixel_size_y: metadata.pixel_size.y,
-        pixel_size_z: metadata.pixel_size.z,
-        name: metadata.name,
-        status: "OK",
-        version: metadata.version,
-        aicsImageVersion: "4.x",
-        transform: {
-          translation: [0, 0, 0],
-          rotation: [0, 0, 0],
-        },
-      };
+    const tw = level.meta.shape[4];
+    const th = level.meta.shape[3];
 
-      // got some data, now let's construct the volume.
-      const vol = new Volume(imgdata);
+    // compute rows and cols and atlas width and ht, given tw and th
+    let nextrows = 1;
+    let nextcols = z;
+    let ratio = (nextcols * tw) / (nextrows * th);
+    let nrows = nextrows;
+    let ncols = nextcols;
+    while (ratio > 1) {
+      nrows = nextrows;
+      ncols = nextcols;
+      nextcols -= 1;
+      nextrows = Math.ceil(z / nextcols);
+      ratio = (nextcols * tw) / (nextrows * th);
+    }
+    const atlaswidth = ncols * tw;
+    const atlasheight = nrows * th;
 
-      // now we get the chunks:
-      for (let i = 0; i < c; ++i) {
-        level3._data.get([0, i, null, null, null]).then((channel) => {
-          const chmin = metadata.channels[i].window.min;
-          const chmax = metadata.channels[i].window.max;
-          const npixels = channel.shape[0] * channel.shape[1] * channel.shape[2];
-          const xy = channel.shape[1] * channel.shape[2];
-          // flatten the 3d array and convert to uint8
-          const u8 = new Uint8Array(npixels);
-          for (let j = 0; j < npixels; ++j) {
-            const slice = Math.floor(j / xy);
-            const yrow = Math.floor(j / channel.shape[2]) - slice * channel.shape[1];
-            const xcol = j % channel.shape[2];
-            u8[j] = ((channel.data[slice][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
-          }
-          vol.setChannelDataFromVolume(i, u8);
-          if (callback) {
-            callback(url, i);
-          }
-        });
-        // level3.getRaster({ selection: { c: i, t: 0 } }).then((channel) => {
-        //   // flatten the 3d array and convert to uint8
-        //   const u8 = new Uint8Array(channel.data.length);
-        //   vol.setChannelDataFromVolume(i, u8);
-        // });
-        // level3.get([0, i, null, null, null]).then((channel) => {
-        // });
-      }
-      return vol;
-    });
+    const chnames: string[] = [];
+    for (let i = 0; i < metadata.channels.length; ++i) {
+      chnames.push(metadata.channels[i].label);
+    }
+    const imgdata = {
+      width: w,
+      height: h,
+      channels: c,
+      channel_names: chnames,
+      rows: nrows,
+      cols: ncols,
+      tiles: z,
+      tile_width: tw,
+      tile_height: th,
+      // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
+      // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
+      atlas_width: atlaswidth,
+      atlas_height: atlasheight,
+      pixel_size_x: metadata.pixel_size.x,
+      pixel_size_y: metadata.pixel_size.y,
+      pixel_size_z: metadata.pixel_size.z,
+      name: metadata.name,
+      status: "OK",
+      version: metadata.version,
+      aicsImageVersion: "4.x",
+      transform: {
+        translation: [0, 0, 0],
+        rotation: [0, 0, 0],
+      },
+    };
+
+    // got some data, now let's construct the volume.
+    const vol = new Volume(imgdata);
+
+    // now we get the chunks:
+    for (let i = 0; i < c; ++i) {
+      level.get([0, i, null, null, null]).then((channel) => {
+        const chmin = metadata.channels[i].window.min;
+        const chmax = metadata.channels[i].window.max;
+        const npixels = channel.shape[0] * channel.shape[1] * channel.shape[2];
+        const xy = channel.shape[1] * channel.shape[2];
+        // flatten the 3d array and convert to uint8
+        const u8 = new Uint8Array(npixels);
+        for (let j = 0; j < npixels; ++j) {
+          const slice = Math.floor(j / xy);
+          const yrow = Math.floor(j / channel.shape[2]) - slice * channel.shape[1];
+          const xcol = j % channel.shape[2];
+          u8[j] = ((channel.data[slice][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
+        }
+        vol.setChannelDataFromVolume(i, u8);
+        if (callback) {
+          callback(url, i);
+        }
+      });
+    }
+    return vol;
   },
 };
 
