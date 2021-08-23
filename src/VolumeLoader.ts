@@ -1,5 +1,5 @@
 import "regenerator-runtime";
-import { slice, openArray, openGroup, HTTPStore } from "zarr";
+import { slice, openArray, openGroup, HTTPStore, NestedArray, TypedArray } from "zarr";
 
 import Volume from "./Volume.js";
 
@@ -140,6 +140,8 @@ const volumeLoader = {
     const c = metadata.size.c;
 
     const numlevels = allmetadata.multiscales[0].datasets.length;
+    // TODO get metadata sizes for each level?  how inefficient is that?
+
     const levelToLoad = 2;
 
     // reduced version to load
@@ -201,6 +203,7 @@ const volumeLoader = {
     // now we get the chunks:
     for (let i = 0; i < c; ++i) {
       level.get([0, i, null, null, null]).then((channel) => {
+        channel = channel as NestedArray<TypedArray>;
         const chmin = metadata.channels[i].window.min;
         const chmax = metadata.channels[i].window.max;
         const npixels = channel.shape[0] * channel.shape[1] * channel.shape[2];
