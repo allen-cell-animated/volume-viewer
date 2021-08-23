@@ -797,7 +797,7 @@ function fetchImage(url) {
       view3D.setVolumeRotation(vol, vol.imageInfo.userData.alignTransform.rotation);
     }
 
-    console.log(vol);
+    //console.log(vol);
     showChannelUI(vol);
   });
 }
