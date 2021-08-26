@@ -55,7 +55,7 @@ export const rayMarchingFragmentShaderSrc = [
   "  float threadId = gl_FragCoord.x/(gl_FragCoord.y + 1.0);",
   "  float bigVal = threadId*1299721.0/911.0;",
   "  vec2 smallVal = vec2(threadId*7927.0/577.0, threadId*104743.0/1039.0);",
-  "  return fract(sin(dot(co ,smallVal)) * bigVal);",
+  "  return fract(sin(dot(co, smallVal)) * bigVal);",
   "}",
 
   "vec4 luma2Alpha(vec4 color, float vmin, float vmax, float C){",
@@ -192,7 +192,7 @@ export const rayMarchingFragmentShaderSrc = [
   "  float invstep = 1.0/csteps;",
   // special-casing the single slice to remove the random ray dither.
   // this removes a Moire pattern visible in single slice images, which we want to view as 2D images as best we can.
-  "  float r = (SLICES==1.0) ?  0.0 : 0.5 - 1.0*rand(eye_d.xy);",
+  "  float r = (SLICES==1.0) ?  0.0 : 0.5 - 1.0*rand(gl_FragCoord.xy/iResolution.xy);",
   // if ortho and clipped, make step size smaller so we still get same number of steps
   "  float tstep = invstep*orthoThickness;",
   "  float tfarsurf = r*tstep;",
