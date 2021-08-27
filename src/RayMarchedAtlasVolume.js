@@ -102,6 +102,9 @@ export default class RayMarchedAtlasVolume {
     this.scale = scale;
 
     this.cubeMesh.scale.copy(new Vector3(scale.x, scale.y, scale.z));
+    this.setUniform("volumeScale", scale);
+    
+    console.log("scale= ", scale);
   }
 
   setRayStepSizes(primary, secondary) {}
@@ -161,6 +164,9 @@ export default class RayMarchedAtlasVolume {
       this.setOrthoThickness(thicknessPct);
     }
     // else don't set? use previous value?
+    else {
+      this.setOrthoThickness(1.0);
+    }
 
     this.setUniform("AABB_CLIP_MIN", this.bounds.bmin);
     this.setUniform("AABB_CLIP_MAX", this.bounds.bmax);

@@ -41,6 +41,7 @@ export const rayMarchingFragmentShaderSrc = [
   "uniform float orthoScale;",
   "uniform int maxProject;",
   "uniform vec3 flipVolume;",
+  "uniform vec3 volumeScale;",
 
   // view space to axis-aligned volume box
   "uniform mat4 inverseModelViewMatrix;",
@@ -188,11 +189,13 @@ export const rayMarchingFragmentShaderSrc = [
 
   //'  //estimate step length',
   "  const int maxSteps = 512;",
+  "  float scaledSteps = float(BREAK_STEPS) * length((eye_d.xyz/volumeScale));",
   "  float csteps = clamp(float(BREAK_STEPS), 1.0, float(maxSteps));",
-  "  float invstep = 1.0/csteps;",
+  "  float invstep = (tfar-tnear)/csteps;",
+//  "  float invstep = 1.0/csteps;",
   // special-casing the single slice to remove the random ray dither.
   // this removes a Moire pattern visible in single slice images, which we want to view as 2D images as best we can.
-  "  float r = (SLICES==1.0) ?  0.0 : 0.5 - 1.0*rand(gl_FragCoord.xy/iResolution.xy);",
+  "  float r = (SLICES==1.0) ?  0.0 : 0.5 - 1.0*rand(eye_d.xy);",
   // if ortho and clipped, make step size smaller so we still get same number of steps
   "  float tstep = invstep*orthoThickness;",
   "  float tfarsurf = r*tstep;",
@@ -381,5 +384,9 @@ export function rayMarchingShaderUniforms() {
       type: "v3",
       value: new Vector3(1.0, 1.0, 1.0),
     },
+    volumeScale: {
+      type: "v3",
+      value: new Vector3(1.0, 1.0, 1.0)
+    }
   };
 }
