@@ -20,22 +20,23 @@ export const rayMarchingFragmentShaderSrc = [
   "#define M_PI 3.14159265358979323846",
 
   "uniform vec2 iResolution;",
+  "uniform vec2 textureRes;",
   "uniform float GAMMA_MIN;",
   "uniform float GAMMA_MAX;",
   "uniform float GAMMA_SCALE;",
   "uniform float BRIGHTNESS;",
   "uniform float DENSITY;",
   "uniform float maskAlpha;",
-  "uniform sampler2D textureAtlas;",
-  "uniform sampler2D textureAtlasMask;",
-  "uniform int BREAK_STEPS;",
   "uniform float ATLAS_X;",
   "uniform float ATLAS_Y;",
-  "uniform float SLICES;",
   "uniform vec3 AABB_CLIP_MIN;",
   "uniform float CLIP_NEAR;",
   "uniform vec3 AABB_CLIP_MAX;",
   "uniform float CLIP_FAR;",
+  "uniform sampler2D textureAtlas;",
+  "uniform sampler2D textureAtlasMask;",
+  "uniform int BREAK_STEPS;",
+  "uniform float SLICES;",
   "uniform float isOrtho;",
   "uniform float orthoThickness;",
   "uniform float orthoScale;",
@@ -89,8 +90,9 @@ export const rayMarchingFragmentShaderSrc = [
   "  vec2 loc0 = vec2(",
   "    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,",
   "    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);",
-  // shrink loc0 to within one edge texel?
-  //"loc0 += 0.5/2048.0;",
+  // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y
+  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.
+  "loc0 = vec2(0.5/textureRes.x, 0.5/textureRes.y) + loc0*vec2(1.0-(ATLAS_X)/textureRes.x, 1.0-(ATLAS_Y)/textureRes.y);",
 
   // interpolate between two slices
 
@@ -105,8 +107,8 @@ export const rayMarchingFragmentShaderSrc = [
 
   // flipped:
   "if (flipVolume.z == -1.0) {",
-  "    z0 = nSlices - z0;",
-  "    z1 = nSlices - z1;",
+  "    z0 = nSlices - z0 - 1.0;",
+  "    z1 = nSlices - z1 - 1.0;",
   "    t = 1.0 - t;",
   "}",
 
@@ -391,6 +393,10 @@ export function rayMarchingShaderUniforms() {
     volumeScale: {
       type: "v3",
       value: new Vector3(1.0, 1.0, 1.0)
+    },
+    textureRes: {
+      type: "v2",
+      value: new Vector2(1.0, 1.0)
     }
   };
 }
