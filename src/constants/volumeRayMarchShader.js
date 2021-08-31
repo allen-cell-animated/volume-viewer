@@ -89,16 +89,18 @@ export const rayMarchingFragmentShaderSrc = [
   "  vec2 loc0 = vec2(",
   "    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,",
   "    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);",
+  // shrink loc0 to within one edge texel?
+  //"loc0 += 0.5/2048.0;",
 
   // interpolate between two slices
 
   // this 0.0001 fudge factor fixes a bug when the volume is clipped to a single slice boundary.
   // Basically I am pushing the number just slightly off of an integer multiple.
-  "  float z = (pos.z)*(nSlices + 0.0001);",
+  "  float z = (pos.z)*(nSlices-1.0);",
   "  float zfloor = floor(z);",
   "  float z0  = zfloor;",
   "  float z1 = (zfloor+1.0);",
-  "  z1 = clamp(z1, 0.0, nSlices);",
+  "  z1 = clamp(z1, 0.0, nSlices-1.0);",
   "  float t = z-zfloor;", //mod(z, 1.0);',
 
   // flipped:
@@ -111,8 +113,8 @@ export const rayMarchingFragmentShaderSrc = [
   // get slice offsets in texture atlas
   "  vec2 o0 = offsetFrontBack(z0,ATLAS_X,ATLAS_Y);//*pix;",
   "  vec2 o1 = offsetFrontBack(z1,ATLAS_X,ATLAS_Y);//*pix;",
-  "  o0 = clamp(o0, 0.0, 1.0) + loc0;",
-  "  o1 = clamp(o1, 0.0, 1.0) + loc0;",
+  "  o0 = clamp(o0, vec2(0.0,0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y)) + loc0;",
+  "  o1 = clamp(o1, vec2(0.0,0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y)) + loc0;",
 
   "  vec4 slice0Color = texture2D(tex, o0);",
   "  vec4 slice1Color = texture2D(tex, o1);",
@@ -121,6 +123,7 @@ export const rayMarchingFragmentShaderSrc = [
   // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?
   "  float slice0Mask = texture2D(textureAtlasMask, o0).x;",
   "  float slice1Mask = texture2D(textureAtlasMask, o1).x;",
+  // or use max for conservative 0 or 1 masking?
   "  float maskVal = mix(slice0Mask, slice1Mask, t);",
   // take mask from 0..1 to alpha..1
   "  maskVal = mix(maskVal, 1.0, maskAlpha);",
@@ -189,8 +192,9 @@ export const rayMarchingFragmentShaderSrc = [
 
   //'  //estimate step length',
   "  const int maxSteps = 512;",
+  // modify the 3 components of eye_d by volume scale
   "  float scaledSteps = float(BREAK_STEPS) * length((eye_d.xyz/volumeScale));",
-  "  float csteps = clamp(float(BREAK_STEPS), 1.0, float(maxSteps));",
+  "  float csteps = clamp(float(scaledSteps), 1.0, float(maxSteps));",
   "  float invstep = (tfar-tnear)/csteps;",
 //  "  float invstep = 1.0/csteps;",
   // special-casing the single slice to remove the random ray dither.
