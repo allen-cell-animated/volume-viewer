@@ -104,8 +104,6 @@ export default class RayMarchedAtlasVolume {
 
     this.cubeMesh.scale.copy(new Vector3(scale.x, scale.y, scale.z));
     this.setUniform("volumeScale", scale);
-    
-    console.log("scale= ", scale);
   }
 
   setRayStepSizes(primary, secondary) {}
