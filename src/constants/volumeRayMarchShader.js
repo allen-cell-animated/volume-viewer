@@ -96,8 +96,6 @@ export const rayMarchingFragmentShaderSrc = [
 
   // interpolate between two slices
 
-  // this 0.0001 fudge factor fixes a bug when the volume is clipped to a single slice boundary.
-  // Basically I am pushing the number just slightly off of an integer multiple.
   "  float z = (pos.z)*(nSlices-1.0);",
   "  float zfloor = floor(z);",
   "  float z0  = zfloor;",
