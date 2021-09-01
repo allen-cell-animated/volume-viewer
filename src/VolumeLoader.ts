@@ -131,8 +131,8 @@ const volumeLoader = {
   loadZarr: async function (url: string, callback: PerChannelCallback): Promise<Volume> {
     const store = new HTTPStore("http://localhost:9020/example-data/z0.zarr");
 
-    const imagegroup = "image_reduced";
-    const levelToLoad = 0;
+    const imagegroup = "image0"; // "image_reduced", 0
+    const levelToLoad = 2;
 
     const data = await openGroup(store, imagegroup, "r");
     const allmetadata = await data.attrs.asObject();
@@ -203,21 +203,25 @@ const volumeLoader = {
     // got some data, now let's construct the volume.
     const vol = new Volume(imgdata);
 
-    // now we get the chunks:
-    for (let i = 0; i < c; ++i) {
-      level.get([0, i, null, null, null]).then((channel) => {
-        channel = channel as NestedArray<TypedArray>;
-        const npixels = channel.shape[0] * channel.shape[1] * channel.shape[2];
+    level.get([0, null, null, null, null]).then((channel) => {
+      channel = channel as NestedArray<TypedArray>;
+      const nc = channel.shape[0];
+      const nz = channel.shape[1];
+      const ny = channel.shape[2];
+      const nx = channel.shape[3];
+      for (let i = 0; i < nc; ++i) {
+        const npixels = nx*ny*nz;
         const u8 = new Uint8Array(npixels);
-        const xy = channel.shape[1] * channel.shape[2];
-
+        const xy = nx*ny;
+  
         if (channel.dtype === "|u1") {
           // flatten the 3d array and convert to uint8
+          // todo test perf with a loop over x,y,z instead
           for (let j = 0; j < npixels; ++j) {
             const slice = Math.floor(j / xy);
-            const yrow = Math.floor(j / channel.shape[2]) - slice * channel.shape[1];
-            const xcol = j % channel.shape[2];
-            u8[j] = channel.data[slice][yrow][xcol];
+            const yrow = Math.floor(j / nx) - slice * ny;
+            const xcol = j % nx;
+            u8[j] = channel.data[i][slice][yrow][xcol];
           }
         } else {
           const chmin = metadata.channels[i].window.min;
@@ -225,17 +229,53 @@ const volumeLoader = {
           // flatten the 3d array and convert to uint8
           for (let j = 0; j < npixels; ++j) {
             const slice = Math.floor(j / xy);
-            const yrow = Math.floor(j / channel.shape[2]) - slice * channel.shape[1];
-            const xcol = j % channel.shape[2];
-            u8[j] = ((channel.data[slice][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
+            const yrow = Math.floor(j / nx) - slice * ny;
+            const xcol = j % nx;
+            u8[j] = ((channel.data[i][slice][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
           }
         }
         vol.setChannelDataFromVolume(i, u8);
         if (callback) {
           callback(url, i);
         }
-      });
-    }
+  
+      }
+
+    });
+
+    //   // now we get the chunks:
+    // for (let i = 0; i < c; ++i) {
+    //   level.get([0, i, null, null, null]).then((channel) => {
+    //     channel = channel as NestedArray<TypedArray>;
+    //     const npixels = channel.shape[0] * channel.shape[1] * channel.shape[2];
+    //     const u8 = new Uint8Array(npixels);
+    //     const xy = channel.shape[1] * channel.shape[2];
+
+    //     if (channel.dtype === "|u1") {
+    //       // flatten the 3d array and convert to uint8
+    //       for (let j = 0; j < npixels; ++j) {
+    //         const slice = Math.floor(j / xy);
+    //         const yrow = Math.floor(j / channel.shape[2]) - slice * channel.shape[1];
+    //         const xcol = j % channel.shape[2];
+    //         u8[j] = channel.data[slice][yrow][xcol];
+    //       }
+    //     } else {
+    //       const chmin = metadata.channels[i].window.min;
+    //       const chmax = metadata.channels[i].window.max;
+    //       // flatten the 3d array and convert to uint8
+    //       for (let j = 0; j < npixels; ++j) {
+    //         const slice = Math.floor(j / xy);
+    //         const yrow = Math.floor(j / channel.shape[2]) - slice * channel.shape[1];
+    //         const xcol = j % channel.shape[2];
+    //         u8[j] = ((channel.data[slice][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
+    //       }
+    //     }
+    //     vol.setChannelDataFromVolume(i, u8);
+    //     if (callback) {
+    //       callback(url, i);
+    //     }
+    //   });
+    // }
     return vol;
   },
 };
