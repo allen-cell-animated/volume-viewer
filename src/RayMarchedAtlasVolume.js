@@ -162,8 +162,10 @@ export default class RayMarchedAtlasVolume {
       const thicknessPct = maxval - minval;
       this.setOrthoThickness(thicknessPct);
     }
-    // else don't set? use previous value?
     else {
+      // it is possible this is overly aggressive resetting this value here
+      // but testing has shown no ill effects and it is better to have a definite
+      // known value when in perspective mode
       this.setOrthoThickness(1.0);
     }
 
