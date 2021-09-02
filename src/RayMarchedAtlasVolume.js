@@ -42,6 +42,7 @@ export default class RayMarchedAtlasVolume {
 
     this.setUniform("ATLAS_X", volume.imageInfo.cols);
     this.setUniform("ATLAS_Y", volume.imageInfo.rows);
+    this.setUniform("textureRes", new Vector2(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height));
     this.setUniform("SLICES", volume.z);
 
     this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
@@ -102,6 +103,7 @@ export default class RayMarchedAtlasVolume {
     this.scale = scale;
 
     this.cubeMesh.scale.copy(new Vector3(scale.x, scale.y, scale.z));
+    this.setUniform("volumeScale", scale);
   }
 
   setRayStepSizes(primary, secondary) {}
@@ -160,7 +162,12 @@ export default class RayMarchedAtlasVolume {
       const thicknessPct = maxval - minval;
       this.setOrthoThickness(thicknessPct);
     }
-    // else don't set? use previous value?
+    else {
+      // it is possible this is overly aggressive resetting this value here
+      // but testing has shown no ill effects and it is better to have a definite
+      // known value when in perspective mode
+      this.setOrthoThickness(1.0);
+    }
 
     this.setUniform("AABB_CLIP_MIN", this.bounds.bmin);
     this.setUniform("AABB_CLIP_MAX", this.bounds.bmax);

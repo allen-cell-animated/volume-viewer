@@ -20,27 +20,29 @@ export const rayMarchingFragmentShaderSrc = [
   "#define M_PI 3.14159265358979323846",
 
   "uniform vec2 iResolution;",
+  "uniform vec2 textureRes;",
   "uniform float GAMMA_MIN;",
   "uniform float GAMMA_MAX;",
   "uniform float GAMMA_SCALE;",
   "uniform float BRIGHTNESS;",
   "uniform float DENSITY;",
   "uniform float maskAlpha;",
-  "uniform sampler2D textureAtlas;",
-  "uniform sampler2D textureAtlasMask;",
-  "uniform int BREAK_STEPS;",
   "uniform float ATLAS_X;",
   "uniform float ATLAS_Y;",
-  "uniform float SLICES;",
   "uniform vec3 AABB_CLIP_MIN;",
   "uniform float CLIP_NEAR;",
   "uniform vec3 AABB_CLIP_MAX;",
   "uniform float CLIP_FAR;",
+  "uniform sampler2D textureAtlas;",
+  "uniform sampler2D textureAtlasMask;",
+  "uniform int BREAK_STEPS;",
+  "uniform float SLICES;",
   "uniform float isOrtho;",
   "uniform float orthoThickness;",
   "uniform float orthoScale;",
   "uniform int maxProject;",
   "uniform vec3 flipVolume;",
+  "uniform vec3 volumeScale;",
 
   // view space to axis-aligned volume box
   "uniform mat4 inverseModelViewMatrix;",
@@ -55,7 +57,7 @@ export const rayMarchingFragmentShaderSrc = [
   "  float threadId = gl_FragCoord.x/(gl_FragCoord.y + 1.0);",
   "  float bigVal = threadId*1299721.0/911.0;",
   "  vec2 smallVal = vec2(threadId*7927.0/577.0, threadId*104743.0/1039.0);",
-  "  return fract(sin(dot(co ,smallVal)) * bigVal);",
+  "  return fract(sin(dot(co, smallVal)) * bigVal);",
   "}",
 
   "vec4 luma2Alpha(vec4 color, float vmin, float vmax, float C){",
@@ -88,30 +90,31 @@ export const rayMarchingFragmentShaderSrc = [
   "  vec2 loc0 = vec2(",
   "    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,",
   "    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);",
+  // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y
+  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.
+  "loc0 = vec2(0.5/textureRes.x, 0.5/textureRes.y) + loc0*vec2(1.0-(ATLAS_X)/textureRes.x, 1.0-(ATLAS_Y)/textureRes.y);",
 
   // interpolate between two slices
 
-  // this 0.0001 fudge factor fixes a bug when the volume is clipped to a single slice boundary.
-  // Basically I am pushing the number just slightly off of an integer multiple.
-  "  float z = (pos.z)*(nSlices + 0.0001);",
+  "  float z = (pos.z)*(nSlices-1.0);",
   "  float zfloor = floor(z);",
   "  float z0  = zfloor;",
   "  float z1 = (zfloor+1.0);",
-  "  z1 = clamp(z1, 0.0, nSlices);",
+  "  z1 = clamp(z1, 0.0, nSlices-1.0);",
   "  float t = z-zfloor;", //mod(z, 1.0);',
 
   // flipped:
   "if (flipVolume.z == -1.0) {",
-  "    z0 = nSlices - z0;",
-  "    z1 = nSlices - z1;",
+  "    z0 = nSlices - z0 - 1.0;",
+  "    z1 = nSlices - z1 - 1.0;",
   "    t = 1.0 - t;",
   "}",
 
   // get slice offsets in texture atlas
   "  vec2 o0 = offsetFrontBack(z0,ATLAS_X,ATLAS_Y);//*pix;",
   "  vec2 o1 = offsetFrontBack(z1,ATLAS_X,ATLAS_Y);//*pix;",
-  "  o0 = clamp(o0, 0.0, 1.0) + loc0;",
-  "  o1 = clamp(o1, 0.0, 1.0) + loc0;",
+  "  o0 = clamp(o0, vec2(0.0,0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y)) + loc0;",
+  "  o1 = clamp(o1, vec2(0.0,0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y)) + loc0;",
 
   "  vec4 slice0Color = texture2D(tex, o0);",
   "  vec4 slice1Color = texture2D(tex, o1);",
@@ -120,6 +123,7 @@ export const rayMarchingFragmentShaderSrc = [
   // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?
   "  float slice0Mask = texture2D(textureAtlasMask, o0).x;",
   "  float slice1Mask = texture2D(textureAtlasMask, o1).x;",
+  // or use max for conservative 0 or 1 masking?
   "  float maskVal = mix(slice0Mask, slice1Mask, t);",
   // take mask from 0..1 to alpha..1
   "  maskVal = mix(maskVal, 1.0, maskAlpha);",
@@ -188,8 +192,10 @@ export const rayMarchingFragmentShaderSrc = [
 
   //'  //estimate step length',
   "  const int maxSteps = 512;",
-  "  float csteps = clamp(float(BREAK_STEPS), 1.0, float(maxSteps));",
-  "  float invstep = 1.0/csteps;",
+  // modify the 3 components of eye_d by volume scale
+  "  float scaledSteps = float(BREAK_STEPS) * length((eye_d.xyz/volumeScale));",
+  "  float csteps = clamp(float(scaledSteps), 1.0, float(maxSteps));",
+  "  float invstep = (tfar-tnear)/csteps;",
   // special-casing the single slice to remove the random ray dither.
   // this removes a Moire pattern visible in single slice images, which we want to view as 2D images as best we can.
   "  float r = (SLICES==1.0) ?  0.0 : 0.5 - 1.0*rand(eye_d.xy);",
@@ -381,5 +387,13 @@ export function rayMarchingShaderUniforms() {
       type: "v3",
       value: new Vector3(1.0, 1.0, 1.0),
     },
+    volumeScale: {
+      type: "v3",
+      value: new Vector3(1.0, 1.0, 1.0)
+    },
+    textureRes: {
+      type: "v2",
+      value: new Vector2(1.0, 1.0)
+    }
   };
 }
