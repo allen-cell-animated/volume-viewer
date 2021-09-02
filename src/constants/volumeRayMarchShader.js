@@ -196,7 +196,6 @@ export const rayMarchingFragmentShaderSrc = [
   "  float scaledSteps = float(BREAK_STEPS) * length((eye_d.xyz/volumeScale));",
   "  float csteps = clamp(float(scaledSteps), 1.0, float(maxSteps));",
   "  float invstep = (tfar-tnear)/csteps;",
-//  "  float invstep = 1.0/csteps;",
   // special-casing the single slice to remove the random ray dither.
   // this removes a Moire pattern visible in single slice images, which we want to view as 2D images as best we can.
   "  float r = (SLICES==1.0) ?  0.0 : 0.5 - 1.0*rand(eye_d.xy);",
