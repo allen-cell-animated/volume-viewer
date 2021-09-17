@@ -284,11 +284,11 @@ const volumeLoader = {
     // make a json metadata dict for the two channels:
     const urls = [
       {
-        name: "http://localhost:9020/example-data/czML0383-P0002-G11-PML0146-S04_ROI-0000-0000-0600-0600-LQTILE-CH405.jpeg",
+        name: "czML0383-P0002-G11-PML0146-S04_ROI-0000-0000-0600-0600-LQTILE-CH405.jpeg",
         channels: [0],
       },
       {
-        name: "http://localhost:9020/example-data/czML0383-P0002-G11-PML0146-S04_ROI-0000-0000-0600-0600-LQTILE-CH488.jpeg",
+        name: "czML0383-P0002-G11-PML0146-S04_ROI-0000-0000-0600-0600-LQTILE-CH488.jpeg",
         channels: [1],
       },
     ];
