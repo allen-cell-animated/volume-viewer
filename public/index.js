@@ -760,9 +760,9 @@ function fetchImage(url) {
     .then(function(myJson) {
       // if you need to adjust image paths prior to download,
       // now is the time to do it:
-      // myJson.images.forEach(function(element) {
-      //     element.name = myURLprefix + element.name;
-      // });
+      myJson.images.forEach(function(element) {
+        element.name = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/" + element.name;
+      });
       loadImageData(myJson);
     });
 }
@@ -895,7 +895,7 @@ function main() {
 
   const loadTestData = true;
   if (loadTestData) {
-    fetchImage("AICS-12_881_atlas.json");
+    fetchImage("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/test_parent_T0.ome_atlas.json");
   } else {
     const volumeinfo = createTestVolume();
     loadImageData(volumeinfo.imgdata, volumeinfo.volumedata);
