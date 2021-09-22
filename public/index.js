@@ -767,41 +767,7 @@ function fetchImage(url) {
   //     loadImageData(myJson);
   //   });
 
-  VolumeLoader.loadOpenCell((url, channelindex) => {
-    const vol = myState.volume;
-    // first 3 channels for starters
-    for (var ch = 0; ch < vol.num_channels; ++ch) {
-      vol.channels[ch].lutGenerator_percentiles(0.5, 0.998);
-      view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
-    }
-
-    view3D.setVolumeChannelAsMask(vol, vol.imageInfo.channel_names.indexOf("SEG_Memb"));
-    view3D.updateActiveChannels(vol);
-    view3D.updateLuts(vol);
-    view3D.updateLights(myState.lights);
-    view3D.updateDensity(vol, myState.density / 100.0);
-    view3D.updateExposure(myState.exposure);
-    if (vol.loaded) {
-      console.log("all channels loaded");
-    }
-  }).then((vol) => {
-    myState.volume = vol;
-    view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
-
-    view3D.removeAllVolumes();
-    view3D.addVolume(vol);
-
-    // apply a volume transform from an external source:
-    if (vol.imageInfo.userData && vol.imageInfo.userData.alignTransform) {
-      view3D.setVolumeTranslation(vol, vol.voxelsToWorldSpace(vol.imageInfo.userData.alignTransform.translation));
-      view3D.setVolumeRotation(vol, vol.imageInfo.userData.alignTransform.rotation);
-    }
-
-    //console.log(vol);
-    showChannelUI(vol);
-  });
-
-  // VolumeLoader.loadZarr("z0/image0", (url, channelindex) => {
+  // VolumeLoader.loadOpenCell((url, channelindex) => {
   //   const vol = myState.volume;
   //   // first 3 channels for starters
   //   for (var ch = 0; ch < vol.num_channels; ++ch) {
@@ -834,6 +800,40 @@ function fetchImage(url) {
   //   //console.log(vol);
   //   showChannelUI(vol);
   // });
+
+  VolumeLoader.loadZarr("z0/image0", (url, channelindex) => {
+    const vol = myState.volume;
+    // first 3 channels for starters
+    for (var ch = 0; ch < vol.num_channels; ++ch) {
+      vol.channels[ch].lutGenerator_percentiles(0.5, 0.998);
+      view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
+    }
+
+    view3D.setVolumeChannelAsMask(vol, vol.imageInfo.channel_names.indexOf("SEG_Memb"));
+    view3D.updateActiveChannels(vol);
+    view3D.updateLuts(vol);
+    view3D.updateLights(myState.lights);
+    view3D.updateDensity(vol, myState.density / 100.0);
+    view3D.updateExposure(myState.exposure);
+    if (vol.loaded) {
+      console.log("all channels loaded");
+    }
+  }).then((vol) => {
+    myState.volume = vol;
+    view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+
+    view3D.removeAllVolumes();
+    view3D.addVolume(vol);
+
+    // apply a volume transform from an external source:
+    if (vol.imageInfo.userData && vol.imageInfo.userData.alignTransform) {
+      view3D.setVolumeTranslation(vol, vol.voxelsToWorldSpace(vol.imageInfo.userData.alignTransform.translation));
+      view3D.setVolumeRotation(vol, vol.imageInfo.userData.alignTransform.rotation);
+    }
+
+    //console.log(vol);
+    showChannelUI(vol);
+  });
 }
 
 function createTestVolume() {
