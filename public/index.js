@@ -17,6 +17,7 @@ let view3D = null;
 const myState = {
   file: "",
   volume: null,
+  timeSeriesVolumes: [],
   density: 12.5,
   maskAlpha: 1.0,
   exposure: 0.75,
@@ -682,8 +683,39 @@ function showChannelUI(volume) {
   }
 }
 
-function loadImageData(jsondata, volumedata) {
-  const vol = new Volume(jsondata);
+function loadVolumeAtlasData(vol, jsonData) {
+  VolumeLoader.loadVolumeAtlasData(vol, jsonData.images, (url, channelIndex) => {
+    vol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
+  
+    if (vol.loaded) {
+      view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+  
+      view3D.removeAllVolumes();
+      view3D.addVolume(vol);
+  
+      // first 3 channels for starters
+      for (var ch = 0; ch < vol.num_channels; ++ch) {
+        view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
+      }
+  
+      view3D.setVolumeChannelAsMask(vol, jsonData.channel_names.indexOf("SEG_Memb"));
+      view3D.updateActiveChannels(vol);
+      view3D.updateLuts(vol);
+      view3D.updateLights(myState.lights);
+      view3D.updateDensity(vol, myState.density / 100.0);
+      view3D.updateExposure(myState.exposure);
+  
+      // apply a volume transform from an external source:
+      if (jsonData.userData && jsonData.userData.alignTransform) {
+        view3D.setVolumeTranslation(vol, vol.voxelsToWorldSpace(jsonData.userData.alignTransform.translation));
+        view3D.setVolumeRotation(vol, jsonData.userData.alignTransform.rotation);
+      }
+    }
+  });
+}
+
+function loadImageData(jsonData, volumedata) {
+  const vol = new Volume(jsonData);
   myState.volume = vol;
 
   // tell the viewer about the image AFTER it's loaded
@@ -694,7 +726,7 @@ function loadImageData(jsondata, volumedata) {
   if (volumedata) {
     for (var i = 0; i < volumedata.length; ++i) {
       // where each volumedata element is a flat Uint8Array of xyz data
-      // according to jsondata.tile_width*jsondata.tile_height*jsondata.tiles
+      // according to jsonData.tile_width*jsonData.tile_height*jsonData.tiles
       // (first row of first plane is the first data in
       // the layout, then second row of first plane, etc)
       vol.setChannelDataFromVolume(i, volumedata[i]);
@@ -709,7 +741,7 @@ function loadImageData(jsondata, volumedata) {
         view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
       }
 
-      const mask_channel_index = jsondata.channel_names.indexOf("SEG_Memb");
+      const mask_channel_index = jsonData.channel_names.indexOf("SEG_Memb");
       view3D.setVolumeChannelAsMask(vol, mask_channel_index);
       view3D.updateActiveChannels(vol);
       view3D.updateLuts(vol);
@@ -718,53 +750,51 @@ function loadImageData(jsondata, volumedata) {
       view3D.updateExposure(myState.exposure);
     }
   } else {
-    VolumeLoader.loadVolumeAtlasData(vol, jsondata.images, (url, channelIndex) => {
-      vol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
-
-      if (vol.loaded) {
-        view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
-
-        view3D.removeAllVolumes();
-        view3D.addVolume(vol);
-
-        // first 3 channels for starters
-        for (var ch = 0; ch < vol.num_channels; ++ch) {
-          view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
-        }
-
-        view3D.setVolumeChannelAsMask(vol, jsondata.channel_names.indexOf("SEG_Memb"));
-        view3D.updateActiveChannels(vol);
-        view3D.updateLuts(vol);
-        view3D.updateLights(myState.lights);
-        view3D.updateDensity(vol, myState.density / 100.0);
-        view3D.updateExposure(myState.exposure);
-
-        // apply a volume transform from an external source:
-        if (jsondata.userData && jsondata.userData.alignTransform) {
-          view3D.setVolumeTranslation(vol, vol.voxelsToWorldSpace(jsondata.userData.alignTransform.translation));
-          view3D.setVolumeRotation(vol, jsondata.userData.alignTransform.rotation);
-        }
-      }
-    });
+    loadVolumeAtlasData(vol, jsonData.images)
   }
   showChannelUI(vol);
 
   return vol;
 }
 
-function fetchImage(url) {
+function cacheTimeSeriesImageData(jsonData) {
+  const vol = new Volume(jsonData);
+  myState.timeSeriesVolumes.push(vol);
+}
+
+function fetchImage(url, isTimeSeries=false, isFirstFrame=false) {
   fetch(url)
     .then(function(response) {
       return response.json();
     })
     .then(function(myJson) {
-      // if you need to adjust image paths prior to download,
-      // now is the time to do it:
-      myJson.images.forEach(function(element) {
-        element.name = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/" + element.name;
-      });
-      loadImageData(myJson);
+      if (isTimeSeries) {
+        // if you need to adjust image paths prior to download,
+        // now is the time to do it:
+        myJson.images.forEach(function(element) {
+          element.name = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/" + element.name;
+        });
+        cacheTimeSeriesImageData(myJson);
+        if (isFirstFrame) {
+          const firstFrameVolume = myState.timeSeriesVolumes[0];
+          myState.volume = firstFrameVolume;
+          loadVolumeAtlasData(firstFrameVolume, myJson)
+          showChannelUI(firstFrameVolume);
+          return firstFrameVolume;
+        }
+      } else {
+        loadImageData(myJson);
+      }
     });
+}
+
+function fetchTimeSeries(urlStart, urlEnd, t0, tf) {
+  // Cache and load first frame
+  fetchImage(urlStart + t0 + urlEnd, true, true);
+  // Cache but not load rest of frames
+  for (let t = t0 + 1; t <= tf; t++) {
+    fetchImage(urlStart + t + urlEnd, true);
+  }
 }
 
 function createTestVolume() {
@@ -893,13 +923,18 @@ function main() {
 
   setupGui();
 
+  const loadTimeSeries = true;
   const loadTestData = true;
-  if (loadTestData) {
-    fetchImage("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/test_parent_T0.ome_atlas.json");
+
+  if (loadTimeSeries) {
+    fetchTimeSeries("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/test_parent_T", ".ome_atlas.json", 0, 3);
+  } else if (loadTestData) {
+    fetchImage("AICS-12_881_atlas.json");
   } else {
     const volumeinfo = createTestVolume();
     loadImageData(volumeinfo.imgdata, volumeinfo.volumedata);
   }
+  console.log(myState.timeSeriesVolumes)
 }
 
 document.body.onload = () => {
