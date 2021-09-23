@@ -822,7 +822,7 @@ function playTimeSeries() {
 
     console.log("loaded frame #" + nextFrame)
   }
-  timer = setInterval(loadNextFrame, 500);
+  timer = setInterval(loadNextFrame, 3000);
 }
 
 function createTestVolume() {
