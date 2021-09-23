@@ -764,6 +764,7 @@ function cacheTimeSeriesImageData(jsonData) {
   const vol = new Volume(jsonData);
   myState.timeSeriesVolumes.push(vol);
   myState.timeSeriesJsonData.push(jsonData);
+  return vol;
 }
 
 function fetchImage(url, isTimeSeries=false, isFirstFrame=false) {
@@ -779,15 +780,40 @@ function fetchImage(url, isTimeSeries=false, isFirstFrame=false) {
           element.name = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/" + element.name;
         });
 
-        cacheTimeSeriesImageData(myJson);
+        const currentVol = cacheTimeSeriesImageData(myJson);
         if (isFirstFrame) {
-          const firstFrameVolume = myState.timeSeriesVolumes[0];
-          myState.volume = firstFrameVolume;
+          // create the main volume and add to view (this is the only place)
+          myState.volume = new Volume(myJson);
+          view3D.removeAllVolumes();
+          view3D.addVolume(myState.volume);
+          view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+          // first 3 channels for starters
+          for (var ch = 0; ch < myState.volume.num_channels; ++ch) {
+            view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
+          }
+          view3D.setVolumeChannelAsMask(myState.volume, myJson.channel_names.indexOf("SEG_Memb"));
+          view3D.updateActiveChannels(myState.volume);
+          view3D.updateLuts(myState.volume);
+          view3D.updateLights(myState.lights);
+          view3D.updateDensity(myState.volume, myState.density / 100.0);
+          view3D.updateExposure(myState.exposure);
+          // apply a volume transform from an external source:
+          if (myJson.userData && myJson.userData.alignTransform) {
+            view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(myJson.userData.alignTransform.translation));
+            view3D.setVolumeRotation(myState.volume, myJson.userData.alignTransform.rotation);
+          }
+          
           myState.currentFrame = 0;
-          loadVolumeAtlasData(firstFrameVolume, myJson)
-          showChannelUI(firstFrameVolume);
-          return firstFrameVolume;  // NOTE: do I need this?
+          showChannelUI(myState.volume);
         }
+
+        VolumeLoader.loadVolumeAtlasData(currentVol, myJson.images, (url, channelIndex) => {
+          currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
+
+          if (currentVol.loaded) {
+            console.log("currentVol with name" + currentVol.name + "is loaded")
+          }
+        });
       } else {
         loadImageData(myJson);
       }
@@ -799,6 +825,7 @@ function fetchTimeSeries(urlStart, urlEnd, t0, tf, interval=1) {
   fetchImage(urlStart + t0 + urlEnd, true, true);
   // Cache but not load rest of frames
   for (let t = t0 + 1; t <= tf; t += interval) {
+    // use t to determine whether to load (instead of 2 fetchImage calls)
     fetchImage(urlStart + t + urlEnd, true);
   }
 }
@@ -812,13 +839,34 @@ function playTimeSeries() {
     }
     const nextFrame = myState.currentFrame + 1;
     const nextFrameVolume = myState.timeSeriesVolumes[nextFrame];
-    const nextFrameJson = myState.timeSeriesJsonData[nextFrame];
+    console.log("loadNextFrame at "+ nextFrame)
     
-    myState.volume = nextFrameVolume;
-    console.log("loading frame at index" + nextFrame)
-    loadVolumeAtlasData(nextFrameVolume, nextFrameJson);
-    showChannelUI(nextFrameVolume);
-    
+    // grab references to data from each channel and put it in myState.volume
+    for (var i = 0; i < nextFrameVolume.num_channels; ++i) {
+      myState.volume.channels[i].imgData = {
+        data: nextFrameVolume.channels[i].imgData.data.slice(),
+        width: nextFrameVolume.channels[i].imgData.width,
+        height: nextFrameVolume.channels[i].imgData.height,
+      };
+      myState.volume.channels[i].volumeData = nextFrameVolume.channels[i].volumeData.slice();
+      myState.volume.channels[i].lut = nextFrameVolume.channels[i].lut.slice();
+      myState.volume.channels[i].loaded = true;
+    }
+
+    myState.volume.loaded = true;
+
+    // first 3 channels for starters
+    for (var ch = 0; ch < myState.volume.num_channels; ++ch) {
+      view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
+    }
+
+    // view3D.setVolumeChannelAsMask(myState.volume, my.channel_names.indexOf("SEG_Memb"));
+    view3D.updateActiveChannels(myState.volume);
+    view3D.updateLuts(myState.volume);
+    view3D.updateLights(myState.lights);
+    view3D.updateDensity(myState.volume, myState.density / 100.0);
+    view3D.updateExposure(myState.exposure);
+
     myState.currentFrame = nextFrame;
 
   }
