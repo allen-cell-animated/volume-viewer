@@ -794,11 +794,11 @@ function fetchImage(url, isTimeSeries=false, isFirstFrame=false) {
     });
 }
 
-function fetchTimeSeries(urlStart, urlEnd, t0, tf) {
+function fetchTimeSeries(urlStart, urlEnd, t0, tf, interval=1) {
   // Cache and load first frame
   fetchImage(urlStart + t0 + urlEnd, true, true);
   // Cache but not load rest of frames
-  for (let t = t0 + 1; t <= tf; t++) {
+  for (let t = t0 + 1; t <= tf; t += interval) {
     fetchImage(urlStart + t + urlEnd, true);
   }
 }
@@ -959,7 +959,7 @@ function main() {
   const loadTestData = true;
 
   if (loadTimeSeries) {
-    fetchTimeSeries("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/test_parent_T", ".ome_atlas.json", 0, 3);
+    fetchTimeSeries("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/test_parent_T", ".ome_atlas.json", 0, 49, 10);
   } else if (loadTestData) {
     fetchImage("AICS-12_881_atlas.json");
   } else {
