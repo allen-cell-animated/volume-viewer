@@ -18,6 +18,7 @@ const myState = {
   file: "",
   volume: null,
   timeSeriesVolumes: [],
+  timeSeriesJsonData: [],
   density: 12.5,
   maskAlpha: 1.0,
   exposure: 0.75,
@@ -59,6 +60,8 @@ const myState = {
   flipX: 1,
   flipY: 1,
   flipZ: 1,
+
+  currentFrame: 0,
 };
 
 // controlPoints is array of [{offset:number, color:cssstring}]
@@ -760,6 +763,7 @@ function loadImageData(jsonData, volumedata) {
 function cacheTimeSeriesImageData(jsonData) {
   const vol = new Volume(jsonData);
   myState.timeSeriesVolumes.push(vol);
+  myState.timeSeriesJsonData.push(jsonData);
 }
 
 function fetchImage(url, isTimeSeries=false, isFirstFrame=false) {
@@ -774,13 +778,15 @@ function fetchImage(url, isTimeSeries=false, isFirstFrame=false) {
         myJson.images.forEach(function(element) {
           element.name = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/" + element.name;
         });
+
         cacheTimeSeriesImageData(myJson);
         if (isFirstFrame) {
           const firstFrameVolume = myState.timeSeriesVolumes[0];
           myState.volume = firstFrameVolume;
+          myState.currentFrame = 0;
           loadVolumeAtlasData(firstFrameVolume, myJson)
           showChannelUI(firstFrameVolume);
-          return firstFrameVolume;
+          return firstFrameVolume;  // NOTE: do I need this?
         }
       } else {
         loadImageData(myJson);
@@ -795,6 +801,28 @@ function fetchTimeSeries(urlStart, urlEnd, t0, tf) {
   for (let t = t0 + 1; t <= tf; t++) {
     fetchImage(urlStart + t + urlEnd, true);
   }
+}
+
+function playTimeSeries() {
+  let timer;
+  const loadNextFrame = () => {
+    if (myState.currentFrame >= myState.timeSeriesVolumes.length - 1) {
+      clearInterval(timer);
+      return;
+    }
+    const nextFrame = myState.currentFrame + 1;
+    const nextFrameVolume = myState.timeSeriesVolumes[nextFrame];
+    const nextFrameJson = myState.timeSeriesJsonData[nextFrame];
+    
+    myState.volume = nextFrameVolume;
+    loadVolumeAtlasData(nextFrameVolume, nextFrameJson);
+    showChannelUI(nextFrameVolume);
+    
+    myState.currentFrame = nextFrame;
+
+    console.log("loaded frame #" + nextFrame)
+  }
+  timer = setInterval(loadNextFrame, 500);
 }
 
 function createTestVolume() {
@@ -884,6 +912,10 @@ function main() {
   flipzbtn.addEventListener("click", () => {
     myState.flipZ *= -1;
     view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
+  });
+  var playbtn = document.getElementById("playbtn");
+  playbtn.addEventListener("click", () => {
+    playTimeSeries();
   });
 
   var alignbtn = document.getElementById("xfbtn");
