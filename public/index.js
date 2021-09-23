@@ -18,7 +18,6 @@ const myState = {
   file: "",
   volume: null,
   timeSeriesVolumes: [],
-  timeSeriesJsonData: [],
   density: 12.5,
   maskAlpha: 1.0,
   exposure: 0.75,
@@ -760,14 +759,13 @@ function loadImageData(jsonData, volumedata) {
   return vol;
 }
 
-function cacheTimeSeriesImageData(jsonData) {
+function cacheTimeSeriesImageData(jsonData, frameNumber) {
   const vol = new Volume(jsonData);
-  myState.timeSeriesVolumes.push(vol);
-  myState.timeSeriesJsonData.push(jsonData);
+  myState.timeSeriesVolumes[frameNumber] = vol;
   return vol;
 }
 
-function fetchImage(url, isTimeSeries=false, isFirstFrame=false) {
+function fetchImage(url, isTimeSeries=false, frameNumber=0) {
   fetch(url)
     .then(function(response) {
       return response.json();
@@ -780,8 +778,8 @@ function fetchImage(url, isTimeSeries=false, isFirstFrame=false) {
           element.name = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/" + element.name;
         });
 
-        const currentVol = cacheTimeSeriesImageData(myJson);
-        if (isFirstFrame) {
+        const currentVol = cacheTimeSeriesImageData(myJson, frameNumber);
+        if (frameNumber === 0) {
           // create the main volume and add to view (this is the only place)
           myState.volume = new Volume(myJson);
           view3D.removeAllVolumes();
@@ -822,11 +820,14 @@ function fetchImage(url, isTimeSeries=false, isFirstFrame=false) {
 
 function fetchTimeSeries(urlStart, urlEnd, t0, tf, interval=1) {
   // Cache and load first frame
-  fetchImage(urlStart + t0 + urlEnd, true, true);
+  // fetchImage(urlStart + t0 + urlEnd, true, true);
   // Cache but not load rest of frames
-  for (let t = t0 + 1; t <= tf; t += interval) {
+  let frameNumber = 0;
+  for (let t = t0; t <= tf; t += interval) {
     // use t to determine whether to load (instead of 2 fetchImage calls)
-    fetchImage(urlStart + t + urlEnd, true);
+
+    fetchImage(urlStart + t + urlEnd, true, frameNumber);
+    frameNumber++
   }
 }
 
@@ -844,12 +845,12 @@ function playTimeSeries() {
     // grab references to data from each channel and put it in myState.volume
     for (var i = 0; i < nextFrameVolume.num_channels; ++i) {
       myState.volume.channels[i].imgData = {
-        data: nextFrameVolume.channels[i].imgData.data.slice(),
+        data: nextFrameVolume.channels[i].imgData.data,
         width: nextFrameVolume.channels[i].imgData.width,
         height: nextFrameVolume.channels[i].imgData.height,
       };
-      myState.volume.channels[i].volumeData = nextFrameVolume.channels[i].volumeData.slice();
-      myState.volume.channels[i].lut = nextFrameVolume.channels[i].lut.slice();
+      myState.volume.channels[i].volumeData = nextFrameVolume.channels[i].volumeData;
+      myState.volume.channels[i].lut = nextFrameVolume.channels[i].lut;
       myState.volume.channels[i].loaded = true;
     }
 
@@ -870,7 +871,7 @@ function playTimeSeries() {
     myState.currentFrame = nextFrame;
 
   }
-  timer = setInterval(loadNextFrame, 2500);
+  timer = setInterval(loadNextFrame, 250);
 }
 
 function createTestVolume() {
@@ -1010,7 +1011,7 @@ function main() {
   const loadTestData = true;
 
   if (loadTimeSeries) {
-    fetchTimeSeries("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/test_parent_T49.ome_", "_atlas.json", 0, 46, 9);
+    fetchTimeSeries("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/test_parent_T49.ome_", "_atlas.json", 0, 46, 3);
   } else if (loadTestData) {
     fetchImage("AICS-12_881_atlas.json");
   } else {
