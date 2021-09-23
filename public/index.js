@@ -815,7 +815,7 @@ function playTimeSeries() {
     const nextFrameJson = myState.timeSeriesJsonData[nextFrame];
     
     myState.volume = nextFrameVolume;
-    console.log("loading frame")
+    console.log("loading frame at index" + nextFrame)
     loadVolumeAtlasData(nextFrameVolume, nextFrameJson);
     showChannelUI(nextFrameVolume);
     
@@ -915,6 +915,9 @@ function main() {
   });
   var playbtn = document.getElementById("playbtn");
   playbtn.addEventListener("click", () => {
+    if (myState.currentFrame !== 0) {
+      myState.currentFrame = -1;
+    }
     playTimeSeries();
   });
 
