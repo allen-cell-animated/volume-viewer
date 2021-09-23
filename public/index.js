@@ -815,12 +815,12 @@ function playTimeSeries() {
     const nextFrameJson = myState.timeSeriesJsonData[nextFrame];
     
     myState.volume = nextFrameVolume;
+    console.log("loading frame")
     loadVolumeAtlasData(nextFrameVolume, nextFrameJson);
     showChannelUI(nextFrameVolume);
     
     myState.currentFrame = nextFrame;
 
-    console.log("loaded frame #" + nextFrame)
   }
   timer = setInterval(loadNextFrame, 3000);
 }
