@@ -962,7 +962,7 @@ function main() {
   const loadTestData = true;
 
   if (loadTimeSeries) {
-    fetchTimeSeries("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/test_parent_T", ".ome_atlas.json", 0, 49, 10);
+    fetchTimeSeries("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/test_parent_T49.ome_", "_atlas.json", 0, 46, 9);
   } else if (loadTestData) {
     fetchImage("AICS-12_881_atlas.json");
   } else {
