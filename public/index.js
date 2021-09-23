@@ -871,7 +871,7 @@ function playTimeSeries() {
     myState.currentFrame = nextFrame;
 
   }
-  timer = setInterval(loadNextFrame, 250);
+  timer = setInterval(loadNextFrame, 1);
 }
 
 function createTestVolume() {
@@ -1011,7 +1011,7 @@ function main() {
   const loadTestData = true;
 
   if (loadTimeSeries) {
-    fetchTimeSeries("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/test_parent_T49.ome_", "_atlas.json", 0, 46, 3);
+    fetchTimeSeries("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/test_parent_T49.ome_", "_atlas.json", 0, 46);
   } else if (loadTestData) {
     fetchImage("AICS-12_881_atlas.json");
   } else {
