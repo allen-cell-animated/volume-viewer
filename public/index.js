@@ -822,7 +822,7 @@ function playTimeSeries() {
     myState.currentFrame = nextFrame;
 
   }
-  timer = setInterval(loadNextFrame, 3000);
+  timer = setInterval(loadNextFrame, 2500);
 }
 
 function createTestVolume() {
