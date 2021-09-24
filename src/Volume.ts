@@ -89,7 +89,7 @@ interface VolumeDataObserver {
  */
 export default class Volume {
   public imageInfo: ImageInfo;
-  private name: string;
+  public name: string;
   private pixel_size: [number, number, number];
   public x: number;
   public y: number;
@@ -101,12 +101,12 @@ export default class Volume {
   private volumeSize: [number, number, number];
   public channels: Channel[];
   private volumeDataObservers: VolumeDataObserver[];
-  private scale: Vector3;
+  public scale: Vector3;
   private currentScale: Vector3;
   private physicalSize: Vector3;
   public normalizedPhysicalSize: Vector3;
   private loaded: boolean;
-  private channel_colors_default: [number, number, number][];
+  public channel_colors_default: [number, number, number][];
 
   constructor(imageInfo: ImageInfo) {
     this.loaded = false;

@@ -29,7 +29,7 @@ import { LUT_ARRAY_LENGTH } from "./Histogram";
 import Volume from "./Volume";
 import { Bounds } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel.js";
-import VolumeDrawable from "./VolumeDrawable.js";
+import VolumeDrawable from "./VolumeDrawable";
 import { Light } from "./Light";
 
 export default class PathTracedVolume {
@@ -339,7 +339,7 @@ export default class PathTracedVolume {
     }
   }
 
-  public setRenderUpdateListener(callback: (number) => void): void {
+  public setRenderUpdateListener(callback?: (number) => void): void {
     this.renderUpdateListener = callback;
   }
 
@@ -553,7 +553,7 @@ export default class PathTracedVolume {
   }
 
   // -0.5 .. 0.5
-  setAxisClip(axis: number, minval: number, maxval: number, isOrthoAxis: boolean): void {
+  setAxisClip(axis: string, minval: number, maxval: number, isOrthoAxis: boolean): void {
     this.bounds.bmax[axis] = maxval;
     this.bounds.bmin[axis] = minval;
     const physicalSize = this.volume.normalizedPhysicalSize;

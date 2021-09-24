@@ -3,7 +3,7 @@ import { AmbientLight, Vector3, Object3D, SpotLight, DirectionalLight, Euler } f
 import { ThreeJsPanel } from "./ThreeJsPanel.js";
 import lightSettings from "./constants/lights.js";
 import FusedChannelData from "./FusedChannelData";
-import VolumeDrawable from "./VolumeDrawable.js";
+import VolumeDrawable from "./VolumeDrawable";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
 
 export const RENDERMODE_RAYMARCH = 0;
