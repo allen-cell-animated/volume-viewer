@@ -13,7 +13,7 @@ import {
 } from "three";
 
 import TrackballControls from "./TrackballControls.js";
-import Timing from "./Timing.js";
+import Timing from "./Timing";
 
 import { VRButton } from "./vr/VRButton";
 import vrObjectControls from "./vr/vrObjectControls.js";

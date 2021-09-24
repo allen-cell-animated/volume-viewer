@@ -1,4 +1,10 @@
 export default class Timing {
+  private beginTime: number;
+  private prevTime: number;
+  private frames: number;
+  private lastFrameMs: number;
+  private lastFPS: number;
+
   constructor() {
     this.beginTime = (performance || Date).now();
     this.prevTime = this.beginTime;
@@ -8,11 +14,11 @@ export default class Timing {
     this.lastFPS = 0;
   }
 
-  begin() {
+  begin(): void {
     this.beginTime = (performance || Date).now();
   }
 
-  end() {
+  end(): number {
     this.frames++;
     const time = (performance || Date).now();
     this.lastFrameMs = time - this.beginTime;
@@ -27,7 +33,7 @@ export default class Timing {
     return time;
   }
 
-  update() {
+  update(): void {
     this.beginTime = this.end();
   }
 }
