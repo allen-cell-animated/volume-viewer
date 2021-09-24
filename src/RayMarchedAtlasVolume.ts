@@ -9,10 +9,7 @@ import {
 import { Volume } from ".";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 
-interface Bounds {
-  bmin: Vector3;
-  bmax: Vector3;
-}
+import { Bounds } from "./types";
 
 export default class RayMarchedAtlasVolume {
   public volume: Volume;

@@ -1,19 +1,43 @@
-import { Vector3 } from "three";
+import { Vector3, Matrix4 } from "three";
 export const AREA_LIGHT = 0;
 export const SKY_LIGHT = 1;
 
 export class Light {
+  public m_theta: number;
+  public m_phi: number;
+  public m_width: number;
+  public m_height: number;
+  public m_distance: number;
+  public m_skyRadius: number;
+  public m_P: Vector3;
+  public m_target: Vector3;
+  public m_area: number;
+  public m_color: Vector3;
+  public m_colorTop: Vector3;
+  public m_colorMiddle: Vector3;
+  public m_colorBottom: Vector3;
+  public m_T: number;
+  public m_N: Vector3;
+  public m_U: Vector3;
+  public m_V: Vector3;
+  public m_halfWidth: number;
+  public m_halfHeight: number;
+  private m_areaPdf: number;
+
   // type = 1 for sky light, 0 for area light
-  constructor(type) {
+  constructor(type: number) {
     this.m_theta = (14 * Math.PI) / 180.0;
     this.m_phi = (54 * Math.PI) / 180.0;
     this.m_width = 1.0;
     this.m_height = 1.0;
+    this.m_halfWidth = 0.5 * this.m_width;
+    this.m_halfHeight = 0.5 * this.m_height;
     this.m_distance = 4.0;
     this.m_skyRadius = 1000.0;
     this.m_P = new Vector3();
     this.m_target = new Vector3();
     this.m_area = 1.0;
+    this.m_areaPdf = 1.0 / this.m_area;
     this.m_color = new Vector3(75, 75, 75);
     this.m_colorTop = new Vector3(0.3, 0.3, 0.3);
     this.m_colorMiddle = new Vector3(0.3, 0.3, 0.3);
@@ -29,7 +53,7 @@ export class Light {
     this.update(new Vector3(0, 0, 0));
   }
 
-  update(targetPoint, cameraMatrix) {
+  update(targetPoint: Vector3, cameraMatrix?: Matrix4): void {
     this.m_halfWidth = 0.5 * this.m_width;
     this.m_halfHeight = 0.5 * this.m_height;
     this.m_target.copy(targetPoint);

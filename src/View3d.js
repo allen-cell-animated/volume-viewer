@@ -4,7 +4,7 @@ import { ThreeJsPanel } from "./ThreeJsPanel.js";
 import lightSettings from "./constants/lights.js";
 import FusedChannelData from "./FusedChannelData";
 import VolumeDrawable from "./VolumeDrawable.js";
-import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light.js";
+import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
 
 export const RENDERMODE_RAYMARCH = 0;
 export const RENDERMODE_PATHTRACE = 1;

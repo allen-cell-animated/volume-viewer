@@ -2,7 +2,7 @@ import { Vector3, Object3D, Euler } from "three";
 
 import MeshVolume from "./MeshVolume.js";
 import RayMarchedAtlasVolume from "./RayMarchedAtlasVolume";
-import PathTracedVolume from "./PathTracedVolume.js";
+import PathTracedVolume from "./PathTracedVolume";
 
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
