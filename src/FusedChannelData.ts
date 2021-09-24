@@ -1,13 +1,8 @@
 import { DataTexture, LuminanceFormat, UnsignedByteType, ClampToEdgeWrapping } from "three";
 import { LinearFilter } from "three/src/constants";
 
-import Channel from "./Channel.js";
-
-interface FuseChannel {
-  chIndex: number;
-  lut: [];
-  rgbColor: [number, number, number];
-}
+import Channel from "./Channel";
+import { FuseChannel } from "./types";
 
 // This is the owner of the fused RGBA volume texture atlas, and the mask texture atlas.
 // This module is responsible for updating the fused texture, given the read-only volume channel data.

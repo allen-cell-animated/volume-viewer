@@ -7,9 +7,10 @@ import {
   rayMarchingShaderUniforms,
 } from "./constants/volumeRayMarchShader.js";
 import { Volume } from ".";
+import Channel from "./Channel";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 
-import { Bounds } from "./types";
+import { Bounds, FuseChannel } from "./types";
 
 export default class RayMarchedAtlasVolume {
   public volume: Volume;

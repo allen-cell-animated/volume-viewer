@@ -88,23 +88,23 @@ interface VolumeDataObserver {
  * @param {imageInfo} imageInfo
  */
 export default class Volume {
-  private imageInfo: ImageInfo;
+  public imageInfo: ImageInfo;
   private name: string;
   private pixel_size: [number, number, number];
-  private x: number;
-  private y: number;
-  private z: number;
+  public x: number;
+  public y: number;
+  public z: number;
   private t: number;
-  private num_channels: number;
+  public num_channels: number;
   private channel_names: string[];
   private atlasSize: [number, number];
   private volumeSize: [number, number, number];
-  private channels: Channel[];
+  public channels: Channel[];
   private volumeDataObservers: VolumeDataObserver[];
   private scale: Vector3;
   private currentScale: Vector3;
   private physicalSize: Vector3;
-  private normalizedPhysicalSize: Vector3;
+  public normalizedPhysicalSize: Vector3;
   private loaded: boolean;
   private channel_colors_default: [number, number, number][];
 
