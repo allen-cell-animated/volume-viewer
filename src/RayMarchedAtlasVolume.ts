@@ -1,4 +1,4 @@
-import { Vector2, Vector3, Group, BoxGeometry, Mesh, ShaderMaterial, Matrix4 } from "three";
+import { Euler, Vector2, Vector3, Group, BoxGeometry, Mesh, ShaderMaterial, Matrix4 } from "three";
 
 import FusedChannelData from "./FusedChannelData";
 import {
@@ -6,9 +6,25 @@ import {
   rayMarchingFragmentShaderSrc,
   rayMarchingShaderUniforms,
 } from "./constants/volumeRayMarchShader.js";
+import { Volume } from ".";
+import { ThreeJsPanel } from "./ThreeJsPanel";
+
+interface Bounds {
+  bmin: Vector3;
+  bmax: Vector3;
+}
 
 export default class RayMarchedAtlasVolume {
-  constructor(volume) {
+  public volume: Volume;
+  public bounds: Bounds;
+  private cube: BoxGeometry;
+  private cubeMesh: Mesh;
+  private cubeTransformNode: Group;
+  private uniforms: any; // map of string to {type, value}?
+  private channelData: FusedChannelData;
+  private scale: Vector3;
+
+  constructor(volume: Volume) {
     // need?
     this.volume = volume;
 
@@ -16,6 +32,7 @@ export default class RayMarchedAtlasVolume {
       bmin: new Vector3(-0.5, -0.5, -0.5),
       bmax: new Vector3(0.5, 0.5, 0.5),
     };
+    this.scale = new Vector3(1.0, 1.0, 1.0);
 
     this.cube = new BoxGeometry(1.0, 1.0, 1.0);
     this.cubeMesh = new Mesh(this.cube);
@@ -28,10 +45,10 @@ export default class RayMarchedAtlasVolume {
     this.uniforms = rayMarchingShaderUniforms();
 
     // shader,vtx and frag.
-    var vtxsrc = rayMarchingVertexShaderSrc;
-    var fgmtsrc = rayMarchingFragmentShaderSrc;
+    const vtxsrc = rayMarchingVertexShaderSrc;
+    const fgmtsrc = rayMarchingFragmentShaderSrc;
 
-    var threeMaterial = new ShaderMaterial({
+    const threeMaterial = new ShaderMaterial({
       uniforms: this.uniforms,
       vertexShader: vtxsrc,
       fragmentShader: fgmtsrc,
@@ -54,30 +71,30 @@ export default class RayMarchedAtlasVolume {
     }
   }
 
-  cleanup() {
+  public cleanup(): void {
     this.cube.dispose();
     this.cubeMesh.material.dispose();
 
     this.channelData.cleanup();
   }
 
-  setVisible(isVisible) {
+  public setVisible(isVisible: boolean): void {
     this.cubeMesh.visible = isVisible;
   }
 
-  doRender(canvas) {
+  private doRender(canvas: ThreeJsPanel): void {
     if (!this.cubeMesh.visible) {
       return;
     }
 
     this.cubeMesh.updateMatrixWorld(true);
 
-    var mvm = new Matrix4();
+    const mvm = new Matrix4();
     mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.cubeMesh.matrixWorld);
-    var mi = new Matrix4();
+    const mi = new Matrix4();
     mi.copy(mvm).invert();
 
-    this.setUniform("inverseModelViewMatrix", mi, true, true);
+    this.setUniform("inverseModelViewMatrix", mi);
 
     const isVR = canvas.isVR();
     if (isVR) {
@@ -91,78 +108,83 @@ export default class RayMarchedAtlasVolume {
     }
   }
 
-  get3dObject() {
+  public get3dObject(): Group {
     return this.cubeTransformNode;
   }
 
-  onChannelData(batch) {
+  public onChannelData(batch: number[]): void {
     this.channelData.onChannelLoaded(batch, this.volume.channels);
   }
 
-  setScale(scale) {
+  public setScale(scale: Vector3): void {
     this.scale = scale;
 
     this.cubeMesh.scale.copy(new Vector3(scale.x, scale.y, scale.z));
     this.setUniform("volumeScale", scale);
   }
 
-  setRayStepSizes(primary, secondary) {}
+  public setRayStepSizes(primary: number, secondary: number): void {
+    // no op
+  }
 
-  setTranslation(vec3xyz) {
+  public setTranslation(vec3xyz: Vector3): void {
     this.cubeMesh.position.copy(vec3xyz);
   }
 
-  setRotation(eulerXYZ) {
+  public setRotation(eulerXYZ: Euler): void {
     this.cubeTransformNode.rotation.copy(eulerXYZ);
   }
 
-  setOrthoScale(value) {
+  public setOrthoScale(value: number): void {
     this.setUniform("orthoScale", value);
   }
 
-  setResolution(x, y) {
+  public setResolution(x: number, y: number): void {
     this.setUniform("iResolution", new Vector2(x, y));
   }
 
-  setPixelSamplingRate(value) {}
+  public setPixelSamplingRate(value: number): void {
+    // no op
+  }
 
-  setDensity(density) {
+  public setDensity(density: number): void {
     this.setUniform("DENSITY", density);
   }
 
   // TODO brightness and exposure should be the same thing?
-  setBrightness(brightness) {
+  public setBrightness(brightness: number): void {
     this.setUniform("BRIGHTNESS", brightness * 2.0);
   }
 
-  setIsOrtho(isOrthoAxis) {
+  public setIsOrtho(isOrthoAxis: boolean): void {
     this.setUniform("isOrtho", isOrthoAxis ? 1.0 : 0.0);
     if (!isOrthoAxis) {
       this.setOrthoThickness(1.0);
     }
   }
 
-  viewpointMoved() {}
+  public viewpointMoved(): void {
+    // no op
+  }
 
-  setGamma(gmin, glevel, gmax) {
+  public setGamma(gmin: number, glevel: number, gmax: number): void {
     this.setUniform("GAMMA_MIN", gmin);
     this.setUniform("GAMMA_MAX", gmax);
     this.setUniform("GAMMA_SCALE", glevel);
   }
 
-  setMaxProjectMode(isMaxProject) {
+  public setMaxProjectMode(isMaxProject: boolean): void {
     this.setUniform("maxProject", isMaxProject ? 1 : 0);
   }
 
-  setAxisClip(axis, minval, maxval, isOrthoAxis) {
+  public setAxisClip(axis: number, minval: number, maxval: number, isOrthoAxis: boolean): void {
     this.bounds.bmax[axis] = maxval;
     this.bounds.bmin[axis] = minval;
 
     if (isOrthoAxis) {
       const thicknessPct = maxval - minval;
       this.setOrthoThickness(thicknessPct);
-    }
-    else {
+    } else {
       // it is possible this is overly aggressive resetting this value here
       // but testing has shown no ill effects and it is better to have a definite
       // known value when in perspective mode
@@ -173,12 +195,12 @@ export default class RayMarchedAtlasVolume {
     this.setUniform("AABB_CLIP_MAX", this.bounds.bmax);
   }
 
-  setFlipAxes(flipX, flipY, flipZ) {
+  public setFlipAxes(flipX: number, flipY: number, flipZ: number): void {
     this.setUniform("flipVolume", new Vector3(flipX, flipY, flipZ));
   }
 
   // 0..1
-  updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
+  public updateClipRegion(xmin: number, xmax: number, ymin: number, ymax: number, zmin: number, zmax: number): void {
     this.bounds = {
       bmin: new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
       bmax: new Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5),
@@ -187,25 +209,25 @@ export default class RayMarchedAtlasVolume {
     this.setUniform("AABB_CLIP_MAX", this.bounds.bmax);
   }
 
-  setChannelAsMask(channelIndex) {
+  public setChannelAsMask(channelIndex: number): boolean {
     if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
       return false;
     }
     return this.channelData.setChannelAsMask(channelIndex, this.volume.channels[channelIndex]);
   }
 
-  setMaskAlpha(maskAlpha) {
+  public setMaskAlpha(maskAlpha: number): void {
     this.setUniform("maskAlpha", maskAlpha);
   }
 
-  setOrthoThickness(value) {
+  public setOrthoThickness(value: number): void {
     this.setUniform("orthoThickness", value);
   }
 
   //////////////////////////////////////////
   //////////////////////////////////////////
 
-  setUniform(name, value) {
+  private setUniform(name, value) {
     if (!this.uniforms[name]) {
       return;
     }
@@ -214,9 +236,9 @@ export default class RayMarchedAtlasVolume {
   }
 
   // channelcolors is array of {rgbColor, lut} and channeldata is volume.channels
-  fuse(channelcolors, channeldata) {
+  public fuse(channelcolors: FuseChannel[], channeldata: Channel[]): void {
     //'m' for max or 'a' for avg
-    var fusionType = "m";
+    const fusionType = "m";
     this.channelData.fuse(channelcolors, fusionType, channeldata);
 
     // update to fused texture

@@ -15,8 +15,9 @@ export default class FusedChannelData {
   private width: number;
   private height: number;
   private fused: Uint8Array;
-  private fusedTexture: DataTexture;
-  private maskTexture: DataTexture;
+  // todo: make private?
+  public fusedTexture: DataTexture;
+  public maskTexture: DataTexture;
 
   private maskChannelLoaded: boolean;
   private maskChannelIndex: number;
