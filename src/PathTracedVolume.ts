@@ -26,7 +26,7 @@ import {
   pathTracingVertexShaderSrc,
 } from "./constants/volumePTshader.js";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
-import Volume from "./Volume.js";
+import Volume from "./Volume";
 import { Bounds } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel.js";
 import VolumeDrawable from "./VolumeDrawable.js";

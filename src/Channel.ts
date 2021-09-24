@@ -93,7 +93,7 @@ export default class Channel {
   // it is assumed to be coming in as a flat Uint8Array of size x*y*z
   // with x*y*z layout (first row of first plane is the first data in the layout,
   // then second row of first plane, etc)
-  private unpackVolumeFromAtlas(x: number, y: number, z: number): void {
+  public unpackVolumeFromAtlas(x: number, y: number, z: number): void {
     const volimgdata = this.imgData.data;
 
     this.dims = [x, y, z];

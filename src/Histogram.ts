@@ -1,4 +1,4 @@
-import { getColorByChannelIndex } from "./constants/colors.js";
+import { getColorByChannelIndex } from "./constants/colors";
 
 function clamp(val: number, cmin: number, cmax: number): number {
   return Math.min(Math.max(cmin, val), cmax);

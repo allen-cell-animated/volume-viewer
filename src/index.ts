@@ -1,5 +1,5 @@
 import { RENDERMODE_PATHTRACE, RENDERMODE_RAYMARCH, View3d } from "./View3d.js";
-import Volume from "./Volume.js";
+import Volume from "./Volume";
 import VolumeMaker from "./VolumeMaker.js";
 import VolumeLoader from "./VolumeLoader.js";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";

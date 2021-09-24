@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import Volume from "../Volume.js";
+import Volume from "../Volume";
 import VolumeMaker from "../VolumeMaker.js";
 import { LUT_ARRAY_LENGTH } from "../Histogram";
 
@@ -80,7 +80,7 @@ function checkChannelDataConstruction(c, index, imgdata) {
   expect(c.name).to.equal(imgdata.channel_names[index]);
   expect(c.imgData.width).to.equal(imgdata.atlas_width);
   expect(c.imgData.height).to.equal(imgdata.atlas_height);
-  expect(c.imgData.data).to.be.a("Uint8Array");
+  expect(c.imgData.data).to.be.a("Uint8ClampedArray");
   expect(c.imgData.data.length).to.equal(imgdata.atlas_width * imgdata.atlas_height);
   expect(c.lut).to.be.a("Uint8Array");
   expect(c.lut.length).to.equal(LUT_ARRAY_LENGTH);

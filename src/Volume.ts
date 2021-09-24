@@ -1,7 +1,37 @@
 import { Vector3 } from "three";
-import Channel from "./Channel";
 
-import { getColorByChannelIndex } from "./constants/colors.js";
+import Channel from "./Channel";
+import Histogram from "./Histogram";
+import { getColorByChannelIndex } from "./constants/colors";
+
+interface ImageInfo {
+  name: string;
+  version: string;
+  width: number;
+  height: number;
+  channels: number;
+  tiles: number;
+  pixel_size_x: number;
+  pixel_size_y: number;
+  pixel_size_z: number;
+  channel_names: string[];
+  channel_colors?: [number, number, number][];
+  rows: number;
+  cols: number;
+  tile_width: number;
+  tile_height: number;
+  atlas_width: number;
+  atlas_height: number;
+  transform: {
+    translation: [number, number, number];
+    rotation: [number, number, number];
+  };
+}
+
+interface VolumeDataObserver {
+  onVolumeData: (vol: Volume, batch: number[]) => void;
+  onVolumeChannelAdded: (vol: Volume, idx: number) => void;
+}
 
 /**
  * Provide dimensions of the volume data, including dimensions for texture atlas data in which the volume z slices
@@ -58,7 +88,28 @@ import { getColorByChannelIndex } from "./constants/colors.js";
  * @param {imageInfo} imageInfo
  */
 export default class Volume {
-  constructor(imageInfo) {
+  private imageInfo: ImageInfo;
+  private name: string;
+  private pixel_size: [number, number, number];
+  private x: number;
+  private y: number;
+  private z: number;
+  private t: number;
+  private num_channels: number;
+  private channel_names: string[];
+  private atlasSize: [number, number];
+  private volumeSize: [number, number, number];
+  private channels: Channel[];
+  private volumeDataObservers: VolumeDataObserver[];
+  private scale: Vector3;
+  private currentScale: Vector3;
+  private physicalSize: Vector3;
+  private normalizedPhysicalSize: Vector3;
+  private loaded: boolean;
+  private channel_colors_default: [number, number, number][];
+
+  constructor(imageInfo: ImageInfo) {
+    this.loaded = false;
     this.imageInfo = imageInfo;
     this.name = imageInfo.name;
 
@@ -90,7 +141,7 @@ export default class Volume {
     this.volumeSize = [this.x, this.y, this.z];
 
     this.channels = [];
-    for (var i = 0; i < this.num_channels; ++i) {
+    for (let i = 0; i < this.num_channels; ++i) {
       this.channels.push(new Channel(this.channel_names[i]));
     }
 
@@ -113,14 +164,14 @@ export default class Volume {
     this.volumeDataObservers = [];
   }
 
-  setScale(scale) {
+  setScale(scale: Vector3): void {
     this.scale = scale;
     this.currentScale = scale.clone();
   }
 
   // we calculate the physical size of the volume (voxels*pixel_size)
   // and then normalize to the max physical dimension
-  setVoxelSize(values) {
+  setVoxelSize(values: number[]): void {
     // basic error check.  bail out if we get something bad.
     if (!values.length || values.length < 3) {
       return;
@@ -137,11 +188,11 @@ export default class Volume {
       this.pixel_size[2] = values[2];
     }
 
-    var physSizeMin = Math.min(this.pixel_size[0], Math.min(this.pixel_size[1], this.pixel_size[2]));
-    var pixelsMax = Math.max(this.imageInfo.width, Math.max(this.imageInfo.height, this.z));
-    var sx = ((this.pixel_size[0] / physSizeMin) * this.imageInfo.width) / pixelsMax;
-    var sy = ((this.pixel_size[1] / physSizeMin) * this.imageInfo.height) / pixelsMax;
-    var sz = ((this.pixel_size[2] / physSizeMin) * this.z) / pixelsMax;
+    const physSizeMin = Math.min(this.pixel_size[0], Math.min(this.pixel_size[1], this.pixel_size[2]));
+    const pixelsMax = Math.max(this.imageInfo.width, Math.max(this.imageInfo.height, this.z));
+    const sx = ((this.pixel_size[0] / physSizeMin) * this.imageInfo.width) / pixelsMax;
+    const sy = ((this.pixel_size[1] / physSizeMin) * this.imageInfo.height) / pixelsMax;
+    const sz = ((this.pixel_size[2] / physSizeMin) * this.z) / pixelsMax;
 
     // this works because image was scaled down in x and y but not z.
     // so use original x and y dimensions from imageInfo.
@@ -158,23 +209,25 @@ export default class Volume {
     this.setScale(new Vector3(sx, sy, sz));
   }
 
-  cleanup() {}
+  cleanup(): void {
+    // no op
+  }
 
   /**
    * @return a reference to the list of channel names
    */
-  channelNames() {
+  channelNames(): string[] {
     return this.channel_names;
   }
 
-  getChannel(channelIndex) {
+  getChannel(channelIndex: number): Channel {
     return this.channels[channelIndex];
   }
 
-  onChannelLoaded(batch) {
+  onChannelLoaded(batch: number[]): void {
     // check to see if all channels are now loaded, and fire an event(?)
     if (
-      this.channels.every(function(element, index, array) {
+      this.channels.every(function (element, index, array) {
         return element.loaded;
       })
     ) {
@@ -192,7 +245,7 @@ export default class Volume {
    * @param {number} atlaswidth
    * @param {number} atlasheight
    */
-  setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight) {
+  setChannelDataFromAtlas(channelIndex: number, atlasdata: Uint8Array, atlaswidth: number, atlasheight: number): void {
     this.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight);
     this.channels[channelIndex].unpackVolumeFromAtlas(this.x, this.y, this.z);
     this.onChannelLoaded([channelIndex]);
@@ -204,7 +257,7 @@ export default class Volume {
    * @param {number} channelIndex
    * @param {Uint8Array} volumeData
    */
-  setChannelDataFromVolume(channelIndex, volumeData) {
+  setChannelDataFromVolume(channelIndex: number, volumeData: Uint8Array): void {
     this.channels[channelIndex].setFromVolumeData(
       volumeData,
       this.x,
@@ -223,10 +276,10 @@ export default class Volume {
    * @param {string} name
    * @param {Array.<number>} color [r,g,b]
    */
-  appendEmptyChannel(name, color) {
-    let idx = this.num_channels;
-    let chname = name || "channel_" + idx;
-    let chcolor = color || getColorByChannelIndex(idx);
+  appendEmptyChannel(name: string, color?: [number, number, number]): number {
+    const idx = this.num_channels;
+    const chname = name || "channel_" + idx;
+    const chcolor = color || getColorByChannelIndex(idx);
     this.num_channels += 1;
     this.channel_names.push(chname);
     this.channel_colors_default.push(chcolor);
@@ -248,7 +301,7 @@ export default class Volume {
    * @param {number} y
    * @param {number} z
    */
-  getIntensity(c, x, y, z) {
+  getIntensity(c: number, x: number, y: number, z: number): number {
     return this.channels[c].getIntensity(x, y, z);
   }
 
@@ -257,7 +310,7 @@ export default class Volume {
    * @return {Histogram} the histogram
    * @param {number} c The channel index
    */
-  getHistogram(c) {
+  getHistogram(c: number): Histogram {
     return this.channels[c].getHistogram();
   }
 
@@ -266,7 +319,7 @@ export default class Volume {
    * @param {number} c The channel index
    * @param {Array.<number>} lut The lut as a 256 element array
    */
-  setLut(c, lut) {
+  setLut(c: number, lut: Uint8Array): void {
     this.channels[c].setLut(lut);
   }
 
@@ -275,7 +328,7 @@ export default class Volume {
    * @param {number} c The channel index
    * @param {Array.<number>} palette The colors as a 256 element array * RGBA
    */
-  setColorPalette(c, palette) {
+  setColorPalette(c: number, palette: Uint8Array): void {
     this.channels[c].setColorPalette(palette);
   }
 
@@ -285,7 +338,7 @@ export default class Volume {
    * @param {number} c The channel index
    * @param {number} alpha The alpha value as a number from 0 to 1
    */
-  setColorPaletteAlpha(c, alpha) {
+  setColorPaletteAlpha(c: number, alpha: number): void {
     this.channels[c].setColorPaletteAlpha(alpha);
   }
 
@@ -293,7 +346,7 @@ export default class Volume {
    * Return the intrinsic rotation associated with this volume (radians)
    * @return {Array.<number>} the xyz Euler angles (radians)
    */
-  getRotation() {
+  getRotation(): [number, number, number] {
     // default axis order is XYZ
     return this.imageInfo.transform.rotation;
   }
@@ -302,7 +355,7 @@ export default class Volume {
    * Return the intrinsic translation (pivot center delta) associated with this volume, in normalized volume units
    * @return {Array.<number>} the xyz translation in normalized volume units
    */
-  getTranslation() {
+  getTranslation(): Vector3 {
     return this.voxelsToWorldSpace(this.imageInfo.transform.translation);
   }
 
@@ -310,23 +363,19 @@ export default class Volume {
    * Return a translation in normalized volume units, given a translation in image voxels
    * @return {Array.<number>} the xyz translation in normalized volume units
    */
-  voxelsToWorldSpace(xyz) {
+  voxelsToWorldSpace(xyz: [number, number, number]): Vector3 {
     // ASSUME: translation is in original image voxels.
     // account for pixel_size and normalized scaling in the threejs volume representation we're using
     const m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
     const pixelSizeVec = new Vector3().fromArray(this.pixel_size);
-    return new Vector3()
-      .fromArray(xyz)
-      .multiply(pixelSizeVec)
-      .multiplyScalar(m)
-      .toArray();
+    return new Vector3().fromArray(xyz).multiply(pixelSizeVec).multiplyScalar(m).toArray();
   }
 
-  addVolumeDataObserver(o) {
+  addVolumeDataObserver(o: VolumeDataObserver): void {
     this.volumeDataObservers.push(o);
   }
 
-  removeVolumeDataObserver(o) {
+  removeVolumeDataObserver(o: VolumeDataObserver): void {
     if (o) {
       let i = this.volumeDataObservers.indexOf(o);
       if (i !== -1) {
@@ -335,7 +384,7 @@ export default class Volume {
     }
   }
 
-  removeAllVolumeDataObservers() {
+  removeAllVolumeDataObservers(): void {
     this.volumeDataObservers = [];
   }
 }
