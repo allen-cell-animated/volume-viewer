@@ -30,8 +30,8 @@ export default class Channel {
   }
 
   // rgbColor is [0..255, 0..255, 0..255]
-  public combineLuts(rgbColor: [number, number, number]): Uint8Array {
-    const ret = new Uint8Array(LUT_ARRAY_LENGTH);
+  public combineLuts(rgbColor: [number, number, number], out?:Uint8Array): Uint8Array {
+    const ret = out ? out : new Uint8Array(LUT_ARRAY_LENGTH);
     const rgb = [rgbColor[0] / 255.0, rgbColor[1] / 255.0, rgbColor[2] / 255.0];
     // colorPalette*alpha + rgb*lut*(1-alpha)
     // a tiny bit faster for the edge cases

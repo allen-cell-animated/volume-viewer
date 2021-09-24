@@ -3,6 +3,7 @@ import { Vector3, Object3D, Euler } from "three";
 import MeshVolume from "./MeshVolume.js";
 import RayMarchedAtlasVolume from "./RayMarchedAtlasVolume";
 import PathTracedVolume from "./PathTracedVolume";
+import { LUT_ARRAY_LENGTH } from "./Histogram";
 
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
@@ -42,7 +43,7 @@ export default class VolumeDrawable {
       }
       return {
         chIndex: index,
-        lut: [],
+        lut: new Uint8Array(LUT_ARRAY_LENGTH),
         rgbColor: rgbColor,
       };
     });
@@ -371,7 +372,7 @@ export default class VolumeDrawable {
 
     this.fusion[newChannelIndex] = {
       chIndex: newChannelIndex,
-      lut: [],
+      lut: new Uint8Array[LUT_ARRAY_LENGTH],
       rgbColor: [
         this.channel_colors[newChannelIndex][0],
         this.channel_colors[newChannelIndex][1],

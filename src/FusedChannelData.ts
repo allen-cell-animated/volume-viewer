@@ -62,7 +62,7 @@ export default class FusedChannelData {
     this.maskChannelIndex = 0;
 
     // force single threaded use even if webworkers are available
-    this.useSingleThread = false;
+    this.useSingleThread = true;
 
     // thread control
     this.fuseWorkersWorking = 0;
@@ -191,7 +191,7 @@ export default class FusedChannelData {
       if (channels[idx].loaded) {
         // set the lut in this fuse combination.
         // can optimize by calling combineLuts more lazily
-        c.lut = channels[idx].combineLuts(c.rgbColor);
+        c.lut = channels[idx].combineLuts(c.rgbColor, c.lut);
         canFuse = true;
         //break;
       }
