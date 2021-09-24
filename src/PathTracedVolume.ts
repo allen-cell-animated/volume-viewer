@@ -703,11 +703,11 @@ export default class PathTracedVolume {
 
       this.pathTracingUniforms.g_intensityMax.value.setComponent(
         i,
-        this.volume.channels[channel].histogram.dataMax / 255.0
+        this.volume.channels[channel].histogram.getMax() / 255.0
       );
       this.pathTracingUniforms.g_intensityMin.value.setComponent(
         i,
-        this.volume.channels[channel].histogram.dataMin / 255.0
+        this.volume.channels[channel].histogram.getMin() / 255.0
       );
     }
     this.pathTracingUniforms.g_lutTexture.value.needsUpdate = true;

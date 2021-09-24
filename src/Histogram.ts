@@ -90,6 +90,22 @@ export default class Histogram {
   }
 
   /**
+   * Return the min data value
+   * @return {number}
+   */
+   getMin(): number {
+    return this.dataMin;
+  }
+
+  /**
+   * Return the max data value
+   * @return {number}
+   */
+   getMax(): number {
+    return this.dataMax;
+  }
+
+  /**
    * Generate a Window/level lookup table
    * @return {Lut}
    * @param {number} wnd in 0..1 range
