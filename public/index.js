@@ -688,25 +688,25 @@ function showChannelUI(volume) {
 function loadVolumeAtlasData(vol, jsonData) {
   VolumeLoader.loadVolumeAtlasData(vol, jsonData.images, (url, channelIndex) => {
     vol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
-  
+
     if (vol.loaded) {
       view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
-  
+
       view3D.removeAllVolumes();
       view3D.addVolume(vol);
-  
+
       // first 3 channels for starters
       for (var ch = 0; ch < vol.num_channels; ++ch) {
         view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
       }
-  
+
       view3D.setVolumeChannelAsMask(vol, jsonData.channel_names.indexOf("SEG_Memb"));
       view3D.updateActiveChannels(vol);
       view3D.updateLuts(vol);
       view3D.updateLights(myState.lights);
       view3D.updateDensity(vol, myState.density / 100.0);
       view3D.updateExposure(myState.exposure);
-  
+
       // apply a volume transform from an external source:
       if (jsonData.userData && jsonData.userData.alignTransform) {
         view3D.setVolumeTranslation(vol, vol.voxelsToWorldSpace(jsonData.userData.alignTransform.translation));
@@ -800,7 +800,7 @@ function fetchImage(url, isTimeSeries=false, frameNumber=0) {
             view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(myJson.userData.alignTransform.translation));
             view3D.setVolumeRotation(myState.volume, myJson.userData.alignTransform.rotation);
           }
-          
+
           myState.currentFrame = 0;
           showChannelUI(myState.volume);
         }
@@ -841,7 +841,7 @@ function playTimeSeries() {
     const nextFrame = myState.currentFrame + 1;
     const nextFrameVolume = myState.timeSeriesVolumes[nextFrame];
     console.log("loadNextFrame at "+ nextFrame)
-    
+
     // grab references to data from each channel and put it in myState.volume
     for (var i = 0; i < nextFrameVolume.num_channels; ++i) {
       myState.volume.channels[i].imgData = {
@@ -853,6 +853,7 @@ function playTimeSeries() {
       myState.volume.channels[i].lut = nextFrameVolume.channels[i].lut;
       myState.volume.channels[i].loaded = true;
     }
+    view3D.onVolumeData(myState.volume, [0,1,2]);
 
     myState.volume.loaded = true;
 

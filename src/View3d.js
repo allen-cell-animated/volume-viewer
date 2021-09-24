@@ -2,7 +2,7 @@ import { AmbientLight, Vector3, Object3D, SpotLight, DirectionalLight, Euler } f
 
 import { ThreeJsPanel } from "./ThreeJsPanel.js";
 import lightSettings from "./constants/lights.js";
-import FusedChannelData from "./FusedChannelData.js";
+import FusedChannelData from "./FusedChannelData";
 import VolumeDrawable from "./VolumeDrawable.js";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light.js";
 

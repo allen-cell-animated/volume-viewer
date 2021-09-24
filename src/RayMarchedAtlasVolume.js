@@ -1,6 +1,6 @@
 import { Vector2, Vector3, Group, BoxGeometry, Mesh, ShaderMaterial, Matrix4 } from "three";
 
-import FusedChannelData from "./FusedChannelData.js";
+import FusedChannelData from "./FusedChannelData";
 import {
   rayMarchingVertexShaderSrc,
   rayMarchingFragmentShaderSrc,

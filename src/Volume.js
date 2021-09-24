@@ -1,5 +1,5 @@
 import { Vector3 } from "three";
-import Channel from "./Channel.js";
+import Channel from "./Channel";
 
 import { getColorByChannelIndex } from "./constants/colors.js";
 
@@ -34,7 +34,7 @@ import { getColorByChannelIndex } from "./constants/colors.js";
   "tiles": 65,
   "tile_width": 204,
   "tile_height": 292,
-  // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048 
+  // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
   // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
   "atlas_width": 2040,
   "atlas_height": 2044,
