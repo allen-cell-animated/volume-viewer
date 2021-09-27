@@ -1,3 +1,5 @@
+import Volume from "./Volume";
+
 /**
  * @callback PerChannelCallback
  * @param {string} imageurl
