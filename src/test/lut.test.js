@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import Histogram from "../Histogram";
-import VolumeMaker from "../VolumeMaker.js";
+import VolumeMaker from "../VolumeMaker";
 
 function clamp(val, cmin, cmax) {
   return Math.min(Math.max(cmin, val), cmax);
