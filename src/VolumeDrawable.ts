@@ -14,7 +14,7 @@ import Channel from "./Channel";
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
   private PT: boolean;
-  private volume: Volume;
+  public volume: Volume;
   private onChannelDataReadyCallback?: () => void;
   private translation: Vector3;
   private rotation: Euler;
@@ -32,7 +32,7 @@ export default class VolumeDrawable {
   private specular: [number, number, number][];
   private emissive: [number, number, number][];
   private glossiness: number[];
-  private sceneRoot: Object3D;
+  public sceneRoot: Object3D;
   private meshVolume: MeshVolume;
   private primaryRayStepSize: number;
   private secondaryRayStepSize: number;
@@ -154,9 +154,9 @@ export default class VolumeDrawable {
         bmax: new Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5]),
       };
       // note: dropping isOrthoAxis argument
-      this.setAxisClip("x", options.clipBounds[0], options.clipBounds[1]);
-      this.setAxisClip("y", options.clipBounds[2], options.clipBounds[3]);
-      this.setAxisClip("z", options.clipBounds[4], options.clipBounds[5]);
+      this.setAxisClip(0, options.clipBounds[0], options.clipBounds[1]);
+      this.setAxisClip(1, options.clipBounds[2], options.clipBounds[3]);
+      this.setAxisClip(2, options.clipBounds[4], options.clipBounds[5]);
     }
     if (Object.hasOwnProperty.call(options, "scale")) {
       this.setScale(options.scale.slice());
@@ -213,7 +213,7 @@ export default class VolumeDrawable {
           if (Object.hasOwnProperty.call(options, "isosurfaceOpacity")) {
             isosurfaceOpacity = options.isosurfaceOpacity;
           }
-          this.createIsosurface(channelIndex, isovalue, isosurfaceOpacity);
+          this.createIsosurface(channelIndex, isovalue, isosurfaceOpacity, isosurfaceOpacity < 1.0);
         }
       } else if (options.isosurfaceEnabled) {
         if (Object.hasOwnProperty.call(options, "isovalue")) {
@@ -269,7 +269,7 @@ export default class VolumeDrawable {
   // @param {number} minval 0..1, should be less than maxval
   // @param {number} maxval 0..1, should be greater than minval
   // @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
-  setAxisClip(axis: string, minval: number, maxval: number, isOrthoAxis?: boolean): void {
+  setAxisClip(axis: number, minval: number, maxval: number, isOrthoAxis?: boolean): void {
     this.bounds.bmax[axis] = maxval;
     this.bounds.bmin[axis] = minval;
 
@@ -350,7 +350,7 @@ export default class VolumeDrawable {
   }
 
   // If an isosurface is not already created, then create one.  Otherwise do nothing.
-  createIsosurface(channel: number, value: number, alpha: number, transp?: number): void {
+  createIsosurface(channel: number, value: number, alpha: number, transp: boolean): void {
     this.meshVolume.createIsosurface(channel, this.channel_colors[channel], value, alpha, transp);
   }
 
@@ -371,10 +371,16 @@ export default class VolumeDrawable {
     }
   }
 
-  setRenderUpdateListener(callback: (number) => void): void {
+  setRenderUpdateListener(callback?: (iteration: number) => void): void {
     this.renderUpdateListener = callback;
     if (this.PT && this.pathTracedVolume) {
       this.pathTracedVolume.setRenderUpdateListener(callback);
+    }
+  }
+
+  updateShadingMethod(isbrdf: boolean): void {
+    if (this.PT && this.pathTracedVolume) {
+      this.pathTracedVolume.updateShadingMethod(isbrdf);
     }
   }
 
@@ -624,9 +630,9 @@ export default class VolumeDrawable {
     this.setFlipAxes(this.flipX, this.flipY, this.flipZ);
 
     // reset clip bounds
-    this.setAxisClip("x", this.bounds.bmin.x, this.bounds.bmax.x);
-    this.setAxisClip("y", this.bounds.bmin.y, this.bounds.bmax.y);
-    this.setAxisClip("z", this.bounds.bmin.z, this.bounds.bmax.z);
+    this.setAxisClip(0, this.bounds.bmin.x, this.bounds.bmax.x);
+    this.setAxisClip(1, this.bounds.bmin.y, this.bounds.bmax.y);
+    this.setAxisClip(2, this.bounds.bmin.z, this.bounds.bmax.z);
 
     this.setRayStepSizes(this.primaryRayStepSize, this.secondaryRayStepSize);
 

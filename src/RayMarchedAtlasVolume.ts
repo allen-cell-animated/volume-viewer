@@ -175,7 +175,7 @@ export default class RayMarchedAtlasVolume {
     this.setUniform("maxProject", isMaxProject ? 1 : 0);
   }
 
-  public setAxisClip(axis: string, minval: number, maxval: number, isOrthoAxis: boolean): void {
+  public setAxisClip(axis: number, minval: number, maxval: number, isOrthoAxis: boolean): void {
     this.bounds.bmax[axis] = maxval;
     this.bounds.bmin[axis] = minval;
 

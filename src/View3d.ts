@@ -1,58 +1,49 @@
-import { AmbientLight, Vector3, Object3D, SpotLight, DirectionalLight, Euler } from "three";
+import { AmbientLight, Vector3, Object3D, SpotLight, DirectionalLight, Euler, Scene } from "three";
 
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import lightSettings from "./constants/lights.js";
 import FusedChannelData from "./FusedChannelData";
 import VolumeDrawable from "./VolumeDrawable";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
+import Volume from "./Volume";
+import { VolumeChannelDisplayOptions, VolumeDisplayOptions } from "./types";
 
 export const RENDERMODE_RAYMARCH = 0;
 export const RENDERMODE_PATHTRACE = 1;
 
-/**
- * Provide options to control the visual appearance of a Volume
- * @typedef {Object} VolumeChannelDisplayOptions
- * @property {boolean} enabled array of boolean per channel
- * @property {<Array.<number>} color array of rgb per channel
- * @property {<Array.<number>} specularColor array of rgb per channel
- * @property {<Array.<number>} emissiveColor array of rgb per channel
- * @property {number} glossiness array of float per channel
- * @property {boolean} isosurfaceEnabled array of boolean per channel
- * @property {number} isovalue array of number per channel
- * @property {number} isosurfaceOpacity array of number per channel
- * @example let options = {
-   };
- */
-/**
- * Provide options to control the visual appearance of a Volume
- * @typedef {Object} VolumeDisplayOptions
- * @property {Array.<VolumeChannelDisplayOptions>} channels array of channel display options
- * @property {number} density
- * @property {Array.<number>} translation xyz
- * @property {Array.<number>} rotation xyz angles in radians
- * @property {number} maskChannelIndex
- * @property {number} maskAlpha
- * @property {Array.<number>} clipBounds [xmin, xmax, ymin, ymax, zmin, zmax] all range from 0 to 1 as a percentage of the volume on that axis
- * @property {Array.<number>} scale xyz voxel size scaling
- * @property {boolean} maxProjection true or false (ray marching)
- * @property {number} renderMode 0 for raymarch, 1 for pathtrace
- * @property {number} shadingMethod 0 for phase, 1 for brdf, 2 for hybrid (path tracer)
- * @property {Array.<number>} gamma [min, max, scale]
- * @property {number} primaryRayStepSize in voxels
- * @property {number} secondaryRayStepSize in voxels
- * @example let options = {
-   };
- */
+export interface View3dOptions {
+  useWebGL2: boolean;
+}
 
 /**
  * @class
  */
 export class View3d {
+  private canvas3d: ThreeJsPanel;
+  private scene: Scene;
+  private backgroundColor: number;
+  private pixelSamplingRate: number;
+  private exposure: number;
+  private volumeRenderMode: number;
+  private renderUpdateListener?: (iteration: number) => void;
+  private loaded: boolean;
+  private parentEl: HTMLElement;
+  private image?: VolumeDrawable;
+
+  private oldScale: Vector3;
+  private currentScale: Vector3;
+  private lights: Light[];
+  private lightContainer: Object3D;
+  private ambientLight: AmbientLight;
+  private spotLight: SpotLight;
+  private reflectedLight: DirectionalLight;
+  private fillLight: DirectionalLight;
+
   /**
    * @param {HTMLElement} parentElement the 3d display will try to fill the parent element.
    * @param {Object} options This is an optional param. The only option is currently boolean {useWebGL2:true} which defaults to true.
    */
-  constructor(parentElement, options) {
+  constructor(parentElement: HTMLElement, options: View3dOptions) {
     options = options || { useWebGL2: true };
     if (options.useWebGL2 === undefined) {
       options.useWebGL2 = true;
@@ -62,16 +53,15 @@ export class View3d {
     this.redraw = this.redraw.bind(this);
     this.scene = null;
     this.backgroundColor = 0x000000;
+    this.lights = [];
 
     this.pixelSamplingRate = 0.75;
     this.exposure = 0.5;
     this.volumeRenderMode = RENDERMODE_RAYMARCH;
-    this.renderUpdateListener = null;
 
     this.loaded = false;
-    let that = this;
     this.parentEl = parentElement;
-    window.addEventListener("resize", () => that.resize(null, that.parentEl.offsetWidth, that.parentEl.offsetHeight));
+    window.addEventListener("resize", () => this.resize(null, this.parentEl.offsetWidth, this.parentEl.offsetHeight));
 
     this.buildScene();
 
@@ -79,7 +69,7 @@ export class View3d {
   }
 
   // prerender should be called on every redraw and should be the first thing done.
-  preRender() {
+  preRender(): void {
     // TODO: if fps just updated and it's too low, do something:
     // if (this.canvas3d.timer.lastFPS < 7 && this.canvas3d.timer.lastFPS > 0 && this.canvas3d.timer.frames === 0) {
     // }
@@ -97,25 +87,25 @@ export class View3d {
    * Capture the contents of this canvas to a data url
    * @param {Object} dataurlcallback function to call when data url is ready; function accepts dataurl as string arg
    */
-  capture(dataurlcallback) {
+  capture(dataurlcallback: (name: string) => void): void {
     return this.canvas3d.requestCapture(dataurlcallback);
   }
 
   /**
    * Force a redraw.
    */
-  redraw() {
+  redraw(): void {
     this.canvas3d.redraw();
   }
 
-  unsetImage() {
+  unsetImage(): VolumeDrawable | undefined {
     if (this.image) {
       this.canvas3d.removeControlHandlers();
       if (this.canvas3d.isVR()) {
         this.canvas3d.onLeaveVR();
       }
-      this.canvas3d.onEnterVRCallback = null;
-      this.canvas3d.onLeaveVRCallback = null;
+      this.canvas3d.onEnterVRCallback = undefined;
+      this.canvas3d.onLeaveVRCallback = undefined;
       this.canvas3d.animate_funcs = [];
       this.scene.remove(this.image.sceneRoot);
     }
@@ -127,10 +117,10 @@ export class View3d {
    * @param {Volume} volume
    * @param {VolumeDisplayOptions} options
    */
-  addVolume(volume, options) {
+  addVolume(volume: Volume, options: VolumeDisplayOptions): void {
     volume.addVolumeDataObserver(this);
     options = options || {};
-    options.renderMode = this.volumeRenderMode === RENDERMODE_PATHTRACE;
+    options.renderMode = this.volumeRenderMode === RENDERMODE_PATHTRACE ? 1 : 0;
     this.setImage(new VolumeDrawable(volume, options));
   }
 
@@ -140,7 +130,7 @@ export class View3d {
    * @param {number} channelIndex the channel index
    * @param {VolumeChannelDisplayOptions} options
    */
-  setVolumeChannelOptions(volume, channelIndex, options) {
+  setVolumeChannelOptions(volume: Volume, channelIndex: number, options: VolumeChannelDisplayOptions): void {
     if (!this.image) {
       return;
     }
@@ -153,7 +143,7 @@ export class View3d {
    * @param {Volume} volume
    * @param {VolumeDisplayOptions} options
    */
-  setVolumeDisplayOptions(volume, options) {
+  setVolumeDisplayOptions(volume: Volume, options: VolumeDisplayOptions): void {
     if (!this.image) {
       return;
     }
@@ -165,7 +155,7 @@ export class View3d {
    * Remove a volume image from the viewer.  This will clean up the View3D's resources for the current volume
    * @param {Volume} volume
    */
-  removeVolume(volume) {
+  removeVolume(volume: Volume): void {
     const oldImage = this.unsetImage();
     if (oldImage) {
       oldImage.cleanup();
@@ -179,7 +169,7 @@ export class View3d {
   /**
    * Remove all volume images from the viewer.
    */
-  removeAllVolumes() {
+  removeAllVolumes(): void {
     if (this.image) {
       this.removeVolume(this.image.volume);
     }
@@ -188,7 +178,7 @@ export class View3d {
   /**
    * @param {function} callback a function that will receive the number of render iterations when it changes
    */
-  setRenderUpdateListener(callback) {
+  setRenderUpdateListener(callback: (iteration: number) => void): void {
     this.renderUpdateListener = callback;
     if (this.image) {
       this.image.setRenderUpdateListener(callback);
@@ -196,13 +186,17 @@ export class View3d {
   }
 
   // channels is an array of channel indices for which new data just arrived.
-  onVolumeData(volume, channels) {
-    this.image.onChannelLoaded(channels);
+  onVolumeData(volume: Volume, channels: number[]): void {
+    if (this.image) {
+      this.image.onChannelLoaded(channels);
+    }
   }
 
   // do fixups for when the volume has had a new empty channel added.
-  onVolumeChannelAdded(volume, newChannelIndex) {
-    this.image.onChannelAdded(newChannelIndex);
+  onVolumeChannelAdded(volume: Volume, newChannelIndex: number): void {
+    if (this.image) {
+      this.image.onChannelAdded(newChannelIndex);
+    }
   }
 
   /**
@@ -210,8 +204,10 @@ export class View3d {
    * @param {Object} volume
    * @param {number} mask_channel_index
    */
-  setVolumeChannelAsMask(volume, mask_channel_index) {
-    this.image.setChannelAsMask(mask_channel_index);
+  setVolumeChannelAsMask(volume: Volume, mask_channel_index: number): void {
+    if (this.image) {
+      this.image.setChannelAsMask(mask_channel_index);
+    }
     this.redraw();
   }
 
@@ -220,14 +216,14 @@ export class View3d {
    * @param {Object} volume
    * @param {number} values Array of x,y,z floating point values for the physical voxel size scaling
    */
-  setVoxelSize(volume, values) {
+  setVoxelSize(volume: Volume, values: number[]): void {
     if (this.image) {
       this.image.setVoxelSize(values);
     }
     this.redraw();
   }
 
-  setRayStepSizes(volume, primary, secondary) {
+  setRayStepSizes(volume: Volume, primary: number, secondary: number): void {
     if (this.image) {
       this.image.setRayStepSizes(primary, secondary);
     }
@@ -241,7 +237,7 @@ export class View3d {
    * @param {number} isovalue isovalue
    * @param {number=} alpha Opacity
    */
-  createIsosurface(volume, channel, isovalue, alpha) {
+  createIsosurface(volume: Volume, channel: number, isovalue: number, alpha: number): void {
     if (!this.image) {
       return;
     }
@@ -259,8 +255,12 @@ export class View3d {
    * @param {number} channel
    * @return true if there is currently a mesh isosurface for this channel
    */
-  hasIsosurface(volume, channel) {
-    return this.image.hasIsosurface(channel);
+  hasIsosurface(volume: Volume, channel: number): boolean {
+    if (this.image) {
+      return this.image.hasIsosurface(channel);
+    } else {
+      return false;
+    }
   }
 
   /**
@@ -269,7 +269,7 @@ export class View3d {
    * @param {number} channel
    * @param {number} isovalue
    */
-  updateIsosurface(volume, channel, isovalue) {
+  updateIsosurface(volume: Volume, channel: number, isovalue: number): void {
     if (!this.image || !this.image.hasIsosurface(channel)) {
       return;
     }
@@ -283,7 +283,7 @@ export class View3d {
    * @param {number} channel
    * @param {number} opacity Opacity
    */
-  updateOpacity(volume, channel, opacity) {
+  updateOpacity(volume: Volume, channel: number, opacity: number): void {
     if (!this.image) {
       return;
     }
@@ -296,8 +296,10 @@ export class View3d {
    * @param {Object} volume
    * @param {number} channel
    */
-  clearIsosurface(volume, channel) {
-    this.image.destroyIsosurface(channel);
+  clearIsosurface(volume: Volume, channel: number): void {
+    if (this.image) {
+      this.image.destroyIsosurface(channel);
+    }
     this.redraw();
   }
 
@@ -307,12 +309,14 @@ export class View3d {
    * @param {number} channelIndex
    * @param {string} type Either 'GLTF' or 'STL'
    */
-  saveChannelIsosurface(volume, channelIndex, type) {
-    this.image.saveChannelIsosurface(channelIndex, type);
+  saveChannelIsosurface(volume: Volume, channelIndex: number, type: string): void {
+    if (this.image) {
+      this.image.saveChannelIsosurface(channelIndex, type);
+    }
   }
 
   // Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will return any prior existing image.
-  setImage(img) {
+  setImage(img: VolumeDrawable): VolumeDrawable | undefined {
     const oldImage = this.unsetImage();
 
     this.image = img;
@@ -333,13 +337,13 @@ export class View3d {
     this.canvas3d.animate_funcs.push(this.preRender.bind(this));
     this.canvas3d.animate_funcs.push(img.onAnimate.bind(img));
     this.canvas3d.onEnterVRCallback = () => {
-      if (this.canvas3d.vrControls) {
-        this.canvas3d.vrControls.pushObjectState(this.image);
+      if (this.canvas3d.xrControls) {
+        this.canvas3d.xrControls.pushObjectState(this.image);
       }
     };
     this.canvas3d.onLeaveVRCallback = () => {
-      if (this.canvas3d.vrControls) {
-        this.canvas3d.vrControls.popObjectState(this.image);
+      if (this.canvas3d.xrControls) {
+        this.canvas3d.xrControls.popObjectState(this.image);
       }
     };
 
@@ -349,7 +353,7 @@ export class View3d {
     return oldImage;
   }
 
-  onStartControls() {
+  onStartControls(): void {
     if (this.volumeRenderMode !== RENDERMODE_PATHTRACE) {
       // TODO: VR display requires a running renderloop
       this.canvas3d.startRenderLoop();
@@ -359,13 +363,13 @@ export class View3d {
     }
   }
 
-  onChangeControls() {
+  onChangeControls(): void {
     if (this.image) {
       this.image.onChangeControls();
     }
   }
 
-  onEndControls() {
+  onEndControls(): void {
     if (this.image) {
       this.image.onEndControls();
     }
@@ -378,7 +382,7 @@ export class View3d {
     this.redraw();
   }
 
-  buildScene() {
+  buildScene(): void {
     this.scene = this.canvas3d.scene;
 
     this.oldScale = new Vector3(0.5, 0.5, 0.5);
@@ -439,7 +443,7 @@ export class View3d {
    * Change the camera projection to look along an axis, or to view in a 3d perspective camera.
    * @param {string} mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X", or "XZ" or "Y".  3D is a perspective view, and all the others are orthographic projections
    */
-  setCameraMode(mode) {
+  setCameraMode(mode: string): void {
     this.canvas3d.switchViewMode(mode);
     if (this.image) {
       this.image.setIsOrtho(mode !== "3D");
@@ -451,7 +455,7 @@ export class View3d {
    * Enable or disable 3d axis display at lower left.
    * @param {boolean} autorotate
    */
-  setShowAxis(showAxis) {
+  setShowAxis(showAxis: boolean): void {
     this.canvas3d.showAxis = showAxis;
     this.canvas3d.redraw();
   }
@@ -460,7 +464,7 @@ export class View3d {
    * Enable or disable a turntable rotation mode. The display will continuously spin about the vertical screen axis.
    * @param {boolean} autorotate
    */
-  setAutoRotate(autorotate) {
+  setAutoRotate(autorotate: boolean): void {
     this.canvas3d.setAutoRotate(autorotate);
 
     if (autorotate) {
@@ -477,7 +481,7 @@ export class View3d {
    * @param {number} flipY y axis sense
    * @param {number} flipZ z axis sense
    */
-  setFlipVolume(volume, flipX, flipY, flipZ) {
+  setFlipVolume(volume: Volume, flipX: number, flipY: number, flipZ: number): void {
     if (this.image) {
       this.image.setFlipAxes(flipX, flipY, flipZ);
       this.redraw();
@@ -493,7 +497,7 @@ export class View3d {
    * @param {number=} oh Ignored.
    * @param {Object=} eOpts Ignored.
    */
-  resize(comp, w, h, ow, oh, eOpts) {
+  resize(comp: HTMLElement | null, w: number, h: number, ow?: number, oh?: number, eOpts?: unknown): void {
     w = w || this.parentEl.offsetWidth;
     h = h || this.parentEl.offsetHeight;
     this.canvas3d.resize(comp, w, h, ow, oh, eOpts);
@@ -509,7 +513,7 @@ export class View3d {
    * @param {Object} volume
    * @param {number} density 0..1 UI slider value
    */
-  updateDensity(volume, density) {
+  updateDensity(volume: Volume, density: number): void {
     if (this.image) {
       this.image.setDensity(density);
     }
@@ -521,7 +525,7 @@ export class View3d {
    * @param {Object} volume
    * @param {number} isbrdf 0: brdf, 1: isotropic phase function, 2: mixed
    */
-  updateShadingMethod(volume, isbrdf) {
+  updateShadingMethod(volume: Volume, isbrdf: boolean): void {
     if (this.image) {
       this.image.updateShadingMethod(isbrdf);
     }
@@ -534,7 +538,7 @@ export class View3d {
    * @param {number} glevel
    * @param {number} gmax
    */
-  setGamma(volume, gmin, glevel, gmax) {
+  setGamma(volume: Volume, gmin: number, glevel: number, gmax: number): void {
     if (this.image) {
       this.image.setGamma(gmin, glevel, gmax);
     }
@@ -546,7 +550,7 @@ export class View3d {
    * @param {Object} volume
    * @param {boolean} isMaxProject true for max project, false for regular volume ray march integration
    */
-  setMaxProjectMode(volume, isMaxProject) {
+  setMaxProjectMode(volume: Volume, isMaxProject: boolean): void {
     if (this.image) {
       this.image.setMaxProjectMode(isMaxProject);
     }
@@ -557,7 +561,7 @@ export class View3d {
    * Notify the view that the set of active volume channels has been modified.
    * @param {Object} volume
    */
-  updateActiveChannels(volume) {
+  updateActiveChannels(volume: Volume): void {
     if (this.image) {
       this.image.fuse();
     }
@@ -567,7 +571,7 @@ export class View3d {
    * Notify the view that transfer function lookup table data has been modified.
    * @param {Object} volume
    */
-  updateLuts(volume) {
+  updateLuts(volume: Volume): void {
     if (this.image) {
       this.image.updateLuts();
     }
@@ -577,7 +581,7 @@ export class View3d {
    * Notify the view that color and appearance settings have been modified.
    * @param {Object} volume
    */
-  updateMaterial(volume) {
+  updateMaterial(volume: Volume): void {
     if (this.image) {
       this.image.updateMaterial();
     }
@@ -587,7 +591,7 @@ export class View3d {
    * Increase or decrease the overall brightness of the rendered image
    * @param {number} e 0..1
    */
-  updateExposure(e) {
+  updateExposure(e: number): void {
     this.exposure = e;
     if (this.image) {
       this.image.setBrightness(e);
@@ -601,11 +605,8 @@ export class View3d {
    * @param {number} focalDistance view-space units for center of focus
    * @param {number} apertureSize view-space units for radius of camera aperture
    */
-  updateCamera(fov, focalDistance, apertureSize) {
-    const cam = this.canvas3d.perspectiveCamera;
-    cam.fov = fov;
-    this.canvas3d.fov = fov;
-    cam.updateProjectionMatrix();
+  updateCamera(fov: number, focalDistance: number, apertureSize: number): void {
+    this.canvas3d.updateCameraFocus(fov, focalDistance, apertureSize);
 
     if (this.image) {
       this.image.onCameraChanged(fov, focalDistance, apertureSize);
@@ -623,7 +624,15 @@ export class View3d {
    * @param {number} zmin 0..1, should be less than zmax
    * @param {number} zmax 0..1, should be greater than zmin
    */
-  updateClipRegion(volume, xmin, xmax, ymin, ymax, zmin, zmax) {
+  updateClipRegion(
+    volume: Volume,
+    xmin: number,
+    xmax: number,
+    ymin: number,
+    ymax: number,
+    zmin: number,
+    zmax: number
+  ): void {
     if (this.image) {
       this.image.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
     }
@@ -639,7 +648,7 @@ export class View3d {
    * @param {number} maxval 0..1, should be greater than minval
    * @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
    */
-  setAxisClip(volume, axis, minval, maxval, isOrthoAxis) {
+  setAxisClip(volume: Volume, axis: number, minval: number, maxval: number, isOrthoAxis: boolean): void {
     if (this.image) {
       this.image.setAxisClip(axis, minval, maxval, isOrthoAxis);
     }
@@ -650,7 +659,7 @@ export class View3d {
    * Update lights
    * @param {Array} state array of Lights
    */
-  updateLights(state) {
+  updateLights(state: Light[]): void {
     // TODO flesh this out
     this.lights = state;
 
@@ -663,7 +672,7 @@ export class View3d {
    * Set a sampling rate to trade performance for quality.
    * @param {number} value (+epsilon..1) 1 is max quality, ~0.1 for lowest quality and highest speed
    */
-  updatePixelSamplingRate(value) {
+  updatePixelSamplingRate(value: number): void {
     if (this.pixelSamplingRate === value) {
       return;
     }
@@ -678,7 +687,7 @@ export class View3d {
    * @param {Object} volume
    * @param {number} value (0..1) 0 for full transparent, 1 for fully opaque
    */
-  updateMaskAlpha(volume, value) {
+  updateMaskAlpha(volume: Volume, value: number): void {
     if (this.image) {
       this.image.setMaskAlpha(value);
     }
@@ -691,7 +700,7 @@ export class View3d {
    * @param {number} channel
    * @param {boolean} enabled
    */
-  setVolumeChannelEnabled(volume, channel, enabled) {
+  setVolumeChannelEnabled(volume: Volume, channel: number, enabled: boolean): void {
     if (this.image) {
       this.image.setVolumeChannelEnabled(channel, enabled);
     }
@@ -706,7 +715,14 @@ export class View3d {
    * @param {Array.<number>} emissivergb [r,g,b]
    * @param {number} glossiness
    */
-  updateChannelMaterial(volume, channelIndex, colorrgb, specularrgb, emissivergb, glossiness) {
+  updateChannelMaterial(
+    volume: Volume,
+    channelIndex: number,
+    colorrgb: [number, number, number],
+    specularrgb: [number, number, number],
+    emissivergb: [number, number, number],
+    glossiness: number
+  ): void {
     if (this.image) {
       this.image.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
     }
@@ -718,7 +734,7 @@ export class View3d {
    * @param {number} channelIndex
    * @param {Array.<number>} colorrgb [r,g,b]
    */
-  updateChannelColor(volume, channelIndex, colorrgb) {
+  updateChannelColor(volume: Volume, channelIndex: number, colorrgb: [number, number, number]): void {
     if (this.image) {
       this.image.updateChannelColor(channelIndex, colorrgb);
     }
@@ -728,7 +744,7 @@ export class View3d {
    * Switch between single pass ray-marched volume rendering and progressive path traced rendering.
    * @param {number} mode 0 for single pass ray march, 1 for progressive path trace
    */
-  setVolumeRenderMode(mode) {
+  setVolumeRenderMode(mode: number): void {
     if (mode === this.volumeRenderMode) {
       return;
     }
@@ -739,16 +755,16 @@ export class View3d {
         this.image.setVolumeRendering(true);
         this.image.updateLights(this.lights);
 
-        if (this.canvas3d.vrButton) {
-          this.canvas3d.vrButton.disabled = true;
+        if (this.canvas3d.xrButton) {
+          this.canvas3d.xrButton.disabled = true;
         }
 
         // pathtrace is a continuous rendering mode
         this.canvas3d.startRenderLoop();
       } else {
         this.image.setVolumeRendering(false);
-        if (this.canvas3d.vrButton) {
-          this.canvas3d.vrButton.disabled = false;
+        if (this.canvas3d.xrButton) {
+          this.canvas3d.xrButton.disabled = false;
         }
         this.canvas3d.redraw();
       }
@@ -766,7 +782,7 @@ export class View3d {
    * @param {Object} volume
    * @param {Array.<number>} xyz
    */
-  setVolumeTranslation(volume, xyz) {
+  setVolumeTranslation(volume: Volume, xyz: [number, number, number]): void {
     if (this.image) {
       this.image.setTranslation(new Vector3().fromArray(xyz));
     }
@@ -778,7 +794,7 @@ export class View3d {
    * @param {Object} volume
    * @param {Array.<number>} eulerXYZ
    */
-  setVolumeRotation(volume, eulerXYZ) {
+  setVolumeRotation(volume: Volume, eulerXYZ: [number, number, number]): void {
     if (this.image) {
       this.image.setRotation(new Euler().fromArray(eulerXYZ));
     }
@@ -788,7 +804,7 @@ export class View3d {
   /**
    * Reset the camera to its default position
    */
-  resetCamera() {
+  resetCamera(): void {
     this.canvas3d.resetCamera();
     if (this.image) {
       this.image.onResetCamera();

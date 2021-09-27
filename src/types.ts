@@ -12,6 +12,20 @@ export interface FuseChannel {
   rgbColor: [number, number, number] | number;
 }
 
+/**
+ * Provide options to control the visual appearance of a Volume
+ * @typedef {Object} VolumeChannelDisplayOptions
+ * @property {boolean} enabled array of boolean per channel
+ * @property {<Array.<number>} color array of rgb per channel
+ * @property {<Array.<number>} specularColor array of rgb per channel
+ * @property {<Array.<number>} emissiveColor array of rgb per channel
+ * @property {number} glossiness array of float per channel
+ * @property {boolean} isosurfaceEnabled array of boolean per channel
+ * @property {number} isovalue array of number per channel
+ * @property {number} isosurfaceOpacity array of number per channel
+ * @example let options = {
+   };
+ */
 export interface VolumeChannelDisplayOptions {
   enabled: boolean;
   color: [number, number, number];
@@ -23,6 +37,26 @@ export interface VolumeChannelDisplayOptions {
   isosurfaceOpacity: number;
 }
 
+/**
+ * Provide options to control the visual appearance of a Volume
+ * @typedef {Object} VolumeDisplayOptions
+ * @property {Array.<VolumeChannelDisplayOptions>} channels array of channel display options
+ * @property {number} density
+ * @property {Array.<number>} translation xyz
+ * @property {Array.<number>} rotation xyz angles in radians
+ * @property {number} maskChannelIndex
+ * @property {number} maskAlpha
+ * @property {Array.<number>} clipBounds [xmin, xmax, ymin, ymax, zmin, zmax] all range from 0 to 1 as a percentage of the volume on that axis
+ * @property {Array.<number>} scale xyz voxel size scaling
+ * @property {boolean} maxProjection true or false (ray marching)
+ * @property {number} renderMode 0 for raymarch, 1 for pathtrace
+ * @property {number} shadingMethod 0 for phase, 1 for brdf, 2 for hybrid (path tracer)
+ * @property {Array.<number>} gamma [min, max, scale]
+ * @property {number} primaryRayStepSize in voxels
+ * @property {number} secondaryRayStepSize in voxels
+ * @example let options = {
+   };
+ */
 export interface VolumeDisplayOptions {
   channels: VolumeChannelDisplayOptions[];
   density: number;

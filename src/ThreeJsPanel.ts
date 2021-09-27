@@ -27,14 +27,14 @@ const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 export class ThreeJsPanel {
   private containerdiv: HTMLDivElement;
   private canvas: HTMLCanvasElement;
-  private scene: Scene;
+  public scene: Scene;
   private zooming: boolean;
-  private animate_funcs: ((ThreeJsPanel) => void)[];
-  private onEnterVRCallback?: () => void;
-  private onLeaveVRCallback?: () => void;
+  public animate_funcs: ((ThreeJsPanel) => void)[];
+  public onEnterVRCallback?: () => void;
+  public onLeaveVRCallback?: () => void;
   private inRenderLoop: boolean;
   private requestedRender: number;
-  private hasWebGL2: boolean;
+  public hasWebGL2: boolean;
   public renderer: WebGLRenderer;
   private timer: Timing;
   public orthoScale: number;
@@ -48,20 +48,20 @@ export class ThreeJsPanel {
   private orthographicCameraZ: OrthographicCamera;
   private orthoControlsZ: TrackballControls;
   public camera: PerspectiveCamera | OrthographicCamera;
-  private controls: TrackballControls;
+  public controls: TrackballControls;
   private controlEndHandler?: EventListener;
   private controlChangeHandler?: EventListener;
   private controlStartHandler?: EventListener;
 
-  private showAxis: boolean;
+  public showAxis: boolean;
   private axisScale: number;
   private axisOffset: [number, number];
   private axisHelperScene: Scene;
   private axisHelperObject: Object3D;
   private axisCamera: PerspectiveCamera | OrthographicCamera;
 
-  private xrButton?: HTMLButtonElement | null;
-  private xrControls?: vrObjectControls;
+  public xrButton?: HTMLButtonElement | null;
+  public xrControls?: vrObjectControls;
   private dataurlcallback?: (string) => void;
 
   constructor(parentElement: HTMLElement, useWebGL2: boolean) {
@@ -190,6 +190,12 @@ export class ThreeJsPanel {
     this.setupAxisHelper();
   }
 
+  updateCameraFocus(fov: number, focalDistance: number, apertureSize: number): void {
+    this.perspectiveCamera.fov = fov;
+    this.fov = fov;
+    this.perspectiveCamera.updateProjectionMatrix();
+  }
+
   resetPerspectiveCamera(): void {
     this.perspectiveCamera.position.x = 0.0;
     this.perspectiveCamera.position.y = 0.0;
@@ -229,7 +235,7 @@ export class ThreeJsPanel {
     this.orthographicCameraZ.lookAt(new Vector3(0, 0, 0));
   }
 
-  requestCapture(dataurlcallback: (str) => void): void {
+  requestCapture(dataurlcallback: (name: string) => void): void {
     this.dataurlcallback = dataurlcallback;
     this.redraw();
   }
@@ -452,7 +458,7 @@ export class ThreeJsPanel {
     return this.canvas;
   }
 
-  resize(comp: HTMLElement | null, w: number, h: number, _ow: number, _oh: number, _eOpts?: unknown): void {
+  resize(comp: HTMLElement | null, w: number, h: number, _ow?: number, _oh?: number, _eOpts?: unknown): void {
     this.containerdiv.style.width = "" + w + "px";
     this.containerdiv.style.height = "" + h + "px";
 

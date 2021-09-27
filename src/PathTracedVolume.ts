@@ -339,7 +339,7 @@ export default class PathTracedVolume {
     }
   }
 
-  public setRenderUpdateListener(callback?: (number) => void): void {
+  public setRenderUpdateListener(callback?: (iteration: number) => void): void {
     this.renderUpdateListener = callback;
   }
 
@@ -553,7 +553,7 @@ export default class PathTracedVolume {
   }
 
   // -0.5 .. 0.5
-  setAxisClip(axis: string, minval: number, maxval: number, isOrthoAxis: boolean): void {
+  setAxisClip(axis: number, minval: number, maxval: number, isOrthoAxis: boolean): void {
     this.bounds.bmax[axis] = maxval;
     this.bounds.bmin[axis] = minval;
     const physicalSize = this.volume.normalizedPhysicalSize;
