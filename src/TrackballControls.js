@@ -7,7 +7,7 @@
 
 import { EventDispatcher, Quaternion, Vector2, Vector3 } from "three";
 
-var TrackballControls = function(object, domElement) {
+var TrackballControls = function (object, domElement) {
   var _this = this;
   var STATE = {
     NONE: -1,
@@ -27,7 +27,9 @@ var TrackballControls = function(object, domElement) {
 
   this.screen = { left: 0, top: 0, width: 0, height: 0 };
 
+  this.length = 10;
   this.scale = 0.5;
+  this.scale0 = 0.5;
   this.aspect = 1.0;
 
   this.rotateSpeed = 1.0;
@@ -87,7 +89,7 @@ var TrackballControls = function(object, domElement) {
 
   // methods
 
-  this.handleResize = function() {
+  this.handleResize = function () {
     if (this.domElement === document) {
       this.screen.left = 0;
       this.screen.top = 0;
@@ -104,7 +106,7 @@ var TrackballControls = function(object, domElement) {
     }
   };
 
-  var getMouseOnScreen = (function() {
+  var getMouseOnScreen = (function () {
     var vector = new Vector2();
 
     return function getMouseOnScreen(pageX, pageY) {
@@ -114,7 +116,7 @@ var TrackballControls = function(object, domElement) {
     };
   })();
 
-  var getMouseOnCircle = (function() {
+  var getMouseOnCircle = (function () {
     var vector = new Vector2();
 
     return function getMouseOnCircle(pageX, pageY) {
@@ -131,7 +133,7 @@ var TrackballControls = function(object, domElement) {
     return ((2 * Math.PI) / 60 / 60) * _this.autoRotateSpeed * (delta * 60.0);
   }
 
-  this.rotateCamera = (function() {
+  this.rotateCamera = (function () {
     var axis = new Vector3(),
       quaternion = new Quaternion(),
       eyeDirection = new Vector3(),
@@ -190,7 +192,7 @@ var TrackballControls = function(object, domElement) {
     };
   })();
 
-  this.zoomCamera = function() {
+  this.zoomCamera = function () {
     var factor;
 
     if (_state === STATE.TOUCH_ZOOM_PAN) {
@@ -216,7 +218,7 @@ var TrackballControls = function(object, domElement) {
     }
   };
 
-  this.panCamera = (function() {
+  this.panCamera = (function () {
     var mouseChange = new Vector2(),
       objectUp = new Vector3(),
       pan = new Vector3();
@@ -227,10 +229,7 @@ var TrackballControls = function(object, domElement) {
       if (mouseChange.lengthSq()) {
         mouseChange.multiplyScalar(_eye.length() * _this.panSpeed);
 
-        pan
-          .copy(_eye)
-          .cross(_this.object.up)
-          .setLength(mouseChange.x);
+        pan.copy(_eye).cross(_this.object.up).setLength(mouseChange.x);
         pan.add(objectUp.copy(_this.object.up).setLength(mouseChange.y));
 
         _this.object.position.add(pan);
@@ -245,7 +244,7 @@ var TrackballControls = function(object, domElement) {
     };
   })();
 
-  this.checkDistances = function() {
+  this.checkDistances = function () {
     if (!_this.noZoom || !_this.noPan) {
       if (_eye.lengthSq() > _this.maxDistance * _this.maxDistance) {
         _this.object.position.addVectors(_this.target, _eye.setLength(_this.maxDistance));
@@ -259,7 +258,7 @@ var TrackballControls = function(object, domElement) {
     }
   };
 
-  this.update = function(delta) {
+  this.update = function (delta) {
     if (_this.enabled === false) return;
 
     delta = delta || 0.0;
@@ -298,7 +297,7 @@ var TrackballControls = function(object, domElement) {
     }
   };
 
-  this.reset = function() {
+  this.reset = function () {
     if (_this.enabled === false) return;
 
     _state = STATE.NONE;
@@ -515,7 +514,7 @@ var TrackballControls = function(object, domElement) {
     event.preventDefault();
   }
 
-  this.dispose = function() {
+  this.dispose = function () {
     this.domElement.removeEventListener("contextmenu", contextmenu, false);
     this.domElement.removeEventListener("mousedown", mousedown, false);
     this.domElement.removeEventListener("wheel", mousewheel, false);

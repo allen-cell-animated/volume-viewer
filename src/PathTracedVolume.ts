@@ -28,7 +28,7 @@ import {
 import { LUT_ARRAY_LENGTH } from "./Histogram";
 import Volume from "./Volume";
 import { Bounds } from "./types";
-import { ThreeJsPanel } from "./ThreeJsPanel.js";
+import { ThreeJsPanel } from "./ThreeJsPanel";
 import VolumeDrawable from "./VolumeDrawable";
 import { Light } from "./Light";
 

@@ -2,7 +2,7 @@ export default class Timing {
   private beginTime: number;
   private prevTime: number;
   private frames: number;
-  private lastFrameMs: number;
+  public lastFrameMs: number;
   private lastFPS: number;
 
   constructor() {
