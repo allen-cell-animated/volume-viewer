@@ -96,7 +96,7 @@ export default class Volume {
   public z: number;
   private t: number;
   public num_channels: number;
-  private channel_names: string[];
+  public channel_names: string[];
   private atlasSize: [number, number];
   private volumeSize: [number, number, number];
   public channels: Channel[];

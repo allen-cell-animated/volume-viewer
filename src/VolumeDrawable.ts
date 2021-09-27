@@ -1,6 +1,6 @@
 import { Vector3, Object3D, Euler } from "three";
 
-import MeshVolume from "./MeshVolume.js";
+import MeshVolume from "./MeshVolume";
 import RayMarchedAtlasVolume from "./RayMarchedAtlasVolume";
 import PathTracedVolume from "./PathTracedVolume";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
@@ -273,7 +273,7 @@ export default class VolumeDrawable {
     this.bounds.bmax[axis] = maxval;
     this.bounds.bmin[axis] = minval;
 
-    !this.PT && this.meshVolume.setAxisClip(axis, minval, maxval, isOrthoAxis);
+    !this.PT && this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
     this.volumeRendering.setAxisClip(axis, minval, maxval, isOrthoAxis || false);
   }
 
@@ -336,7 +336,7 @@ export default class VolumeDrawable {
     this.meshVolume.updateIsovalue(channel, value);
   }
 
-  getIsovalue(channel: number): number {
+  getIsovalue(channel: number): number | undefined {
     return this.meshVolume.getIsovalue(channel);
   }
 
