@@ -20,6 +20,9 @@ const myState = {
   timeSeriesVolumes: [],
   numberOfVolumesCached: 0,
   totalFrames: 0,
+  currentFrame: -1,
+  timerId: 0,
+
   density: 12.5,
   maskAlpha: 1.0,
   exposure: 0.75,
@@ -61,8 +64,6 @@ const myState = {
   flipX: 1,
   flipY: 1,
   flipZ: 1,
-
-  currentFrame: 0,
 };
 
 // controlPoints is array of [{offset:number, color:cssstring}]
@@ -821,7 +822,7 @@ function fetchImage(url, isTimeSeries = false, frameNumber = 0) {
             view3D.setVolumeRotation(myState.volume, myJson.userData.alignTransform.rotation);
           }
 
-          myState.currentFrame = 0;
+          myState.currentFrame = -1;
           showChannelUI(myState.volume);
         }
 
@@ -881,10 +882,9 @@ function copyVolumeToVolume(src, dest) {
 }
 
 function playTimeSeries() {
-  let timer;
   const loadNextFrame = () => {
-    if (myState.currentFrame >= myState.timeSeriesVolumes.length - 1) {
-      clearInterval(timer);
+    if (myState.currentFrame >= myState.totalFrames - 1) {
+      clearInterval(myState.timerId);
       console.log("Reached end of sequence");
       return;
     }
@@ -901,7 +901,7 @@ function playTimeSeries() {
 
     myState.currentFrame = nextFrame;
   };
-  timer = setInterval(loadNextFrame, 1);
+  myState.timerId = setInterval(loadNextFrame, 1);
 }
 
 function createTestVolume() {
@@ -992,12 +992,16 @@ function main() {
     myState.flipZ *= -1;
     view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
   });
-  var playbtn = document.getElementById("playbtn");
+  const playbtn = document.getElementById("playbtn");
   playbtn.addEventListener("click", () => {
-    if (myState.currentFrame !== 0) {
+    if (myState.currentFrame >= myState.totalFrames - 1) {
       myState.currentFrame = -1;
     }
     playTimeSeries();
+  });
+  const pausebtn = document.getElementById("pausebtn");
+  pausebtn.addEventListener("click", () => {
+    clearInterval(myState.timerId);
   });
 
   var alignbtn = document.getElementById("xfbtn");
