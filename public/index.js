@@ -18,6 +18,7 @@ const myState = {
   file: "",
   volume: null,
   timeSeriesVolumes: [],
+  numberOfVolumesCached: 0,
   density: 12.5,
   maskAlpha: 1.0,
   exposure: 0.75,
@@ -762,6 +763,7 @@ function loadImageData(jsonData, volumedata) {
 function cacheTimeSeriesImageData(jsonData, frameNumber) {
   const vol = new Volume(jsonData);
   myState.timeSeriesVolumes[frameNumber] = vol;
+  myState.numberOfVolumesCached++;
   return vol;
 }
 
@@ -844,16 +846,12 @@ function fetchImage(url, isTimeSeries = false, frameNumber = 0) {
 }
 
 function fetchTimeSeries(urlStart, urlEnd, t0, tf, interval = 1) {
-  // Cache and load first frame
-  // fetchImage(urlStart + t0 + urlEnd, true, true);
-  // Cache but not load rest of frames
   let frameNumber = 0;
   for (let t = t0; t <= tf; t += interval) {
-    // use t to determine whether to load (instead of 2 fetchImage calls)
-
     fetchImage(urlStart + t + urlEnd, true, frameNumber);
     frameNumber++;
   }
+  console.log(`${frameNumber} frames requested`);
 }
 
 function copyVolumeToVolume(src, dest) {
@@ -861,16 +859,16 @@ function copyVolumeToVolume(src, dest) {
 
   // grab references to data from each channel and put it in myState.volume
   for (var i = 0; i < src.num_channels; ++i) {
-    dest.channels[i].imgData.data.set(src.channels[i].imgData.data);
-    dest.channels[i].volumeData.set(src.channels[i].volumeData);
-    dest.channels[i].lut.set(src.channels[i].lut);
-    // dest.channels[i].imgData = {
-    //   data: src.channels[i].imgData.data,
-    //   width: src.channels[i].imgData.width,
-    //   height: src.channels[i].imgData.height,
-    // };
-    // dest.channels[i].volumeData = src.channels[i].volumeData;
-    // dest.channels[i].lut = src.channels[i].lut;
+    // dest.channels[i].imgData.data.set(src.channels[i].imgData.data);
+    // dest.channels[i].volumeData.set(src.channels[i].volumeData);
+    // dest.channels[i].lut.set(src.channels[i].lut);
+    dest.channels[i].imgData = {
+      data: src.channels[i].imgData.data,
+      width: src.channels[i].imgData.width,
+      height: src.channels[i].imgData.height,
+    };
+    dest.channels[i].volumeData = src.channels[i].volumeData;
+    dest.channels[i].lut = src.channels[i].lut;
     dest.channels[i].loaded = true;
   }
 }
@@ -880,28 +878,19 @@ function playTimeSeries() {
   const loadNextFrame = () => {
     if (myState.currentFrame >= myState.timeSeriesVolumes.length - 1) {
       clearInterval(timer);
+      console.log("Reached end of sequence");
       return;
     }
     const nextFrame = myState.currentFrame + 1;
     const nextFrameVolume = myState.timeSeriesVolumes[nextFrame];
-    console.log("loadNextFrame at " + nextFrame);
+    //console.log("loadNextFrame at " + nextFrame);
 
     copyVolumeToVolume(nextFrameVolume, myState.volume);
     view3D.onVolumeData(myState.volume, [0, 1, 2]);
 
     myState.volume.loaded = true;
 
-    // first 3 channels for starters
-    for (var ch = 0; ch < myState.volume.num_channels; ++ch) {
-      view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
-    }
-
-    // view3D.setVolumeChannelAsMask(myState.volume, my.channel_names.indexOf("SEG_Memb"));
-    view3D.updateActiveChannels(myState.volume);
     view3D.updateLuts(myState.volume);
-    view3D.updateLights(myState.lights);
-    view3D.updateDensity(myState.volume, myState.density / 100.0);
-    view3D.updateExposure(myState.exposure);
 
     myState.currentFrame = nextFrame;
   };
