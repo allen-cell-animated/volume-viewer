@@ -19,6 +19,7 @@ const myState = {
   volume: null,
   timeSeriesVolumes: [],
   numberOfVolumesCached: 0,
+  totalFrames: 0,
   density: 12.5,
   maskAlpha: 1.0,
   exposure: 0.75,
@@ -763,7 +764,6 @@ function loadImageData(jsonData, volumedata) {
 function cacheTimeSeriesImageData(jsonData, frameNumber) {
   const vol = new Volume(jsonData);
   myState.timeSeriesVolumes[frameNumber] = vol;
-  myState.numberOfVolumesCached++;
   return vol;
 }
 
@@ -830,8 +830,14 @@ function fetchImage(url, isTimeSeries = false, frameNumber = 0) {
 
           if (currentVol.loaded) {
             console.log("currentVol with name" + currentVol.name + " is loaded");
+            myState.numberOfVolumesCached++;
+            if (myState.numberOfVolumesCached >= myState.totalFrames) {
+              console.log("ALL FRAMES RECEIVED");
+            }
+
             if (frameNumber === 0) {
               copyVolumeToVolume(currentVol, myState.volume);
+              // has assumption that only 3 channels
               view3D.onVolumeData(myState.volume, [0, 1, 2]);
               view3D.updateLuts(myState.volume);
 
@@ -851,6 +857,7 @@ function fetchTimeSeries(urlStart, urlEnd, t0, tf, interval = 1) {
     fetchImage(urlStart + t + urlEnd, true, frameNumber);
     frameNumber++;
   }
+  myState.totalFrames = frameNumber;
   console.log(`${frameNumber} frames requested`);
 }
 
