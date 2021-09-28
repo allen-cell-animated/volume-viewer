@@ -15,6 +15,8 @@ class MarchingCubes extends ImmediateRenderObject {
     const scope = this;
 
     // basic default init; these should be reset later.
+    this.position = new Vector3();
+    this.scale = new Vector3(1, 1, 1);
     this.isovalue = 0;
 
     // temp buffers used in polygonize
