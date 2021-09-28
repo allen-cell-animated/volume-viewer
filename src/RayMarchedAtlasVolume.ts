@@ -1,4 +1,4 @@
-import { Euler, Vector2, Vector3, Group, BoxGeometry, Mesh, ShaderMaterial, Matrix4 } from "three";
+import { BoxHelper, Euler, Vector2, Vector3, Group, BoxGeometry, Mesh, ShaderMaterial, Matrix4 } from "three";
 
 import FusedChannelData from "./FusedChannelData";
 import {
@@ -17,6 +17,7 @@ export default class RayMarchedAtlasVolume {
   public bounds: Bounds;
   private cube: BoxGeometry;
   private cubeMesh: Mesh;
+  private boxHelper: BoxHelper;
   private cubeTransformNode: Group;
   private uniforms: any; // map of string to {type, value}?
   private channelData: FusedChannelData;
@@ -36,8 +37,12 @@ export default class RayMarchedAtlasVolume {
     this.cubeMesh = new Mesh(this.cube);
     this.cubeMesh.name = "Volume";
 
+    this.boxHelper = new BoxHelper(this.cubeMesh, 0xffff00);
+
     this.cubeTransformNode = new Group();
     this.cubeTransformNode.name = "VolumeContainerNode";
+    // REINSTATE THIS TO SHOW BOUNDING BOX!
+    //this.cubeTransformNode.add(this.boxHelper);
     this.cubeTransformNode.add(this.cubeMesh);
 
     this.uniforms = rayMarchingShaderUniforms();
@@ -86,6 +91,7 @@ export default class RayMarchedAtlasVolume {
     }
 
     this.cubeMesh.updateMatrixWorld(true);
+    this.boxHelper.update();
 
     const mvm = new Matrix4();
     mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.cubeMesh.matrixWorld);
