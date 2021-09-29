@@ -9,7 +9,7 @@ import { FuseChannel } from "./types";
 export default class FusedChannelData {
   private width: number;
   private height: number;
-  private fused: Uint8Array;
+  private fused: Uint8ClampedArray;
   // todo: make private?
   public fusedTexture: DataTexture;
   public maskTexture: DataTexture;
@@ -33,7 +33,7 @@ export default class FusedChannelData {
     this.height = atlasY;
 
     // cpu memory buffer with the combined rgba texture atlas for display
-    this.fused = new Uint8Array(this.width * this.height * 4);
+    this.fused = new Uint8ClampedArray(this.width * this.height * 4);
 
     // webgl texture with the rgba texture atlas for display
     this.fusedTexture = new DataTexture(this.fused, this.width, this.height);
@@ -44,7 +44,7 @@ export default class FusedChannelData {
     this.fusedTexture.wrapT = ClampToEdgeWrapping;
 
     this.maskTexture = new DataTexture(
-      new Uint8Array(this.width * this.height),
+      new Uint8ClampedArray(this.width * this.height),
       this.width,
       this.height,
       LuminanceFormat,
@@ -155,9 +155,14 @@ export default class FusedChannelData {
     const npx = this.height * this.width;
     // pass channel data to workers
     for (let i = 0; i < this.workersCount; ++i) {
-      // hand some global data to the worker
       for (let j = 0; j < batch.length; ++j) {
         const channelIndex = batch[j];
+        // const u8arr = new Uint8Array(
+        //   channels[channelIndex].imgData.data.buffer,
+        //   Math.floor(i * (npx / this.workersCount)), // byteOffset into buffer
+        //   (npx / this.workersCount) // length(number of elements)
+        // );
+
         // chop up the arrays. this is a copy operation!
         const arr = channels[channelIndex].imgData.data.buffer.slice(
           Math.floor(i * (npx / this.workersCount)),
@@ -313,7 +318,7 @@ export default class FusedChannelData {
     }
     const datacopy = channel.imgData.data.buffer.slice(0);
     const maskData = {
-      data: new Uint8Array(datacopy),
+      data: new Uint8ClampedArray(datacopy),
       width: this.width,
       height: this.height,
     };

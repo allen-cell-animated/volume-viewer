@@ -31,7 +31,7 @@ export default class MeshVolume {
   private volume: Volume;
   private meshRoot: Object3D;
   private meshPivot: Group;
-  private meshrep: Object3D[];
+  private meshrep: (Group | null)[];
   private channel_colors: [number, number, number][];
   private channel_opacities: number[];
   private bounds: Bounds;
@@ -54,6 +54,7 @@ export default class MeshVolume {
     this.channel_colors = [];
     this.channel_opacities = [];
 
+    this.scale = new Vector3(1, 1, 1);
     this.bounds = {
       bmin: new Vector3(-0.5, -0.5, -0.5),
       bmax: new Vector3(0.5, 0.5, 0.5),
@@ -132,18 +133,16 @@ export default class MeshVolume {
 
     // update existing meshes
     for (let i = 0; i < this.volume.num_channels; ++i) {
-      if (this.meshrep[i]) {
+      const meshrep = this.meshrep[i];
+      if (meshrep) {
         const rgb = channel_colors[i];
         const c = (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
 
-        this.meshrep[i].traverse(function (child) {
+        meshrep.traverse(function (child) {
           if (child instanceof Mesh) {
             child.material.color = new Color(c);
           }
         });
-        if (this.meshrep[i].material) {
-          this.meshrep[i].material.color = new Color(c);
-        }
       }
     }
   }
@@ -167,12 +166,12 @@ export default class MeshVolume {
     isovalue: number,
     alpha: number,
     transp: boolean
-  ): Object3D {
+  ): Group {
     // note that if isovalue out of range, this will return an empty array.
     const geometries = this.generateIsosurfaceGeometry(channelIndex, isovalue);
     const material = this.createMaterialForChannel(colorrgb, alpha, transp);
 
-    const theObject = new Object3D();
+    const theObject = new Group();
     theObject.name = "Channel" + channelIndex;
     theObject.userData = { isovalue: isovalue };
     // proper scaling will be done in parent object
@@ -184,10 +183,11 @@ export default class MeshVolume {
   }
 
   updateIsovalue(channel: number, value: number): void {
-    if (!this.meshrep[channel]) {
+    const meshrep = this.meshrep[channel];
+    if (!meshrep) {
       return;
     }
-    if (this.meshrep[channel].userData.isovalue === value) {
+    if (meshrep.userData.isovalue === value) {
       return;
     }
 
@@ -196,16 +196,18 @@ export default class MeshVolume {
     const color = this.channel_colors[channel];
 
     this.destroyIsosurface(channel);
-    this.meshrep[channel] = this.createMeshForChannel(channel, color, value, opacity, false);
+    const newmeshrep = this.createMeshForChannel(channel, color, value, opacity, false);
+    this.meshrep[channel] = newmeshrep;
 
-    this.meshRoot.add(this.meshrep[channel]);
+    this.meshRoot.add(newmeshrep);
   }
 
   getIsovalue(channel: number): number | undefined {
-    if (!this.meshrep[channel]) {
+    const meshrep = this.meshrep[channel];
+    if (!meshrep) {
       return undefined;
     }
-    return this.meshrep[channel].userData.isovalue;
+    return meshrep.userData.isovalue;
   }
 
   updateClipRegion(xmin: number, xmax: number, ymin: number, ymax: number, zmin: number, zmax: number): void {
@@ -229,7 +231,8 @@ export default class MeshVolume {
     const euler = this.meshPivot.rotation;
 
     for (let channel = 0; channel < this.meshrep.length; ++channel) {
-      if (!this.meshrep[channel]) {
+      const meshrep = this.meshrep[channel];
+      if (!meshrep) {
         continue;
       }
       const planes: Plane[] = [];
@@ -252,35 +255,28 @@ export default class MeshVolume {
       if (zmax < 0.5) {
         planes.push(new Plane(new Vector3(0, 0, -1).applyEuler(euler), this.meshRoot.position.z + zmax * this.scale.z));
       }
-      this.meshrep[channel].traverse(function (child) {
+      meshrep.traverse(function (child) {
         if (child instanceof Mesh) {
           child.material.clippingPlanes = planes;
         }
       });
-      if (this.meshrep[channel].material) {
-        this.meshrep[channel].material.clippingPlanes = planes;
-      }
     }
   }
 
   updateOpacity(channel: number, value: number): void {
     this.channel_opacities[channel] = value;
-    if (!this.meshrep[channel]) {
+    const meshrep = this.meshrep[channel];
+    if (!meshrep) {
       return;
     }
 
-    this.meshrep[channel].traverse(function (child) {
+    meshrep.traverse(function (child) {
       if (child instanceof Mesh) {
         child.material.opacity = value;
         child.material.transparent = value < ALPHA_THRESHOLD;
         //child.material.depthWrite = !child.material.transparent;
       }
     });
-    if (this.meshrep[channel].material) {
-      this.meshrep[channel].material.opacity = value;
-      this.meshrep[channel].material.transparent = value < ALPHA_THRESHOLD;
-      //this.meshrep[channel].material.depthWrite = !this.meshrep[channel].material.transparent;
-    }
   }
 
   hasIsosurface(channel: number): boolean {
@@ -306,52 +302,52 @@ export default class MeshVolume {
       if (transp === undefined) {
         transp = alpha < ALPHA_THRESHOLD;
       }
-      this.meshrep[channel] = this.createMeshForChannel(channel, color, value, alpha, transp);
+      const meshrep = this.createMeshForChannel(channel, color, value, alpha, transp);
+      this.meshrep[channel] = meshrep;
       this.channel_opacities[channel] = alpha;
       this.channel_colors[channel] = color;
-      this.meshRoot.add(this.meshrep[channel]);
+      // note we are not removing any prior mesh reps for this channel
+      this.meshRoot.add(meshrep);
     }
   }
 
   destroyIsosurface(channel: number): void {
-    if (this.meshrep[channel]) {
-      this.meshRoot.remove(this.meshrep[channel]);
-      this.meshrep[channel].traverse(function (child) {
+    const meshrep = this.meshrep[channel];
+    if (meshrep) {
+      this.meshRoot.remove(meshrep);
+      meshrep.traverse(function (child) {
         if (child instanceof Mesh) {
           child.material.dispose();
           child.geometry.dispose();
         }
       });
-      if (this.meshrep[channel].geometry) {
-        this.meshrep[channel].geometry.dispose();
-      }
-      if (this.meshrep[channel].material) {
-        this.meshrep[channel].material.dispose();
-      }
       this.meshrep[channel] = null;
     }
   }
 
   saveChannelIsosurface(channelIndex: number, type: string, namePrefix: string): void {
-    if (!this.meshrep[channelIndex]) {
+    const meshrep = this.meshrep[channelIndex];
+    if (!meshrep) {
       return;
     }
 
     if (type === "STL") {
-      this.exportSTL(this.meshrep[channelIndex], namePrefix + "_" + this.volume.channel_names[channelIndex]);
+      this.exportSTL(meshrep, namePrefix + "_" + this.volume.channel_names[channelIndex]);
     } else if (type === "GLTF") {
       // temporarily set other meshreps to invisible
       const prevviz: boolean[] = [];
       for (let i = 0; i < this.meshrep.length; ++i) {
-        if (this.meshrep[i]) {
-          prevviz[i] = this.meshrep[i].visible;
-          this.meshrep[i].visible = i === channelIndex;
+        const meshrepi = this.meshrep[i];
+        if (meshrepi) {
+          prevviz[i] = meshrepi.visible;
+          meshrepi.visible = i === channelIndex;
         }
       }
       this.exportGLTF(this.meshRoot, namePrefix + "_" + this.volume.channel_names[channelIndex]);
       for (let i = 0; i < this.meshrep.length; ++i) {
-        if (this.meshrep[i]) {
-          this.meshrep[i].visible = prevviz[i];
+        const meshrepi = this.meshrep[i];
+        if (meshrepi) {
+          meshrepi.visible = prevviz[i];
         }
       }
     }
@@ -360,7 +356,9 @@ export default class MeshVolume {
   exportSTL(input: Object3D, fname: string): void {
     const ex = new STLExporter();
     const output = ex.parse(input, { binary: true });
-    FileSaver.saveBinary(output.buffer, fname + ".stl");
+    // STLExporter's typing shows that it returns string
+    // but this is not the case when binary=true.
+    FileSaver.saveBinary((output as unknown as DataView).buffer, fname + ".stl");
   }
 
   // takes a scene or object or array of scenes or objects or both!
@@ -400,7 +398,7 @@ export default class MeshVolume {
     if (marchingcubes) {
       const effect = new MarchingCubes(
         [this.volume.x, this.volume.y, this.volume.z],
-        null,
+        new Material(),
         false,
         false,
         true,

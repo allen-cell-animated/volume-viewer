@@ -109,6 +109,11 @@ export default class Volume {
   public channel_colors_default: [number, number, number][];
 
   constructor(imageInfo: ImageInfo) {
+    this.scale = new Vector3(1, 1, 1);
+    this.currentScale = new Vector3(1, 1, 1);
+    this.physicalSize = new Vector3(1, 1, 1);
+    this.normalizedPhysicalSize = new Vector3(1, 1, 1);
+
     this.loaded = false;
     this.imageInfo = imageInfo;
     this.name = imageInfo.name;
@@ -355,7 +360,7 @@ export default class Volume {
    * Return the intrinsic translation (pivot center delta) associated with this volume, in normalized volume units
    * @return {Array.<number>} the xyz translation in normalized volume units
    */
-  getTranslation(): Vector3 {
+  getTranslation(): [number, number, number] {
     return this.voxelsToWorldSpace(this.imageInfo.transform.translation);
   }
 
@@ -363,7 +368,7 @@ export default class Volume {
    * Return a translation in normalized volume units, given a translation in image voxels
    * @return {Array.<number>} the xyz translation in normalized volume units
    */
-  voxelsToWorldSpace(xyz: [number, number, number]): Vector3 {
+  voxelsToWorldSpace(xyz: [number, number, number]): [number, number, number] {
     // ASSUME: translation is in original image voxels.
     // account for pixel_size and normalized scaling in the threejs volume representation we're using
     const m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));

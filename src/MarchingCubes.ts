@@ -6,17 +6,67 @@
 
 // MODIFIED 2018 BY DANIELT@ALLENINSTITUTE.ORG TO ACCEPT enableColors, enableNormals, volumeFieldRef options
 
-import { BufferAttribute, BufferGeometry, ImmediateRenderObject } from "three";
+import { BufferAttribute, BufferGeometry, ImmediateRenderObject, Material, Vector3 } from "three";
 
 class MarchingCubes extends ImmediateRenderObject {
-  constructor(resolution, material, enableUvs, enableColors, enableNormals, volumeFieldRef) {
+  public isovalue: number;
+  public enableUvs: boolean;
+  public enableColors: boolean;
+  public enableNormals: boolean;
+  public dirty: boolean;
+  public resolution: [number, number, number];
+  public stepSizeX: number;
+  public stepSizeY: number;
+  public stepSizeZ: number;
+  public sizeX: number;
+  public sizeY: number;
+  public sizeZ: number;
+  public sizeXY: number;
+  public sizeXYZ: number;
+  public size3: number;
+  public halfsizeX: number;
+  public halfsizeY: number;
+  public halfsizeZ: number;
+  public deltaX: number;
+  public deltaY: number;
+  public deltaZ: number;
+  public yd: number;
+  public zd: number;
+  public field: Uint8Array | Float32Array;
+  public normal_cache: Float32Array;
+  public maxCount = 16384; //4096; // TODO: find the fastest size for this buffer
+  public count = 0;
+  public hasPositions = false;
+  public hasNormals = false;
+  public hasColors = false;
+  public hasUvs = false;
+  public positionArray: Float32Array;
+  public normalArray: Float32Array;
+  public uvArray: Float32Array;
+  public colorArray: Float32Array;
+
+  private init: (res: [number, number, number], vol: Uint8Array) => void;
+  private begin: () => void;
+  private end: (renderCallback: (mc: MarchingCubes) => void) => void;
+  private reset: () => void;
+  public render: (renderCallback: (mc: MarchingCubes) => void) => void;
+  public generateGeometry: () => BufferGeometry[] | undefined;
+
+  constructor(
+    resolution: [number, number, number],
+    material: Material,
+    enableUvs: boolean,
+    enableColors: boolean,
+    enableNormals: boolean,
+    volumeFieldRef: Uint8Array
+  ) {
     super(material);
 
     const scope = this;
 
     // basic default init; these should be reset later.
-    this.position = new Vector3();
-    this.scale = new Vector3(1, 1, 1);
+    //this.position = new Vector3();
+    //this.scale = new Vector3(1, 1, 1);
     this.isovalue = 0;
 
     // temp buffers used in polygonize
@@ -28,11 +78,37 @@ class MarchingCubes extends ImmediateRenderObject {
     this.enableColors = !!enableColors;
     this.enableNormals = !!enableNormals;
 
+    this.dirty = true;
+    this.resolution = [0, 0, 0];
+    this.stepSizeX = 0;
+    this.stepSizeY = 0;
+    this.stepSizeZ = 0;
+    this.sizeX = 0;
+    this.sizeY = 0;
+    this.sizeZ = 0;
+    this.sizeXY = 0;
+    this.sizeXYZ = 0;
+    this.size3 = 0;
+    this.halfsizeX = 0;
+    this.halfsizeY = 0;
+    this.halfsizeZ = 0;
+    this.deltaX = 0;
+    this.deltaY = 0;
+    this.deltaZ = 0;
+    this.yd = 0;
+    this.zd = 0;
+    this.field = new Uint8Array();
+    this.normal_cache = new Float32Array();
+    this.positionArray = new Float32Array();
+    this.normalArray = new Float32Array();
+    this.uvArray = new Float32Array();
+    this.colorArray = new Float32Array();
+
     // functions have to be object properties
     // prototype functions kill performance
     // (tested and it was 4x slower !!!)
 
-    this.init = function (resolution, volumeFieldRef) {
+    this.init = function (resolution: [number, number, number], volumeFieldRef: Uint8Array) {
       this.dirty = true;
 
       this.resolution = resolution;
@@ -105,7 +181,7 @@ class MarchingCubes extends ImmediateRenderObject {
     }
 
     function VIntX(q, offset, isol, x, y, z, valp1, valp2) {
-      var mu = (isol - valp1) / (valp2 - valp1),
+      const mu = (isol - valp1) / (valp2 - valp1),
         nc = scope.normal_cache;
 
       vlist[offset + 0] = x + mu * scope.deltaX * scope.stepSizeX;
@@ -118,14 +194,14 @@ class MarchingCubes extends ImmediateRenderObject {
     }
 
     function VIntY(q, offset, isol, x, y, z, valp1, valp2) {
-      var mu = (isol - valp1) / (valp2 - valp1),
+      const mu = (isol - valp1) / (valp2 - valp1),
         nc = scope.normal_cache;
 
       vlist[offset + 0] = x;
       vlist[offset + 1] = y + mu * scope.deltaY * scope.stepSizeY;
       vlist[offset + 2] = z;
 
-      var q2 = q + scope.yd * 3;
+      const q2 = q + scope.yd * 3;
 
       nlist[offset + 0] = lerp(nc[q + 0], nc[q2 + 0], mu);
       nlist[offset + 1] = lerp(nc[q + 1], nc[q2 + 1], mu);
@@ -133,14 +209,14 @@ class MarchingCubes extends ImmediateRenderObject {
     }
 
     function VIntZ(q, offset, isol, x, y, z, valp1, valp2) {
-      var mu = (isol - valp1) / (valp2 - valp1),
+      const mu = (isol - valp1) / (valp2 - valp1),
         nc = scope.normal_cache;
 
       vlist[offset + 0] = x;
       vlist[offset + 1] = y;
       vlist[offset + 2] = z + mu * scope.deltaZ * scope.stepSizeZ;
 
-      var q2 = q + scope.zd * 3;
+      const q2 = q + scope.zd * 3;
 
       nlist[offset + 0] = lerp(nc[q + 0], nc[q2 + 0], mu);
       nlist[offset + 1] = lerp(nc[q + 1], nc[q2 + 1], mu);
@@ -148,7 +224,7 @@ class MarchingCubes extends ImmediateRenderObject {
     }
 
     function compNorm(q) {
-      var q3 = q * 3;
+      const q3 = q * 3;
 
       if (scope.normal_cache[q3] === 0.0) {
         scope.normal_cache[q3 + 0] = scope.field[q - 1 * scope.stepSizeX] - scope.field[q + 1 * scope.stepSizeX];
@@ -164,7 +240,7 @@ class MarchingCubes extends ImmediateRenderObject {
 
     function polygonize(fx, fy, fz, q, isol, renderCallback) {
       // cache indices
-      var q1 = q + 1 * scope.stepSizeX,
+      const q1 = q + 1 * scope.stepSizeX,
         qy = q + scope.yd * scope.stepSizeY,
         qz = q + scope.zd * scope.stepSizeZ,
         q1y = q1 + scope.yd * scope.stepSizeY,
@@ -172,8 +248,8 @@ class MarchingCubes extends ImmediateRenderObject {
         qyz = q + scope.yd * scope.stepSizeY + scope.zd * scope.stepSizeZ,
         q1yz = q1 + scope.yd * scope.stepSizeY + scope.zd * scope.stepSizeZ;
 
-      var cubeindex = 0,
-        field0 = scope.field[q],
+      let cubeindex = 0;
+      const field0 = scope.field[q],
         field1 = scope.field[q1],
         field2 = scope.field[qy],
         field3 = scope.field[q1y],
@@ -193,10 +269,10 @@ class MarchingCubes extends ImmediateRenderObject {
 
       // if cube is entirely in/out of the surface - bail, nothing to draw
 
-      var bits = edgeTable[cubeindex];
+      const bits = edgeTable[cubeindex];
       if (bits === 0) return 0;
 
-      var dx = scope.deltaX * scope.stepSizeX,
+      const dx = scope.deltaX * scope.stepSizeX,
         dy = scope.deltaY * scope.stepSizeY,
         dz = scope.deltaZ * scope.stepSizeZ,
         fx2 = fx + dx,
@@ -283,7 +359,7 @@ class MarchingCubes extends ImmediateRenderObject {
 
       cubeindex <<= 4; // re-purpose cubeindex into an offset into triTable
 
-      var o1,
+      let o1,
         o2,
         o3,
         numtris = 0,
@@ -310,7 +386,7 @@ class MarchingCubes extends ImmediateRenderObject {
     /////////////////////////////////////
 
     function posnormtriv(pos, norm, o1, o2, o3, renderCallback) {
-      var c = scope.count * 3;
+      const c = scope.count * 3;
 
       // positions
 
@@ -345,7 +421,7 @@ class MarchingCubes extends ImmediateRenderObject {
       // uvs
 
       if (scope.enableUvs) {
-        var d = scope.count * 2;
+        const d = scope.count * 2;
 
         scope.uvArray[d + 0] = pos[o1];
         scope.uvArray[d + 1] = pos[o1 + 2];
@@ -405,7 +481,7 @@ class MarchingCubes extends ImmediateRenderObject {
     this.end = function (renderCallback) {
       if (this.count === 0) return;
 
-      for (var i = this.count * 3; i < this.positionArray.length; i++) {
+      for (let i = this.count * 3; i < this.positionArray.length; i++) {
         this.positionArray[i] = 0.0;
       }
 
@@ -423,169 +499,6 @@ class MarchingCubes extends ImmediateRenderObject {
       }
 
       renderCallback(this);
-    };
-
-    /////////////////////////////////////
-    // Metaballs
-    /////////////////////////////////////
-
-    // Adds a reciprocal ball (nice and blobby) that, to be fast, fades to zero after
-    // a fixed distance, determined by strength and subtract.
-
-    this.addBall = function (ballx, bally, ballz, strength, subtract) {
-      var sign = Math.sign(strength);
-      strength = Math.abs(strength);
-
-      // Let's solve the equation to find the radius:
-      // 1.0 / (0.000001 + radius^2) * strength - subtract = 0
-      // strength / (radius^2) = subtract
-      // strength = subtract * radius^2
-      // radius^2 = strength / subtract
-      // radius = sqrt(strength / subtract)
-
-      var radius = this.sizeX * Math.sqrt(strength / subtract),
-        zs = ballz * this.sizeZ,
-        ys = bally * this.sizeY,
-        xs = ballx * this.sizeX;
-
-      var min_z = Math.floor(zs - radius);
-      if (min_z < 1) min_z = 1;
-      var max_z = Math.floor(zs + radius);
-      if (max_z > this.sizeZ - 1) max_z = this.sizeZ - 1;
-      var min_y = Math.floor(ys - radius);
-      if (min_y < 1) min_y = 1;
-      var max_y = Math.floor(ys + radius);
-      if (max_y > this.sizeY - 1) max_y = this.sizeY - 1;
-      var min_x = Math.floor(xs - radius);
-      if (min_x < 1) min_x = 1;
-      var max_x = Math.floor(xs + radius);
-      if (max_x > this.sizeX - 1) max_x = this.sizeX - 1;
-
-      // Don't polygonize in the outer layer because normals aren't
-      // well-defined there.
-
-      var x, y, z, y_offset, z_offset, fx, fy, fz, fz2, fy2, val;
-
-      for (z = min_z; z < max_z; z++) {
-        z_offset = this.sizeXY * z;
-        fz = z / this.sizeZ - ballz;
-        fz2 = fz * fz;
-
-        for (y = min_y; y < max_y; y++) {
-          y_offset = z_offset + this.sizeX * y;
-          fy = y / this.sizeY - bally;
-          fy2 = fy * fy;
-
-          for (x = min_x; x < max_x; x++) {
-            fx = x / this.sizeX - ballx;
-            val = strength / (0.000001 + fx * fx + fy2 + fz2) - subtract;
-            if (val > 0.0) this.field[y_offset + x] += val * sign;
-          }
-        }
-      }
-    };
-
-    this.addPlaneX = function (strength, subtract) {
-      var x,
-        y,
-        z,
-        xx,
-        val,
-        xdiv,
-        cxy,
-        // cache attribute lookups
-        size = this.size,
-        yd = this.yd,
-        zd = this.zd,
-        field = this.field,
-        dist = size * Math.sqrt(strength / subtract);
-
-      if (dist > size) dist = size;
-
-      for (x = 0; x < dist; x++) {
-        xdiv = x / size;
-        xx = xdiv * xdiv;
-        val = strength / (0.0001 + xx) - subtract;
-
-        if (val > 0.0) {
-          for (y = 0; y < size; y++) {
-            cxy = x + y * yd;
-
-            for (z = 0; z < size; z++) {
-              field[zd * z + cxy] += val;
-            }
-          }
-        }
-      }
-    };
-
-    this.addPlaneY = function (strength, subtract) {
-      var x,
-        y,
-        z,
-        yy,
-        val,
-        ydiv,
-        cy,
-        cxy,
-        // cache attribute lookups
-        size = this.size,
-        yd = this.yd,
-        zd = this.zd,
-        field = this.field,
-        dist = size * Math.sqrt(strength / subtract);
-
-      if (dist > size) dist = size;
-
-      for (y = 0; y < dist; y++) {
-        ydiv = y / size;
-        yy = ydiv * ydiv;
-        val = strength / (0.0001 + yy) - subtract;
-
-        if (val > 0.0) {
-          cy = y * yd;
-
-          for (x = 0; x < size; x++) {
-            cxy = cy + x;
-
-            for (z = 0; z < size; z++) field[zd * z + cxy] += val;
-          }
-        }
-      }
-    };
-
-    this.addPlaneZ = function (strength, subtract) {
-      var x,
-        y,
-        z,
-        zz,
-        val,
-        zdiv,
-        cz,
-        cyz,
-        // cache attribute lookups
-        size = this.size,
-        yd = this.yd,
-        zd = this.zd,
-        field = this.field,
-        dist = size * Math.sqrt(strength / subtract);
-
-      if (dist > size) dist = size;
-
-      for (z = 0; z < dist; z++) {
-        zdiv = z / size;
-        zz = zdiv * zdiv;
-        val = strength / (0.0001 + zz) - subtract;
-        if (val > 0.0) {
-          cz = zd * z;
-
-          for (y = 0; y < size; y++) {
-            cyz = cz + y * yd;
-
-            for (x = 0; x < size; x++) field[cyz + x] += val;
-          }
-        }
-      }
     };
 
     /////////////////////////////////////
@@ -613,21 +526,21 @@ class MarchingCubes extends ImmediateRenderObject {
 
       // Triangulate. Yeah, this is slow.
 
-      var smin2x = this.sizeX - 2;
-      var smin2y = this.sizeY - 2;
-      var smin2z = this.sizeZ - 2;
+      const smin2x = this.sizeX - 2;
+      const smin2y = this.sizeY - 2;
+      const smin2z = this.sizeZ - 2;
 
-      for (var z = 1; z < smin2z; z += this.stepSizeZ) {
-        var z_offset = this.sizeXY * z;
-        var fz = (z - this.halfsizeZ) / this.halfsizeZ; //+ 1
+      for (let z = 1; z < smin2z; z += this.stepSizeZ) {
+        const z_offset = this.sizeXY * z;
+        const fz = (z - this.halfsizeZ) / this.halfsizeZ; //+ 1
 
-        for (var y = 1; y < smin2y; y += this.stepSizeY) {
-          var y_offset = z_offset + this.sizeX * y;
-          var fy = (y - this.halfsizeY) / this.halfsizeY; //+ 1
+        for (let y = 1; y < smin2y; y += this.stepSizeY) {
+          const y_offset = z_offset + this.sizeX * y;
+          const fy = (y - this.halfsizeY) / this.halfsizeY; //+ 1
 
-          for (var x = 1; x < smin2x; x += this.stepSizeX) {
-            var fx = (x - this.halfsizeX) / this.halfsizeX; //+ 1
-            var q = y_offset + x;
+          for (let x = 1; x < smin2x; x += this.stepSizeX) {
+            const fx = (x - this.halfsizeX) / this.halfsizeX; //+ 1
+            const q = y_offset + x;
 
             polygonize(fx, fy, fz, q, this.isovalue, renderCallback);
           }
@@ -642,12 +555,12 @@ class MarchingCubes extends ImmediateRenderObject {
         return;
       }
 
-      var start = 0,
-        geoparent = [];
+      let start = 0;
+      const geoparent: BufferGeometry[] = [];
       //var normals = [];
 
-      var geo_callback = function (object) {
-        var geo = new BufferGeometry();
+      const geo_callback = function (object) {
+        const geo = new BufferGeometry();
         geo.setAttribute("position", new BufferAttribute(object.positionArray.slice(), 3));
         if (object.enableNormals) {
           geo.setAttribute("normal", new BufferAttribute(object.normalArray.slice(), 3));
@@ -662,13 +575,13 @@ class MarchingCubes extends ImmediateRenderObject {
         //
         // }
 
-        var inds = new Uint16Array(object.count);
-        var nfaces = object.count / 3;
+        const inds = new Uint16Array(object.count);
+        const nfaces = object.count / 3;
 
-        for (var i = 0; i < nfaces; i++) {
-          var a = /* start + */ i * 3;
-          var b = a + 1;
-          var c = a + 2;
+        for (let i = 0; i < nfaces; i++) {
+          const a = /* start + */ i * 3;
+          const b = a + 1;
+          const c = a + 2;
 
           inds[i * 3 + 0] = a;
           inds[i * 3 + 1] = b;
@@ -699,8 +612,6 @@ class MarchingCubes extends ImmediateRenderObject {
     this.init(resolution, volumeFieldRef);
   }
 }
-
-MarchingCubes.prototype.isMarchingCubes = true;
 
 /////////////////////////////////////
 // Marching cubes lookup tables

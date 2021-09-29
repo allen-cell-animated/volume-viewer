@@ -1,4 +1,16 @@
-import { BoxHelper, Euler, Vector2, Vector3, Group, BoxGeometry, Mesh, ShaderMaterial, Matrix4 } from "three";
+import {
+  BoxHelper,
+  Euler,
+  Vector2,
+  Vector3,
+  Group,
+  BoxGeometry,
+  Mesh,
+  Material,
+  ShaderMaterial,
+  Matrix4,
+  BufferGeometry,
+} from "three";
 
 import FusedChannelData from "./FusedChannelData";
 import {
@@ -16,7 +28,7 @@ export default class RayMarchedAtlasVolume {
   public volume: Volume;
   public bounds: Bounds;
   private cube: BoxGeometry;
-  private cubeMesh: Mesh;
+  private cubeMesh: Mesh<BufferGeometry, Material>;
   private boxHelper: BoxHelper;
   private cubeTransformNode: Group;
   private uniforms: any; // map of string to {type, value}?

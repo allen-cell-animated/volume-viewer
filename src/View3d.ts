@@ -6,7 +6,7 @@ import FusedChannelData from "./FusedChannelData";
 import VolumeDrawable from "./VolumeDrawable";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
 import Volume from "./Volume";
-import { VolumeChannelDisplayOptions, VolumeDisplayOptions } from "./types";
+import { VolumeChannelDisplayOptions, VolumeDisplayOptions, isOrthographicCamera } from "./types";
 
 export const RENDERMODE_RAYMARCH = 0;
 export const RENDERMODE_PATHTRACE = 1;
@@ -51,7 +51,7 @@ export class View3d {
 
     this.canvas3d = new ThreeJsPanel(parentElement, options.useWebGL2);
     this.redraw = this.redraw.bind(this);
-    this.scene = null;
+    this.scene = new Scene();
     this.backgroundColor = 0x000000;
     this.lights = [];
 
@@ -63,6 +63,13 @@ export class View3d {
     this.parentEl = parentElement;
     window.addEventListener("resize", () => this.resize(null, this.parentEl.offsetWidth, this.parentEl.offsetHeight));
 
+    this.oldScale = new Vector3();
+    this.currentScale = new Vector3();
+    this.lightContainer = new Object3D();
+    this.ambientLight = new AmbientLight();
+    this.spotLight = new SpotLight();
+    this.reflectedLight = new DirectionalLight();
+    this.fillLight = new DirectionalLight();
     this.buildScene();
 
     FusedChannelData.setOnFuseComplete(this.redraw.bind(this));
@@ -74,11 +81,12 @@ export class View3d {
     // if (this.canvas3d.timer.lastFPS < 7 && this.canvas3d.timer.lastFPS > 0 && this.canvas3d.timer.frames === 0) {
     // }
 
-    if (this.scene.getObjectByName("lightContainer")) {
-      this.scene.getObjectByName("lightContainer").rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
+    const lightContainer = this.scene.getObjectByName("lightContainer");
+    if (lightContainer) {
+      lightContainer.rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
     }
     // keep the ortho scale up to date.
-    if (this.image && this.canvas3d.camera.isOrthographicCamera) {
+    if (this.image && isOrthographicCamera(this.canvas3d.camera)) {
       this.image.setOrthoScale(this.canvas3d.controls.scale);
     }
   }
@@ -325,7 +333,7 @@ export class View3d {
 
     // new image picks up current settings
     this.image.setResolution(this.canvas3d);
-    this.image.setIsOrtho(this.canvas3d.camera.isOrthographicCamera);
+    this.image.setIsOrtho(isOrthographicCamera(this.canvas3d.camera));
     this.image.setBrightness(this.exposure);
 
     this.canvas3d.setControlHandlers(
@@ -769,7 +777,7 @@ export class View3d {
         this.canvas3d.redraw();
       }
       this.updatePixelSamplingRate(this.pixelSamplingRate);
-      this.image.setIsOrtho(this.canvas3d.camera.isOrthographicCamera);
+      this.image.setIsOrtho(isOrthographicCamera(this.canvas3d.camera));
       this.image.setResolution(this.canvas3d);
       this.setAutoRotate(this.canvas3d.controls.autoRotate);
 

@@ -1,4 +1,4 @@
-import { Vector3 } from "three";
+import { Camera, OrthographicCamera, Vector3 } from "three";
 
 export interface Bounds {
   bmin: Vector3;
@@ -73,3 +73,6 @@ export interface VolumeDisplayOptions {
   primaryRayStepSize: number;
   secondaryRayStepSize: number;
 }
+
+export const isOrthographicCamera = (def: Camera): def is OrthographicCamera =>
+  def && (def as OrthographicCamera).isOrthographicCamera;

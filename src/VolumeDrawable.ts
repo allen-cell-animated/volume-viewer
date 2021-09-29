@@ -159,7 +159,7 @@ export default class VolumeDrawable {
       this.setAxisClip(2, options.clipBounds[4], options.clipBounds[5]);
     }
     if (Object.hasOwnProperty.call(options, "scale")) {
-      this.setScale(options.scale.slice());
+      this.setScale(new Vector3().fromArray(options.scale));
     }
     if (Object.hasOwnProperty.call(options, "translation")) {
       this.setTranslation(new Vector3().fromArray(options.translation));

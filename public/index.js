@@ -898,7 +898,9 @@ function playTimeSeries() {
     myState.volume.loaded = true;
 
     view3D.updateLuts(myState.volume);
-
+    for (var i = 0; i < myState.volume.num_channels; ++i) {
+      view3D.updateIsosurface(myState.volume, i, myState.infoObj.channelGui[i].isovalue);
+    }
     myState.currentFrame = nextFrame;
   };
   myState.timerId = setInterval(loadNextFrame, 1);

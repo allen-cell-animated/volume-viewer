@@ -6,11 +6,13 @@ import {
   Matrix4,
   Mesh,
   OrthographicCamera,
+  PerspectiveCamera,
   PlaneBufferGeometry,
   Quaternion,
   RGBAFormat,
   Scene,
   ShaderMaterial,
+  ShaderMaterialParameters,
   UniformsUtils,
   UnsignedByteType,
   Vector2,
@@ -27,7 +29,7 @@ import {
 } from "./constants/volumePTshader.js";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
 import Volume from "./Volume";
-import { Bounds } from "./types";
+import { Bounds, isOrthographicCamera } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import VolumeDrawable from "./VolumeDrawable";
 import { Light } from "./Light";
@@ -55,8 +57,8 @@ export default class PathTracedVolume {
   private fullTargetResolution: Vector2;
   private pathTracingRenderTarget: WebGLRenderTarget;
   private screenTextureRenderTarget: WebGLRenderTarget;
-  private screenTextureShader: ShaderMaterial;
-  private screenOutputShader: ShaderMaterial;
+  private screenTextureShader: ShaderMaterialParameters;
+  private screenOutputShader: ShaderMaterialParameters;
   private pathTracingGeometry: PlaneBufferGeometry;
   private pathTracingMaterial: ShaderMaterial;
   private pathTracingMesh: Mesh;
@@ -333,10 +335,8 @@ export default class PathTracedVolume {
   }
 
   public cleanup(): void {
-    if (this.volumeTexture) {
-      this.volumeTexture.dispose();
-      this.volumeTexture = null;
-    }
+    // warning do not use after cleanup is called!
+    this.volumeTexture.dispose();
   }
 
   public setRenderUpdateListener(callback?: (iteration: number) => void): void {
@@ -399,7 +399,7 @@ export default class PathTracedVolume {
     myup.applyMatrix4(m);
     mydir.applyMatrix4(m);
 
-    this.pathTracingUniforms.gCamera.value.m_isOrtho = cam.isOrthographicCamera ? 1 : 0;
+    this.pathTracingUniforms.gCamera.value.m_isOrtho = isOrthographicCamera(cam) ? 1 : 0;
     this.pathTracingUniforms.gCamera.value.m_from.copy(mypos);
     this.pathTracingUniforms.gCamera.value.m_N.copy(mydir);
     this.pathTracingUniforms.gCamera.value.m_U
@@ -410,7 +410,9 @@ export default class PathTracedVolume {
       .normalize();
 
     // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
-    const fScale = cam.isOrthographicCamera ? canvas.orthoScale : Math.tan((0.5 * cam.fov * Math.PI) / 180.0);
+    const fScale = isOrthographicCamera(cam)
+      ? canvas.orthoScale
+      : Math.tan((0.5 * (cam as PerspectiveCamera).fov * Math.PI) / 180.0);
 
     const aspect = this.pathTracingUniforms.uResolution.value.x / this.pathTracingUniforms.uResolution.value.y;
     this.pathTracingUniforms.gCamera.value.m_screen.set(
