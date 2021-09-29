@@ -755,7 +755,7 @@ function loadImageData(jsonData, volumedata) {
       view3D.updateExposure(myState.exposure);
     }
   } else {
-    loadVolumeAtlasData(vol, jsonData.images);
+    loadVolumeAtlasData(vol, jsonData);
   }
   showChannelUI(vol);
 
@@ -907,10 +907,10 @@ function playTimeSeries() {
 }
 
 function goToFrame(targetFrame) {
-  console.log("going to Frame " + targetFrame)
-  const outOfBounds = targetFrame > myState.totalFrames - 1 || targetFrame < 0
+  console.log("going to Frame " + targetFrame);
+  const outOfBounds = targetFrame > myState.totalFrames - 1 || targetFrame < 0;
   if (outOfBounds) {
-    console.log("frame out of bounds")
+    console.log("frame out of bounds");
     return;
   }
 
