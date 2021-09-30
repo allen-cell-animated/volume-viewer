@@ -69,7 +69,7 @@ const shaderLibrary = {
   },
 };
 
-export function createShaderMaterial(id) {
+export function createShaderMaterial(id: string): ShaderMaterial {
   const shader = shaderLibrary[id];
 
   const u = UniformsUtils.clone(shader.uniforms);

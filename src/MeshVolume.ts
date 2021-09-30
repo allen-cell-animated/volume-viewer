@@ -14,7 +14,7 @@ import {
 import { STLExporter } from "three/examples/jsm/exporters/STLExporter";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter";
 
-import { defaultMaterialSettings } from "./constants/materials.js";
+import { defaultMaterialSettings } from "./constants/materials";
 
 import FileSaver from "./FileSaver";
 import NaiveSurfaceNets from "./NaiveSurfaceNets.js";
