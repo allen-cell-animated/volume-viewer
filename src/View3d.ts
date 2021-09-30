@@ -114,7 +114,7 @@ export class View3d {
       }
       this.canvas3d.onEnterVRCallback = undefined;
       this.canvas3d.onLeaveVRCallback = undefined;
-      this.canvas3d.animate_funcs = [];
+      this.canvas3d.animateFuncs = [];
       this.scene.remove(this.image.sceneRoot);
     }
     return this.image;
@@ -342,8 +342,8 @@ export class View3d {
       this.onEndControls.bind(this)
     );
 
-    this.canvas3d.animate_funcs.push(this.preRender.bind(this));
-    this.canvas3d.animate_funcs.push(img.onAnimate.bind(img));
+    this.canvas3d.animateFuncs.push(this.preRender.bind(this));
+    this.canvas3d.animateFuncs.push(img.onAnimate.bind(img));
     this.canvas3d.onEnterVRCallback = () => {
       if (this.canvas3d.xrControls) {
         this.canvas3d.xrControls.pushObjectState(img);

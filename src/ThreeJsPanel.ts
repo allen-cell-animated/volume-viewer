@@ -32,7 +32,7 @@ export class ThreeJsPanel {
   private canvas: HTMLCanvasElement;
   public scene: Scene;
   private zooming: boolean;
-  public animate_funcs: ((ThreeJsPanel) => void)[];
+  public animateFuncs: ((ThreeJsPanel) => void)[];
   public onEnterVRCallback?: () => void;
   public onLeaveVRCallback?: () => void;
   private inRenderLoop: boolean;
@@ -91,7 +91,7 @@ export class ThreeJsPanel {
     this.axisOffset = [66, 66];
 
     this.zooming = false;
-    this.animate_funcs = [];
+    this.animateFuncs = [];
     this.onEnterVRCallback = undefined;
     this.onLeaveVRCallback = undefined;
 
@@ -512,9 +512,9 @@ export class ThreeJsPanel {
 
   render(): void {
     // do whatever we have to do before the main render of this.scene
-    for (let i = 0; i < this.animate_funcs.length; i++) {
-      if (this.animate_funcs[i]) {
-        this.animate_funcs[i](this);
+    for (let i = 0; i < this.animateFuncs.length; i++) {
+      if (this.animateFuncs[i]) {
+        this.animateFuncs[i](this);
       }
     }
 

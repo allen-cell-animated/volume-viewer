@@ -26,7 +26,7 @@ export default class VolumeDrawable {
   private gammaMin: number;
   private gammaLevel: number;
   private gammaMax: number;
-  private channel_colors: [number, number, number][];
+  private channelColors: [number, number, number][];
   private channelOptions: VolumeChannelDisplayOptions[];
   private fusion: FuseChannel[];
   public specular: [number, number, number][];
@@ -77,11 +77,11 @@ export default class VolumeDrawable {
     this.density = 0;
     this.brightness = 0;
 
-    this.channel_colors = this.volume.channel_colors_default.slice();
+    this.channelColors = this.volume.channel_colors_default.slice();
 
     this.channelOptions = new Array(this.volume.num_channels).fill({});
 
-    this.fusion = this.channel_colors.map((col, index) => {
+    this.fusion = this.channelColors.map((col, index) => {
       let rgbColor;
       // take copy of original channel color
       if (col[0] === 0 && col[1] === 0 && col[2] === 0) {
@@ -351,7 +351,7 @@ export default class VolumeDrawable {
 
   // If an isosurface is not already created, then create one.  Otherwise do nothing.
   createIsosurface(channel: number, value: number, alpha: number, transp: boolean): void {
-    this.meshVolume.createIsosurface(channel, this.channel_colors[channel], value, alpha, transp);
+    this.meshVolume.createIsosurface(channel, this.channelColors[channel], value, alpha, transp);
   }
 
   // If an isosurface exists for this channel, destroy it now. Don't just hide it - assume we can free up some resources.
@@ -424,15 +424,15 @@ export default class VolumeDrawable {
   }
 
   onChannelAdded(newChannelIndex: number): void {
-    this.channel_colors[newChannelIndex] = this.volume.channel_colors_default[newChannelIndex];
+    this.channelColors[newChannelIndex] = this.volume.channel_colors_default[newChannelIndex];
 
     this.fusion[newChannelIndex] = {
       chIndex: newChannelIndex,
       lut: new Uint8Array[LUT_ARRAY_LENGTH](),
       rgbColor: [
-        this.channel_colors[newChannelIndex][0],
-        this.channel_colors[newChannelIndex][1],
-        this.channel_colors[newChannelIndex][2],
+        this.channelColors[newChannelIndex][0],
+        this.channelColors[newChannelIndex][1],
+        this.channelColors[newChannelIndex][2],
       ],
     };
 
@@ -450,7 +450,7 @@ export default class VolumeDrawable {
   // Hide or display volume data for a channel
   setVolumeChannelEnabled(channelIndex: number, enabled: boolean): void {
     // flip the color to the "null" value
-    this.fusion[channelIndex].rgbColor = enabled ? this.channel_colors[channelIndex] : 0;
+    this.fusion[channelIndex].rgbColor = enabled ? this.channelColors[channelIndex] : 0;
     // if all are nulled out, then hide the volume element from the scene.
     if (this.fusion.every((elem) => elem.rgbColor === 0)) {
       this.volumeRendering.setVisible(false);
@@ -467,26 +467,26 @@ export default class VolumeDrawable {
   // Set the color for a channel
   // @param {Array.<number>} colorrgb [r,g,b]
   updateChannelColor(channelIndex: number, colorrgb: [number, number, number]): void {
-    if (!this.channel_colors[channelIndex]) {
+    if (!this.channelColors[channelIndex]) {
       return;
     }
-    this.channel_colors[channelIndex] = colorrgb;
+    this.channelColors[channelIndex] = colorrgb;
     // if volume channel is zero'ed out, then don't update it until it is switched on again.
     if (this.fusion[channelIndex].rgbColor !== 0) {
       this.fusion[channelIndex].rgbColor = colorrgb;
     }
-    this.meshVolume.updateMeshColors(this.channel_colors);
+    this.meshVolume.updateMeshColors(this.channelColors);
   }
 
   // TODO remove this from public interface?
   updateMeshColors(): void {
-    this.meshVolume.updateMeshColors(this.channel_colors);
+    this.meshVolume.updateMeshColors(this.channelColors);
   }
 
   // Get the color for a channel
   // @return {Array.<number>} The color as array of [r,g,b]
   getChannelColor(channelIndex: number): [number, number, number] {
-    return this.channel_colors[channelIndex];
+    return this.channelColors[channelIndex];
   }
 
   // Set the material for a channel
@@ -502,7 +502,7 @@ export default class VolumeDrawable {
     emissivergb: [number, number, number],
     glossiness: number
   ): void {
-    if (!this.channel_colors[channelIndex]) {
+    if (!this.channelColors[channelIndex]) {
       return;
     }
     this.updateChannelColor(channelIndex, colorrgb);
@@ -582,20 +582,20 @@ export default class VolumeDrawable {
     this.volumeRendering.setPixelSamplingRate(value);
   }
 
-  setVolumeRendering(is_pathtrace: boolean): void {
-    if (is_pathtrace === this.PT) {
+  setVolumeRendering(isPathtrace: boolean): void {
+    if (isPathtrace === this.PT) {
       return;
     }
 
     // remove old 3d object from scene
-    is_pathtrace && this.sceneRoot.remove(this.meshVolume.get3dObject());
+    isPathtrace && this.sceneRoot.remove(this.meshVolume.get3dObject());
     this.sceneRoot.remove(this.volumeRendering.get3dObject());
 
     // destroy old resources.
     this.volumeRendering.cleanup();
 
     // create new
-    if (is_pathtrace) {
+    if (isPathtrace) {
       this.volumeRendering = new PathTracedVolume(this.volume);
       this.pathTracedVolume = this.volumeRendering;
       this.rayMarchedAtlasVolume = undefined;
@@ -619,7 +619,7 @@ export default class VolumeDrawable {
     this.volumeRendering.setTranslation(this.translation);
     this.volumeRendering.setRotation(this.rotation);
 
-    this.PT = is_pathtrace;
+    this.PT = isPathtrace;
 
     this.setChannelAsMask(this.maskChannelIndex);
     this.setMaskAlpha(this.maskAlpha);

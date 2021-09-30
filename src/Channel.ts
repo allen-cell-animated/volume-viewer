@@ -75,9 +75,9 @@ export default class Channel {
 
   // how to index into tiled texture atlas
   public getIntensityFromAtlas(x: number, y: number, z: number): number {
-    const num_xtiles = this.imgData.width / this.dims[0];
-    const tilex = z % num_xtiles;
-    const tiley = Math.floor(z / num_xtiles);
+    const numXtiles = this.imgData.width / this.dims[0];
+    const tilex = z % numXtiles;
+    const tiley = Math.floor(z / numXtiles);
     const offset = tilex * this.dims[0] + x + (tiley * this.dims[1] + y) * this.imgData.width;
     return this.imgData.data[offset];
   }
@@ -102,7 +102,7 @@ export default class Channel {
     this.dims = [x, y, z];
     this.volumeData = new Uint8Array(x * y * z);
 
-    const num_xtiles = this.imgData.width / x;
+    const numXtiles = this.imgData.width / x;
     const atlasrow = this.imgData.width;
     let tilex = 0,
       tiley = 0,
@@ -110,8 +110,8 @@ export default class Channel {
       tilerowoffset = 0;
     for (let i = 0; i < z; ++i) {
       // tile offset
-      tilex = i % num_xtiles;
-      tiley = Math.floor(i / num_xtiles);
+      tilex = i % numXtiles;
+      tiley = Math.floor(i / numXtiles);
       tileoffset = tilex * x + tiley * y * atlasrow;
       for (let j = 0; j < y; ++j) {
         tilerowoffset = j * atlasrow;
@@ -160,7 +160,7 @@ export default class Channel {
       y = vy,
       z = vz;
 
-    const num_xtiles = this.imgData.width / x;
+    const numXtiles = this.imgData.width / x;
     const atlasrow = this.imgData.width;
     let tilex = 0,
       tiley = 0,
@@ -168,8 +168,8 @@ export default class Channel {
       tilerowoffset = 0;
     for (let i = 0; i < z; ++i) {
       // tile offset
-      tilex = i % num_xtiles;
-      tiley = Math.floor(i / num_xtiles);
+      tilex = i % numXtiles;
+      tiley = Math.floor(i / numXtiles);
       tileoffset = tilex * x + tiley * y * atlasrow;
       for (let j = 0; j < y; ++j) {
         tilerowoffset = j * atlasrow;

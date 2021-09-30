@@ -32,8 +32,8 @@ export default class MeshVolume {
   private meshRoot: Object3D;
   private meshPivot: Group;
   private meshrep: (Group | null)[];
-  private channel_colors: [number, number, number][];
-  private channel_opacities: number[];
+  private channelColors: [number, number, number][];
+  private channelOpacities: number[];
   private bounds: Bounds;
   private scale: Vector3;
 
@@ -51,8 +51,8 @@ export default class MeshVolume {
 
     this.meshrep = [];
 
-    this.channel_colors = [];
-    this.channel_opacities = [];
+    this.channelColors = [];
+    this.channelOpacities = [];
 
     this.scale = new Vector3(1, 1, 1);
     this.bounds = {
@@ -127,15 +127,15 @@ export default class MeshVolume {
 
   //////////////////////////////
 
-  updateMeshColors(channel_colors: [number, number, number][]): void {
+  updateMeshColors(channelColors: [number, number, number][]): void {
     // stash values here for later changes
-    this.channel_colors = channel_colors;
+    this.channelColors = channelColors;
 
     // update existing meshes
     for (let i = 0; i < this.volume.num_channels; ++i) {
       const meshrep = this.meshrep[i];
       if (meshrep) {
-        const rgb = channel_colors[i];
+        const rgb = channelColors[i];
         const c = (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
 
         meshrep.traverse(function (child) {
@@ -192,8 +192,8 @@ export default class MeshVolume {
     }
 
     // find the current isosurface opacity and color.
-    const opacity = this.channel_opacities[channel];
-    const color = this.channel_colors[channel];
+    const opacity = this.channelOpacities[channel];
+    const color = this.channelColors[channel];
 
     this.destroyIsosurface(channel);
     const newmeshrep = this.createMeshForChannel(channel, color, value, opacity, false);
@@ -264,7 +264,7 @@ export default class MeshVolume {
   }
 
   updateOpacity(channel: number, value: number): void {
-    this.channel_opacities[channel] = value;
+    this.channelOpacities[channel] = value;
     const meshrep = this.meshrep[channel];
     if (!meshrep) {
       return;
@@ -304,8 +304,8 @@ export default class MeshVolume {
       }
       const meshrep = this.createMeshForChannel(channel, color, value, alpha, transp);
       this.meshrep[channel] = meshrep;
-      this.channel_opacities[channel] = alpha;
-      this.channel_colors[channel] = color;
+      this.channelOpacities[channel] = alpha;
+      this.channelColors[channel] = color;
       // note we are not removing any prior mesh reps for this channel
       this.meshRoot.add(meshrep);
     }
