@@ -147,7 +147,10 @@ export default class Volume {
 
     this.channels = [];
     for (let i = 0; i < this.num_channels; ++i) {
-      this.channels.push(new Channel(this.channel_names[i]));
+      const channel = new Channel(this.channel_names[i]);
+      this.channels.push(channel);
+      // TODO pass in channel constructor...
+      channel.dims = [this.x, this.y, this.z];
     }
 
     this.setVoxelSize(this.pixel_size);

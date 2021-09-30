@@ -365,9 +365,13 @@ export default class VolumeDrawable {
     }
 
     if (this.PT) {
-      if (this.pathTracedVolume) this.pathTracedVolume.updateActiveChannels(this);
+      if (this.pathTracedVolume) {
+        this.pathTracedVolume.updateActiveChannels(this);
+      }
     } else {
-      if (this.rayMarchedAtlasVolume) this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
+      if (this.rayMarchedAtlasVolume) {
+        this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
+      }
     }
   }
 
