@@ -380,7 +380,7 @@ export default class VolumeDrawable {
 
   updateShadingMethod(isbrdf: boolean): void {
     if (this.PT && this.pathTracedVolume) {
-      this.pathTracedVolume.updateShadingMethod(isbrdf);
+      this.pathTracedVolume.updateShadingMethod(isbrdf ? 1 : 0);
     }
   }
 
