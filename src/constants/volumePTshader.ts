@@ -1147,11 +1147,11 @@ void main()
 `;
 
 // Must match values in shader code above.
-const ShaderType_Brdf = 0;
+const SHADERTYPE_BRDF = 0;
 // const ShaderType_Phase = 1;
 // const ShaderType_Mixed = 2;
 
-export function pathTracingUniforms() {
+export function pathTracingUniforms(): Record<string, { type?: string; value: unknown }> {
   return {
     tPreviousTexture: { type: "t", value: null },
 
@@ -1168,7 +1168,7 @@ export function pathTracingUniforms() {
     gStepSizeShadow: { type: "f", value: 1.0 },
     gInvAaBbMax: { type: "v3", value: new Vector3() },
     g_nChannels: { type: "i", value: 0 },
-    gShadingType: { type: "i", value: ShaderType_Brdf },
+    gShadingType: { type: "i", value: SHADERTYPE_BRDF },
     gGradientDeltaX: { type: "v3", value: new Vector3(0.01, 0, 0) },
     gGradientDeltaY: { type: "v3", value: new Vector3(0, 0.01, 0) },
     gGradientDeltaZ: { type: "v3", value: new Vector3(0, 0, 0.01) },

@@ -26,7 +26,7 @@ import {
   pathTracingFragmentShaderSrc,
   pathTracingUniforms,
   pathTracingVertexShaderSrc,
-} from "./constants/volumePTshader.js";
+} from "./constants/volumePTshader";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
 import Volume from "./Volume";
 import { Bounds, isOrthographicCamera } from "./types";
