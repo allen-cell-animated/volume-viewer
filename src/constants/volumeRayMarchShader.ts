@@ -293,7 +293,7 @@ export const rayMarchingFragmentShaderSrc = [
   "}",
 ].join("\n");
 
-export function rayMarchingShaderUniforms() {
+export function rayMarchingShaderUniforms(): Record<string, { type: string; value: unknown }> {
   return {
     iResolution: {
       type: "v2",

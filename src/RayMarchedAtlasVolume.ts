@@ -17,7 +17,7 @@ import {
   rayMarchingVertexShaderSrc,
   rayMarchingFragmentShaderSrc,
   rayMarchingShaderUniforms,
-} from "./constants/volumeRayMarchShader.js";
+} from "./constants/volumeRayMarchShader";
 import { Volume } from ".";
 import Channel from "./Channel";
 import { ThreeJsPanel } from "./ThreeJsPanel";
