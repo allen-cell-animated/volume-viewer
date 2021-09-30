@@ -13,7 +13,7 @@ import Channel from "./Channel";
 
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
-  private PT: boolean;
+  public PT: boolean;
   public volume: Volume;
   private onChannelDataReadyCallback?: () => void;
   private translation: Vector3;

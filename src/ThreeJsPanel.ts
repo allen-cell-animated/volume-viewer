@@ -21,7 +21,7 @@ import Timing from "./Timing";
 import { isOrthographicCamera } from "./types";
 
 import { VRButton } from "./vr/VRButton";
-import vrObjectControls from "./vr/vrObjectControls.js";
+import vrObjectControls from "./vr/vrObjectControls";
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;

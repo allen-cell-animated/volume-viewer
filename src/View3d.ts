@@ -346,12 +346,12 @@ export class View3d {
     this.canvas3d.animate_funcs.push(img.onAnimate.bind(img));
     this.canvas3d.onEnterVRCallback = () => {
       if (this.canvas3d.xrControls) {
-        this.canvas3d.xrControls.pushObjectState(this.image);
+        this.canvas3d.xrControls.pushObjectState(img);
       }
     };
     this.canvas3d.onLeaveVRCallback = () => {
       if (this.canvas3d.xrControls) {
-        this.canvas3d.xrControls.popObjectState(this.image);
+        this.canvas3d.xrControls.popObjectState(img);
       }
     };
 

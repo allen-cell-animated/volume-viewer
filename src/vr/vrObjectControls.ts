@@ -1,4 +1,4 @@
-import { TextureLoader, Vector3, Matrix4, Quaternion } from "three";
+import { TextureLoader, Vector3, Matrix4, Quaternion, WebGLRenderer, Scene, Mesh, EventListener, Event } from "three";
 import ViveController from "./ViveController.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 
@@ -6,8 +6,32 @@ import VRControllerObj from "../../assets/vr_controller_vive_1_5.obj";
 import VRControllerTexture from "../../assets/onepointfive_texture.png";
 import VRControllerSpecularTexture from "../../assets/onepointfive_spec.png";
 
+import VolumeDrawable from "../VolumeDrawable";
+
 export class vrObjectControls {
-  constructor(renderer, scene, object) {
+  private controller1: ViveController;
+  private controller2: ViveController;
+  private object: VolumeDrawable | null;
+  private trigger1Down?: boolean;
+  private trigger2Down?: boolean;
+  private scale: Vector3;
+  private previousDist: number | null;
+  private currentChannel: [number, number];
+  private scene: Scene;
+  private vrRestoreState: {
+    brightness: number;
+    density: number;
+    isPathTrace: boolean;
+    enabled: boolean[];
+  } | null;
+  private VRrotate: boolean;
+  private VRzoom: boolean;
+  private VRrotateStartPos: Vector3;
+  private wasZooming: boolean;
+  private VRzoomStart: number;
+  private VRzoomdist: number;
+
+  constructor(renderer: WebGLRenderer, scene: Scene, object: null) {
     // TODO This code is HTC Vive-specific.  Find a generic controller model to use instead!
     // (...when WebVR has proliferated further and more hand controllers are in play...)
     this.controller1 = new ViveController(0);
@@ -27,19 +51,29 @@ export class vrObjectControls {
     this.currentChannel = [0, -1];
 
     // load the VR controller geometry
-    var loader = new OBJLoader();
-    var object3d = loader.parse(VRControllerObj);
-    var txloader = new TextureLoader();
-    var controller = object3d.children[0];
-    controller.material.map = txloader.load(VRControllerTexture);
-    controller.material.specularMap = txloader.load(VRControllerSpecularTexture);
+    const loader = new OBJLoader();
+    const object3d = loader.parse(VRControllerObj);
+    const txloader = new TextureLoader();
+    const controller = object3d.children[0];
+    if (controller instanceof Mesh) {
+      controller.material.map = txloader.load(VRControllerTexture);
+      controller.material.specularMap = txloader.load(VRControllerSpecularTexture);
+    }
     this.controller1.add(object3d.clone());
     this.controller2.add(object3d.clone());
 
     this.scene = scene;
+
+    this.vrRestoreState = null;
+    this.VRrotate = false;
+    this.VRzoom = false;
+    this.VRrotateStartPos = new Vector3(0, 0, 0);
+    this.wasZooming = false;
+    this.VRzoomStart = 0;
+    this.VRzoomdist = 0;
   }
 
-  pushObjectState(obj) {
+  pushObjectState(obj: VolumeDrawable): void {
     this.object = obj;
 
     // push the density, brightness, and enabled state of channels.
@@ -49,14 +83,14 @@ export class vrObjectControls {
       isPathTrace: this.object.PT,
       enabled: [],
     };
-    for (let i = 0; i < this.object.num_channels; ++i) {
+    for (let i = 0; i < this.object.volume.num_channels; ++i) {
       this.vrRestoreState.enabled.push(this.object.isVolumeChannelEnabled(i));
     }
     // NO PATHTRACING IN VR MODE!
     this.object.setVolumeRendering(false);
   }
 
-  popObjectState(obj) {
+  popObjectState(obj: VolumeDrawable): void {
     // obj is currently expected to be the same as this.object, the obj that was passed in to pushObjectState
 
     // reset our volume object
@@ -68,7 +102,7 @@ export class vrObjectControls {
       if (this.object) {
         this.object.setBrightness(this.vrRestoreState.brightness);
         this.object.setDensity(this.vrRestoreState.density);
-        for (let i = 0; i < this.object.num_channels; ++i) {
+        for (let i = 0; i < this.object.volume.num_channels; ++i) {
           this.object.setVolumeChannelEnabled(i, this.vrRestoreState.enabled[i]);
         }
         this.object.setVolumeRendering(this.vrRestoreState.isPathTrace);
@@ -81,17 +115,18 @@ export class vrObjectControls {
     this.object = null;
   }
 
-  onEnterVR() {
+  onMenu1(): void {
+    this.cycleChannels(0);
+  }
+  onMenu2(): void {
+    this.cycleChannels(1);
+  }
+
+  onEnterVR(): void {
     // add controllers to 3d scene
     this.scene.add(this.controller1);
     this.scene.add(this.controller2);
 
-    this.onMenu1 = function() {
-      this.cycleChannels(0);
-    }.bind(this);
-    this.onMenu2 = function() {
-      this.cycleChannels(1);
-    }.bind(this);
     this.onAxisChange = this.onAxisChange.bind(this);
     this.controller1.addEventListener("menuup", this.onMenu1);
     this.controller2.addEventListener("menuup", this.onMenu2);
@@ -99,7 +134,7 @@ export class vrObjectControls {
     this.controller2.addEventListener("axischanged", this.onAxisChange);
   }
 
-  onLeaveVR() {
+  onLeaveVR(): void {
     this.controller1.removeEventListener("menuup", this.onMenu1);
     this.controller2.removeEventListener("menuup", this.onMenu2);
     // remove controllers from 3d scene
@@ -107,7 +142,7 @@ export class vrObjectControls {
     this.scene.remove(this.controller2);
   }
 
-  onAxisChange(obj) {
+  onAxisChange(obj): void {
     if (!this.object) {
       return;
     }
@@ -123,23 +158,23 @@ export class vrObjectControls {
     this.object.setDensity(y);
   }
 
-  cycleChannels(i) {
+  cycleChannels(i): void {
     if (!this.object) {
       return;
     }
 
     this.currentChannel[i]++;
-    if (this.currentChannel[i] >= this.object.num_channels) {
+    if (this.currentChannel[i] >= this.object.volume.num_channels) {
       this.currentChannel[i] = 0;
     }
     // this will switch off all channels except this.currentChannels
-    for (let i = 0; i < this.object.num_channels; ++i) {
+    for (let i = 0; i < this.object.volume.num_channels; ++i) {
       this.object.setVolumeChannelEnabled(i, i === this.currentChannel[0] || i === this.currentChannel[1]);
     }
     this.object.fuse();
   }
 
-  update(deltaT) {
+  update(deltaT): void {
     // must call update on the controllers, first!
     this.controller1.update();
     this.controller2.update();
@@ -148,7 +183,7 @@ export class vrObjectControls {
     const isTrigger2Down = this.controller2.getButtonState("trigger");
     const rotating = (isTrigger1Down && !isTrigger2Down) || (isTrigger2Down && !isTrigger1Down);
     const theController = isTrigger1Down ? this.controller1 : this.controller2;
-    const zooming = isTrigger1Down && isTrigger2Down;
+    const zooming = !!isTrigger1Down && !!isTrigger2Down;
 
     if (rotating) {
       if ((!this.trigger1Down && isTrigger1Down) || (!this.trigger2Down && isTrigger2Down)) {
