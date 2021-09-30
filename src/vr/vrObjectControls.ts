@@ -1,4 +1,4 @@
-import { TextureLoader, Vector3, Matrix4, Quaternion, WebGLRenderer, Scene, Mesh, EventListener, Event } from "three";
+import { Event, TextureLoader, Vector3, Matrix4, Quaternion, WebGLRenderer, Scene, Mesh } from "three";
 import ViveController from "./ViveController.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 
@@ -8,7 +8,7 @@ import VRControllerSpecularTexture from "../../assets/onepointfive_spec.png";
 
 import VolumeDrawable from "../VolumeDrawable";
 
-export class vrObjectControls {
+export class VrObjectControls {
   private controller1: ViveController;
   private controller2: ViveController;
   private object: VolumeDrawable | null;
@@ -24,12 +24,12 @@ export class vrObjectControls {
     isPathTrace: boolean;
     enabled: boolean[];
   } | null;
-  private VRrotate: boolean;
-  private VRzoom: boolean;
-  private VRrotateStartPos: Vector3;
+  private vrRotate: boolean;
+  private vrZoom: boolean;
+  private vrRotateStartPos: Vector3;
   private wasZooming: boolean;
-  private VRzoomStart: number;
-  private VRzoomdist: number;
+  private vrZoomStart: number;
+  private vrZoomdist: number;
 
   constructor(renderer: WebGLRenderer, scene: Scene, object: null) {
     // TODO This code is HTC Vive-specific.  Find a generic controller model to use instead!
@@ -65,12 +65,12 @@ export class vrObjectControls {
     this.scene = scene;
 
     this.vrRestoreState = null;
-    this.VRrotate = false;
-    this.VRzoom = false;
-    this.VRrotateStartPos = new Vector3(0, 0, 0);
+    this.vrRotate = false;
+    this.vrZoom = false;
+    this.vrRotateStartPos = new Vector3(0, 0, 0);
     this.wasZooming = false;
-    this.VRzoomStart = 0;
-    this.VRzoomdist = 0;
+    this.vrZoomStart = 0;
+    this.vrZoomdist = 0;
   }
 
   pushObjectState(obj: VolumeDrawable): void {
@@ -90,7 +90,7 @@ export class vrObjectControls {
     this.object.setVolumeRendering(false);
   }
 
-  popObjectState(obj: VolumeDrawable): void {
+  popObjectState(_obj: VolumeDrawable): void {
     // obj is currently expected to be the same as this.object, the obj that was passed in to pushObjectState
 
     // reset our volume object
@@ -142,7 +142,7 @@ export class vrObjectControls {
     this.scene.remove(this.controller2);
   }
 
-  onAxisChange(obj): void {
+  onAxisChange(obj: Event): void {
     if (!this.object) {
       return;
     }
@@ -158,7 +158,7 @@ export class vrObjectControls {
     this.object.setDensity(y);
   }
 
-  cycleChannels(i): void {
+  cycleChannels(i: number): void {
     if (!this.object) {
       return;
     }
@@ -174,7 +174,7 @@ export class vrObjectControls {
     this.object.fuse();
   }
 
-  update(deltaT): void {
+  update(_deltaT: number): void {
     // must call update on the controllers, first!
     this.controller1.update();
     this.controller2.update();
@@ -187,16 +187,16 @@ export class vrObjectControls {
 
     if (rotating) {
       if ((!this.trigger1Down && isTrigger1Down) || (!this.trigger2Down && isTrigger2Down)) {
-        this.VRrotate = true;
-        this.VRrotateStartPos = new Vector3().setFromMatrixPosition(theController.matrix);
+        this.vrRotate = true;
+        this.vrRotateStartPos = new Vector3().setFromMatrixPosition(theController.matrix);
       }
     }
     if ((this.trigger1Down && !isTrigger1Down) || (this.trigger2Down && !isTrigger2Down)) {
-      this.VRrotate = false;
+      this.vrRotate = false;
     }
     if (this.object && zooming) {
-      let obj3d = this.object.sceneRoot;
-      this.VRzoom = true;
+      const obj3d = this.object.sceneRoot;
+      this.vrZoom = true;
 
       this.scale.copy(obj3d.scale);
 
@@ -204,8 +204,8 @@ export class vrObjectControls {
       const p2 = new Vector3().setFromMatrixPosition(this.controller2.matrix);
       const dist = p1.distanceTo(p2);
       if (!this.wasZooming) {
-        this.VRzoomStart = 0;
-        this.VRzoomdist = dist;
+        this.vrZoomStart = 0;
+        this.vrZoomdist = dist;
       }
 
       let deltaStretch = 1.0;
@@ -221,24 +221,24 @@ export class vrObjectControls {
       obj3d.scale.y = Math.min(ZOOM_MAX, Math.max(this.scale.y, ZOOM_MIN));
       obj3d.scale.z = Math.min(ZOOM_MAX, Math.max(this.scale.z, ZOOM_MIN));
     } else {
-      this.VRzoom = false;
+      this.vrZoom = false;
       this.previousDist = null;
     }
 
-    if (this.object && this.VRrotate) {
-      let obj3d = this.object.sceneRoot;
+    if (this.object && this.vrRotate) {
+      const obj3d = this.object.sceneRoot;
 
       // dist from last pose position in x and z.
-      var pos = new Vector3().setFromMatrixPosition(theController.matrix);
+      const pos = new Vector3().setFromMatrixPosition(theController.matrix);
 
-      var origin = obj3d.position;
+      const origin = obj3d.position;
 
-      var v0 = new Vector3().subVectors(this.VRrotateStartPos, origin);
+      let v0 = new Vector3().subVectors(this.vrRotateStartPos, origin);
       v0 = v0.normalize();
-      var v1 = new Vector3().subVectors(pos, origin);
+      let v1 = new Vector3().subVectors(pos, origin);
       v1 = v1.normalize();
 
-      var mio = new Matrix4();
+      const mio = new Matrix4();
       mio.copy(obj3d.matrixWorld).invert();
 
       v0 = v0.transformDirection(mio);
@@ -246,12 +246,12 @@ export class vrObjectControls {
       v1 = v1.transformDirection(mio);
       v1 = v1.normalize();
 
-      var q = new Quaternion();
+      const q = new Quaternion();
       q.setFromUnitVectors(v0, v1);
 
       obj3d.quaternion.multiply(q);
 
-      this.VRrotateStartPos.set(pos.x, pos.y, pos.z);
+      this.vrRotateStartPos.set(pos.x, pos.y, pos.z);
     }
     this.trigger1Down = isTrigger1Down;
     this.trigger2Down = isTrigger2Down;
@@ -259,4 +259,4 @@ export class vrObjectControls {
   }
 }
 
-export default vrObjectControls;
+export default VrObjectControls;

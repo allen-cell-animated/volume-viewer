@@ -21,7 +21,7 @@ import Timing from "./Timing";
 import { isOrthographicCamera } from "./types";
 
 import { VRButton } from "./vr/VRButton";
-import vrObjectControls from "./vr/vrObjectControls";
+import VrObjectControls from "./vr/vrObjectControls";
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
@@ -64,7 +64,7 @@ export class ThreeJsPanel {
   private axisCamera: Camera;
 
   public xrButton?: HTMLButtonElement | null;
-  public xrControls?: vrObjectControls;
+  public xrControls?: VrObjectControls;
   private dataurlcallback?: (string) => void;
 
   constructor(parentElement: HTMLElement, useWebGL2: boolean) {
@@ -252,7 +252,7 @@ export class ThreeJsPanel {
       this.containerdiv.appendChild(this.xrButton);
 
       // VR controllers
-      this.xrControls = new vrObjectControls(this.renderer, this.scene, null);
+      this.xrControls = new VrObjectControls(this.renderer, this.scene, null);
 
       window.addEventListener(
         "vrdisplaypointerrestricted",
