@@ -210,11 +210,11 @@ export class View3d {
   /**
    * Assign a channel index as a mask channel (will multiply its color against the entire visible volume)
    * @param {Object} volume
-   * @param {number} mask_channel_index
+   * @param {number} maskChannelIndex
    */
-  setVolumeChannelAsMask(volume: Volume, mask_channel_index: number): void {
+  setVolumeChannelAsMask(volume: Volume, maskChannelIndex: number): void {
     if (this.image) {
-      this.image.setChannelAsMask(mask_channel_index);
+      this.image.setChannelAsMask(maskChannelIndex);
     }
     this.redraw();
   }
@@ -569,7 +569,7 @@ export class View3d {
    * Notify the view that the set of active volume channels has been modified.
    * @param {Object} volume
    */
-  updateActiveChannels(volume: Volume): void {
+  updateActiveChannels(_volume: Volume): void {
     if (this.image) {
       this.image.fuse();
     }
@@ -579,7 +579,7 @@ export class View3d {
    * Notify the view that transfer function lookup table data has been modified.
    * @param {Object} volume
    */
-  updateLuts(volume: Volume): void {
+  updateLuts(_volume: Volume): void {
     if (this.image) {
       this.image.updateLuts();
     }
@@ -589,7 +589,7 @@ export class View3d {
    * Notify the view that color and appearance settings have been modified.
    * @param {Object} volume
    */
-  updateMaterial(volume: Volume): void {
+  updateMaterial(_volume: Volume): void {
     if (this.image) {
       this.image.updateMaterial();
     }

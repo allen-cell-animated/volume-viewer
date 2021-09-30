@@ -139,7 +139,7 @@ export default class RayMarchedAtlasVolume {
     this.setUniform("volumeScale", scale);
   }
 
-  public setRayStepSizes(primary: number, secondary: number): void {
+  public setRayStepSizes(_primary: number, _secondary: number): void {
     // no op
   }
 
@@ -159,7 +159,7 @@ export default class RayMarchedAtlasVolume {
     this.setUniform("iResolution", new Vector2(x, y));
   }
 
-  public setPixelSamplingRate(value: number): void {
+  public setPixelSamplingRate(_value: number): void {
     // no op
   }
 

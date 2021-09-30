@@ -67,7 +67,7 @@ export class ThreeJsPanel {
   public xrControls?: VrObjectControls;
   private dataurlcallback?: (string) => void;
 
-  constructor(parentElement: HTMLElement, useWebGL2: boolean) {
+  constructor(parentElement: HTMLElement, _useWebGL2: boolean) {
     this.containerdiv = document.createElement("div");
     this.containerdiv.setAttribute("id", "volumeViewerContainerDiv");
     this.containerdiv.style.position = "relative";
@@ -193,7 +193,7 @@ export class ThreeJsPanel {
     this.setupAxisHelper();
   }
 
-  updateCameraFocus(fov: number, focalDistance: number, apertureSize: number): void {
+  updateCameraFocus(fov: number, _focalDistance: number, _apertureSize: number): void {
     this.perspectiveCamera.fov = fov;
     this.fov = fov;
     this.perspectiveCamera.updateProjectionMatrix();

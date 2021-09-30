@@ -29,9 +29,9 @@ export default class VolumeDrawable {
   private channel_colors: [number, number, number][];
   private channelOptions: VolumeChannelDisplayOptions[];
   private fusion: FuseChannel[];
-  private specular: [number, number, number][];
-  private emissive: [number, number, number][];
-  private glossiness: number[];
+  public specular: [number, number, number][];
+  public emissive: [number, number, number][];
+  public glossiness: number[];
   public sceneRoot: Object3D;
   private meshVolume: MeshVolume;
   private primaryRayStepSize: number;

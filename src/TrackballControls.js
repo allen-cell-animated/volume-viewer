@@ -11,8 +11,8 @@ class TrackballControls extends EventDispatcher {
   constructor(object, domElement) {
     super();
 
-    var _this = this;
-    var STATE = {
+    const _this = this;
+    const STATE = {
       NONE: -1,
       ROTATE: 0,
       ZOOM: 1,
@@ -60,21 +60,21 @@ class TrackballControls extends EventDispatcher {
 
     this.target = new Vector3();
 
-    var EPS = 0.000001;
+    const EPS = 0.000001;
 
-    var lastPosition = new Vector3();
+    const lastPosition = new Vector3();
 
-    var _state = STATE.NONE,
+    let _state = STATE.NONE,
       _prevState = STATE.NONE,
-      _eye = new Vector3(),
+      _touchZoomDistanceStart = 0,
+      _touchZoomDistanceEnd = 0,
+      _lastAngle = 0;
+    const _eye = new Vector3(),
       _movePrev = new Vector2(),
       _moveCurr = new Vector2(),
       _lastAxis = new Vector3(),
-      _lastAngle = 0,
       _zoomStart = new Vector2(),
       _zoomEnd = new Vector2(),
-      _touchZoomDistanceStart = 0,
-      _touchZoomDistanceEnd = 0,
       _panStart = new Vector2(),
       _panEnd = new Vector2();
 
@@ -86,9 +86,9 @@ class TrackballControls extends EventDispatcher {
 
     // events
 
-    var changeEvent = { type: "change" };
-    var startEvent = { type: "start" };
-    var endEvent = { type: "end" };
+    const changeEvent = { type: "change" };
+    const startEvent = { type: "start" };
+    const endEvent = { type: "end" };
 
     // methods
 
@@ -99,9 +99,9 @@ class TrackballControls extends EventDispatcher {
         this.screen.width = window.innerWidth;
         this.screen.height = window.innerHeight;
       } else {
-        var box = this.domElement.getBoundingClientRect();
+        const box = this.domElement.getBoundingClientRect();
         // adjustments come from similar code in the jquery offset() function
-        var d = this.domElement.ownerDocument.documentElement;
+        const d = this.domElement.ownerDocument.documentElement;
         this.screen.left = box.left + window.pageXOffset - d.clientLeft;
         this.screen.top = box.top + window.pageYOffset - d.clientTop;
         this.screen.width = box.width;
@@ -109,8 +109,8 @@ class TrackballControls extends EventDispatcher {
       }
     };
 
-    var getMouseOnScreen = (function () {
-      var vector = new Vector2();
+    const getMouseOnScreen = (function () {
+      const vector = new Vector2();
 
       return function getMouseOnScreen(pageX, pageY) {
         vector.set((pageX - _this.screen.left) / _this.screen.width, (pageY - _this.screen.top) / _this.screen.height);
@@ -119,8 +119,8 @@ class TrackballControls extends EventDispatcher {
       };
     })();
 
-    var getMouseOnCircle = (function () {
-      var vector = new Vector2();
+    const getMouseOnCircle = (function () {
+      const vector = new Vector2();
 
       return function getMouseOnCircle(pageX, pageY) {
         vector.set(
@@ -137,15 +137,13 @@ class TrackballControls extends EventDispatcher {
     }
 
     this.rotateCamera = (function () {
-      var axis = new Vector3(),
+      const axis = new Vector3(),
         quaternion = new Quaternion(),
         eyeDirection = new Vector3(),
         objectUpDirection = new Vector3(),
         objectSidewaysDirection = new Vector3(),
-        moveDirection = new Vector3(),
-        angle,
-        dx,
-        dy;
+        moveDirection = new Vector3();
+      let angle, dx, dy;
 
       return function rotateCamera(delta) {
         dx = _moveCurr.x - _movePrev.x;
@@ -196,7 +194,7 @@ class TrackballControls extends EventDispatcher {
     })();
 
     this.zoomCamera = function () {
-      var factor;
+      let factor;
 
       if (_state === STATE.TOUCH_ZOOM_PAN) {
         factor = _touchZoomDistanceStart / _touchZoomDistanceEnd;
@@ -222,7 +220,7 @@ class TrackballControls extends EventDispatcher {
     };
 
     this.panCamera = (function () {
-      var mouseChange = new Vector2(),
+      const mouseChange = new Vector2(),
         objectUp = new Vector3(),
         pan = new Vector3();
 
@@ -347,7 +345,7 @@ class TrackballControls extends EventDispatcher {
       }
     }
 
-    function keyup(event) {
+    function keyup(_event) {
       if (_this.enabled === false) return;
 
       _state = _prevState;
@@ -444,6 +442,7 @@ class TrackballControls extends EventDispatcher {
 
       event.preventDefault();
 
+      let x, y, dx, dy;
       switch (event.touches.length) {
         case 1:
           _state = STATE.TOUCH_ROTATE;
@@ -454,12 +453,12 @@ class TrackballControls extends EventDispatcher {
         default:
           // 2 or more
           _state = STATE.TOUCH_ZOOM_PAN;
-          var dx = event.touches[0].pageX - event.touches[1].pageX;
-          var dy = event.touches[0].pageY - event.touches[1].pageY;
+          dx = event.touches[0].pageX - event.touches[1].pageX;
+          dy = event.touches[0].pageY - event.touches[1].pageY;
           _touchZoomDistanceEnd = _touchZoomDistanceStart = Math.sqrt(dx * dx + dy * dy);
 
-          var x = (event.touches[0].pageX + event.touches[1].pageX) / 2;
-          var y = (event.touches[0].pageY + event.touches[1].pageY) / 2;
+          x = (event.touches[0].pageX + event.touches[1].pageX) / 2;
+          y = (event.touches[0].pageY + event.touches[1].pageY) / 2;
           _panStart.copy(getMouseOnScreen(x, y));
           _panEnd.copy(_panStart);
           break;
@@ -473,6 +472,7 @@ class TrackballControls extends EventDispatcher {
 
       event.preventDefault();
       event.stopPropagation();
+      let x, y, dx, dy;
 
       switch (event.touches.length) {
         case 1:
@@ -482,12 +482,12 @@ class TrackballControls extends EventDispatcher {
 
         default:
           // 2 or more
-          var dx = event.touches[0].pageX - event.touches[1].pageX;
-          var dy = event.touches[0].pageY - event.touches[1].pageY;
+          dx = event.touches[0].pageX - event.touches[1].pageX;
+          dy = event.touches[0].pageY - event.touches[1].pageY;
           _touchZoomDistanceEnd = Math.sqrt(dx * dx + dy * dy);
 
-          var x = (event.touches[0].pageX + event.touches[1].pageX) / 2;
-          var y = (event.touches[0].pageY + event.touches[1].pageY) / 2;
+          x = (event.touches[0].pageX + event.touches[1].pageX) / 2;
+          y = (event.touches[0].pageY + event.touches[1].pageY) / 2;
           _panEnd.copy(getMouseOnScreen(x, y));
           break;
       }

@@ -41,7 +41,7 @@ export default class PathTracedVolume {
   private translation: Vector3;
   private rotation: Euler;
   private pixelSamplingRate: number;
-  private pathTracingUniforms: any; // TODO get threejs uniforms type map of str to {type, value}
+  private pathTracingUniforms: any; // Record<string, { type?: string; value: unknown }>; // TODO get threejs uniforms type map of str to {type, value}
   private volumeTexture: DataTexture3D;
   private maskChannelIndex: number;
   private maskAlpha: number;
@@ -350,7 +350,7 @@ export default class PathTracedVolume {
     this.sampleCounter = 0;
   }
 
-  public setVisible(isVisible: boolean): void {
+  public setVisible(_isVisible: boolean): void {
     // this.visible = isVisible;
   }
 
@@ -470,7 +470,7 @@ export default class PathTracedVolume {
     return this.screenOutputMesh;
   }
 
-  public onChannelData(batch: number[]): void {
+  public onChannelData(_batch: number[]): void {
     // no op
   }
 
@@ -500,11 +500,11 @@ export default class PathTracedVolume {
     this.resetProgress();
   }
 
-  public setOrthoScale(value: number): void {
+  public setOrthoScale(_value: number): void {
     // no op
   }
 
-  public setGamma(gmin: number, glevel: number, gmax: number): void {
+  public setGamma(_gmin: number, _glevel: number, _gmax: number): void {
     // no op
   }
 
@@ -555,7 +555,7 @@ export default class PathTracedVolume {
   }
 
   // -0.5 .. 0.5
-  setAxisClip(axis: number, minval: number, maxval: number, isOrthoAxis: boolean): void {
+  setAxisClip(axis: number, minval: number, maxval: number, _isOrthoAxis: boolean): void {
     this.bounds.bmax[axis] = maxval;
     this.bounds.bmin[axis] = minval;
     const physicalSize = this.volume.normalizedPhysicalSize;
@@ -590,7 +590,7 @@ export default class PathTracedVolume {
     this.resetProgress();
   }
 
-  setOrthoThickness(value: number): void {
+  setOrthoThickness(_value: number): void {
     // no op
   }
 
@@ -696,7 +696,7 @@ export default class PathTracedVolume {
     this.volumeTexture.needsUpdate = true;
   }
 
-  updateLuts(image): void {
+  updateLuts(image: VolumeDrawable): void {
     for (let i = 0; i < this.pathTracingUniforms.g_nChannels.value; ++i) {
       const channel = this.viewChannels[i];
       const combinedLut = image.getChannel(channel).combineLuts(image.getChannelColor(channel));
@@ -719,9 +719,9 @@ export default class PathTracedVolume {
 
   // image is a material interface that supports per-channel color, spec,
   // emissive, glossiness
-  updateMaterial(image): void {
+  updateMaterial(image: VolumeDrawable): void {
     for (let c = 0; c < this.viewChannels.length; ++c) {
-      let i = this.viewChannels[c];
+      const i = this.viewChannels[c];
       if (i > -1) {
         // diffuse color is actually blended into the LUT now.
         const combinedLut = image.getChannel(i).combineLuts(image.getChannelColor(i));
@@ -741,12 +741,12 @@ export default class PathTracedVolume {
     this.resetProgress();
   }
 
-  updateShadingMethod(brdf): void {
+  updateShadingMethod(brdf: number): void {
     this.pathTracingUniforms.gShadingType.value = brdf;
     this.resetProgress();
   }
 
-  updateShowLights(showlights): void {
+  updateShowLights(showlights: number): void {
     this.pathTracingUniforms.uShowLights.value = showlights;
     this.resetProgress();
   }

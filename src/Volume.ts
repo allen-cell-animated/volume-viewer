@@ -382,7 +382,7 @@ export default class Volume {
 
   removeVolumeDataObserver(o: VolumeDataObserver): void {
     if (o) {
-      let i = this.volumeDataObservers.indexOf(o);
+      const i = this.volumeDataObservers.indexOf(o);
       if (i !== -1) {
         this.volumeDataObservers.splice(i, 1);
       }

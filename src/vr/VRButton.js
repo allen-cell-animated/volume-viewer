@@ -6,14 +6,16 @@
 // Modified 2019 danielt@alleninstitute.org
 // -- returns null or no button if XR/VR not supported
 // -- positioned differently so that client code can control positioning more easily
-var VRButton = {
-  createButton: function(renderer, options) {
+const VRButton = {
+  createButton: function (renderer, options) {
     if (options && options.referenceSpaceType) {
       renderer.xr.setReferenceSpaceType(options.referenceSpaceType);
     }
 
+    let button;
+
     function showEnterVR(/*device*/) {
-      var currentSession = null;
+      let currentSession = null;
 
       function onSessionStarted(session) {
         session.addEventListener("end", onSessionEnded);
@@ -42,15 +44,15 @@ var VRButton = {
 
       button.textContent = "ENTER VR";
 
-      button.onmouseenter = function() {
+      button.onmouseenter = function () {
         button.style.opacity = "1.0";
       };
 
-      button.onmouseleave = function() {
+      button.onmouseleave = function () {
         button.style.opacity = "0.5";
       };
 
-      button.onclick = function() {
+      button.onclick = function () {
         if (currentSession === null) {
           // WebXR's requestReferenceSpace only works if the corresponding
           // feature was requested at session creation time. For simplicity,
@@ -60,7 +62,7 @@ var VRButton = {
           // ('local' is always available for immersive sessions and doesn't
           // need to be requested separately.)
 
-          var sessionInit = {
+          const sessionInit = {
             optionalFeatures: ["local-floor", "bounded-floor"],
           };
           navigator.xr.requestSession("immersive-vr", sessionInit).then(onSessionStarted);
@@ -105,18 +107,18 @@ var VRButton = {
     }
 
     if ("xr" in navigator) {
-      var button = document.createElement("button");
+      button = document.createElement("button");
       button.style.display = "none";
 
       stylizeElement(button);
 
-      navigator.xr.isSessionSupported("immersive-vr").then(function(supported) {
+      navigator.xr.isSessionSupported("immersive-vr").then(function (supported) {
         supported ? showEnterVR() : showWebXRNotFound();
       });
 
       return button;
     } else {
-      var messageText = "WEBXR NOT AVAILABLE";
+      let messageText = "WEBXR NOT AVAILABLE";
       if (window.isSecureContext === false) {
         messageText = "WEBXR NEEDS HTTPS"; // TODO Improve message
       } else {

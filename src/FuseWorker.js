@@ -1,5 +1,5 @@
-var channels = [];
-var npx = 0;
+const channels = [];
+let npx = 0;
 
 // sum over [{chIndex, rgbColor}]
 // fusionType = "m" for maximum, "a" for average
@@ -7,11 +7,11 @@ function fuseWorker(combination, fusionType) {
   //console.log("BEGIN WORK");
   // explore some faster ways to fuse here...
 
-  var ar, ag, ab, aa, c, lr, lg, lb, la, opacity, channeldata, lut, idx;
-  var x, i, cx, fx;
-  var cl = combination.length;
+  let ar, ag, ab, aa, c, lr, lg, lb, la, opacity, channeldata, lut, idx;
+  let x, i, cx, fx;
+  const cl = combination.length;
 
-  var npx4 = npx * 4;
+  const npx4 = npx * 4;
 
   // init the rgba image
   // var fused4 = new Uint32Array(this.fused.buffer);
@@ -24,7 +24,7 @@ function fuseWorker(combination, fusionType) {
     self.fused[x + 2] = 0;
     self.fused[x + 3] = 255;
   }
-  var value = 0;
+  let value = 0;
   if (fusionType === "m") {
     for (i = 0; i < cl; ++i) {
       c = combination[i];
@@ -58,7 +58,7 @@ function fuseWorker(combination, fusionType) {
     }
   } else if (fusionType === "a") {
     // count
-    var nchans = 0;
+    let nchans = 0;
     for (i = 0; i < cl; ++i) {
       c = combination[i];
       idx = c.chIndex;
@@ -98,7 +98,7 @@ function fuseWorker(combination, fusionType) {
   //console.log("END WORK");
 }
 
-self.onmessage = function(e) {
+self.onmessage = function (e) {
   if (e.data.msgtype === "channeldata") {
     channels[e.data.channelindex] = new Uint8Array(e.data.data);
     if (npx === 0) {
@@ -112,7 +112,7 @@ self.onmessage = function(e) {
     // we got the starting message!
     fuseWorker(e.data.combination, e.data.fuseMethod);
     // transfer result data back to caller, and tell caller who is reporting back
-    var results = { data: self.fused, workerindex: self.workerindex };
+    const results = { data: self.fused, workerindex: self.workerindex };
     postMessage(results, [results.data.buffer]);
     // reallocate self.fused, now that ownership of the underlying array has been passed back
     self.fused = new Uint8Array(npx * 4);
