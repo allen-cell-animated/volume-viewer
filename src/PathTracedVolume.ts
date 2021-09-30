@@ -21,7 +21,7 @@ import {
 } from "three";
 import { LinearFilter, NearestFilter } from "three/src/constants";
 
-import { denoiseFragmentShaderSrc, denoiseShaderUniforms, denoiseVertexShaderSrc } from "./constants/denoiseShader.js";
+import { denoiseFragmentShaderSrc, denoiseShaderUniforms, denoiseVertexShaderSrc } from "./constants/denoiseShader";
 import {
   pathTracingFragmentShaderSrc,
   pathTracingUniforms,
