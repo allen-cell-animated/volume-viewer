@@ -9,23 +9,23 @@ class ViveController extends Object3D {
   constructor(id) {
     super();
 
-    var scope = this;
-    var gamepad;
+    const scope = this;
+    let gamepad;
 
-    var axes = [0, 0];
-    var thumbpadIsPressed = false;
-    var triggerIsPressed = false;
-    var gripsArePressed = false;
-    var menuIsPressed = false;
+    const axes = [0, 0];
+    let thumbpadIsPressed = false;
+    let triggerIsPressed = false;
+    let gripsArePressed = false;
+    let menuIsPressed = false;
 
     function findGamepad(id) {
       // Iterate across gamepads as Vive Controllers may not be
       // in position 0 and 1.
 
-      var gamepads = navigator.getGamepads && navigator.getGamepads();
+      const gamepads = navigator.getGamepads && navigator.getGamepads();
 
-      for (var i = 0, j = 0; i < gamepads.length; i++) {
-        var gamepad = gamepads[i];
+      for (let i = 0, j = 0; i < gamepads.length; i++) {
+        const gamepad = gamepads[i];
 
         if (
           gamepad &&
@@ -43,18 +43,18 @@ class ViveController extends Object3D {
     this.matrixAutoUpdate = false;
     this.standingMatrix = new Matrix4();
 
-    this.getGamepad = function() {
+    this.getGamepad = function () {
       return gamepad;
     };
 
-    this.getButtonState = function(button) {
+    this.getButtonState = function (button) {
       if (button === "thumbpad") return thumbpadIsPressed;
       if (button === "trigger") return triggerIsPressed;
       if (button === "grips") return gripsArePressed;
       if (button === "menu") return menuIsPressed;
     };
 
-    this.update = function() {
+    this.update = function () {
       gamepad = findGamepad(id);
 
       if (gamepad !== undefined && gamepad.pose !== undefined) {
@@ -62,7 +62,7 @@ class ViveController extends Object3D {
 
         //  Position and orientation.
 
-        var pose = gamepad.pose;
+        const pose = gamepad.pose;
 
         if (pose.position !== null) scope.position.fromArray(pose.position);
         if (pose.orientation !== null) scope.quaternion.fromArray(pose.orientation);
