@@ -103,7 +103,7 @@ export default class Histogram {
   }
 
   /**
-   * Generate a piecewise linear lookup table that ramps up from 0 to 1 over the b to e domain
+   * Generate a piecewise linear lookup table that ramps up from 0 to 1 over the b to e domain. If e === b, then we use a step function with f(b) = 0 and f(b + 1) = 1
    *  |
    * 1|               +---------+-----
    *  |              /
@@ -135,7 +135,6 @@ export default class Histogram {
         lut[x * 4 + 3] = 0;
       } else {
         if (e === b) {
-          // singularity. can this be reached?
           lut[x * 4 + 3] = 255;
         } else {
           const a = (x - b) / (e - b);
@@ -146,19 +145,32 @@ export default class Histogram {
 
     const controlPoints: ControlPoint[] = [];
     let startVal = 0;
-    if (b <= 0) {
-      startVal = -b / (e - b);
+    if (b < 0) {
+      if (e === b) {
+        startVal = 1;
+      } else {
+        startVal = -b / (e - b);
+      }
     }
     controlPoints.push({ x: 0, opacity: startVal, color: [255, 255, 255] });
     if (b > 0) {
       controlPoints.push({ x: b, opacity: 0, color: [255, 255, 255] });
     }
+    
     if (e < 255) {
-      controlPoints.push({ x: e, opacity: 1, color: [255, 255, 255] });
+      if (e === b) {
+        controlPoints.push({ x: b + 0.5, opacity: 1, color: [255, 255, 255] });
+      } else {
+        controlPoints.push({ x: e, opacity: 1, color: [255, 255, 255] });
+      }
     }
     let endVal = 1;
     if (e >= 255) {
-      endVal = (255 - b) / (e - b);
+      if (e === b) {
+        endVal = 0;
+      } else {
+        endVal = (255 - b) / (e - b);
+      }
     }
     controlPoints.push({ x: 255, opacity: endVal, color: [255, 255, 255] });
 
