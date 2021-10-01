@@ -16,7 +16,8 @@ const LUT_ENTRIES = 256;
 const LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
 
 /**
- * @typedef {Object} ControlPoint Used for the TF (transfer function) editor GUI. Need to be converted to LUT for rendering.
+ * @typedef {Object} ControlPoint Used for the TF (transfer function) editor GUI. 
+ * Need to be converted to LUT for rendering.
  * @property {number} x The X Coordinate
  * @property {number} opacity The Opacity, from 0 to 1
  * @property {Array.<number>} color The Color, 3 numbers from 0-255 for r,g,b
@@ -24,7 +25,8 @@ const LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
 
 /**
  * @typedef {Object} Lut Used for rendering.
- * @property {Array.<number>} lut LUT_ARRAY_LENGTH element lookup table as array (maps scalar intensity to a rgb color plus alpha, with each value from 0-255))
+ * @property {Array.<number>} lut LUT_ARRAY_LENGTH element lookup table as array 
+ * (maps scalar intensity to a rgb color plus alpha, with each value from 0-255)
  * @property {Array.<ControlPoint>} controlPoints 
  */
 type ControlPoint = {
@@ -103,7 +105,8 @@ export default class Histogram {
   }
 
   /**
-   * Generate a piecewise linear lookup table that ramps up from 0 to 1 over the b to e domain. If e === b, then we use a step function with f(b) = 0 and f(b + 1) = 1
+   * Generate a piecewise linear lookup table that ramps up from 0 to 1 over the b to e domain. 
+   * If e === b, then we use a step function with f(b) = 0 and f(b + 1) = 1
    *  |
    * 1|               +---------+-----
    *  |              /
@@ -112,7 +115,7 @@ export default class Histogram {
    *  |           /
    *  |          /
    * 0+=========+---------------+-----
-   *  0         b    e          1
+   *  0         b    e         255
    * @return {Lut}
    * @param {number} b
    * @param {number} e
@@ -143,7 +146,10 @@ export default class Histogram {
       }
     }
 
+    // Generate 2 to 4 control points for a minMax LUT, from left to right
     const controlPoints: ControlPoint[] = [];
+
+    // Add starting point at x = 0
     let startVal = 0;
     if (b < 0) {
       if (e === b) {
@@ -153,17 +159,23 @@ export default class Histogram {
       }
     }
     controlPoints.push({ x: 0, opacity: startVal, color: [255, 255, 255] });
+    
+    // If b > 0, add another point at (b, 0)
     if (b > 0) {
       controlPoints.push({ x: b, opacity: 0, color: [255, 255, 255] });
     }
     
+    // If e < 255, Add another point at (e, 1)
     if (e < 255) {
       if (e === b) {
+        // Use b + 0.5 as x value instead of e to create a near-vertical ramp 
         controlPoints.push({ x: b + 0.5, opacity: 1, color: [255, 255, 255] });
       } else {
         controlPoints.push({ x: e, opacity: 1, color: [255, 255, 255] });
       }
     }
+
+    // Add ending point at x = 255
     let endVal = 1;
     if (e >= 255) {
       if (e === b) {
