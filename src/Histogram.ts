@@ -147,7 +147,6 @@ export default class Histogram {
     }
 
     // Edge case: b and e are both out of bounds 
-    // (both are negative or both are greater than 255)
     if (b < 0 && e < 0) {
       return {
         lut: lut,
