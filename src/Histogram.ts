@@ -146,6 +146,27 @@ export default class Histogram {
       }
     }
 
+    // Edge case: b and e are both out of bounds 
+    // (both are negative or both are greater than 255)
+    if (b < 0 && e < 0) {
+      return {
+        lut: lut,
+        controlPoints: [
+          { x: 0, opacity: 1, color: [255, 255, 255] },
+          { x: 255, opacity: 1, color: [255, 255, 255] }
+        ],
+      };
+    }
+    if (b > 255 && e > 255) {
+      return {
+        lut: lut,
+        controlPoints: [
+          { x: 0, opacity: 0, color: [255, 255, 255] },
+          { x: 255, opacity: 0, color: [255, 255, 255] }
+        ],
+      };
+    }
+
     // Generate 2 to 4 control points for a minMax LUT, from left to right
     const controlPoints: ControlPoint[] = [];
 

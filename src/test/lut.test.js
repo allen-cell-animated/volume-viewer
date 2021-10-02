@@ -166,6 +166,22 @@ describe("test histogram", () => {
         expect(controlPoint.opacity).to.be.finite;
       })
     });
+    it("is consistent for minMax edge case -10,-5", () => {
+      const lut = histogram.lutGenerator_minMax(-10, -5);
+      const secondlut = histogram.lutGenerator_fromControlPoints(lut.controlPoints);
+      expect(lut.lut).to.eql(secondlut.lut);
+      // Spot check but all opacity values should be 255
+      expect(lut.lut[3]).to.eql(255);
+      expect(secondlut.lut[3]).to.eql(255);
+      expect(lut.lut[120 * 4 + 3]).to.eql(255);
+      expect(secondlut.lut[120 * 4 + 3]).to.eql(255);
+      expect(lut.lut[255 * 4 + 3]).to.eql(255);
+      expect(secondlut.lut[255 * 4 + 3]).to.eql(255);
+      // Make sure no NaN values
+      lut.controlPoints.forEach(controlPoint => {
+        expect(controlPoint.opacity).to.be.finite;
+      })
+    });
     it("is consistent for minMax edge case 0,1", () => {
       const lut = histogram.lutGenerator_minMax(0, 1);
       const secondlut = histogram.lutGenerator_fromControlPoints(lut.controlPoints);
@@ -202,6 +218,22 @@ describe("test histogram", () => {
       expect(lut.lut).to.eql(secondlut.lut);
       expect(lut.lut[3]).to.eql(0);
       expect(secondlut.lut[3]).to.eql(0);
+      expect(lut.lut[255 * 4 + 3]).to.eql(0);
+      expect(secondlut.lut[255 * 4 + 3]).to.eql(0);
+      // Make sure no NaN values
+      lut.controlPoints.forEach(controlPoint => {
+        expect(controlPoint.opacity).to.be.finite;
+      })
+    });
+    it("is consistent for minMax edge case 300,400", () => {
+      const lut = histogram.lutGenerator_minMax(300, 400);
+      const secondlut = histogram.lutGenerator_fromControlPoints(lut.controlPoints);
+      expect(lut.lut).to.eql(secondlut.lut);
+      // Spot check but all opacity values should be 0
+      expect(lut.lut[3]).to.eql(0);
+      expect(secondlut.lut[3]).to.eql(0);
+      expect(lut.lut[120 * 4 + 3]).to.eql(0);
+      expect(secondlut.lut[120 * 4 + 3]).to.eql(0);
       expect(lut.lut[255 * 4 + 3]).to.eql(0);
       expect(secondlut.lut[255 * 4 + 3]).to.eql(0);
       // Make sure no NaN values
