@@ -156,7 +156,7 @@ export default class Histogram {
         ],
       };
     }
-    if (b > 255 && e > 255) {
+    if (b >= 255 && e >= 255) {
       return {
         lut: lut,
         controlPoints: [
@@ -193,12 +193,8 @@ export default class Histogram {
 
     // Add ending point at x = 255
     let endVal = 1;
-    if (e >= 255) {
-      if (e === b) {
-        endVal = 0;
-      } else {
-        endVal = (255 - b) / (e - b);
-      }
+    if (e > 255) {
+      endVal = (255 - b) / (e - b);
     }
     controlPoints.push({ x: 255, opacity: endVal, color: [255, 255, 255] });
 
