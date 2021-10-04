@@ -123,7 +123,7 @@ describe("test histogram", () => {
       data[i] = clamp(Math.floor(Math.random() * 256), 0, 255);
     }
     const histogram = new Histogram(data);
-    describe("luGenerator_minMax", () => {
+    describe("lutGenerator_minMax", () => {
       it("is consistent for minMax (typical case)", () => {
         const lut = histogram.lutGenerator_minMax(64, 192);
         const secondlut = histogram.lutGenerator_fromControlPoints(lut.controlPoints);
@@ -264,7 +264,7 @@ describe("test histogram", () => {
       //   expect(lut.lut).to.eql(secondlut.lut);
       // });
     });
-    
+
     it("is consistent for fullRange", () => {
       const lut = histogram.lutGenerator_fullRange();
       const secondlut = histogram.lutGenerator_fromControlPoints(lut.controlPoints);
