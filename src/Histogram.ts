@@ -172,11 +172,7 @@ export default class Histogram {
     // Add starting point at x = 0
     let startVal = 0;
     if (b < 0) {
-      if (e === b) {
-        startVal = 1;
-      } else {
-        startVal = -b / (e - b);
-      }
+      startVal = -b / (e - b);
     }
     controlPoints.push({ x: 0, opacity: startVal, color: [255, 255, 255] });
     
