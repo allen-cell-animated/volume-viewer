@@ -177,9 +177,8 @@ describe("test histogram", () => {
       expect(secondlut.lut[120 * 4 + 3]).to.eql(255);
       expect(lut.lut[255 * 4 + 3]).to.eql(255);
       expect(secondlut.lut[255 * 4 + 3]).to.eql(255);
-      // Make sure no NaN values
       lut.controlPoints.forEach(controlPoint => {
-        expect(controlPoint.opacity).to.be.finite;
+        expect(controlPoint.opacity).to.eql(1);
       })
     });
     it("is consistent for minMax edge case 0,1", () => {
@@ -220,9 +219,8 @@ describe("test histogram", () => {
       expect(secondlut.lut[3]).to.eql(0);
       expect(lut.lut[255 * 4 + 3]).to.eql(0);
       expect(secondlut.lut[255 * 4 + 3]).to.eql(0);
-      // Make sure no NaN values
       lut.controlPoints.forEach(controlPoint => {
-        expect(controlPoint.opacity).to.be.finite;
+        expect(controlPoint.opacity).to.eql(0);
       })
     });
     it("is consistent for minMax edge case 300,400", () => {
@@ -236,9 +234,8 @@ describe("test histogram", () => {
       expect(secondlut.lut[120 * 4 + 3]).to.eql(0);
       expect(lut.lut[255 * 4 + 3]).to.eql(0);
       expect(secondlut.lut[255 * 4 + 3]).to.eql(0);
-      // Make sure no NaN values
       lut.controlPoints.forEach(controlPoint => {
-        expect(controlPoint.opacity).to.be.finite;
+        expect(controlPoint.opacity).to.eql(0);
       })
     });
 
