@@ -840,6 +840,7 @@ function fetchImage(url, isTimeSeries = false, frameNumber = 0) {
               copyVolumeToVolume(currentVol, myState.volume);
               // has assumption that only 3 channels
               view3D.onVolumeData(myState.volume, [0, 1, 2]);
+              view3D.updateActiveChannels(myState.volume);
               view3D.updateLuts(myState.volume);
 
               myState.volume.loaded = true;
@@ -897,8 +898,13 @@ function playTimeSeries() {
 
     myState.volume.loaded = true;
 
-    view3D.updateLuts(myState.volume);
-    for (var i = 0; i < myState.volume.num_channels; ++i) {
+    if (myState.isPT) {
+      view3D.updateActiveChannels(myState.volume);
+    } else {
+      view3D.updateLuts(myState.volume);
+    }
+
+    for (let i = 0; i < myState.volume.num_channels; ++i) {
       view3D.updateIsosurface(myState.volume, i, myState.infoObj.channelGui[i].isovalue);
     }
     myState.currentFrame = nextFrame;
