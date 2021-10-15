@@ -109,11 +109,6 @@ export class View3d {
   unsetImage(): VolumeDrawable | undefined {
     if (this.image) {
       this.canvas3d.removeControlHandlers();
-      if (this.canvas3d.isVR()) {
-        this.canvas3d.onLeaveVR();
-      }
-      this.canvas3d.onEnterVRCallback = undefined;
-      this.canvas3d.onLeaveVRCallback = undefined;
       this.canvas3d.animateFuncs = [];
       this.scene.remove(this.image.sceneRoot);
     }
@@ -344,16 +339,6 @@ export class View3d {
 
     this.canvas3d.animateFuncs.push(this.preRender.bind(this));
     this.canvas3d.animateFuncs.push(img.onAnimate.bind(img));
-    this.canvas3d.onEnterVRCallback = () => {
-      if (this.canvas3d.xrControls) {
-        this.canvas3d.xrControls.pushObjectState(img);
-      }
-    };
-    this.canvas3d.onLeaveVRCallback = () => {
-      if (this.canvas3d.xrControls) {
-        this.canvas3d.xrControls.popObjectState(img);
-      }
-    };
 
     // redraw if not already in draw loop
     this.redraw();
@@ -762,18 +747,10 @@ export class View3d {
       if (mode === RENDERMODE_PATHTRACE && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
         this.image.setVolumeRendering(true);
         this.image.updateLights(this.lights);
-
-        if (this.canvas3d.xrButton) {
-          this.canvas3d.xrButton.disabled = true;
-        }
-
         // pathtrace is a continuous rendering mode
         this.canvas3d.startRenderLoop();
       } else {
         this.image.setVolumeRendering(false);
-        if (this.canvas3d.xrButton) {
-          this.canvas3d.xrButton.disabled = false;
-        }
         this.canvas3d.redraw();
       }
       this.updatePixelSamplingRate(this.pixelSamplingRate);

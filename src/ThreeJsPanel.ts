@@ -20,9 +20,6 @@ import TrackballControls from "./TrackballControls.js";
 import Timing from "./Timing";
 import { isOrthographicCamera } from "./types";
 
-import { VRButton } from "./vr/VRButton";
-import VrObjectControls from "./vr/vrObjectControls";
-
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
 const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
@@ -33,8 +30,6 @@ export class ThreeJsPanel {
   public scene: Scene;
   private zooming: boolean;
   public animateFuncs: ((ThreeJsPanel) => void)[];
-  public onEnterVRCallback?: () => void;
-  public onLeaveVRCallback?: () => void;
   private inRenderLoop: boolean;
   private requestedRender: number;
   public hasWebGL2: boolean;
@@ -63,8 +58,6 @@ export class ThreeJsPanel {
   private axisHelperObject: Object3D;
   private axisCamera: Camera;
 
-  public xrButton?: HTMLButtonElement | null;
-  public xrControls?: VrObjectControls;
   private dataurlcallback?: (string) => void;
 
   constructor(parentElement: HTMLElement, _useWebGL2: boolean) {
@@ -92,8 +85,6 @@ export class ThreeJsPanel {
 
     this.zooming = false;
     this.animateFuncs = [];
-    this.onEnterVRCallback = undefined;
-    this.onLeaveVRCallback = undefined;
 
     // are we in a constant render loop or not?
     this.inRenderLoop = false;
@@ -188,8 +179,6 @@ export class ThreeJsPanel {
     this.axisCamera = new PerspectiveCamera();
     this.controls = this.perspectiveControls;
 
-    this.initVR();
-
     this.setupAxisHelper();
   }
 
@@ -243,84 +232,8 @@ export class ThreeJsPanel {
     this.redraw();
   }
 
-  initVR(): void {
-    this.xrButton = VRButton.createButton(this.renderer);
-    if (this.xrButton) {
-      this.xrButton.style.left = "auto";
-      this.xrButton.style.right = "5px";
-      this.xrButton.style.bottom = "5px";
-      this.containerdiv.appendChild(this.xrButton);
-
-      // VR controllers
-      this.xrControls = new VrObjectControls(this.renderer, this.scene, null);
-
-      window.addEventListener(
-        "vrdisplaypointerrestricted",
-        () => {
-          const pointerLockElement = this.renderer.domElement;
-          if (pointerLockElement && typeof pointerLockElement.requestPointerLock === "function") {
-            pointerLockElement.requestPointerLock();
-          }
-        },
-        false
-      );
-      window.addEventListener(
-        "vrdisplaypointerunrestricted",
-        () => {
-          const currentPointerLockElement = document.pointerLockElement;
-          const expectedPointerLockElement = this.renderer.domElement;
-          if (
-            currentPointerLockElement &&
-            currentPointerLockElement === expectedPointerLockElement &&
-            typeof document.exitPointerLock === "function"
-          ) {
-            document.exitPointerLock();
-          }
-        },
-        false
-      );
-
-      window.addEventListener("vrdisplaypresentchange", () => {
-        if (this.isVR()) {
-          // VR requires startRenderLoop.
-          this.startRenderLoop();
-          this.onEnterVR();
-        } else {
-          this.onLeaveVR();
-          this.resetToPerspectiveCamera();
-          // We can't be in pathtracing mode in VR.
-          // When leaving VR, just stop re-rendering until the next user interaction.
-          this.stopRenderLoop();
-        }
-      });
-    }
-  }
-
   isVR(): boolean {
     return this.renderer.xr.enabled;
-  }
-
-  onEnterVR(): void {
-    console.log("ENTERED VR");
-    this.renderer.xr.enabled = true;
-    this.controls.enabled = false;
-    if (this.onEnterVRCallback) {
-      this.onEnterVRCallback();
-    }
-    if (this.xrControls) {
-      this.xrControls.onEnterVR();
-    }
-  }
-
-  onLeaveVR(): void {
-    console.log("LEFT VR");
-    if (this.xrControls) {
-      this.xrControls.onLeaveVR();
-      if (this.onLeaveVRCallback) {
-        this.onLeaveVRCallback();
-      }
-    }
-    this.renderer.xr.enabled = false;
   }
 
   resetToPerspectiveCamera(): void {
@@ -549,11 +462,7 @@ export class ThreeJsPanel {
     this.timer.update();
     const delta = this.timer.lastFrameMs / 1000.0;
 
-    if (this.isVR() && this.xrControls) {
-      this.xrControls.update(delta);
-    } else {
-      this.controls.update(delta);
-    }
+    this.controls.update(delta);
 
     this.render();
 
