@@ -41,7 +41,7 @@ export default class PathTracedVolume {
   private translation: Vector3;
   private rotation: Euler;
   private pixelSamplingRate: number;
-  private pathTracingUniforms: any; // Record<string, { type?: string; value: unknown }>; // TODO get threejs uniforms type map of str to {type, value}
+  private pathTracingUniforms: typeof pathTracingUniforms;
   private volumeTexture: DataTexture3D;
   private maskChannelIndex: number;
   private maskAlpha: number;
@@ -85,7 +85,7 @@ export default class PathTracedVolume {
     // scale factor is a huge optimization.  Maybe use 1/dpi scale
     this.pixelSamplingRate = 0.75;
 
-    this.pathTracingUniforms = pathTracingUniforms();
+    this.pathTracingUniforms = pathTracingUniforms;
 
     // create volume texture
     const sx = volume.x,
@@ -108,7 +108,7 @@ export default class PathTracedVolume {
     const lut0 = new DataTexture(lutData, 256, 4, RGBAFormat, UnsignedByteType);
     lut0.minFilter = lut0.magFilter = LinearFilter;
     lut0.needsUpdate = true;
-    this.pathTracingUniforms.g_lutTexture.value = lut0;
+    this.pathTracingUniforms.gLutTexture.value = lut0;
 
     this.bounds = {
       bmin: new Vector3(-0.5, -0.5, -0.5),
@@ -399,14 +399,12 @@ export default class PathTracedVolume {
     myup.applyMatrix4(m);
     mydir.applyMatrix4(m);
 
-    this.pathTracingUniforms.gCamera.value.m_isOrtho = isOrthographicCamera(cam) ? 1 : 0;
-    this.pathTracingUniforms.gCamera.value.m_from.copy(mypos);
-    this.pathTracingUniforms.gCamera.value.m_N.copy(mydir);
-    this.pathTracingUniforms.gCamera.value.m_U
-      .crossVectors(this.pathTracingUniforms.gCamera.value.m_N, myup)
-      .normalize();
-    this.pathTracingUniforms.gCamera.value.m_V
-      .crossVectors(this.pathTracingUniforms.gCamera.value.m_U, this.pathTracingUniforms.gCamera.value.m_N)
+    this.pathTracingUniforms.gCamera.value.mIsOrtho = isOrthographicCamera(cam) ? 1 : 0;
+    this.pathTracingUniforms.gCamera.value.mFrom.copy(mypos);
+    this.pathTracingUniforms.gCamera.value.mN.copy(mydir);
+    this.pathTracingUniforms.gCamera.value.mU.crossVectors(this.pathTracingUniforms.gCamera.value.mN, myup).normalize();
+    this.pathTracingUniforms.gCamera.value.mV
+      .crossVectors(this.pathTracingUniforms.gCamera.value.mU, this.pathTracingUniforms.gCamera.value.mN)
       .normalize();
 
     // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
@@ -415,15 +413,15 @@ export default class PathTracedVolume {
       : Math.tan((0.5 * (cam as PerspectiveCamera).fov * Math.PI) / 180.0);
 
     const aspect = this.pathTracingUniforms.uResolution.value.x / this.pathTracingUniforms.uResolution.value.y;
-    this.pathTracingUniforms.gCamera.value.m_screen.set(
+    this.pathTracingUniforms.gCamera.value.mScreen.set(
       -fScale * aspect,
       fScale * aspect,
       // the "0" Y pixel will be at +Scale.
       fScale,
       -fScale
     );
-    const scr = this.pathTracingUniforms.gCamera.value.m_screen;
-    this.pathTracingUniforms.gCamera.value.m_invScreen.set(
+    const scr = this.pathTracingUniforms.gCamera.value.mScreen;
+    this.pathTracingUniforms.gCamera.value.mInvScreen.set(
       // the amount to increment for each pixel
       (scr.y - scr.x) / this.pathTracingUniforms.uResolution.value.x,
       (scr.w - scr.z) / this.pathTracingUniforms.uResolution.value.y
@@ -595,7 +593,7 @@ export default class PathTracedVolume {
   }
 
   setIsOrtho(isOrthoAxis: boolean): void {
-    this.pathTracingUniforms.gCamera.value.m_isOrtho = isOrthoAxis ? 1 : 0;
+    this.pathTracingUniforms.gCamera.value.mIsOrtho = isOrthoAxis ? 1 : 0;
     this.resetProgress();
   }
 
@@ -638,7 +636,7 @@ export default class PathTracedVolume {
       return;
     }
 
-    this.pathTracingUniforms.g_nChannels.value = activeChannel;
+    this.pathTracingUniforms.gNChannels.value = activeChannel;
 
     this.viewChannels = ch;
     // update volume data according to channels selected.
@@ -697,22 +695,22 @@ export default class PathTracedVolume {
   }
 
   updateLuts(image: VolumeDrawable): void {
-    for (let i = 0; i < this.pathTracingUniforms.g_nChannels.value; ++i) {
+    for (let i = 0; i < this.pathTracingUniforms.gNChannels.value; ++i) {
       const channel = this.viewChannels[i];
       const combinedLut = image.getChannel(channel).combineLuts(image.getChannelColor(channel));
 
-      this.pathTracingUniforms.g_lutTexture.value.image.data.set(combinedLut, i * LUT_ARRAY_LENGTH);
+      this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, i * LUT_ARRAY_LENGTH);
 
-      this.pathTracingUniforms.g_intensityMax.value.setComponent(
+      this.pathTracingUniforms.gIntensityMax.value.setComponent(
         i,
         this.volume.channels[channel].histogram.getMax() / 255.0
       );
-      this.pathTracingUniforms.g_intensityMin.value.setComponent(
+      this.pathTracingUniforms.gIntensityMin.value.setComponent(
         i,
         this.volume.channels[channel].histogram.getMin() / 255.0
       );
     }
-    this.pathTracingUniforms.g_lutTexture.value.needsUpdate = true;
+    this.pathTracingUniforms.gLutTexture.value.needsUpdate = true;
 
     this.resetProgress();
   }
@@ -725,17 +723,17 @@ export default class PathTracedVolume {
       if (i > -1) {
         // diffuse color is actually blended into the LUT now.
         const combinedLut = image.getChannel(i).combineLuts(image.getChannelColor(i));
-        this.pathTracingUniforms.g_lutTexture.value.image.data.set(combinedLut, c * LUT_ARRAY_LENGTH);
-        this.pathTracingUniforms.g_lutTexture.value.needsUpdate = true;
-        this.pathTracingUniforms.g_diffuse.value[c] = new Vector3(1.0, 1.0, 1.0);
+        this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, c * LUT_ARRAY_LENGTH);
+        this.pathTracingUniforms.gLutTexture.value.needsUpdate = true;
+        this.pathTracingUniforms.gDiffuse.value[c] = new Vector3(1.0, 1.0, 1.0);
 
-        this.pathTracingUniforms.g_specular.value[c] = new Vector3()
+        this.pathTracingUniforms.gSpecular.value[c] = new Vector3()
           .fromArray(image.specular[i])
           .multiplyScalar(1.0 / 255.0);
-        this.pathTracingUniforms.g_emissive.value[c] = new Vector3()
+        this.pathTracingUniforms.gEmissive.value[c] = new Vector3()
           .fromArray(image.emissive[i])
           .multiplyScalar(1.0 / 255.0);
-        this.pathTracingUniforms.g_glossiness.value[c] = image.glossiness[i];
+        this.pathTracingUniforms.gGlossiness.value[c] = image.glossiness[i];
       }
     }
     this.resetProgress();
@@ -762,25 +760,25 @@ export default class PathTracedVolume {
   }
 
   updateCamera(fov: number, focalDistance: number, apertureSize: number): void {
-    this.pathTracingUniforms.gCamera.value.m_apertureSize = apertureSize;
-    this.pathTracingUniforms.gCamera.value.m_focalDistance = focalDistance;
+    this.pathTracingUniforms.gCamera.value.mApertureSize = apertureSize;
+    this.pathTracingUniforms.gCamera.value.mFocalDistance = focalDistance;
 
     this.resetProgress();
   }
 
   updateLights(state: Light[]): void {
     // 0th light in state array is sphere light
-    this.pathTracingUniforms.gLights.value[0].m_colorTop = new Vector3().copy(state[0].m_colorTop);
-    this.pathTracingUniforms.gLights.value[0].m_colorMiddle = new Vector3().copy(state[0].m_colorMiddle);
-    this.pathTracingUniforms.gLights.value[0].m_colorBottom = new Vector3().copy(state[0].m_colorBottom);
+    this.pathTracingUniforms.gLights.value[0].mColorTop = new Vector3().copy(state[0].mColorTop);
+    this.pathTracingUniforms.gLights.value[0].mColorMiddle = new Vector3().copy(state[0].mColorMiddle);
+    this.pathTracingUniforms.gLights.value[0].mColorBottom = new Vector3().copy(state[0].mColorBottom);
 
     // 1st light in state array is area light
-    this.pathTracingUniforms.gLights.value[1].m_color = new Vector3().copy(state[1].m_color);
-    this.pathTracingUniforms.gLights.value[1].m_theta = state[1].m_theta;
-    this.pathTracingUniforms.gLights.value[1].m_phi = state[1].m_phi;
-    this.pathTracingUniforms.gLights.value[1].m_distance = state[1].m_distance;
-    this.pathTracingUniforms.gLights.value[1].m_width = state[1].m_width;
-    this.pathTracingUniforms.gLights.value[1].m_height = state[1].m_height;
+    this.pathTracingUniforms.gLights.value[1].mColor = new Vector3().copy(state[1].mColor);
+    this.pathTracingUniforms.gLights.value[1].mTheta = state[1].mTheta;
+    this.pathTracingUniforms.gLights.value[1].mPhi = state[1].mPhi;
+    this.pathTracingUniforms.gLights.value[1].mDistance = state[1].mDistance;
+    this.pathTracingUniforms.gLights.value[1].mWidth = state[1].mWidth;
+    this.pathTracingUniforms.gLights.value[1].mHeight = state[1].mHeight;
 
     this.updateLightsSecondary();
 

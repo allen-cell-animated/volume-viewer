@@ -112,26 +112,25 @@ export default class FusedChannelData {
     //  var blockSize = this.height / workersCount; // Height of the picture chunk for every worker
 
     // Function called when a job is finished
-    const me = this;
-    const onWorkEnded = function (e) {
-      me.fuseWorkersWorking++;
+    const onWorkEnded = (e) => {
+      this.fuseWorkersWorking++;
       // copy e.data.data into fused
-      me.fused.set(e.data.data, Math.floor(e.data.workerindex * (npx / me.workersCount)) * 4);
-      if (me.fuseWorkersWorking === me.workersCount) {
-        me.fusedTexture.image = { data: me.fused, width: me.width, height: me.height };
-        me.fusedTexture.needsUpdate = true;
-        me.fuseWorkersWorking = 0;
+      this.fused.set(e.data.data, Math.floor(e.data.workerindex * (npx / this.workersCount)) * 4);
+      if (this.fuseWorkersWorking === this.workersCount) {
+        this.fusedTexture.image = { data: this.fused, width: this.width, height: this.height };
+        this.fusedTexture.needsUpdate = true;
+        this.fuseWorkersWorking = 0;
         if (FusedChannelData.onFuseComplete) {
           FusedChannelData.onFuseComplete();
         }
 
         // if there are any fusion requests in queue, execute the next one now.
-        me.isFusing = false;
-        if (me.fuseRequested) {
-          me.fuse(me.fuseRequested, me.fuseMethodRequested, me.channelsDataToFuse);
+        this.isFusing = false;
+        if (this.fuseRequested) {
+          this.fuse(this.fuseRequested, this.fuseMethodRequested, this.channelsDataToFuse);
         }
-        me.fuseRequested = null;
-        me.channelsDataToFuse = [];
+        this.fuseRequested = null;
+        this.channelsDataToFuse = [];
       }
     };
 

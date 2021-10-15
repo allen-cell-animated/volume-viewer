@@ -31,7 +31,7 @@ export default class RayMarchedAtlasVolume {
   private cubeMesh: Mesh<BufferGeometry, Material>;
   private boxHelper: BoxHelper;
   private cubeTransformNode: Group;
-  private uniforms: any; // map of string to {type, value}?
+  private uniforms: typeof rayMarchingShaderUniforms;
   private channelData: FusedChannelData;
   private scale: Vector3;
 
@@ -57,7 +57,7 @@ export default class RayMarchedAtlasVolume {
     //this.cubeTransformNode.add(this.boxHelper);
     this.cubeTransformNode.add(this.cubeMesh);
 
-    this.uniforms = rayMarchingShaderUniforms();
+    this.uniforms = rayMarchingShaderUniforms;
 
     // shader,vtx and frag.
     const vtxsrc = rayMarchingVertexShaderSrc;

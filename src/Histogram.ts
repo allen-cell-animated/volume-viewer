@@ -16,7 +16,7 @@ const LUT_ENTRIES = 256;
 const LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
 
 /**
- * @typedef {Object} ControlPoint Used for the TF (transfer function) editor GUI. 
+ * @typedef {Object} ControlPoint Used for the TF (transfer function) editor GUI.
  * Need to be converted to LUT for rendering.
  * @property {number} x The X Coordinate
  * @property {number} opacity The Opacity, from 0 to 1
@@ -25,9 +25,9 @@ const LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
 
 /**
  * @typedef {Object} Lut Used for rendering.
- * @property {Array.<number>} lut LUT_ARRAY_LENGTH element lookup table as array 
+ * @property {Array.<number>} lut LUT_ARRAY_LENGTH element lookup table as array
  * (maps scalar intensity to a rgb color plus alpha, with each value from 0-255)
- * @property {Array.<ControlPoint>} controlPoints 
+ * @property {Array.<ControlPoint>} controlPoints
  */
 type ControlPoint = {
   x: number;
@@ -95,7 +95,7 @@ export default class Histogram {
    * Return the min data value
    * @return {number}
    */
-   getMin(): number {
+  getMin(): number {
     return this.dataMin;
   }
 
@@ -103,7 +103,7 @@ export default class Histogram {
    * Return the max data value
    * @return {number}
    */
-   getMax(): number {
+  getMax(): number {
     return this.dataMax;
   }
 
@@ -113,6 +113,7 @@ export default class Histogram {
    * @param {number} wnd in 0..1 range
    * @param {number} lvl in 0..1 range
    */
+  /* eslint-disable @typescript-eslint/naming-convention */
   lutGenerator_windowLevel(wnd: number, lvl: number): Lut {
     // simple linear mapping for actual range
     const b = lvl - wnd * 0.5;
@@ -121,7 +122,7 @@ export default class Histogram {
   }
 
   /**
-   * Generate a piecewise linear lookup table that ramps up from 0 to 1 over the b to e domain. 
+   * Generate a piecewise linear lookup table that ramps up from 0 to 1 over the b to e domain.
    * If e === b, then we use a step function with f(b) = 0 and f(b + 1) = 1
    *  |
    * 1|               +---------+-----
@@ -162,13 +163,13 @@ export default class Histogram {
       }
     }
 
-    // Edge case: b and e are both out of bounds 
+    // Edge case: b and e are both out of bounds
     if (b < 0 && e < 0) {
       return {
         lut: lut,
         controlPoints: [
           { x: 0, opacity: 1, color: [255, 255, 255] },
-          { x: 255, opacity: 1, color: [255, 255, 255] }
+          { x: 255, opacity: 1, color: [255, 255, 255] },
         ],
       };
     }
@@ -177,7 +178,7 @@ export default class Histogram {
         lut: lut,
         controlPoints: [
           { x: 0, opacity: 0, color: [255, 255, 255] },
-          { x: 255, opacity: 0, color: [255, 255, 255] }
+          { x: 255, opacity: 0, color: [255, 255, 255] },
         ],
       };
     }
@@ -191,16 +192,16 @@ export default class Histogram {
       startVal = -b / (e - b);
     }
     controlPoints.push({ x: 0, opacity: startVal, color: [255, 255, 255] });
-    
+
     // If b > 0, add another point at (b, 0)
     if (b > 0) {
       controlPoints.push({ x: b, opacity: 0, color: [255, 255, 255] });
     }
-    
+
     // If e < 255, Add another point at (e, 1)
     if (e < 255) {
       if (e === b) {
-        // Use b + 0.5 as x value instead of e to create a near-vertical ramp 
+        // Use b + 0.5 as x value instead of e to create a near-vertical ramp
         controlPoints.push({ x: b + 0.5, opacity: 1, color: [255, 255, 255] });
       } else {
         controlPoints.push({ x: e, opacity: 1, color: [255, 255, 255] });

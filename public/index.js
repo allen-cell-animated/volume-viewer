@@ -106,24 +106,24 @@ function makeColorGradient(controlPoints) {
 }
 */
 function initLights() {
-  myState.lights[0].m_colorTop = new Vector3(
+  myState.lights[0].mColorTop = new Vector3(
     (myState.skyTopColor[0] / 255.0) * myState.skyTopIntensity,
     (myState.skyTopColor[1] / 255.0) * myState.skyTopIntensity,
     (myState.skyTopColor[2] / 255.0) * myState.skyTopIntensity
   );
-  myState.lights[0].m_colorMiddle = new Vector3(
+  myState.lights[0].mColorMiddle = new Vector3(
     (myState.skyMidColor[0] / 255.0) * myState.skyMidIntensity,
     (myState.skyMidColor[1] / 255.0) * myState.skyMidIntensity,
     (myState.skyMidColor[2] / 255.0) * myState.skyMidIntensity
   );
-  myState.lights[0].m_colorBottom = new Vector3(
+  myState.lights[0].mColorBottom = new Vector3(
     (myState.skyBotColor[0] / 255.0) * myState.skyBotIntensity,
     (myState.skyBotColor[1] / 255.0) * myState.skyBotIntensity,
     (myState.skyBotColor[2] / 255.0) * myState.skyBotIntensity
   );
-  myState.lights[1].m_theta = (myState.lightTheta * Math.PI) / 180.0;
-  myState.lights[1].m_phi = (myState.lightPhi * Math.PI) / 180.0;
-  myState.lights[1].m_color = new Vector3(
+  myState.lights[1].mTheta = (myState.lightTheta * Math.PI) / 180.0;
+  myState.lights[1].mPhi = (myState.lightPhi * Math.PI) / 180.0;
+  myState.lights[1].mColor = new Vector3(
     (myState.lightColor[0] / 255.0) * myState.lightIntensity,
     (myState.lightColor[1] / 255.0) * myState.lightIntensity,
     (myState.lightColor[2] / 255.0) * myState.lightIntensity
@@ -316,7 +316,7 @@ function setupGui() {
     .addColor(myState, "skyTopColor")
     .name("Sky Top")
     .onChange(function (value) {
-      myState.lights[0].m_colorTop = new Vector3(
+      myState.lights[0].mColorTop = new Vector3(
         (myState.skyTopColor[0] / 255.0) * myState.skyTopIntensity,
         (myState.skyTopColor[1] / 255.0) * myState.skyTopIntensity,
         (myState.skyTopColor[2] / 255.0) * myState.skyTopIntensity
@@ -329,7 +329,7 @@ function setupGui() {
     .min(0.01)
     .step(0.1)
     .onChange(function (value) {
-      myState.lights[0].m_colorTop = new Vector3(
+      myState.lights[0].mColorTop = new Vector3(
         (myState.skyTopColor[0] / 255.0) * myState.skyTopIntensity,
         (myState.skyTopColor[1] / 255.0) * myState.skyTopIntensity,
         (myState.skyTopColor[2] / 255.0) * myState.skyTopIntensity
@@ -340,7 +340,7 @@ function setupGui() {
     .addColor(myState, "skyMidColor")
     .name("Sky Mid")
     .onChange(function (value) {
-      myState.lights[0].m_colorMiddle = new Vector3(
+      myState.lights[0].mColorMiddle = new Vector3(
         (myState.skyMidColor[0] / 255.0) * myState.skyMidIntensity,
         (myState.skyMidColor[1] / 255.0) * myState.skyMidIntensity,
         (myState.skyMidColor[2] / 255.0) * myState.skyMidIntensity
@@ -353,7 +353,7 @@ function setupGui() {
     .min(0.01)
     .step(0.1)
     .onChange(function (value) {
-      myState.lights[0].m_colorMiddle = new Vector3(
+      myState.lights[0].mColorMiddle = new Vector3(
         (myState.skyMidColor[0] / 255.0) * myState.skyMidIntensity,
         (myState.skyMidColor[1] / 255.0) * myState.skyMidIntensity,
         (myState.skyMidColor[2] / 255.0) * myState.skyMidIntensity
@@ -364,7 +364,7 @@ function setupGui() {
     .addColor(myState, "skyBotColor")
     .name("Sky Bottom")
     .onChange(function (value) {
-      myState.lights[0].m_colorBottom = new Vector3(
+      myState.lights[0].mColorBottom = new Vector3(
         (myState.skyBotColor[0] / 255.0) * myState.skyBotIntensity,
         (myState.skyBotColor[1] / 255.0) * myState.skyBotIntensity,
         (myState.skyBotColor[2] / 255.0) * myState.skyBotIntensity
@@ -377,7 +377,7 @@ function setupGui() {
     .min(0.01)
     .step(0.1)
     .onChange(function (value) {
-      myState.lights[0].m_colorBottom = new Vector3(
+      myState.lights[0].mColorBottom = new Vector3(
         (myState.skyBotColor[0] / 255.0) * myState.skyBotIntensity,
         (myState.skyBotColor[1] / 255.0) * myState.skyBotIntensity,
         (myState.skyBotColor[2] / 255.0) * myState.skyBotIntensity
@@ -385,7 +385,7 @@ function setupGui() {
       view3D.updateLights(myState.lights);
     });
   lighting
-    .add(myState.lights[1], "m_distance")
+    .add(myState.lights[1], "mDistance")
     .max(10.0)
     .min(0.0)
     .step(0.1)
@@ -398,7 +398,7 @@ function setupGui() {
     .min(-180.0)
     .step(1)
     .onChange(function (value) {
-      myState.lights[1].m_theta = (value * Math.PI) / 180.0;
+      myState.lights[1].mTheta = (value * Math.PI) / 180.0;
       view3D.updateLights(myState.lights);
     });
   lighting
@@ -407,17 +407,17 @@ function setupGui() {
     .min(0.0)
     .step(1)
     .onChange(function (value) {
-      myState.lights[1].m_phi = (value * Math.PI) / 180.0;
+      myState.lights[1].mPhi = (value * Math.PI) / 180.0;
       view3D.updateLights(myState.lights);
     });
   lighting
-    .add(myState.lights[1], "m_width")
+    .add(myState.lights[1], "mWidth")
     .max(100.0)
     .min(0.01)
     .step(0.1)
     .onChange(function (value) {
-      myState.lights[1].m_width = value;
-      myState.lights[1].m_height = value;
+      myState.lights[1].mWidth = value;
+      myState.lights[1].mHeight = value;
       view3D.updateLights(myState.lights);
     });
   lighting
@@ -426,7 +426,7 @@ function setupGui() {
     .min(0.01)
     .step(0.1)
     .onChange(function (value) {
-      myState.lights[1].m_color = new Vector3(
+      myState.lights[1].mColor = new Vector3(
         (myState.lightColor[0] / 255.0) * myState.lightIntensity,
         (myState.lightColor[1] / 255.0) * myState.lightIntensity,
         (myState.lightColor[2] / 255.0) * myState.lightIntensity
@@ -437,7 +437,7 @@ function setupGui() {
     .addColor(myState, "lightColor")
     .name("lightcolor")
     .onChange(function (value) {
-      myState.lights[1].m_color = new Vector3(
+      myState.lights[1].mColor = new Vector3(
         (myState.lightColor[0] / 255.0) * myState.lightIntensity,
         (myState.lightColor[1] / 255.0) * myState.lightIntensity,
         (myState.lightColor[2] / 255.0) * myState.lightIntensity

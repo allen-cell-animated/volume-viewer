@@ -72,8 +72,8 @@ export function showChannelUI(volume, view3D, gui) {
       // first 3 channels for starters
       enabled: i < 3,
       // this doesn't give good results currently but is an example of a per-channel button callback
-      autoIJ: (function(j) {
-        return function() {
+      autoIJ: (function (j) {
+        return function () {
           const lut = volume.getHistogram(j).lutGenerator_auto2();
           // TODO: get a proper transfer function editor
           // const lut = { lut: makeColorGradient([
@@ -88,23 +88,23 @@ export function showChannelUI(volume, view3D, gui) {
         };
       })(i),
       // this doesn't give good results currently but is an example of a per-channel button callback
-      auto0: (function(j) {
-        return function() {
+      auto0: (function (j) {
+        return function () {
           const lut = volume.getHistogram(j).lutGenerator_auto();
           volume.setLut(j, lut.lut);
           view3D.updateLuts(volume);
         };
       })(i),
       // this doesn't give good results currently but is an example of a per-channel button callback
-      bestFit: (function(j) {
-        return function() {
+      bestFit: (function (j) {
+        return function () {
           const lut = volume.getHistogram(j).lutGenerator_bestFit();
           volume.setLut(j, lut.lut);
           view3D.updateLuts(volume);
         };
       })(i),
-      pct50_98: (function(j) {
-        return function() {
+      pct50_98: (function (j) {
+        return function () {
           const lut = volume.getHistogram(j).lutGenerator_percentiles(0.5, 0.998);
           volume.setLut(j, lut.lut);
           view3D.updateLuts(volume);
@@ -114,16 +114,16 @@ export function showChannelUI(volume, view3D, gui) {
     var channelGuiFolder = gui.addFolder("Channel " + myState.infoObj.channel_names[i]);
     myState.channelFolderNames.push("Channel " + myState.infoObj.channel_names[i]);
     channelGuiFolder.add(myState.infoObj.channelGui[i], "enabled").onChange(
-      (function(j) {
-        return function(value) {
+      (function (j) {
+        return function (value) {
           view3D.setVolumeChannelEnabled(volume, j, value ? true : false);
           view3D.updateActiveChannels(volume);
         };
       })(i)
     );
     channelGuiFolder.add(myState.infoObj.channelGui[i], "isosurface").onChange(
-      (function(j) {
-        return function(value) {
+      (function (j) {
+        return function (value) {
           if (value) {
             view3D.createIsosurface(volume, j, myState.infoObj.channelGui[j].isovalue, 1.0);
           } else {
@@ -138,8 +138,8 @@ export function showChannelUI(volume, view3D, gui) {
       .min(0)
       .step(1)
       .onChange(
-        (function(j) {
-          return function(value) {
+        (function (j) {
+          return function (value) {
             view3D.updateIsosurface(volume, j, value);
           };
         })(i)
@@ -149,8 +149,8 @@ export function showChannelUI(volume, view3D, gui) {
       .addColor(myState.infoObj.channelGui[i], "colorD")
       .name("Diffuse")
       .onChange(
-        (function(j) {
-          return function(value) {
+        (function (j) {
+          return function (value) {
             view3D.updateChannelMaterial(
               volume,
               j,
@@ -167,8 +167,8 @@ export function showChannelUI(volume, view3D, gui) {
       .addColor(myState.infoObj.channelGui[i], "colorS")
       .name("Specular")
       .onChange(
-        (function(j) {
-          return function(value) {
+        (function (j) {
+          return function (value) {
             view3D.updateChannelMaterial(
               volume,
               j,
@@ -185,8 +185,8 @@ export function showChannelUI(volume, view3D, gui) {
       .addColor(myState.infoObj.channelGui[i], "colorE")
       .name("Emissive")
       .onChange(
-        (function(j) {
-          return function(value) {
+        (function (j) {
+          return function (value) {
             view3D.updateChannelMaterial(
               volume,
               j,
@@ -205,8 +205,8 @@ export function showChannelUI(volume, view3D, gui) {
       .min(0.0)
       .step(0.001)
       .onChange(
-        (function(j) {
-          return function(value) {
+        (function (j) {
+          return function (value) {
             volume.getChannel(j).lutGenerator_windowLevel(value, myState.infoObj.channelGui[j].level);
             view3D.updateLuts(volume);
           };
@@ -219,8 +219,8 @@ export function showChannelUI(volume, view3D, gui) {
       .min(0.0)
       .step(0.001)
       .onChange(
-        (function(j) {
-          return function(value) {
+        (function (j) {
+          return function (value) {
             volume.getChannel(j).lutGenerator_windowLevel(myState.infoObj.channelGui[j].window, value);
             view3D.updateLuts(volume);
           };
@@ -235,8 +235,8 @@ export function showChannelUI(volume, view3D, gui) {
       .max(100.0)
       .min(0.0)
       .onChange(
-        (function(j) {
-          return function(value) {
+        (function (j) {
+          return function (value) {
             view3D.updateChannelMaterial(
               volume,
               j,
@@ -261,7 +261,7 @@ export function setupGui(view3D) {
     .max(100.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateDensity(myState.volume, value / 50.0);
     });
   gui
@@ -269,7 +269,7 @@ export function setupGui(view3D) {
     .max(1.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateMaskAlpha(myState.volume, value);
     });
   gui
@@ -277,7 +277,7 @@ export function setupGui(view3D) {
     .max(40.0)
     .min(1.0)
     .step(0.1)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.setRayStepSizes(myState.volume, myState.primaryRay, myState.secondaryRay);
     });
   gui
@@ -285,7 +285,7 @@ export function setupGui(view3D) {
     .max(40.0)
     .min(1.0)
     .step(0.1)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.setRayStepSizes(myState.volume, myState.primaryRay, myState.secondaryRay);
     });
 
@@ -295,7 +295,7 @@ export function setupGui(view3D) {
     .max(1.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateExposure(value);
     });
   cameragui
@@ -303,7 +303,7 @@ export function setupGui(view3D) {
     .max(0.1)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateCamera(myState.fov, myState.focal_distance, myState.aperture);
     });
   cameragui
@@ -311,7 +311,7 @@ export function setupGui(view3D) {
     .max(5.0)
     .min(0.1)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateCamera(myState.fov, myState.focal_distance, myState.aperture);
     });
   cameragui
@@ -319,7 +319,7 @@ export function setupGui(view3D) {
     .max(90.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateCamera(myState.fov, myState.focal_distance, myState.aperture);
     });
   cameragui
@@ -327,7 +327,7 @@ export function setupGui(view3D) {
     .max(1.0)
     .min(0.1)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updatePixelSamplingRate(value);
     });
 
@@ -337,7 +337,7 @@ export function setupGui(view3D) {
     .max(1.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateClipRegion(
         myState.volume,
         myState.xmin,
@@ -353,7 +353,7 @@ export function setupGui(view3D) {
     .max(1.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateClipRegion(
         myState.volume,
         myState.xmin,
@@ -369,7 +369,7 @@ export function setupGui(view3D) {
     .max(1.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateClipRegion(
         myState.volume,
         myState.xmin,
@@ -385,7 +385,7 @@ export function setupGui(view3D) {
     .max(1.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateClipRegion(
         myState.volume,
         myState.xmin,
@@ -401,7 +401,7 @@ export function setupGui(view3D) {
     .max(1.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateClipRegion(
         myState.volume,
         myState.xmin,
@@ -417,7 +417,7 @@ export function setupGui(view3D) {
     .max(1.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateClipRegion(
         myState.volume,
         myState.xmin,
@@ -433,8 +433,8 @@ export function setupGui(view3D) {
   lighting
     .addColor(myState, "skyTopColor")
     .name("Sky Top")
-    .onChange(function(value) {
-      myState.lights[0].m_colorTop = new Vector3(
+    .onChange(function (value) {
+      myState.lights[0].mColorTop = new Vector3(
         (myState.skyTopColor[0] / 255.0) * myState.skyTopIntensity,
         (myState.skyTopColor[1] / 255.0) * myState.skyTopIntensity,
         (myState.skyTopColor[2] / 255.0) * myState.skyTopIntensity
@@ -446,8 +446,8 @@ export function setupGui(view3D) {
     .max(100.0)
     .min(0.01)
     .step(0.1)
-    .onChange(function(value) {
-      myState.lights[0].m_colorTop = new Vector3(
+    .onChange(function (value) {
+      myState.lights[0].mColorTop = new Vector3(
         (myState.skyTopColor[0] / 255.0) * myState.skyTopIntensity,
         (myState.skyTopColor[1] / 255.0) * myState.skyTopIntensity,
         (myState.skyTopColor[2] / 255.0) * myState.skyTopIntensity
@@ -457,8 +457,8 @@ export function setupGui(view3D) {
   lighting
     .addColor(myState, "skyMidColor")
     .name("Sky Mid")
-    .onChange(function(value) {
-      myState.lights[0].m_colorMiddle = new Vector3(
+    .onChange(function (value) {
+      myState.lights[0].mColorMiddle = new Vector3(
         (myState.skyMidColor[0] / 255.0) * myState.skyMidIntensity,
         (myState.skyMidColor[1] / 255.0) * myState.skyMidIntensity,
         (myState.skyMidColor[2] / 255.0) * myState.skyMidIntensity
@@ -470,8 +470,8 @@ export function setupGui(view3D) {
     .max(100.0)
     .min(0.01)
     .step(0.1)
-    .onChange(function(value) {
-      myState.lights[0].m_colorMiddle = new Vector3(
+    .onChange(function (value) {
+      myState.lights[0].mColorMiddle = new Vector3(
         (myState.skyMidColor[0] / 255.0) * myState.skyMidIntensity,
         (myState.skyMidColor[1] / 255.0) * myState.skyMidIntensity,
         (myState.skyMidColor[2] / 255.0) * myState.skyMidIntensity
@@ -481,8 +481,8 @@ export function setupGui(view3D) {
   lighting
     .addColor(myState, "skyBotColor")
     .name("Sky Bottom")
-    .onChange(function(value) {
-      myState.lights[0].m_colorBottom = new Vector3(
+    .onChange(function (value) {
+      myState.lights[0].mColorBottom = new Vector3(
         (myState.skyBotColor[0] / 255.0) * myState.skyBotIntensity,
         (myState.skyBotColor[1] / 255.0) * myState.skyBotIntensity,
         (myState.skyBotColor[2] / 255.0) * myState.skyBotIntensity
@@ -494,8 +494,8 @@ export function setupGui(view3D) {
     .max(100.0)
     .min(0.01)
     .step(0.1)
-    .onChange(function(value) {
-      myState.lights[0].m_colorBottom = new Vector3(
+    .onChange(function (value) {
+      myState.lights[0].mColorBottom = new Vector3(
         (myState.skyBotColor[0] / 255.0) * myState.skyBotIntensity,
         (myState.skyBotColor[1] / 255.0) * myState.skyBotIntensity,
         (myState.skyBotColor[2] / 255.0) * myState.skyBotIntensity
@@ -503,11 +503,11 @@ export function setupGui(view3D) {
       view3D.updateLights(myState.lights);
     });
   lighting
-    .add(myState.lights[1], "m_distance")
+    .add(myState.lights[1], "mDistance")
     .max(10.0)
     .min(0.0)
     .step(0.1)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateLights(myState.lights);
     });
   lighting
@@ -515,8 +515,8 @@ export function setupGui(view3D) {
     .max(180.0)
     .min(-180.0)
     .step(1)
-    .onChange(function(value) {
-      myState.lights[1].m_theta = (value * Math.PI) / 180.0;
+    .onChange(function (value) {
+      myState.lights[1].mTheta = (value * Math.PI) / 180.0;
       view3D.updateLights(myState.lights);
     });
   lighting
@@ -524,18 +524,18 @@ export function setupGui(view3D) {
     .max(180.0)
     .min(0.0)
     .step(1)
-    .onChange(function(value) {
-      myState.lights[1].m_phi = (value * Math.PI) / 180.0;
+    .onChange(function (value) {
+      myState.lights[1].mPhi = (value * Math.PI) / 180.0;
       view3D.updateLights(myState.lights);
     });
   lighting
-    .add(myState.lights[1], "m_width")
+    .add(myState.lights[1], "mWidth")
     .max(100.0)
     .min(0.01)
     .step(0.1)
-    .onChange(function(value) {
-      myState.lights[1].m_width = value;
-      myState.lights[1].m_height = value;
+    .onChange(function (value) {
+      myState.lights[1].mWidth = value;
+      myState.lights[1].mHeight = value;
       view3D.updateLights(myState.lights);
     });
   lighting
@@ -543,8 +543,8 @@ export function setupGui(view3D) {
     .max(1000.0)
     .min(0.01)
     .step(0.1)
-    .onChange(function(value) {
-      myState.lights[1].m_color = new Vector3(
+    .onChange(function (value) {
+      myState.lights[1].mColor = new Vector3(
         (myState.lightColor[0] / 255.0) * myState.lightIntensity,
         (myState.lightColor[1] / 255.0) * myState.lightIntensity,
         (myState.lightColor[2] / 255.0) * myState.lightIntensity
@@ -554,8 +554,8 @@ export function setupGui(view3D) {
   lighting
     .addColor(myState, "lightColor")
     .name("lightcolor")
-    .onChange(function(value) {
-      myState.lights[1].m_color = new Vector3(
+    .onChange(function (value) {
+      myState.lights[1].mColor = new Vector3(
         (myState.lightColor[0] / 255.0) * myState.lightIntensity,
         (myState.lightColor[1] / 255.0) * myState.lightIntensity,
         (myState.lightColor[2] / 255.0) * myState.lightIntensity
