@@ -4,7 +4,6 @@ import Channel from "./Channel";
 import Histogram from "./Histogram";
 import { getColorByChannelIndex } from "./constants/colors";
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export interface ImageInfo {
   name: string;
   version: string;

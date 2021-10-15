@@ -113,7 +113,6 @@ export default class Histogram {
    * @param {number} wnd in 0..1 range
    * @param {number} lvl in 0..1 range
    */
-  /* eslint-disable @typescript-eslint/naming-convention */
   lutGenerator_windowLevel(wnd: number, lvl: number): Lut {
     // simple linear mapping for actual range
     const b = lvl - wnd * 0.5;
