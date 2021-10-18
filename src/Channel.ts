@@ -194,6 +194,7 @@ export default class Channel {
     this.colorPaletteAlpha = alpha;
   }
 
+  /* eslint-disable @typescript-eslint/naming-convention */
   public lutGenerator_windowLevel(wnd: number, lvl: number): void {
     if (!this.loaded) {
       return;
@@ -258,4 +259,5 @@ export default class Channel {
     const lut = this.histogram.lutGenerator_percentiles(lo, hi);
     this.setLut(lut.lut);
   }
+  /* eslint-enable @typescript-eslint/naming-convention */
 }

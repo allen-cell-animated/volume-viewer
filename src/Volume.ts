@@ -4,6 +4,7 @@ import Channel from "./Channel";
 import Histogram from "./Histogram";
 import { getColorByChannelIndex } from "./constants/colors";
 
+/* eslint-disable @typescript-eslint/naming-convention */
 export interface ImageInfo {
   name: string;
   version: string;
@@ -27,6 +28,7 @@ export interface ImageInfo {
     rotation: [number, number, number];
   };
 }
+/* eslint-enable @typescript-eslint/naming-convention */
 
 interface VolumeDataObserver {
   onVolumeData: (vol: Volume, batch: number[]) => void;
@@ -90,13 +92,10 @@ interface VolumeDataObserver {
 export default class Volume {
   public imageInfo: ImageInfo;
   public name: string;
-  private pixel_size: [number, number, number];
   public x: number;
   public y: number;
   public z: number;
   private t: number;
-  public num_channels: number;
-  public channel_names: string[];
   private atlasSize: [number, number];
   private volumeSize: [number, number, number];
   public channels: Channel[];
@@ -106,7 +105,12 @@ export default class Volume {
   private physicalSize: Vector3;
   public normalizedPhysicalSize: Vector3;
   private loaded: boolean;
+  /* eslint-disable @typescript-eslint/naming-convention */
+  public num_channels: number;
+  public channel_names: string[];
   public channel_colors_default: [number, number, number][];
+  private pixel_size: [number, number, number];
+  /* eslint-enable @typescript-eslint/naming-convention */
 
   constructor(imageInfo: ImageInfo) {
     this.scale = new Vector3(1, 1, 1);

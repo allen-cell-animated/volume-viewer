@@ -4,6 +4,7 @@ import Volume from "../Volume";
 import VolumeMaker from "../VolumeMaker";
 import { LUT_ARRAY_LENGTH } from "../Histogram";
 
+/* eslint-disable @typescript-eslint/naming-convention */
 // PREPARE SOME TEST DATA TO TRY TO DISPLAY A VOLUME.
 const testimgdata = {
   width: 306,
@@ -51,6 +52,7 @@ const testimgdata = {
   version: "0.0.0",
   aicsImageVersion: "0.3.0",
 };
+/* eslint-enable @typescript-eslint/naming-convention */
 
 function checkVolumeConstruction(v, imgdata) {
   expect(v).to.be.a("Object");

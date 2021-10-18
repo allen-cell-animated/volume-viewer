@@ -107,6 +107,8 @@ export default class Histogram {
     return this.dataMax;
   }
 
+  /* eslint-disable @typescript-eslint/naming-convention */
+
   /**
    * Generate a Window/level lookup table
    * @return {Lut}
@@ -560,6 +562,7 @@ export default class Histogram {
     }
     return { lut: lut, controlPoints: controlPoints };
   }
+  /* eslint-enable @typescript-eslint/naming-convention */
 }
 
 export { LUT_ARRAY_LENGTH };
