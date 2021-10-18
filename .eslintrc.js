@@ -36,7 +36,6 @@ module.exports = {
         leadingUnderscore: "allow",
       },
     ],
-    // camelcase: "off",
     "@typescript-eslint/indent": ["off"],
     "@typescript-eslint/no-empty-function": ["warn"],
     "@typescript-eslint/no-inferrable-types": ["warn"],

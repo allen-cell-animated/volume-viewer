@@ -32,7 +32,7 @@ const el = document.getElementById("volume-viewer");
 const view3D = new View3d(el);
 
 // create a volume image with dimensions passed in via jsondata
-// this json format is documented in Volume.ts as imageInfo
+// this json format is documented in Volume.ts as ImageInfo
 const aimg = new Volume(jsondata);
 
 // tell the viewer about the image
@@ -86,7 +86,7 @@ export class VolumeViewer extends React.Component {
         const el = ref.current;
         this.view3D = new View3d(el);
         // to download a volume encoded as a json plus tiled png images:
-        // this format is documented in Volume.ts as imageInfo
+        // this format is documented in Volume.ts as ImageInfo
         return fetch(`${url}/${volumeToLoad}`)
             .then((response) => {
                 return response.json();

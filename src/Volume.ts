@@ -38,7 +38,7 @@ interface VolumeDataObserver {
 /**
  * Provide dimensions of the volume data, including dimensions for texture atlas data in which the volume z slices
  * are tiled across a single large 2d image plane.
- * @typedef {Object} imageInfo
+ * @typedef {Object} ImageInfo
  * @property {string} name Base name of image
  * @property {string} version schema version preferably in semver format.
  * @property {number} width Width of original volumetric data prior to downsampling
@@ -87,7 +87,7 @@ interface VolumeDataObserver {
 /**
  * A renderable multichannel volume image with 8-bits per channel intensity values.
  * @class
- * @param {imageInfo} imageInfo
+ * @param {ImageInfo} imageInfo
  */
 export default class Volume {
   public imageInfo: ImageInfo;
