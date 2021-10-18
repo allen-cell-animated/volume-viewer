@@ -884,6 +884,21 @@ function copyVolumeToVolume(src, dest) {
   }
 }
 
+function updateViewForNewVolume() {
+  view3D.onVolumeData(myState.volume, [0, 1, 2]);
+  myState.volume.loaded = true;
+
+  if (myState.isPT) {
+    view3D.updateActiveChannels(myState.volume);
+  } else {
+    view3D.updateLuts(myState.volume);
+  }
+
+  for (let i = 0; i < myState.volume.num_channels; ++i) {
+    view3D.updateIsosurface(myState.volume, i, myState.infoObj.channelGui[i].isovalue);
+  }
+}
+
 function playTimeSeries() {
   const loadNextFrame = () => {
     if (myState.currentFrame >= myState.totalFrames - 1) {
@@ -896,19 +911,7 @@ function playTimeSeries() {
     //console.log("loadNextFrame at " + nextFrame);
 
     copyVolumeToVolume(nextFrameVolume, myState.volume);
-    view3D.onVolumeData(myState.volume, [0, 1, 2]);
-
-    myState.volume.loaded = true;
-
-    if (myState.isPT) {
-      view3D.updateActiveChannels(myState.volume);
-    } else {
-      view3D.updateLuts(myState.volume);
-    }
-
-    for (let i = 0; i < myState.volume.num_channels; ++i) {
-      view3D.updateIsosurface(myState.volume, i, myState.infoObj.channelGui[i].isovalue);
-    }
+    updateViewForNewVolume();
     myState.currentFrame = nextFrame;
   };
   myState.timerId = setInterval(loadNextFrame, 1);
@@ -925,12 +928,7 @@ function goToFrame(targetFrame) {
   const targetFrameVolume = myState.timeSeriesVolumes[targetFrame];
 
   copyVolumeToVolume(targetFrameVolume, myState.volume);
-  view3D.onVolumeData(myState.volume, [0, 1, 2]);
-
-  myState.volume.loaded = true;
-
-  view3D.updateLuts(myState.volume);
-
+  updateViewForNewVolume();
   myState.currentFrame = targetFrame;
 }
 
@@ -1079,7 +1077,7 @@ function main() {
 
   setupGui();
 
-  const loadTimeSeries = true;
+  const loadTimeSeries = false;
   const loadTestData = true;
 
   if (loadTimeSeries) {
