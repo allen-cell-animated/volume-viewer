@@ -156,12 +156,6 @@ export default class FusedChannelData {
     for (let i = 0; i < this.workersCount; ++i) {
       for (let j = 0; j < batch.length; ++j) {
         const channelIndex = batch[j];
-        // const u8arr = new Uint8Array(
-        //   channels[channelIndex].imgData.data.buffer,
-        //   Math.floor(i * (npx / this.workersCount)), // byteOffset into buffer
-        //   (npx / this.workersCount) // length(number of elements)
-        // );
-
         // chop up the arrays. this is a copy operation!
         const arr = channels[channelIndex].imgData.data.buffer.slice(
           Math.floor(i * (npx / this.workersCount)),
