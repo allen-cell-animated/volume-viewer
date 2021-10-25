@@ -53,7 +53,8 @@ export default class RayMarchedAtlasVolume {
 
     this.cubeTransformNode = new Group();
     this.cubeTransformNode.name = "VolumeContainerNode";
-    // REINSTATE THIS TO SHOW BOUNDING BOX!
+    // TODO: when bounding box UX is determined,
+    // uncomment the following line to show the box
     //this.cubeTransformNode.add(this.boxHelper);
     this.cubeTransformNode.add(this.cubeMesh);
 
