@@ -1,7 +1,7 @@
 import { Vector2, UniformsUtils } from "three";
 
 const DENOISE_WINDOW_RADIUS = 3;
-export function denoiseShaderUniforms() {
+export function denoiseShaderUniforms(): Record<string, { type: string; value: unknown }> {
   return UniformsUtils.merge([
     {
       gInvExposure: {

@@ -1,5 +1,5 @@
 demo/
-src/MarchingCubes.js
+src/MarchingCubes.ts
 src/NaiveSurfaceNets.js
 docs/
 es/

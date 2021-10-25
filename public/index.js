@@ -17,6 +17,12 @@ let view3D = null;
 const myState = {
   file: "",
   volume: null,
+  timeSeriesVolumes: [],
+  numberOfVolumesCached: 0,
+  totalFrames: 0,
+  currentFrame: 0,
+  timerId: 0,
+
   density: 12.5,
   maskAlpha: 1.0,
   exposure: 0.75,
@@ -100,24 +106,24 @@ function makeColorGradient(controlPoints) {
 }
 */
 function initLights() {
-  myState.lights[0].m_colorTop = new Vector3(
+  myState.lights[0].mColorTop = new Vector3(
     (myState.skyTopColor[0] / 255.0) * myState.skyTopIntensity,
     (myState.skyTopColor[1] / 255.0) * myState.skyTopIntensity,
     (myState.skyTopColor[2] / 255.0) * myState.skyTopIntensity
   );
-  myState.lights[0].m_colorMiddle = new Vector3(
+  myState.lights[0].mColorMiddle = new Vector3(
     (myState.skyMidColor[0] / 255.0) * myState.skyMidIntensity,
     (myState.skyMidColor[1] / 255.0) * myState.skyMidIntensity,
     (myState.skyMidColor[2] / 255.0) * myState.skyMidIntensity
   );
-  myState.lights[0].m_colorBottom = new Vector3(
+  myState.lights[0].mColorBottom = new Vector3(
     (myState.skyBotColor[0] / 255.0) * myState.skyBotIntensity,
     (myState.skyBotColor[1] / 255.0) * myState.skyBotIntensity,
     (myState.skyBotColor[2] / 255.0) * myState.skyBotIntensity
   );
-  myState.lights[1].m_theta = (myState.lightTheta * Math.PI) / 180.0;
-  myState.lights[1].m_phi = (myState.lightPhi * Math.PI) / 180.0;
-  myState.lights[1].m_color = new Vector3(
+  myState.lights[1].mTheta = (myState.lightTheta * Math.PI) / 180.0;
+  myState.lights[1].mPhi = (myState.lightPhi * Math.PI) / 180.0;
+  myState.lights[1].mColor = new Vector3(
     (myState.lightColor[0] / 255.0) * myState.lightIntensity,
     (myState.lightColor[1] / 255.0) * myState.lightIntensity,
     (myState.lightColor[2] / 255.0) * myState.lightIntensity
@@ -137,7 +143,7 @@ function setupGui() {
     .max(100.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateDensity(myState.volume, value / 50.0);
     });
   gui
@@ -145,7 +151,7 @@ function setupGui() {
     .max(1.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateMaskAlpha(myState.volume, value);
     });
   gui
@@ -153,7 +159,7 @@ function setupGui() {
     .max(40.0)
     .min(1.0)
     .step(0.1)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.setRayStepSizes(myState.volume, myState.primaryRay, myState.secondaryRay);
     });
   gui
@@ -161,7 +167,7 @@ function setupGui() {
     .max(40.0)
     .min(1.0)
     .step(0.1)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.setRayStepSizes(myState.volume, myState.primaryRay, myState.secondaryRay);
     });
 
@@ -171,7 +177,7 @@ function setupGui() {
     .max(1.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateExposure(value);
     });
   cameragui
@@ -179,7 +185,7 @@ function setupGui() {
     .max(0.1)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateCamera(myState.fov, myState.focal_distance, myState.aperture);
     });
   cameragui
@@ -187,7 +193,7 @@ function setupGui() {
     .max(5.0)
     .min(0.1)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateCamera(myState.fov, myState.focal_distance, myState.aperture);
     });
   cameragui
@@ -195,7 +201,7 @@ function setupGui() {
     .max(90.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateCamera(myState.fov, myState.focal_distance, myState.aperture);
     });
   cameragui
@@ -203,7 +209,7 @@ function setupGui() {
     .max(1.0)
     .min(0.1)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updatePixelSamplingRate(value);
     });
 
@@ -213,7 +219,7 @@ function setupGui() {
     .max(1.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateClipRegion(
         myState.volume,
         myState.xmin,
@@ -229,7 +235,7 @@ function setupGui() {
     .max(1.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateClipRegion(
         myState.volume,
         myState.xmin,
@@ -245,7 +251,7 @@ function setupGui() {
     .max(1.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateClipRegion(
         myState.volume,
         myState.xmin,
@@ -261,7 +267,7 @@ function setupGui() {
     .max(1.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateClipRegion(
         myState.volume,
         myState.xmin,
@@ -277,7 +283,7 @@ function setupGui() {
     .max(1.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateClipRegion(
         myState.volume,
         myState.xmin,
@@ -293,7 +299,7 @@ function setupGui() {
     .max(1.0)
     .min(0.0)
     .step(0.001)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateClipRegion(
         myState.volume,
         myState.xmin,
@@ -309,8 +315,8 @@ function setupGui() {
   lighting
     .addColor(myState, "skyTopColor")
     .name("Sky Top")
-    .onChange(function(value) {
-      myState.lights[0].m_colorTop = new Vector3(
+    .onChange(function (value) {
+      myState.lights[0].mColorTop = new Vector3(
         (myState.skyTopColor[0] / 255.0) * myState.skyTopIntensity,
         (myState.skyTopColor[1] / 255.0) * myState.skyTopIntensity,
         (myState.skyTopColor[2] / 255.0) * myState.skyTopIntensity
@@ -322,8 +328,8 @@ function setupGui() {
     .max(100.0)
     .min(0.01)
     .step(0.1)
-    .onChange(function(value) {
-      myState.lights[0].m_colorTop = new Vector3(
+    .onChange(function (value) {
+      myState.lights[0].mColorTop = new Vector3(
         (myState.skyTopColor[0] / 255.0) * myState.skyTopIntensity,
         (myState.skyTopColor[1] / 255.0) * myState.skyTopIntensity,
         (myState.skyTopColor[2] / 255.0) * myState.skyTopIntensity
@@ -333,8 +339,8 @@ function setupGui() {
   lighting
     .addColor(myState, "skyMidColor")
     .name("Sky Mid")
-    .onChange(function(value) {
-      myState.lights[0].m_colorMiddle = new Vector3(
+    .onChange(function (value) {
+      myState.lights[0].mColorMiddle = new Vector3(
         (myState.skyMidColor[0] / 255.0) * myState.skyMidIntensity,
         (myState.skyMidColor[1] / 255.0) * myState.skyMidIntensity,
         (myState.skyMidColor[2] / 255.0) * myState.skyMidIntensity
@@ -346,8 +352,8 @@ function setupGui() {
     .max(100.0)
     .min(0.01)
     .step(0.1)
-    .onChange(function(value) {
-      myState.lights[0].m_colorMiddle = new Vector3(
+    .onChange(function (value) {
+      myState.lights[0].mColorMiddle = new Vector3(
         (myState.skyMidColor[0] / 255.0) * myState.skyMidIntensity,
         (myState.skyMidColor[1] / 255.0) * myState.skyMidIntensity,
         (myState.skyMidColor[2] / 255.0) * myState.skyMidIntensity
@@ -357,8 +363,8 @@ function setupGui() {
   lighting
     .addColor(myState, "skyBotColor")
     .name("Sky Bottom")
-    .onChange(function(value) {
-      myState.lights[0].m_colorBottom = new Vector3(
+    .onChange(function (value) {
+      myState.lights[0].mColorBottom = new Vector3(
         (myState.skyBotColor[0] / 255.0) * myState.skyBotIntensity,
         (myState.skyBotColor[1] / 255.0) * myState.skyBotIntensity,
         (myState.skyBotColor[2] / 255.0) * myState.skyBotIntensity
@@ -370,8 +376,8 @@ function setupGui() {
     .max(100.0)
     .min(0.01)
     .step(0.1)
-    .onChange(function(value) {
-      myState.lights[0].m_colorBottom = new Vector3(
+    .onChange(function (value) {
+      myState.lights[0].mColorBottom = new Vector3(
         (myState.skyBotColor[0] / 255.0) * myState.skyBotIntensity,
         (myState.skyBotColor[1] / 255.0) * myState.skyBotIntensity,
         (myState.skyBotColor[2] / 255.0) * myState.skyBotIntensity
@@ -379,11 +385,11 @@ function setupGui() {
       view3D.updateLights(myState.lights);
     });
   lighting
-    .add(myState.lights[1], "m_distance")
+    .add(myState.lights[1], "mDistance")
     .max(10.0)
     .min(0.0)
     .step(0.1)
-    .onChange(function(value) {
+    .onChange(function (value) {
       view3D.updateLights(myState.lights);
     });
   lighting
@@ -391,8 +397,8 @@ function setupGui() {
     .max(180.0)
     .min(-180.0)
     .step(1)
-    .onChange(function(value) {
-      myState.lights[1].m_theta = (value * Math.PI) / 180.0;
+    .onChange(function (value) {
+      myState.lights[1].mTheta = (value * Math.PI) / 180.0;
       view3D.updateLights(myState.lights);
     });
   lighting
@@ -400,18 +406,18 @@ function setupGui() {
     .max(180.0)
     .min(0.0)
     .step(1)
-    .onChange(function(value) {
-      myState.lights[1].m_phi = (value * Math.PI) / 180.0;
+    .onChange(function (value) {
+      myState.lights[1].mPhi = (value * Math.PI) / 180.0;
       view3D.updateLights(myState.lights);
     });
   lighting
-    .add(myState.lights[1], "m_width")
+    .add(myState.lights[1], "mWidth")
     .max(100.0)
     .min(0.01)
     .step(0.1)
-    .onChange(function(value) {
-      myState.lights[1].m_width = value;
-      myState.lights[1].m_height = value;
+    .onChange(function (value) {
+      myState.lights[1].mWidth = value;
+      myState.lights[1].mHeight = value;
       view3D.updateLights(myState.lights);
     });
   lighting
@@ -419,8 +425,8 @@ function setupGui() {
     .max(1000.0)
     .min(0.01)
     .step(0.1)
-    .onChange(function(value) {
-      myState.lights[1].m_color = new Vector3(
+    .onChange(function (value) {
+      myState.lights[1].mColor = new Vector3(
         (myState.lightColor[0] / 255.0) * myState.lightIntensity,
         (myState.lightColor[1] / 255.0) * myState.lightIntensity,
         (myState.lightColor[2] / 255.0) * myState.lightIntensity
@@ -430,8 +436,8 @@ function setupGui() {
   lighting
     .addColor(myState, "lightColor")
     .name("lightcolor")
-    .onChange(function(value) {
-      myState.lights[1].m_color = new Vector3(
+    .onChange(function (value) {
+      myState.lights[1].mColor = new Vector3(
         (myState.lightColor[0] / 255.0) * myState.lightIntensity,
         (myState.lightColor[1] / 255.0) * myState.lightIntensity,
         (myState.lightColor[2] / 255.0) * myState.lightIntensity
@@ -443,7 +449,7 @@ function setupGui() {
 }
 
 //eslint-disable-next-line no-undef
-dat.GUI.prototype.removeFolder = function(name) {
+dat.GUI.prototype.removeFolder = function (name) {
   var folder = this.__folders[name];
   if (!folder) {
     return;
@@ -479,8 +485,8 @@ function showChannelUI(volume) {
       // first 3 channels for starters
       enabled: i < 3,
       // this doesn't give good results currently but is an example of a per-channel button callback
-      autoIJ: (function(j) {
-        return function() {
+      autoIJ: (function (j) {
+        return function () {
           const lut = volume.getHistogram(j).lutGenerator_auto2();
           // TODO: get a proper transfer function editor
           // const lut = { lut: makeColorGradient([
@@ -495,31 +501,31 @@ function showChannelUI(volume) {
         };
       })(i),
       // this doesn't give good results currently but is an example of a per-channel button callback
-      auto0: (function(j) {
-        return function() {
+      auto0: (function (j) {
+        return function () {
           const lut = volume.getHistogram(j).lutGenerator_auto();
           volume.setLut(j, lut.lut);
           view3D.updateLuts(volume);
         };
       })(i),
       // this doesn't give good results currently but is an example of a per-channel button callback
-      bestFit: (function(j) {
-        return function() {
+      bestFit: (function (j) {
+        return function () {
           const lut = volume.getHistogram(j).lutGenerator_bestFit();
           volume.setLut(j, lut.lut);
           view3D.updateLuts(volume);
         };
       })(i),
-      pct50_98: (function(j) {
-        return function() {
+      pct50_98: (function (j) {
+        return function () {
           const lut = volume.getHistogram(j).lutGenerator_percentiles(0.5, 0.998);
           volume.setLut(j, lut.lut);
           view3D.updateLuts(volume);
         };
       })(i),
       colorizeEnabled: false,
-      colorize: (function(j) {
-        return function() {
+      colorize: (function (j) {
+        return function () {
           const lut = volume.getHistogram(j).lutGenerator_labelColors();
           volume.setColorPalette(j, lut.lut);
           myState.infoObj.channelGui[j].colorizeEnabled = !myState.infoObj.channelGui[j].colorizeEnabled;
@@ -537,16 +543,16 @@ function showChannelUI(volume) {
     var f = gui.addFolder("Channel " + myState.infoObj.channel_names[i]);
     myState.channelFolderNames.push("Channel " + myState.infoObj.channel_names[i]);
     f.add(myState.infoObj.channelGui[i], "enabled").onChange(
-      (function(j) {
-        return function(value) {
+      (function (j) {
+        return function (value) {
           view3D.setVolumeChannelEnabled(volume, j, value ? true : false);
           view3D.updateActiveChannels(volume);
         };
       })(i)
     );
     f.add(myState.infoObj.channelGui[i], "isosurface").onChange(
-      (function(j) {
-        return function(value) {
+      (function (j) {
+        return function (value) {
           if (value) {
             view3D.createIsosurface(volume, j, myState.infoObj.channelGui[j].isovalue, 1.0);
           } else {
@@ -560,8 +566,8 @@ function showChannelUI(volume) {
       .min(0)
       .step(1)
       .onChange(
-        (function(j) {
-          return function(value) {
+        (function (j) {
+          return function (value) {
             view3D.updateIsosurface(volume, j, value);
           };
         })(i)
@@ -570,8 +576,8 @@ function showChannelUI(volume) {
     f.addColor(myState.infoObj.channelGui[i], "colorD")
       .name("Diffuse")
       .onChange(
-        (function(j) {
-          return function(value) {
+        (function (j) {
+          return function (value) {
             view3D.updateChannelMaterial(
               volume,
               j,
@@ -587,8 +593,8 @@ function showChannelUI(volume) {
     f.addColor(myState.infoObj.channelGui[i], "colorS")
       .name("Specular")
       .onChange(
-        (function(j) {
-          return function(value) {
+        (function (j) {
+          return function (value) {
             view3D.updateChannelMaterial(
               volume,
               j,
@@ -604,8 +610,8 @@ function showChannelUI(volume) {
     f.addColor(myState.infoObj.channelGui[i], "colorE")
       .name("Emissive")
       .onChange(
-        (function(j) {
-          return function(value) {
+        (function (j) {
+          return function (value) {
             view3D.updateChannelMaterial(
               volume,
               j,
@@ -623,8 +629,8 @@ function showChannelUI(volume) {
       .min(0.0)
       .step(0.001)
       .onChange(
-        (function(j) {
-          return function(value) {
+        (function (j) {
+          return function (value) {
             volume.getChannel(j).lutGenerator_windowLevel(value, myState.infoObj.channelGui[j].level);
             view3D.updateLuts(volume);
           };
@@ -636,8 +642,8 @@ function showChannelUI(volume) {
       .min(0.0)
       .step(0.001)
       .onChange(
-        (function(j) {
-          return function(value) {
+        (function (j) {
+          return function (value) {
             volume.getChannel(j).lutGenerator_windowLevel(myState.infoObj.channelGui[j].window, value);
             view3D.updateLuts(volume);
           };
@@ -652,8 +658,8 @@ function showChannelUI(volume) {
       .max(1.0)
       .min(0.0)
       .onChange(
-        (function(j) {
-          return function(value) {
+        (function (j) {
+          return function (value) {
             if (myState.infoObj.channelGui[j].colorizeEnabled) {
               volume.setColorPaletteAlpha(j, value);
               view3D.updateLuts(volume);
@@ -665,8 +671,8 @@ function showChannelUI(volume) {
       .max(100.0)
       .min(0.0)
       .onChange(
-        (function(j) {
-          return function(value) {
+        (function (j) {
+          return function (value) {
             view3D.updateChannelMaterial(
               volume,
               j,
@@ -682,8 +688,39 @@ function showChannelUI(volume) {
   }
 }
 
-function loadImageData(jsondata, volumedata) {
-  const vol = new Volume(jsondata);
+function loadVolumeAtlasData(vol, jsonData) {
+  VolumeLoader.loadVolumeAtlasData(vol, jsonData.images, (url, channelIndex) => {
+    vol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
+
+    if (vol.loaded) {
+      view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+
+      view3D.removeAllVolumes();
+      view3D.addVolume(vol);
+
+      // first 3 channels for starters
+      for (var ch = 0; ch < vol.num_channels; ++ch) {
+        view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
+      }
+
+      view3D.setVolumeChannelAsMask(vol, jsonData.channel_names.indexOf("SEG_Memb"));
+      view3D.updateActiveChannels(vol);
+      view3D.updateLuts(vol);
+      view3D.updateLights(myState.lights);
+      view3D.updateDensity(vol, myState.density / 100.0);
+      view3D.updateExposure(myState.exposure);
+
+      // apply a volume transform from an external source:
+      if (jsonData.userData && jsonData.userData.alignTransform) {
+        view3D.setVolumeTranslation(vol, vol.voxelsToWorldSpace(jsonData.userData.alignTransform.translation));
+        view3D.setVolumeRotation(vol, jsonData.userData.alignTransform.rotation);
+      }
+    }
+  });
+}
+
+function loadImageData(jsonData, volumedata) {
+  const vol = new Volume(jsonData);
   myState.volume = vol;
 
   // tell the viewer about the image AFTER it's loaded
@@ -694,7 +731,7 @@ function loadImageData(jsondata, volumedata) {
   if (volumedata) {
     for (var i = 0; i < volumedata.length; ++i) {
       // where each volumedata element is a flat Uint8Array of xyz data
-      // according to jsondata.tile_width*jsondata.tile_height*jsondata.tiles
+      // according to jsonData.tile_width*jsonData.tile_height*jsonData.tiles
       // (first row of first plane is the first data in
       // the layout, then second row of first plane, etc)
       vol.setChannelDataFromVolume(i, volumedata[i]);
@@ -709,7 +746,7 @@ function loadImageData(jsondata, volumedata) {
         view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
       }
 
-      const mask_channel_index = jsondata.channel_names.indexOf("SEG_Memb");
+      const mask_channel_index = jsonData.channel_names.indexOf("SEG_Memb");
       view3D.setVolumeChannelAsMask(vol, mask_channel_index);
       view3D.updateActiveChannels(vol);
       view3D.updateLuts(vol);
@@ -718,53 +755,181 @@ function loadImageData(jsondata, volumedata) {
       view3D.updateExposure(myState.exposure);
     }
   } else {
-    VolumeLoader.loadVolumeAtlasData(vol, jsondata.images, (url, channelIndex) => {
-      vol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
-
-      if (vol.loaded) {
-        view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
-
-        view3D.removeAllVolumes();
-        view3D.addVolume(vol);
-
-        // first 3 channels for starters
-        for (var ch = 0; ch < vol.num_channels; ++ch) {
-          view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
-        }
-
-        view3D.setVolumeChannelAsMask(vol, jsondata.channel_names.indexOf("SEG_Memb"));
-        view3D.updateActiveChannels(vol);
-        view3D.updateLuts(vol);
-        view3D.updateLights(myState.lights);
-        view3D.updateDensity(vol, myState.density / 100.0);
-        view3D.updateExposure(myState.exposure);
-
-        // apply a volume transform from an external source:
-        if (jsondata.userData && jsondata.userData.alignTransform) {
-          view3D.setVolumeTranslation(vol, vol.voxelsToWorldSpace(jsondata.userData.alignTransform.translation));
-          view3D.setVolumeRotation(vol, jsondata.userData.alignTransform.rotation);
-        }
-      }
-    });
+    loadVolumeAtlasData(vol, jsonData);
   }
   showChannelUI(vol);
 
   return vol;
 }
 
-function fetchImage(url) {
+function cacheTimeSeriesImageData(jsonData, frameNumber) {
+  const vol = new Volume(jsonData);
+  myState.timeSeriesVolumes[frameNumber] = vol;
+  return vol;
+}
+
+function fetchImage(url, isTimeSeries = false, frameNumber = 0) {
   fetch(url)
-    .then(function(response) {
+    .then(function (response) {
       return response.json();
     })
-    .then(function(myJson) {
-      // if you need to adjust image paths prior to download,
-      // now is the time to do it:
-      // myJson.images.forEach(function(element) {
-      //     element.name = myURLprefix + element.name;
-      // });
-      loadImageData(myJson);
+    .then(function (myJson) {
+      if (isTimeSeries) {
+        // if you need to adjust image paths prior to download,
+        // now is the time to do it:
+        myJson.images.forEach(function (element) {
+          element.name = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/" + element.name;
+        });
+
+        const currentVol = cacheTimeSeriesImageData(myJson, frameNumber);
+        if (frameNumber === 0) {
+          // create the main volume and add to view (this is the only place)
+          myState.volume = new Volume(myJson);
+
+          // TODO: this can go in the Volume and Channel constructors!
+          // preallocate some memory to be filled in later
+          for (let i = 0; i < myState.volume.num_channels; ++i) {
+            myState.volume.channels[i].imgData = {
+              data: new Uint8Array(myJson.atlas_width * myJson.atlas_height),
+              width: myJson.atlas_width,
+              height: myJson.atlas_height,
+            };
+            myState.volume.channels[i].volumeData = new Uint8Array(
+              myJson.tile_width * myJson.tile_height * myJson.tiles
+            );
+            // TODO also preallocate the Fused data texture
+          }
+
+          view3D.removeAllVolumes();
+          view3D.addVolume(myState.volume);
+          view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+          // first 3 channels for starters
+          for (var ch = 0; ch < myState.volume.num_channels; ++ch) {
+            view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
+          }
+          view3D.setVolumeChannelAsMask(myState.volume, myJson.channel_names.indexOf("SEG_Memb"));
+          view3D.updateActiveChannels(myState.volume);
+          view3D.updateLuts(myState.volume);
+          view3D.updateLights(myState.lights);
+          view3D.updateDensity(myState.volume, myState.density / 100.0);
+          view3D.updateExposure(myState.exposure);
+          // apply a volume transform from an external source:
+          if (myJson.userData && myJson.userData.alignTransform) {
+            view3D.setVolumeTranslation(
+              myState.volume,
+              myState.volume.voxelsToWorldSpace(myJson.userData.alignTransform.translation)
+            );
+            view3D.setVolumeRotation(myState.volume, myJson.userData.alignTransform.rotation);
+          }
+
+          myState.currentFrame = 0;
+          showChannelUI(myState.volume);
+        }
+
+        VolumeLoader.loadVolumeAtlasData(currentVol, myJson.images, (url, channelIndex) => {
+          currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
+
+          if (currentVol.loaded) {
+            console.log("currentVol with name" + currentVol.name + " is loaded");
+            myState.numberOfVolumesCached++;
+            if (myState.numberOfVolumesCached >= myState.totalFrames) {
+              console.log("ALL FRAMES RECEIVED");
+            }
+
+            if (frameNumber === 0) {
+              copyVolumeToVolume(currentVol, myState.volume);
+              // has assumption that only 3 channels
+              view3D.onVolumeData(myState.volume, [0, 1, 2]);
+              view3D.updateActiveChannels(myState.volume);
+              view3D.updateLuts(myState.volume);
+
+              myState.volume.loaded = true;
+            }
+          }
+        });
+      } else {
+        loadImageData(myJson);
+      }
     });
+}
+
+function fetchTimeSeries(urlStart, urlEnd, t0, tf, interval = 1) {
+  let frameNumber = 0;
+  for (let t = t0; t <= tf; t += interval) {
+    fetchImage(urlStart + t + urlEnd, true, frameNumber);
+    frameNumber++;
+  }
+  myState.totalFrames = frameNumber;
+  console.log(`${frameNumber} frames requested`);
+}
+
+function copyVolumeToVolume(src, dest) {
+  // assumes volumes already have identical dimensions!!!
+
+  // grab references to data from each channel and put it in myState.volume
+  for (var i = 0; i < src.num_channels; ++i) {
+    // dest.channels[i].imgData.data.set(src.channels[i].imgData.data);
+    // dest.channels[i].volumeData.set(src.channels[i].volumeData);
+    // dest.channels[i].lut.set(src.channels[i].lut);
+    dest.channels[i].imgData = {
+      data: src.channels[i].imgData.data,
+      width: src.channels[i].imgData.width,
+      height: src.channels[i].imgData.height,
+    };
+    dest.channels[i].volumeData = src.channels[i].volumeData;
+    dest.channels[i].lut = src.channels[i].lut;
+    // danger: not a copy!
+    dest.channels[i].histogram = src.channels[i].histogram;
+    dest.channels[i].loaded = true;
+  }
+}
+
+function updateViewForNewVolume() {
+  view3D.onVolumeData(myState.volume, [0, 1, 2]);
+  myState.volume.loaded = true;
+
+  if (myState.isPT) {
+    view3D.updateActiveChannels(myState.volume);
+  } else {
+    view3D.updateLuts(myState.volume);
+  }
+
+  for (let i = 0; i < myState.volume.num_channels; ++i) {
+    view3D.updateIsosurface(myState.volume, i, myState.infoObj.channelGui[i].isovalue);
+  }
+}
+
+function playTimeSeries() {
+  const loadNextFrame = () => {
+    if (myState.currentFrame >= myState.totalFrames - 1) {
+      clearInterval(myState.timerId);
+      console.log("Reached end of sequence");
+      return;
+    }
+    const nextFrame = myState.currentFrame + 1;
+    const nextFrameVolume = myState.timeSeriesVolumes[nextFrame];
+    //console.log("loadNextFrame at " + nextFrame);
+
+    copyVolumeToVolume(nextFrameVolume, myState.volume);
+    updateViewForNewVolume();
+    myState.currentFrame = nextFrame;
+  };
+  myState.timerId = setInterval(loadNextFrame, 1);
+}
+
+function goToFrame(targetFrame) {
+  console.log("going to Frame " + targetFrame);
+  const outOfBounds = targetFrame > myState.totalFrames - 1 || targetFrame < 0;
+  if (outOfBounds) {
+    console.log("frame out of bounds");
+    return;
+  }
+
+  const targetFrameVolume = myState.timeSeriesVolumes[targetFrame];
+
+  copyVolumeToVolume(targetFrameVolume, myState.volume);
+  updateViewForNewVolume();
+  myState.currentFrame = targetFrame;
 }
 
 function createTestVolume() {
@@ -855,6 +1020,25 @@ function main() {
     myState.flipZ *= -1;
     view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
   });
+  const playbtn = document.getElementById("playbtn");
+  playbtn.addEventListener("click", () => {
+    if (myState.currentFrame >= myState.totalFrames - 1) {
+      myState.currentFrame = -1;
+    }
+    playTimeSeries();
+  });
+  const pausebtn = document.getElementById("pausebtn");
+  pausebtn.addEventListener("click", () => {
+    clearInterval(myState.timerId);
+  });
+  const forwardbtn = document.getElementById("forwardbtn");
+  forwardbtn.addEventListener("click", () => {
+    goToFrame(myState.currentFrame + 1);
+  });
+  const backbtn = document.getElementById("backbtn");
+  backbtn.addEventListener("click", () => {
+    goToFrame(myState.currentFrame - 1);
+  });
 
   var alignbtn = document.getElementById("xfbtn");
   alignbtn.addEventListener("click", () => {
@@ -867,7 +1051,7 @@ function main() {
     view3D.resetCamera();
   });
   var counterspan = document.getElementById("counter");
-  view3D.setRenderUpdateListener(count => {
+  view3D.setRenderUpdateListener((count) => {
     counterspan.innerHTML = "" + count;
   });
 
@@ -883,7 +1067,7 @@ function main() {
   }
   var screenshotbtn = document.getElementById("screenshotbtn");
   screenshotbtn.addEventListener("click", () => {
-    view3D.capture(dataurl => {
+    view3D.capture((dataurl) => {
       const anch = document.createElement("a");
       anch.href = dataurl;
       anch.download = "screenshot.png";
@@ -893,13 +1077,23 @@ function main() {
 
   setupGui();
 
+  const loadTimeSeries = false;
   const loadTestData = true;
-  if (loadTestData) {
+
+  if (loadTimeSeries) {
+    fetchTimeSeries(
+      "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/test_parent_T49.ome_",
+      "_atlas.json",
+      0,
+      46
+    );
+  } else if (loadTestData) {
     fetchImage("AICS-12_881_atlas.json");
   } else {
     const volumeinfo = createTestVolume();
     loadImageData(volumeinfo.imgdata, volumeinfo.volumedata);
   }
+  console.log(myState.timeSeriesVolumes);
 }
 
 document.body.onload = () => {

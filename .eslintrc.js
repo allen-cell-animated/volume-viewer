@@ -5,12 +5,6 @@ module.exports = {
     es6: true,
     mocha: true,
   },
-  parser: "@typescript-eslint/parser",
-  parserOptions: {
-    project: "./tsconfig.json",
-    ecmaVersion: "2020",
-    sourceType: "module",
-  },
   plugins: ["@typescript-eslint", "react"],
   rules: {
     "@typescript-eslint/ban-types": ["warn"],
@@ -42,7 +36,6 @@ module.exports = {
         leadingUnderscore: "allow",
       },
     ],
-    camelcase: "off",
     "@typescript-eslint/indent": ["off"],
     "@typescript-eslint/no-empty-function": ["warn"],
     "@typescript-eslint/no-inferrable-types": ["warn"],

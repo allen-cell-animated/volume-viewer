@@ -1,9 +1,10 @@
 import { expect } from "chai";
 
-import Volume from "../Volume.js";
-import VolumeMaker from "../VolumeMaker.js";
+import Volume from "../Volume";
+import VolumeMaker from "../VolumeMaker";
 import { LUT_ARRAY_LENGTH } from "../Histogram";
 
+/* eslint-disable @typescript-eslint/naming-convention */
 // PREPARE SOME TEST DATA TO TRY TO DISPLAY A VOLUME.
 const testimgdata = {
   width: 306,
@@ -51,6 +52,7 @@ const testimgdata = {
   version: "0.0.0",
   aicsImageVersion: "0.3.0",
 };
+/* eslint-enable @typescript-eslint/naming-convention */
 
 function checkVolumeConstruction(v, imgdata) {
   expect(v).to.be.a("Object");
@@ -80,7 +82,7 @@ function checkChannelDataConstruction(c, index, imgdata) {
   expect(c.name).to.equal(imgdata.channel_names[index]);
   expect(c.imgData.width).to.equal(imgdata.atlas_width);
   expect(c.imgData.height).to.equal(imgdata.atlas_height);
-  expect(c.imgData.data).to.be.a("Uint8Array");
+  expect(c.imgData.data).to.be.a("Uint8ClampedArray");
   expect(c.imgData.data.length).to.equal(imgdata.atlas_width * imgdata.atlas_height);
   expect(c.lut).to.be.a("Uint8Array");
   expect(c.lut.length).to.equal(LUT_ARRAY_LENGTH);

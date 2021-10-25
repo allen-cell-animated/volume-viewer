@@ -20,7 +20,7 @@ export const transparentMaterialSettings = {
   },
 };
 
-export const ShaderLibrary = {
+const shaderLibrary = {
   fresnel: {
     uniforms: {
       bias: { value: 0.4 },
@@ -69,8 +69,8 @@ export const ShaderLibrary = {
   },
 };
 
-export function createShaderMaterial(id) {
-  const shader = ShaderLibrary[id];
+export function createShaderMaterial(id: string): ShaderMaterial {
+  const shader = shaderLibrary[id];
 
   const u = UniformsUtils.clone(shader.uniforms);
   const vs = shader.vertexShader;

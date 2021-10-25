@@ -1,26 +1,29 @@
 # AICS Volume Viewer
 
 This is a WebGL canvas-based volume viewer. It can display multichannel volume data of 8-bit intensity values.
-Volume data is provided to the core 3d viewer in two parts.  The first part is via a json object containing dimensions and other metadata.  The second part is the volume data itself.
+Volume data is provided to the core 3d viewer in two parts. The first part is via a json object containing dimensions and other metadata. The second part is the volume data itself.
 
 The volume-viewer package exposes two key modules:
-* ```View3d``` is the viewing component that contains a canvas and supports zoom/pan/rotate interaction with the volume.
-* ```Volume``` is the class that holds the volume data. After initialization, this is generally a read-only holder for raw data.
+
+- `View3d` is the viewing component that contains a canvas and supports zoom/pan/rotate interaction with the volume.
+- `Volume` is the class that holds the volume data. After initialization, this is generally a read-only holder for raw data.
 
 It also provides the following two utility modules:
-* ```VolumeLoader``` is a convenience class for downloading and unpacking texture atlases from .png files (up to 3 channels per png) into a Volume.
-* ```VolumeMaker``` is a convenience module for creating simple test volume data
+
+- `VolumeLoader` is a convenience class for downloading and unpacking texture atlases from .png files (up to 3 channels per png) into a Volume.
+- `VolumeMaker` is a convenience module for creating simple test volume data
 
 There are two ways to deliver volume data to the viewer:
-* raw Uint8Arrays of 3d volume data (one Uint8Array per channel). ( ```Volume.setChannelDataFromVolume``` )
-* texture atlases (png files or Uint8Arrays containing volume slices tiled across a 2d image) ( ```Volume.setChannelDataFromAtlas``` )
 
+- raw Uint8Arrays of 3d volume data (one Uint8Array per channel). ( `Volume.setChannelDataFromVolume` )
+- texture atlases (png files or Uint8Arrays containing volume slices tiled across a 2d image) ( `Volume.setChannelDataFromAtlas` )
 
 # Example
 
-See public/index.js for a working example.  (```npm install; npm run dev``` will run that code) The basic code to get the volume viewer up and running is as follows:
+See public/index.js for a working example. (`npm install; npm run dev` will run that code) The basic code to get the volume viewer up and running is as follows:
+
 ```javascript
-import {View3d, Volume, VolumeLoader, VolumeMaker} from 'volume-viewer';
+import { View3d, Volume, VolumeLoader, VolumeMaker } from "volume-viewer";
 
 // find a div that will hold the viewer
 const el = document.getElementById("volume-viewer");
@@ -29,24 +32,24 @@ const el = document.getElementById("volume-viewer");
 const view3D = new View3d(el);
 
 // create a volume image with dimensions passed in via jsondata
-// this json format is documented in Volume.js as imageInfo
+// this json format is documented in Volume.ts as ImageInfo
 const aimg = new Volume(jsondata);
 
 // tell the viewer about the image
 view3D.addVolume(aimg);
 
-// load volume data into the image.  volumedata here is an array of Uint8Arrays.  
+// load volume data into the image.  volumedata here is an array of Uint8Arrays.
 // each element in volumedata is a flattened 3d volume stored in xyz order in a Uint8Array.
 // Intensities must have been be scaled to fit in uint8.
 for (let i = 0; i < volumedata.length; ++i) {
-    aimg.setChannelDataFromVolume(i, volumedata[i]);
-    // optional: initialize with a lookup table suitable for visualizing noisy biological data
-    aimg.channels[i].lutGenerator_percentiles(0.5, 0.998);
+  aimg.setChannelDataFromVolume(i, volumedata[i]);
+  // optional: initialize with a lookup table suitable for visualizing noisy biological data
+  aimg.channels[i].lutGenerator_percentiles(0.5, 0.998);
 }
 
 // enable only the first 3 channels
 for (var ch = 0; ch < aimg.num_channels; ++ch) {
-    view3D.setVolumeChannelEnabled(aimg, ch, ch < 3);
+  view3D.setVolumeChannelEnabled(aimg, ch, ch < 3);
 }
 
 // set some viewing parameters
@@ -57,9 +60,11 @@ view3D.updateActiveChannels(aimg);
 view3D.updateLuts(aimg);
 ```
 
-# React example 
+# React example
+
 - in `VolumeViewer.jsx`
-```JavaScript 
+
+```JavaScript
 import * as React from "react";
 
 import { View3d, Volume, VolumeLoader, VolumeMaker } from 'volume-viewer';
@@ -81,7 +86,7 @@ export class VolumeViewer extends React.Component {
         const el = ref.current;
         this.view3D = new View3d(el);
         // to download a volume encoded as a json plus tiled png images:
-        // this format is documented in Volume.js as imageInfo
+        // this format is documented in Volume.ts as ImageInfo
         return fetch(`${url}/${volumeToLoad}`)
             .then((response) => {
                 return response.json();
@@ -100,7 +105,7 @@ export class VolumeViewer extends React.Component {
 
                     this.view3D.setVolumeChannelEnabled(aimg, channelIndex, channelIndex < 3);
                     this.view3D.updateActiveChannels(aimg);
-                    
+
                     this.view3D.updateLuts(aimg);
                 });
                 // set some initial viewing parameters
@@ -112,7 +117,7 @@ export class VolumeViewer extends React.Component {
 
     render() {
         return (
-            <div 
+            <div
                 style={{height: 1000, width: '100%'}}
                 ref={this.volumeViewer}
             />
@@ -166,12 +171,11 @@ official policies, either expressed or implied, of the Regents of the University
 
 ## Exposure Render license
 
-	Copyright (c) 2011, T. Kroes <t.kroes@tudelft.nl>
-	All rights reserved.
-	Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-	- Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-	- Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-	- Neither the name of the TU Delft nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-	
-	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    Copyright (c) 2011, T. Kroes <t.kroes@tudelft.nl>
+    All rights reserved.
+    Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+    - Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+    - Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+    - Neither the name of the TU Delft nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

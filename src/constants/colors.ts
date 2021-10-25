@@ -1,22 +1,31 @@
-export const defaultColors = [
+export const defaultColors: [number, number, number][] = [
   [255, 0, 255],
   [255, 255, 255],
   [0, 255, 255],
 ];
 
+interface HSVColor {
+  h: number;
+  s: number;
+  v: number;
+}
 // 0 <= (h, s, v) <= 1
 // returns 0 <= (r, g, b) <= 255 rounded to nearest integer
 // you can also pass in just one arg as an object of {h, s, v} props.
-function HSVtoRGB(h, s, v) {
-  let r, g, b, i, f, p, q, t;
+function HSVtoRGB(h: number | HSVColor, s: number, v: number): [number, number, number] {
+  let r, g, b;
+  let hh = 0;
   if (arguments.length === 1) {
-    (s = h.s), (v = h.v), (h = h.h);
+    const hsv = h as HSVColor;
+    (s = hsv.s), (v = hsv.v), (hh = hsv.h);
+  } else {
+    hh = h as number;
   }
-  i = Math.floor(h * 6);
-  f = h * 6 - i;
-  p = v * (1 - s);
-  q = v * (1 - f * s);
-  t = v * (1 - (1 - f) * s);
+  const i = Math.floor(hh * 6);
+  const f = hh * 6 - i;
+  const p = v * (1 - s);
+  const q = v * (1 - f * s);
+  const t = v * (1 - (1 - f) * s);
   switch (i % 6) {
     case 0:
       (r = v), (g = t), (b = p);
@@ -42,17 +51,17 @@ function HSVtoRGB(h, s, v) {
 
 // 1993 Park-Miller LCG
 function LCG(s) {
-  return function() {
+  return function () {
     s = Math.imul(48271, s) | 0 % 2147483647;
     return (s & 2147483647) / 2147483648;
   };
 }
 // Use it like so:
-var myrand = LCG(123);
+const myrand = LCG(123);
 
 // if index exceeds defaultColors start choosing random ones
 // returns [r,g,b] 0-255 range
-export const getColorByChannelIndex = index => {
+export const getColorByChannelIndex = (index: number): [number, number, number] => {
   if (!defaultColors[index]) {
     defaultColors[index] = HSVtoRGB(myrand(), myrand() * 0.5 + 0.5, myrand() * 0.5 + 0.5);
   }

@@ -1,7 +1,11 @@
 import {
   AxesHelper,
+  Camera,
+  Color,
   Vector3,
   Object3D,
+  Event,
+  EventListener,
   Mesh,
   BoxGeometry,
   MeshBasicMaterial,
@@ -13,17 +17,50 @@ import {
 } from "three";
 
 import TrackballControls from "./TrackballControls.js";
-import Timing from "./Timing.js";
-
-import { VRButton } from "./vr/VRButton";
-import vrObjectControls from "./vr/vrObjectControls.js";
+import Timing from "./Timing";
+import { isOrthographicCamera } from "./types";
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
 const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 
 export class ThreeJsPanel {
-  constructor(parentElement, useWebGL2) {
+  private containerdiv: HTMLDivElement;
+  private canvas: HTMLCanvasElement;
+  public scene: Scene;
+  private zooming: boolean;
+  public animateFuncs: ((ThreeJsPanel) => void)[];
+  private inRenderLoop: boolean;
+  private requestedRender: number;
+  public hasWebGL2: boolean;
+  public renderer: WebGLRenderer;
+  private timer: Timing;
+  public orthoScale: number;
+  private fov: number;
+  private perspectiveCamera: PerspectiveCamera;
+  private perspectiveControls: TrackballControls;
+  private orthographicCameraX: OrthographicCamera;
+  private orthoControlsX: TrackballControls;
+  private orthographicCameraY: OrthographicCamera;
+  private orthoControlsY: TrackballControls;
+  private orthographicCameraZ: OrthographicCamera;
+  private orthoControlsZ: TrackballControls;
+  public camera: Camera;
+  public controls: TrackballControls;
+  private controlEndHandler?: EventListener<Event, "end", TrackballControls>;
+  private controlChangeHandler?: EventListener<Event, "change", TrackballControls>;
+  private controlStartHandler?: EventListener<Event, "start", TrackballControls>;
+
+  public showAxis: boolean;
+  private axisScale: number;
+  private axisOffset: [number, number];
+  private axisHelperScene: Scene;
+  private axisHelperObject: Object3D;
+  private axisCamera: Camera;
+
+  private dataurlcallback?: (string) => void;
+
+  constructor(parentElement: HTMLElement, _useWebGL2: boolean) {
     this.containerdiv = document.createElement("div");
     this.containerdiv.setAttribute("id", "volumeViewerContainerDiv");
     this.containerdiv.style.position = "relative";
@@ -39,45 +76,46 @@ export class ThreeJsPanel {
     parentElement.appendChild(this.containerdiv);
 
     this.scene = new Scene();
+    this.axisHelperScene = new Scene();
+    this.axisHelperObject = new Object3D();
+
+    this.showAxis = false;
+    this.axisScale = 50.0;
+    this.axisOffset = [66, 66];
 
     this.zooming = false;
-    this.animate_funcs = [];
-    this.onEnterVRCallback = null;
-    this.onLeaveVRCallback = null;
+    this.animateFuncs = [];
 
     // are we in a constant render loop or not?
     this.inRenderLoop = false;
     // if we're not in a constant render loop, have we queued any single redraws?
     this.requestedRender = 0;
 
+    // if webgl 2 is available, let's just use it anyway.
+    // we are ignoring the useWebGL2 flag
     this.hasWebGL2 = false;
-    if (useWebGL2) {
-      let context = this.canvas.getContext("webgl2");
-      if (context) {
-        this.hasWebGL2 = true;
-        this.renderer = new WebGLRenderer({
-          context: context,
-          canvas: this.canvas,
-          preserveDrawingBuffer: true,
-          alpha: true,
-          premultipliedAlpha: false,
-          sortObjects: true,
-        });
-        //this.renderer.autoClear = false;
-        // set pixel ratio to 0.25 or 0.5 to render at lower res.
-        this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.renderer.state.setBlending(NormalBlending);
-        //required by WebGL 2.0 for rendering to FLOAT textures
-        this.renderer.getContext().getExtension("EXT_color_buffer_float");
-      }
-    }
-    if (!this.hasWebGL2) {
+    const context = this.canvas.getContext("webgl2");
+    if (context) {
+      this.hasWebGL2 = true;
+      this.renderer = new WebGLRenderer({
+        context: context,
+        canvas: this.canvas,
+        preserveDrawingBuffer: true,
+        alpha: true,
+        premultipliedAlpha: false,
+      });
+      //this.renderer.autoClear = false;
+      // set pixel ratio to 0.25 or 0.5 to render at lower res.
+      this.renderer.setPixelRatio(window.devicePixelRatio);
+      this.renderer.state.setBlending(NormalBlending);
+      //required by WebGL 2.0 for rendering to FLOAT textures
+      this.renderer.getContext().getExtension("EXT_color_buffer_float");
+    } else {
       this.renderer = new WebGLRenderer({
         canvas: this.canvas,
         preserveDrawingBuffer: true,
         alpha: true,
         premultipliedAlpha: false,
-        sortObjects: true,
       });
       this.renderer.setPixelRatio(window.devicePixelRatio);
       this.renderer.state.setBlending(NormalBlending);
@@ -87,9 +125,9 @@ export class ThreeJsPanel {
 
     this.timer = new Timing();
 
-    var scale = 0.5;
+    const scale = 0.5;
     this.orthoScale = scale;
-    var aspect = this.getWidth() / this.getHeight();
+    const aspect = this.getWidth() / this.getHeight();
 
     this.fov = 20;
 
@@ -138,14 +176,19 @@ export class ThreeJsPanel {
     this.orthoControlsZ.enabled = false;
 
     this.camera = this.perspectiveCamera;
+    this.axisCamera = new PerspectiveCamera();
     this.controls = this.perspectiveControls;
-
-    this.initVR();
 
     this.setupAxisHelper();
   }
 
-  resetPerspectiveCamera() {
+  updateCameraFocus(fov: number, _focalDistance: number, _apertureSize: number): void {
+    this.perspectiveCamera.fov = fov;
+    this.fov = fov;
+    this.perspectiveCamera.updateProjectionMatrix();
+  }
+
+  resetPerspectiveCamera(): void {
     this.perspectiveCamera.position.x = 0.0;
     this.perspectiveCamera.position.y = 0.0;
     this.perspectiveCamera.position.z = DEFAULT_PERSPECTIVE_CAMERA_DISTANCE;
@@ -154,7 +197,7 @@ export class ThreeJsPanel {
     this.perspectiveCamera.up.z = 0.0;
   }
 
-  resetOrthographicCameraX() {
+  resetOrthographicCameraX(): void {
     this.orthographicCameraX.position.x = 2.0;
     this.orthographicCameraX.position.y = 0.0;
     this.orthographicCameraX.position.z = 0.0;
@@ -164,7 +207,7 @@ export class ThreeJsPanel {
     this.orthographicCameraX.lookAt(new Vector3(0, 0, 0));
   }
 
-  resetOrthographicCameraY() {
+  resetOrthographicCameraY(): void {
     this.orthographicCameraY.position.x = 0.0;
     this.orthographicCameraY.position.y = 2.0;
     this.orthographicCameraY.position.z = 0.0;
@@ -174,7 +217,7 @@ export class ThreeJsPanel {
     this.orthographicCameraY.lookAt(new Vector3(0, 0, 0));
   }
 
-  resetOrthographicCameraZ() {
+  resetOrthographicCameraZ(): void {
     this.orthographicCameraZ.position.x = 0.0;
     this.orthographicCameraZ.position.y = 0.0;
     this.orthographicCameraZ.position.z = 2.0;
@@ -184,94 +227,17 @@ export class ThreeJsPanel {
     this.orthographicCameraZ.lookAt(new Vector3(0, 0, 0));
   }
 
-  requestCapture(dataurlcallback) {
+  requestCapture(dataurlcallback: (name: string) => void): void {
     this.dataurlcallback = dataurlcallback;
     this.redraw();
   }
 
-  initVR() {
-    this.xrButton = VRButton.createButton(this.renderer);
-    if (this.xrButton) {
-      this.xrButton.style.left = "auto";
-      this.xrButton.style.right = "5px";
-      this.xrButton.style.bottom = "5px";
-      this.containerdiv.appendChild(this.xrButton);
-
-      // VR controllers
-      this.xrControls = new vrObjectControls(this.renderer, this.scene, null);
-
-      window.addEventListener(
-        "vrdisplaypointerrestricted",
-        () => {
-          var pointerLockElement = that.renderer.domElement;
-          if (pointerLockElement && typeof pointerLockElement.requestPointerLock === "function") {
-            pointerLockElement.requestPointerLock();
-          }
-        },
-        false
-      );
-      window.addEventListener(
-        "vrdisplaypointerunrestricted",
-        () => {
-          var currentPointerLockElement = document.pointerLockElement;
-          var expectedPointerLockElement = that.renderer.domElement;
-          if (
-            currentPointerLockElement &&
-            currentPointerLockElement === expectedPointerLockElement &&
-            typeof document.exitPointerLock === "function"
-          ) {
-            document.exitPointerLock();
-          }
-        },
-        false
-      );
-
-      var that = this;
-      window.addEventListener("vrdisplaypresentchange", () => {
-        if (that.isVR()) {
-          // VR requires startRenderLoop.
-          that.startRenderLoop();
-          that.onEnterVR();
-        } else {
-          that.onLeaveVR();
-          that.resetToPerspectiveCamera();
-          // We can't be in pathtracing mode in VR.
-          // When leaving VR, just stop re-rendering until the next user interaction.
-          that.stopRenderLoop();
-        }
-      });
-    }
-  }
-
-  isVR() {
+  isVR(): boolean {
     return this.renderer.xr.enabled;
   }
 
-  onEnterVR() {
-    console.log("ENTERED VR");
-    this.renderer.xr.enabled = true;
-    this.controls.enabled = false;
-    if (this.onEnterVRCallback) {
-      this.onEnterVRCallback();
-    }
-    if (this.xrControls) {
-      this.xrControls.onEnterVR();
-    }
-  }
-
-  onLeaveVR() {
-    console.log("LEFT VR");
-    if (this.xrControls) {
-      this.xrControls.onLeaveVR();
-      if (this.onLeaveVRCallback) {
-        this.onLeaveVRCallback();
-      }
-    }
-    this.renderer.xr.enabled = false;
-  }
-
-  resetToPerspectiveCamera() {
-    var aspect = this.getWidth() / this.getHeight();
+  resetToPerspectiveCamera(): void {
+    const aspect = this.getWidth() / this.getHeight();
 
     this.perspectiveCamera = new PerspectiveCamera(
       this.fov,
@@ -286,7 +252,7 @@ export class ThreeJsPanel {
     this.controls.reset();
   }
 
-  resetCamera() {
+  resetCamera(): void {
     if (this.camera === this.perspectiveCamera) {
       this.resetPerspectiveCamera();
     } else if (this.camera === this.orthographicCameraX) {
@@ -299,7 +265,7 @@ export class ThreeJsPanel {
     this.controls.reset();
   }
 
-  setupAxisHelper() {
+  setupAxisHelper(): void {
     // set up axis widget.
 
     this.showAxis = false;
@@ -314,15 +280,15 @@ export class ThreeJsPanel {
     this.axisHelperObject = new Object3D();
     this.axisHelperObject.name = "axisHelperParentObject";
 
-    var axisCubeMaterial = new MeshBasicMaterial({
+    const axisCubeMaterial = new MeshBasicMaterial({
       color: 0xaeacad,
     });
 
-    var axisCube = new BoxGeometry(this.axisScale / 5, this.axisScale / 5, this.axisScale / 5);
-    var axisCubeMesh = new Mesh(axisCube, axisCubeMaterial);
+    const axisCube = new BoxGeometry(this.axisScale / 5, this.axisScale / 5, this.axisScale / 5);
+    const axisCubeMesh = new Mesh(axisCube, axisCubeMaterial);
     this.axisHelperObject.add(axisCubeMesh);
 
-    var axisHelper = new AxesHelper(this.axisScale);
+    const axisHelper = new AxesHelper(this.axisScale);
     this.axisHelperObject.add(axisHelper);
 
     this.axisHelperScene.add(this.axisHelperObject);
@@ -336,19 +302,19 @@ export class ThreeJsPanel {
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
 
-  setAutoRotate(rotate) {
+  setAutoRotate(rotate: boolean): void {
     this.controls.autoRotate = rotate;
   }
 
-  getAutoRotate() {
+  getAutoRotate(): boolean {
     return this.controls.autoRotate;
   }
 
-  replaceCamera(newCam) {
+  replaceCamera(newCam: PerspectiveCamera | OrthographicCamera): void {
     this.camera = newCam;
   }
 
-  replaceControls(newControls) {
+  replaceControls(newControls: TrackballControls): void {
     if (this.controls === newControls) {
       return;
     }
@@ -375,7 +341,7 @@ export class ThreeJsPanel {
     this.controls.update();
   }
 
-  switchViewMode(mode) {
+  switchViewMode(mode: string): void {
     mode = mode.toUpperCase();
     switch (mode) {
       case "YZ":
@@ -404,36 +370,38 @@ export class ThreeJsPanel {
     }
   }
 
-  getCanvas() {
+  getCanvas(): HTMLCanvasElement {
     return this.canvas;
   }
 
-  resize(comp, w, h, ow, oh, eOpts) {
-    this.w = w;
-    this.h = h;
+  resize(comp: HTMLElement | null, w: number, h: number, _ow?: number, _oh?: number, _eOpts?: unknown): void {
     this.containerdiv.style.width = "" + w + "px";
     this.containerdiv.style.height = "" + h + "px";
 
-    var aspect = w / h;
+    const aspect = w / h;
 
     this.perspectiveControls.aspect = aspect;
     this.orthoControlsZ.aspect = aspect;
     this.orthoControlsY.aspect = aspect;
     this.orthoControlsX.aspect = aspect;
-    if (this.camera.isOrthographicCamera) {
-      this.camera.left = -this.orthoScale * aspect;
-      this.camera.right = this.orthoScale * aspect;
+    if (isOrthographicCamera(this.camera)) {
+      (this.camera as OrthographicCamera).left = -this.orthoScale * aspect;
+      (this.camera as OrthographicCamera).right = this.orthoScale * aspect;
+      (this.camera as OrthographicCamera).updateProjectionMatrix();
     } else {
-      this.camera.aspect = aspect;
+      (this.camera as PerspectiveCamera).aspect = aspect;
+      (this.camera as PerspectiveCamera).updateProjectionMatrix();
     }
 
-    this.camera.updateProjectionMatrix();
-
-    this.axisCamera.left = 0;
-    this.axisCamera.right = w;
-    this.axisCamera.top = h;
-    this.axisCamera.bottom = 0;
-    this.axisCamera.updateProjectionMatrix();
+    if (isOrthographicCamera(this.axisCamera)) {
+      this.axisCamera.left = 0;
+      this.axisCamera.right = w;
+      this.axisCamera.top = h;
+      this.axisCamera.bottom = 0;
+      this.axisCamera.updateProjectionMatrix();
+    } else {
+      (this.axisCamera as PerspectiveCamera).updateProjectionMatrix();
+    }
 
     this.renderer.setSize(w, h);
 
@@ -443,23 +411,23 @@ export class ThreeJsPanel {
     this.orthoControlsX.handleResize();
   }
 
-  setClearColor(color, alpha) {
+  setClearColor(color: Color, alpha: number): void {
     this.renderer.setClearColor(color, alpha);
   }
 
-  getWidth() {
+  getWidth(): number {
     return this.renderer.getContext().canvas.width;
   }
 
-  getHeight() {
+  getHeight(): number {
     return this.renderer.getContext().canvas.height;
   }
 
-  render() {
+  render(): void {
     // do whatever we have to do before the main render of this.scene
-    for (var i = 0; i < this.animate_funcs.length; i++) {
-      if (this.animate_funcs[i]) {
-        this.animate_funcs[i](this);
+    for (let i = 0; i < this.animateFuncs.length; i++) {
+      if (this.animateFuncs[i]) {
+        this.animateFuncs[i](this);
       }
     }
 
@@ -473,11 +441,11 @@ export class ThreeJsPanel {
 
     if (this.dataurlcallback) {
       this.dataurlcallback(this.canvas.toDataURL());
-      this.dataurlcallback = null;
+      this.dataurlcallback = undefined;
     }
   }
 
-  redraw() {
+  redraw(): void {
     // if we are not in a render loop already
     if (!this.inRenderLoop) {
       // if there is currently a queued redraw, cancel it and replace it with a new one.
@@ -489,35 +457,31 @@ export class ThreeJsPanel {
     }
   }
 
-  onAnimationLoop() {
+  onAnimationLoop(): void {
     // delta is in seconds
     this.timer.update();
     const delta = this.timer.lastFrameMs / 1000.0;
 
-    if (this.isVR() && this.xrControls) {
-      this.xrControls.update(delta);
-    } else {
-      this.controls.update(delta);
-    }
+    this.controls.update(delta);
 
     this.render();
 
     // update the axis helper in case the view was rotated
-    if (!this.camera.isOrthographicCamera) {
+    if (!isOrthographicCamera(this.camera)) {
       this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
     } else {
       this.orthoScale = this.controls.scale;
     }
   }
 
-  startRenderLoop() {
+  startRenderLoop(): void {
     this.inRenderLoop = true;
     // reset the timer so that the time delta won't go back to the last time we were animating.
     this.timer.begin();
     this.renderer.setAnimationLoop(this.onAnimationLoop.bind(this));
   }
 
-  stopRenderLoop() {
+  stopRenderLoop(): void {
     this.renderer.setAnimationLoop(null);
     this.inRenderLoop = false;
 
@@ -529,7 +493,7 @@ export class ThreeJsPanel {
     this.timer.end();
   }
 
-  removeControlHandlers() {
+  removeControlHandlers(): void {
     if (this.controlStartHandler) {
       this.controls.removeEventListener("start", this.controlStartHandler);
     }
@@ -541,7 +505,11 @@ export class ThreeJsPanel {
     }
   }
 
-  setControlHandlers(onstart, onchange, onend) {
+  setControlHandlers(
+    onstart: EventListener<Event, "start", TrackballControls>,
+    onchange: EventListener<Event, "change", TrackballControls>,
+    onend: EventListener<Event, "end", TrackballControls>
+  ): void {
     this.removeControlHandlers();
 
     if (onstart) {

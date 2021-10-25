@@ -1,4 +1,4 @@
-import { Vector2, Vector3, Vector4 } from "three";
+import { Texture, Vector2, Vector3, Vector4 } from "three";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "../Light";
 
 // threejs passthrough vertex shader for fullscreen quad
@@ -36,38 +36,38 @@ const float MAX_RAY_LEN = 1500000.0f;
 in vec2 vUv;
 
 struct Camera {
-  vec3 m_from;
-  vec3 m_U, m_V, m_N;
-  vec4 m_screen;  // left, right, bottom, top
-  vec2 m_invScreen;  // 1/w, 1/h
-  float m_focalDistance;
-  float m_apertureSize;
-  float m_isOrtho; // 1 or 0
+  vec3 mFrom;
+  vec3 mU, mV, mN;
+  vec4 mScreen;  // left, right, bottom, top
+  vec2 mInvScreen;  // 1/w, 1/h
+  float mFocalDistance;
+  float mApertureSize;
+  float mIsOrtho; // 1 or 0
 };
 
 uniform Camera gCamera;
 
 struct Light {
-  float   m_theta;
-  float   m_phi;
-  float   m_width;
-  float   m_halfWidth;
-  float   m_height;
-  float   m_halfHeight;
-  float   m_distance;
-  float   m_skyRadius;
-  vec3    m_P;
-  vec3    m_target;
-  vec3    m_N;
-  vec3    m_U;
-  vec3    m_V;
-  float   m_area;
-  float   m_areaPdf;
-  vec3    m_color;
-  vec3    m_colorTop;
-  vec3    m_colorMiddle;
-  vec3    m_colorBottom;
-  int     m_T;
+  float   mTheta;
+  float   mPhi;
+  float   mWidth;
+  float   mHalfWidth;
+  float   mHeight;
+  float   mHalfHeight;
+  float   mDistance;
+  float   mSkyRadius;
+  vec3    mP;
+  vec3    mTarget;
+  vec3    mN;
+  vec3    mU;
+  vec3    mV;
+  float   mArea;
+  float   mAreaPdf;
+  vec3    mColor;
+  vec3    mColorTop;
+  vec3    mColorMiddle;
+  vec3    mColorBottom;
+  int     mT;
 };
 const int NUM_LIGHTS = 2;
 uniform Light gLights[2];
@@ -79,7 +79,7 @@ uniform float gStepSize;
 uniform float gStepSizeShadow;
 uniform sampler3D volumeTexture;
 uniform vec3 gInvAaBbMax;
-uniform int g_nChannels;
+uniform int gNChannels;
 uniform int gShadingType;
 uniform vec3 gGradientDeltaX;
 uniform vec3 gGradientDeltaY;
@@ -92,14 +92,14 @@ uniform vec3 flipVolume;
 // per channel
 // the luttexture is a 256x4 rgba texture
 // each row is a 256 element lookup table.
-uniform sampler2D g_lutTexture;
-uniform vec4 g_intensityMax;
-uniform vec4 g_intensityMin;
-uniform float g_opacity[4];
-uniform vec3 g_emissive[4];
-uniform vec3 g_diffuse[4];
-uniform vec3 g_specular[4];
-uniform float g_glossiness[4];
+uniform sampler2D gLutTexture;
+uniform vec4 gIntensityMax;
+uniform vec4 gIntensityMin;
+uniform float gOpacity[4];
+uniform vec3 gEmissive[4];
+uniform vec3 gDiffuse[4];
+uniform vec3 gSpecular[4];
+uniform float gGlossiness[4];
 
 // compositing / progressive render
 uniform float uFrameCounter;
@@ -230,25 +230,25 @@ vec3 rayAt(Ray r, float t) {
 Ray GenerateCameraRay(in Camera cam, in vec2 Pixel, in vec2 ApertureRnd)
 {
   // negating ScreenPoint.y flips the up/down direction. depends on whether you want pixel 0 at top or bottom
-  // we could also have flipped m_screen and m_invScreen, or cam.m_V?
+  // we could also have flipped mScreen and mInvScreen, or cam.mV?
   vec2 ScreenPoint = vec2(
-    cam.m_screen.x + (cam.m_invScreen.x * Pixel.x),
-    cam.m_screen.z + (cam.m_invScreen.y * Pixel.y)
+    cam.mScreen.x + (cam.mInvScreen.x * Pixel.x),
+    cam.mScreen.z + (cam.mInvScreen.y * Pixel.y)
   );
-  vec3 dxy = (ScreenPoint.x * cam.m_U) + (-ScreenPoint.y * cam.m_V);
+  vec3 dxy = (ScreenPoint.x * cam.mU) + (-ScreenPoint.y * cam.mV);
 
   // orthographic camera ray: start at (camera pos + screen point), go in direction N
   // perspective camera ray: start at camera pos, go in direction (N + screen point)
-  vec3 RayO = cam.m_from + cam.m_isOrtho * dxy;
-  vec3 RayD = normalize(cam.m_N + (1.0 - cam.m_isOrtho) * dxy);
+  vec3 RayO = cam.mFrom + cam.mIsOrtho * dxy;
+  vec3 RayD = normalize(cam.mN + (1.0 - cam.mIsOrtho) * dxy);
 
-  if (cam.m_apertureSize != 0.0f)
+  if (cam.mApertureSize != 0.0f)
   {
-    vec2 LensUV = cam.m_apertureSize * getConcentricDiskSample(ApertureRnd);
+    vec2 LensUV = cam.mApertureSize * getConcentricDiskSample(ApertureRnd);
 
-    vec3 LI = cam.m_U * LensUV.x + cam.m_V * LensUV.y;
+    vec3 LI = cam.mU * LensUV.x + cam.mV * LensUV.y;
     RayO += LI;
-    RayD = normalize((RayD * cam.m_focalDistance) - LI);
+    RayD = normalize((RayD * cam.mFocalDistance) - LI);
   }
 
   return Ray(RayO, RayD, 0.0, MAX_RAY_LEN);
@@ -289,18 +289,18 @@ float GetNormalizedIntensityMax4ch(in vec3 P, out int ch)
 {
   vec4 intensity = UINT8_MAX * texture(volumeTexture, PtoVolumeTex(P));
 
-  //intensity = (intensity - g_intensityMin) / (g_intensityMax - g_intensityMin);
+  //intensity = (intensity - gIntensityMin) / (gIntensityMax - gIntensityMin);
   vec4 ilut = vec4(0.0, 0.0, 0.0, 0.0);
   // w in the lut texture is "opacity"
-  ilut.x = texture(g_lutTexture, vec2(intensity.x, 0.5/4.0)).w / 255.0;
-  ilut.y = texture(g_lutTexture, vec2(intensity.y, 1.5/4.0)).w / 255.0;
-  ilut.z = texture(g_lutTexture, vec2(intensity.z, 2.5/4.0)).w / 255.0;
-  ilut.w = texture(g_lutTexture, vec2(intensity.w, 3.5/4.0)).w / 255.0;
+  ilut.x = texture(gLutTexture, vec2(intensity.x, 0.5/4.0)).w / 255.0;
+  ilut.y = texture(gLutTexture, vec2(intensity.y, 1.5/4.0)).w / 255.0;
+  ilut.z = texture(gLutTexture, vec2(intensity.z, 2.5/4.0)).w / 255.0;
+  ilut.w = texture(gLutTexture, vec2(intensity.w, 3.5/4.0)).w / 255.0;
 
   float maxIn = 0.0;
   float iOut = 0.0;
   ch = 0;
-  for (int i = 0; i < min(g_nChannels, 4); ++i) {
+  for (int i = 0; i < min(gNChannels, 4); ++i) {
     if (ilut[i] > maxIn) {
       maxIn = ilut[i];
       ch = i;
@@ -317,8 +317,8 @@ float GetNormalizedIntensity4ch(vec3 P, int ch)
   vec4 intensity = UINT8_MAX * texture(volumeTexture, PtoVolumeTex(P));
   // select channel
   float intensityf = intensity[ch];
-  //intensityf = (intensityf - g_intensityMin[ch]) / (g_intensityMax[ch] - g_intensityMin[ch]);
-  //intensityf = texture(g_lutTexture, vec2(intensityf, (0.5+float(ch))/4.0)).x;
+  //intensityf = (intensityf - gIntensityMin[ch]) / (gIntensityMax[ch] - gIntensityMin[ch]);
+  //intensityf = texture(gLutTexture, vec2(intensityf, (0.5+float(ch))/4.0)).x;
 
   return intensityf;
 }
@@ -339,31 +339,31 @@ vec3 Gradient4ch(vec3 P, int ch)
 float GetOpacity(float NormalizedIntensity, int ch)
 {
   // apply lut
-  float o = texture(g_lutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0)).w / 255.0;
-  float Intensity = o * g_opacity[ch];
+  float o = texture(gLutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0)).w / 255.0;
+  float Intensity = o * gOpacity[ch];
   return Intensity;
 }
 
 vec3 GetEmissionN(float NormalizedIntensity, int ch)
 {
-  return g_emissive[ch];
+  return gEmissive[ch];
 }
 
 vec3 GetDiffuseN(float NormalizedIntensity, int ch)
 {
-  vec4 col = texture(g_lutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0));
+  vec4 col = texture(gLutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0));
   //vec3 col = vec3(1.0, 1.0, 1.0);
-  return col.xyz * g_diffuse[ch];
+  return col.xyz * gDiffuse[ch];
 }
 
 vec3 GetSpecularN(float NormalizedIntensity, int ch)
 {
-  return g_specular[ch];
+  return gSpecular[ch];
 }
 
 float GetGlossinessN(float NormalizedIntensity, int ch)
 {
-  return g_glossiness[ch];
+  return gGlossiness[ch];
 }
 
 // a bsdf sample, a sample on a light source, and a randomly chosen light index
@@ -388,15 +388,15 @@ LightingSample LightingSample_LargeStep(inout uvec2 seed) {
 // return a color xyz
 vec3 Light_Le(in Light light, in vec2 UV)
 {
-  if (light.m_T == 0)
-    return RGBtoXYZ(light.m_color) / light.m_area;
+  if (light.mT == 0)
+    return RGBtoXYZ(light.mColor) / light.mArea;
 
-  if (light.m_T == 1)
+  if (light.mT == 1)
   {
     if (UV.y > 0.0f)
-      return RGBtoXYZ(mix(light.m_colorMiddle, light.m_colorTop, abs(UV.y)));
+      return RGBtoXYZ(mix(light.mColorMiddle, light.mColorTop, abs(UV.y)));
     else
-      return RGBtoXYZ(mix(light.m_colorMiddle, light.m_colorBottom, abs(UV.y)));
+      return RGBtoXYZ(mix(light.mColorMiddle, light.mColorBottom, abs(UV.y)));
   }
 
   return BLACK;
@@ -408,19 +408,19 @@ vec3 Light_SampleL(in Light light, in vec3 P, out Ray Rl, out float Pdf, in Ligh
   vec3 L = BLACK;
   Pdf = 0.0;
   vec3 Ro = vec3(0,0,0), Rd = vec3(0,0,1);
-  if (light.m_T == 0)
+  if (light.mT == 0)
   {
-    Ro = (light.m_P + ((-0.5f + LS.m_lightPos.x) * light.m_width * light.m_U) + ((-0.5f + LS.m_lightPos.y) * light.m_height * light.m_V));
+    Ro = (light.mP + ((-0.5f + LS.m_lightPos.x) * light.mWidth * light.mU) + ((-0.5f + LS.m_lightPos.y) * light.mHeight * light.mV));
     Rd = normalize(P - Ro);
-    L = dot(Rd, light.m_N) > 0.0f ? Light_Le(light, vec2(0.0f)) : BLACK;
-    Pdf = abs(dot(Rd, light.m_N)) > 0.0f ? dot(P-Ro, P-Ro) / (abs(dot(Rd, light.m_N)) * light.m_area) : 0.0f;
+    L = dot(Rd, light.mN) > 0.0f ? Light_Le(light, vec2(0.0f)) : BLACK;
+    Pdf = abs(dot(Rd, light.mN)) > 0.0f ? dot(P-Ro, P-Ro) / (abs(dot(Rd, light.mN)) * light.mArea) : 0.0f;
   }
-  else if (light.m_T == 1)
+  else if (light.mT == 1)
   {
-    Ro = light.m_P + light.m_skyRadius * getUniformSphereSample(LS.m_lightPos);
+    Ro = light.mP + light.mSkyRadius * getUniformSphereSample(LS.m_lightPos);
     Rd = normalize(P - Ro);
     L = Light_Le(light, vec2(1.0f) - 2.0f * LS.m_lightPos);
-    Pdf = pow(light.m_skyRadius, 2.0f) / light.m_area;
+    Pdf = pow(light.mSkyRadius, 2.0f) / light.mArea;
   }
 
   Rl = Ray(Ro, Rd, 0.0f, length(P - Ro));
@@ -431,17 +431,17 @@ vec3 Light_SampleL(in Light light, in vec3 P, out Ray Rl, out float Pdf, in Ligh
 // Intersect ray with light
 bool Light_Intersect(Light light, inout Ray R, out float T, out vec3 L, out float pPdf)
 {
-  if (light.m_T == 0)
+  if (light.mT == 0)
   {
     // Compute projection
-    float DotN = dot(R.m_D, light.m_N);
+    float DotN = dot(R.m_D, light.mN);
 
     // Ray is coplanar with light surface
     if (DotN >= 0.0f)
       return false;
 
     // Compute hit distance
-    T = (-light.m_distance - dot(R.m_O, light.m_N)) / DotN;
+    T = (-light.mDistance - dot(R.m_O, light.mN)) / DotN;
 
     // Intersection is in ray's negative direction
     if (T < R.m_MinT || T > R.m_MaxT)
@@ -451,13 +451,13 @@ bool Light_Intersect(Light light, inout Ray R, out float T, out vec3 L, out floa
     vec3 Pl = rayAt(R, T);
 
     // Vector from point on area light to center of area light
-    vec3 Wl = Pl - light.m_P;
+    vec3 Wl = Pl - light.mP;
 
     // Compute texture coordinates
-    vec2 UV = vec2(dot(Wl, light.m_U), dot(Wl, light.m_V));
+    vec2 UV = vec2(dot(Wl, light.mU), dot(Wl, light.mV));
 
     // Check if within bounds of light surface
-    if (UV.x > light.m_halfWidth || UV.x < -light.m_halfWidth || UV.y > light.m_halfHeight || UV.y < -light.m_halfHeight)
+    if (UV.x > light.mHalfWidth || UV.x < -light.mHalfWidth || UV.y > light.mHalfHeight || UV.y < -light.mHalfHeight)
       return false;
 
     R.m_MaxT = T;
@@ -465,18 +465,18 @@ bool Light_Intersect(Light light, inout Ray R, out float T, out vec3 L, out floa
     //pUV = UV;
 
     if (DotN < 0.0f)
-      L = RGBtoXYZ(light.m_color) / light.m_area;
+      L = RGBtoXYZ(light.mColor) / light.mArea;
     else
       L = BLACK;
 
-    pPdf = dot(R.m_O-Pl, R.m_O-Pl) / (DotN * light.m_area);
+    pPdf = dot(R.m_O-Pl, R.m_O-Pl) / (DotN * light.mArea);
 
     return true;
   }
 
-  else if (light.m_T == 1)
+  else if (light.mT == 1)
   {
-    T = light.m_skyRadius;
+    T = light.mSkyRadius;
 
     // Intersection is in ray's negative direction
     if (T < R.m_MinT || T > R.m_MaxT)
@@ -488,7 +488,7 @@ bool Light_Intersect(Light light, inout Ray R, out float T, out vec3 L, out floa
 
     L = Light_Le(light, vec2(1.0f,1.0f) - 2.0f * UV);
 
-    pPdf = pow(light.m_skyRadius, 2.0f) / light.m_area;
+    pPdf = pow(light.mSkyRadius, 2.0f) / light.mArea;
     //pUV = UV;
 
     return true;
@@ -505,19 +505,19 @@ float Light_Pdf(in Light light, in vec3 P, in vec3 Wi)
 
   Ray Rl = Ray(P, Wi, 0.0f, 100000.0f);
 
-  if (light.m_T == 0)
+  if (light.mT == 0)
   {
     float T = 0.0f;
 
     if (!Light_Intersect(light, Rl, T, L, Pdf))
       return 0.0f;
 
-    return pow(T, 2.0f) / (abs(dot(light.m_N, -Wi)) * light.m_area);
+    return pow(T, 2.0f) / (abs(dot(light.mN, -Wi)) * light.mArea);
   }
 
-  else if (light.m_T == 1)
+  else if (light.mT == 1)
   {
-    return pow(light.m_skyRadius, 2.0f) / light.m_area;
+    return pow(light.mSkyRadius, 2.0f) / light.mArea;
   }
 
   return 0.0f;
@@ -1147,73 +1147,71 @@ void main()
 `;
 
 // Must match values in shader code above.
-const ShaderType_Brdf = 0;
+const SHADERTYPE_BRDF = 0;
 // const ShaderType_Phase = 1;
 // const ShaderType_Mixed = 2;
 
-export function pathTracingUniforms() {
-  return {
-    tPreviousTexture: { type: "t", value: null },
+export const pathTracingUniforms = {
+  tPreviousTexture: { type: "t", value: new Texture() },
 
-    uSampleCounter: { type: "f", value: 0.0 },
-    uFrameCounter: { type: "f", value: 1.0 },
+  uSampleCounter: { type: "f", value: 0.0 },
+  uFrameCounter: { type: "f", value: 1.0 },
 
-    uResolution: { type: "v2", value: new Vector2() },
+  uResolution: { type: "v2", value: new Vector2() },
 
-    ///////////////////////////
-    gClippedAaBbMin: { type: "v3", value: new Vector3(0, 0, 0) },
-    gClippedAaBbMax: { type: "v3", value: new Vector3(1, 1, 1) },
-    gDensityScale: { type: "f", value: 50.0 },
-    gStepSize: { type: "f", value: 1.0 },
-    gStepSizeShadow: { type: "f", value: 1.0 },
-    gInvAaBbMax: { type: "v3", value: new Vector3() },
-    g_nChannels: { type: "i", value: 0 },
-    gShadingType: { type: "i", value: ShaderType_Brdf },
-    gGradientDeltaX: { type: "v3", value: new Vector3(0.01, 0, 0) },
-    gGradientDeltaY: { type: "v3", value: new Vector3(0, 0.01, 0) },
-    gGradientDeltaZ: { type: "v3", value: new Vector3(0, 0, 0.01) },
-    gInvGradientDelta: { type: "f", value: 0.0 },
-    // controls the amount of BRDF-like versus phase-function-like shading
-    gGradientFactor: { type: "f", value: 0.25 },
+  ///////////////////////////
+  gClippedAaBbMin: { type: "v3", value: new Vector3(0, 0, 0) },
+  gClippedAaBbMax: { type: "v3", value: new Vector3(1, 1, 1) },
+  gDensityScale: { type: "f", value: 50.0 },
+  gStepSize: { type: "f", value: 1.0 },
+  gStepSizeShadow: { type: "f", value: 1.0 },
+  gInvAaBbMax: { type: "v3", value: new Vector3() },
+  gNChannels: { type: "i", value: 0 },
+  gShadingType: { type: "i", value: SHADERTYPE_BRDF },
+  gGradientDeltaX: { type: "v3", value: new Vector3(0.01, 0, 0) },
+  gGradientDeltaY: { type: "v3", value: new Vector3(0, 0.01, 0) },
+  gGradientDeltaZ: { type: "v3", value: new Vector3(0, 0, 0.01) },
+  gInvGradientDelta: { type: "f", value: 0.0 },
+  // controls the amount of BRDF-like versus phase-function-like shading
+  gGradientFactor: { type: "f", value: 0.25 },
 
-    gCamera: {
-      value: {
-        // Camera struct
-        m_from: new Vector3(),
-        m_U: new Vector3(),
-        m_V: new Vector3(),
-        m_N: new Vector3(),
-        m_screen: new Vector4(), // left, right, bottom, top
-        m_invScreen: new Vector2(), // 1/w, 1/h
-        m_focalDistance: 0.0,
-        m_apertureSize: 0.0,
-        m_isOrtho: 0.0,
-      },
+  gCamera: {
+    value: {
+      // Camera struct
+      mFrom: new Vector3(),
+      mU: new Vector3(),
+      mV: new Vector3(),
+      mN: new Vector3(),
+      mScreen: new Vector4(), // left, right, bottom, top
+      mInvScreen: new Vector2(), // 1/w, 1/h
+      mFocalDistance: 0.0,
+      mApertureSize: 0.0,
+      mIsOrtho: 0.0,
     },
-    gLights: {
-      value: [new Light(SKY_LIGHT), new Light(AREA_LIGHT)],
-    },
+  },
+  gLights: {
+    value: [new Light(SKY_LIGHT), new Light(AREA_LIGHT)],
+  },
 
-    volumeTexture: { type: "t", value: null },
-    // per channel
-    g_lutTexture: { type: "t", value: null },
-    g_intensityMax: { type: "v4", value: new Vector4(1, 1, 1, 1) },
-    g_intensityMin: { type: "v4", value: new Vector4(0, 0, 0, 0) },
-    g_opacity: { type: "1fv", value: [1, 1, 1, 1] },
-    g_emissive: {
-      type: "v3v",
-      value: [new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)],
-    },
-    g_diffuse: {
-      type: "v3v",
-      value: [new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(0, 0, 1), new Vector3(1, 0, 1)],
-    },
-    g_specular: {
-      type: "v3v",
-      value: [new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)],
-    },
-    g_glossiness: { type: "1fv", value: [1, 1, 1, 1] },
-    uShowLights: { type: "f", value: 0 },
-    flipVolume: { type: "v3", value: new Vector3(1, 1, 1) },
-  };
-}
+  volumeTexture: { type: "t", value: new Texture() },
+  // per channel
+  gLutTexture: { type: "t", value: new Texture() },
+  gIntensityMax: { type: "v4", value: new Vector4(1, 1, 1, 1) },
+  gIntensityMin: { type: "v4", value: new Vector4(0, 0, 0, 0) },
+  gOpacity: { type: "1fv", value: [1, 1, 1, 1] },
+  gEmissive: {
+    type: "v3v",
+    value: [new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)],
+  },
+  gDiffuse: {
+    type: "v3v",
+    value: [new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(0, 0, 1), new Vector3(1, 0, 1)],
+  },
+  gSpecular: {
+    type: "v3v",
+    value: [new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(0, 0, 0)],
+  },
+  gGlossiness: { type: "1fv", value: [1, 1, 1, 1] },
+  uShowLights: { type: "f", value: 0 },
+  flipVolume: { type: "v3", value: new Vector3(1, 1, 1) },
+};

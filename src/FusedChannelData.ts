@@ -1,16 +1,39 @@
 import { DataTexture, LuminanceFormat, UnsignedByteType, ClampToEdgeWrapping } from "three";
 import { LinearFilter } from "three/src/constants";
 
+import Channel from "./Channel";
+import { FuseChannel } from "./types";
+
 // This is the owner of the fused RGBA volume texture atlas, and the mask texture atlas.
 // This module is responsible for updating the fused texture, given the read-only volume channel data.
 export default class FusedChannelData {
-  constructor(atlasX, atlasY) {
+  private width: number;
+  private height: number;
+  private fused: Uint8ClampedArray;
+  // todo: make private?
+  public fusedTexture: DataTexture;
+  public maskTexture: DataTexture;
+
+  private maskChannelLoaded: boolean;
+  private maskChannelIndex: number;
+
+  private useSingleThread: boolean;
+  private fuseWorkersWorking: number;
+  private isFusing: boolean;
+  private workers: Worker[];
+  private workersCount: number;
+
+  private fuseRequested: FuseChannel[] | null;
+  private fuseMethodRequested: string;
+  private channelsDataToFuse: Channel[];
+
+  constructor(atlasX: number, atlasY: number) {
     // allow for resizing
     this.width = atlasX;
     this.height = atlasY;
 
     // cpu memory buffer with the combined rgba texture atlas for display
-    this.fused = new Uint8Array(this.width * this.height * 4);
+    this.fused = new Uint8ClampedArray(this.width * this.height * 4);
 
     // webgl texture with the rgba texture atlas for display
     this.fusedTexture = new DataTexture(this.fused, this.width, this.height);
@@ -21,7 +44,7 @@ export default class FusedChannelData {
     this.fusedTexture.wrapT = ClampToEdgeWrapping;
 
     this.maskTexture = new DataTexture(
-      new Uint8Array(this.width * this.height),
+      new Uint8ClampedArray(this.width * this.height),
       this.width,
       this.height,
       LuminanceFormat,
@@ -35,24 +58,35 @@ export default class FusedChannelData {
     // for single-channel tightly packed array data:
     this.maskTexture.unpackAlignment = 1;
 
+    this.maskChannelLoaded = false;
+    this.maskChannelIndex = 0;
+
     // force single threaded use even if webworkers are available
-    this.useSingleThread = false;
+    this.useSingleThread = true;
 
     // thread control
     this.fuseWorkersWorking = 0;
+    this.isFusing = false;
+    this.fuseRequested = null;
+    this.fuseMethodRequested = "";
+    this.channelsDataToFuse = [];
 
+    this.workers = [];
+    this.workersCount = 0;
     this.setupWorkers();
   }
 
-  static onFuseComplete() {}
+  static onFuseComplete(): void {
+    // no op
+  }
 
-  static setOnFuseComplete(onFuseComplete) {
+  static setOnFuseComplete(onFuseComplete: () => void): void {
     FusedChannelData.onFuseComplete = onFuseComplete;
   }
 
-  cleanup() {
+  public cleanup(): void {
     if (this.workers && this.workers.length > 0) {
-      for (var i = 0; i < this.workers.length; ++i) {
+      for (let i = 0; i < this.workers.length; ++i) {
         this.workers[i].onmessage = null;
         this.workers[i].terminate();
       }
@@ -64,49 +98,47 @@ export default class FusedChannelData {
     this.maskTexture.dispose();
   }
 
-  setupWorkers() {
+  private setupWorkers(): void {
     if (this.useSingleThread || !window.Worker) {
       this.workersCount = 0;
       return;
     }
     // We will break up the image into one piece for each web-worker
     // can we assert that npx is a perfect multiple of workersCount??
-    var npx = this.height * this.width;
+    const npx = this.height * this.width;
     this.workersCount = 4;
     this.fuseWorkersWorking = 0;
     //  var segmentLength = npx / workersCount; // This is the length of array sent to the worker
     //  var blockSize = this.height / workersCount; // Height of the picture chunk for every worker
 
     // Function called when a job is finished
-    var me = this;
-    var onWorkEnded = function(e) {
-      me.fuseWorkersWorking++;
+    const onWorkEnded = (e) => {
+      this.fuseWorkersWorking++;
       // copy e.data.data into fused
-      me.fused.set(e.data.data, Math.floor(e.data.workerindex * (npx / me.workersCount)) * 4);
-      if (me.fuseWorkersWorking === me.workersCount) {
-        me.fusedData = { data: me.fused, width: me.width, height: me.height };
-        me.fusedTexture.image = me.fusedData;
-        me.fusedTexture.needsUpdate = true;
-        me.fuseWorkersWorking = 0;
+      this.fused.set(e.data.data, Math.floor(e.data.workerindex * (npx / this.workersCount)) * 4);
+      if (this.fuseWorkersWorking === this.workersCount) {
+        this.fusedTexture.image = { data: this.fused, width: this.width, height: this.height };
+        this.fusedTexture.needsUpdate = true;
+        this.fuseWorkersWorking = 0;
         if (FusedChannelData.onFuseComplete) {
           FusedChannelData.onFuseComplete();
         }
 
         // if there are any fusion requests in queue, execute the next one now.
-        me.isFusing = false;
-        if (me.fuseRequested) {
-          me.fuse(me.fuseRequested, me.fuseMethodRequested, me.channelsDataToFuse);
+        this.isFusing = false;
+        if (this.fuseRequested) {
+          this.fuse(this.fuseRequested, this.fuseMethodRequested, this.channelsDataToFuse);
         }
-        me.fuseRequested = false;
-        me.channelsDataToFuse = null;
+        this.fuseRequested = null;
+        this.channelsDataToFuse = [];
       }
     };
 
     this.workers = [];
-    for (var index = 0; index < this.workersCount; index++) {
-      var worker = new Worker(new URL("./FuseWorker.js", import.meta.url));
+    for (let index = 0; index < this.workersCount; index++) {
+      const worker = new Worker(new URL("./FuseWorker.js", import.meta.url));
       worker.onmessage = onWorkEnded;
-      worker.onerror = function(e) {
+      worker.onerror = function (e) {
         alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
       };
       this.workers.push(worker);
@@ -115,23 +147,22 @@ export default class FusedChannelData {
 
   // batch is array containing which channels were just loaded
   // channels is the array containing the channel data.
-  onChannelLoaded(batch, channels) {
+  public onChannelLoaded(batch: number[], channels: Channel[]): void {
     if (this.useSingleThread || !window.Worker) {
       return;
     }
-    var npx = this.height * this.width;
+    const npx = this.height * this.width;
     // pass channel data to workers
-    for (var i = 0; i < this.workersCount; ++i) {
-      // hand some global data to the worker
-      for (var j = 0; j < batch.length; ++j) {
-        var channelIndex = batch[j];
+    for (let i = 0; i < this.workersCount; ++i) {
+      for (let j = 0; j < batch.length; ++j) {
+        const channelIndex = batch[j];
         // chop up the arrays. this is a copy operation!
-        var arr = channels[channelIndex].imgData.data.buffer.slice(
+        const arr = channels[channelIndex].imgData.data.buffer.slice(
           Math.floor(i * (npx / this.workersCount)),
           Math.floor((i + 1) * (npx / this.workersCount) - 1)
         );
         //console.log(arr.byteLength);
-        var workerData = {
+        const workerData = {
           msgtype: "channeldata",
           channelindex: channelIndex,
           workerindex: i,
@@ -146,23 +177,19 @@ export default class FusedChannelData {
     }
   }
 
-  appendEmptyChannel(name) {
-    // nothing to do yet
-  }
-
-  fuse(combination, fuseMethod, channels) {
+  fuse(combination: FuseChannel[], fuseMethod: string, channels: Channel[]): void {
     fuseMethod = fuseMethod || "m";
 
     // we can fuse if we have any loaded channels that are showing.
     // actually, we can fuse if no channels are showing (but they are loaded), too.
-    var canFuse = false;
-    for (var i = 0; i < combination.length; ++i) {
-      var c = combination[i];
-      var idx = c.chIndex;
+    let canFuse = false;
+    for (let i = 0; i < combination.length; ++i) {
+      const c = combination[i];
+      const idx = c.chIndex;
       if (channels[idx].loaded) {
         // set the lut in this fuse combination.
         // can optimize by calling combineLuts more lazily
-        c.lut = channels[idx].combineLuts(c.rgbColor);
+        c.lut = channels[idx].combineLuts(c.rgbColor, c.lut);
         canFuse = true;
         //break;
       }
@@ -201,7 +228,7 @@ export default class FusedChannelData {
 
     // Launching every worker
     //console.log("BEGIN FUSE");
-    for (var index = 0; index < this.workersCount; index++) {
+    for (let index = 0; index < this.workersCount; index++) {
       this.workers[index].postMessage({
         msgtype: "fuse",
         combination: combination,
@@ -211,19 +238,19 @@ export default class FusedChannelData {
   }
 
   // sum over [{chIndex, rgbColor}]
-  singleThreadedFuse(combination, channels) {
+  private singleThreadedFuse(combination, channels): void {
     //console.log("BEGIN");
 
     // explore some faster ways to fuse here...
 
-    var ar, ag, ab, aa, c, lr, lg, lb, la, opacity, channeldata;
-    var cx, fx, idx;
-    var cl = combination.length;
+    let ar, ag, ab, aa, c, lr, lg, lb, la, opacity, channeldata;
+    let cx, fx, idx;
+    const cl = combination.length;
 
-    var npx4 = this.height * this.width * 4;
-    var npx = this.height * this.width;
+    const npx4 = this.height * this.width * 4;
+    const npx = this.height * this.width;
 
-    var fused = this.fused;
+    const fused = this.fused;
     // init the rgba image
     for (let x = 0; x < npx4; x += 4) {
       fused[x + 0] = 0;
@@ -231,7 +258,7 @@ export default class FusedChannelData {
       fused[x + 2] = 0;
       fused[x + 3] = 255;
     }
-    var value = 0;
+    let value = 0;
     for (let i = 0; i < cl; ++i) {
       c = combination[i];
       idx = c.chIndex;
@@ -267,25 +294,24 @@ export default class FusedChannelData {
       fused[x + 2] = Math.min(fused[x + 2], 255);
     }
 
-    this.fusedData = {
+    this.fusedTexture.image = {
       data: this.fused,
       width: this.width,
       height: this.height,
     };
-    this.fusedTexture.image = this.fusedData;
     this.fusedTexture.needsUpdate = true;
 
     //console.log("END");
   }
 
   // currently only one channel can be selected to participate as a mask
-  setChannelAsMask(idx, channel) {
+  public setChannelAsMask(idx: number, channel: Channel): boolean {
     if (!channel || !channel.loaded) {
       return false;
     }
-    var datacopy = channel.imgData.data.buffer.slice(0);
-    var maskData = {
-      data: new Uint8Array(datacopy),
+    const datacopy = channel.imgData.data.buffer.slice(0);
+    const maskData = {
+      data: new Uint8ClampedArray(datacopy),
       width: this.width,
       height: this.height,
     };

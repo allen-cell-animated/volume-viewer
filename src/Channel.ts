@@ -3,11 +3,23 @@ import { LUT_ARRAY_LENGTH } from "./Histogram";
 
 // Data and processing for a single channel
 export default class Channel {
-  constructor(name) {
+  public loaded: boolean;
+  public imgData: ImageData;
+  public volumeData: Uint8Array;
+  public name: string;
+  public histogram: Histogram;
+  public lut: Uint8Array;
+  public colorPalette: Uint8Array;
+  public colorPaletteAlpha: number;
+  public dims: [number, number, number];
+
+  constructor(name: string) {
     this.loaded = false;
-    this.imgData = null;
+    this.imgData = { data: new Uint8ClampedArray(), width: 0, height: 0 };
+    this.volumeData = new Uint8Array();
     this.name = name;
-    this.histogram = new Histogram([]);
+    this.histogram = new Histogram(new Uint8Array());
+    this.dims = [0, 0, 0];
 
     // intensity remapping lookup table
     this.lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
@@ -18,8 +30,11 @@ export default class Channel {
   }
 
   // rgbColor is [0..255, 0..255, 0..255]
-  combineLuts(rgbColor) {
-    const ret = new Uint8Array(LUT_ARRAY_LENGTH);
+  public combineLuts(rgbColor: [number, number, number] | number, out?: Uint8Array): Uint8Array {
+    const ret = out ? out : new Uint8Array(LUT_ARRAY_LENGTH);
+    if (!rgbColor) {
+      return ret;
+    }
     const rgb = [rgbColor[0] / 255.0, rgbColor[1] / 255.0, rgbColor[2] / 255.0];
     // colorPalette*alpha + rgb*lut*(1-alpha)
     // a tiny bit faster for the edge cases
@@ -49,27 +64,28 @@ export default class Channel {
     }
     return ret;
   }
-  getHistogram() {
+
+  public getHistogram(): Histogram {
     return this.histogram;
   }
 
-  getIntensity(x, y, z) {
+  public getIntensity(x: number, y: number, z: number): number {
     return this.volumeData[x + y * this.dims[0] + z * (this.dims[0] * this.dims[1])];
   }
 
   // how to index into tiled texture atlas
-  getIntensityFromAtlas(x, y, z) {
-    const num_xtiles = this.imgData.width / this.dims[0];
-    const tilex = z % num_xtiles;
-    const tiley = Math.floor(z / num_xtiles);
+  public getIntensityFromAtlas(x: number, y: number, z: number): number {
+    const numXtiles = this.imgData.width / this.dims[0];
+    const tilex = z % numXtiles;
+    const tiley = Math.floor(z / numXtiles);
     const offset = tilex * this.dims[0] + x + (tiley * this.dims[1] + y) * this.imgData.width;
     return this.imgData.data[offset];
   }
 
   // give the channel fresh data and initialize from that data
   // data is formatted as a texture atlas where each tile is a z slice of the volume
-  setBits(bitsArray, w, h) {
-    this.imgData = { data: bitsArray, width: w, height: h };
+  public setBits(bitsArray: Uint8Array, w: number, h: number): void {
+    this.imgData = { data: new Uint8ClampedArray(bitsArray.buffer), width: w, height: h };
     this.loaded = true;
     this.histogram = new Histogram(bitsArray);
 
@@ -80,26 +96,26 @@ export default class Channel {
   // it is assumed to be coming in as a flat Uint8Array of size x*y*z
   // with x*y*z layout (first row of first plane is the first data in the layout,
   // then second row of first plane, etc)
-  unpackVolumeFromAtlas(x, y, z) {
-    var volimgdata = this.imgData.data;
+  public unpackVolumeFromAtlas(x: number, y: number, z: number): void {
+    const volimgdata = this.imgData.data;
 
     this.dims = [x, y, z];
     this.volumeData = new Uint8Array(x * y * z);
 
-    var num_xtiles = this.imgData.width / x;
-    var atlasrow = this.imgData.width;
-    var tilex = 0,
+    const numXtiles = this.imgData.width / x;
+    const atlasrow = this.imgData.width;
+    let tilex = 0,
       tiley = 0,
       tileoffset = 0,
       tilerowoffset = 0;
-    for (var i = 0; i < z; ++i) {
+    for (let i = 0; i < z; ++i) {
       // tile offset
-      tilex = i % num_xtiles;
-      tiley = Math.floor(i / num_xtiles);
+      tilex = i % numXtiles;
+      tiley = Math.floor(i / numXtiles);
       tileoffset = tilex * x + tiley * y * atlasrow;
-      for (var j = 0; j < y; ++j) {
+      for (let j = 0; j < y; ++j) {
         tilerowoffset = j * atlasrow;
-        for (var k = 0; k < x; ++k) {
+        for (let k = 0; k < x; ++k) {
           this.volumeData[i * (x * y) + j * x + k] = volimgdata[tileoffset + tilerowoffset + k];
         }
       }
@@ -107,7 +123,7 @@ export default class Channel {
   }
 
   // give the channel fresh volume data and initialize from that data
-  setFromVolumeData(bitsArray, vx, vy, vz, ax, ay) {
+  public setFromVolumeData(bitsArray: Uint8Array, vx: number, vy: number, vz: number, ax: number, ay: number): void {
     this.dims = [vx, vy, vz];
     this.volumeData = bitsArray;
     this.packToAtlas(vx, vy, vz, ax, ay);
@@ -118,7 +134,7 @@ export default class Channel {
   }
 
   // given this.volumeData, let's unpack it into a flat textureatlas and fill up this.imgData.
-  packToAtlas(vx, vy, vz, ax, ay) {
+  private packToAtlas(vx: number, vy: number, vz: number, ax: number, ay: number): void {
     // big assumptions:
     // atlassize is a perfect multiple of volumesize in both x and y
     // ax % vx == 0
@@ -133,31 +149,31 @@ export default class Channel {
     this.imgData = {
       width: ax,
       height: ay,
-      data: new Uint8Array(ax * ay),
+      data: new Uint8ClampedArray(ax * ay),
     };
     this.imgData.data.fill(0);
 
     // deposit slices one by one into the imgData.data from volData.
-    var volimgdata = this.imgData.data;
+    const volimgdata = this.imgData.data;
 
-    var x = vx,
+    const x = vx,
       y = vy,
       z = vz;
 
-    var num_xtiles = this.imgData.width / x;
-    var atlasrow = this.imgData.width;
-    var tilex = 0,
+    const numXtiles = this.imgData.width / x;
+    const atlasrow = this.imgData.width;
+    let tilex = 0,
       tiley = 0,
       tileoffset = 0,
       tilerowoffset = 0;
-    for (var i = 0; i < z; ++i) {
+    for (let i = 0; i < z; ++i) {
       // tile offset
-      tilex = i % num_xtiles;
-      tiley = Math.floor(i / num_xtiles);
+      tilex = i % numXtiles;
+      tiley = Math.floor(i / numXtiles);
       tileoffset = tilex * x + tiley * y * atlasrow;
-      for (var j = 0; j < y; ++j) {
+      for (let j = 0; j < y; ++j) {
         tilerowoffset = j * atlasrow;
-        for (var k = 0; k < x; ++k) {
+        for (let k = 0; k < x; ++k) {
           volimgdata[tileoffset + tilerowoffset + k] = this.volumeData[i * (x * y) + j * x + k];
         }
       }
@@ -165,20 +181,21 @@ export default class Channel {
   }
 
   // lut should be an uint8array of 256*4 elements (256 rgba8 values)
-  setLut(lut) {
+  public setLut(lut: Uint8Array): void {
     this.lut = lut;
   }
 
   // palette should be an uint8array of 256*4 elements (256 rgba8 values)
-  setColorPalette(palette) {
+  public setColorPalette(palette: Uint8Array): void {
     this.colorPalette = palette;
   }
 
-  setColorPaletteAlpha(alpha) {
+  public setColorPaletteAlpha(alpha: number): void {
     this.colorPaletteAlpha = alpha;
   }
 
-  lutGenerator_windowLevel(wnd, lvl) {
+  /* eslint-disable @typescript-eslint/naming-convention */
+  public lutGenerator_windowLevel(wnd: number, lvl: number): void {
     if (!this.loaded) {
       return;
     }
@@ -186,7 +203,7 @@ export default class Channel {
     this.setLut(lut.lut);
   }
 
-  lutGenerator_fullRange() {
+  public lutGenerator_fullRange(): void {
     if (!this.loaded) {
       return;
     }
@@ -194,7 +211,7 @@ export default class Channel {
     this.setLut(lut.lut);
   }
 
-  lutGenerator_dataRange() {
+  public lutGenerator_dataRange(): void {
     if (!this.loaded) {
       return;
     }
@@ -202,7 +219,7 @@ export default class Channel {
     this.setLut(lut.lut);
   }
 
-  lutGenerator_bestFit() {
+  public lutGenerator_bestFit(): void {
     if (!this.loaded) {
       return;
     }
@@ -211,7 +228,7 @@ export default class Channel {
   }
 
   // attempt to redo imagej's Auto
-  lutGenerator_auto2() {
+  public lutGenerator_auto2(): void {
     if (!this.loaded) {
       return;
     }
@@ -219,7 +236,7 @@ export default class Channel {
     this.setLut(lut.lut);
   }
 
-  lutGenerator_auto() {
+  public lutGenerator_auto(): void {
     if (!this.loaded) {
       return;
     }
@@ -227,7 +244,7 @@ export default class Channel {
     this.setLut(lut.lut);
   }
 
-  lutGenerator_equalize() {
+  public lutGenerator_equalize(): void {
     if (!this.loaded) {
       return;
     }
@@ -235,11 +252,12 @@ export default class Channel {
     this.setLut(lut.lut);
   }
 
-  lutGenerator_percentiles(lo, hi) {
+  public lutGenerator_percentiles(lo: number, hi: number): void {
     if (!this.loaded) {
       return;
     }
     const lut = this.histogram.lutGenerator_percentiles(lo, hi);
     this.setLut(lut.lut);
   }
+  /* eslint-enable @typescript-eslint/naming-convention */
 }
