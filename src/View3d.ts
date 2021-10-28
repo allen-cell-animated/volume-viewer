@@ -43,8 +43,7 @@ export class View3d {
    * @param {HTMLElement} parentElement the 3d display will try to fill the parent element.
    * @param {Object} options This is an optional param. The only option is currently boolean {useWebGL2:true} which defaults to true.
    */
-  constructor(parentElement: HTMLElement, options: View3dOptions) {
-    options = options || { useWebGL2: true };
+  constructor(parentElement: HTMLElement, options: View3dOptions = { useWebGL2: true }) {
     if (options.useWebGL2 === undefined) {
       options.useWebGL2 = true;
     }
@@ -120,7 +119,7 @@ export class View3d {
    * @param {Volume} volume
    * @param {VolumeDisplayOptions} options
    */
-  addVolume(volume: Volume, options: VolumeDisplayOptions): void {
+  addVolume(volume: Volume, options?: VolumeDisplayOptions): void {
     volume.addVolumeDataObserver(this);
     options = options || {};
     options.renderMode = this.volumeRenderMode === RENDERMODE_PATHTRACE ? 1 : 0;

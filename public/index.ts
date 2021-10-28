@@ -1,4 +1,5 @@
 import { Vector3 } from "three";
+import * as dat from "dat.gui";
 
 import {
   View3d,
@@ -11,10 +12,11 @@ import {
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
 } from "../src";
+import { State } from "./types";
 
-let view3D = null;
+let view3D: View3d = null;
 
-const myState = {
+const myState: State = {
   file: "",
   volume: null,
   timeSeriesVolumes: [],
@@ -64,6 +66,9 @@ const myState = {
   flipX: 1,
   flipY: 1,
   flipZ: 1,
+
+  channelFolderNames: [],
+  infoObj: null,
 };
 
 // controlPoints is array of [{offset:number, color:cssstring}]
@@ -134,7 +139,6 @@ function initLights() {
 let gui = null;
 
 function setupGui() {
-  // eslint-disable-next-line no-undef
   gui = new dat.GUI();
   //gui = new dat.GUI({autoPlace:false, width:200});
 
@@ -435,7 +439,7 @@ function setupGui() {
     });
   lighting
     .addColor(myState, "lightColor")
-    .name("lightcolor")
+    .name("lightColor")
     .onChange(function () {
       myState.lights[1].mColor = new Vector3(
         (myState.lightColor[0] / 255.0) * myState.lightIntensity,
@@ -448,7 +452,6 @@ function setupGui() {
   initLights();
 }
 
-//eslint-disable-next-line no-undef
 dat.GUI.prototype.removeFolder = function (name) {
   const folder = this.__folders[name];
   if (!folder) {
@@ -460,7 +463,7 @@ dat.GUI.prototype.removeFolder = function (name) {
   this.onResize();
 };
 
-function showChannelUI(volume) {
+function showChannelUI(volume: Volume) {
   if (myState && myState.channelFolderNames) {
     for (let i = 0; i < myState.channelFolderNames.length; ++i) {
       gui.removeFolder(myState.channelFolderNames[i]);
@@ -719,7 +722,7 @@ function loadVolumeAtlasData(vol, jsonData) {
   });
 }
 
-function loadImageData(jsonData, volumeData) {
+function loadImageData(jsonData, volumeData?) {
   const vol = new Volume(jsonData);
   myState.volume = vol;
 
@@ -914,7 +917,7 @@ function playTimeSeries() {
     updateViewForNewVolume();
     myState.currentFrame = nextFrame;
   };
-  myState.timerId = setInterval(loadNextFrame, 1);
+  myState.timerId = window.setInterval(loadNextFrame, 1);
 }
 
 function goToFrame(targetFrame) {
@@ -1056,7 +1059,7 @@ function main() {
   });
 
   if (view3D.canvas3d.hasWebGL2) {
-    const ptBtn = document.getElementById("ptBtn");
+    const ptBtn = document.getElementById("ptBtn") as HTMLButtonElement;
     ptBtn.disabled = false;
     ptBtn.style.disabled = false;
     ptBtn.addEventListener("click", () => {
