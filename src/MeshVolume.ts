@@ -391,7 +391,7 @@ export default class MeshVolume {
     if (!this.volume) {
       return [];
     }
-    const volumedata = this.volume.channels[channelIndex].volumeData;
+    const volumeData = this.volume.channels[channelIndex].volumeData;
 
     const marchingcubes = true;
 
@@ -402,7 +402,7 @@ export default class MeshVolume {
         false,
         false,
         true,
-        volumedata
+        volumeData
       );
       effect.position.copy(this.meshRoot.position);
       effect.scale.set(0.5 * this.scale.x, 0.5 * this.scale.y, 0.5 * this.scale.z);
@@ -417,7 +417,7 @@ export default class MeshVolume {
       // }
       return geometries || [];
     } else {
-      const result = NaiveSurfaceNets.surfaceNets(volumedata, [this.volume.x, this.volume.y, this.volume.z], isovalue);
+      const result = NaiveSurfaceNets.surfaceNets(volumeData, [this.volume.x, this.volume.y, this.volume.z], isovalue);
       return NaiveSurfaceNets.constructTHREEGeometry(result);
     }
   }
