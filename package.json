@@ -30,7 +30,7 @@
     "access": "public"
   },
   "dependencies": {
-    "three": "^0.130.1",
+    "three": "^0.132.2",
     "zarr": "^0.5.1"
   },
   "devDependencies": {

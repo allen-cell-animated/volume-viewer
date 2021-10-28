@@ -1,19 +1,23 @@
-import "regenerator-runtime";
+import Volume, { ImageInfo } from "./Volume";
 import { slice, openArray, openGroup, HTTPStore, NestedArray, TypedArray } from "zarr";
-
-import Volume from "./Volume.js";
 
 /**
  * @callback PerChannelCallback
  * @param {string} imageurl
  * @param {number} channelindex
  */
-type PerChannelCallback = (imageurl: string, channelindex: number) => void;
+type PerChannelCallback = (imageurl: string, channelIndex: number) => void;
+
+interface PackedChannelsImage {
+  name: string;
+  channels: number[];
+}
+type PackedChannelsImageRequests = Record<string, HTMLImageElement>;
 
 /**
  * @class
  */
-const volumeLoader = {
+export default class VolumeLoader {
   /**
    * load per-channel volume data from a batch of image files containing the volume slices tiled across the images
    * @param {Volume} volume
@@ -22,7 +26,7 @@ const volumeLoader = {
    * @returns {Object.<string, Image>} a map(imageurl : Image object) that should be used to cancel the download requests,
    * for example if you need to destroy the image before all data has arrived.
    * as requests arrive, the callback will be called per image, not per channel
-   * @example loadVolumeAtlasData(myvolume, [{
+   * @example loadVolumeAtlasData([{
    *     "name": "AICS-10_5_5.ome.tif_atlas_0.png",
    *     "channels": [0, 1, 2]
    * }, {
@@ -33,11 +37,11 @@ const volumeLoader = {
    *     "channels": [6, 7, 8]
    * }], mycallback);
    */
-  loadVolumeAtlasData: function (
+  static loadVolumeAtlasData(
     volume: Volume,
-    imageArray: Array<{ name: string; channels: Array<number> }>,
+    imageArray: PackedChannelsImage[],
     callback: PerChannelCallback
-  ): Record<string, unknown> {
+  ): PackedChannelsImageRequests {
     const numImages = imageArray.length;
 
     const requests = {};
@@ -60,11 +64,11 @@ const volumeLoader = {
           // nice thing about this is i could downsample here
           const w = Math.floor(event.target.naturalWidth);
           const h = Math.floor(event.target.naturalHeight);
-          canvas.setAttribute("width", w + "px");
-          canvas.setAttribute("height", h + "px");
+          canvas.setAttribute("width", "" + w);
+          canvas.setAttribute("height", "" + h);
           const ctx = canvas.getContext("2d");
           if (!ctx) {
-            console.warn("could not decode image data due to bad canvas");
+            console.log("Error creating canvas 2d context for " + url);
             return;
           }
           ctx.globalCompositeOperation = "copy";
@@ -100,7 +104,7 @@ const volumeLoader = {
     }
 
     return requests;
-  },
+  }
 
   // loadVolumeAICS(url:string, callback:PerChannelCallback) : Promise<Volume> {
   //   // note that volume is returned before channel data is ready.
@@ -128,7 +132,7 @@ const volumeLoader = {
    * @param {PerChannelCallback} callback Per-channel callback.  Called when each channel's atlased volume data is loaded
    * @returns {Promise<Volume>}
    */
-  loadZarr: async function (url: string, callback: PerChannelCallback): Promise<Volume> {
+  static async loadZarr(url: string, callback: PerChannelCallback): Promise<Volume> {
     const store = new HTTPStore("http://localhost:9020/example-data/z0.zarr");
 
     const imagegroup = "image0"; // "image_reduced", 0
@@ -173,7 +177,7 @@ const volumeLoader = {
     for (let i = 0; i < metadata.channels.length; ++i) {
       chnames.push(metadata.channels[i].label);
     }
-    const imgdata = {
+    const imgdata: ImageInfo = {
       width: w,
       height: h,
       channels: c,
@@ -191,9 +195,7 @@ const volumeLoader = {
       pixel_size_y: metadata.pixel_size.y,
       pixel_size_z: metadata.pixel_size.z,
       name: metadata.name,
-      status: "OK",
       version: metadata.version,
-      aicsImageVersion: "4.x",
       transform: {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],
@@ -275,9 +277,9 @@ const volumeLoader = {
     //   });
     // }
     return vol;
-  },
+  }
 
-  loadOpenCell: async function(callback: PerChannelCallback): Promise<Volume> {
+  static async loadOpenCell(callback: PerChannelCallback): Promise<Volume> {
     const numChannels = 2;
 
     // HQTILE or LQTILE
@@ -295,7 +297,7 @@ const volumeLoader = {
     // we know these are standardized to 600x600, two channels, one channel per jpg.
     const chnames: string[] = ["DNA", "Structure"];
 
-    const imgdata = {
+    const imgdata: ImageInfo = {
       width: 600,
       height: 600,
       channels: 2,
@@ -313,9 +315,7 @@ const volumeLoader = {
       pixel_size_y: 1,
       pixel_size_z: 2,
       name: "TEST",
-      status: "OK",
-      version: 1.0,
-      aicsImageVersion: "4.x",
+      version: "1.0",
       transform: {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],
@@ -326,7 +326,5 @@ const volumeLoader = {
     const vol = new Volume(imgdata);
     this.loadVolumeAtlasData(vol, urls, callback);
     return vol;
-  },
-};
-
-export default volumeLoader;
+  }
+}
