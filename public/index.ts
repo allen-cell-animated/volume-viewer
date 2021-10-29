@@ -452,7 +452,7 @@ function setupGui() {
   initLights();
 }
 
-dat.GUI.prototype.removeFolder = function (name) {
+dat.GUI.prototype.removeFolder = function ({ name }) {
   const folder = this.__folders[name];
   if (!folder) {
     return;
