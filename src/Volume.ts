@@ -401,4 +401,12 @@ export default class Volume {
   removeAllVolumeDataObservers(): void {
     this.volumeDataObservers = [];
   }
+
+  isLoaded(): boolean {
+    return this.loaded;
+  }
+
+  setIsLoaded(loaded: boolean): void {
+    this.loaded = loaded;
+  }
 }

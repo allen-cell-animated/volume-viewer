@@ -795,4 +795,8 @@ export class View3d {
     }
     this.redraw();
   }
+
+  hasWebGL2(): boolean {
+    return this.canvas3d.hasWebGL2;
+  }
 }

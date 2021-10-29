@@ -793,7 +793,7 @@ function fetchImage(url, isTimeSeries = false, frameNumber = 0) {
           // preallocate some memory to be filled in later
           for (let i = 0; i < myState.volume.num_channels; ++i) {
             myState.volume.channels[i].imgData = {
-              data: new Uint8Array(myJson.atlas_width * myJson.atlas_height),
+              data: new Uint8ClampedArray(myJson.atlas_width * myJson.atlas_height),
               width: myJson.atlas_width,
               height: myJson.atlas_height,
             };
@@ -832,7 +832,7 @@ function fetchImage(url, isTimeSeries = false, frameNumber = 0) {
         VolumeLoader.loadVolumeAtlasData(currentVol, myJson.images, (url, channelIndex) => {
           currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
 
-          if (currentVol.loaded) {
+          if (currentVol.isLoaded()) {
             console.log("currentVol with name" + currentVol.name + " is loaded");
             myState.numberOfVolumesCached++;
             if (myState.numberOfVolumesCached >= myState.totalFrames) {
@@ -846,7 +846,7 @@ function fetchImage(url, isTimeSeries = false, frameNumber = 0) {
               view3D.updateActiveChannels(myState.volume);
               view3D.updateLuts(myState.volume);
 
-              myState.volume.loaded = true;
+              myState.volume.setIsLoaded(true);
             }
           }
         });
@@ -889,7 +889,7 @@ function copyVolumeToVolume(src, dest) {
 
 function updateViewForNewVolume() {
   view3D.onVolumeData(myState.volume, [0, 1, 2]);
-  myState.volume.loaded = true;
+  myState.volume.setIsLoaded(true);
 
   if (myState.isPT) {
     view3D.updateActiveChannels(myState.volume);
@@ -1058,10 +1058,9 @@ function main() {
     counterSpan.innerHTML = "" + count;
   });
 
-  if (view3D.canvas3d.hasWebGL2) {
+  if (view3D.hasWebGL2()) {
     const ptBtn = document.getElementById("ptBtn") as HTMLButtonElement;
     ptBtn.disabled = false;
-    ptBtn.style.disabled = false;
     ptBtn.addEventListener("click", () => {
       myState.isPT = !myState.isPT;
       view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
