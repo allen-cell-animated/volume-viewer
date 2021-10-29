@@ -3,6 +3,7 @@ import { Vector3 } from "three";
 import Channel from "./Channel";
 import Histogram from "./Histogram";
 import { getColorByChannelIndex } from "./constants/colors";
+import { ChannelGuiOptions } from "./types";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 export interface ImageInfo {
@@ -27,6 +28,7 @@ export interface ImageInfo {
     translation: [number, number, number];
     rotation: [number, number, number];
   };
+  channelGui: ChannelGuiOptions[];
 }
 /* eslint-enable @typescript-eslint/naming-convention */
 

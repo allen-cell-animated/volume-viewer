@@ -76,3 +76,22 @@ export interface VolumeDisplayOptions {
 
 export const isOrthographicCamera = (def: Camera): def is OrthographicCamera =>
   def && (def as OrthographicCamera).isOrthographicCamera;
+
+export interface ChannelGuiOptions {
+  colorD: [number, number, number];
+  colorS: [number, number, number];
+  colorE: [number, number, number];
+  window: number;
+  level: number;
+  glossiness: number;
+  isovalue: number;
+  isosurface: boolean;
+  enabled: boolean,
+  autoIJ: (channelNum: number) => void;
+  auto0: (channelNum: number) => void;
+  bestFit: (channelNum: number) => void;
+  pct50_98: (channelNum: number) => void;
+  colorizeEnabled: boolean;
+  colorize: (channelNum: number) => void;
+  colorizeAlpha: number;
+}
