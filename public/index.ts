@@ -14,7 +14,7 @@ import {
 } from "../src";
 import { State } from "./types";
 
-let view3D: View3d = null;
+let view3D: View3d;
 
 const myState: State = {
   file: "",
@@ -136,7 +136,7 @@ function initLights() {
   view3D.updateLights(myState.lights);
 }
 
-let gui = null;
+let gui:dat.GUI;
 
 function setupGui() {
   gui = new dat.GUI();
@@ -980,83 +980,88 @@ function createTestVolume() {
 
 function main() {
   const el = document.getElementById("volume-viewer");
+  if (!el) {
+    return;
+  }
   view3D = new View3d(el);
 
   const xBtn = document.getElementById("X");
-  xBtn.addEventListener("click", () => {
+  xBtn?.addEventListener("click", () => {
     view3D.setCameraMode("X");
   });
   const yBtn = document.getElementById("Y");
-  yBtn.addEventListener("click", () => {
+  yBtn?.addEventListener("click", () => {
     view3D.setCameraMode("Y");
   });
   const zBtn = document.getElementById("Z");
-  zBtn.addEventListener("click", () => {
+  zBtn?.addEventListener("click", () => {
     view3D.setCameraMode("Z");
   });
   const d3Btn = document.getElementById("3D");
-  d3Btn.addEventListener("click", () => {
+  d3Btn?.addEventListener("click", () => {
     view3D.setCameraMode("3D");
   });
   const rotBtn = document.getElementById("rotBtn");
-  rotBtn.addEventListener("click", () => {
+  rotBtn?.addEventListener("click", () => {
     myState.isTurntable = !myState.isTurntable;
     view3D.setAutoRotate(myState.isTurntable);
   });
   const axisBtn = document.getElementById("axisBtn");
-  axisBtn.addEventListener("click", () => {
+  axisBtn?.addEventListener("click", () => {
     myState.isAxisShowing = !myState.isAxisShowing;
     view3D.setShowAxis(myState.isAxisShowing);
   });
   const flipXBtn = document.getElementById("flipXBtn");
-  flipXBtn.addEventListener("click", () => {
+  flipXBtn?.addEventListener("click", () => {
     myState.flipX *= -1;
     view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
   });
   const flipYBtn = document.getElementById("flipYBtn");
-  flipYBtn.addEventListener("click", () => {
+  flipYBtn?.addEventListener("click", () => {
     myState.flipY *= -1;
     view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
   });
   const flipZBtn = document.getElementById("flipZBtn");
-  flipZBtn.addEventListener("click", () => {
+  flipZBtn?.addEventListener("click", () => {
     myState.flipZ *= -1;
     view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
   });
   const playBtn = document.getElementById("playBtn");
-  playBtn.addEventListener("click", () => {
+  playBtn?.addEventListener("click", () => {
     if (myState.currentFrame >= myState.totalFrames - 1) {
       myState.currentFrame = -1;
     }
     playTimeSeries();
   });
   const pauseBtn = document.getElementById("pauseBtn");
-  pauseBtn.addEventListener("click", () => {
+  pauseBtn?.addEventListener("click", () => {
     clearInterval(myState.timerId);
   });
   const forwardBtn = document.getElementById("forwardBtn");
-  forwardBtn.addEventListener("click", () => {
+  forwardBtn?.addEventListener("click", () => {
     goToFrame(myState.currentFrame + 1);
   });
   const backBtn = document.getElementById("backBtn");
-  backBtn.addEventListener("click", () => {
+  backBtn?.addEventListener("click", () => {
     goToFrame(myState.currentFrame - 1);
   });
 
   const alignBtn = document.getElementById("xfBtn");
-  alignBtn.addEventListener("click", () => {
+  alignBtn?.addEventListener("click", () => {
     myState.isAligned = !myState.isAligned;
     view3D.setVolumeTranslation(myState.volume, myState.isAligned ? myState.volume.getTranslation() : [0, 0, 0]);
     view3D.setVolumeRotation(myState.volume, myState.isAligned ? myState.volume.getRotation() : [0, 0, 0]);
   });
   const resetCamBtn = document.getElementById("resetCamBtn");
-  resetCamBtn.addEventListener("click", () => {
+  resetCamBtn?.addEventListener("click", () => {
     view3D.resetCamera();
   });
   const counterSpan = document.getElementById("counter");
-  view3D.setRenderUpdateListener((count) => {
-    counterSpan.innerHTML = "" + count;
-  });
+  if (counterSpan) {
+    view3D.setRenderUpdateListener((count) => {
+      counterSpan.innerHTML = "" + count;
+    });
+  }
 
   if (view3D.hasWebGL2()) {
     const ptBtn = document.getElementById("ptBtn") as HTMLButtonElement;
@@ -1068,7 +1073,7 @@ function main() {
     });
   }
   const screenshotBtn = document.getElementById("screenshotBtn");
-  screenshotBtn.addEventListener("click", () => {
+  screenshotBtn?.addEventListener("click", () => {
     view3D.capture((dataUrl) => {
       const anchor = document.createElement("a");
       anchor.href = dataUrl;
