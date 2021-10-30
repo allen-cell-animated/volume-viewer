@@ -16,9 +16,11 @@
     "target": "ES6",
   },
   "files": [
-    "src/index.ts"
+    "src/index.ts",
+    "public/index.ts"
   ],
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "public/**/*"
   ]
 }
