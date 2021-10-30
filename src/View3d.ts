@@ -119,7 +119,7 @@ export class View3d {
    * @param {Volume} volume
    * @param {VolumeDisplayOptions} options
    */
-  addVolume(volume: Volume, options?: VolumeDisplayOptions): void {
+  addVolume(volume: Volume, options: VolumeDisplayOptions): void {
     volume.addVolumeDataObserver(this);
     options = options || {};
     options.renderMode = this.volumeRenderMode === RENDERMODE_PATHTRACE ? 1 : 0;
