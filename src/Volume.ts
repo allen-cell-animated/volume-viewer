@@ -151,9 +151,11 @@ export default class Volume {
     this.name = this.imageInfo.name;
 
     // clean up some possibly bad data.
-    this.imageInfo.pixel_size_x = this.imageInfo.pixel_size_x || 1.0;
-    this.imageInfo.pixel_size_y = this.imageInfo.pixel_size_y || 1.0;
-    this.imageInfo.pixel_size_z = this.imageInfo.pixel_size_z || 1.0;
+    if (imageInfo) {
+      this.imageInfo.pixel_size_x = imageInfo.pixel_size_x || 1.0;
+      this.imageInfo.pixel_size_y = imageInfo.pixel_size_y || 1.0;
+      this.imageInfo.pixel_size_z = imageInfo.pixel_size_z || 1.0;
+    }
 
     this.pixel_size = [this.imageInfo.pixel_size_x, this.imageInfo.pixel_size_y, this.imageInfo.pixel_size_z];
     this.x = this.imageInfo.tile_width;
