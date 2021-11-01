@@ -459,9 +459,10 @@ function removeFolderByName(name: string) {
     return;
   }
   folder.close();
-  // TODO: ignore TS errors
+  // @ts-expect-error __ul doesn't exist in the type declaration
   gui.__ul.removeChild(folder.domElement.parentNode);
   delete gui.__folders[name];
+  // @ts-expect-error onResize doesn't exist in the type declaration
   gui.onResize();
 };
 
