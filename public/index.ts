@@ -13,12 +13,13 @@ import {
   SKY_LIGHT,
 } from "../src";
 import { State } from "./types";
+import { defaultImageInfo } from "../src/Volume";
 
 let view3D: View3d;
 
 const myState: State = {
   file: "",
-  volume: null,
+  volume: new Volume(),
   timeSeriesVolumes: [],
   numberOfVolumesCached: 0,
   totalFrames: 0,
@@ -68,7 +69,7 @@ const myState: State = {
   flipZ: 1,
 
   channelFolderNames: [],
-  infoObj: null,
+  infoObj: defaultImageInfo,
 };
 
 // controlPoints is array of [{offset:number, color:cssstring}]
@@ -452,21 +453,22 @@ function setupGui() {
   initLights();
 }
 
-dat.GUI.prototype.removeFolder = function ({ name }) {
-  const folder = this.__folders[name];
+function removeFolderByName(name: string) {
+  const folder = gui.__folders[name];
   if (!folder) {
     return;
   }
   folder.close();
-  this.__ul.removeChild(folder.domElement.parentNode);
-  delete this.__folders[name];
-  this.onResize();
+  // TODO: ignore TS errors
+  gui.__ul.removeChild(folder.domElement.parentNode);
+  delete gui.__folders[name];
+  gui.onResize();
 };
 
 function showChannelUI(volume: Volume) {
   if (myState && myState.channelFolderNames) {
     for (let i = 0; i < myState.channelFolderNames.length; ++i) {
-      gui.removeFolder(myState.channelFolderNames[i]);
+      removeFolderByName(myState.channelFolderNames[i]);
     }
   }
 

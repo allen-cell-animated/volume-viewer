@@ -30,6 +30,32 @@ export interface ImageInfo {
   };
   channelGui: ChannelGuiOptions[];
 }
+
+export const defaultImageInfo: ImageInfo = Object.freeze({
+  name: "",
+  version: "",
+  width: 1,
+  height: 1,
+  channels: 0,
+  tiles: 1,
+  pixel_size_x: 1,
+  pixel_size_y: 1,
+  pixel_size_z: 1,
+  channel_names: [],
+  channel_colors: [],
+  rows: 1,
+  cols: 1,
+  tile_width: 1,
+  tile_height: 1,
+  atlas_width: 1,
+  atlas_height: 1,
+  transform: {
+    translation: [0, 0, 0],
+    rotation: [0, 0, 0],
+  },
+  channelGui: [],
+});
+
 /* eslint-enable @typescript-eslint/naming-convention */
 
 interface VolumeDataObserver {
@@ -114,32 +140,32 @@ export default class Volume {
   private pixel_size: [number, number, number];
   /* eslint-enable @typescript-eslint/naming-convention */
 
-  constructor(imageInfo: ImageInfo) {
+  constructor(imageInfo?: ImageInfo) {
     this.scale = new Vector3(1, 1, 1);
     this.currentScale = new Vector3(1, 1, 1);
     this.physicalSize = new Vector3(1, 1, 1);
     this.normalizedPhysicalSize = new Vector3(1, 1, 1);
 
     this.loaded = false;
-    this.imageInfo = imageInfo;
-    this.name = imageInfo.name;
+    this.imageInfo = imageInfo || defaultImageInfo;
+    this.name = this.imageInfo.name;
 
     // clean up some possibly bad data.
-    this.imageInfo.pixel_size_x = imageInfo.pixel_size_x || 1.0;
-    this.imageInfo.pixel_size_y = imageInfo.pixel_size_y || 1.0;
-    this.imageInfo.pixel_size_z = imageInfo.pixel_size_z || 1.0;
+    this.imageInfo.pixel_size_x = this.imageInfo.pixel_size_x || 1.0;
+    this.imageInfo.pixel_size_y = this.imageInfo.pixel_size_y || 1.0;
+    this.imageInfo.pixel_size_z = this.imageInfo.pixel_size_z || 1.0;
 
     this.pixel_size = [this.imageInfo.pixel_size_x, this.imageInfo.pixel_size_y, this.imageInfo.pixel_size_z];
-    this.x = imageInfo.tile_width;
-    this.y = imageInfo.tile_height;
-    this.z = imageInfo.tiles;
+    this.x = this.imageInfo.tile_width;
+    this.y = this.imageInfo.tile_height;
+    this.z = this.imageInfo.tiles;
     this.t = 1;
 
-    this.num_channels = imageInfo.channels;
+    this.num_channels = this.imageInfo.channels;
 
     this.channel_names = this.imageInfo.channel_names.slice();
-    this.channel_colors_default = imageInfo.channel_colors
-      ? imageInfo.channel_colors.slice()
+    this.channel_colors_default = this.imageInfo.channel_colors
+      ? this.imageInfo.channel_colors.slice()
       : this.channel_names.map((name, index) => getColorByChannelIndex(index));
     // fill in gaps
     if (this.channel_colors_default.length < this.num_channels) {
