@@ -140,22 +140,20 @@ export default class Volume {
   private pixel_size: [number, number, number];
   /* eslint-enable @typescript-eslint/naming-convention */
 
-  constructor(imageInfo?: ImageInfo) {
+  constructor(imageInfo: ImageInfo = defaultImageInfo) {
     this.scale = new Vector3(1, 1, 1);
     this.currentScale = new Vector3(1, 1, 1);
     this.physicalSize = new Vector3(1, 1, 1);
     this.normalizedPhysicalSize = new Vector3(1, 1, 1);
 
     this.loaded = false;
-    this.imageInfo = imageInfo || defaultImageInfo;
+    this.imageInfo = imageInfo;
     this.name = this.imageInfo.name;
 
     // clean up some possibly bad data.
-    if (imageInfo) {
-      this.imageInfo.pixel_size_x = imageInfo.pixel_size_x || 1.0;
-      this.imageInfo.pixel_size_y = imageInfo.pixel_size_y || 1.0;
-      this.imageInfo.pixel_size_z = imageInfo.pixel_size_z || 1.0;
-    }
+    this.imageInfo.pixel_size_x = imageInfo.pixel_size_x || 1.0;
+    this.imageInfo.pixel_size_y = imageInfo.pixel_size_y || 1.0;
+    this.imageInfo.pixel_size_z = imageInfo.pixel_size_z || 1.0;
 
     this.pixel_size = [this.imageInfo.pixel_size_x, this.imageInfo.pixel_size_y, this.imageInfo.pixel_size_z];
     this.x = this.imageInfo.tile_width;
