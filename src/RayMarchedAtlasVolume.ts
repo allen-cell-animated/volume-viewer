@@ -3,6 +3,7 @@ import {
   Box3Helper,
   BoxGeometry,
   BufferGeometry,
+  Color,
   Euler,
   Group,
   Material,
@@ -50,7 +51,7 @@ export default class RayMarchedAtlasVolume {
     this.cubeMesh = new Mesh(this.cube);
     this.cubeMesh.name = "Volume";
 
-    this.boxHelper = new Box3Helper(new Box3(this.bounds.bmin, this.bounds.bmax), 0xffff00);
+    this.boxHelper = new Box3Helper(new Box3(this.bounds.bmin, this.bounds.bmax), new Color(0xffff00));
     this.boxHelper.updateMatrixWorld();
     this.boxHelper.visible = false;
 
