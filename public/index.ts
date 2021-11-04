@@ -522,6 +522,7 @@ function showChannelUI(volume: Volume) {
           view3D.updateLuts(volume);
         };
       })(i),
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       pct50_98: (function (j) {
         return function () {
           const lut = volume.getHistogram(j).lutGenerator_percentiles(0.5, 0.998);
