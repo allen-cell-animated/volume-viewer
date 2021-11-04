@@ -70,6 +70,7 @@ const myState: State = {
 
   channelFolderNames: [],
   infoObj: defaultImageInfo,
+  channelGui: [],
 };
 
 // controlPoints is array of [{offset:number, color:cssstring}]
@@ -475,11 +476,11 @@ function showChannelUI(volume: Volume) {
 
   myState.infoObj = volume.imageInfo;
 
-  myState.infoObj.channelGui = [];
+  myState.channelGui = [];
 
   myState.channelFolderNames = [];
   for (let i = 0; i < myState.infoObj.channels; ++i) {
-    myState.infoObj.channelGui.push({
+    myState.channelGui.push({
       colorD: volume.channel_colors_default[i],
       colorS: [0, 0, 0],
       colorE: [0, 0, 0],
@@ -535,9 +536,9 @@ function showChannelUI(volume: Volume) {
         return function () {
           const lut = volume.getHistogram(j).lutGenerator_labelColors();
           volume.setColorPalette(j, lut.lut);
-          myState.infoObj.channelGui[j].colorizeEnabled = !myState.infoObj.channelGui[j].colorizeEnabled;
-          if (myState.infoObj.channelGui[j].colorizeEnabled) {
-            volume.setColorPaletteAlpha(j, myState.infoObj.channelGui[j].colorizeAlpha);
+          myState.channelGui[j].colorizeEnabled = !myState.channelGui[j].colorizeEnabled;
+          if (myState.channelGui[j].colorizeEnabled) {
+            volume.setColorPaletteAlpha(j, myState.channelGui[j].colorizeAlpha);
           } else {
             volume.setColorPaletteAlpha(j, 0);
           }
@@ -549,7 +550,7 @@ function showChannelUI(volume: Volume) {
     });
     const f = gui.addFolder("Channel " + myState.infoObj.channel_names[i]);
     myState.channelFolderNames.push("Channel " + myState.infoObj.channel_names[i]);
-    f.add(myState.infoObj.channelGui[i], "enabled").onChange(
+    f.add(myState.channelGui[i], "enabled").onChange(
       (function (j) {
         return function (value) {
           view3D.setVolumeChannelEnabled(volume, j, value ? true : false);
@@ -557,18 +558,18 @@ function showChannelUI(volume: Volume) {
         };
       })(i)
     );
-    f.add(myState.infoObj.channelGui[i], "isosurface").onChange(
+    f.add(myState.channelGui[i], "isosurface").onChange(
       (function (j) {
         return function (value) {
           if (value) {
-            view3D.createIsosurface(volume, j, myState.infoObj.channelGui[j].isovalue, 1.0);
+            view3D.createIsosurface(volume, j, myState.channelGui[j].isovalue, 1.0);
           } else {
             view3D.clearIsosurface(volume, j);
           }
         };
       })(i)
     );
-    f.add(myState.infoObj.channelGui[i], "isovalue")
+    f.add(myState.channelGui[i], "isovalue")
       .max(255)
       .min(0)
       .step(1)
@@ -580,7 +581,7 @@ function showChannelUI(volume: Volume) {
         })(i)
       );
 
-    f.addColor(myState.infoObj.channelGui[i], "colorD")
+    f.addColor(myState.channelGui[i], "colorD")
       .name("Diffuse")
       .onChange(
         (function (j) {
@@ -588,16 +589,16 @@ function showChannelUI(volume: Volume) {
             view3D.updateChannelMaterial(
               volume,
               j,
-              myState.infoObj.channelGui[j].colorD,
-              myState.infoObj.channelGui[j].colorS,
-              myState.infoObj.channelGui[j].colorE,
-              myState.infoObj.channelGui[j].glossiness
+              myState.channelGui[j].colorD,
+              myState.channelGui[j].colorS,
+              myState.channelGui[j].colorE,
+              myState.channelGui[j].glossiness
             );
             view3D.updateMaterial(volume);
           };
         })(i)
       );
-    f.addColor(myState.infoObj.channelGui[i], "colorS")
+    f.addColor(myState.channelGui[i], "colorS")
       .name("Specular")
       .onChange(
         (function (j) {
@@ -605,16 +606,16 @@ function showChannelUI(volume: Volume) {
             view3D.updateChannelMaterial(
               volume,
               j,
-              myState.infoObj.channelGui[j].colorD,
-              myState.infoObj.channelGui[j].colorS,
-              myState.infoObj.channelGui[j].colorE,
-              myState.infoObj.channelGui[j].glossiness
+              myState.channelGui[j].colorD,
+              myState.channelGui[j].colorS,
+              myState.channelGui[j].colorE,
+              myState.channelGui[j].glossiness
             );
             view3D.updateMaterial(volume);
           };
         })(i)
       );
-    f.addColor(myState.infoObj.channelGui[i], "colorE")
+    f.addColor(myState.channelGui[i], "colorE")
       .name("Emissive")
       .onChange(
         (function (j) {
@@ -622,59 +623,59 @@ function showChannelUI(volume: Volume) {
             view3D.updateChannelMaterial(
               volume,
               j,
-              myState.infoObj.channelGui[j].colorD,
-              myState.infoObj.channelGui[j].colorS,
-              myState.infoObj.channelGui[j].colorE,
-              myState.infoObj.channelGui[j].glossiness
+              myState.channelGui[j].colorD,
+              myState.channelGui[j].colorS,
+              myState.channelGui[j].colorE,
+              myState.channelGui[j].glossiness
             );
             view3D.updateMaterial(volume);
           };
         })(i)
       );
-    f.add(myState.infoObj.channelGui[i], "window")
+    f.add(myState.channelGui[i], "window")
       .max(1.0)
       .min(0.0)
       .step(0.001)
       .onChange(
         (function (j) {
           return function (value) {
-            volume.getChannel(j).lutGenerator_windowLevel(value, myState.infoObj.channelGui[j].level);
+            volume.getChannel(j).lutGenerator_windowLevel(value, myState.channelGui[j].level);
             view3D.updateLuts(volume);
           };
         })(i)
       );
 
-    f.add(myState.infoObj.channelGui[i], "level")
+    f.add(myState.channelGui[i], "level")
       .max(1.0)
       .min(0.0)
       .step(0.001)
       .onChange(
         (function (j) {
           return function (value) {
-            volume.getChannel(j).lutGenerator_windowLevel(myState.infoObj.channelGui[j].window, value);
+            volume.getChannel(j).lutGenerator_windowLevel(myState.channelGui[j].window, value);
             view3D.updateLuts(volume);
           };
         })(i)
       );
-    f.add(myState.infoObj.channelGui[i], "autoIJ");
-    f.add(myState.infoObj.channelGui[i], "auto0");
-    f.add(myState.infoObj.channelGui[i], "bestFit");
-    f.add(myState.infoObj.channelGui[i], "pct50_98");
-    f.add(myState.infoObj.channelGui[i], "colorize");
-    f.add(myState.infoObj.channelGui[i], "colorizeAlpha")
+    f.add(myState.channelGui[i], "autoIJ");
+    f.add(myState.channelGui[i], "auto0");
+    f.add(myState.channelGui[i], "bestFit");
+    f.add(myState.channelGui[i], "pct50_98");
+    f.add(myState.channelGui[i], "colorize");
+    f.add(myState.channelGui[i], "colorizeAlpha")
       .max(1.0)
       .min(0.0)
       .onChange(
         (function (j) {
           return function (value) {
-            if (myState.infoObj.channelGui[j].colorizeEnabled) {
+            if (myState.channelGui[j].colorizeEnabled) {
               volume.setColorPaletteAlpha(j, value);
               view3D.updateLuts(volume);
             }
           };
         })(i)
       );
-    f.add(myState.infoObj.channelGui[i], "glossiness")
+    f.add(myState.channelGui[i], "glossiness")
       .max(100.0)
       .min(0.0)
       .onChange(
@@ -683,10 +684,10 @@ function showChannelUI(volume: Volume) {
             view3D.updateChannelMaterial(
               volume,
               j,
-              myState.infoObj.channelGui[j].colorD,
-              myState.infoObj.channelGui[j].colorS,
-              myState.infoObj.channelGui[j].colorE,
-              myState.infoObj.channelGui[j].glossiness
+              myState.channelGui[j].colorD,
+              myState.channelGui[j].colorS,
+              myState.channelGui[j].colorE,
+              myState.channelGui[j].glossiness
             );
             view3D.updateMaterial(volume);
           };
@@ -902,7 +903,7 @@ function updateViewForNewVolume() {
   }
 
   for (let i = 0; i < myState.volume.num_channels; ++i) {
-    view3D.updateIsosurface(myState.volume, i, myState.infoObj.channelGui[i].isovalue);
+    view3D.updateIsosurface(myState.volume, i, myState.channelGui[i].isovalue);
   }
 }
 

@@ -3,7 +3,6 @@ import { Vector3 } from "three";
 import Channel from "./Channel";
 import Histogram from "./Histogram";
 import { getColorByChannelIndex } from "./constants/colors";
-import { ChannelGuiOptions } from "./types";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 export interface ImageInfo {
@@ -28,10 +27,9 @@ export interface ImageInfo {
     translation: [number, number, number];
     rotation: [number, number, number];
   };
-  channelGui: ChannelGuiOptions[];
 }
 
-export const defaultImageInfo: ImageInfo = Object.freeze({
+export const defaultImageInfo: ImageInfo = {
   name: "",
   version: "",
   width: 1,
@@ -53,8 +51,7 @@ export const defaultImageInfo: ImageInfo = Object.freeze({
     translation: [0, 0, 0],
     rotation: [0, 0, 0],
   },
-  channelGui: [],
-});
+};
 
 /* eslint-enable @typescript-eslint/naming-convention */
 
@@ -140,7 +137,7 @@ export default class Volume {
   private pixel_size: [number, number, number];
   /* eslint-enable @typescript-eslint/naming-convention */
 
-  constructor(imageInfo: ImageInfo = defaultImageInfo) {
+  constructor(imageInfo: ImageInfo = {...defaultImageInfo}) {
     this.scale = new Vector3(1, 1, 1);
     this.currentScale = new Vector3(1, 1, 1);
     this.physicalSize = new Vector3(1, 1, 1);

@@ -54,4 +54,25 @@ export interface State {
 
   channelFolderNames: string[];
   infoObj: ImageInfo;
+  channelGui: ChannelGuiOptions[];
+}
+
+interface ChannelGuiOptions {
+  colorD: [number, number, number];
+  colorS: [number, number, number];
+  colorE: [number, number, number];
+  window: number;
+  level: number;
+  glossiness: number;
+  isovalue: number;
+  isosurface: boolean;
+  enabled: boolean,
+  autoIJ: (channelNum: number) => void;
+  auto0: (channelNum: number) => void;
+  bestFit: (channelNum: number) => void;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  pct50_98: (channelNum: number) => void;
+  colorizeEnabled: boolean;
+  colorize: (channelNum: number) => void;
+  colorizeAlpha: number;
 }
