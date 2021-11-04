@@ -29,28 +29,30 @@ export interface ImageInfo {
   };
 }
 
-export const defaultImageInfo: ImageInfo = {
-  name: "",
-  version: "",
-  width: 1,
-  height: 1,
-  channels: 0,
-  tiles: 1,
-  pixel_size_x: 1,
-  pixel_size_y: 1,
-  pixel_size_z: 1,
-  channel_names: [],
-  channel_colors: [],
-  rows: 1,
-  cols: 1,
-  tile_width: 1,
-  tile_height: 1,
-  atlas_width: 1,
-  atlas_height: 1,
-  transform: {
-    translation: [0, 0, 0],
-    rotation: [0, 0, 0],
-  },
+export const getDefaultImageInfo = (): ImageInfo => {
+  return {
+    name: "",
+    version: "",
+    width: 1,
+    height: 1,
+    channels: 0,
+    tiles: 1,
+    pixel_size_x: 1,
+    pixel_size_y: 1,
+    pixel_size_z: 1,
+    channel_names: [],
+    channel_colors: [],
+    rows: 1,
+    cols: 1,
+    tile_width: 1,
+    tile_height: 1,
+    atlas_width: 1,
+    atlas_height: 1,
+    transform: {
+      translation: [0, 0, 0],
+      rotation: [0, 0, 0],
+    },
+  }
 };
 
 /* eslint-enable @typescript-eslint/naming-convention */
@@ -137,7 +139,7 @@ export default class Volume {
   private pixel_size: [number, number, number];
   /* eslint-enable @typescript-eslint/naming-convention */
 
-  constructor(imageInfo: ImageInfo = {...defaultImageInfo}) {
+  constructor(imageInfo: ImageInfo = getDefaultImageInfo()) {
     this.scale = new Vector3(1, 1, 1);
     this.currentScale = new Vector3(1, 1, 1);
     this.physicalSize = new Vector3(1, 1, 1);

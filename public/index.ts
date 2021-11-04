@@ -13,7 +13,7 @@ import {
   SKY_LIGHT,
 } from "../src";
 import { State } from "./types";
-import { defaultImageInfo } from "../src/Volume";
+import { getDefaultImageInfo } from "../src/Volume";
 
 let view3D: View3d;
 
@@ -69,7 +69,7 @@ const myState: State = {
   flipZ: 1,
 
   channelFolderNames: [],
-  infoObj: defaultImageInfo,
+  infoObj: getDefaultImageInfo(),
   channelGui: [],
 };
 
