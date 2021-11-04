@@ -90,6 +90,7 @@ export interface ChannelGuiOptions {
   autoIJ: (channelNum: number) => void;
   auto0: (channelNum: number) => void;
   bestFit: (channelNum: number) => void;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   pct50_98: (channelNum: number) => void;
   colorizeEnabled: boolean;
   colorize: (channelNum: number) => void;
