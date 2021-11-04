@@ -354,6 +354,10 @@ export default class PathTracedVolume {
     // this.visible = isVisible;
   }
 
+  public setShowBoundingBox(_showBoundingBox: boolean): void {
+    // TODO: NOT IMPLEMENTED YET
+  }
+
   public doRender(canvas: ThreeJsPanel): void {
     if (!this.volumeTexture) {
       return;

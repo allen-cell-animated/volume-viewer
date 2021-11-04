@@ -36,6 +36,7 @@ export default class VolumeDrawable {
   private meshVolume: MeshVolume;
   private primaryRayStepSize: number;
   private secondaryRayStepSize: number;
+  private showBoundingBox: boolean;
 
   // these two should never coexist simultaneously. always one or the other is present
   // a polymorphic interface implementation might be a better way to deal with this.
@@ -76,6 +77,8 @@ export default class VolumeDrawable {
     // TODO verify that these are reasonable
     this.density = 0;
     this.brightness = 0;
+
+    this.showBoundingBox = false;
 
     this.channelColors = this.volume.channel_colors_default.slice();
 
@@ -171,11 +174,11 @@ export default class VolumeDrawable {
     if (options.renderMode !== undefined) {
       this.setVolumeRendering(!!options.renderMode);
     }
-    if (
-      options.primaryRayStepSize !== undefined ||
-      options.secondaryRayStepSize !== undefined
-    ) {
+    if (options.primaryRayStepSize !== undefined || options.secondaryRayStepSize !== undefined) {
       this.setRayStepSizes(options.primaryRayStepSize, options.secondaryRayStepSize);
+    }
+    if (options.showBoundingBox !== undefined) {
+      this.setShowBoundingBox(options.showBoundingBox);
     }
 
     if (options.channels !== undefined) {
@@ -317,14 +320,6 @@ export default class VolumeDrawable {
     canvas.camera.updateMatrixWorld(true);
 
     canvas.camera.matrixWorldInverse.copy(canvas.camera.matrixWorld).invert();
-
-    const isVR = canvas.isVR();
-    if (isVR) {
-      // raise volume drawable to about 1 meter.
-      this.sceneRoot.position.y = 1.0;
-    } else {
-      this.sceneRoot.position.y = 0.0;
-    }
 
     // TODO confirm sequence
     this.volumeRendering.doRender(canvas);
@@ -547,6 +542,11 @@ export default class VolumeDrawable {
   setMaskAlpha(maskAlpha: number): void {
     this.maskAlpha = maskAlpha;
     this.volumeRendering.setMaskAlpha(maskAlpha);
+  }
+
+  setShowBoundingBox(showBoundingBox: boolean): void {
+    this.showBoundingBox = showBoundingBox;
+    this.volumeRendering.setShowBoundingBox(showBoundingBox);
   }
 
   getIntensity(c: number, x: number, y: number, z: number): number {

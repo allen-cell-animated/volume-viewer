@@ -48,6 +48,7 @@ export interface State {
   isAxisShowing: boolean;
   isAligned: boolean;
 
+  showBoundingBox: boolean;
   flipX: number;
   flipY: number;
   flipZ: number;
@@ -75,4 +76,5 @@ interface ChannelGuiOptions {
   colorizeEnabled: boolean;
   colorize: (channelNum: number) => void;
   colorizeAlpha: number;
+}
 }

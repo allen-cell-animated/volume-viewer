@@ -64,6 +64,7 @@ const myState: State = {
   isAxisShowing: false,
   isAligned: true,
 
+  showBoundingBox: false,
   flipX: 1,
   flipY: 1,
   flipZ: 1,
@@ -138,7 +139,7 @@ function initLights() {
   view3D.updateLights(myState.lights);
 }
 
-let gui:dat.GUI;
+let gui: dat.GUI;
 
 function setupGui() {
   gui = new dat.GUI();
@@ -465,7 +466,7 @@ function removeFolderByName(name: string) {
   delete gui.__folders[name];
   // @ts-expect-error onResize doesn't exist in the type declaration
   gui.onResize();
-};
+}
 
 function showChannelUI(volume: Volume) {
   if (myState && myState.channelFolderNames) {
@@ -1015,6 +1016,11 @@ function main() {
   axisBtn?.addEventListener("click", () => {
     myState.isAxisShowing = !myState.isAxisShowing;
     view3D.setShowAxis(myState.isAxisShowing);
+  });
+  const showBoundsBtn = document.getElementById("showBoundingBox");
+  showBoundsBtn?.addEventListener("click", () => {
+    myState.showBoundingBox = !myState.showBoundingBox;
+    view3D.setShowBoundingBox(myState.volume, myState.showBoundingBox);
   });
   const flipXBtn = document.getElementById("flipXBtn");
   flipXBtn?.addEventListener("click", () => {
