@@ -65,6 +65,7 @@ const myState: State = {
   isAligned: true,
 
   showBoundingBox: false,
+  boundingBoxColor: [255, 255, 0],
   flipX: 1,
   flipY: 1,
   flipZ: 1,
@@ -1022,6 +1023,21 @@ function main() {
     myState.showBoundingBox = !myState.showBoundingBox;
     view3D.setShowBoundingBox(myState.volume, myState.showBoundingBox);
   });
+  const boundsColorBtn = document.getElementById("boundingBoxColor");
+  boundsColorBtn?.addEventListener("change", (event: Event) => {
+    // convert value to rgb array
+    function hexToRgb(hex, last: [number, number, number]): [number, number, number] {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result
+        ? [parseInt(result[1], 16) / 255.0, parseInt(result[2], 16) / 255.0, parseInt(result[3], 16) / 255.0]
+        : last;
+    }
+
+    myState.boundingBoxColor = hexToRgb((event.target as HTMLInputElement)?.value, myState.boundingBoxColor);
+    //console.log((event.target as HTMLInputElement)?.value);
+    view3D.setBoundingBoxColor(myState.volume, myState.boundingBoxColor);
+  });
+
   const flipXBtn = document.getElementById("flipXBtn");
   flipXBtn?.addEventListener("click", () => {
     myState.flipX *= -1;

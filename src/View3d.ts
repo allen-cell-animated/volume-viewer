@@ -239,6 +239,13 @@ export class View3d {
     this.redraw();
   }
 
+  setBoundingBoxColor(volume: Volume, color: [number, number, number]): void {
+    if (this.image) {
+      this.image.setBoundingBoxColor(color);
+    }
+    this.redraw();
+  }
+
   /**
    * If an isosurface is not already created, then create one.  Otherwise change the isovalue of the existing isosurface.
    * @param {Object} volume

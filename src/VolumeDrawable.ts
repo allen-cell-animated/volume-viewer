@@ -37,6 +37,7 @@ export default class VolumeDrawable {
   private primaryRayStepSize: number;
   private secondaryRayStepSize: number;
   private showBoundingBox: boolean;
+  private boundingBoxColor: [number, number, number];
 
   // these two should never coexist simultaneously. always one or the other is present
   // a polymorphic interface implementation might be a better way to deal with this.
@@ -79,6 +80,7 @@ export default class VolumeDrawable {
     this.brightness = 0;
 
     this.showBoundingBox = false;
+    this.boundingBoxColor = [1.0, 1.0, 0.0];
 
     this.channelColors = this.volume.channel_colors_default.slice();
 
@@ -179,6 +181,9 @@ export default class VolumeDrawable {
     }
     if (options.showBoundingBox !== undefined) {
       this.setShowBoundingBox(options.showBoundingBox);
+    }
+    if (options.boundingBoxColor !== undefined) {
+      this.setBoundingBoxColor(options.boundingBoxColor);
     }
 
     if (options.channels !== undefined) {
@@ -547,6 +552,11 @@ export default class VolumeDrawable {
   setShowBoundingBox(showBoundingBox: boolean): void {
     this.showBoundingBox = showBoundingBox;
     this.volumeRendering.setShowBoundingBox(showBoundingBox);
+  }
+
+  setBoundingBoxColor(color: [number, number, number]): void {
+    this.boundingBoxColor = color;
+    this.volumeRendering.setBoundingBoxColor(color);
   }
 
   getIntensity(c: number, x: number, y: number, z: number): number {

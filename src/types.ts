@@ -55,6 +55,7 @@ export interface VolumeChannelDisplayOptions {
  * @property {number} primaryRayStepSize in voxels
  * @property {number} secondaryRayStepSize in voxels
  * @property {boolean} showBoundingBox true or false
+ * @property {Array.<number>} boundingBoxColor r,g,b for bounding box lines
  * @example let options = {
    };
  */
@@ -74,6 +75,7 @@ export interface VolumeDisplayOptions {
   primaryRayStepSize?: number;
   secondaryRayStepSize?: number;
   showBoundingBox?: boolean;
+  boundingBoxColor?: [number, number, number];
 }
 
 export const isOrthographicCamera = (def: Camera): def is OrthographicCamera =>

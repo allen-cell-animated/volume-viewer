@@ -358,6 +358,10 @@ export default class PathTracedVolume {
     // TODO: NOT IMPLEMENTED YET
   }
 
+  public setBoundingBoxColor(_color: [number, number, number]): void {
+    // TODO: NOT IMPLEMENTED YET
+  }
+
   public doRender(canvas: ThreeJsPanel): void {
     if (!this.volumeTexture) {
       return;

@@ -6,6 +6,7 @@ import {
   Color,
   Euler,
   Group,
+  LineBasicMaterial,
   Material,
   Matrix4,
   Mesh,
@@ -107,6 +108,14 @@ export default class RayMarchedAtlasVolume {
 
   public setShowBoundingBox(showBoundingBox: boolean): void {
     this.boxHelper.visible = showBoundingBox;
+  }
+
+  public setBoundingBoxColor(color: [number, number, number]): void {
+    // note this material update is supposed to be a hidden implementation detail
+    // but I didn't want to re-create a whole boxHelper again.
+    // I could also create a new LineBasicMaterial but that would also rely on knowledge
+    // that Box3Helper expects that type.
+    (this.boxHelper.material as LineBasicMaterial).color = new Color(color[0], color[1], color[2]);
   }
 
   public doRender(canvas: ThreeJsPanel): void {

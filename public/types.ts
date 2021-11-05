@@ -49,6 +49,8 @@ export interface State {
   isAligned: boolean;
 
   showBoundingBox: boolean;
+  boundingBoxColor: [number, number, number];
+
   flipX: number;
   flipY: number;
   flipZ: number;
