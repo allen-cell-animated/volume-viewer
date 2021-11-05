@@ -402,8 +402,8 @@ export default class PathTracedVolume {
     // apply volume translation and rotation:
     // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
     const m = new Matrix4().makeRotationFromQuaternion(new Quaternion().setFromEuler(this.rotation).invert());
-    mypos.applyMatrix4(m);
     mypos.sub(this.translation);
+    mypos.applyMatrix4(m);
     myup.applyMatrix4(m);
     mydir.applyMatrix4(m);
 
