@@ -6,7 +6,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
 module.exports = {
-  entry: ["./public/index.js"],
+  entry: ["./public/index.ts"],
   output: {
     path: path.resolve(__dirname, "volumeviewer"),
     filename: "volume-viewer-ui.bundle.js",

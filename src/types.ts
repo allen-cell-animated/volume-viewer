@@ -58,20 +58,20 @@ export interface VolumeChannelDisplayOptions {
    };
  */
 export interface VolumeDisplayOptions {
-  channels: VolumeChannelDisplayOptions[];
-  density: number;
-  translation: [number, number, number];
-  rotation: [number, number, number];
-  maskChannelIndex: number;
-  maskAlpha: number;
-  clipBounds: [number, number, number, number, number, number];
-  scale: [number, number, number];
-  maxProjection: boolean;
-  renderMode: number;
-  shadingMethod: number;
-  gamma: [number, number, number];
-  primaryRayStepSize: number;
-  secondaryRayStepSize: number;
+  channels?: VolumeChannelDisplayOptions[];
+  density?: number;
+  translation?: [number, number, number];
+  rotation?: [number, number, number];
+  maskChannelIndex?: number;
+  maskAlpha?: number;
+  clipBounds?: [number, number, number, number, number, number];
+  scale?: [number, number, number];
+  maxProjection?: boolean;
+  renderMode?: number;
+  shadingMethod?: number;
+  gamma?: [number, number, number];
+  primaryRayStepSize?: number;
+  secondaryRayStepSize?: number;
 }
 
 export const isOrthographicCamera = (def: Camera): def is OrthographicCamera =>

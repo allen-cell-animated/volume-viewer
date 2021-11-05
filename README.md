@@ -20,7 +20,7 @@ There are two ways to deliver volume data to the viewer:
 
 # Example
 
-See public/index.js for a working example. (`npm install; npm run dev` will run that code) The basic code to get the volume viewer up and running is as follows:
+See public/index.ts for a working example. (`npm install; npm run dev` will run that code) The basic code to get the volume viewer up and running is as follows:
 
 ```javascript
 import { View3d, Volume, VolumeLoader, VolumeMaker } from "volume-viewer";
@@ -38,11 +38,11 @@ const aimg = new Volume(jsondata);
 // tell the viewer about the image
 view3D.addVolume(aimg);
 
-// load volume data into the image.  volumedata here is an array of Uint8Arrays.
-// each element in volumedata is a flattened 3d volume stored in xyz order in a Uint8Array.
+// load volume data into the image.  volumeData here is an array of Uint8Arrays.
+// each element in volumeData is a flattened 3d volume stored in xyz order in a Uint8Array.
 // Intensities must have been be scaled to fit in uint8.
-for (let i = 0; i < volumedata.length; ++i) {
-  aimg.setChannelDataFromVolume(i, volumedata[i]);
+for (let i = 0; i < volumeData.length; ++i) {
+  aimg.setChannelDataFromVolume(i, volumeData[i]);
   // optional: initialize with a lookup table suitable for visualizing noisy biological data
   aimg.channels[i].lutGenerator_percentiles(0.5, 0.998);
 }

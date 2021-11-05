@@ -142,13 +142,13 @@ export default class VolumeDrawable {
 
   setOptions(options: VolumeDisplayOptions): void {
     options = options || {};
-    if (Object.hasOwnProperty.call(options, "maskChannelIndex")) {
+    if (options.maskChannelIndex !== undefined) {
       this.setChannelAsMask(options.maskChannelIndex);
     }
-    if (Object.hasOwnProperty.call(options, "maskAlpha")) {
+    if (options.maskAlpha !== undefined) {
       this.setMaskAlpha(options.maskAlpha);
     }
-    if (Object.hasOwnProperty.call(options, "clipBounds")) {
+    if (options.clipBounds !== undefined) {
       this.bounds = {
         bmin: new Vector3(options.clipBounds[0], options.clipBounds[2], options.clipBounds[4]),
         bmax: new Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5]),
@@ -158,27 +158,27 @@ export default class VolumeDrawable {
       this.setAxisClip(1, options.clipBounds[2], options.clipBounds[3]);
       this.setAxisClip(2, options.clipBounds[4], options.clipBounds[5]);
     }
-    if (Object.hasOwnProperty.call(options, "scale")) {
+    if (options.scale !== undefined) {
       this.setScale(new Vector3().fromArray(options.scale));
     }
-    if (Object.hasOwnProperty.call(options, "translation")) {
+    if (options.translation !== undefined) {
       this.setTranslation(new Vector3().fromArray(options.translation));
     }
-    if (Object.hasOwnProperty.call(options, "rotation")) {
+    if (options.rotation !== undefined) {
       this.setRotation(new Euler().fromArray(options.rotation));
     }
 
-    if (Object.hasOwnProperty.call(options, "renderMode")) {
+    if (options.renderMode !== undefined) {
       this.setVolumeRendering(!!options.renderMode);
     }
     if (
-      Object.hasOwnProperty.call(options, "primaryRayStepSize") ||
-      Object.hasOwnProperty.call(options, "secondaryRayStepSize")
+      options.primaryRayStepSize !== undefined ||
+      options.secondaryRayStepSize !== undefined
     ) {
       this.setRayStepSizes(options.primaryRayStepSize, options.secondaryRayStepSize);
     }
 
-    if (Object.hasOwnProperty.call(options, "channels")) {
+    if (options.channels !== undefined) {
       // store channel options here!
       this.channelOptions = options.channels;
       this.channelOptions.forEach((channelOptions, channelIndex) => {
