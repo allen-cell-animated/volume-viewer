@@ -69,7 +69,7 @@ interface ChannelGuiOptions {
   glossiness: number;
   isovalue: number;
   isosurface: boolean;
-  enabled: boolean,
+  enabled: boolean;
   autoIJ: (channelNum: number) => void;
   auto0: (channelNum: number) => void;
   bestFit: (channelNum: number) => void;
@@ -78,5 +78,4 @@ interface ChannelGuiOptions {
   colorizeEnabled: boolean;
   colorize: (channelNum: number) => void;
   colorizeAlpha: number;
-}
 }
