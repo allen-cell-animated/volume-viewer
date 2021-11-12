@@ -232,6 +232,20 @@ export class View3d {
     this.redraw();
   }
 
+  setShowBoundingBox(volume: Volume, showBoundingBox: boolean): void {
+    if (this.image) {
+      this.image.setShowBoundingBox(showBoundingBox);
+    }
+    this.redraw();
+  }
+
+  setBoundingBoxColor(volume: Volume, color: [number, number, number]): void {
+    if (this.image) {
+      this.image.setBoundingBoxColor(color);
+    }
+    this.redraw();
+  }
+
   /**
    * If an isosurface is not already created, then create one.  Otherwise change the isovalue of the existing isosurface.
    * @param {Object} volume
@@ -743,7 +757,7 @@ export class View3d {
 
     this.volumeRenderMode = mode;
     if (this.image) {
-      if (mode === RENDERMODE_PATHTRACE && this.canvas3d.hasWebGL2 && !this.canvas3d.isVR()) {
+      if (mode === RENDERMODE_PATHTRACE && this.canvas3d.hasWebGL2) {
         this.image.setVolumeRendering(true);
         this.image.updateLights(this.lights);
         // pathtrace is a continuous rendering mode

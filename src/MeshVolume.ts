@@ -103,7 +103,7 @@ export default class MeshVolume {
   }
 
   setTranslation(vec3xyz: Vector3): void {
-    this.meshRoot.position.copy(vec3xyz);
+    this.meshPivot.position.copy(vec3xyz);
   }
 
   setRotation(eulerXYZ: Euler): void {

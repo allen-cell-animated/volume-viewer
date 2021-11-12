@@ -354,6 +354,14 @@ export default class PathTracedVolume {
     // this.visible = isVisible;
   }
 
+  public setShowBoundingBox(_showBoundingBox: boolean): void {
+    // TODO: NOT IMPLEMENTED YET
+  }
+
+  public setBoundingBoxColor(_color: [number, number, number]): void {
+    // TODO: NOT IMPLEMENTED YET
+  }
+
   public doRender(canvas: ThreeJsPanel): void {
     if (!this.volumeTexture) {
       return;
@@ -394,8 +402,8 @@ export default class PathTracedVolume {
     // apply volume translation and rotation:
     // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
     const m = new Matrix4().makeRotationFromQuaternion(new Quaternion().setFromEuler(this.rotation).invert());
-    mypos.applyMatrix4(m);
     mypos.sub(this.translation);
+    mypos.applyMatrix4(m);
     myup.applyMatrix4(m);
     mydir.applyMatrix4(m);
 
@@ -795,6 +803,7 @@ export default class PathTracedVolume {
     }
   }
 
+  // 0..1 ranges as input
   updateClipRegion(xmin: number, xmax: number, ymin: number, ymax: number, zmin: number, zmax: number): void {
     this.bounds = {
       bmin: new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),

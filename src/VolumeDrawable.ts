@@ -36,6 +36,8 @@ export default class VolumeDrawable {
   private meshVolume: MeshVolume;
   private primaryRayStepSize: number;
   private secondaryRayStepSize: number;
+  private showBoundingBox: boolean;
+  private boundingBoxColor: [number, number, number];
 
   // these two should never coexist simultaneously. always one or the other is present
   // a polymorphic interface implementation might be a better way to deal with this.
@@ -76,6 +78,9 @@ export default class VolumeDrawable {
     // TODO verify that these are reasonable
     this.density = 0;
     this.brightness = 0;
+
+    this.showBoundingBox = false;
+    this.boundingBoxColor = [1.0, 1.0, 0.0];
 
     this.channelColors = this.volume.channel_colors_default.slice();
 
@@ -171,11 +176,14 @@ export default class VolumeDrawable {
     if (options.renderMode !== undefined) {
       this.setVolumeRendering(!!options.renderMode);
     }
-    if (
-      options.primaryRayStepSize !== undefined ||
-      options.secondaryRayStepSize !== undefined
-    ) {
+    if (options.primaryRayStepSize !== undefined || options.secondaryRayStepSize !== undefined) {
       this.setRayStepSizes(options.primaryRayStepSize, options.secondaryRayStepSize);
+    }
+    if (options.showBoundingBox !== undefined) {
+      this.setShowBoundingBox(options.showBoundingBox);
+    }
+    if (options.boundingBoxColor !== undefined) {
+      this.setBoundingBoxColor(options.boundingBoxColor);
     }
 
     if (options.channels !== undefined) {
@@ -263,11 +271,11 @@ export default class VolumeDrawable {
     this.meshVolume.setResolution(x, y);
   }
 
-  // Set clipping range (between 0 and 1) for a given axis.
+  // Set clipping range (between -0.5 and 0.5) for a given axis.
   // Calling this allows the rendering to compensate for changes in thickness in orthographic views that affect how bright the volume is.
   // @param {number} axis 0, 1, or 2 for x, y, or z axis
-  // @param {number} minval 0..1, should be less than maxval
-  // @param {number} maxval 0..1, should be greater than minval
+  // @param {number} minval -0.5..0.5, should be less than maxval
+  // @param {number} maxval -0.5..0.5, should be greater than minval
   // @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
   setAxisClip(axis: number, minval: number, maxval: number, isOrthoAxis?: boolean): void {
     this.bounds.bmax[axis] = maxval;
@@ -317,14 +325,6 @@ export default class VolumeDrawable {
     canvas.camera.updateMatrixWorld(true);
 
     canvas.camera.matrixWorldInverse.copy(canvas.camera.matrixWorld).invert();
-
-    const isVR = canvas.isVR();
-    if (isVR) {
-      // raise volume drawable to about 1 meter.
-      this.sceneRoot.position.y = 1.0;
-    } else {
-      this.sceneRoot.position.y = 0.0;
-    }
 
     // TODO confirm sequence
     this.volumeRendering.doRender(canvas);
@@ -549,6 +549,16 @@ export default class VolumeDrawable {
     this.volumeRendering.setMaskAlpha(maskAlpha);
   }
 
+  setShowBoundingBox(showBoundingBox: boolean): void {
+    this.showBoundingBox = showBoundingBox;
+    this.volumeRendering.setShowBoundingBox(showBoundingBox);
+  }
+
+  setBoundingBoxColor(color: [number, number, number]): void {
+    this.boundingBoxColor = color;
+    this.volumeRendering.setBoundingBoxColor(color);
+  }
+
   getIntensity(c: number, x: number, y: number, z: number): number {
     return this.volume.getIntensity(c, x, y, z);
   }
@@ -573,7 +583,10 @@ export default class VolumeDrawable {
     this.PT && this.pathTracedVolume && this.pathTracedVolume.updateCamera(fov, focalDistance, apertureSize);
   }
 
+  // values are in 0..1 range
   updateClipRegion(xmin: number, xmax: number, ymin: number, ymax: number, zmin: number, zmax: number): void {
+    this.bounds.bmin = new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5);
+    this.bounds.bmax = new Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5);
     this.volumeRendering.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
     this.meshVolume.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
   }
@@ -637,8 +650,18 @@ export default class VolumeDrawable {
     this.setAxisClip(0, this.bounds.bmin.x, this.bounds.bmax.x);
     this.setAxisClip(1, this.bounds.bmin.y, this.bounds.bmax.y);
     this.setAxisClip(2, this.bounds.bmin.z, this.bounds.bmax.z);
-
+    this.updateClipRegion(
+      this.bounds.bmin.x + 0.5,
+      this.bounds.bmax.x + 0.5,
+      this.bounds.bmin.y + 0.5,
+      this.bounds.bmax.y + 0.5,
+      this.bounds.bmin.z + 0.5,
+      this.bounds.bmax.z + 0.5
+    );
     this.setRayStepSizes(this.primaryRayStepSize, this.secondaryRayStepSize);
+
+    this.setShowBoundingBox(this.showBoundingBox);
+    this.setBoundingBoxColor(this.boundingBoxColor);
 
     // add new 3d object to scene
     !this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());

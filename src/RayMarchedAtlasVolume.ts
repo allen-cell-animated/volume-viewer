@@ -1,15 +1,18 @@
 import {
-  BoxHelper,
+  Box3,
+  Box3Helper,
+  BoxGeometry,
+  BufferGeometry,
+  Color,
   Euler,
+  Group,
+  LineBasicMaterial,
+  Material,
+  Matrix4,
+  Mesh,
+  ShaderMaterial,
   Vector2,
   Vector3,
-  Group,
-  BoxGeometry,
-  Mesh,
-  Material,
-  ShaderMaterial,
-  Matrix4,
-  BufferGeometry,
 } from "three";
 
 import FusedChannelData from "./FusedChannelData";
@@ -29,7 +32,7 @@ export default class RayMarchedAtlasVolume {
   public bounds: Bounds;
   private cube: BoxGeometry;
   private cubeMesh: Mesh<BufferGeometry, Material>;
-  private boxHelper: BoxHelper;
+  private boxHelper: Box3Helper;
   private cubeTransformNode: Group;
   private uniforms: typeof rayMarchingShaderUniforms;
   private channelData: FusedChannelData;
@@ -49,13 +52,14 @@ export default class RayMarchedAtlasVolume {
     this.cubeMesh = new Mesh(this.cube);
     this.cubeMesh.name = "Volume";
 
-    this.boxHelper = new BoxHelper(this.cubeMesh, 0xffff00);
+    this.boxHelper = new Box3Helper(new Box3(this.bounds.bmin, this.bounds.bmax), new Color(0xffff00));
+    this.boxHelper.updateMatrixWorld();
+    this.boxHelper.visible = false;
 
     this.cubeTransformNode = new Group();
     this.cubeTransformNode.name = "VolumeContainerNode";
-    // TODO: when bounding box UX is determined,
-    // uncomment the following line to show the box
-    //this.cubeTransformNode.add(this.boxHelper);
+
+    this.cubeTransformNode.add(this.boxHelper);
     this.cubeTransformNode.add(this.cubeMesh);
 
     this.uniforms = rayMarchingShaderUniforms;
@@ -69,14 +73,17 @@ export default class RayMarchedAtlasVolume {
       vertexShader: vtxsrc,
       fragmentShader: fgmtsrc,
       transparent: true,
-      depthTest: false,
+      depthTest: true,
+      depthWrite: false,
     });
+
     this.cubeMesh.material = threeMaterial;
 
     this.setUniform("ATLAS_X", volume.imageInfo.cols);
     this.setUniform("ATLAS_Y", volume.imageInfo.rows);
     this.setUniform("textureRes", new Vector2(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height));
     this.setUniform("SLICES", volume.z);
+    this.setScale(this.scale);
 
     this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
     // tell channelData about the channels that are already present, one at a time.
@@ -96,6 +103,19 @@ export default class RayMarchedAtlasVolume {
 
   public setVisible(isVisible: boolean): void {
     this.cubeMesh.visible = isVisible;
+    // note that this does not affect bounding box visibility
+  }
+
+  public setShowBoundingBox(showBoundingBox: boolean): void {
+    this.boxHelper.visible = showBoundingBox;
+  }
+
+  public setBoundingBoxColor(color: [number, number, number]): void {
+    // note this material update is supposed to be a hidden implementation detail
+    // but I didn't want to re-create a whole boxHelper again.
+    // I could also create a new LineBasicMaterial but that would also rely on knowledge
+    // that Box3Helper expects that type.
+    (this.boxHelper.material as LineBasicMaterial).color = new Color(color[0], color[1], color[2]);
   }
 
   public doRender(canvas: ThreeJsPanel): void {
@@ -103,8 +123,7 @@ export default class RayMarchedAtlasVolume {
       return;
     }
 
-    this.cubeMesh.updateMatrixWorld(true);
-    this.boxHelper.update();
+    this.cubeTransformNode.updateMatrixWorld(true);
 
     const mvm = new Matrix4();
     mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.cubeMesh.matrixWorld);
@@ -112,17 +131,6 @@ export default class RayMarchedAtlasVolume {
     mi.copy(mvm).invert();
 
     this.setUniform("inverseModelViewMatrix", mi);
-
-    const isVR = canvas.isVR();
-    if (isVR) {
-      this.cubeMesh.material.depthWrite = true;
-      this.cubeMesh.material.transparent = false;
-      this.cubeMesh.material.depthTest = true;
-    } else {
-      this.cubeMesh.material.depthWrite = false;
-      this.cubeMesh.material.transparent = true;
-      this.cubeMesh.material.depthTest = false;
-    }
   }
 
   public get3dObject(): Group {
@@ -138,6 +146,10 @@ export default class RayMarchedAtlasVolume {
 
     this.cubeMesh.scale.copy(new Vector3(scale.x, scale.y, scale.z));
     this.setUniform("volumeScale", scale);
+    this.boxHelper.box.set(
+      new Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z),
+      new Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z)
+    );
   }
 
   public setRayStepSizes(_primary: number, _secondary: number): void {
@@ -145,7 +157,7 @@ export default class RayMarchedAtlasVolume {
   }
 
   public setTranslation(vec3xyz: Vector3): void {
-    this.cubeMesh.position.copy(vec3xyz);
+    this.cubeTransformNode.position.copy(vec3xyz);
   }
 
   public setRotation(eulerXYZ: Euler): void {

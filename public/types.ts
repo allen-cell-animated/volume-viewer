@@ -48,6 +48,9 @@ export interface State {
   isAxisShowing: boolean;
   isAligned: boolean;
 
+  showBoundingBox: boolean;
+  boundingBoxColor: [number, number, number];
+
   flipX: number;
   flipY: number;
   flipZ: number;
@@ -66,7 +69,7 @@ interface ChannelGuiOptions {
   glossiness: number;
   isovalue: number;
   isosurface: boolean;
-  enabled: boolean,
+  enabled: boolean;
   autoIJ: (channelNum: number) => void;
   auto0: (channelNum: number) => void;
   bestFit: (channelNum: number) => void;
