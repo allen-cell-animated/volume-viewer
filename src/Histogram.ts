@@ -29,12 +29,12 @@ const LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
  * (maps scalar intensity to a rgb color plus alpha, with each value from 0-255)
  * @property {Array.<ControlPoint>} controlPoints
  */
-type ControlPoint = {
+export type ControlPoint = {
   x: number;
   opacity: number;
   color: [number, number, number];
 };
-type Lut = {
+export type Lut = {
   lut: Uint8Array;
   controlPoints: ControlPoint[];
 };
