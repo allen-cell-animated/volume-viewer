@@ -30,7 +30,7 @@
     "access": "public"
   },
   "dependencies": {
-    "three": "^0.132.2"
+    "three": "^0.137.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.14.8",
