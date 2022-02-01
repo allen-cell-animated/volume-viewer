@@ -1,14 +1,12 @@
 /**
- * @author alteredq / http://alteredqualia.com/
- * @author mrdoob / http://mrdoob.com
  * Port of http://webglsamples.org/blob/blob.html
  */
 
-// MODIFIED 2018 BY DANIELT@ALLENINSTITUTE.ORG TO ACCEPT enableColors, enableNormals, volumeFieldRef options
+// MODIFIED 2018-2022 BY DANIELT@ALLENINSTITUTE.ORG TO ACCEPT enableColors, enableNormals, volumeFieldRef options
 
-import { BufferAttribute, BufferGeometry, ImmediateRenderObject, Material, Vector3 } from "three";
+import { BufferAttribute, BufferGeometry, Material, Mesh } from "three";
 
-class MarchingCubes extends ImmediateRenderObject {
+class MarchingCubes extends Mesh {
   public isovalue: number;
   public enableUvs: boolean;
   public enableColors: boolean;
@@ -34,12 +32,12 @@ class MarchingCubes extends ImmediateRenderObject {
   public zd: number;
   public field: Uint8Array | Float32Array;
   public normal_cache: Float32Array;
-  public maxCount = 16384; //4096; // TODO: find the fastest size for this buffer
-  public count = 0;
-  public hasPositions = false;
-  public hasNormals = false;
-  public hasColors = false;
-  public hasUvs = false;
+  public maxCount: number; //4096; // TODO: find the fastest size for this buffer
+  public count: number;
+  public hasPositions: boolean;
+  public hasNormals: boolean;
+  public hasColors: boolean;
+  public hasUvs: boolean;
   public positionArray: Float32Array;
   public normalArray: Float32Array;
   public uvArray: Float32Array;
@@ -60,7 +58,14 @@ class MarchingCubes extends ImmediateRenderObject {
     enableNormals: boolean,
     volumeFieldRef: Uint8Array
   ) {
-    super(material);
+    const geometry = new BufferGeometry();
+    super(geometry, material);
+    this.maxCount = 16384; //4096; // TODO: find the fastest size for this buffer
+    this.count = 0;
+    this.hasPositions = false;
+    this.hasNormals = false;
+    this.hasColors = false;
+    this.hasUvs = false;
 
     const scope = this;
 

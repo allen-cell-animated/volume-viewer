@@ -30,7 +30,7 @@
     "access": "public"
   },
   "dependencies": {
-    "three": "^0.132.2"
+    "three": "^0.137.4"
   },
   "devDependencies": {
     "@babel/cli": "^7.14.8",
@@ -42,7 +42,7 @@
     "@types/chai": "^4.2.22",
     "@types/dat.gui": "^0.7.3",
     "@types/mocha": "^9.0.0",
-    "@types/three": "^0.132.1",
+    "@types/three": "^0.137.0",
     "@typescript-eslint/eslint-plugin": "^4.28.5",
     "@typescript-eslint/parser": "^4.28.5",
     "babel-loader": "^8.2.2",
