@@ -30,7 +30,9 @@
     "access": "public"
   },
   "dependencies": {
-    "three": "^0.132.2",
+    "acorn": "^8.7.0",
+    "regenerator-runtime": "^0.13.9",
+    "three": "^0.137.4",
     "zarr": "^0.5.1"
   },
   "devDependencies": {

@@ -1,3 +1,4 @@
+import "regenerator-runtime/runtime";
 import Volume, { ImageInfo } from "./Volume";
 import { slice, openArray, openGroup, HTTPStore, NestedArray, TypedArray } from "zarr";
 
@@ -133,9 +134,9 @@ export default class VolumeLoader {
    * @returns {Promise<Volume>}
    */
   static async loadZarr(url: string, callback: PerChannelCallback): Promise<Volume> {
-    const store = new HTTPStore("http://localhost:9020/example-data/z0.zarr");
+    const store = new HTTPStore("http://localhost:9020/example-data/AICS-12_143.zarr");
 
-    const imagegroup = "image0"; // "image_reduced", 0
+    const imagegroup = "AICS-12_143"; // "image_reduced", 0
     const levelToLoad = 2;
 
     const data = await openGroup(store, imagegroup, "r");
