@@ -142,18 +142,25 @@ export default class VolumeLoader {
     const data = await openGroup(store, imagegroup, "r");
     const allmetadata = await data.attrs.asObject();
     const numlevels = allmetadata.multiscales[0].datasets.length;
+
+    // get raw scaling for level 0
+    const scale5d = allmetadata.multiscales[0].datasets[0].coordinateTransformations[0].scale;
+
     // TODO get metadata sizes for each level?  how inefficient is that?
     // update levelToLoad after we get size info about multiscales?
 
     const metadata = allmetadata.omero;
+
+    const level0 = await openArray({ store: store, path: imagegroup + "/" + "0", mode: "r" });
     // full res info
-    const w = metadata.size.width;
-    const h = metadata.size.height;
-    const z = metadata.size.z;
-    const c = metadata.size.c;
+    const w = level0.meta.shape[4];
+    const h = level0.meta.shape[3];
+    const z = level0.meta.shape[2];
+    const c = level0.meta.shape[1];
+    const t = level0.meta.shape[0];
 
     const level = await openArray({ store: store, path: imagegroup + "/" + levelToLoad, mode: "r" });
-
+    // reduced level info
     const tw = level.meta.shape[4];
     const th = level.meta.shape[3];
 
@@ -192,9 +199,9 @@ export default class VolumeLoader {
       // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
       atlas_width: atlaswidth,
       atlas_height: atlasheight,
-      pixel_size_x: metadata.pixel_size.x,
-      pixel_size_y: metadata.pixel_size.y,
-      pixel_size_z: metadata.pixel_size.z,
+      pixel_size_x: scale5d[4],
+      pixel_size_y: scale5d[3],
+      pixel_size_z: scale5d[2],
       name: metadata.name,
       version: metadata.version,
       transform: {

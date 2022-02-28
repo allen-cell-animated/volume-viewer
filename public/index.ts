@@ -784,6 +784,9 @@ function fetchZarr() {
     const currentVol = myState.volume;
 
     currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
+    view3D.setVolumeChannelEnabled(currentVol, channelIndex, channelIndex < 3);
+    view3D.updateActiveChannels(currentVol);
+    view3D.updateLuts(currentVol);
 
     if (currentVol.isLoaded()) {
       console.log("currentVol with name" + currentVol.name + " is loaded");
@@ -821,10 +824,10 @@ function fetchZarr() {
     view3D.removeAllVolumes();
     view3D.addVolume(myState.volume);
     view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
-    // first 3 channels for starters
-    for (let ch = 0; ch < myState.volume.num_channels; ++ch) {
-      view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
-    }
+    // // first 3 channels for starters
+    // for (let ch = 0; ch < myState.volume.num_channels; ++ch) {
+    //   view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
+    // }
     //view3D.setVolumeChannelAsMask(myState.volume, myJson.channel_names.indexOf("SEG_Memb"));
     view3D.updateActiveChannels(myState.volume);
     view3D.updateLuts(myState.volume);
