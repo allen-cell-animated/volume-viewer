@@ -133,25 +133,32 @@ export default class VolumeLoader {
    * @param {PerChannelCallback} callback Per-channel callback.  Called when each channel's atlased volume data is loaded
    * @returns {Promise<Volume>}
    */
-  static async loadZarr(url: string, callback: PerChannelCallback): Promise<Volume> {
-    const store = new HTTPStore("http://localhost:9020/example-data/AICS-12_143.zarr");
+  static async loadZarr(urlStore: string, imageName: string, callback: PerChannelCallback): Promise<Volume> {
+    const store = new HTTPStore(urlStore);
 
-    const imagegroup = "AICS-12_143"; // "image_reduced", 0
-    const levelToLoad = 2;
+    const imagegroup = imageName;
 
     const data = await openGroup(store, imagegroup, "r");
+
+    // get top-level metadata for this zarr image
     const allmetadata = await data.attrs.asObject();
     //const numlevels = allmetadata.multiscales[0].datasets.length;
-
     // get raw scaling for level 0
-    const scale5d = allmetadata.multiscales[0].datasets[0].coordinateTransformations[0].scale;
+    // each entry of multiscales is a multiscale image.
+    const imageIndex = 0;
+    // there is one dataset for each multiscale level.
+    const dataset0 = allmetadata.multiscales[imageIndex].datasets[0];
+    // technically there can be any number of coordinateTransformations
+    // but there must be only one of type "scale".
+    // Here I assume that is the only one.
+    const scale5d = dataset0.coordinateTransformations[0].scale;
 
     // TODO get metadata sizes for each level?  how inefficient is that?
     // update levelToLoad after we get size info about multiscales?
 
     const metadata = allmetadata.omero;
 
-    const level0 = await openArray({ store: store, path: imagegroup + "/" + "0", mode: "r" });
+    const level0 = await openArray({ store: store, path: imagegroup + "/" + dataset0.path, mode: "r" });
     // full res info
     const w = level0.meta.shape[4];
     const h = level0.meta.shape[3];
@@ -159,7 +166,11 @@ export default class VolumeLoader {
     const c = level0.meta.shape[1];
     //const t = level0.meta.shape[0];
 
-    const level = await openArray({ store: store, path: imagegroup + "/" + levelToLoad, mode: "r" });
+    // making a choice of a reduced level:
+    const levelToLoad = 2;
+    const dataset2 = allmetadata.multiscales[imageIndex].datasets[levelToLoad];
+    const level = await openArray({ store: store, path: imagegroup + "/" + dataset2.path, mode: "r" });
+
     // reduced level info
     const tw = level.meta.shape[4];
     const th = level.meta.shape[3];
@@ -246,7 +257,8 @@ export default class VolumeLoader {
         }
         vol.setChannelDataFromVolume(i, u8);
         if (callback) {
-          callback(url, i);
+          // make up a unique name? or have caller pass this in?
+          callback(urlStore + "/" + imageName, i);
         }
       }
     });

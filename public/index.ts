@@ -778,9 +778,9 @@ function cacheTimeSeriesImageData(jsonData, frameNumber) {
   return vol;
 }
 
-function fetchZarr() {
+function fetchZarr(store: string, image: string) {
   // create the main volume and add to view (this is the only place)
-  VolumeLoader.loadZarr("", (url, channelIndex) => {
+  VolumeLoader.loadZarr(store, image, (url, channelIndex) => {
     const currentVol = myState.volume;
 
     currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
@@ -1193,7 +1193,7 @@ function main() {
       46
     );
   } else if (loadTestData) {
-    fetchZarr();
+    fetchZarr("http://localhost:9020/example-data/AICS-12_143.zarr", "AICS-12_143");
     //fetchImage("AICS-12_881_atlas.json");
   } else {
     const volumeInfo = createTestVolume();
