@@ -1,6 +1,6 @@
 import "regenerator-runtime/runtime";
 import Volume, { ImageInfo } from "./Volume";
-import { slice, openArray, openGroup, HTTPStore, NestedArray, TypedArray } from "zarr";
+import { openArray, openGroup, HTTPStore, NestedArray, TypedArray } from "zarr";
 
 /**
  * @callback PerChannelCallback
@@ -53,18 +53,18 @@ export default class VolumeLoader {
 
       // using Image is just a trick to download the bits as a png.
       // the Image will never be used again.
-      const img = new Image();
+      const img: HTMLImageElement = new Image();
       img.onerror = function () {
         console.log("ERROR LOADING " + url);
       };
       img.onload = (function (thisbatch) {
-        return function (event) {
+        return function (event: Event) {
           //console.log("GOT ch " + me.src);
           // extract pixels by drawing to canvas
           const canvas = document.createElement("canvas");
           // nice thing about this is i could downsample here
-          const w = Math.floor(event.target.naturalWidth);
-          const h = Math.floor(event.target.naturalHeight);
+          const w = Math.floor((event?.target as HTMLImageElement).naturalWidth);
+          const h = Math.floor((event?.target as HTMLImageElement).naturalHeight);
           canvas.setAttribute("width", "" + w);
           canvas.setAttribute("height", "" + h);
           const ctx = canvas.getContext("2d");
@@ -74,7 +74,7 @@ export default class VolumeLoader {
           }
           ctx.globalCompositeOperation = "copy";
           ctx.globalAlpha = 1.0;
-          ctx.drawImage(event.target, 0, 0, w, h);
+          ctx.drawImage(event?.target as CanvasImageSource, 0, 0, w, h);
           // getImageData returns rgba.
           // optimize: collapse rgba to single channel arrays
           const iData = ctx.getImageData(0, 0, w, h);
@@ -141,7 +141,7 @@ export default class VolumeLoader {
 
     const data = await openGroup(store, imagegroup, "r");
     const allmetadata = await data.attrs.asObject();
-    const numlevels = allmetadata.multiscales[0].datasets.length;
+    //const numlevels = allmetadata.multiscales[0].datasets.length;
 
     // get raw scaling for level 0
     const scale5d = allmetadata.multiscales[0].datasets[0].coordinateTransformations[0].scale;
@@ -157,7 +157,7 @@ export default class VolumeLoader {
     const h = level0.meta.shape[3];
     const z = level0.meta.shape[2];
     const c = level0.meta.shape[1];
-    const t = level0.meta.shape[0];
+    //const t = level0.meta.shape[0];
 
     const level = await openArray({ store: store, path: imagegroup + "/" + levelToLoad, mode: "r" });
     // reduced level info
@@ -308,7 +308,7 @@ export default class VolumeLoader {
     const imgdata: ImageInfo = {
       width: 600,
       height: 600,
-      channels: 2,
+      channels: numChannels,
       channel_names: chnames,
       rows: 27,
       cols: 1,
