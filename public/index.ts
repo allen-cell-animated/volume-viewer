@@ -1,3 +1,4 @@
+import "regenerator-runtime/runtime";
 import { Vector3 } from "three";
 import * as dat from "dat.gui";
 

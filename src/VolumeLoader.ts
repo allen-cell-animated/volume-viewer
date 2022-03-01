@@ -1,4 +1,3 @@
-import "regenerator-runtime/runtime";
 import Volume, { ImageInfo } from "./Volume";
 import { openArray, openGroup, HTTPStore, NestedArray, TypedArray } from "zarr";
 
