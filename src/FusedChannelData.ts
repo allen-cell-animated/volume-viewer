@@ -62,7 +62,7 @@ export default class FusedChannelData {
     this.maskChannelIndex = 0;
 
     // force single threaded use even if webworkers are available
-    this.useSingleThread = true;
+    this.useSingleThread = false;
 
     // thread control
     this.fuseWorkersWorking = 0;
