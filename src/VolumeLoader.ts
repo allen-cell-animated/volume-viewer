@@ -219,30 +219,33 @@ export default class VolumeLoader {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],
       },
+      times: t,
     };
 
     // got some data, now let's construct the volume.
     const vol = new Volume(imgdata);
 
-    level.get([0, null, null, null, null]).then((channel) => {
-      channel = channel as NestedArray<TypedArray>;
-      const nc = channel.shape[0];
-      const nz = channel.shape[1];
-      const ny = channel.shape[2];
-      const nx = channel.shape[3];
+    level.get([0, null, null, null, null]).then((timesample) => {
+      timesample = timesample as NestedArray<TypedArray>;
+      const nc = timesample.shape[0];
+      const nz = timesample.shape[1];
+      const ny = timesample.shape[2];
+      const nx = timesample.shape[3];
       for (let i = 0; i < nc; ++i) {
+        // TODO put this in a webworker??
+
         const npixels = nx * ny * nz;
         const u8 = new Uint8Array(npixels);
         const xy = nx * ny;
 
-        if (channel.dtype === "|u1") {
+        if (timesample.dtype === "|u1") {
           // flatten the 3d array and convert to uint8
           // todo test perf with a loop over x,y,z instead
           for (let j = 0; j < npixels; ++j) {
             const slice = Math.floor(j / xy);
             const yrow = Math.floor(j / nx) - slice * ny;
             const xcol = j % nx;
-            u8[j] = channel.data[i][slice][yrow][xcol];
+            u8[j] = timesample.data[i][slice][yrow][xcol];
           }
         } else {
           let chmin = 65535; //metadata.channels[i].window.min;
@@ -252,7 +255,7 @@ export default class VolumeLoader {
             const slice = Math.floor(j / xy);
             const yrow = Math.floor(j / nx) - slice * ny;
             const xcol = j % nx;
-            const val = channel.data[i][slice][yrow][xcol];
+            const val = timesample.data[i][slice][yrow][xcol];
             if (val < chmin) {
               chmin = val;
             }
@@ -265,7 +268,7 @@ export default class VolumeLoader {
             const slice = Math.floor(j / xy);
             const yrow = Math.floor(j / nx) - slice * ny;
             const xcol = j % nx;
-            u8[j] = ((channel.data[i][slice][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
+            u8[j] = ((timesample.data[i][slice][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
           }
         }
         vol.setChannelDataFromVolume(i, u8);
@@ -353,6 +356,7 @@ export default class VolumeLoader {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],
       },
+      times: 1,
     };
 
     // got some data, now let's construct the volume.

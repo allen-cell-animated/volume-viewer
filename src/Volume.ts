@@ -27,6 +27,7 @@ export interface ImageInfo {
     translation: [number, number, number];
     rotation: [number, number, number];
   };
+  times: number;
 }
 
 export const getDefaultImageInfo = (): ImageInfo => {
@@ -52,7 +53,8 @@ export const getDefaultImageInfo = (): ImageInfo => {
       translation: [0, 0, 0],
       rotation: [0, 0, 0],
     },
-  }
+    times: 1,
+  };
 };
 
 /* eslint-enable @typescript-eslint/naming-convention */
