@@ -163,10 +163,11 @@ export default class VolumeLoader {
     const h = level0.meta.shape[3];
     const z = level0.meta.shape[2];
     const c = level0.meta.shape[1];
-    //const t = level0.meta.shape[0];
+    const t = level0.meta.shape[0];
+    console.log(`X=${w}, Y=${h}, Z=${z}, C=${c}, T=${t}`);
 
     // making a choice of a reduced level:
-    const levelToLoad = 2;
+    const levelToLoad = 1;
     const dataset2 = allmetadata.multiscales[imageIndex].datasets[levelToLoad];
     const level = await openArray({ store: store, path: imagegroup + "/" + dataset2.path, mode: "r" });
 
@@ -244,8 +245,21 @@ export default class VolumeLoader {
             u8[j] = channel.data[i][slice][yrow][xcol];
           }
         } else {
-          const chmin = metadata.channels[i].window.min;
-          const chmax = metadata.channels[i].window.max;
+          let chmin = 65535; //metadata.channels[i].window.min;
+          let chmax = 0; //metadata.channels[i].window.max;
+          // find min and max
+          for (let j = 0; j < npixels; ++j) {
+            const slice = Math.floor(j / xy);
+            const yrow = Math.floor(j / nx) - slice * ny;
+            const xcol = j % nx;
+            const val = channel.data[i][slice][yrow][xcol];
+            if (val < chmin) {
+              chmin = val;
+            }
+            if (val > chmax) {
+              chmax = val;
+            }
+          }
           // flatten the 3d array and convert to uint8
           for (let j = 0; j < npixels; ++j) {
             const slice = Math.floor(j / xy);

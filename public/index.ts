@@ -1194,7 +1194,8 @@ function main() {
       46
     );
   } else if (loadTestData) {
-    fetchZarr("http://localhost:9020/example-data/AICS-12_143.zarr", "AICS-12_143");
+    fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/Lamin_multi-06-Deskew-28.zarr", "Image_0");
+    //fetchZarr("http://localhost:9020/example-data/AICS-12_143.zarr", "AICS-12_143");
     //fetchImage("AICS-12_881_atlas.json");
   } else {
     const volumeInfo = createTestVolume();
