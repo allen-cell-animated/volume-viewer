@@ -14,6 +14,47 @@ interface PackedChannelsImage {
 }
 type PackedChannelsImageRequests = Record<string, HTMLImageElement>;
 
+function convertChannel(channelData: TypedArray[][], nx: number, ny: number, nz: number, dtype: string): Uint8Array {
+  const npixels = nx * ny * nz;
+  const u8 = new Uint8Array(npixels);
+  const xy = nx * ny;
+
+  if (dtype === "|u1") {
+    // flatten the 3d array and convert to uint8
+    // todo test perf with a loop over x,y,z instead
+    for (let j = 0; j < npixels; ++j) {
+      const slice = Math.floor(j / xy);
+      const yrow = Math.floor(j / nx) - slice * ny;
+      const xcol = j % nx;
+      u8[j] = channelData[slice][yrow][xcol];
+    }
+  } else {
+    let chmin = 65535; //metadata.channels[i].window.min;
+    let chmax = 0; //metadata.channels[i].window.max;
+    // find min and max
+    for (let j = 0; j < npixels; ++j) {
+      const slice = Math.floor(j / xy);
+      const yrow = Math.floor(j / nx) - slice * ny;
+      const xcol = j % nx;
+      const val = channelData[slice][yrow][xcol];
+      if (val < chmin) {
+        chmin = val;
+      }
+      if (val > chmax) {
+        chmax = val;
+      }
+    }
+    // flatten the 3d array and convert to uint8
+    for (let j = 0; j < npixels; ++j) {
+      const slice = Math.floor(j / xy);
+      const yrow = Math.floor(j / nx) - slice * ny;
+      const xcol = j % nx;
+      u8[j] = ((channelData[slice][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
+    }
+  }
+  return u8;
+}
+
 /**
  * @class
  */
@@ -225,93 +266,39 @@ export default class VolumeLoader {
     // got some data, now let's construct the volume.
     const vol = new Volume(imgdata);
 
-    level.get([0, null, null, null, null]).then((timesample) => {
-      timesample = timesample as NestedArray<TypedArray>;
-      const nc = timesample.shape[0];
-      const nz = timesample.shape[1];
-      const ny = timesample.shape[2];
-      const nx = timesample.shape[3];
-      for (let i = 0; i < nc; ++i) {
+    // level.get([0, null, null, null, null]).then((timesample) => {
+    //   timesample = timesample as NestedArray<TypedArray>;
+    //   const nc = timesample.shape[0];
+    //   const nz = timesample.shape[1];
+    //   const ny = timesample.shape[2];
+    //   const nx = timesample.shape[3];
+    //   for (let i = 0; i < nc; ++i) {
+    //     // TODO put this in a webworker??
+    //     const u8 = convertChannel(timesample.data[i] as TypedArray[][], nx, ny, nz, timesample.dtype);
+    //     vol.setChannelDataFromVolume(i, u8);
+    //     if (callback) {
+    //       // make up a unique name? or have caller pass this in?
+    //       callback(urlStore + "/" + imageName, i);
+    //     }
+    //   }
+    // });
+
+    for (let i = 0; i < c; ++i) {
+      level.get([0, i, null, null, null]).then((channel) => {
+        channel = channel as NestedArray<TypedArray>;
+        const nz = channel.shape[0];
+        const ny = channel.shape[1];
+        const nx = channel.shape[2];
         // TODO put this in a webworker??
-
-        const npixels = nx * ny * nz;
-        const u8 = new Uint8Array(npixels);
-        const xy = nx * ny;
-
-        if (timesample.dtype === "|u1") {
-          // flatten the 3d array and convert to uint8
-          // todo test perf with a loop over x,y,z instead
-          for (let j = 0; j < npixels; ++j) {
-            const slice = Math.floor(j / xy);
-            const yrow = Math.floor(j / nx) - slice * ny;
-            const xcol = j % nx;
-            u8[j] = timesample.data[i][slice][yrow][xcol];
-          }
-        } else {
-          let chmin = 65535; //metadata.channels[i].window.min;
-          let chmax = 0; //metadata.channels[i].window.max;
-          // find min and max
-          for (let j = 0; j < npixels; ++j) {
-            const slice = Math.floor(j / xy);
-            const yrow = Math.floor(j / nx) - slice * ny;
-            const xcol = j % nx;
-            const val = timesample.data[i][slice][yrow][xcol];
-            if (val < chmin) {
-              chmin = val;
-            }
-            if (val > chmax) {
-              chmax = val;
-            }
-          }
-          // flatten the 3d array and convert to uint8
-          for (let j = 0; j < npixels; ++j) {
-            const slice = Math.floor(j / xy);
-            const yrow = Math.floor(j / nx) - slice * ny;
-            const xcol = j % nx;
-            u8[j] = ((timesample.data[i][slice][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
-          }
-        }
+        const u8 = convertChannel(channel.data as TypedArray[][], nx, ny, nz, channel.dtype);
         vol.setChannelDataFromVolume(i, u8);
         if (callback) {
           // make up a unique name? or have caller pass this in?
           callback(urlStore + "/" + imageName, i);
         }
-      }
-    });
+      });
+    }
 
-    //   // now we get the chunks:
-    // for (let i = 0; i < c; ++i) {
-    //   level.get([0, i, null, null, null]).then((channel) => {
-    //     channel = channel as NestedArray<TypedArray>;
-    //     const npixels = channel.shape[0] * channel.shape[1] * channel.shape[2];
-    //     const u8 = new Uint8Array(npixels);
-    //     const xy = channel.shape[1] * channel.shape[2];
-
-    //     if (channel.dtype === "|u1") {
-    //       // flatten the 3d array and convert to uint8
-    //       for (let j = 0; j < npixels; ++j) {
-    //         const slice = Math.floor(j / xy);
-    //         const yrow = Math.floor(j / channel.shape[2]) - slice * channel.shape[1];
-    //         const xcol = j % channel.shape[2];
-    //         u8[j] = channel.data[slice][yrow][xcol];
-    //       }
-    //     } else {
-    //       const chmin = metadata.channels[i].window.min;
-    //       const chmax = metadata.channels[i].window.max;
-    //       // flatten the 3d array and convert to uint8
-    //       for (let j = 0; j < npixels; ++j) {
-    //         const slice = Math.floor(j / xy);
-    //         const yrow = Math.floor(j / channel.shape[2]) - slice * channel.shape[1];
-    //         const xcol = j % channel.shape[2];
-    //         u8[j] = ((channel.data[slice][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
-    //       }
-    //     }
-    //     vol.setChannelDataFromVolume(i, u8);
-    //     if (callback) {
-    //       callback(url, i);
-    //     }
-    //   });
-    // }
     return vol;
   }
 
