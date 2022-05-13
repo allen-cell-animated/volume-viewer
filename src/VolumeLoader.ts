@@ -15,6 +15,7 @@ interface PackedChannelsImage {
 type PackedChannelsImageRequests = Record<string, HTMLImageElement>;
 
 function convertChannel(channelData: TypedArray[][], nx: number, ny: number, nz: number, dtype: string): Uint8Array {
+  console.log("begin convert channel");
   const npixels = nx * ny * nz;
   const u8 = new Uint8Array(npixels);
   const xy = nx * ny;
@@ -52,6 +53,8 @@ function convertChannel(channelData: TypedArray[][], nx: number, ny: number, nz:
       u8[j] = ((channelData[slice][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
     }
   }
+  console.log("end convert channel");
+
   return u8;
 }
 
@@ -283,20 +286,42 @@ export default class VolumeLoader {
     //   }
     // });
 
+    // for (let i = 0; i < c; ++i) {
+    //   level.get([0, i, null, null, null]).then((channel) => {
+    //     channel = channel as NestedArray<TypedArray>;
+    //     const nz = channel.shape[0];
+    //     const ny = channel.shape[1];
+    //     const nx = channel.shape[2];
+    //     // TODO put this in a webworker??
+    //     const u8 = convertChannel(channel.data as TypedArray[][], nx, ny, nz, channel.dtype);
+    //     console.log("begin setchannel and callback");
+    //     vol.setChannelDataFromVolume(i, u8);
+    //     if (callback) {
+    //       // make up a unique name? or have caller pass this in?
+    //       callback(urlStore + "/" + imageName, i);
+    //     }
+    //     console.log("end setchannel and callback");
+    //   });
+    // }
+    const storepath = imagegroup + "/" + dataset2.path;
     for (let i = 0; i < c; ++i) {
-      level.get([0, i, null, null, null]).then((channel) => {
-        channel = channel as NestedArray<TypedArray>;
-        const nz = channel.shape[0];
-        const ny = channel.shape[1];
-        const nx = channel.shape[2];
-        // TODO put this in a webworker??
-        const u8 = convertChannel(channel.data as TypedArray[][], nx, ny, nz, channel.dtype);
-        vol.setChannelDataFromVolume(i, u8);
+      const worker = new Worker(new URL("./workers/FetchZarrWorker.ts", import.meta.url));
+      worker.onmessage = function (e) {
+        const u8 = e.data.data;
+        const channel = e.data.channel;
+        console.log("begin setchannel and callback");
+        vol.setChannelDataFromVolume(channel, u8);
         if (callback) {
           // make up a unique name? or have caller pass this in?
-          callback(urlStore + "/" + imageName, i);
+          callback(urlStore + "/" + imageName, channel);
         }
-      });
+        console.log("end setchannel and callback");
+        worker.terminate();
+      };
+      worker.onerror = function (e) {
+        alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
+      };
+      worker.postMessage({ urlStore: urlStore, channel: i, path: storepath });
     }
 
     return vol;
