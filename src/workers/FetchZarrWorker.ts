@@ -45,11 +45,12 @@ function convertChannel(channelData: TypedArray[][], nx: number, ny: number, nz:
 }
 
 self.onmessage = function (e) {
-  const i = e.data.channel;
+  const time = e.data.time;
+  const channelIndex = e.data.channel;
   const store = new HTTPStore(e.data.urlStore);
   openArray({ store: store, path: e.data.path, mode: "r" })
     .then((level) => {
-      return level.get([0, i, null, null, null]);
+      return level.get([time, channelIndex, null, null, null]);
     })
     .then((channel) => {
       channel = channel as NestedArray<TypedArray>;
@@ -58,7 +59,7 @@ self.onmessage = function (e) {
       const nx = channel.shape[2];
       // TODO put this in a webworker??
       const u8: Uint8Array = convertChannel(channel.data as TypedArray[][], nx, ny, nz, channel.dtype);
-      const results = { data: u8, channel: i };
+      const results = { data: u8, channel: channelIndex };
       postMessage(results, [results.data.buffer]);
 
       // TODO excute on postMessage

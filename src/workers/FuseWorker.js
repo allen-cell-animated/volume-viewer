@@ -15,37 +15,38 @@ function fuseWorker(combination, fusionType) {
   self.fused.fill(0);
 
   let value = 0;
-  if (fusionType === "m") {
-    for (i = 0; i < cl; ++i) {
-      c = combination[i];
-      idx = c.chIndex;
-      if (!channels[idx]) {
-        continue;
-      }
-      if (c.rgbColor) {
-        channeldata = channels[idx];
-        lut = c.lut;
+  //  if (fusionType === "m") {
+  for (i = 0; i < cl; ++i) {
+    c = combination[i];
+    idx = c.chIndex;
+    if (!channels[idx]) {
+      continue;
+    }
+    if (c.rgbColor) {
+      channeldata = channels[idx];
+      lut = c.lut;
 
-        for (cx = 0, fx = 0; cx < npx; cx += 1, fx += 4) {
-          value = channeldata[cx];
-          lr = lut[value * 4 + 0]; // 0..255
-          lg = lut[value * 4 + 1]; // 0..255
-          lb = lut[value * 4 + 2]; // 0..255
-          la = lut[value * 4 + 3]; // 0..255
-          opacity = la / 255.0;
+      for (cx = 0, fx = 0; cx < npx; cx += 1, fx += 4) {
+        value = channeldata[cx];
+        lr = lut[value * 4 + 0]; // 0..255
+        lg = lut[value * 4 + 1]; // 0..255
+        lb = lut[value * 4 + 2]; // 0..255
+        la = lut[value * 4 + 3]; // 0..255
+        opacity = la / 255.0;
 
-          // what if rgb*opacity > 255?
-          ar = self.fused[fx + 0];
-          self.fused[fx + 0] = Math.max(ar, lr * opacity);
-          ag = self.fused[fx + 1];
-          self.fused[fx + 1] = Math.max(ag, lg * opacity);
-          ab = self.fused[fx + 2];
-          self.fused[fx + 2] = Math.max(ab, lb * opacity);
-          aa = self.fused[fx + 3];
-          self.fused[fx + 3] = Math.max(aa, la);
-        }
+        // what if rgb*opacity > 255?
+        ar = self.fused[fx + 0];
+        self.fused[fx + 0] = Math.max(ar, lr * opacity);
+        ag = self.fused[fx + 1];
+        self.fused[fx + 1] = Math.max(ag, lg * opacity);
+        ab = self.fused[fx + 2];
+        self.fused[fx + 2] = Math.max(ab, lb * opacity);
+        aa = self.fused[fx + 3];
+        self.fused[fx + 3] = Math.max(aa, la);
       }
     }
+  }
+  /*
   } else if (fusionType === "a") {
     // count
     let nchans = 0;
@@ -84,7 +85,7 @@ function fuseWorker(combination, fusionType) {
       }
     }
   }
-
+*/
   console.log("END fuseWorker WORK");
 }
 

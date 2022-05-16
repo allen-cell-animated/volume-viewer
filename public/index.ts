@@ -470,6 +470,18 @@ function removeFolderByName(name: string) {
   gui.onResize();
 }
 
+function updateTimeUI(volume: Volume) {
+  myState.totalFrames = volume.imageInfo.times;
+  const timeSlider = document.getElementById("timeSlider") as HTMLInputElement;
+  if (timeSlider) {
+    timeSlider.max = `${myState.totalFrames - 1}`;
+  }
+  const timeInput = document.getElementById("timeValue") as HTMLInputElement;
+  if (timeInput) {
+    timeInput.max = `${myState.totalFrames - 1}`;
+  }
+}
+
 function showChannelUI(volume: Volume) {
   if (myState && myState.channelFolderNames) {
     for (let i = 0; i < myState.channelFolderNames.length; ++i) {
@@ -779,9 +791,12 @@ function cacheTimeSeriesImageData(jsonData, frameNumber) {
   return vol;
 }
 
-function fetchZarr(store: string, image: string) {
+function fetchZarr(store: string, image: string, time: number) {
+  if (isNaN(time)) {
+    time = 0;
+  }
   // create the main volume and add to view (this is the only place)
-  VolumeLoader.loadZarr(store, image, (url, channelIndex) => {
+  VolumeLoader.loadZarr(store, image, time, (url, channelIndex) => {
     const currentVol = myState.volume;
 
     currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
@@ -845,6 +860,7 @@ function fetchZarr(store: string, image: string) {
     // }
 
     myState.currentFrame = 0;
+    updateTimeUI(myState.volume);
     showChannelUI(myState.volume);
   });
 }
@@ -1004,14 +1020,23 @@ function goToFrame(targetFrame) {
   console.log("going to Frame " + targetFrame);
   const outOfBounds = targetFrame > myState.totalFrames - 1 || targetFrame < 0;
   if (outOfBounds) {
-    console.log("frame out of bounds");
+    console.log(`frame ${targetFrame} out of bounds`);
     return;
   }
 
   const targetFrameVolume = myState.timeSeriesVolumes[targetFrame];
-
-  copyVolumeToVolume(targetFrameVolume, myState.volume);
-  updateViewForNewVolume();
+  if (targetFrameVolume) {
+    copyVolumeToVolume(targetFrameVolume, myState.volume);
+    updateViewForNewVolume();
+  } else {
+    console.log(`frame ${targetFrame} not yet loaded`);
+    // try zarr:
+    fetchZarr(
+      "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/Lamin_multi-06-Deskew-28.zarr",
+      "Image_0",
+      targetFrame
+    );
+  }
   myState.currentFrame = targetFrame;
 }
 
@@ -1144,6 +1169,26 @@ function main() {
   backBtn?.addEventListener("click", () => {
     goToFrame(myState.currentFrame - 1);
   });
+  const timeSlider = document.getElementById("timeSlider") as HTMLInputElement;
+  const timeInput = document.getElementById("timeValue") as HTMLInputElement;
+  // only update when DONE sliding: change event
+  timeSlider?.addEventListener("change", () => {
+    myState.currentFrame = timeSlider?.valueAsNumber;
+    // trigger loading new time
+    goToFrame(myState.currentFrame);
+    if (timeInput) {
+      timeInput.value = timeSlider.value;
+    }
+  });
+  timeInput?.addEventListener("change", () => {
+    myState.currentFrame = timeInput?.valueAsNumber;
+    // trigger loading new time
+    goToFrame(myState.currentFrame);
+    // update slider
+    if (timeSlider) {
+      timeSlider.value = timeInput.value;
+    }
+  });
 
   const alignBtn = document.getElementById("xfBtn");
   alignBtn?.addEventListener("click", () => {
@@ -1194,7 +1239,7 @@ function main() {
       46
     );
   } else if (loadTestData) {
-    fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/Lamin_multi-06-Deskew-28.zarr", "Image_0");
+    fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/Lamin_multi-06-Deskew-28.zarr", "Image_0", 0);
     //fetchZarr("http://localhost:9020/example-data/AICS-12_143.zarr", "AICS-12_143");
     //fetchImage("AICS-12_881_atlas.json");
   } else {

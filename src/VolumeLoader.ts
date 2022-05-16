@@ -176,7 +176,7 @@ export default class VolumeLoader {
    * @param {PerChannelCallback} callback Per-channel callback.  Called when each channel's atlased volume data is loaded
    * @returns {Promise<Volume>}
    */
-  static async loadZarr(urlStore: string, imageName: string, callback: PerChannelCallback): Promise<Volume> {
+  static async loadZarr(urlStore: string, imageName: string, t: number, callback: PerChannelCallback): Promise<Volume> {
     const store = new HTTPStore(urlStore);
 
     const imagegroup = imageName;
@@ -207,8 +207,8 @@ export default class VolumeLoader {
     const h = level0.meta.shape[3];
     const z = level0.meta.shape[2];
     const c = level0.meta.shape[1];
-    const t = level0.meta.shape[0];
-    console.log(`X=${w}, Y=${h}, Z=${z}, C=${c}, T=${t}`);
+    const sizeT = level0.meta.shape[0];
+    console.log(`X=${w}, Y=${h}, Z=${z}, C=${c}, T=${sizeT}`);
 
     // making a choice of a reduced level:
     const levelToLoad = 1;
@@ -263,7 +263,7 @@ export default class VolumeLoader {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],
       },
-      times: t,
+      times: sizeT,
     };
 
     // got some data, now let's construct the volume.
@@ -321,7 +321,7 @@ export default class VolumeLoader {
       worker.onerror = function (e) {
         alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
       };
-      worker.postMessage({ urlStore: urlStore, channel: i, path: storepath });
+      worker.postMessage({ urlStore: urlStore, time: Math.min(t, sizeT), channel: i, path: storepath });
     }
 
     return vol;
