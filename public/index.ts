@@ -16,6 +16,9 @@ import {
 import { State } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
 
+const loadTimeSeries = false;
+const loadTestData = true;
+
 let view3D: View3d;
 
 const myState: State = {
@@ -1157,10 +1160,16 @@ function main() {
     }
     playTimeSeries();
   });
+  if (!loadTimeSeries) {
+    (playBtn as HTMLButtonElement).disabled = true;
+  }
   const pauseBtn = document.getElementById("pauseBtn");
   pauseBtn?.addEventListener("click", () => {
     clearInterval(myState.timerId);
   });
+  if (!loadTimeSeries) {
+    (pauseBtn as HTMLButtonElement).disabled = true;
+  }
   const forwardBtn = document.getElementById("forwardBtn");
   forwardBtn?.addEventListener("click", () => {
     goToFrame(myState.currentFrame + 1);
@@ -1227,9 +1236,6 @@ function main() {
   });
 
   setupGui();
-
-  const loadTimeSeries = false;
-  const loadTestData = true;
 
   if (loadTimeSeries) {
     fetchTimeSeries(
