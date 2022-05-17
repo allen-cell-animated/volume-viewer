@@ -1,5 +1,5 @@
 import Volume, { ImageInfo } from "./Volume";
-import { openArray, openGroup, HTTPStore, NestedArray, TypedArray } from "zarr";
+import { openArray, openGroup, HTTPStore } from "zarr";
 
 /**
  * @callback PerChannelCallback
@@ -13,50 +13,6 @@ interface PackedChannelsImage {
   channels: number[];
 }
 type PackedChannelsImageRequests = Record<string, HTMLImageElement>;
-
-function convertChannel(channelData: TypedArray[][], nx: number, ny: number, nz: number, dtype: string): Uint8Array {
-  console.log("begin convert channel");
-  const npixels = nx * ny * nz;
-  const u8 = new Uint8Array(npixels);
-  const xy = nx * ny;
-
-  if (dtype === "|u1") {
-    // flatten the 3d array and convert to uint8
-    // todo test perf with a loop over x,y,z instead
-    for (let j = 0; j < npixels; ++j) {
-      const slice = Math.floor(j / xy);
-      const yrow = Math.floor(j / nx) - slice * ny;
-      const xcol = j % nx;
-      u8[j] = channelData[slice][yrow][xcol];
-    }
-  } else {
-    let chmin = 65535; //metadata.channels[i].window.min;
-    let chmax = 0; //metadata.channels[i].window.max;
-    // find min and max
-    for (let j = 0; j < npixels; ++j) {
-      const slice = Math.floor(j / xy);
-      const yrow = Math.floor(j / nx) - slice * ny;
-      const xcol = j % nx;
-      const val = channelData[slice][yrow][xcol];
-      if (val < chmin) {
-        chmin = val;
-      }
-      if (val > chmax) {
-        chmax = val;
-      }
-    }
-    // flatten the 3d array and convert to uint8
-    for (let j = 0; j < npixels; ++j) {
-      const slice = Math.floor(j / xy);
-      const yrow = Math.floor(j / nx) - slice * ny;
-      const xcol = j % nx;
-      u8[j] = ((channelData[slice][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
-    }
-  }
-  console.log("end convert channel");
-
-  return u8;
-}
 
 /**
  * @class
