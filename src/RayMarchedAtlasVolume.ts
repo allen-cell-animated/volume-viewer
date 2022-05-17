@@ -118,6 +118,8 @@ export default class RayMarchedAtlasVolume {
     }
     this.channelData.gpuFuse(canvas.renderer);
 
+    this.channelData.gpuFuse(canvas.renderer);
+
     this.cubeTransformNode.updateMatrixWorld(true);
 
     const mvm = new Matrix4();

@@ -818,12 +818,13 @@ function fetchZarr(store: string, image: string, time: number) {
       // copyVolumeToVolume(currentVol, myState.volume);
       // // has assumption that only 3 channels
       // view3D.onVolumeData(myState.volume, [0, 1, 2]);
-      // view3D.updateActiveChannels(myState.volume);
+      //view3D.updateActiveChannels(myState.volume);
       // view3D.updateLuts(myState.volume);
 
       // myState.volume.setIsLoaded(true);
       // //}
     }
+    view3D.redraw();
   }).then((volume: Volume) => {
     myState.volume = volume;
     // // TODO: this can go in the Volume and Channel constructors!
