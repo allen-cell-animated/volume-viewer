@@ -167,6 +167,7 @@ export default class VolumeLoader {
     console.log(`X=${w}, Y=${h}, Z=${z}, C=${c}, T=${sizeT}`);
 
     // making a choice of a reduced level:
+    const downsampleZ = 2; // half the z
     const levelToLoad = 1;
     const dataset2 = allmetadata.multiscales[imageIndex].datasets[levelToLoad];
     const level = await openArray({ store: store, path: imagegroup + "/" + dataset2.path, mode: "r" });
@@ -176,8 +177,9 @@ export default class VolumeLoader {
     const th = level.meta.shape[3];
 
     // compute rows and cols and atlas width and ht, given tw and th
+    const loadedZ = Math.ceil(z / downsampleZ);
     let nextrows = 1;
-    let nextcols = z;
+    let nextcols = loadedZ;
     let ratio = (nextcols * tw) / (nextrows * th);
     let nrows = nextrows;
     let ncols = nextcols;
@@ -203,7 +205,7 @@ export default class VolumeLoader {
       channel_names: chnames,
       rows: nrows,
       cols: ncols,
-      tiles: z,
+      tiles: loadedZ,
       tile_width: tw,
       tile_height: th,
       // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
@@ -212,7 +214,7 @@ export default class VolumeLoader {
       atlas_height: atlasheight,
       pixel_size_x: scale5d[4],
       pixel_size_y: scale5d[3],
-      pixel_size_z: scale5d[2],
+      pixel_size_z: scale5d[2] * downsampleZ,
       name: metadata.name,
       version: metadata.version,
       transform: {
@@ -225,41 +227,8 @@ export default class VolumeLoader {
     // got some data, now let's construct the volume.
     const vol = new Volume(imgdata);
 
-    // level.get([0, null, null, null, null]).then((timesample) => {
-    //   timesample = timesample as NestedArray<TypedArray>;
-    //   const nc = timesample.shape[0];
-    //   const nz = timesample.shape[1];
-    //   const ny = timesample.shape[2];
-    //   const nx = timesample.shape[3];
-    //   for (let i = 0; i < nc; ++i) {
-    //     // TODO put this in a webworker??
-    //     const u8 = convertChannel(timesample.data[i] as TypedArray[][], nx, ny, nz, timesample.dtype);
-    //     vol.setChannelDataFromVolume(i, u8);
-    //     if (callback) {
-    //       // make up a unique name? or have caller pass this in?
-    //       callback(urlStore + "/" + imageName, i);
-    //     }
-    //   }
-    // });
-
-    // for (let i = 0; i < c; ++i) {
-    //   level.get([0, i, null, null, null]).then((channel) => {
-    //     channel = channel as NestedArray<TypedArray>;
-    //     const nz = channel.shape[0];
-    //     const ny = channel.shape[1];
-    //     const nx = channel.shape[2];
-    //     // TODO put this in a webworker??
-    //     const u8 = convertChannel(channel.data as TypedArray[][], nx, ny, nz, channel.dtype);
-    //     console.log("begin setchannel and callback");
-    //     vol.setChannelDataFromVolume(i, u8);
-    //     if (callback) {
-    //       // make up a unique name? or have caller pass this in?
-    //       callback(urlStore + "/" + imageName, i);
-    //     }
-    //     console.log("end setchannel and callback");
-    //   });
-    // }
     const storepath = imagegroup + "/" + dataset2.path;
+    // do each channel on a worker
     for (let i = 0; i < c; ++i) {
       const worker = new Worker(new URL("./workers/FetchZarrWorker.ts", import.meta.url));
       worker.onmessage = function (e) {
@@ -277,7 +246,13 @@ export default class VolumeLoader {
       worker.onerror = function (e) {
         alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
       };
-      worker.postMessage({ urlStore: urlStore, time: Math.min(t, sizeT), channel: i, path: storepath });
+      worker.postMessage({
+        urlStore: urlStore,
+        time: Math.min(t, sizeT),
+        channel: i,
+        downsampleZ: downsampleZ,
+        path: storepath,
+      });
     }
 
     return vol;
