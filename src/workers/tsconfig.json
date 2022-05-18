@@ -6,7 +6,7 @@
     "declarationDir": "type-declarations",
     "downlevelIteration": true,
     "jsx": "preserve",
-    "lib": ["DOM", "ES2015", "ES6", "DOM.Iterable", "ScriptHost", "ES2016.Array.Include"],
+    "lib": ["WebWorker", "ES2015", "ES6", "ScriptHost", "ES2016.Array.Include"],
     "module": "ES2020",
     "moduleResolution": "node",
     "noImplicitAny": false,
@@ -14,16 +14,5 @@
     "sourceMap": true,
     "strict": true,
     "target": "ES6",
-  },
-  "files": [
-    "src/index.ts",
-    "public/index.ts"
-  ],
-  "include": [
-    "src/**/*",
-    "public/**/*"
-  ],
-  "exclude": [
-    "src/workers/**/*",
-  ]
+  }
 }

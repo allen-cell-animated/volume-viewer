@@ -14,10 +14,28 @@ module.exports = {
   },
   devtool: "source-map",
   devServer: {
-    publicPath: "/volumeviewer/",
-    openPage: "volumeviewer/",
+    open: ["volumeviewer/"],
     port: 9020,
+    static: [
+      {
+        publicPath: "/volumeviewer/",
+        staticOptions: {
+          dotfiles: "allow",
+        },
+      },
+      {
+        publicPath: "/example-data/",
+        directory: path.join(__dirname, "example-data"),
+        staticOptions: {
+          dotfiles: "allow",
+        },
+      },
+    ],
   },
+  performance: {
+    hints: false,
+  },
+  mode: "development",
   plugins: [
     new CleanWebpackPlugin(),
     new CopyWebpackPlugin({

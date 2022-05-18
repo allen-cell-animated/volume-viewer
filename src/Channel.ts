@@ -1,3 +1,4 @@
+import { DataTexture, RedFormat, UnsignedByteType, RGBAFormat, LinearFilter } from "three";
 import Histogram from "./Histogram";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
 
@@ -12,10 +13,18 @@ export default class Channel {
   public colorPalette: Uint8Array;
   public colorPaletteAlpha: number;
   public dims: [number, number, number];
+  public dataTexture: DataTexture;
+  public lutTexture: DataTexture;
 
   constructor(name: string) {
     this.loaded = false;
     this.imgData = { data: new Uint8ClampedArray(), width: 0, height: 0 };
+
+    // on gpu
+    this.dataTexture = new DataTexture(new Uint8Array(), 0, 0);
+    this.lutTexture = new DataTexture(new Uint8Array(LUT_ARRAY_LENGTH), 256, 1, RGBAFormat, UnsignedByteType);
+    this.lutTexture.minFilter = this.lutTexture.magFilter = LinearFilter;
+
     this.volumeData = new Uint8Array();
     this.name = name;
     this.histogram = new Histogram(new Uint8Array());
@@ -62,6 +71,10 @@ export default class Channel {
           this.colorPalette[i * 4 + 3] * this.colorPaletteAlpha + this.lut[i * 4 + 3] * (1.0 - this.colorPaletteAlpha);
       }
     }
+
+    this.lutTexture.image.data.set(ret);
+    this.lutTexture.needsUpdate = true;
+
     return ret;
   }
 
@@ -86,6 +99,11 @@ export default class Channel {
   // data is formatted as a texture atlas where each tile is a z slice of the volume
   public setBits(bitsArray: Uint8Array, w: number, h: number): void {
     this.imgData = { data: new Uint8ClampedArray(bitsArray.buffer), width: w, height: h };
+    this.dataTexture = new DataTexture(this.imgData.data, w, h);
+    this.dataTexture.format = RedFormat;
+    this.dataTexture.type = UnsignedByteType;
+    this.dataTexture.needsUpdate = true;
+
     this.loaded = true;
     this.histogram = new Histogram(bitsArray);
 
@@ -129,7 +147,6 @@ export default class Channel {
     this.packToAtlas(vx, vy, vz, ax, ay);
     this.loaded = true;
     this.histogram = new Histogram(this.volumeData);
-
     this.lutGenerator_auto2();
   }
 
@@ -178,6 +195,11 @@ export default class Channel {
         }
       }
     }
+
+    this.dataTexture = new DataTexture(this.imgData.data, ax, ay);
+    this.dataTexture.format = RedFormat;
+    this.dataTexture.type = UnsignedByteType;
+    this.dataTexture.needsUpdate = true;
   }
 
   // lut should be an uint8array of 256*4 elements (256 rgba8 values)

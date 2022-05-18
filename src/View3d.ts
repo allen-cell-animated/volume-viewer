@@ -70,8 +70,6 @@ export class View3d {
     this.reflectedLight = new DirectionalLight();
     this.fillLight = new DirectionalLight();
     this.buildScene();
-
-    FusedChannelData.setOnFuseComplete(this.redraw.bind(this));
   }
 
   // prerender should be called on every redraw and should be the first thing done.
@@ -571,6 +569,7 @@ export class View3d {
     if (this.image) {
       this.image.fuse();
     }
+    this.redraw();
   }
 
   /**
@@ -581,6 +580,7 @@ export class View3d {
     if (this.image) {
       this.image.updateLuts();
     }
+    this.redraw();
   }
 
   /**
@@ -591,6 +591,7 @@ export class View3d {
     if (this.image) {
       this.image.updateMaterial();
     }
+    this.redraw();
   }
 
   /**
@@ -710,6 +711,7 @@ export class View3d {
     if (this.image) {
       this.image.setVolumeChannelEnabled(channel, enabled);
     }
+    this.redraw();
   }
 
   /**
