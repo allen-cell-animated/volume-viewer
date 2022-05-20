@@ -888,8 +888,11 @@ function copyVolumeToVolume(src, dest) {
     };
     dest.channels[i].volumeData = src.channels[i].volumeData;
     dest.channels[i].lut = src.channels[i].lut;
+
     // danger: not a copy!
     dest.channels[i].histogram = src.channels[i].histogram;
+    dest.channels[i].dataTexture = src.channels[i].dataTexture;
+    dest.channels[i].lutTexture = src.channels[i].lutTexture;
     dest.channels[i].loaded = true;
   }
 }
