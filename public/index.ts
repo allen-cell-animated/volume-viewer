@@ -699,32 +699,37 @@ function showChannelUI(volume: Volume) {
 }
 
 function loadVolumeAtlasData(vol, jsonData) {
+  view3D.removeAllVolumes();
+  view3D.addVolume(vol);
+
+  view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+  // first 3 channels for starters
+  for (let ch = 0; ch < vol.num_channels; ++ch) {
+    view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
+  }
+  view3D.setVolumeChannelAsMask(vol, jsonData.channel_names.indexOf("SEG_Memb"));
+  view3D.updateActiveChannels(vol);
+  view3D.updateLuts(vol);
+  view3D.updateLights(myState.lights);
+  view3D.updateDensity(vol, myState.density / 100.0);
+  view3D.updateExposure(myState.exposure);
+  // apply a volume transform from an external source:
+  if (jsonData.userData && jsonData.userData.alignTransform) {
+    view3D.setVolumeTranslation(vol, vol.voxelsToWorldSpace(jsonData.userData.alignTransform.translation));
+    view3D.setVolumeRotation(vol, jsonData.userData.alignTransform.rotation);
+  }
+
+  myState.currentFrame = 0;
+  showChannelUI(vol);
+
   VolumeLoader.loadVolumeAtlasData(vol, jsonData.images, (url, channelIndex) => {
     vol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
 
     if (vol.loaded) {
-      view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
-
-      view3D.removeAllVolumes();
-      view3D.addVolume(vol);
-
-      // first 3 channels for starters
-      for (let ch = 0; ch < vol.num_channels; ++ch) {
-        view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
-      }
-
-      view3D.setVolumeChannelAsMask(vol, jsonData.channel_names.indexOf("SEG_Memb"));
+      // has assumption that only 3 channels
+      view3D.onVolumeData(vol, [0, 1, 2]);
       view3D.updateActiveChannels(vol);
       view3D.updateLuts(vol);
-      view3D.updateLights(myState.lights);
-      view3D.updateDensity(vol, myState.density / 100.0);
-      view3D.updateExposure(myState.exposure);
-
-      // apply a volume transform from an external source:
-      if (jsonData.userData && jsonData.userData.alignTransform) {
-        view3D.setVolumeTranslation(vol, vol.voxelsToWorldSpace(jsonData.userData.alignTransform.translation));
-        view3D.setVolumeRotation(vol, jsonData.userData.alignTransform.rotation);
-      }
     }
   });
 }
