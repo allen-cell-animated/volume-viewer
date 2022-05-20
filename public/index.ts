@@ -929,7 +929,7 @@ function playTimeSeries() {
     updateViewForNewVolume();
     myState.currentFrame = nextFrame;
   };
-  myState.timerId = window.setInterval(loadNextFrame, 1);
+  myState.timerId = window.setInterval(loadNextFrame, 80);
 }
 
 function goToFrame(targetFrame) {
