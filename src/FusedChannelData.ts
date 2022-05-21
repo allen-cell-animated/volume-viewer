@@ -1,7 +1,6 @@
 import {
   DataTexture,
-  LuminanceFormat,
-  NearestFilter,
+  RedFormat,
   UnsignedByteType,
   ClampToEdgeWrapping,
   Scene,
@@ -50,7 +49,7 @@ export default class FusedChannelData {
       new Uint8ClampedArray(this.width * this.height),
       this.width,
       this.height,
-      LuminanceFormat,
+      RedFormat,
       UnsignedByteType
     );
     this.maskTexture.generateMipmaps = false;
@@ -67,19 +66,16 @@ export default class FusedChannelData {
     this.fuseScene = new Scene();
     this.quadCamera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.fuseRenderTarget = new WebGLRenderTarget(this.width, this.height, {
-      minFilter: NearestFilter,
-      magFilter: NearestFilter,
+      minFilter: LinearFilter,
+      magFilter: LinearFilter,
       format: RGBAFormat,
       type: UnsignedByteType, // FloatType ?
       depthBuffer: false,
       stencilBuffer: false,
+      generateMipmaps: false,
+      wrapS: ClampToEdgeWrapping,
+      wrapT: ClampToEdgeWrapping,
     });
-    this.fuseRenderTarget.texture.generateMipmaps = false;
-    this.fuseRenderTarget.texture.generateMipmaps = false;
-    this.fuseRenderTarget.texture.magFilter = LinearFilter;
-    this.fuseRenderTarget.texture.minFilter = LinearFilter;
-    this.fuseRenderTarget.texture.wrapS = ClampToEdgeWrapping;
-    this.fuseRenderTarget.texture.wrapT = ClampToEdgeWrapping;
 
     this.fuseMaterial = new ShaderMaterial({
       uniforms: UniformsUtils.merge([
