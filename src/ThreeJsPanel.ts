@@ -111,6 +111,11 @@ export class ThreeJsPanel {
       //required by WebGL 2.0 for rendering to FLOAT textures
       this.renderer.getContext().getExtension("EXT_color_buffer_float");
     } else {
+      // TODO Deprecate this code path.
+      console.warn(
+        "WebGL 2.0 not available. Some functionality may be limited. Please use a browser that supports WebGL 2.0."
+      );
+
       this.renderer = new WebGLRenderer({
         canvas: this.canvas,
         preserveDrawingBuffer: true,

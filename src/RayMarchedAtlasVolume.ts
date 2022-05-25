@@ -86,12 +86,6 @@ export default class RayMarchedAtlasVolume {
     this.setScale(this.scale);
 
     this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
-    // tell channelData about the channels that are already present, one at a time.
-    for (let i = 0; i < this.volume.channels.length; ++i) {
-      if (this.volume.getChannel(i).loaded) {
-        this.channelData.onChannelLoaded([i], this.volume.channels);
-      }
-    }
   }
 
   public cleanup(): void {
@@ -122,6 +116,7 @@ export default class RayMarchedAtlasVolume {
     if (!this.cubeMesh.visible) {
       return;
     }
+    this.channelData.gpuFuse(canvas.renderer);
 
     this.cubeTransformNode.updateMatrixWorld(true);
 
@@ -137,8 +132,8 @@ export default class RayMarchedAtlasVolume {
     return this.cubeTransformNode;
   }
 
-  public onChannelData(batch: number[]): void {
-    this.channelData.onChannelLoaded(batch, this.volume.channels);
+  public onChannelData(_batch: number[]): void {
+    // no op
   }
 
   public setScale(scale: Vector3): void {
@@ -266,12 +261,10 @@ export default class RayMarchedAtlasVolume {
 
   // channelcolors is array of {rgbColor, lut} and channeldata is volume.channels
   public fuse(channelcolors: FuseChannel[], channeldata: Channel[]): void {
-    //'m' for max or 'a' for avg
-    const fusionType = "m";
-    this.channelData.fuse(channelcolors, fusionType, channeldata);
+    this.channelData.fuse(channelcolors, channeldata);
 
     // update to fused texture
-    this.setUniform("textureAtlas", this.channelData.fusedTexture);
+    this.setUniform("textureAtlas", this.channelData.getFusedTexture());
     this.setUniform("textureAtlasMask", this.channelData.maskTexture);
   }
 }
