@@ -68,18 +68,9 @@ self.onmessage = function (e) {
       const nz = channel.shape[0];
       const ny = channel.shape[1];
       const nx = channel.shape[2];
-      // TODO put this in a webworker??
+
       const u8: Uint8Array = convertChannel(channel.data as TypedArray[][], nx, ny, nz, channel.dtype, downsampleZ);
       const results = { data: u8, channel: channelIndex };
       postMessage(results, [results.data.buffer]);
-
-      // TODO excute on postMessage
-      // console.log("begin setchannel and callback");
-      // vol.setChannelDataFromVolume(i, u8);
-      // if (callback) {
-      //   // make up a unique name? or have caller pass this in?
-      //   callback(urlStore + "/" + imageName, i);
-      // }
-      // console.log("end setchannel and callback");
     });
 };

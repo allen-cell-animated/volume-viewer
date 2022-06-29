@@ -1,12 +1,16 @@
 import Volume, { ImageInfo } from "./Volume";
-import { openArray, openGroup, HTTPStore, array } from "zarr";
-import GeoTIFF, { fromUrl } from "geotiff";
+import { openArray, openGroup, HTTPStore } from "zarr";
+import { fromUrl } from "geotiff";
 
-type TypedArray = ArrayLike<any> & {
-  BYTES_PER_ELEMENT: number;
-  set(array: ArrayLike<number>, offset?: number): void;
-  slice(start?: number, end?: number): TypedArray;
-};
+export type TypedArray =
+  | Uint8Array
+  | Int8Array
+  | Uint16Array
+  | Int16Array
+  | Uint32Array
+  | Int32Array
+  | Float32Array
+  | Float64Array;
 
 /**
  * @callback PerChannelCallback
@@ -21,6 +25,27 @@ interface PackedChannelsImage {
   channels: number[];
 }
 type PackedChannelsImageRequests = Record<string, HTMLImageElement>;
+
+// We want to find the most "square" packing of z tw by th tiles.
+// Compute number of rows and columns.
+function computePackedAtlasDims(z, tw, th) {
+  let nextrows = 1;
+  let nextcols = z;
+  let ratio = (nextcols * tw) / (nextrows * th);
+  let nrows = nextrows;
+  let ncols = nextcols;
+  while (ratio > 1) {
+    nrows = nextrows;
+    ncols = nextcols;
+    nextcols -= 1;
+    nextrows = Math.ceil(z / nextcols);
+    ratio = (nextcols * tw) / (nextrows * th);
+  }
+  // const atlaswidth = ncols * tw;
+  // const atlasheight = nrows * th;
+  // console.log(atlaswidth, atlasheight);
+  return { nrows, ncols };
+}
 
 /**
  * @class
@@ -390,67 +415,38 @@ export default class VolumeLoader {
       times: sizet,
     };
     const vol = new Volume(imgdata);
-    // do each channel on a worker
-    const pool = undefined; //new GeoTIFF.Pool();
+    // do each channel on a worker?
     for (let channel = 0; channel < sizec; ++channel) {
-      const u16 = new Uint16Array(tilesizex * tilesizey * sizez);
-      const u8 = new Uint8Array(tilesizex * tilesizey * sizez);
-      // load the images of this channel from the tiff
-      // today assume TCZYX so the slices are already in order.
-      let startindex = 0;
-      let incrementz = 1;
-      if (zbeforec) {
-        // we have XYZCT which is the "good" case
-        // TCZYX
-        startindex = sizez * channel;
-        incrementz = 1;
-      } else {
-        // we have to loop differently to increment channels
-        // TZCYX
-        startindex = channel;
-        incrementz = sizec;
-      }
-      for (let imageIndex = startindex, zslice = 0; zslice < sizez; imageIndex += incrementz, ++zslice) {
-        const image = await tiff.getImage(imageIndex);
-        // download and downsample on client
-        const result = await image.readRasters({ width: tilesizex, height: tilesizey, pool: pool });
-        const arrayresult: TypedArray = Array.isArray(result) ? result[0] : result;
-        // convert to uint8 and deposit in u8 in the right place
-        const offset = zslice * tilesizex * tilesizey;
-        if (arrayresult.BYTES_PER_ELEMENT === 2) {
-          u16.set(arrayresult, offset);
-        } else if (arrayresult.BYTES_PER_ELEMENT === 1) {
-          u8.set(arrayresult, offset);
-        } else {
-          console.log("byte size not supported yet");
+      const params = {
+        channel: channel,
+        // these are target xy sizes for the in-memory volume data
+        // they may or may not be the same size as original xy sizes
+        tilesizex: tilesizex,
+        tilesizey: tilesizey,
+        sizec: sizec,
+        sizez: sizez,
+        dimensionOrder: dimensionorder,
+        bytesPerSample: pixeltype === "uint8" ? 1 : pixeltype === "uint16" ? 2 : 4,
+        url: url,
+      };
+      const worker = new Worker(new URL("./workers/FetchTiffWorker.ts", import.meta.url));
+      worker.onmessage = function (e) {
+        const u8 = e.data.data;
+        const channel = e.data.channel;
+        console.log("begin setchannel and callback");
+        vol.setChannelDataFromVolume(channel, u8);
+        if (callback) {
+          // make up a unique name? or have caller pass this in?
+          callback(url, vol, channel);
         }
-      }
-      // all slices collected, now resample 16-to-8 bits
-      if (pixeltype === "uint16") {
-        let chmin = 65535; //metadata.channels[i].window.min;
-        let chmax = 0; //metadata.channels[i].window.max;
-        // find min and max (only of data we are sampling?)
-        for (let j = 0; j < u16.length; ++j) {
-          const val = u16[j];
-          if (val < chmin) {
-            chmin = val;
-          }
-          if (val > chmax) {
-            chmax = val;
-          }
-        }
-        for (let j = 0; j < u16.length; ++j) {
-          u8[j] = ((u16[j] - chmin) / (chmax - chmin)) * 255;
-        }
-      } else if (pixeltype === "uint8") {
-        // no op; keep u8
-      }
-      vol.setChannelDataFromVolume(channel, u8);
-      if (callback) {
-        // make up a unique name? or have caller pass this in?
-        callback(url, vol, channel);
-      }
-      console.log("tiff channel loaded", channel);
+        console.log("tiff channel loaded", channel);
+        console.log("end setchannel and callback");
+        worker.terminate();
+      };
+      worker.onerror = function (e) {
+        alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
+      };
+      worker.postMessage(params);
     }
     return vol;
   }
