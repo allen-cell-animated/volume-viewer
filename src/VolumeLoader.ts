@@ -28,7 +28,7 @@ type PackedChannelsImageRequests = Record<string, HTMLImageElement>;
 
 // We want to find the most "square" packing of z tw by th tiles.
 // Compute number of rows and columns.
-function computePackedAtlasDims(z, tw, th) {
+function computePackedAtlasDims(z, tw, th): { nrows: number; ncols: number } {
   let nextrows = 1;
   let nextcols = z;
   let ratio = (nextcols * tw) / (nextrows * th);
@@ -361,9 +361,6 @@ export default class VolumeLoader {
     const sizet = Number(pixelsEl.getAttribute("SizeT"));
     const pixeltype = pixelsEl.getAttribute("Type");
     const dimensionorder: string = pixelsEl.getAttribute("DimensionOrder") || "XYZCT";
-    console.log("dimensionorder", dimensionorder);
-    // does z come before c???
-    const zbeforec = dimensionorder.indexOf("Z") < dimensionorder.indexOf("C");
 
     // ignoring units for now
     const pixelsizex = Number(pixelsEl.getAttribute("PhysicalSizeX"));
@@ -381,13 +378,19 @@ export default class VolumeLoader {
     const width = image.getWidth();
     const height = image.getHeight();
 
+    const { nrows, ncols } = computePackedAtlasDims(sizez, sizex, sizey);
+    // fit tiles to max of 2048x2048?
+    const targetSize = 2048;
+    const tilesizex = Math.floor(targetSize / ncols);
+    const tilesizey = Math.floor(targetSize / nrows);
+    // const tilesizex = sizex / 4;
+    // const tilesizey = sizey / 4;
+    // const nrows = sizez;
+    // const ncols = 1;
+
     const samplesPerPixel = image.getSamplesPerPixel();
     console.log(width, height, samplesPerPixel);
     // load tiff and check metadata
-    const rows = sizez;
-    const cols = 1;
-    const tilesizex = sizex / 4;
-    const tilesizey = sizey / 4;
 
     const imgdata: ImageInfo = {
       width: sizex,
@@ -401,8 +404,8 @@ export default class VolumeLoader {
       tile_height: tilesizey,
       // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
       // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-      atlas_width: tilesizex * cols,
-      atlas_height: tilesizey * rows,
+      atlas_width: tilesizex * ncols,
+      atlas_height: tilesizey * nrows,
       pixel_size_x: pixelsizex,
       pixel_size_y: pixelsizey,
       pixel_size_z: pixelsizez,

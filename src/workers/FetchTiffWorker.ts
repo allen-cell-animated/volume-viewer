@@ -1,6 +1,6 @@
 import "regenerator-runtime";
 
-import { fromUrl } from "geotiff";
+import GeoTIFF, { fromUrl } from "geotiff";
 
 type TypedArray =
   | Uint8Array
