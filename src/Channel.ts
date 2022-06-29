@@ -1,4 +1,4 @@
-import { DataTexture, RedFormat, UnsignedByteType, RGBAFormat, LinearFilter } from "three";
+import { DataTexture, RedFormat, UnsignedByteType, RGBAFormat, LinearFilter, NearestFilter } from "three";
 import Histogram from "./Histogram";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
 
@@ -24,6 +24,7 @@ export default class Channel {
     this.dataTexture = new DataTexture(new Uint8Array(), 0, 0);
     this.lutTexture = new DataTexture(new Uint8Array(LUT_ARRAY_LENGTH), 256, 1, RGBAFormat, UnsignedByteType);
     this.lutTexture.minFilter = this.lutTexture.magFilter = LinearFilter;
+    this.lutTexture.generateMipmaps = false;
 
     this.volumeData = new Uint8Array();
     this.name = name;
@@ -102,6 +103,9 @@ export default class Channel {
     this.dataTexture = new DataTexture(this.imgData.data, w, h);
     this.dataTexture.format = RedFormat;
     this.dataTexture.type = UnsignedByteType;
+    this.dataTexture.magFilter = NearestFilter;
+    this.dataTexture.minFilter = NearestFilter;
+    this.dataTexture.generateMipmaps = false;
     this.dataTexture.needsUpdate = true;
 
     this.loaded = true;
@@ -199,6 +203,9 @@ export default class Channel {
     this.dataTexture = new DataTexture(this.imgData.data, ax, ay);
     this.dataTexture.format = RedFormat;
     this.dataTexture.type = UnsignedByteType;
+    this.dataTexture.magFilter = NearestFilter;
+    this.dataTexture.minFilter = NearestFilter;
+    this.dataTexture.generateMipmaps = false;
     this.dataTexture.needsUpdate = true;
   }
 

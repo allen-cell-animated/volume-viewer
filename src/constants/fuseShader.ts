@@ -16,9 +16,9 @@ precision highp int;
 precision highp sampler2D;
 precision highp sampler3D;
 
-// the luttexture is a 256x4 rgba texture
-// each row is a 256 element lookup table.
+// the lut texture is a 256x1 rgba texture for each channel
 uniform sampler2D lutSampler;
+// src texture is the raw volume intensity data
 uniform sampler2D srcTexture;
 
 void main()
