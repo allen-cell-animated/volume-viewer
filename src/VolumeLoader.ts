@@ -1,12 +1,20 @@
 import Volume, { ImageInfo } from "./Volume";
-import { openArray, openGroup, HTTPStore } from "zarr";
+import { openArray, openGroup, HTTPStore, array } from "zarr";
+import GeoTIFF, { fromUrl } from "geotiff";
+
+type TypedArray = ArrayLike<any> & {
+  BYTES_PER_ELEMENT: number;
+  set(array: ArrayLike<number>, offset?: number): void;
+  slice(start?: number, end?: number): TypedArray;
+};
 
 /**
  * @callback PerChannelCallback
  * @param {string} imageurl
+ * @param {Volume} volume
  * @param {number} channelindex
  */
-type PerChannelCallback = (imageurl: string, channelIndex: number) => void;
+type PerChannelCallback = (imageurl: string, volume: Volume, channelIndex: number) => void;
 
 interface PackedChannelsImage {
   name: string;
@@ -94,7 +102,7 @@ export default class VolumeLoader {
 
           for (let ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
             volume.setChannelDataFromAtlas(thisbatch[ch], channelsBits[ch], w, h);
-            callback(url, thisbatch[ch]);
+            callback(url, volume, thisbatch[ch]);
           }
         };
       })(batch);
@@ -238,7 +246,7 @@ export default class VolumeLoader {
         vol.setChannelDataFromVolume(channel, u8);
         if (callback) {
           // make up a unique name? or have caller pass this in?
-          callback(urlStore + "/" + imageName, channel);
+          callback(urlStore + "/" + imageName, vol, channel);
         }
         console.log("end setchannel and callback");
         worker.terminate();
@@ -305,6 +313,145 @@ export default class VolumeLoader {
     // got some data, now let's construct the volume.
     const vol = new Volume(imgdata);
     this.loadVolumeAtlasData(vol, urls, callback);
+    return vol;
+  }
+
+  static async loadTiff(url: string, callback: PerChannelCallback): Promise<Volume> {
+    const tiff = await fromUrl(url);
+    // DO NOT DO THIS, ITS SLOW
+    // const imagecount = await tiff.getImageCount();
+    // read the FIRST image
+    const image = await tiff.getImage();
+
+    const tiffimgdesc = image.getFileDirectory().ImageDescription;
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(tiffimgdesc, "text/xml");
+    const omeEl = xmlDoc.getElementsByTagName("OME")[0];
+    const image0El = omeEl.getElementsByTagName("Image")[0];
+    const pixelsEl = image0El.getElementsByTagName("Pixels")[0];
+    const sizex = Number(pixelsEl.getAttribute("SizeX"));
+    const sizey = Number(pixelsEl.getAttribute("SizeY"));
+    const sizez = Number(pixelsEl.getAttribute("SizeZ"));
+    const sizec = Number(pixelsEl.getAttribute("SizeC"));
+    const sizet = Number(pixelsEl.getAttribute("SizeT"));
+    const pixeltype = pixelsEl.getAttribute("Type");
+    const dimensionorder: string = pixelsEl.getAttribute("DimensionOrder") || "XYZCT";
+    console.log("dimensionorder", dimensionorder);
+    // does z come before c???
+    const zbeforec = dimensionorder.indexOf("Z") < dimensionorder.indexOf("C");
+
+    // ignoring units for now
+    const pixelsizex = Number(pixelsEl.getAttribute("PhysicalSizeX"));
+    const pixelsizey = Number(pixelsEl.getAttribute("PhysicalSizeY"));
+    const pixelsizez = Number(pixelsEl.getAttribute("PhysicalSizeZ"));
+    const channelnames: string[] = [];
+    const channelsEls = pixelsEl.getElementsByTagName("Channel");
+    for (let i = 0; i < channelsEls.length; ++i) {
+      const name = channelsEls[i].getAttribute("Name");
+      const id = channelsEls[i].getAttribute("ID");
+      channelnames.push(name ? name : id ? id : "Channel" + i);
+    }
+
+    // compare with sizex, sizey
+    const width = image.getWidth();
+    const height = image.getHeight();
+
+    const samplesPerPixel = image.getSamplesPerPixel();
+    console.log(width, height, samplesPerPixel);
+    // load tiff and check metadata
+    const rows = sizez;
+    const cols = 1;
+    const tilesizex = sizex / 4;
+    const tilesizey = sizey / 4;
+
+    const imgdata: ImageInfo = {
+      width: sizex,
+      height: sizey,
+      channels: sizec,
+      channel_names: channelnames,
+      rows: sizez,
+      cols: 1,
+      tiles: sizez,
+      tile_width: tilesizex,
+      tile_height: tilesizey,
+      // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
+      // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
+      atlas_width: tilesizex * cols,
+      atlas_height: tilesizey * rows,
+      pixel_size_x: pixelsizex,
+      pixel_size_y: pixelsizey,
+      pixel_size_z: pixelsizez,
+      name: "TEST",
+      version: "1.0",
+      transform: {
+        translation: [0, 0, 0],
+        rotation: [0, 0, 0],
+      },
+      times: sizet,
+    };
+    const vol = new Volume(imgdata);
+    // do each channel on a worker
+    const pool = undefined; //new GeoTIFF.Pool();
+    for (let channel = 0; channel < sizec; ++channel) {
+      const u16 = new Uint16Array(tilesizex * tilesizey * sizez);
+      const u8 = new Uint8Array(tilesizex * tilesizey * sizez);
+      // load the images of this channel from the tiff
+      // today assume TCZYX so the slices are already in order.
+      let startindex = 0;
+      let incrementz = 1;
+      if (zbeforec) {
+        // we have XYZCT which is the "good" case
+        // TCZYX
+        startindex = sizez * channel;
+        incrementz = 1;
+      } else {
+        // we have to loop differently to increment channels
+        // TZCYX
+        startindex = channel;
+        incrementz = sizec;
+      }
+      for (let imageIndex = startindex, zslice = 0; zslice < sizez; imageIndex += incrementz, ++zslice) {
+        const image = await tiff.getImage(imageIndex);
+        // download and downsample on client
+        const result = await image.readRasters({ width: tilesizex, height: tilesizey, pool: pool });
+        const arrayresult: TypedArray = Array.isArray(result) ? result[0] : result;
+        // convert to uint8 and deposit in u8 in the right place
+        const offset = zslice * tilesizex * tilesizey;
+        if (arrayresult.BYTES_PER_ELEMENT === 2) {
+          u16.set(arrayresult, offset);
+        } else if (arrayresult.BYTES_PER_ELEMENT === 1) {
+          u8.set(arrayresult, offset);
+        } else {
+          console.log("byte size not supported yet");
+        }
+      }
+      // all slices collected, now resample 16-to-8 bits
+      if (pixeltype === "uint16") {
+        let chmin = 65535; //metadata.channels[i].window.min;
+        let chmax = 0; //metadata.channels[i].window.max;
+        // find min and max (only of data we are sampling?)
+        for (let j = 0; j < u16.length; ++j) {
+          const val = u16[j];
+          if (val < chmin) {
+            chmin = val;
+          }
+          if (val > chmax) {
+            chmax = val;
+          }
+        }
+        for (let j = 0; j < u16.length; ++j) {
+          u8[j] = ((u16[j] - chmin) / (chmax - chmin)) * 255;
+        }
+      } else if (pixeltype === "uint8") {
+        // no op; keep u8
+      }
+      vol.setChannelDataFromVolume(channel, u8);
+      if (callback) {
+        // make up a unique name? or have caller pass this in?
+        callback(url, vol, channel);
+      }
+      console.log("tiff channel loaded", channel);
+    }
     return vol;
   }
 }

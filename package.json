@@ -30,6 +30,7 @@
     "access": "public"
   },
   "dependencies": {
+    "geotiff": "^2.0.5",
     "three": "^0.137.4",
     "zarr": "^0.5.1"
   },
