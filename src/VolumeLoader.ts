@@ -1,3 +1,5 @@
+import "regenerator-runtime/runtime";
+
 import Volume, { ImageInfo } from "./Volume";
 import { openArray, openGroup, HTTPStore } from "zarr";
 import { fromUrl } from "geotiff";

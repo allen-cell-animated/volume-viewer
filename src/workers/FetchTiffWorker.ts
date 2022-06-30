@@ -1,4 +1,4 @@
-import "regenerator-runtime";
+import "regenerator-runtime/runtime";
 
 import GeoTIFF, { fromUrl } from "geotiff";
 
