@@ -263,7 +263,7 @@ export default class VolumeLoader {
     const storepath = imagegroup + "/" + dataset2.path;
     // do each channel on a worker
     for (let i = 0; i < c; ++i) {
-      const worker = new Worker(new URL("./workers/FetchZarrWorker.ts", import.meta.url));
+      const worker = new Worker(new URL("./workers/FetchZarrWorker", import.meta.url));
       worker.onmessage = function (e) {
         const u8 = e.data.data;
         const channel = e.data.channel;
@@ -378,15 +378,13 @@ export default class VolumeLoader {
     const width = image.getWidth();
     const height = image.getHeight();
 
+    // TODO allow user setting of this downsampling info?
+    // TODO allow ROI selection: range of x,y,z,c for a given t
     const { nrows, ncols } = computePackedAtlasDims(sizez, sizex, sizey);
     // fit tiles to max of 2048x2048?
     const targetSize = 2048;
     const tilesizex = Math.floor(targetSize / ncols);
     const tilesizey = Math.floor(targetSize / nrows);
-    // const tilesizex = sizex / 4;
-    // const tilesizey = sizey / 4;
-    // const nrows = sizez;
-    // const ncols = 1;
 
     const samplesPerPixel = image.getSamplesPerPixel();
     console.log(width, height, samplesPerPixel);
@@ -432,7 +430,7 @@ export default class VolumeLoader {
         bytesPerSample: pixeltype === "uint8" ? 1 : pixeltype === "uint16" ? 2 : 4,
         url: url,
       };
-      const worker = new Worker(new URL("./workers/FetchTiffWorker.ts", import.meta.url));
+      const worker = new Worker(new URL("./workers/FetchTiffWorker", import.meta.url));
       worker.onmessage = function (e) {
         const u8 = e.data.data;
         const channel = e.data.channel;
