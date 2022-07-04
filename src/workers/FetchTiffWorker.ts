@@ -1,6 +1,6 @@
 import "regenerator-runtime/runtime";
 
-import GeoTIFF, { fromUrl } from "geotiff";
+import { fromUrl } from "geotiff";
 
 type TypedArray =
   | Uint8Array
@@ -14,7 +14,7 @@ type TypedArray =
 
 self.onmessage = async function (e) {
   // TODO index images by time
-  const time = e.data.time;
+  // const time = e.data.time;
 
   const channelIndex = e.data.channel;
   const tilesizex = e.data.tilesizex;

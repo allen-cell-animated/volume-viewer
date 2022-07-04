@@ -141,25 +141,30 @@ export default class VolumeLoader {
     return requests;
   }
 
-  // loadVolumeAICS(url:string, callback:PerChannelCallback) : Promise<Volume> {
-  //   // note that volume is returned before channel data is ready.
-  //   return fetch(url)
-  //     .then(function(response) {
-  //       return response.json();
-  //     })
-  //     .then(function(myJson) {
-  //       // if you need to adjust image paths prior to download,
-  //       // now is the time to do it:
-  //       // myJson.images.forEach(function(element) {
-  //       //     element.name = myURLprefix + element.name;
-  //       // });
-  //       const vol = new Volume(myJson);
+  /**
+   * load 4d volume stored in json plus tiled png texture atlases
+   * @param {string} url
+   * @param {string} urlPrefix The part of the url to prepend for all the images specified in the json.
+   * @param {PerChannelCallback} callback Per-channel callback.  Called when each channel's atlased volume data is loaded
+   * @returns {Promise<Volume>}
+   */
+  loadJson(url: string, urlPrefix: string, callback: PerChannelCallback): Promise<Volume> {
+    return fetch(url)
+      .then(function (response) {
+        return response.json();
+      })
+      .then(function (myJson) {
+        const vol = new Volume(myJson);
 
-  //       volumeLoader.loadVolumeAtlasData(
-  //         vol, myJson.images, callback);
-  //       return vol;
-  //     });
-  // },
+        // if you need to adjust image paths prior to download,
+        // now is the time to do it:
+        myJson.images.forEach(function (element) {
+          element.name = urlPrefix + element.name;
+        });
+        VolumeLoader.loadVolumeAtlasData(vol, myJson.images, callback);
+        return vol;
+      });
+  }
 
   /**
    * load 5d ome-zarr into Volume object
