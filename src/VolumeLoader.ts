@@ -181,7 +181,8 @@ export default class VolumeLoader {
 
     // get top-level metadata for this zarr image
     const allmetadata = await data.attrs.asObject();
-    //const numlevels = allmetadata.multiscales[0].datasets.length;
+    // take the first multiscales entry
+    const numlevels = allmetadata.multiscales[0].datasets.length;
     // get raw scaling for level 0
     // each entry of multiscales is a multiscale image.
     const imageIndex = 0;
@@ -208,7 +209,7 @@ export default class VolumeLoader {
 
     // making a choice of a reduced level:
     const downsampleZ = 2; // half the z
-    const levelToLoad = 1;
+    const levelToLoad = numlevels - 1; //1;
     const dataset2 = allmetadata.multiscales[imageIndex].datasets[levelToLoad];
     const level = await openArray({ store: store, path: imagegroup + "/" + dataset2.path, mode: "r" });
 
@@ -218,18 +219,7 @@ export default class VolumeLoader {
 
     // compute rows and cols and atlas width and ht, given tw and th
     const loadedZ = Math.ceil(z / downsampleZ);
-    let nextrows = 1;
-    let nextcols = loadedZ;
-    let ratio = (nextcols * tw) / (nextrows * th);
-    let nrows = nextrows;
-    let ncols = nextcols;
-    while (ratio > 1) {
-      nrows = nextrows;
-      ncols = nextcols;
-      nextcols -= 1;
-      nextrows = Math.ceil(z / nextcols);
-      ratio = (nextcols * tw) / (nextrows * th);
-    }
+    const { nrows, ncols } = computePackedAtlasDims(loadedZ, tw, th);
     const atlaswidth = ncols * tw;
     const atlasheight = nrows * th;
     console.log(atlaswidth, atlasheight);
