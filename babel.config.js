@@ -4,11 +4,12 @@ module.exports = {
       "@babel/preset-env",
       {
         modules: false,
-      }
+      },
     ],
     "@babel/preset-typescript",
   ],
   plugins: [
+    ["@babel/plugin-transform-runtime"],
     [
       "babel-plugin-inline-import",
       {

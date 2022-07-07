@@ -1,5 +1,3 @@
-import "regenerator-runtime/runtime";
-
 import { fromUrl } from "geotiff";
 
 type TypedArray =
