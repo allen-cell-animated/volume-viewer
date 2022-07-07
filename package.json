@@ -21,7 +21,7 @@
     "react-example": "webpack serve --config react-example/webpack.react.js",
     "lint": "eslint --config ./.eslintrc.js --ignore-path ./.eslintignore --ext .jsx --ext .js --ext .ts ./src",
     "test": "cross-env TS_NODE_PROJECT='./tsconfig.test.json' mocha --require ts-node/register src/**/test/*.js",
-    "transpileES": "babel 'src/**/*' --out-dir es --extensions .js,.ts --ignore '**/*.test.js'",
+    "transpileES": "babel 'src/' --out-dir es --extensions .js,.ts --ignore '**/*.test.js'",
     "typeCheck": "tsc -p tsconfig.json --noEmit"
   },
   "author": "Daniel Toloudis",
