@@ -28,6 +28,7 @@ export interface ImageInfo {
     rotation: [number, number, number];
   };
   times: number;
+  userData?: Record<string, unknown>;
 }
 
 export const getDefaultImageInfo = (): ImageInfo => {

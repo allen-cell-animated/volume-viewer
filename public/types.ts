@@ -58,6 +58,9 @@ export interface State {
   channelFolderNames: string[];
   infoObj: ImageInfo;
   channelGui: ChannelGuiOptions[];
+
+  currentImageStore: string;
+  currentImageName: string;
 }
 
 interface ChannelGuiOptions {

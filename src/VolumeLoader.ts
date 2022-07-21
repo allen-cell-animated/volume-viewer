@@ -148,7 +148,7 @@ export default class VolumeLoader {
    * @param {PerChannelCallback} callback Per-channel callback.  Called when each channel's atlased volume data is loaded
    * @returns {Promise<Volume>}
    */
-  loadJson(url: string, urlPrefix: string, callback: PerChannelCallback): Promise<Volume> {
+  static loadJson(url: string, urlPrefix: string, callback: PerChannelCallback): Promise<Volume> {
     return fetch(url)
       .then(function (response) {
         return response.json();
