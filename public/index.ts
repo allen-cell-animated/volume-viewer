@@ -17,7 +17,7 @@ import {
 import { State } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
 
-const loadTimeSeries = true;
+const loadTimeSeries = false;
 const loadTestData = true;
 
 let view3D: View3d;
@@ -889,6 +889,15 @@ function fetchZarr(store: string, image: string, time: number) {
   });
 }
 
+function fetchOpenCell() {
+  // create the main volume and add to view (this is the only place)
+  VolumeLoader.loadOpenCell((url, v, channelIndex) => {
+    onChannelDataArrived(url, v, channelIndex);
+  }).then((volume: Volume) => {
+    onVolumeCreated(volume);
+  });
+}
+
 function fetchTiff(url: string, time: number) {
   if (isNaN(time)) {
     time = 0;
@@ -1237,6 +1246,7 @@ function main() {
       46
     );
   } else if (loadTestData) {
+    //fetchOpenCell();
     //fetchTiff("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif", 0);
     fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/Lamin_multi-06-Deskew-28.zarr", "Image_0", 0);
     //fetchZarr("http://localhost:9020/example-data/AICS-12_143.zarr", "AICS-12_143", 0);

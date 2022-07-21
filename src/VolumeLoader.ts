@@ -297,11 +297,11 @@ export default class VolumeLoader {
     // make a json metadata dict for the two channels:
     const urls = [
       {
-        name: "czML0383-P0002-G11-PML0146-S04_ROI-0000-0000-0600-0600-LQTILE-CH405.jpeg",
+        name: "https://opencell.czbiohub.org/data/opencell-microscopy/roi/czML0383-P0007/czML0383-P0007-A02-PML0308-S13_ROI-0424-0025-0600-0600-LQTILE-CH405.jpg",
         channels: [0],
       },
       {
-        name: "czML0383-P0002-G11-PML0146-S04_ROI-0000-0000-0600-0600-LQTILE-CH488.jpeg",
+        name: "https://opencell.czbiohub.org/data/opencell-microscopy/roi/czML0383-P0007/czML0383-P0007-A02-PML0308-S13_ROI-0424-0025-0600-0600-LQTILE-CH488.jpg",
         channels: [1],
       },
     ];
