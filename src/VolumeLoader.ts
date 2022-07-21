@@ -228,6 +228,7 @@ export default class VolumeLoader {
     for (let i = 0; i < metadata.channels.length; ++i) {
       chnames.push(metadata.channels[i].label);
     }
+    /* eslint-disable @typescript-eslint/naming-convention */
     const imgdata: ImageInfo = {
       width: w,
       height: h,
@@ -253,6 +254,7 @@ export default class VolumeLoader {
       },
       times: sizeT,
     };
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     // got some data, now let's construct the volume.
     const vol = new Volume(imgdata);
@@ -306,6 +308,7 @@ export default class VolumeLoader {
     // we know these are standardized to 600x600, two channels, one channel per jpg.
     const chnames: string[] = ["DNA", "Structure"];
 
+    /* eslint-disable @typescript-eslint/naming-convention */
     const imgdata: ImageInfo = {
       width: 600,
       height: 600,
@@ -331,6 +334,7 @@ export default class VolumeLoader {
       },
       times: 1,
     };
+    /* eslint-enable @typescript-eslint/naming-convention */
 
     // got some data, now let's construct the volume.
     const vol = new Volume(imgdata);
@@ -387,6 +391,7 @@ export default class VolumeLoader {
     console.log(width, height, samplesPerPixel);
     // load tiff and check metadata
 
+    /* eslint-disable @typescript-eslint/naming-convention */
     const imgdata: ImageInfo = {
       width: sizex,
       height: sizey,
@@ -412,6 +417,8 @@ export default class VolumeLoader {
       },
       times: sizet,
     };
+    /* eslint-enable @typescript-eslint/naming-convention */
+
     const vol = new Volume(imgdata);
     // do each channel on a worker?
     for (let channel = 0; channel < sizec; ++channel) {
