@@ -21,7 +21,6 @@ self.onmessage = async function (e) {
   const sizec = e.data.sizec;
   const dimensionOrder = e.data.dimensionOrder;
   const bytesPerSample = e.data.bytesPerSample;
-  console.log("Begin fetching channel ", channelIndex);
 
   const tiff = await fromUrl(e.data.url);
 

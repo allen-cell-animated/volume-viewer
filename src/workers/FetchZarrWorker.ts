@@ -8,7 +8,6 @@ function convertChannel(
   dtype: string,
   downsampleZ: number
 ): Uint8Array {
-  console.log("begin convert channel");
   const nresultpixels = nx * ny * Math.ceil(nz / downsampleZ);
   const u8 = new Uint8Array(nresultpixels);
   const xy = nx * ny;
@@ -49,7 +48,6 @@ function convertChannel(
       }
     }
   }
-  console.log("end convert channel");
 
   return u8;
 }

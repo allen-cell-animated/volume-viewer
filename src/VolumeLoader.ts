@@ -210,7 +210,7 @@ export default class VolumeLoader {
     const z = level0.meta.shape[2];
     const c = level0.meta.shape[1];
     const sizeT = level0.meta.shape[0];
-    console.log(`X=${w}, Y=${h}, Z=${z}, C=${c}, T=${sizeT}`);
+    //console.log(`X=${w}, Y=${h}, Z=${z}, C=${c}, T=${sizeT}`);
 
     // making a choice of a reduced level:
     const downsampleZ = 2; // half the z
@@ -227,7 +227,6 @@ export default class VolumeLoader {
     const { nrows, ncols } = computePackedAtlasDims(loadedZ, tw, th);
     const atlaswidth = ncols * tw;
     const atlasheight = nrows * th;
-    console.log(atlaswidth, atlasheight);
 
     const chnames: string[] = [];
     for (let i = 0; i < metadata.channels.length; ++i) {
@@ -271,13 +270,11 @@ export default class VolumeLoader {
       worker.onmessage = function (e) {
         const u8 = e.data.data;
         const channel = e.data.channel;
-        console.log("begin setchannel and callback");
         vol.setChannelDataFromVolume(channel, u8);
         if (onChannelLoaded) {
           // make up a unique name? or have caller pass this in?
           onChannelLoaded(urlStore + "/" + imageName, vol, channel);
         }
-        console.log("end setchannel and callback");
         worker.terminate();
       };
       worker.onerror = function (e) {
@@ -381,8 +378,8 @@ export default class VolumeLoader {
     }
 
     // compare with sizex, sizey
-    const width = image.getWidth();
-    const height = image.getHeight();
+    //const width = image.getWidth();
+    //const height = image.getHeight();
 
     // TODO allow user setting of this downsampling info?
     // TODO allow ROI selection: range of x,y,z,c for a given t
@@ -392,8 +389,6 @@ export default class VolumeLoader {
     const tilesizex = Math.floor(targetSize / ncols);
     const tilesizey = Math.floor(targetSize / nrows);
 
-    const samplesPerPixel = image.getSamplesPerPixel();
-    console.log(width, height, samplesPerPixel);
     // load tiff and check metadata
 
     /* eslint-disable @typescript-eslint/naming-convention */
@@ -443,14 +438,11 @@ export default class VolumeLoader {
       worker.onmessage = function (e) {
         const u8 = e.data.data;
         const channel = e.data.channel;
-        console.log("begin setchannel and callback");
         vol.setChannelDataFromVolume(channel, u8);
         if (onChannelLoaded) {
           // make up a unique name? or have caller pass this in?
           onChannelLoaded(url, vol, channel);
         }
-        console.log("tiff channel loaded", channel);
-        console.log("end setchannel and callback");
         worker.terminate();
       };
       worker.onerror = function (e) {
