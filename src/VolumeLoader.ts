@@ -57,7 +57,7 @@ export default class VolumeLoader {
    * load per-channel volume data from a batch of image files containing the volume slices tiled across the images
    * @param {Volume} volume
    * @param {Array.<{name:string, channels:Array.<number>}>} imageArray
-   * @param {PerChannelCallback} callback Per-channel callback.  Called when each channel's atlased volume data is loaded
+   * @param {PerChannelCallback} onChannelLoaded Per-channel callback.  Called when each channel's atlased volume data is loaded
    * @returns {Object.<string, Image>} a map(imageurl : Image object) that should be used to cancel the download requests,
    * for example if you need to destroy the image before all data has arrived.
    * as requests arrive, the callback will be called per image, not per channel
@@ -75,7 +75,7 @@ export default class VolumeLoader {
   static loadVolumeAtlasData(
     volume: Volume,
     imageArray: PackedChannelsImage[],
-    callback: PerChannelCallback
+    onChannelLoaded: PerChannelCallback
   ): PackedChannelsImageRequests {
     const numImages = imageArray.length;
 
@@ -129,7 +129,7 @@ export default class VolumeLoader {
 
           for (let ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
             volume.setChannelDataFromAtlas(thisbatch[ch], channelsBits[ch], w, h);
-            callback(url, volume, thisbatch[ch]);
+            onChannelLoaded(url, volume, thisbatch[ch]);
           }
         };
       })(batch);
@@ -145,10 +145,10 @@ export default class VolumeLoader {
    * load 4d volume stored in json plus tiled png texture atlases
    * @param {string} url
    * @param {string} urlPrefix The part of the url to prepend for all the images specified in the json.
-   * @param {PerChannelCallback} callback Per-channel callback.  Called when each channel's atlased volume data is loaded
+   * @param {PerChannelCallback} onChannelLoaded Per-channel callback.  Called when each channel's atlased volume data is loaded
    * @returns {Promise<Volume>}
    */
-  static loadJson(url: string, urlPrefix: string, callback: PerChannelCallback): Promise<Volume> {
+  static loadJson(url: string, urlPrefix: string, onChannelLoaded: PerChannelCallback): Promise<Volume> {
     return fetch(url)
       .then(function (response) {
         return response.json();
@@ -161,7 +161,7 @@ export default class VolumeLoader {
         myJson.images.forEach(function (element) {
           element.name = urlPrefix + element.name;
         });
-        VolumeLoader.loadVolumeAtlasData(vol, myJson.images, callback);
+        VolumeLoader.loadVolumeAtlasData(vol, myJson.images, onChannelLoaded);
         return vol;
       });
   }
@@ -169,10 +169,15 @@ export default class VolumeLoader {
   /**
    * load 5d ome-zarr into Volume object
    * @param {string} url
-   * @param {PerChannelCallback} callback Per-channel callback.  Called when each channel's atlased volume data is loaded
+   * @param {PerChannelCallback} onChannelLoaded Per-channel callback.  Called when each channel's atlased volume data is loaded
    * @returns {Promise<Volume>}
    */
-  static async loadZarr(urlStore: string, imageName: string, t: number, callback: PerChannelCallback): Promise<Volume> {
+  static async loadZarr(
+    urlStore: string,
+    imageName: string,
+    t: number,
+    onChannelLoaded: PerChannelCallback
+  ): Promise<Volume> {
     const store = new HTTPStore(urlStore);
 
     const imagegroup = imageName;
@@ -268,9 +273,9 @@ export default class VolumeLoader {
         const channel = e.data.channel;
         console.log("begin setchannel and callback");
         vol.setChannelDataFromVolume(channel, u8);
-        if (callback) {
+        if (onChannelLoaded) {
           // make up a unique name? or have caller pass this in?
-          callback(urlStore + "/" + imageName, vol, channel);
+          onChannelLoaded(urlStore + "/" + imageName, vol, channel);
         }
         console.log("end setchannel and callback");
         worker.terminate();
@@ -290,7 +295,7 @@ export default class VolumeLoader {
     return vol;
   }
 
-  static async loadOpenCell(callback: PerChannelCallback): Promise<Volume> {
+  static async loadOpenCell(onChannelLoaded: PerChannelCallback): Promise<Volume> {
     const numChannels = 2;
 
     // HQTILE or LQTILE
@@ -338,11 +343,11 @@ export default class VolumeLoader {
 
     // got some data, now let's construct the volume.
     const vol = new Volume(imgdata);
-    this.loadVolumeAtlasData(vol, urls, callback);
+    this.loadVolumeAtlasData(vol, urls, onChannelLoaded);
     return vol;
   }
 
-  static async loadTiff(url: string, callback: PerChannelCallback): Promise<Volume> {
+  static async loadTiff(url: string, onChannelLoaded: PerChannelCallback): Promise<Volume> {
     const tiff = await fromUrl(url);
     // DO NOT DO THIS, ITS SLOW
     // const imagecount = await tiff.getImageCount();
@@ -440,9 +445,9 @@ export default class VolumeLoader {
         const channel = e.data.channel;
         console.log("begin setchannel and callback");
         vol.setChannelDataFromVolume(channel, u8);
-        if (callback) {
+        if (onChannelLoaded) {
           // make up a unique name? or have caller pass this in?
-          callback(url, vol, channel);
+          onChannelLoaded(url, vol, channel);
         }
         console.log("tiff channel loaded", channel);
         console.log("end setchannel and callback");
