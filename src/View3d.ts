@@ -1,4 +1,4 @@
-import { AmbientLight, Vector3, Object3D, SpotLight, DirectionalLight, Euler, Scene } from "three";
+import { AmbientLight, Vector3, Object3D, SpotLight, DirectionalLight, Euler, Scene, Color } from "three";
 
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import lightSettings from "./constants/lights";
@@ -241,6 +241,14 @@ export class View3d {
       this.image.setBoundingBoxColor(color);
     }
     this.redraw();
+  }
+
+  setBackgroundColor(color: [number, number, number]): void {
+    const colorObj = new Color().fromArray(color);
+    const hexColor = colorObj.getHex();
+    this.canvas3d.getCanvas().style.backgroundColor = "#" + colorObj.getHexString();
+    this.backgroundColor = hexColor;
+    this.canvas3d.renderer.setClearColor(hexColor, 1);
   }
 
   /**
