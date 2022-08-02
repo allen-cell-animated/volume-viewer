@@ -244,9 +244,7 @@ export class View3d {
   }
 
   setBackgroundColor(color: [number, number, number]): void {
-    const colorObj = new Color().fromArray(color);
-    const hexColor = colorObj.getHex();
-    this.canvas3d.getCanvas().style.backgroundColor = "#" + colorObj.getHexString();
+    const hexColor = new Color().fromArray(color).getHex();
     this.backgroundColor = hexColor;
     this.canvas3d.renderer.setClearColor(hexColor, 1);
   }
