@@ -66,6 +66,7 @@ const myState: State = {
 
   showBoundingBox: false,
   boundingBoxColor: [255, 255, 0],
+  backgroundColor: [0, 0, 0],
   flipX: 1,
   flipY: 1,
   flipZ: 1,
@@ -1033,18 +1034,23 @@ function main() {
     myState.showBoundingBox = !myState.showBoundingBox;
     view3D.setShowBoundingBox(myState.volume, myState.showBoundingBox);
   });
+
+  // convert value to rgb array
+  function hexToRgb(hex, last: [number, number, number]): [number, number, number] {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result
+      ? [parseInt(result[1], 16) / 255.0, parseInt(result[2], 16) / 255.0, parseInt(result[3], 16) / 255.0]
+      : last;
+  }
   const boundsColorBtn = document.getElementById("boundingBoxColor");
   boundsColorBtn?.addEventListener("change", (event: Event) => {
-    // convert value to rgb array
-    function hexToRgb(hex, last: [number, number, number]): [number, number, number] {
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return result
-        ? [parseInt(result[1], 16) / 255.0, parseInt(result[2], 16) / 255.0, parseInt(result[3], 16) / 255.0]
-        : last;
-    }
-
     myState.boundingBoxColor = hexToRgb((event.target as HTMLInputElement)?.value, myState.boundingBoxColor);
     view3D.setBoundingBoxColor(myState.volume, myState.boundingBoxColor);
+  });
+  const backgroundColorBtn = document.getElementById("backgroundColor");
+  backgroundColorBtn?.addEventListener("change", (event: Event) => {
+    myState.backgroundColor = hexToRgb((event.target as HTMLInputElement)?.value, myState.backgroundColor);
+    view3D.setBackgroundColor(myState.backgroundColor);
   });
 
   const flipXBtn = document.getElementById("flipXBtn");
