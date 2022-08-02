@@ -247,6 +247,7 @@ export class View3d {
     const hexColor = new Color().fromArray(color).getHex();
     this.backgroundColor = hexColor;
     this.canvas3d.renderer.setClearColor(hexColor, 1);
+    this.redraw();
   }
 
   /**
