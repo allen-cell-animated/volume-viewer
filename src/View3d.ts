@@ -20,7 +20,7 @@ export interface View3dOptions {
 export class View3d {
   private canvas3d: ThreeJsPanel;
   private scene: Scene;
-  private backgroundColor: number;
+  private backgroundColor: Color;
   private pixelSamplingRate: number;
   private exposure: number;
   private volumeRenderMode: number;
@@ -50,7 +50,7 @@ export class View3d {
     this.canvas3d = new ThreeJsPanel(parentElement, options.useWebGL2);
     this.redraw = this.redraw.bind(this);
     this.scene = new Scene();
-    this.backgroundColor = 0x000000;
+    this.backgroundColor = new Color(0x000000);
     this.lights = [];
 
     this.pixelSamplingRate = 0.75;
@@ -244,9 +244,9 @@ export class View3d {
   }
 
   setBackgroundColor(color: [number, number, number]): void {
-    const hexColor = new Color().fromArray(color).getHex();
-    this.backgroundColor = hexColor;
-    this.canvas3d.renderer.setClearColor(hexColor, 1);
+    const c = new Color().fromArray(color);
+    this.backgroundColor = c;
+    this.canvas3d.setClearColor(c, 1);
     this.redraw();
   }
 
@@ -399,7 +399,7 @@ export class View3d {
     this.currentScale = new Vector3(0.5, 0.5, 0.5);
 
     // background color
-    this.canvas3d.renderer.setClearColor(this.backgroundColor, 1.0);
+    this.canvas3d.setClearColor(this.backgroundColor, 1.0);
 
     this.lights = [new Light(SKY_LIGHT), new Light(AREA_LIGHT)];
 
