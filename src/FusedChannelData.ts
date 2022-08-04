@@ -1,4 +1,5 @@
 import {
+  Color,
   DataTexture,
   RedFormat,
   UnsignedByteType,
@@ -156,9 +157,13 @@ export default class FusedChannelData {
     }
     renderer.setRenderTarget(this.fuseRenderTarget);
     renderer.autoClearColor = true;
+    const prevClearColor = new Color();
+    renderer.getClearColor(prevClearColor);
+    const prevClearAlpha = renderer.getClearAlpha();
     renderer.setClearColor(0x000000, 0);
     renderer.render(this.fuseScene, this.quadCamera);
     renderer.setRenderTarget(null);
+    renderer.setClearColor(prevClearColor, prevClearAlpha);
     // "dirty flag"
     this.fuseRequested = null;
   }

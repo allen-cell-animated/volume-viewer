@@ -5,6 +5,7 @@ import {
   FloatType,
   Matrix4,
   Mesh,
+  NormalBlending,
   OrthographicCamera,
   PerspectiveCamera,
   PlaneBufferGeometry,
@@ -293,6 +294,8 @@ export default class PathTracedVolume {
       fragmentShader: this.screenOutputShader.fragmentShader,
       depthWrite: false,
       depthTest: false,
+      blending: NormalBlending,
+      transparent: true,
     });
 
     this.denoiseShaderUniforms = denoiseShaderUniforms();
@@ -302,6 +305,8 @@ export default class PathTracedVolume {
       fragmentShader: denoiseFragmentShaderSrc,
       depthWrite: false,
       depthTest: false,
+      blending: NormalBlending,
+      transparent: true,
     });
 
     this.screenOutputMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;

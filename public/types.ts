@@ -51,6 +51,8 @@ export interface State {
   showBoundingBox: boolean;
   boundingBoxColor: [number, number, number];
 
+  backgroundColor: [number, number, number];
+
   flipX: number;
   flipY: number;
   flipZ: number;
