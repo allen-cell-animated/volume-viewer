@@ -27,6 +27,8 @@ export interface ImageInfo {
     translation: [number, number, number];
     rotation: [number, number, number];
   };
+  times: number;
+  userData?: Record<string, unknown>;
 }
 
 export const getDefaultImageInfo = (): ImageInfo => {
@@ -52,7 +54,8 @@ export const getDefaultImageInfo = (): ImageInfo => {
       translation: [0, 0, 0],
       rotation: [0, 0, 0],
     },
-  }
+    times: 1,
+  };
 };
 
 /* eslint-enable @typescript-eslint/naming-convention */
@@ -71,6 +74,7 @@ interface VolumeDataObserver {
  * @property {number} width Width of original volumetric data prior to downsampling
  * @property {number} height Height of original volumetric data prior to downsampling
  * @property {number} channels Number of channels
+ * @property {number} times Number of times (default = 1)
  * @property {number} tiles Number of tiles, which must be equal to the number of z-slices in original volumetric data
  * @property {number} pixel_size_x Size of pixel in volumetric data to be rendered, in x-dimension, unitless
  * @property {number} pixel_size_y Size of pixel in volumetric data to be rendered, in y-dimension, unitless

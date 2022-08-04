@@ -116,6 +116,7 @@ export default class RayMarchedAtlasVolume {
     if (!this.cubeMesh.visible) {
       return;
     }
+
     this.channelData.gpuFuse(canvas.renderer);
 
     this.cubeTransformNode.updateMatrixWorld(true);

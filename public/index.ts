@@ -1,7 +1,9 @@
+import "regenerator-runtime/runtime";
 import { Vector3 } from "three";
 import * as dat from "dat.gui";
 
 import {
+  ImageInfo,
   View3d,
   Volume,
   VolumeMaker,
@@ -14,6 +16,9 @@ import {
 } from "../src";
 import { State } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
+
+const loadTimeSeries = false;
+const loadTestData = true;
 
 let view3D: View3d;
 
@@ -74,6 +79,9 @@ const myState: State = {
   channelFolderNames: [],
   infoObj: getDefaultImageInfo(),
   channelGui: [],
+
+  currentImageStore: "",
+  currentImageName: "",
 };
 
 // controlPoints is array of [{offset:number, color:cssstring}]
@@ -470,6 +478,20 @@ function removeFolderByName(name: string) {
   gui.onResize();
 }
 
+function updateTimeUI(volume: Volume) {
+  if (volume.imageInfo.times) {
+    myState.totalFrames = volume.imageInfo.times;
+  }
+  const timeSlider = document.getElementById("timeSlider") as HTMLInputElement;
+  if (timeSlider) {
+    timeSlider.max = `${myState.totalFrames - 1}`;
+  }
+  const timeInput = document.getElementById("timeValue") as HTMLInputElement;
+  if (timeInput) {
+    timeInput.max = `${myState.totalFrames - 1}`;
+  }
+}
+
 function showChannelUI(volume: Volume) {
   if (myState && myState.channelFolderNames) {
     for (let i = 0; i < myState.channelFolderNames.length; ++i) {
@@ -699,43 +721,7 @@ function showChannelUI(volume: Volume) {
   }
 }
 
-function loadVolumeAtlasData(vol, jsonData) {
-  view3D.removeAllVolumes();
-  view3D.addVolume(vol);
-
-  view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
-  // first 3 channels for starters
-  for (let ch = 0; ch < vol.num_channels; ++ch) {
-    view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
-  }
-  view3D.setVolumeChannelAsMask(vol, jsonData.channel_names.indexOf("SEG_Memb"));
-  view3D.updateActiveChannels(vol);
-  view3D.updateLuts(vol);
-  view3D.updateLights(myState.lights);
-  view3D.updateDensity(vol, myState.density / 100.0);
-  view3D.updateExposure(myState.exposure);
-  // apply a volume transform from an external source:
-  if (jsonData.userData && jsonData.userData.alignTransform) {
-    view3D.setVolumeTranslation(vol, vol.voxelsToWorldSpace(jsonData.userData.alignTransform.translation));
-    view3D.setVolumeRotation(vol, jsonData.userData.alignTransform.rotation);
-  }
-
-  myState.currentFrame = 0;
-  showChannelUI(vol);
-
-  VolumeLoader.loadVolumeAtlasData(vol, jsonData.images, (url, channelIndex) => {
-    vol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
-
-    if (vol.loaded) {
-      // has assumption that only 3 channels
-      view3D.onVolumeData(vol, [0, 1, 2]);
-      view3D.updateActiveChannels(vol);
-      view3D.updateLuts(vol);
-    }
-  });
-}
-
-function loadImageData(jsonData, volumeData?) {
+function loadImageData(jsonData, volumeData) {
   const vol = new Volume(jsonData);
   myState.volume = vol;
 
@@ -744,34 +730,30 @@ function loadImageData(jsonData, volumeData?) {
   //view3D.addVolume(vol);
 
   // get data into the image
-  if (volumeData) {
-    for (let i = 0; i < volumeData.length; ++i) {
-      // where each volumeData element is a flat Uint8Array of xyz data
-      // according to jsonData.tile_width*jsonData.tile_height*jsonData.tiles
-      // (first row of first plane is the first data in
-      // the layout, then second row of first plane, etc)
-      vol.setChannelDataFromVolume(i, volumeData[i]);
+  for (let i = 0; i < volumeData.length; ++i) {
+    // where each volumeData element is a flat Uint8Array of xyz data
+    // according to jsonData.tile_width*jsonData.tile_height*jsonData.tiles
+    // (first row of first plane is the first data in
+    // the layout, then second row of first plane, etc)
+    vol.setChannelDataFromVolume(i, volumeData[i]);
 
-      view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+    view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
 
-      view3D.removeAllVolumes();
-      view3D.addVolume(vol);
+    view3D.removeAllVolumes();
+    view3D.addVolume(vol);
 
-      // first 3 channels for starters
-      for (let ch = 0; ch < vol.num_channels; ++ch) {
-        view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
-      }
-
-      const maskChannelIndex = jsonData.channel_names.indexOf("SEG_Memb");
-      view3D.setVolumeChannelAsMask(vol, maskChannelIndex);
-      view3D.updateActiveChannels(vol);
-      view3D.updateLuts(vol);
-      view3D.updateLights(myState.lights);
-      view3D.updateDensity(vol, myState.density / 100.0);
-      view3D.updateExposure(myState.exposure);
+    // first 3 channels for starters
+    for (let ch = 0; ch < vol.num_channels; ++ch) {
+      view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
     }
-  } else {
-    loadVolumeAtlasData(vol, jsonData);
+
+    const maskChannelIndex = jsonData.channel_names.indexOf("SEG_Memb");
+    view3D.setVolumeChannelAsMask(vol, maskChannelIndex);
+    view3D.updateActiveChannels(vol);
+    view3D.updateLuts(vol);
+    view3D.updateLights(myState.lights);
+    view3D.updateDensity(vol, myState.density / 100.0);
+    view3D.updateExposure(myState.exposure);
   }
   showChannelUI(vol);
 
@@ -784,95 +766,169 @@ function cacheTimeSeriesImageData(jsonData, frameNumber) {
   return vol;
 }
 
-function fetchImage(url, isTimeSeries = false, frameNumber = 0) {
-  fetch(url)
-    .then(function (response) {
-      return response.json();
-    })
-    .then(function (myJson) {
-      if (isTimeSeries) {
-        // if you need to adjust image paths prior to download,
-        // now is the time to do it:
-        myJson.images.forEach(function (element) {
-          element.name = "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/" + element.name;
-        });
+function onChannelDataArrived(url, v, channelIndex, cacheForTimeSeries = false, frameNumber = 0) {
+  if (cacheForTimeSeries) {
+    if (v.isLoaded()) {
+      const currentVol = cacheTimeSeriesImageData(v.imageInfo, frameNumber);
 
-        const currentVol = cacheTimeSeriesImageData(myJson, frameNumber);
-        if (frameNumber === 0) {
-          // create the main volume and add to view (this is the only place)
-          myState.volume = new Volume(myJson);
-
-          // TODO: this can go in the Volume and Channel constructors!
-          // preallocate some memory to be filled in later
-          for (let i = 0; i < myState.volume.num_channels; ++i) {
-            myState.volume.channels[i].imgData = {
-              data: new Uint8ClampedArray(myJson.atlas_width * myJson.atlas_height),
-              width: myJson.atlas_width,
-              height: myJson.atlas_height,
-            };
-            myState.volume.channels[i].volumeData = new Uint8Array(
-              myJson.tile_width * myJson.tile_height * myJson.tiles
-            );
-            // TODO also preallocate the Fused data texture
-          }
-
-          view3D.removeAllVolumes();
-          view3D.addVolume(myState.volume);
-          view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
-          // first 3 channels for starters
-          for (let ch = 0; ch < myState.volume.num_channels; ++ch) {
-            view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
-          }
-          view3D.setVolumeChannelAsMask(myState.volume, myJson.channel_names.indexOf("SEG_Memb"));
-          view3D.updateActiveChannels(myState.volume);
-          view3D.updateLuts(myState.volume);
-          view3D.updateLights(myState.lights);
-          view3D.updateDensity(myState.volume, myState.density / 100.0);
-          view3D.updateExposure(myState.exposure);
-          // apply a volume transform from an external source:
-          if (myJson.userData && myJson.userData.alignTransform) {
-            view3D.setVolumeTranslation(
-              myState.volume,
-              myState.volume.voxelsToWorldSpace(myJson.userData.alignTransform.translation)
-            );
-            view3D.setVolumeRotation(myState.volume, myJson.userData.alignTransform.rotation);
-          }
-
-          myState.currentFrame = 0;
-          showChannelUI(myState.volume);
-        }
-
-        VolumeLoader.loadVolumeAtlasData(currentVol, myJson.images, (url, channelIndex) => {
-          currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
-
-          if (currentVol.isLoaded()) {
-            console.log("currentVol with name" + currentVol.name + " is loaded");
-            myState.numberOfVolumesCached++;
-            if (myState.numberOfVolumesCached >= myState.totalFrames) {
-              console.log("ALL FRAMES RECEIVED");
-            }
-
-            if (frameNumber === 0) {
-              copyVolumeToVolume(currentVol, myState.volume);
-              // has assumption that only 3 channels
-              view3D.onVolumeData(myState.volume, [0, 1, 2]);
-              view3D.updateActiveChannels(myState.volume);
-              view3D.updateLuts(myState.volume);
-
-              myState.volume.setIsLoaded(true);
-            }
-          }
-        });
-      } else {
-        loadImageData(myJson);
+      console.log("currentVol with name " + v.name + " is loaded");
+      myState.numberOfVolumesCached++;
+      if (myState.numberOfVolumesCached >= myState.totalFrames) {
+        console.log("ALL FRAMES RECEIVED");
       }
-    });
+
+      copyVolumeToVolume(v, currentVol);
+      if (frameNumber === 0) {
+        copyVolumeToVolume(v, myState.volume);
+        // has assumption that only 3 channels
+        view3D.onVolumeData(myState.volume, [0, 1, 2]);
+        view3D.updateActiveChannels(myState.volume);
+        view3D.updateLuts(myState.volume);
+
+        myState.volume.setIsLoaded(true);
+      } else {
+        //copyVolumeToVolume(v, currentVol);
+      }
+      return;
+    }
+  }
+
+  const currentVol = v; // myState.volume;
+
+  currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
+  view3D.onVolumeData(currentVol, [channelIndex]);
+  view3D.setVolumeChannelEnabled(currentVol, channelIndex, channelIndex < 3);
+
+  view3D.updateActiveChannels(currentVol);
+  view3D.updateLuts(currentVol);
+
+  if (currentVol.isLoaded()) {
+    console.log("currentVol with name " + currentVol.name + " is loaded");
+  }
+  view3D.redraw();
 }
 
-function fetchTimeSeries(urlStart, urlEnd, t0, tf, interval = 1) {
+function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) {
+  const myJson = volume.imageInfo;
+  if (isTimeSeries) {
+    if (frameNumber === 0) {
+      // create the main volume and add to view (this is the only place)
+      myState.volume = new Volume(myJson);
+
+      // TODO: this can go in the Volume and Channel constructors!
+      // preallocate some memory to be filled in later
+      for (let i = 0; i < myState.volume.num_channels; ++i) {
+        myState.volume.channels[i].imgData = {
+          data: new Uint8ClampedArray(myJson.atlas_width * myJson.atlas_height),
+          width: myJson.atlas_width,
+          height: myJson.atlas_height,
+        };
+        myState.volume.channels[i].volumeData = new Uint8Array(myJson.tile_width * myJson.tile_height * myJson.tiles);
+        // TODO also preallocate the Fused data texture
+      }
+
+      view3D.removeAllVolumes();
+      view3D.addVolume(myState.volume);
+      view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+      // first 3 channels for starters
+      for (let ch = 0; ch < myState.volume.num_channels; ++ch) {
+        view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
+      }
+      view3D.setVolumeChannelAsMask(myState.volume, myJson.channel_names.indexOf("SEG_Memb"));
+      view3D.updateActiveChannels(myState.volume);
+      view3D.updateLuts(myState.volume);
+      view3D.updateLights(myState.lights);
+      view3D.updateDensity(myState.volume, myState.density / 100.0);
+      view3D.updateExposure(myState.exposure);
+      // apply a volume transform from an external source:
+      if (myJson.transform) {
+        const alignTransform = myJson.transform;
+        view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(alignTransform.translation));
+        view3D.setVolumeRotation(myState.volume, alignTransform.rotation);
+      }
+    }
+
+    updateTimeUI(myState.volume);
+    showChannelUI(myState.volume);
+    return;
+  }
+
+  myState.volume = volume;
+
+  view3D.removeAllVolumes();
+  view3D.addVolume(myState.volume);
+  view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+
+  view3D.updateActiveChannels(myState.volume);
+  view3D.updateLuts(myState.volume);
+  view3D.updateLights(myState.lights);
+  view3D.updateDensity(myState.volume, myState.density / 100.0);
+  view3D.updateExposure(myState.exposure);
+
+  // apply a volume transform from an external source:
+  if (myJson.transform) {
+    const alignTransform = myJson.transform;
+    view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(alignTransform.translation));
+    view3D.setVolumeRotation(myState.volume, alignTransform.rotation);
+  }
+
+  updateTimeUI(myState.volume);
+  showChannelUI(myState.volume);
+}
+
+function fetchZarr(store: string, image: string, time: number) {
+  if (isNaN(time)) {
+    time = 0;
+  }
+  // create the main volume and add to view (this is the only place)
+  VolumeLoader.loadZarr(store, image, time, (url, v, channelIndex) => {
+    onChannelDataArrived(url, v, channelIndex);
+  }).then((volume: Volume) => {
+    onVolumeCreated(volume);
+    myState.currentImageStore = store;
+    myState.currentImageName = image;
+  });
+}
+
+function fetchOpenCell() {
+  // create the main volume and add to view (this is the only place)
+  VolumeLoader.loadOpenCell((url, v, channelIndex) => {
+    onChannelDataArrived(url, v, channelIndex);
+  }).then((volume: Volume) => {
+    onVolumeCreated(volume);
+  });
+}
+
+function fetchTiff(url: string, time: number) {
+  if (isNaN(time)) {
+    time = 0;
+  }
+  // create the main volume and add to view (this is the only place)
+  VolumeLoader.loadTiff(url, (url, v, channelIndex) => {
+    onChannelDataArrived(url, v, channelIndex);
+  }).then((volume: Volume) => {
+    onVolumeCreated(volume);
+    // TODO split the url into store and image name
+    myState.currentImageStore = url;
+    myState.currentImageName = url;
+  });
+}
+
+function fetchImage(url, urlPrefix, isTimeSeries = false, frameNumber = 0) {
+  VolumeLoader.loadJson(url, urlPrefix, (url, vol, channelIndex) => {
+    onChannelDataArrived(url, vol, channelIndex, isTimeSeries, frameNumber);
+  }).then((vol) => {
+    onVolumeCreated(vol, isTimeSeries, frameNumber);
+    // TODO split the url into store and image name
+    myState.currentImageStore = urlPrefix;
+    myState.currentImageName = url;
+  });
+}
+
+function fetchTimeSeries(urlPrefix, urlStart, urlEnd, t0, tf, interval = 1) {
   let frameNumber = 0;
   for (let t = t0; t <= tf; t += interval) {
-    fetchImage(urlStart + t + urlEnd, true, frameNumber);
+    fetchImage(urlPrefix + urlStart + t + urlEnd, urlPrefix, true, frameNumber);
     frameNumber++;
   }
   myState.totalFrames = frameNumber;
@@ -918,7 +974,7 @@ function updateViewForNewVolume() {
   }
 }
 
-function playTimeSeries() {
+function playTimeSeries(onNewFrameCallback: () => void) {
   clearInterval(myState.timerId);
 
   const loadNextFrame = () => {
@@ -934,27 +990,39 @@ function playTimeSeries() {
     copyVolumeToVolume(nextFrameVolume, myState.volume);
     updateViewForNewVolume();
     myState.currentFrame = nextFrame;
+    onNewFrameCallback();
   };
   myState.timerId = window.setInterval(loadNextFrame, 80);
+}
+
+function getCurrentFrame() {
+  return myState.currentFrame;
 }
 
 function goToFrame(targetFrame) {
   console.log("going to Frame " + targetFrame);
   const outOfBounds = targetFrame > myState.totalFrames - 1 || targetFrame < 0;
   if (outOfBounds) {
-    console.log("frame out of bounds");
-    return;
+    console.log(`frame ${targetFrame} out of bounds`);
+    return false;
   }
 
   const targetFrameVolume = myState.timeSeriesVolumes[targetFrame];
-
-  copyVolumeToVolume(targetFrameVolume, myState.volume);
-  updateViewForNewVolume();
+  if (targetFrameVolume) {
+    copyVolumeToVolume(targetFrameVolume, myState.volume);
+    updateViewForNewVolume();
+  } else {
+    console.log(`frame ${targetFrame} not yet loaded`);
+    // try zarr:
+    fetchZarr(myState.currentImageStore, myState.currentImageName, targetFrame);
+  }
   myState.currentFrame = targetFrame;
+  return true;
 }
 
 function createTestVolume() {
-  const imgData = {
+  /* eslint-disable @typescript-eslint/naming-convention */
+  const imgData: ImageInfo = {
     // width := original full size image width
     width: 64,
     // height := original full size image height
@@ -980,10 +1048,12 @@ function createTestVolume() {
     pixel_size_y: 1,
     pixel_size_z: 1,
     name: "AICS-10_5_5",
-    status: "OK",
     version: "0.0.0",
-    aicsImageVersion: "0.3.0",
+    transform: { translation: [0, 0, 0], rotation: [0, 0, 0] },
+    times: 1,
   };
+  /* eslint-enable @typescript-eslint/naming-convention */
+
   // generate some raw volume data
   const channelVolumes = [
     VolumeMaker.createSphere(imgData.tile_width, imgData.tile_height, imgData.tiles, 24),
@@ -1073,19 +1143,66 @@ function main() {
     if (myState.currentFrame >= myState.totalFrames - 1) {
       myState.currentFrame = -1;
     }
-    playTimeSeries();
+    playTimeSeries(() => {
+      if (timeInput) {
+        timeInput.value = "" + getCurrentFrame();
+      }
+      if (timeSlider) {
+        timeSlider.value = "" + getCurrentFrame();
+      }
+    });
   });
+  if (!loadTimeSeries) {
+    (playBtn as HTMLButtonElement).disabled = true;
+  }
   const pauseBtn = document.getElementById("pauseBtn");
   pauseBtn?.addEventListener("click", () => {
     clearInterval(myState.timerId);
   });
+  if (!loadTimeSeries) {
+    (pauseBtn as HTMLButtonElement).disabled = true;
+  }
   const forwardBtn = document.getElementById("forwardBtn");
-  forwardBtn?.addEventListener("click", () => {
-    goToFrame(myState.currentFrame + 1);
-  });
   const backBtn = document.getElementById("backBtn");
+  const timeSlider = document.getElementById("timeSlider") as HTMLInputElement;
+  const timeInput = document.getElementById("timeValue") as HTMLInputElement;
+  forwardBtn?.addEventListener("click", () => {
+    if (goToFrame(getCurrentFrame() + 1)) {
+      if (timeInput) {
+        timeInput.value = "" + getCurrentFrame();
+      }
+      if (timeSlider) {
+        timeSlider.value = "" + getCurrentFrame();
+      }
+    }
+  });
   backBtn?.addEventListener("click", () => {
-    goToFrame(myState.currentFrame - 1);
+    if (goToFrame(getCurrentFrame() - 1)) {
+      if (timeInput) {
+        timeInput.value = "" + getCurrentFrame();
+      }
+      if (timeSlider) {
+        timeSlider.value = "" + getCurrentFrame();
+      }
+    }
+  });
+  // only update when DONE sliding: change event
+  timeSlider?.addEventListener("change", () => {
+    // trigger loading new time
+    if (goToFrame(timeSlider?.valueAsNumber)) {
+      if (timeInput) {
+        timeInput.value = timeSlider.value;
+      }
+    }
+  });
+  timeInput?.addEventListener("change", () => {
+    // trigger loading new time
+    if (goToFrame(timeInput?.valueAsNumber)) {
+      // update slider
+      if (timeSlider) {
+        timeSlider.value = timeInput.value;
+      }
+    }
   });
 
   const alignBtn = document.getElementById("xfBtn");
@@ -1126,18 +1243,20 @@ function main() {
 
   setupGui();
 
-  const loadTimeSeries = true;
-  const loadTestData = false;
-
   if (loadTimeSeries) {
     fetchTimeSeries(
-      "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/test_parent_T49.ome_",
+      "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/",
+      "test_parent_T49.ome_",
       "_atlas.json",
       0,
       46
     );
   } else if (loadTestData) {
-    fetchImage("AICS-12_881_atlas.json");
+    //fetchOpenCell();
+    //fetchTiff("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif", 0);
+    fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/Lamin_multi-06-Deskew-28.zarr", "Image_0", 0);
+    //fetchZarr("http://localhost:9020/example-data/AICS-12_143.zarr", "AICS-12_143", 0);
+    //fetchImage("AICS-12_881_atlas.json", "");
   } else {
     const volumeInfo = createTestVolume();
     loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
