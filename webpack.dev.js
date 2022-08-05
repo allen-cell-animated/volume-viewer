@@ -10,15 +10,13 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, "volumeviewer"),
     filename: "volume-viewer-ui.bundle.js",
-    publicPath: "/volumeviewer/",
   },
   devtool: "source-map",
   devServer: {
-    open: ["volumeviewer/"],
+    open: ["/"],
     port: 9020,
     static: [
       {
-        publicPath: "/volumeviewer/",
         staticOptions: {
           dotfiles: "allow",
         },
