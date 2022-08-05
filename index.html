@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" height="100%" width="100%">
+
+<head>
+    <meta charset="UTF-8">
+    <title>AICS 3D Volume Viewer</title>
+<script defer src="/volumeviewer/volume-viewer-ui.bundle.js"></script></head>
+
+<body height="100%" width="100%">
+    <div id="volume-viewer" style="width:1200px; height:900px;"></div>
+    <p style="margin:2px;">
+        <button id="X">X</button>
+        <button id="Y">Y</button>
+        <button id="Z">Z</button>
+        <button id="3D">3D</button>
+        <button id="rotBtn">Turntable</button>
+        <button id="axisBtn">Axis</button>
+        <button id="xfBtn">Align</button>
+        <button id="resetCamBtn">ResetCam</button>
+        <button id="ptBtn" disabled>Pathtrace</button>
+        <button id="screenshotBtn">Screenshot</button>
+    </p>
+    <p style="margin:2px;">
+        <button id="showBoundingBox">Bounds</button>
+        <input type="color" id="boundingBoxColor" value="#ffff00">
+        <input type="color" id="backgroundColor" value="#000000">
+        <button id="flipXBtn">FlipX</button>
+        <button id="flipYBtn">FlipY</button>
+        <button id="flipZBtn">FlipZ</button>
+    </p>
+    <p style="margin:2px;">
+        <button id="playBtn">Play</button>
+        <button id="pauseBtn">Pause</button>
+        <button id="backBtn">Back</button>
+        <button id="forwardBtn">Forward</button>
+        <input id="timeSlider" type="range" min="0" max="0" step="1" value="0"/><input type="number" id="timeValue" min="0" max="0" value="0"/>
+    </p>
+    <p>Pathtrace iterations: <span id="counter">0</span></p>
+</body>
+
+</html>
