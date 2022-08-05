@@ -3,9 +3,7 @@ name: github pages
 env:
   NODE_VERSION: "14.x"
 
-on:
-  schedule:
-    - cron: "0 0 * * *"
+on: [push]
 
 jobs:
   deploy:
