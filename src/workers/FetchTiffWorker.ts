@@ -10,6 +10,37 @@ type TypedArray =
   | Float32Array
   | Float64Array;
 
+// from TIFF
+const SAMPLEFORMAT_UINT = 1;
+const SAMPLEFORMAT_INT = 2;
+const SAMPLEFORMAT_IEEEFP = 3;
+
+function castToArray(buf: ArrayBuffer, bytesPerPixel: number, sampleFormat: number): TypedArray {
+  if (sampleFormat === SAMPLEFORMAT_IEEEFP) {
+    if (bytesPerPixel === 4) {
+      return new Float32Array(buf);
+    }
+  } else if (sampleFormat === SAMPLEFORMAT_INT) {
+    if (bytesPerPixel === 1) {
+      return new Int8Array(buf);
+    } else if (bytesPerPixel === 2) {
+      return new Int16Array(buf);
+    } else if (bytesPerPixel === 4) {
+      return new Int32Array(buf);
+    }
+  } else if (sampleFormat === SAMPLEFORMAT_UINT) {
+    if (bytesPerPixel === 1) {
+      return new Uint8Array(buf);
+    } else if (bytesPerPixel === 2) {
+      return new Uint16Array(buf);
+    } else if (bytesPerPixel === 4) {
+      return new Uint32Array(buf);
+    }
+  }
+  console.error(`TIFF Worker: unsupported sample format ${sampleFormat} and bytes per pixel ${bytesPerPixel}`);
+  return new Uint8Array(buf);
+}
+
 self.onmessage = async function (e) {
   // TODO index images by time
   // const time = e.data.time;
@@ -24,8 +55,6 @@ self.onmessage = async function (e) {
 
   const tiff = await fromUrl(e.data.url);
 
-  const u16 = new Uint16Array(tilesizex * tilesizey * sizez);
-  const u8 = new Uint8Array(tilesizex * tilesizey * sizez);
   // load the images of this channel from the tiff
   // today assume TCZYX so the slices are already in order.
   let startindex = 0;
@@ -41,6 +70,18 @@ self.onmessage = async function (e) {
     startindex = channelIndex;
     incrementz = sizec;
   }
+
+  // huge assumption: planes are in a particular order relative to z and c
+
+  // get first plane, to get some details about the image
+  const image = await tiff.getImage(startindex);
+  // on first image, set up some stuff:
+  const sampleFormat = image.getSampleFormat();
+  const bytesPerPixel = image.getBytesPerPixel();
+  // allocate a buffer for one channel
+  const buffer = new ArrayBuffer(tilesizex * tilesizey * sizez * bytesPerPixel);
+  const u8 = new Uint8Array(buffer);
+
   for (let imageIndex = startindex, zslice = 0; zslice < sizez; imageIndex += incrementz, ++zslice) {
     const image = await tiff.getImage(imageIndex);
     // download and downsample on client
@@ -48,36 +89,31 @@ self.onmessage = async function (e) {
     const arrayresult: TypedArray = Array.isArray(result) ? result[0] : result;
     // deposit in full channel array in the right place
     const offset = zslice * tilesizex * tilesizey;
-    if (arrayresult.BYTES_PER_ELEMENT === 2) {
-      u16.set(arrayresult, offset);
-    } else if (arrayresult.BYTES_PER_ELEMENT === 1) {
-      u8.set(arrayresult, offset);
-    } else {
+    if (arrayresult.BYTES_PER_ELEMENT > 4) {
       console.log("byte size not supported yet");
+    } else if (arrayresult.BYTES_PER_ELEMENT !== bytesPerSample) {
+      console.log("tiff bytes per element mismatch with OME metadata");
+    } else {
+      u8.set(new Uint8Array(arrayresult.buffer), offset * arrayresult.BYTES_PER_ELEMENT);
     }
   }
-  // all slices collected, now resample 16-to-8 bits
-  if (bytesPerSample === 2) {
-    let chmin = 65535; //metadata.channels[i].window.min;
-    let chmax = 0; //metadata.channels[i].window.max;
-    // find min and max (only of data we are sampling?)
-    for (let j = 0; j < u16.length; ++j) {
-      const val = u16[j];
-      if (val < chmin) {
-        chmin = val;
-      }
-      if (val > chmax) {
-        chmax = val;
-      }
+  // all slices collected, now resample to 8 bits full data range
+  const src = castToArray(buffer, bytesPerPixel, sampleFormat);
+  let chmin = src[0];
+  let chmax = src[0];
+  for (let j = 0; j < src.length; ++j) {
+    const val = src[j];
+    if (val < chmin) {
+      chmin = val;
     }
-    for (let j = 0; j < u16.length; ++j) {
-      u8[j] = ((u16[j] - chmin) / (chmax - chmin)) * 255;
+    if (val > chmax) {
+      chmax = val;
     }
-  } else if (bytesPerSample === 1) {
-    // no op; keep u8
-  } else {
-    console.log("byte size not supported yet");
   }
-  const results = { data: u8, channel: channelIndex };
+  const out = new Uint8Array(src.length);
+  for (let j = 0; j < src.length; ++j) {
+    out[j] = ((src[j] - chmin) / (chmax - chmin)) * 255;
+  }
+  const results = { data: out, channel: channelIndex };
   postMessage(results, [results.data.buffer]);
 };
