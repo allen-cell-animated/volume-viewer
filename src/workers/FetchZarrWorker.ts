@@ -23,8 +23,8 @@ function convertChannel(
       }
     }
   } else {
-    let chmin = 65535; //metadata.channels[i].window.min;
-    let chmax = 0; //metadata.channels[i].window.max;
+    let chmin = channelData[0][0][0];
+    let chmax = channelData[0][0][0];
     // find min and max (only of data we are sampling?)
     for (let z = 0; z < nz; z += downsampleZ) {
       for (let j = 0; j < xy; ++j) {
