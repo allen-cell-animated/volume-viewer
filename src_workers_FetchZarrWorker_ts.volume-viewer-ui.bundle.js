@@ -28,10 +28,8 @@ function convertChannel(channelData, nx, ny, nz, dtype, downsampleZ) {
       }
     }
   } else {
-    var chmin = 65535; //metadata.channels[i].window.min;
-
-    var chmax = 0; //metadata.channels[i].window.max;
-    // find min and max (only of data we are sampling?)
+    var chmin = channelData[0][0][0];
+    var chmax = channelData[0][0][0]; // find min and max (only of data we are sampling?)
 
     for (var _z = 0; _z < nz; _z += downsampleZ) {
       for (var _j = 0; _j < xy; ++_j) {
