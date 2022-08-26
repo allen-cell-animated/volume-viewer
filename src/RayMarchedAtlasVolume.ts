@@ -42,6 +42,8 @@ export default class RayMarchedAtlasVolume {
     // need?
     this.volume = volume;
 
+    // note that these bounds are the clipped region of interest,
+    // and not always the whole volume
     this.bounds = {
       bmin: new Vector3(-0.5, -0.5, -0.5),
       bmax: new Vector3(0.5, 0.5, 0.5),
