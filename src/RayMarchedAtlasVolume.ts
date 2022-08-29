@@ -42,6 +42,8 @@ export default class RayMarchedAtlasVolume {
     // need?
     this.volume = volume;
 
+    // note that these bounds are the clipped region of interest,
+    // and not always the whole volume
     this.bounds = {
       bmin: new Vector3(-0.5, -0.5, -0.5),
       bmax: new Vector3(0.5, 0.5, 0.5),
@@ -52,7 +54,10 @@ export default class RayMarchedAtlasVolume {
     this.cubeMesh = new Mesh(this.cube);
     this.cubeMesh.name = "Volume";
 
-    this.boxHelper = new Box3Helper(new Box3(this.bounds.bmin, this.bounds.bmax), new Color(0xffff00));
+    this.boxHelper = new Box3Helper(
+      new Box3(new Vector3(-0.5, -0.5, -0.5), new Vector3(0.5, 0.5, 0.5)),
+      new Color(0xffff00)
+    );
     this.boxHelper.updateMatrixWorld();
     this.boxHelper.visible = false;
 
