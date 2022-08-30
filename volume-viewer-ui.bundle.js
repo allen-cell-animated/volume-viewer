@@ -3392,7 +3392,9 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, RayMarchedAtlasVolume);
 
     // need?
-    this.volume = volume;
+    this.volume = volume; // note that these bounds are the clipped region of interest,
+    // and not always the whole volume
+
     this.bounds = {
       bmin: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(-0.5, -0.5, -0.5),
       bmax: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0.5, 0.5, 0.5)
@@ -3401,7 +3403,7 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     this.cube = new three__WEBPACK_IMPORTED_MODULE_4__.BoxGeometry(1.0, 1.0, 1.0);
     this.cubeMesh = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(this.cube);
     this.cubeMesh.name = "Volume";
-    this.boxHelper = new three__WEBPACK_IMPORTED_MODULE_4__.Box3Helper(new three__WEBPACK_IMPORTED_MODULE_4__.Box3(this.bounds.bmin, this.bounds.bmax), new three__WEBPACK_IMPORTED_MODULE_4__.Color(0xffff00));
+    this.boxHelper = new three__WEBPACK_IMPORTED_MODULE_4__.Box3Helper(new three__WEBPACK_IMPORTED_MODULE_4__.Box3(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(-0.5, -0.5, -0.5), new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0.5, 0.5, 0.5)), new three__WEBPACK_IMPORTED_MODULE_4__.Color(0xffff00));
     this.boxHelper.updateMatrixWorld();
     this.boxHelper.visible = false;
     this.cubeTransformNode = new three__WEBPACK_IMPORTED_MODULE_4__.Group();
