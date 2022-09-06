@@ -62,11 +62,9 @@ export class ThreeJsPanel {
 
   constructor(parentElement: HTMLElement, _useWebGL2: boolean) {
     this.containerdiv = document.createElement("div");
-    this.containerdiv.setAttribute("id", "volumeViewerContainerDiv");
     this.containerdiv.style.position = "relative";
 
     this.canvas = document.createElement("canvas");
-    this.canvas.setAttribute("id", "volumeViewerCanvas");
     this.canvas.height = parentElement.offsetHeight;
     this.canvas.width = parentElement.offsetWidth;
 
