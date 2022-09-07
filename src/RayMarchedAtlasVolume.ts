@@ -123,6 +123,7 @@ export default class RayMarchedAtlasVolume {
     }
 
     this.channelData.gpuFuse(canvas.renderer);
+    this.setUniform("textureAtlas", this.channelData.getFusedTexture());
 
     this.cubeTransformNode.updateMatrixWorld(true);
 
