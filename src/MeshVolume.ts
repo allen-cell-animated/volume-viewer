@@ -383,6 +383,9 @@ export default class MeshVolume {
           FileSaver.saveString(output, fname + ".gltf");
         }
       },
+      function (error) {
+        console.error(error);
+      },
       options
     );
   }

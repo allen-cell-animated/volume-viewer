@@ -1,6 +1,6 @@
 import {
   DataTexture,
-  DataTexture3D,
+  Data3DTexture,
   Euler,
   FloatType,
   Matrix4,
@@ -8,7 +8,7 @@ import {
   NormalBlending,
   OrthographicCamera,
   PerspectiveCamera,
-  PlaneBufferGeometry,
+  PlaneGeometry,
   Quaternion,
   RGBAFormat,
   Scene,
@@ -43,7 +43,7 @@ export default class PathTracedVolume {
   private rotation: Euler;
   private pixelSamplingRate: number;
   private pathTracingUniforms: typeof pathTracingUniforms;
-  private volumeTexture: DataTexture3D;
+  private volumeTexture: Data3DTexture;
   private maskChannelIndex: number;
   private maskAlpha: number;
   private bounds: Bounds;
@@ -60,13 +60,13 @@ export default class PathTracedVolume {
   private screenTextureRenderTarget: WebGLRenderTarget;
   private screenTextureShader: ShaderMaterialParameters;
   private screenOutputShader: ShaderMaterialParameters;
-  private pathTracingGeometry: PlaneBufferGeometry;
+  private pathTracingGeometry: PlaneGeometry;
   private pathTracingMaterial: ShaderMaterial;
   private pathTracingMesh: Mesh;
-  private screenTextureGeometry: PlaneBufferGeometry;
+  private screenTextureGeometry: PlaneGeometry;
   private screenTextureMaterial: ShaderMaterial;
   private screenTextureMesh: Mesh;
-  private screenOutputGeometry: PlaneBufferGeometry;
+  private screenOutputGeometry: PlaneGeometry;
   private screenOutputMaterial: ShaderMaterial;
   private denoiseShaderUniforms = denoiseShaderUniforms();
   private screenOutputDenoiseMaterial: ShaderMaterial;
@@ -94,7 +94,7 @@ export default class PathTracedVolume {
       sz = volume.z;
     const data = new Uint8Array(sx * sy * sz * 4).fill(0);
     // defaults to rgba and unsignedbytetype so dont need to supply format this time.
-    this.volumeTexture = new DataTexture3D(data, volume.x, volume.y, volume.z);
+    this.volumeTexture = new Data3DTexture(data, volume.x, volume.y, volume.z);
     this.volumeTexture.minFilter = this.volumeTexture.magFilter = LinearFilter;
     this.volumeTexture.generateMipmaps = false;
 
@@ -254,7 +254,7 @@ export default class PathTracedVolume {
       ].join("\n"),
     };
 
-    this.pathTracingGeometry = new PlaneBufferGeometry(2, 2);
+    this.pathTracingGeometry = new PlaneGeometry(2, 2);
 
     // initialize texture.
     this.pathTracingUniforms.volumeTexture.value = this.volumeTexture;
@@ -271,7 +271,7 @@ export default class PathTracedVolume {
     this.pathTracingMesh = new Mesh(this.pathTracingGeometry, this.pathTracingMaterial);
     this.pathTracingScene.add(this.pathTracingMesh);
 
-    this.screenTextureGeometry = new PlaneBufferGeometry(2, 2);
+    this.screenTextureGeometry = new PlaneGeometry(2, 2);
 
     this.screenTextureMaterial = new ShaderMaterial({
       uniforms: this.screenTextureShader.uniforms,
@@ -286,7 +286,7 @@ export default class PathTracedVolume {
     this.screenTextureMesh = new Mesh(this.screenTextureGeometry, this.screenTextureMaterial);
     this.screenTextureScene.add(this.screenTextureMesh);
 
-    this.screenOutputGeometry = new PlaneBufferGeometry(2, 2);
+    this.screenOutputGeometry = new PlaneGeometry(2, 2);
 
     this.screenOutputMaterial = new ShaderMaterial({
       uniforms: this.screenOutputShader.uniforms,

@@ -10,7 +10,7 @@ import {
   RGBAFormat,
   ShaderMaterial,
   Mesh,
-  PlaneBufferGeometry,
+  PlaneGeometry,
   WebGLRenderer,
   OneFactor,
   CustomBlending,
@@ -35,7 +35,7 @@ export default class FusedChannelData {
   private fuseRequested: FuseChannel[] | null;
   private channelsDataToFuse: Channel[];
 
-  private fuseGeometry: PlaneBufferGeometry;
+  private fuseGeometry: PlaneGeometry;
   private fuseMaterial: ShaderMaterial;
   private fuseScene: Scene;
   private quadCamera: OrthographicCamera;
@@ -100,7 +100,7 @@ export default class FusedChannelData {
       blendDst: OneFactor,
       blendEquation: MaxEquation,
     });
-    this.fuseGeometry = new PlaneBufferGeometry(2, 2);
+    this.fuseGeometry = new PlaneGeometry(2, 2);
   }
 
   getFusedTexture(): Texture {
@@ -178,6 +178,7 @@ export default class FusedChannelData {
       data: new Uint8ClampedArray(datacopy),
       width: this.width,
       height: this.height,
+      colorSpace: "srgb" as PredefinedColorSpace,
     };
     this.maskTexture.image = maskData;
     this.maskTexture.needsUpdate = true;
