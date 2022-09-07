@@ -427,6 +427,13 @@ export class ThreeJsPanel {
   }
 
   render(): void {
+    // update the axis helper in case the view was rotated
+    if (!isOrthographicCamera(this.camera)) {
+      this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
+    } else {
+      this.orthoScale = this.controls.scale;
+    }
+
     // do whatever we have to do before the main render of this.scene
     for (let i = 0; i < this.animateFuncs.length; i++) {
       if (this.animateFuncs[i]) {
@@ -468,13 +475,6 @@ export class ThreeJsPanel {
     this.controls.update(delta);
 
     this.render();
-
-    // update the axis helper in case the view was rotated
-    if (!isOrthographicCamera(this.camera)) {
-      this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
-    } else {
-      this.orthoScale = this.controls.scale;
-    }
   }
 
   startRenderLoop(): void {
