@@ -157,6 +157,7 @@ export class ThreeJsPanel {
     this.orthoControlsX.aspect = aspect;
     this.orthoControlsX.staticMoving = true;
     this.orthoControlsX.enabled = false;
+    this.orthoControlsX.panSpeed = this.canvas.clientWidth * 0.5;
 
     this.orthographicCameraY = new OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraY();
@@ -167,6 +168,7 @@ export class ThreeJsPanel {
     this.orthoControlsY.aspect = aspect;
     this.orthoControlsY.staticMoving = true;
     this.orthoControlsY.enabled = false;
+    this.orthoControlsY.panSpeed = this.canvas.clientWidth * 0.5;
 
     this.orthographicCameraZ = new OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraZ();
@@ -177,6 +179,7 @@ export class ThreeJsPanel {
     this.orthoControlsZ.aspect = aspect;
     this.orthoControlsZ.staticMoving = true;
     this.orthoControlsZ.enabled = false;
+    this.orthoControlsZ.panSpeed = this.canvas.clientWidth * 0.5;
 
     this.camera = this.perspectiveCamera;
     this.axisCamera = new PerspectiveCamera();
@@ -385,8 +388,11 @@ export class ThreeJsPanel {
 
     this.perspectiveControls.aspect = aspect;
     this.orthoControlsZ.aspect = aspect;
+    this.orthoControlsZ.panSpeed = w * 0.5;
     this.orthoControlsY.aspect = aspect;
+    this.orthoControlsY.panSpeed = w * 0.5;
     this.orthoControlsX.aspect = aspect;
+    this.orthoControlsX.panSpeed = w * 0.5;
     if (isOrthographicCamera(this.camera)) {
       (this.camera as OrthographicCamera).left = -this.orthoScale * aspect;
       (this.camera as OrthographicCamera).right = this.orthoScale * aspect;
