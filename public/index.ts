@@ -84,6 +84,9 @@ const myState: State = {
   currentImageName: "",
 };
 
+function densitySliderToView3D(density: number) {
+  return density / 50.0;
+}
 // controlPoints is array of [{offset:number, color:cssstring}]
 // where offset is a value from 0.0 to 1.0, and color is a string encoding a css color value.
 // first and last control points should be at offsets 0 and 1
@@ -161,7 +164,7 @@ function setupGui() {
     .min(0.0)
     .step(0.001)
     .onChange(function (value) {
-      view3D.updateDensity(myState.volume, value / 50.0);
+      view3D.updateDensity(myState.volume, densitySliderToView3D(value));
     });
   gui
     .add(myState, "maskAlpha")
@@ -752,7 +755,7 @@ function loadImageData(jsonData, volumeData) {
     view3D.updateActiveChannels(vol);
     view3D.updateLuts(vol);
     view3D.updateLights(myState.lights);
-    view3D.updateDensity(vol, myState.density / 100.0);
+    view3D.updateDensity(vol, densitySliderToView3D(myState.density));
     view3D.updateExposure(myState.exposure);
   }
   showChannelUI(vol);
@@ -838,7 +841,7 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
       view3D.updateActiveChannels(myState.volume);
       view3D.updateLuts(myState.volume);
       view3D.updateLights(myState.lights);
-      view3D.updateDensity(myState.volume, myState.density / 100.0);
+      view3D.updateDensity(myState.volume, densitySliderToView3D(myState.density));
       view3D.updateExposure(myState.exposure);
       // apply a volume transform from an external source:
       if (myJson.transform) {
@@ -862,7 +865,7 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
   view3D.updateActiveChannels(myState.volume);
   view3D.updateLuts(myState.volume);
   view3D.updateLights(myState.lights);
-  view3D.updateDensity(myState.volume, myState.density / 100.0);
+  view3D.updateDensity(myState.volume, densitySliderToView3D(myState.density));
   view3D.updateExposure(myState.exposure);
 
   // apply a volume transform from an external source:
