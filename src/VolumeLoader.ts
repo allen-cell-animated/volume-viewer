@@ -1,6 +1,7 @@
 import "regenerator-runtime/runtime";
 
-import Volume, { ImageInfo } from "./Volume";
+import Volume from "./Volume";
+import type { ImageInfo } from "./volume";
 import { openArray, openGroup, HTTPStore } from "zarr";
 import { fromUrl } from "geotiff";
 
@@ -27,6 +28,30 @@ interface PackedChannelsImage {
   channels: number[];
 }
 type PackedChannelsImageRequests = Record<string, HTMLImageElement>;
+
+interface ZarrAxis {
+  name: "t" | "c" | "z" | "y" | "x";
+  type: "channel" | "time" | "space";
+  unit: string;
+}
+interface ZarrCoordinateTransformation {
+  type: "scale" | "translation";
+  scale?: number[]; // same as len(axes)
+}
+interface ZarrDataset {
+  path: string;
+  coordinateTransformations: ZarrCoordinateTransformation[];
+  shape: number[];
+}
+interface ZarrMultiscale {
+  version: string;
+  name: string;
+  axes: ZarrAxis[];
+  datasets: ZarrDataset[];
+  coordinateTransformations?: ZarrCoordinateTransformation[];
+  type?: string;
+  metadata?: Record<string, unknown>;
+}
 
 // We want to find the most "square" packing of z tw by th tiles.
 // Compute number of rows and columns.
@@ -164,6 +189,51 @@ export default class VolumeLoader {
         VolumeLoader.loadVolumeAtlasData(vol, myJson.images, onChannelLoaded);
         return vol;
       });
+  }
+
+  static async getZarrInfo(url: string): Promise<ZarrMultiscale> {
+    const store = new HTTPStore(url);
+    const data = await openGroup(store, null, "r");
+
+    // get top-level metadata for this zarr image
+    const allmetadata = await data.attrs.asObject();
+    // take the first multiscales entry
+    if (!Object.prototype.hasOwnProperty.call(allmetadata, "multiscales") || !allmetadata.multiscales) {
+      return Promise.reject("No multiscales metadata found");
+    }
+
+    const multiscales = allmetadata.multiscales[0];
+    const numlevels = multiscales.datasets.length;
+
+    const info = {} as ZarrMultiscale;
+    info.version = multiscales.version;
+    info.name = multiscales.name;
+    info.axes = multiscales.axes;
+    for (let level = 0; level < numlevels; ++level) {
+      // each entry of multiscales is a multiscale image.
+      // there is one dataset for each multiscale level.
+      const dataset = multiscales.datasets[level];
+
+      // technically there can be any number of coordinateTransformations
+      // but there must be only one of type "scale".
+      // Here I assume that is the only one.
+      // const scale5d = dataset.coordinateTransformations[0].scale;
+      // const metadata = allmetadata.omero;
+
+      const theLevel = await openArray({ store: store, path: dataset.path, mode: "r" });
+      const shape = theLevel.meta.shape;
+      // full res info
+      info.datasets.push({ ...dataset, shape: shape.slice() });
+
+      const w = shape[4];
+      const h = shape[3];
+      const z = shape[2];
+      const c = shape[1];
+      const sizeT = shape[0];
+      console.log(`Level ${level} X=${w}, Y=${h}, Z=${z}, C=${c}, T=${sizeT}`);
+    }
+
+    return info;
   }
 
   /**
