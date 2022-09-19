@@ -14,7 +14,7 @@ import {
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
 } from "../src";
-import { State } from "./types";
+import type { State } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
 
 const loadTimeSeries = false;
