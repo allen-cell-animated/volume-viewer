@@ -209,6 +209,7 @@ export default class VolumeLoader {
     info.version = multiscales.version;
     info.name = multiscales.name;
     info.axes = multiscales.axes;
+    info.datasets = [];
     for (let level = 0; level < numlevels; ++level) {
       // each entry of multiscales is a multiscale image.
       // there is one dataset for each multiscale level.
@@ -283,7 +284,7 @@ export default class VolumeLoader {
     //console.log(`X=${w}, Y=${h}, Z=${z}, C=${c}, T=${sizeT}`);
 
     // making a choice of a reduced level:
-    const downsampleZ = 2; // half the z
+    const downsampleZ = 1; // half the z
     const levelToLoad = numlevels - 1; //1;
     const dataset2 = allmetadata.multiscales[imageIndex].datasets[levelToLoad];
     const level = await openArray({ store: store, path: imagegroup + "/" + dataset2.path, mode: "r" });

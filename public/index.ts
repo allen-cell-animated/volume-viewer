@@ -1257,7 +1257,16 @@ function main() {
   } else if (loadTestData) {
     //fetchOpenCell();
     //fetchTiff("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif", 0);
-    fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/Lamin_multi-06-Deskew-28.zarr", "Image_0", 0);
+    VolumeLoader.getZarrInfo(
+      "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/Lamin_multi-06-Deskew-28.zarr/Image_0"
+    ).then((obj) => {
+      console.log(obj);
+      fetchZarr(
+        "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/Lamin_multi-06-Deskew-28.zarr",
+        "Image_0",
+        0
+      );
+    });
     //fetchZarr("http://localhost:9020/example-data/AICS-12_143.zarr", "AICS-12_143", 0);
     //fetchImage("AICS-12_881_atlas.json", "");
   } else {
