@@ -4,6 +4,7 @@
   "description": "volume renderer for multichannel 8-bit intensity data stored as 3D arrays",
   "main": "es/index.js",
   "module": "es/index.js",
+  "types": "es/types/index.d.ts",
   "files": [
     "es",
     "README.md",
@@ -12,7 +13,8 @@
   "scripts": {
     "prepare": "npm run build",
     "build-docs": "node node_modules/documentation/bin/documentation.js build src/Histogram.ts src/View3d.ts src/Volume.ts src/VolumeMaker.ts src/VolumeLoader.ts -f html -o docs --shallow",
-    "build": "npm run transpileES",
+    "build": "npm run transpileES && npm run build-types",
+    "build-types": "tsc -p tsconfig.types.json",
     "build-demo": "webpack --config webpack.demo.js",
     "clean": "rimraf es/",
     "format": "prettier --write src/**/*.js",
@@ -22,7 +24,7 @@
     "react-example": "webpack serve --config react-example/webpack.react.js",
     "lint": "eslint --config ./.eslintrc.js --ignore-path ./.eslintignore --ext .jsx --ext .js --ext .ts ./src",
     "test": "cross-env TS_NODE_PROJECT='./tsconfig.test.json' mocha --require ts-node/register src/**/test/*.js",
-    "transpileES": "babel 'src/' --out-dir es --extensions .js,.ts --ignore '**/*.test.js'",
+    "transpileES": "babel src --out-dir es --extensions .js,.ts --ignore **/*.test.js",
     "typeCheck": "tsc -p tsconfig.json --noEmit"
   },
   "author": "Daniel Toloudis",

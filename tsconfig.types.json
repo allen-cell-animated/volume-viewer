@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "emitDeclarationOnly": true,
+    "outDir": "es",
+  },
+  "files": ["src/index.ts"],
+  "include": ["src/**/*"],
+  "exclude": [
+    "src/workers/**/*",
+    "**/*.test.js",
+  ],
+}
