@@ -8314,23 +8314,26 @@ var rayMarchingShaderUniforms = {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "AREA_LIGHT": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_5__.AREA_LIGHT),
-/* harmony export */   "Histogram": () => (/* reexport safe */ _Histogram__WEBPACK_IMPORTED_MODULE_4__["default"]),
-/* harmony export */   "Light": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_5__.Light),
+/* harmony export */   "AREA_LIGHT": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_6__.AREA_LIGHT),
+/* harmony export */   "Channel": () => (/* reexport safe */ _Channel__WEBPACK_IMPORTED_MODULE_2__["default"]),
+/* harmony export */   "Histogram": () => (/* reexport safe */ _Histogram__WEBPACK_IMPORTED_MODULE_5__["default"]),
+/* harmony export */   "Light": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_6__.Light),
 /* harmony export */   "RENDERMODE_PATHTRACE": () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_PATHTRACE),
 /* harmony export */   "RENDERMODE_RAYMARCH": () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_RAYMARCH),
-/* harmony export */   "SKY_LIGHT": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_5__.SKY_LIGHT),
+/* harmony export */   "SKY_LIGHT": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_6__.SKY_LIGHT),
 /* harmony export */   "View3d": () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.View3d),
 /* harmony export */   "Volume": () => (/* reexport safe */ _Volume__WEBPACK_IMPORTED_MODULE_1__["default"]),
-/* harmony export */   "VolumeLoader": () => (/* reexport safe */ _VolumeLoader__WEBPACK_IMPORTED_MODULE_3__["default"]),
-/* harmony export */   "VolumeMaker": () => (/* reexport safe */ _VolumeMaker__WEBPACK_IMPORTED_MODULE_2__["default"])
+/* harmony export */   "VolumeLoader": () => (/* reexport safe */ _VolumeLoader__WEBPACK_IMPORTED_MODULE_4__["default"]),
+/* harmony export */   "VolumeMaker": () => (/* reexport safe */ _VolumeMaker__WEBPACK_IMPORTED_MODULE_3__["default"])
 /* harmony export */ });
 /* harmony import */ var _View3d__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./View3d */ "./src/View3d.ts");
 /* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Volume */ "./src/Volume.ts");
-/* harmony import */ var _VolumeMaker__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./VolumeMaker */ "./src/VolumeMaker.ts");
-/* harmony import */ var _VolumeLoader__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./VolumeLoader */ "./src/VolumeLoader.ts");
-/* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
-/* harmony import */ var _Light__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Light */ "./src/Light.ts");
+/* harmony import */ var _Channel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Channel */ "./src/Channel.ts");
+/* harmony import */ var _VolumeMaker__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./VolumeMaker */ "./src/VolumeMaker.ts");
+/* harmony import */ var _VolumeLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./VolumeLoader */ "./src/VolumeLoader.ts");
+/* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
+/* harmony import */ var _Light__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./Light */ "./src/Light.ts");
+
 
 
 
