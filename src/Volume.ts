@@ -135,12 +135,12 @@ export default class Volume {
   private currentScale: Vector3;
   private physicalSize: Vector3;
   public normalizedPhysicalSize: Vector3;
-  private loaded: boolean;
+  public loaded: boolean;
   /* eslint-disable @typescript-eslint/naming-convention */
   public num_channels: number;
   public channel_names: string[];
   public channel_colors_default: [number, number, number][];
-  private pixel_size: [number, number, number];
+  public pixel_size: [number, number, number];
   /* eslint-enable @typescript-eslint/naming-convention */
 
   constructor(imageInfo: ImageInfo = getDefaultImageInfo()) {

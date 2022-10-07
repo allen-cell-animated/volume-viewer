@@ -566,7 +566,7 @@ export default class PathTracedVolume {
   }
 
   // -0.5 .. 0.5
-  setAxisClip(axis: number, minval: number, maxval: number, _isOrthoAxis: boolean): void {
+  setAxisClip(axis: "x" | "y" | "z", minval: number, maxval: number, _isOrthoAxis: boolean): void {
     this.bounds.bmax[axis] = maxval;
     this.bounds.bmin[axis] = minval;
     const physicalSize = this.volume.normalizedPhysicalSize;
