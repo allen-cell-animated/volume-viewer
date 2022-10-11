@@ -6384,9 +6384,9 @@ var VolumeDrawable = /*#__PURE__*/function () {
           bmax: new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5])
         }; // note: dropping isOrthoAxis argument
 
-        this.setAxisClip(0, options.clipBounds[0], options.clipBounds[1]);
-        this.setAxisClip(1, options.clipBounds[2], options.clipBounds[3]);
-        this.setAxisClip(2, options.clipBounds[4], options.clipBounds[5]);
+        this.setAxisClip("x", options.clipBounds[0], options.clipBounds[1]);
+        this.setAxisClip("y", options.clipBounds[2], options.clipBounds[3]);
+        this.setAxisClip("z", options.clipBounds[4], options.clipBounds[5]);
       }
 
       if (options.scale !== undefined) {
@@ -6431,15 +6431,15 @@ var VolumeDrawable = /*#__PURE__*/function () {
       // merge to current channel options
       this.channelOptions[channelIndex] = Object.assign(this.channelOptions[channelIndex], options);
 
-      if (Object.hasOwnProperty.call(options, "enabled")) {
+      if (options.enabled !== undefined) {
         this.setVolumeChannelEnabled(channelIndex, options.enabled);
       }
 
-      if (Object.hasOwnProperty.call(options, "color")) {
+      if (options.color !== undefined) {
         this.updateChannelColor(channelIndex, options.color);
       }
 
-      if (Object.hasOwnProperty.call(options, "isosurfaceEnabled")) {
+      if (options.isosurfaceEnabled !== undefined) {
         var hasIso = this.hasIsosurface(channelIndex);
 
         if (hasIso !== options.isosurfaceEnabled) {
@@ -6449,34 +6449,34 @@ var VolumeDrawable = /*#__PURE__*/function () {
             // 127 is half of the intensity range 0..255
             var isovalue = 127;
 
-            if (Object.hasOwnProperty.call(options, "isovalue")) {
+            if (options.isovalue !== undefined) {
               isovalue = options.isovalue;
             } // 1.0 is fully opaque
 
 
             var isosurfaceOpacity = 1.0;
 
-            if (Object.hasOwnProperty.call(options, "isosurfaceOpacity")) {
+            if (options.isosurfaceOpacity !== undefined) {
               isosurfaceOpacity = options.isosurfaceOpacity;
             }
 
             this.createIsosurface(channelIndex, isovalue, isosurfaceOpacity, isosurfaceOpacity < 1.0);
           }
         } else if (options.isosurfaceEnabled) {
-          if (Object.hasOwnProperty.call(options, "isovalue")) {
+          if (options.isovalue !== undefined) {
             this.updateIsovalue(channelIndex, options.isovalue);
           }
 
-          if (Object.hasOwnProperty.call(options, "isosurfaceOpacity")) {
+          if (options.isosurfaceOpacity !== undefined) {
             this.updateOpacity(channelIndex, options.isosurfaceOpacity);
           }
         }
       } else {
-        if (Object.hasOwnProperty.call(options, "isovalue")) {
+        if (options.isovalue !== undefined) {
           this.updateIsovalue(channelIndex, options.isovalue);
         }
 
-        if (Object.hasOwnProperty.call(options, "isosurfaceOpacity")) {
+        if (options.isosurfaceOpacity !== undefined) {
           this.updateOpacity(channelIndex, options.isosurfaceOpacity);
         }
       }
@@ -6929,9 +6929,9 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.setGamma(this.gammaMin, this.gammaLevel, this.gammaMax);
       this.setFlipAxes(this.flipX, this.flipY, this.flipZ); // reset clip bounds
 
-      this.setAxisClip(0, this.bounds.bmin.x, this.bounds.bmax.x);
-      this.setAxisClip(1, this.bounds.bmin.y, this.bounds.bmax.y);
-      this.setAxisClip(2, this.bounds.bmin.z, this.bounds.bmax.z);
+      this.setAxisClip("x", this.bounds.bmin.x, this.bounds.bmax.x);
+      this.setAxisClip("y", this.bounds.bmin.y, this.bounds.bmax.y);
+      this.setAxisClip("z", this.bounds.bmin.z, this.bounds.bmax.z);
       this.updateClipRegion(this.bounds.bmin.x + 0.5, this.bounds.bmax.x + 0.5, this.bounds.bmin.y + 0.5, this.bounds.bmax.y + 0.5, this.bounds.bmin.z + 0.5, this.bounds.bmax.z + 0.5);
       this.setRayStepSizes(this.primaryRayStepSize, this.secondaryRayStepSize);
       this.setShowBoundingBox(this.showBoundingBox);
