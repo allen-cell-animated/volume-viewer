@@ -135,7 +135,7 @@ export default class Volume {
   private currentScale: Vector3;
   private physicalSize: Vector3;
   public normalizedPhysicalSize: Vector3;
-  public loaded: boolean;
+  private loaded: boolean;
   /* eslint-disable @typescript-eslint/naming-convention */
   public num_channels: number;
   public channel_names: string[];
