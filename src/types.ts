@@ -27,14 +27,14 @@ export interface FuseChannel {
    };
  */
 export interface VolumeChannelDisplayOptions {
-  enabled: boolean;
-  color: [number, number, number];
-  specularColor: [number, number, number];
-  emissiveColor: [number, number, number];
-  glossiness: number;
-  isosurfaceEnabled: boolean;
-  isovalue: number;
-  isosurfaceOpacity: number;
+  enabled?: boolean;
+  color?: [number, number, number];
+  specularColor?: [number, number, number];
+  emissiveColor?: [number, number, number];
+  glossiness?: number;
+  isosurfaceEnabled?: boolean;
+  isovalue?: number;
+  isosurfaceOpacity?: number;
 }
 
 /**

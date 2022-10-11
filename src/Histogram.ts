@@ -48,8 +48,8 @@ export default class Histogram {
   private bins: Uint32Array;
   private dataMin: number;
   private dataMax: number;
-  private maxBin: number;
   private nonzeroPixelCount: number;
+  public maxBin: number;
 
   constructor(data: Uint8Array) {
     // no more than 2^32 pixels of any one intensity in the data!?!?!

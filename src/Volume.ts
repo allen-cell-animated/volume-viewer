@@ -140,7 +140,7 @@ export default class Volume {
   public num_channels: number;
   public channel_names: string[];
   public channel_colors_default: [number, number, number][];
-  private pixel_size: [number, number, number];
+  public pixel_size: [number, number, number];
   /* eslint-enable @typescript-eslint/naming-convention */
 
   constructor(imageInfo: ImageInfo = getDefaultImageInfo()) {

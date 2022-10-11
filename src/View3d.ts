@@ -507,7 +507,7 @@ export class View3d {
    * @param {number=} oh Ignored.
    * @param {Object=} eOpts Ignored.
    */
-  resize(comp: HTMLElement | null, w: number, h: number, ow?: number, oh?: number, eOpts?: unknown): void {
+  resize(comp: HTMLElement | null, w?: number, h?: number, ow?: number, oh?: number, eOpts?: unknown): void {
     w = w || this.parentEl.offsetWidth;
     h = h || this.parentEl.offsetHeight;
     this.canvas3d.resize(comp, w, h, ow, oh, eOpts);
@@ -661,7 +661,7 @@ export class View3d {
    * @param {number} maxval 0..1, should be greater than minval
    * @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
    */
-  setAxisClip(volume: Volume, axis: number, minval: number, maxval: number, isOrthoAxis: boolean): void {
+  setAxisClip(volume: Volume, axis: "x" | "y" | "z", minval: number, maxval: number, isOrthoAxis: boolean): void {
     if (this.image) {
       this.image.setAxisClip(axis, minval, maxval, isOrthoAxis);
     }
