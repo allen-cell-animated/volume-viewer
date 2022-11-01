@@ -201,9 +201,9 @@ export default class VolumeLoader {
 
     const level0 = await openArray({ store: store, path: imagegroup + "/" + dataset0.path, mode: "r" });
     // full res info
-    const w = level0.meta.shape[4];
-    const h = level0.meta.shape[3];
-    const z = level0.meta.shape[2];
+    // const w = level0.meta.shape[4];
+    // const h = level0.meta.shape[3];
+    // const z = level0.meta.shape[2];
     const c = level0.meta.shape[1];
     const sizeT = level0.meta.shape[0];
     //console.log(`X=${w}, Y=${h}, Z=${z}, C=${c}, T=${sizeT}`);
