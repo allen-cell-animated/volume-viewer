@@ -133,12 +133,6 @@ vec4 sampleAs3DTexture(sampler2D tex, vec4 pos) {
   return bounds*retval;
 }
 
-vec4 sampleStack(sampler2D tex, vec4 pos) {
-  vec4 col = sampleAs3DTexture(tex, pos);
-  col = luma2Alpha(col, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);
-  return col;
-}
-
 bool intersectBox(in vec3 r_o, in vec3 r_d, in vec3 boxMin, in vec3 boxMax,
                   out float tnear, out float tfar) {
   // compute intersection of ray with all six bbox planes
@@ -172,9 +166,9 @@ vec4 accumulate(vec4 col, float s, vec4 C) {
 }
 
 vec4 accumulateMax(vec4 col, float s, vec4 C) {
-  if (col.x*col.w > C.x) { C.x = col.x*col.w; }
-  if (col.y*col.w > C.y) { C.y = col.y*col.w; }
-  if (col.z*col.w > C.z) { C.z = col.z*col.w; }
+  if (col.x > C.x) { C.x = col.x; }
+  if (col.y > C.y) { C.y = col.y; }
+  if (col.z > C.z) { C.z = col.z; }
   if (col.w > C.w) { C.w = col.w; }
   return C;
 }
@@ -218,7 +212,11 @@ vec4 integrateVolume(vec4 eye_o,vec4 eye_d,
     // scaling is handled by model transform and already accounted for before we get here.
     // AABB clip is independent of this and is only used to determine tnear and tfar.
     pos.xyz = (pos.xyz-(-0.5))/((0.5)-(-0.5)); //0.5 * (pos + 1.0); // map position from [boxMin, boxMax] to [0, 1] coordinates
-    col = sampleStack(textureAtlas,pos);
+
+    vec4 col = sampleAs3DTexture(textureAtlas, pos);
+    if (maxProject == 0) {
+      col = luma2Alpha(col, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);
+    }
 
     col.xyz *= BRIGHTNESS;
 
@@ -274,7 +272,7 @@ void main() {
   if (!hit) {
     // return background color if ray misses the cube
     // is this safe to do when there is other geometry / gObjects drawn?
-    gl_FragColor = vec4(0.0); //C1;//vec4(0.0);',
+    gl_FragColor = vec4(0.0); //C1;//vec4(0.0);
     return;
   }
 
