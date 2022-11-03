@@ -201,6 +201,8 @@ export default class VolumeLoader {
 
     const level0 = await openArray({ store: store, path: imagegroup + "/" + dataset0.path, mode: "r" });
     // full res info
+    // TODO leaving these commented out as they serve as a reminder of how to get the dims,
+    // and will almost certainly be reinstated at some point. Revisit next time this code is modified.
     // const w = level0.meta.shape[4];
     // const h = level0.meta.shape[3];
     // const z = level0.meta.shape[2];
