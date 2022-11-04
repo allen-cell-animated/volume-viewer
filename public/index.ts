@@ -1234,27 +1234,23 @@ function main() {
     });
   }
 
-  if (view3D.hasWebGL2()) {
-    const ptBtn = document.getElementById("ptBtn") as HTMLButtonElement;
-    ptBtn.disabled = false;
-    ptBtn.addEventListener("click", () => {
-      myState.isPT = !myState.isPT;
-      if (myState.isMP) {
-        myState.isMP = false;
-        view3D.setMaxProjectMode(myState.volume, false);
-      }
-      view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
-      view3D.updateLights(myState.lights);
-    });
+  const renderModeSelect = document.getElementById("renderMode");
+  const changeRenderMode = (pt: boolean, mp: boolean) => {
+    myState.isPT = pt;
+    myState.isMP = mp;
+    view3D.setVolumeRenderMode(pt ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+    view3D.setMaxProjectMode(myState.volume, mp);
   }
-  const mpBtn = document.getElementById("mpBtn");
-  mpBtn?.addEventListener("click", () => {
-    if (myState.isPT) {
-      myState.isPT = false;
-      view3D.setVolumeRenderMode(RENDERMODE_RAYMARCH);
+  renderModeSelect?.addEventListener("change", ({ currentTarget }) => {
+    if ((currentTarget as HTMLOptionElement)!.value === "PT") {
+      if (view3D.hasWebGL2()) {
+        changeRenderMode(true, false);
+      }
+    } else if ((currentTarget as HTMLOptionElement)!.value === "MP") {
+      changeRenderMode(false, true);
+    } else {
+      changeRenderMode(false, false);
     }
-    myState.isMP = !myState.isMP;
-    view3D.setMaxProjectMode(myState.volume, myState.isMP);
   });
   const screenshotBtn = document.getElementById("screenshotBtn");
   screenshotBtn?.addEventListener("click", () => {
