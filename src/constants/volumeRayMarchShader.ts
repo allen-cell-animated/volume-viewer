@@ -165,14 +165,6 @@ vec4 accumulate(vec4 col, float s, vec4 C) {
   return C;
 }
 
-vec4 accumulateMax(vec4 col, float s, vec4 C) {
-  if (col.x > C.x) { C.x = col.x; }
-  if (col.y > C.y) { C.y = col.y; }
-  if (col.z > C.z) { C.z = col.z; }
-  if (col.w > C.w) { C.w = col.w; }
-  return C;
-}
-
 vec4 integrateVolume(vec4 eye_o,vec4 eye_d,
                      float tnear,   float tfar,
                      float clipNear, float clipFar,
@@ -214,15 +206,13 @@ vec4 integrateVolume(vec4 eye_o,vec4 eye_d,
     pos.xyz = (pos.xyz-(-0.5))/((0.5)-(-0.5)); //0.5 * (pos + 1.0); // map position from [boxMin, boxMax] to [0, 1] coordinates
 
     vec4 col = sampleAs3DTexture(textureAtlas, pos);
-    if (maxProject == 0) {
-      col = luma2Alpha(col, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);
-    }
-
-    col.xyz *= BRIGHTNESS;
 
     if (maxProject != 0) {
-      C = accumulateMax(col, s, C);
+      col.xyz *= BRIGHTNESS;
+      C = max(col, C);
     } else {
+      col = luma2Alpha(col, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);
+      col.xyz *= BRIGHTNESS;
       // for practical use the density only matters for regular volume integration
       col.w *= DENSITY;
       C = accumulate(col, s, C);
