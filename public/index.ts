@@ -64,6 +64,7 @@ const myState: State = {
   secondaryRay: 1.0,
 
   isPT: false,
+  isMP: false,
 
   isTurntable: false,
   isAxisShowing: false,
@@ -150,6 +151,14 @@ function initLights() {
     (myState.lightColor[2] / 255.0) * myState.lightIntensity
   );
   view3D.updateLights(myState.lights);
+}
+
+function setInitialRenderMode() {
+  if (myState.isPT && myState.isMP) {
+    myState.isMP = false;
+  }
+  view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+  view3D.setMaxProjectMode(myState.volume, myState.isMP);
 }
 
 let gui: dat.GUI;
@@ -740,7 +749,7 @@ function loadImageData(jsonData, volumeData) {
     // the layout, then second row of first plane, etc)
     vol.setChannelDataFromVolume(i, volumeData[i]);
 
-    view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+    setInitialRenderMode();
 
     view3D.removeAllVolumes();
     view3D.addVolume(vol);
@@ -832,7 +841,7 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
 
       view3D.removeAllVolumes();
       view3D.addVolume(myState.volume);
-      view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+      setInitialRenderMode();
       // first 3 channels for starters
       for (let ch = 0; ch < myState.volume.num_channels; ++ch) {
         view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
@@ -860,7 +869,7 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
 
   view3D.removeAllVolumes();
   view3D.addVolume(myState.volume);
-  view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+  setInitialRenderMode();
 
   view3D.updateActiveChannels(myState.volume);
   view3D.updateLuts(myState.volume);
@@ -1230,10 +1239,23 @@ function main() {
     ptBtn.disabled = false;
     ptBtn.addEventListener("click", () => {
       myState.isPT = !myState.isPT;
+      if (myState.isMP) {
+        myState.isMP = false;
+        view3D.setMaxProjectMode(myState.volume, false);
+      }
       view3D.setVolumeRenderMode(myState.isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
       view3D.updateLights(myState.lights);
     });
   }
+  const mpBtn = document.getElementById("mpBtn");
+  mpBtn?.addEventListener("click", () => {
+    if (myState.isPT) {
+      myState.isPT = false;
+      view3D.setVolumeRenderMode(RENDERMODE_RAYMARCH);
+    }
+    myState.isMP = !myState.isMP;
+    view3D.setMaxProjectMode(myState.volume, myState.isMP);
+  });
   const screenshotBtn = document.getElementById("screenshotBtn");
   screenshotBtn?.addEventListener("click", () => {
     view3D.capture((dataUrl) => {
