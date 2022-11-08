@@ -193,10 +193,6 @@ export default class VolumeLoader {
     const imageIndex = 0;
     // there is one dataset for each multiscale level.
     const dataset0 = allmetadata.multiscales[imageIndex].datasets[0];
-    // technically there can be any number of coordinateTransformations
-    // but there must be only one of type "scale".
-    // Here I assume that is the only one.
-    const scale5d = dataset0.coordinateTransformations[0].scale;
 
     // TODO get metadata sizes for each level?  how inefficient is that?
     // update levelToLoad after we get size info about multiscales?
@@ -205,25 +201,31 @@ export default class VolumeLoader {
 
     const level0 = await openArray({ store: store, path: imagegroup + "/" + dataset0.path, mode: "r" });
     // full res info
-    const w = level0.meta.shape[4];
-    const h = level0.meta.shape[3];
-    const z = level0.meta.shape[2];
+    // TODO leaving these commented out as they serve as a reminder of how to get the dims,
+    // and will almost certainly be reinstated at some point. Revisit next time this code is modified.
+    // const w = level0.meta.shape[4];
+    // const h = level0.meta.shape[3];
+    // const z = level0.meta.shape[2];
     const c = level0.meta.shape[1];
     const sizeT = level0.meta.shape[0];
     //console.log(`X=${w}, Y=${h}, Z=${z}, C=${c}, T=${sizeT}`);
 
     // making a choice of a reduced level:
-    const downsampleZ = 2; // half the z
+    const downsampleZ = 1; // z/downsampleZ is number of z slices in reduced volume
     const levelToLoad = numlevels - 1; //1;
     const dataset2 = allmetadata.multiscales[imageIndex].datasets[levelToLoad];
     const level = await openArray({ store: store, path: imagegroup + "/" + dataset2.path, mode: "r" });
+    // technically there can be any number of coordinateTransformations
+    // but there must be only one of type "scale".
+    // Here I assume that is the only one.
+    const scale5d = dataset2.coordinateTransformations[0].scale;
 
     // reduced level info
     const tw = level.meta.shape[4];
     const th = level.meta.shape[3];
-
+    const tz = level.meta.shape[2];
     // compute rows and cols and atlas width and ht, given tw and th
-    const loadedZ = Math.ceil(z / downsampleZ);
+    const loadedZ = Math.ceil(tz / downsampleZ);
     const { nrows, ncols } = computePackedAtlasDims(loadedZ, tw, th);
     const atlaswidth = ncols * tw;
     const atlasheight = nrows * th;
@@ -234,13 +236,13 @@ export default class VolumeLoader {
     }
     /* eslint-disable @typescript-eslint/naming-convention */
     const imgdata: ImageInfo = {
-      width: w,
-      height: h,
+      width: tw, // TODO where should we capture the original w?
+      height: th, // TODO original h?
       channels: c,
       channel_names: chnames,
       rows: nrows,
       cols: ncols,
-      tiles: loadedZ,
+      tiles: loadedZ, // TODO original z????
       tile_width: tw,
       tile_height: th,
       // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
