@@ -43,6 +43,7 @@ export interface State {
   secondaryRay: number;
 
   isPT: boolean;
+  isMP: boolean;
 
   isTurntable: boolean;
   isAxisShowing: boolean;
