@@ -7156,7 +7156,7 @@ var VolumeLoader = /*#__PURE__*/function () {
     key: "loadZarr",
     value: function () {
       var _loadZarr = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(urlStore, imageName, t, onChannelLoaded) {
-        var store, imagegroup, data, allmetadata, numlevels, imageIndex, dataset0, scale5d, metadata, level0, w, h, z, c, sizeT, downsampleZ, levelToLoad, dataset2, level, tw, th, loadedZ, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, chnames, i, imgdata, vol, storepath, _loop2, _i;
+        var store, imagegroup, data, allmetadata, numlevels, imageIndex, dataset0, metadata, level0, c, sizeT, downsampleZ, levelToLoad, dataset2, level, scale5d, tw, th, tz, loadedZ, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, chnames, i, imgdata, vol, storepath, _loop2, _i;
 
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
           while (1) {
@@ -7180,50 +7180,53 @@ var VolumeLoader = /*#__PURE__*/function () {
 
                 imageIndex = 0; // there is one dataset for each multiscale level.
 
-                dataset0 = allmetadata.multiscales[imageIndex].datasets[0]; // technically there can be any number of coordinateTransformations
-                // but there must be only one of type "scale".
-                // Here I assume that is the only one.
-
-                scale5d = dataset0.coordinateTransformations[0].scale; // TODO get metadata sizes for each level?  how inefficient is that?
+                dataset0 = allmetadata.multiscales[imageIndex].datasets[0]; // TODO get metadata sizes for each level?  how inefficient is that?
                 // update levelToLoad after we get size info about multiscales?
 
                 metadata = allmetadata.omero;
-                _context.next = 15;
+                _context.next = 14;
                 return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openArray)({
                   store: store,
                   path: imagegroup + "/" + dataset0.path,
                   mode: "r"
                 });
 
-              case 15:
+              case 14:
                 level0 = _context.sent;
                 // full res info
-                w = level0.meta.shape[4];
-                h = level0.meta.shape[3];
-                z = level0.meta.shape[2];
+                // TODO leaving these commented out as they serve as a reminder of how to get the dims,
+                // and will almost certainly be reinstated at some point. Revisit next time this code is modified.
+                // const w = level0.meta.shape[4];
+                // const h = level0.meta.shape[3];
+                // const z = level0.meta.shape[2];
                 c = level0.meta.shape[1];
                 sizeT = level0.meta.shape[0]; //console.log(`X=${w}, Y=${h}, Z=${z}, C=${c}, T=${sizeT}`);
                 // making a choice of a reduced level:
 
-                downsampleZ = 2; // half the z
+                downsampleZ = 1; // z/downsampleZ is number of z slices in reduced volume
 
                 levelToLoad = numlevels - 1; //1;
 
                 dataset2 = allmetadata.multiscales[imageIndex].datasets[levelToLoad];
-                _context.next = 26;
+                _context.next = 22;
                 return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openArray)({
                   store: store,
                   path: imagegroup + "/" + dataset2.path,
                   mode: "r"
                 });
 
-              case 26:
+              case 22:
                 level = _context.sent;
-                // reduced level info
-                tw = level.meta.shape[4];
-                th = level.meta.shape[3]; // compute rows and cols and atlas width and ht, given tw and th
+                // technically there can be any number of coordinateTransformations
+                // but there must be only one of type "scale".
+                // Here I assume that is the only one.
+                scale5d = dataset2.coordinateTransformations[0].scale; // reduced level info
 
-                loadedZ = Math.ceil(z / downsampleZ);
+                tw = level.meta.shape[4];
+                th = level.meta.shape[3];
+                tz = level.meta.shape[2]; // compute rows and cols and atlas width and ht, given tw and th
+
+                loadedZ = Math.ceil(tz / downsampleZ);
                 _computePackedAtlasDi = computePackedAtlasDims(loadedZ, tw, th), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols;
                 atlaswidth = ncols * tw;
                 atlasheight = nrows * th;
@@ -7236,13 +7239,16 @@ var VolumeLoader = /*#__PURE__*/function () {
 
 
                 imgdata = {
-                  width: w,
-                  height: h,
+                  width: tw,
+                  // TODO where should we capture the original w?
+                  height: th,
+                  // TODO original h?
                   channels: c,
                   channel_names: chnames,
                   rows: nrows,
                   cols: ncols,
                   tiles: loadedZ,
+                  // TODO original z????
                   tile_width: tw,
                   tile_height: th,
                   // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
@@ -7301,7 +7307,7 @@ var VolumeLoader = /*#__PURE__*/function () {
 
                 return _context.abrupt("return", vol);
 
-              case 41:
+              case 39:
               case "end":
                 return _context.stop();
             }
