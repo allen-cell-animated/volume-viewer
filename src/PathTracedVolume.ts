@@ -610,6 +610,10 @@ export default class PathTracedVolume {
     this.resetProgress();
   }
 
+  setInterpolationActive(_active: boolean): void {
+    // no op... for now
+  }
+
   //////////////////////////////////////////
   //////////////////////////////////////////
 
@@ -642,9 +646,7 @@ export default class PathTracedVolume {
       }
     }
 
-    const unchanged = ch.every((elem, index) => {
-      return elem === this.viewChannels[index];
-    }, this);
+    const unchanged = ch.every((elem, index) => elem === this.viewChannels[index], this);
     if (unchanged) {
       return;
     }

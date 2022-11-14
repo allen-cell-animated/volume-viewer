@@ -41,6 +41,7 @@ uniform float isOrtho;
 uniform float orthoThickness;
 uniform float orthoScale;
 uniform int maxProject;
+uniform bool doInterpolation;
 uniform vec3 flipVolume;
 uniform vec3 volumeScale;
 
@@ -90,47 +91,66 @@ vec4 sampleAs3DTexture(sampler2D tex, vec4 pos) {
   vec2 loc0 = vec2(
     (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,
     (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);
+
+  if (!doInterpolation) {
+    loc0 = floor(loc0 * textureRes) / textureRes;
+  }
   // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y
   // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.
   loc0 = vec2(0.5/textureRes.x, 0.5/textureRes.y) + loc0*vec2(1.0-(ATLAS_X)/textureRes.x, 1.0-(ATLAS_Y)/textureRes.y);
+  if (doInterpolation) {
+    // interpolate between two slices
 
-  // interpolate between two slices
+    float z = (pos.z)*(nSlices-1.0);
+    float z0 = floor(z);
+    float t = z-z0; //mod(z, 1.0);
+    float z1 = min(z0+1.0, nSlices-1.0);
 
-  float z = (pos.z)*(nSlices-1.0);
-  float zfloor = floor(z);
-  float z0  = zfloor;
-  float z1 = (zfloor+1.0);
-  z1 = clamp(z1, 0.0, nSlices-1.0);
-  float t = z-zfloor; //mod(z, 1.0);',
+    // flipped:
+    if (flipVolume.z == -1.0) {
+      z0 = nSlices - z0 - 1.0;
+      z1 = nSlices - z1 - 1.0;
+      t = 1.0 - t;
+    }
 
-  // flipped:
-  if (flipVolume.z == -1.0) {
-    z0 = nSlices - z0 - 1.0;
-    z1 = nSlices - z1 - 1.0;
-    t = 1.0 - t;
+    // get slice offsets in texture atlas
+    vec2 o0 = offsetFrontBack(z0,ATLAS_X,ATLAS_Y);//*pix;
+    vec2 o1 = offsetFrontBack(z1,ATLAS_X,ATLAS_Y);//*pix;
+    o0 = clamp(o0, vec2(0.0,0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y)) + loc0;
+    o1 = clamp(o1, vec2(0.0,0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y)) + loc0;
+
+    vec4 slice0Color = texture2D(tex, o0);
+    vec4 slice1Color = texture2D(tex, o1);
+    // NOTE we could premultiply the mask in the fuse function,
+    // but that is slower to update the maskAlpha value than here in the shader.
+    // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?
+    float slice0Mask = texture2D(textureAtlasMask, o0).x;
+    float slice1Mask = texture2D(textureAtlasMask, o1).x;
+    // or use max for conservative 0 or 1 masking?
+    float maskVal = mix(slice0Mask, slice1Mask, t);
+    // take mask from 0..1 to alpha..1
+    maskVal = mix(maskVal, 1.0, maskAlpha);
+    vec4 retval = mix(slice0Color, slice1Color, t);
+    // only mask the rgb, not the alpha(?)
+    retval.rgb *= maskVal;
+    return bounds*retval;
+  } else {
+    float z = min(floor(pos.z * nSlices), nSlices-1.0);
+    
+    if (flipVolume.z == -1.0) {
+      z = nSlices - z - 1.0;
+    }
+
+    vec2 o = offsetFrontBack(z, ATLAS_X, ATLAS_Y);
+    o = clamp(o, vec2(0.0, 0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y)) + loc0;
+    vec4 voxelColor = texture2D(tex, o);
+
+    float voxelMask = texture2D(textureAtlasMask, o).x;
+    voxelMask = mix(voxelMask, 1.0, maskAlpha);
+    voxelColor.rgb *= voxelMask;
+
+    return bounds*voxelColor;
   }
-
-  // get slice offsets in texture atlas
-  vec2 o0 = offsetFrontBack(z0,ATLAS_X,ATLAS_Y);//*pix;
-  vec2 o1 = offsetFrontBack(z1,ATLAS_X,ATLAS_Y);//*pix;
-  o0 = clamp(o0, vec2(0.0,0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y)) + loc0;
-  o1 = clamp(o1, vec2(0.0,0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y)) + loc0;
-
-  vec4 slice0Color = texture2D(tex, o0);
-  vec4 slice1Color = texture2D(tex, o1);
-  // NOTE we could premultiply the mask in the fuse function,
-  // but that is slower to update the maskAlpha value than here in the shader.
-  // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?
-  float slice0Mask = texture2D(textureAtlasMask, o0).x;
-  float slice1Mask = texture2D(textureAtlasMask, o1).x;
-  // or use max for conservative 0 or 1 masking?
-  float maskVal = mix(slice0Mask, slice1Mask, t);
-  // take mask from 0..1 to alpha..1
-  maskVal = mix(maskVal, 1.0, maskAlpha);
-  vec4 retval = mix(slice0Color, slice1Color, t);
-  // only mask the rgb, not the alpha(?)
-  retval.rgb *= maskVal;
-  return bounds*retval;
 }
 
 bool intersectBox(in vec3 r_o, in vec3 r_d, in vec3 boxMin, in vec3 boxMax,
@@ -367,6 +387,10 @@ export const rayMarchingShaderUniforms = {
   maxProject: {
     type: "i",
     value: 0,
+  },
+  doInterpolation: {
+    type: "b",
+    value: false,
   },
   flipVolume: {
     type: "v3",
