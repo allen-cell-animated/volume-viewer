@@ -44,6 +44,7 @@ export interface State {
 
   isPT: boolean;
   isMP: boolean;
+  interpolationActive: boolean;
 
   isTurntable: boolean;
   isAxisShowing: boolean;

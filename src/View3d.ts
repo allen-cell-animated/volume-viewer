@@ -502,6 +502,7 @@ export class View3d {
     if (this.image) {
       this.image.setInterpolationActive(active);
     }
+    this.redraw();
   }
 
   /**

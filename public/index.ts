@@ -18,7 +18,7 @@ import { State } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
 
 const loadTimeSeries = false;
-const loadTestData = true;
+const loadTestData = false;
 
 let view3D: View3d;
 
@@ -65,6 +65,7 @@ const myState: State = {
 
   isPT: false,
   isMP: false,
+  interpolationActive: true,
 
   isTurntable: false,
   isAxisShowing: false,
@@ -1252,6 +1253,13 @@ function main() {
       changeRenderMode(false, false);
     }
   });
+
+  const interpolateBtn = document.getElementById("interpolateBtn");
+  interpolateBtn?.addEventListener("click", () => {
+    myState.interpolationActive = !myState.interpolationActive;
+    view3D.setInterpolationActive(myState.volume, myState.interpolationActive);
+  });
+
   const screenshotBtn = document.getElementById("screenshotBtn");
   screenshotBtn?.addEventListener("click", () => {
     view3D.capture((dataUrl) => {
