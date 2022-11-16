@@ -194,8 +194,8 @@ export default class RayMarchedAtlasVolume {
     }
   }
 
-  public setInterpolationActive(active: boolean): void {
-    this.setUniform("doInterpolation", active);
+  public setInterpolationEnabled(active: boolean): void {
+    this.setUniform("interpolationEnabled", active);
   }
 
   public viewpointMoved(): void {

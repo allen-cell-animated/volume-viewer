@@ -498,9 +498,9 @@ export class View3d {
     }
   }
 
-  setInterpolationActive(volume: Volume, active: boolean): void {
+  setInterpolationEnabled(volume: Volume, active: boolean): void {
     if (this.image) {
-      this.image.setInterpolationActive(active);
+      this.image.setInterpolationEnabled(active);
     }
     this.redraw();
   }

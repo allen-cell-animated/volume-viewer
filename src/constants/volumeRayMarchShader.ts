@@ -41,7 +41,7 @@ uniform float isOrtho;
 uniform float orthoThickness;
 uniform float orthoScale;
 uniform int maxProject;
-uniform bool doInterpolation;
+uniform bool interpolationEnabled;
 uniform vec3 flipVolume;
 uniform vec3 volumeScale;
 
@@ -92,7 +92,7 @@ vec4 sampleAs3DTexture(sampler2D tex, vec4 pos) {
     (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,
     (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);
 
-  if (doInterpolation) {
+  if (interpolationEnabled) {
     // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y
     // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.
     loc0 = vec2(0.5/textureRes.x, 0.5/textureRes.y) + loc0*vec2(1.0-(ATLAS_X)/textureRes.x, 1.0-(ATLAS_Y)/textureRes.y);
@@ -390,7 +390,7 @@ export const rayMarchingShaderUniforms = {
     type: "i",
     value: 0,
   },
-  doInterpolation: {
+  interpolationEnabled: {
     type: "b",
     value: true,
   },

@@ -1257,7 +1257,7 @@ function main() {
   const interpolateBtn = document.getElementById("interpolateBtn");
   interpolateBtn?.addEventListener("click", () => {
     myState.interpolationActive = !myState.interpolationActive;
-    view3D.setInterpolationActive(myState.volume, myState.interpolationActive);
+    view3D.setInterpolationEnabled(myState.volume, myState.interpolationActive);
   });
 
   const screenshotBtn = document.getElementById("screenshotBtn");

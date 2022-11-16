@@ -610,7 +610,7 @@ export default class PathTracedVolume {
     this.resetProgress();
   }
 
-  setInterpolationActive(_active: boolean): void {
+  setInterpolationEnabled(_active: boolean): void {
     // no op... for now
   }
 

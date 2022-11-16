@@ -291,8 +291,8 @@ export default class VolumeDrawable {
     this.volumeRendering.setIsOrtho(isOrtho);
   }
 
-  setInterpolationActive(active: boolean): void {
-    this.volumeRendering.setInterpolationActive(active);
+  setInterpolationEnabled(active: boolean): void {
+    this.volumeRendering.setInterpolationEnabled(active);
   }
 
   setOrthoThickness(value: number): void {
