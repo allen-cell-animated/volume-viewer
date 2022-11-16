@@ -390,7 +390,7 @@ export const rayMarchingShaderUniforms = {
   },
   doInterpolation: {
     type: "b",
-    value: false,
+    value: true,
   },
   flipVolume: {
     type: "v3",

@@ -269,11 +269,7 @@ export default class Volume {
 
   onChannelLoaded(batch: number[]): void {
     // check to see if all channels are now loaded, and fire an event(?)
-    if (
-      this.channels.every(function (element, _index, _array) {
-        return element.loaded;
-      })
-    ) {
+    if (this.channels.every((element) => element.loaded)) {
       this.loaded = true;
     }
     for (let i = 0; i < this.volumeDataObservers.length; ++i) {
