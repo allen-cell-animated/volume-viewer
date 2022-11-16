@@ -96,8 +96,8 @@ vec4 sampleAs3DTexture(sampler2D tex, vec4 pos) {
     // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y
     // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.
     loc0 = vec2(0.5/textureRes.x, 0.5/textureRes.y) + loc0*vec2(1.0-(ATLAS_X)/textureRes.x, 1.0-(ATLAS_Y)/textureRes.y);
+    
     // interpolate between two slices
-
     float z = (pos.z)*(nSlices-1.0);
     float z0 = floor(z);
     float t = z-z0; //mod(z, 1.0);
@@ -132,6 +132,7 @@ vec4 sampleAs3DTexture(sampler2D tex, vec4 pos) {
     retval.rgb *= maskVal;
     return bounds*retval;
   } else {
+    // No interpolation - sample just one slice at a pixel center
     loc0 = floor(loc0 * textureRes) / textureRes;
     loc0 += vec2(0.5/textureRes.x, 0.5/textureRes.y);
 
@@ -145,6 +146,7 @@ vec4 sampleAs3DTexture(sampler2D tex, vec4 pos) {
     o = clamp(o, vec2(0.0, 0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y)) + loc0;
     vec4 voxelColor = texture2D(tex, o);
 
+    // Apply mask
     float voxelMask = texture2D(textureAtlasMask, o).x;
     voxelMask = mix(voxelMask, 1.0, maskAlpha);
     voxelColor.rgb *= voxelMask;
