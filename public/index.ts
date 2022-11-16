@@ -18,7 +18,7 @@ import { State } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
 
 const loadTimeSeries = false;
-const loadTestData = false;
+const loadTestData = true;
 
 let view3D: View3d;
 
