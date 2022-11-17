@@ -610,8 +610,9 @@ export default class PathTracedVolume {
     this.resetProgress();
   }
 
-  setInterpolationEnabled(_active: boolean): void {
-    // no op... for now
+  setInterpolationEnabled(active: boolean): void {
+    this.volumeTexture.minFilter = this.volumeTexture.magFilter = active ? LinearFilter : NearestFilter;
+    this.volumeTexture.needsUpdate = true;
   }
 
   //////////////////////////////////////////
