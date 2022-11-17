@@ -206,7 +206,7 @@ vec4 integrateVolume(vec4 eye_o,vec4 eye_d,
   float invstep = (tfar-tnear)/csteps;
   // special-casing the single slice to remove the random ray dither.
   // this removes a Moire pattern visible in single slice images, which we want to view as 2D images as best we can.
-  float r = (SLICES==1.0) ?  0.0 : 0.5 - 1.0*rand(eye_d.xy);
+  float r = (SLICES==1.0) ? 0.0 : rand(eye_d.xy);
   // if ortho and clipped, make step size smaller so we still get same number of steps
   float tstep = invstep*orthoThickness;
   float tfarsurf = r*tstep;
