@@ -139,7 +139,9 @@ vec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {
     (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,
     (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);
 
-  // No interpolation - sample just one slice at a pixel center
+  // No interpolation - sample just one slice at a pixel center.
+  // Ideally this would be accomplished in part by switching this texture to linear
+  //   filtering, but three makes this difficult to do through a WebGLRenderTarget.
   loc0 = floor(loc0 * textureRes) / textureRes;
   loc0 += vec2(0.5/textureRes.x, 0.5/textureRes.y);
 
