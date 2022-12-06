@@ -498,6 +498,13 @@ export class View3d {
     }
   }
 
+  setInterpolationEnabled(volume: Volume, active: boolean): void {
+    if (this.image) {
+      this.image.setInterpolationEnabled(active);
+    }
+    this.redraw();
+  }
+
   /**
    * Notify the view that it has been resized.  This will automatically be connected to the window when the View3d is created.
    * @param {HTMLElement=} comp Ignored.

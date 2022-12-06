@@ -610,6 +610,11 @@ export default class PathTracedVolume {
     this.resetProgress();
   }
 
+  setInterpolationEnabled(active: boolean): void {
+    this.volumeTexture.minFilter = this.volumeTexture.magFilter = active ? LinearFilter : NearestFilter;
+    this.volumeTexture.needsUpdate = true;
+  }
+
   //////////////////////////////////////////
   //////////////////////////////////////////
 
@@ -642,9 +647,7 @@ export default class PathTracedVolume {
       }
     }
 
-    const unchanged = ch.every((elem, index) => {
-      return elem === this.viewChannels[index];
-    }, this);
+    const unchanged = ch.every((elem, index) => elem === this.viewChannels[index], this);
     if (unchanged) {
       return;
     }

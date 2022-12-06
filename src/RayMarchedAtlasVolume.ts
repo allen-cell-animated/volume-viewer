@@ -194,6 +194,10 @@ export default class RayMarchedAtlasVolume {
     }
   }
 
+  public setInterpolationEnabled(active: boolean): void {
+    this.setUniform("interpolationEnabled", active);
+  }
+
   public viewpointMoved(): void {
     // no op
   }
@@ -258,7 +262,10 @@ export default class RayMarchedAtlasVolume {
   //////////////////////////////////////////
   //////////////////////////////////////////
 
-  private setUniform(name, value) {
+  private setUniform<U extends keyof typeof rayMarchingShaderUniforms>(
+    name: U,
+    value: typeof rayMarchingShaderUniforms[U]["value"]
+  ) {
     if (!this.uniforms[name]) {
       return;
     }
