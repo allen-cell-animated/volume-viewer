@@ -337,11 +337,17 @@ export class ThreeJsPanel {
     const SCALE_BAR_MAX_WIDTH = 150;
     const UNIT = "µm";
     const worldSpaceMaxWidth = this.orthoScale * SCALE_BAR_MAX_WIDTH * 0.10833333333333332;
-    // Round off all but the most significant digit of projectedWidth
-    const div10 = 10 ** Math.floor(Math.log10(worldSpaceMaxWidth));
+    // Round off all but the most significant digit of worldSpaceMaxWidth
+    const digits = Math.floor(Math.log10(worldSpaceMaxWidth));
+    const div10 = 10 ** digits;
     const scaleValue = Math.floor(worldSpaceMaxWidth / div10) * div10;
-    this.orthoScaleBarElement.innerHTML = `${scaleValue}${UNIT}`;
-    this.orthoScaleBarElement.style.width = SCALE_BAR_MAX_WIDTH * (scaleValue / worldSpaceMaxWidth) + "px";
+    let scaleStr = scaleValue.toString();
+    if (digits < 1) {
+      // Handle irrational floating point values (e.g. 0.30000000000000004) 
+      scaleStr = scaleStr.slice(0, Math.abs(digits) + 2);
+    }
+    this.orthoScaleBarElement.innerHTML = `${scaleStr}${UNIT}`;
+    this.orthoScaleBarElement.style.width = `${SCALE_BAR_MAX_WIDTH * (scaleValue / worldSpaceMaxWidth)}px`;
   }
 
   setOrthoScaleBarVisible(visible: boolean): void {
