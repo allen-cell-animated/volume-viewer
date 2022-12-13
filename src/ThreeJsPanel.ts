@@ -29,7 +29,7 @@ export class ThreeJsPanel {
   private canvas: HTMLCanvasElement;
   public scene: Scene;
   private zooming: boolean;
-  public animateFuncs: ((ThreeJsPanel) => void)[];
+  public animateFuncs: ((panel: ThreeJsPanel) => void)[];
   private inRenderLoop: boolean;
   private requestedRender: number;
   public hasWebGL2: boolean;
@@ -58,7 +58,9 @@ export class ThreeJsPanel {
   private axisHelperObject: Object3D;
   private axisCamera: Camera;
 
-  private dataurlcallback?: (string) => void;
+  private orthoScaleBarElement: HTMLDivElement;
+
+  private dataurlcallback?: (url: string) => void;
 
   constructor(parentElement: HTMLElement, _useWebGL2: boolean) {
     this.containerdiv = document.createElement("div");
@@ -186,6 +188,8 @@ export class ThreeJsPanel {
     this.controls = this.perspectiveControls;
 
     this.setupAxisHelper();
+    this.orthoScaleBarElement = document.createElement("div");
+    this.setupOrthoScaleBar();
   }
 
   updateCameraFocus(fov: number, _focalDistance: number, _apertureSize: number): void {
@@ -308,6 +312,42 @@ export class ThreeJsPanel {
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
 
+  setupOrthoScaleBar(): void {
+    const orthoScaleBarStyle: Partial<CSSStyleDeclaration> = {
+      border: "1px solid white",
+      borderTop: "none",
+      height: "10px",
+      display: "none",
+      position: "absolute",
+      right: "15px",
+      bottom: "50px",
+      textAlign: "right",
+      lineHeight: "0px",
+      boxSizing: "border-box",
+      paddingRight: "10px",
+    };
+    Object.keys(orthoScaleBarStyle).forEach((property) => {
+      this.orthoScaleBarElement.style[property] = orthoScaleBarStyle[property];
+    });
+    this.containerdiv.appendChild(this.orthoScaleBarElement);
+    this.updateOrthoScaleBar();
+  }
+
+  updateOrthoScaleBar(): void {
+    const SCALE_BAR_MAX_WIDTH = 150;
+    const UNIT = "µm";
+    const worldSpaceMaxWidth = this.orthoScale * SCALE_BAR_MAX_WIDTH * 0.10833333333333332;
+    // Round off all but the most significant digit of projectedWidth
+    const div10 = 10 ** Math.floor(Math.log10(worldSpaceMaxWidth));
+    const scaleValue = Math.floor(worldSpaceMaxWidth / div10) * div10;
+    this.orthoScaleBarElement.innerHTML = `${scaleValue}${UNIT}`;
+    this.orthoScaleBarElement.style.width = SCALE_BAR_MAX_WIDTH * (scaleValue / worldSpaceMaxWidth) + "px";
+  }
+
+  setOrthoScaleBarVisible(visible: boolean): void {
+    this.orthoScaleBarElement.style.display = visible ? "" : "none";
+  }
+
   setAutoRotate(rotate: boolean): void {
     this.controls.autoRotate = rotate;
   }
@@ -355,23 +395,27 @@ export class ThreeJsPanel {
         this.replaceCamera(this.orthographicCameraX);
         this.replaceControls(this.orthoControlsX);
         this.axisHelperObject.rotation.set(0, Math.PI * 0.5, 0);
+        this.setOrthoScaleBarVisible(true);
         break;
       case "XZ":
       case "Y":
         this.replaceCamera(this.orthographicCameraY);
         this.replaceControls(this.orthoControlsY);
         this.axisHelperObject.rotation.set(Math.PI * 0.5, 0, 0);
+        this.setOrthoScaleBarVisible(true);
         break;
       case "XY":
       case "Z":
         this.replaceCamera(this.orthographicCameraZ);
         this.replaceControls(this.orthoControlsZ);
         this.axisHelperObject.rotation.set(0, 0, 0);
+        this.setOrthoScaleBarVisible(true);
         break;
       default:
         this.replaceCamera(this.perspectiveCamera);
         this.replaceControls(this.perspectiveControls);
         this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
+        this.setOrthoScaleBarVisible(false);
         break;
     }
   }
@@ -438,6 +482,7 @@ export class ThreeJsPanel {
       this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
     } else {
       this.orthoScale = this.controls.scale;
+      this.updateOrthoScaleBar();
     }
 
     // do whatever we have to do before the main render of this.scene
