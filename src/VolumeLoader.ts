@@ -186,53 +186,58 @@ export default class VolumeLoader {
 
     // get top-level metadata for this zarr image
     const allmetadata = await data.attrs.asObject();
-    // take the first multiscales entry
-    const numlevels = allmetadata.multiscales[0].datasets.length;
-    // get raw scaling for level 0
     // each entry of multiscales is a multiscale image.
+    // take the first multiscales entry
     const imageIndex = 0;
-    // there is one dataset for each multiscale level.
-    const dataset0 = allmetadata.multiscales[imageIndex].datasets[0];
+    const multiscales = allmetadata.multiscales[imageIndex].datasets;
+    const numlevels = multiscales.length;
 
-    // TODO get metadata sizes for each level?  how inefficient is that?
-    // update levelToLoad after we get size info about multiscales?
+    // get all shapes
+    for (const i in multiscales) {
+      const level = await openArray({ store: store, path: imagegroup + "/" + multiscales[i].path, mode: "r" });
+      // just stick it in multiscales for now.
+      multiscales[i].shape = level.meta.shape;
+    }
+    console.log(multiscales);
 
-    const metadata = allmetadata.omero;
+    const downsampleZ = 2; // z/downsampleZ is number of z slices in reduced volume
 
-    const level0 = await openArray({ store: store, path: imagegroup + "/" + dataset0.path, mode: "r" });
-    // full res info
-    // TODO leaving these commented out as they serve as a reminder of how to get the dims,
-    // and will almost certainly be reinstated at some point. Revisit next time this code is modified.
-    // const w = level0.meta.shape[4];
-    // const h = level0.meta.shape[3];
-    // const z = level0.meta.shape[2];
-    const c = level0.meta.shape[1];
-    const sizeT = level0.meta.shape[0];
-    //console.log(`X=${w}, Y=${h}, Z=${z}, C=${c}, T=${sizeT}`);
+    // update levelToLoad after we get size info about multiscales.
+    // decide to max out at a 4k x 4k texture.
+    const maxAtlasEdge = 4096;
+    let levelToLoad = numlevels - 1;
+    for (let i = 0; i < multiscales.length; ++i) {
+      // estimate atlas size:
+      const s = (multiscales[i].shape[2] / downsampleZ) * multiscales[i].shape[3] * multiscales[i].shape[4];
+      if (s / maxAtlasEdge <= maxAtlasEdge) {
+        levelToLoad = numlevels - 1 - i;
+        break;
+      }
+    }
 
-    // making a choice of a reduced level:
-    const downsampleZ = 1; // z/downsampleZ is number of z slices in reduced volume
-    const levelToLoad = numlevels - 1; //1;
-    const dataset2 = allmetadata.multiscales[imageIndex].datasets[levelToLoad];
-    const level = await openArray({ store: store, path: imagegroup + "/" + dataset2.path, mode: "r" });
+    const dataset2 = multiscales[levelToLoad];
+    const c = dataset2.shape[1];
+    const sizeT = dataset2.shape[0];
+
     // technically there can be any number of coordinateTransformations
     // but there must be only one of type "scale".
     // Here I assume that is the only one.
     const scale5d = dataset2.coordinateTransformations[0].scale;
+    const tw = dataset2.shape[4];
+    const th = dataset2.shape[3];
+    const tz = dataset2.shape[2];
 
-    // reduced level info
-    const tw = level.meta.shape[4];
-    const th = level.meta.shape[3];
-    const tz = level.meta.shape[2];
     // compute rows and cols and atlas width and ht, given tw and th
     const loadedZ = Math.ceil(tz / downsampleZ);
     const { nrows, ncols } = computePackedAtlasDims(loadedZ, tw, th);
     const atlaswidth = ncols * tw;
     const atlasheight = nrows * th;
+    console.log("atlas width and height: " + atlaswidth + " " + atlasheight);
 
+    const displayMetadata = allmetadata.omero;
     const chnames: string[] = [];
-    for (let i = 0; i < metadata.channels.length; ++i) {
-      chnames.push(metadata.channels[i].label);
+    for (let i = 0; i < displayMetadata.channels.length; ++i) {
+      chnames.push(displayMetadata.channels[i].label);
     }
     /* eslint-disable @typescript-eslint/naming-convention */
     const imgdata: ImageInfo = {
@@ -252,8 +257,8 @@ export default class VolumeLoader {
       pixel_size_x: scale5d[4],
       pixel_size_y: scale5d[3],
       pixel_size_z: scale5d[2] * downsampleZ,
-      name: metadata.name,
-      version: metadata.version,
+      name: displayMetadata.name,
+      version: displayMetadata.version,
       transform: {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],
