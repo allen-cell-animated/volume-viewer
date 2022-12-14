@@ -257,7 +257,9 @@ export default class VolumeLoader {
         multiscales[i].shape[spatialAxes[1]] *
         multiscales[i].shape[spatialAxes[2]];
       if (s / maxAtlasEdge <= maxAtlasEdge) {
-        levelToLoad = numlevels - 1 - i;
+        console.log("Will load level " + i);
+        console.log(multiscales[i]);
+        levelToLoad = i;
         break;
       }
     }
