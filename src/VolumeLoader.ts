@@ -264,17 +264,17 @@ export default class VolumeLoader {
       }
     }
 
-    const dataset2 = multiscales[levelToLoad];
-    const c = hasC ? dataset2.shape[axisTCZYX[1]] : 1;
-    const sizeT = hasT ? dataset2.shape[axisTCZYX[0]] : 1;
+    const dataset = multiscales[levelToLoad];
+    const c = hasC ? dataset.shape[axisTCZYX[1]] : 1;
+    const sizeT = hasT ? dataset.shape[axisTCZYX[0]] : 1;
 
     // technically there can be any number of coordinateTransformations
     // but there must be only one of type "scale".
     // Here I assume that is the only one.
-    const scale5d = dataset2.coordinateTransformations[0].scale;
-    const tw = dataset2.shape[spatialAxes[2]];
-    const th = dataset2.shape[spatialAxes[1]];
-    const tz = dataset2.shape[spatialAxes[0]];
+    const scale5d = dataset.coordinateTransformations[0].scale;
+    const tw = dataset.shape[spatialAxes[2]];
+    const th = dataset.shape[spatialAxes[1]];
+    const tz = dataset.shape[spatialAxes[0]];
 
     // compute rows and cols and atlas width and ht, given tw and th
     const loadedZ = Math.ceil(tz / downsampleZ);
@@ -319,7 +319,7 @@ export default class VolumeLoader {
     // got some data, now let's construct the volume.
     const vol = new Volume(imgdata);
 
-    const storepath = imagegroup + "/" + dataset2.path;
+    const storepath = imagegroup + "/" + dataset.path;
     // do each channel on a worker
     for (let i = 0; i < c; ++i) {
       const worker = new Worker(new URL("./workers/FetchZarrWorker", import.meta.url));
