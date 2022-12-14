@@ -190,6 +190,44 @@ export default class VolumeLoader {
     // take the first multiscales entry
     const imageIndex = 0;
     const multiscales = allmetadata.multiscales[imageIndex].datasets;
+    const axes = allmetadata.multiscales[imageIndex].axes;
+
+    let hasT = false;
+    let hasC = false;
+    const axisTCZYX = [-1, -1, -1, -1, -1];
+    for (let i = 0; i < axes.length; ++i) {
+      const axis = axes[i];
+      if (axis.name === "t") {
+        hasT = true;
+        axisTCZYX[0] = i;
+      } else if (axis.name === "c") {
+        hasC = true;
+        axisTCZYX[1] = i;
+      } else if (axis.name === "z") {
+        axisTCZYX[2] = i;
+      } else if (axis.name === "y") {
+        axisTCZYX[3] = i;
+      } else if (axis.name === "x") {
+        axisTCZYX[4] = i;
+      } else {
+        console.log("ERROR: UNRECOGNIZED AXIS " + axis.name);
+      }
+    }
+    // ZYX
+    const spatialAxes: number[] = [];
+    if (axisTCZYX[2] > -1) {
+      spatialAxes.push(axisTCZYX[2]);
+    }
+    if (axisTCZYX[3] > -1) {
+      spatialAxes.push(axisTCZYX[3]);
+    }
+    if (axisTCZYX[4] > -1) {
+      spatialAxes.push(axisTCZYX[4]);
+    }
+    if (spatialAxes.length != 3) {
+      console.log("ERROR: expect a z,y,and x axis.");
+    }
+
     const numlevels = multiscales.length;
 
     // get all shapes
@@ -197,6 +235,11 @@ export default class VolumeLoader {
       const level = await openArray({ store: store, path: imagegroup + "/" + multiscales[i].path, mode: "r" });
       // just stick it in multiscales for now.
       multiscales[i].shape = level.meta.shape;
+      if (multiscales[i].shape.length != axes.length) {
+        console.log(
+          "ERROR: shape length " + multiscales[i].shape.length + " does not match axes length " + axes.length
+        );
+      }
     }
     console.log(multiscales);
 
@@ -205,10 +248,14 @@ export default class VolumeLoader {
     // update levelToLoad after we get size info about multiscales.
     // decide to max out at a 4k x 4k texture.
     const maxAtlasEdge = 4096;
+    // default to lowest level unless we find a better one
     let levelToLoad = numlevels - 1;
     for (let i = 0; i < multiscales.length; ++i) {
       // estimate atlas size:
-      const s = (multiscales[i].shape[2] / downsampleZ) * multiscales[i].shape[3] * multiscales[i].shape[4];
+      const s =
+        (multiscales[i].shape[spatialAxes[0]] / downsampleZ) *
+        multiscales[i].shape[spatialAxes[1]] *
+        multiscales[i].shape[spatialAxes[2]];
       if (s / maxAtlasEdge <= maxAtlasEdge) {
         levelToLoad = numlevels - 1 - i;
         break;
@@ -216,16 +263,16 @@ export default class VolumeLoader {
     }
 
     const dataset2 = multiscales[levelToLoad];
-    const c = dataset2.shape[1];
-    const sizeT = dataset2.shape[0];
+    const c = hasC ? dataset2.shape[axisTCZYX[1]] : 1;
+    const sizeT = hasT ? dataset2.shape[axisTCZYX[0]] : 1;
 
     // technically there can be any number of coordinateTransformations
     // but there must be only one of type "scale".
     // Here I assume that is the only one.
     const scale5d = dataset2.coordinateTransformations[0].scale;
-    const tw = dataset2.shape[4];
-    const th = dataset2.shape[3];
-    const tz = dataset2.shape[2];
+    const tw = dataset2.shape[spatialAxes[2]];
+    const th = dataset2.shape[spatialAxes[1]];
+    const tz = dataset2.shape[spatialAxes[0]];
 
     // compute rows and cols and atlas width and ht, given tw and th
     const loadedZ = Math.ceil(tz / downsampleZ);
@@ -254,9 +301,9 @@ export default class VolumeLoader {
       // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
       atlas_width: atlaswidth,
       atlas_height: atlasheight,
-      pixel_size_x: scale5d[4],
-      pixel_size_y: scale5d[3],
-      pixel_size_z: scale5d[2] * downsampleZ,
+      pixel_size_x: scale5d[spatialAxes[2]],
+      pixel_size_y: scale5d[spatialAxes[1]],
+      pixel_size_z: scale5d[spatialAxes[0]] * downsampleZ,
       name: displayMetadata.name,
       version: displayMetadata.version,
       transform: {
@@ -289,8 +336,8 @@ export default class VolumeLoader {
       };
       worker.postMessage({
         urlStore: urlStore,
-        time: Math.min(t, sizeT),
-        channel: i,
+        time: hasT ? Math.min(t, sizeT) : -1,
+        channel: hasC ? i : -1,
         downsampleZ: downsampleZ,
         path: storepath,
       });

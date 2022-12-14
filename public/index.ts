@@ -1285,6 +1285,7 @@ function main() {
     //fetchTiff("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif", 0);
     //fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/Lamin_multi-06-Deskew-28.zarr", "Image_0", 0);
     fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr", "", 0);
+    //fetchZarr("https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr ", "", 0);
     //fetchZarr("http://localhost:9020/example-data/AICS-12_143.zarr", "AICS-12_143", 0);
     //fetchImage("AICS-12_881_atlas.json", "");
   } else {
