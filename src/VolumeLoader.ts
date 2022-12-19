@@ -210,7 +210,7 @@ export default class VolumeLoader {
       } else if (axis.name === "x") {
         axisTCZYX[4] = i;
       } else {
-        console.log("ERROR: UNRECOGNIZED AXIS " + axis.name);
+        console.log("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
       }
     }
     // ZYX
@@ -225,7 +225,7 @@ export default class VolumeLoader {
       spatialAxes.push(axisTCZYX[4]);
     }
     if (spatialAxes.length != 3) {
-      console.log("ERROR: expect a z,y,and x axis.");
+      console.log("ERROR: zarr loader expects a z, y, and x axis.");
     }
 
     const numlevels = multiscales.length;
