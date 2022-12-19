@@ -241,7 +241,6 @@ export default class VolumeLoader {
         );
       }
     }
-    console.log(multiscales);
 
     const downsampleZ = 2; // z/downsampleZ is number of z slices in reduced volume
 
@@ -258,7 +257,6 @@ export default class VolumeLoader {
         multiscales[i].shape[spatialAxes[2]];
       if (s / maxAtlasEdge <= maxAtlasEdge) {
         console.log("Will load level " + i);
-        console.log(multiscales[i]);
         levelToLoad = i;
         break;
       }
