@@ -59,6 +59,7 @@ export class ThreeJsPanel {
   private axisCamera: Camera;
 
   private orthoScaleBarElement: HTMLDivElement;
+  private scaleBarUnit?: string;
 
   private dataurlcallback?: (url: string) => void;
 
@@ -321,8 +322,10 @@ export class ThreeJsPanel {
       position: "absolute",
       right: "15px",
       bottom: "50px",
+      color: "white",
       textAlign: "right",
       lineHeight: "0px",
+      fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
       boxSizing: "border-box",
       paddingRight: "10px",
     };
@@ -346,12 +349,16 @@ export class ThreeJsPanel {
       // Handle irrational floating point values (e.g. 0.30000000000000004) 
       scaleStr = scaleStr.slice(0, Math.abs(digits) + 2);
     }
-    this.orthoScaleBarElement.innerHTML = `${scaleStr}${UNIT}`;
+    this.orthoScaleBarElement.innerHTML = `${scaleStr}${this.scaleBarUnit || ""}`;
     this.orthoScaleBarElement.style.width = `${SCALE_BAR_MAX_WIDTH * (scaleValue / worldSpaceMaxWidth)}px`;
   }
 
   setOrthoScaleBarVisible(visible: boolean): void {
     this.orthoScaleBarElement.style.display = visible ? "" : "none";
+  }
+
+  setOrthoScaleBarUnit(unit: string): void {
+    this.scaleBarUnit = unit;
   }
 
   setAutoRotate(rotate: boolean): void {

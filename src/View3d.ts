@@ -485,6 +485,14 @@ export class View3d {
   }
 
   /**
+   * Set the unit symbol for the scale bar (e.g. µm)
+   * @param {string} unit
+   */
+  setScaleUnit(unit: string): void {
+    this.canvas3d.setOrthoScaleBarUnit(unit);
+  }
+
+  /**
    * Invert axes of volume. -1 to invert, +1 NOT to invert.
    * @param {Object} volume
    * @param {number} flipX x axis sense
