@@ -186,53 +186,105 @@ export default class VolumeLoader {
 
     // get top-level metadata for this zarr image
     const allmetadata = await data.attrs.asObject();
-    // take the first multiscales entry
-    const numlevels = allmetadata.multiscales[0].datasets.length;
-    // get raw scaling for level 0
     // each entry of multiscales is a multiscale image.
+    // take the first multiscales entry
     const imageIndex = 0;
-    // there is one dataset for each multiscale level.
-    const dataset0 = allmetadata.multiscales[imageIndex].datasets[0];
+    const multiscales = allmetadata.multiscales[imageIndex].datasets;
+    const axes = allmetadata.multiscales[imageIndex].axes;
 
-    // TODO get metadata sizes for each level?  how inefficient is that?
-    // update levelToLoad after we get size info about multiscales?
+    let hasT = false;
+    let hasC = false;
+    const axisTCZYX = [-1, -1, -1, -1, -1];
+    for (let i = 0; i < axes.length; ++i) {
+      const axis = axes[i];
+      if (axis.name === "t") {
+        hasT = true;
+        axisTCZYX[0] = i;
+      } else if (axis.name === "c") {
+        hasC = true;
+        axisTCZYX[1] = i;
+      } else if (axis.name === "z") {
+        axisTCZYX[2] = i;
+      } else if (axis.name === "y") {
+        axisTCZYX[3] = i;
+      } else if (axis.name === "x") {
+        axisTCZYX[4] = i;
+      } else {
+        console.log("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
+      }
+    }
+    // ZYX
+    const spatialAxes: number[] = [];
+    if (axisTCZYX[2] > -1) {
+      spatialAxes.push(axisTCZYX[2]);
+    }
+    if (axisTCZYX[3] > -1) {
+      spatialAxes.push(axisTCZYX[3]);
+    }
+    if (axisTCZYX[4] > -1) {
+      spatialAxes.push(axisTCZYX[4]);
+    }
+    if (spatialAxes.length != 3) {
+      console.log("ERROR: zarr loader expects a z, y, and x axis.");
+    }
 
-    const metadata = allmetadata.omero;
+    const numlevels = multiscales.length;
 
-    const level0 = await openArray({ store: store, path: imagegroup + "/" + dataset0.path, mode: "r" });
-    // full res info
-    // TODO leaving these commented out as they serve as a reminder of how to get the dims,
-    // and will almost certainly be reinstated at some point. Revisit next time this code is modified.
-    // const w = level0.meta.shape[4];
-    // const h = level0.meta.shape[3];
-    // const z = level0.meta.shape[2];
-    const c = level0.meta.shape[1];
-    const sizeT = level0.meta.shape[0];
-    //console.log(`X=${w}, Y=${h}, Z=${z}, C=${c}, T=${sizeT}`);
+    // get all shapes
+    for (const i in multiscales) {
+      const level = await openArray({ store: store, path: imagegroup + "/" + multiscales[i].path, mode: "r" });
+      // just stick it in multiscales for now.
+      multiscales[i].shape = level.meta.shape;
+      if (multiscales[i].shape.length != axes.length) {
+        console.log(
+          "ERROR: shape length " + multiscales[i].shape.length + " does not match axes length " + axes.length
+        );
+      }
+    }
 
-    // making a choice of a reduced level:
-    const downsampleZ = 1; // z/downsampleZ is number of z slices in reduced volume
-    const levelToLoad = numlevels - 1; //1;
-    const dataset2 = allmetadata.multiscales[imageIndex].datasets[levelToLoad];
-    const level = await openArray({ store: store, path: imagegroup + "/" + dataset2.path, mode: "r" });
+    const downsampleZ = 2; // z/downsampleZ is number of z slices in reduced volume
+
+    // update levelToLoad after we get size info about multiscales.
+    // decide to max out at a 4k x 4k texture.
+    const maxAtlasEdge = 4096;
+    // default to lowest level unless we find a better one
+    let levelToLoad = numlevels - 1;
+    for (let i = 0; i < multiscales.length; ++i) {
+      // estimate atlas size:
+      const s =
+        (multiscales[i].shape[spatialAxes[0]] / downsampleZ) *
+        multiscales[i].shape[spatialAxes[1]] *
+        multiscales[i].shape[spatialAxes[2]];
+      if (s / maxAtlasEdge <= maxAtlasEdge) {
+        console.log("Will load level " + i);
+        levelToLoad = i;
+        break;
+      }
+    }
+
+    const dataset = multiscales[levelToLoad];
+    const c = hasC ? dataset.shape[axisTCZYX[1]] : 1;
+    const sizeT = hasT ? dataset.shape[axisTCZYX[0]] : 1;
+
     // technically there can be any number of coordinateTransformations
     // but there must be only one of type "scale".
     // Here I assume that is the only one.
-    const scale5d = dataset2.coordinateTransformations[0].scale;
+    const scale5d = dataset.coordinateTransformations[0].scale;
+    const tw = dataset.shape[spatialAxes[2]];
+    const th = dataset.shape[spatialAxes[1]];
+    const tz = dataset.shape[spatialAxes[0]];
 
-    // reduced level info
-    const tw = level.meta.shape[4];
-    const th = level.meta.shape[3];
-    const tz = level.meta.shape[2];
     // compute rows and cols and atlas width and ht, given tw and th
     const loadedZ = Math.ceil(tz / downsampleZ);
     const { nrows, ncols } = computePackedAtlasDims(loadedZ, tw, th);
     const atlaswidth = ncols * tw;
     const atlasheight = nrows * th;
+    console.log("atlas width and height: " + atlaswidth + " " + atlasheight);
 
+    const displayMetadata = allmetadata.omero;
     const chnames: string[] = [];
-    for (let i = 0; i < metadata.channels.length; ++i) {
-      chnames.push(metadata.channels[i].label);
+    for (let i = 0; i < displayMetadata.channels.length; ++i) {
+      chnames.push(displayMetadata.channels[i].label);
     }
     /* eslint-disable @typescript-eslint/naming-convention */
     const imgdata: ImageInfo = {
@@ -249,11 +301,11 @@ export default class VolumeLoader {
       // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
       atlas_width: atlaswidth,
       atlas_height: atlasheight,
-      pixel_size_x: scale5d[4],
-      pixel_size_y: scale5d[3],
-      pixel_size_z: scale5d[2] * downsampleZ,
-      name: metadata.name,
-      version: metadata.version,
+      pixel_size_x: scale5d[spatialAxes[2]],
+      pixel_size_y: scale5d[spatialAxes[1]],
+      pixel_size_z: scale5d[spatialAxes[0]] * downsampleZ,
+      name: displayMetadata.name,
+      version: displayMetadata.version,
       transform: {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],
@@ -265,7 +317,7 @@ export default class VolumeLoader {
     // got some data, now let's construct the volume.
     const vol = new Volume(imgdata);
 
-    const storepath = imagegroup + "/" + dataset2.path;
+    const storepath = imagegroup + "/" + dataset.path;
     // do each channel on a worker
     for (let i = 0; i < c; ++i) {
       const worker = new Worker(new URL("./workers/FetchZarrWorker", import.meta.url));
@@ -284,8 +336,8 @@ export default class VolumeLoader {
       };
       worker.postMessage({
         urlStore: urlStore,
-        time: Math.min(t, sizeT),
-        channel: i,
+        time: hasT ? Math.min(t, sizeT) : -1,
+        channel: hasC ? i : -1,
         downsampleZ: downsampleZ,
         path: storepath,
       });

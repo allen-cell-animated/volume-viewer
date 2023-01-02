@@ -59,7 +59,16 @@ self.onmessage = function (e) {
   const store = new HTTPStore(e.data.urlStore);
   openArray({ store: store, path: e.data.path, mode: "r" })
     .then((level) => {
-      return level.get([time, channelIndex, null, null, null]);
+      // build slice spec
+      // assuming ZYX are the last three dimensions:
+      const sliceSpec = [null, null, null];
+      if (channelIndex > -1) {
+        sliceSpec.unshift(channelIndex);
+      }
+      if (time > -1) {
+        sliceSpec.unshift(time);
+      }
+      return level.get(sliceSpec);
     })
     .then((channel) => {
       channel = channel as NestedArray<TypedArray>;
@@ -68,7 +77,7 @@ self.onmessage = function (e) {
       const nx = channel.shape[2];
 
       const u8: Uint8Array = convertChannel(channel.data as TypedArray[][], nx, ny, nz, channel.dtype, downsampleZ);
-      const results = { data: u8, channel: channelIndex };
+      const results = { data: u8, channel: channelIndex === -1 ? 0 : channelIndex };
       postMessage(results, [results.data.buffer]);
     });
 };
