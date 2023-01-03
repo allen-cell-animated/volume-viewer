@@ -7181,7 +7181,7 @@ var VolumeLoader = /*#__PURE__*/function () {
     key: "loadZarr",
     value: function () {
       var _loadZarr = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(urlStore, imageName, t, onChannelLoaded) {
-        var store, imagegroup, data, allmetadata, numlevels, imageIndex, dataset0, metadata, level0, c, sizeT, downsampleZ, levelToLoad, dataset2, level, scale5d, tw, th, tz, loadedZ, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, chnames, i, imgdata, vol, storepath, _loop2, _i;
+        var store, imagegroup, data, allmetadata, imageIndex, multiscales, axes, hasT, hasC, axisTCZYX, i, axis, spatialAxes, numlevels, _i, level, downsampleZ, maxAtlasEdge, levelToLoad, _i2, s, dataset, c, sizeT, scale5d, tw, th, tz, loadedZ, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, imgdata, vol, storepath, _loop2, _i3;
 
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
           while (1) {
@@ -7199,66 +7199,139 @@ var VolumeLoader = /*#__PURE__*/function () {
 
               case 7:
                 allmetadata = _context.sent;
-                // take the first multiscales entry
-                numlevels = allmetadata.multiscales[0].datasets.length; // get raw scaling for level 0
                 // each entry of multiscales is a multiscale image.
+                // take the first multiscales entry
+                imageIndex = 0;
+                multiscales = allmetadata.multiscales[imageIndex].datasets;
+                axes = allmetadata.multiscales[imageIndex].axes;
+                hasT = false;
+                hasC = false;
+                axisTCZYX = [-1, -1, -1, -1, -1];
 
-                imageIndex = 0; // there is one dataset for each multiscale level.
+                for (i = 0; i < axes.length; ++i) {
+                  axis = axes[i];
 
-                dataset0 = allmetadata.multiscales[imageIndex].datasets[0]; // TODO get metadata sizes for each level?  how inefficient is that?
-                // update levelToLoad after we get size info about multiscales?
+                  if (axis.name === "t") {
+                    hasT = true;
+                    axisTCZYX[0] = i;
+                  } else if (axis.name === "c") {
+                    hasC = true;
+                    axisTCZYX[1] = i;
+                  } else if (axis.name === "z") {
+                    axisTCZYX[2] = i;
+                  } else if (axis.name === "y") {
+                    axisTCZYX[3] = i;
+                  } else if (axis.name === "x") {
+                    axisTCZYX[4] = i;
+                  } else {
+                    console.log("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
+                  }
+                } // ZYX
 
-                metadata = allmetadata.omero;
-                _context.next = 14;
-                return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openArray)({
-                  store: store,
-                  path: imagegroup + "/" + dataset0.path,
-                  mode: "r"
-                });
 
-              case 14:
-                level0 = _context.sent;
-                // full res info
-                // TODO leaving these commented out as they serve as a reminder of how to get the dims,
-                // and will almost certainly be reinstated at some point. Revisit next time this code is modified.
-                // const w = level0.meta.shape[4];
-                // const h = level0.meta.shape[3];
-                // const z = level0.meta.shape[2];
-                c = level0.meta.shape[1];
-                sizeT = level0.meta.shape[0]; //console.log(`X=${w}, Y=${h}, Z=${z}, C=${c}, T=${sizeT}`);
-                // making a choice of a reduced level:
+                spatialAxes = [];
 
-                downsampleZ = 1; // z/downsampleZ is number of z slices in reduced volume
+                if (axisTCZYX[2] > -1) {
+                  spatialAxes.push(axisTCZYX[2]);
+                }
 
-                levelToLoad = numlevels - 1; //1;
+                if (axisTCZYX[3] > -1) {
+                  spatialAxes.push(axisTCZYX[3]);
+                }
 
-                dataset2 = allmetadata.multiscales[imageIndex].datasets[levelToLoad];
-                _context.next = 22;
-                return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openArray)({
-                  store: store,
-                  path: imagegroup + "/" + dataset2.path,
-                  mode: "r"
-                });
+                if (axisTCZYX[4] > -1) {
+                  spatialAxes.push(axisTCZYX[4]);
+                }
+
+                if (spatialAxes.length != 3) {
+                  console.log("ERROR: zarr loader expects a z, y, and x axis.");
+                }
+
+                numlevels = multiscales.length; // get all shapes
+
+                _context.t0 = _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().keys(multiscales);
 
               case 22:
+                if ((_context.t1 = _context.t0()).done) {
+                  _context.next = 31;
+                  break;
+                }
+
+                _i = _context.t1.value;
+                _context.next = 26;
+                return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openArray)({
+                  store: store,
+                  path: imagegroup + "/" + multiscales[_i].path,
+                  mode: "r"
+                });
+
+              case 26:
                 level = _context.sent;
-                // technically there can be any number of coordinateTransformations
+                // just stick it in multiscales for now.
+                multiscales[_i].shape = level.meta.shape;
+
+                if (multiscales[_i].shape.length != axes.length) {
+                  console.log("ERROR: shape length " + multiscales[_i].shape.length + " does not match axes length " + axes.length);
+                }
+
+                _context.next = 22;
+                break;
+
+              case 31:
+                downsampleZ = 2; // z/downsampleZ is number of z slices in reduced volume
+                // update levelToLoad after we get size info about multiscales.
+                // decide to max out at a 4k x 4k texture.
+
+                maxAtlasEdge = 4096; // default to lowest level unless we find a better one
+
+                levelToLoad = numlevels - 1;
+                _i2 = 0;
+
+              case 35:
+                if (!(_i2 < multiscales.length)) {
+                  _context.next = 44;
+                  break;
+                }
+
+                // estimate atlas size:
+                s = multiscales[_i2].shape[spatialAxes[0]] / downsampleZ * multiscales[_i2].shape[spatialAxes[1]] * multiscales[_i2].shape[spatialAxes[2]];
+
+                if (!(s / maxAtlasEdge <= maxAtlasEdge)) {
+                  _context.next = 41;
+                  break;
+                }
+
+                console.log("Will load level " + _i2);
+                levelToLoad = _i2;
+                return _context.abrupt("break", 44);
+
+              case 41:
+                ++_i2;
+                _context.next = 35;
+                break;
+
+              case 44:
+                dataset = multiscales[levelToLoad];
+                c = hasC ? dataset.shape[axisTCZYX[1]] : 1;
+                sizeT = hasT ? dataset.shape[axisTCZYX[0]] : 1; // technically there can be any number of coordinateTransformations
                 // but there must be only one of type "scale".
                 // Here I assume that is the only one.
-                scale5d = dataset2.coordinateTransformations[0].scale; // reduced level info
 
-                tw = level.meta.shape[4];
-                th = level.meta.shape[3];
-                tz = level.meta.shape[2]; // compute rows and cols and atlas width and ht, given tw and th
+                scale5d = dataset.coordinateTransformations[0].scale;
+                tw = dataset.shape[spatialAxes[2]];
+                th = dataset.shape[spatialAxes[1]];
+                tz = dataset.shape[spatialAxes[0]]; // compute rows and cols and atlas width and ht, given tw and th
 
                 loadedZ = Math.ceil(tz / downsampleZ);
                 _computePackedAtlasDi = computePackedAtlasDims(loadedZ, tw, th), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols;
                 atlaswidth = ncols * tw;
                 atlasheight = nrows * th;
+                console.log("atlas width and height: " + atlaswidth + " " + atlasheight);
+                displayMetadata = allmetadata.omero;
                 chnames = [];
 
-                for (i = 0; i < metadata.channels.length; ++i) {
-                  chnames.push(metadata.channels[i].label);
+                for (i = 0; i < displayMetadata.channels.length; ++i) {
+                  chnames.push(displayMetadata.channels[i].label);
                 }
                 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -7280,11 +7353,11 @@ var VolumeLoader = /*#__PURE__*/function () {
                   // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
                   atlas_width: atlaswidth,
                   atlas_height: atlasheight,
-                  pixel_size_x: scale5d[4],
-                  pixel_size_y: scale5d[3],
-                  pixel_size_z: scale5d[2] * downsampleZ,
-                  name: metadata.name,
-                  version: metadata.version,
+                  pixel_size_x: scale5d[spatialAxes[2]],
+                  pixel_size_y: scale5d[spatialAxes[1]],
+                  pixel_size_z: scale5d[spatialAxes[0]] * downsampleZ,
+                  name: displayMetadata.name,
+                  version: displayMetadata.version,
                   transform: {
                     translation: [0, 0, 0],
                     rotation: [0, 0, 0]
@@ -7295,9 +7368,9 @@ var VolumeLoader = /*#__PURE__*/function () {
                 // got some data, now let's construct the volume.
 
                 vol = new _Volume__WEBPACK_IMPORTED_MODULE_5__["default"](imgdata);
-                storepath = imagegroup + "/" + dataset2.path; // do each channel on a worker
+                storepath = imagegroup + "/" + dataset.path; // do each channel on a worker
 
-                _loop2 = function _loop2(_i) {
+                _loop2 = function _loop2(_i3) {
                   var worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchZarrWorker_ts"), __webpack_require__.b));
 
                   worker.onmessage = function (e) {
@@ -7319,20 +7392,20 @@ var VolumeLoader = /*#__PURE__*/function () {
 
                   worker.postMessage({
                     urlStore: urlStore,
-                    time: Math.min(t, sizeT),
-                    channel: _i,
+                    time: hasT ? Math.min(t, sizeT) : -1,
+                    channel: hasC ? _i3 : -1,
                     downsampleZ: downsampleZ,
                     path: storepath
                   });
                 };
 
-                for (_i = 0; _i < c; ++_i) {
-                  _loop2(_i);
+                for (_i3 = 0; _i3 < c; ++_i3) {
+                  _loop2(_i3);
                 }
 
                 return _context.abrupt("return", vol);
 
-              case 39:
+              case 65:
               case "end":
                 return _context.stop();
             }
@@ -84555,7 +84628,9 @@ function main() {
   } else if (loadTestData) {
     //fetchOpenCell();
     //fetchTiff("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif", 0);
-    fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/Lamin_multi-06-Deskew-28.zarr", "Image_0", 0); //fetchZarr("http://localhost:9020/example-data/AICS-12_143.zarr", "AICS-12_143", 0);
+    //fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/Lamin_multi-06-Deskew-28.zarr", "Image_0", 0);
+    fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr", "", 0); //fetchZarr("https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr ", "", 0);
+    //fetchZarr("http://localhost:9020/example-data/AICS-12_143.zarr", "AICS-12_143", 0);
     //fetchImage("AICS-12_881_atlas.json", "");
   } else {
     var volumeInfo = createTestVolume();

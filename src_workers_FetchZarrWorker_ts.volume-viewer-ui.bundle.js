@@ -74,7 +74,19 @@ self.onmessage = function (e) {
     path: e.data.path,
     mode: "r"
   }).then(function (level) {
-    return level.get([time, channelIndex, null, null, null]);
+    // build slice spec
+    // assuming ZYX are the last three dimensions:
+    var sliceSpec = [null, null, null];
+
+    if (channelIndex > -1) {
+      sliceSpec.unshift(channelIndex);
+    }
+
+    if (time > -1) {
+      sliceSpec.unshift(time);
+    }
+
+    return level.get(sliceSpec);
   }).then(function (channel) {
     channel = channel;
     var nz = channel.shape[0];
@@ -83,7 +95,7 @@ self.onmessage = function (e) {
     var u8 = convertChannel(channel.data, nx, ny, nz, channel.dtype, downsampleZ);
     var results = {
       data: u8,
-      channel: channelIndex
+      channel: channelIndex === -1 ? 0 : channelIndex
     };
     postMessage(results, [results.data.buffer]);
   });
