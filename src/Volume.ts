@@ -15,7 +15,7 @@ export interface ImageInfo {
   pixel_size_x: number;
   pixel_size_y: number;
   pixel_size_z: number;
-  unit: string;
+  unit_symbol: string;
   channel_names: string[];
   channel_colors?: [number, number, number][];
   rows: number;
@@ -43,7 +43,7 @@ export const getDefaultImageInfo = (): ImageInfo => {
     pixel_size_x: 1,
     pixel_size_y: 1,
     pixel_size_z: 1,
-    unit: "µm",
+    unit_symbol: "µm",
     channel_names: [],
     channel_colors: [],
     rows: 1,

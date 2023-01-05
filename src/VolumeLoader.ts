@@ -28,6 +28,37 @@ interface PackedChannelsImage {
 }
 type PackedChannelsImageRequests = Record<string, HTMLImageElement>;
 
+// Preferred spatial units in OME-Zarr are specified as full names. We want just the symbol.
+// See https://ngff.openmicroscopy.org/latest/#axes-md
+const spatialUnitSymbols = {
+  "angstrom":      "Å",
+  "attometer":     "am",
+  "centimeter":    "cm",
+  "decimeter":     "dm",
+  "exameter":      "Em",
+  "femtometer":    "fm",
+  "foot":          "ft",
+  "gigameter":     "Gm",
+  "hectometer":    "hm",
+  "inch":          "in",
+  "kilometer":     "km",
+  "megameter":     "Mm",
+  "meter":         "m",
+  "micrometer":    "μm",
+  "mile":          "mi",
+  "millimeter":    "mm",
+  "nanometer":     "nm",
+  "parsec":        "pc",
+  "petameter":     "Pm",
+  "picometer":     "pm",
+  "terameter":     "Tm",
+  "yard":          "yd",
+  "yoctometer":    "ym",
+  "yottameter":    "Ym",
+  "zeptometer":    "zm",
+  "zettameter":    "Zm",
+};
+
 // We want to find the most "square" packing of z tw by th tiles.
 // Compute number of rows and columns.
 function computePackedAtlasDims(z, tw, th): { nrows: number; ncols: number } {
@@ -229,6 +260,8 @@ export default class VolumeLoader {
     }
 
     const numlevels = multiscales.length;
+    // Assume all axes have the same units - we have no means of storing per-axis unit symbols
+    const unitSymbol = spatialUnitSymbols[axes[spatialAxes[2]].unit] || axes[spatialAxes[2]].unit || "";
 
     // get all shapes
     for (const i in multiscales) {
@@ -304,6 +337,7 @@ export default class VolumeLoader {
       pixel_size_x: scale5d[spatialAxes[2]],
       pixel_size_y: scale5d[spatialAxes[1]],
       pixel_size_z: scale5d[spatialAxes[0]] * downsampleZ,
+      unit_symbol: unitSymbol,
       name: displayMetadata.name,
       version: displayMetadata.version,
       transform: {
@@ -384,7 +418,7 @@ export default class VolumeLoader {
       pixel_size_z: 2,
       name: "TEST",
       version: "1.0",
-      unit: "µm",
+      unit_symbol: "µm",
       transform: {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],
@@ -466,7 +500,7 @@ export default class VolumeLoader {
       pixel_size_z: pixelsizez,
       name: "TEST",
       version: "1.0",
-      unit: "µm",
+      unit_symbol: "µm",
       transform: {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],
