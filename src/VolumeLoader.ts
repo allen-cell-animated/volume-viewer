@@ -261,7 +261,8 @@ export default class VolumeLoader {
 
     const numlevels = multiscales.length;
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
-    const unitSymbol = spatialUnitSymbols[axes[spatialAxes[2]].unit] || axes[spatialAxes[2]].unit || "";
+    const unitName = axes[spatialAxes[2]].unit;
+    const unitSymbol = spatialUnitSymbols[unitName] || unitName || "";
 
     // get all shapes
     for (const i in multiscales) {

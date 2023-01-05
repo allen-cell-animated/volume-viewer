@@ -36,7 +36,6 @@ export class ThreeJsPanel {
   public renderer: WebGLRenderer;
   private timer: Timing;
   public orthoScale: number;
-  public orthoHorizontalAxis: number;
   private fov: number;
   private perspectiveCamera: PerspectiveCamera;
   private perspectiveControls: TrackballControls;
@@ -59,6 +58,8 @@ export class ThreeJsPanel {
   private axisHelperObject: Object3D;
   private axisCamera: PerspectiveCamera | OrthographicCamera;
 
+  // Index of the horizontal axis in orthographic view modes, used for picking pixel scales for the scale bar
+  public orthoHorizontalAxis: number;
   private orthoScaleBarElement: HTMLDivElement;
   private scaleBarUnit?: string;
 
@@ -472,6 +473,11 @@ export class ThreeJsPanel {
       this.axisCamera.updateProjectionMatrix();
     } else {
       this.axisCamera.updateProjectionMatrix();
+    }
+
+    // The window may have moved to a monitor of a different resolution
+    if (this.renderer.getPixelRatio() !== window.devicePixelRatio) {
+      this.renderer.setPixelRatio(window.devicePixelRatio);
     }
 
     this.renderer.setSize(w, h);

@@ -89,7 +89,8 @@ export class View3d {
   }
 
   private updateOrthoScaleBar() {
-    this.canvas3d.updateOrthoScaleBar(this.image!.volume.pixel_size[this.canvas3d.orthoHorizontalAxis]);
+    const scale = this.image!.volume.pixel_size[this.canvas3d.orthoHorizontalAxis];
+    this.canvas3d.updateOrthoScaleBar(scale);
   }
 
   /**
