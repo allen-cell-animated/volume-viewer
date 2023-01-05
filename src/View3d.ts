@@ -84,7 +84,12 @@ export class View3d {
     // keep the ortho scale up to date.
     if (this.image && isOrthographicCamera(this.canvas3d.camera)) {
       this.image.setOrthoScale(this.canvas3d.controls.scale);
+      this.updateOrthoScaleBar();
     }
+  }
+
+  private updateOrthoScaleBar() {
+    this.canvas3d.updateOrthoScaleBar(this.image!.volume.pixel_size[this.canvas3d.orthoHorizontalAxis]);
   }
 
   /**
@@ -490,6 +495,9 @@ export class View3d {
    */
   setScaleUnit(unit: string): void {
     this.canvas3d.setOrthoScaleBarUnit(unit);
+    if (this.image && isOrthographicCamera(this.canvas3d.camera)) {
+      this.updateOrthoScaleBar();
+    }
   }
 
   /**
