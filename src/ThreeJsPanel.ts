@@ -325,6 +325,7 @@ export class ThreeJsPanel {
       right: "15px",
       bottom: "50px",
       color: "white",
+      mixBlendMode: "difference",
       textAlign: "right",
       lineHeight: "0px",
       fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
