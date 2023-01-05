@@ -219,10 +219,14 @@ export class View3d {
    * Set voxel dimensions - controls volume scaling. For example, the physical measurements of the voxels from a biological data set
    * @param {Object} volume
    * @param {number} values Array of x,y,z floating point values for the physical voxel size scaling
+   * @param {string} unit The unit of `values`, if different than previous
    */
-  setVoxelSize(volume: Volume, values: number[]): void {
+  setVoxelSize(volume: Volume, values: number[], unit?: string): void {
     if (this.image) {
       this.image.setVoxelSize(values);
+    }
+    if (unit) {
+      this.setScaleUnit(unit);
     }
     this.redraw();
   }

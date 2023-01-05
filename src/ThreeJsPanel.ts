@@ -332,9 +332,7 @@ export class ThreeJsPanel {
       boxSizing: "border-box",
       paddingRight: "10px",
     };
-    Object.keys(orthoScaleBarStyle).forEach((property) => {
-      this.orthoScaleBarElement.style[property] = orthoScaleBarStyle[property];
-    });
+    Object.assign(this.orthoScaleBarElement.style, orthoScaleBarStyle);
     this.containerdiv.appendChild(this.orthoScaleBarElement);
     this.updateOrthoScaleBar();
   }

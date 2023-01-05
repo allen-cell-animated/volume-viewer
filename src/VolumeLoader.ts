@@ -154,15 +154,15 @@ export default class VolumeLoader {
         return response.json();
       })
       .then(function (myJson) {
-        const vol = new Volume(myJson);
+    const vol = new Volume(myJson);
 
-        // if you need to adjust image paths prior to download,
-        // now is the time to do it:
-        myJson.images.forEach(function (element) {
-          element.name = urlPrefix + element.name;
-        });
-        VolumeLoader.loadVolumeAtlasData(vol, myJson.images, onChannelLoaded);
-        return vol;
+    // if you need to adjust image paths prior to download,
+    // now is the time to do it:
+    myJson.images.forEach(function (element) {
+      element.name = urlPrefix + element.name;
+    });
+    VolumeLoader.loadVolumeAtlasData(vol, myJson.images, onChannelLoaded);
+    return vol;
       });
   }
 
@@ -332,6 +332,7 @@ export default class VolumeLoader {
       pixel_size_z: 2,
       name: "TEST",
       version: "1.0",
+      unit: "µm",
       transform: {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],
@@ -413,6 +414,7 @@ export default class VolumeLoader {
       pixel_size_z: pixelsizez,
       name: "TEST",
       version: "1.0",
+      unit: "µm",
       transform: {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],
