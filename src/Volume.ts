@@ -43,7 +43,7 @@ export const getDefaultImageInfo = (): ImageInfo => {
     pixel_size_x: 1,
     pixel_size_y: 1,
     pixel_size_z: 1,
-    unit_symbol: "µm",
+    unit_symbol: "",
     channel_names: [],
     channel_colors: [],
     rows: 1,

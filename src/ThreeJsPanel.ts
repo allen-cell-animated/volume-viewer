@@ -468,7 +468,6 @@ export class ThreeJsPanel {
       this.axisCamera.updateProjectionMatrix();
     }
 
-    // The window may have moved to a monitor of a different resolution
     if (this.renderer.getPixelRatio() !== window.devicePixelRatio) {
       this.renderer.setPixelRatio(window.devicePixelRatio);
     }
