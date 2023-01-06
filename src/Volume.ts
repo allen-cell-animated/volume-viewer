@@ -134,8 +134,8 @@ export default class Volume {
   public channels: Channel[];
   private volumeDataObservers: VolumeDataObserver[];
   public scale: Vector3;
-  private currentScale: Vector3;
   private physicalSize: Vector3;
+  public physicalScale: number;
   public normalizedPhysicalSize: Vector3;
   private loaded: boolean;
   /* eslint-disable @typescript-eslint/naming-convention */
@@ -147,8 +147,8 @@ export default class Volume {
 
   constructor(imageInfo: ImageInfo = getDefaultImageInfo()) {
     this.scale = new Vector3(1, 1, 1);
-    this.currentScale = new Vector3(1, 1, 1);
     this.physicalSize = new Vector3(1, 1, 1);
+    this.physicalScale = 1;
     this.normalizedPhysicalSize = new Vector3(1, 1, 1);
 
     this.loaded = false;
@@ -209,11 +209,6 @@ export default class Volume {
     this.volumeDataObservers = [];
   }
 
-  setScale(scale: Vector3): void {
-    this.scale = scale;
-    this.currentScale = scale.clone();
-  }
-
   // we calculate the physical size of the volume (voxels*pixel_size)
   // and then normalize to the max physical dimension
   setVoxelSize(values: number[]): void {
@@ -233,8 +228,8 @@ export default class Volume {
       this.pixel_size[2] = values[2];
     }
 
-    const physSizeMin = Math.min(this.pixel_size[0], Math.min(this.pixel_size[1], this.pixel_size[2]));
-    const pixelsMax = Math.max(this.imageInfo.width, Math.max(this.imageInfo.height, this.z));
+    const physSizeMin = Math.min(this.pixel_size[0], this.pixel_size[1], this.pixel_size[2]);
+    const pixelsMax = Math.max(this.imageInfo.width, this.imageInfo.height, this.z);
     const sx = ((this.pixel_size[0] / physSizeMin) * this.imageInfo.width) / pixelsMax;
     const sy = ((this.pixel_size[1] / physSizeMin) * this.imageInfo.height) / pixelsMax;
     const sz = ((this.pixel_size[2] / physSizeMin) * this.z) / pixelsMax;
@@ -246,12 +241,13 @@ export default class Volume {
       this.imageInfo.height * this.pixel_size[1],
       this.z * this.pixel_size[2]
     );
-    const m = Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
+    // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
+    this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z);
     // Compute the volume's max extent - scaled to max dimension.
-    this.normalizedPhysicalSize = new Vector3().copy(this.physicalSize).multiplyScalar(1.0 / m);
+    this.normalizedPhysicalSize = this.physicalSize.clone().divideScalar(this.physicalScale);
 
     // sx, sy, sz should be same as normalizedPhysicalSize
-    this.setScale(new Vector3(sx, sy, sz));
+    this.scale = new Vector3(sx, sy, sz);
   }
 
   cleanup(): void {

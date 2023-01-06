@@ -58,8 +58,6 @@ export class ThreeJsPanel {
   private axisHelperObject: Object3D;
   private axisCamera: PerspectiveCamera | OrthographicCamera;
 
-  // Index of the horizontal axis in orthographic view modes, used for picking pixel scales for the scale bar
-  public orthoHorizontalAxis: number;
   private orthoScaleBarElement: HTMLDivElement;
   private scaleBarUnit?: string;
 
@@ -136,7 +134,6 @@ export class ThreeJsPanel {
     const scale = 0.5;
     this.orthoScale = scale;
     const aspect = this.getWidth() / this.getHeight();
-    this.orthoHorizontalAxis = 0;
 
     this.fov = 20;
 
@@ -339,19 +336,22 @@ export class ThreeJsPanel {
   }
 
   updateOrthoScaleBar(scale: number = 1): void {
+    // We want to find the largest round number of physical units that keeps the scale bar within this width on screen
     const SCALE_BAR_MAX_WIDTH = 150;
-    const worldSpaceMaxWidth = this.orthoScale * SCALE_BAR_MAX_WIDTH * scale / window.devicePixelRatio;
+    // Convert max width to volume physical units
+    const physicalMaxWidth = this.orthoScale * 2 * (SCALE_BAR_MAX_WIDTH * window.devicePixelRatio / this.getHeight()) * scale;
     // Round off all but the most significant digit of worldSpaceMaxWidth
-    const digits = Math.floor(Math.log10(worldSpaceMaxWidth));
+    const digits = Math.floor(Math.log10(physicalMaxWidth));
     const div10 = 10 ** digits;
-    const scaleValue = Math.floor(worldSpaceMaxWidth / div10) * div10;
+    const scaleValue = Math.floor(physicalMaxWidth / div10) * div10;
     let scaleStr = scaleValue.toString();
     if (digits < 1) {
       // Handle irrational floating point values (e.g. 0.30000000000000004) 
       scaleStr = scaleStr.slice(0, Math.abs(digits) + 2);
     }
     this.orthoScaleBarElement.innerHTML = `${scaleStr}${this.scaleBarUnit || ""}`;
-    this.orthoScaleBarElement.style.width = `${SCALE_BAR_MAX_WIDTH * (scaleValue / worldSpaceMaxWidth)}px`;
+    this.orthoScaleBarElement.style.width = `${SCALE_BAR_MAX_WIDTH * (scaleValue / physicalMaxWidth)}px`;
+    // Uncomment to disable rounding and stick to a fixed width
     // this.orthoScaleBarElement.innerHTML = `${worldSpaceMaxWidth}${this.scaleBarUnit || ""}`;
     // this.orthoScaleBarElement.style.width = `${SCALE_BAR_MAX_WIDTH}px`;
   }
@@ -412,7 +412,6 @@ export class ThreeJsPanel {
         this.replaceControls(this.orthoControlsX);
         this.axisHelperObject.rotation.set(0, Math.PI * 0.5, 0);
         this.setOrthoScaleBarVisible(true);
-        this.orthoHorizontalAxis = 1;
         break;
       case "XZ":
       case "Y":
@@ -420,7 +419,6 @@ export class ThreeJsPanel {
         this.replaceControls(this.orthoControlsY);
         this.axisHelperObject.rotation.set(Math.PI * 0.5, 0, 0);
         this.setOrthoScaleBarVisible(true);
-        this.orthoHorizontalAxis = 0;
         break;
       case "XY":
       case "Z":
@@ -428,7 +426,6 @@ export class ThreeJsPanel {
         this.replaceControls(this.orthoControlsZ);
         this.axisHelperObject.rotation.set(0, 0, 0);
         this.setOrthoScaleBarVisible(true);
-        this.orthoHorizontalAxis = 0;
         break;
       default:
         this.replaceCamera(this.perspectiveCamera);
