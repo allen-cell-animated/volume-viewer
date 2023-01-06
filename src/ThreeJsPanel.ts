@@ -312,6 +312,12 @@ export class ThreeJsPanel {
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
 
+  orthoScreenPixelsToPhysicalUnits(pixels: number, scale = 1): number {
+    // at orthoScale = 0.5, the viewport is 1 world unit tall
+    const worldUnitsPerPixel = this.orthoScale * 2 / this.getHeight();
+    return pixels * window.devicePixelRatio * worldUnitsPerPixel * scale;
+  }
+
   setupOrthoScaleBar(): void {
     const orthoScaleBarStyle: Partial<CSSStyleDeclaration> = {
       border: "1px solid white",
@@ -319,8 +325,8 @@ export class ThreeJsPanel {
       height: "10px",
       display: "none",
       position: "absolute",
-      right: "15px",
-      bottom: "50px",
+      right: "20px",
+      bottom: "20px",
       color: "white",
       mixBlendMode: "difference",
       textAlign: "right",
@@ -338,7 +344,7 @@ export class ThreeJsPanel {
     // We want to find the largest round number of physical units that keeps the scale bar within this width on screen
     const SCALE_BAR_MAX_WIDTH = 150;
     // Convert max width to volume physical units
-    const physicalMaxWidth = this.orthoScale * 2 * (SCALE_BAR_MAX_WIDTH * window.devicePixelRatio / this.getHeight()) * scale;
+    const physicalMaxWidth = this.orthoScreenPixelsToPhysicalUnits(SCALE_BAR_MAX_WIDTH, scale);
     // Round off all but the most significant digit of worldSpaceMaxWidth
     const digits = Math.floor(Math.log10(physicalMaxWidth));
     const div10 = 10 ** digits;
@@ -350,9 +356,6 @@ export class ThreeJsPanel {
     }
     this.orthoScaleBarElement.innerHTML = `${scaleStr}${this.scaleBarUnit || ""}`;
     this.orthoScaleBarElement.style.width = `${SCALE_BAR_MAX_WIDTH * (scaleValue / physicalMaxWidth)}px`;
-    // Uncomment to disable rounding and stick to a fixed width
-    // this.orthoScaleBarElement.innerHTML = `${worldSpaceMaxWidth}${this.scaleBarUnit || ""}`;
-    // this.orthoScaleBarElement.style.width = `${SCALE_BAR_MAX_WIDTH}px`;
   }
 
   setOrthoScaleBarVisible(visible: boolean): void {
