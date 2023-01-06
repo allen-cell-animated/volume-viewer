@@ -30,34 +30,31 @@ type PackedChannelsImageRequests = Record<string, HTMLImageElement>;
 
 // Preferred spatial units in OME-Zarr are specified as full names. We want just the symbol.
 // See https://ngff.openmicroscopy.org/latest/#axes-md
-const spatialUnitSymbols = {
-  "angstrom":      "Å",
-  "attometer":     "am",
-  "centimeter":    "cm",
-  "decimeter":     "dm",
-  "exameter":      "Em",
-  "femtometer":    "fm",
-  "foot":          "ft",
-  "gigameter":     "Gm",
-  "hectometer":    "hm",
-  "inch":          "in",
-  "kilometer":     "km",
-  "megameter":     "Mm",
-  "meter":         "m",
-  "micrometer":    "μm",
-  "mile":          "mi",
-  "millimeter":    "mm",
-  "nanometer":     "nm",
-  "parsec":        "pc",
-  "petameter":     "Pm",
-  "picometer":     "pm",
-  "terameter":     "Tm",
-  "yard":          "yd",
-  "yoctometer":    "ym",
-  "yottameter":    "Ym",
-  "zeptometer":    "zm",
-  "zettameter":    "Zm",
-};
+function spatialUnitNameToSymbol(unitName: string): string | null {
+  const unitSymbols = {
+    "angstrom":   "Å",
+    "decameter":  "dam",
+    "foot":       "ft",
+    "inch":       "in",
+    "meter":      "m",
+    "micrometer": "μm",
+    "mile":       "mi",
+    "parsec":     "pc",
+    "yard":       "yd",
+  };
+  if (unitSymbols[unitName]) {
+    return unitSymbols[unitName];
+  }
+
+  // SI prefixes not in unitSymbols are abbreviated by first letter, capitalized if prefix ends with "a"
+  if (unitName.endsWith("meter")) {
+    const capitalize = unitName[unitName.length - 6] === "a";
+    const prefix = capitalize ? unitName[0].toUpperCase() : unitName[0];
+    return prefix + "m";
+  }
+
+  return null;
+}
 
 // We want to find the most "square" packing of z tw by th tiles.
 // Compute number of rows and columns.
@@ -179,14 +176,10 @@ export default class VolumeLoader {
    * @param {PerChannelCallback} onChannelLoaded Per-channel callback.  Called when each channel's atlased volume data is loaded
    * @returns {Promise<Volume>}
    */
-  static loadJson(url: string, urlPrefix: string, onChannelLoaded: PerChannelCallback): Promise<Volume> {
-    return fetch(url)
-      .then(function (response) {
-        return response.json();
-      })
-      .then(function (myJson) {
+  static async loadJson(url: string, urlPrefix: string, onChannelLoaded: PerChannelCallback): Promise<Volume> {
+    const response = await fetch(url);
+    const myJson = await response.json();
     const vol = new Volume(myJson);
-
     // if you need to adjust image paths prior to download,
     // now is the time to do it:
     myJson.images.forEach(function (element) {
@@ -194,7 +187,6 @@ export default class VolumeLoader {
     });
     VolumeLoader.loadVolumeAtlasData(vol, myJson.images, onChannelLoaded);
     return vol;
-      });
   }
 
   /**
@@ -262,7 +254,7 @@ export default class VolumeLoader {
     const numlevels = multiscales.length;
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
     const unitName = axes[spatialAxes[2]].unit;
-    const unitSymbol = spatialUnitSymbols[unitName] || unitName || "";
+    const unitSymbol = spatialUnitNameToSymbol(unitName) || unitName || "";
 
     // get all shapes
     for (const i in multiscales) {
@@ -452,6 +444,7 @@ export default class VolumeLoader {
     const sizez = Number(pixelsEl.getAttribute("SizeZ"));
     const sizec = Number(pixelsEl.getAttribute("SizeC"));
     const sizet = Number(pixelsEl.getAttribute("SizeT"));
+    const unit = pixelsEl.getAttribute("PhysicalSizeXUnit");
     const pixeltype = pixelsEl.getAttribute("Type");
     const dimensionorder: string = pixelsEl.getAttribute("DimensionOrder") || "XYZCT";
 
@@ -501,7 +494,7 @@ export default class VolumeLoader {
       pixel_size_z: pixelsizez,
       name: "TEST",
       version: "1.0",
-      unit_symbol: "µm",
+      unit_symbol: unit || "",
       transform: {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],

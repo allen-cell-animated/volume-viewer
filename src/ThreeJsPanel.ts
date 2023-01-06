@@ -1,6 +1,5 @@
 import {
   AxesHelper,
-  Camera,
   Color,
   Vector3,
   Object3D,
@@ -335,7 +334,7 @@ export class ThreeJsPanel {
     this.updateOrthoScaleBar();
   }
 
-  updateOrthoScaleBar(scale: number = 1): void {
+  updateOrthoScaleBar(scale = 1): void {
     // We want to find the largest round number of physical units that keeps the scale bar within this width on screen
     const SCALE_BAR_MAX_WIDTH = 150;
     // Convert max width to volume physical units
