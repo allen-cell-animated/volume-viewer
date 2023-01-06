@@ -58,7 +58,6 @@ export class ThreeJsPanel {
   private axisCamera: PerspectiveCamera | OrthographicCamera;
 
   private orthoScaleBarElement: HTMLDivElement;
-  private scaleBarUnit?: string;
 
   private dataurlcallback?: (url: string) => void;
 
@@ -312,7 +311,7 @@ export class ThreeJsPanel {
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
 
-  orthoScreenPixelsToPhysicalUnits(pixels: number, scale = 1): number {
+  orthoScreenPixelsToPhysicalUnits(pixels: number, scale: number): number {
     // at orthoScale = 0.5, the viewport is 1 world unit tall
     const worldUnitsPerPixel = this.orthoScale * 2 / this.getHeight();
     return pixels * window.devicePixelRatio * worldUnitsPerPixel * scale;
@@ -337,10 +336,9 @@ export class ThreeJsPanel {
     };
     Object.assign(this.orthoScaleBarElement.style, orthoScaleBarStyle);
     this.containerdiv.appendChild(this.orthoScaleBarElement);
-    this.updateOrthoScaleBar();
   }
 
-  updateOrthoScaleBar(scale = 1): void {
+  updateOrthoScaleBar(scale: number, unit?: string): void {
     // We want to find the largest round number of physical units that keeps the scale bar within this width on screen
     const SCALE_BAR_MAX_WIDTH = 150;
     // Convert max width to volume physical units
@@ -354,16 +352,12 @@ export class ThreeJsPanel {
       // Handle irrational floating point values (e.g. 0.30000000000000004) 
       scaleStr = scaleStr.slice(0, Math.abs(digits) + 2);
     }
-    this.orthoScaleBarElement.innerHTML = `${scaleStr}${this.scaleBarUnit || ""}`;
+    this.orthoScaleBarElement.innerHTML = `${scaleStr}${unit || ""}`;
     this.orthoScaleBarElement.style.width = `${SCALE_BAR_MAX_WIDTH * (scaleValue / physicalMaxWidth)}px`;
   }
 
   setOrthoScaleBarVisible(visible: boolean): void {
     this.orthoScaleBarElement.style.display = visible ? "" : "none";
-  }
-
-  setOrthoScaleBarUnit(unit: string): void {
-    this.scaleBarUnit = unit;
   }
 
   setAutoRotate(rotate: boolean): void {

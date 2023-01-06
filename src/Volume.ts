@@ -136,6 +136,7 @@ export default class Volume {
   public scale: Vector3;
   private physicalSize: Vector3;
   public physicalScale: number;
+  public physicalUnitSymbol: string;
   public normalizedPhysicalSize: Vector3;
   private loaded: boolean;
   /* eslint-disable @typescript-eslint/naming-convention */
@@ -190,6 +191,7 @@ export default class Volume {
       channel.dims = [this.x, this.y, this.z];
     }
 
+    this.physicalUnitSymbol = this.imageInfo.unit_symbol;
     this.setVoxelSize(this.pixel_size);
 
     // make sure a transform is specified
@@ -248,6 +250,10 @@ export default class Volume {
 
     // sx, sy, sz should be same as normalizedPhysicalSize
     this.scale = new Vector3(sx, sy, sz);
+  }
+
+  setUnitSymbol(symbol: string): void {
+    this.physicalUnitSymbol = symbol;
   }
 
   cleanup(): void {

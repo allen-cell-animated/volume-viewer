@@ -84,12 +84,12 @@ export class View3d {
     // keep the ortho scale up to date.
     if (this.image && isOrthographicCamera(this.canvas3d.camera)) {
       this.image.setOrthoScale(this.canvas3d.controls.scale);
-      this.updateOrthoScaleBar(this.image);
+      this.updateOrthoScaleBar(this.image.volume);
     }
   }
 
-  private updateOrthoScaleBar(image: VolumeDrawable) {
-    this.canvas3d.updateOrthoScaleBar(image.volume.physicalScale);
+  private updateOrthoScaleBar(volume: Volume) {
+    this.canvas3d.updateOrthoScaleBar(volume.physicalScale, volume.imageInfo.unit_symbol);
   }
 
   /**
@@ -224,9 +224,10 @@ export class View3d {
   setVoxelSize(volume: Volume, values: number[], unit?: string): void {
     if (this.image) {
       this.image.setVoxelSize(values);
-    }
-    if (unit) {
-      this.setScaleUnit(unit);
+
+      if (unit) {
+        this.image.volume.setUnitSymbol(unit);
+      }
     }
     this.redraw();
   }
@@ -366,8 +367,6 @@ export class View3d {
     this.canvas3d.animateFuncs.push(this.preRender.bind(this));
     this.canvas3d.animateFuncs.push(img.onAnimate.bind(img));
 
-    this.canvas3d.setOrthoScaleBarUnit(img.volume.imageInfo.unit_symbol);
-    
     // redraw if not already in draw loop
     this.redraw();
 
@@ -500,9 +499,11 @@ export class View3d {
    * @param {string} unit
    */
   setScaleUnit(unit: string): void {
-    this.canvas3d.setOrthoScaleBarUnit(unit);
-    if (this.image && isOrthographicCamera(this.canvas3d.camera)) {
-      this.updateOrthoScaleBar(this.image);
+    if (this.image) {
+      this.image.volume.setUnitSymbol(unit);
+      if (isOrthographicCamera(this.canvas3d.camera)) {
+        this.updateOrthoScaleBar(this.image.volume);
+      }
     }
   }
 
