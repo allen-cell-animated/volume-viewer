@@ -50,6 +50,8 @@ export interface State {
   isAxisShowing: boolean;
   isAligned: boolean;
 
+  showScaleBar: boolean;
+
   showBoundingBox: boolean;
   boundingBoxColor: [number, number, number];
 

@@ -473,11 +473,19 @@ export class View3d {
 
   /**
    * Enable or disable 3d axis display at lower left.
-   * @param {boolean} autorotate
+   * @param {boolean} showAxis
    */
   setShowAxis(showAxis: boolean): void {
     this.canvas3d.showAxis = showAxis;
     this.canvas3d.redraw();
+  }
+
+  /**
+   * Enable or disable scale indicators.
+   * @param showScaleBar
+   */
+  setShowScaleBar(showScaleBar: boolean): void {
+    this.canvas3d.setShowOrthoScaleBar(showScaleBar);
   }
 
   /**

@@ -58,6 +58,7 @@ export class ThreeJsPanel {
   private axisCamera: PerspectiveCamera | OrthographicCamera;
 
   private orthoScaleBarElement: HTMLDivElement;
+  public showOrthoScaleBar: boolean;
 
   private dataurlcallback?: (url: string) => void;
 
@@ -81,6 +82,9 @@ export class ThreeJsPanel {
     this.showAxis = false;
     this.axisScale = 50.0;
     this.axisOffset = [66, 66];
+
+    this.orthoScaleBarElement = document.createElement("div");
+    this.showOrthoScaleBar = true;
 
     this.zooming = false;
     this.animateFuncs = [];
@@ -187,7 +191,6 @@ export class ThreeJsPanel {
     this.controls = this.perspectiveControls;
 
     this.setupAxisHelper();
-    this.orthoScaleBarElement = document.createElement("div");
     this.setupOrthoScaleBar();
   }
 
@@ -359,8 +362,14 @@ export class ThreeJsPanel {
     this.orthoScaleBarElement.style.width = `${SCALE_BAR_MAX_WIDTH * (scaleValue / physicalMaxWidth)}px`;
   }
 
-  setOrthoScaleBarVisible(visible: boolean): void {
+  updateOrthoScaleBarVisibility(): void {
+    const visible = isOrthographicCamera(this.camera) && this.showOrthoScaleBar;
     this.orthoScaleBarElement.style.display = visible ? "" : "none";
+  }
+
+  setShowOrthoScaleBar(visible: boolean): void {
+    this.showOrthoScaleBar = visible;
+    this.updateOrthoScaleBarVisibility();
   }
 
   setAutoRotate(rotate: boolean): void {
@@ -410,29 +419,26 @@ export class ThreeJsPanel {
         this.replaceCamera(this.orthographicCameraX);
         this.replaceControls(this.orthoControlsX);
         this.axisHelperObject.rotation.set(0, Math.PI * 0.5, 0);
-        this.setOrthoScaleBarVisible(true);
         break;
       case "XZ":
       case "Y":
         this.replaceCamera(this.orthographicCameraY);
         this.replaceControls(this.orthoControlsY);
         this.axisHelperObject.rotation.set(Math.PI * 0.5, 0, 0);
-        this.setOrthoScaleBarVisible(true);
         break;
       case "XY":
       case "Z":
         this.replaceCamera(this.orthographicCameraZ);
         this.replaceControls(this.orthoControlsZ);
         this.axisHelperObject.rotation.set(0, 0, 0);
-        this.setOrthoScaleBarVisible(true);
         break;
       default:
         this.replaceCamera(this.perspectiveCamera);
         this.replaceControls(this.perspectiveControls);
         this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
-        this.setOrthoScaleBarVisible(false);
         break;
     }
+    this.updateOrthoScaleBarVisibility();
   }
 
   getCanvas(): HTMLCanvasElement {
