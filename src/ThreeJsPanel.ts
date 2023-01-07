@@ -311,10 +311,13 @@ export class ThreeJsPanel {
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
 
-  orthoScreenPixelsToPhysicalUnits(pixels: number, scale: number): number {
-    // at orthoScale = 0.5, the viewport is 1 world unit tall
+  orthoScreenPixelsToPhysicalUnits(pixels: number, physicalUnitsPerWorldUnit: number): number {
+    // At orthoScale = 0.5, the viewport is 1 world unit tall
     const worldUnitsPerPixel = this.orthoScale * 2 / this.getHeight();
-    return pixels * window.devicePixelRatio * worldUnitsPerPixel * scale;
+    // Multiply by devicePixelRatio to convert from scaled CSS pixels to physical pixels
+    // (to account for high dpi monitors, e.g.). We didn't do this to height above because
+    // that value comes from three, which works in physical pixels.
+    return pixels * window.devicePixelRatio * worldUnitsPerPixel * physicalUnitsPerWorldUnit;
   }
 
   setupOrthoScaleBar(): void {
