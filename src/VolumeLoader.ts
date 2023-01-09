@@ -180,11 +180,13 @@ export default class VolumeLoader {
     const response = await fetch(url);
     const myJson = await response.json();
     const vol = new Volume(myJson);
+
     // if you need to adjust image paths prior to download,
     // now is the time to do it:
-    myJson.images.forEach(function (element) {
+    myJson.images.forEach((element) => {
       element.name = urlPrefix + element.name;
     });
+    myJson.unit_symbol = myJson.unit_symbol || "μm";
     VolumeLoader.loadVolumeAtlasData(vol, myJson.images, onChannelLoaded);
     return vol;
   }

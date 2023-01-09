@@ -349,7 +349,7 @@ export class ThreeJsPanel {
     const SCALE_BAR_MAX_WIDTH = 150;
     // Convert max width to volume physical units
     const physicalMaxWidth = this.orthoScreenPixelsToPhysicalUnits(SCALE_BAR_MAX_WIDTH, scale);
-    // Round off all but the most significant digit of worldSpaceMaxWidth
+    // Round off all but the most significant digit of physicalMaxWidth
     const digits = Math.floor(Math.log10(physicalMaxWidth));
     const div10 = 10 ** digits;
     const scaleValue = Math.floor(physicalMaxWidth / div10) * div10;
