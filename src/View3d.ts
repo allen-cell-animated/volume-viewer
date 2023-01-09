@@ -5,7 +5,7 @@ import lightSettings from "./constants/lights";
 import VolumeDrawable from "./VolumeDrawable";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
 import Volume from "./Volume";
-import { VolumeChannelDisplayOptions, VolumeDisplayOptions, isOrthographicCamera } from "./types";
+import { VolumeChannelDisplayOptions, VolumeDisplayOptions, isOrthographicCamera, ViewportCorner } from "./types";
 
 export const RENDERMODE_RAYMARCH = 0;
 export const RENDERMODE_PATHTRACE = 1;
@@ -486,8 +486,8 @@ export class View3d {
    * @param {number} marginX
    * @param {number} marginY
    */
-  setAxisPosition(marginX: number, marginY: number): void {
-    this.canvas3d.setAxisPosition(marginX, marginY);
+  setAxisPosition(marginX: number, marginY: number, corner: ViewportCorner = "bottom_left"): void {
+    this.canvas3d.setAxisPosition(marginX, marginY, corner);
     if (this.canvas3d.showAxis) {
       this.canvas3d.redraw();
     }
@@ -498,8 +498,8 @@ export class View3d {
    * @param {number} marginX
    * @param {number} marginY
    */
-  setScaleBarPosition(marginX: number, marginY: number): void {
-    this.canvas3d.setOrthoScaleBarPosition(marginX, marginY);
+  setScaleBarPosition(marginX: number, marginY: number, corner: ViewportCorner = "bottom_right"): void {
+    this.canvas3d.setOrthoScaleBarPosition(marginX, marginY, corner);
   }
 
   /**

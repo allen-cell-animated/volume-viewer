@@ -17,7 +17,7 @@ import {
 
 import TrackballControls from "./TrackballControls.js";
 import Timing from "./Timing";
-import { isOrthographicCamera } from "./types";
+import { isOrthographicCamera, ViewportCorner } from "./types";
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
@@ -55,7 +55,7 @@ export class ThreeJsPanel {
   private axisOffset: [number, number];
   private axisHelperScene: Scene;
   private axisHelperObject: Object3D;
-  private axisCamera: PerspectiveCamera | OrthographicCamera;
+  private axisCamera: OrthographicCamera;
 
   private orthoScaleBarElement: HTMLDivElement;
   public showOrthoScaleBar: boolean;
@@ -76,12 +76,6 @@ export class ThreeJsPanel {
     parentElement.appendChild(this.containerdiv);
 
     this.scene = new Scene();
-    this.axisHelperScene = new Scene();
-    this.axisHelperObject = new Object3D();
-
-    this.showAxis = false;
-    this.axisScale = 50.0;
-    this.axisOffset = [66, 66];
 
     this.orthoScaleBarElement = document.createElement("div");
     this.showOrthoScaleBar = true;
@@ -187,8 +181,18 @@ export class ThreeJsPanel {
     this.orthoControlsZ.panSpeed = this.canvas.clientWidth * 0.5;
 
     this.camera = this.perspectiveCamera;
-    this.axisCamera = new PerspectiveCamera();
     this.controls = this.perspectiveControls;
+    
+    this.axisCamera = new OrthographicCamera();
+    this.axisHelperScene = new Scene();
+    this.axisHelperObject = new Object3D();
+    this.axisHelperObject.name = "axisHelperParentObject";
+
+    this.showAxis = false;
+    // size of axes in px.
+    this.axisScale = 50.0;
+    // offset from bottom left corner in px.
+    this.axisOffset = [66.0, 66.0];
 
     this.setupAxisHelper();
     this.setupOrthoScaleBar();
@@ -280,18 +284,6 @@ export class ThreeJsPanel {
   setupAxisHelper(): void {
     // set up axis widget.
 
-    this.showAxis = false;
-
-    // size of axes in px.
-    this.axisScale = 50.0;
-    // offset from bottom left corner in px.
-    this.axisOffset = [66.0, 66.0];
-
-    this.axisHelperScene = new Scene();
-
-    this.axisHelperObject = new Object3D();
-    this.axisHelperObject.name = "axisHelperParentObject";
-
     const axisCubeMaterial = new MeshBasicMaterial({
       color: 0xaeacad,
     });
@@ -314,11 +306,17 @@ export class ThreeJsPanel {
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
 
-  setAxisPosition(marginX: number, marginY: number) {
+  setAxisPosition(marginX: number, marginY: number, corner: ViewportCorner) {
     // Offset is relative to center of object, not corner of possible extent
     // at offsets lower than BASE_MARGIN, axes may extend off screen
     const BASE_MARGIN = 50;
     this.axisOffset = [marginX + BASE_MARGIN, marginY + BASE_MARGIN];
+    if (corner.startsWith("top")) {
+      this.axisOffset[1] = this.getHeight() - this.axisOffset[1];
+    }
+    if (corner.endsWith("right")) {
+      this.axisOffset[0] = this.getWidth() - this.axisOffset[0];
+    }
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
 
@@ -345,6 +343,7 @@ export class ThreeJsPanel {
       textAlign: "right",
       lineHeight: "0px",
       fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
+      fontSize: "14px",
       boxSizing: "border-box",
       paddingRight: "10px",
     };
@@ -380,10 +379,26 @@ export class ThreeJsPanel {
     this.updateOrthoScaleBarVisibility();
   }
 
-  setOrthoScaleBarPosition(marginX: number, marginY: number) {
-    Object.assign(this.orthoScaleBarElement.style, {
-      right: marginX + "px",
-      bottom: marginY + "px",
+  setOrthoScaleBarPosition(marginX: number, marginY: number, corner: ViewportCorner) {
+    const { style } = this.orthoScaleBarElement;
+
+    style.removeProperty("top");
+    style.removeProperty("bottom");
+    style.removeProperty("left");
+    style.removeProperty("right");
+
+    let [yProp, xProp] = corner.split("_");
+    // Sanity check: must be valid css property names
+    if (xProp !== "left" && xProp !== "right") {
+      xProp = "right";
+    }
+    if (yProp !== "top" && yProp !== "bottom") {
+      yProp = "bottom";
+    }
+
+    Object.assign(style, {
+      [xProp]: marginX + "px",
+      [yProp]: marginY + "px",
     });
   }
 
@@ -482,15 +497,11 @@ export class ThreeJsPanel {
       this.camera.updateProjectionMatrix();
     }
 
-    if (isOrthographicCamera(this.axisCamera)) {
-      this.axisCamera.left = 0;
-      this.axisCamera.right = w;
-      this.axisCamera.top = h;
-      this.axisCamera.bottom = 0;
-      this.axisCamera.updateProjectionMatrix();
-    } else {
-      this.axisCamera.updateProjectionMatrix();
-    }
+    this.axisCamera.left = 0;
+    this.axisCamera.right = w;
+    this.axisCamera.top = h;
+    this.axisCamera.bottom = 0;
+    this.axisCamera.updateProjectionMatrix();
 
     if (this.renderer.getPixelRatio() !== window.devicePixelRatio) {
       this.renderer.setPixelRatio(window.devicePixelRatio);
