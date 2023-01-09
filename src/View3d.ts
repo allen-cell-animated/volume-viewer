@@ -84,7 +84,12 @@ export class View3d {
     // keep the ortho scale up to date.
     if (this.image && isOrthographicCamera(this.canvas3d.camera)) {
       this.image.setOrthoScale(this.canvas3d.controls.scale);
+      this.updateOrthoScaleBar(this.image.volume);
     }
+  }
+
+  private updateOrthoScaleBar(volume: Volume) {
+    this.canvas3d.updateOrthoScaleBar(volume.physicalScale, volume.imageInfo.pixel_size_unit);
   }
 
   /**
@@ -214,10 +219,15 @@ export class View3d {
    * Set voxel dimensions - controls volume scaling. For example, the physical measurements of the voxels from a biological data set
    * @param {Object} volume
    * @param {number} values Array of x,y,z floating point values for the physical voxel size scaling
+   * @param {string} unit The unit of `values`, if different than previous
    */
-  setVoxelSize(volume: Volume, values: number[]): void {
+  setVoxelSize(volume: Volume, values: number[], unit?: string): void {
     if (this.image) {
       this.image.setVoxelSize(values);
+
+      if (unit) {
+        this.image.volume.setUnitSymbol(unit);
+      }
     }
     this.redraw();
   }
@@ -463,11 +473,19 @@ export class View3d {
 
   /**
    * Enable or disable 3d axis display at lower left.
-   * @param {boolean} autorotate
+   * @param {boolean} showAxis
    */
   setShowAxis(showAxis: boolean): void {
     this.canvas3d.showAxis = showAxis;
     this.canvas3d.redraw();
+  }
+
+  /**
+   * Enable or disable scale indicators.
+   * @param showScaleBar
+   */
+  setShowScaleBar(showScaleBar: boolean): void {
+    this.canvas3d.setShowOrthoScaleBar(showScaleBar);
   }
 
   /**
@@ -481,6 +499,19 @@ export class View3d {
       this.onStartControls();
     } else {
       this.onEndControls();
+    }
+  }
+
+  /**
+   * Set the unit symbol for the scale bar (e.g. µm)
+   * @param {string} unit
+   */
+  setScaleUnit(unit: string): void {
+    if (this.image) {
+      this.image.volume.setUnitSymbol(unit);
+      if (isOrthographicCamera(this.canvas3d.camera)) {
+        this.updateOrthoScaleBar(this.image.volume);
+      }
     }
   }
 

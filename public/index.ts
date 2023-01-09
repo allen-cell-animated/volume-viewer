@@ -71,6 +71,8 @@ const myState: State = {
   isAxisShowing: false,
   isAligned: true,
 
+  showScaleBar: true,
+
   showBoundingBox: false,
   boundingBoxColor: [255, 255, 0],
   backgroundColor: [0, 0, 0],
@@ -1062,6 +1064,7 @@ function createTestVolume() {
     pixel_size_z: 1,
     name: "AICS-10_5_5",
     version: "0.0.0",
+    pixel_size_unit: "",
     transform: { translation: [0, 0, 0], rotation: [0, 0, 0] },
     times: 1,
   };
@@ -1117,6 +1120,11 @@ function main() {
     myState.showBoundingBox = !myState.showBoundingBox;
     view3D.setShowBoundingBox(myState.volume, myState.showBoundingBox);
   });
+  const showScaleBarBtn = document.getElementById("showScaleBar");
+  showScaleBarBtn?.addEventListener("click", () => {
+    myState.showScaleBar = !myState.showScaleBar;
+    view3D.setShowScaleBar(myState.showScaleBar);
+  })
 
   // convert value to rgb array
   function hexToRgb(hex, last: [number, number, number]): [number, number, number] {

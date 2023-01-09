@@ -28,6 +28,34 @@ interface PackedChannelsImage {
 }
 type PackedChannelsImageRequests = Record<string, HTMLImageElement>;
 
+// Preferred spatial units in OME-Zarr are specified as full names. We want just the symbol.
+// See https://ngff.openmicroscopy.org/latest/#axes-md
+function spatialUnitNameToSymbol(unitName: string): string | null {
+  const unitSymbols = {
+    "angstrom":   "Å",
+    "decameter":  "dam",
+    "foot":       "ft",
+    "inch":       "in",
+    "meter":      "m",
+    "micrometer": "μm",
+    "mile":       "mi",
+    "parsec":     "pc",
+    "yard":       "yd",
+  };
+  if (unitSymbols[unitName]) {
+    return unitSymbols[unitName];
+  }
+
+  // SI prefixes not in unitSymbols are abbreviated by first letter, capitalized if prefix ends with "a"
+  if (unitName.endsWith("meter")) {
+    const capitalize = unitName[unitName.length - 6] === "a";
+    const prefix = capitalize ? unitName[0].toUpperCase() : unitName[0];
+    return prefix + "m";
+  }
+
+  return null;
+}
+
 // We want to find the most "square" packing of z tw by th tiles.
 // Compute number of rows and columns.
 function computePackedAtlasDims(z, tw, th): { nrows: number; ncols: number } {
@@ -148,22 +176,19 @@ export default class VolumeLoader {
    * @param {PerChannelCallback} onChannelLoaded Per-channel callback.  Called when each channel's atlased volume data is loaded
    * @returns {Promise<Volume>}
    */
-  static loadJson(url: string, urlPrefix: string, onChannelLoaded: PerChannelCallback): Promise<Volume> {
-    return fetch(url)
-      .then(function (response) {
-        return response.json();
-      })
-      .then(function (myJson) {
-        const vol = new Volume(myJson);
+  static async loadJson(url: string, urlPrefix: string, onChannelLoaded: PerChannelCallback): Promise<Volume> {
+    const response = await fetch(url);
+    const myJson = await response.json();
+    const vol = new Volume(myJson);
 
-        // if you need to adjust image paths prior to download,
-        // now is the time to do it:
-        myJson.images.forEach(function (element) {
-          element.name = urlPrefix + element.name;
-        });
-        VolumeLoader.loadVolumeAtlasData(vol, myJson.images, onChannelLoaded);
-        return vol;
-      });
+    // if you need to adjust image paths prior to download,
+    // now is the time to do it:
+    myJson.images.forEach((element) => {
+      element.name = urlPrefix + element.name;
+    });
+    myJson.pixel_size_unit = myJson.pixel_size_unit || "μm";
+    VolumeLoader.loadVolumeAtlasData(vol, myJson.images, onChannelLoaded);
+    return vol;
   }
 
   /**
@@ -229,6 +254,9 @@ export default class VolumeLoader {
     }
 
     const numlevels = multiscales.length;
+    // Assume all axes have the same units - we have no means of storing per-axis unit symbols
+    const unitName = axes[spatialAxes[2]].unit;
+    const unitSymbol = spatialUnitNameToSymbol(unitName) || unitName || "";
 
     // get all shapes
     for (const i in multiscales) {
@@ -304,6 +332,7 @@ export default class VolumeLoader {
       pixel_size_x: scale5d[spatialAxes[2]],
       pixel_size_y: scale5d[spatialAxes[1]],
       pixel_size_z: scale5d[spatialAxes[0]] * downsampleZ,
+      pixel_size_unit: unitSymbol,
       name: displayMetadata.name,
       version: displayMetadata.version,
       transform: {
@@ -384,6 +413,7 @@ export default class VolumeLoader {
       pixel_size_z: 2,
       name: "TEST",
       version: "1.0",
+      pixel_size_unit: "µm",
       transform: {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],
@@ -416,6 +446,7 @@ export default class VolumeLoader {
     const sizez = Number(pixelsEl.getAttribute("SizeZ"));
     const sizec = Number(pixelsEl.getAttribute("SizeC"));
     const sizet = Number(pixelsEl.getAttribute("SizeT"));
+    const unit = pixelsEl.getAttribute("PhysicalSizeXUnit");
     const pixeltype = pixelsEl.getAttribute("Type");
     const dimensionorder: string = pixelsEl.getAttribute("DimensionOrder") || "XYZCT";
 
@@ -465,6 +496,7 @@ export default class VolumeLoader {
       pixel_size_z: pixelsizez,
       name: "TEST",
       version: "1.0",
+      pixel_size_unit: unit || "",
       transform: {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],

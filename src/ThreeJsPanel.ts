@@ -1,6 +1,5 @@
 import {
   AxesHelper,
-  Camera,
   Color,
   Vector3,
   Object3D,
@@ -29,7 +28,7 @@ export class ThreeJsPanel {
   private canvas: HTMLCanvasElement;
   public scene: Scene;
   private zooming: boolean;
-  public animateFuncs: ((ThreeJsPanel) => void)[];
+  public animateFuncs: ((panel: ThreeJsPanel) => void)[];
   private inRenderLoop: boolean;
   private requestedRender: number;
   public hasWebGL2: boolean;
@@ -45,7 +44,7 @@ export class ThreeJsPanel {
   private orthoControlsY: TrackballControls;
   private orthographicCameraZ: OrthographicCamera;
   private orthoControlsZ: TrackballControls;
-  public camera: Camera;
+  public camera: PerspectiveCamera | OrthographicCamera;
   public controls: TrackballControls;
   private controlEndHandler?: EventListener<Event, "end", TrackballControls>;
   private controlChangeHandler?: EventListener<Event, "change", TrackballControls>;
@@ -56,9 +55,12 @@ export class ThreeJsPanel {
   private axisOffset: [number, number];
   private axisHelperScene: Scene;
   private axisHelperObject: Object3D;
-  private axisCamera: Camera;
+  private axisCamera: PerspectiveCamera | OrthographicCamera;
 
-  private dataurlcallback?: (string) => void;
+  private orthoScaleBarElement: HTMLDivElement;
+  public showOrthoScaleBar: boolean;
+
+  private dataurlcallback?: (url: string) => void;
 
   constructor(parentElement: HTMLElement, _useWebGL2: boolean) {
     this.containerdiv = document.createElement("div");
@@ -80,6 +82,9 @@ export class ThreeJsPanel {
     this.showAxis = false;
     this.axisScale = 50.0;
     this.axisOffset = [66, 66];
+
+    this.orthoScaleBarElement = document.createElement("div");
+    this.showOrthoScaleBar = true;
 
     this.zooming = false;
     this.animateFuncs = [];
@@ -186,6 +191,7 @@ export class ThreeJsPanel {
     this.controls = this.perspectiveControls;
 
     this.setupAxisHelper();
+    this.setupOrthoScaleBar();
   }
 
   updateCameraFocus(fov: number, _focalDistance: number, _apertureSize: number): void {
@@ -308,6 +314,64 @@ export class ThreeJsPanel {
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
 
+  orthoScreenPixelsToPhysicalUnits(pixels: number, physicalUnitsPerWorldUnit: number): number {
+    // At orthoScale = 0.5, the viewport is 1 world unit tall
+    const worldUnitsPerPixel = this.orthoScale * 2 / this.getHeight();
+    // Multiply by devicePixelRatio to convert from scaled CSS pixels to physical pixels
+    // (to account for high dpi monitors, e.g.). We didn't do this to height above because
+    // that value comes from three, which works in physical pixels.
+    return pixels * window.devicePixelRatio * worldUnitsPerPixel * physicalUnitsPerWorldUnit;
+  }
+
+  setupOrthoScaleBar(): void {
+    const orthoScaleBarStyle: Partial<CSSStyleDeclaration> = {
+      border: "1px solid white",
+      borderTop: "none",
+      height: "10px",
+      display: "none",
+      position: "absolute",
+      right: "20px",
+      bottom: "20px",
+      color: "white",
+      mixBlendMode: "difference",
+      textAlign: "right",
+      lineHeight: "0px",
+      fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
+      boxSizing: "border-box",
+      paddingRight: "10px",
+    };
+    Object.assign(this.orthoScaleBarElement.style, orthoScaleBarStyle);
+    this.containerdiv.appendChild(this.orthoScaleBarElement);
+  }
+
+  updateOrthoScaleBar(scale: number, unit?: string): void {
+    // We want to find the largest round number of physical units that keeps the scale bar within this width on screen
+    const SCALE_BAR_MAX_WIDTH = 150;
+    // Convert max width to volume physical units
+    const physicalMaxWidth = this.orthoScreenPixelsToPhysicalUnits(SCALE_BAR_MAX_WIDTH, scale);
+    // Round off all but the most significant digit of physicalMaxWidth
+    const digits = Math.floor(Math.log10(physicalMaxWidth));
+    const div10 = 10 ** digits;
+    const scaleValue = Math.floor(physicalMaxWidth / div10) * div10;
+    let scaleStr = scaleValue.toString();
+    if (digits < 1) {
+      // Handle irrational floating point values (e.g. 0.30000000000000004) 
+      scaleStr = scaleStr.slice(0, Math.abs(digits) + 2);
+    }
+    this.orthoScaleBarElement.innerHTML = `${scaleStr}${unit || ""}`;
+    this.orthoScaleBarElement.style.width = `${SCALE_BAR_MAX_WIDTH * (scaleValue / physicalMaxWidth)}px`;
+  }
+
+  updateOrthoScaleBarVisibility(): void {
+    const visible = isOrthographicCamera(this.camera) && this.showOrthoScaleBar;
+    this.orthoScaleBarElement.style.display = visible ? "" : "none";
+  }
+
+  setShowOrthoScaleBar(visible: boolean): void {
+    this.showOrthoScaleBar = visible;
+    this.updateOrthoScaleBarVisibility();
+  }
+
   setAutoRotate(rotate: boolean): void {
     this.controls.autoRotate = rotate;
   }
@@ -374,6 +438,7 @@ export class ThreeJsPanel {
         this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
         break;
     }
+    this.updateOrthoScaleBarVisibility();
   }
 
   getCanvas(): HTMLCanvasElement {
@@ -394,12 +459,12 @@ export class ThreeJsPanel {
     this.orthoControlsX.aspect = aspect;
     this.orthoControlsX.panSpeed = w * 0.5;
     if (isOrthographicCamera(this.camera)) {
-      (this.camera as OrthographicCamera).left = -this.orthoScale * aspect;
-      (this.camera as OrthographicCamera).right = this.orthoScale * aspect;
-      (this.camera as OrthographicCamera).updateProjectionMatrix();
+      this.camera.left = -this.orthoScale * aspect;
+      this.camera.right = this.orthoScale * aspect;
+      this.camera.updateProjectionMatrix();
     } else {
-      (this.camera as PerspectiveCamera).aspect = aspect;
-      (this.camera as PerspectiveCamera).updateProjectionMatrix();
+      this.camera.aspect = aspect;
+      this.camera.updateProjectionMatrix();
     }
 
     if (isOrthographicCamera(this.axisCamera)) {
@@ -409,7 +474,11 @@ export class ThreeJsPanel {
       this.axisCamera.bottom = 0;
       this.axisCamera.updateProjectionMatrix();
     } else {
-      (this.axisCamera as PerspectiveCamera).updateProjectionMatrix();
+      this.axisCamera.updateProjectionMatrix();
+    }
+
+    if (this.renderer.getPixelRatio() !== window.devicePixelRatio) {
+      this.renderer.setPixelRatio(window.devicePixelRatio);
     }
 
     this.renderer.setSize(w, h);
