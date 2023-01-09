@@ -29,8 +29,6 @@ export class View3d {
   private parentEl: HTMLElement;
   private image?: VolumeDrawable;
 
-  private oldScale: Vector3;
-  private currentScale: Vector3;
   private lights: Light[];
   private lightContainer: Object3D;
   private ambientLight: AmbientLight;
@@ -61,8 +59,6 @@ export class View3d {
     this.parentEl = parentElement;
     window.addEventListener("resize", () => this.resize(null, this.parentEl.offsetWidth, this.parentEl.offsetHeight));
 
-    this.oldScale = new Vector3();
-    this.currentScale = new Vector3();
     this.lightContainer = new Object3D();
     this.ambientLight = new AmbientLight();
     this.spotLight = new SpotLight();
@@ -405,9 +401,6 @@ export class View3d {
   buildScene(): void {
     this.scene = this.canvas3d.scene;
 
-    this.oldScale = new Vector3(0.5, 0.5, 0.5);
-    this.currentScale = new Vector3(0.5, 0.5, 0.5);
-
     // background color
     this.canvas3d.setClearColor(this.backgroundColor, 1.0);
 
@@ -486,6 +479,27 @@ export class View3d {
    */
   setShowScaleBar(showScaleBar: boolean): void {
     this.canvas3d.setShowOrthoScaleBar(showScaleBar);
+  }
+
+  /**
+   * Set the offset of the axis indicator from the bottom-left corner
+   * @param {number} marginX
+   * @param {number} marginY
+   */
+  setAxisPosition(marginX: number, marginY: number): void {
+    this.canvas3d.setAxisPosition(marginX, marginY);
+    if (this.canvas3d.showAxis) {
+      this.canvas3d.redraw();
+    }
+  }
+
+  /**
+   * Set the offset of the scale bar from the bottom-right corner
+   * @param {number} marginX
+   * @param {number} marginY
+   */
+  setScaleBarPosition(marginX: number, marginY: number): void {
+    this.canvas3d.setOrthoScaleBarPosition(marginX, marginY);
   }
 
   /**

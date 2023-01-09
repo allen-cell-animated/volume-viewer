@@ -314,6 +314,14 @@ export class ThreeJsPanel {
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
 
+  setAxisPosition(marginX: number, marginY: number) {
+    // Offset is relative to center of object, not corner of possible extent
+    // at offsets lower than BASE_MARGIN, axes may extend off screen
+    const BASE_MARGIN = 50;
+    this.axisOffset = [marginX + BASE_MARGIN, marginY + BASE_MARGIN];
+    this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
+  }
+
   orthoScreenPixelsToPhysicalUnits(pixels: number, physicalUnitsPerWorldUnit: number): number {
     // At orthoScale = 0.5, the viewport is 1 world unit tall
     const worldUnitsPerPixel = this.orthoScale * 2 / this.getHeight();
@@ -370,6 +378,13 @@ export class ThreeJsPanel {
   setShowOrthoScaleBar(visible: boolean): void {
     this.showOrthoScaleBar = visible;
     this.updateOrthoScaleBarVisibility();
+  }
+
+  setOrthoScaleBarPosition(marginX: number, marginY: number) {
+    Object.assign(this.orthoScaleBarElement.style, {
+      right: marginX + "px",
+      bottom: marginY + "px",
+    });
   }
 
   setAutoRotate(rotate: boolean): void {
