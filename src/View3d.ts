@@ -482,9 +482,12 @@ export class View3d {
   }
 
   /**
-   * Set the offset of the axis indicator from the bottom-left corner
+   * Set the position of the axis indicator, as a corner of the viewport and horizontal and vertical margins from the
+   * edge of the viewport.
    * @param {number} marginX
    * @param {number} marginY
+   * @param {ViewportCorner} [corner] The corner of the viewport in which the axis appears.
+   *  Possible values: `top_left`, `top_right`, `bottom_left`, `bottom_right`; default: `bottom_left`
    */
   setAxisPosition(marginX: number, marginY: number, corner: ViewportCorner = "bottom_left"): void {
     this.canvas3d.setAxisPosition(marginX, marginY, corner);
@@ -494,9 +497,12 @@ export class View3d {
   }
 
   /**
-   * Set the offset of the scale bar from the bottom-right corner
+   * Set the position of the scale bar, as a corner of the viewport and horizontal and vertical margins from the edge
+   * of the viewport.
    * @param {number} marginX
    * @param {number} marginY
+   * @param {ViewportCorner} [corner] The corner of the viewport in which the scale bar appears.
+   *  Possible values: `top_left`, `top_right`, `bottom_left`, `bottom_right`; default: `bottom_right`
    */
   setScaleBarPosition(marginX: number, marginY: number, corner: ViewportCorner = "bottom_right"): void {
     this.canvas3d.setOrthoScaleBarPosition(marginX, marginY, corner);
