@@ -186,7 +186,7 @@ export default class VolumeLoader {
     myJson.images.forEach((element) => {
       element.name = urlPrefix + element.name;
     });
-    myJson.unit_symbol = myJson.unit_symbol || "μm";
+    myJson.pixel_size_unit = myJson.pixel_size_unit || "μm";
     VolumeLoader.loadVolumeAtlasData(vol, myJson.images, onChannelLoaded);
     return vol;
   }
@@ -332,7 +332,7 @@ export default class VolumeLoader {
       pixel_size_x: scale5d[spatialAxes[2]],
       pixel_size_y: scale5d[spatialAxes[1]],
       pixel_size_z: scale5d[spatialAxes[0]] * downsampleZ,
-      unit_symbol: unitSymbol,
+      pixel_size_unit: unitSymbol,
       name: displayMetadata.name,
       version: displayMetadata.version,
       transform: {
@@ -413,7 +413,7 @@ export default class VolumeLoader {
       pixel_size_z: 2,
       name: "TEST",
       version: "1.0",
-      unit_symbol: "µm",
+      pixel_size_unit: "µm",
       transform: {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],
@@ -496,7 +496,7 @@ export default class VolumeLoader {
       pixel_size_z: pixelsizez,
       name: "TEST",
       version: "1.0",
-      unit_symbol: unit || "",
+      pixel_size_unit: unit || "",
       transform: {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],

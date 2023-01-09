@@ -15,7 +15,7 @@ export interface ImageInfo {
   pixel_size_x: number;
   pixel_size_y: number;
   pixel_size_z: number;
-  unit_symbol: string;
+  pixel_size_unit: string;
   channel_names: string[];
   channel_colors?: [number, number, number][];
   rows: number;
@@ -43,7 +43,7 @@ export const getDefaultImageInfo = (): ImageInfo => {
     pixel_size_x: 1,
     pixel_size_y: 1,
     pixel_size_z: 1,
-    unit_symbol: "",
+    pixel_size_unit: "",
     channel_names: [],
     channel_colors: [],
     rows: 1,
@@ -191,7 +191,7 @@ export default class Volume {
       channel.dims = [this.x, this.y, this.z];
     }
 
-    this.physicalUnitSymbol = this.imageInfo.unit_symbol;
+    this.physicalUnitSymbol = this.imageInfo.pixel_size_unit;
     this.setVoxelSize(this.pixel_size);
 
     // make sure a transform is specified

@@ -89,7 +89,7 @@ export class View3d {
   }
 
   private updateOrthoScaleBar(volume: Volume) {
-    this.canvas3d.updateOrthoScaleBar(volume.physicalScale, volume.imageInfo.unit_symbol);
+    this.canvas3d.updateOrthoScaleBar(volume.physicalScale, volume.imageInfo.pixel_size_unit);
   }
 
   /**

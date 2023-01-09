@@ -1064,7 +1064,7 @@ function createTestVolume() {
     pixel_size_z: 1,
     name: "AICS-10_5_5",
     version: "0.0.0",
-    unit_symbol: "",
+    pixel_size_unit: "",
     transform: { translation: [0, 0, 0], rotation: [0, 0, 0] },
     times: 1,
   };
