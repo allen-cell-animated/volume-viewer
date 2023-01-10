@@ -3687,6 +3687,8 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     this.showAxis = false;
     this.axisScale = 50.0;
     this.axisOffset = [66, 66];
+    this.orthoScaleBarElement = document.createElement("div");
+    this.showOrthoScaleBar = true;
     this.zooming = false;
     this.animateFuncs = []; // are we in a constant render loop or not?
 
@@ -3776,6 +3778,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_5__.PerspectiveCamera();
     this.controls = this.perspectiveControls;
     this.setupAxisHelper();
+    this.setupOrthoScaleBar();
   }
 
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(ThreeJsPanel, [{
@@ -3895,6 +3898,71 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
     }
   }, {
+    key: "orthoScreenPixelsToPhysicalUnits",
+    value: function orthoScreenPixelsToPhysicalUnits(pixels, physicalUnitsPerWorldUnit) {
+      // At orthoScale = 0.5, the viewport is 1 world unit tall
+      var worldUnitsPerPixel = this.orthoScale * 2 / this.getHeight(); // Multiply by devicePixelRatio to convert from scaled CSS pixels to physical pixels
+      // (to account for high dpi monitors, e.g.). We didn't do this to height above because
+      // that value comes from three, which works in physical pixels.
+
+      return pixels * window.devicePixelRatio * worldUnitsPerPixel * physicalUnitsPerWorldUnit;
+    }
+  }, {
+    key: "setupOrthoScaleBar",
+    value: function setupOrthoScaleBar() {
+      var orthoScaleBarStyle = {
+        border: "1px solid white",
+        borderTop: "none",
+        height: "10px",
+        display: "none",
+        position: "absolute",
+        right: "20px",
+        bottom: "20px",
+        color: "white",
+        mixBlendMode: "difference",
+        textAlign: "right",
+        lineHeight: "0px",
+        fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
+        boxSizing: "border-box",
+        paddingRight: "10px"
+      };
+      Object.assign(this.orthoScaleBarElement.style, orthoScaleBarStyle);
+      this.containerdiv.appendChild(this.orthoScaleBarElement);
+    }
+  }, {
+    key: "updateOrthoScaleBar",
+    value: function updateOrthoScaleBar(scale, unit) {
+      // We want to find the largest round number of physical units that keeps the scale bar within this width on screen
+      var SCALE_BAR_MAX_WIDTH = 150; // Convert max width to volume physical units
+
+      var physicalMaxWidth = this.orthoScreenPixelsToPhysicalUnits(SCALE_BAR_MAX_WIDTH, scale); // Round off all but the most significant digit of physicalMaxWidth
+
+      var digits = Math.floor(Math.log10(physicalMaxWidth));
+      var div10 = Math.pow(10, digits);
+      var scaleValue = Math.floor(physicalMaxWidth / div10) * div10;
+      var scaleStr = scaleValue.toString();
+
+      if (digits < 1) {
+        // Handle irrational floating point values (e.g. 0.30000000000000004) 
+        scaleStr = scaleStr.slice(0, Math.abs(digits) + 2);
+      }
+
+      this.orthoScaleBarElement.innerHTML = "".concat(scaleStr).concat(unit || "");
+      this.orthoScaleBarElement.style.width = "".concat(SCALE_BAR_MAX_WIDTH * (scaleValue / physicalMaxWidth), "px");
+    }
+  }, {
+    key: "updateOrthoScaleBarVisibility",
+    value: function updateOrthoScaleBarVisibility() {
+      var visible = (0,_types__WEBPACK_IMPORTED_MODULE_4__.isOrthographicCamera)(this.camera) && this.showOrthoScaleBar;
+      this.orthoScaleBarElement.style.display = visible ? "" : "none";
+    }
+  }, {
+    key: "setShowOrthoScaleBar",
+    value: function setShowOrthoScaleBar(visible) {
+      this.showOrthoScaleBar = visible;
+      this.updateOrthoScaleBarVisibility();
+    }
+  }, {
     key: "setAutoRotate",
     value: function setAutoRotate(rotate) {
       this.controls.autoRotate = rotate;
@@ -3970,6 +4038,8 @@ var ThreeJsPanel = /*#__PURE__*/function () {
           this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
           break;
       }
+
+      this.updateOrthoScaleBarVisibility();
     }
   }, {
     key: "getCanvas",
@@ -4007,6 +4077,10 @@ var ThreeJsPanel = /*#__PURE__*/function () {
         this.axisCamera.updateProjectionMatrix();
       } else {
         this.axisCamera.updateProjectionMatrix();
+      }
+
+      if (this.renderer.getPixelRatio() !== window.devicePixelRatio) {
+        this.renderer.setPixelRatio(window.devicePixelRatio);
       }
 
       this.renderer.setSize(w, h);
@@ -4998,7 +5072,13 @@ var View3d = /*#__PURE__*/function () {
 
       if (this.image && (0,_types__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(this.canvas3d.camera)) {
         this.image.setOrthoScale(this.canvas3d.controls.scale);
+        this.updateOrthoScaleBar(this.image.volume);
       }
+    }
+  }, {
+    key: "updateOrthoScaleBar",
+    value: function updateOrthoScaleBar(volume) {
+      this.canvas3d.updateOrthoScaleBar(volume.physicalScale, volume.imageInfo.pixel_size_unit);
     }
     /**
      * Capture the contents of this canvas to a data url
@@ -5155,13 +5235,18 @@ var View3d = /*#__PURE__*/function () {
      * Set voxel dimensions - controls volume scaling. For example, the physical measurements of the voxels from a biological data set
      * @param {Object} volume
      * @param {number} values Array of x,y,z floating point values for the physical voxel size scaling
+     * @param {string} unit The unit of `values`, if different than previous
      */
 
   }, {
     key: "setVoxelSize",
-    value: function setVoxelSize(volume, values) {
+    value: function setVoxelSize(volume, values, unit) {
       if (this.image) {
         this.image.setVoxelSize(values);
+
+        if (unit) {
+          this.image.volume.setUnitSymbol(unit);
+        }
       }
 
       this.redraw();
@@ -5408,7 +5493,7 @@ var View3d = /*#__PURE__*/function () {
     }
     /**
      * Enable or disable 3d axis display at lower left.
-     * @param {boolean} autorotate
+     * @param {boolean} showAxis
      */
 
   }, {
@@ -5416,6 +5501,16 @@ var View3d = /*#__PURE__*/function () {
     value: function setShowAxis(showAxis) {
       this.canvas3d.showAxis = showAxis;
       this.canvas3d.redraw();
+    }
+    /**
+     * Enable or disable scale indicators.
+     * @param showScaleBar
+     */
+
+  }, {
+    key: "setShowScaleBar",
+    value: function setShowScaleBar(showScaleBar) {
+      this.canvas3d.setShowOrthoScaleBar(showScaleBar);
     }
     /**
      * Enable or disable a turntable rotation mode. The display will continuously spin about the vertical screen axis.
@@ -5431,6 +5526,22 @@ var View3d = /*#__PURE__*/function () {
         this.onStartControls();
       } else {
         this.onEndControls();
+      }
+    }
+    /**
+     * Set the unit symbol for the scale bar (e.g. µm)
+     * @param {string} unit
+     */
+
+  }, {
+    key: "setScaleUnit",
+    value: function setScaleUnit(unit) {
+      if (this.image) {
+        this.image.volume.setUnitSymbol(unit);
+
+        if ((0,_types__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(this.canvas3d.camera)) {
+          this.updateOrthoScaleBar(this.image.volume);
+        }
       }
     }
     /**
@@ -5875,6 +5986,7 @@ var getDefaultImageInfo = function getDefaultImageInfo() {
     pixel_size_x: 1,
     pixel_size_y: 1,
     pixel_size_z: 1,
+    pixel_size_unit: "",
     channel_names: [],
     channel_colors: [],
     rows: 1,
@@ -5957,8 +6069,8 @@ var Volume = /*#__PURE__*/function () {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Volume);
 
     this.scale = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1);
-    this.currentScale = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1);
     this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1);
+    this.physicalScale = 1;
     this.normalizedPhysicalSize = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1);
     this.loaded = false;
     this.imageInfo = imageInfo;
@@ -5995,6 +6107,7 @@ var Volume = /*#__PURE__*/function () {
       channel.dims = [this.x, this.y, this.z];
     }
 
+    this.physicalUnitSymbol = this.imageInfo.pixel_size_unit;
     this.setVoxelSize(this.pixel_size); // make sure a transform is specified
 
     if (!this.imageInfo.transform) {
@@ -6013,17 +6126,11 @@ var Volume = /*#__PURE__*/function () {
     }
 
     this.volumeDataObservers = [];
-  }
+  } // we calculate the physical size of the volume (voxels*pixel_size)
+  // and then normalize to the max physical dimension
+
 
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Volume, [{
-    key: "setScale",
-    value: function setScale(scale) {
-      this.scale = scale;
-      this.currentScale = scale.clone();
-    } // we calculate the physical size of the volume (voxels*pixel_size)
-    // and then normalize to the max physical dimension
-
-  }, {
     key: "setVoxelSize",
     value: function setVoxelSize(values) {
       // basic error check.  bail out if we get something bad.
@@ -6044,19 +6151,25 @@ var Volume = /*#__PURE__*/function () {
         this.pixel_size[2] = values[2];
       }
 
-      var physSizeMin = Math.min(this.pixel_size[0], Math.min(this.pixel_size[1], this.pixel_size[2]));
-      var pixelsMax = Math.max(this.imageInfo.width, Math.max(this.imageInfo.height, this.z));
+      var physSizeMin = Math.min(this.pixel_size[0], this.pixel_size[1], this.pixel_size[2]);
+      var pixelsMax = Math.max(this.imageInfo.width, this.imageInfo.height, this.z);
       var sx = this.pixel_size[0] / physSizeMin * this.imageInfo.width / pixelsMax;
       var sy = this.pixel_size[1] / physSizeMin * this.imageInfo.height / pixelsMax;
       var sz = this.pixel_size[2] / physSizeMin * this.z / pixelsMax; // this works because image was scaled down in x and y but not z.
       // so use original x and y dimensions from imageInfo.
 
-      this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(this.imageInfo.width * this.pixel_size[0], this.imageInfo.height * this.pixel_size[1], this.z * this.pixel_size[2]);
-      var m = Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z)); // Compute the volume's max extent - scaled to max dimension.
+      this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(this.imageInfo.width * this.pixel_size[0], this.imageInfo.height * this.pixel_size[1], this.z * this.pixel_size[2]); // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
 
-      this.normalizedPhysicalSize = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3().copy(this.physicalSize).multiplyScalar(1.0 / m); // sx, sy, sz should be same as normalizedPhysicalSize
+      this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z); // Compute the volume's max extent - scaled to max dimension.
 
-      this.setScale(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(sx, sy, sz));
+      this.normalizedPhysicalSize = this.physicalSize.clone().divideScalar(this.physicalScale); // sx, sy, sz should be same as normalizedPhysicalSize
+
+      this.scale = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(sx, sy, sz);
+    }
+  }, {
+    key: "setUnitSymbol",
+    value: function setUnitSymbol(symbol) {
+      this.physicalUnitSymbol = symbol;
     }
   }, {
     key: "cleanup",
@@ -7019,8 +7132,37 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-// We want to find the most "square" packing of z tw by th tiles.
+// Preferred spatial units in OME-Zarr are specified as full names. We want just the symbol.
+// See https://ngff.openmicroscopy.org/latest/#axes-md
+function spatialUnitNameToSymbol(unitName) {
+  var unitSymbols = {
+    "angstrom": "Å",
+    "decameter": "dam",
+    "foot": "ft",
+    "inch": "in",
+    "meter": "m",
+    "micrometer": "μm",
+    "mile": "mi",
+    "parsec": "pc",
+    "yard": "yd"
+  };
+
+  if (unitSymbols[unitName]) {
+    return unitSymbols[unitName];
+  } // SI prefixes not in unitSymbols are abbreviated by first letter, capitalized if prefix ends with "a"
+
+
+  if (unitName.endsWith("meter")) {
+    var capitalize = unitName[unitName.length - 6] === "a";
+    var prefix = capitalize ? unitName[0].toUpperCase() : unitName[0];
+    return prefix + "m";
+  }
+
+  return null;
+} // We want to find the most "square" packing of z tw by th tiles.
 // Compute number of rows and columns.
+
+
 function computePackedAtlasDims(z, tw, th) {
   var nextrows = 1;
   var nextcols = z;
@@ -7156,20 +7298,47 @@ var VolumeLoader = /*#__PURE__*/function () {
 
   }, {
     key: "loadJson",
-    value: function loadJson(url, urlPrefix, onChannelLoaded) {
-      return fetch(url).then(function (response) {
-        return response.json();
-      }).then(function (myJson) {
-        var vol = new _Volume__WEBPACK_IMPORTED_MODULE_5__["default"](myJson); // if you need to adjust image paths prior to download,
-        // now is the time to do it:
+    value: function () {
+      var _loadJson = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(url, urlPrefix, onChannelLoaded) {
+        var response, myJson, vol;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                _context.next = 2;
+                return fetch(url);
 
-        myJson.images.forEach(function (element) {
-          element.name = urlPrefix + element.name;
-        });
-        VolumeLoader.loadVolumeAtlasData(vol, myJson.images, onChannelLoaded);
-        return vol;
-      });
-    }
+              case 2:
+                response = _context.sent;
+                _context.next = 5;
+                return response.json();
+
+              case 5:
+                myJson = _context.sent;
+                vol = new _Volume__WEBPACK_IMPORTED_MODULE_5__["default"](myJson); // if you need to adjust image paths prior to download,
+                // now is the time to do it:
+
+                myJson.images.forEach(function (element) {
+                  element.name = urlPrefix + element.name;
+                });
+                myJson.pixel_size_unit = myJson.pixel_size_unit || "μm";
+                VolumeLoader.loadVolumeAtlasData(vol, myJson.images, onChannelLoaded);
+                return _context.abrupt("return", vol);
+
+              case 11:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee);
+      }));
+
+      function loadJson(_x, _x2, _x3) {
+        return _loadJson.apply(this, arguments);
+      }
+
+      return loadJson;
+    }()
     /**
      * load 5d ome-zarr into Volume object
      * @param {string} url
@@ -7180,25 +7349,25 @@ var VolumeLoader = /*#__PURE__*/function () {
   }, {
     key: "loadZarr",
     value: function () {
-      var _loadZarr = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(urlStore, imageName, t, onChannelLoaded) {
-        var store, imagegroup, data, allmetadata, imageIndex, multiscales, axes, hasT, hasC, axisTCZYX, i, axis, spatialAxes, numlevels, _i, level, downsampleZ, maxAtlasEdge, levelToLoad, _i2, s, dataset, c, sizeT, scale5d, tw, th, tz, loadedZ, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, imgdata, vol, storepath, _loop2, _i3;
+      var _loadZarr = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(urlStore, imageName, t, onChannelLoaded) {
+        var store, imagegroup, data, allmetadata, imageIndex, multiscales, axes, hasT, hasC, axisTCZYX, i, axis, spatialAxes, numlevels, unitName, unitSymbol, _i, level, downsampleZ, maxAtlasEdge, levelToLoad, _i2, s, dataset, c, sizeT, scale5d, tw, th, tz, loadedZ, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, imgdata, vol, storepath, _loop2, _i3;
 
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee2$(_context2) {
           while (1) {
-            switch (_context.prev = _context.next) {
+            switch (_context2.prev = _context2.next) {
               case 0:
                 store = new zarr__WEBPACK_IMPORTED_MODULE_6__.HTTPStore(urlStore);
                 imagegroup = imageName;
-                _context.next = 4;
+                _context2.next = 4;
                 return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openGroup)(store, imagegroup, "r");
 
               case 4:
-                data = _context.sent;
-                _context.next = 7;
+                data = _context2.sent;
+                _context2.next = 7;
                 return data.attrs.asObject();
 
               case 7:
-                allmetadata = _context.sent;
+                allmetadata = _context2.sent;
                 // each entry of multiscales is a multiscale image.
                 // take the first multiscales entry
                 imageIndex = 0;
@@ -7247,26 +7416,29 @@ var VolumeLoader = /*#__PURE__*/function () {
                   console.log("ERROR: zarr loader expects a z, y, and x axis.");
                 }
 
-                numlevels = multiscales.length; // get all shapes
+                numlevels = multiscales.length; // Assume all axes have the same units - we have no means of storing per-axis unit symbols
 
-                _context.t0 = _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().keys(multiscales);
+                unitName = axes[spatialAxes[2]].unit;
+                unitSymbol = spatialUnitNameToSymbol(unitName) || unitName || ""; // get all shapes
 
-              case 22:
-                if ((_context.t1 = _context.t0()).done) {
-                  _context.next = 31;
+                _context2.t0 = _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().keys(multiscales);
+
+              case 24:
+                if ((_context2.t1 = _context2.t0()).done) {
+                  _context2.next = 33;
                   break;
                 }
 
-                _i = _context.t1.value;
-                _context.next = 26;
+                _i = _context2.t1.value;
+                _context2.next = 28;
                 return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openArray)({
                   store: store,
                   path: imagegroup + "/" + multiscales[_i].path,
                   mode: "r"
                 });
 
-              case 26:
-                level = _context.sent;
+              case 28:
+                level = _context2.sent;
                 // just stick it in multiscales for now.
                 multiscales[_i].shape = level.meta.shape;
 
@@ -7274,10 +7446,10 @@ var VolumeLoader = /*#__PURE__*/function () {
                   console.log("ERROR: shape length " + multiscales[_i].shape.length + " does not match axes length " + axes.length);
                 }
 
-                _context.next = 22;
+                _context2.next = 24;
                 break;
 
-              case 31:
+              case 33:
                 downsampleZ = 2; // z/downsampleZ is number of z slices in reduced volume
                 // update levelToLoad after we get size info about multiscales.
                 // decide to max out at a 4k x 4k texture.
@@ -7287,9 +7459,9 @@ var VolumeLoader = /*#__PURE__*/function () {
                 levelToLoad = numlevels - 1;
                 _i2 = 0;
 
-              case 35:
+              case 37:
                 if (!(_i2 < multiscales.length)) {
-                  _context.next = 44;
+                  _context2.next = 46;
                   break;
                 }
 
@@ -7297,20 +7469,20 @@ var VolumeLoader = /*#__PURE__*/function () {
                 s = multiscales[_i2].shape[spatialAxes[0]] / downsampleZ * multiscales[_i2].shape[spatialAxes[1]] * multiscales[_i2].shape[spatialAxes[2]];
 
                 if (!(s / maxAtlasEdge <= maxAtlasEdge)) {
-                  _context.next = 41;
+                  _context2.next = 43;
                   break;
                 }
 
                 console.log("Will load level " + _i2);
                 levelToLoad = _i2;
-                return _context.abrupt("break", 44);
+                return _context2.abrupt("break", 46);
 
-              case 41:
+              case 43:
                 ++_i2;
-                _context.next = 35;
+                _context2.next = 37;
                 break;
 
-              case 44:
+              case 46:
                 dataset = multiscales[levelToLoad];
                 c = hasC ? dataset.shape[axisTCZYX[1]] : 1;
                 sizeT = hasT ? dataset.shape[axisTCZYX[0]] : 1; // technically there can be any number of coordinateTransformations
@@ -7356,6 +7528,7 @@ var VolumeLoader = /*#__PURE__*/function () {
                   pixel_size_x: scale5d[spatialAxes[2]],
                   pixel_size_y: scale5d[spatialAxes[1]],
                   pixel_size_z: scale5d[spatialAxes[0]] * downsampleZ,
+                  pixel_size_unit: unitSymbol,
                   name: displayMetadata.name,
                   version: displayMetadata.version,
                   transform: {
@@ -7403,17 +7576,17 @@ var VolumeLoader = /*#__PURE__*/function () {
                   _loop2(_i3);
                 }
 
-                return _context.abrupt("return", vol);
+                return _context2.abrupt("return", vol);
 
-              case 65:
+              case 67:
               case "end":
-                return _context.stop();
+                return _context2.stop();
             }
           }
-        }, _callee);
+        }, _callee2);
       }));
 
-      function loadZarr(_x, _x2, _x3, _x4) {
+      function loadZarr(_x4, _x5, _x6, _x7) {
         return _loadZarr.apply(this, arguments);
       }
 
@@ -7422,11 +7595,11 @@ var VolumeLoader = /*#__PURE__*/function () {
   }, {
     key: "loadOpenCell",
     value: function () {
-      var _loadOpenCell = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(onChannelLoaded) {
+      var _loadOpenCell = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee3(onChannelLoaded) {
         var numChannels, urls, chnames, imgdata, vol;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee2$(_context2) {
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee3$(_context3) {
           while (1) {
-            switch (_context2.prev = _context2.next) {
+            switch (_context3.prev = _context3.next) {
               case 0:
                 numChannels = 2; // HQTILE or LQTILE
                 // make a json metadata dict for the two channels:
@@ -7461,6 +7634,7 @@ var VolumeLoader = /*#__PURE__*/function () {
                   pixel_size_z: 2,
                   name: "TEST",
                   version: "1.0",
+                  pixel_size_unit: "µm",
                   transform: {
                     translation: [0, 0, 0],
                     rotation: [0, 0, 0]
@@ -7472,17 +7646,17 @@ var VolumeLoader = /*#__PURE__*/function () {
 
                 vol = new _Volume__WEBPACK_IMPORTED_MODULE_5__["default"](imgdata);
                 this.loadVolumeAtlasData(vol, urls, onChannelLoaded);
-                return _context2.abrupt("return", vol);
+                return _context3.abrupt("return", vol);
 
               case 7:
               case "end":
-                return _context2.stop();
+                return _context3.stop();
             }
           }
-        }, _callee2, this);
+        }, _callee3, this);
       }));
 
-      function loadOpenCell(_x5) {
+      function loadOpenCell(_x8) {
         return _loadOpenCell.apply(this, arguments);
       }
 
@@ -7491,23 +7665,23 @@ var VolumeLoader = /*#__PURE__*/function () {
   }, {
     key: "loadTiff",
     value: function () {
-      var _loadTiff = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee3(url, onChannelLoaded) {
-        var tiff, image, tiffimgdesc, parser, xmlDoc, omeEl, image0El, pixelsEl, sizex, sizey, sizez, sizec, sizet, pixeltype, dimensionorder, pixelsizex, pixelsizey, pixelsizez, channelnames, channelsEls, i, name, id, _computePackedAtlasDi2, nrows, ncols, targetSize, tilesizex, tilesizey, imgdata, vol, _loop3, channel;
+      var _loadTiff = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee4(url, onChannelLoaded) {
+        var tiff, image, tiffimgdesc, parser, xmlDoc, omeEl, image0El, pixelsEl, sizex, sizey, sizez, sizec, sizet, unit, pixeltype, dimensionorder, pixelsizex, pixelsizey, pixelsizez, channelnames, channelsEls, i, name, id, _computePackedAtlasDi2, nrows, ncols, targetSize, tilesizex, tilesizey, imgdata, vol, _loop3, channel;
 
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee3$(_context3) {
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee4$(_context4) {
           while (1) {
-            switch (_context3.prev = _context3.next) {
+            switch (_context4.prev = _context4.next) {
               case 0:
-                _context3.next = 2;
+                _context4.next = 2;
                 return (0,geotiff__WEBPACK_IMPORTED_MODULE_7__.fromUrl)(url);
 
               case 2:
-                tiff = _context3.sent;
-                _context3.next = 5;
+                tiff = _context4.sent;
+                _context4.next = 5;
                 return tiff.getImage();
 
               case 5:
-                image = _context3.sent;
+                image = _context4.sent;
                 tiffimgdesc = image.getFileDirectory().ImageDescription;
                 parser = new DOMParser();
                 xmlDoc = parser.parseFromString(tiffimgdesc, "text/xml");
@@ -7519,6 +7693,7 @@ var VolumeLoader = /*#__PURE__*/function () {
                 sizez = Number(pixelsEl.getAttribute("SizeZ"));
                 sizec = Number(pixelsEl.getAttribute("SizeC"));
                 sizet = Number(pixelsEl.getAttribute("SizeT"));
+                unit = pixelsEl.getAttribute("PhysicalSizeXUnit");
                 pixeltype = pixelsEl.getAttribute("Type");
                 dimensionorder = pixelsEl.getAttribute("DimensionOrder") || "XYZCT"; // ignoring units for now
 
@@ -7566,6 +7741,7 @@ var VolumeLoader = /*#__PURE__*/function () {
                   pixel_size_z: pixelsizez,
                   name: "TEST",
                   version: "1.0",
+                  pixel_size_unit: unit || "",
                   transform: {
                     translation: [0, 0, 0],
                     rotation: [0, 0, 0]
@@ -7615,17 +7791,17 @@ var VolumeLoader = /*#__PURE__*/function () {
                   _loop3(channel);
                 }
 
-                return _context3.abrupt("return", vol);
+                return _context4.abrupt("return", vol);
 
-              case 34:
+              case 35:
               case "end":
-                return _context3.stop();
+                return _context4.stop();
             }
           }
-        }, _callee3);
+        }, _callee4);
       }));
 
-      function loadTiff(_x6, _x7) {
+      function loadTiff(_x9, _x10) {
         return _loadTiff.apply(this, arguments);
       }
 
@@ -83700,6 +83876,7 @@ var myState = {
   isTurntable: false,
   isAxisShowing: false,
   isAligned: true,
+  showScaleBar: true,
   showBoundingBox: false,
   boundingBoxColor: [255, 255, 0],
   backgroundColor: [0, 0, 0],
@@ -84403,6 +84580,7 @@ function createTestVolume() {
     pixel_size_z: 1,
     name: "AICS-10_5_5",
     version: "0.0.0",
+    pixel_size_unit: "",
     transform: {
       translation: [0, 0, 0],
       rotation: [0, 0, 0]
@@ -84457,6 +84635,11 @@ function main() {
   showBoundsBtn === null || showBoundsBtn === void 0 ? void 0 : showBoundsBtn.addEventListener("click", function () {
     myState.showBoundingBox = !myState.showBoundingBox;
     view3D.setShowBoundingBox(myState.volume, myState.showBoundingBox);
+  });
+  var showScaleBarBtn = document.getElementById("showScaleBar");
+  showScaleBarBtn === null || showScaleBarBtn === void 0 ? void 0 : showScaleBarBtn.addEventListener("click", function () {
+    myState.showScaleBar = !myState.showScaleBar;
+    view3D.setShowScaleBar(myState.showScaleBar);
   }); // convert value to rgb array
 
   function hexToRgb(hex, last) {
