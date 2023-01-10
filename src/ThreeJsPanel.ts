@@ -311,10 +311,10 @@ export class ThreeJsPanel {
     // at offsets lower than BASE_MARGIN, axes may extend off screen
     const BASE_MARGIN = 50;
     this.axisOffset = [marginX + BASE_MARGIN, marginY + BASE_MARGIN];
-    if (corner.startsWith("top")) {
+    if (corner % 4 < 2) { // top
       this.axisOffset[1] = this.getHeight() - this.axisOffset[1];
     }
-    if (corner.endsWith("right")) {
+    if (corner % 2) { // right
       this.axisOffset[0] = this.getWidth() - this.axisOffset[0];
     }
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
@@ -387,14 +387,8 @@ export class ThreeJsPanel {
     style.removeProperty("left");
     style.removeProperty("right");
 
-    let [yProp, xProp] = corner.split("_");
-    // Sanity check: must be valid css property names
-    if (xProp !== "left" && xProp !== "right") {
-      xProp = "right";
-    }
-    if (yProp !== "top" && yProp !== "bottom") {
-      yProp = "bottom";
-    }
+    const xProp = corner % 2 ? "right" : "left";
+    const yProp = corner % 4 < 2 ? "top" : "bottom";
 
     Object.assign(style, {
       [xProp]: marginX + "px",

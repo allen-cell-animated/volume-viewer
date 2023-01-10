@@ -81,4 +81,9 @@ export interface VolumeDisplayOptions {
 export const isOrthographicCamera = (def: Camera): def is OrthographicCamera =>
   def && (def as OrthographicCamera).isOrthographicCamera;
 
-export type ViewportCorner = "top_left" | "top_right" | "bottom_left" | "bottom_right";
+export const enum ViewportCorner {
+  TOP_LEFT = 0,
+  TOP_RIGHT,
+  BOTTOM_LEFT,
+  BOTTOM_RIGHT,
+}
