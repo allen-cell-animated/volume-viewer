@@ -17,7 +17,7 @@ import {
 
 import TrackballControls from "./TrackballControls.js";
 import Timing from "./Timing";
-import { isOrthographicCamera, ViewportCorner } from "./types";
+import { isOrthographicCamera, ViewportCorner, isTop, isRight } from "./types";
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
@@ -182,7 +182,7 @@ export class ThreeJsPanel {
 
     this.camera = this.perspectiveCamera;
     this.controls = this.perspectiveControls;
-    
+
     this.axisCamera = new OrthographicCamera();
     this.axisHelperScene = new Scene();
     this.axisHelperObject = new Object3D();
@@ -311,10 +311,10 @@ export class ThreeJsPanel {
     // at offsets lower than BASE_MARGIN, axes may extend off screen
     const BASE_MARGIN = 50;
     this.axisOffset = [marginX + BASE_MARGIN, marginY + BASE_MARGIN];
-    if (corner % 4 < 2) { // top
+    if (isTop(corner)) {
       this.axisOffset[1] = this.getHeight() - this.axisOffset[1];
     }
-    if (corner % 2) { // right
+    if (isRight(corner)) {
       this.axisOffset[0] = this.getWidth() - this.axisOffset[0];
     }
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
@@ -322,7 +322,7 @@ export class ThreeJsPanel {
 
   orthoScreenPixelsToPhysicalUnits(pixels: number, physicalUnitsPerWorldUnit: number): number {
     // At orthoScale = 0.5, the viewport is 1 world unit tall
-    const worldUnitsPerPixel = this.orthoScale * 2 / this.getHeight();
+    const worldUnitsPerPixel = (this.orthoScale * 2) / this.getHeight();
     // Multiply by devicePixelRatio to convert from scaled CSS pixels to physical pixels
     // (to account for high dpi monitors, e.g.). We didn't do this to height above because
     // that value comes from three, which works in physical pixels.
@@ -362,7 +362,7 @@ export class ThreeJsPanel {
     const scaleValue = Math.floor(physicalMaxWidth / div10) * div10;
     let scaleStr = scaleValue.toString();
     if (digits < 1) {
-      // Handle irrational floating point values (e.g. 0.30000000000000004) 
+      // Handle irrational floating point values (e.g. 0.30000000000000004)
       scaleStr = scaleStr.slice(0, Math.abs(digits) + 2);
     }
     this.orthoScaleBarElement.innerHTML = `${scaleStr}${unit || ""}`;
@@ -387,8 +387,8 @@ export class ThreeJsPanel {
     style.removeProperty("left");
     style.removeProperty("right");
 
-    const xProp = corner % 2 ? "right" : "left";
-    const yProp = corner % 4 < 2 ? "top" : "bottom";
+    const xProp = isRight(corner) ? "right" : "left";
+    const yProp = isTop(corner) ? "top" : "bottom";
 
     Object.assign(style, {
       [xProp]: marginX + "px",

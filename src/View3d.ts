@@ -487,8 +487,8 @@ export class View3d {
    * @param {number} marginX
    * @param {number} marginY
    * @param {ViewportCorner} [corner] The corner of the viewport in which the axis appears. Default: bottom-left.
-   *  TypeScript users should use the `ViewportCorner` enum. Otherwise, this parameter is a number where
-   *  `0`: top-left, `1`: top-right, `2`: bottom-left, `3`: bottom-right
+   *  TypeScript users should use the `ViewportCorner` enum. Otherwise, corner is one of: `top_left`, `top_right`,
+   *  `bottom_left`, `bottom_right`.
    */
   setAxisPosition(marginX: number, marginY: number, corner: ViewportCorner = ViewportCorner.BOTTOM_LEFT): void {
     this.canvas3d.setAxisPosition(marginX, marginY, corner);
@@ -502,9 +502,9 @@ export class View3d {
    * of the viewport.
    * @param {number} marginX
    * @param {number} marginY
-   * @param {number} [corner] The corner of the viewport in which the scale bar appears. Default: bottom-right.
-   *  TypeScript users should use the `ViewportCorner` enum. Otherwise, this parameter is a number where:
-   *  `0`: top-left, `1`: top-right, `2`: bottom-left, `3`: bottom-right
+   * @param {ViewportCorner} [corner] The corner of the viewport in which the scale bar appears. Default: bottom-right.
+   *  TypeScript users should use the `ViewportCorner` enum. Otherwise, corner is one of: `top_left`, `top_right`,
+   *  `bottom_left`, `bottom_right`.
    */
   setScaleBarPosition(marginX: number, marginY: number, corner: ViewportCorner = ViewportCorner.BOTTOM_RIGHT): void {
     this.canvas3d.setOrthoScaleBarPosition(marginX, marginY, corner);

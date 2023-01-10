@@ -82,8 +82,12 @@ export const isOrthographicCamera = (def: Camera): def is OrthographicCamera =>
   def && (def as OrthographicCamera).isOrthographicCamera;
 
 export const enum ViewportCorner {
-  TOP_LEFT = 0,
-  TOP_RIGHT,
-  BOTTOM_LEFT,
-  BOTTOM_RIGHT,
+  TOP_LEFT = "top_left",
+  TOP_RIGHT = "top_right",
+  BOTTOM_LEFT = "bottom_left",
+  BOTTOM_RIGHT = "bottom_right",
 }
+export const isTop = (corner: ViewportCorner): boolean =>
+  corner === ViewportCorner.TOP_LEFT || corner === ViewportCorner.TOP_RIGHT;
+export const isRight = (corner: ViewportCorner): boolean =>
+  corner === ViewportCorner.TOP_RIGHT || corner === ViewportCorner.BOTTOM_RIGHT;
