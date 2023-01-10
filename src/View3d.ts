@@ -5,7 +5,7 @@ import lightSettings from "./constants/lights";
 import VolumeDrawable from "./VolumeDrawable";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
 import Volume from "./Volume";
-import { VolumeChannelDisplayOptions, VolumeDisplayOptions, isOrthographicCamera } from "./types";
+import { VolumeChannelDisplayOptions, VolumeDisplayOptions, isOrthographicCamera, ViewportCorner } from "./types";
 
 export const RENDERMODE_RAYMARCH = 0;
 export const RENDERMODE_PATHTRACE = 1;
@@ -29,8 +29,6 @@ export class View3d {
   private parentEl: HTMLElement;
   private image?: VolumeDrawable;
 
-  private oldScale: Vector3;
-  private currentScale: Vector3;
   private lights: Light[];
   private lightContainer: Object3D;
   private ambientLight: AmbientLight;
@@ -61,8 +59,6 @@ export class View3d {
     this.parentEl = parentElement;
     window.addEventListener("resize", () => this.resize(null, this.parentEl.offsetWidth, this.parentEl.offsetHeight));
 
-    this.oldScale = new Vector3();
-    this.currentScale = new Vector3();
     this.lightContainer = new Object3D();
     this.ambientLight = new AmbientLight();
     this.spotLight = new SpotLight();
@@ -405,9 +401,6 @@ export class View3d {
   buildScene(): void {
     this.scene = this.canvas3d.scene;
 
-    this.oldScale = new Vector3(0.5, 0.5, 0.5);
-    this.currentScale = new Vector3(0.5, 0.5, 0.5);
-
     // background color
     this.canvas3d.setClearColor(this.backgroundColor, 1.0);
 
@@ -486,6 +479,35 @@ export class View3d {
    */
   setShowScaleBar(showScaleBar: boolean): void {
     this.canvas3d.setShowOrthoScaleBar(showScaleBar);
+  }
+
+  /**
+   * Set the position of the axis indicator, as a corner of the viewport and horizontal and vertical margins from the
+   * edge of the viewport.
+   * @param {number} marginX
+   * @param {number} marginY
+   * @param {string} [corner] The corner of the viewport in which the axis appears. Default: `"bottom_left"`.
+   *  TypeScript users should use the `ViewportCorner` enum. Otherwise, corner is one of: `"top_left"`, `"top_right"`,
+   *  `"bottom_left"`, `"bottom_right"`.
+   */
+  setAxisPosition(marginX: number, marginY: number, corner: ViewportCorner = ViewportCorner.BOTTOM_LEFT): void {
+    this.canvas3d.setAxisPosition(marginX, marginY, corner);
+    if (this.canvas3d.showAxis) {
+      this.canvas3d.redraw();
+    }
+  }
+
+  /**
+   * Set the position of the scale bar, as a corner of the viewport and horizontal and vertical margins from the edge
+   * of the viewport.
+   * @param {number} marginX
+   * @param {number} marginY
+   * @param {string} [corner] The corner of the viewport in which the scale bar appears. Default: `"bottom_right"`.
+   *  TypeScript users should use the `ViewportCorner` enum. Otherwise, corner is one of: `"top_left"`, `"top_right"`,
+   *  `"bottom_left"`, `"bottom_right"`.
+   */
+  setScaleBarPosition(marginX: number, marginY: number, corner: ViewportCorner = ViewportCorner.BOTTOM_RIGHT): void {
+    this.canvas3d.setOrthoScaleBarPosition(marginX, marginY, corner);
   }
 
   /**

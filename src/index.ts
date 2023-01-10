@@ -4,6 +4,7 @@ import Channel from "./Channel";
 import VolumeMaker from "./VolumeMaker";
 import VolumeLoader from "./VolumeLoader";
 import Histogram from "./Histogram";
+import { ViewportCorner } from "./types";
 
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
 
@@ -17,6 +18,7 @@ export {
   VolumeLoader,
   Channel,
   Light,
+  ViewportCorner,
   AREA_LIGHT,
   RENDERMODE_PATHTRACE,
   RENDERMODE_RAYMARCH,
