@@ -3654,12 +3654,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "ThreeJsPanel": () => (/* binding */ ThreeJsPanel)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _TrackballControls_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./TrackballControls.js */ "./src/TrackballControls.js");
-/* harmony import */ var _Timing__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Timing */ "./src/Timing.ts");
-/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./types */ "./src/types.ts");
+/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _TrackballControls_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./TrackballControls.js */ "./src/TrackballControls.js");
+/* harmony import */ var _Timing__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Timing */ "./src/Timing.ts");
+/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./types */ "./src/types.ts");
+
 
 
 
@@ -3671,7 +3673,7 @@ var DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
 var DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 var ThreeJsPanel = /*#__PURE__*/function () {
   function ThreeJsPanel(parentElement, _useWebGL2) {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, ThreeJsPanel);
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, ThreeJsPanel);
 
     this.containerdiv = document.createElement("div");
     this.containerdiv.style.position = "relative";
@@ -3681,12 +3683,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     this.canvas.style.backgroundColor = "black";
     this.containerdiv.appendChild(this.canvas);
     parentElement.appendChild(this.containerdiv);
-    this.scene = new three__WEBPACK_IMPORTED_MODULE_5__.Scene();
-    this.axisHelperScene = new three__WEBPACK_IMPORTED_MODULE_5__.Scene();
-    this.axisHelperObject = new three__WEBPACK_IMPORTED_MODULE_5__.Object3D();
-    this.showAxis = false;
-    this.axisScale = 50.0;
-    this.axisOffset = [66, 66];
+    this.scene = new three__WEBPACK_IMPORTED_MODULE_6__.Scene();
     this.orthoScaleBarElement = document.createElement("div");
     this.showOrthoScaleBar = true;
     this.zooming = false;
@@ -3702,7 +3699,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
 
     if (context) {
       this.hasWebGL2 = true;
-      this.renderer = new three__WEBPACK_IMPORTED_MODULE_5__.WebGLRenderer({
+      this.renderer = new three__WEBPACK_IMPORTED_MODULE_6__.WebGLRenderer({
         context: context,
         canvas: this.canvas,
         preserveDrawingBuffer: true,
@@ -3712,41 +3709,41 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       // set pixel ratio to 0.25 or 0.5 to render at lower res.
 
       this.renderer.setPixelRatio(window.devicePixelRatio);
-      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_5__.NormalBlending); //required by WebGL 2.0 for rendering to FLOAT textures
+      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_6__.NormalBlending); //required by WebGL 2.0 for rendering to FLOAT textures
 
       this.renderer.getContext().getExtension("EXT_color_buffer_float");
     } else {
       // TODO Deprecate this code path.
       console.warn("WebGL 2.0 not available. Some functionality may be limited. Please use a browser that supports WebGL 2.0.");
-      this.renderer = new three__WEBPACK_IMPORTED_MODULE_5__.WebGLRenderer({
+      this.renderer = new three__WEBPACK_IMPORTED_MODULE_6__.WebGLRenderer({
         canvas: this.canvas,
         preserveDrawingBuffer: true,
         alpha: true,
         premultipliedAlpha: false
       });
       this.renderer.setPixelRatio(window.devicePixelRatio);
-      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_5__.NormalBlending);
+      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_6__.NormalBlending);
     }
 
     this.renderer.localClippingEnabled = true;
     this.renderer.setSize(parentElement.offsetWidth, parentElement.offsetHeight);
-    this.timer = new _Timing__WEBPACK_IMPORTED_MODULE_3__["default"]();
+    this.timer = new _Timing__WEBPACK_IMPORTED_MODULE_4__["default"]();
     var scale = 0.5;
     this.orthoScale = scale;
     var aspect = this.getWidth() / this.getHeight();
     this.fov = 20;
-    this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_5__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
+    this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_6__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
     this.resetPerspectiveCamera();
-    this.perspectiveControls = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_2__["default"](this.perspectiveCamera, this.canvas);
+    this.perspectiveControls = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_3__["default"](this.perspectiveCamera, this.canvas);
     this.perspectiveControls.rotateSpeed = 4.0 / window.devicePixelRatio;
     this.perspectiveControls.autoRotate = false;
     this.perspectiveControls.staticMoving = true;
     this.perspectiveControls.length = 10;
     this.perspectiveControls.enabled = true; //turn off mouse moments by setting to false
 
-    this.orthographicCameraX = new three__WEBPACK_IMPORTED_MODULE_5__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
+    this.orthographicCameraX = new three__WEBPACK_IMPORTED_MODULE_6__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraX();
-    this.orthoControlsX = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_2__["default"](this.orthographicCameraX, this.canvas);
+    this.orthoControlsX = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_3__["default"](this.orthographicCameraX, this.canvas);
     this.orthoControlsX.noRotate = true;
     this.orthoControlsX.scale = scale;
     this.orthoControlsX.scale0 = scale;
@@ -3754,9 +3751,9 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     this.orthoControlsX.staticMoving = true;
     this.orthoControlsX.enabled = false;
     this.orthoControlsX.panSpeed = this.canvas.clientWidth * 0.5;
-    this.orthographicCameraY = new three__WEBPACK_IMPORTED_MODULE_5__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
+    this.orthographicCameraY = new three__WEBPACK_IMPORTED_MODULE_6__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraY();
-    this.orthoControlsY = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_2__["default"](this.orthographicCameraY, this.canvas);
+    this.orthoControlsY = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_3__["default"](this.orthographicCameraY, this.canvas);
     this.orthoControlsY.noRotate = true;
     this.orthoControlsY.scale = scale;
     this.orthoControlsY.scale0 = scale;
@@ -3764,9 +3761,9 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     this.orthoControlsY.staticMoving = true;
     this.orthoControlsY.enabled = false;
     this.orthoControlsY.panSpeed = this.canvas.clientWidth * 0.5;
-    this.orthographicCameraZ = new three__WEBPACK_IMPORTED_MODULE_5__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
+    this.orthographicCameraZ = new three__WEBPACK_IMPORTED_MODULE_6__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraZ();
-    this.orthoControlsZ = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_2__["default"](this.orthographicCameraZ, this.canvas);
+    this.orthoControlsZ = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_3__["default"](this.orthographicCameraZ, this.canvas);
     this.orthoControlsZ.noRotate = true;
     this.orthoControlsZ.scale = scale;
     this.orthoControlsZ.scale0 = scale;
@@ -3775,13 +3772,21 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     this.orthoControlsZ.enabled = false;
     this.orthoControlsZ.panSpeed = this.canvas.clientWidth * 0.5;
     this.camera = this.perspectiveCamera;
-    this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_5__.PerspectiveCamera();
     this.controls = this.perspectiveControls;
+    this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_6__.OrthographicCamera();
+    this.axisHelperScene = new three__WEBPACK_IMPORTED_MODULE_6__.Scene();
+    this.axisHelperObject = new three__WEBPACK_IMPORTED_MODULE_6__.Object3D();
+    this.axisHelperObject.name = "axisHelperParentObject";
+    this.showAxis = false; // size of axes in px.
+
+    this.axisScale = 50.0; // offset from bottom left corner in px.
+
+    this.axisOffset = [66.0, 66.0];
     this.setupAxisHelper();
     this.setupOrthoScaleBar();
   }
 
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(ThreeJsPanel, [{
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(ThreeJsPanel, [{
     key: "updateCameraFocus",
     value: function updateCameraFocus(fov, _focalDistance, _apertureSize) {
       this.perspectiveCamera.fov = fov;
@@ -3807,7 +3812,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       this.orthographicCameraX.up.x = 0.0;
       this.orthographicCameraX.up.y = 0.0;
       this.orthographicCameraX.up.z = 1.0;
-      this.orthographicCameraX.lookAt(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0));
+      this.orthographicCameraX.lookAt(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, 0));
     }
   }, {
     key: "resetOrthographicCameraY",
@@ -3818,7 +3823,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       this.orthographicCameraY.up.x = 0.0;
       this.orthographicCameraY.up.y = 0.0;
       this.orthographicCameraY.up.z = 1.0;
-      this.orthographicCameraY.lookAt(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0));
+      this.orthographicCameraY.lookAt(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, 0));
     }
   }, {
     key: "resetOrthographicCameraZ",
@@ -3829,7 +3834,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       this.orthographicCameraZ.up.x = 0.0;
       this.orthographicCameraZ.up.y = 1.0;
       this.orthographicCameraZ.up.z = 0.0;
-      this.orthographicCameraZ.lookAt(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0));
+      this.orthographicCameraZ.lookAt(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, 0));
     }
   }, {
     key: "requestCapture",
@@ -3846,7 +3851,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     key: "resetToPerspectiveCamera",
     value: function resetToPerspectiveCamera() {
       var aspect = this.getWidth() / this.getHeight();
-      this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_5__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
+      this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_6__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
       this.resetPerspectiveCamera();
       this.switchViewMode("3D");
       this.controls.object = this.perspectiveCamera;
@@ -3872,29 +3877,39 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     key: "setupAxisHelper",
     value: function setupAxisHelper() {
       // set up axis widget.
-      this.showAxis = false; // size of axes in px.
-
-      this.axisScale = 50.0; // offset from bottom left corner in px.
-
-      this.axisOffset = [66.0, 66.0];
-      this.axisHelperScene = new three__WEBPACK_IMPORTED_MODULE_5__.Scene();
-      this.axisHelperObject = new three__WEBPACK_IMPORTED_MODULE_5__.Object3D();
-      this.axisHelperObject.name = "axisHelperParentObject";
-      var axisCubeMaterial = new three__WEBPACK_IMPORTED_MODULE_5__.MeshBasicMaterial({
+      var axisCubeMaterial = new three__WEBPACK_IMPORTED_MODULE_6__.MeshBasicMaterial({
         color: 0xaeacad
       });
-      var axisCube = new three__WEBPACK_IMPORTED_MODULE_5__.BoxGeometry(this.axisScale / 5, this.axisScale / 5, this.axisScale / 5);
-      var axisCubeMesh = new three__WEBPACK_IMPORTED_MODULE_5__.Mesh(axisCube, axisCubeMaterial);
+      var axisCube = new three__WEBPACK_IMPORTED_MODULE_6__.BoxGeometry(this.axisScale / 5, this.axisScale / 5, this.axisScale / 5);
+      var axisCubeMesh = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(axisCube, axisCubeMaterial);
       this.axisHelperObject.add(axisCubeMesh);
-      var axisHelper = new three__WEBPACK_IMPORTED_MODULE_5__.AxesHelper(this.axisScale);
+      var axisHelper = new three__WEBPACK_IMPORTED_MODULE_6__.AxesHelper(this.axisScale);
       this.axisHelperObject.add(axisHelper);
       this.axisHelperScene.add(this.axisHelperObject);
-      this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_5__.OrthographicCamera(0, this.getWidth(), this.getHeight(), 0, 0.001, this.axisScale * 4.0);
+      this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_6__.OrthographicCamera(0, this.getWidth(), this.getHeight(), 0, 0.001, this.axisScale * 4.0);
       this.axisCamera.position.z = 1.0;
       this.axisCamera.up.x = 0.0;
       this.axisCamera.up.y = 1.0;
       this.axisCamera.up.z = 0.0;
-      this.axisCamera.lookAt(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0));
+      this.axisCamera.lookAt(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, 0));
+      this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
+    }
+  }, {
+    key: "setAxisPosition",
+    value: function setAxisPosition(marginX, marginY, corner) {
+      // Offset is relative to center of object, not corner of possible extent
+      // at offsets lower than BASE_MARGIN, axes may extend off screen
+      var BASE_MARGIN = 50;
+      this.axisOffset = [marginX + BASE_MARGIN, marginY + BASE_MARGIN];
+
+      if ((0,_types__WEBPACK_IMPORTED_MODULE_5__.isTop)(corner)) {
+        this.axisOffset[1] = this.getHeight() - this.axisOffset[1];
+      }
+
+      if ((0,_types__WEBPACK_IMPORTED_MODULE_5__.isRight)(corner)) {
+        this.axisOffset[0] = this.getWidth() - this.axisOffset[0];
+      }
+
       this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
     }
   }, {
@@ -3923,6 +3938,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
         textAlign: "right",
         lineHeight: "0px",
         fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
+        fontSize: "14px",
         boxSizing: "border-box",
         paddingRight: "10px"
       };
@@ -3943,7 +3959,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       var scaleStr = scaleValue.toString();
 
       if (digits < 1) {
-        // Handle irrational floating point values (e.g. 0.30000000000000004) 
+        // Handle irrational floating point values (e.g. 0.30000000000000004)
         scaleStr = scaleStr.slice(0, Math.abs(digits) + 2);
       }
 
@@ -3953,7 +3969,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
   }, {
     key: "updateOrthoScaleBarVisibility",
     value: function updateOrthoScaleBarVisibility() {
-      var visible = (0,_types__WEBPACK_IMPORTED_MODULE_4__.isOrthographicCamera)(this.camera) && this.showOrthoScaleBar;
+      var visible = (0,_types__WEBPACK_IMPORTED_MODULE_5__.isOrthographicCamera)(this.camera) && this.showOrthoScaleBar;
       this.orthoScaleBarElement.style.display = visible ? "" : "none";
     }
   }, {
@@ -3961,6 +3977,20 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     value: function setShowOrthoScaleBar(visible) {
       this.showOrthoScaleBar = visible;
       this.updateOrthoScaleBarVisibility();
+    }
+  }, {
+    key: "setOrthoScaleBarPosition",
+    value: function setOrthoScaleBarPosition(marginX, marginY, corner) {
+      var _Object$assign;
+
+      var style = this.orthoScaleBarElement.style;
+      style.removeProperty("top");
+      style.removeProperty("bottom");
+      style.removeProperty("left");
+      style.removeProperty("right");
+      var xProp = (0,_types__WEBPACK_IMPORTED_MODULE_5__.isRight)(corner) ? "right" : "left";
+      var yProp = (0,_types__WEBPACK_IMPORTED_MODULE_5__.isTop)(corner) ? "top" : "bottom";
+      Object.assign(style, (_Object$assign = {}, (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(_Object$assign, xProp, marginX + "px"), (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(_Object$assign, yProp, marginY + "px"), _Object$assign));
     }
   }, {
     key: "setAutoRotate",
@@ -4060,7 +4090,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       this.orthoControlsX.aspect = aspect;
       this.orthoControlsX.panSpeed = w * 0.5;
 
-      if ((0,_types__WEBPACK_IMPORTED_MODULE_4__.isOrthographicCamera)(this.camera)) {
+      if ((0,_types__WEBPACK_IMPORTED_MODULE_5__.isOrthographicCamera)(this.camera)) {
         this.camera.left = -this.orthoScale * aspect;
         this.camera.right = this.orthoScale * aspect;
         this.camera.updateProjectionMatrix();
@@ -4069,15 +4099,11 @@ var ThreeJsPanel = /*#__PURE__*/function () {
         this.camera.updateProjectionMatrix();
       }
 
-      if ((0,_types__WEBPACK_IMPORTED_MODULE_4__.isOrthographicCamera)(this.axisCamera)) {
-        this.axisCamera.left = 0;
-        this.axisCamera.right = w;
-        this.axisCamera.top = h;
-        this.axisCamera.bottom = 0;
-        this.axisCamera.updateProjectionMatrix();
-      } else {
-        this.axisCamera.updateProjectionMatrix();
-      }
+      this.axisCamera.left = 0;
+      this.axisCamera.right = w;
+      this.axisCamera.top = h;
+      this.axisCamera.bottom = 0;
+      this.axisCamera.updateProjectionMatrix();
 
       if (this.renderer.getPixelRatio() !== window.devicePixelRatio) {
         this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -4108,7 +4134,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     key: "render",
     value: function render() {
       // update the axis helper in case the view was rotated
-      if (!(0,_types__WEBPACK_IMPORTED_MODULE_4__.isOrthographicCamera)(this.camera)) {
+      if (!(0,_types__WEBPACK_IMPORTED_MODULE_5__.isOrthographicCamera)(this.camera)) {
         this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
       } else {
         this.orthoScale = this.controls.scale;
@@ -5046,8 +5072,6 @@ var View3d = /*#__PURE__*/function () {
     window.addEventListener("resize", function () {
       return _this.resize(null, _this.parentEl.offsetWidth, _this.parentEl.offsetHeight);
     });
-    this.oldScale = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3();
-    this.currentScale = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3();
     this.lightContainer = new three__WEBPACK_IMPORTED_MODULE_7__.Object3D();
     this.ambientLight = new three__WEBPACK_IMPORTED_MODULE_7__.AmbientLight();
     this.spotLight = new three__WEBPACK_IMPORTED_MODULE_7__.SpotLight();
@@ -5444,9 +5468,7 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "buildScene",
     value: function buildScene() {
-      this.scene = this.canvas3d.scene;
-      this.oldScale = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0.5, 0.5, 0.5);
-      this.currentScale = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0.5, 0.5, 0.5); // background color
+      this.scene = this.canvas3d.scene; // background color
 
       this.canvas3d.setClearColor(this.backgroundColor, 1.0);
       this.lights = [new _Light__WEBPACK_IMPORTED_MODULE_5__.Light(_Light__WEBPACK_IMPORTED_MODULE_5__.SKY_LIGHT), new _Light__WEBPACK_IMPORTED_MODULE_5__.Light(_Light__WEBPACK_IMPORTED_MODULE_5__.AREA_LIGHT)];
@@ -5511,6 +5533,42 @@ var View3d = /*#__PURE__*/function () {
     key: "setShowScaleBar",
     value: function setShowScaleBar(showScaleBar) {
       this.canvas3d.setShowOrthoScaleBar(showScaleBar);
+    }
+    /**
+     * Set the position of the axis indicator, as a corner of the viewport and horizontal and vertical margins from the
+     * edge of the viewport.
+     * @param {number} marginX
+     * @param {number} marginY
+     * @param {string} [corner] The corner of the viewport in which the axis appears. Default: `"bottom_left"`.
+     *  TypeScript users should use the `ViewportCorner` enum. Otherwise, corner is one of: `"top_left"`, `"top_right"`,
+     *  `"bottom_left"`, `"bottom_right"`.
+     */
+
+  }, {
+    key: "setAxisPosition",
+    value: function setAxisPosition(marginX, marginY) {
+      var corner = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _types__WEBPACK_IMPORTED_MODULE_6__.ViewportCorner.BOTTOM_LEFT;
+      this.canvas3d.setAxisPosition(marginX, marginY, corner);
+
+      if (this.canvas3d.showAxis) {
+        this.canvas3d.redraw();
+      }
+    }
+    /**
+     * Set the position of the scale bar, as a corner of the viewport and horizontal and vertical margins from the edge
+     * of the viewport.
+     * @param {number} marginX
+     * @param {number} marginY
+     * @param {string} [corner] The corner of the viewport in which the scale bar appears. Default: `"bottom_right"`.
+     *  TypeScript users should use the `ViewportCorner` enum. Otherwise, corner is one of: `"top_left"`, `"top_right"`,
+     *  `"bottom_left"`, `"bottom_right"`.
+     */
+
+  }, {
+    key: "setScaleBarPosition",
+    value: function setScaleBarPosition(marginX, marginY) {
+      var corner = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _types__WEBPACK_IMPORTED_MODULE_6__.ViewportCorner.BOTTOM_RIGHT;
+      this.canvas3d.setOrthoScaleBarPosition(marginX, marginY, corner);
     }
     /**
      * Enable or disable a turntable rotation mode. The display will continuously spin about the vertical screen axis.
@@ -8548,14 +8606,15 @@ var rayMarchingShaderUniforms = {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "AREA_LIGHT": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_6__.AREA_LIGHT),
+/* harmony export */   "AREA_LIGHT": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_7__.AREA_LIGHT),
 /* harmony export */   "Channel": () => (/* reexport safe */ _Channel__WEBPACK_IMPORTED_MODULE_2__["default"]),
 /* harmony export */   "Histogram": () => (/* reexport safe */ _Histogram__WEBPACK_IMPORTED_MODULE_5__["default"]),
-/* harmony export */   "Light": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_6__.Light),
+/* harmony export */   "Light": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_7__.Light),
 /* harmony export */   "RENDERMODE_PATHTRACE": () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_PATHTRACE),
 /* harmony export */   "RENDERMODE_RAYMARCH": () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_RAYMARCH),
-/* harmony export */   "SKY_LIGHT": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_6__.SKY_LIGHT),
+/* harmony export */   "SKY_LIGHT": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_7__.SKY_LIGHT),
 /* harmony export */   "View3d": () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.View3d),
+/* harmony export */   "ViewportCorner": () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_6__.ViewportCorner),
 /* harmony export */   "Volume": () => (/* reexport safe */ _Volume__WEBPACK_IMPORTED_MODULE_1__["default"]),
 /* harmony export */   "VolumeLoader": () => (/* reexport safe */ _VolumeLoader__WEBPACK_IMPORTED_MODULE_4__["default"]),
 /* harmony export */   "VolumeMaker": () => (/* reexport safe */ _VolumeMaker__WEBPACK_IMPORTED_MODULE_3__["default"])
@@ -8566,7 +8625,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _VolumeMaker__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./VolumeMaker */ "./src/VolumeMaker.ts");
 /* harmony import */ var _VolumeLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./VolumeLoader */ "./src/VolumeLoader.ts");
 /* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
-/* harmony import */ var _Light__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./Light */ "./src/Light.ts");
+/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./types */ "./src/types.ts");
+/* harmony import */ var _Light__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Light */ "./src/Light.ts");
+
 
 
 
@@ -8587,7 +8648,10 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "isOrthographicCamera": () => (/* binding */ isOrthographicCamera)
+/* harmony export */   "ViewportCorner": () => (/* binding */ ViewportCorner),
+/* harmony export */   "isOrthographicCamera": () => (/* binding */ isOrthographicCamera),
+/* harmony export */   "isRight": () => (/* binding */ isRight),
+/* harmony export */   "isTop": () => (/* binding */ isTop)
 /* harmony export */ });
 /**
  * Provide options to control the visual appearance of a Volume
@@ -8628,6 +8692,21 @@ __webpack_require__.r(__webpack_exports__);
  */
 var isOrthographicCamera = function isOrthographicCamera(def) {
   return def && def.isOrthographicCamera;
+};
+var ViewportCorner;
+
+(function (ViewportCorner) {
+  ViewportCorner["TOP_LEFT"] = "top_left";
+  ViewportCorner["TOP_RIGHT"] = "top_right";
+  ViewportCorner["BOTTOM_LEFT"] = "bottom_left";
+  ViewportCorner["BOTTOM_RIGHT"] = "bottom_right";
+})(ViewportCorner || (ViewportCorner = {}));
+
+var isTop = function isTop(corner) {
+  return corner === ViewportCorner.TOP_LEFT || corner === ViewportCorner.TOP_RIGHT;
+};
+var isRight = function isRight(corner) {
+  return corner === ViewportCorner.TOP_RIGHT || corner === ViewportCorner.BOTTOM_RIGHT;
 };
 
 /***/ }),
