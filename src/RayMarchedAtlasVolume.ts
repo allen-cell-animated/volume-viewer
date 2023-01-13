@@ -29,9 +29,6 @@ import { ThreeJsPanel } from "./ThreeJsPanel";
 
 import { Bounds, FuseChannel } from "./types";
 
-// TODO calculate tick mark sizes better
-const NUM_TICK_MARKS = 4;
-
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
 export default class RayMarchedAtlasVolume {
