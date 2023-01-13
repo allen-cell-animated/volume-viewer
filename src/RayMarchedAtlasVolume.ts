@@ -2,11 +2,13 @@ import {
   Box3,
   Box3Helper,
   BoxGeometry,
+  BufferAttribute,
   BufferGeometry,
   Color,
   Euler,
   Group,
   LineBasicMaterial,
+  LineSegments,
   Material,
   Matrix4,
   Mesh,
@@ -27,12 +29,18 @@ import { ThreeJsPanel } from "./ThreeJsPanel";
 
 import { Bounds, FuseChannel } from "./types";
 
+// TODO calculate tick mark sizes better
+const NUM_TICK_MARKS = 4;
+
+const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
+
 export default class RayMarchedAtlasVolume {
   public volume: Volume;
   public bounds: Bounds;
   private cube: BoxGeometry;
   private cubeMesh: Mesh<BufferGeometry, Material>;
   private boxHelper: Box3Helper;
+  private tickMarksMesh: LineSegments;
   private cubeTransformNode: Group;
   private uniforms: typeof rayMarchingShaderUniforms;
   private channelData: FusedChannelData;
@@ -56,16 +64,20 @@ export default class RayMarchedAtlasVolume {
 
     this.boxHelper = new Box3Helper(
       new Box3(new Vector3(-0.5, -0.5, -0.5), new Vector3(0.5, 0.5, 0.5)),
-      new Color(0xffff00)
+      BOUNDING_BOX_DEFAULT_COLOR
     );
     this.boxHelper.updateMatrixWorld();
     this.boxHelper.visible = false;
 
+    this.tickMarksMesh = new LineSegments();
+    this.tickMarksMesh.updateMatrixWorld();
+    this.tickMarksMesh.visible = false;
+    this.createTickMarks();
+
     this.cubeTransformNode = new Group();
     this.cubeTransformNode.name = "VolumeContainerNode";
 
-    this.cubeTransformNode.add(this.boxHelper);
-    this.cubeTransformNode.add(this.cubeMesh);
+    this.cubeTransformNode.add(this.boxHelper, this.tickMarksMesh, this.cubeMesh);
 
     this.uniforms = rayMarchingShaderUniforms;
 
@@ -93,6 +105,69 @@ export default class RayMarchedAtlasVolume {
     this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
   }
 
+  private createTickMarks(): void {
+    const { physicalScale, normalizedPhysicalSize } = this.volume;
+    const tickMarkLength = 10 ** Math.floor(Math.log10(physicalScale / 2));
+    const numTickMarks = physicalScale / tickMarkLength;
+
+    const vertices: number[] = [];
+
+    const tickLengthX = 1 / (normalizedPhysicalSize.x * numTickMarks);
+    for (let x = -0.5; x <= 0.5; x += tickLengthX) {
+      vertices.push(
+        // x, -0.5,  -0.5,
+        // x, -0.55, -0.5,
+
+        // x,  0.5,  -0.5,
+        // x,  0.55, -0.5,
+
+        // x, -0.5,   0.5,
+        // x, -0.55,  0.5,
+
+        x,  0.5,   0.5,
+        x,  0.55,  0.5,
+      );
+    }
+
+    const tickLengthY = 1 / (normalizedPhysicalSize.y * numTickMarks);
+    for (let y = 0.5; y >= -0.5; y -= tickLengthY) {
+      vertices.push(
+        // -0.5,  y, -0.5,
+        // -0.55, y, -0.5,
+
+        //  0.5,  y, -0.5,
+        //  0.55, y, -0.5,
+
+        -0.5,  y,  0.5,
+        -0.55, y,  0.5,
+
+        //  0.5,  y,  0.5,
+        //  0.55, y,  0.5,
+      );
+    }
+
+    const tickLengthZ = 1 / (normalizedPhysicalSize.z * numTickMarks);
+    for (let z = 0.5; z >= 0.5; z -= tickLengthZ) {
+      vertices.push(
+        // -0.5,  -0.5, z,
+        // -0.55, -0.5, z,
+
+        //  0.5,  -0.5, z,
+        //  0.55, -0.5, z,
+
+        -0.5,   0.5, z,
+        -0.55,  0.5, z,
+
+        //  0.5,   0.5, z,
+        //  0.55,  0.5, z,
+      );
+    }
+
+    const geometry = new BufferGeometry();
+    geometry.setAttribute("position", new BufferAttribute(new Float32Array(vertices), 3));
+    this.tickMarksMesh = new LineSegments(geometry, new LineBasicMaterial({color: BOUNDING_BOX_DEFAULT_COLOR}));
+  }
+
   public cleanup(): void {
     this.cube.dispose();
     this.cubeMesh.material.dispose();
@@ -107,14 +182,17 @@ export default class RayMarchedAtlasVolume {
 
   public setShowBoundingBox(showBoundingBox: boolean): void {
     this.boxHelper.visible = showBoundingBox;
+    this.tickMarksMesh.visible = showBoundingBox;
   }
 
   public setBoundingBoxColor(color: [number, number, number]): void {
+    const newBoxColor = new Color(color[0], color[1], color[2]);
     // note this material update is supposed to be a hidden implementation detail
     // but I didn't want to re-create a whole boxHelper again.
     // I could also create a new LineBasicMaterial but that would also rely on knowledge
     // that Box3Helper expects that type.
-    (this.boxHelper.material as LineBasicMaterial).color = new Color(color[0], color[1], color[2]);
+    (this.boxHelper.material as LineBasicMaterial).color = newBoxColor;
+    (this.tickMarksMesh.material as LineBasicMaterial).color = newBoxColor;
   }
 
   public doRender(canvas: ThreeJsPanel): void {
@@ -146,12 +224,13 @@ export default class RayMarchedAtlasVolume {
   public setScale(scale: Vector3): void {
     this.scale = scale;
 
-    this.cubeMesh.scale.copy(new Vector3(scale.x, scale.y, scale.z));
+    this.cubeMesh.scale.copy(scale);
     this.setUniform("volumeScale", scale);
     this.boxHelper.box.set(
       new Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z),
       new Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z)
     );
+    this.tickMarksMesh.scale.copy(scale);
   }
 
   public setRayStepSizes(_primary: number, _secondary: number): void {
