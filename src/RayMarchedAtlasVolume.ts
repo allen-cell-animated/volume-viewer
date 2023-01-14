@@ -4,6 +4,7 @@ import {
   BoxGeometry,
   BufferAttribute,
   BufferGeometry,
+  CanvasTexture,
   Color,
   Euler,
   Group,
@@ -12,6 +13,8 @@ import {
   Material,
   Matrix4,
   Mesh,
+  MeshBasicMaterial,
+  PlaneGeometry,
   ShaderMaterial,
   Vector2,
   Vector3,
@@ -38,6 +41,8 @@ export default class RayMarchedAtlasVolume {
   private cubeMesh: Mesh<BufferGeometry, Material>;
   private boxHelper: Box3Helper;
   private tickMarksMesh: LineSegments;
+  private scaleTextMesh: Mesh;
+  private tickMarksPhysicalLength: number;
   private cubeTransformNode: Group;
   private uniforms: typeof rayMarchingShaderUniforms;
   private channelData: FusedChannelData;
@@ -67,14 +72,16 @@ export default class RayMarchedAtlasVolume {
     this.boxHelper.visible = false;
 
     this.tickMarksMesh = new LineSegments();
+    this.scaleTextMesh = new Mesh();
     this.tickMarksMesh.updateMatrixWorld();
     this.tickMarksMesh.visible = false;
+    this.tickMarksPhysicalLength = 1;
     this.createTickMarks();
 
     this.cubeTransformNode = new Group();
     this.cubeTransformNode.name = "VolumeContainerNode";
 
-    this.cubeTransformNode.add(this.boxHelper, this.tickMarksMesh, this.cubeMesh);
+    this.cubeTransformNode.add(this.boxHelper, this.tickMarksMesh, this.cubeMesh, this.scaleTextMesh);
 
     this.uniforms = rayMarchingShaderUniforms;
 
@@ -104,65 +111,79 @@ export default class RayMarchedAtlasVolume {
 
   private createTickMarks(): void {
     const { physicalScale, normalizedPhysicalSize } = this.volume;
-    const tickMarkLength = 10 ** Math.floor(Math.log10(physicalScale / 2));
-    const numTickMarks = physicalScale / tickMarkLength;
+    this.tickMarksPhysicalLength = 10 ** Math.floor(Math.log10(physicalScale / 2));
+    const numTickMarks = physicalScale / this.tickMarksPhysicalLength;
 
     const vertices: number[] = [];
 
     const tickLengthX = 1 / (normalizedPhysicalSize.x * numTickMarks);
     for (let x = -0.5; x <= 0.5; x += tickLengthX) {
-      vertices.push(
-        // x, -0.5,  -0.5,
-        // x, -0.55, -0.5,
+      vertices.push(x, 0.5, 0.5, x, 0.55, 0.5);
+      // x, -0.5,  -0.5,
+      // x, -0.55, -0.5,
 
-        // x,  0.5,  -0.5,
-        // x,  0.55, -0.5,
+      // x,  0.5,  -0.5,
+      // x,  0.55, -0.5,
 
-        // x, -0.5,   0.5,
-        // x, -0.55,  0.5,
-
-        x,  0.5,   0.5,
-        x,  0.55,  0.5,
-      );
+      // x, -0.5,   0.5,
+      // x, -0.55,  0.5,
     }
 
     const tickLengthY = 1 / (normalizedPhysicalSize.y * numTickMarks);
     for (let y = 0.5; y >= -0.5; y -= tickLengthY) {
-      vertices.push(
-        // -0.5,  y, -0.5,
-        // -0.55, y, -0.5,
+      vertices.push(-0.5, y, 0.5, -0.55, y, 0.5);
+      // -0.5,  y, -0.5,
+      // -0.55, y, -0.5,
 
-        //  0.5,  y, -0.5,
-        //  0.55, y, -0.5,
+      //  0.5,  y, -0.5,
+      //  0.55, y, -0.5,
 
-        -0.5,  y,  0.5,
-        -0.55, y,  0.5,
-
-        //  0.5,  y,  0.5,
-        //  0.55, y,  0.5,
-      );
+      //  0.5,  y,  0.5,
+      //  0.55, y,  0.5,
     }
 
     const tickLengthZ = 1 / (normalizedPhysicalSize.z * numTickMarks);
     for (let z = 0.5; z >= 0.5; z -= tickLengthZ) {
-      vertices.push(
-        // -0.5,  -0.5, z,
-        // -0.55, -0.5, z,
+      vertices.push(-0.5, 0.5, z, -0.55, 0.5, z);
+      // -0.5,  -0.5, z,
+      // -0.55, -0.5, z,
 
-        //  0.5,  -0.5, z,
-        //  0.55, -0.5, z,
+      //  0.5,  -0.5, z,
+      //  0.55, -0.5, z,
 
-        -0.5,   0.5, z,
-        -0.55,  0.5, z,
-
-        //  0.5,   0.5, z,
-        //  0.55,  0.5, z,
-      );
+      //  0.5,   0.5, z,
+      //  0.55,  0.5, z,
     }
 
     const geometry = new BufferGeometry();
     geometry.setAttribute("position", new BufferAttribute(new Float32Array(vertices), 3));
-    this.tickMarksMesh = new LineSegments(geometry, new LineBasicMaterial({color: BOUNDING_BOX_DEFAULT_COLOR}));
+    this.tickMarksMesh = new LineSegments(geometry, new LineBasicMaterial({ color: BOUNDING_BOX_DEFAULT_COLOR }));
+
+    this.updateTickMarkScaleText();
+  }
+
+  public updateTickMarkScaleText(): void {
+    const { physicalUnitSymbol, normalizedPhysicalSize } = this.volume;
+
+    const textCanvas = document.createElement("canvas");
+    textCanvas.width = 250;
+    textCanvas.height = 30;
+    const ctx = textCanvas.getContext("2d");
+    if (ctx === null) {
+      return;
+    }
+    ctx.font = "20px -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif";
+    ctx.fillStyle = "white";
+    ctx.fillText(`${this.tickMarksPhysicalLength}${physicalUnitSymbol || "μm"}`, 0, 20);
+    const tex = new CanvasTexture(textCanvas);
+    const geometry = new PlaneGeometry(0.4, 0.05);
+    const material = new MeshBasicMaterial({ map: tex, transparent: true });
+    this.scaleTextMesh = new Mesh(geometry, material);
+    this.scaleTextMesh.position
+      .copy(normalizedPhysicalSize)
+      .divideScalar(2)
+      .add(new Vector3(0.2 - normalizedPhysicalSize.x, 0.02, 0));
+    this.scaleTextMesh.updateMatrixWorld();
   }
 
   public cleanup(): void {
