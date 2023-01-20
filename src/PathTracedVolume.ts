@@ -72,7 +72,7 @@ export default class PathTracedVolume {
   private screenOutputDenoiseMaterial: ShaderMaterial;
   private screenOutputMesh: Mesh;
   private gradientDelta: number;
-  private renderUpdateListener?: (number) => void;
+  private renderUpdateListener?: (iteration: number) => void;
 
   constructor(volume: Volume) {
     // need?
