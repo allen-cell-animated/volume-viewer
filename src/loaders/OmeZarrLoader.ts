@@ -5,22 +5,6 @@ import Volume from "../Volume";
 
 import { openArray, openGroup, HTTPStore } from "zarr";
 
-function estimateLevelForAtlas(multiscales: VolumeDims[], maxAtlasEdge = 4096) {
-  // update levelToLoad after we get size info about multiscales.
-  // decide to max out at a 4k x 4k texture.
-  let levelToLoad = multiscales.length - 1;
-  for (let i = 0; i < multiscales.length; ++i) {
-    // estimate atlas size:
-    const s = multiscales[i].shape[2] * multiscales[i].shape[3] * multiscales[i].shape[4];
-    if (s / maxAtlasEdge <= maxAtlasEdge) {
-      console.log("Will load level " + i);
-      levelToLoad = i;
-      break;
-    }
-  }
-  return levelToLoad;
-}
-
 class OMEZarrLoader implements IVolumeLoader {
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const store = new HTTPStore(loadSpec.url);

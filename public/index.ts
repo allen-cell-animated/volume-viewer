@@ -7,13 +7,17 @@ import {
   View3d,
   Volume,
   VolumeMaker,
-  VolumeLoader,
   Light,
   AREA_LIGHT,
   RENDERMODE_PATHTRACE,
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
 } from "../src";
+import { LoadSpec } from "../src/loaders/IVolumeLoader";
+import { JsonImageInfoLoader } from "../src/loaders/JsonImageInfoLoader";
+import { OMEZarrLoader } from "../src/loaders/OmeZarrLoader";
+import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
+import { TiffLoader } from "../src/loaders/TiffLoader";
 import { State } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
 
@@ -896,7 +900,12 @@ function fetchZarr(store: string, image: string, time: number) {
     time = 0;
   }
   // create the main volume and add to view (this is the only place)
-  VolumeLoader.loadZarr(store, image, time, (url, v, channelIndex) => {
+  const loader = new OMEZarrLoader();
+  const loadSpec = new LoadSpec();
+  loadSpec.url = store;
+  loadSpec.subpath = image;
+  loadSpec.time = time;
+  loader.createVolume(loadSpec, (url, v, channelIndex) => {
     onChannelDataArrived(url, v, channelIndex);
   }).then((volume: Volume) => {
     onVolumeCreated(volume);
@@ -907,7 +916,9 @@ function fetchZarr(store: string, image: string, time: number) {
 
 function fetchOpenCell() {
   // create the main volume and add to view (this is the only place)
-  VolumeLoader.loadOpenCell((url, v, channelIndex) => {
+  const loader = new OpenCellLoader();
+  const loadSpec = new LoadSpec();
+  loader.createVolume(loadSpec, (url, v, channelIndex) => {
     onChannelDataArrived(url, v, channelIndex);
   }).then((volume: Volume) => {
     onVolumeCreated(volume);
@@ -919,23 +930,29 @@ function fetchTiff(url: string, time: number) {
     time = 0;
   }
   // create the main volume and add to view (this is the only place)
-  VolumeLoader.loadTiff(url, (url, v, channelIndex) => {
+  const loader = new TiffLoader();
+  const loadSpec = new LoadSpec();
+  loadSpec.url = url;
+  loadSpec.time = time;
+  loader.createVolume(loadSpec, (url, v, channelIndex) => {
     onChannelDataArrived(url, v, channelIndex);
   }).then((volume: Volume) => {
     onVolumeCreated(volume);
-    // TODO split the url into store and image name
     myState.currentImageStore = url;
     myState.currentImageName = url;
   });
 }
 
 function fetchImage(url, urlPrefix, isTimeSeries = false, frameNumber = 0) {
-  VolumeLoader.loadJson(url, urlPrefix, (url, vol, channelIndex) => {
-    onChannelDataArrived(url, vol, channelIndex, isTimeSeries, frameNumber);
-  }).then((vol) => {
-    onVolumeCreated(vol, isTimeSeries, frameNumber);
-    // TODO split the url into store and image name
-    myState.currentImageStore = urlPrefix;
+  const loader = new JsonImageInfoLoader();
+  const loadSpec = new LoadSpec();
+  loadSpec.url = url;
+  loadSpec.time = frameNumber;
+  loader.createVolume(loadSpec, (url, v, channelIndex) => {
+    onChannelDataArrived(url, v, channelIndex, isTimeSeries, frameNumber);
+  }).then((volume: Volume) => {
+    onVolumeCreated(volume, isTimeSeries, frameNumber);
+    myState.currentImageStore = url;
     myState.currentImageName = url;
   });
 }
