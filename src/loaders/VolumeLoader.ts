@@ -58,7 +58,7 @@ export function spatialUnitNameToSymbol(unitName: string): string | null {
 
 // We want to find the most "square" packing of z tw by th tiles.
 // Compute number of rows and columns.
-function computePackedAtlasDims(z, tw, th): { nrows: number; ncols: number } {
+export function computePackedAtlasDims(z, tw, th): { nrows: number; ncols: number } {
   let nextrows = 1;
   let nextcols = z;
   let ratio = (nextcols * tw) / (nextrows * th);

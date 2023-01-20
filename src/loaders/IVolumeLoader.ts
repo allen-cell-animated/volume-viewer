@@ -1,4 +1,4 @@
-import Volume, { ImageInfo } from "../Volume";
+import Volume from "../Volume";
 
 export class LoadSpec {
   url = "";

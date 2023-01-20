@@ -1,5 +1,5 @@
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
-import { spatialUnitNameToSymbol } from "./VolumeLoader";
+import { computePackedAtlasDims, spatialUnitNameToSymbol } from "./VolumeLoader";
 import { ImageInfo } from "../Volume";
 import Volume from "../Volume";
 
@@ -37,16 +37,12 @@ class OMEZarrLoader implements IVolumeLoader {
     const multiscales = allmetadata.multiscales[imageIndex].datasets;
     const axes = allmetadata.multiscales[imageIndex].axes;
 
-    let hasT = false;
-    let hasC = false;
     const axisTCZYX = [-1, -1, -1, -1, -1];
     for (let i = 0; i < axes.length; ++i) {
       const axis = axes[i];
       if (axis.name === "t") {
-        hasT = true;
         axisTCZYX[0] = i;
       } else if (axis.name === "c") {
-        hasC = true;
         axisTCZYX[1] = i;
       } else if (axis.name === "z") {
         axisTCZYX[2] = i;
@@ -157,19 +153,10 @@ class OMEZarrLoader implements IVolumeLoader {
     const unitName = axes[spatialAxes[2]].unit;
     const unitSymbol = spatialUnitNameToSymbol(unitName) || unitName || "";
 
-    // get the shape for the level we want to load
-    // default to lowest level until we find a better one
+    // default to lowest level until we find the match
     let levelToLoad = numlevels - 1;
-    for (const i in multiscales) {
+    for (let i = 0; i < numlevels; ++i) {
       if (multiscales[i].path == loadSpec.subpath) {
-        const level = await openArray({ store: store, path: imagegroup + "/" + multiscales[i].path, mode: "r" });
-        // just stick it in multiscales for now.
-        multiscales[i].shape = level.meta.shape;
-        if (multiscales[i].shape.length != axes.length) {
-          console.log(
-            "ERROR: shape length " + multiscales[i].shape.length + " does not match axes length " + axes.length
-          );
-        }
         levelToLoad = i;
         break;
       }
@@ -177,23 +164,16 @@ class OMEZarrLoader implements IVolumeLoader {
 
     const downsampleZ = 2; // z/downsampleZ is number of z slices in reduced volume
 
-    // update levelToLoad after we get size info about multiscales.
-    // decide to max out at a 4k x 4k texture.
-    const maxAtlasEdge = 4096;
-    for (let i = 0; i < multiscales.length; ++i) {
-      // estimate atlas size:
-      const s =
-        (multiscales[i].shape[spatialAxes[0]] / downsampleZ) *
-        multiscales[i].shape[spatialAxes[1]] *
-        multiscales[i].shape[spatialAxes[2]];
-      if (s / maxAtlasEdge <= maxAtlasEdge) {
-        console.log("Will load level " + i);
-        levelToLoad = i;
-        break;
-      }
+    const dataset = multiscales[levelToLoad];
+
+    // get the shape for the level we want to load
+    const level = await openArray({ store: store, path: imagegroup + "/" + dataset.path, mode: "r" });
+    // just stick it in multiscales for now.
+    dataset.shape = level.meta.shape;
+    if (dataset.shape.length != axes.length) {
+      console.log("ERROR: shape length " + dataset.shape.length + " does not match axes length " + axes.length);
     }
 
-    const dataset = multiscales[levelToLoad];
     const c = hasC ? dataset.shape[axisTCZYX[1]] : 1;
     const sizeT = hasT ? dataset.shape[axisTCZYX[0]] : 1;
 
@@ -252,14 +232,14 @@ class OMEZarrLoader implements IVolumeLoader {
     const storepath = imagegroup + "/" + dataset.path;
     // do each channel on a worker
     for (let i = 0; i < c; ++i) {
-      const worker = new Worker(new URL("./workers/FetchZarrWorker", import.meta.url));
+      const worker = new Worker(new URL("../workers/FetchZarrWorker", import.meta.url));
       worker.onmessage = function (e) {
         const u8 = e.data.data;
         const channel = e.data.channel;
         vol.setChannelDataFromVolume(channel, u8);
         if (onChannelLoaded) {
           // make up a unique name? or have caller pass this in?
-          onChannelLoaded(urlStore + "/" + imageName, vol, channel);
+          onChannelLoaded(loadSpec.url + "/" + imagegroup, vol, channel);
         }
         worker.terminate();
       };
@@ -267,8 +247,8 @@ class OMEZarrLoader implements IVolumeLoader {
         alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
       };
       worker.postMessage({
-        urlStore: urlStore,
-        time: hasT ? Math.min(t, sizeT) : -1,
+        urlStore: loadSpec.url,
+        time: hasT ? Math.min(loadSpec.time, sizeT) : -1,
         channel: hasC ? i : -1,
         downsampleZ: downsampleZ,
         path: storepath,
