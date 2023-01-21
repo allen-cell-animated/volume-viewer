@@ -13,7 +13,7 @@ import {
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
 } from "../src";
-import { LoadSpec } from "../src/loaders/IVolumeLoader";
+import { IVolumeLoader, LoadSpec } from "../src/loaders/IVolumeLoader";
 import { JsonImageInfoLoader } from "../src/loaders/JsonImageInfoLoader";
 import { OMEZarrLoader } from "../src/loaders/OmeZarrLoader";
 import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
@@ -96,6 +96,8 @@ const myState: State = {
   totalFrames: 0,
   currentFrame: 0,
   timerId: 0,
+
+  loader: new JsonImageInfoLoader(),
 
   density: 12.5,
   maskAlpha: 1.0,
@@ -560,6 +562,8 @@ function removeFolderByName(name: string) {
 }
 
 function updateTimeUI(volume: Volume) {
+  // TODO: we have stashed sizeT in volume.imageInfo.times
+  // but the Volume doesn't store any other info that would help
   if (volume.imageInfo.times) {
     myState.totalFrames = volume.imageInfo.times;
   } else {
@@ -973,86 +977,6 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
   showChannelUI(myState.volume);
 }
 
-function fetchZarr(store: string, image: string, time: number) {
-  if (isNaN(time)) {
-    time = 0;
-  }
-  // create the main volume and add to view (this is the only place)
-  const loader = new OMEZarrLoader();
-  const loadSpec = new LoadSpec();
-  loadSpec.url = store;
-  loadSpec.subpath = image;
-  loadSpec.time = time;
-  loader
-    .createVolume(loadSpec, (url, v, channelIndex) => {
-      onChannelDataArrived(url, v, channelIndex);
-    })
-    .then((volume: Volume) => {
-      onVolumeCreated(volume);
-      myState.currentImageStore = store;
-      myState.currentImageName = image;
-    });
-}
-
-function fetchOpenCell() {
-  // create the main volume and add to view (this is the only place)
-  const loader = new OpenCellLoader();
-  const loadSpec = new LoadSpec();
-  loader
-    .createVolume(loadSpec, (url, v, channelIndex) => {
-      onChannelDataArrived(url, v, channelIndex);
-    })
-    .then((volume: Volume) => {
-      onVolumeCreated(volume);
-    });
-}
-
-function fetchTiff(url: string, time: number) {
-  if (isNaN(time)) {
-    time = 0;
-  }
-  // create the main volume and add to view (this is the only place)
-  const loader = new TiffLoader();
-  const loadSpec = new LoadSpec();
-  loadSpec.url = url;
-  loadSpec.time = time;
-  loader
-    .createVolume(loadSpec, (url, v, channelIndex) => {
-      onChannelDataArrived(url, v, channelIndex);
-    })
-    .then((volume: Volume) => {
-      onVolumeCreated(volume);
-      myState.currentImageStore = url;
-      myState.currentImageName = url;
-    });
-}
-
-function fetchImage(url, urlPrefix, isTimeSeries = false, frameNumber = 0) {
-  const loader = new JsonImageInfoLoader();
-  const loadSpec = new LoadSpec();
-  loadSpec.url = url;
-  loadSpec.time = frameNumber;
-  loader
-    .createVolume(loadSpec, (url, v, channelIndex) => {
-      onChannelDataArrived(url, v, channelIndex, isTimeSeries, frameNumber);
-    })
-    .then((volume: Volume) => {
-      onVolumeCreated(volume, isTimeSeries, frameNumber);
-      myState.currentImageStore = url;
-      myState.currentImageName = url;
-    });
-}
-
-function fetchTimeSeries(urlPrefix, urlStart, urlEnd, t0, tf, interval = 1) {
-  let frameNumber = 0;
-  for (let t = t0; t <= tf; t += interval) {
-    fetchImage(urlPrefix + urlStart + t + urlEnd, urlPrefix, true, frameNumber);
-    frameNumber++;
-  }
-  myState.totalFrames = frameNumber;
-  console.log(`${frameNumber} frames requested`);
-}
-
 function copyVolumeToVolume(src, dest) {
   // assumes volumes already have identical dimensions!!!
 
@@ -1125,14 +1049,19 @@ function goToFrame(targetFrame) {
     return false;
   }
 
+  // check to see if we have pre-cached the volume
   const targetFrameVolume = myState.timeSeriesVolumes[targetFrame];
   if (targetFrameVolume) {
     copyVolumeToVolume(targetFrameVolume, myState.volume);
     updateViewForNewVolume();
   } else {
     console.log(`frame ${targetFrame} not yet loaded`);
-    // try zarr:
-    fetchZarr(myState.currentImageStore, myState.currentImageName, targetFrame);
+    // try our loader
+    const loadSpec = new LoadSpec();
+    loadSpec.time = targetFrame;
+    loadSpec.url = myState.currentImageStore;
+    // TODO loadspec needs to know proper multiresolution level here
+    loadVolume(loadSpec, myState.loader, false);
   }
   myState.currentFrame = targetFrame;
   return true;
@@ -1185,26 +1114,56 @@ function createTestVolume() {
   };
 }
 
+function createLoader(type: string): IVolumeLoader {
+  switch (type) {
+    case "opencell":
+      return new OpenCellLoader();
+    case "omezarr":
+      return new OMEZarrLoader();
+    case "ometiff":
+      return new TiffLoader();
+    // case "procedural":
+    //   return new RawVolumeLoader();
+    case "jsonatlas":
+      return new JsonImageInfoLoader();
+    default:
+      throw new Error("Unknown loader type: " + type);
+  }
+}
+
+function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader, cacheTimeSeries) {
+  loader
+    .createVolume(loadSpec, (url, v, channelIndex) => {
+      onChannelDataArrived(url, v, channelIndex, cacheTimeSeries, loadSpec.time);
+    })
+    .then((volume: Volume) => {
+      onVolumeCreated(volume, cacheTimeSeries, loadSpec.time);
+      myState.currentImageStore = loadSpec.url;
+      myState.currentImageName = loadSpec.url;
+    });
+}
+
 function loadTestData(testdata: TestDataSpec) {
-  if (testdata.type === "jsonatlas") {
-    const isTimeseries = testdata.tend > testdata.tstart;
-    let frameNumber = 0;
-    for (let t = testdata.tstart; t <= testdata.tend; t++) {
-      frameNumber = t;
-      // replace %% with frame number
-      const url = testdata.url.replace("%%", t.toString());
-      fetchImage(url, url, isTimeseries, frameNumber);
-    }
-  } else if (testdata.type === "omezarr") {
-    fetchZarr(testdata.url, "", testdata.tstart);
-  } else if (testdata.type === "ometiff") {
-    fetchTiff(testdata.url, testdata.tstart);
-  } else if (testdata.type === "opencell") {
-    fetchOpenCell();
-  } else if (testdata.type === "procedural") {
+  if (testdata.type === "procedural") {
     const volumeInfo = createTestVolume();
     loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
+    return;
   }
+
+  const loader: IVolumeLoader = createLoader(testdata.type);
+  myState.loader = loader;
+
+  const isTimeSeries = testdata.tend > testdata.tstart;
+  for (let t = testdata.tstart; t <= testdata.tend; t++) {
+    // replace %% with frame number
+    const url = testdata.url.replace("%%", t.toString());
+
+    const loadSpec = new LoadSpec();
+    loadSpec.url = url;
+    loadSpec.time = t;
+    loadVolume(loadSpec, loader, isTimeSeries);
+  }
+  myState.totalFrames = testdata.tend - testdata.tstart + 1;
 }
 
 function main() {

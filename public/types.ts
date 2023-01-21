@@ -1,4 +1,5 @@
 import { Volume, Light } from "../src";
+import { IVolumeLoader } from "../src/loaders/IVolumeLoader";
 import { ImageInfo } from "../src/Volume";
 
 export interface TestDataSpec {
@@ -7,6 +8,7 @@ export interface TestDataSpec {
   tstart: number;
   tend: number;
 }
+
 export interface State {
   file: string;
   volume: Volume;
@@ -15,6 +17,8 @@ export interface State {
   totalFrames: number;
   currentFrame: number;
   timerId: number;
+
+  loader: IVolumeLoader;
 
   density: number;
   maskAlpha: number;
