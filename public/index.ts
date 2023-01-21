@@ -24,7 +24,7 @@ import { getDefaultImageInfo } from "../src/Volume";
 const TEST_DATA: Record<string, TestDataSpec> = {
   timeSeries: {
     type: "jsonatlas",
-    url: "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/test_parent_T49.ome_%%_atlas.json",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json",
     tstart: 0,
     tend: 46,
   },
@@ -567,7 +567,7 @@ function updateTimeUI(volume: Volume) {
   if (volume.imageInfo.times) {
     myState.totalFrames = volume.imageInfo.times;
   } else {
-    myState.totalFrames = 1;
+    //myState.totalFrames = 1;
   }
 
   const timeSlider = document.getElementById("timeSlider") as HTMLInputElement;
@@ -1020,12 +1020,15 @@ function playTimeSeries(onNewFrameCallback: () => void) {
   clearInterval(myState.timerId);
 
   const loadNextFrame = () => {
-    if (myState.currentFrame >= myState.totalFrames - 1) {
-      clearInterval(myState.timerId);
-      console.log("Reached end of sequence");
-      return;
+    // if (myState.currentFrame >= myState.totalFrames - 1) {
+    //   clearInterval(myState.timerId);
+    //   console.log("Reached end of sequence");
+    //   return;
+    // }
+    let nextFrame = myState.currentFrame + 1;
+    if (nextFrame >= myState.totalFrames) {
+      nextFrame = 0;
     }
-    const nextFrame = myState.currentFrame + 1;
     const nextFrameVolume = myState.timeSeriesVolumes[nextFrame];
     //console.log("loadNextFrame at " + nextFrame);
 
