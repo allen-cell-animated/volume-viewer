@@ -18,11 +18,73 @@ import { JsonImageInfoLoader } from "../src/loaders/JsonImageInfoLoader";
 import { OMEZarrLoader } from "../src/loaders/OmeZarrLoader";
 import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
 import { TiffLoader } from "../src/loaders/TiffLoader";
-import { State } from "./types";
+import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
 
-const loadTimeSeries = false;
-const loadTestData = true;
+const TEST_DATA: Record<string, TestDataSpec> = {
+  timeSeries: {
+    type: "jsonatlas",
+    url: "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/test_parent_T49.ome_%%_atlas.json",
+    tstart: 0,
+    tend: 46,
+  },
+  omeTiff: {
+    type: "ometiff",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif",
+    tstart: 0,
+    tend: 0,
+  },
+  zarrVariance: {
+    type: "omezarr",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr",
+    tstart: 0,
+    tend: 0,
+  },
+  zarrNucmorph0: {
+    type: "omezarr",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P13-C4.zarr/",
+    tstart: 0,
+    tend: 0,
+  },
+  zarrNucmorph1: {
+    type: "omezarr",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P15-C3.zarr/",
+    tstart: 0,
+    tend: 0,
+  },
+  zarrNucmorph2: {
+    type: "omezarr",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P7-B4.zarr/",
+    tstart: 0,
+    tend: 0,
+  },
+  zarrNucmorph3: {
+    type: "omezarr",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P8-B4.zarr/",
+    tstart: 0,
+    tend: 0,
+  },
+  zarrUK: {
+    type: "omezarr",
+    url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr",
+    tstart: 0,
+    tend: 0,
+  },
+  opencell: { type: "opencell", url: "", tstart: 0, tend: 0 },
+  cfeJson: {
+    type: "jsonatlas",
+    url: "AICS-12_881_atlas.json",
+    tstart: 0,
+    tend: 0,
+  },
+  abm: {
+    type: "ometiff",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/HAMILTONIAN_TERM_FOV_VSAHJUP_0000_000192.ome.tif",
+    tstart: 0,
+    tend: 0,
+  },
+  procedural: { type: "procedural", url: "", tstart: 0, tend: 0 },
+};
 
 let view3D: View3d;
 
@@ -500,7 +562,10 @@ function removeFolderByName(name: string) {
 function updateTimeUI(volume: Volume) {
   if (volume.imageInfo.times) {
     myState.totalFrames = volume.imageInfo.times;
+  } else {
+    myState.totalFrames = 1;
   }
+
   const timeSlider = document.getElementById("timeSlider") as HTMLInputElement;
   if (timeSlider) {
     timeSlider.max = `${myState.totalFrames - 1}`;
@@ -508,6 +573,19 @@ function updateTimeUI(volume: Volume) {
   const timeInput = document.getElementById("timeValue") as HTMLInputElement;
   if (timeInput) {
     timeInput.max = `${myState.totalFrames - 1}`;
+  }
+
+  const playBtn = document.getElementById("playBtn");
+  if (myState.totalFrames < 2) {
+    (playBtn as HTMLButtonElement).disabled = true;
+  } else {
+    (playBtn as HTMLButtonElement).disabled = false;
+  }
+  const pauseBtn = document.getElementById("pauseBtn");
+  if (myState.totalFrames < 2) {
+    (pauseBtn as HTMLButtonElement).disabled = true;
+  } else {
+    (pauseBtn as HTMLButtonElement).disabled = false;
   }
 }
 
@@ -905,24 +983,28 @@ function fetchZarr(store: string, image: string, time: number) {
   loadSpec.url = store;
   loadSpec.subpath = image;
   loadSpec.time = time;
-  loader.createVolume(loadSpec, (url, v, channelIndex) => {
-    onChannelDataArrived(url, v, channelIndex);
-  }).then((volume: Volume) => {
-    onVolumeCreated(volume);
-    myState.currentImageStore = store;
-    myState.currentImageName = image;
-  });
+  loader
+    .createVolume(loadSpec, (url, v, channelIndex) => {
+      onChannelDataArrived(url, v, channelIndex);
+    })
+    .then((volume: Volume) => {
+      onVolumeCreated(volume);
+      myState.currentImageStore = store;
+      myState.currentImageName = image;
+    });
 }
 
 function fetchOpenCell() {
   // create the main volume and add to view (this is the only place)
   const loader = new OpenCellLoader();
   const loadSpec = new LoadSpec();
-  loader.createVolume(loadSpec, (url, v, channelIndex) => {
-    onChannelDataArrived(url, v, channelIndex);
-  }).then((volume: Volume) => {
-    onVolumeCreated(volume);
-  });
+  loader
+    .createVolume(loadSpec, (url, v, channelIndex) => {
+      onChannelDataArrived(url, v, channelIndex);
+    })
+    .then((volume: Volume) => {
+      onVolumeCreated(volume);
+    });
 }
 
 function fetchTiff(url: string, time: number) {
@@ -934,13 +1016,15 @@ function fetchTiff(url: string, time: number) {
   const loadSpec = new LoadSpec();
   loadSpec.url = url;
   loadSpec.time = time;
-  loader.createVolume(loadSpec, (url, v, channelIndex) => {
-    onChannelDataArrived(url, v, channelIndex);
-  }).then((volume: Volume) => {
-    onVolumeCreated(volume);
-    myState.currentImageStore = url;
-    myState.currentImageName = url;
-  });
+  loader
+    .createVolume(loadSpec, (url, v, channelIndex) => {
+      onChannelDataArrived(url, v, channelIndex);
+    })
+    .then((volume: Volume) => {
+      onVolumeCreated(volume);
+      myState.currentImageStore = url;
+      myState.currentImageName = url;
+    });
 }
 
 function fetchImage(url, urlPrefix, isTimeSeries = false, frameNumber = 0) {
@@ -948,13 +1032,15 @@ function fetchImage(url, urlPrefix, isTimeSeries = false, frameNumber = 0) {
   const loadSpec = new LoadSpec();
   loadSpec.url = url;
   loadSpec.time = frameNumber;
-  loader.createVolume(loadSpec, (url, v, channelIndex) => {
-    onChannelDataArrived(url, v, channelIndex, isTimeSeries, frameNumber);
-  }).then((volume: Volume) => {
-    onVolumeCreated(volume, isTimeSeries, frameNumber);
-    myState.currentImageStore = url;
-    myState.currentImageName = url;
-  });
+  loader
+    .createVolume(loadSpec, (url, v, channelIndex) => {
+      onChannelDataArrived(url, v, channelIndex, isTimeSeries, frameNumber);
+    })
+    .then((volume: Volume) => {
+      onVolumeCreated(volume, isTimeSeries, frameNumber);
+      myState.currentImageStore = url;
+      myState.currentImageName = url;
+    });
 }
 
 function fetchTimeSeries(urlPrefix, urlStart, urlEnd, t0, tf, interval = 1) {
@@ -1099,12 +1185,43 @@ function createTestVolume() {
   };
 }
 
+function loadTestData(testdata: TestDataSpec) {
+  if (testdata.type === "jsonatlas") {
+    const isTimeseries = testdata.tend > testdata.tstart;
+    let frameNumber = 0;
+    for (let t = testdata.tstart; t <= testdata.tend; t++) {
+      frameNumber = t;
+      // replace %% with frame number
+      const url = testdata.url.replace("%%", t.toString());
+      fetchImage(url, url, isTimeseries, frameNumber);
+    }
+  } else if (testdata.type === "omezarr") {
+    fetchZarr(testdata.url, "", testdata.tstart);
+  } else if (testdata.type === "ometiff") {
+    fetchTiff(testdata.url, testdata.tstart);
+  } else if (testdata.type === "opencell") {
+    fetchOpenCell();
+  } else if (testdata.type === "procedural") {
+    const volumeInfo = createTestVolume();
+    loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
+  }
+}
+
 function main() {
   const el = document.getElementById("volume-viewer");
   if (!el) {
     return;
   }
   view3D = new View3d(el);
+
+  const testDataSelect = document.getElementById("testData");
+  testDataSelect?.addEventListener("change", ({ currentTarget }) => {
+    const selected = (currentTarget as HTMLOptionElement)?.value;
+    const testdata = TEST_DATA[selected];
+    if (testdata) {
+      loadTestData(testdata);
+    }
+  });
 
   const xBtn = document.getElementById("X");
   xBtn?.addEventListener("click", () => {
@@ -1141,7 +1258,7 @@ function main() {
   showScaleBarBtn?.addEventListener("click", () => {
     myState.showScaleBar = !myState.showScaleBar;
     view3D.setShowScaleBar(myState.showScaleBar);
-  })
+  });
 
   // convert value to rgb array
   function hexToRgb(hex, last: [number, number, number]): [number, number, number] {
@@ -1190,16 +1307,11 @@ function main() {
       }
     });
   });
-  if (!loadTimeSeries) {
-    (playBtn as HTMLButtonElement).disabled = true;
-  }
   const pauseBtn = document.getElementById("pauseBtn");
   pauseBtn?.addEventListener("click", () => {
     clearInterval(myState.timerId);
   });
-  if (!loadTimeSeries) {
-    (pauseBtn as HTMLButtonElement).disabled = true;
-  }
+
   const forwardBtn = document.getElementById("forwardBtn");
   const backBtn = document.getElementById("backBtn");
   const timeSlider = document.getElementById("timeSlider") as HTMLInputElement;
@@ -1297,26 +1409,7 @@ function main() {
 
   setupGui();
 
-  if (loadTimeSeries) {
-    fetchTimeSeries(
-      "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/",
-      "test_parent_T49.ome_",
-      "_atlas.json",
-      0,
-      46
-    );
-  } else if (loadTestData) {
-    //fetchOpenCell();
-    //fetchTiff("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif", 0);
-    //fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/Lamin_multi-06-Deskew-28.zarr", "Image_0", 0);
-    fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr", "", 0);
-    //fetchZarr("https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr ", "", 0);
-    //fetchZarr("http://localhost:9020/example-data/AICS-12_143.zarr", "AICS-12_143", 0);
-    //fetchImage("AICS-12_881_atlas.json", "");
-  } else {
-    const volumeInfo = createTestVolume();
-    loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
-  }
+  loadTestData(TEST_DATA[(testDataSelect as HTMLSelectElement)?.value]);
   console.log(myState.timeSeriesVolumes);
 }
 

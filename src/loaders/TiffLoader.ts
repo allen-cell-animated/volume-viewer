@@ -134,7 +134,7 @@ class TiffLoader implements IVolumeLoader {
         bytesPerSample: pixeltype === "uint8" ? 1 : pixeltype === "uint16" ? 2 : 4,
         url: loadSpec.url,
       };
-      const worker = new Worker(new URL("./workers/FetchTiffWorker", import.meta.url));
+      const worker = new Worker(new URL("../workers/FetchTiffWorker", import.meta.url));
       worker.onmessage = function (e) {
         const u8 = e.data.data;
         const channel = e.data.channel;

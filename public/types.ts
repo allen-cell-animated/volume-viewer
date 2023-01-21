@@ -1,6 +1,12 @@
 import { Volume, Light } from "../src";
 import { ImageInfo } from "../src/Volume";
 
+export interface TestDataSpec {
+  type: "ometiff" | "omezarr" | "jsonatlas" | "opencell" | "procedural";
+  url: string;
+  tstart: number;
+  tend: number;
+}
 export interface State {
   file: string;
   volume: Volume;
