@@ -1020,17 +1020,11 @@ function playTimeSeries(onNewFrameCallback: () => void) {
   clearInterval(myState.timerId);
 
   const loadNextFrame = () => {
-    // if (myState.currentFrame >= myState.totalFrames - 1) {
-    //   clearInterval(myState.timerId);
-    //   console.log("Reached end of sequence");
-    //   return;
-    // }
     let nextFrame = myState.currentFrame + 1;
     if (nextFrame >= myState.totalFrames) {
       nextFrame = 0;
     }
     const nextFrameVolume = myState.timeSeriesVolumes[nextFrame];
-    //console.log("loadNextFrame at " + nextFrame);
 
     copyVolumeToVolume(nextFrameVolume, myState.volume);
     updateViewForNewVolume();
