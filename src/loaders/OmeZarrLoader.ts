@@ -69,10 +69,20 @@ class OMEZarrLoader implements IVolumeLoader {
         );
       }
 
+      // technically there can be any number of coordinateTransformations
+      // but there must be only one of type "scale".
+      // Here I assume that is the only one.
+      const scale5d = multiscales[i].coordinateTransformations[0].scale;
+
       const d = new VolumeDims();
       d.subpath = "";
-      d.shape = [1, 2, 27, 600, 600];
-      d.spacing = [1, 1, 2, 1, 1];
+      d.shape = [1, 1, 1, 1, 1];
+      for (let i = 0; i < d.shape.length; ++i) {
+        if (axisTCZYX[i] > -1) {
+          d.shape[i] = multiscales[i].shape[axisTCZYX[i]];
+        }
+      }
+      d.spacing = [1, 1, scale5d[spatialAxes[0]], scale5d[spatialAxes[1]], scale5d[spatialAxes[2]]];
       d.spatialUnit = unitSymbol; // unknown unit.
       d.dataType = "uint8";
       dims.push(d);
