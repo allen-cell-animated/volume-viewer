@@ -1,5 +1,5 @@
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
-import { computePackedAtlasDims, spatialUnitNameToSymbol } from "./VolumeLoader";
+import { computePackedAtlasDims, spatialUnitNameToSymbol } from "./VolumeLoaderUtils";
 import { ImageInfo } from "../Volume";
 import Volume from "../Volume";
 

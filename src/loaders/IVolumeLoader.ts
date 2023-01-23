@@ -35,5 +35,7 @@ export interface IVolumeLoader {
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]>;
 
   // create a Volume from a LoadSpec; async data download will be initiated here
+  // TODO this is not cancellable in the sense that any async requests initiated here are not stored
+  // in a way that they can be interrupted.
   createVolume(loadSpec: LoadSpec, onChannelLoaded: PerChannelCallback): Promise<Volume>;
 }
