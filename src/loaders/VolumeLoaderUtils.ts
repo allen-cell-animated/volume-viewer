@@ -55,9 +55,6 @@ export function computePackedAtlasDims(z, tw, th): { nrows: number; ncols: numbe
     nextrows = Math.ceil(z / nextcols);
     ratio = (nextcols * tw) / (nextrows * th);
   }
-  // const atlaswidth = ncols * tw;
-  // const atlasheight = nrows * th;
-  // console.log(atlaswidth, atlasheight);
   return { nrows, ncols };
 }
 
