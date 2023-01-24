@@ -4,21 +4,89 @@ import * as dat from "dat.gui";
 
 import {
   ImageInfo,
+  IVolumeLoader,
+  LoadSpec,
+  JsonImageInfoLoader,
+  OMEZarrLoader,
+  TiffLoader,
   View3d,
   Volume,
   VolumeMaker,
-  VolumeLoader,
   Light,
   AREA_LIGHT,
   RENDERMODE_PATHTRACE,
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
 } from "../src";
-import { State } from "./types";
+// special loader really just for this demo app but lives with the other loaders
+import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
+import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
 
-const loadTimeSeries = false;
-const loadTestData = true;
+const TEST_DATA: Record<string, TestDataSpec> = {
+  timeSeries: {
+    type: "jsonatlas",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json",
+    tstart: 0,
+    tend: 46,
+  },
+  omeTiff: {
+    type: "ometiff",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif",
+    tstart: 0,
+    tend: 0,
+  },
+  zarrVariance: {
+    type: "omezarr",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr",
+    tstart: 0,
+    tend: 0,
+  },
+  zarrNucmorph0: {
+    type: "omezarr",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P13-C4.zarr/",
+    tstart: 0,
+    tend: 0,
+  },
+  zarrNucmorph1: {
+    type: "omezarr",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P15-C3.zarr/",
+    tstart: 0,
+    tend: 0,
+  },
+  zarrNucmorph2: {
+    type: "omezarr",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P7-B4.zarr/",
+    tstart: 0,
+    tend: 0,
+  },
+  zarrNucmorph3: {
+    type: "omezarr",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P8-B4.zarr/",
+    tstart: 0,
+    tend: 0,
+  },
+  zarrUK: {
+    type: "omezarr",
+    url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr",
+    tstart: 0,
+    tend: 0,
+  },
+  opencell: { type: "opencell", url: "", tstart: 0, tend: 0 },
+  cfeJson: {
+    type: "jsonatlas",
+    url: "AICS-12_881_atlas.json",
+    tstart: 0,
+    tend: 0,
+  },
+  abm: {
+    type: "ometiff",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/HAMILTONIAN_TERM_FOV_VSAHJUP_0000_000192.ome.tif",
+    tstart: 0,
+    tend: 0,
+  },
+  procedural: { type: "procedural", url: "", tstart: 0, tend: 0 },
+};
 
 let view3D: View3d;
 
@@ -30,6 +98,8 @@ const myState: State = {
   totalFrames: 0,
   currentFrame: 0,
   timerId: 0,
+
+  loader: new JsonImageInfoLoader(),
 
   density: 12.5,
   maskAlpha: 1.0,
@@ -494,9 +564,14 @@ function removeFolderByName(name: string) {
 }
 
 function updateTimeUI(volume: Volume) {
+  // TODO: we have stashed sizeT in volume.imageInfo.times
+  // but the Volume doesn't store any other info that would help
   if (volume.imageInfo.times) {
     myState.totalFrames = volume.imageInfo.times;
+  } else {
+    //myState.totalFrames = 1;
   }
+
   const timeSlider = document.getElementById("timeSlider") as HTMLInputElement;
   if (timeSlider) {
     timeSlider.max = `${myState.totalFrames - 1}`;
@@ -504,6 +579,19 @@ function updateTimeUI(volume: Volume) {
   const timeInput = document.getElementById("timeValue") as HTMLInputElement;
   if (timeInput) {
     timeInput.max = `${myState.totalFrames - 1}`;
+  }
+
+  const playBtn = document.getElementById("playBtn");
+  if (myState.totalFrames < 2) {
+    (playBtn as HTMLButtonElement).disabled = true;
+  } else {
+    (playBtn as HTMLButtonElement).disabled = false;
+  }
+  const pauseBtn = document.getElementById("pauseBtn");
+  if (myState.totalFrames < 2) {
+    (pauseBtn as HTMLButtonElement).disabled = true;
+  } else {
+    (pauseBtn as HTMLButtonElement).disabled = false;
   }
 }
 
@@ -891,65 +979,6 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
   showChannelUI(myState.volume);
 }
 
-function fetchZarr(store: string, image: string, time: number) {
-  if (isNaN(time)) {
-    time = 0;
-  }
-  // create the main volume and add to view (this is the only place)
-  VolumeLoader.loadZarr(store, image, time, (url, v, channelIndex) => {
-    onChannelDataArrived(url, v, channelIndex);
-  }).then((volume: Volume) => {
-    onVolumeCreated(volume);
-    myState.currentImageStore = store;
-    myState.currentImageName = image;
-  });
-}
-
-function fetchOpenCell() {
-  // create the main volume and add to view (this is the only place)
-  VolumeLoader.loadOpenCell((url, v, channelIndex) => {
-    onChannelDataArrived(url, v, channelIndex);
-  }).then((volume: Volume) => {
-    onVolumeCreated(volume);
-  });
-}
-
-function fetchTiff(url: string, time: number) {
-  if (isNaN(time)) {
-    time = 0;
-  }
-  // create the main volume and add to view (this is the only place)
-  VolumeLoader.loadTiff(url, (url, v, channelIndex) => {
-    onChannelDataArrived(url, v, channelIndex);
-  }).then((volume: Volume) => {
-    onVolumeCreated(volume);
-    // TODO split the url into store and image name
-    myState.currentImageStore = url;
-    myState.currentImageName = url;
-  });
-}
-
-function fetchImage(url, urlPrefix, isTimeSeries = false, frameNumber = 0) {
-  VolumeLoader.loadJson(url, urlPrefix, (url, vol, channelIndex) => {
-    onChannelDataArrived(url, vol, channelIndex, isTimeSeries, frameNumber);
-  }).then((vol) => {
-    onVolumeCreated(vol, isTimeSeries, frameNumber);
-    // TODO split the url into store and image name
-    myState.currentImageStore = urlPrefix;
-    myState.currentImageName = url;
-  });
-}
-
-function fetchTimeSeries(urlPrefix, urlStart, urlEnd, t0, tf, interval = 1) {
-  let frameNumber = 0;
-  for (let t = t0; t <= tf; t += interval) {
-    fetchImage(urlPrefix + urlStart + t + urlEnd, urlPrefix, true, frameNumber);
-    frameNumber++;
-  }
-  myState.totalFrames = frameNumber;
-  console.log(`${frameNumber} frames requested`);
-}
-
 function copyVolumeToVolume(src, dest) {
   // assumes volumes already have identical dimensions!!!
 
@@ -993,14 +1022,11 @@ function playTimeSeries(onNewFrameCallback: () => void) {
   clearInterval(myState.timerId);
 
   const loadNextFrame = () => {
-    if (myState.currentFrame >= myState.totalFrames - 1) {
-      clearInterval(myState.timerId);
-      console.log("Reached end of sequence");
-      return;
+    let nextFrame = myState.currentFrame + 1;
+    if (nextFrame >= myState.totalFrames) {
+      nextFrame = 0;
     }
-    const nextFrame = myState.currentFrame + 1;
     const nextFrameVolume = myState.timeSeriesVolumes[nextFrame];
-    //console.log("loadNextFrame at " + nextFrame);
 
     copyVolumeToVolume(nextFrameVolume, myState.volume);
     updateViewForNewVolume();
@@ -1022,14 +1048,19 @@ function goToFrame(targetFrame) {
     return false;
   }
 
+  // check to see if we have pre-cached the volume
   const targetFrameVolume = myState.timeSeriesVolumes[targetFrame];
   if (targetFrameVolume) {
     copyVolumeToVolume(targetFrameVolume, myState.volume);
     updateViewForNewVolume();
   } else {
     console.log(`frame ${targetFrame} not yet loaded`);
-    // try zarr:
-    fetchZarr(myState.currentImageStore, myState.currentImageName, targetFrame);
+    // try our loader
+    const loadSpec = new LoadSpec();
+    loadSpec.time = targetFrame;
+    loadSpec.url = myState.currentImageStore;
+    // TODO loadspec needs to know proper multiresolution level here
+    loadVolume(loadSpec, myState.loader, false);
   }
   myState.currentFrame = targetFrame;
   return true;
@@ -1082,12 +1113,73 @@ function createTestVolume() {
   };
 }
 
+function createLoader(type: string): IVolumeLoader {
+  switch (type) {
+    case "opencell":
+      return new OpenCellLoader();
+    case "omezarr":
+      return new OMEZarrLoader();
+    case "ometiff":
+      return new TiffLoader();
+    // case "procedural":
+    //   return new RawVolumeLoader();
+    case "jsonatlas":
+      return new JsonImageInfoLoader();
+    default:
+      throw new Error("Unknown loader type: " + type);
+  }
+}
+
+function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader, cacheTimeSeries) {
+  loader
+    .createVolume(loadSpec, (url, v, channelIndex) => {
+      onChannelDataArrived(url, v, channelIndex, cacheTimeSeries, loadSpec.time);
+    })
+    .then((volume: Volume) => {
+      onVolumeCreated(volume, cacheTimeSeries, loadSpec.time);
+      myState.currentImageStore = loadSpec.url;
+      myState.currentImageName = loadSpec.url;
+    });
+}
+
+function loadTestData(testdata: TestDataSpec) {
+  if (testdata.type === "procedural") {
+    const volumeInfo = createTestVolume();
+    loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
+    return;
+  }
+
+  const loader: IVolumeLoader = createLoader(testdata.type);
+  myState.loader = loader;
+
+  const isTimeSeries = testdata.tend > testdata.tstart;
+  for (let t = testdata.tstart; t <= testdata.tend; t++) {
+    // replace %% with frame number
+    const url = testdata.url.replace("%%", t.toString());
+
+    const loadSpec = new LoadSpec();
+    loadSpec.url = url;
+    loadSpec.time = t;
+    loadVolume(loadSpec, loader, isTimeSeries);
+  }
+  myState.totalFrames = testdata.tend - testdata.tstart + 1;
+}
+
 function main() {
   const el = document.getElementById("volume-viewer");
   if (!el) {
     return;
   }
   view3D = new View3d(el);
+
+  const testDataSelect = document.getElementById("testData");
+  testDataSelect?.addEventListener("change", ({ currentTarget }) => {
+    const selected = (currentTarget as HTMLOptionElement)?.value;
+    const testdata = TEST_DATA[selected];
+    if (testdata) {
+      loadTestData(testdata);
+    }
+  });
 
   const xBtn = document.getElementById("X");
   xBtn?.addEventListener("click", () => {
@@ -1124,7 +1216,7 @@ function main() {
   showScaleBarBtn?.addEventListener("click", () => {
     myState.showScaleBar = !myState.showScaleBar;
     view3D.setShowScaleBar(myState.showScaleBar);
-  })
+  });
 
   // convert value to rgb array
   function hexToRgb(hex, last: [number, number, number]): [number, number, number] {
@@ -1173,16 +1265,11 @@ function main() {
       }
     });
   });
-  if (!loadTimeSeries) {
-    (playBtn as HTMLButtonElement).disabled = true;
-  }
   const pauseBtn = document.getElementById("pauseBtn");
   pauseBtn?.addEventListener("click", () => {
     clearInterval(myState.timerId);
   });
-  if (!loadTimeSeries) {
-    (pauseBtn as HTMLButtonElement).disabled = true;
-  }
+
   const forwardBtn = document.getElementById("forwardBtn");
   const backBtn = document.getElementById("backBtn");
   const timeSlider = document.getElementById("timeSlider") as HTMLInputElement;
@@ -1280,26 +1367,7 @@ function main() {
 
   setupGui();
 
-  if (loadTimeSeries) {
-    fetchTimeSeries(
-      "http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/",
-      "test_parent_T49.ome_",
-      "_atlas.json",
-      0,
-      46
-    );
-  } else if (loadTestData) {
-    //fetchOpenCell();
-    //fetchTiff("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif", 0);
-    //fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/Lamin_multi-06-Deskew-28.zarr", "Image_0", 0);
-    fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr", "", 0);
-    //fetchZarr("https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr ", "", 0);
-    //fetchZarr("http://localhost:9020/example-data/AICS-12_143.zarr", "AICS-12_143", 0);
-    //fetchImage("AICS-12_881_atlas.json", "");
-  } else {
-    const volumeInfo = createTestVolume();
-    loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
-  }
+  loadTestData(TEST_DATA[(testDataSelect as HTMLSelectElement)?.value]);
   console.log(myState.timeSeriesVolumes);
 }
 
