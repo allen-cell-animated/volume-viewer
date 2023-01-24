@@ -4,7 +4,6 @@ import {
   BoxGeometry,
   BufferAttribute,
   BufferGeometry,
-  CanvasTexture,
   Color,
   Euler,
   Group,
@@ -13,8 +12,6 @@ import {
   Material,
   Matrix4,
   Mesh,
-  MeshBasicMaterial,
-  PlaneGeometry,
   ShaderMaterial,
   Vector2,
   Vector3,
@@ -37,13 +34,11 @@ const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 export default class RayMarchedAtlasVolume {
   public volume: Volume;
   public bounds: Bounds;
+  public tickMarksPhysicalLength: number;
   private cube: BoxGeometry;
   private cubeMesh: Mesh<BufferGeometry, Material>;
   private boxHelper: Box3Helper;
   private tickMarksMesh: LineSegments;
-  private scaleTextMesh: Mesh;
-  private rulerMesh: Mesh;
-  private tickMarksPhysicalLength: number;
   private cubeTransformNode: Group;
   private uniforms: typeof rayMarchingShaderUniforms;
   private channelData: FusedChannelData;
@@ -73,8 +68,6 @@ export default class RayMarchedAtlasVolume {
     this.boxHelper.visible = false;
 
     this.tickMarksMesh = new LineSegments();
-    this.scaleTextMesh = new Mesh();
-    this.rulerMesh = new Mesh();
     this.tickMarksMesh.updateMatrixWorld();
     this.tickMarksMesh.visible = false;
     this.tickMarksPhysicalLength = 1;
@@ -83,7 +76,7 @@ export default class RayMarchedAtlasVolume {
     this.cubeTransformNode = new Group();
     this.cubeTransformNode.name = "VolumeContainerNode";
 
-    this.cubeTransformNode.add(this.boxHelper, this.cubeMesh, this.tickMarksMesh, this.rulerMesh);
+    this.cubeTransformNode.add(this.boxHelper, this.cubeMesh, this.tickMarksMesh);
 
     this.uniforms = rayMarchingShaderUniforms;
 
@@ -120,41 +113,56 @@ export default class RayMarchedAtlasVolume {
 
     const tickLengthX = 1 / (normalizedPhysicalSize.x * numTickMarks);
     for (let x = -0.5; x <= 0.5; x += tickLengthX) {
-      vertices.push(x, 0.5, 0.5, x, 0.55, 0.5);
-      // x, -0.5,  -0.5,
-      // x, -0.55, -0.5,
+      // prettier-ignore
+      vertices.push(
+      x, 0.5,  0.5,
+      x, 0.55, 0.5,
 
-      // x,  0.5,  -0.5,
-      // x,  0.55, -0.5,
+      x, -0.5,  -0.5,
+      x, -0.55, -0.5,
 
-      // x, -0.5,   0.5,
-      // x, -0.55,  0.5,
+      x, 0.5,  -0.5,
+      x, 0.55, -0.5,
+
+      x, -0.5,  0.5,
+      x, -0.55, 0.5,
+      );
     }
 
     const tickLengthY = 1 / (normalizedPhysicalSize.y * numTickMarks);
     for (let y = 0.5; y >= -0.5; y -= tickLengthY) {
-      vertices.push(-0.5, y, 0.5, -0.55, y, 0.5);
-      // -0.5,  y, -0.5,
-      // -0.55, y, -0.5,
+      // prettier-ignore
+      vertices.push(
+        -0.5,  y, 0.5,
+        -0.55, y, 0.5,
 
-      //  0.5,  y, -0.5,
-      //  0.55, y, -0.5,
+        -0.5,  y, -0.5,
+        -0.55, y, -0.5,
 
-      //  0.5,  y,  0.5,
-      //  0.55, y,  0.5,
+        0.5,   y, -0.5,
+        0.55,  y, -0.5,
+
+        0.5,   y, 0.5,
+        0.55,  y, 0.5,
+      );
     }
 
     const tickLengthZ = 1 / (normalizedPhysicalSize.z * numTickMarks);
-    for (let z = 0.5; z >= 0.5; z -= tickLengthZ) {
-      vertices.push(-0.5, 0.5, z, -0.55, 0.5, z);
-      // -0.5,  -0.5, z,
-      // -0.55, -0.5, z,
+    for (let z = 0.5; z >= -0.5; z -= tickLengthZ) {
+      // prettier-ignore
+      vertices.push(
+        -0.5,  0.5,  z,
+        -0.55, 0.5,  z,
 
-      //  0.5,  -0.5, z,
-      //  0.55, -0.5, z,
+        -0.5,  -0.5, z,
+        -0.55, -0.5, z,
 
-      //  0.5,   0.5, z,
-      //  0.55,  0.5, z,
+        0.5,   -0.5, z,
+        0.55,  -0.5, z,
+
+        0.5,   0.5,  z,
+        0.55,  0.5,  z,
+      );
     }
 
     const geometry = new BufferGeometry();
@@ -162,71 +170,6 @@ export default class RayMarchedAtlasVolume {
     this.tickMarksMesh = new LineSegments(geometry, new LineBasicMaterial({ color: BOUNDING_BOX_DEFAULT_COLOR }));
 
     // this.updateTickMarkScaleText();
-    this.createCanvasTickMarks();
-  }
-
-  private createCanvasTickMarks(): void {
-    const CANVAS_HEIGHT = 50,
-      CANVAS_ASPECT = 0.05;
-    const { physicalScale, normalizedPhysicalSize, physicalUnitSymbol } = this.volume;
-    this.tickMarksPhysicalLength = 10 ** Math.floor(Math.log10(physicalScale / 2));
-    const numTickMarks = physicalScale / this.tickMarksPhysicalLength;
-
-    const canvasX = document.createElement("canvas");
-    canvasX.height = CANVAS_HEIGHT;
-    canvasX.width = (CANVAS_HEIGHT / CANVAS_ASPECT) * normalizedPhysicalSize.x;
-
-    const ctxX = canvasX.getContext("2d");
-    if (!ctxX) {
-      return; // make TypeScript happy
-    }
-    ctxX.strokeStyle = "white";
-    ctxX.fillStyle = "white";
-    ctxX.font = "24px -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif";
-
-    // ctxX.beginPath();
-    // ctxX.moveTo(0, 0);
-    // ctxX.lineTo(0, CANVAS_HEIGHT);
-    const tickLengthX = canvasX.width / (numTickMarks * normalizedPhysicalSize.x);
-    let rulerLabel = this.tickMarksPhysicalLength;
-    for (let x = tickLengthX; x <= canvasX.width; x += tickLengthX) {
-      // ctxX.moveTo(x, 0);
-      // ctxX.lineTo(x, CANVAS_HEIGHT);
-      ctxX.fillText(` ${rulerLabel}${physicalUnitSymbol || "μm"}`, x, CANVAS_HEIGHT * 0.7);
-      rulerLabel += this.tickMarksPhysicalLength;
-    }
-    // ctxX.stroke();
-
-    const tex = new CanvasTexture(canvasX);
-    const geometry = new PlaneGeometry(normalizedPhysicalSize.x, CANVAS_ASPECT);
-    const material = new MeshBasicMaterial({ map: tex, transparent: true });
-    this.rulerMesh = new Mesh(geometry, material);
-    this.rulerMesh.position.copy(normalizedPhysicalSize).divideScalar(2).add(new Vector3(-0.5, 0.025, 0));
-    this.rulerMesh.updateMatrixWorld();
-  }
-
-  public updateTickMarkScaleText(): void {
-    const { physicalUnitSymbol, normalizedPhysicalSize } = this.volume;
-
-    const textCanvas = document.createElement("canvas");
-    textCanvas.width = 250;
-    textCanvas.height = 30;
-    const ctx = textCanvas.getContext("2d");
-    if (ctx === null) {
-      return;
-    }
-    ctx.font = "20px -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif";
-    ctx.fillStyle = "white";
-    ctx.fillText(`${this.tickMarksPhysicalLength}${physicalUnitSymbol || "μm"}`, 0, 20);
-    const tex = new CanvasTexture(textCanvas);
-    const geometry = new PlaneGeometry(0.4, 0.05);
-    const material = new MeshBasicMaterial({ map: tex, transparent: true });
-    this.scaleTextMesh = new Mesh(geometry, material);
-    this.scaleTextMesh.position
-      .copy(normalizedPhysicalSize)
-      .divideScalar(2)
-      .add(new Vector3(0.2 - normalizedPhysicalSize.x, 0.02, 0));
-    this.scaleTextMesh.updateMatrixWorld();
   }
 
   public cleanup(): void {
