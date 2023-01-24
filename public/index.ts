@@ -4,6 +4,11 @@ import * as dat from "dat.gui";
 
 import {
   ImageInfo,
+  IVolumeLoader,
+  LoadSpec,
+  JsonImageInfoLoader,
+  OMEZarrLoader,
+  TiffLoader,
   View3d,
   Volume,
   VolumeMaker,
@@ -13,11 +18,8 @@ import {
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
 } from "../src";
-import { IVolumeLoader, LoadSpec } from "../src/loaders/IVolumeLoader";
-import { JsonImageInfoLoader } from "../src/loaders/JsonImageInfoLoader";
-import { OMEZarrLoader } from "../src/loaders/OmeZarrLoader";
+// special loader really just for this demo app but lives with the other loaders
 import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
-import { TiffLoader } from "../src/loaders/TiffLoader";
 import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
 
