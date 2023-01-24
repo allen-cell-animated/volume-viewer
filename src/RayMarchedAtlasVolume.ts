@@ -105,63 +105,66 @@ export default class RayMarchedAtlasVolume {
   }
 
   private createTickMarks(): void {
+    const TICK_LENGTH = 0.05;
     const { physicalScale, normalizedPhysicalSize } = this.volume;
     this.tickMarksPhysicalLength = 10 ** Math.floor(Math.log10(physicalScale / 2));
     const numTickMarks = physicalScale / this.tickMarksPhysicalLength;
 
     const vertices: number[] = [];
 
-    const tickLengthX = 1 / (normalizedPhysicalSize.x * numTickMarks);
-    for (let x = -0.5; x <= 0.5; x += tickLengthX) {
+    const tickEndY = TICK_LENGTH / normalizedPhysicalSize.y + 0.5;
+    const tickSpacingX = 1 / (normalizedPhysicalSize.x * numTickMarks);
+    for (let x = -0.5; x <= 0.5; x += tickSpacingX) {
       // prettier-ignore
       vertices.push(
-      x, 0.5,  0.5,
-      x, 0.55, 0.5,
+        x, 0.5,       0.5,
+        x, tickEndY,  0.5,
 
-      x, -0.5,  -0.5,
-      x, -0.55, -0.5,
+        x, -0.5,      -0.5,
+        x, -tickEndY, -0.5,
 
-      x, 0.5,  -0.5,
-      x, 0.55, -0.5,
+        x, 0.5,       -0.5,
+        x, tickEndY,  -0.5,
 
-      x, -0.5,  0.5,
-      x, -0.55, 0.5,
+        x, -0.5,      0.5,
+        x, -tickEndY, 0.5,
       );
     }
 
-    const tickLengthY = 1 / (normalizedPhysicalSize.y * numTickMarks);
-    for (let y = 0.5; y >= -0.5; y -= tickLengthY) {
+    const tickEndX = TICK_LENGTH / normalizedPhysicalSize.x + 0.5;
+    const tickSpacingY = 1 / (normalizedPhysicalSize.y * numTickMarks);
+    for (let y = 0.5; y >= -0.5; y -= tickSpacingY) {
       // prettier-ignore
       vertices.push(
-        -0.5,  y, 0.5,
-        -0.55, y, 0.5,
+        -0.5,      y, 0.5,
+        -tickEndX, y, 0.5,
 
-        -0.5,  y, -0.5,
-        -0.55, y, -0.5,
+        -0.5,      y, -0.5,
+        -tickEndX, y, -0.5,
 
-        0.5,   y, -0.5,
-        0.55,  y, -0.5,
+        0.5,       y, -0.5,
+        tickEndX,  y, -0.5,
 
-        0.5,   y, 0.5,
-        0.55,  y, 0.5,
+        0.5,       y, 0.5,
+        tickEndX,  y, 0.5,
       );
     }
 
-    const tickLengthZ = 1 / (normalizedPhysicalSize.z * numTickMarks);
-    for (let z = 0.5; z >= -0.5; z -= tickLengthZ) {
+    const tickSpacingZ = 1 / (normalizedPhysicalSize.z * numTickMarks);
+    for (let z = 0.5; z >= -0.5; z -= tickSpacingZ) {
       // prettier-ignore
       vertices.push(
-        -0.5,  0.5,  z,
-        -0.55, 0.5,  z,
+        -0.5,      0.5,  z,
+        -tickEndX, 0.5,  z,
 
-        -0.5,  -0.5, z,
-        -0.55, -0.5, z,
+        -0.5,      -0.5, z,
+        -tickEndX, -0.5, z,
 
-        0.5,   -0.5, z,
-        0.55,  -0.5, z,
+        0.5,       -0.5, z,
+        tickEndX,  -0.5, z,
 
-        0.5,   0.5,  z,
-        0.55,  0.5,  z,
+        0.5,       0.5,  z,
+        tickEndX,  0.5,  z,
       );
     }
 
