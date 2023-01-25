@@ -103,7 +103,7 @@ export default class RayMarchedAtlasVolume {
 
   private createTickMarks(): LineSegments {
     // Length of tick mark lines in world units
-    const TICK_LENGTH = 0.05;
+    const TICK_LENGTH = 0.025;
     const { tickMarkPhysicalLength, physicalScale, normalizedPhysicalSize } = this.volume;
     const numTickMarks = physicalScale / tickMarkPhysicalLength;
 
