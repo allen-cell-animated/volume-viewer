@@ -34,7 +34,6 @@ const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 export default class RayMarchedAtlasVolume {
   public volume: Volume;
   public bounds: Bounds;
-  public tickMarksPhysicalLength!: number;
   private cube: BoxGeometry;
   private cubeMesh: Mesh<BufferGeometry, Material>;
   private boxHelper: Box3Helper;
@@ -103,10 +102,10 @@ export default class RayMarchedAtlasVolume {
   }
 
   private createTickMarks(): LineSegments {
+    // Length of tick mark lines in world units
     const TICK_LENGTH = 0.05;
-    const { physicalScale, normalizedPhysicalSize } = this.volume;
-    this.tickMarksPhysicalLength = 10 ** Math.floor(Math.log10(physicalScale / 2));
-    const numTickMarks = physicalScale / this.tickMarksPhysicalLength;
+    const { tickMarkPhysicalLength, physicalScale, normalizedPhysicalSize } = this.volume;
+    const numTickMarks = physicalScale / tickMarkPhysicalLength;
 
     const vertices: number[] = [];
 

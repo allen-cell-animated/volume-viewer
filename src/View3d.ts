@@ -84,8 +84,12 @@ export class View3d {
     }
   }
 
-  private updateOrthoScaleBar(volume: Volume) {
+  private updateOrthoScaleBar(volume: Volume): void {
     this.canvas3d.updateOrthoScaleBar(volume.physicalScale, volume.imageInfo.pixel_size_unit);
+  }
+
+  private updatePerspectiveScaleBar(volume: Volume): void {
+    this.canvas3d.updatePerspectiveScaleBar(volume.tickMarkPhysicalLength, volume.imageInfo.pixel_size_unit);
   }
 
   /**
@@ -223,6 +227,9 @@ export class View3d {
 
       if (unit) {
         this.image.volume.setUnitSymbol(unit);
+      } else if (!isOrthographicCamera(this.canvas3d.camera)) {
+        // `else if` because `setUnitSymbol` would have done this already
+        this.updatePerspectiveScaleBar(this.image.volume);
       }
     }
     this.redraw();
@@ -366,6 +373,8 @@ export class View3d {
 
     this.canvas3d.animateFuncs.push(this.preRender.bind(this));
     this.canvas3d.animateFuncs.push(img.onAnimate.bind(img));
+
+    this.updatePerspectiveScaleBar(img.volume);
 
     // redraw if not already in draw loop
     this.redraw();
@@ -538,6 +547,7 @@ export class View3d {
   setScaleUnit(unit: string): void {
     if (this.image) {
       this.image.volume.setUnitSymbol(unit);
+      this.updatePerspectiveScaleBar(this.image.volume);
       if (isOrthographicCamera(this.canvas3d.camera)) {
         this.updateOrthoScaleBar(this.image.volume);
       }
