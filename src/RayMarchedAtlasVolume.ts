@@ -73,7 +73,7 @@ export default class RayMarchedAtlasVolume {
     this.cubeTransformNode = new Group();
     this.cubeTransformNode.name = "VolumeContainerNode";
 
-    this.cubeTransformNode.add(this.boxHelper, this.cubeMesh, this.tickMarksMesh);
+    this.cubeTransformNode.add(this.boxHelper, this.tickMarksMesh, this.cubeMesh);
 
     this.uniforms = rayMarchingShaderUniforms;
 

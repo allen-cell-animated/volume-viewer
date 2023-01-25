@@ -227,10 +227,9 @@ export class View3d {
 
       if (unit) {
         this.image.volume.setUnitSymbol(unit);
-      } else if (!isOrthographicCamera(this.canvas3d.camera)) {
-        // `else if` because `setUnitSymbol` would have done this already
-        this.updatePerspectiveScaleBar(this.image.volume);
       }
+
+      this.updatePerspectiveScaleBar(this.image.volume);
     }
     this.redraw();
   }
