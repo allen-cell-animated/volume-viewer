@@ -7160,720 +7160,6 @@ var VolumeDrawable = /*#__PURE__*/function () {
 
 /***/ }),
 
-/***/ "./src/VolumeLoader.ts":
-/*!*****************************!*\
-  !*** ./src/VolumeLoader.ts ***!
-  \*****************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (/* binding */ VolumeLoader)
-/* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! regenerator-runtime/runtime */ "./node_modules/regenerator-runtime/runtime.js");
-/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Volume */ "./src/Volume.ts");
-/* harmony import */ var zarr__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! zarr */ "./node_modules/zarr/zarr.mjs");
-/* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
-
-
-
-
-
-
-
-
-
-// Preferred spatial units in OME-Zarr are specified as full names. We want just the symbol.
-// See https://ngff.openmicroscopy.org/latest/#axes-md
-function spatialUnitNameToSymbol(unitName) {
-  var unitSymbols = {
-    "angstrom": "Å",
-    "decameter": "dam",
-    "foot": "ft",
-    "inch": "in",
-    "meter": "m",
-    "micrometer": "μm",
-    "mile": "mi",
-    "parsec": "pc",
-    "yard": "yd"
-  };
-
-  if (unitSymbols[unitName]) {
-    return unitSymbols[unitName];
-  } // SI prefixes not in unitSymbols are abbreviated by first letter, capitalized if prefix ends with "a"
-
-
-  if (unitName.endsWith("meter")) {
-    var capitalize = unitName[unitName.length - 6] === "a";
-    var prefix = capitalize ? unitName[0].toUpperCase() : unitName[0];
-    return prefix + "m";
-  }
-
-  return null;
-} // We want to find the most "square" packing of z tw by th tiles.
-// Compute number of rows and columns.
-
-
-function computePackedAtlasDims(z, tw, th) {
-  var nextrows = 1;
-  var nextcols = z;
-  var ratio = nextcols * tw / (nextrows * th);
-  var nrows = nextrows;
-  var ncols = nextcols;
-
-  while (ratio > 1) {
-    nrows = nextrows;
-    ncols = nextcols;
-    nextcols -= 1;
-    nextrows = Math.ceil(z / nextcols);
-    ratio = nextcols * tw / (nextrows * th);
-  } // const atlaswidth = ncols * tw;
-  // const atlasheight = nrows * th;
-  // console.log(atlaswidth, atlasheight);
-
-
-  return {
-    nrows: nrows,
-    ncols: ncols
-  };
-}
-/**
- * @class
- */
-
-
-var VolumeLoader = /*#__PURE__*/function () {
-  function VolumeLoader() {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, VolumeLoader);
-  }
-
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(VolumeLoader, null, [{
-    key: "loadVolumeAtlasData",
-    value:
-    /**
-     * load per-channel volume data from a batch of image files containing the volume slices tiled across the images
-     * @param {Volume} volume
-     * @param {Array.<{name:string, channels:Array.<number>}>} imageArray
-     * @param {PerChannelCallback} onChannelLoaded Per-channel callback.  Called when each channel's atlased volume data is loaded
-     * @returns {Object.<string, Image>} a map(imageurl : Image object) that should be used to cancel the download requests,
-     * for example if you need to destroy the image before all data has arrived.
-     * as requests arrive, the callback will be called per image, not per channel
-     * @example loadVolumeAtlasData([{
-     *     "name": "AICS-10_5_5.ome.tif_atlas_0.png",
-     *     "channels": [0, 1, 2]
-     * }, {
-     *     "name": "AICS-10_5_5.ome.tif_atlas_1.png",
-     *     "channels": [3, 4, 5]
-     * }, {
-     *     "name": "AICS-10_5_5.ome.tif_atlas_2.png",
-     *     "channels": [6, 7, 8]
-     * }], mycallback);
-     */
-    function loadVolumeAtlasData(volume, imageArray, onChannelLoaded) {
-      var numImages = imageArray.length;
-      var requests = {}; //console.log("BEGIN DOWNLOAD DATA");
-
-      var _loop = function _loop(i) {
-        var url = imageArray[i].name;
-        var batch = imageArray[i].channels; // using Image is just a trick to download the bits as a png.
-        // the Image will never be used again.
-
-        var img = new Image();
-
-        img.onerror = function () {
-          console.log("ERROR LOADING " + url);
-        };
-
-        img.onload = function (thisbatch) {
-          return function (event) {
-            //console.log("GOT ch " + me.src);
-            // extract pixels by drawing to canvas
-            var canvas = document.createElement("canvas"); // nice thing about this is i could downsample here
-
-            var w = Math.floor((event === null || event === void 0 ? void 0 : event.target).naturalWidth);
-            var h = Math.floor((event === null || event === void 0 ? void 0 : event.target).naturalHeight);
-            canvas.setAttribute("width", "" + w);
-            canvas.setAttribute("height", "" + h);
-            var ctx = canvas.getContext("2d");
-
-            if (!ctx) {
-              console.log("Error creating canvas 2d context for " + url);
-              return;
-            }
-
-            ctx.globalCompositeOperation = "copy";
-            ctx.globalAlpha = 1.0;
-            ctx.drawImage(event === null || event === void 0 ? void 0 : event.target, 0, 0, w, h); // getImageData returns rgba.
-            // optimize: collapse rgba to single channel arrays
-
-            var iData = ctx.getImageData(0, 0, w, h);
-            var channelsBits = []; // allocate channels in batch
-
-            for (var ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
-              channelsBits.push(new Uint8Array(w * h));
-            } // extract the data
-
-
-            for (var j = 0; j < Math.min(thisbatch.length, 4); ++j) {
-              for (var px = 0; px < w * h; px++) {
-                channelsBits[j][px] = iData.data[px * 4 + j];
-              }
-            } // done with img, iData, and canvas now.
-
-
-            for (var _ch = 0; _ch < Math.min(thisbatch.length, 4); ++_ch) {
-              volume.setChannelDataFromAtlas(thisbatch[_ch], channelsBits[_ch], w, h);
-              onChannelLoaded(url, volume, thisbatch[_ch]);
-            }
-          };
-        }(batch);
-
-        img.crossOrigin = "Anonymous";
-        img.src = url;
-        requests[url] = img;
-      };
-
-      for (var i = 0; i < numImages; ++i) {
-        _loop(i);
-      }
-
-      return requests;
-    }
-    /**
-     * load 4d volume stored in json plus tiled png texture atlases
-     * @param {string} url
-     * @param {string} urlPrefix The part of the url to prepend for all the images specified in the json.
-     * @param {PerChannelCallback} onChannelLoaded Per-channel callback.  Called when each channel's atlased volume data is loaded
-     * @returns {Promise<Volume>}
-     */
-
-  }, {
-    key: "loadJson",
-    value: function () {
-      var _loadJson = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(url, urlPrefix, onChannelLoaded) {
-        var response, myJson, vol;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
-          while (1) {
-            switch (_context.prev = _context.next) {
-              case 0:
-                _context.next = 2;
-                return fetch(url);
-
-              case 2:
-                response = _context.sent;
-                _context.next = 5;
-                return response.json();
-
-              case 5:
-                myJson = _context.sent;
-                vol = new _Volume__WEBPACK_IMPORTED_MODULE_5__["default"](myJson); // if you need to adjust image paths prior to download,
-                // now is the time to do it:
-
-                myJson.images.forEach(function (element) {
-                  element.name = urlPrefix + element.name;
-                });
-                myJson.pixel_size_unit = myJson.pixel_size_unit || "μm";
-                VolumeLoader.loadVolumeAtlasData(vol, myJson.images, onChannelLoaded);
-                return _context.abrupt("return", vol);
-
-              case 11:
-              case "end":
-                return _context.stop();
-            }
-          }
-        }, _callee);
-      }));
-
-      function loadJson(_x, _x2, _x3) {
-        return _loadJson.apply(this, arguments);
-      }
-
-      return loadJson;
-    }()
-    /**
-     * load 5d ome-zarr into Volume object
-     * @param {string} url
-     * @param {PerChannelCallback} onChannelLoaded Per-channel callback.  Called when each channel's atlased volume data is loaded
-     * @returns {Promise<Volume>}
-     */
-
-  }, {
-    key: "loadZarr",
-    value: function () {
-      var _loadZarr = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(urlStore, imageName, t, onChannelLoaded) {
-        var store, imagegroup, data, allmetadata, imageIndex, multiscales, axes, hasT, hasC, axisTCZYX, i, axis, spatialAxes, numlevels, unitName, unitSymbol, _i, level, downsampleZ, maxAtlasEdge, levelToLoad, _i2, s, dataset, c, sizeT, scale5d, tw, th, tz, loadedZ, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, imgdata, vol, storepath, _loop2, _i3;
-
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee2$(_context2) {
-          while (1) {
-            switch (_context2.prev = _context2.next) {
-              case 0:
-                store = new zarr__WEBPACK_IMPORTED_MODULE_6__.HTTPStore(urlStore);
-                imagegroup = imageName;
-                _context2.next = 4;
-                return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openGroup)(store, imagegroup, "r");
-
-              case 4:
-                data = _context2.sent;
-                _context2.next = 7;
-                return data.attrs.asObject();
-
-              case 7:
-                allmetadata = _context2.sent;
-                // each entry of multiscales is a multiscale image.
-                // take the first multiscales entry
-                imageIndex = 0;
-                multiscales = allmetadata.multiscales[imageIndex].datasets;
-                axes = allmetadata.multiscales[imageIndex].axes;
-                hasT = false;
-                hasC = false;
-                axisTCZYX = [-1, -1, -1, -1, -1];
-
-                for (i = 0; i < axes.length; ++i) {
-                  axis = axes[i];
-
-                  if (axis.name === "t") {
-                    hasT = true;
-                    axisTCZYX[0] = i;
-                  } else if (axis.name === "c") {
-                    hasC = true;
-                    axisTCZYX[1] = i;
-                  } else if (axis.name === "z") {
-                    axisTCZYX[2] = i;
-                  } else if (axis.name === "y") {
-                    axisTCZYX[3] = i;
-                  } else if (axis.name === "x") {
-                    axisTCZYX[4] = i;
-                  } else {
-                    console.log("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
-                  }
-                } // ZYX
-
-
-                spatialAxes = [];
-
-                if (axisTCZYX[2] > -1) {
-                  spatialAxes.push(axisTCZYX[2]);
-                }
-
-                if (axisTCZYX[3] > -1) {
-                  spatialAxes.push(axisTCZYX[3]);
-                }
-
-                if (axisTCZYX[4] > -1) {
-                  spatialAxes.push(axisTCZYX[4]);
-                }
-
-                if (spatialAxes.length != 3) {
-                  console.log("ERROR: zarr loader expects a z, y, and x axis.");
-                }
-
-                numlevels = multiscales.length; // Assume all axes have the same units - we have no means of storing per-axis unit symbols
-
-                unitName = axes[spatialAxes[2]].unit;
-                unitSymbol = spatialUnitNameToSymbol(unitName) || unitName || ""; // get all shapes
-
-                _context2.t0 = _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().keys(multiscales);
-
-              case 24:
-                if ((_context2.t1 = _context2.t0()).done) {
-                  _context2.next = 33;
-                  break;
-                }
-
-                _i = _context2.t1.value;
-                _context2.next = 28;
-                return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openArray)({
-                  store: store,
-                  path: imagegroup + "/" + multiscales[_i].path,
-                  mode: "r"
-                });
-
-              case 28:
-                level = _context2.sent;
-                // just stick it in multiscales for now.
-                multiscales[_i].shape = level.meta.shape;
-
-                if (multiscales[_i].shape.length != axes.length) {
-                  console.log("ERROR: shape length " + multiscales[_i].shape.length + " does not match axes length " + axes.length);
-                }
-
-                _context2.next = 24;
-                break;
-
-              case 33:
-                downsampleZ = 2; // z/downsampleZ is number of z slices in reduced volume
-                // update levelToLoad after we get size info about multiscales.
-                // decide to max out at a 4k x 4k texture.
-
-                maxAtlasEdge = 4096; // default to lowest level unless we find a better one
-
-                levelToLoad = numlevels - 1;
-                _i2 = 0;
-
-              case 37:
-                if (!(_i2 < multiscales.length)) {
-                  _context2.next = 46;
-                  break;
-                }
-
-                // estimate atlas size:
-                s = multiscales[_i2].shape[spatialAxes[0]] / downsampleZ * multiscales[_i2].shape[spatialAxes[1]] * multiscales[_i2].shape[spatialAxes[2]];
-
-                if (!(s / maxAtlasEdge <= maxAtlasEdge)) {
-                  _context2.next = 43;
-                  break;
-                }
-
-                console.log("Will load level " + _i2);
-                levelToLoad = _i2;
-                return _context2.abrupt("break", 46);
-
-              case 43:
-                ++_i2;
-                _context2.next = 37;
-                break;
-
-              case 46:
-                dataset = multiscales[levelToLoad];
-                c = hasC ? dataset.shape[axisTCZYX[1]] : 1;
-                sizeT = hasT ? dataset.shape[axisTCZYX[0]] : 1; // technically there can be any number of coordinateTransformations
-                // but there must be only one of type "scale".
-                // Here I assume that is the only one.
-
-                scale5d = dataset.coordinateTransformations[0].scale;
-                tw = dataset.shape[spatialAxes[2]];
-                th = dataset.shape[spatialAxes[1]];
-                tz = dataset.shape[spatialAxes[0]]; // compute rows and cols and atlas width and ht, given tw and th
-
-                loadedZ = Math.ceil(tz / downsampleZ);
-                _computePackedAtlasDi = computePackedAtlasDims(loadedZ, tw, th), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols;
-                atlaswidth = ncols * tw;
-                atlasheight = nrows * th;
-                console.log("atlas width and height: " + atlaswidth + " " + atlasheight);
-                displayMetadata = allmetadata.omero;
-                chnames = [];
-
-                for (i = 0; i < displayMetadata.channels.length; ++i) {
-                  chnames.push(displayMetadata.channels[i].label);
-                }
-                /* eslint-disable @typescript-eslint/naming-convention */
-
-
-                imgdata = {
-                  width: tw,
-                  // TODO where should we capture the original w?
-                  height: th,
-                  // TODO original h?
-                  channels: c,
-                  channel_names: chnames,
-                  rows: nrows,
-                  cols: ncols,
-                  tiles: loadedZ,
-                  // TODO original z????
-                  tile_width: tw,
-                  tile_height: th,
-                  // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-                  // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-                  atlas_width: atlaswidth,
-                  atlas_height: atlasheight,
-                  pixel_size_x: scale5d[spatialAxes[2]],
-                  pixel_size_y: scale5d[spatialAxes[1]],
-                  pixel_size_z: scale5d[spatialAxes[0]] * downsampleZ,
-                  pixel_size_unit: unitSymbol,
-                  name: displayMetadata.name,
-                  version: displayMetadata.version,
-                  transform: {
-                    translation: [0, 0, 0],
-                    rotation: [0, 0, 0]
-                  },
-                  times: sizeT
-                };
-                /* eslint-enable @typescript-eslint/naming-convention */
-                // got some data, now let's construct the volume.
-
-                vol = new _Volume__WEBPACK_IMPORTED_MODULE_5__["default"](imgdata);
-                storepath = imagegroup + "/" + dataset.path; // do each channel on a worker
-
-                _loop2 = function _loop2(_i3) {
-                  var worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchZarrWorker_ts"), __webpack_require__.b));
-
-                  worker.onmessage = function (e) {
-                    var u8 = e.data.data;
-                    var channel = e.data.channel;
-                    vol.setChannelDataFromVolume(channel, u8);
-
-                    if (onChannelLoaded) {
-                      // make up a unique name? or have caller pass this in?
-                      onChannelLoaded(urlStore + "/" + imageName, vol, channel);
-                    }
-
-                    worker.terminate();
-                  };
-
-                  worker.onerror = function (e) {
-                    alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
-                  };
-
-                  worker.postMessage({
-                    urlStore: urlStore,
-                    time: hasT ? Math.min(t, sizeT) : -1,
-                    channel: hasC ? _i3 : -1,
-                    downsampleZ: downsampleZ,
-                    path: storepath
-                  });
-                };
-
-                for (_i3 = 0; _i3 < c; ++_i3) {
-                  _loop2(_i3);
-                }
-
-                return _context2.abrupt("return", vol);
-
-              case 67:
-              case "end":
-                return _context2.stop();
-            }
-          }
-        }, _callee2);
-      }));
-
-      function loadZarr(_x4, _x5, _x6, _x7) {
-        return _loadZarr.apply(this, arguments);
-      }
-
-      return loadZarr;
-    }()
-  }, {
-    key: "loadOpenCell",
-    value: function () {
-      var _loadOpenCell = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee3(onChannelLoaded) {
-        var numChannels, urls, chnames, imgdata, vol;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee3$(_context3) {
-          while (1) {
-            switch (_context3.prev = _context3.next) {
-              case 0:
-                numChannels = 2; // HQTILE or LQTILE
-                // make a json metadata dict for the two channels:
-
-                urls = [{
-                  name: "https://opencell.czbiohub.org/data/opencell-microscopy/roi/czML0383-P0007/czML0383-P0007-A02-PML0308-S13_ROI-0424-0025-0600-0600-LQTILE-CH405.jpg",
-                  channels: [0]
-                }, {
-                  name: "https://opencell.czbiohub.org/data/opencell-microscopy/roi/czML0383-P0007/czML0383-P0007-A02-PML0308-S13_ROI-0424-0025-0600-0600-LQTILE-CH488.jpg",
-                  channels: [1]
-                }]; // we know these are standardized to 600x600, two channels, one channel per jpg.
-
-                chnames = ["DNA", "Structure"];
-                /* eslint-disable @typescript-eslint/naming-convention */
-
-                imgdata = {
-                  width: 600,
-                  height: 600,
-                  channels: numChannels,
-                  channel_names: chnames,
-                  rows: 27,
-                  cols: 1,
-                  tiles: 27,
-                  tile_width: 600,
-                  tile_height: 600,
-                  // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-                  // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-                  atlas_width: 600,
-                  atlas_height: 16200,
-                  pixel_size_x: 1,
-                  pixel_size_y: 1,
-                  pixel_size_z: 2,
-                  name: "TEST",
-                  version: "1.0",
-                  pixel_size_unit: "µm",
-                  transform: {
-                    translation: [0, 0, 0],
-                    rotation: [0, 0, 0]
-                  },
-                  times: 1
-                };
-                /* eslint-enable @typescript-eslint/naming-convention */
-                // got some data, now let's construct the volume.
-
-                vol = new _Volume__WEBPACK_IMPORTED_MODULE_5__["default"](imgdata);
-                this.loadVolumeAtlasData(vol, urls, onChannelLoaded);
-                return _context3.abrupt("return", vol);
-
-              case 7:
-              case "end":
-                return _context3.stop();
-            }
-          }
-        }, _callee3, this);
-      }));
-
-      function loadOpenCell(_x8) {
-        return _loadOpenCell.apply(this, arguments);
-      }
-
-      return loadOpenCell;
-    }()
-  }, {
-    key: "loadTiff",
-    value: function () {
-      var _loadTiff = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee4(url, onChannelLoaded) {
-        var tiff, image, tiffimgdesc, parser, xmlDoc, omeEl, image0El, pixelsEl, sizex, sizey, sizez, sizec, sizet, unit, pixeltype, dimensionorder, pixelsizex, pixelsizey, pixelsizez, channelnames, channelsEls, i, name, id, _computePackedAtlasDi2, nrows, ncols, targetSize, tilesizex, tilesizey, imgdata, vol, _loop3, channel;
-
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee4$(_context4) {
-          while (1) {
-            switch (_context4.prev = _context4.next) {
-              case 0:
-                _context4.next = 2;
-                return (0,geotiff__WEBPACK_IMPORTED_MODULE_7__.fromUrl)(url);
-
-              case 2:
-                tiff = _context4.sent;
-                _context4.next = 5;
-                return tiff.getImage();
-
-              case 5:
-                image = _context4.sent;
-                tiffimgdesc = image.getFileDirectory().ImageDescription;
-                parser = new DOMParser();
-                xmlDoc = parser.parseFromString(tiffimgdesc, "text/xml");
-                omeEl = xmlDoc.getElementsByTagName("OME")[0];
-                image0El = omeEl.getElementsByTagName("Image")[0];
-                pixelsEl = image0El.getElementsByTagName("Pixels")[0];
-                sizex = Number(pixelsEl.getAttribute("SizeX"));
-                sizey = Number(pixelsEl.getAttribute("SizeY"));
-                sizez = Number(pixelsEl.getAttribute("SizeZ"));
-                sizec = Number(pixelsEl.getAttribute("SizeC"));
-                sizet = Number(pixelsEl.getAttribute("SizeT"));
-                unit = pixelsEl.getAttribute("PhysicalSizeXUnit");
-                pixeltype = pixelsEl.getAttribute("Type");
-                dimensionorder = pixelsEl.getAttribute("DimensionOrder") || "XYZCT"; // ignoring units for now
-
-                pixelsizex = Number(pixelsEl.getAttribute("PhysicalSizeX"));
-                pixelsizey = Number(pixelsEl.getAttribute("PhysicalSizeY"));
-                pixelsizez = Number(pixelsEl.getAttribute("PhysicalSizeZ"));
-                channelnames = [];
-                channelsEls = pixelsEl.getElementsByTagName("Channel");
-
-                for (i = 0; i < channelsEls.length; ++i) {
-                  name = channelsEls[i].getAttribute("Name");
-                  id = channelsEls[i].getAttribute("ID");
-                  channelnames.push(name ? name : id ? id : "Channel" + i);
-                } // compare with sizex, sizey
-                //const width = image.getWidth();
-                //const height = image.getHeight();
-                // TODO allow user setting of this downsampling info?
-                // TODO allow ROI selection: range of x,y,z,c for a given t
-
-
-                _computePackedAtlasDi2 = computePackedAtlasDims(sizez, sizex, sizey), nrows = _computePackedAtlasDi2.nrows, ncols = _computePackedAtlasDi2.ncols; // fit tiles to max of 2048x2048?
-
-                targetSize = 2048;
-                tilesizex = Math.floor(targetSize / ncols);
-                tilesizey = Math.floor(targetSize / nrows); // load tiff and check metadata
-
-                /* eslint-disable @typescript-eslint/naming-convention */
-
-                imgdata = {
-                  width: sizex,
-                  height: sizey,
-                  channels: sizec,
-                  channel_names: channelnames,
-                  rows: nrows,
-                  cols: ncols,
-                  tiles: sizez,
-                  tile_width: tilesizex,
-                  tile_height: tilesizey,
-                  // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-                  // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-                  atlas_width: tilesizex * ncols,
-                  atlas_height: tilesizey * nrows,
-                  pixel_size_x: pixelsizex,
-                  pixel_size_y: pixelsizey,
-                  pixel_size_z: pixelsizez,
-                  name: "TEST",
-                  version: "1.0",
-                  pixel_size_unit: unit || "",
-                  transform: {
-                    translation: [0, 0, 0],
-                    rotation: [0, 0, 0]
-                  },
-                  times: sizet
-                };
-                /* eslint-enable @typescript-eslint/naming-convention */
-
-                vol = new _Volume__WEBPACK_IMPORTED_MODULE_5__["default"](imgdata); // do each channel on a worker?
-
-                _loop3 = function _loop3(channel) {
-                  var params = {
-                    channel: channel,
-                    // these are target xy sizes for the in-memory volume data
-                    // they may or may not be the same size as original xy sizes
-                    tilesizex: tilesizex,
-                    tilesizey: tilesizey,
-                    sizec: sizec,
-                    sizez: sizez,
-                    dimensionOrder: dimensionorder,
-                    bytesPerSample: pixeltype === "uint8" ? 1 : pixeltype === "uint16" ? 2 : 4,
-                    url: url
-                  };
-                  var worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchTiffWorker_ts"), __webpack_require__.b));
-
-                  worker.onmessage = function (e) {
-                    var u8 = e.data.data;
-                    var channel = e.data.channel;
-                    vol.setChannelDataFromVolume(channel, u8);
-
-                    if (onChannelLoaded) {
-                      // make up a unique name? or have caller pass this in?
-                      onChannelLoaded(url, vol, channel);
-                    }
-
-                    worker.terminate();
-                  };
-
-                  worker.onerror = function (e) {
-                    alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
-                  };
-
-                  worker.postMessage(params);
-                };
-
-                for (channel = 0; channel < sizec; ++channel) {
-                  _loop3(channel);
-                }
-
-                return _context4.abrupt("return", vol);
-
-              case 35:
-              case "end":
-                return _context4.stop();
-            }
-          }
-        }, _callee4);
-      }));
-
-      function loadTiff(_x9, _x10) {
-        return _loadTiff.apply(this, arguments);
-      }
-
-      return loadTiff;
-    }()
-  }]);
-
-  return VolumeLoader;
-}();
-
-
-
-/***/ }),
-
 /***/ "./src/VolumeMaker.ts":
 /*!****************************!*\
   !*** ./src/VolumeMaker.ts ***!
@@ -8606,27 +7892,33 @@ var rayMarchingShaderUniforms = {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "AREA_LIGHT": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_7__.AREA_LIGHT),
+/* harmony export */   "AREA_LIGHT": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_10__.AREA_LIGHT),
 /* harmony export */   "Channel": () => (/* reexport safe */ _Channel__WEBPACK_IMPORTED_MODULE_2__["default"]),
-/* harmony export */   "Histogram": () => (/* reexport safe */ _Histogram__WEBPACK_IMPORTED_MODULE_5__["default"]),
-/* harmony export */   "Light": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_7__.Light),
+/* harmony export */   "Histogram": () => (/* reexport safe */ _Histogram__WEBPACK_IMPORTED_MODULE_4__["default"]),
+/* harmony export */   "JsonImageInfoLoader": () => (/* reexport safe */ _loaders_JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_6__.JsonImageInfoLoader),
+/* harmony export */   "Light": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_10__.Light),
+/* harmony export */   "LoadSpec": () => (/* reexport safe */ _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.LoadSpec),
+/* harmony export */   "OMEZarrLoader": () => (/* reexport safe */ _loaders_OmeZarrLoader__WEBPACK_IMPORTED_MODULE_8__.OMEZarrLoader),
 /* harmony export */   "RENDERMODE_PATHTRACE": () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_PATHTRACE),
 /* harmony export */   "RENDERMODE_RAYMARCH": () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_RAYMARCH),
-/* harmony export */   "SKY_LIGHT": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_7__.SKY_LIGHT),
+/* harmony export */   "SKY_LIGHT": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_10__.SKY_LIGHT),
+/* harmony export */   "TiffLoader": () => (/* reexport safe */ _loaders_TiffLoader__WEBPACK_IMPORTED_MODULE_9__.TiffLoader),
 /* harmony export */   "View3d": () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.View3d),
-/* harmony export */   "ViewportCorner": () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_6__.ViewportCorner),
+/* harmony export */   "ViewportCorner": () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_5__.ViewportCorner),
 /* harmony export */   "Volume": () => (/* reexport safe */ _Volume__WEBPACK_IMPORTED_MODULE_1__["default"]),
-/* harmony export */   "VolumeLoader": () => (/* reexport safe */ _VolumeLoader__WEBPACK_IMPORTED_MODULE_4__["default"]),
 /* harmony export */   "VolumeMaker": () => (/* reexport safe */ _VolumeMaker__WEBPACK_IMPORTED_MODULE_3__["default"])
 /* harmony export */ });
 /* harmony import */ var _View3d__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./View3d */ "./src/View3d.ts");
 /* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Volume */ "./src/Volume.ts");
 /* harmony import */ var _Channel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Channel */ "./src/Channel.ts");
 /* harmony import */ var _VolumeMaker__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./VolumeMaker */ "./src/VolumeMaker.ts");
-/* harmony import */ var _VolumeLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./VolumeLoader */ "./src/VolumeLoader.ts");
-/* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
-/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./types */ "./src/types.ts");
-/* harmony import */ var _Light__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Light */ "./src/Light.ts");
+/* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
+/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./types */ "./src/types.ts");
+/* harmony import */ var _loaders_JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./loaders/JsonImageInfoLoader */ "./src/loaders/JsonImageInfoLoader.ts");
+/* harmony import */ var _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./loaders/IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _loaders_OmeZarrLoader__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./loaders/OmeZarrLoader */ "./src/loaders/OmeZarrLoader.ts");
+/* harmony import */ var _loaders_TiffLoader__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./loaders/TiffLoader */ "./src/loaders/TiffLoader.ts");
+/* harmony import */ var _Light__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./Light */ "./src/Light.ts");
 
 
 
@@ -8636,6 +7928,1215 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
+
+
+/***/ }),
+
+/***/ "./src/loaders/IVolumeLoader.ts":
+/*!**************************************!*\
+  !*** ./src/loaders/IVolumeLoader.ts ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "LoadSpec": () => (/* binding */ LoadSpec),
+/* harmony export */   "VolumeDims": () => (/* binding */ VolumeDims)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
+
+
+
+var LoadSpec = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__["default"])(function LoadSpec() {
+  (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, LoadSpec);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "url", "");
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "subpath", "");
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "scene", 0);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "time", 0);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "minx", 0);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "miny", 0);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "minz", 0);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "maxx", 0);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "maxy", 0);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "maxz", 0);
+});
+var VolumeDims = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__["default"])(function VolumeDims() {
+  (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, VolumeDims);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "subpath", "");
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "shape", [0, 0, 0, 0, 0]);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "spacing", [1, 1, 1, 1, 1]);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "spatialUnit", "micron");
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "dataType", "uint8");
+});
+/**
+ * @callback PerChannelCallback
+ * @param {string} imageurl
+ * @param {Volume} volume
+ * @param {number} channelindex
+ */
+
+/***/ }),
+
+/***/ "./src/loaders/JsonImageInfoLoader.ts":
+/*!********************************************!*\
+  !*** ./src/loaders/JsonImageInfoLoader.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "JsonImageInfoLoader": () => (/* binding */ JsonImageInfoLoader)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
+
+
+
+
+
+
+
+
+var JsonImageInfoLoader = /*#__PURE__*/function () {
+  function JsonImageInfoLoader() {
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, JsonImageInfoLoader);
+
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "imageInfo", null);
+
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "imageArray", []);
+  }
+
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(JsonImageInfoLoader, [{
+    key: "getImageInfo",
+    value: function () {
+      var _getImageInfo = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(loadSpec) {
+        var response, myJson, imageInfo;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                if (this.imageInfo) {
+                  _context.next = 11;
+                  break;
+                }
+
+                _context.next = 3;
+                return fetch(loadSpec.url);
+
+              case 3:
+                response = _context.sent;
+                _context.next = 6;
+                return response.json();
+
+              case 6:
+                myJson = _context.sent;
+                imageInfo = myJson;
+                imageInfo.pixel_size_unit = imageInfo.pixel_size_unit || "μm";
+                this.imageInfo = imageInfo;
+                this.imageArray = myJson.images;
+
+              case 11:
+                return _context.abrupt("return", this.imageInfo);
+
+              case 12:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee, this);
+      }));
+
+      function getImageInfo(_x) {
+        return _getImageInfo.apply(this, arguments);
+      }
+
+      return getImageInfo;
+    }()
+  }, {
+    key: "loadDims",
+    value: function () {
+      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee2(loadSpec) {
+        var imageInfo, d;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                _context2.next = 2;
+                return this.getImageInfo(loadSpec);
+
+              case 2:
+                imageInfo = _context2.sent;
+                d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__.VolumeDims();
+                d.subpath = "";
+                d.shape = [imageInfo.times, imageInfo.channels, imageInfo.tiles, imageInfo.tile_height, imageInfo.tile_width];
+                d.spacing = [1, 1, imageInfo.pixel_size_z, imageInfo.pixel_size_y, imageInfo.pixel_size_x];
+                d.spatialUnit = imageInfo.pixel_size_unit;
+                d.dataType = "uint8";
+                return _context2.abrupt("return", [d]);
+
+              case 10:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2, this);
+      }));
+
+      function loadDims(_x2) {
+        return _loadDims.apply(this, arguments);
+      }
+
+      return loadDims;
+    }()
+  }, {
+    key: "createVolume",
+    value: function () {
+      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(loadSpec, onChannelLoaded) {
+        var imageInfo, vol, urlPrefix;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee3$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                _context3.next = 2;
+                return this.getImageInfo(loadSpec);
+
+              case 2:
+                imageInfo = _context3.sent;
+                vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imageInfo); // if you need to adjust image paths prior to download,
+                // now is the time to do it.
+                // Try to figure out the urlPrefix from the LoadSpec.
+                // For this format we assume the image data is in the same directory as the json file.
+                // This regex removes everything after the last slash, so the url had better be simple.
+
+                urlPrefix = loadSpec.url.replace(/[^/]*$/, "");
+                this.imageArray.forEach(function (element) {
+                  element.name = urlPrefix + element.name;
+                });
+                JsonImageInfoLoader.loadVolumeAtlasData(vol, this.imageArray, onChannelLoaded);
+                return _context3.abrupt("return", vol);
+
+              case 8:
+              case "end":
+                return _context3.stop();
+            }
+          }
+        }, _callee3, this);
+      }));
+
+      function createVolume(_x3, _x4) {
+        return _createVolume.apply(this, arguments);
+      }
+
+      return createVolume;
+    }()
+    /**
+     * load per-channel volume data from a batch of image files containing the volume slices tiled across the images
+     * @param {Volume} volume
+     * @param {Array.<{name:string, channels:Array.<number>}>} imageArray
+     * @param {PerChannelCallback} onChannelLoaded Per-channel callback.  Called when each channel's atlased volume data is loaded
+     * @returns {Object.<string, Image>} a map(imageurl : Image object) that should be used to cancel the download requests,
+     * for example if you need to destroy the image before all data has arrived.
+     * as requests arrive, the callback will be called per image, not per channel
+     * @example loadVolumeAtlasData([{
+     *     "name": "AICS-10_5_5.ome.tif_atlas_0.png",
+     *     "channels": [0, 1, 2]
+     * }, {
+     *     "name": "AICS-10_5_5.ome.tif_atlas_1.png",
+     *     "channels": [3, 4, 5]
+     * }, {
+     *     "name": "AICS-10_5_5.ome.tif_atlas_2.png",
+     *     "channels": [6, 7, 8]
+     * }], mycallback);
+     */
+
+  }], [{
+    key: "loadVolumeAtlasData",
+    value: function loadVolumeAtlasData(volume, imageArray, onChannelLoaded) {
+      var numImages = imageArray.length;
+      var requests = {}; //console.log("BEGIN DOWNLOAD DATA");
+
+      var _loop = function _loop(i) {
+        var url = imageArray[i].name;
+        var batch = imageArray[i].channels; // using Image is just a trick to download the bits as a png.
+        // the Image will never be used again.
+
+        var img = new Image();
+
+        img.onerror = function () {
+          console.log("ERROR LOADING " + url);
+        };
+
+        img.onload = function (thisbatch) {
+          return function (event) {
+            //console.log("GOT ch " + me.src);
+            // extract pixels by drawing to canvas
+            var canvas = document.createElement("canvas"); // nice thing about this is i could downsample here
+
+            var w = Math.floor((event === null || event === void 0 ? void 0 : event.target).naturalWidth);
+            var h = Math.floor((event === null || event === void 0 ? void 0 : event.target).naturalHeight);
+            canvas.setAttribute("width", "" + w);
+            canvas.setAttribute("height", "" + h);
+            var ctx = canvas.getContext("2d");
+
+            if (!ctx) {
+              console.log("Error creating canvas 2d context for " + url);
+              return;
+            }
+
+            ctx.globalCompositeOperation = "copy";
+            ctx.globalAlpha = 1.0;
+            ctx.drawImage(event === null || event === void 0 ? void 0 : event.target, 0, 0, w, h); // getImageData returns rgba.
+            // optimize: collapse rgba to single channel arrays
+
+            var iData = ctx.getImageData(0, 0, w, h);
+            var channelsBits = []; // allocate channels in batch
+
+            for (var ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
+              channelsBits.push(new Uint8Array(w * h));
+            } // extract the data
+
+
+            for (var j = 0; j < Math.min(thisbatch.length, 4); ++j) {
+              for (var px = 0; px < w * h; px++) {
+                channelsBits[j][px] = iData.data[px * 4 + j];
+              }
+            } // done with img, iData, and canvas now.
+
+
+            for (var _ch = 0; _ch < Math.min(thisbatch.length, 4); ++_ch) {
+              volume.setChannelDataFromAtlas(thisbatch[_ch], channelsBits[_ch], w, h);
+              onChannelLoaded(url, volume, thisbatch[_ch]);
+            }
+          };
+        }(batch);
+
+        img.crossOrigin = "Anonymous";
+        img.src = url;
+        requests[url] = img;
+      };
+
+      for (var i = 0; i < numImages; ++i) {
+        _loop(i);
+      }
+
+      return requests;
+    }
+  }]);
+
+  return JsonImageInfoLoader;
+}();
+
+
+
+/***/ }),
+
+/***/ "./src/loaders/OmeZarrLoader.ts":
+/*!**************************************!*\
+  !*** ./src/loaders/OmeZarrLoader.ts ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "OMEZarrLoader": () => (/* binding */ OMEZarrLoader)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
+/* harmony import */ var zarr__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! zarr */ "./node_modules/zarr/zarr.mjs");
+
+
+
+
+
+
+
+
+
+var OMEZarrLoader = /*#__PURE__*/function () {
+  function OMEZarrLoader() {
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, OMEZarrLoader);
+  }
+
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(OMEZarrLoader, [{
+    key: "loadDims",
+    value: function () {
+      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(loadSpec) {
+        var store, imagegroup, data, allmetadata, imageIndex, multiscales, axes, axisTCZYX, i, axis, spatialAxes, unitName, unitSymbol, dims, _i, level, scale5d, d, _i2;
+
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                store = new zarr__WEBPACK_IMPORTED_MODULE_7__.HTTPStore(loadSpec.url);
+                imagegroup = loadSpec.subpath;
+                _context.next = 4;
+                return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openGroup)(store, imagegroup, "r");
+
+              case 4:
+                data = _context.sent;
+                _context.next = 7;
+                return data.attrs.asObject();
+
+              case 7:
+                allmetadata = _context.sent;
+                // each entry of multiscales is a multiscale image.
+                // take the first multiscales entry
+                imageIndex = 0;
+                multiscales = allmetadata.multiscales[imageIndex].datasets;
+                axes = allmetadata.multiscales[imageIndex].axes;
+                axisTCZYX = [-1, -1, -1, -1, -1];
+
+                for (i = 0; i < axes.length; ++i) {
+                  axis = axes[i];
+
+                  if (axis.name === "t") {
+                    axisTCZYX[0] = i;
+                  } else if (axis.name === "c") {
+                    axisTCZYX[1] = i;
+                  } else if (axis.name === "z") {
+                    axisTCZYX[2] = i;
+                  } else if (axis.name === "y") {
+                    axisTCZYX[3] = i;
+                  } else if (axis.name === "x") {
+                    axisTCZYX[4] = i;
+                  } else {
+                    console.log("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
+                  }
+                } // ZYX
+
+
+                spatialAxes = [];
+
+                if (axisTCZYX[2] > -1) {
+                  spatialAxes.push(axisTCZYX[2]);
+                }
+
+                if (axisTCZYX[3] > -1) {
+                  spatialAxes.push(axisTCZYX[3]);
+                }
+
+                if (axisTCZYX[4] > -1) {
+                  spatialAxes.push(axisTCZYX[4]);
+                }
+
+                if (spatialAxes.length != 3) {
+                  console.log("ERROR: zarr loader expects a z, y, and x axis.");
+                } // Assume all axes have the same units - we have no means of storing per-axis unit symbols
+
+
+                unitName = axes[spatialAxes[2]].unit;
+                unitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.spatialUnitNameToSymbol)(unitName) || unitName || "";
+                dims = []; // get all shapes
+
+                _context.t0 = _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().keys(multiscales);
+
+              case 22:
+                if ((_context.t1 = _context.t0()).done) {
+                  _context.next = 40;
+                  break;
+                }
+
+                _i = _context.t1.value;
+                _context.next = 26;
+                return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openArray)({
+                  store: store,
+                  path: imagegroup + "/" + multiscales[_i].path,
+                  mode: "r"
+                });
+
+              case 26:
+                level = _context.sent;
+                // just stick it in multiscales for now.
+                multiscales[_i].shape = level.meta.shape;
+
+                if (multiscales[_i].shape.length != axes.length) {
+                  console.log("ERROR: shape length " + multiscales[_i].shape.length + " does not match axes length " + axes.length);
+                } // technically there can be any number of coordinateTransformations
+                // but there must be only one of type "scale".
+                // Here I assume that is the only one.
+
+
+                scale5d = multiscales[_i].coordinateTransformations[0].scale;
+                d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__.VolumeDims();
+                d.subpath = "";
+                d.shape = [1, 1, 1, 1, 1];
+
+                for (_i2 = 0; _i2 < d.shape.length; ++_i2) {
+                  if (axisTCZYX[_i2] > -1) {
+                    d.shape[_i2] = multiscales[_i2].shape[axisTCZYX[_i2]];
+                  }
+                }
+
+                d.spacing = [1, 1, scale5d[spatialAxes[0]], scale5d[spatialAxes[1]], scale5d[spatialAxes[2]]];
+                d.spatialUnit = unitSymbol; // unknown unit.
+
+                d.dataType = "uint8";
+                dims.push(d);
+                _context.next = 22;
+                break;
+
+              case 40:
+                return _context.abrupt("return", dims);
+
+              case 41:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee);
+      }));
+
+      function loadDims(_x) {
+        return _loadDims.apply(this, arguments);
+      }
+
+      return loadDims;
+    }()
+  }, {
+    key: "createVolume",
+    value: function () {
+      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(loadSpec, onChannelLoaded) {
+        var store, imagegroup, data, allmetadata, imageIndex, multiscales, axes, hasT, hasC, axisTCZYX, i, axis, spatialAxes, numlevels, unitName, unitSymbol, levelToLoad, _i3, downsampleZ, dataset, level, c, sizeT, scale5d, tw, th, tz, loadedZ, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, imgdata, vol, storepath, _loop, _i4;
+
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                store = new zarr__WEBPACK_IMPORTED_MODULE_7__.HTTPStore(loadSpec.url);
+                imagegroup = loadSpec.subpath;
+                _context2.next = 4;
+                return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openGroup)(store, imagegroup, "r");
+
+              case 4:
+                data = _context2.sent;
+                _context2.next = 7;
+                return data.attrs.asObject();
+
+              case 7:
+                allmetadata = _context2.sent;
+                // each entry of multiscales is a multiscale image.
+                // take the first multiscales entry
+                imageIndex = 0; // TODO is this LoadSpec.scene?
+
+                multiscales = allmetadata.multiscales[imageIndex].datasets;
+                axes = allmetadata.multiscales[imageIndex].axes;
+                hasT = false;
+                hasC = false;
+                axisTCZYX = [-1, -1, -1, -1, -1];
+
+                for (i = 0; i < axes.length; ++i) {
+                  axis = axes[i];
+
+                  if (axis.name === "t") {
+                    hasT = true;
+                    axisTCZYX[0] = i;
+                  } else if (axis.name === "c") {
+                    hasC = true;
+                    axisTCZYX[1] = i;
+                  } else if (axis.name === "z") {
+                    axisTCZYX[2] = i;
+                  } else if (axis.name === "y") {
+                    axisTCZYX[3] = i;
+                  } else if (axis.name === "x") {
+                    axisTCZYX[4] = i;
+                  } else {
+                    console.log("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
+                  }
+                } // ZYX
+
+
+                spatialAxes = [];
+
+                if (axisTCZYX[2] > -1) {
+                  spatialAxes.push(axisTCZYX[2]);
+                }
+
+                if (axisTCZYX[3] > -1) {
+                  spatialAxes.push(axisTCZYX[3]);
+                }
+
+                if (axisTCZYX[4] > -1) {
+                  spatialAxes.push(axisTCZYX[4]);
+                }
+
+                if (spatialAxes.length != 3) {
+                  console.log("ERROR: zarr loader expects a z, y, and x axis.");
+                }
+
+                numlevels = multiscales.length; // Assume all axes have the same units - we have no means of storing per-axis unit symbols
+
+                unitName = axes[spatialAxes[2]].unit;
+                unitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.spatialUnitNameToSymbol)(unitName) || unitName || ""; // default to lowest level until we find the match
+
+                levelToLoad = numlevels - 1;
+                _i3 = 0;
+
+              case 25:
+                if (!(_i3 < numlevels)) {
+                  _context2.next = 32;
+                  break;
+                }
+
+                if (!(multiscales[_i3].path == loadSpec.subpath)) {
+                  _context2.next = 29;
+                  break;
+                }
+
+                levelToLoad = _i3;
+                return _context2.abrupt("break", 32);
+
+              case 29:
+                ++_i3;
+                _context2.next = 25;
+                break;
+
+              case 32:
+                downsampleZ = 2; // z/downsampleZ is number of z slices in reduced volume
+
+                dataset = multiscales[levelToLoad]; // get the shape for the level we want to load
+
+                _context2.next = 36;
+                return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openArray)({
+                  store: store,
+                  path: imagegroup + "/" + dataset.path,
+                  mode: "r"
+                });
+
+              case 36:
+                level = _context2.sent;
+                // just stick it in multiscales for now.
+                dataset.shape = level.meta.shape;
+
+                if (dataset.shape.length != axes.length) {
+                  console.log("ERROR: shape length " + dataset.shape.length + " does not match axes length " + axes.length);
+                }
+
+                c = hasC ? dataset.shape[axisTCZYX[1]] : 1;
+                sizeT = hasT ? dataset.shape[axisTCZYX[0]] : 1; // technically there can be any number of coordinateTransformations
+                // but there must be only one of type "scale".
+                // Here I assume that is the only one.
+
+                scale5d = dataset.coordinateTransformations[0].scale;
+                tw = dataset.shape[spatialAxes[2]];
+                th = dataset.shape[spatialAxes[1]];
+                tz = dataset.shape[spatialAxes[0]]; // compute rows and cols and atlas width and ht, given tw and th
+
+                loadedZ = Math.ceil(tz / downsampleZ);
+                _computePackedAtlasDi = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.computePackedAtlasDims)(loadedZ, tw, th), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols;
+                atlaswidth = ncols * tw;
+                atlasheight = nrows * th;
+                console.log("atlas width and height: " + atlaswidth + " " + atlasheight);
+                displayMetadata = allmetadata.omero;
+                chnames = [];
+
+                for (i = 0; i < displayMetadata.channels.length; ++i) {
+                  chnames.push(displayMetadata.channels[i].label);
+                }
+                /* eslint-disable @typescript-eslint/naming-convention */
+
+
+                imgdata = {
+                  width: tw,
+                  // TODO where should we capture the original w?
+                  height: th,
+                  // TODO original h?
+                  channels: c,
+                  channel_names: chnames,
+                  rows: nrows,
+                  cols: ncols,
+                  tiles: loadedZ,
+                  // TODO original z????
+                  tile_width: tw,
+                  tile_height: th,
+                  // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
+                  // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
+                  atlas_width: atlaswidth,
+                  atlas_height: atlasheight,
+                  pixel_size_x: scale5d[spatialAxes[2]],
+                  pixel_size_y: scale5d[spatialAxes[1]],
+                  pixel_size_z: scale5d[spatialAxes[0]] * downsampleZ,
+                  pixel_size_unit: unitSymbol,
+                  name: displayMetadata.name,
+                  version: displayMetadata.version,
+                  transform: {
+                    translation: [0, 0, 0],
+                    rotation: [0, 0, 0]
+                  },
+                  times: sizeT
+                };
+                /* eslint-enable @typescript-eslint/naming-convention */
+                // got some data, now let's construct the volume.
+
+                vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata);
+                storepath = imagegroup + "/" + dataset.path; // do each channel on a worker
+
+                _loop = function _loop(_i4) {
+                  var worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchZarrWorker_ts"), __webpack_require__.b));
+
+                  worker.onmessage = function (e) {
+                    var u8 = e.data.data;
+                    var channel = e.data.channel;
+                    vol.setChannelDataFromVolume(channel, u8);
+
+                    if (onChannelLoaded) {
+                      // make up a unique name? or have caller pass this in?
+                      onChannelLoaded(loadSpec.url + "/" + imagegroup, vol, channel);
+                    }
+
+                    worker.terminate();
+                  };
+
+                  worker.onerror = function (e) {
+                    alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
+                  };
+
+                  worker.postMessage({
+                    urlStore: loadSpec.url,
+                    time: hasT ? Math.min(loadSpec.time, sizeT) : -1,
+                    channel: hasC ? _i4 : -1,
+                    downsampleZ: downsampleZ,
+                    path: storepath
+                  });
+                };
+
+                for (_i4 = 0; _i4 < c; ++_i4) {
+                  _loop(_i4);
+                }
+
+                return _context2.abrupt("return", vol);
+
+              case 59:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2);
+      }));
+
+      function createVolume(_x2, _x3) {
+        return _createVolume.apply(this, arguments);
+      }
+
+      return createVolume;
+    }()
+  }]);
+
+  return OMEZarrLoader;
+}();
+
+
+
+/***/ }),
+
+/***/ "./src/loaders/OpenCellLoader.ts":
+/*!***************************************!*\
+  !*** ./src/loaders/OpenCellLoader.ts ***!
+  \***************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "OpenCellLoader": () => (/* binding */ OpenCellLoader)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
+/* harmony import */ var _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./JsonImageInfoLoader */ "./src/loaders/JsonImageInfoLoader.ts");
+
+
+
+
+
+
+
+
+var OpenCellLoader = /*#__PURE__*/function () {
+  function OpenCellLoader() {
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, OpenCellLoader);
+  }
+
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(OpenCellLoader, [{
+    key: "loadDims",
+    value: function () {
+      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(_) {
+        var d;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__.VolumeDims();
+                d.subpath = "";
+                d.shape = [1, 2, 27, 600, 600];
+                d.spacing = [1, 1, 2, 1, 1];
+                d.spatialUnit = ""; // unknown unit.
+
+                d.dataType = "uint8";
+                return _context.abrupt("return", [d]);
+
+              case 7:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee);
+      }));
+
+      function loadDims(_x) {
+        return _loadDims.apply(this, arguments);
+      }
+
+      return loadDims;
+    }()
+  }, {
+    key: "createVolume",
+    value: function () {
+      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(_, onChannelLoaded) {
+        var numChannels, urls, chnames, imgdata, vol;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                numChannels = 2; // HQTILE or LQTILE
+                // make a json metadata dict for the two channels:
+
+                urls = [{
+                  name: "https://opencell.czbiohub.org/data/opencell-microscopy/roi/czML0383-P0007/czML0383-P0007-A02-PML0308-S13_ROI-0424-0025-0600-0600-LQTILE-CH405.jpg",
+                  channels: [0]
+                }, {
+                  name: "https://opencell.czbiohub.org/data/opencell-microscopy/roi/czML0383-P0007/czML0383-P0007-A02-PML0308-S13_ROI-0424-0025-0600-0600-LQTILE-CH488.jpg",
+                  channels: [1]
+                }]; // we know these are standardized to 600x600, two channels, one channel per jpg.
+
+                chnames = ["DNA", "Structure"];
+                /* eslint-disable @typescript-eslint/naming-convention */
+
+                imgdata = {
+                  width: 600,
+                  height: 600,
+                  channels: numChannels,
+                  channel_names: chnames,
+                  rows: 27,
+                  cols: 1,
+                  tiles: 27,
+                  tile_width: 600,
+                  tile_height: 600,
+                  // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
+                  // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
+                  atlas_width: 600,
+                  atlas_height: 16200,
+                  pixel_size_x: 1,
+                  pixel_size_y: 1,
+                  pixel_size_z: 2,
+                  name: "TEST",
+                  version: "1.0",
+                  pixel_size_unit: "µm",
+                  transform: {
+                    translation: [0, 0, 0],
+                    rotation: [0, 0, 0]
+                  },
+                  times: 1
+                };
+                /* eslint-enable @typescript-eslint/naming-convention */
+                // got some data, now let's construct the volume.
+
+                vol = new _Volume__WEBPACK_IMPORTED_MODULE_5__["default"](imgdata);
+                _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_6__.JsonImageInfoLoader.loadVolumeAtlasData(vol, urls, onChannelLoaded);
+                return _context2.abrupt("return", vol);
+
+              case 7:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2);
+      }));
+
+      function createVolume(_x2, _x3) {
+        return _createVolume.apply(this, arguments);
+      }
+
+      return createVolume;
+    }()
+  }]);
+
+  return OpenCellLoader;
+}();
+
+
+
+/***/ }),
+
+/***/ "./src/loaders/TiffLoader.ts":
+/*!***********************************!*\
+  !*** ./src/loaders/TiffLoader.ts ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "TiffLoader": () => (/* binding */ TiffLoader)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
+/* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
+
+
+
+
+
+
+
+
+
+var TiffLoader = /*#__PURE__*/function () {
+  function TiffLoader() {
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, TiffLoader);
+  }
+
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(TiffLoader, [{
+    key: "loadDims",
+    value: function () {
+      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(loadSpec) {
+        var tiff, image, tiffimgdesc, parser, xmlDoc, omeEl, image0El, pixelsEl, sizex, sizey, sizez, sizec, sizet, unit, pixeltype, pixelsizex, pixelsizey, pixelsizez, d;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                _context.next = 2;
+                return (0,geotiff__WEBPACK_IMPORTED_MODULE_7__.fromUrl)(loadSpec.url);
+
+              case 2:
+                tiff = _context.sent;
+                _context.next = 5;
+                return tiff.getImage();
+
+              case 5:
+                image = _context.sent;
+                tiffimgdesc = image.getFileDirectory().ImageDescription;
+                parser = new DOMParser();
+                xmlDoc = parser.parseFromString(tiffimgdesc, "text/xml");
+                omeEl = xmlDoc.getElementsByTagName("OME")[0];
+                image0El = omeEl.getElementsByTagName("Image")[0];
+                pixelsEl = image0El.getElementsByTagName("Pixels")[0];
+                sizex = Number(pixelsEl.getAttribute("SizeX"));
+                sizey = Number(pixelsEl.getAttribute("SizeY"));
+                sizez = Number(pixelsEl.getAttribute("SizeZ"));
+                sizec = Number(pixelsEl.getAttribute("SizeC"));
+                sizet = Number(pixelsEl.getAttribute("SizeT"));
+                unit = pixelsEl.getAttribute("PhysicalSizeXUnit");
+                pixeltype = pixelsEl.getAttribute("Type"); //const dimensionorder: string = pixelsEl.getAttribute("DimensionOrder") || "XYZCT";
+                // ignoring units for now
+
+                pixelsizex = Number(pixelsEl.getAttribute("PhysicalSizeX"));
+                pixelsizey = Number(pixelsEl.getAttribute("PhysicalSizeY"));
+                pixelsizez = Number(pixelsEl.getAttribute("PhysicalSizeZ"));
+                d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__.VolumeDims();
+                d.subpath = "";
+                d.shape = [sizet, sizec, sizez, sizey, sizex];
+                d.spacing = [1, 1, pixelsizez, pixelsizey, pixelsizex];
+                d.spatialUnit = unit ? unit : "micron";
+                d.dataType = pixeltype ? pixeltype : "uint8";
+                return _context.abrupt("return", [d]);
+
+              case 29:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee);
+      }));
+
+      function loadDims(_x) {
+        return _loadDims.apply(this, arguments);
+      }
+
+      return loadDims;
+    }()
+  }, {
+    key: "createVolume",
+    value: function () {
+      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(loadSpec, onChannelLoaded) {
+        var tiff, image, tiffimgdesc, parser, xmlDoc, omeEl, image0El, pixelsEl, sizex, sizey, sizez, sizec, sizet, unit, pixeltype, dimensionorder, pixelsizex, pixelsizey, pixelsizez, channelnames, channelsEls, i, name, id, _computePackedAtlasDi, nrows, ncols, targetSize, tilesizex, tilesizey, imgdata, vol, _loop, channel;
+
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee2$(_context2) {
+          while (1) {
+            switch (_context2.prev = _context2.next) {
+              case 0:
+                _context2.next = 2;
+                return (0,geotiff__WEBPACK_IMPORTED_MODULE_7__.fromUrl)(loadSpec.url);
+
+              case 2:
+                tiff = _context2.sent;
+                _context2.next = 5;
+                return tiff.getImage();
+
+              case 5:
+                image = _context2.sent;
+                tiffimgdesc = image.getFileDirectory().ImageDescription;
+                parser = new DOMParser();
+                xmlDoc = parser.parseFromString(tiffimgdesc, "text/xml");
+                omeEl = xmlDoc.getElementsByTagName("OME")[0];
+                image0El = omeEl.getElementsByTagName("Image")[0];
+                pixelsEl = image0El.getElementsByTagName("Pixels")[0];
+                sizex = Number(pixelsEl.getAttribute("SizeX"));
+                sizey = Number(pixelsEl.getAttribute("SizeY"));
+                sizez = Number(pixelsEl.getAttribute("SizeZ"));
+                sizec = Number(pixelsEl.getAttribute("SizeC"));
+                sizet = Number(pixelsEl.getAttribute("SizeT"));
+                unit = pixelsEl.getAttribute("PhysicalSizeXUnit");
+                pixeltype = pixelsEl.getAttribute("Type");
+                dimensionorder = pixelsEl.getAttribute("DimensionOrder") || "XYZCT"; // ignoring units for now
+
+                pixelsizex = Number(pixelsEl.getAttribute("PhysicalSizeX"));
+                pixelsizey = Number(pixelsEl.getAttribute("PhysicalSizeY"));
+                pixelsizez = Number(pixelsEl.getAttribute("PhysicalSizeZ"));
+                channelnames = [];
+                channelsEls = pixelsEl.getElementsByTagName("Channel");
+
+                for (i = 0; i < channelsEls.length; ++i) {
+                  name = channelsEls[i].getAttribute("Name");
+                  id = channelsEls[i].getAttribute("ID");
+                  channelnames.push(name ? name : id ? id : "Channel" + i);
+                } // compare with sizex, sizey
+                //const width = image.getWidth();
+                //const height = image.getHeight();
+                // TODO allow user setting of this downsampling info?
+                // TODO allow ROI selection: range of x,y,z,c for a given t
+
+
+                _computePackedAtlasDi = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.computePackedAtlasDims)(sizez, sizex, sizey), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols; // fit tiles to max of 2048x2048?
+
+                targetSize = 2048;
+                tilesizex = Math.floor(targetSize / ncols);
+                tilesizey = Math.floor(targetSize / nrows); // load tiff and check metadata
+
+                /* eslint-disable @typescript-eslint/naming-convention */
+
+                imgdata = {
+                  width: sizex,
+                  height: sizey,
+                  channels: sizec,
+                  channel_names: channelnames,
+                  rows: nrows,
+                  cols: ncols,
+                  tiles: sizez,
+                  tile_width: tilesizex,
+                  tile_height: tilesizey,
+                  // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
+                  // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
+                  atlas_width: tilesizex * ncols,
+                  atlas_height: tilesizey * nrows,
+                  pixel_size_x: pixelsizex,
+                  pixel_size_y: pixelsizey,
+                  pixel_size_z: pixelsizez,
+                  name: "TEST",
+                  version: "1.0",
+                  pixel_size_unit: unit || "",
+                  transform: {
+                    translation: [0, 0, 0],
+                    rotation: [0, 0, 0]
+                  },
+                  times: sizet
+                };
+                /* eslint-enable @typescript-eslint/naming-convention */
+
+                vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata); // do each channel on a worker?
+
+                _loop = function _loop(channel) {
+                  var params = {
+                    channel: channel,
+                    // these are target xy sizes for the in-memory volume data
+                    // they may or may not be the same size as original xy sizes
+                    tilesizex: tilesizex,
+                    tilesizey: tilesizey,
+                    sizec: sizec,
+                    sizez: sizez,
+                    dimensionOrder: dimensionorder,
+                    bytesPerSample: pixeltype === "uint8" ? 1 : pixeltype === "uint16" ? 2 : 4,
+                    url: loadSpec.url
+                  };
+                  var worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchTiffWorker_ts"), __webpack_require__.b));
+
+                  worker.onmessage = function (e) {
+                    var u8 = e.data.data;
+                    var channel = e.data.channel;
+                    vol.setChannelDataFromVolume(channel, u8);
+
+                    if (onChannelLoaded) {
+                      // make up a unique name? or have caller pass this in?
+                      onChannelLoaded(loadSpec.url, vol, channel);
+                    }
+
+                    worker.terminate();
+                  };
+
+                  worker.onerror = function (e) {
+                    alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
+                  };
+
+                  worker.postMessage(params);
+                };
+
+                for (channel = 0; channel < sizec; ++channel) {
+                  _loop(channel);
+                }
+
+                return _context2.abrupt("return", vol);
+
+              case 35:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2);
+      }));
+
+      function createVolume(_x2, _x3) {
+        return _createVolume.apply(this, arguments);
+      }
+
+      return createVolume;
+    }()
+  }]);
+
+  return TiffLoader;
+}();
+
+
+
+/***/ }),
+
+/***/ "./src/loaders/VolumeLoaderUtils.ts":
+/*!******************************************!*\
+  !*** ./src/loaders/VolumeLoaderUtils.ts ***!
+  \******************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "computePackedAtlasDims": () => (/* binding */ computePackedAtlasDims),
+/* harmony export */   "estimateLevelForAtlas": () => (/* binding */ estimateLevelForAtlas),
+/* harmony export */   "spatialUnitNameToSymbol": () => (/* binding */ spatialUnitNameToSymbol)
+/* harmony export */ });
+/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! regenerator-runtime/runtime */ "./node_modules/regenerator-runtime/runtime.js");
+/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0__);
+
+// Preferred spatial units in OME-Zarr are specified as full names. We want just the symbol.
+// See https://ngff.openmicroscopy.org/latest/#axes-md
+function spatialUnitNameToSymbol(unitName) {
+  var unitSymbols = {
+    angstrom: "Å",
+    decameter: "dam",
+    foot: "ft",
+    inch: "in",
+    meter: "m",
+    micrometer: "μm",
+    mile: "mi",
+    parsec: "pc",
+    yard: "yd"
+  };
+
+  if (unitSymbols[unitName]) {
+    return unitSymbols[unitName];
+  } // SI prefixes not in unitSymbols are abbreviated by first letter, capitalized if prefix ends with "a"
+
+
+  if (unitName.endsWith("meter")) {
+    var capitalize = unitName[unitName.length - 6] === "a";
+    var prefix = capitalize ? unitName[0].toUpperCase() : unitName[0];
+    return prefix + "m";
+  }
+
+  return null;
+} // We want to find the most "square" packing of z tw by th tiles.
+// Compute number of rows and columns.
+
+function computePackedAtlasDims(z, tw, th) {
+  var nextrows = 1;
+  var nextcols = z;
+  var ratio = nextcols * tw / (nextrows * th);
+  var nrows = nextrows;
+  var ncols = nextcols;
+
+  while (ratio > 1) {
+    nrows = nextrows;
+    ncols = nextcols;
+    nextcols -= 1;
+    nextrows = Math.ceil(z / nextcols);
+    ratio = nextcols * tw / (nextrows * th);
+  }
+
+  return {
+    nrows: nrows,
+    ncols: ncols
+  };
+}
+function estimateLevelForAtlas(multiscales) {
+  var maxAtlasEdge = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 4096;
+  // update levelToLoad after we get size info about multiscales.
+  // decide to max out at a 4k x 4k texture.
+  var levelToLoad = multiscales.length - 1;
+
+  for (var i = 0; i < multiscales.length; ++i) {
+    // estimate atlas size:
+    var s = multiscales[i].shape[2] * multiscales[i].shape[3] * multiscales[i].shape[4];
+
+    if (s / maxAtlasEdge <= maxAtlasEdge) {
+      console.log("Will load level " + i);
+      levelToLoad = i;
+      break;
+    }
+  }
+
+  return levelToLoad;
+}
 
 /***/ }),
 
@@ -83901,17 +84402,92 @@ var __webpack_exports__ = {};
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! regenerator-runtime/runtime */ "./node_modules/regenerator-runtime/runtime.js");
 /* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var dat_gui__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! dat.gui */ "./node_modules/dat.gui/build/dat.gui.module.js");
 /* harmony import */ var _src__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../src */ "./src/index.ts");
-/* harmony import */ var _src_Volume__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../src/Volume */ "./src/Volume.ts");
+/* harmony import */ var _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../src/loaders/OpenCellLoader */ "./src/loaders/OpenCellLoader.ts");
+/* harmony import */ var _src_Volume__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../src/Volume */ "./src/Volume.ts");
 
 
 
+ // special loader really just for this demo app but lives with the other loaders
 
 
-var loadTimeSeries = false;
-var loadTestData = true;
+
+var TEST_DATA = {
+  timeSeries: {
+    type: "jsonatlas",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json",
+    tstart: 0,
+    tend: 46
+  },
+  omeTiff: {
+    type: "ometiff",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif",
+    tstart: 0,
+    tend: 0
+  },
+  zarrVariance: {
+    type: "omezarr",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr",
+    tstart: 0,
+    tend: 0
+  },
+  zarrNucmorph0: {
+    type: "omezarr",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P13-C4.zarr/",
+    tstart: 0,
+    tend: 0
+  },
+  zarrNucmorph1: {
+    type: "omezarr",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P15-C3.zarr/",
+    tstart: 0,
+    tend: 0
+  },
+  zarrNucmorph2: {
+    type: "omezarr",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P7-B4.zarr/",
+    tstart: 0,
+    tend: 0
+  },
+  zarrNucmorph3: {
+    type: "omezarr",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P8-B4.zarr/",
+    tstart: 0,
+    tend: 0
+  },
+  zarrUK: {
+    type: "omezarr",
+    url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr",
+    tstart: 0,
+    tend: 0
+  },
+  opencell: {
+    type: "opencell",
+    url: "",
+    tstart: 0,
+    tend: 0
+  },
+  cfeJson: {
+    type: "jsonatlas",
+    url: "AICS-12_881_atlas.json",
+    tstart: 0,
+    tend: 0
+  },
+  abm: {
+    type: "ometiff",
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/HAMILTONIAN_TERM_FOV_VSAHJUP_0000_000192.ome.tif",
+    tstart: 0,
+    tend: 0
+  },
+  procedural: {
+    type: "procedural",
+    url: "",
+    tstart: 0,
+    tend: 0
+  }
+};
 var view3D;
 var myState = {
   file: "",
@@ -83921,6 +84497,7 @@ var myState = {
   totalFrames: 0,
   currentFrame: 0,
   timerId: 0,
+  loader: new _src__WEBPACK_IMPORTED_MODULE_2__.JsonImageInfoLoader(),
   density: 12.5,
   maskAlpha: 1.0,
   exposure: 0.75,
@@ -83963,7 +84540,7 @@ var myState = {
   flipY: 1,
   flipZ: 1,
   channelFolderNames: [],
-  infoObj: (0,_src_Volume__WEBPACK_IMPORTED_MODULE_3__.getDefaultImageInfo)(),
+  infoObj: (0,_src_Volume__WEBPACK_IMPORTED_MODULE_4__.getDefaultImageInfo)(),
   channelGui: [],
   currentImageStore: "",
   currentImageName: ""
@@ -84014,12 +84591,12 @@ function makeColorGradient(controlPoints) {
 
 
 function initLights() {
-  myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
-  myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
-  myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+  myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+  myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+  myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
   myState.lights[1].mTheta = myState.lightTheta * Math.PI / 180.0;
   myState.lights[1].mPhi = myState.lightPhi * Math.PI / 180.0;
-  myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+  myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
   view3D.updateLights(myState.lights);
 }
 
@@ -84086,27 +84663,27 @@ function setupGui() {
   });
   var lighting = gui.addFolder("Lighting");
   lighting.addColor(myState, "skyTopColor").name("Sky Top").onChange(function () {
-    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyTopIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "skyMidColor").name("Sky Mid").onChange(function () {
-    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyMidIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "skyBotColor").name("Sky Bottom").onChange(function () {
-    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyBotIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState.lights[1], "mDistance").max(10.0).min(0.0).step(0.1).onChange(function () {
@@ -84126,11 +84703,11 @@ function setupGui() {
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "lightIntensity").max(1000.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "lightColor").name("lightColor").onChange(function () {
-    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
     view3D.updateLights(myState.lights);
   });
   initLights();
@@ -84153,8 +84730,11 @@ function removeFolderByName(name) {
 }
 
 function updateTimeUI(volume) {
+  // TODO: we have stashed sizeT in volume.imageInfo.times
+  // but the Volume doesn't store any other info that would help
   if (volume.imageInfo.times) {
     myState.totalFrames = volume.imageInfo.times;
+  } else {//myState.totalFrames = 1;
   }
 
   var timeSlider = document.getElementById("timeSlider");
@@ -84167,6 +84747,22 @@ function updateTimeUI(volume) {
 
   if (timeInput) {
     timeInput.max = "".concat(myState.totalFrames - 1);
+  }
+
+  var playBtn = document.getElementById("playBtn");
+
+  if (myState.totalFrames < 2) {
+    playBtn.disabled = true;
+  } else {
+    playBtn.disabled = false;
+  }
+
+  var pauseBtn = document.getElementById("pauseBtn");
+
+  if (myState.totalFrames < 2) {
+    pauseBtn.disabled = true;
+  } else {
+    pauseBtn.disabled = false;
   }
 }
 
@@ -84479,72 +85075,6 @@ function onVolumeCreated(volume) {
   showChannelUI(myState.volume);
 }
 
-function fetchZarr(store, image, time) {
-  if (isNaN(time)) {
-    time = 0;
-  } // create the main volume and add to view (this is the only place)
-
-
-  _src__WEBPACK_IMPORTED_MODULE_2__.VolumeLoader.loadZarr(store, image, time, function (url, v, channelIndex) {
-    onChannelDataArrived(url, v, channelIndex);
-  }).then(function (volume) {
-    onVolumeCreated(volume);
-    myState.currentImageStore = store;
-    myState.currentImageName = image;
-  });
-}
-
-function fetchOpenCell() {
-  // create the main volume and add to view (this is the only place)
-  _src__WEBPACK_IMPORTED_MODULE_2__.VolumeLoader.loadOpenCell(function (url, v, channelIndex) {
-    onChannelDataArrived(url, v, channelIndex);
-  }).then(function (volume) {
-    onVolumeCreated(volume);
-  });
-}
-
-function fetchTiff(url, time) {
-  if (isNaN(time)) {
-    time = 0;
-  } // create the main volume and add to view (this is the only place)
-
-
-  _src__WEBPACK_IMPORTED_MODULE_2__.VolumeLoader.loadTiff(url, function (url, v, channelIndex) {
-    onChannelDataArrived(url, v, channelIndex);
-  }).then(function (volume) {
-    onVolumeCreated(volume); // TODO split the url into store and image name
-
-    myState.currentImageStore = url;
-    myState.currentImageName = url;
-  });
-}
-
-function fetchImage(url, urlPrefix) {
-  var isTimeSeries = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-  var frameNumber = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
-  _src__WEBPACK_IMPORTED_MODULE_2__.VolumeLoader.loadJson(url, urlPrefix, function (url, vol, channelIndex) {
-    onChannelDataArrived(url, vol, channelIndex, isTimeSeries, frameNumber);
-  }).then(function (vol) {
-    onVolumeCreated(vol, isTimeSeries, frameNumber); // TODO split the url into store and image name
-
-    myState.currentImageStore = urlPrefix;
-    myState.currentImageName = url;
-  });
-}
-
-function fetchTimeSeries(urlPrefix, urlStart, urlEnd, t0, tf) {
-  var interval = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 1;
-  var frameNumber = 0;
-
-  for (var t = t0; t <= tf; t += interval) {
-    fetchImage(urlPrefix + urlStart + t + urlEnd, urlPrefix, true, frameNumber);
-    frameNumber++;
-  }
-
-  myState.totalFrames = frameNumber;
-  console.log("".concat(frameNumber, " frames requested"));
-}
-
 function copyVolumeToVolume(src, dest) {
   // assumes volumes already have identical dimensions!!!
   // grab references to data from each channel and put it in myState.volume
@@ -84586,15 +85116,13 @@ function playTimeSeries(onNewFrameCallback) {
   clearInterval(myState.timerId);
 
   var loadNextFrame = function loadNextFrame() {
-    if (myState.currentFrame >= myState.totalFrames - 1) {
-      clearInterval(myState.timerId);
-      console.log("Reached end of sequence");
-      return;
+    var nextFrame = myState.currentFrame + 1;
+
+    if (nextFrame >= myState.totalFrames) {
+      nextFrame = 0;
     }
 
-    var nextFrame = myState.currentFrame + 1;
-    var nextFrameVolume = myState.timeSeriesVolumes[nextFrame]; //console.log("loadNextFrame at " + nextFrame);
-
+    var nextFrameVolume = myState.timeSeriesVolumes[nextFrame];
     copyVolumeToVolume(nextFrameVolume, myState.volume);
     updateViewForNewVolume();
     myState.currentFrame = nextFrame;
@@ -84615,7 +85143,8 @@ function goToFrame(targetFrame) {
   if (outOfBounds) {
     console.log("frame ".concat(targetFrame, " out of bounds"));
     return false;
-  }
+  } // check to see if we have pre-cached the volume
+
 
   var targetFrameVolume = myState.timeSeriesVolumes[targetFrame];
 
@@ -84623,9 +85152,13 @@ function goToFrame(targetFrame) {
     copyVolumeToVolume(targetFrameVolume, myState.volume);
     updateViewForNewVolume();
   } else {
-    console.log("frame ".concat(targetFrame, " not yet loaded")); // try zarr:
+    console.log("frame ".concat(targetFrame, " not yet loaded")); // try our loader
 
-    fetchZarr(myState.currentImageStore, myState.currentImageName, targetFrame);
+    var loadSpec = new _src__WEBPACK_IMPORTED_MODULE_2__.LoadSpec();
+    loadSpec.time = targetFrame;
+    loadSpec.url = myState.currentImageStore; // TODO loadspec needs to know proper multiresolution level here
+
+    loadVolume(loadSpec, myState.loader, false);
   }
 
   myState.currentFrame = targetFrame;
@@ -84676,6 +85209,60 @@ function createTestVolume() {
   };
 }
 
+function createLoader(type) {
+  switch (type) {
+    case "opencell":
+      return new _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_3__.OpenCellLoader();
+
+    case "omezarr":
+      return new _src__WEBPACK_IMPORTED_MODULE_2__.OMEZarrLoader();
+
+    case "ometiff":
+      return new _src__WEBPACK_IMPORTED_MODULE_2__.TiffLoader();
+    // case "procedural":
+    //   return new RawVolumeLoader();
+
+    case "jsonatlas":
+      return new _src__WEBPACK_IMPORTED_MODULE_2__.JsonImageInfoLoader();
+
+    default:
+      throw new Error("Unknown loader type: " + type);
+  }
+}
+
+function loadVolume(loadSpec, loader, cacheTimeSeries) {
+  loader.createVolume(loadSpec, function (url, v, channelIndex) {
+    onChannelDataArrived(url, v, channelIndex, cacheTimeSeries, loadSpec.time);
+  }).then(function (volume) {
+    onVolumeCreated(volume, cacheTimeSeries, loadSpec.time);
+    myState.currentImageStore = loadSpec.url;
+    myState.currentImageName = loadSpec.url;
+  });
+}
+
+function loadTestData(testdata) {
+  if (testdata.type === "procedural") {
+    var volumeInfo = createTestVolume();
+    loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
+    return;
+  }
+
+  var loader = createLoader(testdata.type);
+  myState.loader = loader;
+  var isTimeSeries = testdata.tend > testdata.tstart;
+
+  for (var t = testdata.tstart; t <= testdata.tend; t++) {
+    // replace %% with frame number
+    var url = testdata.url.replace("%%", t.toString());
+    var loadSpec = new _src__WEBPACK_IMPORTED_MODULE_2__.LoadSpec();
+    loadSpec.url = url;
+    loadSpec.time = t;
+    loadVolume(loadSpec, loader, isTimeSeries);
+  }
+
+  myState.totalFrames = testdata.tend - testdata.tstart + 1;
+}
+
 function main() {
   var el = document.getElementById("volume-viewer");
 
@@ -84684,6 +85271,16 @@ function main() {
   }
 
   view3D = new _src__WEBPACK_IMPORTED_MODULE_2__.View3d(el);
+  var testDataSelect = document.getElementById("testData");
+  testDataSelect === null || testDataSelect === void 0 ? void 0 : testDataSelect.addEventListener("change", function (_ref) {
+    var currentTarget = _ref.currentTarget;
+    var selected = currentTarget === null || currentTarget === void 0 ? void 0 : currentTarget.value;
+    var testdata = TEST_DATA[selected];
+
+    if (testdata) {
+      loadTestData(testdata);
+    }
+  });
   var xBtn = document.getElementById("X");
   xBtn === null || xBtn === void 0 ? void 0 : xBtn.addEventListener("click", function () {
     view3D.setCameraMode("X");
@@ -84771,20 +85368,10 @@ function main() {
       }
     });
   });
-
-  if (!loadTimeSeries) {
-    playBtn.disabled = true;
-  }
-
   var pauseBtn = document.getElementById("pauseBtn");
   pauseBtn === null || pauseBtn === void 0 ? void 0 : pauseBtn.addEventListener("click", function () {
     clearInterval(myState.timerId);
   });
-
-  if (!loadTimeSeries) {
-    pauseBtn.disabled = true;
-  }
-
   var forwardBtn = document.getElementById("forwardBtn");
   var backBtn = document.getElementById("backBtn");
   var timeSlider = document.getElementById("timeSlider");
@@ -84856,8 +85443,8 @@ function main() {
     view3D.setMaxProjectMode(myState.volume, mp);
   };
 
-  renderModeSelect === null || renderModeSelect === void 0 ? void 0 : renderModeSelect.addEventListener("change", function (_ref) {
-    var currentTarget = _ref.currentTarget;
+  renderModeSelect === null || renderModeSelect === void 0 ? void 0 : renderModeSelect.addEventListener("change", function (_ref2) {
+    var currentTarget = _ref2.currentTarget;
 
     if (currentTarget.value === "PT") {
       if (view3D.hasWebGL2()) {
@@ -84884,21 +85471,7 @@ function main() {
     });
   });
   setupGui();
-
-  if (loadTimeSeries) {
-    fetchTimeSeries("http://dev-aics-dtp-001.corp.alleninstitute.org/dan-data/", "test_parent_T49.ome_", "_atlas.json", 0, 46);
-  } else if (loadTestData) {
-    //fetchOpenCell();
-    //fetchTiff("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif", 0);
-    //fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/Lamin_multi-06-Deskew-28.zarr", "Image_0", 0);
-    fetchZarr("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr", "", 0); //fetchZarr("https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr ", "", 0);
-    //fetchZarr("http://localhost:9020/example-data/AICS-12_143.zarr", "AICS-12_143", 0);
-    //fetchImage("AICS-12_881_atlas.json", "");
-  } else {
-    var volumeInfo = createTestVolume();
-    loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
-  }
-
+  loadTestData(TEST_DATA[testDataSelect === null || testDataSelect === void 0 ? void 0 : testDataSelect.value]);
   console.log(myState.timeSeriesVolumes);
 }
 
