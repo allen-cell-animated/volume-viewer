@@ -17,6 +17,7 @@ import {
 
 import TrackballControls from "./TrackballControls.js";
 import Timing from "./Timing";
+import scaleBarSVG from "./constants/scaleBarSVG";
 import { isOrthographicCamera, ViewportCorner, isTop, isRight } from "./types";
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
@@ -57,8 +58,11 @@ export class ThreeJsPanel {
   private axisHelperObject: Object3D;
   private axisCamera: OrthographicCamera;
 
+  private scaleBarContainerElement: HTMLDivElement;
   private orthoScaleBarElement: HTMLDivElement;
   public showOrthoScaleBar: boolean;
+  private perspectiveScaleBarElement: HTMLDivElement;
+  public showPerspectiveScaleBar: boolean;
 
   private dataurlcallback?: (url: string) => void;
 
@@ -77,8 +81,11 @@ export class ThreeJsPanel {
 
     this.scene = new Scene();
 
+    this.scaleBarContainerElement = document.createElement("div");
     this.orthoScaleBarElement = document.createElement("div");
     this.showOrthoScaleBar = true;
+    this.perspectiveScaleBarElement = document.createElement("div");
+    this.showPerspectiveScaleBar = false;
 
     this.zooming = false;
     this.animateFuncs = [];
@@ -195,7 +202,7 @@ export class ThreeJsPanel {
     this.axisOffset = [66.0, 66.0];
 
     this.setupAxisHelper();
-    this.setupOrthoScaleBar();
+    this.setupScaleBarElements();
   }
 
   updateCameraFocus(fov: number, _focalDistance: number, _apertureSize: number): void {
@@ -329,26 +336,49 @@ export class ThreeJsPanel {
     return pixels * window.devicePixelRatio * worldUnitsPerPixel * physicalUnitsPerWorldUnit;
   }
 
-  setupOrthoScaleBar(): void {
+  setupScaleBarElements(): void {
+    const scaleBarContainerStyle: Partial<CSSStyleDeclaration> = {
+      fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
+      position: "absolute",
+      right: "20px",
+      bottom: "20px",
+    };
+    Object.assign(this.scaleBarContainerElement.style, scaleBarContainerStyle);
+    this.containerdiv.appendChild(this.scaleBarContainerElement);
+
+    // Orthographic scale bar
     const orthoScaleBarStyle: Partial<CSSStyleDeclaration> = {
       border: "1px solid white",
       borderTop: "none",
       height: "10px",
       display: "none",
-      position: "absolute",
-      right: "20px",
-      bottom: "20px",
       color: "white",
       mixBlendMode: "difference",
       textAlign: "right",
       lineHeight: "0px",
-      fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
       fontSize: "14px",
       boxSizing: "border-box",
       paddingRight: "10px",
     };
     Object.assign(this.orthoScaleBarElement.style, orthoScaleBarStyle);
-    this.containerdiv.appendChild(this.orthoScaleBarElement);
+    this.scaleBarContainerElement.appendChild(this.orthoScaleBarElement);
+
+    // Perspective scale bar
+    const perspectiveScaleBarStyle: Partial<CSSStyleDeclaration> = {
+      width: "75px",
+      textAlign: "center",
+      display: "none",
+      color: "white",
+    };
+    Object.assign(this.perspectiveScaleBarElement.style, perspectiveScaleBarStyle);
+    this.scaleBarContainerElement.appendChild(this.perspectiveScaleBarElement);
+
+    const labeldiv = document.createElement("div");
+    const svgdiv = document.createElement("div");
+    svgdiv.style.color = "rgb(255, 255, 0)";
+    svgdiv.innerHTML = scaleBarSVG;
+    this.perspectiveScaleBarElement.appendChild(labeldiv);
+    this.perspectiveScaleBarElement.appendChild(svgdiv);
   }
 
   updateOrthoScaleBar(scale: number, unit?: string): void {
@@ -369,18 +399,36 @@ export class ThreeJsPanel {
     this.orthoScaleBarElement.style.width = `${SCALE_BAR_MAX_WIDTH * (scaleValue / physicalMaxWidth)}px`;
   }
 
-  updateOrthoScaleBarVisibility(): void {
-    const visible = isOrthographicCamera(this.camera) && this.showOrthoScaleBar;
-    this.orthoScaleBarElement.style.display = visible ? "" : "none";
+  updatePerspectiveScaleBar(length: number, unit?: string): void {
+    const labeldiv = this.perspectiveScaleBarElement.firstChild as HTMLDivElement;
+    labeldiv.innerHTML = `${length}${unit || ""}`;
+  }
+
+  setPerspectiveScaleBarColor(color: [number, number, number]): void {
+    const svgdiv = this.perspectiveScaleBarElement.lastChild as HTMLDivElement;
+    svgdiv.style.color = `rgb(${color[0] * 255}, ${color[1] * 255}, ${color[2] * 255})`;
+  }
+
+  updateScaleBarVisibility(): void {
+    const isOrtho = isOrthographicCamera(this.camera);
+    const orthoVisible = isOrtho && this.showOrthoScaleBar;
+    const perspectiveVisible = !isOrtho && this.showPerspectiveScaleBar;
+    this.orthoScaleBarElement.style.display = orthoVisible ? "" : "none";
+    this.perspectiveScaleBarElement.style.display = perspectiveVisible ? "" : "none";
   }
 
   setShowOrthoScaleBar(visible: boolean): void {
     this.showOrthoScaleBar = visible;
-    this.updateOrthoScaleBarVisibility();
+    this.updateScaleBarVisibility();
   }
 
-  setOrthoScaleBarPosition(marginX: number, marginY: number, corner: ViewportCorner) {
-    const { style } = this.orthoScaleBarElement;
+  setShowPerspectiveScaleBar(visible: boolean): void {
+    this.showPerspectiveScaleBar = visible;
+    this.updateScaleBarVisibility();
+  }
+
+  setScaleBarPosition(marginX: number, marginY: number, corner: ViewportCorner) {
+    const { style } = this.scaleBarContainerElement;
 
     style.removeProperty("top");
     style.removeProperty("bottom");
@@ -462,7 +510,7 @@ export class ThreeJsPanel {
         this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
         break;
     }
-    this.updateOrthoScaleBarVisibility();
+    this.updateScaleBarVisibility();
   }
 
   getCanvas(): HTMLCanvasElement {

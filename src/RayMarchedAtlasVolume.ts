@@ -34,7 +34,7 @@ const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 export default class RayMarchedAtlasVolume {
   public volume: Volume;
   public bounds: Bounds;
-  public tickMarksPhysicalLength: number;
+  public tickMarksPhysicalLength!: number;
   private cube: BoxGeometry;
   private cubeMesh: Mesh<BufferGeometry, Material>;
   private boxHelper: Box3Helper;
@@ -67,11 +67,9 @@ export default class RayMarchedAtlasVolume {
     this.boxHelper.updateMatrixWorld();
     this.boxHelper.visible = false;
 
-    this.tickMarksMesh = new LineSegments();
+    this.tickMarksMesh = this.createTickMarks();
     this.tickMarksMesh.updateMatrixWorld();
     this.tickMarksMesh.visible = false;
-    this.tickMarksPhysicalLength = 1;
-    this.createTickMarks();
 
     this.cubeTransformNode = new Group();
     this.cubeTransformNode.name = "VolumeContainerNode";
@@ -104,7 +102,7 @@ export default class RayMarchedAtlasVolume {
     this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
   }
 
-  private createTickMarks(): void {
+  private createTickMarks(): LineSegments {
     const TICK_LENGTH = 0.05;
     const { physicalScale, normalizedPhysicalSize } = this.volume;
     this.tickMarksPhysicalLength = 10 ** Math.floor(Math.log10(physicalScale / 2));
@@ -170,9 +168,7 @@ export default class RayMarchedAtlasVolume {
 
     const geometry = new BufferGeometry();
     geometry.setAttribute("position", new BufferAttribute(new Float32Array(vertices), 3));
-    this.tickMarksMesh = new LineSegments(geometry, new LineBasicMaterial({ color: BOUNDING_BOX_DEFAULT_COLOR }));
-
-    // this.updateTickMarkScaleText();
+    return new LineSegments(geometry, new LineBasicMaterial({ color: BOUNDING_BOX_DEFAULT_COLOR }));
   }
 
   public cleanup(): void {

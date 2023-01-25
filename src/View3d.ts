@@ -239,6 +239,9 @@ export class View3d {
     if (this.image) {
       this.image.setShowBoundingBox(showBoundingBox);
     }
+    this.canvas3d.setShowPerspectiveScaleBar(
+      showBoundingBox && this.canvas3d.showOrthoScaleBar && this.volumeRenderMode !== RENDERMODE_PATHTRACE
+    );
     this.redraw();
   }
 
@@ -246,6 +249,7 @@ export class View3d {
     if (this.image) {
       this.image.setBoundingBoxColor(color);
     }
+    this.canvas3d.setPerspectiveScaleBarColor(color);
     this.redraw();
   }
 
@@ -479,6 +483,9 @@ export class View3d {
    */
   setShowScaleBar(showScaleBar: boolean): void {
     this.canvas3d.setShowOrthoScaleBar(showScaleBar);
+    this.canvas3d.setShowPerspectiveScaleBar(
+      showScaleBar && !!this.image?.showBoundingBox && this.volumeRenderMode !== RENDERMODE_PATHTRACE
+    );
   }
 
   /**
@@ -507,7 +514,7 @@ export class View3d {
    *  `"bottom_left"`, `"bottom_right"`.
    */
   setScaleBarPosition(marginX: number, marginY: number, corner: ViewportCorner = ViewportCorner.BOTTOM_RIGHT): void {
-    this.canvas3d.setOrthoScaleBarPosition(marginX, marginY, corner);
+    this.canvas3d.setScaleBarPosition(marginX, marginY, corner);
   }
 
   /**
@@ -841,6 +848,11 @@ export class View3d {
 
       this.image.setRenderUpdateListener(this.renderUpdateListener);
     }
+
+    // TODO remove when pathtrace supports a bounding box
+    this.canvas3d.setShowPerspectiveScaleBar(
+      this.canvas3d.showOrthoScaleBar && !!this.image?.showBoundingBox && mode !== RENDERMODE_PATHTRACE
+    );
   }
 
   /**
