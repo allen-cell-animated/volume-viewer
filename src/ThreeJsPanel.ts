@@ -405,6 +405,7 @@ export class ThreeJsPanel {
   }
 
   setPerspectiveScaleBarColor(color: [number, number, number]): void {
+    // set the font color of the SVG container. only paths with `stroke="currentColor"` will react to this.
     const svgdiv = this.perspectiveScaleBarElement.lastChild as HTMLDivElement;
     svgdiv.style.color = `rgb(${color[0] * 255}, ${color[1] * 255}, ${color[2] * 255})`;
   }
