@@ -138,6 +138,7 @@ export default class Volume {
   public physicalScale: number;
   public physicalUnitSymbol: string;
   public normalizedPhysicalSize: Vector3;
+  public tickMarkPhysicalLength: number;
   private loaded: boolean;
   /* eslint-disable @typescript-eslint/naming-convention */
   public num_channels: number;
@@ -192,6 +193,7 @@ export default class Volume {
     }
 
     this.physicalUnitSymbol = this.imageInfo.pixel_size_unit;
+    this.tickMarkPhysicalLength = 1;
     this.setVoxelSize(this.pixel_size);
 
     // make sure a transform is specified
@@ -247,6 +249,9 @@ export default class Volume {
     this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z);
     // Compute the volume's max extent - scaled to max dimension.
     this.normalizedPhysicalSize = this.physicalSize.clone().divideScalar(this.physicalScale);
+    // While we're here, pick a power of 10 that divides into our max dimension a reasonable number of times
+    // and save it to be the length of tick marks in 3d.
+    this.tickMarkPhysicalLength = 10 ** Math.floor(Math.log10(this.physicalScale / 2));
 
     // sx, sy, sz should be same as normalizedPhysicalSize
     this.scale = new Vector3(sx, sy, sz);

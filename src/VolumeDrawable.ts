@@ -36,7 +36,7 @@ export default class VolumeDrawable {
   private meshVolume: MeshVolume;
   private primaryRayStepSize: number;
   private secondaryRayStepSize: number;
-  private showBoundingBox: boolean;
+  public showBoundingBox: boolean;
   private boundingBoxColor: [number, number, number];
 
   // these two should never coexist simultaneously. always one or the other is present
