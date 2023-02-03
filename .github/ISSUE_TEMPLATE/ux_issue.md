@@ -36,4 +36,4 @@ _Who is directly involved? (developers, main points of contact, final approver)_
 _Add completion date to ticket and any time specific notes here_
 
 ### Notes
-_Add completion date to ticket and any time specific notes here_
+_Additional notes here_
