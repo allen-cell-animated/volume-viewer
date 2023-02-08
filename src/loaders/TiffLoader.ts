@@ -5,6 +5,12 @@ import Volume from "../Volume";
 
 import { fromUrl } from "geotiff";
 
+function prepareXML(xml: string): string {
+  // trim trailing unicode zeros?
+  const expr = /[\u0000]$/g;
+  return xml.trim().replace(expr, "").trim();
+}
+
 class TiffLoader implements IVolumeLoader {
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const tiff = await fromUrl(loadSpec.url);
@@ -13,7 +19,8 @@ class TiffLoader implements IVolumeLoader {
     // read the FIRST image
     const image = await tiff.getImage();
 
-    const tiffimgdesc = image.getFileDirectory().ImageDescription;
+    const tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
+
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(tiffimgdesc, "text/xml");
     const omeEl = xmlDoc.getElementsByTagName("OME")[0];
@@ -49,7 +56,8 @@ class TiffLoader implements IVolumeLoader {
     // read the FIRST image
     const image = await tiff.getImage();
 
-    const tiffimgdesc = image.getFileDirectory().ImageDescription;
+    const tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
+
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(tiffimgdesc, "text/xml");
     const omeEl = xmlDoc.getElementsByTagName("OME")[0];
