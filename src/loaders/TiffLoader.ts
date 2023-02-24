@@ -5,6 +5,60 @@ import Volume from "../Volume";
 
 import { fromUrl } from "geotiff";
 
+function prepareXML(xml: string): string {
+  // trim trailing unicode zeros?
+  // eslint-disable-next-line no-control-regex
+  const expr = /[\u0000]$/g;
+  return xml.trim().replace(expr, "").trim();
+}
+
+function getOME(xml: string): Element {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(xml, "text/xml");
+  const omeEl = xmlDoc.getElementsByTagName("OME")[0];
+  return omeEl;
+}
+
+class OMEDims {
+  sizex = 0;
+  sizey = 0;
+  sizez = 0;
+  sizec = 0;
+  sizet = 0;
+  unit = "";
+  pixeltype = "";
+  dimensionorder = "";
+  pixelsizex = 0;
+  pixelsizey = 0;
+  pixelsizez = 0;
+  channelnames: string[] = [];
+}
+
+function getOMEDims(imageEl: Element): OMEDims {
+  const dims = new OMEDims();
+
+  const pixelsEl = imageEl.getElementsByTagName("Pixels")[0];
+  dims.sizex = Number(pixelsEl.getAttribute("SizeX"));
+  dims.sizey = Number(pixelsEl.getAttribute("SizeY"));
+  dims.sizez = Number(pixelsEl.getAttribute("SizeZ"));
+  dims.sizec = Number(pixelsEl.getAttribute("SizeC"));
+  dims.sizet = Number(pixelsEl.getAttribute("SizeT"));
+  dims.unit = pixelsEl.getAttribute("PhysicalSizeXUnit") || "";
+  dims.pixeltype = pixelsEl.getAttribute("Type") || "";
+  dims.dimensionorder = pixelsEl.getAttribute("DimensionOrder") || "XYZCT";
+  dims.pixelsizex = Number(pixelsEl.getAttribute("PhysicalSizeX"));
+  dims.pixelsizey = Number(pixelsEl.getAttribute("PhysicalSizeY"));
+  dims.pixelsizez = Number(pixelsEl.getAttribute("PhysicalSizeZ"));
+  const channelsEls = pixelsEl.getElementsByTagName("Channel");
+  for (let i = 0; i < channelsEls.length; ++i) {
+    const name = channelsEls[i].getAttribute("Name");
+    const id = channelsEls[i].getAttribute("ID");
+    dims.channelnames.push(name ? name : id ? id : "Channel" + i);
+  }
+
+  return dims;
+}
+
 class TiffLoader implements IVolumeLoader {
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const tiff = await fromUrl(loadSpec.url);
@@ -13,32 +67,18 @@ class TiffLoader implements IVolumeLoader {
     // read the FIRST image
     const image = await tiff.getImage();
 
-    const tiffimgdesc = image.getFileDirectory().ImageDescription;
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(tiffimgdesc, "text/xml");
-    const omeEl = xmlDoc.getElementsByTagName("OME")[0];
-    const image0El = omeEl.getElementsByTagName("Image")[0];
-    const pixelsEl = image0El.getElementsByTagName("Pixels")[0];
-    const sizex = Number(pixelsEl.getAttribute("SizeX"));
-    const sizey = Number(pixelsEl.getAttribute("SizeY"));
-    const sizez = Number(pixelsEl.getAttribute("SizeZ"));
-    const sizec = Number(pixelsEl.getAttribute("SizeC"));
-    const sizet = Number(pixelsEl.getAttribute("SizeT"));
-    const unit = pixelsEl.getAttribute("PhysicalSizeXUnit");
-    const pixeltype = pixelsEl.getAttribute("Type");
-    //const dimensionorder: string = pixelsEl.getAttribute("DimensionOrder") || "XYZCT";
+    const tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
+    const omeEl = getOME(tiffimgdesc);
 
-    // ignoring units for now
-    const pixelsizex = Number(pixelsEl.getAttribute("PhysicalSizeX"));
-    const pixelsizey = Number(pixelsEl.getAttribute("PhysicalSizeY"));
-    const pixelsizez = Number(pixelsEl.getAttribute("PhysicalSizeZ"));
+    const image0El = omeEl.getElementsByTagName("Image")[0];
+    const dims = getOMEDims(image0El);
 
     const d = new VolumeDims();
     d.subpath = "";
-    d.shape = [sizet, sizec, sizez, sizey, sizex];
-    d.spacing = [1, 1, pixelsizez, pixelsizey, pixelsizex];
-    d.spatialUnit = unit ? unit : "micron";
-    d.dataType = pixeltype ? pixeltype : "uint8";
+    d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
+    d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
+    d.spatialUnit = dims.unit ? dims.unit : "micron";
+    d.dataType = dims.pixeltype ? dims.pixeltype : "uint8";
     return [d];
   }
 
@@ -49,32 +89,11 @@ class TiffLoader implements IVolumeLoader {
     // read the FIRST image
     const image = await tiff.getImage();
 
-    const tiffimgdesc = image.getFileDirectory().ImageDescription;
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(tiffimgdesc, "text/xml");
-    const omeEl = xmlDoc.getElementsByTagName("OME")[0];
-    const image0El = omeEl.getElementsByTagName("Image")[0];
-    const pixelsEl = image0El.getElementsByTagName("Pixels")[0];
-    const sizex = Number(pixelsEl.getAttribute("SizeX"));
-    const sizey = Number(pixelsEl.getAttribute("SizeY"));
-    const sizez = Number(pixelsEl.getAttribute("SizeZ"));
-    const sizec = Number(pixelsEl.getAttribute("SizeC"));
-    const sizet = Number(pixelsEl.getAttribute("SizeT"));
-    const unit = pixelsEl.getAttribute("PhysicalSizeXUnit");
-    const pixeltype = pixelsEl.getAttribute("Type");
-    const dimensionorder: string = pixelsEl.getAttribute("DimensionOrder") || "XYZCT";
+    const tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
+    const omeEl = getOME(tiffimgdesc);
 
-    // ignoring units for now
-    const pixelsizex = Number(pixelsEl.getAttribute("PhysicalSizeX"));
-    const pixelsizey = Number(pixelsEl.getAttribute("PhysicalSizeY"));
-    const pixelsizez = Number(pixelsEl.getAttribute("PhysicalSizeZ"));
-    const channelnames: string[] = [];
-    const channelsEls = pixelsEl.getElementsByTagName("Channel");
-    for (let i = 0; i < channelsEls.length; ++i) {
-      const name = channelsEls[i].getAttribute("Name");
-      const id = channelsEls[i].getAttribute("ID");
-      channelnames.push(name ? name : id ? id : "Channel" + i);
-    }
+    const image0El = omeEl.getElementsByTagName("Image")[0];
+    const dims = getOMEDims(image0El);
 
     // compare with sizex, sizey
     //const width = image.getWidth();
@@ -82,7 +101,7 @@ class TiffLoader implements IVolumeLoader {
 
     // TODO allow user setting of this downsampling info?
     // TODO allow ROI selection: range of x,y,z,c for a given t
-    const { nrows, ncols } = computePackedAtlasDims(sizez, sizex, sizey);
+    const { nrows, ncols } = computePackedAtlasDims(dims.sizez, dims.sizex, dims.sizey);
     // fit tiles to max of 2048x2048?
     const targetSize = 2048;
     const tilesizex = Math.floor(targetSize / ncols);
@@ -92,46 +111,46 @@ class TiffLoader implements IVolumeLoader {
 
     /* eslint-disable @typescript-eslint/naming-convention */
     const imgdata: ImageInfo = {
-      width: sizex,
-      height: sizey,
-      channels: sizec,
-      channel_names: channelnames,
+      width: dims.sizex,
+      height: dims.sizey,
+      channels: dims.sizec,
+      channel_names: dims.channelnames,
       rows: nrows,
       cols: ncols,
-      tiles: sizez,
+      tiles: dims.sizez,
       tile_width: tilesizex,
       tile_height: tilesizey,
       // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
       // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
       atlas_width: tilesizex * ncols,
       atlas_height: tilesizey * nrows,
-      pixel_size_x: pixelsizex,
-      pixel_size_y: pixelsizey,
-      pixel_size_z: pixelsizez,
+      pixel_size_x: dims.pixelsizex,
+      pixel_size_y: dims.pixelsizey,
+      pixel_size_z: dims.pixelsizez,
       name: "TEST",
       version: "1.0",
-      pixel_size_unit: unit || "",
+      pixel_size_unit: dims.unit || "",
       transform: {
         translation: [0, 0, 0],
         rotation: [0, 0, 0],
       },
-      times: sizet,
+      times: dims.sizet,
     };
     /* eslint-enable @typescript-eslint/naming-convention */
 
     const vol = new Volume(imgdata);
     // do each channel on a worker?
-    for (let channel = 0; channel < sizec; ++channel) {
+    for (let channel = 0; channel < dims.sizec; ++channel) {
       const params = {
         channel: channel,
         // these are target xy sizes for the in-memory volume data
         // they may or may not be the same size as original xy sizes
         tilesizex: tilesizex,
         tilesizey: tilesizey,
-        sizec: sizec,
-        sizez: sizez,
-        dimensionOrder: dimensionorder,
-        bytesPerSample: pixeltype === "uint8" ? 1 : pixeltype === "uint16" ? 2 : 4,
+        sizec: dims.sizec,
+        sizez: dims.sizez,
+        dimensionOrder: dims.dimensionorder,
+        bytesPerSample: dims.pixeltype === "uint8" ? 1 : dims.pixeltype === "uint16" ? 2 : 4,
         url: loadSpec.url,
       };
       const worker = new Worker(new URL("../workers/FetchTiffWorker", import.meta.url));
