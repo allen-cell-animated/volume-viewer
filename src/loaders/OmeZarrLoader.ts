@@ -89,7 +89,6 @@ class OMEZarrLoader implements IVolumeLoader {
     // get all shapes
     for (const i in multiscales) {
       const shape = await fetchShapeOfLevel(store, imagegroup, multiscales[i]);
-      // just stick it in multiscales for now.
       if (shape.length != axes.length) {
         console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
       }
