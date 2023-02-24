@@ -1,9 +1,68 @@
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
-import { computePackedAtlasDims, spatialUnitNameToSymbol } from "./VolumeLoaderUtils";
+import { computePackedAtlasDims, estimateLevelForAtlas, spatialUnitNameToSymbol } from "./VolumeLoaderUtils";
 import { ImageInfo } from "../Volume";
 import Volume from "../Volume";
 
 import { openArray, openGroup, HTTPStore } from "zarr";
+
+function imageIndexFromLoadSpec(loadSpec: LoadSpec, multiscales): number {
+  // each entry of multiscales is a multiscale image.
+  let imageIndex = loadSpec.scene;
+  if (imageIndex !== 0) {
+    console.warn("WARNING: OMEZarrLoader does not support multiple scenes. Results may be invalid.");
+  }
+  if (imageIndex >= multiscales.length) {
+    console.warn(`WARNING: OMEZarrLoader: scene ${imageIndex} is invalid. Using scene 0.`);
+    imageIndex = 0;
+  }
+  return imageIndex;
+}
+
+function remapAxesToTCZYX(axes): number[] {
+  const axisTCZYX = [-1, -1, -1, -1, -1];
+  for (let i = 0; i < axes.length; ++i) {
+    const axis = axes[i];
+    if (axis.name === "t") {
+      axisTCZYX[0] = i;
+    } else if (axis.name === "c") {
+      axisTCZYX[1] = i;
+    } else if (axis.name === "z") {
+      axisTCZYX[2] = i;
+    } else if (axis.name === "y") {
+      axisTCZYX[3] = i;
+    } else if (axis.name === "x") {
+      axisTCZYX[4] = i;
+    } else {
+      console.log("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
+    }
+  }
+  return axisTCZYX;
+}
+
+function findSpatialAxesZYX(axisTCZYX): number[] {
+  const spatialAxes: number[] = [];
+  if (axisTCZYX[2] > -1) {
+    spatialAxes.push(axisTCZYX[2]);
+  }
+  if (axisTCZYX[3] > -1) {
+    spatialAxes.push(axisTCZYX[3]);
+  }
+  if (axisTCZYX[4] > -1) {
+    spatialAxes.push(axisTCZYX[4]);
+  }
+  if (spatialAxes.length != 3) {
+    console.log("ERROR: zarr loader expects a z, y, and x axis.");
+  }
+  return spatialAxes;
+}
+
+async function fetchShapeOfLevel(store, imagegroup, multiscale): Promise<number[]> {
+  // get all shapes
+  const level = await openArray({ store: store, path: imagegroup + "/" + multiscale.path, mode: "r" });
+
+  const shape = level.meta.shape;
+  return shape;
+}
 
 class OMEZarrLoader implements IVolumeLoader {
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
@@ -16,42 +75,13 @@ class OMEZarrLoader implements IVolumeLoader {
     // get top-level metadata for this zarr image
     const allmetadata = await data.attrs.asObject();
     // each entry of multiscales is a multiscale image.
-    // take the first multiscales entry
-    const imageIndex = 0;
+    const imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
     const multiscales = allmetadata.multiscales[imageIndex].datasets;
     const axes = allmetadata.multiscales[imageIndex].axes;
 
-    const axisTCZYX = [-1, -1, -1, -1, -1];
-    for (let i = 0; i < axes.length; ++i) {
-      const axis = axes[i];
-      if (axis.name === "t") {
-        axisTCZYX[0] = i;
-      } else if (axis.name === "c") {
-        axisTCZYX[1] = i;
-      } else if (axis.name === "z") {
-        axisTCZYX[2] = i;
-      } else if (axis.name === "y") {
-        axisTCZYX[3] = i;
-      } else if (axis.name === "x") {
-        axisTCZYX[4] = i;
-      } else {
-        console.log("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
-      }
-    }
+    const axisTCZYX = remapAxesToTCZYX(axes);
     // ZYX
-    const spatialAxes: number[] = [];
-    if (axisTCZYX[2] > -1) {
-      spatialAxes.push(axisTCZYX[2]);
-    }
-    if (axisTCZYX[3] > -1) {
-      spatialAxes.push(axisTCZYX[3]);
-    }
-    if (axisTCZYX[4] > -1) {
-      spatialAxes.push(axisTCZYX[4]);
-    }
-    if (spatialAxes.length != 3) {
-      console.log("ERROR: zarr loader expects a z, y, and x axis.");
-    }
+    const spatialAxes: number[] = findSpatialAxesZYX(axisTCZYX);
 
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
     const unitName = axes[spatialAxes[2]].unit;
@@ -60,13 +90,10 @@ class OMEZarrLoader implements IVolumeLoader {
     const dims: VolumeDims[] = [];
     // get all shapes
     for (const i in multiscales) {
-      const level = await openArray({ store: store, path: imagegroup + "/" + multiscales[i].path, mode: "r" });
+      const shape = await fetchShapeOfLevel(store, imagegroup, multiscales[i]);
       // just stick it in multiscales for now.
-      multiscales[i].shape = level.meta.shape;
-      if (multiscales[i].shape.length != axes.length) {
-        console.log(
-          "ERROR: shape length " + multiscales[i].shape.length + " does not match axes length " + axes.length
-        );
+      if (shape.length != axes.length) {
+        console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
       }
 
       // technically there can be any number of coordinateTransformations
@@ -79,7 +106,7 @@ class OMEZarrLoader implements IVolumeLoader {
       d.shape = [1, 1, 1, 1, 1];
       for (let i = 0; i < d.shape.length; ++i) {
         if (axisTCZYX[i] > -1) {
-          d.shape[i] = multiscales[i].shape[axisTCZYX[i]];
+          d.shape[i] = shape[axisTCZYX[i]];
         }
       }
       d.spacing = [1, 1, scale5d[spatialAxes[0]], scale5d[spatialAxes[1]], scale5d[spatialAxes[2]]];
@@ -101,51 +128,31 @@ class OMEZarrLoader implements IVolumeLoader {
     // get top-level metadata for this zarr image
     const allmetadata = await data.attrs.asObject();
     // each entry of multiscales is a multiscale image.
-    // take the first multiscales entry
-    const imageIndex = 0; // TODO is this LoadSpec.scene?
+    const imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
     const multiscales = allmetadata.multiscales[imageIndex].datasets;
     const axes = allmetadata.multiscales[imageIndex].axes;
 
-    let hasT = false;
-    let hasC = false;
-    const axisTCZYX = [-1, -1, -1, -1, -1];
-    for (let i = 0; i < axes.length; ++i) {
-      const axis = axes[i];
-      if (axis.name === "t") {
-        hasT = true;
-        axisTCZYX[0] = i;
-      } else if (axis.name === "c") {
-        hasC = true;
-        axisTCZYX[1] = i;
-      } else if (axis.name === "z") {
-        axisTCZYX[2] = i;
-      } else if (axis.name === "y") {
-        axisTCZYX[3] = i;
-      } else if (axis.name === "x") {
-        axisTCZYX[4] = i;
-      } else {
-        console.log("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
-      }
-    }
+    const axisTCZYX = remapAxesToTCZYX(axes);
+    const hasT = axisTCZYX[0] > -1;
+    const hasC = axisTCZYX[1] > -1;
     // ZYX
-    const spatialAxes: number[] = [];
-    if (axisTCZYX[2] > -1) {
-      spatialAxes.push(axisTCZYX[2]);
-    }
-    if (axisTCZYX[3] > -1) {
-      spatialAxes.push(axisTCZYX[3]);
-    }
-    if (axisTCZYX[4] > -1) {
-      spatialAxes.push(axisTCZYX[4]);
-    }
-    if (spatialAxes.length != 3) {
-      console.log("ERROR: zarr loader expects a z, y, and x axis.");
-    }
+    const spatialAxes: number[] = findSpatialAxesZYX(axisTCZYX);
 
     const numlevels = multiscales.length;
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
     const unitName = axes[spatialAxes[2]].unit;
     const unitSymbol = spatialUnitNameToSymbol(unitName) || unitName || "";
+
+    // fetch all shapes and find xyz spatial dimensions
+    const spatialDims: number[][] = [];
+    for (const i in multiscales) {
+      const shape = await fetchShapeOfLevel(store, imagegroup, multiscales[i]);
+      // just stick it in multiscales for now.
+      if (shape.length != axes.length) {
+        console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
+      }
+      spatialDims.push([shape[spatialAxes[0]], shape[spatialAxes[1]], shape[spatialAxes[2]]]);
+    }
 
     // default to lowest level until we find the match
     let levelToLoad = numlevels - 1;
@@ -156,7 +163,13 @@ class OMEZarrLoader implements IVolumeLoader {
       }
     }
 
-    const downsampleZ = 2; // z/downsampleZ is number of z slices in reduced volume
+    const optimalLevel = estimateLevelForAtlas(spatialDims, 2048);
+    // assume all levels are decreasing in size.  If a larger level is optimal then use it:
+    if (optimalLevel < levelToLoad) {
+      levelToLoad = optimalLevel;
+    }
+
+    const downsampleZ = 1; // z/downsampleZ is number of z slices in reduced volume
 
     const dataset = multiscales[levelToLoad];
 
