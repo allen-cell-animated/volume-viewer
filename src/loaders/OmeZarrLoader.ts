@@ -57,9 +57,7 @@ function findSpatialAxesZYX(axisTCZYX): number[] {
 }
 
 async function fetchShapeOfLevel(store, imagegroup, multiscale): Promise<number[]> {
-  // get all shapes
   const level = await openArray({ store: store, path: imagegroup + "/" + multiscale.path, mode: "r" });
-
   const shape = level.meta.shape;
   return shape;
 }
