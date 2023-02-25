@@ -8950,14 +8950,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "TiffLoader": () => (/* binding */ TiffLoader)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
-/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
-/* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
+/* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
 
 
 
@@ -8966,23 +8967,91 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
+function prepareXML(xml) {
+  // trim trailing unicode zeros?
+  // eslint-disable-next-line no-control-regex
+  var expr = /[\u0000]$/g;
+  return xml.trim().replace(expr, "").trim();
+}
+
+function getOME(xml) {
+  var parser = new DOMParser();
+  var xmlDoc = parser.parseFromString(xml, "text/xml");
+  var omeEl = xmlDoc.getElementsByTagName("OME")[0];
+  return omeEl;
+}
+
+var OMEDims = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(function OMEDims() {
+  (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, OMEDims);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "sizex", 0);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "sizey", 0);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "sizez", 0);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "sizec", 0);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "sizet", 0);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "unit", "");
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "pixeltype", "");
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "dimensionorder", "");
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "pixelsizex", 0);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "pixelsizey", 0);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "pixelsizez", 0);
+
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "channelnames", []);
+});
+
+function getOMEDims(imageEl) {
+  var dims = new OMEDims();
+  var pixelsEl = imageEl.getElementsByTagName("Pixels")[0];
+  dims.sizex = Number(pixelsEl.getAttribute("SizeX"));
+  dims.sizey = Number(pixelsEl.getAttribute("SizeY"));
+  dims.sizez = Number(pixelsEl.getAttribute("SizeZ"));
+  dims.sizec = Number(pixelsEl.getAttribute("SizeC"));
+  dims.sizet = Number(pixelsEl.getAttribute("SizeT"));
+  dims.unit = pixelsEl.getAttribute("PhysicalSizeXUnit") || "";
+  dims.pixeltype = pixelsEl.getAttribute("Type") || "";
+  dims.dimensionorder = pixelsEl.getAttribute("DimensionOrder") || "XYZCT";
+  dims.pixelsizex = Number(pixelsEl.getAttribute("PhysicalSizeX"));
+  dims.pixelsizey = Number(pixelsEl.getAttribute("PhysicalSizeY"));
+  dims.pixelsizez = Number(pixelsEl.getAttribute("PhysicalSizeZ"));
+  var channelsEls = pixelsEl.getElementsByTagName("Channel");
+
+  for (var i = 0; i < channelsEls.length; ++i) {
+    var name = channelsEls[i].getAttribute("Name");
+    var id = channelsEls[i].getAttribute("ID");
+    dims.channelnames.push(name ? name : id ? id : "Channel" + i);
+  }
+
+  return dims;
+}
 
 var TiffLoader = /*#__PURE__*/function () {
   function TiffLoader() {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, TiffLoader);
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, TiffLoader);
   }
 
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(TiffLoader, [{
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(TiffLoader, [{
     key: "loadDims",
     value: function () {
-      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(loadSpec) {
-        var tiff, image, tiffimgdesc, parser, xmlDoc, omeEl, image0El, pixelsEl, sizex, sizey, sizez, sizec, sizet, unit, pixeltype, pixelsizex, pixelsizey, pixelsizez, d;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
+      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(loadSpec) {
+        var tiff, image, tiffimgdesc, omeEl, image0El, dims, d;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
                 _context.next = 2;
-                return (0,geotiff__WEBPACK_IMPORTED_MODULE_7__.fromUrl)(loadSpec.url);
+                return (0,geotiff__WEBPACK_IMPORTED_MODULE_8__.fromUrl)(loadSpec.url);
 
               case 2:
                 tiff = _context.sent;
@@ -8991,33 +9060,19 @@ var TiffLoader = /*#__PURE__*/function () {
 
               case 5:
                 image = _context.sent;
-                tiffimgdesc = image.getFileDirectory().ImageDescription;
-                parser = new DOMParser();
-                xmlDoc = parser.parseFromString(tiffimgdesc, "text/xml");
-                omeEl = xmlDoc.getElementsByTagName("OME")[0];
+                tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
+                omeEl = getOME(tiffimgdesc);
                 image0El = omeEl.getElementsByTagName("Image")[0];
-                pixelsEl = image0El.getElementsByTagName("Pixels")[0];
-                sizex = Number(pixelsEl.getAttribute("SizeX"));
-                sizey = Number(pixelsEl.getAttribute("SizeY"));
-                sizez = Number(pixelsEl.getAttribute("SizeZ"));
-                sizec = Number(pixelsEl.getAttribute("SizeC"));
-                sizet = Number(pixelsEl.getAttribute("SizeT"));
-                unit = pixelsEl.getAttribute("PhysicalSizeXUnit");
-                pixeltype = pixelsEl.getAttribute("Type"); //const dimensionorder: string = pixelsEl.getAttribute("DimensionOrder") || "XYZCT";
-                // ignoring units for now
-
-                pixelsizex = Number(pixelsEl.getAttribute("PhysicalSizeX"));
-                pixelsizey = Number(pixelsEl.getAttribute("PhysicalSizeY"));
-                pixelsizez = Number(pixelsEl.getAttribute("PhysicalSizeZ"));
-                d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__.VolumeDims();
+                dims = getOMEDims(image0El);
+                d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__.VolumeDims();
                 d.subpath = "";
-                d.shape = [sizet, sizec, sizez, sizey, sizex];
-                d.spacing = [1, 1, pixelsizez, pixelsizey, pixelsizex];
-                d.spatialUnit = unit ? unit : "micron";
-                d.dataType = pixeltype ? pixeltype : "uint8";
+                d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
+                d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
+                d.spatialUnit = dims.unit ? dims.unit : "micron";
+                d.dataType = dims.pixeltype ? dims.pixeltype : "uint8";
                 return _context.abrupt("return", [d]);
 
-              case 29:
+              case 17:
               case "end":
                 return _context.stop();
             }
@@ -9034,15 +9089,15 @@ var TiffLoader = /*#__PURE__*/function () {
   }, {
     key: "createVolume",
     value: function () {
-      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(loadSpec, onChannelLoaded) {
-        var tiff, image, tiffimgdesc, parser, xmlDoc, omeEl, image0El, pixelsEl, sizex, sizey, sizez, sizec, sizet, unit, pixeltype, dimensionorder, pixelsizex, pixelsizey, pixelsizez, channelnames, channelsEls, i, name, id, _computePackedAtlasDi, nrows, ncols, targetSize, tilesizex, tilesizey, imgdata, vol, _loop, channel;
+      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee2(loadSpec, onChannelLoaded) {
+        var tiff, image, tiffimgdesc, omeEl, image0El, dims, _computePackedAtlasDi, nrows, ncols, targetSize, tilesizex, tilesizey, imgdata, vol, _loop, channel;
 
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee2$(_context2) {
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee2$(_context2) {
           while (1) {
             switch (_context2.prev = _context2.next) {
               case 0:
                 _context2.next = 2;
-                return (0,geotiff__WEBPACK_IMPORTED_MODULE_7__.fromUrl)(loadSpec.url);
+                return (0,geotiff__WEBPACK_IMPORTED_MODULE_8__.fromUrl)(loadSpec.url);
 
               case 2:
                 tiff = _context2.sent;
@@ -9051,39 +9106,16 @@ var TiffLoader = /*#__PURE__*/function () {
 
               case 5:
                 image = _context2.sent;
-                tiffimgdesc = image.getFileDirectory().ImageDescription;
-                parser = new DOMParser();
-                xmlDoc = parser.parseFromString(tiffimgdesc, "text/xml");
-                omeEl = xmlDoc.getElementsByTagName("OME")[0];
+                tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
+                omeEl = getOME(tiffimgdesc);
                 image0El = omeEl.getElementsByTagName("Image")[0];
-                pixelsEl = image0El.getElementsByTagName("Pixels")[0];
-                sizex = Number(pixelsEl.getAttribute("SizeX"));
-                sizey = Number(pixelsEl.getAttribute("SizeY"));
-                sizez = Number(pixelsEl.getAttribute("SizeZ"));
-                sizec = Number(pixelsEl.getAttribute("SizeC"));
-                sizet = Number(pixelsEl.getAttribute("SizeT"));
-                unit = pixelsEl.getAttribute("PhysicalSizeXUnit");
-                pixeltype = pixelsEl.getAttribute("Type");
-                dimensionorder = pixelsEl.getAttribute("DimensionOrder") || "XYZCT"; // ignoring units for now
-
-                pixelsizex = Number(pixelsEl.getAttribute("PhysicalSizeX"));
-                pixelsizey = Number(pixelsEl.getAttribute("PhysicalSizeY"));
-                pixelsizez = Number(pixelsEl.getAttribute("PhysicalSizeZ"));
-                channelnames = [];
-                channelsEls = pixelsEl.getElementsByTagName("Channel");
-
-                for (i = 0; i < channelsEls.length; ++i) {
-                  name = channelsEls[i].getAttribute("Name");
-                  id = channelsEls[i].getAttribute("ID");
-                  channelnames.push(name ? name : id ? id : "Channel" + i);
-                } // compare with sizex, sizey
+                dims = getOMEDims(image0El); // compare with sizex, sizey
                 //const width = image.getWidth();
                 //const height = image.getHeight();
                 // TODO allow user setting of this downsampling info?
                 // TODO allow ROI selection: range of x,y,z,c for a given t
 
-
-                _computePackedAtlasDi = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.computePackedAtlasDims)(sizez, sizex, sizey), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols; // fit tiles to max of 2048x2048?
+                _computePackedAtlasDi = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.computePackedAtlasDims)(dims.sizez, dims.sizex, dims.sizey), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols; // fit tiles to max of 2048x2048?
 
                 targetSize = 2048;
                 tilesizex = Math.floor(targetSize / ncols);
@@ -9092,34 +9124,34 @@ var TiffLoader = /*#__PURE__*/function () {
                 /* eslint-disable @typescript-eslint/naming-convention */
 
                 imgdata = {
-                  width: sizex,
-                  height: sizey,
-                  channels: sizec,
-                  channel_names: channelnames,
+                  width: dims.sizex,
+                  height: dims.sizey,
+                  channels: dims.sizec,
+                  channel_names: dims.channelnames,
                   rows: nrows,
                   cols: ncols,
-                  tiles: sizez,
+                  tiles: dims.sizez,
                   tile_width: tilesizex,
                   tile_height: tilesizey,
                   // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
                   // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
                   atlas_width: tilesizex * ncols,
                   atlas_height: tilesizey * nrows,
-                  pixel_size_x: pixelsizex,
-                  pixel_size_y: pixelsizey,
-                  pixel_size_z: pixelsizez,
+                  pixel_size_x: dims.pixelsizex,
+                  pixel_size_y: dims.pixelsizey,
+                  pixel_size_z: dims.pixelsizez,
                   name: "TEST",
                   version: "1.0",
-                  pixel_size_unit: unit || "",
+                  pixel_size_unit: dims.unit || "",
                   transform: {
                     translation: [0, 0, 0],
                     rotation: [0, 0, 0]
                   },
-                  times: sizet
+                  times: dims.sizet
                 };
                 /* eslint-enable @typescript-eslint/naming-convention */
 
-                vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata); // do each channel on a worker?
+                vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imgdata); // do each channel on a worker?
 
                 _loop = function _loop(channel) {
                   var params = {
@@ -9128,10 +9160,10 @@ var TiffLoader = /*#__PURE__*/function () {
                     // they may or may not be the same size as original xy sizes
                     tilesizex: tilesizex,
                     tilesizey: tilesizey,
-                    sizec: sizec,
-                    sizez: sizez,
-                    dimensionOrder: dimensionorder,
-                    bytesPerSample: pixeltype === "uint8" ? 1 : pixeltype === "uint16" ? 2 : 4,
+                    sizec: dims.sizec,
+                    sizez: dims.sizez,
+                    dimensionOrder: dims.dimensionorder,
+                    bytesPerSample: dims.pixeltype === "uint8" ? 1 : dims.pixeltype === "uint16" ? 2 : 4,
                     url: loadSpec.url
                   };
                   var worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchTiffWorker_ts"), __webpack_require__.b));
@@ -9156,13 +9188,13 @@ var TiffLoader = /*#__PURE__*/function () {
                   worker.postMessage(params);
                 };
 
-                for (channel = 0; channel < sizec; ++channel) {
+                for (channel = 0; channel < dims.sizec; ++channel) {
                   _loop(channel);
                 }
 
                 return _context2.abrupt("return", vol);
 
-              case 35:
+              case 19:
               case "end":
                 return _context2.stop();
             }
