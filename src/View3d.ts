@@ -135,10 +135,7 @@ export class View3d {
    * @param {VolumeChannelDisplayOptions} options
    */
   setVolumeChannelOptions(volume: Volume, channelIndex: number, options: VolumeChannelDisplayOptions): void {
-    if (!this.image) {
-      return;
-    }
-    this.image.setChannelOptions(channelIndex, options);
+    this.image?.setChannelOptions(channelIndex, options);
     this.redraw();
   }
 
@@ -148,10 +145,7 @@ export class View3d {
    * @param {VolumeDisplayOptions} options
    */
   setVolumeDisplayOptions(volume: Volume, options: VolumeDisplayOptions): void {
-    if (!this.image) {
-      return;
-    }
-    this.image.setOptions(options);
+    this.image?.setOptions(options);
     this.redraw();
   }
 
@@ -184,23 +178,17 @@ export class View3d {
    */
   setRenderUpdateListener(callback: (iteration: number) => void): void {
     this.renderUpdateListener = callback;
-    if (this.image) {
-      this.image.setRenderUpdateListener(callback);
-    }
+    this.image?.setRenderUpdateListener(callback);
   }
 
   // channels is an array of channel indices for which new data just arrived.
   onVolumeData(volume: Volume, channels: number[]): void {
-    if (this.image) {
-      this.image.onChannelLoaded(channels);
-    }
+    this.image?.onChannelLoaded(channels);
   }
 
   // do fixups for when the volume has had a new empty channel added.
   onVolumeChannelAdded(volume: Volume, newChannelIndex: number): void {
-    if (this.image) {
-      this.image.onChannelAdded(newChannelIndex);
-    }
+    this.image?.onChannelAdded(newChannelIndex);
   }
 
   /**
@@ -209,9 +197,7 @@ export class View3d {
    * @param {number} maskChannelIndex
    */
   setVolumeChannelAsMask(volume: Volume, maskChannelIndex: number): void {
-    if (this.image) {
-      this.image.setChannelAsMask(maskChannelIndex);
-    }
+    this.image?.setChannelAsMask(maskChannelIndex);
     this.redraw();
   }
 
@@ -235,16 +221,12 @@ export class View3d {
   }
 
   setRayStepSizes(volume: Volume, primary: number, secondary: number): void {
-    if (this.image) {
-      this.image.setRayStepSizes(primary, secondary);
-    }
+    this.image?.setRayStepSizes(primary, secondary);
     this.redraw();
   }
 
   setShowBoundingBox(volume: Volume, showBoundingBox: boolean): void {
-    if (this.image) {
-      this.image.setShowBoundingBox(showBoundingBox);
-    }
+    this.image?.setShowBoundingBox(showBoundingBox);
     this.canvas3d.setShowPerspectiveScaleBar(
       showBoundingBox && this.canvas3d.showOrthoScaleBar && this.volumeRenderMode !== RENDERMODE_PATHTRACE
     );
@@ -252,9 +234,7 @@ export class View3d {
   }
 
   setBoundingBoxColor(volume: Volume, color: [number, number, number]): void {
-    if (this.image) {
-      this.image.setBoundingBoxColor(color);
-    }
+    this.image?.setBoundingBoxColor(color);
     this.canvas3d.setPerspectiveScaleBarColor(color);
     this.redraw();
   }
@@ -292,11 +272,7 @@ export class View3d {
    * @return true if there is currently a mesh isosurface for this channel
    */
   hasIsosurface(volume: Volume, channel: number): boolean {
-    if (this.image) {
-      return this.image.hasIsosurface(channel);
-    } else {
-      return false;
-    }
+    return this.image?.hasIsosurface(channel) || false;
   }
 
   /**
@@ -320,10 +296,7 @@ export class View3d {
    * @param {number} opacity Opacity
    */
   updateOpacity(volume: Volume, channel: number, opacity: number): void {
-    if (!this.image) {
-      return;
-    }
-    this.image.updateOpacity(channel, opacity);
+    this.image?.updateOpacity(channel, opacity);
     this.redraw();
   }
 
@@ -333,9 +306,7 @@ export class View3d {
    * @param {number} channel
    */
   clearIsosurface(volume: Volume, channel: number): void {
-    if (this.image) {
-      this.image.destroyIsosurface(channel);
-    }
+    this.image?.destroyIsosurface(channel);
     this.redraw();
   }
 
@@ -346,9 +317,7 @@ export class View3d {
    * @param {string} type Either 'GLTF' or 'STL'
    */
   saveChannelIsosurface(volume: Volume, channelIndex: number, type: string): void {
-    if (this.image) {
-      this.image.saveChannelIsosurface(channelIndex, type);
-    }
+    this.image?.saveChannelIsosurface(channelIndex, type);
   }
 
   // Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will return any prior existing image.
@@ -386,21 +355,15 @@ export class View3d {
       // TODO: VR display requires a running renderloop
       this.canvas3d.startRenderLoop();
     }
-    if (this.image) {
-      this.image.onStartControls();
-    }
+    this.image?.onStartControls();
   }
 
   onChangeControls(): void {
-    if (this.image) {
-      this.image.onChangeControls();
-    }
+    this.image?.onChangeControls();
   }
 
   onEndControls(): void {
-    if (this.image) {
-      this.image.onEndControls();
-    }
+    this.image?.onEndControls();
     // If we are pathtracing or autorotating, then keep rendering. Otherwise stop now.
     if (this.volumeRenderMode !== RENDERMODE_PATHTRACE && !this.canvas3d.controls.autoRotate) {
       // TODO: VR display requires a running renderloop
@@ -470,9 +433,7 @@ export class View3d {
    */
   setCameraMode(mode: string): void {
     this.canvas3d.switchViewMode(mode);
-    if (this.image) {
-      this.image.setIsOrtho(mode !== "3D");
-    }
+    this.image?.setIsOrtho(mode !== "3D");
     this.canvas3d.redraw();
   }
 
@@ -561,16 +522,12 @@ export class View3d {
    * @param {number} flipZ z axis sense
    */
   setFlipVolume(volume: Volume, flipX: number, flipY: number, flipZ: number): void {
-    if (this.image) {
-      this.image.setFlipAxes(flipX, flipY, flipZ);
-      this.redraw();
-    }
+    this.image?.setFlipAxes(flipX, flipY, flipZ);
+    this.redraw();
   }
 
   setInterpolationEnabled(volume: Volume, active: boolean): void {
-    if (this.image) {
-      this.image.setInterpolationEnabled(active);
-    }
+    this.image?.setInterpolationEnabled(active);
     this.redraw();
   }
 
@@ -588,9 +545,7 @@ export class View3d {
     h = h || this.parentEl.offsetHeight;
     this.canvas3d.resize(comp, w, h, ow, oh, eOpts);
 
-    if (this.image) {
-      this.image.setResolution(this.canvas3d);
-    }
+    this.image?.setResolution(this.canvas3d);
     this.redraw();
   }
 
@@ -600,9 +555,7 @@ export class View3d {
    * @param {number} density 0..1 UI slider value
    */
   updateDensity(volume: Volume, density: number): void {
-    if (this.image) {
-      this.image.setDensity(density);
-    }
+    this.image?.setDensity(density);
     this.redraw();
   }
 
@@ -612,9 +565,7 @@ export class View3d {
    * @param {number} isbrdf 0: brdf, 1: isotropic phase function, 2: mixed
    */
   updateShadingMethod(volume: Volume, isbrdf: boolean): void {
-    if (this.image) {
-      this.image.updateShadingMethod(isbrdf);
-    }
+    this.image?.updateShadingMethod(isbrdf);
   }
 
   /**
@@ -625,9 +576,7 @@ export class View3d {
    * @param {number} gmax
    */
   setGamma(volume: Volume, gmin: number, glevel: number, gmax: number): void {
-    if (this.image) {
-      this.image.setGamma(gmin, glevel, gmax);
-    }
+    this.image?.setGamma(gmin, glevel, gmax);
     this.redraw();
   }
 
@@ -637,9 +586,7 @@ export class View3d {
    * @param {boolean} isMaxProject true for max project, false for regular volume ray march integration
    */
   setMaxProjectMode(volume: Volume, isMaxProject: boolean): void {
-    if (this.image) {
-      this.image.setMaxProjectMode(isMaxProject);
-    }
+    this.image?.setMaxProjectMode(isMaxProject);
     this.redraw();
   }
 
@@ -648,9 +595,7 @@ export class View3d {
    * @param {Object} volume
    */
   updateActiveChannels(_volume: Volume): void {
-    if (this.image) {
-      this.image.fuse();
-    }
+    this.image?.fuse();
     this.redraw();
   }
 
@@ -659,9 +604,7 @@ export class View3d {
    * @param {Object} volume
    */
   updateLuts(_volume: Volume): void {
-    if (this.image) {
-      this.image.updateLuts();
-    }
+    this.image?.updateLuts();
     this.redraw();
   }
 
@@ -670,9 +613,7 @@ export class View3d {
    * @param {Object} volume
    */
   updateMaterial(_volume: Volume): void {
-    if (this.image) {
-      this.image.updateMaterial();
-    }
+    this.image?.updateMaterial();
     this.redraw();
   }
 
@@ -682,9 +623,7 @@ export class View3d {
    */
   updateExposure(e: number): void {
     this.exposure = e;
-    if (this.image) {
-      this.image.setBrightness(e);
-    }
+    this.image?.setBrightness(e);
     this.redraw();
   }
 
@@ -697,9 +636,7 @@ export class View3d {
   updateCamera(fov: number, focalDistance: number, apertureSize: number): void {
     this.canvas3d.updateCameraFocus(fov, focalDistance, apertureSize);
 
-    if (this.image) {
-      this.image.onCameraChanged(fov, focalDistance, apertureSize);
-    }
+    this.image?.onCameraChanged(fov, focalDistance, apertureSize);
     this.redraw();
   }
 
@@ -722,9 +659,7 @@ export class View3d {
     zmin: number,
     zmax: number
   ): void {
-    if (this.image) {
-      this.image.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
-    }
+    this.image?.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
     this.redraw();
   }
 
@@ -738,9 +673,7 @@ export class View3d {
    * @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
    */
   setAxisClip(volume: Volume, axis: "x" | "y" | "z", minval: number, maxval: number, isOrthoAxis: boolean): void {
-    if (this.image) {
-      this.image.setAxisClip(axis, minval, maxval, isOrthoAxis);
-    }
+    this.image?.setAxisClip(axis, minval, maxval, isOrthoAxis);
     this.redraw();
   }
 
@@ -752,9 +685,7 @@ export class View3d {
     // TODO flesh this out
     this.lights = state;
 
-    if (this.image) {
-      this.image.updateLights(state);
-    }
+    this.image?.updateLights(state);
   }
 
   /**
@@ -766,9 +697,7 @@ export class View3d {
       return;
     }
     this.pixelSamplingRate = value;
-    if (this.image) {
-      this.image.setPixelSamplingRate(value);
-    }
+    this.image?.setPixelSamplingRate(value);
   }
 
   /**
@@ -777,9 +706,7 @@ export class View3d {
    * @param {number} value (0..1) 0 for full transparent, 1 for fully opaque
    */
   updateMaskAlpha(volume: Volume, value: number): void {
-    if (this.image) {
-      this.image.setMaskAlpha(value);
-    }
+    this.image?.setMaskAlpha(value);
     this.redraw();
   }
 
@@ -790,9 +717,7 @@ export class View3d {
    * @param {boolean} enabled
    */
   setVolumeChannelEnabled(volume: Volume, channel: number, enabled: boolean): void {
-    if (this.image) {
-      this.image.setVolumeChannelEnabled(channel, enabled);
-    }
+    this.image?.setVolumeChannelEnabled(channel, enabled);
     this.redraw();
   }
 
@@ -813,9 +738,7 @@ export class View3d {
     emissivergb: [number, number, number],
     glossiness: number
   ): void {
-    if (this.image) {
-      this.image.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
-    }
+    this.image?.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
   }
 
   /**
@@ -825,9 +748,7 @@ export class View3d {
    * @param {Array.<number>} colorrgb [r,g,b]
    */
   updateChannelColor(volume: Volume, channelIndex: number, colorrgb: [number, number, number]): void {
-    if (this.image) {
-      this.image.updateChannelColor(channelIndex, colorrgb);
-    }
+    this.image?.updateChannelColor(channelIndex, colorrgb);
   }
 
   /**
@@ -870,9 +791,7 @@ export class View3d {
    * @param {Array.<number>} xyz
    */
   setVolumeTranslation(volume: Volume, xyz: [number, number, number]): void {
-    if (this.image) {
-      this.image.setTranslation(new Vector3().fromArray(xyz));
-    }
+    this.image?.setTranslation(new Vector3().fromArray(xyz));
     this.redraw();
   }
 
@@ -882,9 +801,7 @@ export class View3d {
    * @param {Array.<number>} eulerXYZ
    */
   setVolumeRotation(volume: Volume, eulerXYZ: [number, number, number]): void {
-    if (this.image) {
-      this.image.setRotation(new Euler().fromArray(eulerXYZ));
-    }
+    this.image?.setRotation(new Euler().fromArray(eulerXYZ));
     this.redraw();
   }
 
@@ -893,9 +810,7 @@ export class View3d {
    */
   resetCamera(): void {
     this.canvas3d.resetCamera();
-    if (this.image) {
-      this.image.onResetCamera();
-    }
+    this.image?.onResetCamera();
     this.redraw();
   }
 
