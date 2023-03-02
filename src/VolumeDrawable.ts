@@ -49,7 +49,7 @@ export default class VolumeDrawable {
   private bounds: Bounds;
   private scale: Vector3;
   private currentScale: Vector3;
-  private renderUpdateListener?: (number) => void;
+  private renderUpdateListener?: (iteration: number) => void;
   private density: number;
   private brightness: number;
 
