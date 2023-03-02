@@ -11,7 +11,8 @@ export const RENDERMODE_RAYMARCH = 0;
 export const RENDERMODE_PATHTRACE = 1;
 
 export interface View3dOptions {
-  useWebGL2: boolean;
+  parentElement?: HTMLElement;
+  useWebGL2?: boolean;
 }
 
 /**
@@ -25,8 +26,6 @@ export class View3d {
   private exposure: number;
   private volumeRenderMode: number;
   private renderUpdateListener?: (iteration: number) => void;
-  private loaded: boolean;
-  private parentEl: HTMLElement;
   private image?: VolumeDrawable;
 
   private lights: Light[];
@@ -40,12 +39,12 @@ export class View3d {
    * @param {HTMLElement} parentElement the 3d display will try to fill the parent element.
    * @param {Object} options This is an optional param. The only option is currently boolean {useWebGL2:true} which defaults to true.
    */
-  constructor(parentElement: HTMLElement, options: View3dOptions = { useWebGL2: true }) {
-    if (options.useWebGL2 === undefined) {
-      options.useWebGL2 = true;
+  constructor({ useWebGL2, parentElement }: View3dOptions) {
+    if (useWebGL2 === undefined) {
+      useWebGL2 = true;
     }
 
-    this.canvas3d = new ThreeJsPanel(parentElement, options.useWebGL2);
+    this.canvas3d = new ThreeJsPanel(parentElement, useWebGL2);
     this.redraw = this.redraw.bind(this);
     this.scene = new Scene();
     this.backgroundColor = new Color(0x000000);
@@ -55,9 +54,7 @@ export class View3d {
     this.exposure = 0.5;
     this.volumeRenderMode = RENDERMODE_RAYMARCH;
 
-    this.loaded = false;
-    this.parentEl = parentElement;
-    window.addEventListener("resize", () => this.resize(null, this.parentEl.offsetWidth, this.parentEl.offsetHeight));
+    window.addEventListener("resize", () => this.resize(null));
 
     this.lightContainer = new Object3D();
     this.ambientLight = new AmbientLight();
@@ -541,10 +538,7 @@ export class View3d {
    * @param {Object=} eOpts Ignored.
    */
   resize(comp: HTMLElement | null, w?: number, h?: number, ow?: number, oh?: number, eOpts?: unknown): void {
-    w = w || this.parentEl.offsetWidth;
-    h = h || this.parentEl.offsetHeight;
     this.canvas3d.resize(comp, w, h, ow, oh, eOpts);
-
     this.image?.setResolution(this.canvas3d);
     this.redraw();
   }
