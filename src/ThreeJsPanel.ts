@@ -25,7 +25,7 @@ const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
 const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 
 export class ThreeJsPanel {
-  private containerdiv: HTMLDivElement;
+  public containerdiv: HTMLDivElement;
   private canvas: HTMLCanvasElement;
   public scene: Scene;
   private zooming: boolean;
@@ -66,18 +66,19 @@ export class ThreeJsPanel {
 
   private dataurlcallback?: (url: string) => void;
 
-  constructor(parentElement: HTMLElement, _useWebGL2: boolean) {
+  constructor(parentElement: HTMLElement | undefined, _useWebGL2: boolean) {
     this.containerdiv = document.createElement("div");
     this.containerdiv.style.position = "relative";
 
     this.canvas = document.createElement("canvas");
-    this.canvas.height = parentElement.offsetHeight;
-    this.canvas.width = parentElement.offsetWidth;
-
+    this.containerdiv.appendChild(this.canvas);
     this.canvas.style.backgroundColor = "black";
 
-    this.containerdiv.appendChild(this.canvas);
-    parentElement.appendChild(this.containerdiv);
+    if (parentElement) {
+      this.canvas.height = parentElement.offsetHeight;
+      this.canvas.width = parentElement.offsetWidth;
+      parentElement.appendChild(this.containerdiv);
+    }
 
     this.scene = new Scene();
 
@@ -130,7 +131,10 @@ export class ThreeJsPanel {
       this.renderer.state.setBlending(NormalBlending);
     }
     this.renderer.localClippingEnabled = true;
-    this.renderer.setSize(parentElement.offsetWidth, parentElement.offsetHeight);
+
+    if (parentElement) {
+      this.renderer.setSize(parentElement.offsetWidth, parentElement.offsetHeight);
+    }
 
     this.timer = new Timing();
 
@@ -518,7 +522,10 @@ export class ThreeJsPanel {
     return this.canvas;
   }
 
-  resize(comp: HTMLElement | null, w: number, h: number, _ow?: number, _oh?: number, _eOpts?: unknown): void {
+  resize(comp: HTMLElement | null, w?: number, h?: number, _ow?: number, _oh?: number, _eOpts?: unknown): void {
+    w = w || this.containerdiv.parentElement?.offsetWidth || this.containerdiv.offsetWidth;
+    h = h || this.containerdiv.parentElement?.offsetHeight || this.containerdiv.offsetHeight;
+
     this.containerdiv.style.width = "" + w + "px";
     this.containerdiv.style.height = "" + h + "px";
 
