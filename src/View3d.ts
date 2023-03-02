@@ -41,12 +41,10 @@ export class View3d {
    * @param {HTMLElement} options.parentElement An optional element to which to append the viewer element on creation.
    *   The viewer will attempt to fill this element if provided.
    */
-  constructor({ useWebGL2, parentElement }: View3dOptions) {
-    if (useWebGL2 === undefined) {
-      useWebGL2 = true;
-    }
+  constructor(options?: View3dOptions) {
+    const useWebGL2 = options?.useWebGL2 === undefined ? true : options.useWebGL2;
 
-    this.canvas3d = new ThreeJsPanel(parentElement, useWebGL2);
+    this.canvas3d = new ThreeJsPanel(options?.parentElement, useWebGL2);
     this.redraw = this.redraw.bind(this);
     this.scene = new Scene();
     this.backgroundColor = new Color(0x000000);
