@@ -1170,7 +1170,7 @@ function main() {
   if (!el) {
     return;
   }
-  view3D = new View3d(el);
+  view3D = new View3d({ parentElement: el });
 
   const testDataSelect = document.getElementById("testData");
   testDataSelect?.addEventListener("change", ({ currentTarget }) => {
