@@ -39,18 +39,19 @@ function remapAxesToTCZYX(axes): number[] {
   return axisTCZYX;
 }
 
-function findSpatialAxesZYX(axisTCZYX): number[] {
-  const spatialAxes: number[] = [];
+function findSpatialAxesZYX(axisTCZYX): [number, number, number] {
+  // return in ZYX order
+  const spatialAxes: [number, number, number] = [-1, -1, -1];
   if (axisTCZYX[2] > -1) {
-    spatialAxes.push(axisTCZYX[2]);
+    spatialAxes[0] = axisTCZYX[2];
   }
   if (axisTCZYX[3] > -1) {
-    spatialAxes.push(axisTCZYX[3]);
+    spatialAxes[1] = axisTCZYX[3];
   }
   if (axisTCZYX[4] > -1) {
-    spatialAxes.push(axisTCZYX[4]);
+    spatialAxes[2] = axisTCZYX[4];
   }
-  if (spatialAxes.length != 3) {
+  if (spatialAxes.some((el) => el === -1)) {
     console.log("ERROR: zarr loader expects a z, y, and x axis.");
   }
   return spatialAxes;
@@ -79,7 +80,7 @@ class OMEZarrLoader implements IVolumeLoader {
 
     const axisTCZYX = remapAxesToTCZYX(axes);
     // ZYX
-    const spatialAxes: number[] = findSpatialAxesZYX(axisTCZYX);
+    const spatialAxes = findSpatialAxesZYX(axisTCZYX);
 
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
     const unitName = axes[spatialAxes[2]].unit;
@@ -133,7 +134,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const hasT = axisTCZYX[0] > -1;
     const hasC = axisTCZYX[1] > -1;
     // ZYX
-    const spatialAxes: number[] = findSpatialAxesZYX(axisTCZYX);
+    const spatialAxes = findSpatialAxesZYX(axisTCZYX);
 
     const numlevels = multiscales.length;
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
