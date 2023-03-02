@@ -25,7 +25,7 @@ const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
 const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 
 export class ThreeJsPanel {
-  private containerdiv: HTMLDivElement;
+  public containerdiv: HTMLDivElement;
   private canvas: HTMLCanvasElement;
   public scene: Scene;
   private zooming: boolean;

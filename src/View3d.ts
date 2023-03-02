@@ -97,6 +97,10 @@ export class View3d {
     return this.canvas3d.requestCapture(dataurlcallback);
   }
 
+  getDOMElement(): HTMLDivElement {
+    return this.canvas3d.containerdiv;
+  }
+
   /**
    * Force a redraw.
    */
