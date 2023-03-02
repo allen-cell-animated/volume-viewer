@@ -36,8 +36,10 @@ export class View3d {
   private fillLight: DirectionalLight;
 
   /**
-   * @param {HTMLElement} parentElement the 3d display will try to fill the parent element.
-   * @param {Object} options This is an optional param. The only option is currently boolean {useWebGL2:true} which defaults to true.
+   * @param {Object} options Optional options.
+   * @param {boolean} options.useWebGL2 Default true
+   * @param {HTMLElement} options.parentElement An optional element to which to append the viewer element on creation.
+   *   The viewer will attempt to fill this element if provided.
    */
   constructor({ useWebGL2, parentElement }: View3dOptions) {
     if (useWebGL2 === undefined) {
