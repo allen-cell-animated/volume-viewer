@@ -124,6 +124,7 @@ interface VolumeDataObserver {
  */
 export default class Volume {
   public imageInfo: ImageInfo;
+  public imageMetadata: Record<string, unknown>;
   public name: string;
   public x: number;
   public y: number;
@@ -148,6 +149,8 @@ export default class Volume {
   /* eslint-enable @typescript-eslint/naming-convention */
 
   constructor(imageInfo: ImageInfo = getDefaultImageInfo()) {
+    // imageMetadata to be filled in by Volume Loaders
+    this.imageMetadata = {};
     this.scale = new Vector3(1, 1, 1);
     this.physicalSize = new Vector3(1, 1, 1);
     this.physicalScale = 1;

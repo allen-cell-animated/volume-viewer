@@ -1,4 +1,5 @@
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
+import { buildDefaultMetadata } from "./VolumeLoaderUtils";
 import { ImageInfo } from "../Volume";
 import Volume from "../Volume";
 
@@ -42,7 +43,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
     const imageInfo = await this.getImageInfo(loadSpec);
 
     const vol = new Volume(imageInfo);
-
+    vol.imageMetadata = buildDefaultMetadata(imageInfo);
     // if you need to adjust image paths prior to download,
     // now is the time to do it.
     // Try to figure out the urlPrefix from the LoadSpec.
