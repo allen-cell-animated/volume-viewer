@@ -1,5 +1,10 @@
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
-import { computePackedAtlasDims, estimateLevelForAtlas, spatialUnitNameToSymbol } from "./VolumeLoaderUtils";
+import {
+  buildDefaultMetadata,
+  computePackedAtlasDims,
+  estimateLevelForAtlas,
+  spatialUnitNameToSymbol,
+} from "./VolumeLoaderUtils";
 import { ImageInfo } from "../Volume";
 import Volume from "../Volume";
 
@@ -233,6 +238,7 @@ class OMEZarrLoader implements IVolumeLoader {
 
     // got some data, now let's construct the volume.
     const vol = new Volume(imgdata);
+    vol.imageMetadata = buildDefaultMetadata(imgdata);
 
     const storepath = imagegroup + "/" + dataset.path;
     // do each channel on a worker

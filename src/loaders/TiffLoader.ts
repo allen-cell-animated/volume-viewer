@@ -1,5 +1,5 @@
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
-import { computePackedAtlasDims } from "./VolumeLoaderUtils";
+import { buildDefaultMetadata, computePackedAtlasDims } from "./VolumeLoaderUtils";
 import { ImageInfo } from "../Volume";
 import Volume from "../Volume";
 
@@ -139,6 +139,8 @@ class TiffLoader implements IVolumeLoader {
     /* eslint-enable @typescript-eslint/naming-convention */
 
     const vol = new Volume(imgdata);
+    vol.imageMetadata = buildDefaultMetadata(imgdata);
+
     // do each channel on a worker?
     for (let channel = 0; channel < dims.sizec; ++channel) {
       const params = {

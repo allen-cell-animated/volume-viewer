@@ -1,4 +1,5 @@
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
+import { buildDefaultMetadata } from "./VolumeLoaderUtils";
 import { ImageInfo } from "../Volume";
 import Volume from "../Volume";
 import { JsonImageInfoLoader } from "./JsonImageInfoLoader";
@@ -63,6 +64,8 @@ class OpenCellLoader implements IVolumeLoader {
 
     // got some data, now let's construct the volume.
     const vol = new Volume(imgdata);
+    vol.imageMetadata = buildDefaultMetadata(imgdata);
+
     JsonImageInfoLoader.loadVolumeAtlasData(vol, urls, onChannelLoaded);
     return vol;
   }

@@ -1,5 +1,7 @@
 import "regenerator-runtime/runtime";
 
+import { ImageInfo } from "../Volume";
+
 export type TypedArray =
   | Uint8Array
   | Int8Array
@@ -75,4 +77,26 @@ export function estimateLevelForAtlas(spatialDimsZYX: number[][], maxAtlasEdge =
     }
   }
   return levelToLoad;
+}
+
+// currently everything needed can come from the imageInfo
+// but in the future each IVolumeLoader could have a completely separate implementation.
+export function buildDefaultMetadata(imageInfo: ImageInfo): Record<string, unknown> {
+  const metadata = {};
+  metadata["Dimensions"] = { x: imageInfo.tile_width, y: imageInfo.tile_height, z: imageInfo.tiles };
+  metadata["Original dimensions"] = { x: imageInfo.width, y: imageInfo.height, z: imageInfo.tiles };
+  metadata["Physical size"] = {
+    x: imageInfo.width * imageInfo.pixel_size_x + imageInfo.pixel_size_unit,
+    y: imageInfo.height * imageInfo.pixel_size_y + imageInfo.pixel_size_unit,
+    z: imageInfo.tiles * imageInfo.pixel_size_z + imageInfo.pixel_size_unit,
+  };
+  metadata["Physical size per pixel"] = {
+    x: imageInfo.pixel_size_x + imageInfo.pixel_size_unit,
+    y: imageInfo.pixel_size_y + imageInfo.pixel_size_unit,
+    z: imageInfo.pixel_size_z + imageInfo.pixel_size_unit,
+  };
+  metadata["Channels"] = imageInfo.channels;
+  metadata["Time series frames"] = imageInfo.times || 1;
+  metadata["User data"] = imageInfo.userData;
+  return metadata;
 }
