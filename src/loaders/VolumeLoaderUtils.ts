@@ -79,6 +79,15 @@ export function estimateLevelForAtlas(spatialDimsZYX: number[][], maxAtlasEdge =
   return levelToLoad;
 }
 
+function isEmpty(obj) {
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // currently everything needed can come from the imageInfo
 // but in the future each IVolumeLoader could have a completely separate implementation.
 export function buildDefaultMetadata(imageInfo: ImageInfo): Record<string, unknown> {
@@ -97,6 +106,9 @@ export function buildDefaultMetadata(imageInfo: ImageInfo): Record<string, unkno
   };
   metadata["Channels"] = imageInfo.channels;
   metadata["Time series frames"] = imageInfo.times || 1;
-  metadata["User data"] = imageInfo.userData;
+  // don't add User data if it's empty
+  if (imageInfo.userData && !isEmpty(imageInfo.userData)) {
+    metadata["User data"] = imageInfo.userData;
+  }
   return metadata;
 }
