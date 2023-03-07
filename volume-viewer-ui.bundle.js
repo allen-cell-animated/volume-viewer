@@ -6207,6 +6207,8 @@ var Volume = /*#__PURE__*/function () {
 
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Volume);
 
+    // imageMetadata to be filled in by Volume Loaders
+    this.imageMetadata = {};
     this.scale = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1);
     this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1);
     this.physicalScale = 1;
@@ -8116,7 +8118,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__);
 /* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
+/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
+
 
 
 
@@ -8230,7 +8234,8 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
 
               case 2:
                 imageInfo = _context3.sent;
-                vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imageInfo); // if you need to adjust image paths prior to download,
+                vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imageInfo);
+                vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imageInfo); // if you need to adjust image paths prior to download,
                 // now is the time to do it.
                 // Try to figure out the urlPrefix from the LoadSpec.
                 // For this format we assume the image data is in the same directory as the json file.
@@ -8243,7 +8248,7 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
                 JsonImageInfoLoader.loadVolumeAtlasData(vol, this.imageArray, onChannelLoaded);
                 return _context3.abrupt("return", vol);
 
-              case 8:
+              case 9:
               case "end":
                 return _context3.stop();
             }
@@ -8751,6 +8756,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 // got some data, now let's construct the volume.
 
                 vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata);
+                vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.buildDefaultMetadata)(imgdata);
                 storepath = imagegroup + "/" + dataset.path; // do each channel on a worker
 
                 _loop = function _loop(_i3) {
@@ -8788,7 +8794,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
 
                 return _context2.abrupt("return", vol);
 
-              case 67:
+              case 68:
               case "end":
                 return _context2.stop();
             }
@@ -8828,8 +8834,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__);
 /* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
-/* harmony import */ var _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./JsonImageInfoLoader */ "./src/loaders/JsonImageInfoLoader.ts");
+/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
+/* harmony import */ var _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./JsonImageInfoLoader */ "./src/loaders/JsonImageInfoLoader.ts");
+
 
 
 
@@ -8927,11 +8935,12 @@ var OpenCellLoader = /*#__PURE__*/function () {
                 /* eslint-enable @typescript-eslint/naming-convention */
                 // got some data, now let's construct the volume.
 
-                vol = new _Volume__WEBPACK_IMPORTED_MODULE_5__["default"](imgdata);
-                _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_6__.JsonImageInfoLoader.loadVolumeAtlasData(vol, urls, onChannelLoaded);
+                vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata);
+                vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.buildDefaultMetadata)(imgdata);
+                _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_7__.JsonImageInfoLoader.loadVolumeAtlasData(vol, urls, onChannelLoaded);
                 return _context2.abrupt("return", vol);
 
-              case 7:
+              case 8:
               case "end":
                 return _context2.stop();
             }
@@ -9167,7 +9176,8 @@ var TiffLoader = /*#__PURE__*/function () {
                 };
                 /* eslint-enable @typescript-eslint/naming-convention */
 
-                vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imgdata); // do each channel on a worker?
+                vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imgdata);
+                vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imgdata); // do each channel on a worker?
 
                 _loop = function _loop(channel) {
                   var params = {
@@ -9210,7 +9220,7 @@ var TiffLoader = /*#__PURE__*/function () {
 
                 return _context2.abrupt("return", vol);
 
-              case 19:
+              case 20:
               case "end":
                 return _context2.stop();
             }
@@ -9242,6 +9252,7 @@ var TiffLoader = /*#__PURE__*/function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "buildDefaultMetadata": () => (/* binding */ buildDefaultMetadata),
 /* harmony export */   "computePackedAtlasDims": () => (/* binding */ computePackedAtlasDims),
 /* harmony export */   "estimateLevelForAtlas": () => (/* binding */ estimateLevelForAtlas),
 /* harmony export */   "spatialUnitNameToSymbol": () => (/* binding */ spatialUnitNameToSymbol)
@@ -9321,6 +9332,50 @@ function estimateLevelForAtlas(spatialDimsZYX) {
   }
 
   return levelToLoad;
+}
+
+function isEmpty(obj) {
+  for (var key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      return false;
+    }
+  }
+
+  return true;
+} // currently everything needed can come from the imageInfo
+// but in the future each IVolumeLoader could have a completely separate implementation.
+
+
+function buildDefaultMetadata(imageInfo) {
+  var metadata = {};
+  metadata["Dimensions"] = {
+    x: imageInfo.tile_width,
+    y: imageInfo.tile_height,
+    z: imageInfo.tiles
+  };
+  metadata["Original dimensions"] = {
+    x: imageInfo.width,
+    y: imageInfo.height,
+    z: imageInfo.tiles
+  };
+  metadata["Physical size"] = {
+    x: imageInfo.width * imageInfo.pixel_size_x + imageInfo.pixel_size_unit,
+    y: imageInfo.height * imageInfo.pixel_size_y + imageInfo.pixel_size_unit,
+    z: imageInfo.tiles * imageInfo.pixel_size_z + imageInfo.pixel_size_unit
+  };
+  metadata["Physical size per pixel"] = {
+    x: imageInfo.pixel_size_x + imageInfo.pixel_size_unit,
+    y: imageInfo.pixel_size_y + imageInfo.pixel_size_unit,
+    z: imageInfo.pixel_size_z + imageInfo.pixel_size_unit
+  };
+  metadata["Channels"] = imageInfo.channels;
+  metadata["Time series frames"] = imageInfo.times || 1; // don't add User data if it's empty
+
+  if (imageInfo.userData && !isEmpty(imageInfo.userData)) {
+    metadata["User data"] = imageInfo.userData;
+  }
+
+  return metadata;
 }
 
 /***/ }),
