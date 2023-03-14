@@ -5,6 +5,13 @@ export interface Bounds {
   bmax: Vector3;
 }
 
+export interface CameraPosition {
+  position: [number, number, number];
+  target: [number, number, number];
+  up: [number, number, number];
+  zoom: number;
+}
+
 export interface FuseChannel {
   chIndex: number;
   lut: Uint8Array;

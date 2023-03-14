@@ -18,7 +18,7 @@ import {
 import TrackballControls from "./TrackballControls.js";
 import Timing from "./Timing";
 import scaleBarSVG from "./constants/scaleBarSVG";
-import { isOrthographicCamera, ViewportCorner, isTop, isRight } from "./types";
+import { isOrthographicCamera, ViewportCorner, isTop, isRight, CameraPosition } from "./types";
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
@@ -575,6 +575,23 @@ export class ThreeJsPanel {
 
   getHeight(): number {
     return this.renderer.getContext().canvas.height;
+  }
+
+  getCameraPosition(): CameraPosition {
+    return {
+      position: this.camera.position.toArray(),
+      up: this.camera.up.toArray(),
+      target: this.controls.target.toArray(),
+      zoom: this.camera.zoom,
+    };
+  }
+
+  applyCameraPosition({ position, target, zoom, up }: CameraPosition): void {
+    this.camera.position.fromArray(position);
+    this.controls.target.fromArray(target);
+    this.camera.up.fromArray(up);
+    this.camera.zoom = zoom;
+    this.camera.updateProjectionMatrix();
   }
 
   render(): void {

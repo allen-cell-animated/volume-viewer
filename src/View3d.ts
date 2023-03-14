@@ -1,11 +1,17 @@
-import { AmbientLight, Vector3, Object3D, SpotLight, DirectionalLight, Euler, Scene, Color } from "three";
+import { AmbientLight, Vector3, Object3D, SpotLight, DirectionalLight, Euler, Scene, Color, Matrix4 } from "three";
 
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import lightSettings from "./constants/lights";
 import VolumeDrawable from "./VolumeDrawable";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
 import Volume from "./Volume";
-import { VolumeChannelDisplayOptions, VolumeDisplayOptions, isOrthographicCamera, ViewportCorner } from "./types";
+import {
+  VolumeChannelDisplayOptions,
+  VolumeDisplayOptions,
+  isOrthographicCamera,
+  ViewportCorner,
+  CameraPosition,
+} from "./types";
 
 export const RENDERMODE_RAYMARCH = 0;
 export const RENDERMODE_PATHTRACE = 1;
@@ -147,6 +153,15 @@ export class View3d {
    */
   setVolumeDisplayOptions(volume: Volume, options: VolumeDisplayOptions): void {
     this.image?.setOptions(options);
+    this.redraw();
+  }
+
+  getCameraPosition(): CameraPosition {
+    return this.canvas3d.getCameraPosition();
+  }
+
+  applyCameraPosition(position: CameraPosition): void {
+    this.canvas3d.applyCameraPosition(position);
     this.redraw();
   }
 
