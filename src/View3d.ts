@@ -1,4 +1,4 @@
-import { AmbientLight, Vector3, Object3D, SpotLight, DirectionalLight, Euler, Scene, Color, Matrix4 } from "three";
+import { AmbientLight, Vector3, Object3D, SpotLight, DirectionalLight, Euler, Scene, Color } from "three";
 
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import lightSettings from "./constants/lights";
