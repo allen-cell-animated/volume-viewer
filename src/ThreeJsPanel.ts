@@ -24,6 +24,8 @@ const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
 const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 
+const DEFAULT_ORTHO_SCALE = 0.5;
+
 export class ThreeJsPanel {
   public containerdiv: HTMLDivElement;
   private canvas: HTMLCanvasElement;
@@ -35,7 +37,6 @@ export class ThreeJsPanel {
   public hasWebGL2: boolean;
   public renderer: WebGLRenderer;
   private timer: Timing;
-  public orthoScale: number;
   private fov: number;
   private perspectiveCamera: PerspectiveCamera;
   private perspectiveControls: TrackballControls;
@@ -138,8 +139,7 @@ export class ThreeJsPanel {
 
     this.timer = new Timing();
 
-    const scale = 0.5;
-    this.orthoScale = scale;
+    const scale = DEFAULT_ORTHO_SCALE;
     const aspect = this.getWidth() / this.getHeight();
 
     this.fov = 20;
@@ -331,9 +331,13 @@ export class ThreeJsPanel {
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
 
+  getOrthoScale(): number {
+    return this.controls.scale;
+  }
+
   orthoScreenPixelsToPhysicalUnits(pixels: number, physicalUnitsPerWorldUnit: number): number {
     // At orthoScale = 0.5, the viewport is 1 world unit tall
-    const worldUnitsPerPixel = (this.orthoScale * 2) / this.getHeight();
+    const worldUnitsPerPixel = (this.getOrthoScale() * 2) / this.getHeight();
     // Multiply by devicePixelRatio to convert from scaled CSS pixels to physical pixels
     // (to account for high dpi monitors, e.g.). We didn't do this to height above because
     // that value comes from three, which works in physical pixels.
@@ -539,8 +543,8 @@ export class ThreeJsPanel {
     this.orthoControlsX.aspect = aspect;
     this.orthoControlsX.panSpeed = w * 0.5;
     if (isOrthographicCamera(this.camera)) {
-      this.camera.left = -this.orthoScale * aspect;
-      this.camera.right = this.orthoScale * aspect;
+      this.camera.left = -DEFAULT_ORTHO_SCALE * aspect;
+      this.camera.right = DEFAULT_ORTHO_SCALE * aspect;
       this.camera.updateProjectionMatrix();
     } else {
       this.camera.aspect = aspect;
@@ -581,8 +585,6 @@ export class ThreeJsPanel {
     // update the axis helper in case the view was rotated
     if (!isOrthographicCamera(this.camera)) {
       this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
-    } else {
-      this.orthoScale = this.controls.scale;
     }
 
     // do whatever we have to do before the main render of this.scene
