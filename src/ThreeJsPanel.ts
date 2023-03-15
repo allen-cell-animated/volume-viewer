@@ -24,7 +24,7 @@ const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
 const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 
-export const DEFAULT_ORTHO_SCALE = 0.5;
+const DEFAULT_ORTHO_SCALE = 0.5;
 
 export class ThreeJsPanel {
   public containerdiv: HTMLDivElement;
@@ -331,9 +331,13 @@ export class ThreeJsPanel {
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
 
+  getOrthoScale(): number {
+    return this.controls.scale;
+  }
+
   orthoScreenPixelsToPhysicalUnits(pixels: number, physicalUnitsPerWorldUnit: number): number {
     // At orthoScale = 0.5, the viewport is 1 world unit tall
-    const worldUnitsPerPixel = (this.controls.scale * 2) / this.getHeight();
+    const worldUnitsPerPixel = (this.getOrthoScale() * 2) / this.getHeight();
     // Multiply by devicePixelRatio to convert from scaled CSS pixels to physical pixels
     // (to account for high dpi monitors, e.g.). We didn't do this to height above because
     // that value comes from three, which works in physical pixels.
