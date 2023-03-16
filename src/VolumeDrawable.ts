@@ -87,7 +87,7 @@ export default class VolumeDrawable {
     this.channelOptions = new Array<VolumeChannelDisplayOptions>(this.volume.num_channels).fill({});
 
     this.fusion = this.channelColors.map((col, index) => {
-      let rgbColor;
+      let rgbColor: number | [number, number, number];
       // take copy of original channel color
       if (col[0] === 0 && col[1] === 0 && col[2] === 0) {
         rgbColor = 0;
