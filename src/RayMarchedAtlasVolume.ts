@@ -42,6 +42,7 @@ export default class RayMarchedAtlasVolume {
   private uniforms: typeof rayMarchingShaderUniforms;
   private channelData: FusedChannelData;
   private scale: Vector3;
+  private isOrtho: boolean;
 
   constructor(volume: Volume) {
     // need?
@@ -54,6 +55,7 @@ export default class RayMarchedAtlasVolume {
       bmax: new Vector3(0.5, 0.5, 0.5),
     };
     this.scale = new Vector3(1.0, 1.0, 1.0);
+    this.isOrtho = false;
 
     this.cube = new BoxGeometry(1.0, 1.0, 1.0);
     this.cubeMesh = new Mesh(this.cube);
@@ -184,7 +186,7 @@ export default class RayMarchedAtlasVolume {
 
   public setShowBoundingBox(showBoundingBox: boolean): void {
     this.boxHelper.visible = showBoundingBox;
-    this.tickMarksMesh.visible = showBoundingBox;
+    this.tickMarksMesh.visible = showBoundingBox && !this.isOrtho;
   }
 
   public setBoundingBoxColor(color: [number, number, number]): void {
@@ -269,6 +271,8 @@ export default class RayMarchedAtlasVolume {
   }
 
   public setIsOrtho(isOrthoAxis: boolean): void {
+    this.isOrtho = isOrthoAxis;
+    this.tickMarksMesh.visible = this.boxHelper.visible && !isOrthoAxis;
     this.setUniform("isOrtho", isOrthoAxis ? 1.0 : 0.0);
     if (!isOrthoAxis) {
       this.setOrthoThickness(1.0);
