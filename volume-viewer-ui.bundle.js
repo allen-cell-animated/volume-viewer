@@ -2962,7 +2962,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
       this.pathTracingUniforms.gCamera.value.mU.crossVectors(this.pathTracingUniforms.gCamera.value.mN, myup).normalize();
       this.pathTracingUniforms.gCamera.value.mV.crossVectors(this.pathTracingUniforms.gCamera.value.mU, this.pathTracingUniforms.gCamera.value.mN).normalize(); // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
 
-      var fScale = (0,_types__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(cam) ? canvas.orthoScale : Math.tan(0.5 * cam.fov * Math.PI / 180.0);
+      var fScale = (0,_types__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(cam) ? canvas.getOrthoScale() : Math.tan(0.5 * cam.fov * Math.PI / 180.0);
       var aspect = this.pathTracingUniforms.uResolution.value.x / this.pathTracingUniforms.uResolution.value.y;
       this.pathTracingUniforms.gCamera.value.mScreen.set(-fScale * aspect, fScale * aspect, // the "0" Y pixel will be at +Scale.
       fScale, -fScale);
@@ -3720,6 +3720,7 @@ __webpack_require__.r(__webpack_exports__);
 var DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 var DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
 var DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
+var DEFAULT_ORTHO_SCALE = 0.5;
 var ThreeJsPanel = /*#__PURE__*/function () {
   function ThreeJsPanel(parentElement, _useWebGL2) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, ThreeJsPanel);
@@ -3788,8 +3789,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     }
 
     this.timer = new _Timing__WEBPACK_IMPORTED_MODULE_4__["default"]();
-    var scale = 0.5;
-    this.orthoScale = scale;
+    var scale = DEFAULT_ORTHO_SCALE;
     var aspect = this.getWidth() / this.getHeight();
     this.fov = 20;
     this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_7__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
@@ -3973,10 +3973,15 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
     }
   }, {
+    key: "getOrthoScale",
+    value: function getOrthoScale() {
+      return this.controls.scale;
+    }
+  }, {
     key: "orthoScreenPixelsToPhysicalUnits",
     value: function orthoScreenPixelsToPhysicalUnits(pixels, physicalUnitsPerWorldUnit) {
       // At orthoScale = 0.5, the viewport is 1 world unit tall
-      var worldUnitsPerPixel = this.orthoScale * 2 / this.getHeight(); // Multiply by devicePixelRatio to convert from scaled CSS pixels to physical pixels
+      var worldUnitsPerPixel = this.getOrthoScale() * 2 / this.getHeight(); // Multiply by devicePixelRatio to convert from scaled CSS pixels to physical pixels
       // (to account for high dpi monitors, e.g.). We didn't do this to height above because
       // that value comes from three, which works in physical pixels.
 
@@ -4197,8 +4202,8 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       this.orthoControlsX.panSpeed = w * 0.5;
 
       if ((0,_types__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(this.camera)) {
-        this.camera.left = -this.orthoScale * aspect;
-        this.camera.right = this.orthoScale * aspect;
+        this.camera.left = -DEFAULT_ORTHO_SCALE * aspect;
+        this.camera.right = DEFAULT_ORTHO_SCALE * aspect;
         this.camera.updateProjectionMatrix();
       } else {
         this.camera.aspect = aspect;
@@ -4242,8 +4247,6 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       // update the axis helper in case the view was rotated
       if (!(0,_types__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(this.camera)) {
         this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
-      } else {
-        this.orthoScale = this.controls.scale;
       } // do whatever we have to do before the main render of this.scene
 
 
