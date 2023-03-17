@@ -3401,6 +3401,7 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
       bmax: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0.5, 0.5, 0.5)
     };
     this.scale = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1.0, 1.0, 1.0);
+    this.isOrtho = false;
     this.cube = new three__WEBPACK_IMPORTED_MODULE_4__.BoxGeometry(1.0, 1.0, 1.0);
     this.cubeMesh = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(this.cube);
     this.cubeMesh.name = "Volume";
@@ -3490,7 +3491,7 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     key: "setShowBoundingBox",
     value: function setShowBoundingBox(showBoundingBox) {
       this.boxHelper.visible = showBoundingBox;
-      this.tickMarksMesh.visible = showBoundingBox;
+      this.tickMarksMesh.visible = showBoundingBox && !this.isOrtho;
     }
   }, {
     key: "setBoundingBoxColor",
@@ -3579,6 +3580,8 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
   }, {
     key: "setIsOrtho",
     value: function setIsOrtho(isOrthoAxis) {
+      this.isOrtho = isOrthoAxis;
+      this.tickMarksMesh.visible = this.boxHelper.visible && !isOrthoAxis;
       this.setUniform("isOrtho", isOrthoAxis ? 1.0 : 0.0);
 
       if (!isOrthoAxis) {
