@@ -15,21 +15,9 @@ class OpenCellLoader implements IVolumeLoader {
     return [d];
   }
 
-  async createVolume(_: LoadSpec, onChannelLoaded: PerChannelCallback): Promise<Volume> {
+  async createVolume(_: LoadSpec): Promise<Volume> {
     const numChannels = 2;
 
-    // HQTILE or LQTILE
-    // make a json metadata dict for the two channels:
-    const urls = [
-      {
-        name: "https://opencell.czbiohub.org/data/opencell-microscopy/roi/czML0383-P0007/czML0383-P0007-A02-PML0308-S13_ROI-0424-0025-0600-0600-LQTILE-CH405.jpg",
-        channels: [0],
-      },
-      {
-        name: "https://opencell.czbiohub.org/data/opencell-microscopy/roi/czML0383-P0007/czML0383-P0007-A02-PML0308-S13_ROI-0424-0025-0600-0600-LQTILE-CH488.jpg",
-        channels: [1],
-      },
-    ];
     // we know these are standardized to 600x600, two channels, one channel per jpg.
     const chnames: string[] = ["DNA", "Structure"];
 
@@ -65,9 +53,24 @@ class OpenCellLoader implements IVolumeLoader {
     // got some data, now let's construct the volume.
     const vol = new Volume(imgdata);
     vol.imageMetadata = buildDefaultMetadata(imgdata);
+    return vol;
+  }
+
+  loadVolumeData(vol: Volume, _: LoadSpec, onChannelLoaded: PerChannelCallback): void {
+    // HQTILE or LQTILE
+    // make a json metadata dict for the two channels:
+    const urls = [
+      {
+        name: "https://opencell.czbiohub.org/data/opencell-microscopy/roi/czML0383-P0007/czML0383-P0007-A02-PML0308-S13_ROI-0424-0025-0600-0600-LQTILE-CH405.jpg",
+        channels: [0],
+      },
+      {
+        name: "https://opencell.czbiohub.org/data/opencell-microscopy/roi/czML0383-P0007/czML0383-P0007-A02-PML0308-S13_ROI-0424-0025-0600-0600-LQTILE-CH488.jpg",
+        channels: [1],
+      },
+    ];
 
     JsonImageInfoLoader.loadVolumeAtlasData(vol, urls, onChannelLoaded);
-    return vol;
   }
 }
 
