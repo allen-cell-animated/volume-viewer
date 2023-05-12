@@ -10,9 +10,68 @@ import Volume from "../Volume";
 
 import { openArray, openGroup, HTTPStore } from "zarr";
 
+type CoordinateTransformation =
+  | {
+      type: "identity";
+    }
+  | {
+      type: "translation";
+      translation: number[];
+    }
+  | {
+      type: "scale";
+      scale: number[];
+    }
+  | {
+      type: "translation" | "scale";
+      path: string;
+    };
+
+type Axis = {
+  name: string;
+  type?: string;
+  unit?: string;
+};
+
+type OMEDataset = {
+  path: string;
+  coordinateTransformations?: CoordinateTransformation[];
+};
+
+// https://ngff.openmicroscopy.org/latest/#multiscale-md
+type OMEMultiscale = {
+  version?: string;
+  name?: string;
+  axes: Axis[];
+  datasets: OMEDataset[];
+  coordinateTransformations?: CoordinateTransformation[];
+  type?: string;
+  metadata?: Record<string, unknown>;
+};
+
 const DOWNSAMPLE_Z = 1; // z/downsampleZ is number of z slices in reduced volume
 
-function imageIndexFromLoadSpec(loadSpec: LoadSpec, multiscales): number {
+// This assumes we'll never encounter the "path" variant
+const isScaleTransform = (t: CoordinateTransformation): t is { type: "scale"; scale: number[] } => t.type === "scale";
+
+function getScale({ coordinateTransformations }: OMEDataset | OMEMultiscale): number[] {
+  if (coordinateTransformations === undefined) {
+    console.log("ERROR: no coordinate transformations for scale level");
+    return [1, 1, 1, 1, 1];
+  }
+
+  // there can be any number of coordinateTransformations
+  // but there must be only one of type "scale".
+  const scaleTransform = coordinateTransformations.find(isScaleTransform);
+  if (!scaleTransform) {
+    console.log('ERROR: no coordinate transformation of type "scale" for scale level');
+    return [1, 1, 1, 1, 1];
+  }
+
+  return scaleTransform.scale;
+}
+
+function imageIndexFromLoadSpec(loadSpec: LoadSpec, multiscales: OMEMultiscale[]): number {
   // each entry of multiscales is a multiscale image.
   let imageIndex = loadSpec.scene;
   if (imageIndex !== 0) {
@@ -25,7 +84,7 @@ function imageIndexFromLoadSpec(loadSpec: LoadSpec, multiscales): number {
   return imageIndex;
 }
 
-function remapAxesToTCZYX(axes): number[] {
+function remapAxesToTCZYX(axes: Axis[]): number[] {
   const axisTCZYX = [-1, -1, -1, -1, -1];
   for (let i = 0; i < axes.length; ++i) {
     const axis = axes[i];
@@ -46,7 +105,7 @@ function remapAxesToTCZYX(axes): number[] {
   return axisTCZYX;
 }
 
-function findSpatialAxesZYX(axisTCZYX): [number, number, number] {
+function findSpatialAxesZYX(axisTCZYX: number[]): [number, number, number] {
   // return in ZYX order
   const spatialAxes: [number, number, number] = [-1, -1, -1];
   if (axisTCZYX[2] > -1) {
@@ -64,14 +123,14 @@ function findSpatialAxesZYX(axisTCZYX): [number, number, number] {
   return spatialAxes;
 }
 
-async function fetchShapeOfLevel(store, imagegroup, multiscale): Promise<number[]> {
+async function fetchShapeOfLevel(store: HTTPStore, imagegroup: string, multiscale: OMEDataset): Promise<number[]> {
   const level = await openArray({ store: store, path: imagegroup + "/" + multiscale.path, mode: "r" });
   const shape = level.meta.shape;
   return shape;
 }
 
 async function pickLevelToLoad(
-  multiscale,
+  multiscale: OMEMultiscale,
   store: HTTPStore,
   loadSpec: LoadSpec,
   spatialAxes?: [number, number, number]
@@ -129,8 +188,8 @@ class OMEZarrLoader implements IVolumeLoader {
     const allmetadata = await data.attrs.asObject();
     // each entry of multiscales is a multiscale image.
     const imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
-    const multiscales = allmetadata.multiscales[imageIndex].datasets;
-    const axes = allmetadata.multiscales[imageIndex].axes;
+    const multiscales: OMEDataset[] = allmetadata.multiscales[imageIndex].datasets;
+    const axes: Axis[] = allmetadata.multiscales[imageIndex].axes;
 
     const axisTCZYX = remapAxesToTCZYX(axes);
     // ZYX
@@ -138,7 +197,7 @@ class OMEZarrLoader implements IVolumeLoader {
 
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
     const unitName = axes[spatialAxes[2]].unit;
-    const unitSymbol = spatialUnitNameToSymbol(unitName) || unitName || "";
+    const unitSymbol = (unitName && spatialUnitNameToSymbol(unitName)) || unitName || "";
 
     const dims: VolumeDims[] = [];
     // get all shapes
@@ -148,10 +207,7 @@ class OMEZarrLoader implements IVolumeLoader {
         console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
       }
 
-      // technically there can be any number of coordinateTransformations
-      // but there must be only one of type "scale".
-      // Here I assume that is the only one.
-      const scale5d = multiscales[i].coordinateTransformations[0].scale;
+      const scale5d = getScale(multiscales[i]);
 
       const d = new VolumeDims();
       d.subpath = "";
@@ -181,21 +237,22 @@ class OMEZarrLoader implements IVolumeLoader {
     const allmetadata = await data.attrs.asObject();
     // each entry of multiscales is a multiscale image.
     const imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
-    const multiscale = allmetadata.multiscales[imageIndex];
+    const multiscale: OMEMultiscale = allmetadata.multiscales[imageIndex];
     const { datasets, axes } = multiscale;
 
     const axisTCZYX = remapAxesToTCZYX(axes);
-    const hasT = axisTCZYX[0] > -1;
-    const hasC = axisTCZYX[1] > -1;
+    this.hasT = axisTCZYX[0] > -1;
+    this.hasC = axisTCZYX[1] > -1;
     // ZYX
     const spatialAxes = findSpatialAxesZYX(axisTCZYX);
 
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
     const unitName = axes[spatialAxes[2]].unit;
-    const unitSymbol = spatialUnitNameToSymbol(unitName) || unitName || "";
+    const unitSymbol = (unitName && spatialUnitNameToSymbol(unitName)) || unitName || "";
 
     const levelToLoad = await pickLevelToLoad(multiscale, store, loadSpec);
     const dataset = datasets[levelToLoad];
+    this.multiscalePath = dataset.path;
 
     // get the shape for the level we want to load
     const level = await openArray({ store: store, path: imagegroup + "/" + dataset.path, mode: "r" });
@@ -205,13 +262,10 @@ class OMEZarrLoader implements IVolumeLoader {
       console.log("ERROR: shape length " + multiscaleShape.length + " does not match axes length " + axes.length);
     }
 
-    const channels = hasC ? multiscaleShape[axisTCZYX[1]] : 1;
-    const sizeT = hasT ? multiscaleShape[axisTCZYX[0]] : 1;
+    const channels = this.hasC ? multiscaleShape[axisTCZYX[1]] : 1;
+    const sizeT = this.hasT ? multiscaleShape[axisTCZYX[0]] : 1;
 
-    // technically there can be any number of coordinateTransformations
-    // but there must be only one of type "scale".
-    // Here I assume that is the only one.
-    const scale5d = dataset.coordinateTransformations[0].scale;
+    const scale5d = getScale(dataset);
     const tw = multiscaleShape[spatialAxes[2]];
     const th = multiscaleShape[spatialAxes[1]];
     const tz = multiscaleShape[spatialAxes[0]];
@@ -308,6 +362,10 @@ class OMEZarrLoader implements IVolumeLoader {
         path: storepath,
       });
     }
+
+    this.multiscalePath = undefined;
+    this.hasC = undefined;
+    this.hasT = undefined;
   }
 }
 
