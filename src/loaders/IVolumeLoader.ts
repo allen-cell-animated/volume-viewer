@@ -43,5 +43,5 @@ export interface IVolumeLoader {
 
   // TODO document
   // TODO make this return a promise that resolves when loading is done?
-  loadVolumeData(volume: Volume, loadSpec: LoadSpec, onChannelLoaded: PerChannelCallback): void;
+  loadVolumeData(volume: Volume, onChannelLoaded: PerChannelCallback): void;
 }

@@ -3,6 +3,7 @@ import { Vector3 } from "three";
 import Channel from "./Channel";
 import Histogram from "./Histogram";
 import { getColorByChannelIndex } from "./constants/colors";
+import { LoadSpec } from "./loaders/IVolumeLoader";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 export interface ImageInfo {
@@ -124,6 +125,7 @@ interface VolumeDataObserver {
  */
 export default class Volume {
   public imageInfo: ImageInfo;
+  public loadSpec: LoadSpec;
   public imageMetadata: Record<string, unknown>;
   public name: string;
   public x: number;
@@ -148,7 +150,7 @@ export default class Volume {
   public pixel_size: [number, number, number];
   /* eslint-enable @typescript-eslint/naming-convention */
 
-  constructor(imageInfo: ImageInfo = getDefaultImageInfo()) {
+  constructor(imageInfo: ImageInfo = getDefaultImageInfo(), loadSpec: LoadSpec = new LoadSpec()) {
     // imageMetadata to be filled in by Volume Loaders
     this.imageMetadata = {};
     this.scale = new Vector3(1, 1, 1);
@@ -159,6 +161,7 @@ export default class Volume {
     this.loaded = false;
     this.imageInfo = imageInfo;
     this.name = this.imageInfo.name;
+    this.loadSpec = loadSpec;
 
     // clean up some possibly bad data.
     this.imageInfo.pixel_size_x = imageInfo.pixel_size_x || 1.0;

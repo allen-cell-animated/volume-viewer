@@ -56,7 +56,7 @@ class OpenCellLoader implements IVolumeLoader {
     return vol;
   }
 
-  loadVolumeData(vol: Volume, _: LoadSpec, onChannelLoaded: PerChannelCallback): void {
+  loadVolumeData(vol: Volume, onChannelLoaded: PerChannelCallback): void {
     // HQTILE or LQTILE
     // make a json metadata dict for the two channels:
     const urls = [

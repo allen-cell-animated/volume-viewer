@@ -316,7 +316,8 @@ class OMEZarrLoader implements IVolumeLoader {
     return vol;
   }
 
-  async loadVolumeData(vol: Volume, loadSpec: LoadSpec, onChannelLoaded: PerChannelCallback): Promise<void> {
+  async loadVolumeData(vol: Volume, onChannelLoaded: PerChannelCallback): Promise<void> {
+    const { loadSpec } = vol;
     const { channels, times } = vol.imageInfo;
 
     if (this.multiscalePath === undefined || this.hasC === undefined || this.hasT === undefined) {
