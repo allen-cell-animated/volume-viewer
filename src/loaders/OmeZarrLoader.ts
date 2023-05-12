@@ -51,20 +51,20 @@ type OMEMultiscale = {
 
 const DOWNSAMPLE_Z = 1; // z/downsampleZ is number of z slices in reduced volume
 
-// This assumes we'll never encounter the "path" variant
-const isScaleTransform = (t: CoordinateTransformation): t is { type: "scale"; scale: number[] } => t.type === "scale";
-
 function getScale({ coordinateTransformations }: OMEDataset | OMEMultiscale): number[] {
   if (coordinateTransformations === undefined) {
     console.log("ERROR: no coordinate transformations for scale level");
     return [1, 1, 1, 1, 1];
   }
 
+  // this assumes we'll never encounter the "path" variant
+  const isScaleTransform = (t: CoordinateTransformation): t is { type: "scale"; scale: number[] } => t.type === "scale";
+
   // there can be any number of coordinateTransformations
   // but there must be only one of type "scale".
   const scaleTransform = coordinateTransformations.find(isScaleTransform);
   if (!scaleTransform) {
-    console.log('ERROR: no coordinate transformation of type "scale" for scale level');
+    console.log(`ERROR: no coordinate transformation of type "scale" for scale level`);
     return [1, 1, 1, 1, 1];
   }
 
@@ -133,26 +133,27 @@ async function pickLevelToLoad(
   multiscale: OMEMultiscale,
   store: HTTPStore,
   loadSpec: LoadSpec,
-  spatialAxes?: [number, number, number]
+  cachedSpatialAxes?: [number, number, number]
 ): Promise<number> {
   const { datasets, axes } = multiscale;
   const numlevels = datasets.length;
 
-  if (spatialAxes === undefined) {
+  let spatialAxes: [number, number, number];
+  if (cachedSpatialAxes !== undefined) {
+    spatialAxes = cachedSpatialAxes;
+  } else {
     const axisTCZYX = remapAxesToTCZYX(axes);
     spatialAxes = findSpatialAxesZYX(axisTCZYX);
   }
 
-  // fetch all shapes and find xyz spatial dimensions
-  const spatialDims: number[][] = [];
-  for (const i in datasets) {
-    const shape = await fetchShapeOfLevel(store, loadSpec.subpath, datasets[i]);
-    // just stick it in multiscales for now.
-    if (shape.length != axes.length) {
+  const shapePromises = datasets.map(async (dataset): Promise<[number, number, number]> => {
+    const shape = await fetchShapeOfLevel(store, loadSpec.subpath, dataset);
+    if (shape.length !== axes.length) {
       console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
     }
-    spatialDims.push([shape[spatialAxes[0]], shape[spatialAxes[1]], shape[spatialAxes[2]]]);
-  }
+    return [shape[spatialAxes[0]], shape[spatialAxes[1]], shape[spatialAxes[2]]];
+  });
+  const spatialDims = await Promise.all(shapePromises);
 
   // default to lowest level until we find the match
   let levelToLoad = numlevels - 1;
@@ -199,15 +200,13 @@ class OMEZarrLoader implements IVolumeLoader {
     const unitName = axes[spatialAxes[2]].unit;
     const unitSymbol = (unitName && spatialUnitNameToSymbol(unitName)) || unitName || "";
 
-    const dims: VolumeDims[] = [];
-    // get all shapes
-    for (const i in multiscales) {
-      const shape = await fetchShapeOfLevel(store, imagegroup, multiscales[i]);
+    const dimsPromises = multiscales.map(async (multiscale): Promise<VolumeDims> => {
+      const shape = await fetchShapeOfLevel(store, imagegroup, multiscale);
       if (shape.length != axes.length) {
         console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
       }
 
-      const scale5d = getScale(multiscales[i]);
+      const scale5d = getScale(multiscale);
 
       const d = new VolumeDims();
       d.subpath = "";
@@ -220,10 +219,10 @@ class OMEZarrLoader implements IVolumeLoader {
       d.spacing = [1, 1, scale5d[spatialAxes[0]], scale5d[spatialAxes[1]], scale5d[spatialAxes[2]]];
       d.spatialUnit = unitSymbol; // unknown unit.
       d.dataType = "uint8";
-      dims.push(d);
-    }
+      return d;
+    });
 
-    return dims;
+    return Promise.all(dimsPromises);
   }
 
   async createVolume(loadSpec: LoadSpec): Promise<Volume> {
