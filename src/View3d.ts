@@ -4,6 +4,7 @@ import { ThreeJsPanel } from "./ThreeJsPanel";
 import lightSettings from "./constants/lights";
 import VolumeDrawable from "./VolumeDrawable";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
+import { IVolumeLoader, PerChannelCallback } from "./loaders/IVolumeLoader";
 import Volume from "./Volume";
 import { VolumeChannelDisplayOptions, VolumeDisplayOptions, isOrthographicCamera, ViewportCorner } from "./types";
 
@@ -190,6 +191,11 @@ export class View3d {
   // do fixups for when the volume has had a new empty channel added.
   onVolumeChannelAdded(volume: Volume, newChannelIndex: number): void {
     this.image?.onChannelAdded(newChannelIndex);
+  }
+
+  setTime(volume: Volume, time: number, loader: IVolumeLoader, onChannelLoaded?: PerChannelCallback): void {
+    volume.loadSpec.time = Math.max(0, Math.min(volume.imageInfo.times, time));
+    loader.loadVolumeData(volume, onChannelLoaded);
   }
 
   /**
