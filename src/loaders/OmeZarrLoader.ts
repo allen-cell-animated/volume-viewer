@@ -311,7 +311,7 @@ class OMEZarrLoader implements IVolumeLoader {
     /* eslint-enable @typescript-eslint/naming-convention */
 
     // got some data, now let's construct the volume.
-    const vol = new Volume(imgdata);
+    const vol = new Volume(imgdata, loadSpec);
     vol.imageMetadata = buildDefaultMetadata(imgdata);
     return vol;
   }
@@ -334,7 +334,7 @@ class OMEZarrLoader implements IVolumeLoader {
       const spatialAxes = findSpatialAxesZYX(axisTCZYX);
 
       const levelToLoad = await pickLevelToLoad(multiscale, store, loadSpec, spatialAxes);
-      this.multiscalePath = multiscale.datasets[levelToLoad];
+      this.multiscalePath = multiscale.datasets[levelToLoad].path;
     }
 
     const storepath = loadSpec.subpath + "/" + this.multiscalePath;

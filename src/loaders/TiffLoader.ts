@@ -146,7 +146,7 @@ class TiffLoader implements IVolumeLoader {
     };
     /* eslint-enable @typescript-eslint/naming-convention */
 
-    const vol = new Volume(imgdata);
+    const vol = new Volume(imgdata, loadSpec);
     vol.imageMetadata = buildDefaultMetadata(imgdata);
 
     this.dimensionOrder = dims.dimensionorder;

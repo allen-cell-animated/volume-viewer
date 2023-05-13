@@ -42,7 +42,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
   async createVolume(loadSpec: LoadSpec): Promise<Volume> {
     const imageInfo = await this.getImageInfo(loadSpec);
 
-    const vol = new Volume(imageInfo);
+    const vol = new Volume(imageInfo, loadSpec);
     vol.imageMetadata = buildDefaultMetadata(imageInfo);
     return vol;
   }
