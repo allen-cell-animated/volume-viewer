@@ -42,7 +42,8 @@ export interface IVolumeLoader {
    */
   createVolume(loadSpec: LoadSpec): Promise<Volume>;
 
-  /** Begin loading a volume's data, as specified in its `LoadSpec`.
+  /**
+   * Begin loading a volume's data, as specified in its `LoadSpec`.
    * Pass a callback to respond whenever a new channel is loaded.
    */
   // TODO make this return a promise that resolves when loading is done?
