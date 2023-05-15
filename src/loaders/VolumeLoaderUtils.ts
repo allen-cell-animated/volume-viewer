@@ -14,7 +14,11 @@ export type TypedArray =
 
 // Preferred spatial units in OME-Zarr are specified as full names. We want just the symbol.
 // See https://ngff.openmicroscopy.org/latest/#axes-md
-export function spatialUnitNameToSymbol(unitName: string): string | null {
+export function spatialUnitNameToSymbol(unitName?: string): string | null {
+  if (unitName === undefined) {
+    return null;
+  }
+
   const unitSymbols = {
     angstrom: "Å",
     decameter: "dam",
@@ -42,7 +46,7 @@ export function spatialUnitNameToSymbol(unitName: string): string | null {
 
 // We want to find the most "square" packing of z tw by th tiles.
 // Compute number of rows and columns.
-export function computePackedAtlasDims(z, tw, th): { nrows: number; ncols: number } {
+export function computePackedAtlasDims(z: number, tw: number, th: number): { nrows: number; ncols: number } {
   let nextrows = 1;
   let nextcols = z;
   let ratio = (nextcols * tw) / (nextrows * th);

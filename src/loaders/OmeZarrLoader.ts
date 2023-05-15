@@ -198,7 +198,7 @@ class OMEZarrLoader implements IVolumeLoader {
 
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
     const unitName = axes[spatialAxes[2]].unit;
-    const unitSymbol = (unitName && spatialUnitNameToSymbol(unitName)) || unitName || "";
+    const unitSymbol = spatialUnitNameToSymbol(unitName) || unitName || "";
 
     const dimsPromises = multiscales.map(async (multiscale): Promise<VolumeDims> => {
       const shape = await fetchShapeOfLevel(store, imagegroup, multiscale);
@@ -247,7 +247,7 @@ class OMEZarrLoader implements IVolumeLoader {
 
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
     const unitName = axes[spatialAxes[2]].unit;
-    const unitSymbol = (unitName && spatialUnitNameToSymbol(unitName)) || unitName || "";
+    const unitSymbol = spatialUnitNameToSymbol(unitName) || unitName || "";
 
     const levelToLoad = await pickLevelToLoad(multiscale, store, loadSpec);
     const dataset = datasets[levelToLoad];
