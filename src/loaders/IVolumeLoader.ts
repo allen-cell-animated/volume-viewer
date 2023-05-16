@@ -32,13 +32,21 @@ export class VolumeDims {
  */
 export type PerChannelCallback = (imageurl: string, volume: Volume, channelIndex: number) => void;
 
+/**
+ * Loads volume data from a source specified by a `LoadSpec`.
+ *
+ * Loaders may keep state for reuse between volume creation and volume loading, and should be kept alive until volume
+ * loading is complete. (See `createVolume`)
+ */
 export interface IVolumeLoader {
   /** Use VolumeDims to further refine a `LoadSpec` for use in `createVolume` */
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]>;
 
   /**
    * Create an empty `Volume` from a `LoadSpec`, which must be passed to `loadVolumeData` to begin loading.
-   * May cache some values for use on only the next call to `loadVolumeData`.
+   *
+   * May cache some values for use on only the next call to `loadVolumeData`; callers should guarantee that the next
+   * call to this loader's `loadVolumeData` is made on the returned `Volume` before the volume's state is changed.
    */
   createVolume(loadSpec: LoadSpec): Promise<Volume>;
 
