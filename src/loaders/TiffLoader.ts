@@ -59,7 +59,26 @@ function getOMEDims(imageEl: Element): OMEDims {
   return dims;
 }
 
+async function getDimsFromUrl(url: string): Promise<OMEDims> {
+  const tiff = await fromUrl(url);
+  // DO NOT DO THIS, ITS SLOW
+  // const imagecount = await tiff.getImageCount();
+  // read the FIRST image
+  const image = await tiff.getImage();
+
+  const tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
+  const omeEl = getOME(tiffimgdesc);
+
+  const image0El = omeEl.getElementsByTagName("Image")[0];
+  return getOMEDims(image0El);
+}
+
+const getBytesPerSample = (type: string): number => (type === "uint8" ? 1 : type === "uint16" ? 2 : 4);
+
 class TiffLoader implements IVolumeLoader {
+  dimensionOrder?: string;
+  bytesPerSample?: number;
+
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const tiff = await fromUrl(loadSpec.url);
     // DO NOT DO THIS, ITS SLOW
@@ -82,19 +101,8 @@ class TiffLoader implements IVolumeLoader {
     return [d];
   }
 
-  async createVolume(loadSpec: LoadSpec, onChannelLoaded: PerChannelCallback): Promise<Volume> {
-    const tiff = await fromUrl(loadSpec.url);
-    // DO NOT DO THIS, ITS SLOW
-    // const imagecount = await tiff.getImageCount();
-    // read the FIRST image
-    const image = await tiff.getImage();
-
-    const tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
-    const omeEl = getOME(tiffimgdesc);
-
-    const image0El = omeEl.getElementsByTagName("Image")[0];
-    const dims = getOMEDims(image0El);
-
+  async createVolume(loadSpec: LoadSpec): Promise<Volume> {
+    const dims = await getDimsFromUrl(loadSpec.url);
     // compare with sizex, sizey
     //const width = image.getWidth();
     //const height = image.getHeight();
@@ -138,22 +146,39 @@ class TiffLoader implements IVolumeLoader {
     };
     /* eslint-enable @typescript-eslint/naming-convention */
 
-    const vol = new Volume(imgdata);
+    const vol = new Volume(imgdata, loadSpec);
     vol.imageMetadata = buildDefaultMetadata(imgdata);
 
+    this.dimensionOrder = dims.dimensionorder;
+    this.bytesPerSample = getBytesPerSample(dims.pixeltype);
+
+    return vol;
+  }
+
+  async loadVolumeData(vol: Volume, onChannelLoaded: PerChannelCallback): Promise<void> {
+    //
+    if (this.bytesPerSample === undefined || this.dimensionOrder === undefined) {
+      const dims = await getDimsFromUrl(vol.loadSpec.url);
+
+      this.dimensionOrder = dims.dimensionorder;
+      this.bytesPerSample = getBytesPerSample(dims.pixeltype);
+    }
+
+    const imageInfo = vol.imageInfo;
+
     // do each channel on a worker?
-    for (let channel = 0; channel < dims.sizec; ++channel) {
+    for (let channel = 0; channel < imageInfo.channels; ++channel) {
       const params = {
         channel: channel,
         // these are target xy sizes for the in-memory volume data
         // they may or may not be the same size as original xy sizes
-        tilesizex: tilesizex,
-        tilesizey: tilesizey,
-        sizec: dims.sizec,
-        sizez: dims.sizez,
-        dimensionOrder: dims.dimensionorder,
-        bytesPerSample: dims.pixeltype === "uint8" ? 1 : dims.pixeltype === "uint16" ? 2 : 4,
-        url: loadSpec.url,
+        tilesizex: imageInfo.tile_width,
+        tilesizey: imageInfo.tile_height,
+        sizec: imageInfo.channels,
+        sizez: imageInfo.tiles,
+        dimensionOrder: this.dimensionOrder,
+        bytesPerSample: this.bytesPerSample,
+        url: vol.loadSpec.url,
       };
       const worker = new Worker(new URL("../workers/FetchTiffWorker", import.meta.url));
       worker.onmessage = function (e) {
@@ -162,7 +187,7 @@ class TiffLoader implements IVolumeLoader {
         vol.setChannelDataFromVolume(channel, u8);
         if (onChannelLoaded) {
           // make up a unique name? or have caller pass this in?
-          onChannelLoaded(loadSpec.url, vol, channel);
+          onChannelLoaded(vol.loadSpec.url, vol, channel);
         }
         worker.terminate();
       };
@@ -171,7 +196,9 @@ class TiffLoader implements IVolumeLoader {
       };
       worker.postMessage(params);
     }
-    return vol;
+
+    this.dimensionOrder = undefined;
+    this.bytesPerSample = undefined;
   }
 }
 

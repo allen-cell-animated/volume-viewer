@@ -1130,16 +1130,15 @@ function createLoader(type: string): IVolumeLoader {
   }
 }
 
-function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader, cacheTimeSeries) {
-  loader
-    .createVolume(loadSpec, (url, v, channelIndex) => {
-      onChannelDataArrived(url, v, channelIndex, cacheTimeSeries, loadSpec.time);
-    })
-    .then((volume: Volume) => {
-      onVolumeCreated(volume, cacheTimeSeries, loadSpec.time);
-      myState.currentImageStore = loadSpec.url;
-      myState.currentImageName = loadSpec.url;
-    });
+async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader, cacheTimeSeries: boolean): Promise<void> {
+  const volume = await loader.createVolume(loadSpec);
+  onVolumeCreated(volume, cacheTimeSeries, loadSpec.time);
+  loader.loadVolumeData(volume, (url, v, channelIndex) => {
+    onChannelDataArrived(url, v, channelIndex, cacheTimeSeries, loadSpec.time);
+  });
+
+  myState.currentImageStore = loadSpec.url;
+  myState.currentImageName = loadSpec.url;
 }
 
 function loadTestData(testdata: TestDataSpec) {

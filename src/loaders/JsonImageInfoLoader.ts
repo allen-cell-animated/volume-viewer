@@ -39,22 +39,25 @@ class JsonImageInfoLoader implements IVolumeLoader {
     return [d];
   }
 
-  async createVolume(loadSpec: LoadSpec, onChannelLoaded: PerChannelCallback): Promise<Volume> {
+  async createVolume(loadSpec: LoadSpec): Promise<Volume> {
     const imageInfo = await this.getImageInfo(loadSpec);
 
-    const vol = new Volume(imageInfo);
+    const vol = new Volume(imageInfo, loadSpec);
     vol.imageMetadata = buildDefaultMetadata(imageInfo);
+    return vol;
+  }
+
+  async loadVolumeData(vol: Volume, onChannelLoaded: PerChannelCallback): Promise<void> {
     // if you need to adjust image paths prior to download,
     // now is the time to do it.
     // Try to figure out the urlPrefix from the LoadSpec.
     // For this format we assume the image data is in the same directory as the json file.
     // This regex removes everything after the last slash, so the url had better be simple.
-    const urlPrefix = loadSpec.url.replace(/[^/]*$/, "");
+    const urlPrefix = vol.loadSpec.url.replace(/[^/]*$/, "");
     this.imageArray.forEach((element) => {
       element.name = urlPrefix + element.name;
     });
     JsonImageInfoLoader.loadVolumeAtlasData(vol, this.imageArray, onChannelLoaded);
-    return vol;
   }
 
   /**

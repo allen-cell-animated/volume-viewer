@@ -32,12 +32,30 @@ export class VolumeDims {
  */
 export type PerChannelCallback = (imageurl: string, volume: Volume, channelIndex: number) => void;
 
+/**
+ * Loads volume data from a source specified by a `LoadSpec`.
+ *
+ * Loaders may keep state for reuse between volume creation and volume loading, and should be kept alive until volume
+ * loading is complete. (See `createVolume`)
+ */
 export interface IVolumeLoader {
-  // use VolumeDims to further refine a LoadSpec for use in createVolume
+  /** Use VolumeDims to further refine a `LoadSpec` for use in `createVolume` */
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]>;
 
-  // create a Volume from a LoadSpec; async data download will be initiated here
+  /**
+   * Create an empty `Volume` from a `LoadSpec`, which must be passed to `loadVolumeData` to begin loading.
+   *
+   * May cache some values for use on only the next call to `loadVolumeData`; callers should guarantee that the next
+   * call to this loader's `loadVolumeData` is made on the returned `Volume` before the volume's state is changed.
+   */
+  createVolume(loadSpec: LoadSpec): Promise<Volume>;
+
+  /**
+   * Begin loading a volume's data, as specified in its `LoadSpec`.
+   * Pass a callback to respond whenever a new channel is loaded.
+   */
+  // TODO make this return a promise that resolves when loading is done?
   // TODO this is not cancellable in the sense that any async requests initiated here are not stored
   // in a way that they can be interrupted.
-  createVolume(loadSpec: LoadSpec, onChannelLoaded: PerChannelCallback): Promise<Volume>;
+  loadVolumeData(volume: Volume, onChannelLoaded?: PerChannelCallback): void;
 }
