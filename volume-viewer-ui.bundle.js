@@ -5350,6 +5350,12 @@ var View3d = /*#__PURE__*/function () {
 
       (_this$image5 = this.image) === null || _this$image5 === void 0 ? void 0 : _this$image5.onChannelAdded(newChannelIndex);
     }
+  }, {
+    key: "setTime",
+    value: function setTime(volume, time, loader, onChannelLoaded) {
+      volume.loadSpec.time = Math.max(0, Math.min(volume.imageInfo.times, time));
+      loader.loadVolumeData(volume, onChannelLoaded);
+    }
     /**
      * Assign a channel index as a mask channel (will multiply its color against the entire visible volume)
      * @param {Object} volume
@@ -6110,9 +6116,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _Channel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Channel */ "./src/Channel.ts");
 /* harmony import */ var _constants_colors__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./constants/colors */ "./src/constants/colors.ts");
+/* harmony import */ var _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./loaders/IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
+
 
 
 
@@ -6210,18 +6218,20 @@ var Volume = /*#__PURE__*/function () {
   /* eslint-enable @typescript-eslint/naming-convention */
   function Volume() {
     var imageInfo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : getDefaultImageInfo();
+    var loadSpec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__.LoadSpec();
 
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Volume);
 
     // imageMetadata to be filled in by Volume Loaders
     this.imageMetadata = {};
-    this.scale = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1);
-    this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1);
+    this.scale = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
+    this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
     this.physicalScale = 1;
-    this.normalizedPhysicalSize = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1);
+    this.normalizedPhysicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
     this.loaded = false;
     this.imageInfo = imageInfo;
-    this.name = this.imageInfo.name; // clean up some possibly bad data.
+    this.name = this.imageInfo.name;
+    this.loadSpec = loadSpec; // clean up some possibly bad data.
 
     this.imageInfo.pixel_size_x = imageInfo.pixel_size_x || 1.0;
     this.imageInfo.pixel_size_y = imageInfo.pixel_size_y || 1.0;
@@ -6306,7 +6316,7 @@ var Volume = /*#__PURE__*/function () {
       var sz = this.pixel_size[2] / physSizeMin * this.z / pixelsMax; // this works because image was scaled down in x and y but not z.
       // so use original x and y dimensions from imageInfo.
 
-      this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(this.imageInfo.width * this.pixel_size[0], this.imageInfo.height * this.pixel_size[1], this.z * this.pixel_size[2]); // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
+      this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(this.imageInfo.width * this.pixel_size[0], this.imageInfo.height * this.pixel_size[1], this.z * this.pixel_size[2]); // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
 
       this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z); // Compute the volume's max extent - scaled to max dimension.
 
@@ -6315,7 +6325,7 @@ var Volume = /*#__PURE__*/function () {
 
       this.tickMarkPhysicalLength = Math.pow(10, Math.floor(Math.log10(this.physicalScale / 2))); // sx, sy, sz should be same as normalizedPhysicalSize
 
-      this.scale = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(sx, sy, sz);
+      this.scale = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(sx, sy, sz);
     }
   }, {
     key: "setUnitSymbol",
@@ -6498,8 +6508,8 @@ var Volume = /*#__PURE__*/function () {
       // ASSUME: translation is in original image voxels.
       // account for pixel_size and normalized scaling in the threejs volume representation we're using
       var m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
-      var pixelSizeVec = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3().fromArray(this.pixel_size);
-      return new three__WEBPACK_IMPORTED_MODULE_4__.Vector3().fromArray(xyz).multiply(pixelSizeVec).multiplyScalar(m).toArray();
+      var pixelSizeVec = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3().fromArray(this.pixel_size);
+      return new three__WEBPACK_IMPORTED_MODULE_5__.Vector3().fromArray(xyz).multiply(pixelSizeVec).multiplyScalar(m).toArray();
     }
   }, {
     key: "addVolumeDataObserver",
@@ -8229,8 +8239,8 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
   }, {
     key: "createVolume",
     value: function () {
-      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(loadSpec, onChannelLoaded) {
-        var imageInfo, vol, urlPrefix;
+      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(loadSpec) {
+        var imageInfo, vol;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee3$(_context3) {
           while (1) {
             switch (_context3.prev = _context3.next) {
@@ -8240,21 +8250,11 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
 
               case 2:
                 imageInfo = _context3.sent;
-                vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imageInfo);
-                vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imageInfo); // if you need to adjust image paths prior to download,
-                // now is the time to do it.
-                // Try to figure out the urlPrefix from the LoadSpec.
-                // For this format we assume the image data is in the same directory as the json file.
-                // This regex removes everything after the last slash, so the url had better be simple.
-
-                urlPrefix = loadSpec.url.replace(/[^/]*$/, "");
-                this.imageArray.forEach(function (element) {
-                  element.name = urlPrefix + element.name;
-                });
-                JsonImageInfoLoader.loadVolumeAtlasData(vol, this.imageArray, onChannelLoaded);
+                vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imageInfo, loadSpec);
+                vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imageInfo);
                 return _context3.abrupt("return", vol);
 
-              case 9:
+              case 6:
               case "end":
                 return _context3.stop();
             }
@@ -8262,11 +8262,45 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
         }, _callee3, this);
       }));
 
-      function createVolume(_x3, _x4) {
+      function createVolume(_x3) {
         return _createVolume.apply(this, arguments);
       }
 
       return createVolume;
+    }()
+  }, {
+    key: "loadVolumeData",
+    value: function () {
+      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee4(vol, onChannelLoaded) {
+        var urlPrefix;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee4$(_context4) {
+          while (1) {
+            switch (_context4.prev = _context4.next) {
+              case 0:
+                // if you need to adjust image paths prior to download,
+                // now is the time to do it.
+                // Try to figure out the urlPrefix from the LoadSpec.
+                // For this format we assume the image data is in the same directory as the json file.
+                // This regex removes everything after the last slash, so the url had better be simple.
+                urlPrefix = vol.loadSpec.url.replace(/[^/]*$/, "");
+                this.imageArray.forEach(function (element) {
+                  element.name = urlPrefix + element.name;
+                });
+                JsonImageInfoLoader.loadVolumeAtlasData(vol, this.imageArray, onChannelLoaded);
+
+              case 3:
+              case "end":
+                return _context4.stop();
+            }
+          }
+        }, _callee4, this);
+      }));
+
+      function loadVolumeData(_x4, _x5) {
+        return _loadVolumeData.apply(this, arguments);
+      }
+
+      return loadVolumeData;
     }()
     /**
      * load per-channel volume data from a batch of image files containing the volume slices tiled across the images
@@ -8397,6 +8431,32 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+var DOWNSAMPLE_Z = 1; // z/downsampleZ is number of z slices in reduced volume
+
+function getScale(_ref) {
+  var coordinateTransformations = _ref.coordinateTransformations;
+
+  if (coordinateTransformations === undefined) {
+    console.log("ERROR: no coordinate transformations for scale level");
+    return [1, 1, 1, 1, 1];
+  } // this assumes we'll never encounter the "path" variant
+
+
+  var isScaleTransform = function isScaleTransform(t) {
+    return t.type === "scale";
+  }; // there can be any number of coordinateTransformations
+  // but there must be only one of type "scale".
+
+
+  var scaleTransform = coordinateTransformations.find(isScaleTransform);
+
+  if (!scaleTransform) {
+    console.log("ERROR: no coordinate transformation of type \"scale\" for scale level");
+    return [1, 1, 1, 1, 1];
+  }
+
+  return scaleTransform.scale;
+}
 
 function imageIndexFromLoadSpec(loadSpec, multiscales) {
   // each entry of multiscales is a multiscale image.
@@ -8468,13 +8528,13 @@ function fetchShapeOfLevel(_x, _x2, _x3) {
 }
 
 function _fetchShapeOfLevel() {
-  _fetchShapeOfLevel = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee3(store, imagegroup, multiscale) {
+  _fetchShapeOfLevel = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee5(store, imagegroup, multiscale) {
     var level, shape;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee3$(_context3) {
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee5$(_context5) {
       while (1) {
-        switch (_context3.prev = _context3.next) {
+        switch (_context5.prev = _context5.next) {
           case 0:
-            _context3.next = 2;
+            _context5.next = 2;
             return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openArray)({
               store: store,
               path: imagegroup + "/" + multiscale.path,
@@ -8482,18 +8542,121 @@ function _fetchShapeOfLevel() {
             });
 
           case 2:
-            level = _context3.sent;
+            level = _context5.sent;
             shape = level.meta.shape;
-            return _context3.abrupt("return", shape);
+            return _context5.abrupt("return", shape);
 
           case 5:
           case "end":
-            return _context3.stop();
+            return _context5.stop();
         }
       }
-    }, _callee3);
+    }, _callee5);
   }));
   return _fetchShapeOfLevel.apply(this, arguments);
+}
+
+function pickLevelToLoad(_x4, _x5, _x6, _x7) {
+  return _pickLevelToLoad.apply(this, arguments);
+}
+
+function _pickLevelToLoad() {
+  _pickLevelToLoad = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee7(multiscale, store, loadSpec, cachedSpatialAxes) {
+    var datasets, axes, numlevels, spatialAxes, axisTCZYX, shapePromises, spatialDims, levelToLoad, i, optimalLevel;
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee7$(_context7) {
+      while (1) {
+        switch (_context7.prev = _context7.next) {
+          case 0:
+            datasets = multiscale.datasets, axes = multiscale.axes;
+            numlevels = datasets.length;
+
+            if (cachedSpatialAxes !== undefined) {
+              spatialAxes = cachedSpatialAxes;
+            } else {
+              axisTCZYX = remapAxesToTCZYX(axes);
+              spatialAxes = findSpatialAxesZYX(axisTCZYX);
+            }
+
+            shapePromises = datasets.map( /*#__PURE__*/function () {
+              var _ref3 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee6(dataset) {
+                var shape;
+                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee6$(_context6) {
+                  while (1) {
+                    switch (_context6.prev = _context6.next) {
+                      case 0:
+                        _context6.next = 2;
+                        return fetchShapeOfLevel(store, loadSpec.subpath, dataset);
+
+                      case 2:
+                        shape = _context6.sent;
+
+                        if (shape.length !== axes.length) {
+                          console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
+                        }
+
+                        return _context6.abrupt("return", [shape[spatialAxes[0]], shape[spatialAxes[1]], shape[spatialAxes[2]]]);
+
+                      case 5:
+                      case "end":
+                        return _context6.stop();
+                    }
+                  }
+                }, _callee6);
+              }));
+
+              return function (_x13) {
+                return _ref3.apply(this, arguments);
+              };
+            }());
+            _context7.next = 6;
+            return Promise.all(shapePromises);
+
+          case 6:
+            spatialDims = _context7.sent;
+            // default to lowest level until we find the match
+            levelToLoad = numlevels - 1;
+            i = 0;
+
+          case 9:
+            if (!(i < numlevels)) {
+              _context7.next = 16;
+              break;
+            }
+
+            if (!(datasets[i].path == loadSpec.subpath)) {
+              _context7.next = 13;
+              break;
+            }
+
+            levelToLoad = i;
+            return _context7.abrupt("break", 16);
+
+          case 13:
+            ++i;
+            _context7.next = 9;
+            break;
+
+          case 16:
+            optimalLevel = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.estimateLevelForAtlas)(spatialDims, 2048); // assume all levels are decreasing in size.  If a larger level is optimal then use it:
+
+            if (!(optimalLevel < levelToLoad)) {
+              _context7.next = 21;
+              break;
+            }
+
+            return _context7.abrupt("return", optimalLevel);
+
+          case 21:
+            return _context7.abrupt("return", levelToLoad);
+
+          case 22:
+          case "end":
+            return _context7.stop();
+        }
+      }
+    }, _callee7);
+  }));
+  return _pickLevelToLoad.apply(this, arguments);
 }
 
 var OMEZarrLoader = /*#__PURE__*/function () {
@@ -8504,101 +8667,8 @@ var OMEZarrLoader = /*#__PURE__*/function () {
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(OMEZarrLoader, [{
     key: "loadDims",
     value: function () {
-      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(loadSpec) {
-        var store, imagegroup, data, allmetadata, imageIndex, multiscales, axes, axisTCZYX, spatialAxes, unitName, unitSymbol, dims, i, shape, scale5d, d, _i;
-
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
-          while (1) {
-            switch (_context.prev = _context.next) {
-              case 0:
-                store = new zarr__WEBPACK_IMPORTED_MODULE_7__.HTTPStore(loadSpec.url);
-                imagegroup = loadSpec.subpath;
-                _context.next = 4;
-                return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openGroup)(store, imagegroup, "r");
-
-              case 4:
-                data = _context.sent;
-                _context.next = 7;
-                return data.attrs.asObject();
-
-              case 7:
-                allmetadata = _context.sent;
-                // each entry of multiscales is a multiscale image.
-                imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
-                multiscales = allmetadata.multiscales[imageIndex].datasets;
-                axes = allmetadata.multiscales[imageIndex].axes;
-                axisTCZYX = remapAxesToTCZYX(axes); // ZYX
-
-                spatialAxes = findSpatialAxesZYX(axisTCZYX); // Assume all axes have the same units - we have no means of storing per-axis unit symbols
-
-                unitName = axes[spatialAxes[2]].unit;
-                unitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.spatialUnitNameToSymbol)(unitName) || unitName || "";
-                dims = []; // get all shapes
-
-                _context.t0 = _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().keys(multiscales);
-
-              case 17:
-                if ((_context.t1 = _context.t0()).done) {
-                  _context.next = 34;
-                  break;
-                }
-
-                i = _context.t1.value;
-                _context.next = 21;
-                return fetchShapeOfLevel(store, imagegroup, multiscales[i]);
-
-              case 21:
-                shape = _context.sent;
-
-                if (shape.length != axes.length) {
-                  console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
-                } // technically there can be any number of coordinateTransformations
-                // but there must be only one of type "scale".
-                // Here I assume that is the only one.
-
-
-                scale5d = multiscales[i].coordinateTransformations[0].scale;
-                d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__.VolumeDims();
-                d.subpath = "";
-                d.shape = [1, 1, 1, 1, 1];
-
-                for (_i = 0; _i < d.shape.length; ++_i) {
-                  if (axisTCZYX[_i] > -1) {
-                    d.shape[_i] = shape[axisTCZYX[_i]];
-                  }
-                }
-
-                d.spacing = [1, 1, scale5d[spatialAxes[0]], scale5d[spatialAxes[1]], scale5d[spatialAxes[2]]];
-                d.spatialUnit = unitSymbol; // unknown unit.
-
-                d.dataType = "uint8";
-                dims.push(d);
-                _context.next = 17;
-                break;
-
-              case 34:
-                return _context.abrupt("return", dims);
-
-              case 35:
-              case "end":
-                return _context.stop();
-            }
-          }
-        }, _callee);
-      }));
-
-      function loadDims(_x4) {
-        return _loadDims.apply(this, arguments);
-      }
-
-      return loadDims;
-    }()
-  }, {
-    key: "createVolume",
-    value: function () {
-      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(loadSpec, onChannelLoaded) {
-        var store, imagegroup, data, allmetadata, imageIndex, multiscales, axes, axisTCZYX, hasT, hasC, spatialAxes, numlevels, unitName, unitSymbol, spatialDims, i, shape, levelToLoad, _i2, optimalLevel, downsampleZ, dataset, level, c, sizeT, scale5d, tw, th, tz, loadedZ, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, imgdata, vol, storepath, _loop, _i3;
-
+      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(loadSpec) {
+        var store, imagegroup, data, allmetadata, imageIndex, multiscales, axes, axisTCZYX, spatialAxes, unitName, unitSymbol, dimsPromises;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee2$(_context2) {
           while (1) {
             switch (_context2.prev = _context2.next) {
@@ -8619,103 +8689,139 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
                 multiscales = allmetadata.multiscales[imageIndex].datasets;
                 axes = allmetadata.multiscales[imageIndex].axes;
-                axisTCZYX = remapAxesToTCZYX(axes);
-                hasT = axisTCZYX[0] > -1;
-                hasC = axisTCZYX[1] > -1; // ZYX
+                axisTCZYX = remapAxesToTCZYX(axes); // ZYX
 
-                spatialAxes = findSpatialAxesZYX(axisTCZYX);
-                numlevels = multiscales.length; // Assume all axes have the same units - we have no means of storing per-axis unit symbols
+                spatialAxes = findSpatialAxesZYX(axisTCZYX); // Assume all axes have the same units - we have no means of storing per-axis unit symbols
 
                 unitName = axes[spatialAxes[2]].unit;
-                unitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.spatialUnitNameToSymbol)(unitName) || unitName || ""; // fetch all shapes and find xyz spatial dimensions
+                unitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.spatialUnitNameToSymbol)(unitName) || unitName || "";
+                dimsPromises = multiscales.map( /*#__PURE__*/function () {
+                  var _ref2 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(multiscale) {
+                    var shape, scale5d, d, i;
+                    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
+                      while (1) {
+                        switch (_context.prev = _context.next) {
+                          case 0:
+                            _context.next = 2;
+                            return fetchShapeOfLevel(store, imagegroup, multiscale);
 
-                spatialDims = [];
-                _context2.t0 = _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().keys(multiscales);
+                          case 2:
+                            shape = _context.sent;
 
-              case 20:
-                if ((_context2.t1 = _context2.t0()).done) {
-                  _context2.next = 29;
-                  break;
-                }
+                            if (shape.length != axes.length) {
+                              console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
+                            }
 
-                i = _context2.t1.value;
-                _context2.next = 24;
-                return fetchShapeOfLevel(store, imagegroup, multiscales[i]);
+                            scale5d = getScale(multiscale);
+                            d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__.VolumeDims();
+                            d.subpath = "";
+                            d.shape = [1, 1, 1, 1, 1];
 
-              case 24:
-                shape = _context2.sent;
+                            for (i = 0; i < d.shape.length; ++i) {
+                              if (axisTCZYX[i] > -1) {
+                                d.shape[i] = shape[axisTCZYX[i]];
+                              }
+                            }
 
-                // just stick it in multiscales for now.
-                if (shape.length != axes.length) {
-                  console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
-                }
+                            d.spacing = [1, 1, scale5d[spatialAxes[0]], scale5d[spatialAxes[1]], scale5d[spatialAxes[2]]];
+                            d.spatialUnit = unitSymbol; // unknown unit.
 
-                spatialDims.push([shape[spatialAxes[0]], shape[spatialAxes[1]], shape[spatialAxes[2]]]);
-                _context2.next = 20;
-                break;
+                            d.dataType = "uint8";
+                            return _context.abrupt("return", d);
 
-              case 29:
-                // default to lowest level until we find the match
-                levelToLoad = numlevels - 1;
-                _i2 = 0;
+                          case 13:
+                          case "end":
+                            return _context.stop();
+                        }
+                      }
+                    }, _callee);
+                  }));
 
-              case 31:
-                if (!(_i2 < numlevels)) {
-                  _context2.next = 38;
-                  break;
-                }
+                  return function (_x9) {
+                    return _ref2.apply(this, arguments);
+                  };
+                }());
+                return _context2.abrupt("return", Promise.all(dimsPromises));
 
-                if (!(multiscales[_i2].path == loadSpec.subpath)) {
-                  _context2.next = 35;
-                  break;
-                }
+              case 17:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2);
+      }));
 
-                levelToLoad = _i2;
-                return _context2.abrupt("break", 38);
+      function loadDims(_x8) {
+        return _loadDims.apply(this, arguments);
+      }
 
-              case 35:
-                ++_i2;
-                _context2.next = 31;
-                break;
+      return loadDims;
+    }()
+  }, {
+    key: "createVolume",
+    value: function () {
+      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee3(loadSpec) {
+        var store, imagegroup, data, allmetadata, imageIndex, multiscale, datasets, axes, axisTCZYX, spatialAxes, unitName, unitSymbol, levelToLoad, dataset, level, multiscaleShape, channels, sizeT, scale5d, tw, th, tz, loadedZ, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, i, imgdata, vol;
 
-              case 38:
-                optimalLevel = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.estimateLevelForAtlas)(spatialDims, 2048); // assume all levels are decreasing in size.  If a larger level is optimal then use it:
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee3$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                store = new zarr__WEBPACK_IMPORTED_MODULE_7__.HTTPStore(loadSpec.url);
+                imagegroup = loadSpec.subpath;
+                _context3.next = 4;
+                return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openGroup)(store, imagegroup, "r");
 
-                if (optimalLevel < levelToLoad) {
-                  levelToLoad = optimalLevel;
-                }
+              case 4:
+                data = _context3.sent;
+                _context3.next = 7;
+                return data.attrs.asObject();
 
-                downsampleZ = 1; // z/downsampleZ is number of z slices in reduced volume
+              case 7:
+                allmetadata = _context3.sent;
+                // each entry of multiscales is a multiscale image.
+                imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
+                multiscale = allmetadata.multiscales[imageIndex];
+                datasets = multiscale.datasets, axes = multiscale.axes;
+                axisTCZYX = remapAxesToTCZYX(axes);
+                this.hasT = axisTCZYX[0] > -1;
+                this.hasC = axisTCZYX[1] > -1; // ZYX
 
-                dataset = multiscales[levelToLoad]; // get the shape for the level we want to load
+                spatialAxes = findSpatialAxesZYX(axisTCZYX); // Assume all axes have the same units - we have no means of storing per-axis unit symbols
 
-                _context2.next = 44;
+                unitName = axes[spatialAxes[2]].unit;
+                unitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.spatialUnitNameToSymbol)(unitName) || unitName || "";
+                _context3.next = 19;
+                return pickLevelToLoad(multiscale, store, loadSpec);
+
+              case 19:
+                levelToLoad = _context3.sent;
+                dataset = datasets[levelToLoad];
+                this.multiscalePath = dataset.path; // get the shape for the level we want to load
+
+                _context3.next = 24;
                 return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openArray)({
                   store: store,
                   path: imagegroup + "/" + dataset.path,
                   mode: "r"
                 });
 
-              case 44:
-                level = _context2.sent;
-                // just stick it in multiscales for now.
-                dataset.shape = level.meta.shape;
+              case 24:
+                level = _context3.sent;
+                multiscaleShape = level.meta.shape;
 
-                if (dataset.shape.length != axes.length) {
-                  console.log("ERROR: shape length " + dataset.shape.length + " does not match axes length " + axes.length);
+                if (multiscaleShape.length != axes.length) {
+                  console.log("ERROR: shape length " + multiscaleShape.length + " does not match axes length " + axes.length);
                 }
 
-                c = hasC ? dataset.shape[axisTCZYX[1]] : 1;
-                sizeT = hasT ? dataset.shape[axisTCZYX[0]] : 1; // technically there can be any number of coordinateTransformations
-                // but there must be only one of type "scale".
-                // Here I assume that is the only one.
+                channels = this.hasC ? multiscaleShape[axisTCZYX[1]] : 1;
+                sizeT = this.hasT ? multiscaleShape[axisTCZYX[0]] : 1;
+                scale5d = getScale(dataset);
+                tw = multiscaleShape[spatialAxes[2]];
+                th = multiscaleShape[spatialAxes[1]];
+                tz = multiscaleShape[spatialAxes[0]]; // compute rows and cols and atlas width and ht, given tw and th
 
-                scale5d = dataset.coordinateTransformations[0].scale;
-                tw = dataset.shape[spatialAxes[2]];
-                th = dataset.shape[spatialAxes[1]];
-                tz = dataset.shape[spatialAxes[0]]; // compute rows and cols and atlas width and ht, given tw and th
-
-                loadedZ = Math.ceil(tz / downsampleZ);
+                loadedZ = Math.ceil(tz / DOWNSAMPLE_Z);
                 _computePackedAtlasDi = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.computePackedAtlasDims)(loadedZ, tw, th), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols;
                 atlaswidth = ncols * tw;
                 atlasheight = nrows * th;
@@ -8734,7 +8840,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                   // TODO where should we capture the original w?
                   height: th,
                   // TODO original h?
-                  channels: c,
+                  channels: channels,
                   channel_names: chnames,
                   rows: nrows,
                   cols: ncols,
@@ -8748,7 +8854,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                   atlas_height: atlasheight,
                   pixel_size_x: scale5d[spatialAxes[2]],
                   pixel_size_y: scale5d[spatialAxes[1]],
-                  pixel_size_z: scale5d[spatialAxes[0]] * downsampleZ,
+                  pixel_size_z: scale5d[spatialAxes[0]] * DOWNSAMPLE_Z,
                   pixel_size_unit: unitSymbol,
                   name: displayMetadata.name,
                   version: displayMetadata.version,
@@ -8761,11 +8867,72 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 /* eslint-enable @typescript-eslint/naming-convention */
                 // got some data, now let's construct the volume.
 
-                vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata);
+                vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata, loadSpec);
                 vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.buildDefaultMetadata)(imgdata);
-                storepath = imagegroup + "/" + dataset.path; // do each channel on a worker
+                return _context3.abrupt("return", vol);
 
-                _loop = function _loop(_i3) {
+              case 45:
+              case "end":
+                return _context3.stop();
+            }
+          }
+        }, _callee3, this);
+      }));
+
+      function createVolume(_x10) {
+        return _createVolume.apply(this, arguments);
+      }
+
+      return createVolume;
+    }()
+  }, {
+    key: "loadVolumeData",
+    value: function () {
+      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee4(vol, onChannelLoaded) {
+        var _this = this;
+
+        var loadSpec, _vol$imageInfo, channels, times, store, data, allmetadata, imageIndex, multiscale, axisTCZYX, spatialAxes, levelToLoad, storepath, _loop, i;
+
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee4$(_context4) {
+          while (1) {
+            switch (_context4.prev = _context4.next) {
+              case 0:
+                loadSpec = vol.loadSpec;
+                _vol$imageInfo = vol.imageInfo, channels = _vol$imageInfo.channels, times = _vol$imageInfo.times;
+
+                if (!(this.multiscalePath === undefined || this.hasC === undefined || this.hasT === undefined)) {
+                  _context4.next = 20;
+                  break;
+                }
+
+                store = new zarr__WEBPACK_IMPORTED_MODULE_7__.HTTPStore(loadSpec.url);
+                _context4.next = 6;
+                return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openGroup)(store, loadSpec.subpath, "r");
+
+              case 6:
+                data = _context4.sent;
+                _context4.next = 9;
+                return data.attrs.asObject();
+
+              case 9:
+                allmetadata = _context4.sent;
+                imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
+                multiscale = allmetadata.multiscales[imageIndex];
+                axisTCZYX = remapAxesToTCZYX(multiscale.axes);
+                this.hasT = axisTCZYX[0] > -1;
+                this.hasC = axisTCZYX[1] > -1;
+                spatialAxes = findSpatialAxesZYX(axisTCZYX);
+                _context4.next = 18;
+                return pickLevelToLoad(multiscale, store, loadSpec, spatialAxes);
+
+              case 18:
+                levelToLoad = _context4.sent;
+                this.multiscalePath = multiscale.datasets[levelToLoad].path;
+
+              case 20:
+                storepath = loadSpec.subpath + "/" + this.multiscalePath; // do each channel on a worker
+
+                _loop = function _loop(i) {
                   var worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchZarrWorker_ts"), __webpack_require__.b));
 
                   worker.onmessage = function (e) {
@@ -8775,7 +8942,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
 
                     if (onChannelLoaded) {
                       // make up a unique name? or have caller pass this in?
-                      onChannelLoaded(loadSpec.url + "/" + imagegroup, vol, channel);
+                      onChannelLoaded(loadSpec.url + "/" + loadSpec.subpath, vol, channel);
                     }
 
                     worker.terminate();
@@ -8787,32 +8954,34 @@ var OMEZarrLoader = /*#__PURE__*/function () {
 
                   worker.postMessage({
                     urlStore: loadSpec.url,
-                    time: hasT ? Math.min(loadSpec.time, sizeT) : -1,
-                    channel: hasC ? _i3 : -1,
-                    downsampleZ: downsampleZ,
+                    time: _this.hasT ? Math.min(loadSpec.time, times) : -1,
+                    channel: _this.hasC ? i : -1,
+                    downsampleZ: DOWNSAMPLE_Z,
                     path: storepath
                   });
                 };
 
-                for (_i3 = 0; _i3 < c; ++_i3) {
-                  _loop(_i3);
+                for (i = 0; i < channels; ++i) {
+                  _loop(i);
                 }
 
-                return _context2.abrupt("return", vol);
+                this.multiscalePath = undefined;
+                this.hasC = undefined;
+                this.hasT = undefined;
 
-              case 68:
+              case 26:
               case "end":
-                return _context2.stop();
+                return _context4.stop();
             }
           }
-        }, _callee2);
+        }, _callee4, this);
       }));
 
-      function createVolume(_x5, _x6) {
-        return _createVolume.apply(this, arguments);
+      function loadVolumeData(_x11, _x12) {
+        return _loadVolumeData.apply(this, arguments);
       }
 
-      return createVolume;
+      return loadVolumeData;
     }()
   }]);
 
@@ -8892,22 +9061,13 @@ var OpenCellLoader = /*#__PURE__*/function () {
   }, {
     key: "createVolume",
     value: function () {
-      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(_, onChannelLoaded) {
-        var numChannels, urls, chnames, imgdata, vol;
+      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(_) {
+        var numChannels, chnames, imgdata, vol;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee2$(_context2) {
           while (1) {
             switch (_context2.prev = _context2.next) {
               case 0:
-                numChannels = 2; // HQTILE or LQTILE
-                // make a json metadata dict for the two channels:
-
-                urls = [{
-                  name: "https://opencell.czbiohub.org/data/opencell-microscopy/roi/czML0383-P0007/czML0383-P0007-A02-PML0308-S13_ROI-0424-0025-0600-0600-LQTILE-CH405.jpg",
-                  channels: [0]
-                }, {
-                  name: "https://opencell.czbiohub.org/data/opencell-microscopy/roi/czML0383-P0007/czML0383-P0007-A02-PML0308-S13_ROI-0424-0025-0600-0600-LQTILE-CH488.jpg",
-                  channels: [1]
-                }]; // we know these are standardized to 600x600, two channels, one channel per jpg.
+                numChannels = 2; // we know these are standardized to 600x600, two channels, one channel per jpg.
 
                 chnames = ["DNA", "Structure"];
                 /* eslint-disable @typescript-eslint/naming-convention */
@@ -8943,10 +9103,9 @@ var OpenCellLoader = /*#__PURE__*/function () {
 
                 vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata);
                 vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.buildDefaultMetadata)(imgdata);
-                _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_7__.JsonImageInfoLoader.loadVolumeAtlasData(vol, urls, onChannelLoaded);
                 return _context2.abrupt("return", vol);
 
-              case 8:
+              case 6:
               case "end":
                 return _context2.stop();
             }
@@ -8954,12 +9113,26 @@ var OpenCellLoader = /*#__PURE__*/function () {
         }, _callee2);
       }));
 
-      function createVolume(_x2, _x3) {
+      function createVolume(_x2) {
         return _createVolume.apply(this, arguments);
       }
 
       return createVolume;
     }()
+  }, {
+    key: "loadVolumeData",
+    value: function loadVolumeData(vol, onChannelLoaded) {
+      // HQTILE or LQTILE
+      // make a json metadata dict for the two channels:
+      var urls = [{
+        name: "https://opencell.czbiohub.org/data/opencell-microscopy/roi/czML0383-P0007/czML0383-P0007-A02-PML0308-S13_ROI-0424-0025-0600-0600-LQTILE-CH405.jpg",
+        channels: [0]
+      }, {
+        name: "https://opencell.czbiohub.org/data/opencell-microscopy/roi/czML0383-P0007/czML0383-P0007-A02-PML0308-S13_ROI-0424-0025-0600-0600-LQTILE-CH488.jpg",
+        channels: [1]
+      }];
+      _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_7__.JsonImageInfoLoader.loadVolumeAtlasData(vol, urls, onChannelLoaded);
+    }
   }]);
 
   return OpenCellLoader;
@@ -9067,6 +9240,46 @@ function getOMEDims(imageEl) {
   return dims;
 }
 
+function getDimsFromUrl(_x) {
+  return _getDimsFromUrl.apply(this, arguments);
+}
+
+function _getDimsFromUrl() {
+  _getDimsFromUrl = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee4(url) {
+    var tiff, image, tiffimgdesc, omeEl, image0El;
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee4$(_context4) {
+      while (1) {
+        switch (_context4.prev = _context4.next) {
+          case 0:
+            _context4.next = 2;
+            return (0,geotiff__WEBPACK_IMPORTED_MODULE_8__.fromUrl)(url);
+
+          case 2:
+            tiff = _context4.sent;
+            _context4.next = 5;
+            return tiff.getImage();
+
+          case 5:
+            image = _context4.sent;
+            tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
+            omeEl = getOME(tiffimgdesc);
+            image0El = omeEl.getElementsByTagName("Image")[0];
+            return _context4.abrupt("return", getOMEDims(image0El));
+
+          case 10:
+          case "end":
+            return _context4.stop();
+        }
+      }
+    }, _callee4);
+  }));
+  return _getDimsFromUrl.apply(this, arguments);
+}
+
+var getBytesPerSample = function getBytesPerSample(type) {
+  return type === "uint8" ? 1 : type === "uint16" ? 2 : 4;
+};
+
 var TiffLoader = /*#__PURE__*/function () {
   function TiffLoader() {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, TiffLoader);
@@ -9111,7 +9324,7 @@ var TiffLoader = /*#__PURE__*/function () {
         }, _callee);
       }));
 
-      function loadDims(_x) {
+      function loadDims(_x2) {
         return _loadDims.apply(this, arguments);
       }
 
@@ -9120,32 +9333,23 @@ var TiffLoader = /*#__PURE__*/function () {
   }, {
     key: "createVolume",
     value: function () {
-      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee2(loadSpec, onChannelLoaded) {
-        var tiff, image, tiffimgdesc, omeEl, image0El, dims, _computePackedAtlasDi, nrows, ncols, targetSize, tilesizex, tilesizey, imgdata, vol, _loop, channel;
+      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee2(loadSpec) {
+        var dims, _computePackedAtlasDi, nrows, ncols, targetSize, tilesizex, tilesizey, imgdata, vol;
 
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee2$(_context2) {
           while (1) {
             switch (_context2.prev = _context2.next) {
               case 0:
                 _context2.next = 2;
-                return (0,geotiff__WEBPACK_IMPORTED_MODULE_8__.fromUrl)(loadSpec.url);
+                return getDimsFromUrl(loadSpec.url);
 
               case 2:
-                tiff = _context2.sent;
-                _context2.next = 5;
-                return tiff.getImage();
-
-              case 5:
-                image = _context2.sent;
-                tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
-                omeEl = getOME(tiffimgdesc);
-                image0El = omeEl.getElementsByTagName("Image")[0];
-                dims = getOMEDims(image0El); // compare with sizex, sizey
+                dims = _context2.sent;
+                // compare with sizex, sizey
                 //const width = image.getWidth();
                 //const height = image.getHeight();
                 // TODO allow user setting of this downsampling info?
                 // TODO allow ROI selection: range of x,y,z,c for a given t
-
                 _computePackedAtlasDi = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.computePackedAtlasDims)(dims.sizez, dims.sizex, dims.sizey), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols; // fit tiles to max of 2048x2048?
 
                 targetSize = 2048;
@@ -9182,21 +9386,66 @@ var TiffLoader = /*#__PURE__*/function () {
                 };
                 /* eslint-enable @typescript-eslint/naming-convention */
 
-                vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imgdata);
-                vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imgdata); // do each channel on a worker?
+                vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imgdata, loadSpec);
+                vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imgdata);
+                this.dimensionOrder = dims.dimensionorder;
+                this.bytesPerSample = getBytesPerSample(dims.pixeltype);
+                return _context2.abrupt("return", vol);
+
+              case 13:
+              case "end":
+                return _context2.stop();
+            }
+          }
+        }, _callee2, this);
+      }));
+
+      function createVolume(_x3) {
+        return _createVolume.apply(this, arguments);
+      }
+
+      return createVolume;
+    }()
+  }, {
+    key: "loadVolumeData",
+    value: function () {
+      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(vol, onChannelLoaded) {
+        var _this = this;
+
+        var dims, imageInfo, _loop, channel;
+
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee3$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                if (!(this.bytesPerSample === undefined || this.dimensionOrder === undefined)) {
+                  _context3.next = 6;
+                  break;
+                }
+
+                _context3.next = 3;
+                return getDimsFromUrl(vol.loadSpec.url);
+
+              case 3:
+                dims = _context3.sent;
+                this.dimensionOrder = dims.dimensionorder;
+                this.bytesPerSample = getBytesPerSample(dims.pixeltype);
+
+              case 6:
+                imageInfo = vol.imageInfo; // do each channel on a worker?
 
                 _loop = function _loop(channel) {
                   var params = {
                     channel: channel,
                     // these are target xy sizes for the in-memory volume data
                     // they may or may not be the same size as original xy sizes
-                    tilesizex: tilesizex,
-                    tilesizey: tilesizey,
-                    sizec: dims.sizec,
-                    sizez: dims.sizez,
-                    dimensionOrder: dims.dimensionorder,
-                    bytesPerSample: dims.pixeltype === "uint8" ? 1 : dims.pixeltype === "uint16" ? 2 : 4,
-                    url: loadSpec.url
+                    tilesizex: imageInfo.tile_width,
+                    tilesizey: imageInfo.tile_height,
+                    sizec: imageInfo.channels,
+                    sizez: imageInfo.tiles,
+                    dimensionOrder: _this.dimensionOrder,
+                    bytesPerSample: _this.bytesPerSample,
+                    url: vol.loadSpec.url
                   };
                   var worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchTiffWorker_ts"), __webpack_require__.b));
 
@@ -9207,7 +9456,7 @@ var TiffLoader = /*#__PURE__*/function () {
 
                     if (onChannelLoaded) {
                       // make up a unique name? or have caller pass this in?
-                      onChannelLoaded(loadSpec.url, vol, channel);
+                      onChannelLoaded(vol.loadSpec.url, vol, channel);
                     }
 
                     worker.terminate();
@@ -9220,25 +9469,26 @@ var TiffLoader = /*#__PURE__*/function () {
                   worker.postMessage(params);
                 };
 
-                for (channel = 0; channel < dims.sizec; ++channel) {
+                for (channel = 0; channel < imageInfo.channels; ++channel) {
                   _loop(channel);
                 }
 
-                return _context2.abrupt("return", vol);
+                this.dimensionOrder = undefined;
+                this.bytesPerSample = undefined;
 
-              case 20:
+              case 11:
               case "end":
-                return _context2.stop();
+                return _context3.stop();
             }
           }
-        }, _callee2);
+        }, _callee3, this);
       }));
 
-      function createVolume(_x2, _x3) {
-        return _createVolume.apply(this, arguments);
+      function loadVolumeData(_x4, _x5) {
+        return _loadVolumeData.apply(this, arguments);
       }
 
-      return createVolume;
+      return loadVolumeData;
     }()
   }]);
 
@@ -9269,6 +9519,10 @@ __webpack_require__.r(__webpack_exports__);
 // Preferred spatial units in OME-Zarr are specified as full names. We want just the symbol.
 // See https://ngff.openmicroscopy.org/latest/#axes-md
 function spatialUnitNameToSymbol(unitName) {
+  if (unitName === undefined) {
+    return null;
+  }
+
   var unitSymbols = {
     angstrom: "Å",
     decameter: "dam",
@@ -84645,13 +84899,18 @@ var __webpack_exports__ = {};
   !*** ./public/index.ts ***!
   \*************************/
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! regenerator-runtime/runtime */ "./node_modules/regenerator-runtime/runtime.js");
-/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var dat_gui__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! dat.gui */ "./node_modules/dat.gui/build/dat.gui.module.js");
-/* harmony import */ var _src__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../src */ "./src/index.ts");
-/* harmony import */ var _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../src/loaders/OpenCellLoader */ "./src/loaders/OpenCellLoader.ts");
-/* harmony import */ var _src_Volume__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../src/Volume */ "./src/Volume.ts");
+/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! regenerator-runtime/runtime */ "./node_modules/regenerator-runtime/runtime.js");
+/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var dat_gui__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! dat.gui */ "./node_modules/dat.gui/build/dat.gui.module.js");
+/* harmony import */ var _src__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../src */ "./src/index.ts");
+/* harmony import */ var _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../src/loaders/OpenCellLoader */ "./src/loaders/OpenCellLoader.ts");
+/* harmony import */ var _src_Volume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../src/Volume */ "./src/Volume.ts");
+
+
 
 
 
@@ -84736,20 +84995,20 @@ var TEST_DATA = {
 var view3D;
 var myState = {
   file: "",
-  volume: new _src__WEBPACK_IMPORTED_MODULE_2__.Volume(),
+  volume: new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(),
   timeSeriesVolumes: [],
   numberOfVolumesCached: 0,
   totalFrames: 0,
   currentFrame: 0,
   timerId: 0,
-  loader: new _src__WEBPACK_IMPORTED_MODULE_2__.JsonImageInfoLoader(),
+  loader: new _src__WEBPACK_IMPORTED_MODULE_4__.JsonImageInfoLoader(),
   density: 12.5,
   maskAlpha: 1.0,
   exposure: 0.75,
   aperture: 0.0,
   fov: 20,
   focalDistance: 4.0,
-  lights: [new _src__WEBPACK_IMPORTED_MODULE_2__.Light(_src__WEBPACK_IMPORTED_MODULE_2__.SKY_LIGHT), new _src__WEBPACK_IMPORTED_MODULE_2__.Light(_src__WEBPACK_IMPORTED_MODULE_2__.AREA_LIGHT)],
+  lights: [new _src__WEBPACK_IMPORTED_MODULE_4__.Light(_src__WEBPACK_IMPORTED_MODULE_4__.SKY_LIGHT), new _src__WEBPACK_IMPORTED_MODULE_4__.Light(_src__WEBPACK_IMPORTED_MODULE_4__.AREA_LIGHT)],
   skyTopIntensity: 0.3,
   skyMidIntensity: 0.3,
   skyBotIntensity: 0.3,
@@ -84785,7 +85044,7 @@ var myState = {
   flipY: 1,
   flipZ: 1,
   channelFolderNames: [],
-  infoObj: (0,_src_Volume__WEBPACK_IMPORTED_MODULE_4__.getDefaultImageInfo)(),
+  infoObj: (0,_src_Volume__WEBPACK_IMPORTED_MODULE_6__.getDefaultImageInfo)(),
   channelGui: [],
   currentImageStore: "",
   currentImageName: ""
@@ -84836,12 +85095,12 @@ function makeColorGradient(controlPoints) {
 
 
 function initLights() {
-  myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
-  myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
-  myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+  myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+  myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+  myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
   myState.lights[1].mTheta = myState.lightTheta * Math.PI / 180.0;
   myState.lights[1].mPhi = myState.lightPhi * Math.PI / 180.0;
-  myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+  myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
   view3D.updateLights(myState.lights);
 }
 
@@ -84850,14 +85109,14 @@ function setInitialRenderMode() {
     myState.isMP = false;
   }
 
-  view3D.setVolumeRenderMode(myState.isPT ? _src__WEBPACK_IMPORTED_MODULE_2__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_2__.RENDERMODE_RAYMARCH);
+  view3D.setVolumeRenderMode(myState.isPT ? _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_RAYMARCH);
   view3D.setMaxProjectMode(myState.volume, myState.isMP);
 }
 
 var gui;
 
 function setupGui() {
-  gui = new dat_gui__WEBPACK_IMPORTED_MODULE_1__.GUI(); //gui = new dat.GUI({autoPlace:false, width:200});
+  gui = new dat_gui__WEBPACK_IMPORTED_MODULE_3__.GUI(); //gui = new dat.GUI({autoPlace:false, width:200});
 
   gui.add(myState, "density").max(100.0).min(0.0).step(0.001).onChange(function (value) {
     view3D.updateDensity(myState.volume, densitySliderToView3D(value));
@@ -84908,27 +85167,27 @@ function setupGui() {
   });
   var lighting = gui.addFolder("Lighting");
   lighting.addColor(myState, "skyTopColor").name("Sky Top").onChange(function () {
-    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyTopIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "skyMidColor").name("Sky Mid").onChange(function () {
-    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyMidIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "skyBotColor").name("Sky Bottom").onChange(function () {
-    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyBotIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState.lights[1], "mDistance").max(10.0).min(0.0).step(0.1).onChange(function () {
@@ -84948,11 +85207,11 @@ function setupGui() {
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "lightIntensity").max(1000.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "lightColor").name("lightColor").onChange(function () {
-    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
     view3D.updateLights(myState.lights);
   });
   initLights();
@@ -85168,7 +85427,7 @@ function showChannelUI(volume) {
 }
 
 function loadImageData(jsonData, volumeData) {
-  var vol = new _src__WEBPACK_IMPORTED_MODULE_2__.Volume(jsonData);
+  var vol = new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(jsonData);
   myState.volume = vol; // tell the viewer about the image AFTER it's loaded
   //view3D.removeAllVolumes();
   //view3D.addVolume(vol);
@@ -85202,7 +85461,7 @@ function loadImageData(jsonData, volumeData) {
 }
 
 function cacheTimeSeriesImageData(jsonData, frameNumber) {
-  var vol = new _src__WEBPACK_IMPORTED_MODULE_2__.Volume(jsonData);
+  var vol = new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(jsonData);
   myState.timeSeriesVolumes[frameNumber] = vol;
   return vol;
 }
@@ -85261,7 +85520,7 @@ function onVolumeCreated(volume) {
   if (isTimeSeries) {
     if (frameNumber === 0) {
       // create the main volume and add to view (this is the only place)
-      myState.volume = new _src__WEBPACK_IMPORTED_MODULE_2__.Volume(myJson); // TODO: this can go in the Volume and Channel constructors!
+      myState.volume = new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(myJson); // TODO: this can go in the Volume and Channel constructors!
       // preallocate some memory to be filled in later
 
       for (var i = 0; i < myState.volume.num_channels; ++i) {
@@ -85399,7 +85658,7 @@ function goToFrame(targetFrame) {
   } else {
     console.log("frame ".concat(targetFrame, " not yet loaded")); // try our loader
 
-    var loadSpec = new _src__WEBPACK_IMPORTED_MODULE_2__.LoadSpec();
+    var loadSpec = new _src__WEBPACK_IMPORTED_MODULE_4__.LoadSpec();
     loadSpec.time = targetFrame;
     loadSpec.url = myState.currentImageStore; // TODO loadspec needs to know proper multiresolution level here
 
@@ -85447,7 +85706,7 @@ function createTestVolume() {
   /* eslint-enable @typescript-eslint/naming-convention */
   // generate some raw volume data
 
-  var channelVolumes = [_src__WEBPACK_IMPORTED_MODULE_2__.VolumeMaker.createSphere(imgData.tile_width, imgData.tile_height, imgData.tiles, 24), _src__WEBPACK_IMPORTED_MODULE_2__.VolumeMaker.createTorus(imgData.tile_width, imgData.tile_height, imgData.tiles, 24, 8), _src__WEBPACK_IMPORTED_MODULE_2__.VolumeMaker.createCone(imgData.tile_width, imgData.tile_height, imgData.tiles, 24, 24)];
+  var channelVolumes = [_src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createSphere(imgData.tile_width, imgData.tile_height, imgData.tiles, 24), _src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createTorus(imgData.tile_width, imgData.tile_height, imgData.tiles, 24, 8), _src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createCone(imgData.tile_width, imgData.tile_height, imgData.tiles, 24, 24)];
   return {
     imgData: imgData,
     volumeData: channelVolumes
@@ -85457,32 +85716,55 @@ function createTestVolume() {
 function createLoader(type) {
   switch (type) {
     case "opencell":
-      return new _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_3__.OpenCellLoader();
+      return new _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_5__.OpenCellLoader();
 
     case "omezarr":
-      return new _src__WEBPACK_IMPORTED_MODULE_2__.OMEZarrLoader();
+      return new _src__WEBPACK_IMPORTED_MODULE_4__.OMEZarrLoader();
 
     case "ometiff":
-      return new _src__WEBPACK_IMPORTED_MODULE_2__.TiffLoader();
+      return new _src__WEBPACK_IMPORTED_MODULE_4__.TiffLoader();
     // case "procedural":
     //   return new RawVolumeLoader();
 
     case "jsonatlas":
-      return new _src__WEBPACK_IMPORTED_MODULE_2__.JsonImageInfoLoader();
+      return new _src__WEBPACK_IMPORTED_MODULE_4__.JsonImageInfoLoader();
 
     default:
       throw new Error("Unknown loader type: " + type);
   }
 }
 
-function loadVolume(loadSpec, loader, cacheTimeSeries) {
-  loader.createVolume(loadSpec, function (url, v, channelIndex) {
-    onChannelDataArrived(url, v, channelIndex, cacheTimeSeries, loadSpec.time);
-  }).then(function (volume) {
-    onVolumeCreated(volume, cacheTimeSeries, loadSpec.time);
-    myState.currentImageStore = loadSpec.url;
-    myState.currentImageName = loadSpec.url;
-  });
+function loadVolume(_x, _x2, _x3) {
+  return _loadVolume.apply(this, arguments);
+}
+
+function _loadVolume() {
+  _loadVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().mark(function _callee(loadSpec, loader, cacheTimeSeries) {
+    var volume;
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            _context.next = 2;
+            return loader.createVolume(loadSpec);
+
+          case 2:
+            volume = _context.sent;
+            onVolumeCreated(volume, cacheTimeSeries, loadSpec.time);
+            loader.loadVolumeData(volume, function (url, v, channelIndex) {
+              onChannelDataArrived(url, v, channelIndex, cacheTimeSeries, loadSpec.time);
+            });
+            myState.currentImageStore = loadSpec.url;
+            myState.currentImageName = loadSpec.url;
+
+          case 7:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, _callee);
+  }));
+  return _loadVolume.apply(this, arguments);
 }
 
 function loadTestData(testdata) {
@@ -85499,7 +85781,7 @@ function loadTestData(testdata) {
   for (var t = testdata.tstart; t <= testdata.tend; t++) {
     // replace %% with frame number
     var url = testdata.url.replace("%%", t.toString());
-    var loadSpec = new _src__WEBPACK_IMPORTED_MODULE_2__.LoadSpec();
+    var loadSpec = new _src__WEBPACK_IMPORTED_MODULE_4__.LoadSpec();
     loadSpec.url = url;
     loadSpec.time = t;
     loadVolume(loadSpec, loader, isTimeSeries);
@@ -85515,7 +85797,7 @@ function main() {
     return;
   }
 
-  view3D = new _src__WEBPACK_IMPORTED_MODULE_2__.View3d({
+  view3D = new _src__WEBPACK_IMPORTED_MODULE_4__.View3d({
     parentElement: el
   });
   var testDataSelect = document.getElementById("testData");
@@ -85686,7 +85968,7 @@ function main() {
   var changeRenderMode = function changeRenderMode(pt, mp) {
     myState.isPT = pt;
     myState.isMP = mp;
-    view3D.setVolumeRenderMode(pt ? _src__WEBPACK_IMPORTED_MODULE_2__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_2__.RENDERMODE_RAYMARCH);
+    view3D.setVolumeRenderMode(pt ? _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_RAYMARCH);
     view3D.setMaxProjectMode(myState.volume, mp);
   };
 
