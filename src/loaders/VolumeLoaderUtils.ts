@@ -12,33 +12,41 @@ export type TypedArray =
   | Float32Array
   | Float64Array;
 
-// Preferred spatial units in OME-Zarr are specified as full names. We want just the symbol.
+// Preferred units in OME-Zarr are specified as full names. We want just the symbol.
 // See https://ngff.openmicroscopy.org/latest/#axes-md
-export function spatialUnitNameToSymbol(unitName?: string): string | null {
+export function unitNameToSymbol(unitName?: string): string | null {
   if (unitName === undefined) {
     return null;
   }
 
   const unitSymbols = {
     angstrom: "Å",
+    day: "d",
     decameter: "dam",
+    decasecond: "das",
     foot: "ft",
+    hour: "h",
     inch: "in",
     meter: "m",
     micrometer: "μm",
+    microsecond: "μs",
     mile: "mi",
+    minute: "min",
     parsec: "pc",
+    second: "s",
     yard: "yd",
   };
   if (unitSymbols[unitName]) {
     return unitSymbols[unitName];
   }
 
-  // SI prefixes not in unitSymbols are abbreviated by first letter, capitalized if prefix ends with "a"
-  if (unitName.endsWith("meter")) {
-    const capitalize = unitName[unitName.length - 6] === "a";
+  const siUnits: (keyof typeof unitSymbols)[] = ["meter", "second"];
+  const prefixedSIUnit = siUnits.find((siUnit) => unitName.endsWith(siUnit));
+  if (prefixedSIUnit) {
+    // SI prefixes not in unitSymbols are abbreviated by first letter, capitalized if prefix ends with "a"
+    const capitalize = unitName[unitName.length - 1 - prefixedSIUnit.length] === "a";
     const prefix = capitalize ? unitName[0].toUpperCase() : unitName[0];
-    return prefix + "m";
+    return prefix + unitSymbols[prefixedSIUnit];
   }
 
   return null;
