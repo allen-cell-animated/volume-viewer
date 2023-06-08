@@ -12,41 +12,54 @@ export type TypedArray =
   | Float32Array
   | Float64Array;
 
-// Preferred units in OME-Zarr are specified as full names. We want just the symbol.
-// See https://ngff.openmicroscopy.org/latest/#axes-md
+// Map from units to their symbols
+const UNIT_SYMBOLS = {
+  angstrom: "Å",
+  day: "d",
+  foot: "ft",
+  hour: "h",
+  inch: "in",
+  meter: "m",
+  mile: "mi",
+  minute: "min",
+  parsec: "pc",
+  second: "s",
+  yard: "yd",
+};
+
+// Units which may take SI prefixes (e.g. micro-, tera-)
+const SI_UNITS: (keyof typeof UNIT_SYMBOLS)[] = ["meter", "second"];
+
+// SI prefixes which abbreviate in nonstandard ways
+const SI_PREFIX_ABBVS = {
+  micro: "μ",
+  deca: "da",
+};
+
+/** Converts a full spatial or temporal unit name supported by OME-Zarr to its unit symbol */
+// (see https://ngff.openmicroscopy.org/latest/#axes-md)
 export function unitNameToSymbol(unitName?: string): string | null {
   if (unitName === undefined) {
     return null;
   }
 
-  const unitSymbols = {
-    angstrom: "Å",
-    day: "d",
-    decameter: "dam",
-    decasecond: "das",
-    foot: "ft",
-    hour: "h",
-    inch: "in",
-    meter: "m",
-    micrometer: "μm",
-    microsecond: "μs",
-    mile: "mi",
-    minute: "min",
-    parsec: "pc",
-    second: "s",
-    yard: "yd",
-  };
-  if (unitSymbols[unitName]) {
-    return unitSymbols[unitName];
+  if (UNIT_SYMBOLS[unitName]) {
+    return UNIT_SYMBOLS[unitName];
   }
 
-  const siUnits: (keyof typeof unitSymbols)[] = ["meter", "second"];
-  const prefixedSIUnit = siUnits.find((siUnit) => unitName.endsWith(siUnit));
+  const prefixedSIUnit = SI_UNITS.find((siUnit) => unitName.endsWith(siUnit));
   if (prefixedSIUnit) {
-    // SI prefixes not in unitSymbols are abbreviated by first letter, capitalized if prefix ends with "a"
-    const capitalize = unitName[unitName.length - 1 - prefixedSIUnit.length] === "a";
-    const prefix = capitalize ? unitName[0].toUpperCase() : unitName[0];
-    return prefix + unitSymbols[prefixedSIUnit];
+    const prefix = unitName.substring(0, unitName.length - prefixedSIUnit.length);
+
+    if (SI_PREFIX_ABBVS[prefix]) {
+      // "special" SI prefix
+      return SI_PREFIX_ABBVS[prefix] + UNIT_SYMBOLS[prefixedSIUnit];
+    }
+
+    // almost all SI prefixes are abbreviated by first letter, capitalized if prefix ends with "a"
+    const capitalize = prefix.endsWith("a");
+    const prefixAbbr = capitalize ? prefix[0].toUpperCase() : prefix[0];
+    return prefixAbbr + UNIT_SYMBOLS[prefixedSIUnit];
   }
 
   return null;
