@@ -10,6 +10,7 @@ import { Bounds, FuseChannel } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import Channel from "./Channel";
+import { IVolumeRendering } from "./IVolumeRendering";
 
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
@@ -39,12 +40,7 @@ export default class VolumeDrawable {
   public showBoundingBox: boolean;
   private boundingBoxColor: [number, number, number];
 
-  // these two should never coexist simultaneously. always one or the other is present
-  // a polymorphic interface implementation might be a better way to deal with this.
-  // this is a remnant of a pre-typescript world
-  private pathTracedVolume?: PathTracedVolume;
-  private rayMarchedAtlasVolume?: RayMarchedAtlasVolume;
-  private volumeRendering: PathTracedVolume | RayMarchedAtlasVolume;
+  private volumeRendering: IVolumeRendering;
 
   private bounds: Bounds;
   private scale: Vector3;
@@ -115,10 +111,8 @@ export default class VolumeDrawable {
     this.secondaryRayStepSize = 1.0;
     if (this.PT) {
       this.volumeRendering = new PathTracedVolume(this.volume);
-      this.pathTracedVolume = this.volumeRendering;
     } else {
       this.volumeRendering = new RayMarchedAtlasVolume(this.volume);
-      this.rayMarchedAtlasVolume = this.volumeRendering;
     }
 
     // draw meshes first, and volume last, for blending and depth test reasons with raymarch
@@ -320,7 +314,9 @@ export default class VolumeDrawable {
   }
 
   setMaxProjectMode(isMaxProject: boolean): void {
-    !this.PT && this.rayMarchedAtlasVolume && this.rayMarchedAtlasVolume.setMaxProjectMode(isMaxProject);
+    const isRayMarchedVolume = (rendering: IVolumeRendering): rendering is RayMarchedAtlasVolume =>
+      (rendering as RayMarchedAtlasVolume).setMaxProjectMode !== undefined;
+    !this.PT && isRayMarchedVolume(this.volumeRendering) && this.volumeRendering.setMaxProjectMode(isMaxProject);
   }
 
   onAnimate(canvas: ThreeJsPanel): void {
