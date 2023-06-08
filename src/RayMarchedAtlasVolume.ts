@@ -27,11 +27,12 @@ import { Volume } from ".";
 import Channel from "./Channel";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 
+import { IVolumeRendering } from "./IVolumeRendering";
 import { Bounds, FuseChannel } from "./types";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
-export default class RayMarchedAtlasVolume {
+export default class RayMarchedAtlasVolume implements IVolumeRendering {
   public volume: Volume;
   public bounds: Bounds;
   private cube: BoxGeometry;
