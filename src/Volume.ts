@@ -30,6 +30,8 @@ export interface ImageInfo {
     rotation: [number, number, number];
   };
   times: number;
+  time_scale: number;
+  time_unit: string;
   userData?: Record<string, unknown>;
 }
 
@@ -58,6 +60,8 @@ export const getDefaultImageInfo = (): ImageInfo => {
       rotation: [0, 0, 0],
     },
     times: 1,
+    time_scale: 1,
+    time_unit: "",
   };
 };
 

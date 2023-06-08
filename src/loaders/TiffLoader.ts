@@ -143,6 +143,8 @@ class TiffLoader implements IVolumeLoader {
         rotation: [0, 0, 0],
       },
       times: dims.sizet,
+      time_scale: 1,
+      time_unit: "",
     };
     /* eslint-enable @typescript-eslint/naming-convention */
 

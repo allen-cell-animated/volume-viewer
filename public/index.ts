@@ -1098,6 +1098,8 @@ function createTestVolume() {
     pixel_size_unit: "",
     transform: { translation: [0, 0, 0], rotation: [0, 0, 0] },
     times: 1,
+    time_scale: 1,
+    time_unit: "",
   };
   /* eslint-enable @typescript-eslint/naming-convention */
 

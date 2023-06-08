@@ -47,6 +47,8 @@ class OpenCellLoader implements IVolumeLoader {
         rotation: [0, 0, 0],
       },
       times: 1,
+      time_scale: 1,
+      time_unit: "",
     };
     /* eslint-enable @typescript-eslint/naming-convention */
 

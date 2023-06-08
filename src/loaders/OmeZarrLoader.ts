@@ -3,7 +3,7 @@ import {
   buildDefaultMetadata,
   computePackedAtlasDims,
   estimateLevelForAtlas,
-  spatialUnitNameToSymbol,
+  unitNameToSymbol,
 } from "./VolumeLoaderUtils";
 import { ImageInfo } from "../Volume";
 import Volume from "../Volume";
@@ -198,7 +198,7 @@ class OMEZarrLoader implements IVolumeLoader {
 
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
     const unitName = axes[spatialAxes[2]].unit;
-    const unitSymbol = spatialUnitNameToSymbol(unitName) || unitName || "";
+    const unitSymbol = unitNameToSymbol(unitName) || unitName || "";
 
     const dimsPromises = multiscales.map(async (multiscale): Promise<VolumeDims> => {
       const shape = await fetchShapeOfLevel(store, imagegroup, multiscale);
@@ -246,8 +246,11 @@ class OMEZarrLoader implements IVolumeLoader {
     const spatialAxes = findSpatialAxesZYX(axisTCZYX);
 
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
-    const unitName = axes[spatialAxes[2]].unit;
-    const unitSymbol = spatialUnitNameToSymbol(unitName) || unitName || "";
+    const spaceUnitName = axes[spatialAxes[2]].unit;
+    const spaceUnitSymbol = unitNameToSymbol(spaceUnitName) || spaceUnitName || "";
+
+    const timeUnitName = this.hasT ? axes[axisTCZYX[0]].unit : undefined;
+    const timeUnitSymbol = unitNameToSymbol(timeUnitName) || timeUnitName || "";
 
     const levelToLoad = await pickLevelToLoad(multiscale, store, loadSpec);
     const dataset = datasets[levelToLoad];
@@ -265,6 +268,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const sizeT = this.hasT ? multiscaleShape[axisTCZYX[0]] : 1;
 
     const scale5d = getScale(dataset);
+    const timeScale = this.hasT ? scale5d[axisTCZYX[0]] : 1;
     const tw = multiscaleShape[spatialAxes[2]];
     const th = multiscaleShape[spatialAxes[1]];
     const tz = multiscaleShape[spatialAxes[0]];
@@ -299,7 +303,7 @@ class OMEZarrLoader implements IVolumeLoader {
       pixel_size_x: scale5d[spatialAxes[2]],
       pixel_size_y: scale5d[spatialAxes[1]],
       pixel_size_z: scale5d[spatialAxes[0]] * DOWNSAMPLE_Z,
-      pixel_size_unit: unitSymbol,
+      pixel_size_unit: spaceUnitSymbol,
       name: displayMetadata.name,
       version: displayMetadata.version,
       transform: {
@@ -307,6 +311,8 @@ class OMEZarrLoader implements IVolumeLoader {
         rotation: [0, 0, 0],
       },
       times: sizeT,
+      time_scale: timeScale,
+      time_unit: timeUnitSymbol,
     };
     /* eslint-enable @typescript-eslint/naming-convention */
 
