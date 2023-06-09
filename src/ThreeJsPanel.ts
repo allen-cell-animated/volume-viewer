@@ -64,6 +64,9 @@ export class ThreeJsPanel {
   public showOrthoScaleBar: boolean;
   private perspectiveScaleBarElement: HTMLDivElement;
   public showPerspectiveScaleBar: boolean;
+  private timestepIndicatorElement: HTMLDivElement;
+  // TODO come back to see if this remains marked unused. if so, delete; if not, mark public
+  private showTimestepIndicator: boolean;
 
   private dataurlcallback?: (url: string) => void;
 
@@ -88,6 +91,8 @@ export class ThreeJsPanel {
     this.showOrthoScaleBar = true;
     this.perspectiveScaleBarElement = document.createElement("div");
     this.showPerspectiveScaleBar = false;
+    this.timestepIndicatorElement = document.createElement("div");
+    this.showTimestepIndicator = false;
 
     this.zooming = false;
     this.animateFuncs = [];
@@ -206,7 +211,7 @@ export class ThreeJsPanel {
     this.axisOffset = [66.0, 66.0];
 
     this.setupAxisHelper();
-    this.setupScaleBarElements();
+    this.setupIndicatorElements();
   }
 
   updateCameraFocus(fov: number, _focalDistance: number, _apertureSize: number): void {
@@ -344,7 +349,7 @@ export class ThreeJsPanel {
     return pixels * window.devicePixelRatio * worldUnitsPerPixel * physicalUnitsPerWorldUnit;
   }
 
-  setupScaleBarElements(): void {
+  setupIndicatorElements(): void {
     const scaleBarContainerStyle: Partial<CSSStyleDeclaration> = {
       fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
       position: "absolute",
@@ -362,9 +367,9 @@ export class ThreeJsPanel {
       display: "none",
       color: "white",
       mixBlendMode: "difference",
+      fontSize: "14px",
       textAlign: "right",
       lineHeight: "0px",
-      fontSize: "14px",
       boxSizing: "border-box",
       paddingRight: "10px",
     };
@@ -387,6 +392,19 @@ export class ThreeJsPanel {
     svgdiv.innerHTML = scaleBarSVG;
     this.perspectiveScaleBarElement.appendChild(labeldiv);
     this.perspectiveScaleBarElement.appendChild(svgdiv);
+
+    // Time step indicator
+    const timestepIndicatorStyle: Partial<CSSStyleDeclaration> = {
+      fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
+      position: "absolute",
+      right: "200px",
+      bottom: "20px",
+      color: "white",
+      mixBlendMode: "difference",
+      display: "none",
+    };
+    Object.assign(this.timestepIndicatorElement.style, timestepIndicatorStyle);
+    this.containerdiv.appendChild(this.timestepIndicatorElement);
   }
 
   updateOrthoScaleBar(scale: number, unit?: string): void {
@@ -410,6 +428,10 @@ export class ThreeJsPanel {
   updatePerspectiveScaleBar(length: number, unit?: string): void {
     const labeldiv = this.perspectiveScaleBarElement.firstChild as HTMLDivElement;
     labeldiv.innerHTML = `${length}${unit || ""}`;
+  }
+
+  updateTimestepIndicator(progress: number, total: number, unit: string): void {
+    this.timestepIndicatorElement.innerHTML = `${progress} / ${total} ${unit}`;
   }
 
   setPerspectiveScaleBarColor(color: [number, number, number]): void {
@@ -436,8 +458,13 @@ export class ThreeJsPanel {
     this.updateScaleBarVisibility();
   }
 
-  setScaleBarPosition(marginX: number, marginY: number, corner: ViewportCorner) {
-    const { style } = this.scaleBarContainerElement;
+  setShowTimestepIndicator(visible: boolean): void {
+    this.showTimestepIndicator = visible;
+    this.timestepIndicatorElement.style.display = visible ? "" : "none";
+  }
+
+  setIndicatorPosition(timestep: boolean, marginX: number, marginY: number, corner: ViewportCorner) {
+    const { style } = timestep ? this.timestepIndicatorElement : this.scaleBarContainerElement;
 
     style.removeProperty("top");
     style.removeProperty("bottom");

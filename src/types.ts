@@ -87,7 +87,5 @@ export const enum ViewportCorner {
   BOTTOM_LEFT = "bottom_left",
   BOTTOM_RIGHT = "bottom_right",
 }
-export const isTop = (corner: ViewportCorner): boolean =>
-  corner === ViewportCorner.TOP_LEFT || corner === ViewportCorner.TOP_RIGHT;
-export const isRight = (corner: ViewportCorner): boolean =>
-  corner === ViewportCorner.TOP_RIGHT || corner === ViewportCorner.BOTTOM_RIGHT;
+export const isTop = (corner: ViewportCorner): boolean => corner.toLowerCase().startsWith("top");
+export const isRight = (corner: ViewportCorner): boolean => corner.toLowerCase().endsWith("right");

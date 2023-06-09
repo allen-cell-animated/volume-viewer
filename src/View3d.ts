@@ -90,6 +90,12 @@ export class View3d {
     this.canvas3d.updatePerspectiveScaleBar(volume.tickMarkPhysicalLength, volume.imageInfo.pixel_size_unit);
   }
 
+  private updateTimestepIndicator(volume: Volume): void {
+    const { times, time_scale, time_unit } = volume.imageInfo;
+    const currentTime = volume.loadSpec.time;
+    this.canvas3d.updateTimestepIndicator(currentTime * time_scale, times * time_scale, time_unit);
+  }
+
   /**
    * Capture the contents of this canvas to a data url
    * @param {Object} dataurlcallback function to call when data url is ready; function accepts dataurl as string arg
@@ -195,6 +201,7 @@ export class View3d {
 
   setTime(volume: Volume, time: number, loader: IVolumeLoader, onChannelLoaded?: PerChannelCallback): void {
     volume.loadSpec.time = Math.max(0, Math.min(volume.imageInfo.times, time));
+    this.updateTimestepIndicator(volume);
     loader.loadVolumeData(volume, onChannelLoaded);
   }
 
@@ -350,6 +357,9 @@ export class View3d {
     this.canvas3d.animateFuncs.push(img.onAnimate.bind(img));
 
     this.updatePerspectiveScaleBar(img.volume);
+    this.updateTimestepIndicator(img.volume);
+    // TODO remove
+    this.setShowTimestepIndicator(img.volume.imageInfo.times > 1);
 
     // redraw if not already in draw loop
     this.redraw();
@@ -465,6 +475,16 @@ export class View3d {
   }
 
   /**
+   * Enable or disable time indicator.
+   * @param showTimestepIndicator
+   */
+  setShowTimestepIndicator(showIndicator: boolean): void {
+    const times = this.image?.volume.imageInfo.times;
+    const hasTimes = !!times && times > 1;
+    this.canvas3d.setShowTimestepIndicator(showIndicator && hasTimes);
+  }
+
+  /**
    * Set the position of the axis indicator, as a corner of the viewport and horizontal and vertical margins from the
    * edge of the viewport.
    * @param {number} marginX
@@ -489,8 +509,21 @@ export class View3d {
    *  TypeScript users should use the `ViewportCorner` enum. Otherwise, corner is one of: `"top_left"`, `"top_right"`,
    *  `"bottom_left"`, `"bottom_right"`.
    */
-  setScaleBarPosition(marginX: number, marginY: number, corner: ViewportCorner = ViewportCorner.BOTTOM_RIGHT): void {
-    this.canvas3d.setScaleBarPosition(marginX, marginY, corner);
+  setScaleBarPosition(marginX: number, marginY: number, corner = ViewportCorner.BOTTOM_RIGHT): void {
+    this.canvas3d.setIndicatorPosition(false, marginX, marginY, corner);
+  }
+
+  /**
+   * Set the position of the time step indicator, as a corner of the viewport and horizontal and vertical margins from
+   * the edge of the viewport.
+   * @param {number} marginX
+   * @param {number} marginY
+   * @param {string} [corner] The corner of the viewport in which the scale bar appears. Default: `"bottom_right"`.
+   *  TypeScript users should use the `ViewportCorner` enum. Otherwise, corner is one of: `"top_left"`, `"top_right"`,
+   *  `"bottom_left"`, `"bottom_right"`.
+   */
+  setTimestepIndicatorPosition(marginX: number, marginY: number, corner = ViewportCorner.BOTTOM_RIGHT): void {
+    this.canvas3d.setIndicatorPosition(true, marginX, marginY, corner);
   }
 
   /**
