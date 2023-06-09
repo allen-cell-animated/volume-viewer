@@ -6152,7 +6152,9 @@ var getDefaultImageInfo = function getDefaultImageInfo() {
       translation: [0, 0, 0],
       rotation: [0, 0, 0]
     },
-    times: 1
+    times: 1,
+    time_scale: 1,
+    time_unit: ""
   };
 };
 /* eslint-enable @typescript-eslint/naming-convention */
@@ -8694,7 +8696,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 spatialAxes = findSpatialAxesZYX(axisTCZYX); // Assume all axes have the same units - we have no means of storing per-axis unit symbols
 
                 unitName = axes[spatialAxes[2]].unit;
-                unitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.spatialUnitNameToSymbol)(unitName) || unitName || "";
+                unitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.unitNameToSymbol)(unitName) || unitName || "";
                 dimsPromises = multiscales.map( /*#__PURE__*/function () {
                   var _ref2 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(multiscale) {
                     var shape, scale5d, d, i;
@@ -8761,7 +8763,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
     key: "createVolume",
     value: function () {
       var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee3(loadSpec) {
-        var store, imagegroup, data, allmetadata, imageIndex, multiscale, datasets, axes, axisTCZYX, spatialAxes, unitName, unitSymbol, levelToLoad, dataset, level, multiscaleShape, channels, sizeT, scale5d, tw, th, tz, loadedZ, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, i, imgdata, vol;
+        var store, imagegroup, data, allmetadata, imageIndex, multiscale, datasets, axes, axisTCZYX, spatialAxes, spaceUnitName, spaceUnitSymbol, timeUnitName, timeUnitSymbol, levelToLoad, dataset, level, multiscaleShape, channels, sizeT, scale5d, timeScale, tw, th, tz, loadedZ, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, i, imgdata, vol;
 
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee3$(_context3) {
           while (1) {
@@ -8789,24 +8791,26 @@ var OMEZarrLoader = /*#__PURE__*/function () {
 
                 spatialAxes = findSpatialAxesZYX(axisTCZYX); // Assume all axes have the same units - we have no means of storing per-axis unit symbols
 
-                unitName = axes[spatialAxes[2]].unit;
-                unitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.spatialUnitNameToSymbol)(unitName) || unitName || "";
-                _context3.next = 19;
+                spaceUnitName = axes[spatialAxes[2]].unit;
+                spaceUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
+                timeUnitName = this.hasT ? axes[axisTCZYX[0]].unit : undefined;
+                timeUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
+                _context3.next = 21;
                 return pickLevelToLoad(multiscale, store, loadSpec);
 
-              case 19:
+              case 21:
                 levelToLoad = _context3.sent;
                 dataset = datasets[levelToLoad];
                 this.multiscalePath = dataset.path; // get the shape for the level we want to load
 
-                _context3.next = 24;
+                _context3.next = 26;
                 return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openArray)({
                   store: store,
                   path: imagegroup + "/" + dataset.path,
                   mode: "r"
                 });
 
-              case 24:
+              case 26:
                 level = _context3.sent;
                 multiscaleShape = level.meta.shape;
 
@@ -8817,6 +8821,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 channels = this.hasC ? multiscaleShape[axisTCZYX[1]] : 1;
                 sizeT = this.hasT ? multiscaleShape[axisTCZYX[0]] : 1;
                 scale5d = getScale(dataset);
+                timeScale = this.hasT ? scale5d[axisTCZYX[0]] : 1;
                 tw = multiscaleShape[spatialAxes[2]];
                 th = multiscaleShape[spatialAxes[1]];
                 tz = multiscaleShape[spatialAxes[0]]; // compute rows and cols and atlas width and ht, given tw and th
@@ -8855,14 +8860,16 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                   pixel_size_x: scale5d[spatialAxes[2]],
                   pixel_size_y: scale5d[spatialAxes[1]],
                   pixel_size_z: scale5d[spatialAxes[0]] * DOWNSAMPLE_Z,
-                  pixel_size_unit: unitSymbol,
+                  pixel_size_unit: spaceUnitSymbol,
                   name: displayMetadata.name,
                   version: displayMetadata.version,
                   transform: {
                     translation: [0, 0, 0],
                     rotation: [0, 0, 0]
                   },
-                  times: sizeT
+                  times: sizeT,
+                  time_scale: timeScale,
+                  time_unit: timeUnitSymbol
                 };
                 /* eslint-enable @typescript-eslint/naming-convention */
                 // got some data, now let's construct the volume.
@@ -8871,7 +8878,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.buildDefaultMetadata)(imgdata);
                 return _context3.abrupt("return", vol);
 
-              case 45:
+              case 48:
               case "end":
                 return _context3.stop();
             }
@@ -9096,7 +9103,9 @@ var OpenCellLoader = /*#__PURE__*/function () {
                     translation: [0, 0, 0],
                     rotation: [0, 0, 0]
                   },
-                  times: 1
+                  times: 1,
+                  time_scale: 1,
+                  time_unit: ""
                 };
                 /* eslint-enable @typescript-eslint/naming-convention */
                 // got some data, now let's construct the volume.
@@ -9382,7 +9391,9 @@ var TiffLoader = /*#__PURE__*/function () {
                     translation: [0, 0, 0],
                     rotation: [0, 0, 0]
                   },
-                  times: dims.sizet
+                  times: dims.sizet,
+                  time_scale: 1,
+                  time_unit: ""
                 };
                 /* eslint-enable @typescript-eslint/naming-convention */
 
@@ -9511,39 +9522,60 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "buildDefaultMetadata": () => (/* binding */ buildDefaultMetadata),
 /* harmony export */   "computePackedAtlasDims": () => (/* binding */ computePackedAtlasDims),
 /* harmony export */   "estimateLevelForAtlas": () => (/* binding */ estimateLevelForAtlas),
-/* harmony export */   "spatialUnitNameToSymbol": () => (/* binding */ spatialUnitNameToSymbol)
+/* harmony export */   "unitNameToSymbol": () => (/* binding */ unitNameToSymbol)
 /* harmony export */ });
 /* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! regenerator-runtime/runtime */ "./node_modules/regenerator-runtime/runtime.js");
 /* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0__);
 
-// Preferred spatial units in OME-Zarr are specified as full names. We want just the symbol.
-// See https://ngff.openmicroscopy.org/latest/#axes-md
-function spatialUnitNameToSymbol(unitName) {
+// Map from units to their symbols
+var UNIT_SYMBOLS = {
+  angstrom: "Å",
+  day: "d",
+  foot: "ft",
+  hour: "h",
+  inch: "in",
+  meter: "m",
+  mile: "mi",
+  minute: "min",
+  parsec: "pc",
+  second: "s",
+  yard: "yd"
+}; // Units which may take SI prefixes (e.g. micro-, tera-)
+
+var SI_UNITS = ["meter", "second"]; // SI prefixes which abbreviate in nonstandard ways
+
+var SI_PREFIX_ABBVS = {
+  micro: "μ",
+  deca: "da"
+};
+/** Converts a full spatial or temporal unit name supported by OME-Zarr to its unit symbol */
+// (see https://ngff.openmicroscopy.org/latest/#axes-md)
+
+function unitNameToSymbol(unitName) {
   if (unitName === undefined) {
     return null;
   }
 
-  var unitSymbols = {
-    angstrom: "Å",
-    decameter: "dam",
-    foot: "ft",
-    inch: "in",
-    meter: "m",
-    micrometer: "μm",
-    mile: "mi",
-    parsec: "pc",
-    yard: "yd"
-  };
+  if (UNIT_SYMBOLS[unitName]) {
+    return UNIT_SYMBOLS[unitName];
+  }
 
-  if (unitSymbols[unitName]) {
-    return unitSymbols[unitName];
-  } // SI prefixes not in unitSymbols are abbreviated by first letter, capitalized if prefix ends with "a"
+  var prefixedSIUnit = SI_UNITS.find(function (siUnit) {
+    return unitName.endsWith(siUnit);
+  });
+
+  if (prefixedSIUnit) {
+    var prefix = unitName.substring(0, unitName.length - prefixedSIUnit.length);
+
+    if (SI_PREFIX_ABBVS[prefix]) {
+      // "special" SI prefix
+      return SI_PREFIX_ABBVS[prefix] + UNIT_SYMBOLS[prefixedSIUnit];
+    } // almost all SI prefixes are abbreviated by first letter, capitalized if prefix ends with "a"
 
 
-  if (unitName.endsWith("meter")) {
-    var capitalize = unitName[unitName.length - 6] === "a";
-    var prefix = capitalize ? unitName[0].toUpperCase() : unitName[0];
-    return prefix + "m";
+    var capitalize = prefix.endsWith("a");
+    var prefixAbbr = capitalize ? prefix[0].toUpperCase() : prefix[0];
+    return prefixAbbr + UNIT_SYMBOLS[prefixedSIUnit];
   }
 
   return null;
@@ -85701,7 +85733,9 @@ function createTestVolume() {
       translation: [0, 0, 0],
       rotation: [0, 0, 0]
     },
-    times: 1
+    times: 1,
+    time_scale: 1,
+    time_unit: ""
   };
   /* eslint-enable @typescript-eslint/naming-convention */
   // generate some raw volume data
