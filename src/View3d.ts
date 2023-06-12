@@ -358,8 +358,6 @@ export class View3d {
 
     this.updatePerspectiveScaleBar(img.volume);
     this.updateTimestepIndicator(img.volume);
-    // TODO remove
-    this.setShowTimestepIndicator(img.volume.imageInfo.times > 1);
 
     // redraw if not already in draw loop
     this.redraw();

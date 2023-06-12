@@ -369,7 +369,7 @@ export class ThreeJsPanel {
       mixBlendMode: "difference",
       fontSize: "14px",
       textAlign: "right",
-      lineHeight: "0px",
+      lineHeight: "0",
       boxSizing: "border-box",
       paddingRight: "10px",
     };
@@ -397,11 +397,12 @@ export class ThreeJsPanel {
     const timestepIndicatorStyle: Partial<CSSStyleDeclaration> = {
       fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
       position: "absolute",
-      right: "200px",
+      right: "20px",
       bottom: "20px",
       color: "white",
       mixBlendMode: "difference",
       display: "none",
+      lineHeight: "0.75",
     };
     Object.assign(this.timestepIndicatorElement.style, timestepIndicatorStyle);
     this.containerdiv.appendChild(this.timestepIndicatorElement);
