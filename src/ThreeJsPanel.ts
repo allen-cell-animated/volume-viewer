@@ -65,8 +65,7 @@ export class ThreeJsPanel {
   private perspectiveScaleBarElement: HTMLDivElement;
   public showPerspectiveScaleBar: boolean;
   private timestepIndicatorElement: HTMLDivElement;
-  // TODO come back to see if this remains marked unused. if so, delete; if not, mark public
-  private showTimestepIndicator: boolean;
+  public showTimestepIndicator: boolean;
 
   private dataurlcallback?: (url: string) => void;
 
