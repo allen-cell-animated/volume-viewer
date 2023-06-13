@@ -3746,6 +3746,8 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     this.showOrthoScaleBar = true;
     this.perspectiveScaleBarElement = document.createElement("div");
     this.showPerspectiveScaleBar = false;
+    this.timestepIndicatorElement = document.createElement("div");
+    this.showTimestepIndicator = false;
     this.zooming = false;
     this.animateFuncs = []; // are we in a constant render loop or not?
 
@@ -3846,7 +3848,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
 
     this.axisOffset = [66.0, 66.0];
     this.setupAxisHelper();
-    this.setupScaleBarElements();
+    this.setupIndicatorElements();
   }
 
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(ThreeJsPanel, [{
@@ -3991,8 +3993,8 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       return pixels * window.devicePixelRatio * worldUnitsPerPixel * physicalUnitsPerWorldUnit;
     }
   }, {
-    key: "setupScaleBarElements",
-    value: function setupScaleBarElements() {
+    key: "setupIndicatorElements",
+    value: function setupIndicatorElements() {
       var scaleBarContainerStyle = {
         fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
         position: "absolute",
@@ -4009,9 +4011,9 @@ var ThreeJsPanel = /*#__PURE__*/function () {
         display: "none",
         color: "white",
         mixBlendMode: "difference",
-        textAlign: "right",
-        lineHeight: "0px",
         fontSize: "14px",
+        textAlign: "right",
+        lineHeight: "0",
         boxSizing: "border-box",
         paddingRight: "10px"
       };
@@ -4031,7 +4033,20 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       svgdiv.style.color = "rgb(255, 255, 0)";
       svgdiv.innerHTML = _constants_scaleBarSVG__WEBPACK_IMPORTED_MODULE_5__["default"];
       this.perspectiveScaleBarElement.appendChild(labeldiv);
-      this.perspectiveScaleBarElement.appendChild(svgdiv);
+      this.perspectiveScaleBarElement.appendChild(svgdiv); // Time step indicator
+
+      var timestepIndicatorStyle = {
+        fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
+        position: "absolute",
+        right: "20px",
+        bottom: "20px",
+        color: "white",
+        mixBlendMode: "difference",
+        display: "none",
+        lineHeight: "0.75"
+      };
+      Object.assign(this.timestepIndicatorElement.style, timestepIndicatorStyle);
+      this.containerdiv.appendChild(this.timestepIndicatorElement);
     }
   }, {
     key: "updateOrthoScaleBar",
@@ -4059,6 +4074,11 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     value: function updatePerspectiveScaleBar(length, unit) {
       var labeldiv = this.perspectiveScaleBarElement.firstChild;
       labeldiv.innerHTML = "".concat(length).concat(unit || "");
+    }
+  }, {
+    key: "updateTimestepIndicator",
+    value: function updateTimestepIndicator(progress, total, unit) {
+      this.timestepIndicatorElement.innerHTML = "".concat(progress, " / ").concat(total, " ").concat(unit);
     }
   }, {
     key: "setPerspectiveScaleBarColor",
@@ -4089,11 +4109,19 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       this.updateScaleBarVisibility();
     }
   }, {
-    key: "setScaleBarPosition",
-    value: function setScaleBarPosition(marginX, marginY, corner) {
+    key: "setShowTimestepIndicator",
+    value: function setShowTimestepIndicator(visible) {
+      this.showTimestepIndicator = visible;
+      this.timestepIndicatorElement.style.display = visible ? "" : "none";
+    }
+  }, {
+    key: "setIndicatorPosition",
+    value: function setIndicatorPosition(timestep, marginX, marginY, corner) {
       var _Object$assign;
 
-      var style = this.scaleBarContainerElement.style;
+      var _ref = timestep ? this.timestepIndicatorElement : this.scaleBarContainerElement,
+          style = _ref.style;
+
       style.removeProperty("top");
       style.removeProperty("bottom");
       style.removeProperty("left");
@@ -5214,6 +5242,17 @@ var View3d = /*#__PURE__*/function () {
     value: function updatePerspectiveScaleBar(volume) {
       this.canvas3d.updatePerspectiveScaleBar(volume.tickMarkPhysicalLength, volume.imageInfo.pixel_size_unit);
     }
+  }, {
+    key: "updateTimestepIndicator",
+    value: function updateTimestepIndicator(volume) {
+      // convert names to camel case to keep eslint happy
+      var _volume$imageInfo = volume.imageInfo,
+          times = _volume$imageInfo.times,
+          timeScale = _volume$imageInfo.time_scale,
+          timeUnit = _volume$imageInfo.time_unit;
+      var currentTime = volume.loadSpec.time;
+      this.canvas3d.updateTimestepIndicator(currentTime * timeScale, times * timeScale, timeUnit);
+    }
     /**
      * Capture the contents of this canvas to a data url
      * @param {Object} dataurlcallback function to call when data url is ready; function accepts dataurl as string arg
@@ -5354,6 +5393,7 @@ var View3d = /*#__PURE__*/function () {
     key: "setTime",
     value: function setTime(volume, time, loader, onChannelLoaded) {
       volume.loadSpec.time = Math.max(0, Math.min(volume.imageInfo.times, time));
+      this.updateTimestepIndicator(volume);
       loader.loadVolumeData(volume, onChannelLoaded);
     }
     /**
@@ -5537,7 +5577,8 @@ var View3d = /*#__PURE__*/function () {
       this.canvas3d.setControlHandlers(this.onStartControls.bind(this), this.onChangeControls.bind(this), this.onEndControls.bind(this));
       this.canvas3d.animateFuncs.push(this.preRender.bind(this));
       this.canvas3d.animateFuncs.push(img.onAnimate.bind(img));
-      this.updatePerspectiveScaleBar(img.volume); // redraw if not already in draw loop
+      this.updatePerspectiveScaleBar(img.volume);
+      this.updateTimestepIndicator(img.volume); // redraw if not already in draw loop
 
       this.redraw();
       return oldImage;
@@ -5647,6 +5688,20 @@ var View3d = /*#__PURE__*/function () {
       this.canvas3d.setShowPerspectiveScaleBar(showScaleBar && !!((_this$image18 = this.image) !== null && _this$image18 !== void 0 && _this$image18.showBoundingBox) && this.volumeRenderMode !== RENDERMODE_PATHTRACE);
     }
     /**
+     * Enable or disable time indicator.
+     * @param showTimestepIndicator
+     */
+
+  }, {
+    key: "setShowTimestepIndicator",
+    value: function setShowTimestepIndicator(showIndicator) {
+      var _this$image19;
+
+      var times = (_this$image19 = this.image) === null || _this$image19 === void 0 ? void 0 : _this$image19.volume.imageInfo.times;
+      var hasTimes = !!times && times > 1;
+      this.canvas3d.setShowTimestepIndicator(showIndicator && hasTimes);
+    }
+    /**
      * Set the position of the axis indicator, as a corner of the viewport and horizontal and vertical margins from the
      * edge of the viewport.
      * @param {number} marginX
@@ -5680,7 +5735,23 @@ var View3d = /*#__PURE__*/function () {
     key: "setScaleBarPosition",
     value: function setScaleBarPosition(marginX, marginY) {
       var corner = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _types__WEBPACK_IMPORTED_MODULE_6__.ViewportCorner.BOTTOM_RIGHT;
-      this.canvas3d.setScaleBarPosition(marginX, marginY, corner);
+      this.canvas3d.setIndicatorPosition(false, marginX, marginY, corner);
+    }
+    /**
+     * Set the position of the time step indicator, as a corner of the viewport and horizontal and vertical margins from
+     * the edge of the viewport.
+     * @param {number} marginX
+     * @param {number} marginY
+     * @param {string} [corner] The corner of the viewport in which the scale bar appears. Default: `"bottom_right"`.
+     *  TypeScript users should use the `ViewportCorner` enum. Otherwise, corner is one of: `"top_left"`, `"top_right"`,
+     *  `"bottom_left"`, `"bottom_right"`.
+     */
+
+  }, {
+    key: "setTimestepIndicatorPosition",
+    value: function setTimestepIndicatorPosition(marginX, marginY) {
+      var corner = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _types__WEBPACK_IMPORTED_MODULE_6__.ViewportCorner.BOTTOM_RIGHT;
+      this.canvas3d.setIndicatorPosition(true, marginX, marginY, corner);
     }
     /**
      * Enable or disable a turntable rotation mode. The display will continuously spin about the vertical screen axis.
@@ -5726,17 +5797,17 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setFlipVolume",
     value: function setFlipVolume(volume, flipX, flipY, flipZ) {
-      var _this$image19;
+      var _this$image20;
 
-      (_this$image19 = this.image) === null || _this$image19 === void 0 ? void 0 : _this$image19.setFlipAxes(flipX, flipY, flipZ);
+      (_this$image20 = this.image) === null || _this$image20 === void 0 ? void 0 : _this$image20.setFlipAxes(flipX, flipY, flipZ);
       this.redraw();
     }
   }, {
     key: "setInterpolationEnabled",
     value: function setInterpolationEnabled(volume, active) {
-      var _this$image20;
+      var _this$image21;
 
-      (_this$image20 = this.image) === null || _this$image20 === void 0 ? void 0 : _this$image20.setInterpolationEnabled(active);
+      (_this$image21 = this.image) === null || _this$image21 === void 0 ? void 0 : _this$image21.setInterpolationEnabled(active);
       this.redraw();
     }
     /**
@@ -5752,10 +5823,10 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "resize",
     value: function resize(comp, w, h, ow, oh, eOpts) {
-      var _this$image21;
+      var _this$image22;
 
       this.canvas3d.resize(comp, w, h, ow, oh, eOpts);
-      (_this$image21 = this.image) === null || _this$image21 === void 0 ? void 0 : _this$image21.setResolution(this.canvas3d);
+      (_this$image22 = this.image) === null || _this$image22 === void 0 ? void 0 : _this$image22.setResolution(this.canvas3d);
       this.redraw();
     }
     /**
@@ -5767,9 +5838,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateDensity",
     value: function updateDensity(volume, density) {
-      var _this$image22;
+      var _this$image23;
 
-      (_this$image22 = this.image) === null || _this$image22 === void 0 ? void 0 : _this$image22.setDensity(density);
+      (_this$image23 = this.image) === null || _this$image23 === void 0 ? void 0 : _this$image23.setDensity(density);
       this.redraw();
     }
     /**
@@ -5781,9 +5852,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateShadingMethod",
     value: function updateShadingMethod(volume, isbrdf) {
-      var _this$image23;
+      var _this$image24;
 
-      (_this$image23 = this.image) === null || _this$image23 === void 0 ? void 0 : _this$image23.updateShadingMethod(isbrdf);
+      (_this$image24 = this.image) === null || _this$image24 === void 0 ? void 0 : _this$image24.updateShadingMethod(isbrdf);
     }
     /**
      * Set gamma levels: this affects the transparency and brightness of the single pass ray march volume render
@@ -5796,9 +5867,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setGamma",
     value: function setGamma(volume, gmin, glevel, gmax) {
-      var _this$image24;
+      var _this$image25;
 
-      (_this$image24 = this.image) === null || _this$image24 === void 0 ? void 0 : _this$image24.setGamma(gmin, glevel, gmax);
+      (_this$image25 = this.image) === null || _this$image25 === void 0 ? void 0 : _this$image25.setGamma(gmin, glevel, gmax);
       this.redraw();
     }
     /**
@@ -5810,9 +5881,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setMaxProjectMode",
     value: function setMaxProjectMode(volume, isMaxProject) {
-      var _this$image25;
+      var _this$image26;
 
-      (_this$image25 = this.image) === null || _this$image25 === void 0 ? void 0 : _this$image25.setMaxProjectMode(isMaxProject);
+      (_this$image26 = this.image) === null || _this$image26 === void 0 ? void 0 : _this$image26.setMaxProjectMode(isMaxProject);
       this.redraw();
     }
     /**
@@ -5823,9 +5894,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateActiveChannels",
     value: function updateActiveChannels(_volume) {
-      var _this$image26;
+      var _this$image27;
 
-      (_this$image26 = this.image) === null || _this$image26 === void 0 ? void 0 : _this$image26.fuse();
+      (_this$image27 = this.image) === null || _this$image27 === void 0 ? void 0 : _this$image27.fuse();
       this.redraw();
     }
     /**
@@ -5836,9 +5907,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateLuts",
     value: function updateLuts(_volume) {
-      var _this$image27;
+      var _this$image28;
 
-      (_this$image27 = this.image) === null || _this$image27 === void 0 ? void 0 : _this$image27.updateLuts();
+      (_this$image28 = this.image) === null || _this$image28 === void 0 ? void 0 : _this$image28.updateLuts();
       this.redraw();
     }
     /**
@@ -5849,9 +5920,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateMaterial",
     value: function updateMaterial(_volume) {
-      var _this$image28;
+      var _this$image29;
 
-      (_this$image28 = this.image) === null || _this$image28 === void 0 ? void 0 : _this$image28.updateMaterial();
+      (_this$image29 = this.image) === null || _this$image29 === void 0 ? void 0 : _this$image29.updateMaterial();
       this.redraw();
     }
     /**
@@ -5862,10 +5933,10 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateExposure",
     value: function updateExposure(e) {
-      var _this$image29;
+      var _this$image30;
 
       this.exposure = e;
-      (_this$image29 = this.image) === null || _this$image29 === void 0 ? void 0 : _this$image29.setBrightness(e);
+      (_this$image30 = this.image) === null || _this$image30 === void 0 ? void 0 : _this$image30.setBrightness(e);
       this.redraw();
     }
     /**
@@ -5878,10 +5949,10 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateCamera",
     value: function updateCamera(fov, focalDistance, apertureSize) {
-      var _this$image30;
+      var _this$image31;
 
       this.canvas3d.updateCameraFocus(fov, focalDistance, apertureSize);
-      (_this$image30 = this.image) === null || _this$image30 === void 0 ? void 0 : _this$image30.onCameraChanged(fov, focalDistance, apertureSize);
+      (_this$image31 = this.image) === null || _this$image31 === void 0 ? void 0 : _this$image31.onCameraChanged(fov, focalDistance, apertureSize);
       this.redraw();
     }
     /**
@@ -5898,9 +5969,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateClipRegion",
     value: function updateClipRegion(volume, xmin, xmax, ymin, ymax, zmin, zmax) {
-      var _this$image31;
+      var _this$image32;
 
-      (_this$image31 = this.image) === null || _this$image31 === void 0 ? void 0 : _this$image31.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
+      (_this$image32 = this.image) === null || _this$image32 === void 0 ? void 0 : _this$image32.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
       this.redraw();
     }
     /**
@@ -5916,9 +5987,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setAxisClip",
     value: function setAxisClip(volume, axis, minval, maxval, isOrthoAxis) {
-      var _this$image32;
+      var _this$image33;
 
-      (_this$image32 = this.image) === null || _this$image32 === void 0 ? void 0 : _this$image32.setAxisClip(axis, minval, maxval, isOrthoAxis);
+      (_this$image33 = this.image) === null || _this$image33 === void 0 ? void 0 : _this$image33.setAxisClip(axis, minval, maxval, isOrthoAxis);
       this.redraw();
     }
     /**
@@ -5929,11 +6000,11 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateLights",
     value: function updateLights(state) {
-      var _this$image33;
+      var _this$image34;
 
       // TODO flesh this out
       this.lights = state;
-      (_this$image33 = this.image) === null || _this$image33 === void 0 ? void 0 : _this$image33.updateLights(state);
+      (_this$image34 = this.image) === null || _this$image34 === void 0 ? void 0 : _this$image34.updateLights(state);
     }
     /**
      * Set a sampling rate to trade performance for quality.
@@ -5943,14 +6014,14 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updatePixelSamplingRate",
     value: function updatePixelSamplingRate(value) {
-      var _this$image34;
+      var _this$image35;
 
       if (this.pixelSamplingRate === value) {
         return;
       }
 
       this.pixelSamplingRate = value;
-      (_this$image34 = this.image) === null || _this$image34 === void 0 ? void 0 : _this$image34.setPixelSamplingRate(value);
+      (_this$image35 = this.image) === null || _this$image35 === void 0 ? void 0 : _this$image35.setPixelSamplingRate(value);
     }
     /**
      * Set the opacity of the mask channel
@@ -5961,9 +6032,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateMaskAlpha",
     value: function updateMaskAlpha(volume, value) {
-      var _this$image35;
+      var _this$image36;
 
-      (_this$image35 = this.image) === null || _this$image35 === void 0 ? void 0 : _this$image35.setMaskAlpha(value);
+      (_this$image36 = this.image) === null || _this$image36 === void 0 ? void 0 : _this$image36.setMaskAlpha(value);
       this.redraw();
     }
     /**
@@ -5976,9 +6047,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeChannelEnabled",
     value: function setVolumeChannelEnabled(volume, channel, enabled) {
-      var _this$image36;
+      var _this$image37;
 
-      (_this$image36 = this.image) === null || _this$image36 === void 0 ? void 0 : _this$image36.setVolumeChannelEnabled(channel, enabled);
+      (_this$image37 = this.image) === null || _this$image37 === void 0 ? void 0 : _this$image37.setVolumeChannelEnabled(channel, enabled);
       this.redraw();
     }
     /**
@@ -5994,9 +6065,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateChannelMaterial",
     value: function updateChannelMaterial(volume, channelIndex, colorrgb, specularrgb, emissivergb, glossiness) {
-      var _this$image37;
+      var _this$image38;
 
-      (_this$image37 = this.image) === null || _this$image37 === void 0 ? void 0 : _this$image37.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
+      (_this$image38 = this.image) === null || _this$image38 === void 0 ? void 0 : _this$image38.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
     }
     /**
      * Set the color for a channel
@@ -6008,9 +6079,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateChannelColor",
     value: function updateChannelColor(volume, channelIndex, colorrgb) {
-      var _this$image38;
+      var _this$image39;
 
-      (_this$image38 = this.image) === null || _this$image38 === void 0 ? void 0 : _this$image38.updateChannelColor(channelIndex, colorrgb);
+      (_this$image39 = this.image) === null || _this$image39 === void 0 ? void 0 : _this$image39.updateChannelColor(channelIndex, colorrgb);
     }
     /**
      * Switch between single pass ray-marched volume rendering and progressive path traced rendering.
@@ -6020,7 +6091,7 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeRenderMode",
     value: function setVolumeRenderMode(mode) {
-      var _this$image39;
+      var _this$image40;
 
       if (mode === this.volumeRenderMode) {
         return;
@@ -6047,7 +6118,7 @@ var View3d = /*#__PURE__*/function () {
       } // TODO remove when pathtrace supports a bounding box
 
 
-      this.canvas3d.setShowPerspectiveScaleBar(this.canvas3d.showOrthoScaleBar && !!((_this$image39 = this.image) !== null && _this$image39 !== void 0 && _this$image39.showBoundingBox) && mode !== RENDERMODE_PATHTRACE);
+      this.canvas3d.setShowPerspectiveScaleBar(this.canvas3d.showOrthoScaleBar && !!((_this$image40 = this.image) !== null && _this$image40 !== void 0 && _this$image40.showBoundingBox) && mode !== RENDERMODE_PATHTRACE);
     }
     /**
      *
@@ -6058,9 +6129,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeTranslation",
     value: function setVolumeTranslation(volume, xyz) {
-      var _this$image40;
+      var _this$image41;
 
-      (_this$image40 = this.image) === null || _this$image40 === void 0 ? void 0 : _this$image40.setTranslation(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().fromArray(xyz));
+      (_this$image41 = this.image) === null || _this$image41 === void 0 ? void 0 : _this$image41.setTranslation(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().fromArray(xyz));
       this.redraw();
     }
     /**
@@ -6072,9 +6143,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeRotation",
     value: function setVolumeRotation(volume, eulerXYZ) {
-      var _this$image41;
+      var _this$image42;
 
-      (_this$image41 = this.image) === null || _this$image41 === void 0 ? void 0 : _this$image41.setRotation(new three__WEBPACK_IMPORTED_MODULE_7__.Euler().fromArray(eulerXYZ));
+      (_this$image42 = this.image) === null || _this$image42 === void 0 ? void 0 : _this$image42.setRotation(new three__WEBPACK_IMPORTED_MODULE_7__.Euler().fromArray(eulerXYZ));
       this.redraw();
     }
     /**
@@ -6084,10 +6155,10 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "resetCamera",
     value: function resetCamera() {
-      var _this$image42;
+      var _this$image43;
 
       this.canvas3d.resetCamera();
-      (_this$image42 = this.image) === null || _this$image42 === void 0 ? void 0 : _this$image42.onResetCamera();
+      (_this$image43 = this.image) === null || _this$image43 === void 0 ? void 0 : _this$image43.onResetCamera();
       this.redraw();
     }
   }, {
