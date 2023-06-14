@@ -267,7 +267,9 @@ class OMEZarrLoader implements IVolumeLoader {
     const channels = this.hasC ? multiscaleShape[axisTCZYX[1]] : 1;
     const sizeT = this.hasT ? multiscaleShape[axisTCZYX[0]] : 1;
 
-    const scale5d = getScale(dataset);
+    // we want scale of level 0
+    const scale5d = getScale(datasets[0]);
+
     const timeScale = this.hasT ? scale5d[axisTCZYX[0]] : 1;
     const tw = multiscaleShape[spatialAxes[2]];
     const th = multiscaleShape[spatialAxes[1]];
@@ -285,10 +287,14 @@ class OMEZarrLoader implements IVolumeLoader {
     for (let i = 0; i < displayMetadata.channels.length; ++i) {
       chnames.push(displayMetadata.channels[i].label);
     }
+
+    // get shape of level 0
+    const shape0 = await fetchShapeOfLevel(store, loadSpec.subpath, datasets[0]);
+
     /* eslint-disable @typescript-eslint/naming-convention */
     const imgdata: ImageInfo = {
-      width: tw, // TODO where should we capture the original w?
-      height: th, // TODO original h?
+      width: shape0[spatialAxes[2]],
+      height: shape0[spatialAxes[1]],
       channels: channels,
       channel_names: chnames,
       rows: nrows,
