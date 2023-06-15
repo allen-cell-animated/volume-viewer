@@ -8834,7 +8834,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
     key: "createVolume",
     value: function () {
       var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee3(loadSpec) {
-        var store, imagegroup, data, allmetadata, imageIndex, multiscale, datasets, axes, axisTCZYX, spatialAxes, spaceUnitName, spaceUnitSymbol, timeUnitName, timeUnitSymbol, levelToLoad, dataset, level, multiscaleShape, channels, sizeT, scale5d, timeScale, tw, th, tz, loadedZ, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, i, imgdata, vol;
+        var store, imagegroup, data, allmetadata, imageIndex, multiscale, datasets, axes, axisTCZYX, spatialAxes, spaceUnitName, spaceUnitSymbol, timeUnitName, timeUnitSymbol, levelToLoad, dataset, level, multiscaleShape, channels, sizeT, scale5d, timeScale, tw, th, tz, loadedZ, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, i, shape0, imgdata, vol;
 
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee3$(_context3) {
           while (1) {
@@ -8890,8 +8890,9 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 }
 
                 channels = this.hasC ? multiscaleShape[axisTCZYX[1]] : 1;
-                sizeT = this.hasT ? multiscaleShape[axisTCZYX[0]] : 1;
-                scale5d = getScale(dataset);
+                sizeT = this.hasT ? multiscaleShape[axisTCZYX[0]] : 1; // we want scale of level 0
+
+                scale5d = getScale(datasets[0]);
                 timeScale = this.hasT ? scale5d[axisTCZYX[0]] : 1;
                 tw = multiscaleShape[spatialAxes[2]];
                 th = multiscaleShape[spatialAxes[1]];
@@ -8907,15 +8908,19 @@ var OMEZarrLoader = /*#__PURE__*/function () {
 
                 for (i = 0; i < displayMetadata.channels.length; ++i) {
                   chnames.push(displayMetadata.channels[i].label);
-                }
+                } // get shape of level 0
+
+
+                _context3.next = 46;
+                return fetchShapeOfLevel(store, loadSpec.subpath, datasets[0]);
+
+              case 46:
+                shape0 = _context3.sent;
+
                 /* eslint-disable @typescript-eslint/naming-convention */
-
-
                 imgdata = {
-                  width: tw,
-                  // TODO where should we capture the original w?
-                  height: th,
-                  // TODO original h?
+                  width: shape0[spatialAxes[2]],
+                  height: shape0[spatialAxes[1]],
                   channels: channels,
                   channel_names: chnames,
                   rows: nrows,
@@ -8949,7 +8954,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.buildDefaultMetadata)(imgdata);
                 return _context3.abrupt("return", vol);
 
-              case 48:
+              case 51:
               case "end":
                 return _context3.stop();
             }
