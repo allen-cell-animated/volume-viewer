@@ -1,4 +1,6 @@
 import { AmbientLight, Vector3, Object3D, SpotLight, DirectionalLight, Euler, Scene, Color } from "three";
+import { Pane } from "tweakpane";
+import { Bindable, FolderApi } from "@tweakpane/core";
 
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import lightSettings from "./constants/lights";
@@ -36,6 +38,8 @@ export class View3d {
   private reflectedLight: DirectionalLight;
   private fillLight: DirectionalLight;
 
+  private tweakpane: Pane;
+
   /**
    * @param {Object} options Optional options.
    * @param {boolean} options.useWebGL2 Default true
@@ -63,6 +67,8 @@ export class View3d {
     this.reflectedLight = new DirectionalLight();
     this.fillLight = new DirectionalLight();
     this.buildScene();
+
+    this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
   }
 
   // prerender should be called on every redraw and should be the first thing done.
@@ -853,4 +859,38 @@ export class View3d {
   hasWebGL2(): boolean {
     return this.canvas3d.hasWebGL2;
   }
+
+  setupGui(container: HTMLElement): Pane {
+    const pane = new Pane({ title: "Advanced Settings", container });
+
+    const paneStyle: Partial<CSSStyleDeclaration> = {
+      position: "absolute",
+      top: "0",
+      right: "0",
+    };
+    Object.assign(pane.element.style, paneStyle);
+
+    // LIGHTS
+    const lights = pane.addFolder({ title: "Lights" });
+    createFolderForObject(lights, "spot light", this.spotLight, ["color", "intensity", "position"]);
+    createFolderForObject(lights, "ambient light", this.ambientLight, ["color", "intensity"]);
+    createFolderForObject(lights, "reflected light", this.reflectedLight, ["color", "intensity", "position"]);
+    createFolderForObject(lights, "fill light", this.fillLight, ["color", "intensity", "position"]);
+
+    return pane;
+  }
+}
+
+function createFolderForObject<O extends Bindable, Key extends keyof O>(
+  parent: FolderApi,
+  title: string,
+  object: O,
+  keys: Key[]
+): FolderApi {
+  const folder = parent.addFolder({ title });
+  keys.forEach((key) => {
+    const options = key === "color" ? { color: { type: "float" } } : undefined;
+    folder.addInput(object, key, options);
+  });
+  return folder;
 }
