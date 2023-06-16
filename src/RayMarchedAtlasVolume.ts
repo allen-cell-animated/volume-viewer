@@ -368,5 +368,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.setUniform("textureAtlasMask", this.channelData.maskTexture);
   }
 
-  public setRenderUpdateListener(_listener?: ((iteration: number) => void) | undefined) {0;}
+  public setRenderUpdateListener(_listener?: ((iteration: number) => void) | undefined) {
+    0;
+  }
 }
