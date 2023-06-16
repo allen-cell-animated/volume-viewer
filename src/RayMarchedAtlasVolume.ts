@@ -26,12 +26,13 @@ import {
 import { Volume } from ".";
 import Channel from "./Channel";
 import { ThreeJsPanel } from "./ThreeJsPanel";
+import { VolumeRenderImpl } from "./VolumeRenderImpl";
 
 import { Bounds, FuseChannel } from "./types";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
-export default class RayMarchedAtlasVolume {
+export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   public volume: Volume;
   public bounds: Bounds;
   private cube: BoxGeometry;
@@ -366,4 +367,6 @@ export default class RayMarchedAtlasVolume {
     this.setUniform("textureAtlas", this.channelData.getFusedTexture());
     this.setUniform("textureAtlasMask", this.channelData.maskTexture);
   }
+
+  public setRenderUpdateListener(_listener?: ((iteration: number) => void) | undefined) {0;}
 }

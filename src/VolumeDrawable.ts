@@ -11,6 +11,7 @@ import { Bounds, FuseChannel } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import Channel from "./Channel";
+import { VolumeRenderImpl } from "./VolumeRenderImpl";
 
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
@@ -46,7 +47,7 @@ export default class VolumeDrawable {
   private pathTracedVolume?: PathTracedVolume;
   private rayMarchedAtlasVolume?: RayMarchedAtlasVolume;
   private remoteAgaveVolume?: RemoteAgaveVolume;
-  private volumeRendering: PathTracedVolume | RayMarchedAtlasVolume | RemoteAgaveVolume;
+  private volumeRendering: VolumeRenderImpl;
 
   private bounds: Bounds;
   private scale: Vector3;
