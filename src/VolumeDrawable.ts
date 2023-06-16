@@ -10,14 +10,15 @@ import { Bounds, FuseChannel } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import Channel from "./Channel";
+import { Pane } from "tweakpane";
 
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
   public PT: boolean;
   public volume: Volume;
   private onChannelDataReadyCallback?: () => void;
-  private translation: Vector3;
-  private rotation: Euler;
+  public translation: Vector3;
+  public rotation: Euler;
   private flipX: number;
   private flipY: number;
   private flipZ: number;
@@ -34,8 +35,8 @@ export default class VolumeDrawable {
   public glossiness: number[];
   public sceneRoot: Object3D;
   private meshVolume: MeshVolume;
-  private primaryRayStepSize: number;
-  private secondaryRayStepSize: number;
+  public primaryRayStepSize: number;
+  public secondaryRayStepSize: number;
   public showBoundingBox: boolean;
   private boundingBoxColor: [number, number, number];
 
@@ -684,5 +685,18 @@ export default class VolumeDrawable {
     this.rotation.copy(eulerXYZ);
     this.volumeRendering.setRotation(this.rotation);
     this.meshVolume.setRotation(this.rotation);
+  }
+
+  setupGui(pane: Pane): void {
+    pane.addInput(this, "translation").on("change", ({ value }) => this.setTranslation(value));
+    pane.addInput(this, "rotation").on("change", ({ value }) => this.setRotation(value));
+
+    const pathtrace = pane.addFolder({ title: "Pathtrace", expanded: false });
+    pathtrace.addInput(this, "primaryRayStepSize").on("change", ({ value }) => this.setRayStepSizes(value));
+    pathtrace
+      .addInput(this, "secondaryRayStepSize")
+      .on("change", ({ value }) => this.setRayStepSizes(undefined, value));
+
+    const channels = pane.addFolder({ title: "Channels", expanded: false });
   }
 }
