@@ -11,6 +11,7 @@ import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import Channel from "./Channel";
 import { Pane } from "tweakpane";
+import { colorArrayToObject, colorObjectToArray, WithObjectColors } from "./paneUtil";
 
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
@@ -687,7 +688,7 @@ export default class VolumeDrawable {
     this.meshVolume.setRotation(this.rotation);
   }
 
-  setupGui(pane: Pane): void {
+  setupGui(pane: Pane, onChange?: () => void): void {
     pane.addInput(this, "translation").on("change", ({ value }) => this.setTranslation(value));
     pane.addInput(this, "rotation").on("change", ({ value }) => this.setRotation(value));
 
@@ -698,5 +699,64 @@ export default class VolumeDrawable {
       .on("change", ({ value }) => this.setRayStepSizes(undefined, value));
 
     const channels = pane.addFolder({ title: "Channels", expanded: false });
+    window.setTimeout(() => console.log(this.channelColors), 10_000);
+    this.channelOptions.forEach((options, channelIndex) => {
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      const self = this;
+      type ChannelState = WithObjectColors<VolumeChannelDisplayOptions>;
+      // Volume channel options are not stored in a consistent place.
+      // Perhaps they should be. For now, this proxy lets us pretend they are.
+      const optionsProxy = new Proxy<ChannelState>(options as ChannelState, {
+        get: <K extends keyof ChannelState>(_target: ChannelState, key: K): ChannelState[K] => {
+          const handlers: { [L in keyof ChannelState]: () => ChannelState[L] } = {
+            enabled: () => self.fusion[channelIndex].rgbColor !== 0,
+            color: () => colorArrayToObject(self.channelColors[channelIndex]),
+            specularColor: () => colorArrayToObject(self.specular[channelIndex]),
+            emissiveColor: () => colorArrayToObject(self.emissive[channelIndex]),
+            glossiness: () => self.glossiness[channelIndex],
+            isosurfaceEnabled: () => self.meshVolume.hasIsosurface(channelIndex),
+            isovalue: () => {
+              const value = self.meshVolume.getIsovalue(channelIndex);
+              return value === undefined ? 127 : value;
+            },
+            isosurfaceOpacity: () => {
+              const opacity = self.meshVolume.getOpacity(channelIndex);
+              return opacity === undefined ? 1 : opacity;
+            },
+          };
+          return handlers[key]();
+        },
+        // Can't rely on tweakpane events to set values - they use values read
+        // from the object after tp tries to modify them, not from the UI
+        set: <K extends keyof ChannelState>(_target: ChannelState, key: K, value: ChannelState[K]): boolean => {
+          const handlers: { [L in keyof ChannelState]: (value: ChannelState[L]) => void } = {
+            enabled: (value) => {
+              self.setVolumeChannelEnabled(channelIndex, !!value);
+              self.fuse();
+            },
+            color: (value) => value && (self.channelColors[channelIndex] = colorObjectToArray(value)),
+            specularColor: (value) => value && (self.specular[channelIndex] = colorObjectToArray(value)),
+            emissiveColor: (value) => value && (self.emissive[channelIndex] = colorObjectToArray(value)),
+            glossiness: (value) => value !== undefined && (self.glossiness[channelIndex] = value),
+            isosurfaceEnabled: (value) => self.setChannelOptions(channelIndex, { isosurfaceEnabled: value }),
+            isovalue: (value) => value !== undefined && self.updateIsovalue(channelIndex, value),
+            isosurfaceOpacity: (value) => value !== undefined && self.updateOpacity(channelIndex, value),
+          };
+          handlers[key](value);
+          if (key in ["enabled", "color", "specularColor", "emissiveColor", "glossiness"]) {
+            self.updateMaterial();
+          }
+          if (onChange) {
+            onChange();
+          }
+          return true;
+        },
+      });
+      const folder = channels.addFolder({ title: `Channel ${channelIndex}`, expanded: false });
+      folder.addInput(optionsProxy, "enabled");
+      folder.addInput(optionsProxy, "isosurfaceEnabled");
+      folder.addInput(optionsProxy, "isovalue", { min: 0, max: 255 });
+      folder.addInput(optionsProxy, "isosurfaceOpacity", { min: 0, max: 1 });
+    });
   }
 }

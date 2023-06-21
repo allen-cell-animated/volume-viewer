@@ -1,5 +1,15 @@
 import { Bindable, FolderApi } from "@tweakpane/core";
 
+type ColorArray = [number, number, number];
+type ColorObject = { r: number; g: number; b: number };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type WithObjectColors<T extends Record<string, any>> = {
+  [K in keyof T]: T[K] extends ColorArray | undefined ? ColorObject : T[K];
+};
+
+export const colorArrayToObject = ([r, g, b]: ColorArray): ColorObject => ({ r, g, b });
+export const colorObjectToArray = ({ r, g, b }: ColorObject): ColorArray => [r, g, b];
+
 export function createFolderForObject<O extends Bindable, Key extends keyof O>(
   parent: FolderApi,
   title: string,

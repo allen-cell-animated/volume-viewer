@@ -199,6 +199,9 @@ export class View3d {
   // channels is an array of channel indices for which new data just arrived.
   onVolumeData(volume: Volume, channels: number[]): void {
     this.image?.onChannelLoaded(channels);
+    if (volume.isLoaded()) {
+      this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
+    }
   }
 
   // do fixups for when the volume has had a new empty channel added.
@@ -866,7 +869,6 @@ export class View3d {
     }
 
     const pane = new Pane({ title: "Advanced Settings", container });
-
     const paneStyle: Partial<CSSStyleDeclaration> = {
       position: "absolute",
       top: "0",
@@ -880,6 +882,8 @@ export class View3d {
     createFolderForObject(lights, "ambient light", this.ambientLight, ["color", "intensity"]);
     createFolderForObject(lights, "reflected light", this.reflectedLight, ["color", "intensity", "position"]);
     createFolderForObject(lights, "fill light", this.fillLight, ["color", "intensity", "position"]);
+
+    this.image?.setupGui(pane, this.redraw);
 
     return pane;
   }
