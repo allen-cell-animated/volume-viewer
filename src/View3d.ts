@@ -48,6 +48,7 @@ export class View3d {
   private fillLight: DirectionalLight;
 
   private tweakpane: Pane;
+  private tweakpaneOpen: boolean;
 
   /**
    * @param {Object} options Optional options.
@@ -78,6 +79,8 @@ export class View3d {
     this.buildScene();
 
     this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
+    this.tweakpaneOpen = false;
+    window.addEventListener("keydown", this.handleKeydown);
   }
 
   // prerender should be called on every redraw and should be the first thing done.
@@ -872,6 +875,18 @@ export class View3d {
     return this.canvas3d.hasWebGL2;
   }
 
+  handleKeydown = (event: KeyboardEvent): void => {
+    // control-option-1 (mac) or ctrl-alt-1 (windows)
+    if (event.code === "Digit1" && event.altKey && event.ctrlKey) {
+      this.tweakpaneOpen = !this.tweakpaneOpen;
+      this.tweakpane.element.style.display = this.tweakpaneOpen ? "block" : "none";
+    }
+  };
+
+  removeEventListeners(): void {
+    window.removeEventListener("keydown", this.handleKeydown);
+  }
+
   setupGui(container: HTMLElement): Pane {
     if (this.tweakpane) {
       this.canvas3d.containerdiv.removeChild(this.tweakpane.element);
@@ -882,6 +897,7 @@ export class View3d {
       position: "absolute",
       top: "0",
       right: "0",
+      display: "none",
     };
     Object.assign(pane.element.style, paneStyle);
 

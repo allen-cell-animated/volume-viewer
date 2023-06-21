@@ -708,7 +708,6 @@ export default class VolumeDrawable {
       .on("change", ({ value }) => this.setRayStepSizes(undefined, value));
 
     const channels = pane.addFolder({ title: "Channels", expanded: false });
-    window.setTimeout(() => console.log(this.channelColors), 10_000);
     this.channelOptions.forEach((options, channelIndex) => {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       const self = this;
@@ -735,6 +734,7 @@ export default class VolumeDrawable {
           };
           return handlers[key]();
         },
+
         // Can't rely on tweakpane events to set values - they receive values
         // read from the object after tp tries to modify it, not from the UI
         set: <K extends keyof ChannelState>(_target: ChannelState, key: K, value: ChannelState[K]): boolean => {
@@ -749,6 +749,7 @@ export default class VolumeDrawable {
             isosurfaceOpacity: (value) => value !== undefined && self.updateOpacity(channelIndex, value),
           };
           handlers[key](value);
+
           if (key in ["enabled", "color", "specularColor", "emissiveColor", "glossiness"]) {
             self.updateMaterial();
           }
@@ -758,6 +759,7 @@ export default class VolumeDrawable {
           return true;
         },
       });
+
       const folder = channels.addFolder({ title: `Channel ${channelIndex}`, expanded: false });
       folder.addInput(optionsProxy, "enabled");
       folder.addInput(optionsProxy, "isosurfaceEnabled");
