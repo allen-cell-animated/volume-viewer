@@ -11,7 +11,16 @@ import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import Channel from "./Channel";
 import { Pane } from "tweakpane";
-import { colorArrayToObject, colorObjectToArray, WithObjectColors } from "./paneUtil";
+
+type ColorArray = [number, number, number];
+type ColorObject = { r: number; g: number; b: number };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type WithObjectColors<T extends Record<string, any>> = {
+  [K in keyof T]: T[K] extends ColorArray | undefined ? ColorObject : T[K];
+};
+
+export const colorArrayToObject = ([r, g, b]: ColorArray): ColorObject => ({ r, g, b });
+export const colorObjectToArray = ({ r, g, b }: ColorObject): ColorArray => [r, g, b];
 
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
@@ -706,7 +715,7 @@ export default class VolumeDrawable {
       type ChannelState = WithObjectColors<VolumeChannelDisplayOptions>;
       // Volume channel options are not stored in a consistent place.
       // Perhaps they should be. For now, this proxy lets us pretend they are.
-      const optionsProxy = new Proxy<ChannelState>(options as ChannelState, {
+      const optionsProxy = new Proxy(options as ChannelState, {
         get: <K extends keyof ChannelState>(_target: ChannelState, key: K): ChannelState[K] => {
           const handlers: { [L in keyof ChannelState]: () => ChannelState[L] } = {
             enabled: () => self.fusion[channelIndex].rgbColor !== 0,
@@ -726,14 +735,11 @@ export default class VolumeDrawable {
           };
           return handlers[key]();
         },
-        // Can't rely on tweakpane events to set values - they use values read
-        // from the object after tp tries to modify them, not from the UI
+        // Can't rely on tweakpane events to set values - they receive values
+        // read from the object after tp tries to modify it, not from the UI
         set: <K extends keyof ChannelState>(_target: ChannelState, key: K, value: ChannelState[K]): boolean => {
           const handlers: { [L in keyof ChannelState]: (value: ChannelState[L]) => void } = {
-            enabled: (value) => {
-              self.setVolumeChannelEnabled(channelIndex, !!value);
-              self.fuse();
-            },
+            enabled: (value) => self.setVolumeChannelEnabled(channelIndex, !!value),
             color: (value) => value && (self.channelColors[channelIndex] = colorObjectToArray(value)),
             specularColor: (value) => value && (self.specular[channelIndex] = colorObjectToArray(value)),
             emissiveColor: (value) => value && (self.emissive[channelIndex] = colorObjectToArray(value)),

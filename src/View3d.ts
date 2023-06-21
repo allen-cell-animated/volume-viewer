@@ -1,4 +1,14 @@
-import { AmbientLight, Vector3, Object3D, SpotLight, DirectionalLight, Euler, Scene, Color } from "three";
+import {
+  AmbientLight,
+  Vector3,
+  Object3D,
+  SpotLight,
+  DirectionalLight,
+  Euler,
+  Scene,
+  Color,
+  Light as ThreeLight,
+} from "three";
 import { Pane } from "tweakpane";
 
 import { ThreeJsPanel } from "./ThreeJsPanel";
@@ -8,7 +18,6 @@ import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
 import { IVolumeLoader, PerChannelCallback } from "./loaders/IVolumeLoader";
 import Volume from "./Volume";
 import { VolumeChannelDisplayOptions, VolumeDisplayOptions, isOrthographicCamera, ViewportCorner } from "./types";
-import { createFolderForObject } from "./paneUtil";
 
 export const RENDERMODE_RAYMARCH = 0;
 export const RENDERMODE_PATHTRACE = 1;
@@ -878,10 +887,20 @@ export class View3d {
 
     // LIGHTS
     const lights = pane.addFolder({ title: "Lights (isosurface)" });
-    createFolderForObject(lights, "spot light", this.spotLight, ["color", "intensity", "position"]);
-    createFolderForObject(lights, "ambient light", this.ambientLight, ["color", "intensity"]);
-    createFolderForObject(lights, "reflected light", this.reflectedLight, ["color", "intensity", "position"]);
-    createFolderForObject(lights, "fill light", this.fillLight, ["color", "intensity", "position"]);
+
+    const addFolderForLight = (light: ThreeLight, title: string): void => {
+      const folder = lights.addFolder({ title, expanded: false });
+      folder.addInput(light, "color", { color: { type: "float" } });
+      folder.addInput(light, "intensity");
+      if (!(light as AmbientLight).isAmbientLight) {
+        folder.addInput(light, "position");
+      }
+    };
+
+    addFolderForLight(this.spotLight, "spot light");
+    addFolderForLight(this.ambientLight, "ambient light");
+    addFolderForLight(this.reflectedLight, "reflected light");
+    addFolderForLight(this.fillLight, "fill light");
 
     this.image?.setupGui(pane, this.redraw);
 
