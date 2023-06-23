@@ -1,4 +1,16 @@
-import { Euler, Object3D, Vector3, Texture, Mesh, MeshBasicMaterial, PlaneGeometry } from "three";
+import {
+  DataTexture,
+  Euler,
+  Mesh,
+  NormalBlending,
+  Object3D,
+  PlaneGeometry,
+  ShaderMaterial,
+  ShaderMaterialParameters,
+  Texture,
+  UniformsUtils,
+  Vector3,
+} from "three";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
@@ -11,12 +23,64 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
   private imageStream: HTMLImageElement;
   private imageTex: Texture;
   private object: Mesh;
+  private screenOutputShader: ShaderMaterialParameters;
+  private screenOutputMaterial: ShaderMaterial;
 
   constructor(volume: Volume) {
     this.volume = volume;
     this.imageStream = new Image();
     this.imageTex = new Texture(this.imageStream);
-    this.object = new Mesh(new PlaneGeometry(1, 1), new MeshBasicMaterial({ map: this.imageTex }));
+    this.imageTex = new DataTexture(new Uint8Array([255, 0, 0, 255]), 1, 1);
+    this.screenOutputShader = {
+      uniforms: UniformsUtils.merge([
+        {
+          tTexture0: {
+            type: "t",
+            value: this.imageTex,
+          },
+        },
+      ]),
+
+      vertexShader: [
+        "precision highp float;",
+        "precision highp int;",
+
+        "out vec2 vUv;",
+
+        "void main()",
+        "{",
+        "vUv = uv;",
+        "gl_Position = vec4( position*2.0, 1.0 );",
+        "}",
+      ].join("\n"),
+
+      fragmentShader: [
+        "precision highp float;",
+        "precision highp int;",
+        "precision highp sampler2D;",
+
+        "uniform sampler2D tTexture0;",
+        "in vec2 vUv;",
+
+        "void main()",
+        "{",
+        "vec4 pixelColor = texture(tTexture0, vUv);",
+        "pc_fragColor = pixelColor;", // sqrt(pixelColor);',
+        //'out_FragColor = pow(pixelColor, vec4(1.0/2.2));',
+        "}",
+      ].join("\n"),
+    };
+
+    this.screenOutputMaterial = new ShaderMaterial({
+      uniforms: this.screenOutputShader.uniforms,
+      vertexShader: this.screenOutputShader.vertexShader,
+      fragmentShader: this.screenOutputShader.fragmentShader,
+      depthWrite: false,
+      depthTest: false,
+      blending: NormalBlending,
+      transparent: true,
+    });
+    this.object = new Mesh(new PlaneGeometry(1, 1), this.screenOutputMaterial);
     const wsUri = "ws://localhost:1235";
     //const wsUri = "ws://dev-aics-dtp-001.corp.alleninstitute.org:1235";
     //const wsUri = "ws://ec2-54-245-184-76.us-west-2.compute.amazonaws.com:1235";
@@ -32,7 +96,7 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
   private onConnectionOpened() {
     // tell agave to load this volume.
     // convert subpath to a number for multiresolution level.
-    const level = parseInt(this.volume.loadSpec.subpath);
+    const level = parseInt(this.volume.loadSpec.subpath) || 0;
     this.agave.loadData(this.volume.loadSpec.url, this.volume.loadSpec.scene, level, this.volume.loadSpec.time, [
       this.volume.loadSpec.minx,
       this.volume.loadSpec.maxx,
@@ -46,17 +110,19 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
   private onJsonReceived(_json: JSONValue) {
     0;
   }
-  private onImageReceived(_image: Blob) {
-    //const dataurl = URL.createObjectURL(image);
+  private onImageReceived(image: Blob) {
+    const dataurl = URL.createObjectURL(image);
 
     // arraybuffer mode
     //const dataurl = "data:image/png;base64," + arrayBufferToBase64String(this.enqueued_image_data);
 
-    // this is directly rendering the image; see redraw()
-    // ideally we render to canvas, combine with other elements or threejs etc
-    //this.streamimg1.src = dataurl;
-
-    0;
+    // decode jpg/png, get it into Image, then into Texture
+    this.imageStream = new Image();
+    this.imageStream.src = dataurl;
+    this.imageTex = new Texture(this.imageStream);
+    this.imageTex.needsUpdate = true;
+    this.screenOutputMaterial.uniforms.tTexture0.value = this.imageTex;
+    //(this.object.material as Material).needsUpdate = true;
   }
   ///////////////////////////////////////////////
   // VolumeRenderImpl interface implementation //

@@ -13,6 +13,9 @@ import { Light } from "./Light";
 import Channel from "./Channel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 
+// TODO set up enum for this
+const RENDERMODE_AGAVE = 2;
+
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
   public PT: boolean;
@@ -41,12 +44,12 @@ export default class VolumeDrawable {
   public showBoundingBox: boolean;
   private boundingBoxColor: [number, number, number];
 
-  // these two should never coexist simultaneously. always one or the other is present
-  // a polymorphic interface implementation might be a better way to deal with this.
+  // these should never coexist simultaneously. always one or the other is present
   // this is a remnant of a pre-typescript world
   private pathTracedVolume?: PathTracedVolume;
   private rayMarchedAtlasVolume?: RayMarchedAtlasVolume;
   private remoteAgaveVolume?: RemoteAgaveVolume;
+
   private volumeRendering: VolumeRenderImpl;
 
   private bounds: Bounds;
@@ -116,7 +119,10 @@ export default class VolumeDrawable {
 
     this.primaryRayStepSize = 1.0;
     this.secondaryRayStepSize = 1.0;
-    if (this.PT) {
+    if (options.renderMode === RENDERMODE_AGAVE) {
+      this.remoteAgaveVolume = new RemoteAgaveVolume(this.volume);
+      this.volumeRendering = this.remoteAgaveVolume;
+    } else if (this.PT) {
       this.pathTracedVolume = new PathTracedVolume(this.volume);
       this.volumeRendering = this.pathTracedVolume;
     } else {
@@ -177,7 +183,7 @@ export default class VolumeDrawable {
     }
 
     if (options.renderMode !== undefined) {
-      this.setVolumeRendering(!!options.renderMode);
+      this.setVolumeRendering(!!options.renderMode, options.renderMode);
     }
     if (options.primaryRayStepSize !== undefined || options.secondaryRayStepSize !== undefined) {
       this.setRayStepSizes(options.primaryRayStepSize, options.secondaryRayStepSize);
@@ -606,8 +612,11 @@ export default class VolumeDrawable {
     this.volumeRendering.setPixelSamplingRate(value);
   }
 
-  setVolumeRendering(isPathtrace: boolean): void {
-    if (isPathtrace === this.PT) {
+  setVolumeRendering(isPathtrace: boolean, renderMode: number): void {
+    if (isPathtrace === this.PT && this.volumeRendering === this.pathTracedVolume) {
+      return;
+    }
+    if (renderMode === RENDERMODE_AGAVE && this.volumeRendering === this.remoteAgaveVolume) {
       return;
     }
 
@@ -619,15 +628,27 @@ export default class VolumeDrawable {
     this.volumeRendering.cleanup();
 
     // create new
-    if (isPathtrace) {
+    if (renderMode === RENDERMODE_AGAVE) {
+      this.remoteAgaveVolume = new RemoteAgaveVolume(this.volume);
+      this.volumeRendering = this.remoteAgaveVolume;
+      this.rayMarchedAtlasVolume = undefined;
+      this.pathTracedVolume = undefined;
+
+      if (this.renderUpdateListener) {
+        this.renderUpdateListener(0);
+      }
+      // this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
+    } else if (isPathtrace) {
       this.pathTracedVolume = new PathTracedVolume(this.volume);
       this.volumeRendering = this.pathTracedVolume;
       this.rayMarchedAtlasVolume = undefined;
+      this.remoteAgaveVolume = undefined;
       this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
     } else {
       this.rayMarchedAtlasVolume = new RayMarchedAtlasVolume(this.volume);
-      this.pathTracedVolume = undefined;
       this.volumeRendering = this.rayMarchedAtlasVolume;
+      this.pathTracedVolume = undefined;
+      this.remoteAgaveVolume = undefined;
 
       for (let i = 0; i < this.volume.num_channels; ++i) {
         if (this.volume.getChannel(i).loaded) {
