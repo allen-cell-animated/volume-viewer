@@ -33,7 +33,7 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     // tell agave to load this volume.
     // convert subpath to a number for multiresolution level.
     const level = parseInt(this.volume.loadSpec.subpath);
-    this.agave.load_data(this.volume.loadSpec.url, this.volume.loadSpec.scene, level, this.volume.loadSpec.time, [
+    this.agave.loadData(this.volume.loadSpec.url, this.volume.loadSpec.scene, level, this.volume.loadSpec.time, [
       this.volume.loadSpec.minx,
       this.volume.loadSpec.maxx,
       this.volume.loadSpec.miny,
@@ -46,14 +46,15 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
   private onJsonReceived(_json: JSONValue) {
     0;
   }
-  private onImageReceived(image: Blob) {
-    const dataurl = URL.createObjectURL(image);
+  private onImageReceived(_image: Blob) {
+    //const dataurl = URL.createObjectURL(image);
+
     // arraybuffer mode
     //const dataurl = "data:image/png;base64," + arrayBufferToBase64String(this.enqueued_image_data);
 
     // this is directly rendering the image; see redraw()
     // ideally we render to canvas, combine with other elements or threejs etc
-    this.streamimg1.src = dataurl;
+    //this.streamimg1.src = dataurl;
 
     0;
   }
@@ -65,8 +66,8 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     return this.object;
   }
   setRayStepSizes(rayStepSize: number, secondaryRayStepSize: number): void {
-    this.agave.set_primary_ray_step_size(rayStepSize);
-    this.agave.set_secondary_ray_step_size(secondaryRayStepSize);
+    this.agave.setPrimaryRayStepSize(rayStepSize);
+    this.agave.setSecondaryRayStepSize(secondaryRayStepSize);
   }
   setScale(_scale: Vector3): void {
     console.log("RemoteAgaveVolume.setScale not implemented");
@@ -75,7 +76,7 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     console.log("RemoteAgaveVolume.setOrthoScale not implemented");
   }
   setResolution(_x: number, _y: number): void {
-    this.agave.set_resolution(_x, _y);
+    this.agave.setResolution(_x, _y);
   }
   setAxisClip(_axis: "x" | "y" | "z", _minval: number, _maxval: number, _isOrthoAxis: boolean): void {
     console.log("RemoteAgaveVolume.setAxisClip not implemented");
@@ -121,16 +122,16 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     console.log("RemoteAgaveVolume.setMaskAlpha not implemented");
   }
   setShowBoundingBox(show: boolean): void {
-    this.agave.show_bounding_box(show ? 1 : 0);
+    this.agave.showBoundingBox(show ? 1 : 0);
   }
   setBoundingBoxColor(color: [number, number, number]): void {
-    this.agave.bounding_box_color(color[0], color[1], color[2]);
+    this.agave.boundingBoxColor(color[0], color[1], color[2]);
   }
   viewpointMoved(): void {
     console.log("RemoteAgaveVolume.viewpointMoved not implemented");
   }
   updateClipRegion(xmin: number, xmax: number, ymin: number, ymax: number, zmin: number, zmax: number): void {
-    this.agave.set_clip_region(xmin, xmax, ymin, ymax, zmin, zmax);
+    this.agave.setClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
   }
   setPixelSamplingRate(_rate: number): void {
     console.log("RemoteAgaveVolume.setPixelSamplingRate not implemented");

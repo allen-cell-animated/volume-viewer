@@ -5,7 +5,7 @@ export type JSONValue = string | number | boolean | { [x: string]: JSONValue } |
 export class AgaveClient {
   private binarysocket0: WebSocket;
   private cb: CommandBuffer;
-  private session_name: string;
+  private sessionName: string;
   private onOpen: () => void;
   private onJson: (json: JSONValue) => void;
   private onImage: (data: Blob) => void;
@@ -38,9 +38,9 @@ export class AgaveClient {
 
     // do some stuff on initial connection
     this.binarysocket0.onopen = (_ev: Event) => {
-      this.set_resolution(256, 256);
+      this.setResolution(256, 256);
       // put agave in streaming mode from the get-go
-      this.stream_mode(1);
+      this.streamMode(1);
       this.flushCommandBuffer();
 
       // user provided callback
@@ -57,7 +57,7 @@ export class AgaveClient {
     };
 
     // handle incoming messages
-    this.binarysocket0.onmessage = (evt: MessageEvent<any>) => {
+    this.binarysocket0.onmessage = (evt: MessageEvent<unknown>) => {
       if (typeof evt.data === "string") {
         const returnedObj = JSON.parse(evt.data);
         if (returnedObj.commandId === COMMANDS.LOAD_DATA[0]) {
@@ -83,7 +83,7 @@ export class AgaveClient {
     };
 
     this.cb = new CommandBuffer();
-    this.session_name = "";
+    this.sessionName = "";
   }
 
   /**
@@ -97,14 +97,14 @@ export class AgaveClient {
   session(name: string) {
     // 0
     this.cb.addCommand("SESSION", name);
-    this.session_name = name;
+    this.sessionName = name;
   }
   /**
    * Sets a search path for volume files. NOT YET IMPLEMENTED.
    *
    * @param name This name is the path where volume images are located.
    */
-  asset_path(name: string) {
+  assetPath(name: string) {
     // 1
     this.cb.addCommand("ASSET_PATH", name);
   }
@@ -168,14 +168,14 @@ export class AgaveClient {
 
   /**
    * Set the viewer camera projection type, along with a relevant parameter.
-   * @param projection_type 0 for Perspective, 1 for Orthographic.  Default: 0
+   * @param projectionType 0 for Perspective, 1 for Orthographic.  Default: 0
    * @param x If Perspective, then this is the vertical Field of View angle in degrees.
    * If Orthographic, then this is the orthographic scale dimension.
    * Default: 55.0 degrees. (default Orthographic scale is 0.5)
    */
-  camera_projection(projection_type: number, x: number) {
+  cameraProjection(projectionType: number, x: number) {
     // 7
-    this.cb.addCommand("CAMERA_PROJECTION", projection_type, x);
+    this.cb.addCommand("CAMERA_PROJECTION", projectionType, x);
   }
 
   /**
@@ -207,7 +207,7 @@ export class AgaveClient {
    * @param b The blue value between 0 and 1
    * @param a The alpha value between 0 and 1 (currently unused)
    */
-  mat_diffuse(channel: number, r: number, g: number, b: number, a: number) {
+  matDiffuse(channel: number, r: number, g: number, b: number, a: number) {
     // 10
     this.cb.addCommand("MAT_DIFFUSE", channel, r, g, b, a);
   }
@@ -222,7 +222,7 @@ export class AgaveClient {
    * @param b The blue value between 0 and 1
    * @param a The alpha value between 0 and 1 (currently unused)
    */
-  mat_specular(channel: number, r: number, g: number, b: number, a: number) {
+  matSpecular(channel: number, r: number, g: number, b: number, a: number) {
     // 11
     this.cb.addCommand("MAT_SPECULAR", channel, r, g, b, a);
   }
@@ -236,7 +236,7 @@ export class AgaveClient {
    * @param b The blue value between 0 and 1
    * @param a The alpha value between 0 and 1 (currently unused)
    */
-  mat_emissive(channel: number, r: number, g: number, b: number, a: number) {
+  matEmissive(channel: number, r: number, g: number, b: number, a: number) {
     // 12
     this.cb.addCommand("MAT_EMISSIVE", channel, r, g, b, a);
   }
@@ -246,7 +246,7 @@ export class AgaveClient {
    *
    * @param x How many paths per pixel. The more paths, the less noise in the image.
    */
-  render_iterations(x: number) {
+  renderIterations(x: number) {
     // 13
     this.cb.addCommand("RENDER_ITERATIONS", x);
   }
@@ -258,7 +258,7 @@ export class AgaveClient {
    *
    * @param x 0 for off, 1 for on. Default is off.
    */
-  stream_mode(x: number) {
+  streamMode(x: number) {
     // 14
     this.cb.addCommand("STREAM_MODE", x);
   }
@@ -291,7 +291,7 @@ export class AgaveClient {
    * @param x x resolution in pixels
    * @param y y resolution in pixels
    */
-  set_resolution(x: number, y: number) {
+  setResolution(x: number, y: number) {
     // 16
     this.cb.addCommand("SET_RESOLUTION", x, y);
   }
@@ -311,7 +311,7 @@ export class AgaveClient {
    * Automatically set camera parameters so that the volume fills the view.
    * Useful when you have insufficient information to position the camera accurately.
    */
-  frame_scene() {
+  frameScene() {
     // 18
     this.cb.addCommand("FRAME_SCENE");
   }
@@ -322,7 +322,7 @@ export class AgaveClient {
    * @param channel Which channel index, 0 based.
    * @param glossiness Sets the shininess, a number between 0 and 100.
    */
-  mat_glossiness(channel: number, glossiness: number) {
+  matGlossiness(channel: number, glossiness: number) {
     // 19
     this.cb.addCommand("MAT_GLOSSINESS", channel, glossiness);
   }
@@ -333,7 +333,7 @@ export class AgaveClient {
    * @param channel Which channel index, 0 based.
    * @param enabled 0 to hide, 1 to show
    */
-  enable_channel(channel: number, enabled: number) {
+  enableChannel(channel: number, enabled: number) {
     // 20
     this.cb.addCommand("ENABLE_CHANNEL", channel, enabled);
   }
@@ -345,7 +345,7 @@ export class AgaveClient {
    * @param window Width of the window, from 0-1.
    * @param level Intensity level mapped to middle of window, from 0-1
    */
-  set_window_level(channel: number, window: number, level: number) {
+  setWindowLevel(channel: number, window: number, level: number) {
     // 21
     this.cb.addCommand("SET_WINDOW_LEVEL", channel, window, level);
   }
@@ -356,7 +356,7 @@ export class AgaveClient {
    * @param theta polar angle in degrees
    * @param phi azimuthal angle in degrees
    */
-  orbit_camera(theta: number, phi: number) {
+  orbitCamera(theta: number, phi: number) {
     // 22
     this.cb.addCommand("ORBIT_CAMERA", theta, phi);
   }
@@ -367,7 +367,7 @@ export class AgaveClient {
    * @param theta vertical screen angle in degrees
    * @param phi horizontal screen angle in degrees
    */
-  trackball_camera(theta: number, phi: number) {
+  trackballCamera(theta: number, phi: number) {
     // 43
     this.cb.addCommand("TRACKBALL_CAMERA", theta, phi);
   }
@@ -379,7 +379,7 @@ export class AgaveClient {
    * @param g The green value between 0 and 1
    * @param b The blue value between 0 and 1
    */
-  skylight_top_color(r: number, g: number, b: number) {
+  skylightTopColor(r: number, g: number, b: number) {
     // 23
     this.cb.addCommand("SKYLIGHT_TOP_COLOR", r, g, b);
   }
@@ -391,7 +391,7 @@ export class AgaveClient {
    * @param g The green value between 0 and 1
    * @param b The blue value between 0 and 1
    */
-  skylight_middle_color(r: number, g: number, b: number) {
+  skylightMiddleColor(r: number, g: number, b: number) {
     // 24
     this.cb.addCommand("SKYLIGHT_MIDDLE_COLOR", r, g, b);
   }
@@ -403,7 +403,7 @@ export class AgaveClient {
    * @param g The green value between 0 and 1
    * @param b The blue value between 0 and 1
    */
-  skylight_bottom_color(r: number, g: number, b: number) {
+  skylightBottomColor(r: number, g: number, b: number) {
     // 25
     this.cb.addCommand("SKYLIGHT_BOTTOM_COLOR", r, g, b);
   }
@@ -416,7 +416,7 @@ export class AgaveClient {
    * @param theta The polar angle
    * @param phi The azimuthal angle
    */
-  light_pos(index: number, r: number, theta: number, phi: number) {
+  lightPos(index: number, r: number, theta: number, phi: number) {
     // 26
     this.cb.addCommand("LIGHT_POS", index, r, theta, phi);
   }
@@ -430,7 +430,7 @@ export class AgaveClient {
    * @param g The green value between 0 and 1
    * @param b The blue value between 0 and 1
    */
-  light_color(index: number, r: number, g: number, b: number) {
+  lightColor(index: number, r: number, g: number, b: number) {
     // 27
     this.cb.addCommand("LIGHT_COLOR", index, r, g, b);
   }
@@ -442,7 +442,7 @@ export class AgaveClient {
    * @param x The width dimension of the area light
    * @param y The height dimension of the area light
    */
-  light_size(index: number, x: number, y: number) {
+  lightSize(index: number, x: number, y: number) {
     // 28
     this.cb.addCommand("LIGHT_SIZE", index, x, y);
   }
@@ -460,7 +460,7 @@ export class AgaveClient {
    * @param minz The lower z extent between 0 and 1
    * @param maxz The higher z extent between 0 and 1
    */
-  set_clip_region(minx: number, maxx: number, miny: number, maxy: number, minz: number, maxz: number) {
+  setClipRegion(minx: number, maxx: number, miny: number, maxy: number, minz: number, maxz: number) {
     // 29
     this.cb.addCommand("SET_CLIP_REGION", minx, maxx, miny, maxy, minz, maxz);
   }
@@ -474,7 +474,7 @@ export class AgaveClient {
    * @param y y scale
    * @param z z scale
    */
-  set_voxel_scale(x: number, y: number, z: number) {
+  setVoxelScale(x: number, y: number, z: number) {
     // 30
     this.cb.addCommand("SET_VOXEL_SCALE", x, y, z);
   }
@@ -490,7 +490,7 @@ export class AgaveClient {
    * 3: ChimeraX emulation
    * 4: between 0.5 percentile and 0.98 percentile
    */
-  auto_threshold(channel: number, method: number) {
+  autoThreshold(channel: number, method: number) {
     // 31
     this.cb.addCommand("AUTO_THRESHOLD", channel, method);
   }
@@ -500,12 +500,12 @@ export class AgaveClient {
    * intensity
    *
    * @param channel Which channel index, 0 based.
-   * @param pct_low The low percentile to remap to 0(min) intensity
-   * @param pct_high The high percentile to remap to 1(max) intensity
+   * @param pctLow The low percentile to remap to 0(min) intensity
+   * @param pctHigh The high percentile to remap to 1(max) intensity
    */
-  set_percentile_threshold(channel: number, pct_low: number, pct_high: number) {
+  setPercentileThreshold(channel: number, pctLow: number, pctHigh: number) {
     // 32
-    this.cb.addCommand("SET_PERCENTILE_THRESHOLD", channel, pct_low, pct_high);
+    this.cb.addCommand("SET_PERCENTILE_THRESHOLD", channel, pctLow, pctHigh);
   }
 
   /**
@@ -515,7 +515,7 @@ export class AgaveClient {
    * @param channel Which channel index, 0 based.
    * @param opacity A multiplier between 0 and 1. Default is 1
    */
-  mat_opacity(channel: number, opacity: number) {
+  matOpacity(channel: number, opacity: number) {
     // 33
     this.cb.addCommand("MAT_OPACITY", channel, opacity);
   }
@@ -525,11 +525,11 @@ export class AgaveClient {
    * values are more accurate. High values will render faster.
    * Primary rays are the rays that are cast from the camera out into the volume.
    *
-   * @param step_size A value in voxels. Default is 4.  Minimum sensible value is 1.
+   * @param stepSize A value in voxels. Default is 4.  Minimum sensible value is 1.
    */
-  set_primary_ray_step_size(step_size: number) {
+  setPrimaryRayStepSize(stepSize: number) {
     // 34
-    this.cb.addCommand("SET_PRIMARY_RAY_STEP_SIZE", step_size);
+    this.cb.addCommand("SET_PRIMARY_RAY_STEP_SIZE", stepSize);
   }
 
   /**
@@ -538,11 +538,11 @@ export class AgaveClient {
    * The secondary rays are rays which are cast toward lights after they have
    * scattered within the volume.
    *
-   * @param step_size A value in voxels. Default is 4.  Minimum sensible value is 1.
+   * @param stepSize A value in voxels. Default is 4.  Minimum sensible value is 1.
    */
-  set_secondary_ray_step_size(step_size: number) {
+  setSecondaryRayStepSize(stepSize: number) {
     // 35
-    this.cb.addCommand("SET_SECONDARY_RAY_STEP_SIZE", step_size);
+    this.cb.addCommand("SET_SECONDARY_RAY_STEP_SIZE", stepSize);
   }
 
   /**
@@ -552,7 +552,7 @@ export class AgaveClient {
    * @param g The green value between 0 and 1
    * @param b The blue value between 0 and 1
    */
-  background_color(r: number, g: number, b: number) {
+  backgroundColor(r: number, g: number, b: number) {
     // 36
     this.cb.addCommand("BACKGROUND_COLOR", r, g, b);
   }
@@ -565,7 +565,7 @@ export class AgaveClient {
    * @param isorange A range around the isovalue to keep at constant intensity, between 0 and 1.
    * Typically small, to select for a single isovalue.
    */
-  set_isovalue_threshold(channel: number, isovalue: number, isorange: number) {
+  setIsovalueThreshold(channel: number, isovalue: number, isorange: number) {
     // 37
     this.cb.addCommand("SET_ISOVALUE_THRESHOLD", channel, isovalue, isorange);
   }
@@ -578,7 +578,7 @@ export class AgaveClient {
    * next four are rgba (all 0-1).  Only alpha is currently used as the remapped
    * intensity value.  All others are linearly interpolated.
    */
-  set_control_points(channel: number, data: number[]) {
+  setControlPoints(channel: number, data: number[]) {
     // 38
     this.cb.addCommand("SET_CONTROL_POINTS", channel, data);
   }
@@ -596,7 +596,7 @@ export class AgaveClient {
    *
    * @param time zero-based index to select the time sample.  Defaults to 0
    */
-  set_time(time: number) {
+  setTime(time: number) {
     // 40
     this.cb.addCommand("SET_TIME", time);
   }
@@ -608,7 +608,7 @@ export class AgaveClient {
    * @param g the green value, from 0 to 1
    * @param b the blue value, from 0 to 1
    */
-  bounding_box_color(r: number, g: number, b: number) {
+  boundingBoxColor(r: number, g: number, b: number) {
     // 41
     this.cb.addCommand("SET_BOUNDING_BOX_COLOR", r, g, b);
   }
@@ -618,7 +618,7 @@ export class AgaveClient {
    *
    * @param on 0 to hide bounding box, 1 to show it
    */
-  show_bounding_box(on: number) {
+  showBoundingBox(on: number) {
     // 42
     this.cb.addCommand("SHOW_BOUNDING_BOX", on);
   }
@@ -629,22 +629,22 @@ export class AgaveClient {
    * @param path URL or directory or file path to the data. The path must be locally
    * accessible from the AGAVE server.
    * @param scene zero-based index to select the scene, for multi-scene files. Defaults to 0
-   * @param multiresolution_level zero-based index to select the multiresolution level.  Defaults to 0
+   * @param multiresolutionLevel zero-based index to select the multiresolution level.  Defaults to 0
    * @param time zero-based index to select the time sample.  Defaults to 0
    * @param channels zero-based indices to select the channels.  Defaults to all channels
    * @param region 6 integers specifying the region to load.  Defaults to the entire volume.
    * Any list length other than 0 or 6 is an error.
    */
-  load_data(
+  loadData(
     path: string,
     scene = 0,
-    multiresolution_level = 0,
+    multiresolutionLevel = 0,
     time = 0,
     channels: number[] = [],
     region: number[] = []
   ) {
     // 44
-    this.cb.addCommand("LOAD_DATA", path, scene, multiresolution_level, time, channels, region);
+    this.cb.addCommand("LOAD_DATA", path, scene, multiresolutionLevel, time, channels, region);
   }
 
   // send all data in our current command buffer to the server
