@@ -3,7 +3,7 @@
 
 name: Node.js CI
 env:
-  NODE_VERSION: "lts"
+  NODE_VERSION: "18"
 
 on: [push]
 
