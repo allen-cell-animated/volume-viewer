@@ -1,6 +1,6 @@
 import { expect } from "chai";
 
-import RequestQueue from "../RequestQueue";
+import RequestQueue from "../utils/RequestQueue";
 import { LoadSpec } from "../loaders/IVolumeLoader";
 
 describe("test requestqueue", () => {

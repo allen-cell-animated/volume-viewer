@@ -1,6 +1,6 @@
-import Volume from "./Volume";
-import { IVolumeLoader, LoadSpec } from "./loaders/IVolumeLoader";
-import { StringifyingMap } from "./utils/StringifyingMap";
+import Volume from "../Volume";
+import { IVolumeLoader, LoadSpec } from "../loaders/IVolumeLoader";
+import { StringifyingMap } from "./StringifyingMap";
 
 // TODO: Revive cancelled requests, if the operations being run have not finished yet.
 
