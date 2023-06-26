@@ -1,5 +1,3 @@
-import { LoadSpec } from "../loaders/IVolumeLoader";
-
 // TODO: Revive cancelled requests, if the operations being run have not finished yet.
 
 // Type used when making multiple requests.
@@ -202,7 +200,7 @@ export default class RequestQueue<K> {
 
     /**
      * Finds and deletes all requests with the matching keyString from internal state, and rejects the request
-     * for the provided reason.
+     * for the provided cancellation reason.
      */
     private cancelRequestByKeyString(keyString: string, cancelReason: any): void {
         if (!this.allRequests.has(keyString)) {
@@ -241,7 +239,7 @@ export default class RequestQueue<K> {
     }
 
     /**
-     * Returns whether a request with the given key exists in the RequestQueue (and is not cancelled).
+     * Returns whether a request with the given key exists in the RequestQueue and is not cancelled.
      * @param key the key to search for.
      * @returns true if the request is in the RequestQueue, or false 
      */

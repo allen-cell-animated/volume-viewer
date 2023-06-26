@@ -110,8 +110,19 @@ describe("test RequestQueue", () => {
         }
     });
 
-    it ("handles failing request actions", () => {
+    it ("handles failing request actions", async () => {
+        const maxActiveRequests = 10;
+        const rq = new RequestQueue(JSON.stringify, maxActiveRequests);
+        const iterations = maxActiveRequests * 10;
 
+        const promises: Promise<void>[] = [];
+        for (let i = 0; i < iterations; i++) {
+            promises.push(rq.addRequest(i, async () => {
+                await sleep(5);
+                throw new Error("Test error (should be caught)");
+            }));
+        }
+        await Promise.allSettled(promises).catch((err) => {});
     });
 
     it ("handles sequential requests", async () => {
@@ -178,27 +189,35 @@ describe("test RequestQueue", () => {
 
     it ("can cancel all requests", async () => {
         const rq = new RequestQueue(JSON.stringify, 1);
-        const iterations = 5;
-        let counter: number[] = [];
+        const iterations = 10;
+        let count = 0;
+        const rejectionReason = "test reject";
 
         const promises: Promise<any>[] = [];
         for (let i = 0; i < iterations; i++) {
             const work = async () => {
                 await sleep(10);
                 if (rq.hasRequest(i)) {
-                    counter.push(i);
+                    count++;
                 }
             }
             promises.push(rq.addRequest(i, work));
         }
-        rq.cancelAllRequests();
-        await Promise.all(promises);
-        
-
+        rq.cancelAllRequests(rejectionReason);
+        // Use allSettled so it does not stop on a rejection
+        await Promise.allSettled(promises).then((results) =>
+        results.forEach((result) => {
+            expect(result.status).to.equal("rejected");
+            if (result.status === "rejected") {
+                expect(result.reason).to.equal(rejectionReason);
+            }
+        }));
+        await sleep(10);
+        expect(count).to.equal(0);
     });
 
-    // request implementation
-    // request setTimeout, then try cancelling some or all of them
+    
+
     /**
      * USE CASES:
      * 1. Requesting large amount of data (write mock requests)
@@ -210,6 +229,5 @@ describe("test RequestQueue", () => {
      *   - Make a bunch of existing requests
      *   - Cancel all in-flight requests, make 20 new ones
      *   - Are base assumptions true after cancellation?
-     * 
      */
 });
