@@ -10,7 +10,7 @@ async function sleep(timeoutMs: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, timeoutMs));
 }
 
-describe("test requestqueue", () => {
+describe("test RequestQueue", () => {
     it ("can issue one request", () => {
         const rq = new RequestQueue();
         const loadSpec = new LoadSpec();
@@ -62,7 +62,40 @@ describe("test requestqueue", () => {
     });
 
     it ("handles multiple concurrent requests", async () => {
+        const rq = new RequestQueue();
+        const array = [false, false, false, false, false];
+        const promises: Promise<any>[] = [];
+        for (let i = 0; i < array.length; i++) {
+            const work = async () => {
+                await sleep(10);
+                array[i] = true;
+            }
+            promises.push(rq.addRequest(i, work));
+        }
+        await Promise.all(promises);
+        for (let i = 0; i < array.length; i++) {
+            expect(array[i]).to.be.true;
+        }
+    });
 
+    it ("completes all tasks sequentially when max requests is set", async () => {
+        const rq = new RequestQueue(JSON.stringify, 1);
+        const startTime = Date.now();
+        const iterations = 5;
+        const delayMs = 10;
+        let count = 0;
+        const promises: Promise<any>[] = [];
+        for (let i = 0; i < iterations; i++) {
+            const work = async () => {
+                await sleep(delayMs);
+                count++;
+            }
+            promises.push(rq.addRequest(i, work));
+        }
+        await Promise.all(promises);
+        const duration = Date.now() - startTime;
+        expect(duration).to.be.greaterThan(delayMs * iterations);
+        expect(count).to.equal(iterations);
     });
 
     it ("handles sequential requests", async () => {
@@ -76,10 +109,6 @@ describe("test requestqueue", () => {
         await sleep(10);
         await rq.addRequest(0, work);
         expect(count).to.equal(2);
-    });
-
-    it ("handles key object mutation", () => {
-
     });
 
     // request implementation

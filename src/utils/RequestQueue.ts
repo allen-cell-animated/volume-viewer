@@ -151,7 +151,7 @@ export default class RequestQueue<K> {
      * requests already active.
      */
     private dequeue(): boolean {
-        if (this.activeRequests.values.length >= this.maxActiveRequests
+        if (this.activeRequests.size >= this.maxActiveRequests
             || this.queue.length === 0) {
             return false;
         }
