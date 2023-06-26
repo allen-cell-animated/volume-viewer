@@ -1,10 +1,12 @@
 import {
-  DataTexture,
   Euler,
+  Matrix4,
   Mesh,
   NormalBlending,
   Object3D,
+  PerspectiveCamera,
   PlaneGeometry,
+  Quaternion,
   ShaderMaterial,
   ShaderMaterialParameters,
   Texture,
@@ -16,10 +18,14 @@ import { ThreeJsPanel } from "./ThreeJsPanel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 import { AgaveClient, JSONValue } from "./temp_agave/agave";
 import Volume from "./Volume";
+import { isOrthographicCamera } from "./types";
 
 export default class RemoteAgaveVolume implements VolumeRenderImpl {
   private agave: AgaveClient;
   private volume: Volume;
+  private translation: Vector3;
+  private rotation: Euler;
+
   private imageStream: HTMLImageElement;
   private imageTex: Texture;
   private object: Mesh;
@@ -28,9 +34,11 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
 
   constructor(volume: Volume) {
     this.volume = volume;
+    this.translation = new Vector3(0, 0, 0);
+    this.rotation = new Euler();
     this.imageStream = new Image();
     this.imageTex = new Texture(this.imageStream);
-    this.imageTex = new DataTexture(new Uint8Array([255, 0, 0, 255]), 1, 1);
+    //this.imageTex = new DataTexture(new Uint8Array([255, 0, 0, 255]), 1, 1);
     this.screenOutputShader = {
       uniforms: UniformsUtils.merge([
         {
@@ -105,6 +113,15 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
       this.volume.loadSpec.minz,
       this.volume.loadSpec.maxz,
     ]);
+    this.agave.streamMode(1);
+    this.agave.enableChannel(0, 1);
+    this.agave.enableChannel(1, 1);
+    this.agave.enableChannel(2, 1);
+    this.agave.frameScene();
+    this.agave.exposure(0.75);
+    this.agave.density(50);
+    this.agave.redraw();
+    this.agave.flushCommandBuffer();
   }
 
   private onJsonReceived(_json: JSONValue) {
@@ -117,11 +134,10 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     //const dataurl = "data:image/png;base64," + arrayBufferToBase64String(this.enqueued_image_data);
 
     // decode jpg/png, get it into Image, then into Texture
-    this.imageStream = new Image();
     this.imageStream.src = dataurl;
-    this.imageTex = new Texture(this.imageStream);
     this.imageTex.needsUpdate = true;
-    this.screenOutputMaterial.uniforms.tTexture0.value = this.imageTex;
+    //    this.screenOutputMaterial.uniforms.tTexture0.value = this.imageTex;
+    this.screenOutputMaterial.needsUpdate = true;
     //(this.object.material as Material).needsUpdate = true;
   }
   ///////////////////////////////////////////////
@@ -162,8 +178,41 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
   setFlipAxes(_flipX: number, _flipY: number, _flipZ: number): void {
     console.log("RemoteAgaveVolume.setFlipAxes not implemented");
   }
-  doRender(_canvas: ThreeJsPanel): void {
-    console.log("RemoteAgaveVolume.doRender not implemented");
+  doRender(canvas: ThreeJsPanel): void {
+    if (!this.agave) {
+      return;
+    }
+    if (!this.agave.isReady()) {
+      return;
+    }
+    // update camera here?
+    canvas.camera.updateMatrixWorld(true);
+    const cam = canvas.camera;
+
+    let mydir = new Vector3();
+    mydir = cam.getWorldDirection(mydir);
+    const myup = new Vector3().copy(cam.up);
+    // don't rotate this vector.  we are using translation as the pivot point of the object, and THEN rotating.
+    const mypos = new Vector3().copy(cam.position);
+
+    // apply volume translation and rotation:
+    // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
+    const m = new Matrix4().makeRotationFromQuaternion(new Quaternion().setFromEuler(this.rotation).invert());
+    mypos.sub(this.translation);
+    mypos.applyMatrix4(m);
+    myup.applyMatrix4(m);
+    mydir.applyMatrix4(m);
+
+    this.agave.eye(mypos.x, mypos.y, mypos.z);
+    this.agave.up(myup.x, myup.y, myup.z);
+    this.agave.target(mypos.x + mydir.x, mypos.y + mydir.y, mypos.z + mydir.z);
+    this.agave.cameraProjection(
+      isOrthographicCamera(cam) ? 1 : 0,
+      isOrthographicCamera(cam) ? canvas.getOrthoScale() : (cam as PerspectiveCamera).fov
+    );
+
+    this.agave.flushCommandBuffer();
+    //console.log("RemoteAgaveVolume.doRender not implemented");
   }
   cleanup(): void {
     console.log("RemoteAgaveVolume.cleanup not implemented");
@@ -205,10 +254,12 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
   setRenderUpdateListener(_listener?: (iteration: number) => void): void {
     console.log("RemoteAgaveVolume.setRenderUpdateListener not implemented");
   }
-  setTranslation(_translation: Vector3): void {
-    console.log("RemoteAgaveVolume.setTranslation not implemented");
+
+  setTranslation(vec3xyz: Vector3): void {
+    this.translation.copy(vec3xyz);
   }
-  setRotation(_rotation: Euler): void {
-    console.log("RemoteAgaveVolume.setRotation not implemented");
+
+  setRotation(eulerXYZ: Euler): void {
+    this.rotation.copy(eulerXYZ);
   }
 }

@@ -86,6 +86,10 @@ export class AgaveClient {
     this.sessionName = "";
   }
 
+  isReady(): boolean {
+    return this.binarysocket0.readyState === 1;
+  }
+
   /**
    * Set the current session name.  Use the full path to the name of the output
    * image here.
@@ -649,9 +653,11 @@ export class AgaveClient {
 
   // send all data in our current command buffer to the server
   flushCommandBuffer() {
-    const buf = this.cb.prebufferToBuffer();
-    this.binarysocket0.send(buf);
-    // assuming the buffer is sent, prepare a new one
-    this.cb = new CommandBuffer();
+    if (this.cb.length() > 0) {
+      const buf = this.cb.prebufferToBuffer();
+      this.binarysocket0.send(buf);
+      // assuming the buffer is sent, prepare a new one
+      this.cb = new CommandBuffer();
+    }
   }
 }

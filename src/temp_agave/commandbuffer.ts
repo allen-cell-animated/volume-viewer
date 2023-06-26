@@ -211,4 +211,8 @@ export class CommandBuffer {
     // TODO: check against signature!!!
     this.prebuffer.push([...args]);
   }
+
+  length(): number {
+    return this.prebuffer.length;
+  }
 }
