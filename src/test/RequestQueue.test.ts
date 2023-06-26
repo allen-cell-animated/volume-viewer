@@ -3,6 +3,13 @@ import { expect } from "chai";
 import RequestQueue from "../utils/RequestQueue";
 import { LoadSpec } from "../loaders/IVolumeLoader";
 
+/**
+ * Returns a promise that resolves once the timeout (give in ms) is completed.
+*/
+async function sleep(timeoutMs: number): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, timeoutMs));
+}
+
 describe("test requestqueue", () => {
     it ("can issue one request", () => {
         const rq = new RequestQueue();
@@ -16,42 +23,64 @@ describe("test requestqueue", () => {
         expect(actionIsRun).to.be.true;
     });
 
-    it ("only runs request once", () => {
+    it ("only runs request once", async () => {
         const rq = new RequestQueue();
         const loadSpec = new LoadSpec();
         let count = 0;
-        rq.addRequest(loadSpec, async () => {
-            // do something
+        const promises: Promise<any>[] = [];
+        const work = async () => {
+            await sleep(100);
             count++;
-            return null;
-        });
-        rq.addRequest(loadSpec, async () => {
-            // do something
-            count++;
-            return null;
-        });
+        }
+        promises.push(rq.addRequest(loadSpec, work));
+        promises.push(rq.addRequest(loadSpec, work));
+        await Promise.all(promises);
         expect(count).to.equal(1);
     });
 
-    it ("handles duplicate identical load specs", () => {
+    // Test that same promise is returned
+
+    it ("handles identical key objects", async () => {
         const rq = new RequestQueue();
         const loadSpec1 = new LoadSpec();
         const loadSpec2 = new LoadSpec();
 
         let count = 0;
-        rq.addRequest(loadSpec1, async () => {
-            // do something
+        const promises: Promise<any>[] = [];
+        const work = async () => {
+            await sleep(100);
             count++;
-            return null;
-        });
-        rq.addRequest(loadSpec2, async () => {
-            // do something
-            count++;
-            return null;
-        });
+        }
+        const promise1 = rq.addRequest(loadSpec1, work);
+        const promise2 = rq.addRequest(loadSpec2, work);
+        // Check that the promises are the same instance
+        expect(promise1).to.deep.equal(promise2);
+        promises.push(promise1);
+        promises.push(promise2);
+        await Promise.all(promises);
         expect(count).to.equal(1);
     });
 
+    it ("handles multiple concurrent requests", async () => {
+
+    });
+
+    it ("handles sequential requests", async () => {
+        const rq = new RequestQueue();
+        let count = 0;
+        const work = async () => {
+            count++;
+        }
+        await rq.addRequest(0, work);
+        expect(count).to.equal(1);
+        await sleep(10);
+        await rq.addRequest(0, work);
+        expect(count).to.equal(2);
+    });
+
+    it ("handles key object mutation", () => {
+
+    });
 
     // request implementation
     // request setTimeout, then try cancelling some or all of them
