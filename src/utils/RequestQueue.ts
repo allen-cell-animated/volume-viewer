@@ -8,6 +8,8 @@ export type Request<K, V> = {
     requestAction: () => Promise<V>;
 };
 
+export const DEFAULT_REQUEST_CANCEL_REASON = "request cancelled";
+
 interface QueueItem<V> {
     /** Key used to index this queue item. */
     key: string;
@@ -29,22 +31,21 @@ interface QueueItem<V> {
  * while the original request is still in the queue.
  */
 export default class RequestQueue<K> {
-    // TODO: Consider limit for number of requests that can be operated on at once
-    // TODO: Consider adding staggering for tasks (timeout for how they get added to this ^)
     // VolumeLoader calling .addRequest? -> write a new fake VolumeLoader :)
     //    .getDataVolume() => .addRequest()
     //    How does this change VolumeLoader?
     //    How does this integrate with cache?
 
     /** The maximum number of requests that can be handled concurently.
-    Additional requests will be queued up to run when a running request completes.*/
+    Once reached, additional requests will be queued up to run once a running request completes.*/
     private maxActiveRequests: number;
 
+    /** A queue of requests that are ready to be executed, in order of request time. */
     private queue: string[];
 
     /** Stores all requests, even those that are currently active. */
     private allRequests: Map<string, QueueItem<any>>;
-    /** Stores requests that are currently processing. */
+    /** Stores requests whose actions are currently being run. */
     private activeRequests: Set<string>;
 
     /** Used to convert keys into a string identifier. Can be overridden in constructor. */
@@ -91,10 +92,16 @@ export default class RequestQueue<K> {
 
     /**
      * Adds a request with a unique key to the queue, if it doesn't already exist.
-     * @param key The key used to track the request. Keys will be compared using JSON.stringify(). 
+     * @param key The key used to track the request. Keys will be compared using the stringify function provided
+     *  in the constructor.
      * @param requestAction Function that will be called to complete the request. The function
      *  will be run only once per unique key while the request exists, and may be deferred by the
      *  queue at any time.
+     * 
+     * NOTE: Cancelling a request while the action is running WILL NOT stop the action. Actions are responsible
+     * for checking the RequestQueue, determining if the request is still valid, and stopping if this is desired
+     * behavior.
+     * 
      * @returns A promise that will resolve on completion of the request. If multiple requests are issued
      *  with the same key, the same promise will be returned until request is resolved or cancelled.
      */
@@ -107,6 +114,8 @@ export default class RequestQueue<K> {
         }
         // TODO: Possible type error if addRequest is called with the same key on two different issuer return types?
         return this.allRequests.get(keyString)?.promise!;
+
+        // TODO: If request is known but is on a timeout, cancel the timeout and add to queue
     }
 
     /**
@@ -191,11 +200,52 @@ export default class RequestQueue<K> {
         return true;
     }
 
-    public cancelRequest(loadSpec: LoadSpec) {
-
+    /**
+     * Finds and deletes all requests with the matching keyString from internal state, and rejects the request
+     * for the provided reason.
+     */
+    private cancelRequestByKeyString(keyString: string, cancelReason: any): void {
+        if (!this.allRequests.has(keyString)) {
+            return;
+        }
+        const requestItem = this.allRequests.get(keyString)!;
+        if (requestItem.timeoutId) {   // Cancel requests that have not been queued yet.
+            clearTimeout(requestItem.timeoutId);
+        }
+        // Reject the request, then clear from the queue and known requests.
+        requestItem.reject(cancelReason);
+        this.queue = this.queue.filter(key => key !== keyString);
+        this.allRequests.delete(keyString);
+        this.activeRequests.delete(keyString);
     }
 
-    public cancelAllRequests(): void {
+    /**
+     * Removes any request matching the provided key from the queue and rejects its promise. 
+     * @param key The key that should be matched against, using the stringify function provided in
+     *  the RequestQueue constructor.
+     * @param cancelReason A message or object that will be used as the promise rejection.
+     */
+    public cancelRequest(key: K, cancelReason: any = DEFAULT_REQUEST_CANCEL_REASON): void {
+        this.cancelRequestByKeyString(this.keyStringifyFn(key), cancelReason);
+    }
 
+    /**
+     * Rejects all request promises and clears the queue.
+     * @param cancelReason A message or object that will be used as the promise rejection.
+     */
+    public cancelAllRequests(cancelReason: any = DEFAULT_REQUEST_CANCEL_REASON): void {
+        this.queue = [];  // Clear the queue so we don't do extra work while filtering it
+        for (let keyString of this.allRequests.keys()) {
+            this.cancelRequestByKeyString(keyString, cancelReason);
+        }
+    }
+
+    /**
+     * Returns whether a request with the given key exists in the RequestQueue (and is not cancelled).
+     * @param key the key to search for.
+     * @returns true if the request is in the RequestQueue, or false 
+     */
+    public hasRequest(key: K): boolean {
+        return this.allRequests.has(this.keyStringifyFn(key));
     }
 }
