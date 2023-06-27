@@ -23,7 +23,7 @@
     "start": "webpack serve --config webpack.dev.js",
     "react-example": "webpack serve --config react-example/webpack.react.js",
     "lint": "eslint --config ./.eslintrc.js --ignore-path ./.eslintignore --ext .jsx --ext .js --ext .ts ./src",
-    "test": "cross-env TS_NODE_PROJECT='./tsconfig.test.json' mocha --require ts-node/register src/**/test/*.js",
+    "test": "cross-env TS_NODE_PROJECT='./tsconfig.test.json' mocha --require ts-node/register src/**/test/*.[jt]s",
     "transpileES": "babel src --out-dir es --extensions .js,.ts --ignore **/*.test.js",
     "typeCheck": "tsc -p tsconfig.json --noEmit"
   },

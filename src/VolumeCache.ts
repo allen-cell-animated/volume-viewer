@@ -49,20 +49,22 @@ const extentIsEqual = (a: CacheEntryExtent, b: CacheEntryExtent): boolean => {
   );
 };
 
-// TODO if this is not well used, don't keep it!
-const removeFromArray = <T>(arr: T[], el: T): T => arr.splice(arr.indexOf(el), 1)[0];
+// Extent ranges are inclusive on both ends
+const dimSize = ([min, max]: [number, number]): number => max + 1 - min;
+const extentVolume = ({ x, y, z }: CacheEntryExtent): number => dimSize(x) * dimSize(y) * dimSize(z);
+const dimInvalid = ([min, max]: [number, number]): boolean => min > max;
+const extentInvalid = ({ x, y, z }: CacheEntryExtent): boolean => dimInvalid(x) || dimInvalid(y) || dimInvalid(z);
 
 export default class VolumeCache {
   private store: CachedVolume[];
-  private readonly maxSize: number;
+  public readonly maxSize: number;
   private currentSize: number;
-
-  // TODO implement some way to manage used vs unused (prefetched) entries so
-  // that prefetched entries which are never used don't get highest priority!
 
   // Ends of a linked list of entries, to track LRU and evict efficiently
   private first: MaybeCacheEntry;
   private last: MaybeCacheEntry;
+  // TODO implement some way to manage used vs unused (prefetched) entries so
+  // that prefetched entries which are never used don't get highest priority!
 
   constructor(maxSize = 1_000_000) {
     this.maxSize = maxSize;
@@ -74,16 +76,16 @@ export default class VolumeCache {
   }
 
   /**
-   * Removes an entry from its store but NOT the LRU list.
+   * Removes an entry from the store but NOT the LRU list.
    * Only call from a method with the word "evict" in it!
    */
   private removeEntryFromStore(entry: CacheEntry): void {
-    removeFromArray(entry.parentArr, entry);
+    entry.parentArr.slice(entry.parentArr.indexOf(entry), 1);
     this.currentSize -= entry.data.length;
   }
 
   /**
-   * Remvoes an entry from the LRU list but NOT its store.
+   * Remvoes an entry from the LRU list but NOT the store.
    * Entry must be replaced in list or removed from store, or it will never be evicted!
    */
   private removeEntryFromList(entry: CacheEntry): void {
@@ -117,7 +119,7 @@ export default class VolumeCache {
   /** Evicts the least recently used entry from the cache */
   private evictLast(): void {
     if (!this.last) {
-      console.error("Attempt to evict last frame from cache when no last frame has been set");
+      console.error("VolumeCache: attempt to evict last entry from cache when no last entry is set");
       return;
     }
 
@@ -131,7 +133,6 @@ export default class VolumeCache {
 
   /** Evicts a specific entry from the cache */
   // TODO use this to smartly evict redundant data from TCStore
-  // @ts-ignore unused method
   private evict(entry: CacheEntry): void {
     this.removeEntryFromStore(entry);
     this.removeEntryFromList(entry);
@@ -143,7 +144,11 @@ export default class VolumeCache {
     this.addEntryAsFirst(entry);
   }
 
-  public addVolume(times: number, channels: number, scaleDims: VolumeScaleDims[]): number {
+  /**
+   * Prepares space for a new volume in the cache.
+   * @returns {number} a unique ID which identifies the volume when interacting with it in the cache.
+   */
+  public addVolume(channels: number, times: number, scaleDims: VolumeScaleDims[]): number {
     const makeTCArray = (): CacheEntry[][][] => {
       const arr: CacheEntry[][][] = [];
       for (let i = 0; i < times; i++) {
@@ -157,28 +162,43 @@ export default class VolumeCache {
     return this.store.length - 1;
   }
 
-  public insert(volume: number, scale: number, data: Uint8Array, optDims?: Partial<DataArrayExtent>): void {
+  /**
+   * Add a new array to the cache (representing a subset of a channel's extent at a given scale and time)
+   * @returns {boolean} a boolean indicating whether the insertion succeeded
+   */
+  public insert(volume: number, scale: number, data: Uint8Array, optDims?: Partial<DataArrayExtent>): boolean {
     const scaleCache = this.store[volume].scales[scale];
     // Apply defaults to `optDims`
     const {
       time = 0,
       channel = 0,
-      z = [0, scaleCache.size.z],
-      y = [0, scaleCache.size.y],
-      x = [0, scaleCache.size.x],
+      z = [0, scaleCache.size.z - 1],
+      y = [0, scaleCache.size.y - 1],
+      x = [0, scaleCache.size.x - 1],
     } = optDims || {};
     const entryList = scaleCache.data[time][channel];
     const size: CacheEntryExtent = { z, y, x };
 
-    // TODO validate size of array is equal to extent?
-    // TODO validate size of array is not larger than cache on its own
+    // Validate input
+    if (extentVolume(size) !== data.length) {
+      console.error("VolumeCache: attempt to insert data which does not match the provided dimensions");
+      return false;
+    }
+    if (extentInvalid(size) || x[1] >= scaleCache.size.x || y[1] >= scaleCache.size.y || z[1] >= scaleCache.size.z) {
+      console.error("VolumeCache: attempt to insert data with bad extent");
+      return false;
+    }
+    if (data.length > this.maxSize) {
+      console.error("VolumeCache: attempt to insert a single entry larger than the cache");
+      return false;
+    }
 
     // Check if entry is already in cache
     for (const existingEntry of entryList) {
       if (extentIsEqual(existingEntry.size, size)) {
         existingEntry.data = data;
         this.moveEntryToFirst(existingEntry);
-        return;
+        return true;
       }
     }
 
@@ -192,6 +212,7 @@ export default class VolumeCache {
     while (this.currentSize > this.maxSize) {
       this.evictLast();
     }
+    return true;
   }
 
   private getOneChannel(volume: number, channel: number, optDims?: Partial<QueryExtent>): Uint8Array | undefined {
@@ -201,9 +222,9 @@ export default class VolumeCache {
     // Apply defaults to `optDims`
     const {
       time = 0,
-      z = [0, scaleCache.size.z],
-      y = [0, scaleCache.size.y],
-      x = [0, scaleCache.size.x],
+      z = [0, scaleCache.size.z - 1],
+      y = [0, scaleCache.size.y - 1],
+      x = [0, scaleCache.size.x - 1],
     } = optDims || {};
     const entryList = scaleCache.data[time][channel];
     const size: CacheEntryExtent = { z, y, x };
@@ -217,8 +238,11 @@ export default class VolumeCache {
     return undefined;
   }
 
+  /** Attempts to get data from a single channel of a cached volume. Returns `undefined` if not present in the cache. */
   public get(volume: number, channel: number, optDims?: Partial<QueryExtent>): Uint8Array | undefined;
+  /** Attempts to get data from multiple channels of a volume. Channels not present in the cache are `undefined`. */
   public get(volume: number, channel: number[], optDims?: Partial<QueryExtent>): (Uint8Array | undefined)[];
+  /** Attempts to get all channels of a volume from the cache. Channels not present in the cache are `undefined`. */
   public get(volume: number, optDims?: Partial<QueryExtent>): (Uint8Array | undefined)[];
   public get(
     volume: number,
@@ -226,7 +250,6 @@ export default class VolumeCache {
     optDims?: Partial<QueryExtent>
   ): Uint8Array | undefined | (Uint8Array | undefined)[] {
     if (typeof channel === "object" || channel === undefined) {
-      // TODO is this the right spot to look for channel size?
       const channelKeys = [...Array(this.store[volume].channels).keys()];
       return channelKeys.map((c) => this.getOneChannel(volume, c, optDims));
     }
