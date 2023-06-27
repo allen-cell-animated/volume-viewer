@@ -174,7 +174,8 @@ describe("test RequestQueue", () => {
             const promises = rq.addRequests(requests, 1000);
             rq.addRequest(1, work); // requesting this again should remove the delay
             await Promise.allSettled(promises);
-            expect(Date.now() - start).to.be.lessThan(1000);            
+            expect(Date.now() - start).to.be.lessThan(1000);    
+            expect(count).to.equal(2);
         });
     });
 
@@ -297,7 +298,7 @@ describe("test RequestQueue", () => {
         const yDim = 600;
         const numFrames = 30;
         let workCount = 0;
-        
+
         const action = async (loadSpec: LoadSpec) => {
             // Check if the work we were going to do has been cancelled.
             if(rq.hasRequest(loadSpec)) {
@@ -319,7 +320,7 @@ describe("test RequestQueue", () => {
         
         // Verify promise return types and dimensions
         let promiseCount = 0;
-        for (let promise of promises) {
+        for (const promise of promises) {
             await promise.then((value) => {
                 promiseCount++;
                 expect(value).to.be.a("Uint8Array");
