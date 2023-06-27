@@ -1346,8 +1346,6 @@ function main() {
       }
     } else if (target.value === "MP") {
       changeRenderMode(false, true);
-    } else if (target.value === "AG") {
-      changeRenderMode(false, false);
     } else {
       changeRenderMode(false, false);
     }
