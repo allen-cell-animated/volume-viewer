@@ -88,6 +88,7 @@ describe("VolumeCache", () => {
       cache.insert(id1, new Uint8Array(2)); // 10 < 12
       cache.insert(id1, new Uint8Array(8), { scale: 1, x: [2, 3] }); // 18 > 12! evict 1!
       expect(cache.size).to.equal(10);
+      expect(cache.numberOfEntries).to.equal(2);
       expect(cache.get(id1, 0, { scale: 1, x: [0, 1] })).to.be.undefined;
       expect(cache.get(id1, 0)).to.deep.equal(new Uint8Array(2));
       expect(cache.get(id1, 0, { scale: 1, x: [2, 3] })).to.deep.equal(new Uint8Array(8));
@@ -99,6 +100,7 @@ describe("VolumeCache", () => {
       cache.insert(id2, new Uint8Array(6)); // 8
       cache.insert(id2, new Uint8Array(6), { time: 1 }); // 14!
       expect(cache.size).to.equal(12);
+      expect(cache.numberOfEntries).to.equal(2);
       expect(cache.get(id1, 0)).to.be.undefined;
       expect(cache.get(id2, 0)).to.deep.equal(new Uint8Array(6));
       expect(cache.get(id2, 0, { time: 1 })).to.deep.equal(new Uint8Array(6));
@@ -110,6 +112,7 @@ describe("VolumeCache", () => {
       cache.insert(id2, new Uint8Array(6), { time: 1 }); // 12
       cache.insert(id1, new Uint8Array(8), { scale: 1, x: [0, 1] }); // 20!
       expect(cache.size).to.equal(8);
+      expect(cache.numberOfEntries).to.equal(1);
       expect(cache.get(id2, 0)).to.be.undefined;
       expect(cache.get(id2, 0, { time: 1 })).to.be.undefined;
       expect(cache.get(id1, 0, { scale: 1, x: [0, 1] })).to.deep.equal(new Uint8Array(8));
@@ -121,6 +124,7 @@ describe("VolumeCache", () => {
       cache.insert(id1, new Uint8Array(8), { scale: 1, x: [1, 2] }); // 12
       cache.insert(id1, new Uint8Array([5, 6, 7, 8]), { scale: 1, x: [0, 0] }); // still 12
       expect(cache.size).to.equal(12);
+      expect(cache.numberOfEntries).to.equal(2);
       expect(cache.get(id1, 0, { scale: 1, x: [1, 2] })).to.deep.equal(new Uint8Array(8));
       expect(cache.get(id1, 0, { scale: 1, x: [0, 0] })).to.deep.equal(new Uint8Array([5, 6, 7, 8]));
     });
@@ -207,6 +211,7 @@ describe("VolumeCache", () => {
       const [cache, id1, id2] = setupClearTest();
       cache.clearVolume(id1);
       expect(cache.size).to.equal(1);
+      expect(cache.numberOfEntries).to.equal(1);
       expect(cache.get(id1, 0)).to.be.undefined;
       expect(cache.get(id1, 1, SPECIFIC_EXTENT)).to.be.undefined;
       expect(cache.get(id2, 0)).to.deep.equal(new Uint8Array(1));
@@ -218,6 +223,7 @@ describe("VolumeCache", () => {
     const [cache, id1, id2] = setupClearTest();
     cache.clear();
     expect(cache.size).to.equal(0);
+    expect(cache.numberOfEntries).to.equal(0);
     expect(cache.get(id1, 0)).to.be.undefined;
     expect(cache.get(id1, 1, SPECIFIC_EXTENT)).to.be.undefined;
     expect(cache.get(id2, 0)).to.be.undefined;

@@ -63,6 +63,7 @@ export default class VolumeCache {
   private store: CachedVolume[];
   public readonly maxSize: number;
   private currentSize: number;
+  private currentEntries: number;
 
   // Ends of a linked list of entries, to track LRU and evict efficiently
   private first: MaybeCacheEntry;
@@ -73,15 +74,20 @@ export default class VolumeCache {
   constructor(maxSize = 1_000_000) {
     this.maxSize = maxSize;
     this.currentSize = 0;
+    this.currentEntries = 0;
     this.store = [];
 
     this.first = null;
     this.last = null;
   }
 
-  // Hide `currentSize` behind a getter so it's definitely never set from outside
+  // Hide these behind getters so they're definitely never set from the outside
   public get size() {
     return this.currentSize;
+  }
+
+  public get numberOfEntries() {
+    return this.currentEntries;
   }
 
   /**
@@ -91,6 +97,7 @@ export default class VolumeCache {
   private removeEntryFromStore(entry: CacheEntry): void {
     entry.parentArr.splice(entry.parentArr.indexOf(entry), 1);
     this.currentSize -= entry.data.length;
+    this.currentEntries--;
   }
 
   /**
@@ -221,6 +228,7 @@ export default class VolumeCache {
     this.addEntryAsFirst(newEntry);
     entryList.push(newEntry);
     this.currentSize += data.length;
+    this.currentEntries++;
 
     // Evict until size is within limit
     while (this.currentSize > this.maxSize) {
