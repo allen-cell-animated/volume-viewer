@@ -104,7 +104,7 @@ export default class RequestQueue<K> {
      */
     public addRequest<T>(key: K, requestAction: () => Promise<T>): Promise<unknown> {
         const keyString = this.keyStringifyFn(key);
-        
+
         if (!this.allRequests.has(keyString)) {  // New request!
             this.registerRequest(keyString, requestAction);
             this.queue.push(keyString);
@@ -139,7 +139,6 @@ export default class RequestQueue<K> {
      */
     public addRequests<T>(requests: Request<K, T>[], delayMs = 10): Promise<unknown>[] {
         const promises: Promise<unknown>[] = [];
-        // TODO
         for (let i = 0; i < requests.length; i++) {
             const item = requests[i];
             const keyString = this.keyStringifyFn(item.key);
