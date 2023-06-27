@@ -1,6 +1,4 @@
-// TODO: Revive cancelled requests, if the operations being run have not finished yet.
-
-// Type used when making multiple requests.
+/** Object format used when passing multiple requests to RequestQueue at once. */
 export type Request<K, V> = {
     key: K;
     requestAction: () => Promise<V>;
@@ -8,18 +6,21 @@ export type Request<K, V> = {
 
 export const DEFAULT_REQUEST_CANCEL_REASON = "request cancelled";
 
-interface QueueItem<V> {
+/**
+ * Internal object interface used by RequestQueue to store request metadata and callbacks.
+ */
+interface RequestItem<V> {
     /** Key used to index this queue item. */
     key: string;
     /** Action to be run. */
     action: () => Promise<V>;
     /** Reference to the promise object that will be resolved when the action is complete. */
     promise: Promise<V>;
-    // value is of promise's type
+    /** Callback used to resolve the promise. */
     resolve: (value?: V | PromiseLike<V> | undefined) => void;
-    // reason is really any
+    /** Callback used to reject the promise. */
     reject: (reason?: unknown) => void;
-    /** Optional, used to track timeouts when the item will be added to the queue later. */
+    /** Optional, used to track timeouts if the item will be added to the queue later. */
     timeoutId?: NodeJS.Timeout;
 }
 
@@ -29,11 +30,6 @@ interface QueueItem<V> {
  * while the original request is still in the queue.
  */
 export default class RequestQueue<K> {
-    // VolumeLoader calling .addRequest? -> write a new fake VolumeLoader :)
-    //    .getDataVolume() => .addRequest()
-    //    How does this change VolumeLoader?
-    //    How does this integrate with cache?
-
     /** The maximum number of requests that can be handled concurently.
     Once reached, additional requests will be queued up to run once a running request completes.*/
     private maxActiveRequests: number;
@@ -42,7 +38,7 @@ export default class RequestQueue<K> {
     private queue: string[];
 
     /** Stores all requests, even those that are currently active. */
-    private allRequests: Map<string, QueueItem<unknown>>;
+    private allRequests: Map<string, RequestItem<unknown>>;
 
     /** Stores requests whose actions are currently being run. */
     private activeRequests: Set<string>;
@@ -71,8 +67,8 @@ export default class RequestQueue<K> {
      */
     private registerRequest<T>(keyString: string, requestAction: () => Promise<T>): Promise<T> {
         // Create a new promise and store the resolve and reject callbacks for later.
-        // This lets us perform the actual action at a later point, when the request is ready to be
-        // processed.
+        // This lets us perform the actual action at a later point, when the request is at the
+        // front of the processing queue.
         let promiseResolve, promiseReject;
         const promise = new Promise<T>((resolve, reject) => {
             promiseResolve = resolve;
@@ -91,34 +87,44 @@ export default class RequestQueue<K> {
 
     /**
      * Adds a request with a unique key to the queue, if it doesn't already exist.
-     * @param key The key used to track the request. Keys will be compared using the stringify function provided
+     * @param key The key used to track the request. Keys will be compared using the `keyStringifyFn` function provided
      *  in the constructor.
      * @param requestAction Function that will be called to complete the request. The function
      *  will be run only once per unique key while the request exists, and may be deferred by the
      *  queue at any time.
      * 
-     * NOTE: Cancelling a request while the action is running WILL NOT stop the action. Actions are responsible
-     * for checking the RequestQueue, determining if the request is still valid, and stopping if this is desired
-     * behavior.
+     * NOTE: Cancelling a request while the action is running WILL NOT stop the action. If this behavior is desired,
+     * actions must be responsible for checking the RequestQueue, determining if the request is still valid (e.g.
+     * using `.hasRequest()`), and stopping or returning early.
      * 
-     * @returns A promise that will resolve on completion of the request. If multiple requests are issued
-     *  with the same key, a promise for the first request will be returned until the request is resolved or cancelled.
+     * @returns A promise that will resolve on completion of the request, or reject if the request is cancelled.
+     *  If multiple requests are issued with the same key, a promise for the first request will be returned
+     *  until the request is resolved or cancelled. 
      *  Note that the return type of the promise will match that of the first request's instance.
      */
     public addRequest<T>(key: K, requestAction: () => Promise<T>): Promise<unknown> {
         const keyString = this.keyStringifyFn(key);
+        
         if (!this.allRequests.has(keyString)) {  // New request!
             this.registerRequest(keyString, requestAction);
             this.queue.push(keyString);
             this.dequeue();  // Check if we can run a task.
+        } else {
+            // We already have this request. Check if it's on a delay timer; if so, remove the timer and add to queue
+            // immediately, rather than waiting.
+            const requestItem = this.allRequests.get(keyString);
+            if (requestItem && requestItem.timeoutId) {
+                clearTimeout(requestItem.timeoutId);
+                requestItem.timeoutId = undefined;
+                this.queue.push(keyString);
+                this.dequeue();
+            }
         }
         const promise = this.allRequests.get(keyString)?.promise;
         if (!promise) {
             throw new Error("Found no promise to return when getting stored request data.");
         }
         return promise;
-
-        // TODO: If request is known but is on a timeout, cancel the timeout and add to queue
     }
 
     /**
