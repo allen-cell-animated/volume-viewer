@@ -1,48 +1,6 @@
 import { expect } from "chai";
 import VolumeCache, { DataArrayExtent } from "../VolumeCache";
 
-function testInsertFails(dataLength: number, extent?: Partial<DataArrayExtent>, maxSize?: number): void {
-  const cache = new VolumeCache(maxSize);
-  const vol = cache.addVolume(1, 1, [{ x: 2, y: 2, z: 2 }]);
-  const insertionResult = cache.insert(vol, new Uint8Array(dataLength), extent);
-  expect(insertionResult).to.be.false;
-  expect(cache.get(vol, 0)).to.be.undefined;
-}
-
-/**
- * - Cache has a memory limit of 12
- * - Volume 1 has 2 channels, 1 time, 2 scale levels: 2x1x1 and 4x2x2
- * - Volume 2 has 1 channel, 2 times, 1 scale level: 3x2x1
- */
-function setupEvictionTest(): [VolumeCache, number, number] {
-  const cache = new VolumeCache(12);
-  const id1 = cache.addVolume(2, 1, [
-    { x: 2, y: 1, z: 1 },
-    { x: 4, y: 2, z: 2 },
-  ]);
-  const id2 = cache.addVolume(1, 2, [{ x: 3, y: 2, z: 1 }]);
-  return [cache, id1, id2];
-}
-
-const SLICE_1_1 = [1, 2, 3, 4];
-const SLICE_1_2 = [5, 6, 7, 8];
-const SLICE_2_1 = [2, 4, 6, 8];
-const SLICE_2_2 = [1, 3, 5, 7];
-function setupGetTest(addSlices: [boolean, boolean, boolean, boolean]): [VolumeCache, number] {
-  const cache = new VolumeCache(12);
-  const vol = cache.addVolume(2, 1, [{ x: 2, y: 2, z: 2 }]);
-  const insertFuncs = [
-    () => cache.insert(vol, new Uint8Array(SLICE_1_1), { z: [0, 0] }),
-    () => cache.insert(vol, new Uint8Array(SLICE_1_2), { z: [1, 1] }),
-    () => cache.insert(vol, new Uint8Array(SLICE_2_1), { z: [0, 0], channel: 1 }),
-    () => cache.insert(vol, new Uint8Array(SLICE_2_2), { z: [1, 1], channel: 1 }),
-  ];
-  insertFuncs.forEach((fn, idx) => {
-    if (addSlices[idx]) fn();
-  });
-  return [cache, vol];
-}
-
 describe("VolumeCache", () => {
   it("creates an empty cache with the specified max size", () => {
     const cache = new VolumeCache(10);
@@ -85,6 +43,14 @@ describe("VolumeCache", () => {
       expect(cache.get(vol, 0)).to.deep.equal(new Uint8Array(8));
     });
 
+    function testInsertFails(dataLength: number, extent?: Partial<DataArrayExtent>, maxSize?: number): void {
+      const cache = new VolumeCache(maxSize);
+      const vol = cache.addVolume(1, 1, [{ x: 2, y: 2, z: 2 }]);
+      const insertionResult = cache.insert(vol, new Uint8Array(dataLength), extent);
+      expect(insertionResult).to.be.false;
+      expect(cache.get(vol, 0)).to.be.undefined;
+    }
+
     it("does not insert an entry if the extent does not match the data", () => {
       testInsertFails(7);
     });
@@ -100,6 +66,21 @@ describe("VolumeCache", () => {
     it("does not insert an entry if it is too big for the cache", () => {
       testInsertFails(8, {}, 6);
     });
+
+    /**
+     * - Cache has a memory limit of 12
+     * - Volume 1 has 2 channels, 1 time, 2 scale levels: 2x1x1 and 4x2x2
+     * - Volume 2 has 1 channel, 2 times, 1 scale level: 3x2x1
+     */
+    function setupEvictionTest(): [VolumeCache, number, number] {
+      const cache = new VolumeCache(12);
+      const id1 = cache.addVolume(2, 1, [
+        { x: 2, y: 1, z: 1 },
+        { x: 4, y: 2, z: 2 },
+      ]);
+      const id2 = cache.addVolume(1, 2, [{ x: 3, y: 2, z: 1 }]);
+      return [cache, id1, id2];
+    }
 
     it("evicts the least recently used entry when above its size limit", () => {
       const [cache, id1] = setupEvictionTest(); // max: 12
@@ -145,6 +126,25 @@ describe("VolumeCache", () => {
     });
   });
 
+  const SLICE_1_1 = [1, 2, 3, 4];
+  const SLICE_1_2 = [5, 6, 7, 8];
+  const SLICE_2_1 = [2, 4, 6, 8];
+  const SLICE_2_2 = [1, 3, 5, 7];
+  function setupGetTest(addSlices: [boolean, boolean, boolean, boolean]): [VolumeCache, number] {
+    const cache = new VolumeCache(12);
+    const vol = cache.addVolume(2, 1, [{ x: 2, y: 2, z: 2 }]);
+    const insertFuncs = [
+      () => cache.insert(vol, new Uint8Array(SLICE_1_1), { z: [0, 0] }),
+      () => cache.insert(vol, new Uint8Array(SLICE_1_2), { z: [1, 1] }),
+      () => cache.insert(vol, new Uint8Array(SLICE_2_1), { z: [0, 0], channel: 1 }),
+      () => cache.insert(vol, new Uint8Array(SLICE_2_2), { z: [1, 1], channel: 1 }),
+    ];
+    insertFuncs.forEach((fn, idx) => {
+      if (addSlices[idx]) fn();
+    });
+    return [cache, vol];
+  }
+
   describe("get", () => {
     it("gets a single channel when provided a channel index", () => {
       const [cache, id] = setupGetTest([false, false, false, true]);
@@ -186,5 +186,40 @@ describe("VolumeCache", () => {
       expect(cache.get(id, 0, { z: [1, 1] })).to.be.undefined;
       expect(cache.get(id, 0, { z: [0, 0] })).to.deep.equal(new Uint8Array(SLICE_1_1));
     });
+  });
+
+  const SPECIFIC_EXTENT: Partial<DataArrayExtent> = { time: 1, channel: 1, scale: 1, x: [1, 1], y: [1, 1] };
+  function setupClearTest(): [VolumeCache, number, number] {
+    const cache = new VolumeCache();
+    const id1 = cache.addVolume(2, 2, [
+      { x: 1, y: 1, z: 1 },
+      { x: 2, y: 2, z: 2 },
+    ]);
+    const id2 = cache.addVolume(1, 1, [{ x: 1, y: 1, z: 1 }]);
+    cache.insert(id1, new Uint8Array(1));
+    cache.insert(id1, new Uint8Array(2), SPECIFIC_EXTENT);
+    cache.insert(id2, new Uint8Array(1));
+    return [cache, id1, id2];
+  }
+
+  describe("clearVolume", () => {
+    it("clears all entries associated with one volume from the cache", () => {
+      const [cache, id1, id2] = setupClearTest();
+      cache.clearVolume(id1);
+      expect(cache.size).to.equal(1);
+      expect(cache.get(id1, 0)).to.be.undefined;
+      expect(cache.get(id1, 1, SPECIFIC_EXTENT)).to.be.undefined;
+      expect(cache.get(id2, 0)).to.deep.equal(new Uint8Array(1));
+    });
+  });
+
+  describe("clear", () => {
+    it("clears all entries from the cache", () => {});
+    const [cache, id1, id2] = setupClearTest();
+    cache.clear();
+    expect(cache.size).to.equal(0);
+    expect(cache.get(id1, 0)).to.be.undefined;
+    expect(cache.get(id1, 1, SPECIFIC_EXTENT)).to.be.undefined;
+    expect(cache.get(id2, 0)).to.be.undefined;
   });
 });

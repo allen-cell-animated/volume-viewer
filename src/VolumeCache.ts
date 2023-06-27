@@ -132,11 +132,11 @@ export default class VolumeCache {
       return;
     }
 
+    this.removeEntryFromStore(this.last);
+
     if (this.last.next) {
       this.last.next.prev = null;
     }
-
-    this.removeEntryFromStore(this.last);
     this.last = this.last.next;
   }
 
@@ -274,5 +274,25 @@ export default class VolumeCache {
     }
 
     return this.getOneChannel(volume, channel, optDims);
+  }
+
+  /** Clears data associated with one volume from the cache */
+  public clearVolume(volume: number): void {
+    this.store[volume].scales.forEach((scale) => {
+      scale.data.forEach((time) => {
+        time.forEach((channel) => {
+          channel.forEach((entry) => {
+            this.evict(entry);
+          });
+        });
+      });
+    });
+  }
+
+  /** Clears all data from the cache */
+  public clear(): void {
+    while (this.last) {
+      this.evictLast();
+    }
   }
 }
