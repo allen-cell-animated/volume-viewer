@@ -1,7 +1,8 @@
 import { expect } from "chai";
 
-import RequestQueue from "../utils/RequestQueue";
+import RequestQueue, { Request } from "../utils/RequestQueue";
 import { LoadSpec } from "../loaders/IVolumeLoader";
+import { TypedArray } from "zarr";
 
 /**
  * Returns a promise that resolves once the timeout (give in ms) is completed.
@@ -31,7 +32,7 @@ describe("test RequestQueue", () => {
         const rq = new RequestQueue();
         const loadSpec = new LoadSpec();
         let count = 0;
-        const promises: Promise<any>[] = [];
+        const promises: Promise<unknown>[] = [];
         const work = async () => {
             await sleep(100);
             count++;
@@ -50,7 +51,7 @@ describe("test RequestQueue", () => {
         const loadSpec2 = new LoadSpec();
 
         let count = 0;
-        const promises: Promise<any>[] = [];
+        const promises: Promise<unknown>[] = [];
         const work = async () => {
             await sleep(100);
             count++;
@@ -68,7 +69,7 @@ describe("test RequestQueue", () => {
     it ("handles multiple concurrent requests", async () => {
         const rq = new RequestQueue();
         const array = [false, false, false, false, false];
-        const promises: Promise<any>[] = [];
+        const promises: Promise<unknown>[] = [];
         for (let i = 0; i < array.length; i++) {
             const work = async () => {
                 await sleep(10);
@@ -87,9 +88,9 @@ describe("test RequestQueue", () => {
         const startTime = Date.now();
         const iterations = 5;
         const delayMs = 5;
-        let counter: number[] = [];
+        const counter: number[] = [];
 
-        const promises: Promise<any>[] = [];
+        const promises: Promise<unknown>[] = [];
         for (let i = 0; i < iterations; i++) {
             const work = async () => {
                 await sleep(delayMs);
@@ -115,14 +116,14 @@ describe("test RequestQueue", () => {
         const rq = new RequestQueue(JSON.stringify, maxActiveRequests);
         const iterations = maxActiveRequests * 10;
 
-        const promises: Promise<void>[] = [];
+        const promises: Promise<unknown>[] = [];
         for (let i = 0; i < iterations; i++) {
             promises.push(rq.addRequest(i, async () => {
                 await sleep(5);
                 throw new Error("Test error (should be caught)");
             }));
         }
-        await Promise.allSettled(promises).catch((err) => {});
+        await Promise.allSettled(promises).catch((_) => {return;});
     });
 
     it ("handles sequential requests", async () => {
@@ -154,7 +155,7 @@ describe("test RequestQueue", () => {
         rq.cancelRequest(0);
 
         let didReject = false;
-        await promise.catch((err) => {
+        await promise.catch((_) => {
             didReject = true;
         });
 
@@ -193,7 +194,7 @@ describe("test RequestQueue", () => {
         let count = 0;
         const rejectionReason = "test reject";
 
-        const promises: Promise<any>[] = [];
+        const promises: Promise<unknown>[] = [];
         for (let i = 0; i < iterations; i++) {
             const work = async () => {
                 await sleep(10);
@@ -216,18 +217,102 @@ describe("test RequestQueue", () => {
         expect(count).to.equal(0);
     });
 
-    
+    async function mockLoader(loadSpec: LoadSpec, maxDelayMs = 10.0): Promise<TypedArray> {
+        const x = loadSpec.maxx - loadSpec.minx;
+        const y = loadSpec.maxy - loadSpec.miny;
+        const z = loadSpec.maxz - loadSpec.minz;
+        const data = new Uint8Array(x * y * z);
+        const delayMs = Math.random() * maxDelayMs;
+
+        await sleep(delayMs);
+        return data;
+    }    
 
     /**
-     * USE CASES:
-     * 1. Requesting large amount of data (write mock requests)
-     *   - ex: requesting 20 z-slices ahead of our current time,
-     *     different t and same z-value for loadspec.
-     *   - Some mock worker that returns typed array of some size
-     *     (x by y size of fake volume) after a given delay
-     * 2. Move to a new time from an existing one
-     *   - Make a bunch of existing requests
-     *   - Cancel all in-flight requests, make 20 new ones
-     *   - Are base assumptions true after cancellation?
+     * Creates an array of requests where the keys are Loadspecs with the given dimensions and range, and the
+     * requestAction is a mock loader that creates typed arrays after a random duration.
      */
+    function getLoadSpecRequests<T>(startingFrame: number, frames: number, xDim: number, yDim: number, action: (LoadSpec) => Promise<T>): Request<LoadSpec, T>[] {
+        const requests: Request<LoadSpec, T>[] = [];
+        for (let i = startingFrame; i < startingFrame + frames; i++) {
+            const loadSpec = new LoadSpec();
+            loadSpec.minx = 0;
+            loadSpec.maxx = xDim;
+            loadSpec.miny = 0;
+            loadSpec.maxy = yDim;
+            loadSpec.minz = i;
+            loadSpec.maxz = i + 1;
+
+            requests.push({
+                key: loadSpec,
+                requestAction: () => {return action(loadSpec)}
+            });
+        }
+        return requests;
+    }
+
+    it ("can issue and cancel mock loadspec requests", async () => {
+        const rq = new RequestQueue(JSON.stringify, 1);
+        const xDim = 400;
+        const yDim = 600;
+        const numFrames = 30;
+        let workCount = 0;
+
+        const action = async (loadSpec: LoadSpec) => {
+            // Check if the work we were going to do has been cancelled.
+            if(rq.hasRequest(loadSpec)) {
+                workCount++;
+                return await mockLoader(loadSpec);
+            }
+            return null;
+        }
+
+        let requests = getLoadSpecRequests(0, numFrames, xDim, yDim, action);
+        let promises = rq.addRequests(requests);
+        sleep(5);
+        rq.cancelAllRequests();
+
+        // Reissue overlapping requests
+        requests = getLoadSpecRequests(60, numFrames, xDim, yDim, action);
+        promises = rq.addRequests(requests);
+        await Promise.all(promises);
+
+        // Verify promise return types and dimensions
+        let promiseCount = 0;
+        for (let promise of promises) {
+            await promise.then((value) => {
+                promiseCount++;
+                expect(value).to.be.a("Uint8Array");
+                expect(value).to.be.instanceOf(Uint8Array);
+                if (value instanceof Uint8Array) {
+                    expect(value.buffer.byteLength).to.equal(xDim * yDim);
+                } else {
+                    throw new Error("Value is not a Uint8Array");
+                }
+            });
+        }
+        expect(promiseCount).to.equal(numFrames);
+        // Expect some of the work to be cancelled correctly.
+        expect(workCount).to.be.lessThan(2 * numFrames).and.greaterThanOrEqual(numFrames);
+    });
+
+    it ("ignores different promise return types.", async () => {
+        const rq = new RequestQueue();
+        const promise1 = rq.addRequest(0, async () => {
+            await sleep(10);
+            return "5";
+        });
+        const promise2 = rq.addRequest(0, async () => { 
+            await sleep(10);
+            return 5;
+        });
+
+        expect(promise1).to.equal(promise2);
+        promise1.then((value) => {
+            expect(value).to.be.a("string").and.to.equal("5");
+        });
+        promise2.then((value) => {
+            expect(value).to.be.a("string").and.to.equal("5");
+        });
+    });
 });

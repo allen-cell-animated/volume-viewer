@@ -42,7 +42,8 @@ export default class RequestQueue<K> {
     private queue: string[];
 
     /** Stores all requests, even those that are currently active. */
-    private allRequests: Map<string, QueueItem<any>>;
+    private allRequests: Map<string, QueueItem<unknown>>;
+
     /** Stores requests whose actions are currently being run. */
     private activeRequests: Set<string>;
 
@@ -101,17 +102,21 @@ export default class RequestQueue<K> {
      * behavior.
      * 
      * @returns A promise that will resolve on completion of the request. If multiple requests are issued
-     *  with the same key, the same promise will be returned until request is resolved or cancelled.
+     *  with the same key, a promise for the first request will be returned until the request is resolved or cancelled.
+     *  Note that the return type of the promise will match that of the first request's instance.
      */
-    public addRequest<T>(key: K, requestAction: () => Promise<T>): Promise<T> {
+    public addRequest<T>(key: K, requestAction: () => Promise<T>): Promise<unknown> {
         const keyString = this.keyStringifyFn(key);
         if (!this.allRequests.has(keyString)) {  // New request!
-            const promise = this.registerRequest(keyString, requestAction);
+            this.registerRequest(keyString, requestAction);
             this.queue.push(keyString);
             this.dequeue();  // Check if we can run a task.
         }
-        // TODO: Possible type error if addRequest is called with the same key on two different issuer return types?
-        return this.allRequests.get(keyString)?.promise!;
+        const promise = this.allRequests.get(keyString)?.promise;
+        if (!promise) {
+            throw new Error("Found no promise to return when getting stored request data.");
+        }
+        return promise;
 
         // TODO: If request is known but is on a timeout, cancel the timeout and add to queue
     }
@@ -122,17 +127,23 @@ export default class RequestQueue<K> {
      * @param delayMs An optional delay in milliseconds to be added between each request.
      *  For example, a delay of 10 ms will cause the second request to be added to the queue
      *  after 10 ms, the third to added after 20 ms, and so on. Set to 10 ms by default. 
-     * @returns 
+     * @returns An array of promises corresponding to the provided requests. (i.e., the `i`th value
+     * of the returned array will be a Promise for the resolution of `requests[i]`). If a request
+     *  with a matching key is already pending, returns the promise for the initial request.
      */
-    public addRequests<T>(requests: Request<K, T>[], delayMs = 10): Promise<T>[] {
-        const promises: Promise<T>[] = [];
+    public addRequests<T>(requests: Request<K, T>[], delayMs = 10): Promise<unknown>[] {
+        const promises: Promise<unknown>[] = [];
         // TODO
         for (let i = 0; i < requests.length; i++) {
             const item = requests[i];
             const keyString = this.keyStringifyFn(item.key);
             if (this.allRequests.has(keyString)) {
                 // Existing request
-                promises.push(this.allRequests.get(keyString)?.promise!);
+                const promise = this.allRequests.get(keyString)?.promise;
+                if (!promise) {
+                    throw new Error("Promise reference was not found in request metadata when expected.");
+                }
+                promises.push(promise);
             } else {
                 // Add this request to our map of all requests, but don't add to queue until after delay.
                 const promise = this.registerRequest(keyString, item.requestAction);
@@ -142,8 +153,10 @@ export default class RequestQueue<K> {
                     this.dequeue();  // Check if we can run a task.
                 }, delayMs * i);
                 // Store the timeoutId to the request metadata in case we need to cancel this task later.
-                const requestData = this.allRequests.get(keyString)!;
-                requestData.timeoutId = timeoutId;
+                const requestData = this.allRequests.get(keyString);
+                if (requestData) {
+                    requestData.timeoutId = timeoutId;
+                }
             }
             promises.push(
                 
@@ -202,16 +215,18 @@ export default class RequestQueue<K> {
      * Finds and deletes all requests with the matching keyString from internal state, and rejects the request
      * for the provided cancellation reason.
      */
-    private cancelRequestByKeyString(keyString: string, cancelReason: any): void {
+    private cancelRequestByKeyString(keyString: string, cancelReason: unknown): void {
         if (!this.allRequests.has(keyString)) {
             return;
         }
-        const requestItem = this.allRequests.get(keyString)!;
-        if (requestItem.timeoutId) {   // Cancel requests that have not been queued yet.
-            clearTimeout(requestItem.timeoutId);
+        const requestItem = this.allRequests.get(keyString);
+        if (requestItem) {
+            if (requestItem.timeoutId) {   // Cancel requests that have not been queued yet.
+                clearTimeout(requestItem.timeoutId);
+            }
+            // Reject the request, then clear from the queue and known requests.
+            requestItem.reject(cancelReason);
         }
-        // Reject the request, then clear from the queue and known requests.
-        requestItem.reject(cancelReason);
         this.queue = this.queue.filter(key => key !== keyString);
         this.allRequests.delete(keyString);
         this.activeRequests.delete(keyString);
@@ -223,7 +238,7 @@ export default class RequestQueue<K> {
      *  the RequestQueue constructor.
      * @param cancelReason A message or object that will be used as the promise rejection.
      */
-    public cancelRequest(key: K, cancelReason: any = DEFAULT_REQUEST_CANCEL_REASON): void {
+    public cancelRequest(key: K, cancelReason: unknown = DEFAULT_REQUEST_CANCEL_REASON): void {
         this.cancelRequestByKeyString(this.keyStringifyFn(key), cancelReason);
     }
 
@@ -231,9 +246,9 @@ export default class RequestQueue<K> {
      * Rejects all request promises and clears the queue.
      * @param cancelReason A message or object that will be used as the promise rejection.
      */
-    public cancelAllRequests(cancelReason: any = DEFAULT_REQUEST_CANCEL_REASON): void {
+    public cancelAllRequests(cancelReason: unknown = DEFAULT_REQUEST_CANCEL_REASON): void {
         this.queue = [];  // Clear the queue so we don't do extra work while filtering it
-        for (let keyString of this.allRequests.keys()) {
+        for (const keyString of this.allRequests.keys()) {
             this.cancelRequestByKeyString(keyString, cancelReason);
         }
     }
