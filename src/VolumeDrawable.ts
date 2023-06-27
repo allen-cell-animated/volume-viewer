@@ -12,9 +12,6 @@ import { Light } from "./Light";
 import Channel from "./Channel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 
-// TODO set up enum for this
-const RENDERMODE_AGAVE = 2;
-
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
   public PT: boolean;
@@ -178,7 +175,7 @@ export default class VolumeDrawable {
     }
 
     if (options.renderMode !== undefined) {
-      this.setVolumeRendering(!!options.renderMode, options.renderMode);
+      this.setVolumeRendering(!!options.renderMode);
     }
     if (options.primaryRayStepSize !== undefined || options.secondaryRayStepSize !== undefined) {
       this.setRayStepSizes(options.primaryRayStepSize, options.secondaryRayStepSize);
@@ -607,7 +604,7 @@ export default class VolumeDrawable {
     this.volumeRendering.setPixelSamplingRate(value);
   }
 
-  setVolumeRendering(isPathtrace: boolean, renderMode: number): void {
+  setVolumeRendering(isPathtrace: boolean): void {
     if (isPathtrace === this.PT && this.volumeRendering === this.pathTracedVolume) {
       return;
     }
