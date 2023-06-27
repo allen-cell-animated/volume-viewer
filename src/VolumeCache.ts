@@ -2,7 +2,10 @@ type XYZ<T> = { x: T; y: T; z: T };
 export type VolumeScaleDims = XYZ<number>;
 type CacheEntryExtent = XYZ<[number, number]>;
 
+// The following two very similar types are kept separate because we may later want to allow more
+// complex queries with respect to scale, e.g. "get the largest available scale within this range"
 export type DataArrayExtent = CacheEntryExtent & {
+  scale: number;
   time: number;
   channel: number;
 };
@@ -14,6 +17,7 @@ export type QueryExtent = CacheEntryExtent & {
 
 type CacheEntry = {
   /** The data contained in this entry */
+  // TODO allow more types of `TypedArray` to be stored together in the cache?
   data: Uint8Array;
   /** The subset of the volume covered by this entry */
   size: CacheEntryExtent;
@@ -75,12 +79,17 @@ export default class VolumeCache {
     this.last = null;
   }
 
+  // Hide `currentSize` behind a getter so it's definitely never set from outside
+  public get size() {
+    return this.currentSize;
+  }
+
   /**
    * Removes an entry from the store but NOT the LRU list.
    * Only call from a method with the word "evict" in it!
    */
   private removeEntryFromStore(entry: CacheEntry): void {
-    entry.parentArr.slice(entry.parentArr.indexOf(entry), 1);
+    entry.parentArr.splice(entry.parentArr.indexOf(entry), 1);
     this.currentSize -= entry.data.length;
   }
 
@@ -132,7 +141,7 @@ export default class VolumeCache {
   }
 
   /** Evicts a specific entry from the cache */
-  // TODO use this to smartly evict redundant data from TCStore
+  // TODO use this to intelligently evict redundant data
   private evict(entry: CacheEntry): void {
     this.removeEntryFromStore(entry);
     this.removeEntryFromList(entry);
@@ -145,16 +154,20 @@ export default class VolumeCache {
   }
 
   /**
-   * Prepares space for a new volume in the cache.
+   * Prepares space for a new volume in the cache with the specified channels, times, and scales.
    * @returns {number} a unique ID which identifies the volume when interacting with it in the cache.
    */
   public addVolume(channels: number, times: number, scaleDims: VolumeScaleDims[]): number {
     const makeTCArray = (): CacheEntry[][][] => {
-      const arr: CacheEntry[][][] = [];
+      const tArr: CacheEntry[][][] = [];
       for (let i = 0; i < times; i++) {
-        arr.push(Array(channels).fill([]));
+        const cArr: CacheEntry[][] = [];
+        for (let j = 0; j < channels; j++) {
+          cArr.push([]);
+        }
+        tArr.push(cArr);
       }
-      return arr;
+      return tArr;
     };
 
     const scales = scaleDims.map((size): VolumeCacheScale => ({ size, data: makeTCArray() }));
@@ -163,10 +176,11 @@ export default class VolumeCache {
   }
 
   /**
-   * Add a new array to the cache (representing a subset of a channel's extent at a given scale and time)
+   * Add a new array to the cache (representing a subset of a channel's extent at a given time and scale)
    * @returns {boolean} a boolean indicating whether the insertion succeeded
    */
-  public insert(volume: number, scale: number, data: Uint8Array, optDims?: Partial<DataArrayExtent>): boolean {
+  public insert(volume: number, data: Uint8Array, optDims?: Partial<DataArrayExtent>): boolean {
+    const scale = optDims?.scale || 0;
     const scaleCache = this.store[volume].scales[scale];
     // Apply defaults to `optDims`
     const {
@@ -231,6 +245,7 @@ export default class VolumeCache {
 
     for (const entry of entryList) {
       if (extentIsEqual(entry.size, size)) {
+        this.moveEntryToFirst(entry);
         return entry.data;
       }
     }
@@ -249,13 +264,13 @@ export default class VolumeCache {
     channel?: number | number[] | Partial<QueryExtent>,
     optDims?: Partial<QueryExtent>
   ): Uint8Array | undefined | (Uint8Array | undefined)[] {
-    if (typeof channel === "object" || channel === undefined) {
-      const channelKeys = [...Array(this.store[volume].channels).keys()];
-      return channelKeys.map((c) => this.getOneChannel(volume, c, optDims));
-    }
-
     if (Array.isArray(channel)) {
       return channel.map((c) => this.getOneChannel(volume, c, optDims));
+    }
+
+    if (typeof channel === "object" || channel === undefined) {
+      const channelKeys = [...Array(this.store[volume].channels).keys()];
+      return channelKeys.map((c) => this.getOneChannel(volume, c, channel));
     }
 
     return this.getOneChannel(volume, channel, optDims);
