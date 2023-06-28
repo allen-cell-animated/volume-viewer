@@ -1,6 +1,6 @@
 type XYZ<T> = { x: T; y: T; z: T };
-export type VolumeScaleDims = XYZ<number>;
 type CacheEntryExtent = XYZ<[number, number]>;
+export type VolumeScaleDims = XYZ<number>;
 
 // The following two very similar types are kept separate because we may later want to allow more
 // complex queries with respect to scale, e.g. "get the largest available scale within this range"
@@ -15,12 +15,13 @@ export type QueryExtent = CacheEntryExtent & {
   time: number;
 };
 
+type MaybeCacheEntry = CacheEntry | null;
 type CacheEntry = {
   /** The data contained in this entry */
   // TODO allow more types of `TypedArray` to be stored together in the cache?
   data: Uint8Array;
   /** The subset of the volume covered by this entry */
-  size: CacheEntryExtent;
+  extent: CacheEntryExtent;
   /** The previous entry in the LRU list */
   prev: MaybeCacheEntry;
   /** The next entry in the LRU list */
@@ -28,7 +29,6 @@ type CacheEntry = {
   /** The array which contains this entry */
   parentArr: CacheEntry[];
 };
-type MaybeCacheEntry = CacheEntry | null;
 
 type VolumeCacheScale = {
   // Entries are indexed by T and C, then stored in lists of ZYX subsets
@@ -38,8 +38,8 @@ type VolumeCacheScale = {
 
 type CachedVolume = {
   scales: VolumeCacheScale[];
-  times: number;
-  channels: number;
+  numTimes: number;
+  numChannels: number;
 };
 
 const extentIsEqual = (a: CacheEntryExtent, b: CacheEntryExtent): boolean => {
@@ -164,12 +164,12 @@ export default class VolumeCache {
    * Prepares space for a new volume in the cache with the specified channels, times, and scales.
    * @returns {number} a unique ID which identifies the volume when interacting with it in the cache.
    */
-  public addVolume(channels: number, times: number, scaleDims: VolumeScaleDims[]): number {
+  public addVolume(numChannels: number, numTimes: number, scaleDims: VolumeScaleDims[]): number {
     const makeTCArray = (): CacheEntry[][][] => {
       const tArr: CacheEntry[][][] = [];
-      for (let i = 0; i < times; i++) {
+      for (let i = 0; i < numTimes; i++) {
         const cArr: CacheEntry[][] = [];
-        for (let j = 0; j < channels; j++) {
+        for (let j = 0; j < numChannels; j++) {
           cArr.push([]);
         }
         tArr.push(cArr);
@@ -178,7 +178,7 @@ export default class VolumeCache {
     };
 
     const scales = scaleDims.map((size): VolumeCacheScale => ({ size, data: makeTCArray() }));
-    this.store.push({ scales, times, channels });
+    this.store.push({ scales, numTimes, numChannels });
     return this.store.length - 1;
   }
 
@@ -198,14 +198,14 @@ export default class VolumeCache {
       x = [0, scaleCache.size.x - 1],
     } = optDims || {};
     const entryList = scaleCache.data[time][channel];
-    const size: CacheEntryExtent = { z, y, x };
+    const extent: CacheEntryExtent = { z, y, x };
 
     // Validate input
-    if (extentVolume(size) !== data.length) {
+    if (extentVolume(extent) !== data.length) {
       console.error("VolumeCache: attempt to insert data which does not match the provided dimensions");
       return false;
     }
-    if (extentInvalid(size) || x[1] >= scaleCache.size.x || y[1] >= scaleCache.size.y || z[1] >= scaleCache.size.z) {
+    if (extentInvalid(extent) || x[1] >= scaleCache.size.x || y[1] >= scaleCache.size.y || z[1] >= scaleCache.size.z) {
       console.error("VolumeCache: attempt to insert data with bad extent");
       return false;
     }
@@ -216,7 +216,7 @@ export default class VolumeCache {
 
     // Check if entry is already in cache
     for (const existingEntry of entryList) {
-      if (extentIsEqual(existingEntry.size, size)) {
+      if (extentIsEqual(existingEntry.extent, extent)) {
         existingEntry.data = data;
         this.moveEntryToFirst(existingEntry);
         return true;
@@ -224,7 +224,7 @@ export default class VolumeCache {
     }
 
     // Add new entry to cache
-    const newEntry: CacheEntry = { data, size, prev: null, next: null, parentArr: entryList };
+    const newEntry: CacheEntry = { data, extent, prev: null, next: null, parentArr: entryList };
     this.addEntryAsFirst(newEntry);
     entryList.push(newEntry);
     this.currentSize += data.length;
@@ -252,7 +252,7 @@ export default class VolumeCache {
     const size: CacheEntryExtent = { z, y, x };
 
     for (const entry of entryList) {
-      if (extentIsEqual(entry.size, size)) {
+      if (extentIsEqual(entry.extent, size)) {
         this.moveEntryToFirst(entry);
         return entry.data;
       }
@@ -277,7 +277,7 @@ export default class VolumeCache {
     }
 
     if (typeof channel === "object" || channel === undefined) {
-      const channelKeys = [...Array(this.store[volume].channels).keys()];
+      const channelKeys = [...Array(this.store[volume].numChannels).keys()];
       return channelKeys.map((c) => this.getOneChannel(volume, c, channel));
     }
 
