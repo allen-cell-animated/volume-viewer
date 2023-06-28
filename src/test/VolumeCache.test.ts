@@ -219,13 +219,14 @@ describe("VolumeCache", () => {
   });
 
   describe("clear", () => {
-    it("clears all entries from the cache", () => {});
-    const [cache, id1, id2] = setupClearTest();
-    cache.clear();
-    expect(cache.size).to.equal(0);
-    expect(cache.numberOfEntries).to.equal(0);
-    expect(cache.get(id1, 0)).to.be.undefined;
-    expect(cache.get(id1, 1, SPECIFIC_EXTENT)).to.be.undefined;
-    expect(cache.get(id2, 0)).to.be.undefined;
+    it("clears all entries from the cache", () => {
+      const [cache, id1, id2] = setupClearTest();
+      cache.clear();
+      expect(cache.size).to.equal(0);
+      expect(cache.numberOfEntries).to.equal(0);
+      expect(cache.get(id1, 0)).to.be.undefined;
+      expect(cache.get(id1, 1, SPECIFIC_EXTENT)).to.be.undefined;
+      expect(cache.get(id2, 0)).to.be.undefined;
+    });
   });
 });
