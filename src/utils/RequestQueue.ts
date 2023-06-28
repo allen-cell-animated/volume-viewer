@@ -86,6 +86,26 @@ export default class RequestQueue<K> {
   }
 
   /**
+   * Moves a registered request into the processing queue, clearing any timeouts on the request.
+   * @param keyString string identifier of the request.
+   */
+  private addRequestToQueue(keyString: string): void {
+    if (this.allRequests.has(keyString)) {  // Check that this request is not cancelled.
+      // Clear the request timeout, if it has one, since it is being added to the queue.
+      const requestItem = this.allRequests.get(keyString);
+      if (requestItem && requestItem.timeoutId) {
+        clearTimeout(requestItem.timeoutId);
+        requestItem.timeoutId = undefined;
+      }
+      if (!this.queue.includes(keyString)) {
+        // Add to queue and check if the request can be processed right away.
+        this.queue.push(keyString);
+        this.dequeue();
+      }
+    }
+  }
+
+  /**
    * Adds a request with a unique key to the queue, if it doesn't already exist.
    * @param key The key used to track the request. Keys will be compared using the `keyStringifyFn` function provided
    *  in the constructor.
@@ -102,25 +122,30 @@ export default class RequestQueue<K> {
    *  until the request is resolved or cancelled.
    *  Note that the return type of the promise will match that of the first request's instance.
    */
-  public addRequest<T>(key: K, requestAction: () => Promise<T>): Promise<unknown> {
+  public addRequest<T>(key: K, requestAction: () => Promise<T>, delayMs = 0): Promise<unknown> {
     const keyString = this.keyStringifyFn(key);
 
     if (!this.allRequests.has(keyString)) {
       // New request!
       this.registerRequest(keyString, requestAction);
-      this.queue.push(keyString);
-      this.dequeue(); // Check if we can run a task.
-    } else {
-      // We already have this request. Check if it's on a delay timer; if so, remove the timer and add to queue
-      // immediately, rather than waiting.
-      const requestItem = this.allRequests.get(keyString);
-      if (requestItem && requestItem.timeoutId) {
-        clearTimeout(requestItem.timeoutId);
-        requestItem.timeoutId = undefined;
-        this.queue.push(keyString);
-        this.dequeue();
+      // If a delay is set, wait to add this to the queue.
+      if (delayMs > 0) {
+        const timeoutId = setTimeout(() => this.addRequestToQueue(keyString), delayMs);
+        // Save timeout information to request metadata
+        const requestItem = this.allRequests.get(keyString);
+        if (requestItem) {
+          requestItem.timeoutId = timeoutId;
+        }        
+      } else {
+        // No delay, add immediately
+        this.addRequestToQueue(keyString);
       }
+    } else if (delayMs <= 0) {
+      // This request is registered, but is now being requested without a delay.
+      // Move into queue immediately if it's not already added, and clear any timeouts it may have.
+      this.addRequestToQueue(keyString);
     }
+
     const promise = this.allRequests.get(keyString)?.promise;
     if (!promise) {
       throw new Error("Found no promise to return when getting stored request data.");
@@ -154,10 +179,7 @@ export default class RequestQueue<K> {
         // Add this request to our map of all requests, but don't add to queue until after delay.
         const promise = this.registerRequest(keyString, item.requestAction);
         promises.push(promise);
-        const timeoutId = setTimeout(() => {
-          this.queue.push(keyString);
-          this.dequeue(); // Check if we can run a task.
-        }, delayMs * i);
+        const timeoutId = setTimeout(() => this.addRequestToQueue(keyString), delayMs * i);
         // Store the timeoutId to the request metadata in case we need to cancel this task later.
         const requestData = this.allRequests.get(keyString);
         if (requestData) {
@@ -182,6 +204,11 @@ export default class RequestQueue<K> {
     if (!requestKey) {
       return false;
     }
+    if (this.activeRequests.has(requestKey)) {
+      // This request is already active, so skip.
+      return false;
+    }
+
     const requestItem = this.allRequests.get(requestKey);
     if (!requestItem) {
       return false;

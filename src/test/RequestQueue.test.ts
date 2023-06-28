@@ -44,6 +44,23 @@ describe("test RequestQueue", () => {
       expect(count).to.equal(1);
     });
 
+    it("can issue delayed requests", async () => {
+      const rq = new RequestQueue();
+      const startTime = Date.now();
+      const delayMs = 15;
+      const immediatePromise = rq.addRequest(0, async () => {});
+      const delayedPromise = rq.addRequest(1, async () => {}, delayMs);
+
+      const promises: Promise<unknown>[] = [];
+      promises.push(immediatePromise.then(() => {
+        expect(Date.now() - startTime).to.be.lessThan(delayMs);
+      }));
+      promises.push(delayedPromise.then(() => {
+        expect(Date.now() - startTime).to.be.greaterThanOrEqual(delayMs);
+      }));
+      await Promise.all(promises);
+    })
+
     // Test that same promise is returned
 
     it("handles identical key objects", async () => {
