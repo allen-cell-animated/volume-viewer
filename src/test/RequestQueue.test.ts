@@ -104,7 +104,7 @@ describe("test RequestQueue", () => {
     it("completes all tasks sequentially when max requests is set", async () => {
       const rq = new RequestQueue(1);
       const startTime = Date.now();
-      const iterations = 5;
+      const iterations = 6;
       const delayMs = 5;
       const counter: number[] = [];
 
@@ -113,10 +113,14 @@ describe("test RequestQueue", () => {
         const work = async () => {
           await sleep(delayMs);
           counter.push(i);
+          if (i % 2 === 1) {
+            throw new Error(`${i}`);
+          }
+          return i;
         };
         promises.push(rq.addRequest(`${i}`, work));
       }
-      await Promise.all(promises);
+      const results = await Promise.allSettled(promises);
 
       // Should run only one task at a time, so time should be
       // at LEAST the timeout * number of tasks
@@ -126,6 +130,19 @@ describe("test RequestQueue", () => {
       // Tasks should execute in sequential order, all tasks should run.
       for (let i = 0; i < iterations; i++) {
         expect(counter[i]).to.equal(i);
+        const result = results[i];
+        if (i % 2 === 0) {
+          expect(result.status).to.equal("fulfilled");
+          if (result.status === "fulfilled") {
+            expect(result.value).to.equal(i);
+          }
+        } else {
+          expect(result.status).to.equal("rejected");
+          if (result.status === "rejected") {
+            expect(result.reason).to.be.instanceOf(Error);
+            expect(result.reason.message).to.equal(`${i}`);
+          }
+        }
       }
     });
 
