@@ -57,7 +57,9 @@ const extentIsEqual = (a: CacheEntryExtent, b: CacheEntryExtent): boolean => {
 const dimSize = ([min, max]: [number, number]): number => max + 1 - min;
 const extentVolume = ({ x, y, z }: CacheEntryExtent): number => dimSize(x) * dimSize(y) * dimSize(z);
 const dimInvalid = ([min, max]: [number, number]): boolean => min > max;
-const extentInvalid = ({ x, y, z }: CacheEntryExtent): boolean => dimInvalid(x) || dimInvalid(y) || dimInvalid(z);
+const extentIsInvalid = ({ x, y, z }: CacheEntryExtent): boolean => dimInvalid(x) || dimInvalid(y) || dimInvalid(z);
+const validExtentIsOutsideDims = (ext: CacheEntryExtent, dims: VolumeScaleDims): boolean =>
+  ext.x[1] > dims.x || ext.y[1] > dims.y || ext.z[1] > dims.z;
 
 export default class VolumeCache {
   private store: CachedVolume[];
@@ -82,10 +84,12 @@ export default class VolumeCache {
   }
 
   // Hide these behind getters so they're definitely never set from the outside
+  /** The size of all data arrays currently stored in this cache, in bytes */
   public get size() {
     return this.currentSize;
   }
 
+  /** The number of entries currently stored in this cache */
   public get numberOfEntries() {
     return this.currentEntries;
   }
@@ -132,6 +136,13 @@ export default class VolumeCache {
     this.first = entry;
   }
 
+  /** Moves an entry which is *currently in the list* to the front of the list */
+  private moveEntryToFirst(entry: CacheEntry): void {
+    if (entry === this.first) return;
+    this.removeEntryFromList(entry);
+    this.addEntryAsFirst(entry);
+  }
+
   /** Evicts the least recently used entry from the cache */
   private evictLast(): void {
     if (!this.last) {
@@ -152,12 +163,6 @@ export default class VolumeCache {
   private evict(entry: CacheEntry): void {
     this.removeEntryFromStore(entry);
     this.removeEntryFromList(entry);
-  }
-
-  private moveEntryToFirst(entry: CacheEntry): void {
-    if (entry === this.first) return;
-    this.removeEntryFromList(entry);
-    this.addEntryAsFirst(entry);
   }
 
   /**
@@ -205,7 +210,7 @@ export default class VolumeCache {
       console.error("VolumeCache: attempt to insert data which does not match the provided dimensions");
       return false;
     }
-    if (extentInvalid(extent) || x[1] >= scaleCache.size.x || y[1] >= scaleCache.size.y || z[1] >= scaleCache.size.z) {
+    if (extentIsInvalid(extent) || validExtentIsOutsideDims(extent, scaleCache.size)) {
       console.error("VolumeCache: attempt to insert data with bad extent");
       return false;
     }
@@ -237,6 +242,10 @@ export default class VolumeCache {
     return true;
   }
 
+  /**
+   * Attempts to get data from a single channel. Internal implementation of `get`,
+   * which is overloaded to call this in different patterns.
+   */
   private getOneChannel(volume: number, channel: number, optDims?: Partial<QueryExtent>): Uint8Array | undefined {
     // TODO allow searching through a range of scales and picking the highest available one
     const scale = optDims?.scale || 0;
