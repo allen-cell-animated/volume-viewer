@@ -17,16 +17,16 @@ describe("test RequestQueue", () => {
       const rq = new RequestQueue();
       const loadSpec = new LoadSpec();
       let actionIsRun = false;
-      rq.addRequest(loadSpec, async () => {
+      rq.addRequest(loadSpec.toString(), async () => {
         // do something
         await sleep(10);
         actionIsRun = true;
         return null;
       });
-      expect(rq.hasRequest(loadSpec)).to.be.true;
+      expect(rq.hasRequest(loadSpec.toString())).to.be.true;
       await sleep(15);
       expect(actionIsRun).to.be.true;
-      expect(rq.hasRequest(loadSpec)).to.be.false;
+      expect(rq.hasRequest(loadSpec.toString())).to.be.false;
     });
 
     it("only runs request once", async () => {
@@ -38,8 +38,8 @@ describe("test RequestQueue", () => {
         await sleep(100);
         count++;
       };
-      promises.push(rq.addRequest(loadSpec, work));
-      promises.push(rq.addRequest(loadSpec, work));
+      promises.push(rq.addRequest(loadSpec.toString(), work));
+      promises.push(rq.addRequest(loadSpec.toString(), work));
       await Promise.all(promises);
       expect(count).to.equal(1);
     });
@@ -48,8 +48,8 @@ describe("test RequestQueue", () => {
       const rq = new RequestQueue();
       const startTime = Date.now();
       const delayMs = 15;
-      const immediatePromise = rq.addRequest(0, async () => {});
-      const delayedPromise = rq.addRequest(1, async () => {}, delayMs);
+      const immediatePromise = rq.addRequest("a", async () => {});
+      const delayedPromise = rq.addRequest("b", async () => {}, delayMs);
 
       const promises: Promise<unknown>[] = [];
       promises.push(immediatePromise.then(() => {
@@ -63,7 +63,7 @@ describe("test RequestQueue", () => {
 
     // Test that same promise is returned
 
-    it("handles identical key objects", async () => {
+    it("ignores duplicate requests", async () => {
       const rq = new RequestQueue();
       const loadSpec1 = new LoadSpec();
       const loadSpec2 = new LoadSpec();
@@ -74,8 +74,8 @@ describe("test RequestQueue", () => {
         await sleep(100);
         count++;
       };
-      const promise1 = rq.addRequest(loadSpec1, work);
-      const promise2 = rq.addRequest(loadSpec2, work);
+      const promise1 = rq.addRequest(loadSpec1.toString(), work);
+      const promise2 = rq.addRequest(loadSpec2.toString(), work);
       // Check that the promises are the same instance
       expect(promise1).to.deep.equal(promise2);
       promises.push(promise1);
@@ -93,7 +93,7 @@ describe("test RequestQueue", () => {
           await sleep(10);
           array[i] = true;
         };
-        promises.push(rq.addRequest(i, work));
+        promises.push(rq.addRequest(`${i}`, work));
       }
       await Promise.all(promises);
       for (let i = 0; i < array.length; i++) {
@@ -102,7 +102,7 @@ describe("test RequestQueue", () => {
     });
 
     it("completes all tasks sequentially when max requests is set", async () => {
-      const rq = new RequestQueue(JSON.stringify, 1);
+      const rq = new RequestQueue(1);
       const startTime = Date.now();
       const iterations = 5;
       const delayMs = 5;
@@ -114,7 +114,7 @@ describe("test RequestQueue", () => {
           await sleep(delayMs);
           counter.push(i);
         };
-        promises.push(rq.addRequest(i, work));
+        promises.push(rq.addRequest(`${i}`, work));
       }
       await Promise.all(promises);
 
@@ -131,13 +131,13 @@ describe("test RequestQueue", () => {
 
     it("handles failing request actions", async () => {
       const maxActiveRequests = 10;
-      const rq = new RequestQueue(JSON.stringify, maxActiveRequests);
+      const rq = new RequestQueue(maxActiveRequests);
       const iterations = maxActiveRequests * 10;
 
       const promises: Promise<unknown>[] = [];
       for (let i = 0; i < iterations; i++) {
         promises.push(
-          rq.addRequest(i, async () => {
+          rq.addRequest(`${i}`, async () => {
             await sleep(5);
             throw new Error("Test error (should be caught)");
           })
@@ -154,20 +154,20 @@ describe("test RequestQueue", () => {
       const work = async () => {
         count++;
       };
-      await rq.addRequest(0, work);
+      await rq.addRequest("a", work);
       expect(count).to.equal(1);
       await sleep(10);
-      await rq.addRequest(0, work);
+      await rq.addRequest("a", work);
       expect(count).to.equal(2);
     });
 
     it("ignores different promise return types.", async () => {
       const rq = new RequestQueue();
-      const promise1 = rq.addRequest(0, async () => {
+      const promise1 = rq.addRequest("a", async () => {
         await sleep(10);
         return "5";
       });
-      const promise2 = rq.addRequest(0, async () => {
+      const promise2 = rq.addRequest("a", async () => {
         await sleep(10);
         return 5;
       });
@@ -188,16 +188,17 @@ describe("test RequestQueue", () => {
         count++;
         return;
       };
+      const delayMs = 1000;
 
-      const requests: Request<number, void>[] = [
-        { key: 0, requestAction: work },
-        { key: 1, requestAction: work },
+      const requests: Request<void>[] = [
+        { key: "a", requestAction: work },
+        { key: "b", requestAction: work },
       ];
       const start = Date.now();
-      const promises = rq.addRequests(requests, 1000);
-      rq.addRequest(1, work); // requesting this again should remove the delay
+      const promises = rq.addRequests(requests, delayMs);
+      rq.addRequest("b", work); // requesting this again should remove the delay
       await Promise.allSettled(promises);
-      expect(Date.now() - start).to.be.lessThan(1000);
+      expect(Date.now() - start).to.be.lessThan(delayMs);
       expect(count).to.equal(2);
     });
   });
@@ -215,8 +216,8 @@ describe("test RequestQueue", () => {
           count++;
         }
       };
-      const promise = rq.addRequest(0, () => work(0));
-      rq.cancelRequest(0);
+      const promise = rq.addRequest("a", () => work(0));
+      rq.cancelRequest("a");
 
       let didReject = false;
       await promise.catch((_) => {
@@ -227,7 +228,7 @@ describe("test RequestQueue", () => {
 
       expect(count).to.equal(0);
       expect(didReject).to.be.true;
-      expect(rq.hasRequest(0)).to.be.false;
+      expect(rq.hasRequest("a")).to.be.false;
     });
 
     it("does not resolve cancelled requests", async () => {
@@ -237,9 +238,9 @@ describe("test RequestQueue", () => {
         throw new Error("some error message");
       };
 
-      const promise = rq.addRequest(0, work);
+      const promise = rq.addRequest("a", work);
       const cancelReason = "test cancel";
-      rq.cancelRequest(0, cancelReason);
+      rq.cancelRequest("a", cancelReason);
 
       await promise.catch((err) => {
         expect(err).to.equal(cancelReason);
@@ -253,7 +254,7 @@ describe("test RequestQueue", () => {
     });
 
     it("can cancel all requests", async () => {
-      const rq = new RequestQueue(JSON.stringify, 1);
+      const rq = new RequestQueue(1);
       const iterations = 10;
       let count = 0;
       const rejectionReason = "test reject";
@@ -262,11 +263,11 @@ describe("test RequestQueue", () => {
       for (let i = 0; i < iterations; i++) {
         const work = async () => {
           await sleep(10);
-          if (rq.hasRequest(i)) {
+          if (rq.hasRequest(`${i}`)) {
             count++;
           }
         };
-        promises.push(rq.addRequest(i, work));
+        promises.push(rq.addRequest(`${i}`, work));
       }
       rq.cancelAllRequests(rejectionReason);
       // Use allSettled so it does not stop on a rejection
@@ -303,8 +304,8 @@ describe("test RequestQueue", () => {
       xDim: number,
       yDim: number,
       action: (LoadSpec) => Promise<T>
-    ): Request<LoadSpec, T>[] {
-      const requests: Request<LoadSpec, T>[] = [];
+    ): Request<T>[] {
+      const requests: Request<T>[] = [];
       for (let i = startingFrame; i < startingFrame + frames; i++) {
         const loadSpec = new LoadSpec();
         loadSpec.minx = 0;
@@ -315,7 +316,7 @@ describe("test RequestQueue", () => {
         loadSpec.maxz = i + 1;
 
         requests.push({
-          key: loadSpec,
+          key: loadSpec.toString(),
           requestAction: () => {
             return action(loadSpec);
           },
@@ -325,24 +326,26 @@ describe("test RequestQueue", () => {
     }
 
     it("can issue and cancel mock loadspec requests", async () => {
-      const rq = new RequestQueue(JSON.stringify, 1);
+      const rq = new RequestQueue(10);
       const xDim = 400;
       const yDim = 600;
       const numFrames = 30;
+      const maxDelayMs = 10;
       let workCount = 0;
 
       const action = async (loadSpec: LoadSpec) => {
         // Check if the work we were going to do has been cancelled.
-        if (rq.hasRequest(loadSpec)) {
+        if (rq.hasRequest(loadSpec.toString())) {
           workCount++;
-          return await mockLoader(loadSpec);
+          return await mockLoader(loadSpec, maxDelayMs);
         }
         return null;
       };
 
       let requests = getLoadSpecRequests(0, numFrames, xDim, yDim, action);
       let promises = rq.addRequests(requests);
-      sleep(5);
+      // Allow some but not all requests to complete
+      await sleep(maxDelayMs / 2);
       rq.cancelAllRequests();
 
       // Reissue overlapping requests

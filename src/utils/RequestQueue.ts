@@ -1,6 +1,6 @@
 /** Object format used when passing multiple requests to RequestQueue at once. */
-export type Request<K, V> = {
-  key: K;
+export type Request<V> = {
+  key: string;
   requestAction: () => Promise<V>;
 };
 
@@ -25,11 +25,11 @@ interface RequestItem<V> {
 }
 
 /**
- * Manages a queue of asynchronous requests with unique keys, which can be added to or cancelled.
+ * Manages a queue of asynchronous requests with unique string keys, which can be added to or cancelled.
  * If redundant requests with the same key are issued, the request action will only be run once per key
  * while the original request is still in the queue.
  */
-export default class RequestQueue<K> {
+export default class RequestQueue {
   /** The maximum number of requests that can be handled concurently.
     Once reached, additional requests will be queued up to run once a running request completes.*/
   private maxActiveRequests: number;
@@ -43,29 +43,24 @@ export default class RequestQueue<K> {
   /** Stores requests whose actions are currently being run. */
   private activeRequests: Set<string>;
 
-  /** Used to convert keys into a string identifier. Can be overridden in constructor. */
-  private keyStringifyFn: (key: K) => string;
-
   /**
    * Creates a new RequestQueue.
-   * @param keyStringifyFn Function used to turn the key type into a string identifier. By default, uses JSON.stringify.
    * @param maxActiveRequests The maximum number of requests that will be handled concurrently. This is 10 by default.
    */
-  constructor(keyStringifyFn = (key: K) => JSON.stringify(key), maxActiveRequests = 10) {
+  constructor(maxActiveRequests = 10) {
     this.allRequests = new Map();
     this.activeRequests = new Set();
     this.queue = [];
     this.maxActiveRequests = maxActiveRequests;
-    this.keyStringifyFn = keyStringifyFn;
   }
 
   /**
    * Stores request metadata to the internal map of all pending requests.
-   * @param keyString string identifier of the request.
+   * @param key string identifier of the request.
    * @param requestAction callable function action of the request.
    * @returns the promise of the request, to be resolved later.
    */
-  private registerRequest<T>(keyString: string, requestAction: () => Promise<T>): Promise<T> {
+  private registerRequest<T>(key: string, requestAction: () => Promise<T>): Promise<T> {
     // Create a new promise and store the resolve and reject callbacks for later.
     // This lets us perform the actual action at a later point, when the request is at the
     // front of the processing queue.
@@ -75,8 +70,8 @@ export default class RequestQueue<K> {
       promiseReject = reject;
     });
     // Store the request data.
-    this.allRequests.set(keyString, {
-      key: keyString,
+    this.allRequests.set(key, {
+      key: key,
       action: requestAction,
       resolve: promiseResolve,
       reject: promiseReject,
@@ -87,19 +82,19 @@ export default class RequestQueue<K> {
 
   /**
    * Moves a registered request into the processing queue, clearing any timeouts on the request.
-   * @param keyString string identifier of the request.
+   * @param key string identifier of the request.
    */
-  private addRequestToQueue(keyString: string): void {
-    if (this.allRequests.has(keyString)) {  // Check that this request is not cancelled.
+  private addRequestToQueue(key: string): void {
+    if (this.allRequests.has(key)) {  // Check that this request is not cancelled.
       // Clear the request timeout, if it has one, since it is being added to the queue.
-      const requestItem = this.allRequests.get(keyString);
+      const requestItem = this.allRequests.get(key);
       if (requestItem && requestItem.timeoutId) {
         clearTimeout(requestItem.timeoutId);
         requestItem.timeoutId = undefined;
       }
-      if (!this.queue.includes(keyString)) {
+      if (!this.queue.includes(key)) {
         // Add to queue and check if the request can be processed right away.
-        this.queue.push(keyString);
+        this.queue.push(key);
         this.dequeue();
       }
     }
@@ -107,8 +102,7 @@ export default class RequestQueue<K> {
 
   /**
    * Adds a request with a unique key to the queue, if it doesn't already exist.
-   * @param key The key used to track the request. Keys will be compared using the `keyStringifyFn` function provided
-   *  in the constructor.
+   * @param key The key used to track the request.
    * @param requestAction Function that will be called to complete the request. The function
    *  will be run only once per unique key while the request exists, and may be deferred by the
    *  queue at any time.
@@ -122,31 +116,29 @@ export default class RequestQueue<K> {
    *  until the request is resolved or cancelled.
    *  Note that the return type of the promise will match that of the first request's instance.
    */
-  public addRequest<T>(key: K, requestAction: () => Promise<T>, delayMs = 0): Promise<unknown> {
-    const keyString = this.keyStringifyFn(key);
-
-    if (!this.allRequests.has(keyString)) {
+  public addRequest<T>(key: string, requestAction: () => Promise<T>, delayMs = 0): Promise<unknown> {
+    if (!this.allRequests.has(key)) {
       // New request!
-      this.registerRequest(keyString, requestAction);
+      this.registerRequest(key, requestAction);
       // If a delay is set, wait to add this to the queue.
       if (delayMs > 0) {
-        const timeoutId = setTimeout(() => this.addRequestToQueue(keyString), delayMs);
+        const timeoutId = setTimeout(() => this.addRequestToQueue(key), delayMs);
         // Save timeout information to request metadata
-        const requestItem = this.allRequests.get(keyString);
+        const requestItem = this.allRequests.get(key);
         if (requestItem) {
           requestItem.timeoutId = timeoutId;
         }        
       } else {
         // No delay, add immediately
-        this.addRequestToQueue(keyString);
+        this.addRequestToQueue(key);
       }
     } else if (delayMs <= 0) {
       // This request is registered, but is now being requested without a delay.
       // Move into queue immediately if it's not already added, and clear any timeouts it may have.
-      this.addRequestToQueue(keyString);
+      this.addRequestToQueue(key);
     }
 
-    const promise = this.allRequests.get(keyString)?.promise;
+    const promise = this.allRequests.get(key)?.promise;
     if (!promise) {
       throw new Error("Found no promise to return when getting stored request data.");
     }
@@ -163,25 +155,25 @@ export default class RequestQueue<K> {
    * of the returned array will be a Promise for the resolution of `requests[i]`). If a request
    *  with a matching key is already pending, returns the promise for the initial request.
    */
-  public addRequests<T>(requests: Request<K, T>[], delayMs = 10): Promise<unknown>[] {
+  public addRequests<T>(requests: Request<T>[], delayMs = 10): Promise<unknown>[] {
     const promises: Promise<unknown>[] = [];
     for (let i = 0; i < requests.length; i++) {
       const item = requests[i];
-      const keyString = this.keyStringifyFn(item.key);
-      if (this.allRequests.has(keyString)) {
+      const key = item.key;
+      if (this.allRequests.has(key)) {
         // Existing request
-        const promise = this.allRequests.get(keyString)?.promise;
+        const promise = this.allRequests.get(key)?.promise;
         if (!promise) {
           throw new Error("Promise reference was not found in request metadata when expected.");
         }
         promises.push(promise);
       } else {
         // Add this request to our map of all requests, but don't add to queue until after delay.
-        const promise = this.registerRequest(keyString, item.requestAction);
+        const promise = this.registerRequest(key, item.requestAction);
         promises.push(promise);
-        const timeoutId = setTimeout(() => this.addRequestToQueue(keyString), delayMs * i);
+        const timeoutId = setTimeout(() => this.addRequestToQueue(key), delayMs * i);
         // Store the timeoutId to the request metadata in case we need to cancel this task later.
-        const requestData = this.allRequests.get(keyString);
+        const requestData = this.allRequests.get(key);
         if (requestData) {
           requestData.timeoutId = timeoutId;
         }
@@ -214,10 +206,10 @@ export default class RequestQueue<K> {
       return false;
     }
 
-    const keyString = requestItem.key;
+    const key = requestItem.key;
     try {
       // Mark that this request is active
-      this.activeRequests.add(keyString);
+      this.activeRequests.add(key);
 
       // Run the task
       requestItem
@@ -225,19 +217,19 @@ export default class RequestQueue<K> {
         .then((value) => {
           requestItem.resolve(value);
           // Clean up the item
-          this.activeRequests.delete(keyString);
-          this.allRequests.delete(keyString);
+          this.activeRequests.delete(key);
+          this.allRequests.delete(key);
           this.dequeue();
         })
         .catch((err) => {
-          this.activeRequests.delete(keyString);
-          this.allRequests.delete(keyString);
+          this.activeRequests.delete(key);
+          this.allRequests.delete(key);
           requestItem.reject(err);
           this.dequeue();
         });
     } catch (err) {
-      this.activeRequests.delete(keyString);
-      this.allRequests.delete(keyString);
+      this.activeRequests.delete(key);
+      this.allRequests.delete(key);
       requestItem.reject(err);
       this.dequeue();
     }
@@ -245,14 +237,14 @@ export default class RequestQueue<K> {
   }
 
   /**
-   * Finds and deletes all requests with the matching keyString from internal state, and rejects the request
+   * Finds and deletes all requests with the matching key from internal state, and rejects the request
    * for the provided cancellation reason.
    */
-  private cancelRequestByKeyString(keyString: string, cancelReason: unknown): void {
-    if (!this.allRequests.has(keyString)) {
+  private cancelRequestByKey(key: string, cancelReason: unknown): void {
+    if (!this.allRequests.has(key)) {
       return;
     }
-    const requestItem = this.allRequests.get(keyString);
+    const requestItem = this.allRequests.get(key);
     if (requestItem) {
       if (requestItem.timeoutId) {
         // Cancel requests that have not been queued yet.
@@ -261,19 +253,18 @@ export default class RequestQueue<K> {
       // Reject the request, then clear from the queue and known requests.
       requestItem.reject(cancelReason);
     }
-    this.queue = this.queue.filter((key) => key !== keyString);
-    this.allRequests.delete(keyString);
-    this.activeRequests.delete(keyString);
+    this.queue = this.queue.filter((key) => key !== key);
+    this.allRequests.delete(key);
+    this.activeRequests.delete(key);
   }
 
   /**
    * Removes any request matching the provided key from the queue and rejects its promise.
-   * @param key The key that should be matched against, using the stringify function provided in
-   *  the RequestQueue constructor.
+   * @param key The key that should be matched against.
    * @param cancelReason A message or object that will be used as the promise rejection.
    */
-  public cancelRequest(key: K, cancelReason: unknown = DEFAULT_REQUEST_CANCEL_REASON): void {
-    this.cancelRequestByKeyString(this.keyStringifyFn(key), cancelReason);
+  public cancelRequest(key: string, cancelReason: unknown = DEFAULT_REQUEST_CANCEL_REASON): void {
+    this.cancelRequestByKey(key, cancelReason);
   }
 
   /**
@@ -282,8 +273,8 @@ export default class RequestQueue<K> {
    */
   public cancelAllRequests(cancelReason: unknown = DEFAULT_REQUEST_CANCEL_REASON): void {
     this.queue = []; // Clear the queue so we don't do extra work while filtering it
-    for (const keyString of this.allRequests.keys()) {
-      this.cancelRequestByKeyString(keyString, cancelReason);
+    for (const key of this.allRequests.keys()) {
+      this.cancelRequestByKey(key, cancelReason);
     }
   }
 
@@ -292,7 +283,7 @@ export default class RequestQueue<K> {
    * @param key the key to search for.
    * @returns true if the request is in the RequestQueue, or false
    */
-  public hasRequest(key: K): boolean {
-    return this.allRequests.has(this.keyStringifyFn(key));
+  public hasRequest(key: string): boolean {
+    return this.allRequests.has(key);
   }
 }
