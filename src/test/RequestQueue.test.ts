@@ -104,7 +104,7 @@ describe("test RequestQueue", () => {
     it("completes all tasks sequentially when max requests is set", async () => {
       const rq = new RequestQueue(1);
       const startTime = Date.now();
-      const iterations = 6;
+      const iterations = 10;
       const delayMs = 5;
       const counter: number[] = [];
 
@@ -125,7 +125,7 @@ describe("test RequestQueue", () => {
       // Should run only one task at a time, so time should be
       // at LEAST the timeout * number of tasks
       const duration = Date.now() - startTime;
-      expect(duration).to.be.greaterThan(delayMs * iterations);
+      expect(duration).to.be.greaterThanOrEqual(delayMs * iterations);
 
       // Tasks should execute in sequential order, all tasks should run.
       for (let i = 0; i < iterations; i++) {
