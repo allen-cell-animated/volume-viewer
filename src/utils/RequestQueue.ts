@@ -106,6 +106,7 @@ export default class RequestQueue {
    * @param requestAction Function that will be called to complete the request. The function
    *  will be run only once per unique key while the request exists, and may be deferred by the
    *  queue at any time.
+   * @param delayMs Minimum delay, in milliseconds, before this request should be executed.
    *
    * NOTE: Cancelling a request while the action is running WILL NOT stop the action. If this behavior is desired,
    * actions must be responsible for checking the RequestQueue, determining if the request is still valid (e.g.
@@ -148,8 +149,8 @@ export default class RequestQueue {
   /**
    * Adds multiple requests to the queue, with an optional delay between each.
    * @param requests An array of RequestItems, which include a key and a request action.
-   * @param delayMs An optional delay in milliseconds to be added between each request.
-   *  For example, a delay of 10 ms will cause the second request to be added to the queue
+   * @param delayMs An optional minimum delay in milliseconds to be added between each request.
+   *  For example, a delay of 10 ms will cause the second request to be added to the processing queue
    *  after 10 ms, the third to added after 20 ms, and so on. Set to 10 ms by default.
    * @returns An array of promises corresponding to the provided requests. (i.e., the `i`th value
    * of the returned array will be a Promise for the resolution of `requests[i]`). If a request
@@ -168,14 +169,19 @@ export default class RequestQueue {
         }
         promises.push(promise);
       } else {
-        // Add this request to our map of all requests, but don't add to queue until after delay.
+        // This is a new request.
         const promise = this.registerRequest(key, item.requestAction);
         promises.push(promise);
-        const timeoutId = setTimeout(() => this.addRequestToQueue(key), delayMs * i);
-        // Store the timeoutId to the request metadata in case we need to cancel this task later.
-        const requestData = this.allRequests.get(key);
-        if (requestData) {
-          requestData.timeoutId = timeoutId;
+        if (delayMs === 0) {  // No delay, so add immediately
+          this.addRequestToQueue(key);
+        } else {
+          // Add this request to our map of all requests, but don't add to queue until after delay.
+          const timeoutId = setTimeout(() => this.addRequestToQueue(key), delayMs * i);
+          // Store the timeoutId to the request metadata in case we need to cancel this task later.
+          const requestData = this.allRequests.get(key);
+          if (requestData) {
+            requestData.timeoutId = timeoutId;
+          }
         }
       }
       promises.push();
