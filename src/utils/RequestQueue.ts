@@ -169,52 +169,38 @@ export default class RequestQueue {
    * @returns true if a request was started, or false if there are too many
    * requests already active.
    */
-  private dequeue(): boolean {
+  private async dequeue(): Promise<void> {
     if (this.activeRequests.size >= this.maxActiveRequests || this.queue.length === 0) {
-      return false;
+      return;
     }
     const requestKey = this.queue.shift();
     if (!requestKey) {
-      return false;
+      return;
     }
     if (this.activeRequests.has(requestKey)) {
       // This request is already active, so skip.
-      return false;
+      return;
     }
 
     const requestItem = this.allRequests.get(requestKey);
     if (!requestItem) {
-      return false;
+      return;
     }
 
     const key = requestItem.key;
-    try {
-      // Mark that this request is active
-      this.activeRequests.add(key);
-
-      // Run the task
-      requestItem
-        .action()
-        .then((value) => {
-          requestItem.resolve(value);
-          // Clean up the item
-          this.activeRequests.delete(key);
-          this.allRequests.delete(key);
-          this.dequeue();
-        })
-        .catch((err) => {
-          this.activeRequests.delete(key);
-          this.allRequests.delete(key);
-          requestItem.reject(err);
-          this.dequeue();
-        });
-    } catch (err) {
-      this.activeRequests.delete(key);
-      this.allRequests.delete(key);
-      requestItem.reject(err);
-      this.dequeue();
-    }
-    return true;
+    // Mark that this request is active
+    this.activeRequests.add(key);
+    
+    await requestItem.action().then(
+      (fulfilledValue) => {
+        requestItem.resolve(fulfilledValue);
+      }, (rejectedValue) => {
+        requestItem.reject(rejectedValue);
+      }
+    );
+    this.activeRequests.delete(key);
+    this.allRequests.delete(key);
+    this.dequeue();
   }
 
   /**
