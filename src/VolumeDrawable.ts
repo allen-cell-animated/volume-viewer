@@ -702,9 +702,11 @@ export default class VolumeDrawable {
     pane.addInput(this, "rotation").on("change", ({ value }) => this.setRotation(value));
 
     const pathtrace = pane.addFolder({ title: "Pathtrace", expanded: false });
-    pathtrace.addInput(this, "primaryRayStepSize").on("change", ({ value }) => this.setRayStepSizes(value));
     pathtrace
-      .addInput(this, "secondaryRayStepSize")
+      .addInput(this, "primaryRayStepSize", { min: 1, max: 100 })
+      .on("change", ({ value }) => this.setRayStepSizes(value));
+    pathtrace
+      .addInput(this, "secondaryRayStepSize", { min: 1, max: 100 })
       .on("change", ({ value }) => this.setRayStepSizes(undefined, value));
   }
 }

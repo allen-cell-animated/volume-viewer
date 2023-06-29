@@ -907,7 +907,7 @@ export class View3d {
     const addFolderForLight = (light: ThreeLight, title: string): void => {
       const folder = lights.addFolder({ title, expanded: false });
       folder.addInput(light, "color", { color: { type: "float" } });
-      folder.addInput(light, "intensity");
+      folder.addInput(light, "intensity", { min: 0 });
       if (!(light as AmbientLight).isAmbientLight) {
         folder.addInput(light, "position");
       }
