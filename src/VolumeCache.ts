@@ -59,7 +59,7 @@ const extentVolume = ({ x, y, z }: CacheEntryExtent): number => dimSize(x) * dim
 const dimInvalid = ([min, max]: [number, number]): boolean => min > max;
 const extentIsInvalid = ({ x, y, z }: CacheEntryExtent): boolean => dimInvalid(x) || dimInvalid(y) || dimInvalid(z);
 const validExtentIsOutsideDims = (ext: CacheEntryExtent, dims: VolumeScaleDims): boolean =>
-  ext.x[1] > dims.x || ext.y[1] > dims.y || ext.z[1] > dims.z;
+  ext.x[1] >= dims.x || ext.y[1] >= dims.y || ext.z[1] >= dims.z;
 
 export default class VolumeCache {
   private store: CachedVolume[];
