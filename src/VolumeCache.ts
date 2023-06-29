@@ -105,7 +105,7 @@ export default class VolumeCache {
   }
 
   /**
-   * Remvoes an entry from the LRU list but NOT the store.
+   * Removes an entry from the LRU list but NOT the store.
    * Entry must be replaced in list or removed from store, or it will never be evicted!
    */
   private removeEntryFromList(entry: CacheEntry): void {
@@ -114,25 +114,25 @@ export default class VolumeCache {
     if (prev) {
       prev.next = next;
     } else {
-      this.last = next;
+      this.first = next;
     }
 
     if (next) {
       next.prev = prev;
     } else {
-      this.first = prev;
+      this.last = prev;
     }
   }
 
   /** Adds an entry which is *not currently in the list* to the front of the list */
   private addEntryAsFirst(entry: CacheEntry): void {
     if (this.first) {
-      this.first.next = entry;
+      this.first.prev = entry;
     } else {
       this.last = entry;
     }
-    entry.prev = this.first;
-    entry.next = null;
+    entry.next = this.first;
+    entry.prev = null;
     this.first = entry;
   }
 
@@ -152,10 +152,10 @@ export default class VolumeCache {
 
     this.removeEntryFromStore(this.last);
 
-    if (this.last.next) {
-      this.last.next.prev = null;
+    if (this.last.prev) {
+      this.last.prev.next = null;
     }
-    this.last = this.last.next;
+    this.last = this.last.prev;
   }
 
   /** Evicts a specific entry from the cache */
