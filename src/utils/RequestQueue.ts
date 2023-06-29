@@ -58,9 +58,9 @@ export default class RequestQueue {
    * Stores request metadata to the internal map of all pending requests.
    * @param key string identifier of the request.
    * @param requestAction callable function action of the request.
-   * @returns the promise of the request, to be resolved later.
+   * @returns a reference to the new, registered RequestItem.
    */
-  private registerRequest<T>(key: string, requestAction: () => Promise<T>): Promise<T> {
+  private registerRequest<T>(key: string, requestAction: () => Promise<T>): RequestItem<T> {
     // Create a new promise and store the resolve and reject callbacks for later.
     // This lets us perform the actual action at a later point, when the request is at the
     // front of the processing queue.
@@ -70,14 +70,15 @@ export default class RequestQueue {
       promiseReject = reject;
     });
     // Store the request data.
-    this.allRequests.set(key, {
+    const requestItem = {
       key: key,
       action: requestAction,
       resolve: promiseResolve,
       reject: promiseReject,
       promise,
-    });
-    return promise;
+    }
+    this.allRequests.set(key, requestItem);
+    return requestItem;
   }
 
   /**
@@ -120,15 +121,12 @@ export default class RequestQueue {
   public addRequest<T>(key: string, requestAction: () => Promise<T>, delayMs = 0): Promise<unknown> {
     if (!this.allRequests.has(key)) {
       // New request!
-      this.registerRequest(key, requestAction);
+      const requestItem = this.registerRequest(key, requestAction);
       // If a delay is set, wait to add this to the queue.
       if (delayMs > 0) {
         const timeoutId = setTimeout(() => this.addRequestToQueue(key), delayMs);
         // Save timeout information to request metadata
-        const requestItem = this.allRequests.get(key);
-        if (requestItem) {
-          requestItem.timeoutId = timeoutId;
-        }        
+        requestItem.timeoutId = timeoutId;      
       } else {
         // No delay, add immediately
         this.addRequestToQueue(key);
