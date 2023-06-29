@@ -887,7 +887,7 @@ export class View3d {
     window.removeEventListener("keydown", this.handleKeydown);
   }
 
-  setupGui(container: HTMLElement): Pane {
+  private setupGui(container: HTMLElement): Pane {
     if (this.tweakpane) {
       this.canvas3d.containerdiv.removeChild(this.tweakpane.element);
     }
@@ -918,7 +918,7 @@ export class View3d {
     addFolderForLight(this.reflectedLight, "reflected light");
     addFolderForLight(this.fillLight, "fill light");
 
-    this.image?.setupGui(pane, this.redraw);
+    this.image?.setupGui(pane);
 
     return pane;
   }
