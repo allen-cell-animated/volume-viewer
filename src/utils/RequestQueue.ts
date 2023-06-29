@@ -21,7 +21,7 @@ interface RequestItem<V> {
   /** Callback used to reject the promise. */
   reject: (reason?: unknown) => void;
   /** Optional, used to track timeouts if the item will be added to the queue later. */
-  timeoutId?: NodeJS.Timeout;
+  timeoutId?: ReturnType<typeof setTimeout>;
 }
 
 /**
@@ -160,31 +160,8 @@ export default class RequestQueue {
     const promises: Promise<unknown>[] = [];
     for (let i = 0; i < requests.length; i++) {
       const item = requests[i];
-      const key = item.key;
-      if (this.allRequests.has(key)) {
-        // Existing request
-        const promise = this.allRequests.get(key)?.promise;
-        if (!promise) {
-          throw new Error("Promise reference was not found in request metadata when expected.");
-        }
-        promises.push(promise);
-      } else {
-        // This is a new request.
-        const promise = this.registerRequest(key, item.requestAction);
-        promises.push(promise);
-        if (delayMs === 0) {  // No delay, so add immediately
-          this.addRequestToQueue(key);
-        } else {
-          // Add this request to our map of all requests, but don't add to queue until after delay.
-          const timeoutId = setTimeout(() => this.addRequestToQueue(key), delayMs * i);
-          // Store the timeoutId to the request metadata in case we need to cancel this task later.
-          const requestData = this.allRequests.get(key);
-          if (requestData) {
-            requestData.timeoutId = timeoutId;
-          }
-        }
-      }
-      promises.push();
+      const promise = this.addRequest(item.key, item.requestAction, delayMs * i);
+      promises.push(promise);
     }
     return promises;
   }
