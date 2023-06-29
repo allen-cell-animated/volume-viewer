@@ -270,6 +270,35 @@ describe("test RequestQueue", () => {
       });
     });
 
+    it("can cancel delayed requests", async () => {
+      const rq = new RequestQueue(1);
+      let workCount = 0;
+      const delayMs = 10;
+      const work = async () => {
+        workCount++;
+        return;
+      };
+      const promise = rq.addRequest("a", work, delayMs);
+      rq.cancelRequest("a");
+      await Promise.allSettled([promise]);
+      await sleep(delayMs);
+      expect(workCount).to.equal(0);
+    });
+
+    it("is not blocked by cancelled requests", async () => {
+      const rq = new RequestQueue(1);
+      const work = async () => {
+        await sleep(5);
+        throw new Error("promise rejection");
+      };
+      const promises: Promise<unknown>[] = [];
+      for (let i = 0; i < 10; i++) {
+        promises.push(rq.addRequest(`${i}`, work, 0));
+        rq.cancelRequest(`${i}`);
+      }
+      await Promise.allSettled(promises);
+    });
+
     it("can cancel all requests", async () => {
       const rq = new RequestQueue(1);
       const iterations = 10;
@@ -353,8 +382,9 @@ describe("test RequestQueue", () => {
       const action = async (loadSpec: LoadSpec) => {
         // Check if the work we were going to do has been cancelled.
         if (rq.hasRequest(loadSpec.toString())) {
+          const ret = await mockLoader(loadSpec, maxDelayMs)
           workCount++;
-          return await mockLoader(loadSpec, maxDelayMs);
+          return ret;
         }
         return null;
       };
@@ -362,8 +392,11 @@ describe("test RequestQueue", () => {
       let requests = getLoadSpecRequests(0, numFrames, xDim, yDim, action);
       let promises = rq.addRequests(requests);
       // Allow some but not all requests to complete
-      await sleep(maxDelayMs / 2);
+      await sleep(maxDelayMs * 0.5);
       rq.cancelAllRequests();
+      await sleep(maxDelayMs);  // Wait for all async actions to finish
+      expect(workCount).to.be.greaterThan(0);
+      expect(workCount).to.be.lessThan(numFrames - 1);
 
       // Reissue overlapping requests
       requests = getLoadSpecRequests(60, numFrames, xDim, yDim, action);
