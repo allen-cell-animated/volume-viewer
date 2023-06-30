@@ -191,21 +191,15 @@ export default class RequestQueue {
     // Mark that this request is active
     this.activeRequests.add(key);
     
-    await requestItem.action().then(
-      (fulfilledValue) => {
-        requestItem.resolve(fulfilledValue);
-      }, (rejectedValue) => {
-        requestItem.reject(rejectedValue);
-      }
-    );
+    await requestItem.action().then(requestItem.resolve, requestItem.reject);
     this.activeRequests.delete(key);
     this.allRequests.delete(key);
     this.dequeue();
   }
 
   /**
-   * Finds and deletes all requests with the matching key from internal state, and rejects the request
-   * for the provided cancellation reason.
+   * Finds and deletes all requests with the matching key from internal state,
+   * and rejects the request for the provided cancellation reason.
    */
   private cancelRequestByKey(key: string, cancelReason: unknown): void {
     if (!this.allRequests.has(key)) {
