@@ -1,4 +1,15 @@
-import { AmbientLight, Vector3, Object3D, SpotLight, DirectionalLight, Euler, Scene, Color } from "three";
+import {
+  AmbientLight,
+  Vector3,
+  Object3D,
+  SpotLight,
+  DirectionalLight,
+  Euler,
+  Scene,
+  Color,
+  Light as ThreeLight,
+} from "three";
+import { Pane } from "tweakpane";
 
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import lightSettings from "./constants/lights";
@@ -37,6 +48,9 @@ export class View3d {
   private reflectedLight: DirectionalLight;
   private fillLight: DirectionalLight;
 
+  private tweakpane: Pane;
+  private tweakpaneOpen: boolean;
+
   /**
    * @param {Object} options Optional options.
    * @param {boolean} options.useWebGL2 Default true
@@ -64,6 +78,10 @@ export class View3d {
     this.reflectedLight = new DirectionalLight();
     this.fillLight = new DirectionalLight();
     this.buildScene();
+
+    this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
+    this.tweakpaneOpen = false;
+    window.addEventListener("keydown", this.handleKeydown);
   }
 
   // prerender should be called on every redraw and should be the first thing done.
@@ -194,6 +212,9 @@ export class View3d {
   // channels is an array of channel indices for which new data just arrived.
   onVolumeData(volume: Volume, channels: number[]): void {
     this.image?.onChannelLoaded(channels);
+    if (volume.isLoaded()) {
+      this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
+    }
   }
 
   // do fixups for when the volume has had a new empty channel added.
@@ -858,5 +879,53 @@ export class View3d {
 
   hasWebGL2(): boolean {
     return this.canvas3d.hasWebGL2;
+  }
+
+  handleKeydown = (event: KeyboardEvent): void => {
+    // control-option-1 (mac) or ctrl-alt-1 (windows)
+    if (event.code === "Digit1" && event.altKey && event.ctrlKey) {
+      this.tweakpaneOpen = !this.tweakpaneOpen;
+      this.tweakpane.element.style.display = this.tweakpaneOpen ? "block" : "none";
+    }
+  };
+
+  removeEventListeners(): void {
+    window.removeEventListener("keydown", this.handleKeydown);
+  }
+
+  private setupGui(container: HTMLElement): Pane {
+    if (this.tweakpane) {
+      this.canvas3d.containerdiv.removeChild(this.tweakpane.element);
+    }
+
+    const pane = new Pane({ title: "Advanced Settings", container });
+    const paneStyle: Partial<CSSStyleDeclaration> = {
+      position: "absolute",
+      top: "0",
+      right: "0",
+      display: "none",
+    };
+    Object.assign(pane.element.style, paneStyle);
+
+    // LIGHTS
+    const lights = pane.addFolder({ title: "Lights (isosurface)" });
+
+    const addFolderForLight = (light: ThreeLight, title: string): void => {
+      const folder = lights.addFolder({ title, expanded: false });
+      folder.addInput(light, "color", { color: { type: "float" } });
+      folder.addInput(light, "intensity", { min: 0 });
+      if (!(light as AmbientLight).isAmbientLight) {
+        folder.addInput(light, "position");
+      }
+    };
+
+    addFolderForLight(this.spotLight, "spot light");
+    addFolderForLight(this.ambientLight, "ambient light");
+    addFolderForLight(this.reflectedLight, "reflected light");
+    addFolderForLight(this.fillLight, "fill light");
+
+    this.image?.setupGui(pane);
+
+    return pane;
   }
 }

@@ -13,7 +13,7 @@ module.exports = {
     [
       "babel-plugin-inline-import",
       {
-        extensions: [".obj"],
+        extensions: [".obj", ".frag", ".vert", ".glsl", ".fs", ".vs"],
       },
     ],
     [

@@ -15,14 +15,25 @@ import { VolumeRenderImpl } from "./VolumeRenderImpl";
 
 // TODO set up enum for this
 const RENDERMODE_AGAVE = 2;
+import { Pane } from "tweakpane";
+
+type ColorArray = [number, number, number];
+type ColorObject = { r: number; g: number; b: number };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type WithObjectColors<T extends Record<string, any>> = {
+  [K in keyof T]: T[K] extends ColorArray | undefined ? ColorObject : T[K];
+};
+
+export const colorArrayToObject = ([r, g, b]: ColorArray): ColorObject => ({ r, g, b });
+export const colorObjectToArray = ({ r, g, b }: ColorObject): ColorArray => [r, g, b];
 
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
   public PT: boolean;
   public volume: Volume;
   private onChannelDataReadyCallback?: () => void;
-  private translation: Vector3;
-  private rotation: Euler;
+  public translation: Vector3;
+  public rotation: Euler;
   private flipX: number;
   private flipY: number;
   private flipZ: number;
@@ -39,8 +50,8 @@ export default class VolumeDrawable {
   public glossiness: number[];
   public sceneRoot: Object3D;
   private meshVolume: MeshVolume;
-  private primaryRayStepSize: number;
-  private secondaryRayStepSize: number;
+  public primaryRayStepSize: number;
+  public secondaryRayStepSize: number;
   public showBoundingBox: boolean;
   private boundingBoxColor: [number, number, number];
 
@@ -708,5 +719,18 @@ export default class VolumeDrawable {
     this.rotation.copy(eulerXYZ);
     this.volumeRendering.setRotation(this.rotation);
     this.meshVolume.setRotation(this.rotation);
+  }
+
+  setupGui(pane: Pane): void {
+    pane.addInput(this, "translation").on("change", ({ value }) => this.setTranslation(value));
+    pane.addInput(this, "rotation").on("change", ({ value }) => this.setRotation(value));
+
+    const pathtrace = pane.addFolder({ title: "Pathtrace", expanded: false });
+    pathtrace
+      .addInput(this, "primaryRayStepSize", { min: 1, max: 100 })
+      .on("change", ({ value }) => this.setRayStepSizes(value));
+    pathtrace
+      .addInput(this, "secondaryRayStepSize", { min: 1, max: 100 })
+      .on("change", ({ value }) => this.setRayStepSizes(undefined, value));
   }
 }
