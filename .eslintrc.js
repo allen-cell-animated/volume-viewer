@@ -40,6 +40,7 @@ module.exports = {
     "@typescript-eslint/no-empty-function": ["warn"],
     "@typescript-eslint/no-inferrable-types": ["warn"],
     "@typescript-eslint/no-this-alias": ["warn"],
+    "@typescript-eslint/no-non-null-assertion": ["off"],
     "prefer-const": ["warn"],
     "prefer-spread": ["warn"],
     "no-var": ["warn"],

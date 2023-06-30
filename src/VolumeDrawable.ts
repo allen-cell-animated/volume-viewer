@@ -623,7 +623,7 @@ export default class VolumeDrawable {
     this.volumeRendering.setPixelSamplingRate(value);
   }
 
-  setVolumeRendering(isPathtrace: boolean, renderMode: number): void {
+  async setVolumeRendering(isPathtrace: boolean, renderMode: number): Promise<void> {
     if (isPathtrace === this.PT && this.volumeRendering === this.pathTracedVolume) {
       return;
     }
@@ -641,6 +641,7 @@ export default class VolumeDrawable {
     // create new
     if (renderMode === RENDERMODE_AGAVE) {
       this.remoteAgaveVolume = new RemoteAgaveVolume(this.volume);
+      await this.remoteAgaveVolume.init();
       this.volumeRendering = this.remoteAgaveVolume;
       this.rayMarchedAtlasVolume = undefined;
       this.pathTracedVolume = undefined;

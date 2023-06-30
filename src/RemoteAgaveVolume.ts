@@ -89,6 +89,7 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
       transparent: true,
     });
     this.object = new Mesh(new PlaneGeometry(1, 1), this.screenOutputMaterial);
+
     const wsUri = "ws://localhost:1235";
     //const wsUri = "ws://dev-aics-dtp-001.corp.alleninstitute.org:1235";
     //const wsUri = "ws://ec2-54-245-184-76.us-west-2.compute.amazonaws.com:1235";
@@ -99,6 +100,10 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
       this.onJsonReceived.bind(this),
       this.onImageReceived.bind(this)
     );
+  }
+
+  async init() {
+    await this.agave.connect();
   }
 
   private onConnectionOpened() {
@@ -115,8 +120,11 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     ]);
     this.agave.streamMode(1);
     this.agave.enableChannel(0, 1);
+    this.agave.autoThreshold(0, 4);
     this.agave.enableChannel(1, 1);
+    this.agave.autoThreshold(0, 4);
     this.agave.enableChannel(2, 1);
+    this.agave.autoThreshold(0, 4);
     this.agave.frameScene();
     this.agave.exposure(0.75);
     this.agave.density(50);
@@ -135,8 +143,13 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
 
     // decode jpg/png, get it into Image, then into Texture
     this.imageStream.src = dataurl;
+
+    const img = new Image();
+    img.src = dataurl;
+    this.imageTex = new Texture(img);
+
     this.imageTex.needsUpdate = true;
-    //    this.screenOutputMaterial.uniforms.tTexture0.value = this.imageTex;
+    this.screenOutputMaterial.uniforms.tTexture0.value = this.imageTex;
     this.screenOutputMaterial.needsUpdate = true;
     //(this.object.material as Material).needsUpdate = true;
   }
@@ -203,6 +216,7 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     myup.applyMatrix4(m);
     mydir.applyMatrix4(m);
 
+    //this.agave.orbitCamera(4, 0);
     this.agave.eye(mypos.x, mypos.y, mypos.z);
     this.agave.up(myup.x, myup.y, myup.z);
     this.agave.target(mypos.x + mydir.x, mypos.y + mydir.y, mypos.z + mydir.z);
@@ -214,12 +228,15 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     this.agave.flushCommandBuffer();
     //console.log("RemoteAgaveVolume.doRender not implemented");
   }
+
   cleanup(): void {
-    console.log("RemoteAgaveVolume.cleanup not implemented");
+    this.agave.disconnect();
   }
+
   onChannelData(_batch: number[]): void {
-    console.log("RemoteAgaveVolume.onChannelData not implemented");
+    // all channel data is loaded separately by agave on the back end
   }
+
   setVisible(_visible: boolean): void {
     console.log("RemoteAgaveVolume.setVisible not implemented");
   }
