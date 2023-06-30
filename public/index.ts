@@ -1339,11 +1339,12 @@ function main() {
     view3D.setMaxProjectMode(myState.volume, mp);
   };
   renderModeSelect?.addEventListener("change", ({ currentTarget }) => {
-    if ((currentTarget as HTMLOptionElement)!.value === "PT") {
+    const target = (currentTarget as HTMLOptionElement)!;
+    if (target.value === "PT") {
       if (view3D.hasWebGL2()) {
         changeRenderMode(true, false);
       }
-    } else if ((currentTarget as HTMLOptionElement)!.value === "MP") {
+    } else if (target.value === "MP") {
       changeRenderMode(false, true);
     } else {
       changeRenderMode(false, false);
