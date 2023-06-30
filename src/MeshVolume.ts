@@ -204,10 +204,20 @@ export default class MeshVolume {
 
   getIsovalue(channel: number): number | undefined {
     const meshrep = this.meshrep[channel];
-    if (!meshrep) {
-      return undefined;
-    }
-    return meshrep.userData.isovalue;
+    return meshrep?.userData.isovalue;
+  }
+
+  getOpacity(channel: number): number | undefined {
+    const meshrep = this.meshrep[channel];
+    let opacity: number | undefined = undefined;
+
+    meshrep?.traverse((obj) => {
+      if (obj instanceof Mesh) {
+        opacity = obj.material.opacity;
+      }
+    });
+
+    return opacity;
   }
 
   updateClipRegion(xmin: number, xmax: number, ymin: number, ymax: number, zmin: number, zmax: number): void {
