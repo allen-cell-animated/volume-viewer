@@ -12,6 +12,7 @@ import { Light } from "./Light";
 import Channel from "./Channel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 import { Pane } from "tweakpane";
+import Atlas2DSlice from "./Atlas2DSlice";
 
 type ColorArray = [number, number, number];
 type ColorObject = { r: number; g: number; b: number };
@@ -54,7 +55,7 @@ export default class VolumeDrawable {
   // these should never coexist simultaneously. always one or the other is present
   // this is a remnant of a pre-typescript world
   private pathTracedVolume?: PathTracedVolume;
-  private rayMarchedAtlasVolume?: RayMarchedAtlasVolume;
+  private rayMarchedAtlasVolume?: Atlas2DSlice;
 
   private volumeRendering: VolumeRenderImpl;
 
@@ -129,7 +130,7 @@ export default class VolumeDrawable {
       this.pathTracedVolume = new PathTracedVolume(this.volume);
       this.volumeRendering = this.pathTracedVolume;
     } else {
-      this.rayMarchedAtlasVolume = new RayMarchedAtlasVolume(this.volume);
+      this.rayMarchedAtlasVolume = new Atlas2DSlice(this.volume);
       this.volumeRendering = this.rayMarchedAtlasVolume;
     }
 
@@ -634,7 +635,7 @@ export default class VolumeDrawable {
       this.rayMarchedAtlasVolume = undefined;
       this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
     } else {
-      this.rayMarchedAtlasVolume = new RayMarchedAtlasVolume(this.volume);
+      this.rayMarchedAtlasVolume = new Atlas2DSlice(this.volume);
       this.volumeRendering = this.rayMarchedAtlasVolume;
       this.pathTracedVolume = undefined;
 

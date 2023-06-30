@@ -20,8 +20,6 @@ import {
 
 import FusedChannelData from "./FusedChannelData";
 import {
-  rayMarchingVertexShaderSrc,
-  rayMarchingFragmentShaderSrc,
   rayMarchingShaderUniforms,
 } from "./constants/volumeRayMarchShader";
 import { Volume } from ".";
@@ -30,6 +28,7 @@ import { ThreeJsPanel } from "./ThreeJsPanel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 
 import { Bounds, FuseChannel } from "./types";
+import { sliceFragmentShaderSrc, sliceVertexShaderSrc } from "./constants/volumeSliceShader";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
@@ -40,7 +39,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
   private planeMesh: Mesh<BufferGeometry, Material>;
   private boxHelper: Box3Helper;
   private tickMarksMesh: LineSegments;
-  private cubeTransformNode: Group;
+  private planeTransformNode: Group;
   private uniforms: typeof rayMarchingShaderUniforms;
   private channelData: FusedChannelData;
   private scale: Vector3;
@@ -59,12 +58,13 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.scale = new Vector3(1.0, 1.0, 1.0);
     this.isOrtho = false;
 
-    this.plane = new BoxGeometry(1.0, 1.0, 1.0);
+    this.plane = new PlaneGeometry(1.0, 1.0);
     this.planeMesh = new Mesh(this.plane);
-    this.planeMesh.name = "Volume";
+    this.planeMesh.name = "Plane";
 
+    // Could replace with PlaneHelper but that does something different
     this.boxHelper = new Box3Helper(
-      new Box3(new Vector3(-0.5, -0.5, -0.5), new Vector3(0.5, 0.5, 0.5)),
+      new Box3(new Vector3(-0.5, -0.5, 0), new Vector3(0.5, 0.5, 0)),
       BOUNDING_BOX_DEFAULT_COLOR
     );
     this.boxHelper.updateMatrixWorld();
@@ -74,16 +74,16 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.tickMarksMesh.updateMatrixWorld();
     this.tickMarksMesh.visible = false;
 
-    this.cubeTransformNode = new Group();
-    this.cubeTransformNode.name = "VolumeContainerNode";
+    this.planeTransformNode = new Group();
+    this.planeTransformNode.name = "VolumeContainerNode";
 
-    this.cubeTransformNode.add(this.boxHelper, this.tickMarksMesh, this.planeMesh);
+    this.planeTransformNode.add(this.boxHelper, this.tickMarksMesh, this.planeMesh);
 
     this.uniforms = rayMarchingShaderUniforms;
 
     // shader,vtx and frag.
-    const vtxsrc = rayMarchingVertexShaderSrc;
-    const fgmtsrc = rayMarchingFragmentShaderSrc;
+    const vtxsrc = sliceVertexShaderSrc;
+    const fgmtsrc = sliceFragmentShaderSrc;
 
     const threeMaterial = new ShaderMaterial({
       uniforms: this.uniforms,
@@ -209,7 +209,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.channelData.gpuFuse(canvas.renderer);
     this.setUniform("textureAtlas", this.channelData.getFusedTexture());
 
-    this.cubeTransformNode.updateMatrixWorld(true);
+    this.planeTransformNode.updateMatrixWorld(true);
 
     const mvm = new Matrix4();
     mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.planeMesh.matrixWorld);
@@ -220,7 +220,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
   }
 
   public get3dObject(): Group {
-    return this.cubeTransformNode;
+    return this.planeTransformNode;
   }
 
   public onChannelData(_batch: number[]): void {
@@ -244,11 +244,11 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
   }
 
   public setTranslation(vec3xyz: Vector3): void {
-    this.cubeTransformNode.position.copy(vec3xyz);
+    this.planeTransformNode.position.copy(vec3xyz);
   }
 
   public setRotation(eulerXYZ: Euler): void {
-    this.cubeTransformNode.rotation.copy(eulerXYZ);
+    this.planeTransformNode.rotation.copy(eulerXYZ);
   }
 
   public setOrthoScale(value: number): void {
