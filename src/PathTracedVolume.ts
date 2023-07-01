@@ -34,8 +34,9 @@ import { Bounds, isOrthographicCamera } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import VolumeDrawable from "./VolumeDrawable";
 import { Light } from "./Light";
+import { VolumeRenderImpl } from "./VolumeRenderImpl";
 
-export default class PathTracedVolume {
+export default class PathTracedVolume implements VolumeRenderImpl {
   private volume: Volume;
   private viewChannels: number[]; // should have 4 or less elements
   private scale: Vector3;

@@ -10,6 +10,7 @@ import { Bounds, FuseChannel } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import Channel from "./Channel";
+import { VolumeRenderImpl } from "./VolumeRenderImpl";
 import { Pane } from "tweakpane";
 
 type ColorArray = [number, number, number];
@@ -50,12 +51,12 @@ export default class VolumeDrawable {
   public showBoundingBox: boolean;
   private boundingBoxColor: [number, number, number];
 
-  // these two should never coexist simultaneously. always one or the other is present
-  // a polymorphic interface implementation might be a better way to deal with this.
+  // these should never coexist simultaneously. always one or the other is present
   // this is a remnant of a pre-typescript world
   private pathTracedVolume?: PathTracedVolume;
   private rayMarchedAtlasVolume?: RayMarchedAtlasVolume;
-  private volumeRendering: PathTracedVolume | RayMarchedAtlasVolume;
+
+  private volumeRendering: VolumeRenderImpl;
 
   private bounds: Bounds;
   private scale: Vector3;
@@ -125,11 +126,11 @@ export default class VolumeDrawable {
     this.primaryRayStepSize = 1.0;
     this.secondaryRayStepSize = 1.0;
     if (this.PT) {
-      this.volumeRendering = new PathTracedVolume(this.volume);
-      this.pathTracedVolume = this.volumeRendering;
+      this.pathTracedVolume = new PathTracedVolume(this.volume);
+      this.volumeRendering = this.pathTracedVolume;
     } else {
-      this.volumeRendering = new RayMarchedAtlasVolume(this.volume);
-      this.rayMarchedAtlasVolume = this.volumeRendering;
+      this.rayMarchedAtlasVolume = new RayMarchedAtlasVolume(this.volume);
+      this.volumeRendering = this.rayMarchedAtlasVolume;
     }
 
     // draw meshes first, and volume last, for blending and depth test reasons with raymarch
@@ -615,7 +616,7 @@ export default class VolumeDrawable {
   }
 
   setVolumeRendering(isPathtrace: boolean): void {
-    if (isPathtrace === this.PT) {
+    if (isPathtrace === this.PT && this.volumeRendering === this.pathTracedVolume) {
       return;
     }
 
@@ -628,14 +629,14 @@ export default class VolumeDrawable {
 
     // create new
     if (isPathtrace) {
-      this.volumeRendering = new PathTracedVolume(this.volume);
-      this.pathTracedVolume = this.volumeRendering;
+      this.pathTracedVolume = new PathTracedVolume(this.volume);
+      this.volumeRendering = this.pathTracedVolume;
       this.rayMarchedAtlasVolume = undefined;
       this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
     } else {
-      this.volumeRendering = new RayMarchedAtlasVolume(this.volume);
+      this.rayMarchedAtlasVolume = new RayMarchedAtlasVolume(this.volume);
+      this.volumeRendering = this.rayMarchedAtlasVolume;
       this.pathTracedVolume = undefined;
-      this.rayMarchedAtlasVolume = this.volumeRendering;
 
       for (let i = 0; i < this.volume.num_channels; ++i) {
         if (this.volume.getChannel(i).loaded) {
