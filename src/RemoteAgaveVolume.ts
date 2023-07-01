@@ -146,11 +146,17 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
 
     const img = new Image();
     img.src = dataurl;
-    this.imageTex = new Texture(img);
+    img.onload = () => {
+      this.imageTex = new Texture(img);
+      this.imageTex.needsUpdate = true;
+      this.screenOutputMaterial.uniforms.tTexture0.value = this.imageTex;
+      this.screenOutputMaterial.needsUpdate = true;
+    };
+    //    this.imageTex = new Texture(img);
 
-    this.imageTex.needsUpdate = true;
-    this.screenOutputMaterial.uniforms.tTexture0.value = this.imageTex;
-    this.screenOutputMaterial.needsUpdate = true;
+    //    this.imageTex.needsUpdate = true;
+    // this.screenOutputMaterial.uniforms.tTexture0.value = this.imageTex;
+    // this.screenOutputMaterial.needsUpdate = true;
     //(this.object.material as Material).needsUpdate = true;
   }
   ///////////////////////////////////////////////
