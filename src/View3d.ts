@@ -21,7 +21,6 @@ import { VolumeChannelDisplayOptions, VolumeDisplayOptions, isOrthographicCamera
 
 export const RENDERMODE_RAYMARCH = 0;
 export const RENDERMODE_PATHTRACE = 1;
-export const RENDERMODE_AGAVE = 2;
 
 export interface View3dOptions {
   parentElement?: HTMLElement;
@@ -821,17 +820,12 @@ export class View3d {
     this.volumeRenderMode = mode;
     if (this.image) {
       if (mode === RENDERMODE_PATHTRACE && this.canvas3d.hasWebGL2) {
-        this.image.setVolumeRendering(true, mode);
-        this.image.updateLights(this.lights);
-        // pathtrace is a continuous rendering mode
-        this.canvas3d.startRenderLoop();
-      } else if (mode === RENDERMODE_AGAVE) {
-        this.image.setVolumeRendering(true, mode);
+        this.image.setVolumeRendering(true);
         this.image.updateLights(this.lights);
         // pathtrace is a continuous rendering mode
         this.canvas3d.startRenderLoop();
       } else {
-        this.image.setVolumeRendering(false, mode);
+        this.image.setVolumeRendering(false);
         this.canvas3d.redraw();
       }
       this.updatePixelSamplingRate(this.pixelSamplingRate);

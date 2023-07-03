@@ -350,7 +350,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
   private setUniform<U extends keyof typeof rayMarchingShaderUniforms>(
     name: U,
-    value: typeof rayMarchingShaderUniforms[U]["value"]
+    value: (typeof rayMarchingShaderUniforms)[U]["value"]
   ) {
     if (!this.uniforms[name]) {
       return;
@@ -369,6 +369,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   }
 
   public setRenderUpdateListener(_listener?: ((iteration: number) => void) | undefined) {
-    0;
+    return;
   }
 }

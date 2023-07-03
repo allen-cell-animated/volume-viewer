@@ -1,4 +1,4 @@
-import { RENDERMODE_AGAVE, RENDERMODE_PATHTRACE, RENDERMODE_RAYMARCH, View3d } from "./View3d";
+import { RENDERMODE_PATHTRACE, RENDERMODE_RAYMARCH, View3d } from "./View3d";
 import Volume from "./Volume";
 import Channel from "./Channel";
 import VolumeMaker from "./VolumeMaker";
@@ -27,7 +27,6 @@ export {
   Light,
   ViewportCorner,
   AREA_LIGHT,
-  RENDERMODE_AGAVE,
   RENDERMODE_PATHTRACE,
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
