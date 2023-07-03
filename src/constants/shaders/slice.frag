@@ -35,8 +35,6 @@ uniform vec3 volumeScale;
 varying vec2 texCoord;
 varying vec2 vUv;
 
-// view space to axis-aligned volume box
-uniform mat4 inverseModelViewMatrix;
 
 float powf(float a, float b) {
   return pow(a,b);
@@ -246,7 +244,6 @@ vec4 integrateVolume(vec4 eye_o,vec4 eye_d,
 
 void main() {
   gl_FragColor = vec4(0.0);
-  vec2 screenUv = gl_FragCoord.xy/iResolution.xy;
 
   // -0.5..0.5 is full box. AABB_CLIP lets us clip to a box shaped ROI to look at
   // I am applying it here at the earliest point so that the ray march does
@@ -254,29 +251,30 @@ void main() {
   // generally (obviously)
   vec3 boxMin = AABB_CLIP_MIN;
   vec3 boxMax = AABB_CLIP_MAX;
+  // Normalize UV for [-0.5, 0.5] range
   vec2 normUv = vUv - vec2(0.5);
 
   if (normUv.x < boxMin.x || normUv.x > boxMax.x || normUv.y < boxMin.y || normUv.y > boxMax.y) {
-    // return background color if ray misses the cube
-    // is this safe to do when there is other geometry / gObjects drawn?
+    // return background color if outside of clipping box
     gl_FragColor = vec4(0.0); //C1;//vec4(0.0);
     return;
   }
 
-  float clipNear = 0.0;//-(dot(eyeRay_o.xyz, eyeNorm) + dNear) / dot(eyeRay_d.xyz, eyeNorm);
-  float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);
 
   // TODO: Pass in Z-slice value
-  // TODO: Use box clipping
   // TODO: Delete unused code in fragment shader
-  // TODO: Apply interpolation/nearest
   vec4 pos = vec4(vUv, 0.5, 0.0);
-  vec4 C = sampleAtlasNearest(textureAtlas, pos);
 
-/*   vec4 C = integrateVolume(vec4(eyeRay_o,1.0), vec4(eyeRay_d,0.0),
-                           tnear,    tfar, //intersections of box
-                           clipNear, clipFar,
-                           textureAtlas); */
+  vec4 C;
+  if (interpolationEnabled) {
+    C = sampleAtlasLinear(textureAtlas, pos); 
+  } else {
+    C = sampleAtlasNearest(textureAtlas, pos);
+  }
+  C = luma2Alpha(C, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);
+  C.xyz *= BRIGHTNESS;
+  // C.w *= DENSITY;  // Uncertain if needed
+
   C = clamp(C, 0.0, 1.0);
   gl_FragColor = C;
   return;
