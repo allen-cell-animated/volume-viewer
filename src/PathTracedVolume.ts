@@ -30,7 +30,7 @@ import {
 } from "./constants/volumePTshader";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
 import Volume from "./Volume";
-import { Bounds, isOrthographicCamera } from "./types";
+import { Bounds, FuseChannel, isOrthographicCamera } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import VolumeDrawable from "./VolumeDrawable";
 import { Light } from "./Light";
@@ -632,6 +632,10 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
   viewpointMoved(): void {
     this.resetProgress();
+  }
+
+  updateChannelFusion(_settings: FuseChannel[]): void {
+    return;
   }
 
   updateActiveChannels(image: VolumeDrawable): void {

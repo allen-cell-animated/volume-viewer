@@ -18,7 +18,7 @@ import { ThreeJsPanel } from "./ThreeJsPanel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 import { AgaveClient, JSONValue } from "./temp_agave/agave";
 import Volume from "./Volume";
-import { Bounds, isOrthographicCamera } from "./types";
+import { Bounds, FuseChannel, isOrthographicCamera } from "./types";
 
 export default class RemoteAgaveVolume implements VolumeRenderImpl {
   private agave: AgaveClient;
@@ -363,5 +363,24 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
   }
   onEndControls(): void {
     return;
+  }
+
+  updateChannelFusion(settings: FuseChannel[]): void {
+    for (let i = 0; i < this.volume.num_channels; i++) {
+      this.agave.enableChannel(i, 0);
+    }
+    for (const channel of settings) {
+      const enabled = channel.rgbColor !== 0;
+      this.agave.enableChannel(channel.chIndex, enabled ? 1 : 0);
+      if (enabled) {
+        this.agave.matDiffuse(
+          channel.chIndex,
+          channel.rgbColor[0] / 255.0,
+          channel.rgbColor[1] / 255.0,
+          channel.rgbColor[2] / 255.0,
+          1.0
+        );
+      }
+    }
   }
 }

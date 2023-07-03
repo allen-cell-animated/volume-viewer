@@ -1,6 +1,6 @@
 import { Euler, Object3D, Vector3 } from "three";
 import { ThreeJsPanel } from "./ThreeJsPanel";
-
+import { FuseChannel } from "./types";
 export interface VolumeRenderImpl {
   onStartControls(): void;
   onEndControls(): void;
@@ -32,4 +32,6 @@ export interface VolumeRenderImpl {
   setRenderUpdateListener: (_listener?: (iteration: number) => void) => void;
   setTranslation: (_translation: Vector3) => void;
   setRotation: (_rotation: Euler) => void;
+
+  updateChannelFusion: (_settings: FuseChannel[]) => void;
 }

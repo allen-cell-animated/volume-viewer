@@ -106,7 +106,7 @@ export default class VolumeDrawable {
     this.channelOptions = new Array<VolumeChannelDisplayOptions>(this.volume.num_channels).fill({});
 
     this.fusion = this.channelColors.map((col, index) => {
-      let rgbColor: number | [number, number, number];
+      let rgbColor: 0 | [number, number, number];
       // take copy of original channel color
       if (col[0] === 0 && col[1] === 0 && col[2] === 0) {
         rgbColor = 0;
@@ -394,6 +394,8 @@ export default class VolumeDrawable {
     if (this.PT) {
       if (this.pathTracedVolume) {
         this.pathTracedVolume.updateActiveChannels(this);
+      } else if (this.remoteAgaveVolume) {
+        this.remoteAgaveVolume.updateChannelFusion(this.fusion);
       }
     } else {
       if (this.rayMarchedAtlasVolume) {
@@ -417,6 +419,9 @@ export default class VolumeDrawable {
 
   updateMaterial(): void {
     this.PT && this.pathTracedVolume && this.pathTracedVolume.updateMaterial(this);
+    if (this.remoteAgaveVolume) {
+      this.remoteAgaveVolume.updateChannelFusion(this.fusion);
+    }
     !this.PT && this.rayMarchedAtlasVolume && this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
   }
 

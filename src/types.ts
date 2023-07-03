@@ -9,7 +9,7 @@ export interface FuseChannel {
   chIndex: number;
   lut: Uint8Array;
   // zero is a sentinel value to disable from fusion
-  rgbColor: [number, number, number] | number;
+  rgbColor: [number, number, number] | 0;
 }
 
 /**

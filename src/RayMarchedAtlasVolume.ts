@@ -381,4 +381,8 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   public onEndControls(): void {
     return;
   }
+
+  updateChannelFusion(_settings: FuseChannel[]): void {
+    return;
+  }
 }

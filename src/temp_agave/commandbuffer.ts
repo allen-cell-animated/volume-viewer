@@ -113,7 +113,7 @@ export class CommandBuffer {
       const nArgsExpected = signature.length - 1;
       // for each arg:
       if (command.length - 1 !== nArgsExpected) {
-        console.error("BAD COMMAND: EXPECTED " + nArgsExpected + " args and got " + (command.length - 1));
+        console.error(`BAD COMMAND: EXPECTED ${nArgsExpected} args and got ${command.length - 1}`);
       }
 
       for (let j = 0; j < nArgsExpected; ++j) {
