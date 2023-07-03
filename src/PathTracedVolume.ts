@@ -388,8 +388,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.pathTracingUniforms.uFrameCounter.value = this.frameCounter;
 
     // CAMERA
-    // force the camera to update its world matrix.
-    canvas.camera.updateMatrixWorld(true);
     const cam = canvas.camera;
 
     // rotate lights with camera, as if we are tumbling the volume with a fixed camera and world lighting.
