@@ -105,7 +105,7 @@ export class CommandBuffer {
 
       const command = this.prebuffer[i];
       const commandCode = command[0] as string;
-      console.log("AGAVE." + commandCode);
+      console.log("AGAVE." + commandCode, command.slice(1));
       const signature = COMMANDS[commandCode];
       if (!signature) {
         console.error("CommandBuffer: Unrecognized command " + commandCode);

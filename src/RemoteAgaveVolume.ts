@@ -112,21 +112,28 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     // tell agave to load this volume.
     // convert subpath to a number for multiresolution level.
     const level = parseInt(this.volume.loadSpec.subpath) || 0;
-    this.agave.loadData(this.volume.loadSpec.url, this.volume.loadSpec.scene, level, this.volume.loadSpec.time, [
-      this.volume.loadSpec.minx,
-      this.volume.loadSpec.maxx,
-      this.volume.loadSpec.miny,
-      this.volume.loadSpec.maxy,
-      this.volume.loadSpec.minz,
-      this.volume.loadSpec.maxz,
-    ]);
+    this.agave.loadData(
+      this.volume.loadSpec.url,
+      this.volume.loadSpec.scene,
+      level,
+      this.volume.loadSpec.time,
+      [],
+      [
+        this.volume.loadSpec.minx,
+        this.volume.loadSpec.maxx,
+        this.volume.loadSpec.miny,
+        this.volume.loadSpec.maxy,
+        this.volume.loadSpec.minz,
+        this.volume.loadSpec.maxz,
+      ]
+    );
     this.agave.streamMode(1);
     this.agave.enableChannel(0, 1);
-    this.agave.autoThreshold(0, 4);
+    this.agave.setPercentileThreshold(0, 0.5, 0.98);
     this.agave.enableChannel(1, 1);
-    this.agave.autoThreshold(0, 4);
+    this.agave.setPercentileThreshold(1, 0.5, 0.98);
     this.agave.enableChannel(2, 1);
-    this.agave.autoThreshold(0, 4);
+    this.agave.setPercentileThreshold(2, 0.5, 0.98);
     this.agave.frameScene();
     this.agave.exposure(0.75);
     this.agave.density(50);
@@ -135,7 +142,7 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
   }
 
   private onJsonReceived(_json: JSONValue) {
-    0;
+    return;
   }
   private onImageReceived(image: Blob) {
     const dataurl = URL.createObjectURL(image);
@@ -200,13 +207,15 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     console.log("RemoteAgaveVolume.setFlipAxes not implemented");
   }
   doRender(canvas: ThreeJsPanel): void {
-    if (!this.cameraIsMoving) {
-      return;
-    }
     if (!this.agave) {
       return;
     }
     if (!this.agave.isReady()) {
+      return;
+    }
+    if (!this.cameraIsMoving) {
+      // this.agave.redraw();
+      // this.agave.flushCommandBuffer();
       return;
     }
     // update camera here?
@@ -227,14 +236,14 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     myup.applyMatrix4(m);
     mydir.applyMatrix4(m);
 
-    //this.agave.orbitCamera(4, 0);
-    this.agave.eye(mypos.x, mypos.y, mypos.z);
-    this.agave.up(myup.x, myup.y, myup.z);
-    this.agave.target(mypos.x + mydir.x, mypos.y + mydir.y, mypos.z + mydir.z);
-    this.agave.cameraProjection(
-      isOrthographicCamera(cam) ? 1 : 0,
-      isOrthographicCamera(cam) ? canvas.getOrthoScale() : (cam as PerspectiveCamera).fov
-    );
+    this.agave.orbitCamera(4, 0);
+    // this.agave.eye(mypos.x, mypos.y, mypos.z);
+    // this.agave.up(myup.x, myup.y, myup.z);
+    // this.agave.target(mypos.x + mydir.x, mypos.y + mydir.y, mypos.z + mydir.z);
+    // this.agave.cameraProjection(
+    //   isOrthographicCamera(cam) ? 1 : 0,
+    //   isOrthographicCamera(cam) ? canvas.getOrthoScale() : (cam as PerspectiveCamera).fov
+    // );
 
     this.agave.flushCommandBuffer();
   }

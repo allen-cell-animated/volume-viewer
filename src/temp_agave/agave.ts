@@ -15,13 +15,13 @@ export class AgaveClient {
     url = "ws://localhost:1235/",
     rendermode = "pathtrace",
     onOpen = () => {
-      0;
+      return;
     },
     onJson = (_json: JSONValue) => {
-      0;
+      return;
     },
     onImage = (_data: Blob) => {
-      0;
+      return;
     }
   ) {
     if (rendermode !== "pathtrace" && rendermode !== "raymarch") {
