@@ -24,28 +24,12 @@ uniform sampler2D textureAtlasMask;
 uniform int BREAK_STEPS;
 uniform float SLICES;
 uniform int zSlice;
-uniform float isOrtho;
-uniform float orthoThickness;
-uniform float orthoScale;
-uniform int maxProject;
 uniform bool interpolationEnabled;
 uniform vec3 flipVolume;
 uniform vec3 volumeScale;
 
 varying vec2 texCoord;
 varying vec2 vUv;
-
-
-float powf(float a, float b) {
-  return pow(a,b);
-}
-
-float rand(vec2 co) {
-  float threadId = gl_FragCoord.x/(gl_FragCoord.y + 1.0);
-  float bigVal = threadId*1299721.0/911.0;
-  vec2 smallVal = vec2(threadId*7927.0/577.0, threadId*104743.0/1039.0);
-  return fract(sin(dot(co, smallVal)) * bigVal);
-}
 
 vec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {
   float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));
@@ -131,6 +115,7 @@ vec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {
   loc0 = floor(loc0 * textureRes) / textureRes;
   loc0 += vec2(0.5/textureRes.x, 0.5/textureRes.y);
 
+  // Replace with Z-Slice
   float z = min(floor(pos.z * nSlices), nSlices-1.0);
   
   if (flipVolume.z == -1.0) {
@@ -146,100 +131,6 @@ vec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {
   voxelColor.rgb *= voxelMask;
 
   return bounds*voxelColor;
-}
-
-bool intersectBox(in vec3 r_o, in vec3 r_d, in vec3 boxMin, in vec3 boxMax,
-                  out float tnear, out float tfar) {
-  // compute intersection of ray with all six bbox planes
-  vec3 invR = vec3(1.0,1.0,1.0) / r_d;
-  vec3 tbot = invR * (boxMin - r_o);
-  vec3 ttop = invR * (boxMax - r_o);
-
-  // re-order intersections to find smallest and largest on each axis
-  vec3 tmin = min(ttop, tbot);
-  vec3 tmax = max(ttop, tbot);
-
-  // find the largest tmin and the smallest tmax
-  float largest_tmin  = max(max(tmin.x, tmin.y), max(tmin.x, tmin.z));
-  float smallest_tmax = min(min(tmax.x, tmax.y), min(tmax.x, tmax.z));
-
-  tnear = largest_tmin;
-  tfar = smallest_tmax;
-
-  // use >= here?
-  return(smallest_tmax > largest_tmin);
-}
-
-vec4 accumulate(vec4 col, float s, vec4 C) {
-  float stepScale = (1.0 - powf((1.0-col.w),s));
-  col.w = stepScale;
-  col.xyz *= col.w;
-  col = clamp(col,0.0,1.0);
-
-  C = (1.0-C.w)*col + C;
-  return C;
-}
-
-vec4 integrateVolume(vec4 eye_o,vec4 eye_d,
-                     float tnear,   float tfar,
-                     float clipNear, float clipFar,
-                     sampler2D textureAtlas
-                     ) {
-  vec4 C = vec4(0.0);
-  float tend   = tfar;
-  float tbegin = tnear;
-
-  // march along ray from front to back, accumulating color
-
-  // estimate step length
-  const int maxSteps = 512;
-  // modify the 3 components of eye_d by volume scale
-  float scaledSteps = float(BREAK_STEPS) * length((eye_d.xyz/volumeScale));
-  float csteps = clamp(float(scaledSteps), 1.0, float(maxSteps));
-  float invstep = (tfar-tnear)/csteps;
-  // special-casing the single slice to remove the random ray dither.
-  // this removes a Moire pattern visible in single slice images, which we want to view as 2D images as best we can.
-  float r = (SLICES==1.0) ? 0.0 : rand(eye_d.xy);
-  // if ortho and clipped, make step size smaller so we still get same number of steps
-  float tstep = invstep*orthoThickness;
-  float tfarsurf = r*tstep;
-  float overflow = mod((tfarsurf - tend),tstep); // random dithering offset
-  float t = tbegin + overflow;
-  t += r*tstep; // random dithering offset
-  float tdist = 0.0;
-  int numSteps = 0;
-  vec4 pos, col;
-  // We need to be able to scale the alpha contrib with number of ray steps,
-  // in order to make the final color invariant to the step size(?)
-  // use maxSteps (a constant) as the numerator... Not sure if this is sound.
-  float s = 0.5 * float(maxSteps) / csteps;
-  for(int i=0; i<maxSteps; i++) {
-    pos = eye_o + eye_d*t;
-    // !!! assume box bounds are -0.5 .. 0.5.  pos = (pos-min)/(max-min)
-    // scaling is handled by model transform and already accounted for before we get here.
-    // AABB clip is independent of this and is only used to determine tnear and tfar.
-    pos.xyz = (pos.xyz-(-0.5))/((0.5)-(-0.5)); //0.5 * (pos + 1.0); // map position from [boxMin, boxMax] to [0, 1] coordinates
-
-    vec4 col = interpolationEnabled ? sampleAtlasLinear(textureAtlas, pos) : sampleAtlasNearest(textureAtlas, pos);
-
-    if (maxProject != 0) {
-      col.xyz *= BRIGHTNESS;
-      C = max(col, C);
-    } else {
-      col = luma2Alpha(col, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);
-      col.xyz *= BRIGHTNESS;
-      // for practical use the density only matters for regular volume integration
-      col.w *= DENSITY;
-      C = accumulate(col, s, C);
-    }
-    t += tstep;
-    numSteps = i;
-
-    if (t > tend || t > tbegin+clipFar ) break;
-    if (C.w > 1.0 ) break;
-  }
-
-  return C;
 }
 
 void main() {
@@ -262,7 +153,6 @@ void main() {
 
 
   // TODO: Pass in Z-slice value
-  // TODO: Delete unused code in fragment shader
   vec4 pos = vec4(vUv, 0.5, 0.0);
 
   vec4 C;
