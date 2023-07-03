@@ -38,8 +38,6 @@ varying vec2 vUv;
 // view space to axis-aligned volume box
 uniform mat4 inverseModelViewMatrix;
 
-varying vec3 pObj;
-
 float powf(float a, float b) {
   return pow(a,b);
 }
@@ -256,22 +254,22 @@ void main() {
   // generally (obviously)
   vec3 boxMin = AABB_CLIP_MIN;
   vec3 boxMax = AABB_CLIP_MAX;
+  vec2 normUv = vUv - vec2(0.5);
 
-  float tnear, tfar;
-/*   bool hit = intersectBox(eyeRay_o, eyeRay_d, boxMin, boxMax, tnear, tfar);
-
-  if (!hit) {
+  if (normUv.x < boxMin.x || normUv.x > boxMax.x || normUv.y < boxMin.y || normUv.y > boxMax.y) {
     // return background color if ray misses the cube
     // is this safe to do when there is other geometry / gObjects drawn?
     gl_FragColor = vec4(0.0); //C1;//vec4(0.0);
     return;
-  } */
+  }
 
   float clipNear = 0.0;//-(dot(eyeRay_o.xyz, eyeNorm) + dNear) / dot(eyeRay_d.xyz, eyeNorm);
   float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);
 
   // TODO: Pass in Z-slice value
   // TODO: Use box clipping
+  // TODO: Delete unused code in fragment shader
+  // TODO: Apply interpolation/nearest
   vec4 pos = vec4(vUv, 0.5, 0.0);
   vec4 C = sampleAtlasNearest(textureAtlas, pos);
 
