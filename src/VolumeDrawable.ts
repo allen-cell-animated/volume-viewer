@@ -54,6 +54,7 @@ export default class VolumeDrawable {
   public secondaryRayStepSize: number;
   public showBoundingBox: boolean;
   private boundingBoxColor: [number, number, number];
+  private lastResolution: [number, number];
 
   // these should never coexist simultaneously. always one or the other is present
   // this is a remnant of a pre-typescript world
@@ -71,6 +72,7 @@ export default class VolumeDrawable {
   private brightness: number;
 
   constructor(volume: Volume, options: VolumeDisplayOptions) {
+    this.lastResolution = [2, 2];
     this.PT = !!options.renderMode;
 
     // THE VOLUME DATA
@@ -289,6 +291,7 @@ export default class VolumeDrawable {
     const y = viewObj.getHeight();
     this.volumeRendering.setResolution(x, y);
     this.meshVolume.setResolution(x, y);
+    this.lastResolution = [x, y];
   }
 
   // Set clipping range (between -0.5 and 0.5) for a given axis.
@@ -671,6 +674,8 @@ export default class VolumeDrawable {
         this.renderUpdateListener(0);
       }
     }
+
+    this.volumeRendering.setResolution(this.lastResolution[0], this.lastResolution[1]);
 
     // ensure transforms on new volume representation are up to date
     this.volumeRendering.setTranslation(this.translation);

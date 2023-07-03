@@ -213,37 +213,34 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     if (!this.agave.isReady()) {
       return;
     }
-    if (!this.cameraIsMoving) {
-      // this.agave.redraw();
-      // this.agave.flushCommandBuffer();
-      return;
+    if (this.cameraIsMoving) {
+      // update camera here?
+      canvas.camera.updateMatrixWorld(true);
+      const cam = canvas.camera;
+
+      let mydir = new Vector3();
+      mydir = cam.getWorldDirection(mydir);
+      const myup = new Vector3().copy(cam.up);
+      // don't rotate this vector.  we are using translation as the pivot point of the object, and THEN rotating.
+      const mypos = new Vector3().copy(cam.position);
+
+      // apply volume translation and rotation:
+      // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
+      const m = new Matrix4().makeRotationFromQuaternion(new Quaternion().setFromEuler(this.rotation).invert());
+      mypos.sub(this.translation);
+      mypos.applyMatrix4(m);
+      myup.applyMatrix4(m);
+      mydir.applyMatrix4(m);
+
+      //this.agave.orbitCamera(4, 0);
+      this.agave.eye(mypos.x, mypos.y, mypos.z);
+      this.agave.up(myup.x, myup.y, myup.z);
+      this.agave.target(mypos.x + mydir.x, mypos.y + mydir.y, mypos.z + mydir.z);
+      this.agave.cameraProjection(
+        isOrthographicCamera(cam) ? 1 : 0,
+        isOrthographicCamera(cam) ? canvas.getOrthoScale() : (cam as PerspectiveCamera).fov
+      );
     }
-    // update camera here?
-    canvas.camera.updateMatrixWorld(true);
-    const cam = canvas.camera;
-
-    let mydir = new Vector3();
-    mydir = cam.getWorldDirection(mydir);
-    const myup = new Vector3().copy(cam.up);
-    // don't rotate this vector.  we are using translation as the pivot point of the object, and THEN rotating.
-    const mypos = new Vector3().copy(cam.position);
-
-    // apply volume translation and rotation:
-    // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
-    const m = new Matrix4().makeRotationFromQuaternion(new Quaternion().setFromEuler(this.rotation).invert());
-    mypos.sub(this.translation);
-    mypos.applyMatrix4(m);
-    myup.applyMatrix4(m);
-    mydir.applyMatrix4(m);
-
-    this.agave.orbitCamera(4, 0);
-    // this.agave.eye(mypos.x, mypos.y, mypos.z);
-    // this.agave.up(myup.x, myup.y, myup.z);
-    // this.agave.target(mypos.x + mydir.x, mypos.y + mydir.y, mypos.z + mydir.z);
-    // this.agave.cameraProjection(
-    //   isOrthographicCamera(cam) ? 1 : 0,
-    //   isOrthographicCamera(cam) ? canvas.getOrthoScale() : (cam as PerspectiveCamera).fov
-    // );
 
     this.agave.flushCommandBuffer();
   }
@@ -260,10 +257,14 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     console.log("RemoteAgaveVolume.setVisible not implemented");
   }
   setBrightness(brightness: number): void {
+    // convert to an exposure value
+    if (brightness === 1.0) {
+      brightness = 0.999;
+    }
     this.agave.exposure(brightness);
   }
   setDensity(density: number): void {
-    this.agave.density(density);
+    this.agave.density(density * 150.0);
   }
   setChannelAsMask(_channel: number): boolean {
     console.log("RemoteAgaveVolume.setChannelAsMask not implemented");
