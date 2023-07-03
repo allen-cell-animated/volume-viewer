@@ -2,6 +2,7 @@ import { Vector3, Object3D, Euler } from "three";
 
 import MeshVolume from "./MeshVolume";
 import RayMarchedAtlasVolume from "./RayMarchedAtlasVolume";
+import RemoteAgaveVolume from "./RemoteAgaveVolume";
 import PathTracedVolume from "./PathTracedVolume";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
 import Volume from "./Volume";
@@ -58,6 +59,7 @@ export default class VolumeDrawable {
   // this is a remnant of a pre-typescript world
   private pathTracedVolume?: PathTracedVolume;
   private rayMarchedAtlasVolume?: RayMarchedAtlasVolume;
+  private remoteAgaveVolume?: RemoteAgaveVolume;
 
   private volumeRendering: VolumeRenderImpl;
 
@@ -128,7 +130,10 @@ export default class VolumeDrawable {
 
     this.primaryRayStepSize = 1.0;
     this.secondaryRayStepSize = 1.0;
-    if (this.PT) {
+    if (options.renderMode === RENDERMODE_AGAVE) {
+      this.remoteAgaveVolume = new RemoteAgaveVolume(this.volume);
+      this.volumeRendering = this.remoteAgaveVolume;
+    } else if (this.PT) {
       this.pathTracedVolume = new PathTracedVolume(this.volume);
       this.volumeRendering = this.pathTracedVolume;
     } else {
@@ -189,7 +194,7 @@ export default class VolumeDrawable {
     }
 
     if (options.renderMode !== undefined) {
-      this.setVolumeRendering(!!options.renderMode);
+      this.setVolumeRendering(!!options.renderMode, options.renderMode);
     }
     if (options.primaryRayStepSize !== undefined || options.secondaryRayStepSize !== undefined) {
       this.setRayStepSizes(options.primaryRayStepSize, options.secondaryRayStepSize);
@@ -622,6 +627,9 @@ export default class VolumeDrawable {
     if (isPathtrace === this.PT && this.volumeRendering === this.pathTracedVolume) {
       return;
     }
+    if (renderMode === RENDERMODE_AGAVE && this.volumeRendering === this.remoteAgaveVolume) {
+      return;
+    }
 
     // remove old 3d object from scene
     isPathtrace && this.sceneRoot.remove(this.meshVolume.get3dObject());
@@ -646,11 +654,13 @@ export default class VolumeDrawable {
       this.pathTracedVolume = new PathTracedVolume(this.volume);
       this.volumeRendering = this.pathTracedVolume;
       this.rayMarchedAtlasVolume = undefined;
+      this.remoteAgaveVolume = undefined;
       this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
     } else {
       this.rayMarchedAtlasVolume = new RayMarchedAtlasVolume(this.volume);
       this.volumeRendering = this.rayMarchedAtlasVolume;
       this.pathTracedVolume = undefined;
+      this.remoteAgaveVolume = undefined;
 
       for (let i = 0; i < this.volume.num_channels; ++i) {
         if (this.volume.getChannel(i).loaded) {

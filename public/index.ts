@@ -14,6 +14,7 @@ import {
   VolumeMaker,
   Light,
   AREA_LIGHT,
+  RENDERMODE_AGAVE,
   RENDERMODE_PATHTRACE,
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
@@ -1332,22 +1333,24 @@ function main() {
   }
 
   const renderModeSelect = document.getElementById("renderMode");
-  const changeRenderMode = (pt: boolean, mp: boolean) => {
+  const changeRenderMode = (pt: boolean, mp: boolean, agave: boolean) => {
     myState.isPT = pt;
     myState.isMP = mp;
-    view3D.setVolumeRenderMode(pt ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
+    view3D.setVolumeRenderMode(agave ? RENDERMODE_AGAVE : pt ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
     view3D.setMaxProjectMode(myState.volume, mp);
   };
   renderModeSelect?.addEventListener("change", ({ currentTarget }) => {
     const target = (currentTarget as HTMLOptionElement)!;
     if (target.value === "PT") {
       if (view3D.hasWebGL2()) {
-        changeRenderMode(true, false);
+        changeRenderMode(true, false, false);
       }
     } else if (target.value === "MP") {
-      changeRenderMode(false, true);
+      changeRenderMode(false, true, false);
+    } else if (target.value === "AG") {
+      changeRenderMode(false, false, true);
     } else {
-      changeRenderMode(false, false);
+      changeRenderMode(false, false, false);
     }
   });
 
