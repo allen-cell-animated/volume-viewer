@@ -2,6 +2,9 @@ import { Euler, Object3D, Vector3 } from "three";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 
 export interface VolumeRenderImpl {
+  onStartControls(): void;
+  onEndControls(): void;
+  onChangeControls(): void;
   get3dObject: () => Object3D;
   setRayStepSizes: (_rayStepSize: number, _secondaryRayStepSize: number) => void;
   setScale: (_scale: Vector3) => void;

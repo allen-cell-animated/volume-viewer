@@ -588,15 +588,15 @@ export default class VolumeDrawable {
   }
 
   onStartControls(): void {
-    this.PT && this.pathTracedVolume && this.pathTracedVolume.onStartControls();
+    this.volumeRendering.onStartControls();
   }
 
   onChangeControls(): void {
-    this.PT && this.pathTracedVolume && this.pathTracedVolume.onChangeControls();
+    this.volumeRendering.onChangeControls();
   }
 
   onEndControls(): void {
-    this.PT && this.pathTracedVolume && this.pathTracedVolume.onEndControls();
+    this.volumeRendering.onEndControls();
   }
 
   onResetCamera(): void {

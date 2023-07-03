@@ -32,6 +32,8 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
   private screenOutputShader: ShaderMaterialParameters;
   private screenOutputMaterial: ShaderMaterial;
 
+  private cameraIsMoving = false;
+
   constructor(volume: Volume) {
     this.volume = volume;
     this.translation = new Vector3(0, 0, 0);
@@ -198,6 +200,9 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     console.log("RemoteAgaveVolume.setFlipAxes not implemented");
   }
   doRender(canvas: ThreeJsPanel): void {
+    if (!this.cameraIsMoving) {
+      return;
+    }
     if (!this.agave) {
       return;
     }
@@ -232,7 +237,6 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     );
 
     this.agave.flushCommandBuffer();
-    //console.log("RemoteAgaveVolume.doRender not implemented");
   }
 
   cleanup(): void {
@@ -284,5 +288,16 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
 
   setRotation(eulerXYZ: Euler): void {
     this.rotation.copy(eulerXYZ);
+  }
+
+  onStartControls(): void {
+    this.cameraIsMoving = true;
+    //console.log("RemoteAgaveVolume.onStartControls not implemented");
+  }
+  onChangeControls(): void {
+    this.cameraIsMoving = true;
+  }
+  onEndControls(): void {
+    this.cameraIsMoving = false;
   }
 }

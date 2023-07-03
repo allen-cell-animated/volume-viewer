@@ -371,4 +371,14 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   public setRenderUpdateListener(_listener?: ((iteration: number) => void) | undefined) {
     return;
   }
+
+  public onStartControls(): void {
+    return;
+  }
+  public onChangeControls(): void {
+    return;
+  }
+  public onEndControls(): void {
+    return;
+  }
 }
