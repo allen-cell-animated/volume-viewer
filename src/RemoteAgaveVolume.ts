@@ -34,6 +34,7 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
 
   private cameraDirty = false;
   private bounds: Bounds;
+  private pixelSamplingRate = 0.75;
 
   constructor(volume: Volume) {
     this.volume = volume;
@@ -98,7 +99,7 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
 
     const wsUri = "ws://localhost:1235";
     //const wsUri = "ws://dev-aics-dtp-001.corp.alleninstitute.org:1235";
-    //const wsUri = "ws://ec2-54-245-184-76.us-west-2.compute.amazonaws.com:1235";
+    //const wsUri = "ws://ec2-35-86-138-54.us-west-2.compute.amazonaws.com:1235";
     this.agave = new AgaveClient(
       wsUri,
       "pathtrace",
@@ -109,7 +110,15 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
   }
 
   async init() {
-    await this.agave.connect();
+    //await this.agave.connect();
+    this.agave
+      .connect()
+      .then(() => {
+        return;
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   }
 
   private onConnectionOpened() {
@@ -187,8 +196,11 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
   setOrthoScale(_scale: number): void {
     console.log("RemoteAgaveVolume.setOrthoScale not implemented");
   }
-  setResolution(_x: number, _y: number): void {
-    this.agave.setResolution(_x, _y);
+  setResolution(x: number, y: number): void {
+    const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
+    const nx = Math.floor((x * this.pixelSamplingRate) / dpr);
+    const ny = Math.floor((y * this.pixelSamplingRate) / dpr);
+    this.agave.setResolution(nx, ny);
   }
 
   // -0.5 .. 0.5
