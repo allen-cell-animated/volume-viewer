@@ -59,6 +59,10 @@ export const rayMarchingShaderUniforms = {
     type: "f",
     value: 50,
   },
+  Z_SLICE: {
+    type: "i",
+    value: 50,
+  },
   isOrtho: {
     type: "f",
     value: 0.0,

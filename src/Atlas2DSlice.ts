@@ -5,6 +5,7 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
+  DoubleSide,
   Euler,
   Group,
   LineBasicMaterial,
@@ -92,6 +93,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
       transparent: true,
       depthTest: true,
       depthWrite: false,
+      side: DoubleSide,
     });
 
     this.planeMesh.material = threeMaterial;
@@ -100,6 +102,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.setUniform("ATLAS_Y", volume.imageInfo.rows);
     this.setUniform("textureRes", new Vector2(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height));
     this.setUniform("SLICES", volume.z);
+    this.setUniform("Z_SLICE", Math.floor(volume.z / 2));
     this.setScale(this.scale);
 
     this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);

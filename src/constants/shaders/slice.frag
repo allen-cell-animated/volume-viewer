@@ -22,8 +22,8 @@ uniform float CLIP_FAR;
 uniform sampler2D textureAtlas;
 uniform sampler2D textureAtlasMask;
 uniform int BREAK_STEPS;
+uniform int Z_SLICE;
 uniform float SLICES;
-uniform int zSlice;
 uniform bool interpolationEnabled;
 uniform vec3 flipVolume;
 uniform vec3 volumeScale;
@@ -115,7 +115,6 @@ vec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {
   loc0 = floor(loc0 * textureRes) / textureRes;
   loc0 += vec2(0.5/textureRes.x, 0.5/textureRes.y);
 
-  // Replace with Z-Slice
   float z = min(floor(pos.z * nSlices), nSlices-1.0);
   
   if (flipVolume.z == -1.0) {
@@ -147,13 +146,13 @@ void main() {
 
   if (normUv.x < boxMin.x || normUv.x > boxMax.x || normUv.y < boxMin.y || normUv.y > boxMax.y) {
     // return background color if outside of clipping box
-    gl_FragColor = vec4(0.0); //C1;//vec4(0.0);
+    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); //C1;//vec4(0.0);
     return;
   }
 
-
-  // TODO: Pass in Z-slice value
-  vec4 pos = vec4(vUv, 0.5, 0.0);
+  // Normalize z-slice by total slices
+  // vec4 pos = vec4(vUv, floor(float(Z_SLICE) / (SLICES - 1.0)), 0.0);
+  vec4 pos = vec4(vUv, 0.75, 0.0);
 
   vec4 C;
   if (interpolationEnabled) {

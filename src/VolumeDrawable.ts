@@ -34,6 +34,7 @@ export default class VolumeDrawable {
   private flipX: number;
   private flipY: number;
   private flipZ: number;
+  private viewMode: string;
   private maskChannelIndex: number;
   private maskAlpha: number;
   private gammaMin: number;
@@ -55,7 +56,8 @@ export default class VolumeDrawable {
   // these should never coexist simultaneously. always one or the other is present
   // this is a remnant of a pre-typescript world
   private pathTracedVolume?: PathTracedVolume;
-  private rayMarchedAtlasVolume?: Atlas2DSlice;
+  private rayMarchedAtlasVolume?: RayMarchedAtlasVolume;
+  private atlas2DSlice?: Atlas2DSlice;
 
   private volumeRendering: VolumeRenderImpl;
 
@@ -79,6 +81,9 @@ export default class VolumeDrawable {
     this.flipX = 1;
     this.flipY = 1;
     this.flipZ = 1;
+
+    // TODO: Replace with enum
+    this.viewMode = "3D";
 
     this.maskChannelIndex = -1;
 
@@ -130,7 +135,7 @@ export default class VolumeDrawable {
       this.pathTracedVolume = new PathTracedVolume(this.volume);
       this.volumeRendering = this.pathTracedVolume;
     } else {
-      this.rayMarchedAtlasVolume = new Atlas2DSlice(this.volume);
+      this.rayMarchedAtlasVolume = new RayMarchedAtlasVolume(this.volume);
       this.volumeRendering = this.rayMarchedAtlasVolume;
     }
 
@@ -296,6 +301,30 @@ export default class VolumeDrawable {
 
     !this.PT && this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
     this.volumeRendering.setAxisClip(axis, minval, maxval, isOrthoAxis || false);
+  }
+
+// TODO: Change mode to an enum
+/**
+ * Sets the camera mode of the VolumeDrawable.
+ * @param mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X", or "XZ" or "Y".
+ */
+  setViewMode(mode: string): void {
+    this.viewMode = mode;
+    if (mode === "XY" || mode === "Z") {
+      // Currently in raymarch mode, hotswap the 2D slice
+      console.log(this.rayMarchedAtlasVolume);
+      console.log(this.atlas2DSlice);
+      if (this.rayMarchedAtlasVolume && !this.atlas2DSlice) {
+        // We are not already rendering with 2D mode, so trigger a switch
+        this.setVolumeRendering(false);
+        console.log(this.volumeRendering);
+      }
+    } else {
+      if (!this.rayMarchedAtlasVolume && this.atlas2DSlice) {
+        // Switch back to 3D mode
+        this.setVolumeRendering(false);
+      }
+    }
   }
 
   // Tell this image that it needs to be drawn in an orthographic mode
@@ -628,20 +657,30 @@ export default class VolumeDrawable {
     // destroy old resources.
     this.volumeRendering.cleanup();
 
+    this.atlas2DSlice = undefined;
+    this.pathTracedVolume = undefined;
+    this.rayMarchedAtlasVolume = undefined;
+
     // create new
     if (isPathtrace) {
       this.pathTracedVolume = new PathTracedVolume(this.volume);
       this.volumeRendering = this.pathTracedVolume;
-      this.rayMarchedAtlasVolume = undefined;
       this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
     } else {
-      this.rayMarchedAtlasVolume = new Atlas2DSlice(this.volume);
-      this.volumeRendering = this.rayMarchedAtlasVolume;
-      this.pathTracedVolume = undefined;
+      // Quietly swap the RayMarchedAtlasVolume for a 2D slice renderer when our render mode
+      // is XY/Z mode. 
+      if (this.viewMode === "XY" || this.viewMode === "Z") {
+        console.log("Switching view mode to Atlas2DSlice");
+        this.atlas2DSlice = new Atlas2DSlice(this.volume);
+        this.volumeRendering = this.atlas2DSlice;
+      } else {
+        this.rayMarchedAtlasVolume = new RayMarchedAtlasVolume(this.volume);
+        this.volumeRendering = this.rayMarchedAtlasVolume;
+      }
 
       for (let i = 0; i < this.volume.num_channels; ++i) {
         if (this.volume.getChannel(i).loaded) {
-          this.rayMarchedAtlasVolume.onChannelData([i]);
+          this.volumeRendering.onChannelData([i]);
         }
       }
       if (this.renderUpdateListener) {
