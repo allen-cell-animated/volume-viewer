@@ -93,7 +93,9 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
    * @param uniforms object containing uniforms to pass to the shader material.
    * @returns the new geometry and geometry mesh.
    */
-  protected createGeometry(uniforms: typeof rayMarchingShaderUniforms): [ShapeGeometry, Mesh<BufferGeometry, Material>] {
+  protected createGeometry(
+    uniforms: typeof rayMarchingShaderUniforms
+  ): [ShapeGeometry, Mesh<BufferGeometry, Material>] {
     const geom = new BoxGeometry(1.0, 1.0, 1.0);
     const mesh: Mesh<BufferGeometry, Material> = new Mesh(geom);
     mesh.name = "Volume";

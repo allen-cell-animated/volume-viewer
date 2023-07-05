@@ -306,11 +306,11 @@ export default class VolumeDrawable {
     this.volumeRendering.setAxisClip(axis, minval, maxval, isOrthoAxis || false);
   }
 
-// TODO: Change mode to an enum
-/**
- * Sets the camera mode of the VolumeDrawable.
- * @param mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X", or "XZ" or "Y".
- */
+  // TODO: Change mode to an enum
+  /**
+   * Sets the camera mode of the VolumeDrawable.
+   * @param mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X", or "XZ" or "Y".
+   */
   setViewMode(mode: string): void {
     this.viewMode = mode;
     if (mode === "XY" || mode === "Z") {
@@ -671,7 +671,7 @@ export default class VolumeDrawable {
       this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
     } else {
       // Quietly swap the RayMarchedAtlasVolume for a 2D slice renderer when our render mode
-      // is XY/Z mode. 
+      // is XY/Z mode.
       if (this.viewMode === "XY" || this.viewMode === "Z") {
         this.atlas2DSlice = new Atlas2DSlice(this.volume);
         this.volumeRendering = this.atlas2DSlice;
@@ -757,7 +757,7 @@ export default class VolumeDrawable {
   setZSlice(slice: number): boolean {
     if (this.volumeRendering.setZSlice(slice)) {
       this.zSlice = slice;
-      return true; 
+      return true;
     }
     return false;
   }

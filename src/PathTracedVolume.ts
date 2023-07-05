@@ -835,5 +835,4 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   public setZSlice(_slice: number): boolean {
     return true;
   }
-
 }
