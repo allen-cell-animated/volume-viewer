@@ -335,8 +335,8 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.setUniform("AABB_CLIP_MAX", this.bounds.bmax);
   }
 
-  public setZSlice(slice: number): void {
-    return;
+  public setZSlice(slice: number): boolean {
+    return false;
   }
 
   public setChannelAsMask(channelIndex: number): boolean {

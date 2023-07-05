@@ -753,4 +753,8 @@ export default class VolumeDrawable {
       .addInput(this, "secondaryRayStepSize", { min: 1, max: 100 })
       .on("change", ({ value }) => this.setRayStepSizes(undefined, value));
   }
+
+  setZSlice(slice: number): boolean {
+    return this.volumeRendering.setZSlice(slice);
+  }
 }

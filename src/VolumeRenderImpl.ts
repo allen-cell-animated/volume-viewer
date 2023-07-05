@@ -25,7 +25,7 @@ export interface VolumeRenderImpl {
     setBoundingBoxColor: (_color: [number, number, number])=> void;
     viewpointMoved: ()=> void;
     updateClipRegion: (_xmin: number, _xmax: number, _ymin: number, _ymax: number, _zmin: number, _zmax: number)=> void;
-    setZSlice: (slice: number) => void;
+    setZSlice: (slice: number) => boolean;
     setPixelSamplingRate: (_rate: number)=> void;
     setRenderUpdateListener: (_listener?: (iteration:number)=>void)=> void;
     setTranslation: (_translation: Vector3)=> void;

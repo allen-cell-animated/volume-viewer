@@ -53,7 +53,7 @@ export default class Atlas2DSlice extends RayMarchedAtlasVolume {
     const fgmtsrc = sliceFragmentShaderSrc;
 
     const threeMaterial = new ShaderMaterial({
-      uniforms: this.uniforms,
+      uniforms: this.uniforms,  // TODO: refactor into param
       vertexShader: vtxsrc,
       fragmentShader: fgmtsrc,
       transparent: true,
@@ -65,9 +65,15 @@ export default class Atlas2DSlice extends RayMarchedAtlasVolume {
     return [geom, mesh];
   }
 
-  public setZSlice(slice: number): void {
+  public setZSlice(slice: number): boolean {
     // Clamp the slice value
-    slice = Math.floor(Math.max(0, Math.min(slice, this.volume.z - 1)));
+    slice = Math.floor(slice);
+    if (slice < 0 || slice > this.volume.z - 1) {
+      return false;
+    }
     this.setUniform("Z_SLICE", slice);
+    console.log(slice);
+    this.geometryMesh.material.needsUpdate = true;
+    return true;
   }
 }

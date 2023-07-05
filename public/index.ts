@@ -599,9 +599,9 @@ function updateZSliceUI(volume: Volume) {
   const zSlider = document.getElementById("zSlider") as HTMLInputElement;
   const zInput = document.getElementById("zValue") as HTMLInputElement;
 
-  const zSlices = volume.z;
-  zSlider.max = `${zSlices}`;
-  zInput.max = `${zSlices}`;
+  const totalZSlices = volume.z;
+  zSlider.max = `${totalZSlices}`;
+  zInput.max = `${totalZSlices}`;
 }
 
 function showChannelUI(volume: Volume) {
@@ -1078,9 +1078,7 @@ function goToFrame(targetFrame) {
 }
 
 function goToZSlice(targetSlice: number): boolean {
-  
-  
-  return true;
+  return view3D.setZSlice(targetSlice);
 }
 
 function createTestVolume() {

@@ -151,8 +151,7 @@ void main() {
   }
 
   // Normalize z-slice by total slices
-  // vec4 pos = vec4(vUv, floor(float(Z_SLICE) / (SLICES - 1.0)), 0.0);
-  vec4 pos = vec4(vUv, 0.75, 0.0);
+  vec4 pos = vec4(vUv, float(Z_SLICE) / (SLICES - 1.0), 0.0);
 
   vec4 C;
   if (interpolationEnabled) {

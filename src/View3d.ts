@@ -476,6 +476,15 @@ export class View3d {
     this.canvas3d.redraw();
   }
 
+  setZSlice(slice: number): boolean {
+    const ret = this.image?.setZSlice(slice);
+    if (ret) {
+      this.canvas3d.redraw();
+      return true;
+    }
+    return false;
+  }
+
   /**
    * Enable or disable 3d axis display at lower left.
    * @param {boolean} showAxis
