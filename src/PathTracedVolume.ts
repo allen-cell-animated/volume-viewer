@@ -832,7 +832,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.resetProgress();
   }
 
-  public setZSlice(slice: number): boolean {
+  public setZSlice(_slice: number): boolean {
     return true;
   }
 

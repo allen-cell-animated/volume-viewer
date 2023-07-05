@@ -60,7 +60,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.isOrtho = false;
 
     this.uniforms = rayMarchingShaderUniforms;
-    [this.geometry, this.geometryMesh] = this.createGeometry();
+    [this.geometry, this.geometryMesh] = this.createGeometry(this.uniforms);
 
     this.boxHelper = new Box3Helper(
       new Box3(new Vector3(-0.5, -0.5, -0.5), new Vector3(0.5, 0.5, 0.5)),
@@ -87,7 +87,13 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
   }
 
-  protected createGeometry(): [ShapeGeometry, Mesh<BufferGeometry, Material>] {
+  // TODO: Change uniforms to be a generic type in a abstract parent class?
+  /**
+   * Creates the geometry mesh and material for rendering the volume.
+   * @param uniforms object containing uniforms to pass to the shader material.
+   * @returns the new geometry and geometry mesh.
+   */
+  protected createGeometry(uniforms: typeof rayMarchingShaderUniforms): [ShapeGeometry, Mesh<BufferGeometry, Material>] {
     const geom = new BoxGeometry(1.0, 1.0, 1.0);
     const mesh: Mesh<BufferGeometry, Material> = new Mesh(geom);
     mesh.name = "Volume";
@@ -97,7 +103,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     const fgmtsrc = rayMarchingFragmentShaderSrc;
 
     const threeMaterial = new ShaderMaterial({
-      uniforms: this.uniforms,
+      uniforms: uniforms,
       vertexShader: vtxsrc,
       fragmentShader: fgmtsrc,
       transparent: true,
@@ -335,7 +341,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.setUniform("AABB_CLIP_MAX", this.bounds.bmax);
   }
 
-  public setZSlice(slice: number): boolean {
+  public setZSlice(_slice: number): boolean {
     return true;
   }
 
