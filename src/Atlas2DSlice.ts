@@ -1,7 +1,6 @@
 import {
   Box3,
   Box3Helper,
-  BoxGeometry,
   BufferAttribute,
   BufferGeometry,
   Color,
@@ -20,9 +19,6 @@ import {
 } from "three";
 
 import FusedChannelData from "./FusedChannelData";
-import {
-  rayMarchingShaderUniforms,
-} from "./constants/volumeRayMarchShader";
 import { Volume } from ".";
 import Channel from "./Channel";
 import { ThreeJsPanel } from "./ThreeJsPanel";
@@ -33,13 +29,15 @@ import { sliceFragmentShaderSrc, sliceShaderUniforms, sliceVertexShaderSrc } fro
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
+/**
+ * Creates a plane that renders a 2D XY slice of volume atlas data.
+ */
 export default class Atlas2DSlice implements VolumeRenderImpl {
   public volume: Volume;
   public bounds: Bounds;
   private plane: PlaneGeometry;
   private planeMesh: Mesh<BufferGeometry, Material>;
   private boxHelper: Box3Helper;
-  private tickMarksMesh: LineSegments;
   private planeTransformNode: Group;
   private uniforms: typeof sliceShaderUniforms;
   private channelData: FusedChannelData;
@@ -71,16 +69,12 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.boxHelper.updateMatrixWorld();
     this.boxHelper.visible = false;
 
-    this.tickMarksMesh = this.createTickMarks();
-    this.tickMarksMesh.updateMatrixWorld();
-    this.tickMarksMesh.visible = false;
-
     this.planeTransformNode = new Group();
     this.planeTransformNode.name = "VolumeContainerNode";
 
-    this.planeTransformNode.add(this.boxHelper, this.tickMarksMesh, this.planeMesh);
+    this.planeTransformNode.add(this.boxHelper, this.planeMesh);
 
-    this.uniforms = rayMarchingShaderUniforms;
+    this.uniforms = sliceShaderUniforms;
 
     // shader,vtx and frag.
     const vtxsrc = sliceVertexShaderSrc;
@@ -108,75 +102,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
   }
 
-  private createTickMarks(): LineSegments {
-    // Length of tick mark lines in world units
-    const TICK_LENGTH = 0.025;
-    const { tickMarkPhysicalLength, physicalScale, normalizedPhysicalSize } = this.volume;
-    const numTickMarks = physicalScale / tickMarkPhysicalLength;
-
-    const vertices: number[] = [];
-
-    const tickEndY = TICK_LENGTH / normalizedPhysicalSize.y + 0.5;
-    const tickSpacingX = 1 / (normalizedPhysicalSize.x * numTickMarks);
-    for (let x = -0.5; x <= 0.5; x += tickSpacingX) {
-      // prettier-ignore
-      vertices.push(
-        x, 0.5,       0.5,
-        x, tickEndY,  0.5,
-
-        x, -0.5,      -0.5,
-        x, -tickEndY, -0.5,
-
-        x, 0.5,       -0.5,
-        x, tickEndY,  -0.5,
-
-        x, -0.5,      0.5,
-        x, -tickEndY, 0.5,
-      );
-    }
-
-    const tickEndX = TICK_LENGTH / normalizedPhysicalSize.x + 0.5;
-    const tickSpacingY = 1 / (normalizedPhysicalSize.y * numTickMarks);
-    for (let y = 0.5; y >= -0.5; y -= tickSpacingY) {
-      // prettier-ignore
-      vertices.push(
-        -0.5,      y, 0.5,
-        -tickEndX, y, 0.5,
-
-        -0.5,      y, -0.5,
-        -tickEndX, y, -0.5,
-
-        0.5,       y, -0.5,
-        tickEndX,  y, -0.5,
-
-        0.5,       y, 0.5,
-        tickEndX,  y, 0.5,
-      );
-    }
-
-    const tickSpacingZ = 1 / (normalizedPhysicalSize.z * numTickMarks);
-    for (let z = 0.5; z >= -0.5; z -= tickSpacingZ) {
-      // prettier-ignore
-      vertices.push(
-        -0.5,      0.5,  z,
-        -tickEndX, 0.5,  z,
-
-        -0.5,      -0.5, z,
-        -tickEndX, -0.5, z,
-
-        0.5,       -0.5, z,
-        tickEndX,  -0.5, z,
-
-        0.5,       0.5,  z,
-        tickEndX,  0.5,  z,
-      );
-    }
-
-    const geometry = new BufferGeometry();
-    geometry.setAttribute("position", new BufferAttribute(new Float32Array(vertices), 3));
-    return new LineSegments(geometry, new LineBasicMaterial({ color: BOUNDING_BOX_DEFAULT_COLOR }));
-  }
-
   public cleanup(): void {
     this.plane.dispose();
     this.planeMesh.material.dispose();
@@ -191,7 +116,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
 
   public setShowBoundingBox(showBoundingBox: boolean): void {
     this.boxHelper.visible = showBoundingBox;
-    this.tickMarksMesh.visible = showBoundingBox && !this.isOrtho;
   }
 
   public setBoundingBoxColor(color: [number, number, number]): void {
@@ -201,7 +125,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     // I could also create a new LineBasicMaterial but that would also rely on knowledge
     // that Box3Helper expects that type.
     (this.boxHelper.material as LineBasicMaterial).color = newBoxColor;
-    (this.tickMarksMesh.material as LineBasicMaterial).color = newBoxColor;
   }
 
   public doRender(canvas: ThreeJsPanel): void {
@@ -239,7 +162,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
       new Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z),
       new Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z)
     );
-    this.tickMarksMesh.scale.copy(scale);
   }
 
   public setRayStepSizes(_primary: number, _secondary: number): void {
@@ -277,7 +199,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
 
   public setIsOrtho(isOrthoAxis: boolean): void {
     this.isOrtho = isOrthoAxis;
-    this.tickMarksMesh.visible = this.boxHelper.visible && !isOrthoAxis;
     this.setUniform("isOrtho", isOrthoAxis ? 1.0 : 0.0);
     if (!isOrthoAxis) {
       this.setOrthoThickness(1.0);
