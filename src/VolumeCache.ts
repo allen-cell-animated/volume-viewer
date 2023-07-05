@@ -36,7 +36,7 @@ type VolumeCacheScale = {
   size: VolumeScaleDims;
 };
 
-type CachedVolume = {
+export type CachedVolume = {
   scales: VolumeCacheScale[];
   numTimes: number;
   numChannels: number;
@@ -62,7 +62,6 @@ const validExtentIsOutsideDims = (ext: CacheEntryExtent, dims: VolumeScaleDims):
   ext.x[1] >= dims.x || ext.y[1] >= dims.y || ext.z[1] >= dims.z;
 
 export default class VolumeCache {
-  private store: CachedVolume[];
   public readonly maxSize: number;
   private currentSize: number;
   private currentEntries: number;
@@ -73,11 +72,10 @@ export default class VolumeCache {
   // TODO implement some way to manage used vs unused (prefetched) entries so
   // that prefetched entries which are never used don't get highest priority!
 
-  constructor(maxSize = 1_000_000) {
+  constructor(maxSize = 250_000_000) {
     this.maxSize = maxSize;
     this.currentSize = 0;
     this.currentEntries = 0;
-    this.store = [];
 
     this.first = null;
     this.last = null;
@@ -95,7 +93,7 @@ export default class VolumeCache {
   }
 
   /**
-   * Removes an entry from the store but NOT the LRU list.
+   * Removes an entry from a volume but NOT the LRU list.
    * Only call from a method with the word "evict" in it!
    */
   private removeEntryFromStore(entry: CacheEntry): void {
@@ -105,8 +103,8 @@ export default class VolumeCache {
   }
 
   /**
-   * Removes an entry from the LRU list but NOT the store.
-   * Entry must be replaced in list or removed from store, or it will never be evicted!
+   * Removes an entry from the LRU list but NOT its volume.
+   * Entry must be replaced in list or removed from volume, or it will never be evicted!
    */
   private removeEntryFromList(entry: CacheEntry): void {
     const { prev, next } = entry;
@@ -166,10 +164,10 @@ export default class VolumeCache {
   }
 
   /**
-   * Prepares space for a new volume in the cache with the specified channels, times, and scales.
+   * Prepares a new cached volume with the specified channels, times, and scales.
    * @returns {number} a unique ID which identifies the volume when interacting with it in the cache.
    */
-  public addVolume(numChannels: number, numTimes: number, scaleDims: VolumeScaleDims[]): number {
+  public addVolume(numChannels: number, numTimes: number, scaleDims: VolumeScaleDims[]): CachedVolume {
     const makeTCArray = (): CacheEntry[][][] => {
       const tArr: CacheEntry[][][] = [];
       for (let i = 0; i < numTimes; i++) {
@@ -183,17 +181,16 @@ export default class VolumeCache {
     };
 
     const scales = scaleDims.map((size): VolumeCacheScale => ({ size, data: makeTCArray() }));
-    this.store.push({ scales, numTimes, numChannels });
-    return this.store.length - 1;
+    return { scales, numTimes, numChannels };
   }
 
   /**
    * Add a new array to the cache (representing a subset of a channel's extent at a given time and scale)
    * @returns {boolean} a boolean indicating whether the insertion succeeded
    */
-  public insert(volume: number, data: Uint8Array, optDims?: Partial<DataArrayExtent>): boolean {
+  public insert(volume: CachedVolume, data: Uint8Array, optDims?: Partial<DataArrayExtent>): boolean {
     const scale = optDims?.scale || 0;
-    const scaleCache = this.store[volume].scales[scale];
+    const scaleCache = volume.scales[scale];
     // Apply defaults to `optDims`
     const {
       time = 0,
@@ -246,10 +243,10 @@ export default class VolumeCache {
    * Attempts to get data from a single channel. Internal implementation of `get`,
    * which is overloaded to call this in different patterns.
    */
-  private getOneChannel(volume: number, channel: number, optDims?: Partial<QueryExtent>): Uint8Array | undefined {
+  private getOneChannel(volume: CachedVolume, channel: number, optDims?: Partial<QueryExtent>): Uint8Array | undefined {
     // TODO allow searching through a range of scales and picking the highest available one
     const scale = optDims?.scale || 0;
-    const scaleCache = this.store[volume].scales[scale];
+    const scaleCache = volume.scales[scale];
     // Apply defaults to `optDims`
     const {
       time = 0,
@@ -271,13 +268,13 @@ export default class VolumeCache {
   }
 
   /** Attempts to get data from a single channel of a cached volume. Returns `undefined` if not present in the cache. */
-  public get(volume: number, channel: number, optDims?: Partial<QueryExtent>): Uint8Array | undefined;
+  public get(volume: CachedVolume, channel: number, optDims?: Partial<QueryExtent>): Uint8Array | undefined;
   /** Attempts to get data from multiple channels of a volume. Channels not present in the cache are `undefined`. */
-  public get(volume: number, channel: number[], optDims?: Partial<QueryExtent>): (Uint8Array | undefined)[];
+  public get(volume: CachedVolume, channel: number[], optDims?: Partial<QueryExtent>): (Uint8Array | undefined)[];
   /** Attempts to get all channels of a volume from the cache. Channels not present in the cache are `undefined`. */
-  public get(volume: number, optDims?: Partial<QueryExtent>): (Uint8Array | undefined)[];
+  public get(volume: CachedVolume, optDims?: Partial<QueryExtent>): (Uint8Array | undefined)[];
   public get(
-    volume: number,
+    volume: CachedVolume,
     channel?: number | number[] | Partial<QueryExtent>,
     optDims?: Partial<QueryExtent>
   ): Uint8Array | undefined | (Uint8Array | undefined)[] {
@@ -286,7 +283,7 @@ export default class VolumeCache {
     }
 
     if (typeof channel === "object" || channel === undefined) {
-      const channelKeys = [...Array(this.store[volume].numChannels).keys()];
+      const channelKeys = [...Array(volume.numChannels).keys()];
       return channelKeys.map((c) => this.getOneChannel(volume, c, channel));
     }
 
@@ -294,8 +291,8 @@ export default class VolumeCache {
   }
 
   /** Clears data associated with one volume from the cache */
-  public clearVolume(volume: number): void {
-    this.store[volume].scales.forEach((scale) => {
+  public clearVolume(volume: CachedVolume): void {
+    volume.scales.forEach((scale) => {
       scale.data.forEach((time) => {
         time.forEach((channel) => {
           channel.forEach((entry) => {

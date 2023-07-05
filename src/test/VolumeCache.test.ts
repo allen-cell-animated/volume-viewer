@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import VolumeCache, { DataArrayExtent } from "../VolumeCache";
+import VolumeCache, { CachedVolume, DataArrayExtent } from "../VolumeCache";
 
 describe("VolumeCache", () => {
   it("creates an empty cache with the specified max size", () => {
@@ -72,7 +72,7 @@ describe("VolumeCache", () => {
      * - Volume 1 has 2 channels, 1 time, 2 scale levels: 2x1x1 and 4x2x2
      * - Volume 2 has 1 channel, 2 times, 1 scale level: 3x2x1
      */
-    function setupEvictionTest(): [VolumeCache, number, number] {
+    function setupEvictionTest(): [VolumeCache, CachedVolume, CachedVolume] {
       const cache = new VolumeCache(12);
       const id1 = cache.addVolume(2, 1, [
         { x: 2, y: 1, z: 1 },
@@ -134,7 +134,7 @@ describe("VolumeCache", () => {
   const SLICE_1_2 = [5, 6, 7, 8];
   const SLICE_2_1 = [2, 4, 6, 8];
   const SLICE_2_2 = [1, 3, 5, 7];
-  function setupGetTest(addSlices: [boolean, boolean, boolean, boolean]): [VolumeCache, number] {
+  function setupGetTest(addSlices: [boolean, boolean, boolean, boolean]): [VolumeCache, CachedVolume] {
     const cache = new VolumeCache(12);
     const vol = cache.addVolume(2, 1, [{ x: 2, y: 2, z: 2 }]);
     const insertFuncs = [
@@ -193,7 +193,7 @@ describe("VolumeCache", () => {
   });
 
   const SPECIFIC_EXTENT: Partial<DataArrayExtent> = { time: 1, channel: 1, scale: 1, x: [1, 1], y: [1, 1] };
-  function setupClearTest(): [VolumeCache, number, number] {
+  function setupClearTest(): [VolumeCache, CachedVolume, CachedVolume] {
     const cache = new VolumeCache();
     const id1 = cache.addVolume(2, 2, [
       { x: 1, y: 1, z: 1 },
