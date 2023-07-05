@@ -418,6 +418,9 @@ export default class VolumeDrawable {
       if (this.rayMarchedAtlasVolume) {
         this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
       }
+      if (this.atlas2DSlice) {
+        this.atlas2DSlice.fuse(this.fusion, this.volume.channels);
+      }
     }
   }
 
