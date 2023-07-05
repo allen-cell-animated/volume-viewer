@@ -52,32 +52,29 @@ function convertChannel(
   return u8;
 }
 
-self.onmessage = function (e) {
+self.onmessage = async (e) => {
   const time = e.data.time;
   const channelIndex = e.data.channel;
   const downsampleZ = e.data.downsampleZ;
   const store = new HTTPStore(e.data.urlStore);
-  openArray({ store: store, path: e.data.path, mode: "r" })
-    .then((level) => {
-      // build slice spec
-      // assuming ZYX are the last three dimensions:
-      const sliceSpec = [null, null, null];
-      if (channelIndex > -1) {
-        sliceSpec.unshift(channelIndex);
-      }
-      if (time > -1) {
-        sliceSpec.unshift(time);
-      }
-      return level.get(sliceSpec);
-    })
-    .then((channel) => {
-      channel = channel as NestedArray<TypedArray>;
-      const nz = channel.shape[0];
-      const ny = channel.shape[1];
-      const nx = channel.shape[2];
+  const level = await openArray({ store: store, path: e.data.path, mode: "r" });
 
-      const u8: Uint8Array = convertChannel(channel.data as TypedArray[][], nx, ny, nz, channel.dtype, downsampleZ);
-      const results = { data: u8, channel: channelIndex === -1 ? 0 : channelIndex };
-      postMessage(results, [results.data.buffer]);
-    });
+  // build slice spec
+  // assuming ZYX are the last three dimensions:
+  const sliceSpec = [null, null, null];
+  if (channelIndex > -1) {
+    sliceSpec.unshift(channelIndex);
+  }
+  if (time > -1) {
+    sliceSpec.unshift(time);
+  }
+  const channel = (await level.get(sliceSpec)) as NestedArray<TypedArray>;
+
+  const nz = channel.shape[0];
+  const ny = channel.shape[1];
+  const nx = channel.shape[2];
+
+  const u8: Uint8Array = convertChannel(channel.data as TypedArray[][], nx, ny, nz, channel.dtype, downsampleZ);
+  const results = { data: u8, channel: channelIndex === -1 ? 0 : channelIndex };
+  postMessage(results, [results.data.buffer]);
 };
