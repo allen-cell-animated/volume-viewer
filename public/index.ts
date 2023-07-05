@@ -1078,7 +1078,7 @@ function goToFrame(targetFrame) {
 }
 
 function goToZSlice(slice: number): boolean {
-  if (view3D.setZSlice(slice)) {
+  if (view3D.setZSlice(myState.volume, slice)) {
     const zSlider = document.getElementById("zSlider") as HTMLInputElement;
     const zInput = document.getElementById("zValue") as HTMLInputElement;
     zInput.value = `${slice}`;
