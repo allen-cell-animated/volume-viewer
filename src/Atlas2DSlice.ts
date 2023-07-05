@@ -64,4 +64,10 @@ export default class Atlas2DSlice extends RayMarchedAtlasVolume {
     mesh.material = threeMaterial;
     return [geom, mesh];
   }
+
+  public setZSlice(slice: number): void {
+    // Clamp the slice value
+    slice = Math.floor(Math.max(0, Math.min(slice, this.volume.z - 1)));
+    this.setUniform("Z_SLICE", slice);
+  }
 }

@@ -54,6 +54,10 @@ export const rayMarchingShaderUniforms = {
     type: "f",
     value: 6,
   },
+  Z_SLICE: {  // Used by slice shader that extends ray march shader
+    type: "i",
+    value: 0
+  },
   SLICES: {
     type: "f",
     value: 50,
