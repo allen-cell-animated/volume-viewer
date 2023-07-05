@@ -13,6 +13,8 @@ export default class Atlas2DSlice extends RayMarchedAtlasVolume {
     this.setUniform("Z_SLICE", Math.floor(volume.z / 2));
   }
 
+  // TODO: Change uniforms so that it can be a different/custom type
+  // (this requires a refactor of some of the render implementation classes)
   // Overload geometry to create plane instead of a cube mesh
   protected createGeometry(
     uniforms: typeof rayMarchingShaderUniforms
@@ -26,7 +28,7 @@ export default class Atlas2DSlice extends RayMarchedAtlasVolume {
     const fgmtsrc = sliceFragmentShaderSrc;
 
     const threeMaterial = new ShaderMaterial({
-      uniforms: uniforms, // TODO: refactor into param
+      uniforms: uniforms,
       vertexShader: vtxsrc,
       fragmentShader: fgmtsrc,
       transparent: true,

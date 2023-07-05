@@ -24,6 +24,11 @@ export interface VolumeRenderImpl {
   setShowBoundingBox: (_show: boolean) => void;
   setBoundingBoxColor: (_color: [number, number, number]) => void;
   viewpointMoved: () => void;
+  /**
+   * Sets the visible z slice, for volume renderers that support it.
+   * @returns true if the z slice was set correctly, false if the slice is out of range.
+   * Defaults to true if z-slice rendering is not implemented on the volume renderer.
+   */
   setZSlice: (_slice: number) => boolean;
   updateClipRegion: (_xmin: number, _xmax: number, _ymin: number, _ymax: number, _zmin: number, _zmax: number) => void;
   setPixelSamplingRate: (_rate: number) => void;

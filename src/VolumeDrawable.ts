@@ -314,14 +314,13 @@ export default class VolumeDrawable {
   setViewMode(mode: string): void {
     this.viewMode = mode;
     if (mode === "XY" || mode === "Z") {
-      // Currently in raymarch mode, hotswap the 2D slice
+      // If currently in 3D raymarch mode, hotswap the 2D slice
       if (this.rayMarchedAtlasVolume && !this.atlas2DSlice) {
-        // We are not already rendering with 2D mode, so trigger a switch
         this.setVolumeRendering(false);
       }
     } else {
+      // If in 2D slice mode, switch back to 3D raymarch mode
       if (!this.rayMarchedAtlasVolume && this.atlas2DSlice) {
-        // Switch back to 3D mode
         this.setVolumeRendering(false);
       }
     }
@@ -415,11 +414,8 @@ export default class VolumeDrawable {
         this.pathTracedVolume.updateActiveChannels(this);
       }
     } else {
-      if (this.rayMarchedAtlasVolume) {
-        this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
-      }
-      if (this.atlas2DSlice) {
-        this.atlas2DSlice.fuse(this.fusion, this.volume.channels);
+      if (this.volumeRendering instanceof RayMarchedAtlasVolume) {
+        this.volumeRendering.fuse(this.fusion, this.volume.channels);
       }
     }
   }

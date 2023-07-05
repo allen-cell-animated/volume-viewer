@@ -123,8 +123,8 @@ void main() {
   // Normalize UV for [-0.5, 0.5] range
   vec2 normUv = vUv - vec2(0.5);
 
+  // Return background color if outside of clipping box
   if(normUv.x < boxMin.x || normUv.x > boxMax.x || normUv.y < boxMin.y || normUv.y > boxMax.y) {
-    // return background color if outside of clipping box
     gl_FragColor = vec4(0.0);
     return;
   }
@@ -140,7 +140,7 @@ void main() {
   }
   C = luma2Alpha(C, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);
   C.xyz *= BRIGHTNESS;
-  C.w *= DENSITY;  // Uncertain if needed
+  // C.w *= DENSITY;  // Density disabled because it causes XY mode to render very dark on default settings
 
   C = clamp(C, 0.0, 1.0);
   gl_FragColor = C;
