@@ -1077,8 +1077,18 @@ function goToFrame(targetFrame) {
   return true;
 }
 
-function goToZSlice(targetSlice: number): boolean {
-  return view3D.setZSlice(targetSlice);
+function goToZSlice(slice: number): boolean {
+  if (view3D.setZSlice(slice)) {
+    const zSlider = document.getElementById("zSlider") as HTMLInputElement;
+    const zInput = document.getElementById("zValue") as HTMLInputElement;
+    zInput.value = `${slice}`;
+    zSlider.value = `${slice}`;
+    return true;
+  } else {
+    return false;
+  }
+
+  // update UI if successful
 }
 
 function createTestVolume() {
@@ -1156,6 +1166,9 @@ async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader, cacheTimeSe
 
   myState.currentImageStore = loadSpec.url;
   myState.currentImageName = loadSpec.url;
+
+  // Set default zSlice
+  goToZSlice(Math.floor(volume.z / 2));
 }
 
 function loadTestData(testdata: TestDataSpec) {
@@ -1333,18 +1346,10 @@ function main() {
   const zSlider = document.getElementById("zSlider") as HTMLInputElement;
   const zInput = document.getElementById("zValue") as HTMLInputElement;
   zSlider?.addEventListener("change", () => {
-    if (goToZSlice(zSlider?.valueAsNumber)) {
-      if (zInput) {
-        zInput.value = zSlider.value;
-      }
-    }
+    goToZSlice(zSlider?.valueAsNumber);
   });
   zInput?.addEventListener("change", () => {
-    if (goToZSlice(zInput?.valueAsNumber)) {
-      if (zSlider) {
-        zSlider.value = zInput.value;
-      }
-    }
+    goToZSlice(zInput?.valueAsNumber);
   })
 
   const alignBtn = document.getElementById("xfBtn");

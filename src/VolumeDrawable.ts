@@ -43,6 +43,7 @@ export default class VolumeDrawable {
   private channelColors: [number, number, number][];
   private channelOptions: VolumeChannelDisplayOptions[];
   private fusion: FuseChannel[];
+  private zSlice: number;
   public specular: [number, number, number][];
   public emissive: [number, number, number][];
   public glossiness: number[];
@@ -161,6 +162,8 @@ export default class VolumeDrawable {
     this.setRotation(new Euler().fromArray(this.volume.getRotation()));
 
     this.setOptions(options);
+    this.zSlice = Math.floor(this.volume.z / 2);
+    this.volumeRendering.setZSlice(this.zSlice);
   }
 
   setOptions(options: VolumeDisplayOptions): void {
@@ -312,12 +315,9 @@ export default class VolumeDrawable {
     this.viewMode = mode;
     if (mode === "XY" || mode === "Z") {
       // Currently in raymarch mode, hotswap the 2D slice
-      console.log(this.rayMarchedAtlasVolume);
-      console.log(this.atlas2DSlice);
       if (this.rayMarchedAtlasVolume && !this.atlas2DSlice) {
         // We are not already rendering with 2D mode, so trigger a switch
         this.setVolumeRendering(false);
-        console.log(this.volumeRendering);
       }
     } else {
       if (!this.rayMarchedAtlasVolume && this.atlas2DSlice) {
@@ -673,7 +673,6 @@ export default class VolumeDrawable {
       // Quietly swap the RayMarchedAtlasVolume for a 2D slice renderer when our render mode
       // is XY/Z mode. 
       if (this.viewMode === "XY" || this.viewMode === "Z") {
-        console.log("Switching view mode to Atlas2DSlice");
         this.atlas2DSlice = new Atlas2DSlice(this.volume);
         this.volumeRendering = this.atlas2DSlice;
       } else {
@@ -704,6 +703,7 @@ export default class VolumeDrawable {
     this.setDensity(this.getDensity());
     this.setGamma(this.gammaMin, this.gammaLevel, this.gammaMax);
     this.setFlipAxes(this.flipX, this.flipY, this.flipZ);
+    this.setZSlice(this.zSlice);
 
     // reset clip bounds
     this.setAxisClip("x", this.bounds.bmin.x, this.bounds.bmax.x);
@@ -755,6 +755,10 @@ export default class VolumeDrawable {
   }
 
   setZSlice(slice: number): boolean {
-    return this.volumeRendering.setZSlice(slice);
+    if (this.volumeRendering.setZSlice(slice)) {
+      this.zSlice = slice;
+      return true; 
+    }
+    return false;
   }
 }

@@ -1,7 +1,6 @@
 precision highp float;
 precision highp int;
 
-varying vec2 texCoord;
 varying vec2 vUv;
 
 void main()

@@ -72,7 +72,6 @@ export default class Atlas2DSlice extends RayMarchedAtlasVolume {
       return false;
     }
     this.setUniform("Z_SLICE", slice);
-    console.log(slice);
     this.geometryMesh.material.needsUpdate = true;
     return true;
   }

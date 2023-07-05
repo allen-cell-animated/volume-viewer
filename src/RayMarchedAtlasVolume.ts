@@ -336,7 +336,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   }
 
   public setZSlice(slice: number): boolean {
-    return false;
+    return true;
   }
 
   public setChannelAsMask(channelIndex: number): boolean {

@@ -3,9 +3,6 @@
 precision highp float;
 #endif
 
-#define M_PI 3.14159265358979323846
-
-uniform vec2 iResolution;
 uniform vec2 textureRes;
 uniform float GAMMA_MIN;
 uniform float GAMMA_MAX;
@@ -16,24 +13,18 @@ uniform float maskAlpha;
 uniform float ATLAS_X;
 uniform float ATLAS_Y;
 uniform vec3 AABB_CLIP_MIN;
-uniform float CLIP_NEAR;
 uniform vec3 AABB_CLIP_MAX;
-uniform float CLIP_FAR;
 uniform sampler2D textureAtlas;
 uniform sampler2D textureAtlasMask;
-uniform int BREAK_STEPS;
 uniform int Z_SLICE;
 uniform float SLICES;
 uniform bool interpolationEnabled;
 uniform vec3 flipVolume;
-uniform vec3 volumeScale;
 
-varying vec2 texCoord;
 varying vec2 vUv;
 
 vec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {
   float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));
-  // float x = max(color[2], max(color[0],color[1]));
   float xi = (x-vmin)/(vmax-vmin);
   xi = clamp(xi,0.0,1.0);
   float y = pow(xi,C);
@@ -54,10 +45,6 @@ vec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {
                        pos[1] >= 0.0 && pos[1] <= 1.0 &&
                        pos[2] >= 0.0 && pos[2] <= 1.0 );
   float nSlices = float(SLICES);
-  // get location within atlas tile
-  // TODO: get loc1 which follows ray to next slice along ray direction
-  // when flipvolume = 1:  pos
-  // when flipvolume = -1: 1-pos
   vec2 loc0 = vec2(
     (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,
     (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);
@@ -135,10 +122,6 @@ vec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {
 void main() {
   gl_FragColor = vec4(0.0);
 
-  // -0.5..0.5 is full box. AABB_CLIP lets us clip to a box shaped ROI to look at
-  // I am applying it here at the earliest point so that the ray march does
-  // not waste steps.  For general shaped ROI, this has to be handled more
-  // generally (obviously)
   vec3 boxMin = AABB_CLIP_MIN;
   vec3 boxMax = AABB_CLIP_MAX;
   // Normalize UV for [-0.5, 0.5] range
@@ -146,7 +129,7 @@ void main() {
 
   if (normUv.x < boxMin.x || normUv.x > boxMax.x || normUv.y < boxMin.y || normUv.y > boxMax.y) {
     // return background color if outside of clipping box
-    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); //C1;//vec4(0.0);
+    gl_FragColor = vec4(0.0);
     return;
   }
 
@@ -161,7 +144,7 @@ void main() {
   }
   C = luma2Alpha(C, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);
   C.xyz *= BRIGHTNESS;
-  // C.w *= DENSITY;  // Uncertain if needed
+  C.w *= DENSITY;  // Uncertain if needed
 
   C = clamp(C, 0.0, 1.0);
   gl_FragColor = C;
