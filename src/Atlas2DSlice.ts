@@ -29,7 +29,7 @@ import { ThreeJsPanel } from "./ThreeJsPanel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 
 import { Bounds, FuseChannel } from "./types";
-import { sliceFragmentShaderSrc, sliceVertexShaderSrc } from "./constants/volumeSliceShader";
+import { sliceFragmentShaderSrc, sliceShaderUniforms, sliceVertexShaderSrc } from "./constants/volumeSliceShader";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
@@ -41,7 +41,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
   private boxHelper: Box3Helper;
   private tickMarksMesh: LineSegments;
   private planeTransformNode: Group;
-  private uniforms: typeof rayMarchingShaderUniforms;
+  private uniforms: typeof sliceShaderUniforms;
   private channelData: FusedChannelData;
   private scale: Vector3;
   private isOrtho: boolean;
@@ -352,9 +352,9 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
   //////////////////////////////////////////
   //////////////////////////////////////////
 
-  private setUniform<U extends keyof typeof rayMarchingShaderUniforms>(
+  private setUniform<U extends keyof typeof sliceShaderUniforms>(
     name: U,
-    value: (typeof rayMarchingShaderUniforms)[U]["value"]
+    value: (typeof sliceShaderUniforms)[U]["value"]
   ) {
     if (!this.uniforms[name]) {
       return;

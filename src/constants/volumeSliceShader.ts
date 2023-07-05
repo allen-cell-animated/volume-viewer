@@ -6,7 +6,7 @@ export const sliceVertexShaderSrc = sliceVertexShader;
 
 export const sliceFragmentShaderSrc = sliceFragShader;
 
-export const rayMarchingShaderUniforms = {
+export const sliceShaderUniforms = {
   iResolution: {
     type: "v2",
     value: new Vector2(100, 100),
