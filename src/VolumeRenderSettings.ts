@@ -1,17 +1,19 @@
 import { Euler, Vector3 } from "three";
 import Volume from "./Volume";
+import { Bounds } from "./types";
+import VolumeDrawable from "./VolumeDrawable";
 
 export type VolumeRenderSettings = {
   translation: Vector3,
   rotation: Euler,
 
   scale: Vector3,
-  orthoScale: Vector3,
+  isOrtho: boolean,
+  orthoScale: number,
+  orthoAxis: "x" | "y" | "z" | null;
   currentScale: Vector3,
 
-  flipX: number,
-  flipY: number,
-  flipZ: number,
+  flipAxes: Vector3,
   maskChannelIndex: number,
   maskAlpha: number,
   gammaMin: number,
@@ -21,7 +23,11 @@ export type VolumeRenderSettings = {
   brightness: number,
 
   showBoundingBox: boolean,
+  bounds: Bounds,
   boundingBoxColor: [number, number, number],
+
+  useInterpolation: boolean,
+  visible: boolean,
 
   zSlice: number,
   specular: [number, number, number][],
@@ -43,10 +49,10 @@ export const defaultVolumeRenderSettings: VolumeRenderSettings = {
     rotation: new Euler(),
     scale: new Vector3(1, 1, 1),
     currentScale: new Vector3(1, 1, 1),
-    orthoScale: new Vector3(1, 1, 1),
-    flipX: 1,
-    flipY: 1,
-    flipZ: 1,
+    isOrtho: false,
+    orthoAxis: null,
+    orthoScale: 1.0,
+    flipAxes: new Vector3(1, 1, 1),
     maskChannelIndex: -1,
     maskAlpha: 1.0,
     gammaMin: 0.0,
@@ -55,9 +61,15 @@ export const defaultVolumeRenderSettings: VolumeRenderSettings = {
     density: 0,
     brightness: 0,
     showBoundingBox: false,
+    bounds: {
+      bmin: new Vector3(-0.5, -0.5, -0.5),
+      bmax: new Vector3(0.5, 0.5, 0.5),
+    },
     boundingBoxColor: [1.0, 1.0, 0.0],
     primaryRayStepSize: 1.0,
     secondaryRayStepSize: 1.0,
+    useInterpolation: true,
+    visible: true,
     // volume-dependent properties
     zSlice: 0,
     specular: new Array(1).fill([0, 0, 0]),
@@ -70,6 +82,11 @@ export function updateDefaultVolumeRenderSettings(renderSettings: VolumeRenderSe
   renderSettings.specular = new Array(volume.num_channels).fill([0, 0, 0]);
   renderSettings.emissive = new Array(volume.num_channels).fill([0, 0, 0]);
   renderSettings.glossiness = new Array(volume.num_channels).fill(0);
+}
+
+// TODO: Replace JSON stringify/parsing
+export function cloneSettings(sourceSettings: VolumeRenderSettings): VolumeRenderSettings {
+  return JSON.parse(JSON.stringify(sourceSettings));
 }
 
 type FancySetting<T> = {
