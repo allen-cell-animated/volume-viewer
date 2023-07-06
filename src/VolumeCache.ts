@@ -22,22 +22,22 @@ type CacheEntry = {
   data: Uint8Array;
   /** The subset of the volume covered by this entry */
   extent: CacheEntryExtent;
-  /** The previous entry in the LRU list */
+  /** The previous entry in the LRU list (more recently used) */
   prev: MaybeCacheEntry;
-  /** The next entry in the LRU list */
+  /** The next entry in the LRU list (less recently used) */
   next: MaybeCacheEntry;
   /** The array which contains this entry */
   parentArr: CacheEntry[];
 };
 
-type VolumeCacheScale = {
+type CachedVolumeScale = {
   // Entries are indexed by T and C, then stored in lists of ZYX subsets
   data: CacheEntry[][][];
   size: VolumeScaleDims;
 };
 
 export type CachedVolume = {
-  scales: VolumeCacheScale[];
+  scales: CachedVolumeScale[];
   numTimes: number;
   numChannels: number;
 };
@@ -165,7 +165,8 @@ export default class VolumeCache {
 
   /**
    * Prepares a new cached volume with the specified channels, times, and scales.
-   * @returns {number} a unique ID which identifies the volume when interacting with it in the cache.
+   * @returns {CachedVolume} A container for cache entries for this volume.
+   * A `CachedVolume` may only be accessed or modified by passing it to this class's methods.
    */
   public addVolume(numChannels: number, numTimes: number, scaleDims: VolumeScaleDims[]): CachedVolume {
     const makeTCArray = (): CacheEntry[][][] => {
@@ -180,7 +181,7 @@ export default class VolumeCache {
       return tArr;
     };
 
-    const scales = scaleDims.map((size): VolumeCacheScale => ({ size, data: makeTCArray() }));
+    const scales = scaleDims.map((size): CachedVolumeScale => ({ size, data: makeTCArray() }));
     return { scales, numTimes, numChannels };
   }
 
