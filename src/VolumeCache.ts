@@ -61,8 +61,8 @@ const extentIsInvalid = ({ x, y, z }: CacheEntryExtent): boolean => dimInvalid(x
 const validExtentIsOutsideDims = (ext: CacheEntryExtent, dims: VolumeScaleDims): boolean =>
   ext.x[1] >= dims.x || ext.y[1] >= dims.y || ext.z[1] >= dims.z;
 
-/** Default: 100MB. Should be large enough to be useful but safe for most any computer that can run the app */
-const CACHE_MAX_SIZE_DEFAULT = 100_000_000;
+/** Default: 250MB. Should be large enough to be useful but safe for most any computer that can run the app */
+const CACHE_MAX_SIZE_DEFAULT = 250_000_000;
 
 export default class VolumeCache {
   public readonly maxSize: number;
