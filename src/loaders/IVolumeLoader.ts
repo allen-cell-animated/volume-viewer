@@ -12,6 +12,10 @@ export class LoadSpec {
   maxx = 0;
   maxy = 0;
   maxz = 0;
+
+  toString(): string {
+    return `${this.url}:${this.subpath}${this.scene}:${this.time}:x(${this.minx},${this.maxx}):y(${this.miny},${this.maxy}):z(${this.minz},${this.maxz})`;
+  }
 }
 
 export class VolumeDims {
