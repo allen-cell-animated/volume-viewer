@@ -61,6 +61,9 @@ const extentIsInvalid = ({ x, y, z }: CacheEntryExtent): boolean => dimInvalid(x
 const validExtentIsOutsideDims = (ext: CacheEntryExtent, dims: VolumeScaleDims): boolean =>
   ext.x[1] >= dims.x || ext.y[1] >= dims.y || ext.z[1] >= dims.z;
 
+/** Default: 100MB. Should be large enough to be useful but safe for most any computer that can run the app */
+const CACHE_MAX_SIZE_DEFAULT = 100_000_000;
+
 export default class VolumeCache {
   public readonly maxSize: number;
   private currentSize: number;
@@ -72,7 +75,7 @@ export default class VolumeCache {
   // TODO implement some way to manage used vs unused (prefetched) entries so
   // that prefetched entries which are never used don't get highest priority!
 
-  constructor(maxSize = 250_000_000) {
+  constructor(maxSize = CACHE_MAX_SIZE_DEFAULT) {
     this.maxSize = maxSize;
     this.currentSize = 0;
     this.currentEntries = 0;
