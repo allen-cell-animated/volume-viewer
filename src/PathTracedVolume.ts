@@ -33,7 +33,7 @@ import { isOrthographicCamera } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
-import { VolumeRenderSettings, cloneSettings, defaultVolumeRenderSettings, updateDefaultVolumeRenderSettings } from "./VolumeRenderSettings";
+import { VolumeRenderSettings, defaultVolumeRenderSettings, VolumeRenderSettingUtils } from "./VolumeRenderSettings";
 import VolumeDrawable from "./VolumeDrawable";
 
 export default class PathTracedVolume implements VolumeRenderImpl {
@@ -75,7 +75,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   constructor(volume: Volume, settings?: VolumeRenderSettings) {
     if (!settings) {
       settings = defaultVolumeRenderSettings();
-      updateDefaultVolumeRenderSettings(settings, volume);
+      VolumeRenderSettingUtils.updateWithVolume(settings, volume);
     }
     this.settings = settings;
 
@@ -349,7 +349,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     // rotation
     // gamma
     // ortho
-    const oldSettings = cloneSettings(this.settings);
+    const oldSettings = VolumeRenderSettingUtils.clone(this.settings);
     this.settings = newSettings;
 
     this.pathTracingUniforms.flipVolume.value = this.settings.flipAxes;

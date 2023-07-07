@@ -78,14 +78,25 @@ export const defaultVolumeRenderSettings = (): VolumeRenderSettings => {
   };
 };
 
-export function updateDefaultVolumeRenderSettings(renderSettings: VolumeRenderSettings, volume: Volume): void {
-  renderSettings.zSlice = Math.floor(volume.z / 2);
-  renderSettings.specular = new Array(volume.num_channels).fill([0, 0, 0]);
-  renderSettings.emissive = new Array(volume.num_channels).fill([0, 0, 0]);
-  renderSettings.glossiness = new Array(volume.num_channels).fill(0);
+export class VolumeRenderSettingUtils {
+
+  public static updateWithVolume(renderSettings: VolumeRenderSettings, volume: Volume): void {
+    renderSettings.zSlice = Math.floor(volume.z / 2);
+    renderSettings.specular = new Array(volume.num_channels).fill([0, 0, 0]);
+    renderSettings.emissive = new Array(volume.num_channels).fill([0, 0, 0]);
+    renderSettings.glossiness = new Array(volume.num_channels).fill(0);
+  }
+
+  public static isEqual(s1: VolumeRenderSettings, s2: VolumeRenderSettings): boolean {
+    for (let key of Object.keys(s1)) {
+      
+    }
+  }
+
+  // TODO: Replace JSON stringify/parsing
+  public static clone(sourceSettings: VolumeRenderSettings): VolumeRenderSettings {
+    return JSON.parse(JSON.stringify(sourceSettings));
+  }
 }
 
-// TODO: Replace JSON stringify/parsing
-export function cloneSettings(sourceSettings: VolumeRenderSettings): VolumeRenderSettings {
-  return JSON.parse(JSON.stringify(sourceSettings));
-}
+

@@ -30,7 +30,7 @@ import { ThreeJsPanel } from "./ThreeJsPanel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 
 import { Bounds, FuseChannel } from "./types";
-import { cloneSettings, defaultVolumeRenderSettings, updateDefaultVolumeRenderSettings, VolumeRenderSettings } from "./VolumeRenderSettings";
+import { defaultVolumeRenderSettings, VolumeRenderSettingUtils, VolumeRenderSettings } from "./VolumeRenderSettings";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
@@ -49,7 +49,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   constructor(volume: Volume, settings?: VolumeRenderSettings) {
     if (!settings) {
       settings = defaultVolumeRenderSettings();
-      updateDefaultVolumeRenderSettings(settings, volume);
+      VolumeRenderSettingUtils.updateWithVolume(settings, volume);
     }
     this.settings = settings;
 
@@ -93,7 +93,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   }
 
   public updateSettings(newSettings: VolumeRenderSettings) {
-    const oldSettings = cloneSettings(this.settings);
+    const oldSettings = VolumeRenderSettingUtils.clone(this.settings);
     this.settings = newSettings;
 
     this.geometryMesh.visible = this.settings.visible;

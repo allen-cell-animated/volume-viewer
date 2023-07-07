@@ -13,7 +13,7 @@ import Channel from "./Channel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 import { Pane } from "tweakpane";
 import Atlas2DSlice from "./Atlas2DSlice";
-import {VolumeRenderSettings, defaultVolumeRenderSettings, updateDefaultVolumeRenderSettings } from "./VolumeRenderSettings";
+import {VolumeRenderSettings, defaultVolumeRenderSettings, VolumeRenderSettingUtils } from "./VolumeRenderSettings";
 
 type ColorArray = [number, number, number];
 type ColorObject = { r: number; g: number; b: number };
@@ -55,7 +55,7 @@ export default class VolumeDrawable {
     this.volume = volume;
     // TODO: clone?
     this.settings = defaultVolumeRenderSettings();
-    updateDefaultVolumeRenderSettings(this.settings, volume);
+    VolumeRenderSettingUtils.updateWithVolume(this.settings, volume);
 
     this.onChannelDataReadyCallback = undefined;
 
