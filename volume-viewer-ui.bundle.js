@@ -21,19 +21,18 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 // Data and processing for a single channel
 var Channel = /*#__PURE__*/function () {
   function Channel(name) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Channel);
-
     this.loaded = false;
     this.imgData = {
       data: new Uint8ClampedArray(),
       width: 0,
       height: 0
-    }; // on gpu
+    };
 
+    // on gpu
     this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(new Uint8Array(), 0, 0);
     this.lutTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH), 256, 1, three__WEBPACK_IMPORTED_MODULE_3__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType);
     this.lutTexture.minFilter = this.lutTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_3__.LinearFilter;
@@ -41,33 +40,31 @@ var Channel = /*#__PURE__*/function () {
     this.volumeData = new Uint8Array();
     this.name = name;
     this.histogram = new _Histogram__WEBPACK_IMPORTED_MODULE_2__["default"](new Uint8Array());
-    this.dims = [0, 0, 0]; // intensity remapping lookup table
+    this.dims = [0, 0, 0];
 
-    this.lut = new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH).fill(0); // per-intensity color labeling (disabled initially)
-
-    this.colorPalette = new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH).fill(0); // store in 0..1 range. 1 means fully colorPalette, 0 means fully lut.
-
+    // intensity remapping lookup table
+    this.lut = new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH).fill(0);
+    // per-intensity color labeling (disabled initially)
+    this.colorPalette = new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH).fill(0);
+    // store in 0..1 range. 1 means fully colorPalette, 0 means fully lut.
     this.colorPaletteAlpha = 0.0;
-  } // rgbColor is [0..255, 0..255, 0..255]
+  }
 
-
+  // rgbColor is [0..255, 0..255, 0..255]
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Channel, [{
     key: "combineLuts",
     value: function combineLuts(rgbColor, out) {
       var ret = out ? out : new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH);
-
       if (!rgbColor) {
         return ret;
       }
-
-      var rgb = [rgbColor[0] / 255.0, rgbColor[1] / 255.0, rgbColor[2] / 255.0]; // colorPalette*alpha + rgb*lut*(1-alpha)
+      var rgb = [rgbColor[0] / 255.0, rgbColor[1] / 255.0, rgbColor[2] / 255.0];
+      // colorPalette*alpha + rgb*lut*(1-alpha)
       // a tiny bit faster for the edge cases
-
       if (this.colorPaletteAlpha === 1.0) {
         ret.set(this.colorPalette);
       } else if (this.colorPaletteAlpha === 0.0) {
         ret.set(this.lut);
-
         for (var i = 0; i < _Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH / 4; ++i) {
           ret[i * 4 + 0] *= rgb[0];
           ret[i * 4 + 1] *= rgb[1];
@@ -81,7 +78,6 @@ var Channel = /*#__PURE__*/function () {
           ret[_i * 4 + 3] = this.colorPalette[_i * 4 + 3] * this.colorPaletteAlpha + this.lut[_i * 4 + 3] * (1.0 - this.colorPaletteAlpha);
         }
       }
-
       this.lutTexture.image.data.set(ret);
       this.lutTexture.needsUpdate = true;
       return ret;
@@ -95,8 +91,9 @@ var Channel = /*#__PURE__*/function () {
     key: "getIntensity",
     value: function getIntensity(x, y, z) {
       return this.volumeData[x + y * this.dims[0] + z * (this.dims[0] * this.dims[1])];
-    } // how to index into tiled texture atlas
+    }
 
+    // how to index into tiled texture atlas
   }, {
     key: "getIntensityFromAtlas",
     value: function getIntensityFromAtlas(x, y, z) {
@@ -105,9 +102,10 @@ var Channel = /*#__PURE__*/function () {
       var tiley = Math.floor(z / numXtiles);
       var offset = tilex * this.dims[0] + x + (tiley * this.dims[1] + y) * this.imgData.width;
       return this.imgData.data[offset];
-    } // give the channel fresh data and initialize from that data
-    // data is formatted as a texture atlas where each tile is a z slice of the volume
+    }
 
+    // give the channel fresh data and initialize from that data
+    // data is formatted as a texture atlas where each tile is a z slice of the volume
   }, {
     key: "setBits",
     value: function setBits(bitsArray, w, h) {
@@ -126,11 +124,12 @@ var Channel = /*#__PURE__*/function () {
       this.loaded = true;
       this.histogram = new _Histogram__WEBPACK_IMPORTED_MODULE_2__["default"](bitsArray);
       this.lutGenerator_auto2();
-    } // let's rearrange this.imgData.data into a 3d array.
+    }
+
+    // let's rearrange this.imgData.data into a 3d array.
     // it is assumed to be coming in as a flat Uint8Array of size x*y*z
     // with x*y*z layout (first row of first plane is the first data in the layout,
     // then second row of first plane, etc)
-
   }, {
     key: "unpackVolumeFromAtlas",
     value: function unpackVolumeFromAtlas(x, y, z) {
@@ -140,26 +139,24 @@ var Channel = /*#__PURE__*/function () {
       var numXtiles = this.imgData.width / x;
       var atlasrow = this.imgData.width;
       var tilex = 0,
-          tiley = 0,
-          tileoffset = 0,
-          tilerowoffset = 0;
-
+        tiley = 0,
+        tileoffset = 0,
+        tilerowoffset = 0;
       for (var i = 0; i < z; ++i) {
         // tile offset
         tilex = i % numXtiles;
         tiley = Math.floor(i / numXtiles);
         tileoffset = tilex * x + tiley * y * atlasrow;
-
         for (var j = 0; j < y; ++j) {
           tilerowoffset = j * atlasrow;
-
           for (var k = 0; k < x; ++k) {
             this.volumeData[i * (x * y) + j * x + k] = volimgdata[tileoffset + tilerowoffset + k];
           }
         }
       }
-    } // give the channel fresh volume data and initialize from that data
+    }
 
+    // give the channel fresh volume data and initialize from that data
   }, {
     key: "setFromVolumeData",
     value: function setFromVolumeData(bitsArray, vx, vy, vz, ax, ay) {
@@ -169,8 +166,9 @@ var Channel = /*#__PURE__*/function () {
       this.loaded = true;
       this.histogram = new _Histogram__WEBPACK_IMPORTED_MODULE_2__["default"](this.volumeData);
       this.lutGenerator_auto2();
-    } // given this.volumeData, let's unpack it into a flat textureatlas and fill up this.imgData.
+    }
 
+    // given this.volumeData, let's unpack it into a flat textureatlas and fill up this.imgData.
   }, {
     key: "packToAtlas",
     value: function packToAtlas(vx, vy, vz, ax, ay) {
@@ -184,40 +182,36 @@ var Channel = /*#__PURE__*/function () {
         console.log("ERROR - atlas and volume dims are inconsistent");
         console.log(ax, ay, vx, vy, vz);
       }
-
       this.imgData = {
         width: ax,
         height: ay,
         data: new Uint8ClampedArray(ax * ay)
       };
-      this.imgData.data.fill(0); // deposit slices one by one into the imgData.data from volData.
+      this.imgData.data.fill(0);
 
+      // deposit slices one by one into the imgData.data from volData.
       var volimgdata = this.imgData.data;
       var x = vx,
-          y = vy,
-          z = vz;
+        y = vy,
+        z = vz;
       var numXtiles = this.imgData.width / x;
       var atlasrow = this.imgData.width;
       var tilex = 0,
-          tiley = 0,
-          tileoffset = 0,
-          tilerowoffset = 0;
-
+        tiley = 0,
+        tileoffset = 0,
+        tilerowoffset = 0;
       for (var i = 0; i < z; ++i) {
         // tile offset
         tilex = i % numXtiles;
         tiley = Math.floor(i / numXtiles);
         tileoffset = tilex * x + tiley * y * atlasrow;
-
         for (var j = 0; j < y; ++j) {
           tilerowoffset = j * atlasrow;
-
           for (var k = 0; k < x; ++k) {
             volimgdata[tileoffset + tilerowoffset + k] = this.volumeData[i * (x * y) + j * x + k];
           }
         }
       }
-
       this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(this.imgData.data, ax, ay);
       this.dataTexture.format = three__WEBPACK_IMPORTED_MODULE_3__.RedFormat;
       this.dataTexture.type = three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType;
@@ -225,14 +219,16 @@ var Channel = /*#__PURE__*/function () {
       this.dataTexture.minFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
       this.dataTexture.generateMipmaps = false;
       this.dataTexture.needsUpdate = true;
-    } // lut should be an uint8array of 256*4 elements (256 rgba8 values)
+    }
 
+    // lut should be an uint8array of 256*4 elements (256 rgba8 values)
   }, {
     key: "setLut",
     value: function setLut(lut) {
       this.lut = lut;
-    } // palette should be an uint8array of 256*4 elements (256 rgba8 values)
+    }
 
+    // palette should be an uint8array of 256*4 elements (256 rgba8 values)
   }, {
     key: "setColorPalette",
     value: function setColorPalette(palette) {
@@ -243,15 +239,14 @@ var Channel = /*#__PURE__*/function () {
     value: function setColorPaletteAlpha(alpha) {
       this.colorPaletteAlpha = alpha;
     }
-    /* eslint-disable @typescript-eslint/naming-convention */
 
+    /* eslint-disable @typescript-eslint/naming-convention */
   }, {
     key: "lutGenerator_windowLevel",
     value: function lutGenerator_windowLevel(wnd, lvl) {
       if (!this.loaded) {
         return;
       }
-
       var lut = this.histogram.lutGenerator_windowLevel(wnd, lvl);
       this.setLut(lut.lut);
     }
@@ -261,7 +256,6 @@ var Channel = /*#__PURE__*/function () {
       if (!this.loaded) {
         return;
       }
-
       var lut = this.histogram.lutGenerator_fullRange();
       this.setLut(lut.lut);
     }
@@ -271,7 +265,6 @@ var Channel = /*#__PURE__*/function () {
       if (!this.loaded) {
         return;
       }
-
       var lut = this.histogram.lutGenerator_dataRange();
       this.setLut(lut.lut);
     }
@@ -281,18 +274,17 @@ var Channel = /*#__PURE__*/function () {
       if (!this.loaded) {
         return;
       }
-
       var lut = this.histogram.lutGenerator_bestFit();
       this.setLut(lut.lut);
-    } // attempt to redo imagej's Auto
+    }
 
+    // attempt to redo imagej's Auto
   }, {
     key: "lutGenerator_auto2",
     value: function lutGenerator_auto2() {
       if (!this.loaded) {
         return;
       }
-
       var lut = this.histogram.lutGenerator_auto2();
       this.setLut(lut.lut);
     }
@@ -302,7 +294,6 @@ var Channel = /*#__PURE__*/function () {
       if (!this.loaded) {
         return;
       }
-
       var lut = this.histogram.lutGenerator_auto();
       this.setLut(lut.lut);
     }
@@ -312,7 +303,6 @@ var Channel = /*#__PURE__*/function () {
       if (!this.loaded) {
         return;
       }
-
       var lut = this.histogram.lutGenerator_equalize();
       this.setLut(lut.lut);
     }
@@ -322,17 +312,13 @@ var Channel = /*#__PURE__*/function () {
       if (!this.loaded) {
         return;
       }
-
       var lut = this.histogram.lutGenerator_percentiles(lo, hi);
       this.setLut(lut.lut);
     }
     /* eslint-enable @typescript-eslint/naming-convention */
-
   }]);
-
   return Channel;
 }();
-
 
 
 /***/ }),
@@ -352,12 +338,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 
 
-
 var FileSaver = /*#__PURE__*/function () {
   function FileSaver() {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, FileSaver);
   }
-
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(FileSaver, null, [{
     key: "save",
     value: function save(blob, fname) {
@@ -396,10 +380,8 @@ var FileSaver = /*#__PURE__*/function () {
       FileSaver.save(blob, filename);
     }
   }]);
-
   return FileSaver;
 }();
-
 
 
 /***/ }),
@@ -425,13 +407,11 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 // This is the owner of the fused RGBA volume texture atlas, and the mask texture atlas.
 // This module is responsible for updating the fused texture, given the read-only volume channel data.
 var FusedChannelData = /*#__PURE__*/function () {
   function FusedChannelData(atlasX, atlasY) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, FusedChannelData);
-
     // allow for resizing
     this.width = atlasX;
     this.height = atlasY;
@@ -440,8 +420,8 @@ var FusedChannelData = /*#__PURE__*/function () {
     this.maskTexture.magFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_4__.LinearFilter;
     this.maskTexture.minFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_4__.LinearFilter;
     this.maskTexture.wrapS = three__WEBPACK_IMPORTED_MODULE_3__.ClampToEdgeWrapping;
-    this.maskTexture.wrapT = three__WEBPACK_IMPORTED_MODULE_3__.ClampToEdgeWrapping; // for single-channel tightly packed array data:
-
+    this.maskTexture.wrapT = three__WEBPACK_IMPORTED_MODULE_3__.ClampToEdgeWrapping;
+    // for single-channel tightly packed array data:
     this.maskTexture.unpackAlignment = 1;
     this.fuseRequested = null;
     this.channelsDataToFuse = [];
@@ -481,7 +461,6 @@ var FusedChannelData = /*#__PURE__*/function () {
     });
     this.fuseGeometry = new three__WEBPACK_IMPORTED_MODULE_3__.PlaneGeometry(2, 2);
   }
-
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(FusedChannelData, [{
     key: "getFusedTexture",
     value: function getFusedTexture() {
@@ -499,23 +478,21 @@ var FusedChannelData = /*#__PURE__*/function () {
       // we can fuse if we have any loaded channels that are showing.
       // actually, we can fuse if no channels are showing (but they are loaded), too.
       var canFuse = false;
-
       for (var i = 0; i < combination.length; ++i) {
         var c = combination[i];
         var idx = c.chIndex;
-
         if (channels[idx].loaded) {
           // set the lut in this fuse combination.
           // can optimize by calling combineLuts more lazily
           c.lut = channels[idx].combineLuts(c.rgbColor, c.lut);
-          canFuse = true; //break;
+          canFuse = true;
+          //break;
         }
       }
 
       if (!canFuse) {
         return;
       }
-
       this.fuseRequested = combination;
       this.channelsDataToFuse = channels;
     }
@@ -524,26 +501,23 @@ var FusedChannelData = /*#__PURE__*/function () {
     value: function gpuFuse(renderer) {
       var combination = this.fuseRequested;
       var channels = this.channelsDataToFuse;
-
       if (!combination) {
         return;
-      } // webgl draw one mesh per channel to fuse.  clear texture to 0,0,0,0
+      }
 
-
+      // webgl draw one mesh per channel to fuse.  clear texture to 0,0,0,0
       this.fuseScene.clear();
-
       for (var i = 0; i < combination.length; ++i) {
         if (combination[i].rgbColor) {
-          var chIndex = combination[i].chIndex; // add a draw call per channel here.
+          var chIndex = combination[i].chIndex;
+          // add a draw call per channel here.
           // TODO create these at channel creation time!
-
           var mat = this.fuseMaterial.clone();
           mat.uniforms.lutSampler.value = channels[chIndex].lutTexture;
           mat.uniforms.srcTexture.value = channels[chIndex].dataTexture;
           this.fuseScene.add(new three__WEBPACK_IMPORTED_MODULE_3__.Mesh(this.fuseGeometry, mat));
         }
       }
-
       renderer.setRenderTarget(this.fuseRenderTarget);
       renderer.autoClearColor = true;
       var prevClearColor = new three__WEBPACK_IMPORTED_MODULE_3__.Color();
@@ -552,18 +526,18 @@ var FusedChannelData = /*#__PURE__*/function () {
       renderer.setClearColor(0x000000, 0);
       renderer.render(this.fuseScene, this.quadCamera);
       renderer.setRenderTarget(null);
-      renderer.setClearColor(prevClearColor, prevClearAlpha); // "dirty flag"
-
+      renderer.setClearColor(prevClearColor, prevClearAlpha);
+      // "dirty flag"
       this.fuseRequested = null;
-    } // currently only one channel can be selected to participate as a mask
+    }
 
+    // currently only one channel can be selected to participate as a mask
   }, {
     key: "setChannelAsMask",
     value: function setChannelAsMask(idx, channel) {
       if (!channel || !channel.loaded) {
         return false;
       }
-
       var datacopy = channel.imgData.data.buffer.slice(0);
       var maskData = {
         data: new Uint8ClampedArray(datacopy),
@@ -576,10 +550,8 @@ var FusedChannelData = /*#__PURE__*/function () {
       return true;
     }
   }]);
-
   return FusedChannelData;
 }();
-
 
 
 /***/ }),
@@ -593,7 +565,7 @@ var FusedChannelData = /*#__PURE__*/function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "LUT_ARRAY_LENGTH": () => (/* binding */ LUT_ARRAY_LENGTH),
+/* harmony export */   LUT_ARRAY_LENGTH: () => (/* binding */ LUT_ARRAY_LENGTH),
 /* harmony export */   "default": () => (/* binding */ Histogram)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
@@ -602,21 +574,18 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 function clamp(val, cmin, cmax) {
   return Math.min(Math.max(cmin, val), cmax);
 }
-
 function controlPointToRGBA(controlPoint) {
   return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], Math.floor(controlPoint.opacity * 255)];
 }
-
 function lerp(xmin, xmax, a) {
   return a * (xmax - xmin) + xmin;
 }
-
 var LUT_ENTRIES = 256;
 var LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
+
 /**
  * @typedef {Object} ControlPoint Used for the TF (transfer function) editor GUI.
  * Need to be converted to LUT for rendering.
@@ -631,7 +600,6 @@ var LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
  * (maps scalar intensity to a rgb color plus alpha, with each value from 0-255)
  * @property {Array.<ControlPoint>} controlPoints
  */
-
 /**
  * Builds a histogram with 256 bins from a data array. Assume data is 8 bit single channel grayscale.
  * @class
@@ -640,39 +608,37 @@ var LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
 var Histogram = /*#__PURE__*/function () {
   function Histogram(data) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Histogram);
-
     // no more than 2^32 pixels of any one intensity in the data!?!?!
     this.bins = new Uint32Array(256);
     this.bins.fill(0);
     this.dataMin = 255;
     this.dataMax = 0;
-    this.maxBin = 0; // build up the histogram
+    this.maxBin = 0;
 
+    // build up the histogram
     for (var i = 0; i < data.length; ++i) {
       this.bins[data[i]]++;
-    } // track the first and last nonzero bins with at least 1 sample
-
-
+    }
+    // track the first and last nonzero bins with at least 1 sample
     for (var _i = 1; _i < this.bins.length; _i++) {
       if (this.bins[_i] > 0) {
         this.dataMin = _i;
         break;
       }
     }
-
     for (var _i2 = this.bins.length - 1; _i2 >= 1; _i2--) {
       if (this.bins[_i2] > 0) {
         this.dataMax = _i2;
         break;
       }
-    } // total number of pixels minus the number of zero pixels
+    }
 
+    // total number of pixels minus the number of zero pixels
+    this.nonzeroPixelCount = data.length - this.bins[0];
 
-    this.nonzeroPixelCount = data.length - this.bins[0]; // get the bin with the most frequently occurring NONZERO value
-
+    // get the bin with the most frequently occurring NONZERO value
     this.maxBin = 1;
     var max = this.bins[1];
-
     for (var _i3 = 1; _i3 < this.bins.length; _i3++) {
       if (this.bins[_i3] > max) {
         this.maxBin = _i3;
@@ -680,27 +646,27 @@ var Histogram = /*#__PURE__*/function () {
       }
     }
   }
+
   /**
    * Return the min data value
    * @return {number}
    */
-
-
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Histogram, [{
     key: "getMin",
     value: function getMin() {
       return this.dataMin;
     }
+
     /**
      * Return the max data value
      * @return {number}
      */
-
   }, {
     key: "getMax",
     value: function getMax() {
       return this.dataMax;
     }
+
     /* eslint-disable @typescript-eslint/naming-convention */
 
     /**
@@ -709,7 +675,6 @@ var Histogram = /*#__PURE__*/function () {
      * @param {number} wnd in 0..1 range
      * @param {number} lvl in 0..1 range
      */
-
   }, {
     key: "lutGenerator_windowLevel",
     value: function lutGenerator_windowLevel(wnd, lvl) {
@@ -718,6 +683,7 @@ var Histogram = /*#__PURE__*/function () {
       var e = lvl + wnd * 0.5;
       return this.lutGenerator_minMax(b * 255, e * 255);
     }
+
     /**
      * Generate a piecewise linear lookup table that ramps up from 0 to 1 over the b to e domain.
      * If e === b, then we use a step function with f(b) = 0 and f(b + 1) = 1
@@ -734,7 +700,6 @@ var Histogram = /*#__PURE__*/function () {
      * @param {number} b
      * @param {number} e
      */
-
   }, {
     key: "lutGenerator_minMax",
     value: function lutGenerator_minMax(b, e) {
@@ -744,14 +709,11 @@ var Histogram = /*#__PURE__*/function () {
         e = b;
         b = tmp;
       }
-
       var lut = new Uint8Array(LUT_ARRAY_LENGTH);
-
       for (var x = 0; x < lut.length / 4; ++x) {
         lut[x * 4 + 0] = 255;
         lut[x * 4 + 1] = 255;
         lut[x * 4 + 2] = 255;
-
         if (x > e) {
           lut[x * 4 + 3] = 255;
         } else if (x <= b) {
@@ -764,9 +726,9 @@ var Histogram = /*#__PURE__*/function () {
             lut[x * 4 + 3] = lerp(0, 255, a);
           }
         }
-      } // Edge case: b and e are both out of bounds
+      }
 
-
+      // Edge case: b and e are both out of bounds
       if (b < 0 && e < 0) {
         return {
           lut: lut,
@@ -781,7 +743,6 @@ var Histogram = /*#__PURE__*/function () {
           }]
         };
       }
-
       if (b >= 255 && e >= 255) {
         return {
           lut: lut,
@@ -795,32 +756,32 @@ var Histogram = /*#__PURE__*/function () {
             color: [255, 255, 255]
           }]
         };
-      } // Generate 2 to 4 control points for a minMax LUT, from left to right
+      }
 
+      // Generate 2 to 4 control points for a minMax LUT, from left to right
+      var controlPoints = [];
 
-      var controlPoints = []; // Add starting point at x = 0
-
+      // Add starting point at x = 0
       var startVal = 0;
-
       if (b < 0) {
         startVal = -b / (e - b);
       }
-
       controlPoints.push({
         x: 0,
         opacity: startVal,
         color: [255, 255, 255]
-      }); // If b > 0, add another point at (b, 0)
+      });
 
+      // If b > 0, add another point at (b, 0)
       if (b > 0) {
         controlPoints.push({
           x: b,
           opacity: 0,
           color: [255, 255, 255]
         });
-      } // If e < 255, Add another point at (e, 1)
+      }
 
-
+      // If e < 255, Add another point at (e, 1)
       if (e < 255) {
         if (e === b) {
           // Use b + 0.5 as x value instead of e to create a near-vertical ramp
@@ -836,15 +797,13 @@ var Histogram = /*#__PURE__*/function () {
             color: [255, 255, 255]
           });
         }
-      } // Add ending point at x = 255
+      }
 
-
+      // Add ending point at x = 255
       var endVal = 1;
-
       if (e > 255) {
         endVal = (255 - b) / (e - b);
       }
-
       controlPoints.push({
         x: 255,
         opacity: endVal,
@@ -855,23 +814,23 @@ var Histogram = /*#__PURE__*/function () {
         controlPoints: controlPoints
       };
     }
+
     /**
      * Generate a straight 0-1 linear identity lookup table
      * @return {Lut}
      */
-
   }, {
     key: "lutGenerator_fullRange",
     value: function lutGenerator_fullRange() {
-      var lut = new Uint8Array(LUT_ARRAY_LENGTH); // simple linear mapping for actual range
+      var lut = new Uint8Array(LUT_ARRAY_LENGTH);
 
+      // simple linear mapping for actual range
       for (var x = 0; x < lut.length / 4; ++x) {
         lut[x * 4 + 0] = 255;
         lut[x * 4 + 1] = 255;
         lut[x * 4 + 2] = 255;
         lut[x * 4 + 3] = x;
       }
-
       return {
         lut: lut,
         controlPoints: [{
@@ -885,11 +844,11 @@ var Histogram = /*#__PURE__*/function () {
         }]
       };
     }
+
     /**
      * Generate a lookup table over the min to max range of the data values
      * @return {Lut}
      */
-
   }, {
     key: "lutGenerator_dataRange",
     value: function lutGenerator_dataRange() {
@@ -898,16 +857,16 @@ var Histogram = /*#__PURE__*/function () {
       var e = this.dataMax;
       return this.lutGenerator_minMax(b, e);
     }
+
     /**
      * Generate a lookup table with a different color per intensity value
      * @return {Lut}
      */
-
   }, {
     key: "lutGenerator_labelColors",
     value: function lutGenerator_labelColors() {
-      var lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0); // TODO specify type for control point
-
+      var lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
+      // TODO specify type for control point
       var controlPoints = [];
       controlPoints.push({
         x: 0,
@@ -921,9 +880,10 @@ var Histogram = /*#__PURE__*/function () {
       var r = 0;
       var g = 0;
       var b = 0;
-      var a = 0; // assumes exactly one bin per intensity value?
-      // skip zero!!!
+      var a = 0;
 
+      // assumes exactly one bin per intensity value?
+      // skip zero!!!
       for (var i = 1; i < this.bins.length; ++i) {
         if (this.bins[i] > 0) {
           var rgb = (0,_constants_colors__WEBPACK_IMPORTED_MODULE_2__.getColorByChannelIndex)(i);
@@ -941,9 +901,8 @@ var Histogram = /*#__PURE__*/function () {
           g = 0;
           b = 0;
           a = 0;
-        } // if current control point is same as last one don't add it
-
-
+        }
+        // if current control point is same as last one don't add it
         if (r !== lastr || g !== lastg || b !== lastb || a !== lasta) {
           if (lasta === 0) {
             controlPoints.push({
@@ -952,7 +911,6 @@ var Histogram = /*#__PURE__*/function () {
               color: [lastr, lastg, lastb]
             });
           }
-
           controlPoints.push({
             x: i,
             opacity: a,
@@ -964,18 +922,17 @@ var Histogram = /*#__PURE__*/function () {
           lasta = a;
         }
       }
-
       return {
         lut: lut,
         controlPoints: controlPoints
       };
     }
+
     /**
      * Find the bin that contains the percentage of pixels below it
      * @return {number}
      * @param {number} pct
      */
-
   }, {
     key: "findBinOfPercentile",
     value: function findBinOfPercentile(pct) {
@@ -983,24 +940,21 @@ var Histogram = /*#__PURE__*/function () {
       var limit = pixcount * pct;
       var i = 0;
       var count = 0;
-
       for (i = 0; i < this.bins.length; ++i) {
         count += this.bins[i];
-
         if (count > limit) {
           break;
         }
       }
-
       return i;
     }
+
     /**
      * Generate a lookup table based on histogram percentiles
      * @return {Lut}
      * @param {number} pmin
      * @param {number} pmax
      */
-
   }, {
     key: "lutGenerator_percentiles",
     value: function lutGenerator_percentiles(pmin, pmax) {
@@ -1009,73 +963,65 @@ var Histogram = /*#__PURE__*/function () {
       var hmax = this.findBinOfPercentile(pmax);
       return this.lutGenerator_minMax(hmin, hmax);
     }
+
     /**
      * Generate a 10% / 90% lookup table
      * @return {Lut}
      */
-
   }, {
     key: "lutGenerator_bestFit",
     value: function lutGenerator_bestFit() {
-      var pixcount = this.nonzeroPixelCount; //const pixcount = this.imgData.data.length;
-
+      var pixcount = this.nonzeroPixelCount;
+      //const pixcount = this.imgData.data.length;
       var limit = pixcount / 10;
       var i = 0;
       var count = 0;
-
       for (i = 1; i < this.bins.length; ++i) {
         count += this.bins[i];
-
         if (count > limit) {
           break;
         }
       }
-
       var hmin = i;
       count = 0;
-
       for (i = this.bins.length - 1; i >= 1; --i) {
         count += this.bins[i];
-
         if (count > limit) {
           break;
         }
       }
-
       var hmax = i;
       return this.lutGenerator_minMax(hmin, hmax);
     }
+
     /**
      * Generate a lookup table attempting to replicate ImageJ's "Auto" button
      * @return {Lut}
      */
-
   }, {
     key: "lutGenerator_auto2",
     value: function lutGenerator_auto2() {
       var AUTO_THRESHOLD = 5000;
-      var pixcount = this.nonzeroPixelCount; //  const pixcount = this.imgData.data.length;
-
+      var pixcount = this.nonzeroPixelCount;
+      //  const pixcount = this.imgData.data.length;
       var limit = pixcount / 10;
-      var threshold = pixcount / AUTO_THRESHOLD; // this will skip the "zero" bin which contains pixels of zero intensity.
+      var threshold = pixcount / AUTO_THRESHOLD;
 
+      // this will skip the "zero" bin which contains pixels of zero intensity.
       var hmin = this.bins.length - 1;
       var hmax = 1;
-
       for (var i = 1; i < this.bins.length; ++i) {
         if (this.bins[i] > threshold && this.bins[i] <= limit) {
           hmin = i;
           break;
         }
       }
-
       for (var _i4 = this.bins.length - 1; _i4 >= 1; --_i4) {
         if (this.bins[_i4] > threshold && this.bins[_i4] <= limit) {
           hmax = _i4;
           break;
         }
       }
-
       if (hmax < hmin) {
         // just reset to whole range in this case.
         return this.lutGenerator_fullRange();
@@ -1083,11 +1029,11 @@ var Histogram = /*#__PURE__*/function () {
         return this.lutGenerator_minMax(hmin, hmax);
       }
     }
+
     /**
      * Generate a lookup table using a percentile of the most commonly occurring value
      * @return {Lut}
      */
-
   }, {
     key: "lutGenerator_auto",
     value: function lutGenerator_auto() {
@@ -1097,49 +1043,43 @@ var Histogram = /*#__PURE__*/function () {
       var th = Math.floor(this.bins[this.maxBin] * PERCENTAGE);
       var b = 0;
       var e = this.bins.length - 1;
-
       for (var x = 1; x < this.bins.length; ++x) {
         if (this.bins[x] > th) {
           b = x;
           break;
         }
       }
-
       for (var _x = this.bins.length - 1; _x >= 1; --_x) {
         if (this.bins[_x] > th) {
           e = _x;
           break;
         }
       }
-
       return this.lutGenerator_minMax(b, e);
     }
+
     /**
      * Generate an "equalized" lookup table
      * @return {Lut}
      */
-
   }, {
     key: "lutGenerator_equalize",
     value: function lutGenerator_equalize() {
       var map = [];
-
       for (var i = 0; i < this.bins.length; ++i) {
         map[i] = 0;
-      } // summed area table?
+      }
 
-
+      // summed area table?
       map[0] = this.bins[0];
-
       for (var _i5 = 1; _i5 < this.bins.length; ++_i5) {
         map[_i5] = map[_i5 - 1] + this.bins[_i5];
       }
-
       var div = map[map.length - 1] - map[0];
-
       if (div > 0) {
-        var lut = new Uint8Array(LUT_ARRAY_LENGTH); // compute lut and track control points for the piecewise linear sections
+        var lut = new Uint8Array(LUT_ARRAY_LENGTH);
 
+        // compute lut and track control points for the piecewise linear sections
         var lutControlPoints = [{
           x: 0,
           opacity: 0,
@@ -1153,7 +1093,6 @@ var Histogram = /*#__PURE__*/function () {
         var lastSlope = 0;
         var opacity = 0;
         var lastOpacity = 0;
-
         for (var _i6 = 1; _i6 < lut.length / 4; ++_i6) {
           lut[_i6 * 4 + 0] = 255;
           lut[_i6 * 4 + 1] = 255;
@@ -1161,8 +1100,8 @@ var Histogram = /*#__PURE__*/function () {
           lastOpacity = opacity;
           opacity = clamp(Math.round(255 * (map[_i6] - map[0])), 0, 255);
           lut[_i6 * 4 + 3] = opacity;
-          slope = opacity - lastOpacity; // if map[i]-map[i-1] is the same as map[i+1]-map[i] then we are in a linear segment and do not need a new control point
-
+          slope = opacity - lastOpacity;
+          // if map[i]-map[i-1] is the same as map[i+1]-map[i] then we are in a linear segment and do not need a new control point
           if (slope != lastSlope) {
             lutControlPoints.push({
               x: _i6 - 1,
@@ -1172,7 +1111,6 @@ var Histogram = /*#__PURE__*/function () {
             lastSlope = slope;
           }
         }
-
         lutControlPoints.push({
           x: 255,
           opacity: 1,
@@ -1186,57 +1124,55 @@ var Histogram = /*#__PURE__*/function () {
         // just reset to whole range in this case...?
         return this.lutGenerator_fullRange();
       }
-    } // @param {Object[]} controlPoints - array of {x:number 0..255, opacity:number 0..1, color:array of 3 numbers 0..255}
-    // @return {Uint8Array} array of length 256*4 representing the rgba values of the gradient
+    }
 
+    // @param {Object[]} controlPoints - array of {x:number 0..255, opacity:number 0..1, color:array of 3 numbers 0..255}
+    // @return {Uint8Array} array of length 256*4 representing the rgba values of the gradient
   }, {
     key: "lutGenerator_fromControlPoints",
     value: function lutGenerator_fromControlPoints(controlPoints) {
       var lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
-
       if (controlPoints.length === 0) {
-        return {
-          lut: lut,
-          controlPoints: controlPoints
-        };
-      } // ensure they are sorted in ascending order of x
-
-
-      controlPoints.sort(function (a, b) {
-        return a.x - b.x;
-      }); // special case only one control point.
-
-      if (controlPoints.length === 1) {
-        var rgba = controlPointToRGBA(controlPoints[0]); // copy val from x to 255.
-
-        for (var x = controlPoints[0].x; x < 256; ++x) {
-          lut[x * 4 + 0] = rgba[0];
-          lut[x * 4 + 1] = rgba[1];
-          lut[x * 4 + 2] = rgba[2];
-          lut[x * 4 + 3] = rgba[3];
-        }
-
         return {
           lut: lut,
           controlPoints: controlPoints
         };
       }
 
+      // ensure they are sorted in ascending order of x
+      controlPoints.sort(function (a, b) {
+        return a.x - b.x;
+      });
+
+      // special case only one control point.
+      if (controlPoints.length === 1) {
+        var rgba = controlPointToRGBA(controlPoints[0]);
+        // copy val from x to 255.
+        for (var x = controlPoints[0].x; x < 256; ++x) {
+          lut[x * 4 + 0] = rgba[0];
+          lut[x * 4 + 1] = rgba[1];
+          lut[x * 4 + 2] = rgba[2];
+          lut[x * 4 + 3] = rgba[3];
+        }
+        return {
+          lut: lut,
+          controlPoints: controlPoints
+        };
+      }
       var c0 = controlPoints[0];
       var c1 = controlPoints[1];
       var color0 = controlPointToRGBA(c0);
       var color1 = controlPointToRGBA(c1);
       var lastIndex = 1;
-      var a = 0; // if the first control point is after 0, act like there are 0s going all the way up to it.
+      var a = 0;
+      // if the first control point is after 0, act like there are 0s going all the way up to it.
       // or lerp up to the first point?
-
       for (var _x2 = c0.x; _x2 < 256; ++_x2) {
         while (_x2 > c1.x) {
           // advance control points
           c0 = c1;
           color0 = color1;
           lastIndex++;
-
           if (lastIndex >= controlPoints.length) {
             // if the last control point is before 255, then we want to continue its value all the way to 255.
             c1 = {
@@ -1247,36 +1183,29 @@ var Histogram = /*#__PURE__*/function () {
           } else {
             c1 = controlPoints[lastIndex];
           }
-
           color1 = controlPointToRGBA(c1);
         }
-
         if (c1.x === c0.x) {
           // use c1
           a = 1.0;
         } else {
           a = (_x2 - c0.x) / (c1.x - c0.x);
-        } // lerp the colors
-
-
+        }
+        // lerp the colors
         lut[_x2 * 4 + 0] = lerp(color0[0], color1[0], a);
         lut[_x2 * 4 + 1] = lerp(color0[1], color1[1], a);
         lut[_x2 * 4 + 2] = lerp(color0[2], color1[2], a);
         lut[_x2 * 4 + 3] = lerp(color0[3], color1[3], a);
       }
-
       return {
         lut: lut,
         controlPoints: controlPoints
       };
     }
     /* eslint-enable @typescript-eslint/naming-convention */
-
   }]);
-
   return Histogram;
 }();
-
 
 
 
@@ -1291,9 +1220,9 @@ var Histogram = /*#__PURE__*/function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "AREA_LIGHT": () => (/* binding */ AREA_LIGHT),
-/* harmony export */   "Light": () => (/* binding */ Light),
-/* harmony export */   "SKY_LIGHT": () => (/* binding */ SKY_LIGHT)
+/* harmony export */   AREA_LIGHT: () => (/* binding */ AREA_LIGHT),
+/* harmony export */   Light: () => (/* binding */ Light),
+/* harmony export */   SKY_LIGHT: () => (/* binding */ SKY_LIGHT)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
@@ -1307,7 +1236,6 @@ var Light = /*#__PURE__*/function () {
   // type = 1 for sky light, 0 for area light
   function Light(type) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Light);
-
     this.mTheta = 14 * Math.PI / 180.0;
     this.mPhi = 54 * Math.PI / 180.0;
     this.mWidth = 1.0;
@@ -1323,62 +1251,61 @@ var Light = /*#__PURE__*/function () {
     this.mColor = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(75, 75, 75);
     this.mColorTop = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0.3, 0.3, 0.3);
     this.mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0.3, 0.3, 0.3);
-    this.mColorBottom = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0.3, 0.3, 0.3); // type = 1 for sky light, 0 for area light
+    this.mColorBottom = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0.3, 0.3, 0.3);
 
-    this.mT = type; // secondary properties:
+    // type = 1 for sky light, 0 for area light
+    this.mT = type;
 
+    // secondary properties:
     this.mN = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 1);
     this.mU = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(1, 0, 0);
     this.mV = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 1, 0);
     this.update(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0));
   }
-
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Light, [{
     key: "update",
     value: function update(targetPoint, cameraMatrix) {
       this.mHalfWidth = 0.5 * this.mWidth;
       this.mHalfHeight = 0.5 * this.mHeight;
-      this.mTarget.copy(targetPoint); // Determine light position
+      this.mTarget.copy(targetPoint);
 
+      // Determine light position
       this.mP.x = this.mDistance * Math.sin(this.mPhi) * Math.sin(this.mTheta);
       this.mP.z = this.mDistance * Math.sin(this.mPhi) * Math.cos(this.mTheta);
       this.mP.y = this.mDistance * Math.cos(this.mPhi);
       this.mP.add(this.mTarget);
-
       if (cameraMatrix) {
         // We want to treat the lights as positioned relative to the camera, so camera rotations should not move them.
         // In other words, when we rotate the camera, it should seem like we are tumbling the volume under fixed lighting.
         this.mP.applyMatrix4(cameraMatrix);
         this.mTarget.applyMatrix4(cameraMatrix);
-      } // Determine area
+      }
 
-
+      // Determine area
       if (this.mT === AREA_LIGHT) {
         this.mArea = this.mWidth * this.mHeight;
         this.mAreaPdf = 1.0 / this.mArea;
       } else if (this.mT === SKY_LIGHT) {
-        this.mP.copy(targetPoint); // shift by nonzero amount
-
+        this.mP.copy(targetPoint);
+        // shift by nonzero amount
         this.mTarget.addVectors(this.mP, new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0.0, 0.0, 1.0));
         this.mSkyRadius = 1000.0 * targetPoint.length() * 2.0;
         this.mArea = 4.0 * Math.PI * Math.pow(this.mSkyRadius, 2.0);
         this.mAreaPdf = 1.0 / this.mArea;
-      } // Compute orthogonal basis frame
+      }
 
-
-      this.mN.subVectors(this.mTarget, this.mP).normalize(); // if N and "up" are parallel, then just choose a different "up"
-
+      // Compute orthogonal basis frame
+      this.mN.subVectors(this.mTarget, this.mP).normalize();
+      // if N and "up" are parallel, then just choose a different "up"
       if (this.mN.y === 1.0 || this.mN.y === -1.0) {
         this.mU.crossVectors(this.mN, new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(1.0, 0.0, 0.0)).normalize();
       } else {
         // standard "up" vector
         this.mU.crossVectors(this.mN, new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0.0, 1.0, 0.0)).normalize();
       }
-
       this.mV.crossVectors(this.mN, this.mU).normalize();
     }
   }]);
-
   return Light;
 }();
 
@@ -1393,10 +1320,10 @@ var Light = /*#__PURE__*/function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "MarchingCubes": () => (/* binding */ MarchingCubes),
+/* harmony export */   MarchingCubes: () => (/* binding */ MarchingCubes),
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__),
-/* harmony export */   "edgeTable": () => (/* binding */ edgeTable),
-/* harmony export */   "triTable": () => (/* binding */ triTable)
+/* harmony export */   edgeTable: () => (/* binding */ edgeTable),
+/* harmony export */   triTable: () => (/* binding */ triTable)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
@@ -1411,44 +1338,39 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__["default"])(this, result); }; }
-
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
-
 /**
  * Port of http://webglsamples.org/blob/blob.html
  */
+
 // MODIFIED 2018-2022 BY DANIELT@ALLENINSTITUTE.ORG TO ACCEPT enableColors, enableNormals, volumeFieldRef options
 
 
 var MarchingCubes = /*#__PURE__*/function (_Mesh) {
   (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_3__["default"])(MarchingCubes, _Mesh);
-
   var _super = _createSuper(MarchingCubes);
-
   //4096; // TODO: find the fastest size for this buffer
+
   function MarchingCubes(resolution, material, enableUvs, enableColors, enableNormals, volumeFieldRef) {
     var _this;
-
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, MarchingCubes);
-
     var geometry = new three__WEBPACK_IMPORTED_MODULE_6__.BufferGeometry();
     _this = _super.call(this, geometry, material);
     _this.maxCount = 16384; //4096; // TODO: find the fastest size for this buffer
-
     _this.count = 0;
     _this.hasPositions = false;
     _this.hasNormals = false;
     _this.hasColors = false;
     _this.hasUvs = false;
+    var scope = (0,_babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_2__["default"])(_this);
 
-    var scope = (0,_babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_2__["default"])(_this); // basic default init; these should be reset later.
+    // basic default init; these should be reset later.
     //this.position = new Vector3();
     //this.scale = new Vector3(1, 1, 1);
+    _this.isovalue = 0;
 
-
-    _this.isovalue = 0; // temp buffers used in polygonize
+    // temp buffers used in polygonize
 
     var vlist = new Float32Array(12 * 3);
     var nlist = new Float32Array(12 * 3);
@@ -1479,19 +1401,24 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
     _this.positionArray = new Float32Array();
     _this.normalArray = new Float32Array();
     _this.uvArray = new Float32Array();
-    _this.colorArray = new Float32Array(); // functions have to be object properties
+    _this.colorArray = new Float32Array();
+
+    // functions have to be object properties
     // prototype functions kill performance
     // (tested and it was 4x slower !!!)
 
     _this.init = function (resolution, volumeFieldRef) {
       this.dirty = true;
-      this.resolution = resolution; // parameters
+      this.resolution = resolution;
+
+      // parameters
 
       this.isovalue = 0.05;
       this.stepSizeX = 1;
       this.stepSizeY = 1;
-      this.stepSizeZ = 1; // size of field, 32 is pushing it in Javascript :)
+      this.stepSizeZ = 1;
 
+      // size of field, 32 is pushing it in Javascript :)
       this.sizeX = resolution[0];
       this.sizeY = resolution[1];
       this.sizeZ = resolution[2];
@@ -1500,54 +1427,52 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
       this.size3 = this.sizeXYZ;
       this.halfsizeX = this.sizeX / 2.0;
       this.halfsizeY = this.sizeY / 2.0;
-      this.halfsizeZ = this.sizeZ / 2.0; // deltas
+      this.halfsizeZ = this.sizeZ / 2.0;
+
+      // deltas
 
       this.deltaX = 2.0 / this.sizeX;
       this.deltaY = 2.0 / this.sizeY;
       this.deltaZ = 2.0 / this.sizeZ;
       this.yd = this.sizeX;
       this.zd = this.sizeXY;
-
       if (volumeFieldRef) {
         this.field = volumeFieldRef;
       } else {
         this.field = new Float32Array(this.size3);
       }
+      this.normal_cache = new Float32Array(this.size3 * 3);
 
-      this.normal_cache = new Float32Array(this.size3 * 3); // immediate render mode simulator
+      // immediate render mode simulator
 
       this.maxCount = 16384; //4096; // TODO: find the fastest size for this buffer
-
       this.count = 0;
       this.hasPositions = false;
       this.hasNormals = false;
       this.hasColors = false;
       this.hasUvs = false;
       this.positionArray = new Float32Array(this.maxCount * 3);
-
       if (this.enableNormals) {
         this.normalArray = new Float32Array(this.maxCount * 3);
       }
-
       if (this.enableUvs) {
         this.uvArray = new Float32Array(this.maxCount * 2);
       }
-
       if (this.enableColors) {
         this.colorArray = new Float32Array(this.maxCount * 3);
       }
-    }; ///////////////////////
+    };
+
+    ///////////////////////
     // Polygonization
     ///////////////////////
-
 
     function lerp(a, b, t) {
       return a + (b - a) * t;
     }
-
     function VIntX(q, offset, isol, x, y, z, valp1, valp2) {
       var mu = (isol - valp1) / (valp2 - valp1),
-          nc = scope.normal_cache;
+        nc = scope.normal_cache;
       vlist[offset + 0] = x + mu * scope.deltaX * scope.stepSizeX;
       vlist[offset + 1] = y;
       vlist[offset + 2] = z;
@@ -1555,10 +1480,9 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
       nlist[offset + 1] = lerp(nc[q + 1], nc[q + 4], mu);
       nlist[offset + 2] = lerp(nc[q + 2], nc[q + 5], mu);
     }
-
     function VIntY(q, offset, isol, x, y, z, valp1, valp2) {
       var mu = (isol - valp1) / (valp2 - valp1),
-          nc = scope.normal_cache;
+        nc = scope.normal_cache;
       vlist[offset + 0] = x;
       vlist[offset + 1] = y + mu * scope.deltaY * scope.stepSizeY;
       vlist[offset + 2] = z;
@@ -1567,10 +1491,9 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
       nlist[offset + 1] = lerp(nc[q + 1], nc[q2 + 1], mu);
       nlist[offset + 2] = lerp(nc[q + 2], nc[q2 + 2], mu);
     }
-
     function VIntZ(q, offset, isol, x, y, z, valp1, valp2) {
       var mu = (isol - valp1) / (valp2 - valp1),
-          nc = scope.normal_cache;
+        nc = scope.normal_cache;
       vlist[offset + 0] = x;
       vlist[offset + 1] = y;
       vlist[offset + 2] = z + mu * scope.deltaZ * scope.stepSizeZ;
@@ -1579,37 +1502,36 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
       nlist[offset + 1] = lerp(nc[q + 1], nc[q2 + 1], mu);
       nlist[offset + 2] = lerp(nc[q + 2], nc[q2 + 2], mu);
     }
-
     function compNorm(q) {
       var q3 = q * 3;
-
       if (scope.normal_cache[q3] === 0.0) {
         scope.normal_cache[q3 + 0] = scope.field[q - 1 * scope.stepSizeX] - scope.field[q + 1 * scope.stepSizeX];
         scope.normal_cache[q3 + 1] = scope.field[q - scope.yd * scope.stepSizeY] - scope.field[q + scope.yd * scope.stepSizeY];
         scope.normal_cache[q3 + 2] = scope.field[q - scope.zd * scope.stepSizeZ] - scope.field[q + scope.zd * scope.stepSizeZ];
       }
-    } // Returns total number of triangles. Fills triangles.
-    // (this is where most of time is spent - it's inner work of O(n3) loop )
+    }
 
+    // Returns total number of triangles. Fills triangles.
+    // (this is where most of time is spent - it's inner work of O(n3) loop )
 
     function polygonize(fx, fy, fz, q, isol, renderCallback) {
       // cache indices
       var q1 = q + 1 * scope.stepSizeX,
-          qy = q + scope.yd * scope.stepSizeY,
-          qz = q + scope.zd * scope.stepSizeZ,
-          q1y = q1 + scope.yd * scope.stepSizeY,
-          q1z = q1 + scope.zd * scope.stepSizeZ,
-          qyz = q + scope.yd * scope.stepSizeY + scope.zd * scope.stepSizeZ,
-          q1yz = q1 + scope.yd * scope.stepSizeY + scope.zd * scope.stepSizeZ;
+        qy = q + scope.yd * scope.stepSizeY,
+        qz = q + scope.zd * scope.stepSizeZ,
+        q1y = q1 + scope.yd * scope.stepSizeY,
+        q1z = q1 + scope.zd * scope.stepSizeZ,
+        qyz = q + scope.yd * scope.stepSizeY + scope.zd * scope.stepSizeZ,
+        q1yz = q1 + scope.yd * scope.stepSizeY + scope.zd * scope.stepSizeZ;
       var cubeindex = 0;
       var field0 = scope.field[q],
-          field1 = scope.field[q1],
-          field2 = scope.field[qy],
-          field3 = scope.field[q1y],
-          field4 = scope.field[qz],
-          field5 = scope.field[q1z],
-          field6 = scope.field[qyz],
-          field7 = scope.field[q1yz];
+        field1 = scope.field[q1],
+        field2 = scope.field[qy],
+        field3 = scope.field[q1y],
+        field4 = scope.field[qz],
+        field5 = scope.field[q1z],
+        field6 = scope.field[qyz],
+        field7 = scope.field[q1yz];
       if (field0 < isol) cubeindex |= 1;
       if (field1 < isol) cubeindex |= 2;
       if (field2 < isol) cubeindex |= 8;
@@ -1617,98 +1539,96 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
       if (field4 < isol) cubeindex |= 16;
       if (field5 < isol) cubeindex |= 32;
       if (field6 < isol) cubeindex |= 128;
-      if (field7 < isol) cubeindex |= 64; // if cube is entirely in/out of the surface - bail, nothing to draw
+      if (field7 < isol) cubeindex |= 64;
+
+      // if cube is entirely in/out of the surface - bail, nothing to draw
 
       var bits = edgeTable[cubeindex];
       if (bits === 0) return 0;
       var dx = scope.deltaX * scope.stepSizeX,
-          dy = scope.deltaY * scope.stepSizeY,
-          dz = scope.deltaZ * scope.stepSizeZ,
-          fx2 = fx + dx,
-          fy2 = fy + dy,
-          fz2 = fz + dz; // top of the cube
+        dy = scope.deltaY * scope.stepSizeY,
+        dz = scope.deltaZ * scope.stepSizeZ,
+        fx2 = fx + dx,
+        fy2 = fy + dy,
+        fz2 = fz + dz;
+
+      // top of the cube
 
       if (bits & 1) {
         compNorm(q);
         compNorm(q1);
         VIntX(q * 3, 0, isol, fx, fy, fz, field0, field1);
       }
-
       if (bits & 2) {
         compNorm(q1);
         compNorm(q1y);
         VIntY(q1 * 3, 3, isol, fx2, fy, fz, field1, field3);
       }
-
       if (bits & 4) {
         compNorm(qy);
         compNorm(q1y);
         VIntX(qy * 3, 6, isol, fx, fy2, fz, field2, field3);
       }
-
       if (bits & 8) {
         compNorm(q);
         compNorm(qy);
         VIntY(q * 3, 9, isol, fx, fy, fz, field0, field2);
-      } // bottom of the cube
+      }
 
+      // bottom of the cube
 
       if (bits & 16) {
         compNorm(qz);
         compNorm(q1z);
         VIntX(qz * 3, 12, isol, fx, fy, fz2, field4, field5);
       }
-
       if (bits & 32) {
         compNorm(q1z);
         compNorm(q1yz);
         VIntY(q1z * 3, 15, isol, fx2, fy, fz2, field5, field7);
       }
-
       if (bits & 64) {
         compNorm(qyz);
         compNorm(q1yz);
         VIntX(qyz * 3, 18, isol, fx, fy2, fz2, field6, field7);
       }
-
       if (bits & 128) {
         compNorm(qz);
         compNorm(qyz);
         VIntY(qz * 3, 21, isol, fx, fy, fz2, field4, field6);
-      } // vertical lines of the cube
+      }
 
+      // vertical lines of the cube
 
       if (bits & 256) {
         compNorm(q);
         compNorm(qz);
         VIntZ(q * 3, 24, isol, fx, fy, fz, field0, field4);
       }
-
       if (bits & 512) {
         compNorm(q1);
         compNorm(q1z);
         VIntZ(q1 * 3, 27, isol, fx2, fy, fz, field1, field5);
       }
-
       if (bits & 1024) {
         compNorm(q1y);
         compNorm(q1yz);
         VIntZ(q1y * 3, 30, isol, fx2, fy2, fz, field3, field7);
       }
-
       if (bits & 2048) {
         compNorm(qy);
         compNorm(qyz);
         VIntZ(qy * 3, 33, isol, fx, fy2, fz, field2, field6);
       }
-
       cubeindex <<= 4; // re-purpose cubeindex into an offset into triTable
 
       var o1,
-          o2,
-          o3,
-          numtris = 0,
-          i = 0; // here is where triangles are created
+        o2,
+        o3,
+        numtris = 0,
+        i = 0;
+
+      // here is where triangles are created
 
       while (triTable[cubeindex + i] != -1) {
         o1 = cubeindex + i;
@@ -1718,15 +1638,17 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
         i += 3;
         numtris++;
       }
-
       return numtris;
-    } /////////////////////////////////////
+    }
+
+    /////////////////////////////////////
     // Immediate render mode simulator
     /////////////////////////////////////
 
-
     function posnormtriv(pos, norm, o1, o2, o3, renderCallback) {
-      var c = scope.count * 3; // positions
+      var c = scope.count * 3;
+
+      // positions
 
       scope.positionArray[c + 0] = pos[o1];
       scope.positionArray[c + 1] = pos[o1 + 1];
@@ -1736,7 +1658,9 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
       scope.positionArray[c + 5] = pos[o2 + 2];
       scope.positionArray[c + 6] = pos[o3];
       scope.positionArray[c + 7] = pos[o3 + 1];
-      scope.positionArray[c + 8] = pos[o3 + 2]; // normals
+      scope.positionArray[c + 8] = pos[o3 + 2];
+
+      // normals
 
       if (scope.enableNormals) {
         scope.normalArray[c + 0] = norm[o1];
@@ -1748,8 +1672,9 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
         scope.normalArray[c + 6] = norm[o3];
         scope.normalArray[c + 7] = norm[o3 + 1];
         scope.normalArray[c + 8] = norm[o3 + 2];
-      } // uvs
+      }
 
+      // uvs
 
       if (scope.enableUvs) {
         var d = scope.count * 2;
@@ -1759,8 +1684,9 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
         scope.uvArray[d + 3] = pos[o2 + 2];
         scope.uvArray[d + 4] = pos[o3];
         scope.uvArray[d + 5] = pos[o3 + 2];
-      } // colors
+      }
 
+      // colors
 
       if (scope.enableColors) {
         scope.colorArray[c + 0] = pos[o1];
@@ -1773,28 +1699,21 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
         scope.colorArray[c + 7] = pos[o3 + 1];
         scope.colorArray[c + 8] = pos[o3 + 2];
       }
-
       scope.count += 3;
-
       if (scope.count >= scope.maxCount - 3) {
         scope.hasPositions = true;
-
         if (scope.enableNormals) {
           scope.hasNormals = true;
         }
-
         if (scope.enableUvs) {
           scope.hasUvs = true;
         }
-
         if (scope.enableColors) {
           scope.hasColors = true;
         }
-
         renderCallback(scope);
       }
     }
-
     _this.begin = function () {
       this.count = 0;
       this.hasPositions = false;
@@ -1802,55 +1721,50 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
       this.hasUvs = false;
       this.hasColors = false;
     };
-
     _this.end = function (renderCallback) {
       if (this.count === 0) return;
-
       for (var i = this.count * 3; i < this.positionArray.length; i++) {
         this.positionArray[i] = 0.0;
       }
-
       this.hasPositions = true;
-
       if (this.enableNormals) {
         this.hasNormals = true;
       }
-
       if (this.enableUvs) {
         this.hasUvs = true;
       }
-
       if (this.enableColors) {
         this.hasColors = true;
       }
-
       renderCallback(this);
-    }; /////////////////////////////////////
+    };
+
+    /////////////////////////////////////
     // Updates
     /////////////////////////////////////
 
-
     _this.reset = function () {
-      var i; // wipe the normal cache
+      var i;
+
+      // wipe the normal cache
 
       for (i = 0; i < this.size3; i++) {
         this.normal_cache[i * 3] = 0.0;
         this.field[i] = 0.0;
       }
     };
-
     _this.render = function (renderCallback) {
       if (!this.dirty) {
         this.end(renderCallback);
         return;
       }
+      this.begin();
 
-      this.begin(); // Triangulate. Yeah, this is slow.
+      // Triangulate. Yeah, this is slow.
 
       var smin2x = this.sizeX - 2;
       var smin2y = this.sizeY - 2;
       var smin2z = this.sizeZ - 2;
-
       for (var z = 1; z < smin2z; z += this.stepSizeZ) {
         var z_offset = this.sizeXY * z;
         var fz = (z - this.halfsizeZ) / this.halfsizeZ; //+ 1
@@ -1861,31 +1775,28 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
 
           for (var x = 1; x < smin2x; x += this.stepSizeX) {
             var fx = (x - this.halfsizeX) / this.halfsizeX; //+ 1
-
             var q = y_offset + x;
             polygonize(fx, fy, fz, q, this.isovalue, renderCallback);
           }
         }
       }
-
       this.end(renderCallback);
     };
-
     _this.generateGeometry = function () {
       if (!this.dirty) {
         return;
       }
-
       var start = 0;
-      var geoparent = []; //var normals = [];
+      var geoparent = [];
+      //var normals = [];
 
       var geo_callback = function geo_callback(object) {
         var geo = new three__WEBPACK_IMPORTED_MODULE_6__.BufferGeometry();
         geo.setAttribute("position", new three__WEBPACK_IMPORTED_MODULE_6__.BufferAttribute(object.positionArray.slice(), 3));
-
         if (object.enableNormals) {
           geo.setAttribute("normal", new three__WEBPACK_IMPORTED_MODULE_6__.BufferAttribute(object.normalArray.slice(), 3));
-        } // for ( var i = 0; i < object.count; i ++ ) {
+        }
+        // for ( var i = 0; i < object.count; i ++ ) {
         //
         // 	var vertex = new Vector3().fromArray( object.positionArray, i * 3 );
         // 	var normal = new Vector3().fromArray( object.normalArray, i * 3 );
@@ -1895,19 +1806,17 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
         //
         // }
 
-
         var inds = new Uint16Array(object.count);
         var nfaces = object.count / 3;
-
         for (var i = 0; i < nfaces; i++) {
-          var a =
-          /* start + */
-          i * 3;
+          var a = /* start + */i * 3;
           var b = a + 1;
           var c = a + 2;
           inds[i * 3 + 0] = a;
           inds[i * 3 + 1] = b;
-          inds[i * 3 + 2] = c; // var na = normals[ a ];
+          inds[i * 3 + 2] = c;
+
+          // var na = normals[ a ];
           // var nb = normals[ b ];
           // var nc = normals[ c ];
           //
@@ -1920,18 +1829,16 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
         start += nfaces;
         object.count = 0;
       };
+      this.render(geo_callback);
 
-      this.render(geo_callback); // console.log( "generated " + geo.faces.length + " triangles" );
+      // console.log( "generated " + geo.faces.length + " triangles" );
 
       this.dirty = false;
       return geoparent;
     };
-
     _this.init(resolution, volumeFieldRef);
-
     return _this;
   }
-
   return (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__["default"])(MarchingCubes);
 }(three__WEBPACK_IMPORTED_MODULE_6__.Mesh); /////////////////////////////////////
 // Marching cubes lookup tables
@@ -1939,8 +1846,6 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
 // These tables are straight from Paul Bourke's page:
 // http://local.wasp.uwa.edu.au/~pbourke/geometry/polygonise/
 // who in turn got them from Cory Gene Bloyd.
-
-
 var edgeTable = new Int32Array([0x0, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00, 0x190, 0x99, 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c, 0x99c, 0x895, 0xb9f, 0xa96, 0xd9a, 0xc93, 0xf99, 0xe90, 0x230, 0x339, 0x33, 0x13a, 0x636, 0x73f, 0x435, 0x53c, 0xa3c, 0xb35, 0x83f, 0x936, 0xe3a, 0xf33, 0xc39, 0xd30, 0x3a0, 0x2a9, 0x1a3, 0xaa, 0x7a6, 0x6af, 0x5a5, 0x4ac, 0xbac, 0xaa5, 0x9af, 0x8a6, 0xfaa, 0xea3, 0xda9, 0xca0, 0x460, 0x569, 0x663, 0x76a, 0x66, 0x16f, 0x265, 0x36c, 0xc6c, 0xd65, 0xe6f, 0xf66, 0x86a, 0x963, 0xa69, 0xb60, 0x5f0, 0x4f9, 0x7f3, 0x6fa, 0x1f6, 0xff, 0x3f5, 0x2fc, 0xdfc, 0xcf5, 0xfff, 0xef6, 0x9fa, 0x8f3, 0xbf9, 0xaf0, 0x650, 0x759, 0x453, 0x55a, 0x256, 0x35f, 0x55, 0x15c, 0xe5c, 0xf55, 0xc5f, 0xd56, 0xa5a, 0xb53, 0x859, 0x950, 0x7c0, 0x6c9, 0x5c3, 0x4ca, 0x3c6, 0x2cf, 0x1c5, 0xcc, 0xfcc, 0xec5, 0xdcf, 0xcc6, 0xbca, 0xac3, 0x9c9, 0x8c0, 0x8c0, 0x9c9, 0xac3, 0xbca, 0xcc6, 0xdcf, 0xec5, 0xfcc, 0xcc, 0x1c5, 0x2cf, 0x3c6, 0x4ca, 0x5c3, 0x6c9, 0x7c0, 0x950, 0x859, 0xb53, 0xa5a, 0xd56, 0xc5f, 0xf55, 0xe5c, 0x15c, 0x55, 0x35f, 0x256, 0x55a, 0x453, 0x759, 0x650, 0xaf0, 0xbf9, 0x8f3, 0x9fa, 0xef6, 0xfff, 0xcf5, 0xdfc, 0x2fc, 0x3f5, 0xff, 0x1f6, 0x6fa, 0x7f3, 0x4f9, 0x5f0, 0xb60, 0xa69, 0x963, 0x86a, 0xf66, 0xe6f, 0xd65, 0xc6c, 0x36c, 0x265, 0x16f, 0x66, 0x76a, 0x663, 0x569, 0x460, 0xca0, 0xda9, 0xea3, 0xfaa, 0x8a6, 0x9af, 0xaa5, 0xbac, 0x4ac, 0x5a5, 0x6af, 0x7a6, 0xaa, 0x1a3, 0x2a9, 0x3a0, 0xd30, 0xc39, 0xf33, 0xe3a, 0x936, 0x83f, 0xb35, 0xa3c, 0x53c, 0x435, 0x73f, 0x636, 0x13a, 0x33, 0x339, 0x230, 0xe90, 0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895, 0x99c, 0x69c, 0x795, 0x49f, 0x596, 0x29a, 0x393, 0x99, 0x190, 0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c, 0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0]);
 var triTable = new Int32Array([-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 8, 3, 9, 8, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 8, 3, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 9, 2, 10, 0, 2, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 2, 8, 3, 2, 10, 8, 10, 9, 8, -1, -1, -1, -1, -1, -1, -1, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 11, 2, 8, 11, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 9, 0, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 11, 2, 1, 9, 11, 9, 8, 11, -1, -1, -1, -1, -1, -1, -1, 3, 10, 1, 11, 10, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 10, 1, 0, 8, 10, 8, 11, 10, -1, -1, -1, -1, -1, -1, -1, 3, 9, 0, 3, 11, 9, 11, 10, 9, -1, -1, -1, -1, -1, -1, -1, 9, 8, 10, 10, 8, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 3, 0, 7, 3, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 1, 9, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 1, 9, 4, 7, 1, 7, 3, 1, -1, -1, -1, -1, -1, -1, -1, 1, 2, 10, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 3, 4, 7, 3, 0, 4, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1, 9, 2, 10, 9, 0, 2, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, 2, 10, 9, 2, 9, 7, 2, 7, 3, 7, 9, 4, -1, -1, -1, -1, 8, 4, 7, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 11, 4, 7, 11, 2, 4, 2, 0, 4, -1, -1, -1, -1, -1, -1, -1, 9, 0, 1, 8, 4, 7, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, 4, 7, 11, 9, 4, 11, 9, 11, 2, 9, 2, 1, -1, -1, -1, -1, 3, 10, 1, 3, 11, 10, 7, 8, 4, -1, -1, -1, -1, -1, -1, -1, 1, 11, 10, 1, 4, 11, 1, 0, 4, 7, 11, 4, -1, -1, -1, -1, 4, 7, 8, 9, 0, 11, 9, 11, 10, 11, 0, 3, -1, -1, -1, -1, 4, 7, 11, 4, 11, 9, 9, 11, 10, -1, -1, -1, -1, -1, -1, -1, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 9, 5, 4, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 5, 4, 1, 5, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 8, 5, 4, 8, 3, 5, 3, 1, 5, -1, -1, -1, -1, -1, -1, -1, 1, 2, 10, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 3, 0, 8, 1, 2, 10, 4, 9, 5, -1, -1, -1, -1, -1, -1, -1, 5, 2, 10, 5, 4, 2, 4, 0, 2, -1, -1, -1, -1, -1, -1, -1, 2, 10, 5, 3, 2, 5, 3, 5, 4, 3, 4, 8, -1, -1, -1, -1, 9, 5, 4, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 11, 2, 0, 8, 11, 4, 9, 5, -1, -1, -1, -1, -1, -1, -1, 0, 5, 4, 0, 1, 5, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, 2, 1, 5, 2, 5, 8, 2, 8, 11, 4, 8, 5, -1, -1, -1, -1, 10, 3, 11, 10, 1, 3, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1, 4, 9, 5, 0, 8, 1, 8, 10, 1, 8, 11, 10, -1, -1, -1, -1, 5, 4, 0, 5, 0, 11, 5, 11, 10, 11, 0, 3, -1, -1, -1, -1, 5, 4, 8, 5, 8, 10, 10, 8, 11, -1, -1, -1, -1, -1, -1, -1, 9, 7, 8, 5, 7, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 9, 3, 0, 9, 5, 3, 5, 7, 3, -1, -1, -1, -1, -1, -1, -1, 0, 7, 8, 0, 1, 7, 1, 5, 7, -1, -1, -1, -1, -1, -1, -1, 1, 5, 3, 3, 5, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 9, 7, 8, 9, 5, 7, 10, 1, 2, -1, -1, -1, -1, -1, -1, -1, 10, 1, 2, 9, 5, 0, 5, 3, 0, 5, 7, 3, -1, -1, -1, -1, 8, 0, 2, 8, 2, 5, 8, 5, 7, 10, 5, 2, -1, -1, -1, -1, 2, 10, 5, 2, 5, 3, 3, 5, 7, -1, -1, -1, -1, -1, -1, -1, 7, 9, 5, 7, 8, 9, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1, 9, 5, 7, 9, 7, 2, 9, 2, 0, 2, 7, 11, -1, -1, -1, -1, 2, 3, 11, 0, 1, 8, 1, 7, 8, 1, 5, 7, -1, -1, -1, -1, 11, 2, 1, 11, 1, 7, 7, 1, 5, -1, -1, -1, -1, -1, -1, -1, 9, 5, 8, 8, 5, 7, 10, 1, 3, 10, 3, 11, -1, -1, -1, -1, 5, 7, 0, 5, 0, 9, 7, 11, 0, 1, 0, 10, 11, 10, 0, -1, 11, 10, 0, 11, 0, 3, 10, 5, 0, 8, 0, 7, 5, 7, 0, -1, 11, 10, 5, 7, 11, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 8, 3, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 9, 0, 1, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 8, 3, 1, 9, 8, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, 1, 6, 5, 2, 6, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 6, 5, 1, 2, 6, 3, 0, 8, -1, -1, -1, -1, -1, -1, -1, 9, 6, 5, 9, 0, 6, 0, 2, 6, -1, -1, -1, -1, -1, -1, -1, 5, 9, 8, 5, 8, 2, 5, 2, 6, 3, 2, 8, -1, -1, -1, -1, 2, 3, 11, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 11, 0, 8, 11, 2, 0, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1, 0, 1, 9, 2, 3, 11, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, 5, 10, 6, 1, 9, 2, 9, 11, 2, 9, 8, 11, -1, -1, -1, -1, 6, 3, 11, 6, 5, 3, 5, 1, 3, -1, -1, -1, -1, -1, -1, -1, 0, 8, 11, 0, 11, 5, 0, 5, 1, 5, 11, 6, -1, -1, -1, -1, 3, 11, 6, 0, 3, 6, 0, 6, 5, 0, 5, 9, -1, -1, -1, -1, 6, 5, 9, 6, 9, 11, 11, 9, 8, -1, -1, -1, -1, -1, -1, -1, 5, 10, 6, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 3, 0, 4, 7, 3, 6, 5, 10, -1, -1, -1, -1, -1, -1, -1, 1, 9, 0, 5, 10, 6, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, 10, 6, 5, 1, 9, 7, 1, 7, 3, 7, 9, 4, -1, -1, -1, -1, 6, 1, 2, 6, 5, 1, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1, 1, 2, 5, 5, 2, 6, 3, 0, 4, 3, 4, 7, -1, -1, -1, -1, 8, 4, 7, 9, 0, 5, 0, 6, 5, 0, 2, 6, -1, -1, -1, -1, 7, 3, 9, 7, 9, 4, 3, 2, 9, 5, 9, 6, 2, 6, 9, -1, 3, 11, 2, 7, 8, 4, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1, 5, 10, 6, 4, 7, 2, 4, 2, 0, 2, 7, 11, -1, -1, -1, -1, 0, 1, 9, 4, 7, 8, 2, 3, 11, 5, 10, 6, -1, -1, -1, -1, 9, 2, 1, 9, 11, 2, 9, 4, 11, 7, 11, 4, 5, 10, 6, -1, 8, 4, 7, 3, 11, 5, 3, 5, 1, 5, 11, 6, -1, -1, -1, -1, 5, 1, 11, 5, 11, 6, 1, 0, 11, 7, 11, 4, 0, 4, 11, -1, 0, 5, 9, 0, 6, 5, 0, 3, 6, 11, 6, 3, 8, 4, 7, -1, 6, 5, 9, 6, 9, 11, 4, 7, 9, 7, 11, 9, -1, -1, -1, -1, 10, 4, 9, 6, 4, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 10, 6, 4, 9, 10, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, 10, 0, 1, 10, 6, 0, 6, 4, 0, -1, -1, -1, -1, -1, -1, -1, 8, 3, 1, 8, 1, 6, 8, 6, 4, 6, 1, 10, -1, -1, -1, -1, 1, 4, 9, 1, 2, 4, 2, 6, 4, -1, -1, -1, -1, -1, -1, -1, 3, 0, 8, 1, 2, 9, 2, 4, 9, 2, 6, 4, -1, -1, -1, -1, 0, 2, 4, 4, 2, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 8, 3, 2, 8, 2, 4, 4, 2, 6, -1, -1, -1, -1, -1, -1, -1, 10, 4, 9, 10, 6, 4, 11, 2, 3, -1, -1, -1, -1, -1, -1, -1, 0, 8, 2, 2, 8, 11, 4, 9, 10, 4, 10, 6, -1, -1, -1, -1, 3, 11, 2, 0, 1, 6, 0, 6, 4, 6, 1, 10, -1, -1, -1, -1, 6, 4, 1, 6, 1, 10, 4, 8, 1, 2, 1, 11, 8, 11, 1, -1, 9, 6, 4, 9, 3, 6, 9, 1, 3, 11, 6, 3, -1, -1, -1, -1, 8, 11, 1, 8, 1, 0, 11, 6, 1, 9, 1, 4, 6, 4, 1, -1, 3, 11, 6, 3, 6, 0, 0, 6, 4, -1, -1, -1, -1, -1, -1, -1, 6, 4, 8, 11, 6, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 7, 10, 6, 7, 8, 10, 8, 9, 10, -1, -1, -1, -1, -1, -1, -1, 0, 7, 3, 0, 10, 7, 0, 9, 10, 6, 7, 10, -1, -1, -1, -1, 10, 6, 7, 1, 10, 7, 1, 7, 8, 1, 8, 0, -1, -1, -1, -1, 10, 6, 7, 10, 7, 1, 1, 7, 3, -1, -1, -1, -1, -1, -1, -1, 1, 2, 6, 1, 6, 8, 1, 8, 9, 8, 6, 7, -1, -1, -1, -1, 2, 6, 9, 2, 9, 1, 6, 7, 9, 0, 9, 3, 7, 3, 9, -1, 7, 8, 0, 7, 0, 6, 6, 0, 2, -1, -1, -1, -1, -1, -1, -1, 7, 3, 2, 6, 7, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 2, 3, 11, 10, 6, 8, 10, 8, 9, 8, 6, 7, -1, -1, -1, -1, 2, 0, 7, 2, 7, 11, 0, 9, 7, 6, 7, 10, 9, 10, 7, -1, 1, 8, 0, 1, 7, 8, 1, 10, 7, 6, 7, 10, 2, 3, 11, -1, 11, 2, 1, 11, 1, 7, 10, 6, 1, 6, 7, 1, -1, -1, -1, -1, 8, 9, 6, 8, 6, 7, 9, 1, 6, 11, 6, 3, 1, 3, 6, -1, 0, 9, 1, 11, 6, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 7, 8, 0, 7, 0, 6, 3, 11, 0, 11, 6, 0, -1, -1, -1, -1, 7, 11, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 3, 0, 8, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 1, 9, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 8, 1, 9, 8, 3, 1, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, 10, 1, 2, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 2, 10, 3, 0, 8, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1, 2, 9, 0, 2, 10, 9, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1, 6, 11, 7, 2, 10, 3, 10, 8, 3, 10, 9, 8, -1, -1, -1, -1, 7, 2, 3, 6, 2, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 7, 0, 8, 7, 6, 0, 6, 2, 0, -1, -1, -1, -1, -1, -1, -1, 2, 7, 6, 2, 3, 7, 0, 1, 9, -1, -1, -1, -1, -1, -1, -1, 1, 6, 2, 1, 8, 6, 1, 9, 8, 8, 7, 6, -1, -1, -1, -1, 10, 7, 6, 10, 1, 7, 1, 3, 7, -1, -1, -1, -1, -1, -1, -1, 10, 7, 6, 1, 7, 10, 1, 8, 7, 1, 0, 8, -1, -1, -1, -1, 0, 3, 7, 0, 7, 10, 0, 10, 9, 6, 10, 7, -1, -1, -1, -1, 7, 6, 10, 7, 10, 8, 8, 10, 9, -1, -1, -1, -1, -1, -1, -1, 6, 8, 4, 11, 8, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 3, 6, 11, 3, 0, 6, 0, 4, 6, -1, -1, -1, -1, -1, -1, -1, 8, 6, 11, 8, 4, 6, 9, 0, 1, -1, -1, -1, -1, -1, -1, -1, 9, 4, 6, 9, 6, 3, 9, 3, 1, 11, 3, 6, -1, -1, -1, -1, 6, 8, 4, 6, 11, 8, 2, 10, 1, -1, -1, -1, -1, -1, -1, -1, 1, 2, 10, 3, 0, 11, 0, 6, 11, 0, 4, 6, -1, -1, -1, -1, 4, 11, 8, 4, 6, 11, 0, 2, 9, 2, 10, 9, -1, -1, -1, -1, 10, 9, 3, 10, 3, 2, 9, 4, 3, 11, 3, 6, 4, 6, 3, -1, 8, 2, 3, 8, 4, 2, 4, 6, 2, -1, -1, -1, -1, -1, -1, -1, 0, 4, 2, 4, 6, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 9, 0, 2, 3, 4, 2, 4, 6, 4, 3, 8, -1, -1, -1, -1, 1, 9, 4, 1, 4, 2, 2, 4, 6, -1, -1, -1, -1, -1, -1, -1, 8, 1, 3, 8, 6, 1, 8, 4, 6, 6, 10, 1, -1, -1, -1, -1, 10, 1, 0, 10, 0, 6, 6, 0, 4, -1, -1, -1, -1, -1, -1, -1, 4, 6, 3, 4, 3, 8, 6, 10, 3, 0, 3, 9, 10, 9, 3, -1, 10, 9, 4, 6, 10, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 9, 5, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 8, 3, 4, 9, 5, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, 5, 0, 1, 5, 4, 0, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1, 11, 7, 6, 8, 3, 4, 3, 5, 4, 3, 1, 5, -1, -1, -1, -1, 9, 5, 4, 10, 1, 2, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1, 6, 11, 7, 1, 2, 10, 0, 8, 3, 4, 9, 5, -1, -1, -1, -1, 7, 6, 11, 5, 4, 10, 4, 2, 10, 4, 0, 2, -1, -1, -1, -1, 3, 4, 8, 3, 5, 4, 3, 2, 5, 10, 5, 2, 11, 7, 6, -1, 7, 2, 3, 7, 6, 2, 5, 4, 9, -1, -1, -1, -1, -1, -1, -1, 9, 5, 4, 0, 8, 6, 0, 6, 2, 6, 8, 7, -1, -1, -1, -1, 3, 6, 2, 3, 7, 6, 1, 5, 0, 5, 4, 0, -1, -1, -1, -1, 6, 2, 8, 6, 8, 7, 2, 1, 8, 4, 8, 5, 1, 5, 8, -1, 9, 5, 4, 10, 1, 6, 1, 7, 6, 1, 3, 7, -1, -1, -1, -1, 1, 6, 10, 1, 7, 6, 1, 0, 7, 8, 7, 0, 9, 5, 4, -1, 4, 0, 10, 4, 10, 5, 0, 3, 10, 6, 10, 7, 3, 7, 10, -1, 7, 6, 10, 7, 10, 8, 5, 4, 10, 4, 8, 10, -1, -1, -1, -1, 6, 9, 5, 6, 11, 9, 11, 8, 9, -1, -1, -1, -1, -1, -1, -1, 3, 6, 11, 0, 6, 3, 0, 5, 6, 0, 9, 5, -1, -1, -1, -1, 0, 11, 8, 0, 5, 11, 0, 1, 5, 5, 6, 11, -1, -1, -1, -1, 6, 11, 3, 6, 3, 5, 5, 3, 1, -1, -1, -1, -1, -1, -1, -1, 1, 2, 10, 9, 5, 11, 9, 11, 8, 11, 5, 6, -1, -1, -1, -1, 0, 11, 3, 0, 6, 11, 0, 9, 6, 5, 6, 9, 1, 2, 10, -1, 11, 8, 5, 11, 5, 6, 8, 0, 5, 10, 5, 2, 0, 2, 5, -1, 6, 11, 3, 6, 3, 5, 2, 10, 3, 10, 5, 3, -1, -1, -1, -1, 5, 8, 9, 5, 2, 8, 5, 6, 2, 3, 8, 2, -1, -1, -1, -1, 9, 5, 6, 9, 6, 0, 0, 6, 2, -1, -1, -1, -1, -1, -1, -1, 1, 5, 8, 1, 8, 0, 5, 6, 8, 3, 8, 2, 6, 2, 8, -1, 1, 5, 6, 2, 1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 3, 6, 1, 6, 10, 3, 8, 6, 5, 6, 9, 8, 9, 6, -1, 10, 1, 0, 10, 0, 6, 9, 5, 0, 5, 6, 0, -1, -1, -1, -1, 0, 3, 8, 5, 6, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 10, 5, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 11, 5, 10, 7, 5, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 11, 5, 10, 11, 7, 5, 8, 3, 0, -1, -1, -1, -1, -1, -1, -1, 5, 11, 7, 5, 10, 11, 1, 9, 0, -1, -1, -1, -1, -1, -1, -1, 10, 7, 5, 10, 11, 7, 9, 8, 1, 8, 3, 1, -1, -1, -1, -1, 11, 1, 2, 11, 7, 1, 7, 5, 1, -1, -1, -1, -1, -1, -1, -1, 0, 8, 3, 1, 2, 7, 1, 7, 5, 7, 2, 11, -1, -1, -1, -1, 9, 7, 5, 9, 2, 7, 9, 0, 2, 2, 11, 7, -1, -1, -1, -1, 7, 5, 2, 7, 2, 11, 5, 9, 2, 3, 2, 8, 9, 8, 2, -1, 2, 5, 10, 2, 3, 5, 3, 7, 5, -1, -1, -1, -1, -1, -1, -1, 8, 2, 0, 8, 5, 2, 8, 7, 5, 10, 2, 5, -1, -1, -1, -1, 9, 0, 1, 5, 10, 3, 5, 3, 7, 3, 10, 2, -1, -1, -1, -1, 9, 8, 2, 9, 2, 1, 8, 7, 2, 10, 2, 5, 7, 5, 2, -1, 1, 3, 5, 3, 7, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 8, 7, 0, 7, 1, 1, 7, 5, -1, -1, -1, -1, -1, -1, -1, 9, 0, 3, 9, 3, 5, 5, 3, 7, -1, -1, -1, -1, -1, -1, -1, 9, 8, 7, 5, 9, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 5, 8, 4, 5, 10, 8, 10, 11, 8, -1, -1, -1, -1, -1, -1, -1, 5, 0, 4, 5, 11, 0, 5, 10, 11, 11, 3, 0, -1, -1, -1, -1, 0, 1, 9, 8, 4, 10, 8, 10, 11, 10, 4, 5, -1, -1, -1, -1, 10, 11, 4, 10, 4, 5, 11, 3, 4, 9, 4, 1, 3, 1, 4, -1, 2, 5, 1, 2, 8, 5, 2, 11, 8, 4, 5, 8, -1, -1, -1, -1, 0, 4, 11, 0, 11, 3, 4, 5, 11, 2, 11, 1, 5, 1, 11, -1, 0, 2, 5, 0, 5, 9, 2, 11, 5, 4, 5, 8, 11, 8, 5, -1, 9, 4, 5, 2, 11, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 2, 5, 10, 3, 5, 2, 3, 4, 5, 3, 8, 4, -1, -1, -1, -1, 5, 10, 2, 5, 2, 4, 4, 2, 0, -1, -1, -1, -1, -1, -1, -1, 3, 10, 2, 3, 5, 10, 3, 8, 5, 4, 5, 8, 0, 1, 9, -1, 5, 10, 2, 5, 2, 4, 1, 9, 2, 9, 4, 2, -1, -1, -1, -1, 8, 4, 5, 8, 5, 3, 3, 5, 1, -1, -1, -1, -1, -1, -1, -1, 0, 4, 5, 1, 0, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 8, 4, 5, 8, 5, 3, 9, 0, 5, 0, 3, 5, -1, -1, -1, -1, 9, 4, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 11, 7, 4, 9, 11, 9, 10, 11, -1, -1, -1, -1, -1, -1, -1, 0, 8, 3, 4, 9, 7, 9, 11, 7, 9, 10, 11, -1, -1, -1, -1, 1, 10, 11, 1, 11, 4, 1, 4, 0, 7, 4, 11, -1, -1, -1, -1, 3, 1, 4, 3, 4, 8, 1, 10, 4, 7, 4, 11, 10, 11, 4, -1, 4, 11, 7, 9, 11, 4, 9, 2, 11, 9, 1, 2, -1, -1, -1, -1, 9, 7, 4, 9, 11, 7, 9, 1, 11, 2, 11, 1, 0, 8, 3, -1, 11, 7, 4, 11, 4, 2, 2, 4, 0, -1, -1, -1, -1, -1, -1, -1, 11, 7, 4, 11, 4, 2, 8, 3, 4, 3, 2, 4, -1, -1, -1, -1, 2, 9, 10, 2, 7, 9, 2, 3, 7, 7, 4, 9, -1, -1, -1, -1, 9, 10, 7, 9, 7, 4, 10, 2, 7, 8, 7, 0, 2, 0, 7, -1, 3, 7, 10, 3, 10, 2, 7, 4, 10, 1, 10, 0, 4, 0, 10, -1, 1, 10, 2, 8, 7, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 9, 1, 4, 1, 7, 7, 1, 3, -1, -1, -1, -1, -1, -1, -1, 4, 9, 1, 4, 1, 7, 0, 8, 1, 8, 7, 1, -1, -1, -1, -1, 4, 0, 3, 7, 4, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 4, 8, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 9, 10, 8, 10, 11, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 3, 0, 9, 3, 9, 11, 11, 9, 10, -1, -1, -1, -1, -1, -1, -1, 0, 1, 10, 0, 10, 8, 8, 10, 11, -1, -1, -1, -1, -1, -1, -1, 3, 1, 10, 11, 3, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 2, 11, 1, 11, 9, 9, 11, 8, -1, -1, -1, -1, -1, -1, -1, 3, 0, 9, 3, 9, 11, 1, 2, 9, 2, 11, 9, -1, -1, -1, -1, 0, 2, 11, 8, 0, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 3, 2, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 2, 3, 8, 2, 8, 10, 10, 8, 9, -1, -1, -1, -1, -1, -1, -1, 9, 10, 2, 0, 9, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 2, 3, 8, 2, 8, 10, 0, 1, 8, 1, 10, 8, -1, -1, -1, -1, 1, 10, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 3, 8, 9, 1, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]);
 
@@ -1980,17 +1885,15 @@ __webpack_require__.r(__webpack_exports__);
 // this cutoff is chosen to have a small buffer of values before the object is treated
 // as transparent for gpu blending and depth testing.
 var ALPHA_THRESHOLD = 0.9;
-
 var MeshVolume = /*#__PURE__*/function () {
   function MeshVolume(volume) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, MeshVolume);
-
     // need?
     this.volume = volume;
     this.meshRoot = new three__WEBPACK_IMPORTED_MODULE_6__.Object3D(); //create an empty container
+    this.meshRoot.name = "Mesh Surface Group";
 
-    this.meshRoot.name = "Mesh Surface Group"; // handle transform ordering for giving the meshroot a rotation about a pivot point
-
+    // handle transform ordering for giving the meshroot a rotation about a pivot point
     this.meshPivot = new three__WEBPACK_IMPORTED_MODULE_6__.Group();
     this.meshPivot.name = "MeshContainerNode";
     this.meshPivot.add(this.meshRoot);
@@ -2003,7 +1906,6 @@ var MeshVolume = /*#__PURE__*/function () {
       bmax: new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0.5, 0.5, 0.5)
     };
   }
-
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(MeshVolume, [{
     key: "cleanup",
     value: function cleanup() {
@@ -2018,7 +1920,8 @@ var MeshVolume = /*#__PURE__*/function () {
     }
   }, {
     key: "doRender",
-    value: function doRender(_canvas) {// no op
+    value: function doRender(_canvas) {
+      // no op
     }
   }, {
     key: "get3dObject",
@@ -2029,8 +1932,8 @@ var MeshVolume = /*#__PURE__*/function () {
     key: "onChannelData",
     value: function onChannelData(batch) {
       for (var j = 0; j < batch.length; ++j) {
-        var idx = batch[j]; // if an isosurface was created before the channel data arrived, we need to re-calculate it now.
-
+        var idx = batch[j];
+        // if an isosurface was created before the channel data arrived, we need to re-calculate it now.
         if (this.meshrep[idx]) {
           var isovalue = this.getIsovalue(idx);
           this.updateIsovalue(idx, isovalue === undefined ? 127 : isovalue);
@@ -2061,11 +1964,13 @@ var MeshVolume = /*#__PURE__*/function () {
     }
   }, {
     key: "setResolution",
-    value: function setResolution(_x, _y) {// no op
+    value: function setResolution(_x, _y) {
+      // no op
     }
   }, {
     key: "setOrthoThickness",
-    value: function setOrthoThickness(_value) {// no op
+    value: function setOrthoThickness(_value) {
+      // no op
     }
   }, {
     key: "setAxisClip",
@@ -2073,28 +1978,31 @@ var MeshVolume = /*#__PURE__*/function () {
       this.bounds.bmax[axis] = maxval;
       this.bounds.bmin[axis] = minval;
       this.updateClipFromBounds();
-    } //////////////////////////////
+    }
 
+    //////////////////////////////
   }, {
     key: "updateMeshColors",
     value: function updateMeshColors(channelColors) {
+      var _this = this;
       // stash values here for later changes
-      this.channelColors = channelColors; // update existing meshes
+      this.channelColors = channelColors;
 
-      for (var i = 0; i < this.volume.num_channels; ++i) {
-        var meshrep = this.meshrep[i];
-
+      // update existing meshes
+      var _loop = function _loop() {
+        var meshrep = _this.meshrep[i];
         if (meshrep) {
-          (function () {
-            var rgb = channelColors[i];
-            var c = rgb[0] << 16 | rgb[1] << 8 | rgb[2];
-            meshrep.traverse(function (child) {
-              if (child instanceof three__WEBPACK_IMPORTED_MODULE_6__.Mesh) {
-                child.material.color = new three__WEBPACK_IMPORTED_MODULE_6__.Color(c);
-              }
-            });
-          })();
+          var rgb = channelColors[i];
+          var c = rgb[0] << 16 | rgb[1] << 8 | rgb[2];
+          meshrep.traverse(function (child) {
+            if (child instanceof three__WEBPACK_IMPORTED_MODULE_6__.Mesh) {
+              child.material.color = new three__WEBPACK_IMPORTED_MODULE_6__.Color(c);
+            }
+          });
         }
+      };
+      for (var i = 0; i < this.volume.num_channels; ++i) {
+        _loop();
       }
     }
   }, {
@@ -2121,29 +2029,26 @@ var MeshVolume = /*#__PURE__*/function () {
       theObject.name = "Channel" + channelIndex;
       theObject.userData = {
         isovalue: isovalue
-      }; // proper scaling will be done in parent object
-
+      };
+      // proper scaling will be done in parent object
       for (var i = 0; i < geometries.length; ++i) {
         var mesh = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(geometries[i], material);
         theObject.add(mesh);
       }
-
       return theObject;
     }
   }, {
     key: "updateIsovalue",
     value: function updateIsovalue(channel, value) {
       var meshrep = this.meshrep[channel];
-
       if (!meshrep) {
         return;
       }
-
       if (meshrep.userData.isovalue === value) {
         return;
-      } // find the current isosurface opacity and color.
+      }
 
-
+      // find the current isosurface opacity and color.
       var opacity = this.channelOpacities[channel];
       var color = this.channelColors[channel];
       this.destroyIsosurface(channel);
@@ -2183,8 +2088,7 @@ var MeshVolume = /*#__PURE__*/function () {
   }, {
     key: "updateClipFromBounds",
     value: function updateClipFromBounds() {
-      var _this = this;
-
+      var _this2 = this;
       var xmin = this.bounds.bmin.x;
       var ymin = this.bounds.bmin.y;
       var zmin = this.bounds.bmin.z;
@@ -2192,50 +2096,39 @@ var MeshVolume = /*#__PURE__*/function () {
       var ymax = this.bounds.bmax.y;
       var zmax = this.bounds.bmax.z;
       var euler = this.meshPivot.rotation;
-
-      var _loop = function _loop(channel) {
-        var meshrep = _this.meshrep[channel];
-
+      var _loop2 = function _loop2() {
+        var meshrep = _this2.meshrep[channel];
         if (!meshrep) {
           return "continue";
         }
-
-        var planes = []; // up to 6 planes.
-
+        var planes = [];
+        // up to 6 planes.
         if (xmin > -0.5) {
-          planes.push(new three__WEBPACK_IMPORTED_MODULE_6__.Plane(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(1, 0, 0).applyEuler(euler), _this.meshRoot.position.x + -xmin * _this.scale.x));
+          planes.push(new three__WEBPACK_IMPORTED_MODULE_6__.Plane(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(1, 0, 0).applyEuler(euler), _this2.meshRoot.position.x + -xmin * _this2.scale.x));
         }
-
         if (ymin > -0.5) {
-          planes.push(new three__WEBPACK_IMPORTED_MODULE_6__.Plane(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 1, 0).applyEuler(euler), _this.meshRoot.position.y + -ymin * _this.scale.y));
+          planes.push(new three__WEBPACK_IMPORTED_MODULE_6__.Plane(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 1, 0).applyEuler(euler), _this2.meshRoot.position.y + -ymin * _this2.scale.y));
         }
-
         if (zmin > -0.5) {
-          planes.push(new three__WEBPACK_IMPORTED_MODULE_6__.Plane(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, 1).applyEuler(euler), _this.meshRoot.position.z + -zmin * _this.scale.z));
+          planes.push(new three__WEBPACK_IMPORTED_MODULE_6__.Plane(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, 1).applyEuler(euler), _this2.meshRoot.position.z + -zmin * _this2.scale.z));
         }
-
         if (xmax < 0.5) {
-          planes.push(new three__WEBPACK_IMPORTED_MODULE_6__.Plane(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(-1, 0, 0).applyEuler(euler), _this.meshRoot.position.x + xmax * _this.scale.x));
+          planes.push(new three__WEBPACK_IMPORTED_MODULE_6__.Plane(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(-1, 0, 0).applyEuler(euler), _this2.meshRoot.position.x + xmax * _this2.scale.x));
         }
-
         if (ymax < 0.5) {
-          planes.push(new three__WEBPACK_IMPORTED_MODULE_6__.Plane(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, -1, 0).applyEuler(euler), _this.meshRoot.position.y + ymax * _this.scale.y));
+          planes.push(new three__WEBPACK_IMPORTED_MODULE_6__.Plane(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, -1, 0).applyEuler(euler), _this2.meshRoot.position.y + ymax * _this2.scale.y));
         }
-
         if (zmax < 0.5) {
-          planes.push(new three__WEBPACK_IMPORTED_MODULE_6__.Plane(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, -1).applyEuler(euler), _this.meshRoot.position.z + zmax * _this.scale.z));
+          planes.push(new three__WEBPACK_IMPORTED_MODULE_6__.Plane(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, -1).applyEuler(euler), _this2.meshRoot.position.z + zmax * _this2.scale.z));
         }
-
         meshrep.traverse(function (child) {
           if (child instanceof three__WEBPACK_IMPORTED_MODULE_6__.Mesh) {
             child.material.clippingPlanes = planes;
           }
         });
       };
-
       for (var channel = 0; channel < this.meshrep.length; ++channel) {
-        var _ret = _loop(channel);
-
+        var _ret = _loop2();
         if (_ret === "continue") continue;
       }
     }
@@ -2244,15 +2137,14 @@ var MeshVolume = /*#__PURE__*/function () {
     value: function updateOpacity(channel, value) {
       this.channelOpacities[channel] = value;
       var meshrep = this.meshrep[channel];
-
       if (!meshrep) {
         return;
       }
-
       meshrep.traverse(function (child) {
         if (child instanceof three__WEBPACK_IMPORTED_MODULE_6__.Mesh) {
           child.material.opacity = value;
-          child.material.transparent = value < ALPHA_THRESHOLD; //child.material.depthWrite = !child.material.transparent;
+          child.material.transparent = value < ALPHA_THRESHOLD;
+          //child.material.depthWrite = !child.material.transparent;
         }
       });
     }
@@ -2269,21 +2161,18 @@ var MeshVolume = /*#__PURE__*/function () {
           // 127 is half of the intensity range 0..255
           value = 127;
         }
-
         if (alpha === undefined) {
           // 1.0 indicates full opacity, non-transparent
           alpha = 1.0;
         }
-
         if (transp === undefined) {
           transp = alpha < ALPHA_THRESHOLD;
         }
-
         var meshrep = this.createMeshForChannel(channel, color, value, alpha, transp);
         this.meshrep[channel] = meshrep;
         this.channelOpacities[channel] = alpha;
-        this.channelColors[channel] = color; // note we are not removing any prior mesh reps for this channel
-
+        this.channelColors[channel] = color;
+        // note we are not removing any prior mesh reps for this channel
         this.meshRoot.add(meshrep);
       }
     }
@@ -2291,7 +2180,6 @@ var MeshVolume = /*#__PURE__*/function () {
     key: "destroyIsosurface",
     value: function destroyIsosurface(channel) {
       var meshrep = this.meshrep[channel];
-
       if (meshrep) {
         this.meshRoot.remove(meshrep);
         meshrep.traverse(function (child) {
@@ -2307,31 +2195,24 @@ var MeshVolume = /*#__PURE__*/function () {
     key: "saveChannelIsosurface",
     value: function saveChannelIsosurface(channelIndex, type, namePrefix) {
       var meshrep = this.meshrep[channelIndex];
-
       if (!meshrep) {
         return;
       }
-
       if (type === "STL") {
         this.exportSTL(meshrep, namePrefix + "_" + this.volume.channel_names[channelIndex]);
       } else if (type === "GLTF") {
         // temporarily set other meshreps to invisible
         var prevviz = [];
-
         for (var i = 0; i < this.meshrep.length; ++i) {
           var meshrepi = this.meshrep[i];
-
           if (meshrepi) {
             prevviz[i] = meshrepi.visible;
             meshrepi.visible = i === channelIndex;
           }
         }
-
         this.exportGLTF(this.meshRoot, namePrefix + "_" + this.volume.channel_names[channelIndex]);
-
         for (var _i = 0; _i < this.meshrep.length; ++_i) {
           var _meshrepi = this.meshrep[_i];
-
           if (_meshrepi) {
             _meshrepi.visible = prevviz[_i];
           }
@@ -2344,12 +2225,13 @@ var MeshVolume = /*#__PURE__*/function () {
       var ex = new three_examples_jsm_exporters_STLExporter__WEBPACK_IMPORTED_MODULE_7__.STLExporter();
       var output = ex.parse(input, {
         binary: true
-      }); // STLExporter's typing shows that it returns string
+      });
+      // STLExporter's typing shows that it returns string
       // but this is not the case when binary=true.
-
       _FileSaver__WEBPACK_IMPORTED_MODULE_3__["default"].saveBinary(output.buffer, fname + ".stl");
-    } // takes a scene or object or array of scenes or objects or both!
+    }
 
+    // takes a scene or object or array of scenes or objects or both!
   }, {
     key: "exportGLTF",
     value: function exportGLTF(input, fname) {
@@ -2380,23 +2262,21 @@ var MeshVolume = /*#__PURE__*/function () {
       if (!this.volume) {
         return [];
       }
-
       var volumeData = this.volume.channels[channelIndex].volumeData;
       var marchingcubes = true;
-
       if (marchingcubes) {
         var effect = new _MarchingCubes__WEBPACK_IMPORTED_MODULE_5__["default"]([this.volume.x, this.volume.y, this.volume.z], new three__WEBPACK_IMPORTED_MODULE_6__.Material(), false, false, true, volumeData);
         effect.position.copy(this.meshRoot.position);
         effect.scale.set(0.5 * this.scale.x, 0.5 * this.scale.y, 0.5 * this.scale.z);
         effect.isovalue = isovalue;
-        var geometries = effect.generateGeometry(); // TODO: weld vertices and recompute normals if MarchingCubes results in excessive coincident verts
+        var geometries = effect.generateGeometry();
+        // TODO: weld vertices and recompute normals if MarchingCubes results in excessive coincident verts
         // for (var i = 0; i < geometries.length; ++i) {
         //   var g = new THREE.Geometry().fromBufferGeometry(geometries[i]);
         //   g.mergeVertices();
         //   geometries[i] = new THREE.BufferGeometry().fromGeometry(g);
         //   geometries[i].computeVertexNormals();
         // }
-
         return geometries || [];
       } else {
         var result = _NaiveSurfaceNets_js__WEBPACK_IMPORTED_MODULE_4__["default"].surfaceNets(volumeData, [this.volume.x, this.volume.y, this.volume.z], isovalue);
@@ -2404,10 +2284,8 @@ var MeshVolume = /*#__PURE__*/function () {
       }
     }
   }]);
-
   return MeshVolume;
 }();
-
 
 
 /***/ }),
@@ -2455,199 +2333,187 @@ __webpack_require__.r(__webpack_exports__);
  *
  * Based on: S.F. Gibson, "Constrained Elastic Surface Nets". (1998) MERL Tech Report.
  */
+
 // MODIFIED 2018 BY DANIELT@ALLENINSTITUTE.ORG TO ACCEPT AN ISOVALUE AND RESCALE VERTEX POSITIONS
 
-
 var SurfaceNets = function () {
-  "use strict"; //Precompute edge table, like Paul Bourke does.
+  "use strict";
+
+  //Precompute edge table, like Paul Bourke does.
   // This saves a bit of time when computing the centroid of each boundary cell
-
   var cube_edges = new Int32Array(24),
-      edge_table = new Int32Array(256);
-
+    edge_table = new Int32Array(256);
   (function () {
     //Initialize the cube_edges table
     // This is just the vertex number of each cube
     var k = 0;
-
     for (var i = 0; i < 8; ++i) {
       for (var j = 1; j <= 4; j <<= 1) {
         var p = i ^ j;
-
         if (i <= p) {
           cube_edges[k++] = i;
           cube_edges[k++] = p;
         }
       }
-    } //Initialize the intersection table.
+    }
+
+    //Initialize the intersection table.
     //  This is a 2^(cube configuration) ->  2^(edge configuration) map
     //  There is one entry for each possible cube configuration, and the output is a 12-bit vector enumerating all edges crossing the 0-level.
-
-
     for (var i = 0; i < 256; ++i) {
       var em = 0;
-
       for (var j = 0; j < 24; j += 2) {
         var a = !!(i & 1 << cube_edges[j]),
-            b = !!(i & 1 << cube_edges[j + 1]);
+          b = !!(i & 1 << cube_edges[j + 1]);
         em |= a !== b ? 1 << (j >> 1) : 0;
       }
-
       edge_table[i] = em;
     }
-  })(); //Internal buffer, this may get resized at run time
+  })();
 
-
+  //Internal buffer, this may get resized at run time
   var buffer = new Int32Array(4096);
   return function (data, dims, isovalue) {
     var vertices = [],
-        faces = [],
-        n = 0,
-        x = new Int32Array(3),
-        R = new Int32Array([1, dims[0] + 1, (dims[0] + 1) * (dims[1] + 1)]),
-        grid = new Float32Array(8),
-        buf_no = 1; //Resize buffer if necessary
+      faces = [],
+      n = 0,
+      x = new Int32Array(3),
+      R = new Int32Array([1, dims[0] + 1, (dims[0] + 1) * (dims[1] + 1)]),
+      grid = new Float32Array(8),
+      buf_no = 1;
 
+    //Resize buffer if necessary
     if (R[2] * 2 > buffer.length) {
       buffer = new Int32Array(R[2] * 2);
-    } //March over the voxel grid
+    }
 
-
+    //March over the voxel grid
     for (x[2] = 0; x[2] < dims[2] - 1; ++x[2], n += dims[0], buf_no ^= 1, R[2] = -R[2]) {
       //m is the pointer into the buffer we are going to use.
       //This is slightly obtuse because javascript does not have good support for packed data structures, so we must use typed arrays :(
       //The contents of the buffer will be the indices of the vertices on the previous x/y slice of the volume
       var m = 1 + (dims[0] + 1) * (1 + buf_no * (dims[1] + 1));
+      for (x[1] = 0; x[1] < dims[1] - 1; ++x[1], ++n, m += 2) for (x[0] = 0; x[0] < dims[0] - 1; ++x[0], ++n, ++m) {
+        //Read in 8 field values around this vertex and store them in an array
+        //Also calculate 8-bit mask, like in marching cubes, so we can speed up sign checks later
+        var mask = 0,
+          g = 0,
+          idx = n;
+        for (var k = 0; k < 2; ++k, idx += dims[0] * (dims[1] - 2)) for (var j = 0; j < 2; ++j, idx += dims[0] - 2) for (var i = 0; i < 2; ++i, ++g, ++idx) {
+          var p = data[idx] - isovalue;
+          grid[g] = p;
+          mask |= p < 0 ? 1 << g : 0;
+        }
 
-      for (x[1] = 0; x[1] < dims[1] - 1; ++x[1], ++n, m += 2) {
-        for (x[0] = 0; x[0] < dims[0] - 1; ++x[0], ++n, ++m) {
-          //Read in 8 field values around this vertex and store them in an array
-          //Also calculate 8-bit mask, like in marching cubes, so we can speed up sign checks later
-          var mask = 0,
-              g = 0,
-              idx = n;
+        //Check for early termination if cell does not intersect boundary
+        if (mask === 0 || mask === 0xff) {
+          continue;
+        }
 
-          for (var k = 0; k < 2; ++k, idx += dims[0] * (dims[1] - 2)) {
-            for (var j = 0; j < 2; ++j, idx += dims[0] - 2) {
-              for (var i = 0; i < 2; ++i, ++g, ++idx) {
-                var p = data[idx] - isovalue;
-                grid[g] = p;
-                mask |= p < 0 ? 1 << g : 0;
-              }
-            }
-          } //Check for early termination if cell does not intersect boundary
+        //Sum up edge intersections
+        var edge_mask = edge_table[mask],
+          v = [0.0, 0.0, 0.0],
+          e_count = 0;
 
-
-          if (mask === 0 || mask === 0xff) {
+        //For every edge of the cube...
+        for (var i = 0; i < 12; ++i) {
+          //Use edge mask to check if it is crossed
+          if (!(edge_mask & 1 << i)) {
             continue;
-          } //Sum up edge intersections
+          }
 
+          //If it did, increment number of edge crossings
+          ++e_count;
 
-          var edge_mask = edge_table[mask],
-              v = [0.0, 0.0, 0.0],
-              e_count = 0; //For every edge of the cube...
-
-          for (var i = 0; i < 12; ++i) {
-            //Use edge mask to check if it is crossed
-            if (!(edge_mask & 1 << i)) {
-              continue;
-            } //If it did, increment number of edge crossings
-
-
-            ++e_count; //Now find the point of intersection
-
-            var e0 = cube_edges[i << 1],
-                //Unpack vertices
+          //Now find the point of intersection
+          var e0 = cube_edges[i << 1],
+            //Unpack vertices
             e1 = cube_edges[(i << 1) + 1],
-                g0 = grid[e0],
-                //Unpack grid values
+            g0 = grid[e0],
+            //Unpack grid values
             g1 = grid[e1],
-                t = g0 - g1; //Compute point of intersection
+            t = g0 - g1; //Compute point of intersection
+          if (Math.abs(t) > 1e-6) {
+            t = g0 / t;
+          } else {
+            continue;
+          }
 
-            if (Math.abs(t) > 1e-6) {
-              t = g0 / t;
+          //Interpolate vertices and add up intersections (this can be done without multiplying)
+          for (var j = 0, k = 1; j < 3; ++j, k <<= 1) {
+            var a = e0 & k,
+              b = e1 & k;
+            if (a !== b) {
+              v[j] += a ? 1.0 - t : t;
             } else {
-              continue;
-            } //Interpolate vertices and add up intersections (this can be done without multiplying)
-
-
-            for (var j = 0, k = 1; j < 3; ++j, k <<= 1) {
-              var a = e0 & k,
-                  b = e1 & k;
-
-              if (a !== b) {
-                v[j] += a ? 1.0 - t : t;
-              } else {
-                v[j] += a ? 1.0 : 0;
-              }
-            }
-          } //Now we just average the edge intersections and add them to coordinate
-
-
-          var s = 1.0 / e_count;
-
-          for (var i = 0; i < 3; ++i) {
-            v[i] = x[i] + s * v[i];
-          } //Add vertex to buffer, store pointer to vertex index in buffer
-
-
-          buffer[m] = vertices.length;
-          vertices.push([2.0 * v[0] / dims[0] - 1.0, 2.0 * v[1] / dims[1] - 1.0, 2.0 * v[2] / dims[2] - 1.0]); //Now we need to add faces together, to do this we just loop over 3 basis components
-
-          for (var i = 0; i < 3; ++i) {
-            //The first three entries of the edge_mask count the crossings along the edge
-            if (!(edge_mask & 1 << i)) {
-              continue;
-            } // i = axes we are point along.  iu, iv = orthogonal axes
-
-
-            var iu = (i + 1) % 3,
-                iv = (i + 2) % 3; //If we are on a boundary, skip it
-
-            if (x[iu] === 0 || x[iv] === 0) {
-              continue;
-            } //Otherwise, look up adjacent edges in buffer
-
-
-            var du = R[iu],
-                dv = R[iv]; //Remember to flip orientation depending on the sign of the corner.
-
-            if (mask & 1) {
-              faces.push([buffer[m], buffer[m - du], buffer[m - du - dv], buffer[m - dv]]);
-            } else {
-              faces.push([buffer[m], buffer[m - dv], buffer[m - du - dv], buffer[m - du]]);
+              v[j] += a ? 1.0 : 0;
             }
           }
         }
+
+        //Now we just average the edge intersections and add them to coordinate
+        var s = 1.0 / e_count;
+        for (var i = 0; i < 3; ++i) {
+          v[i] = x[i] + s * v[i];
+        }
+
+        //Add vertex to buffer, store pointer to vertex index in buffer
+        buffer[m] = vertices.length;
+        vertices.push([2.0 * v[0] / dims[0] - 1.0, 2.0 * v[1] / dims[1] - 1.0, 2.0 * v[2] / dims[2] - 1.0]);
+
+        //Now we need to add faces together, to do this we just loop over 3 basis components
+        for (var i = 0; i < 3; ++i) {
+          //The first three entries of the edge_mask count the crossings along the edge
+          if (!(edge_mask & 1 << i)) {
+            continue;
+          }
+
+          // i = axes we are point along.  iu, iv = orthogonal axes
+          var iu = (i + 1) % 3,
+            iv = (i + 2) % 3;
+
+          //If we are on a boundary, skip it
+          if (x[iu] === 0 || x[iv] === 0) {
+            continue;
+          }
+
+          //Otherwise, look up adjacent edges in buffer
+          var du = R[iu],
+            dv = R[iv];
+
+          //Remember to flip orientation depending on the sign of the corner.
+          if (mask & 1) {
+            faces.push([buffer[m], buffer[m - du], buffer[m - du - dv], buffer[m - dv]]);
+          } else {
+            faces.push([buffer[m], buffer[m - dv], buffer[m - du - dv], buffer[m - du]]);
+          }
+        }
       }
-    } //All done!  Return the result
+    }
 
-
+    //All done!  Return the result
     return {
       vertices: vertices,
       faces: faces
     };
   };
-}(); // returns array of indexed BufferGeometry
+}();
 
-
+// returns array of indexed BufferGeometry
 function ConstructTHREEGeometry(surfaceNetResult) {
   var result = surfaceNetResult;
   var varray = new Float32Array(result.vertices.length * 3);
-
   for (var i = 0; i < result.vertices.length; ++i) {
     var v = result.vertices[i];
     varray[i * 3 + 0] = v[0];
     varray[i * 3 + 1] = v[1];
     varray[i * 3 + 2] = v[2];
-  } // count triangles; split quad faces
+  }
 
-
+  // count triangles; split quad faces
   var n_triangles = 0;
-
   for (var i = 0; i < result.faces.length; ++i) {
     var f = result.faces[i];
-
     if (f.length === 3) {
       n_triangles += 1;
     } else if (f.length === 4) {
@@ -2657,14 +2523,12 @@ function ConstructTHREEGeometry(surfaceNetResult) {
       console.log("unhandled poly with " + f.length + " vertices");
     }
   }
-
   var inds = new Uint32Array(n_triangles * 3);
   var j = 0;
-
   for (var i = 0; i < result.faces.length; ++i) {
-    var f = result.faces[i]; // note what appears to be inverted winding order.
+    var f = result.faces[i];
+    // note what appears to be inverted winding order.
     // I believe this is related to isosurface < or > testing but have not checked.
-
     if (f.length === 3) {
       inds[j++] = f[2];
       inds[j++] = f[1];
@@ -2679,14 +2543,12 @@ function ConstructTHREEGeometry(surfaceNetResult) {
       inds[j++] = f[0];
     }
   }
-
   var geo = new three__WEBPACK_IMPORTED_MODULE_0__.BufferGeometry();
   geo.setAttribute("position", new three__WEBPACK_IMPORTED_MODULE_0__.BufferAttribute(varray, 3, false));
   geo.setIndex(new three__WEBPACK_IMPORTED_MODULE_0__.BufferAttribute(inds, 1));
   geo.computeVertexNormals();
   return [geo];
 }
-
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
   surfaceNets: SurfaceNets,
   constructTHREEGeometry: ConstructTHREEGeometry
@@ -2723,37 +2585,37 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 var PathTracedVolume = /*#__PURE__*/function () {
-  // should have 4 or less elements
   function PathTracedVolume(volume) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, PathTracedVolume);
-
+    // should have 4 or less elements
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "denoiseShaderUniforms", (0,_constants_denoiseShader__WEBPACK_IMPORTED_MODULE_3__.denoiseShaderUniforms)());
-
     // need?
     this.volume = volume;
     this.viewChannels = [-1, -1, -1, -1];
     this.scale = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1, 1, 1);
     this.translation = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0);
-    this.rotation = new three__WEBPACK_IMPORTED_MODULE_7__.Euler(); // scale factor is a huge optimization.  Maybe use 1/dpi scale
+    this.rotation = new three__WEBPACK_IMPORTED_MODULE_7__.Euler();
 
+    // scale factor is a huge optimization.  Maybe use 1/dpi scale
     this.pixelSamplingRate = 0.75;
-    this.pathTracingUniforms = _constants_volumePTshader__WEBPACK_IMPORTED_MODULE_4__.pathTracingUniforms; // create volume texture
+    this.pathTracingUniforms = _constants_volumePTshader__WEBPACK_IMPORTED_MODULE_4__.pathTracingUniforms;
 
+    // create volume texture
     var sx = volume.x,
-        sy = volume.y,
-        sz = volume.z;
-    var data = new Uint8Array(sx * sy * sz * 4).fill(0); // defaults to rgba and unsignedbytetype so dont need to supply format this time.
-
+      sy = volume.y,
+      sz = volume.z;
+    var data = new Uint8Array(sx * sy * sz * 4).fill(0);
+    // defaults to rgba and unsignedbytetype so dont need to supply format this time.
     this.volumeTexture = new three__WEBPACK_IMPORTED_MODULE_7__.Data3DTexture(data, volume.x, volume.y, volume.z);
     this.volumeTexture.minFilter = this.volumeTexture.magFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_8__.LinearFilter;
     this.volumeTexture.generateMipmaps = false;
     this.volumeTexture.needsUpdate = true;
     this.maskChannelIndex = -1;
-    this.maskAlpha = 1.0; // create Lut textures
-    // empty array
+    this.maskAlpha = 1.0;
 
+    // create Lut textures
+    // empty array
     var lutData = new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH * 4).fill(1);
     var lut0 = new three__WEBPACK_IMPORTED_MODULE_7__.DataTexture(lutData, 256, 4, three__WEBPACK_IMPORTED_MODULE_7__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_7__.UnsignedByteType);
     lut0.minFilter = lut0.magFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_8__.LinearFilter;
@@ -2769,10 +2631,11 @@ var PathTracedVolume = /*#__PURE__*/function () {
     this.stepSizePrimaryRayVoxels = 1.0;
     this.stepSizeSecondaryRayVoxels = 1.0;
     this.pathTracingScene = new three__WEBPACK_IMPORTED_MODULE_7__.Scene();
-    this.screenTextureScene = new three__WEBPACK_IMPORTED_MODULE_7__.Scene(); // quadCamera is simply the camera to help render the full screen quad (2 triangles),
+    this.screenTextureScene = new three__WEBPACK_IMPORTED_MODULE_7__.Scene();
+
+    // quadCamera is simply the camera to help render the full screen quad (2 triangles),
     // hence the name.  It is an Orthographic camera that sits facing the view plane, which serves as
     // the window into our 3d world. This camera will not move or rotate for the duration of the app.
-
     this.quadCamera = new three__WEBPACK_IMPORTED_MODULE_7__.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.fullTargetResolution = new three__WEBPACK_IMPORTED_MODULE_7__.Vector2(2, 2);
     this.pathTracingRenderTarget = new three__WEBPACK_IMPORTED_MODULE_7__.WebGLRenderTarget(2, 2, {
@@ -2815,14 +2678,18 @@ var PathTracedVolume = /*#__PURE__*/function () {
         }
       }]),
       vertexShader: ["precision highp float;", "precision highp int;", "out vec2 vUv;", "void main()", "{", "vUv = uv;", "gl_Position = vec4( position, 1.0 );", "}"].join("\n"),
-      fragmentShader: ["precision highp float;", "precision highp int;", "precision highp sampler2D;", "uniform float gInvExposure;", "uniform sampler2D tTexture0;", "in vec2 vUv;", // Used to convert from XYZ to linear RGB space
-      "const mat3 XYZ_2_RGB = (mat3(", "  3.2404542, -1.5371385, -0.4985314,", " -0.9692660,  1.8760108,  0.0415560,", "  0.0556434, -0.2040259,  1.0572252", "));", "vec3 XYZtoRGB(vec3 xyz) {", "return xyz * XYZ_2_RGB;", "}", "void main()", "{", "vec4 pixelColor = texture(tTexture0, vUv);", "pixelColor.rgb = XYZtoRGB(pixelColor.rgb);", //'pixelColor.rgb = pow(pixelColor.rgb, vec3(1.0/2.2));',
-      "pixelColor.rgb = 1.0-exp(-pixelColor.rgb*gInvExposure);", "pixelColor = clamp(pixelColor, 0.0, 1.0);", "pc_fragColor = pixelColor;", // sqrt(pixelColor);',
+      fragmentShader: ["precision highp float;", "precision highp int;", "precision highp sampler2D;", "uniform float gInvExposure;", "uniform sampler2D tTexture0;", "in vec2 vUv;",
+      // Used to convert from XYZ to linear RGB space
+      "const mat3 XYZ_2_RGB = (mat3(", "  3.2404542, -1.5371385, -0.4985314,", " -0.9692660,  1.8760108,  0.0415560,", "  0.0556434, -0.2040259,  1.0572252", "));", "vec3 XYZtoRGB(vec3 xyz) {", "return xyz * XYZ_2_RGB;", "}", "void main()", "{", "vec4 pixelColor = texture(tTexture0, vUv);", "pixelColor.rgb = XYZtoRGB(pixelColor.rgb);",
+      //'pixelColor.rgb = pow(pixelColor.rgb, vec3(1.0/2.2));',
+      "pixelColor.rgb = 1.0-exp(-pixelColor.rgb*gInvExposure);", "pixelColor = clamp(pixelColor, 0.0, 1.0);", "pc_fragColor = pixelColor;",
+      // sqrt(pixelColor);',
       //'out_FragColor = pow(pixelColor, vec4(1.0/2.2));',
       "}"].join("\n")
     };
-    this.pathTracingGeometry = new three__WEBPACK_IMPORTED_MODULE_7__.PlaneGeometry(2, 2); // initialize texture.
+    this.pathTracingGeometry = new three__WEBPACK_IMPORTED_MODULE_7__.PlaneGeometry(2, 2);
 
+    // initialize texture.
     this.pathTracingUniforms.volumeTexture.value = this.volumeTexture;
     this.pathTracingUniforms.tPreviousTexture.value = this.screenTextureRenderTarget.texture;
     this.pathTracingMaterial = new three__WEBPACK_IMPORTED_MODULE_7__.ShaderMaterial({
@@ -2874,20 +2741,19 @@ var PathTracedVolume = /*#__PURE__*/function () {
 
     this.pathTracingUniforms.gGradientDeltaX.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(this.gradientDelta, 0, 0);
     this.pathTracingUniforms.gGradientDeltaY.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, this.gradientDelta, 0);
-    this.pathTracingUniforms.gGradientDeltaZ.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, this.gradientDelta); // can this be a per-x,y,z value?
-
+    this.pathTracingUniforms.gGradientDeltaZ.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, this.gradientDelta);
+    // can this be a per-x,y,z value?
     this.pathTracingUniforms.gInvGradientDelta.value = invGradientDelta; // a voxel count
-
     this.pathTracingUniforms.gGradientFactor.value = 50.0; // related to voxel counts also
 
-    this.setRayStepSizes(1.0, 1.0); // bounds will go from 0 to physicalSize
+    this.setRayStepSizes(1.0, 1.0);
 
+    // bounds will go from 0 to physicalSize
     var physicalSize = volume.normalizedPhysicalSize;
     this.pathTracingUniforms.gInvAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1.0 / physicalSize.x, 1.0 / physicalSize.y, 1.0 / physicalSize.z);
     this.updateClipRegion(0, 1, 0, 1, 0, 1);
     this.updateLightsSecondary();
   }
-
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(PathTracedVolume, [{
     key: "cleanup",
     value: function cleanup() {
@@ -2905,20 +2771,22 @@ var PathTracedVolume = /*#__PURE__*/function () {
       if (this.sampleCounter !== 0 && this.renderUpdateListener) {
         this.renderUpdateListener(0);
       }
-
       this.sampleCounter = 0;
     }
   }, {
     key: "setVisible",
-    value: function setVisible(_isVisible) {// this.visible = isVisible;
+    value: function setVisible(_isVisible) {
+      // this.visible = isVisible;
     }
   }, {
     key: "setShowBoundingBox",
-    value: function setShowBoundingBox(_showBoundingBox) {// TODO: NOT IMPLEMENTED YET
+    value: function setShowBoundingBox(_showBoundingBox) {
+      // TODO: NOT IMPLEMENTED YET
     }
   }, {
     key: "setBoundingBoxColor",
-    value: function setBoundingBoxColor(_color) {// TODO: NOT IMPLEMENTED YET
+    value: function setBoundingBoxColor(_color) {
+      // TODO: NOT IMPLEMENTED YET
     }
   }, {
     key: "doRender",
@@ -2926,38 +2794,38 @@ var PathTracedVolume = /*#__PURE__*/function () {
       if (!this.volumeTexture) {
         return;
       }
-
       if (this.cameraIsMoving) {
         this.resetProgress();
         this.frameCounter += 1.0;
       } else {
         this.sampleCounter += 1.0;
         this.frameCounter += 1.0;
-
         if (this.renderUpdateListener) {
           this.renderUpdateListener(this.sampleCounter);
         }
       }
-
       this.pathTracingUniforms.uSampleCounter.value = this.sampleCounter;
-      this.pathTracingUniforms.uFrameCounter.value = this.frameCounter; // CAMERA
-      // force the camera to update its world matrix.
+      this.pathTracingUniforms.uFrameCounter.value = this.frameCounter;
 
+      // CAMERA
+      // force the camera to update its world matrix.
       canvas.camera.updateMatrixWorld(true);
-      var cam = canvas.camera; // rotate lights with camera, as if we are tumbling the volume with a fixed camera and world lighting.
+      var cam = canvas.camera;
+
+      // rotate lights with camera, as if we are tumbling the volume with a fixed camera and world lighting.
       // this code is analogous to this threejs code from View3d.preRender:
       // this.scene.getObjectByName('lightContainer').rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
-
       var mycamxform = cam.matrixWorld.clone();
       mycamxform.setPosition(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0));
       this.updateLightsSecondary(mycamxform);
       var mydir = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3();
       mydir = cam.getWorldDirection(mydir);
-      var myup = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().copy(cam.up); // don't rotate this vector.  we are using translation as the pivot point of the object, and THEN rotating.
+      var myup = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().copy(cam.up);
+      // don't rotate this vector.  we are using translation as the pivot point of the object, and THEN rotating.
+      var mypos = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().copy(cam.position);
 
-      var mypos = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().copy(cam.position); // apply volume translation and rotation:
+      // apply volume translation and rotation:
       // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
-
       var m = new three__WEBPACK_IMPORTED_MODULE_7__.Matrix4().makeRotationFromQuaternion(new three__WEBPACK_IMPORTED_MODULE_7__.Quaternion().setFromEuler(this.rotation).invert());
       mypos.sub(this.translation);
       mypos.applyMatrix4(m);
@@ -2967,45 +2835,52 @@ var PathTracedVolume = /*#__PURE__*/function () {
       this.pathTracingUniforms.gCamera.value.mFrom.copy(mypos);
       this.pathTracingUniforms.gCamera.value.mN.copy(mydir);
       this.pathTracingUniforms.gCamera.value.mU.crossVectors(this.pathTracingUniforms.gCamera.value.mN, myup).normalize();
-      this.pathTracingUniforms.gCamera.value.mV.crossVectors(this.pathTracingUniforms.gCamera.value.mU, this.pathTracingUniforms.gCamera.value.mN).normalize(); // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
+      this.pathTracingUniforms.gCamera.value.mV.crossVectors(this.pathTracingUniforms.gCamera.value.mU, this.pathTracingUniforms.gCamera.value.mN).normalize();
 
+      // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
       var fScale = (0,_types__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(cam) ? canvas.getOrthoScale() : Math.tan(0.5 * cam.fov * Math.PI / 180.0);
       var aspect = this.pathTracingUniforms.uResolution.value.x / this.pathTracingUniforms.uResolution.value.y;
-      this.pathTracingUniforms.gCamera.value.mScreen.set(-fScale * aspect, fScale * aspect, // the "0" Y pixel will be at +Scale.
+      this.pathTracingUniforms.gCamera.value.mScreen.set(-fScale * aspect, fScale * aspect,
+      // the "0" Y pixel will be at +Scale.
       fScale, -fScale);
       var scr = this.pathTracingUniforms.gCamera.value.mScreen;
-      this.pathTracingUniforms.gCamera.value.mInvScreen.set( // the amount to increment for each pixel
+      this.pathTracingUniforms.gCamera.value.mInvScreen.set(
+      // the amount to increment for each pixel
       (scr.y - scr.x) / this.pathTracingUniforms.uResolution.value.x, (scr.w - scr.z) / this.pathTracingUniforms.uResolution.value.y);
       var denoiseLerpC = 0.33 * (Math.max(this.sampleCounter - 1, 1.0) * 0.035);
-
       if (denoiseLerpC > 0.0 && denoiseLerpC < 1.0) {
         this.screenOutputDenoiseMaterial.uniforms.gDenoiseLerpC.value = denoiseLerpC;
         this.screenOutputMesh.material = this.screenOutputDenoiseMaterial;
       } else {
         this.screenOutputMesh.material = this.screenOutputMaterial;
       }
-
       this.screenOutputDenoiseMaterial.uniforms.gDenoisePixelSize.value.x = this.pathTracingUniforms.uResolution.value.x;
-      this.screenOutputDenoiseMaterial.uniforms.gDenoisePixelSize.value.y = this.pathTracingUniforms.uResolution.value.y; // RENDERING in 3 steps
+      this.screenOutputDenoiseMaterial.uniforms.gDenoisePixelSize.value.y = this.pathTracingUniforms.uResolution.value.y;
+
+      // RENDERING in 3 steps
+
       // STEP 1
       // Perform PathTracing and Render(save) into pathTracingRenderTarget
+
       // This is currently rendered as a fullscreen quad with no camera transform in the vertex shader!
       // It is also composited with screenTextureRenderTarget's texture.
       // (Read previous screenTextureRenderTarget to use as a new starting point to blend with)
-
       canvas.renderer.setRenderTarget(this.pathTracingRenderTarget);
-      canvas.renderer.render(this.pathTracingScene, this.quadCamera); // STEP 2
+      canvas.renderer.render(this.pathTracingScene, this.quadCamera);
+
+      // STEP 2
       // Render(copy) the final pathTracingScene output(above) into screenTextureRenderTarget
       // This will be used as a new starting point for Step 1 above
-
       canvas.renderer.setRenderTarget(this.screenTextureRenderTarget);
-      canvas.renderer.render(this.screenTextureScene, this.quadCamera); // STEP 3
+      canvas.renderer.render(this.screenTextureScene, this.quadCamera);
+
+      // STEP 3
       // Render full screen quad with generated pathTracingRenderTarget in STEP 1 above.
       // After the image is gamma corrected, it will be shown on the screen as the final accumulated output
       // DMT - this step is handled by the threeJsPanel.
       // tell the threejs panel to use the quadCamera to render this scene.
-      // renderer.render( this.screenOutputScene, this.quadCamera );
 
+      // renderer.render( this.screenOutputScene, this.quadCamera );
       canvas.renderer.setRenderTarget(null);
     }
   }, {
@@ -3015,7 +2890,8 @@ var PathTracedVolume = /*#__PURE__*/function () {
     }
   }, {
     key: "onChannelData",
-    value: function onChannelData(_batch) {// no op
+    value: function onChannelData(_batch) {
+      // no op
     }
   }, {
     key: "setScale",
@@ -3029,7 +2905,6 @@ var PathTracedVolume = /*#__PURE__*/function () {
       if (this.stepSizePrimaryRayVoxels !== primary || this.stepSizeSecondaryRayVoxels !== secondary) {
         this.resetProgress();
       }
-
       this.stepSizePrimaryRayVoxels = primary;
       this.stepSizeSecondaryRayVoxels = secondary;
       this.pathTracingUniforms.gStepSize.value = this.stepSizePrimaryRayVoxels * this.gradientDelta;
@@ -3049,17 +2924,19 @@ var PathTracedVolume = /*#__PURE__*/function () {
     }
   }, {
     key: "setOrthoScale",
-    value: function setOrthoScale(_value) {// no op
+    value: function setOrthoScale(_value) {
+      // no op
     }
   }, {
     key: "setGamma",
-    value: function setGamma(_gmin, _glevel, _gmax) {// no op
+    value: function setGamma(_gmin, _glevel, _gmax) {
+      // no op
     }
   }, {
     key: "setFlipAxes",
     value: function setFlipAxes(flipX, flipY, flipZ) {
-      this.pathTracingUniforms.flipVolume.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(flipX, flipY, flipZ); // TODO: only reset if changed!
-
+      this.pathTracingUniforms.flipVolume.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(flipX, flipY, flipZ);
+      // TODO: only reset if changed!
       this.resetProgress();
     }
   }, {
@@ -3070,8 +2947,9 @@ var PathTracedVolume = /*#__PURE__*/function () {
       var nx = Math.floor(x * this.pixelSamplingRate / dpr);
       var ny = Math.floor(y * this.pixelSamplingRate / dpr);
       this.pathTracingUniforms.uResolution.value.x = nx;
-      this.pathTracingUniforms.uResolution.value.y = ny; // TODO optimization: scale this value down when nx,ny is small.  For now can leave it at 3 (a 7x7 pixel filter).
+      this.pathTracingUniforms.uResolution.value.y = ny;
 
+      // TODO optimization: scale this value down when nx,ny is small.  For now can leave it at 3 (a 7x7 pixel filter).
       var denoiseFilterR = 3;
       this.screenOutputDenoiseMaterial.uniforms.gDenoiseWindowRadius.value = denoiseFilterR;
       this.screenOutputDenoiseMaterial.uniforms.gDenoiseInvWindowArea.value = 1.0 / ((2.0 * denoiseFilterR + 1.0) * (2.0 * denoiseFilterR + 1.0));
@@ -3091,8 +2969,9 @@ var PathTracedVolume = /*#__PURE__*/function () {
     value: function setDensity(density) {
       this.pathTracingUniforms.gDensityScale.value = density * 150.0;
       this.resetProgress();
-    } // TODO brightness and exposure should be the same thing? or gamma?
+    }
 
+    // TODO brightness and exposure should be the same thing? or gamma?
   }, {
     key: "setBrightness",
     value: function setBrightness(brightness) {
@@ -3100,10 +2979,10 @@ var PathTracedVolume = /*#__PURE__*/function () {
       if (brightness === 1.0) {
         brightness = 0.999;
       }
-
       this.updateExposure(brightness);
-    } // -0.5 .. 0.5
+    }
 
+    // -0.5 .. 0.5
   }, {
     key: "setAxisClip",
     value: function setAxisClip(axis, minval, maxval, _isOrthoAxis) {
@@ -3120,13 +2999,11 @@ var PathTracedVolume = /*#__PURE__*/function () {
       if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
         return false;
       }
-
       if (this.maskChannelIndex !== channelIndex) {
         this.maskChannelIndex = channelIndex;
         this.updateVolumeData4();
         this.resetProgress();
       }
-
       return true;
     }
   }, {
@@ -3138,7 +3015,8 @@ var PathTracedVolume = /*#__PURE__*/function () {
     }
   }, {
     key: "setOrthoThickness",
-    value: function setOrthoThickness(_value) {// no op
+    value: function setOrthoThickness(_value) {
+      // no op
     }
   }, {
     key: "setIsOrtho",
@@ -3151,9 +3029,10 @@ var PathTracedVolume = /*#__PURE__*/function () {
     value: function setInterpolationEnabled(active) {
       this.volumeTexture.minFilter = this.volumeTexture.magFilter = active ? three_src_constants__WEBPACK_IMPORTED_MODULE_8__.LinearFilter : three_src_constants__WEBPACK_IMPORTED_MODULE_8__.NearestFilter;
       this.volumeTexture.needsUpdate = true;
-    } //////////////////////////////////////////
-    //////////////////////////////////////////
+    }
 
+    //////////////////////////////////////////
+    //////////////////////////////////////////
   }, {
     key: "onStartControls",
     value: function onStartControls() {
@@ -3161,7 +3040,8 @@ var PathTracedVolume = /*#__PURE__*/function () {
     }
   }, {
     key: "onChangeControls",
-    value: function onChangeControls() {// this.cameraIsMoving = true;
+    value: function onChangeControls() {
+      // this.cameraIsMoving = true;
     }
   }, {
     key: "onEndControls",
@@ -3178,51 +3058,45 @@ var PathTracedVolume = /*#__PURE__*/function () {
     key: "updateActiveChannels",
     value: function updateActiveChannels(image) {
       var _this = this;
-
       var ch = [-1, -1, -1, -1];
       var activeChannel = 0;
       var NC = this.volume.num_channels;
       var maxch = 4;
-
       for (var i = 0; i < NC && activeChannel < maxch; ++i) {
         if (image.isVolumeChannelEnabled(i) && image.getChannel(i).loaded) {
           ch[activeChannel] = i;
           activeChannel++;
         }
       }
-
       var unchanged = ch.every(function (elem, index) {
         return elem === _this.viewChannels[index];
       }, this);
-
       if (unchanged) {
         return;
       }
-
       this.pathTracingUniforms.gNChannels.value = activeChannel;
-      this.viewChannels = ch; // update volume data according to channels selected.
-
+      this.viewChannels = ch;
+      // update volume data according to channels selected.
       this.updateVolumeData4();
       this.resetProgress();
       this.updateLuts(image);
-      this.updateMaterial(image); // console.log(this.pathTracingUniforms);
+      this.updateMaterial(image);
+
+      // console.log(this.pathTracingUniforms);
     }
   }, {
     key: "updateVolumeData4",
     value: function updateVolumeData4() {
       var sx = this.volume.x,
-          sy = this.volume.y,
-          sz = this.volume.z;
+        sy = this.volume.y,
+        sz = this.volume.z;
       var data = new Uint8Array(sx * sy * sz * 4);
       data.fill(0);
-
       for (var i = 0; i < 4; ++i) {
         var ch = this.viewChannels[i];
-
         if (ch === -1) {
           continue;
         }
-
         for (var iz = 0; iz < sz; ++iz) {
           for (var iy = 0; iy < sy; ++iy) {
             for (var ix = 0; ix < sx; ++ix) {
@@ -3230,18 +3104,17 @@ var PathTracedVolume = /*#__PURE__*/function () {
             }
           }
         }
-
         if (this.maskChannelIndex !== -1 && this.maskAlpha < 1.0) {
-          var maskChannel = this.volume.getChannel(this.maskChannelIndex); // const maskMax = maskChannel.getHistogram().dataMax;
-
+          var maskChannel = this.volume.getChannel(this.maskChannelIndex);
+          // const maskMax = maskChannel.getHistogram().dataMax;
           var maskVal = 1.0;
           var maskAlpha = this.maskAlpha;
-
           for (var _iz = 0; _iz < sz; ++_iz) {
             for (var _iy = 0; _iy < sy; ++_iy) {
               for (var _ix = 0; _ix < sx; ++_ix) {
                 // nonbinary masking
                 // maskVal = maskChannel.getIntensity(ix,iy,iz) * maskAlpha / maskMax;
+
                 // binary masking
                 maskVal = maskChannel.getIntensity(_ix, _iy, _iz) > 0 ? 1.0 : maskAlpha;
                 data[i + _ix * 4 + _iy * 4 * sx + _iz * 4 * sx * sy] *= maskVal;
@@ -3249,9 +3122,8 @@ var PathTracedVolume = /*#__PURE__*/function () {
             }
           }
         }
-      } // defaults to rgba and unsignedbytetype so dont need to supply format this time.
-
-
+      }
+      // defaults to rgba and unsignedbytetype so dont need to supply format this time.
       this.volumeTexture.image.data.set(data);
       this.volumeTexture.needsUpdate = true;
     }
@@ -3265,18 +3137,17 @@ var PathTracedVolume = /*#__PURE__*/function () {
         this.pathTracingUniforms.gIntensityMax.value.setComponent(i, this.volume.channels[channel].histogram.getMax() / 255.0);
         this.pathTracingUniforms.gIntensityMin.value.setComponent(i, this.volume.channels[channel].histogram.getMin() / 255.0);
       }
-
       this.pathTracingUniforms.gLutTexture.value.needsUpdate = true;
       this.resetProgress();
-    } // image is a material interface that supports per-channel color, spec,
-    // emissive, glossiness
+    }
 
+    // image is a material interface that supports per-channel color, spec,
+    // emissive, glossiness
   }, {
     key: "updateMaterial",
     value: function updateMaterial(image) {
       for (var c = 0; c < this.viewChannels.length; ++c) {
         var i = this.viewChannels[c];
-
         if (i > -1) {
           // diffuse color is actually blended into the LUT now.
           var combinedLut = image.getChannel(i).combineLuts(image.getChannelColor(i));
@@ -3288,7 +3159,6 @@ var PathTracedVolume = /*#__PURE__*/function () {
           this.pathTracingUniforms.gGlossiness.value[c] = image.glossiness[i];
         }
       }
-
       this.resetProgress();
     }
   }, {
@@ -3310,7 +3180,6 @@ var PathTracedVolume = /*#__PURE__*/function () {
       if (e > 0.99999) {
         e = 0.99999;
       }
-
       this.screenOutputMaterial.uniforms.gInvExposure.value = 1.0 / (1.0 - e) - 1.0;
       this.screenOutputDenoiseMaterial.uniforms.gInvExposure.value = 1.0 / (1.0 - e) - 1.0;
       this.resetProgress();
@@ -3328,8 +3197,9 @@ var PathTracedVolume = /*#__PURE__*/function () {
       // 0th light in state array is sphere light
       this.pathTracingUniforms.gLights.value[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().copy(state[0].mColorTop);
       this.pathTracingUniforms.gLights.value[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().copy(state[0].mColorMiddle);
-      this.pathTracingUniforms.gLights.value[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().copy(state[0].mColorBottom); // 1st light in state array is area light
+      this.pathTracingUniforms.gLights.value[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().copy(state[0].mColorBottom);
 
+      // 1st light in state array is area light
       this.pathTracingUniforms.gLights.value[1].mColor = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().copy(state[1].mColor);
       this.pathTracingUniforms.gLights.value[1].mTheta = state[1].mTheta;
       this.pathTracingUniforms.gLights.value[1].mPhi = state[1].mPhi;
@@ -3344,13 +3214,13 @@ var PathTracedVolume = /*#__PURE__*/function () {
     value: function updateLightsSecondary(cameraMatrix) {
       var physicalSize = this.volume.normalizedPhysicalSize;
       var bbctr = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(physicalSize.x * 0.5, physicalSize.y * 0.5, physicalSize.z * 0.5);
-
       for (var i = 0; i < 2; ++i) {
         var lt = this.pathTracingUniforms.gLights.value[i];
         lt.update(bbctr, cameraMatrix);
       }
-    } // 0..1 ranges as input
+    }
 
+    // 0..1 ranges as input
   }, {
     key: "updateClipRegion",
     value: function updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
@@ -3364,10 +3234,8 @@ var PathTracedVolume = /*#__PURE__*/function () {
       this.resetProgress();
     }
   }]);
-
   return PathTracedVolume;
 }();
-
 
 
 /***/ }),
@@ -3394,15 +3262,14 @@ __webpack_require__.r(__webpack_exports__);
 
 
 var BOUNDING_BOX_DEFAULT_COLOR = new three__WEBPACK_IMPORTED_MODULE_4__.Color(0xffff00);
-
 var RayMarchedAtlasVolume = /*#__PURE__*/function () {
   function RayMarchedAtlasVolume(volume) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, RayMarchedAtlasVolume);
-
     // need?
-    this.volume = volume; // note that these bounds are the clipped region of interest,
-    // and not always the whole volume
+    this.volume = volume;
 
+    // note that these bounds are the clipped region of interest,
+    // and not always the whole volume
     this.bounds = {
       bmin: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(-0.5, -0.5, -0.5),
       bmax: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0.5, 0.5, 0.5)
@@ -3421,8 +3288,9 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     this.cubeTransformNode = new three__WEBPACK_IMPORTED_MODULE_4__.Group();
     this.cubeTransformNode.name = "VolumeContainerNode";
     this.cubeTransformNode.add(this.boxHelper, this.tickMarksMesh, this.cubeMesh);
-    this.uniforms = _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_3__.rayMarchingShaderUniforms; // shader,vtx and frag.
+    this.uniforms = _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_3__.rayMarchingShaderUniforms;
 
+    // shader,vtx and frag.
     var vtxsrc = _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_3__.rayMarchingVertexShaderSrc;
     var fgmtsrc = _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_3__.rayMarchingFragmentShaderSrc;
     var threeMaterial = new three__WEBPACK_IMPORTED_MODULE_4__.ShaderMaterial({
@@ -3441,41 +3309,34 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     this.setScale(this.scale);
     this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_2__["default"](volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
   }
-
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(RayMarchedAtlasVolume, [{
     key: "createTickMarks",
     value: function createTickMarks() {
       // Length of tick mark lines in world units
       var TICK_LENGTH = 0.025;
       var _this$volume = this.volume,
-          tickMarkPhysicalLength = _this$volume.tickMarkPhysicalLength,
-          physicalScale = _this$volume.physicalScale,
-          normalizedPhysicalSize = _this$volume.normalizedPhysicalSize;
+        tickMarkPhysicalLength = _this$volume.tickMarkPhysicalLength,
+        physicalScale = _this$volume.physicalScale,
+        normalizedPhysicalSize = _this$volume.normalizedPhysicalSize;
       var numTickMarks = physicalScale / tickMarkPhysicalLength;
       var vertices = [];
       var tickEndY = TICK_LENGTH / normalizedPhysicalSize.y + 0.5;
       var tickSpacingX = 1 / (normalizedPhysicalSize.x * numTickMarks);
-
       for (var x = -0.5; x <= 0.5; x += tickSpacingX) {
         // prettier-ignore
         vertices.push(x, 0.5, 0.5, x, tickEndY, 0.5, x, -0.5, -0.5, x, -tickEndY, -0.5, x, 0.5, -0.5, x, tickEndY, -0.5, x, -0.5, 0.5, x, -tickEndY, 0.5);
       }
-
       var tickEndX = TICK_LENGTH / normalizedPhysicalSize.x + 0.5;
       var tickSpacingY = 1 / (normalizedPhysicalSize.y * numTickMarks);
-
       for (var y = 0.5; y >= -0.5; y -= tickSpacingY) {
         // prettier-ignore
         vertices.push(-0.5, y, 0.5, -tickEndX, y, 0.5, -0.5, y, -0.5, -tickEndX, y, -0.5, 0.5, y, -0.5, tickEndX, y, -0.5, 0.5, y, 0.5, tickEndX, y, 0.5);
       }
-
       var tickSpacingZ = 1 / (normalizedPhysicalSize.z * numTickMarks);
-
       for (var z = 0.5; z >= -0.5; z -= tickSpacingZ) {
         // prettier-ignore
         vertices.push(-0.5, 0.5, z, -tickEndX, 0.5, z, -0.5, -0.5, z, -tickEndX, -0.5, z, 0.5, -0.5, z, tickEndX, -0.5, z, 0.5, 0.5, z, tickEndX, 0.5, z);
       }
-
       var geometry = new three__WEBPACK_IMPORTED_MODULE_4__.BufferGeometry();
       geometry.setAttribute("position", new three__WEBPACK_IMPORTED_MODULE_4__.BufferAttribute(new Float32Array(vertices), 3));
       return new three__WEBPACK_IMPORTED_MODULE_4__.LineSegments(geometry, new three__WEBPACK_IMPORTED_MODULE_4__.LineBasicMaterial({
@@ -3492,7 +3353,8 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
   }, {
     key: "setVisible",
     value: function setVisible(isVisible) {
-      this.cubeMesh.visible = isVisible; // note that this does not affect bounding box visibility
+      this.cubeMesh.visible = isVisible;
+      // note that this does not affect bounding box visibility
     }
   }, {
     key: "setShowBoundingBox",
@@ -3503,11 +3365,11 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
   }, {
     key: "setBoundingBoxColor",
     value: function setBoundingBoxColor(color) {
-      var newBoxColor = new three__WEBPACK_IMPORTED_MODULE_4__.Color(color[0], color[1], color[2]); // note this material update is supposed to be a hidden implementation detail
+      var newBoxColor = new three__WEBPACK_IMPORTED_MODULE_4__.Color(color[0], color[1], color[2]);
+      // note this material update is supposed to be a hidden implementation detail
       // but I didn't want to re-create a whole boxHelper again.
       // I could also create a new LineBasicMaterial but that would also rely on knowledge
       // that Box3Helper expects that type.
-
       this.boxHelper.material.color = newBoxColor;
       this.tickMarksMesh.material.color = newBoxColor;
     }
@@ -3517,7 +3379,6 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
       if (!this.cubeMesh.visible) {
         return;
       }
-
       this.channelData.gpuFuse(canvas.renderer);
       this.setUniform("textureAtlas", this.channelData.getFusedTexture());
       this.cubeTransformNode.updateMatrixWorld(true);
@@ -3534,7 +3395,8 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     }
   }, {
     key: "onChannelData",
-    value: function onChannelData(_batch) {// no op
+    value: function onChannelData(_batch) {
+      // no op
     }
   }, {
     key: "setScale",
@@ -3547,7 +3409,8 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     }
   }, {
     key: "setRayStepSizes",
-    value: function setRayStepSizes(_primary, _secondary) {// no op
+    value: function setRayStepSizes(_primary, _secondary) {
+      // no op
     }
   }, {
     key: "setTranslation",
@@ -3571,14 +3434,16 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     }
   }, {
     key: "setPixelSamplingRate",
-    value: function setPixelSamplingRate(_value) {// no op
+    value: function setPixelSamplingRate(_value) {
+      // no op
     }
   }, {
     key: "setDensity",
     value: function setDensity(density) {
       this.setUniform("DENSITY", density);
-    } // TODO brightness and exposure should be the same thing?
+    }
 
+    // TODO brightness and exposure should be the same thing?
   }, {
     key: "setBrightness",
     value: function setBrightness(brightness) {
@@ -3590,7 +3455,6 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
       this.isOrtho = isOrthoAxis;
       this.tickMarksMesh.visible = this.boxHelper.visible && !isOrthoAxis;
       this.setUniform("isOrtho", isOrthoAxis ? 1.0 : 0.0);
-
       if (!isOrthoAxis) {
         this.setOrthoThickness(1.0);
       }
@@ -3602,7 +3466,8 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     }
   }, {
     key: "viewpointMoved",
-    value: function viewpointMoved() {// no op
+    value: function viewpointMoved() {
+      // no op
     }
   }, {
     key: "setGamma",
@@ -3621,7 +3486,6 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     value: function setAxisClip(axis, minval, maxval, isOrthoAxis) {
       this.bounds.bmax[axis] = maxval;
       this.bounds.bmin[axis] = minval;
-
       if (isOrthoAxis) {
         var thicknessPct = maxval - minval;
         this.setOrthoThickness(thicknessPct);
@@ -3631,7 +3495,6 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
         // known value when in perspective mode
         this.setOrthoThickness(1.0);
       }
-
       this.setUniform("AABB_CLIP_MIN", this.bounds.bmin);
       this.setUniform("AABB_CLIP_MAX", this.bounds.bmax);
     }
@@ -3639,8 +3502,9 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     key: "setFlipAxes",
     value: function setFlipAxes(flipX, flipY, flipZ) {
       this.setUniform("flipVolume", new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(flipX, flipY, flipZ));
-    } // 0..1
+    }
 
+    // 0..1
   }, {
     key: "updateClipRegion",
     value: function updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
@@ -3657,7 +3521,6 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
       if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
         return false;
       }
-
       return this.channelData.setChannelAsMask(channelIndex, this.volume.channels[channelIndex]);
     }
   }, {
@@ -3669,33 +3532,38 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     key: "setOrthoThickness",
     value: function setOrthoThickness(value) {
       this.setUniform("orthoThickness", value);
-    } //////////////////////////////////////////
-    //////////////////////////////////////////
+    }
 
+    //////////////////////////////////////////
+    //////////////////////////////////////////
   }, {
     key: "setUniform",
     value: function setUniform(name, value) {
       if (!this.uniforms[name]) {
         return;
       }
-
       this.uniforms[name].value = value;
       this.cubeMesh.material.needsUpdate = true;
-    } // channelcolors is array of {rgbColor, lut} and channeldata is volume.channels
+    }
 
+    // channelcolors is array of {rgbColor, lut} and channeldata is volume.channels
   }, {
     key: "fuse",
     value: function fuse(channelcolors, channeldata) {
-      this.channelData.fuse(channelcolors, channeldata); // update to fused texture
+      this.channelData.fuse(channelcolors, channeldata);
 
+      // update to fused texture
       this.setUniform("textureAtlas", this.channelData.getFusedTexture());
       this.setUniform("textureAtlasMask", this.channelData.maskTexture);
     }
+  }, {
+    key: "setRenderUpdateListener",
+    value: function setRenderUpdateListener(_listener) {
+      return;
+    }
   }]);
-
   return RayMarchedAtlasVolume;
 }();
-
 
 
 /***/ }),
@@ -3709,7 +3577,7 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "ThreeJsPanel": () => (/* binding */ ThreeJsPanel)
+/* harmony export */   ThreeJsPanel: () => (/* binding */ ThreeJsPanel)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
@@ -3734,19 +3602,16 @@ var DEFAULT_ORTHO_SCALE = 0.5;
 var ThreeJsPanel = /*#__PURE__*/function () {
   function ThreeJsPanel(parentElement, _useWebGL2) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, ThreeJsPanel);
-
     this.containerdiv = document.createElement("div");
     this.containerdiv.style.position = "relative";
     this.canvas = document.createElement("canvas");
     this.containerdiv.appendChild(this.canvas);
     this.canvas.style.backgroundColor = "black";
-
     if (parentElement) {
       this.canvas.height = parentElement.offsetHeight;
       this.canvas.width = parentElement.offsetWidth;
       parentElement.appendChild(this.containerdiv);
     }
-
     this.scene = new three__WEBPACK_IMPORTED_MODULE_7__.Scene();
     this.scaleBarContainerElement = document.createElement("div");
     this.orthoScaleBarElement = document.createElement("div");
@@ -3756,16 +3621,17 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     this.timestepIndicatorElement = document.createElement("div");
     this.showTimestepIndicator = false;
     this.zooming = false;
-    this.animateFuncs = []; // are we in a constant render loop or not?
+    this.animateFuncs = [];
 
-    this.inRenderLoop = false; // if we're not in a constant render loop, have we queued any single redraws?
+    // are we in a constant render loop or not?
+    this.inRenderLoop = false;
+    // if we're not in a constant render loop, have we queued any single redraws?
+    this.requestedRender = 0;
 
-    this.requestedRender = 0; // if webgl 2 is available, let's just use it anyway.
+    // if webgl 2 is available, let's just use it anyway.
     // we are ignoring the useWebGL2 flag
-
     this.hasWebGL2 = false;
     var context = this.canvas.getContext("webgl2");
-
     if (context) {
       this.hasWebGL2 = true;
       this.renderer = new three__WEBPACK_IMPORTED_MODULE_7__.WebGLRenderer({
@@ -3774,12 +3640,12 @@ var ThreeJsPanel = /*#__PURE__*/function () {
         preserveDrawingBuffer: true,
         alpha: true,
         premultipliedAlpha: false
-      }); //this.renderer.autoClear = false;
+      });
+      //this.renderer.autoClear = false;
       // set pixel ratio to 0.25 or 0.5 to render at lower res.
-
       this.renderer.setPixelRatio(window.devicePixelRatio);
-      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending); //required by WebGL 2.0 for rendering to FLOAT textures
-
+      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending);
+      //required by WebGL 2.0 for rendering to FLOAT textures
       this.renderer.getContext().getExtension("EXT_color_buffer_float");
     } else {
       // TODO Deprecate this code path.
@@ -3793,13 +3659,10 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       this.renderer.setPixelRatio(window.devicePixelRatio);
       this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending);
     }
-
     this.renderer.localClippingEnabled = true;
-
     if (parentElement) {
       this.renderer.setSize(parentElement.offsetWidth, parentElement.offsetHeight);
     }
-
     this.timer = new _Timing__WEBPACK_IMPORTED_MODULE_4__["default"]();
     var scale = DEFAULT_ORTHO_SCALE;
     var aspect = this.getWidth() / this.getHeight();
@@ -3849,15 +3712,14 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     this.axisHelperScene = new three__WEBPACK_IMPORTED_MODULE_7__.Scene();
     this.axisHelperObject = new three__WEBPACK_IMPORTED_MODULE_7__.Object3D();
     this.axisHelperObject.name = "axisHelperParentObject";
-    this.showAxis = false; // size of axes in px.
-
-    this.axisScale = 50.0; // offset from bottom left corner in px.
-
+    this.showAxis = false;
+    // size of axes in px.
+    this.axisScale = 50.0;
+    // offset from bottom left corner in px.
     this.axisOffset = [66.0, 66.0];
     this.setupAxisHelper();
     this.setupIndicatorElements();
   }
-
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(ThreeJsPanel, [{
     key: "updateCameraFocus",
     value: function updateCameraFocus(fov, _focalDistance, _apertureSize) {
@@ -3942,13 +3804,13 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       } else if (this.camera === this.orthographicCameraZ) {
         this.resetOrthographicCameraZ();
       }
-
       this.controls.reset();
     }
   }, {
     key: "setupAxisHelper",
     value: function setupAxisHelper() {
       // set up axis widget.
+
       var axisCubeMaterial = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
         color: 0xaeacad
       });
@@ -3973,15 +3835,12 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       // at offsets lower than BASE_MARGIN, axes may extend off screen
       var BASE_MARGIN = 50;
       this.axisOffset = [marginX + BASE_MARGIN, marginY + BASE_MARGIN];
-
       if ((0,_types__WEBPACK_IMPORTED_MODULE_6__.isTop)(corner)) {
         this.axisOffset[1] = this.getHeight() - this.axisOffset[1];
       }
-
       if ((0,_types__WEBPACK_IMPORTED_MODULE_6__.isRight)(corner)) {
         this.axisOffset[0] = this.getWidth() - this.axisOffset[0];
       }
-
       this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
     }
   }, {
@@ -3993,10 +3852,10 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     key: "orthoScreenPixelsToPhysicalUnits",
     value: function orthoScreenPixelsToPhysicalUnits(pixels, physicalUnitsPerWorldUnit) {
       // At orthoScale = 0.5, the viewport is 1 world unit tall
-      var worldUnitsPerPixel = this.getOrthoScale() * 2 / this.getHeight(); // Multiply by devicePixelRatio to convert from scaled CSS pixels to physical pixels
+      var worldUnitsPerPixel = this.getOrthoScale() * 2 / this.getHeight();
+      // Multiply by devicePixelRatio to convert from scaled CSS pixels to physical pixels
       // (to account for high dpi monitors, e.g.). We didn't do this to height above because
       // that value comes from three, which works in physical pixels.
-
       return pixels * window.devicePixelRatio * worldUnitsPerPixel * physicalUnitsPerWorldUnit;
     }
   }, {
@@ -4009,8 +3868,9 @@ var ThreeJsPanel = /*#__PURE__*/function () {
         bottom: "20px"
       };
       Object.assign(this.scaleBarContainerElement.style, scaleBarContainerStyle);
-      this.containerdiv.appendChild(this.scaleBarContainerElement); // Orthographic scale bar
+      this.containerdiv.appendChild(this.scaleBarContainerElement);
 
+      // Orthographic scale bar
       var orthoScaleBarStyle = {
         border: "1px solid white",
         borderTop: "none",
@@ -4025,8 +3885,9 @@ var ThreeJsPanel = /*#__PURE__*/function () {
         paddingRight: "10px"
       };
       Object.assign(this.orthoScaleBarElement.style, orthoScaleBarStyle);
-      this.scaleBarContainerElement.appendChild(this.orthoScaleBarElement); // Perspective scale bar
+      this.scaleBarContainerElement.appendChild(this.orthoScaleBarElement);
 
+      // Perspective scale bar
       var perspectiveScaleBarStyle = {
         width: "75px",
         textAlign: "center",
@@ -4040,8 +3901,9 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       svgdiv.style.color = "rgb(255, 255, 0)";
       svgdiv.innerHTML = _constants_scaleBarSVG__WEBPACK_IMPORTED_MODULE_5__["default"];
       this.perspectiveScaleBarElement.appendChild(labeldiv);
-      this.perspectiveScaleBarElement.appendChild(svgdiv); // Time step indicator
+      this.perspectiveScaleBarElement.appendChild(svgdiv);
 
+      // Time step indicator
       var timestepIndicatorStyle = {
         fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
         position: "absolute",
@@ -4059,20 +3921,18 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     key: "updateOrthoScaleBar",
     value: function updateOrthoScaleBar(scale, unit) {
       // We want to find the largest round number of physical units that keeps the scale bar within this width on screen
-      var SCALE_BAR_MAX_WIDTH = 150; // Convert max width to volume physical units
-
-      var physicalMaxWidth = this.orthoScreenPixelsToPhysicalUnits(SCALE_BAR_MAX_WIDTH, scale); // Round off all but the most significant digit of physicalMaxWidth
-
+      var SCALE_BAR_MAX_WIDTH = 150;
+      // Convert max width to volume physical units
+      var physicalMaxWidth = this.orthoScreenPixelsToPhysicalUnits(SCALE_BAR_MAX_WIDTH, scale);
+      // Round off all but the most significant digit of physicalMaxWidth
       var digits = Math.floor(Math.log10(physicalMaxWidth));
       var div10 = Math.pow(10, digits);
       var scaleValue = Math.floor(physicalMaxWidth / div10) * div10;
       var scaleStr = scaleValue.toString();
-
       if (digits < 1) {
         // Handle irrational floating point values (e.g. 0.30000000000000004)
         scaleStr = scaleStr.slice(0, Math.abs(digits) + 2);
       }
-
       this.orthoScaleBarElement.innerHTML = "".concat(scaleStr).concat(unit || "");
       this.orthoScaleBarElement.style.width = "".concat(SCALE_BAR_MAX_WIDTH * (scaleValue / physicalMaxWidth), "px");
     }
@@ -4125,10 +3985,8 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     key: "setIndicatorPosition",
     value: function setIndicatorPosition(timestep, marginX, marginY, corner) {
       var _Object$assign;
-
       var _ref = timestep ? this.timestepIndicatorElement : this.scaleBarContainerElement,
-          style = _ref.style;
-
+        style = _ref.style;
       style.removeProperty("top");
       style.removeProperty("bottom");
       style.removeProperty("left");
@@ -4157,34 +4015,31 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     value: function replaceControls(newControls) {
       if (this.controls === newControls) {
         return;
-      } // disable the old, install the new.
+      }
+      // disable the old, install the new.
+      this.controls.enabled = false;
 
-
-      this.controls.enabled = false; // detach old control change handlers
-
+      // detach old control change handlers
       this.removeControlHandlers();
       this.controls = newControls;
-      this.controls.enabled = true; // re-install existing control change handlers on new controls
+      this.controls.enabled = true;
 
+      // re-install existing control change handlers on new controls
       if (this.controlStartHandler) {
         this.controls.addEventListener("start", this.controlStartHandler);
       }
-
       if (this.controlChangeHandler) {
         this.controls.addEventListener("change", this.controlChangeHandler);
       }
-
       if (this.controlEndHandler) {
         this.controls.addEventListener("end", this.controlEndHandler);
       }
-
       this.controls.update();
     }
   }, {
     key: "switchViewMode",
     value: function switchViewMode(mode) {
       mode = mode.toUpperCase();
-
       switch (mode) {
         case "YZ":
         case "X":
@@ -4192,28 +4047,24 @@ var ThreeJsPanel = /*#__PURE__*/function () {
           this.replaceControls(this.orthoControlsX);
           this.axisHelperObject.rotation.set(0, Math.PI * 0.5, 0);
           break;
-
         case "XZ":
         case "Y":
           this.replaceCamera(this.orthographicCameraY);
           this.replaceControls(this.orthoControlsY);
           this.axisHelperObject.rotation.set(Math.PI * 0.5, 0, 0);
           break;
-
         case "XY":
         case "Z":
           this.replaceCamera(this.orthographicCameraZ);
           this.replaceControls(this.orthoControlsZ);
           this.axisHelperObject.rotation.set(0, 0, 0);
           break;
-
         default:
           this.replaceCamera(this.perspectiveCamera);
           this.replaceControls(this.perspectiveControls);
           this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
           break;
       }
-
       this.updateScaleBarVisibility();
     }
   }, {
@@ -4225,7 +4076,6 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     key: "resize",
     value: function resize(comp, w, h, _ow, _oh, _eOpts) {
       var _this$containerdiv$pa, _this$containerdiv$pa2;
-
       w = w || ((_this$containerdiv$pa = this.containerdiv.parentElement) === null || _this$containerdiv$pa === void 0 ? void 0 : _this$containerdiv$pa.offsetWidth) || this.containerdiv.offsetWidth;
       h = h || ((_this$containerdiv$pa2 = this.containerdiv.parentElement) === null || _this$containerdiv$pa2 === void 0 ? void 0 : _this$containerdiv$pa2.offsetHeight) || this.containerdiv.offsetHeight;
       this.containerdiv.style.width = "" + w + "px";
@@ -4238,7 +4088,6 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       this.orthoControlsY.panSpeed = w * 0.5;
       this.orthoControlsX.aspect = aspect;
       this.orthoControlsX.panSpeed = w * 0.5;
-
       if ((0,_types__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(this.camera)) {
         this.camera.left = -DEFAULT_ORTHO_SCALE * aspect;
         this.camera.right = DEFAULT_ORTHO_SCALE * aspect;
@@ -4247,17 +4096,14 @@ var ThreeJsPanel = /*#__PURE__*/function () {
         this.camera.aspect = aspect;
         this.camera.updateProjectionMatrix();
       }
-
       this.axisCamera.left = 0;
       this.axisCamera.right = w;
       this.axisCamera.top = h;
       this.axisCamera.bottom = 0;
       this.axisCamera.updateProjectionMatrix();
-
       if (this.renderer.getPixelRatio() !== window.devicePixelRatio) {
         this.renderer.setPixelRatio(window.devicePixelRatio);
       }
-
       this.renderer.setSize(w, h);
       this.perspectiveControls.handleResize();
       this.orthoControlsZ.handleResize();
@@ -4285,23 +4131,21 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       // update the axis helper in case the view was rotated
       if (!(0,_types__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(this.camera)) {
         this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
-      } // do whatever we have to do before the main render of this.scene
+      }
 
-
+      // do whatever we have to do before the main render of this.scene
       for (var i = 0; i < this.animateFuncs.length; i++) {
         if (this.animateFuncs[i]) {
           this.animateFuncs[i](this);
         }
       }
-
-      this.renderer.render(this.scene, this.camera); // overlay
-
+      this.renderer.render(this.scene, this.camera);
+      // overlay
       if (this.showAxis) {
         this.renderer.autoClear = false;
         this.renderer.render(this.axisHelperScene, this.axisCamera);
         this.renderer.autoClear = true;
       }
-
       if (this.dataurlcallback) {
         this.dataurlcallback(this.canvas.toDataURL());
         this.dataurlcallback = undefined;
@@ -4316,7 +4160,6 @@ var ThreeJsPanel = /*#__PURE__*/function () {
         if (this.requestedRender) {
           cancelAnimationFrame(this.requestedRender);
         }
-
         this.timer.begin();
         this.requestedRender = requestAnimationFrame(this.onAnimationLoop.bind(this));
       }
@@ -4333,8 +4176,8 @@ var ThreeJsPanel = /*#__PURE__*/function () {
   }, {
     key: "startRenderLoop",
     value: function startRenderLoop() {
-      this.inRenderLoop = true; // reset the timer so that the time delta won't go back to the last time we were animating.
-
+      this.inRenderLoop = true;
+      // reset the timer so that the time delta won't go back to the last time we were animating.
       this.timer.begin();
       this.renderer.setAnimationLoop(this.onAnimationLoop.bind(this));
     }
@@ -4343,12 +4186,10 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     value: function stopRenderLoop() {
       this.renderer.setAnimationLoop(null);
       this.inRenderLoop = false;
-
       if (this.requestedRender) {
         cancelAnimationFrame(this.requestedRender);
         this.requestedRender = 0;
       }
-
       this.timer.end();
     }
   }, {
@@ -4357,11 +4198,9 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       if (this.controlStartHandler) {
         this.controls.removeEventListener("start", this.controlStartHandler);
       }
-
       if (this.controlChangeHandler) {
         this.controls.removeEventListener("change", this.controlChangeHandler);
       }
-
       if (this.controlEndHandler) {
         this.controls.removeEventListener("end", this.controlEndHandler);
       }
@@ -4370,24 +4209,20 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     key: "setControlHandlers",
     value: function setControlHandlers(onstart, onchange, onend) {
       this.removeControlHandlers();
-
       if (onstart) {
         this.controlStartHandler = onstart;
         this.controls.addEventListener("start", this.controlStartHandler);
       }
-
       if (onchange) {
         this.controlChangeHandler = onchange;
         this.controls.addEventListener("change", this.controlChangeHandler);
       }
-
       if (onend) {
         this.controlEndHandler = onend;
         this.controls.addEventListener("end", this.controlEndHandler);
       }
     }
   }]);
-
   return ThreeJsPanel;
 }();
 
@@ -4408,18 +4243,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 
 
-
 var Timing = /*#__PURE__*/function () {
   function Timing() {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Timing);
-
     this.beginTime = (performance || Date).now();
     this.prevTime = this.beginTime;
     this.frames = 0;
     this.lastFrameMs = 0;
     this.lastFPS = 0;
   }
-
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Timing, [{
     key: "begin",
     value: function begin() {
@@ -4430,14 +4262,14 @@ var Timing = /*#__PURE__*/function () {
     value: function end() {
       this.frames++;
       var time = (performance || Date).now();
-      this.lastFrameMs = time - this.beginTime; // wait at least a second's worth of frames, to update FPS.
+      this.lastFrameMs = time - this.beginTime;
 
+      // wait at least a second's worth of frames, to update FPS.
       if (time >= this.prevTime + 1000) {
         this.lastFPS = this.frames * 1000 / (time - this.prevTime);
         this.prevTime = time;
         this.frames = 0;
       }
-
       return time;
     }
   }, {
@@ -4446,10 +4278,8 @@ var Timing = /*#__PURE__*/function () {
       this.beginTime = this.end();
     }
   }]);
-
   return Timing;
 }();
-
 
 
 /***/ }),
@@ -4478,41 +4308,31 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__["default"])(this, result); }; }
-
 function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
-
 /**
  * @author Eberhard Graether / http://egraether.com/
  * @author Mark Lundin 	/ http://mark-lundin.com
  * @author Simone Manini / http://daron1337.github.io
  * @author Luca Antiga 	/ http://lantiga.github.io
  */
- // this file is heavily derived from threejs and so we disable a lot of our
+
+
+
+// this file is heavily derived from threejs and so we disable a lot of our
 // linting rules just for this file, to allow it to keep a similar form to the
 // original.
-
 /* eslint-disable @typescript-eslint/naming-convention */
-
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-
 /* eslint-disable @typescript-eslint/no-this-alias */
-
 var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
   (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_3__["default"])(TrackballControls, _EventDispatcher);
-
   var _super = _createSuper(TrackballControls);
-
   function TrackballControls(object, domElement) {
     var _this;
-
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, TrackballControls);
-
     _this = _super.call(this);
-
     var scope = (0,_babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_2__["default"])(_this);
-
     var STATE = {
       NONE: -1,
       ROTATE: 0,
@@ -4522,7 +4342,8 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
       TOUCH_ZOOM_PAN: 4
     };
     _this.object = object;
-    _this.domElement = domElement; // API
+    _this.domElement = domElement;
+    // API
 
     _this.enabled = true;
     _this.screen = {
@@ -4545,22 +4366,18 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
     _this.dynamicDampingFactor = 0.2;
     _this.minDistance = 0;
     _this.maxDistance = Infinity;
-    _this.keys = ["KeyA",
-    /*A*/
-    "KeyS",
-    /*S*/
-    "KeyD"
-    /*D*/
-    ];
+    _this.keys = ["KeyA", /*A*/"KeyS", /*S*/"KeyD" /*D*/];
     _this.mouseButtons = {
       LEFT: three__WEBPACK_IMPORTED_MODULE_6__.MOUSE.ROTATE,
       MIDDLE: three__WEBPACK_IMPORTED_MODULE_6__.MOUSE.DOLLY,
       RIGHT: three__WEBPACK_IMPORTED_MODULE_6__.MOUSE.PAN
-    }; // Set to true to automatically rotate around the target
-    // If auto-rotate is enabled, you must call controls.update() in your animation loop
+    };
 
+    // Set to true to automatically rotate around the target
+    // If auto-rotate is enabled, you must call controls.update() in your animation loop
     _this.autoRotate = false;
     _this.autoRotateSpeed = 2.0; // 30 seconds per round when fps is 60
+
     // internals
 
     _this.target = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3();
@@ -4568,27 +4385,29 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
     var lastPosition = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3();
     var lastZoom = 1;
     var _state = STATE.NONE,
-        _keyState = STATE.NONE,
-        _touchZoomDistanceStart = 0,
-        _touchZoomDistanceEnd = 0,
-        _lastAngle = 0;
-
+      _keyState = STATE.NONE,
+      _touchZoomDistanceStart = 0,
+      _touchZoomDistanceEnd = 0,
+      _lastAngle = 0;
     var _eye = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
-        _movePrev = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
-        _moveCurr = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
-        _lastAxis = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
-        _zoomStart = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
-        _zoomEnd = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
-        _panStart = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
-        _panEnd = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
-        _pointers = [],
-        _pointerPositions = {}; // for reset
+      _movePrev = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
+      _moveCurr = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
+      _lastAxis = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
+      _zoomStart = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
+      _zoomEnd = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
+      _panStart = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
+      _panEnd = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
+      _pointers = [],
+      _pointerPositions = {};
 
+    // for reset
 
     _this.target0 = _this.target.clone();
     _this.position0 = _this.object.position.clone();
     _this.up0 = _this.object.up.clone();
-    _this.zoom0 = _this.object.zoom; // events
+    _this.zoom0 = _this.object.zoom;
+
+    // events
 
     var _changeEvent = {
       type: "change"
@@ -4598,18 +4417,19 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
     };
     var _endEvent = {
       type: "end"
-    }; // methods
+    };
+
+    // methods
 
     _this.handleResize = function () {
-      var box = scope.domElement.getBoundingClientRect(); // adjustments come from similar code in the jquery offset() function
-
+      var box = scope.domElement.getBoundingClientRect();
+      // adjustments come from similar code in the jquery offset() function
       var d = scope.domElement.ownerDocument.documentElement;
       scope.screen.left = box.left + window.pageXOffset - d.clientLeft;
       scope.screen.top = box.top + window.pageYOffset - d.clientTop;
       scope.screen.width = box.width;
       scope.screen.height = box.height;
     };
-
     var getMouseOnScreen = function () {
       var vector = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2();
       return function getMouseOnScreen(pageX, pageY) {
@@ -4617,27 +4437,25 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
         return vector;
       };
     }();
-
     var getMouseOnCircle = function () {
       var vector = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2();
       return function getMouseOnCircle(pageX, pageY) {
         vector.set((pageX - scope.screen.width * 0.5 - scope.screen.left) / (scope.screen.width * 0.5), (scope.screen.height + 2 * (scope.screen.top - pageY)) / scope.screen.width // screen.width intentional
         );
+
         return vector;
       };
     }();
-
     function getAutoRotationAngle(delta) {
       return 2 * Math.PI / 60 / 60 * scope.autoRotateSpeed * (delta * 60.0);
     }
-
     _this.rotateCamera = function () {
       var axis = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
-          quaternion = new three__WEBPACK_IMPORTED_MODULE_6__.Quaternion(),
-          eyeDirection = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
-          objectUpDirection = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
-          objectSidewaysDirection = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
-          moveDirection = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3();
+        quaternion = new three__WEBPACK_IMPORTED_MODULE_6__.Quaternion(),
+        eyeDirection = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
+        objectUpDirection = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
+        objectSidewaysDirection = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
+        moveDirection = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3();
       var angle, dx, dy;
       return function rotateCamera(delta) {
         dx = _moveCurr.x - _movePrev.x;
@@ -4645,7 +4463,6 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
         moveDirection.set(dx, dy, 0);
         angle = moveDirection.length();
         angle *= scope.rotateSpeed;
-
         if (scope.autoRotate && _state === STATE.NONE) {
           // rotate about vertical axis
           angle = getAutoRotationAngle(delta);
@@ -4653,10 +4470,8 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
           dy = 0;
           moveDirection.set(angle, 0, 0);
         }
-
         if (angle) {
           _eye.copy(scope.object.position).sub(scope.target);
-
           eyeDirection.copy(_eye).normalize();
           objectUpDirection.copy(scope.object.up).normalize();
           objectSidewaysDirection.crossVectors(objectUpDirection, eyeDirection).normalize();
@@ -4665,37 +4480,25 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
           moveDirection.copy(objectUpDirection.add(objectSidewaysDirection));
           axis.crossVectors(moveDirection, _eye).normalize();
           quaternion.setFromAxisAngle(axis, angle);
-
           _eye.applyQuaternion(quaternion);
-
           scope.object.up.applyQuaternion(quaternion);
-
           _lastAxis.copy(axis);
-
           _lastAngle = angle;
         } else if (!scope.staticMoving && _lastAngle) {
           _lastAngle *= Math.sqrt(1.0 - scope.dynamicDampingFactor);
-
           _eye.copy(scope.object.position).sub(scope.target);
-
           quaternion.setFromAxisAngle(_lastAxis, _lastAngle);
-
           _eye.applyQuaternion(quaternion);
-
           scope.object.up.applyQuaternion(quaternion);
         }
-
         _movePrev.copy(_moveCurr);
       };
     }();
-
     _this.zoomCamera = function () {
       var factor;
-
       if (_state === STATE.TOUCH_ZOOM_PAN) {
         factor = _touchZoomDistanceStart / _touchZoomDistanceEnd;
         _touchZoomDistanceStart = _touchZoomDistanceEnd;
-
         if (scope.object.isPerspectiveCamera) {
           _eye.multiplyScalar(factor);
         } else if (scope.object.isOrthographicCamera) {
@@ -4707,7 +4510,6 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
         }
       } else {
         factor = 1.0 + (_zoomEnd.y - _zoomStart.y) * scope.zoomSpeed;
-
         if (factor !== 1.0 && factor > 0.0) {
           if (scope.object.isPerspectiveCamera) {
             _eye.multiplyScalar(factor);
@@ -4719,7 +4521,6 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
             console.warn("THREE.TrackballControls: Unsupported camera type");
           }
         }
-
         if (scope.staticMoving) {
           _zoomStart.copy(_zoomEnd);
         } else {
@@ -4727,14 +4528,12 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
         }
       }
     };
-
     _this.panCamera = function () {
       var mouseChange = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
-          objectUp = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
-          pan = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3();
+        objectUp = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
+        pan = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3();
       return function panCamera() {
         mouseChange.copy(_panEnd).sub(_panStart);
-
         if (mouseChange.lengthSq()) {
           if (scope.object.isOrthographicCamera) {
             var scale_x = (scope.object.right - scope.object.left) / scope.object.zoom / scope.domElement.clientWidth;
@@ -4742,13 +4541,11 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
             mouseChange.x *= scale_x;
             mouseChange.y *= scale_y;
           }
-
           mouseChange.multiplyScalar(_eye.length() * scope.panSpeed);
           pan.copy(_eye).cross(scope.object.up).setLength(mouseChange.x);
           pan.add(objectUp.copy(scope.object.up).setLength(mouseChange.y));
           scope.object.position.add(pan);
           scope.target.add(pan);
-
           if (scope.staticMoving) {
             _panStart.copy(_panEnd);
           } else {
@@ -4757,54 +4554,41 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
         }
       };
     }();
-
     _this.checkDistances = function () {
       if (!scope.noZoom || !scope.noPan) {
         if (_eye.lengthSq() > scope.maxDistance * scope.maxDistance) {
           scope.object.position.addVectors(scope.target, _eye.setLength(scope.maxDistance));
-
           _zoomStart.copy(_zoomEnd);
         }
-
         if (_eye.lengthSq() < scope.minDistance * scope.minDistance) {
           scope.object.position.addVectors(scope.target, _eye.setLength(scope.minDistance));
-
           _zoomStart.copy(_zoomEnd);
         }
       }
     };
-
     _this.update = function (delta) {
       if (scope.enabled === false) return;
       delta = delta || 0.0;
-
       _eye.subVectors(scope.object.position, scope.target);
-
       if (!scope.noRotate) {
         scope.rotateCamera(delta);
       }
-
       if (!scope.noZoom) {
         scope.zoomCamera();
       }
-
       if (!scope.noPan) {
         scope.panCamera();
       }
-
       scope.object.position.addVectors(scope.target, _eye);
-
       if (scope.object.isPerspectiveCamera) {
         scope.checkDistances();
         scope.object.lookAt(scope.target);
-
         if (lastPosition.distanceToSquared(scope.object.position) > EPS) {
           scope.dispatchEvent(_changeEvent);
           lastPosition.copy(scope.object.position);
         }
       } else if (scope.object.isOrthographicCamera) {
         scope.object.lookAt(scope.target);
-
         if (lastPosition.distanceToSquared(scope.object.position) > EPS || lastZoom !== scope.object.zoom) {
           scope.dispatchEvent(_changeEvent);
           lastPosition.copy(scope.object.position);
@@ -4814,9 +4598,9 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
         console.warn("THREE.TrackballControls: Unsupported camera type");
       }
     };
-
     _this.reset = function () {
       //if (scope.enabled === false) return;
+
       _state = STATE.NONE;
       _keyState = STATE.NONE;
       scope.target.copy(scope.target0);
@@ -4825,72 +4609,59 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
       scope.object.zoom = scope.zoom0;
       scope.scale = scope.scale0;
       scope.object.updateProjectionMatrix();
-
       _eye.subVectors(scope.object.position, scope.target);
-
       scope.object.lookAt(scope.target);
       scope.dispatchEvent(_changeEvent);
       lastPosition.copy(scope.object.position);
       lastZoom = scope.object.zoom;
-    }; // listeners
+    };
 
+    // listeners
 
     function onPointerDown(event) {
       if (scope.enabled === false) return;
-
       if (_pointers.length === 0) {
         scope.domElement.setPointerCapture(event.pointerId);
         scope.domElement.addEventListener("pointermove", onPointerMove);
         scope.domElement.addEventListener("pointerup", onPointerUp);
       } //
 
-
       addPointer(event);
-
       if (event.pointerType === "touch") {
         onTouchStart(event);
       } else {
         onMouseDown(event);
       }
     }
-
     function onPointerMove(event) {
       if (scope.enabled === false) return;
-
       if (event.pointerType === "touch") {
         onTouchMove(event);
       } else {
         onMouseMove(event);
       }
     }
-
     function onPointerUp(event) {
       if (scope.enabled === false) return;
-
       if (event.pointerType === "touch") {
         onTouchEnd(event);
       } else {
         onMouseUp();
       } //
 
-
       removePointer(event);
-
       if (_pointers.length === 0) {
         scope.domElement.releasePointerCapture(event.pointerId);
         scope.domElement.removeEventListener("pointermove", onPointerMove);
         scope.domElement.removeEventListener("pointerup", onPointerUp);
       }
     }
-
     function onPointerCancel(event) {
       removePointer(event);
     }
-
     function keydown(event) {
       if (scope.enabled === false) return;
       window.removeEventListener("keydown", keydown);
-
       if (_keyState !== STATE.NONE) {
         return;
       } else if (event.code === scope.keys[STATE.ROTATE] && !scope.noRotate) {
@@ -4901,55 +4672,42 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
         _keyState = STATE.PAN;
       }
     }
-
     function keyup(_event) {
       if (scope.enabled === false) return;
       _keyState = STATE.NONE;
       window.addEventListener("keydown", keydown);
     }
-
     function onMouseDown(event) {
       if (_state === STATE.NONE) {
         switch (event.button) {
           case scope.mouseButtons.LEFT:
             _state = STATE.ROTATE;
             break;
-
           case scope.mouseButtons.MIDDLE:
             _state = STATE.ZOOM;
             break;
-
           case scope.mouseButtons.RIGHT:
             _state = STATE.PAN;
             break;
         }
       }
-
       var state = _keyState !== STATE.NONE ? _keyState : _state;
-
       if (state === STATE.ROTATE && !scope.noRotate) {
         _moveCurr.copy(getMouseOnCircle(event.pageX, event.pageY));
-
         _movePrev.copy(_moveCurr);
       } else if (state === STATE.ZOOM && !scope.noZoom) {
         _zoomStart.copy(getMouseOnScreen(event.pageX, event.pageY));
-
         _zoomEnd.copy(_zoomStart);
       } else if (state === STATE.PAN && !scope.noPan) {
         _panStart.copy(getMouseOnScreen(event.pageX, event.pageY));
-
         _panEnd.copy(_panStart);
       }
-
       scope.dispatchEvent(_startEvent);
     }
-
     function onMouseMove(event) {
       var state = _keyState !== STATE.NONE ? _keyState : _state;
-
       if (state === STATE.ROTATE && !scope.noRotate) {
         _movePrev.copy(_moveCurr);
-
         _moveCurr.copy(getMouseOnCircle(event.pageX, event.pageY));
       } else if (state === STATE.ZOOM && !scope.noZoom) {
         _zoomEnd.copy(getMouseOnScreen(event.pageX, event.pageY));
@@ -4957,52 +4715,40 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
         _panEnd.copy(getMouseOnScreen(event.pageX, event.pageY));
       }
     }
-
     function onMouseUp() {
       _state = STATE.NONE;
       scope.dispatchEvent(_endEvent);
     }
-
     function onMouseWheel(event) {
       if (scope.enabled === false) return;
       if (scope.noZoom === true) return;
       event.preventDefault();
-
       switch (event.deltaMode) {
         case 2:
           // Zoom in pages
           _zoomStart.y -= event.deltaY * 0.025;
           break;
-
         case 1:
           // Zoom in lines
           _zoomStart.y -= event.deltaY * 0.01;
           break;
-
         default:
           // undefined, 0, assume pixels
           _zoomStart.y -= event.deltaY * 0.00025;
           break;
       }
-
       scope.dispatchEvent(_startEvent);
       scope.dispatchEvent(_endEvent);
     }
-
     function onTouchStart(event) {
       trackPointer(event);
       var dx, dy, x, y;
-
       switch (_pointers.length) {
         case 1:
           _state = STATE.TOUCH_ROTATE;
-
           _moveCurr.copy(getMouseOnCircle(_pointers[0].pageX, _pointers[0].pageY));
-
           _movePrev.copy(_moveCurr);
-
           break;
-
         default:
           // 2 or more
           _state = STATE.TOUCH_ZOOM_PAN;
@@ -5011,29 +4757,20 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
           _touchZoomDistanceEnd = _touchZoomDistanceStart = Math.sqrt(dx * dx + dy * dy);
           x = (_pointers[0].pageX + _pointers[1].pageX) / 2;
           y = (_pointers[0].pageY + _pointers[1].pageY) / 2;
-
           _panStart.copy(getMouseOnScreen(x, y));
-
           _panEnd.copy(_panStart);
-
           break;
       }
-
       scope.dispatchEvent(_startEvent);
     }
-
     function onTouchMove(event) {
       trackPointer(event);
       var position, dx, dy, x, y;
-
       switch (_pointers.length) {
         case 1:
           _movePrev.copy(_moveCurr);
-
           _moveCurr.copy(getMouseOnCircle(event.pageX, event.pageY));
-
           break;
-
         default:
           // 2 or more
           position = getSecondPointerPosition(event);
@@ -5042,78 +4779,56 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
           _touchZoomDistanceEnd = Math.sqrt(dx * dx + dy * dy);
           x = (event.pageX + position.x) / 2;
           y = (event.pageY + position.y) / 2;
-
           _panEnd.copy(getMouseOnScreen(x, y));
-
           break;
       }
     }
-
     function onTouchEnd(event) {
       switch (_pointers.length) {
         case 0:
           _state = STATE.NONE;
           break;
-
         case 1:
           _state = STATE.TOUCH_ROTATE;
-
           _moveCurr.copy(getMouseOnCircle(event.pageX, event.pageY));
-
           _movePrev.copy(_moveCurr);
-
           break;
-
         case 2:
           _state = STATE.TOUCH_ZOOM_PAN;
-
           _moveCurr.copy(getMouseOnCircle(event.pageX - _movePrev.x, event.pageY - _movePrev.y));
-
           _movePrev.copy(_moveCurr);
-
           break;
       }
-
       scope.dispatchEvent(_endEvent);
     }
-
     function contextmenu(event) {
       if (scope.enabled === false) return;
       event.preventDefault();
     }
-
     function addPointer(event) {
       _pointers.push(event);
     }
-
     function removePointer(event) {
       delete _pointerPositions[event.pointerId];
-
       for (var i = 0; i < _pointers.length; i++) {
         if (_pointers[i].pointerId == event.pointerId) {
           _pointers.splice(i, 1);
-
           return;
         }
       }
     }
-
     function trackPointer(event) {
       var position = _pointerPositions[event.pointerId];
-
       if (position === undefined) {
         position = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2();
         _pointerPositions[event.pointerId] = position;
       }
-
       position.set(event.pageX, event.pageY);
     }
-
     function getSecondPointerPosition(event) {
       var pointer = event.pointerId === _pointers[0].pointerId ? _pointers[1] : _pointers[0];
       return _pointerPositions[pointer.pointerId];
     }
-
     _this.dispose = function () {
       scope.domElement.removeEventListener("contextmenu", contextmenu);
       scope.domElement.removeEventListener("pointerdown", onPointerDown);
@@ -5124,31 +4839,21 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
       window.removeEventListener("keydown", keydown);
       window.removeEventListener("keyup", keyup);
     };
-
     _this.domElement.addEventListener("contextmenu", contextmenu);
-
     _this.domElement.addEventListener("pointerdown", onPointerDown);
-
     _this.domElement.addEventListener("pointercancel", onPointerCancel);
-
     _this.domElement.addEventListener("wheel", onMouseWheel, {
       passive: false
     });
-
     window.addEventListener("keydown", keydown);
     window.addEventListener("keyup", keyup);
-
     _this.handleResize(); // force an update at start
 
-
     _this.update();
-
     return _this;
   }
-
   return (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__["default"])(TrackballControls);
 }(three__WEBPACK_IMPORTED_MODULE_6__.EventDispatcher);
-
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (TrackballControls);
 
 /***/ }),
@@ -5162,9 +4867,9 @@ var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "RENDERMODE_PATHTRACE": () => (/* binding */ RENDERMODE_PATHTRACE),
-/* harmony export */   "RENDERMODE_RAYMARCH": () => (/* binding */ RENDERMODE_RAYMARCH),
-/* harmony export */   "View3d": () => (/* binding */ View3d)
+/* harmony export */   RENDERMODE_PATHTRACE: () => (/* binding */ RENDERMODE_PATHTRACE),
+/* harmony export */   RENDERMODE_RAYMARCH: () => (/* binding */ RENDERMODE_RAYMARCH),
+/* harmony export */   View3d: () => (/* binding */ View3d)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
@@ -5189,7 +4894,6 @@ __webpack_require__.r(__webpack_exports__);
 
 var RENDERMODE_RAYMARCH = 0;
 var RENDERMODE_PATHTRACE = 1;
-
 /**
  * @class
  */
@@ -5202,9 +4906,7 @@ var View3d = /*#__PURE__*/function () {
    */
   function View3d(options) {
     var _this = this;
-
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, View3d);
-
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "handleKeydown", function (event) {
       // control-option-1 (mac) or ctrl-alt-1 (windows)
       if (event.code === "Digit1" && event.altKey && event.ctrlKey) {
@@ -5212,7 +4914,6 @@ var View3d = /*#__PURE__*/function () {
         _this.tweakpane.element.style.display = _this.tweakpaneOpen ? "block" : "none";
       }
     });
-
     var useWebGL2 = (options === null || options === void 0 ? void 0 : options.useWebGL2) === undefined ? true : options.useWebGL2;
     this.canvas3d = new _ThreeJsPanel__WEBPACK_IMPORTED_MODULE_4__.ThreeJsPanel(options === null || options === void 0 ? void 0 : options.parentElement, useWebGL2);
     this.redraw = this.redraw.bind(this);
@@ -5234,22 +4935,21 @@ var View3d = /*#__PURE__*/function () {
     this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
     this.tweakpaneOpen = false;
     window.addEventListener("keydown", this.handleKeydown);
-  } // prerender should be called on every redraw and should be the first thing done.
+  }
 
-
+  // prerender should be called on every redraw and should be the first thing done.
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(View3d, [{
     key: "preRender",
     value: function preRender() {
       // TODO: if fps just updated and it's too low, do something:
       // if (this.canvas3d.timer.lastFPS < 7 && this.canvas3d.timer.lastFPS > 0 && this.canvas3d.timer.frames === 0) {
       // }
-      var lightContainer = this.scene.getObjectByName("lightContainer");
 
+      var lightContainer = this.scene.getObjectByName("lightContainer");
       if (lightContainer) {
         lightContainer.rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
-      } // keep the ortho scale up to date.
-
-
+      }
+      // keep the ortho scale up to date.
       if (this.image && (0,_types__WEBPACK_IMPORTED_MODULE_8__.isOrthographicCamera)(this.canvas3d.camera)) {
         this.image.setOrthoScale(this.canvas3d.controls.scale);
         this.updateOrthoScaleBar(this.image.volume);
@@ -5270,17 +4970,17 @@ var View3d = /*#__PURE__*/function () {
     value: function updateTimestepIndicator(volume) {
       // convert names to camel case to keep eslint happy
       var _volume$imageInfo = volume.imageInfo,
-          times = _volume$imageInfo.times,
-          timeScale = _volume$imageInfo.time_scale,
-          timeUnit = _volume$imageInfo.time_unit;
+        times = _volume$imageInfo.times,
+        timeScale = _volume$imageInfo.time_scale,
+        timeUnit = _volume$imageInfo.time_unit;
       var currentTime = volume.loadSpec.time;
       this.canvas3d.updateTimestepIndicator(currentTime * timeScale, times * timeScale, timeUnit);
     }
+
     /**
      * Capture the contents of this canvas to a data url
      * @param {Object} dataurlcallback function to call when data url is ready; function accepts dataurl as string arg
      */
-
   }, {
     key: "capture",
     value: function capture(dataurlcallback) {
@@ -5291,10 +4991,10 @@ var View3d = /*#__PURE__*/function () {
     value: function getDOMElement() {
       return this.canvas3d.containerdiv;
     }
+
     /**
      * Force a redraw.
      */
-
   }, {
     key: "redraw",
     value: function redraw() {
@@ -5308,15 +5008,14 @@ var View3d = /*#__PURE__*/function () {
         this.canvas3d.animateFuncs = [];
         this.scene.remove(this.image.sceneRoot);
       }
-
       return this.image;
     }
+
     /**
      * Add a new volume image to the viewer.  (The viewer currently only supports a single image at a time - adding repeatedly, without removing in between, is a potential resource leak)
      * @param {Volume} volume
      * @param {VolumeDisplayOptions} options
      */
-
   }, {
     key: "addVolume",
     value: function addVolume(volume, options) {
@@ -5325,58 +5024,54 @@ var View3d = /*#__PURE__*/function () {
       options.renderMode = this.volumeRenderMode === RENDERMODE_PATHTRACE ? 1 : 0;
       this.setImage(new _VolumeDrawable__WEBPACK_IMPORTED_MODULE_6__["default"](volume, options));
     }
+
     /**
      * Apply a set of display options to a given channel of a volume
      * @param {Volume} volume
      * @param {number} channelIndex the channel index
      * @param {VolumeChannelDisplayOptions} options
      */
-
   }, {
     key: "setVolumeChannelOptions",
     value: function setVolumeChannelOptions(volume, channelIndex, options) {
       var _this$image;
-
       (_this$image = this.image) === null || _this$image === void 0 ? void 0 : _this$image.setChannelOptions(channelIndex, options);
       this.redraw();
     }
+
     /**
      * Apply a set of display options to the given volume
      * @param {Volume} volume
      * @param {VolumeDisplayOptions} options
      */
-
   }, {
     key: "setVolumeDisplayOptions",
     value: function setVolumeDisplayOptions(volume, options) {
       var _this$image2;
-
       (_this$image2 = this.image) === null || _this$image2 === void 0 ? void 0 : _this$image2.setOptions(options);
       this.redraw();
     }
+
     /**
      * Remove a volume image from the viewer.  This will clean up the View3D's resources for the current volume
      * @param {Volume} volume
      */
-
   }, {
     key: "removeVolume",
     value: function removeVolume(volume) {
       var oldImage = this.unsetImage();
-
       if (oldImage) {
         oldImage.cleanup();
       }
-
       if (volume) {
         // assert oldImage.volume === volume!
         volume.removeVolumeDataObserver(this);
       }
     }
+
     /**
      * Remove all volume images from the viewer.
      */
-
   }, {
     key: "removeAllVolumes",
     value: function removeAllVolumes() {
@@ -5384,36 +5079,34 @@ var View3d = /*#__PURE__*/function () {
         this.removeVolume(this.image.volume);
       }
     }
+
     /**
      * @param {function} callback a function that will receive the number of render iterations when it changes
      */
-
   }, {
     key: "setRenderUpdateListener",
     value: function setRenderUpdateListener(callback) {
       var _this$image3;
-
       this.renderUpdateListener = callback;
       (_this$image3 = this.image) === null || _this$image3 === void 0 ? void 0 : _this$image3.setRenderUpdateListener(callback);
-    } // channels is an array of channel indices for which new data just arrived.
+    }
 
+    // channels is an array of channel indices for which new data just arrived.
   }, {
     key: "onVolumeData",
     value: function onVolumeData(volume, channels) {
       var _this$image4;
-
       (_this$image4 = this.image) === null || _this$image4 === void 0 ? void 0 : _this$image4.onChannelLoaded(channels);
-
       if (volume.isLoaded()) {
         this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
       }
-    } // do fixups for when the volume has had a new empty channel added.
+    }
 
+    // do fixups for when the volume has had a new empty channel added.
   }, {
     key: "onVolumeChannelAdded",
     value: function onVolumeChannelAdded(volume, newChannelIndex) {
       var _this$image5;
-
       (_this$image5 = this.image) === null || _this$image5 === void 0 ? void 0 : _this$image5.onChannelAdded(newChannelIndex);
     }
   }, {
@@ -5423,47 +5116,42 @@ var View3d = /*#__PURE__*/function () {
       this.updateTimestepIndicator(volume);
       loader.loadVolumeData(volume, onChannelLoaded);
     }
+
     /**
      * Assign a channel index as a mask channel (will multiply its color against the entire visible volume)
      * @param {Object} volume
      * @param {number} maskChannelIndex
      */
-
   }, {
     key: "setVolumeChannelAsMask",
     value: function setVolumeChannelAsMask(volume, maskChannelIndex) {
       var _this$image6;
-
       (_this$image6 = this.image) === null || _this$image6 === void 0 ? void 0 : _this$image6.setChannelAsMask(maskChannelIndex);
       this.redraw();
     }
+
     /**
      * Set voxel dimensions - controls volume scaling. For example, the physical measurements of the voxels from a biological data set
      * @param {Object} volume
      * @param {number} values Array of x,y,z floating point values for the physical voxel size scaling
      * @param {string} unit The unit of `values`, if different than previous
      */
-
   }, {
     key: "setVoxelSize",
     value: function setVoxelSize(volume, values, unit) {
       if (this.image) {
         this.image.setVoxelSize(values);
-
         if (unit) {
           this.image.volume.setUnitSymbol(unit);
         }
-
         this.updatePerspectiveScaleBar(this.image.volume);
       }
-
       this.redraw();
     }
   }, {
     key: "setRayStepSizes",
     value: function setRayStepSizes(volume, primary, secondary) {
       var _this$image7;
-
       (_this$image7 = this.image) === null || _this$image7 === void 0 ? void 0 : _this$image7.setRayStepSizes(primary, secondary);
       this.redraw();
     }
@@ -5471,7 +5159,6 @@ var View3d = /*#__PURE__*/function () {
     key: "setShowBoundingBox",
     value: function setShowBoundingBox(volume, showBoundingBox) {
       var _this$image8;
-
       (_this$image8 = this.image) === null || _this$image8 === void 0 ? void 0 : _this$image8.setShowBoundingBox(showBoundingBox);
       this.canvas3d.setShowPerspectiveScaleBar(showBoundingBox && this.canvas3d.showOrthoScaleBar && this.volumeRenderMode !== RENDERMODE_PATHTRACE);
       this.redraw();
@@ -5480,7 +5167,6 @@ var View3d = /*#__PURE__*/function () {
     key: "setBoundingBoxColor",
     value: function setBoundingBoxColor(volume, color) {
       var _this$image9;
-
       (_this$image9 = this.image) === null || _this$image9 === void 0 ? void 0 : _this$image9.setBoundingBoxColor(color);
       this.canvas3d.setPerspectiveScaleBarColor(color);
       this.redraw();
@@ -5493,6 +5179,7 @@ var View3d = /*#__PURE__*/function () {
       this.canvas3d.setClearColor(c, 1);
       this.redraw();
     }
+
     /**
      * If an isosurface is not already created, then create one.  Otherwise change the isovalue of the existing isosurface.
      * @param {Object} volume
@@ -5500,104 +5187,98 @@ var View3d = /*#__PURE__*/function () {
      * @param {number} isovalue isovalue
      * @param {number=} alpha Opacity
      */
-
   }, {
     key: "createIsosurface",
     value: function createIsosurface(volume, channel, isovalue, alpha) {
       if (!this.image) {
         return;
       }
-
       if (this.image.hasIsosurface(channel)) {
         this.image.updateIsovalue(channel, isovalue);
       } else {
         this.image.createIsosurface(channel, isovalue, alpha, alpha < 0.95);
       }
-
       this.redraw();
     }
+
     /**
      * Is an isosurface already created for this channel?
      * @param {Object} volume
      * @param {number} channel
      * @return true if there is currently a mesh isosurface for this channel
      */
-
   }, {
     key: "hasIsosurface",
     value: function hasIsosurface(volume, channel) {
       var _this$image10;
-
       return ((_this$image10 = this.image) === null || _this$image10 === void 0 ? void 0 : _this$image10.hasIsosurface(channel)) || false;
     }
+
     /**
      * If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
      * @param {Object} volume
      * @param {number} channel
      * @param {number} isovalue
      */
-
   }, {
     key: "updateIsosurface",
     value: function updateIsosurface(volume, channel, isovalue) {
       if (!this.image || !this.image.hasIsosurface(channel)) {
         return;
       }
-
       this.image.updateIsovalue(channel, isovalue);
       this.redraw();
     }
+
     /**
      * Set opacity for isosurface
      * @param {Object} volume
      * @param {number} channel
      * @param {number} opacity Opacity
      */
-
   }, {
     key: "updateOpacity",
     value: function updateOpacity(volume, channel, opacity) {
       var _this$image11;
-
       (_this$image11 = this.image) === null || _this$image11 === void 0 ? void 0 : _this$image11.updateOpacity(channel, opacity);
       this.redraw();
     }
+
     /**
      * If an isosurface exists for this channel, hide it now
      * @param {Object} volume
      * @param {number} channel
      */
-
   }, {
     key: "clearIsosurface",
     value: function clearIsosurface(volume, channel) {
       var _this$image12;
-
       (_this$image12 = this.image) === null || _this$image12 === void 0 ? void 0 : _this$image12.destroyIsosurface(channel);
       this.redraw();
     }
+
     /**
      * Save a channel's isosurface as a triangle mesh to either STL or GLTF2 format.  File will be named automatically, using image name and channel name.
      * @param {Object} volume
      * @param {number} channelIndex
      * @param {string} type Either 'GLTF' or 'STL'
      */
-
   }, {
     key: "saveChannelIsosurface",
     value: function saveChannelIsosurface(volume, channelIndex, type) {
       var _this$image13;
-
       (_this$image13 = this.image) === null || _this$image13 === void 0 ? void 0 : _this$image13.saveChannelIsosurface(channelIndex, type);
-    } // Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will return any prior existing image.
+    }
 
+    // Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will return any prior existing image.
   }, {
     key: "setImage",
     value: function setImage(img) {
       var oldImage = this.unsetImage();
       this.image = img;
-      this.scene.add(img.sceneRoot); // new image picks up current settings
+      this.scene.add(img.sceneRoot);
 
+      // new image picks up current settings
       this.image.setResolution(this.canvas3d);
       this.image.setIsOrtho((0,_types__WEBPACK_IMPORTED_MODULE_8__.isOrthographicCamera)(this.canvas3d.camera));
       this.image.setBrightness(this.exposure);
@@ -5605,8 +5286,9 @@ var View3d = /*#__PURE__*/function () {
       this.canvas3d.animateFuncs.push(this.preRender.bind(this));
       this.canvas3d.animateFuncs.push(img.onAnimate.bind(img));
       this.updatePerspectiveScaleBar(img.volume);
-      this.updateTimestepIndicator(img.volume); // redraw if not already in draw loop
+      this.updateTimestepIndicator(img.volume);
 
+      // redraw if not already in draw loop
       this.redraw();
       return oldImage;
     }
@@ -5614,61 +5296,59 @@ var View3d = /*#__PURE__*/function () {
     key: "onStartControls",
     value: function onStartControls() {
       var _this$image14;
-
       if (this.volumeRenderMode !== RENDERMODE_PATHTRACE) {
         // TODO: VR display requires a running renderloop
         this.canvas3d.startRenderLoop();
       }
-
       (_this$image14 = this.image) === null || _this$image14 === void 0 ? void 0 : _this$image14.onStartControls();
     }
   }, {
     key: "onChangeControls",
     value: function onChangeControls() {
       var _this$image15;
-
       (_this$image15 = this.image) === null || _this$image15 === void 0 ? void 0 : _this$image15.onChangeControls();
     }
   }, {
     key: "onEndControls",
     value: function onEndControls() {
       var _this$image16;
-
-      (_this$image16 = this.image) === null || _this$image16 === void 0 ? void 0 : _this$image16.onEndControls(); // If we are pathtracing or autorotating, then keep rendering. Otherwise stop now.
-
+      (_this$image16 = this.image) === null || _this$image16 === void 0 ? void 0 : _this$image16.onEndControls();
+      // If we are pathtracing or autorotating, then keep rendering. Otherwise stop now.
       if (this.volumeRenderMode !== RENDERMODE_PATHTRACE && !this.canvas3d.controls.autoRotate) {
         // TODO: VR display requires a running renderloop
         this.canvas3d.stopRenderLoop();
-      } // force a redraw.  This mainly fixes a bug with the way TrackballControls deals with wheel events.
-
-
+      }
+      // force a redraw.  This mainly fixes a bug with the way TrackballControls deals with wheel events.
       this.redraw();
     }
   }, {
     key: "buildScene",
     value: function buildScene() {
-      this.scene = this.canvas3d.scene; // background color
+      this.scene = this.canvas3d.scene;
 
+      // background color
       this.canvas3d.setClearColor(this.backgroundColor, 1.0);
       this.lights = [new _Light__WEBPACK_IMPORTED_MODULE_7__.Light(_Light__WEBPACK_IMPORTED_MODULE_7__.SKY_LIGHT), new _Light__WEBPACK_IMPORTED_MODULE_7__.Light(_Light__WEBPACK_IMPORTED_MODULE_7__.AREA_LIGHT)];
       this.lightContainer = new three__WEBPACK_IMPORTED_MODULE_9__.Object3D();
       this.lightContainer.name = "lightContainer";
       this.ambientLight = new three__WEBPACK_IMPORTED_MODULE_9__.AmbientLight(_constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].ambientLightSettings.color, _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].ambientLightSettings.intensity);
-      this.lightContainer.add(this.ambientLight); // key light
+      this.lightContainer.add(this.ambientLight);
 
+      // key light
       this.spotLight = new three__WEBPACK_IMPORTED_MODULE_9__.SpotLight(_constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.color, _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.intensity);
       this.spotLight.position.set(_constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.position.x, _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.position.y, _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.position.z);
       this.spotLight.target = new three__WEBPACK_IMPORTED_MODULE_9__.Object3D(); // this.substrate;
-
       this.spotLight.angle = _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.angle;
-      this.lightContainer.add(this.spotLight); // reflect light
+      this.lightContainer.add(this.spotLight);
 
+      // reflect light
       this.reflectedLight = new three__WEBPACK_IMPORTED_MODULE_9__.DirectionalLight(_constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.color);
       this.reflectedLight.position.set(_constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.position.x, _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.position.y, _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.position.z);
       this.reflectedLight.castShadow = _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.castShadow;
       this.reflectedLight.intensity = _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.intensity;
-      this.lightContainer.add(this.reflectedLight); // fill light
+      this.lightContainer.add(this.reflectedLight);
 
+      // fill light
       this.fillLight = new three__WEBPACK_IMPORTED_MODULE_9__.DirectionalLight(_constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.color);
       this.fillLight.position.set(_constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.position.x, _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.position.y, _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.position.z);
       this.fillLight.castShadow = _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.castShadow;
@@ -5676,58 +5356,56 @@ var View3d = /*#__PURE__*/function () {
       this.lightContainer.add(this.fillLight);
       this.scene.add(this.lightContainer);
     }
+
     /**
      * Change the camera projection to look along an axis, or to view in a 3d perspective camera.
      * @param {string} mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X", or "XZ" or "Y".  3D is a perspective view, and all the others are orthographic projections
      */
-
   }, {
     key: "setCameraMode",
     value: function setCameraMode(mode) {
       var _this$image17;
-
       this.canvas3d.switchViewMode(mode);
       (_this$image17 = this.image) === null || _this$image17 === void 0 ? void 0 : _this$image17.setIsOrtho(mode !== "3D");
       this.canvas3d.redraw();
     }
+
     /**
      * Enable or disable 3d axis display at lower left.
      * @param {boolean} showAxis
      */
-
   }, {
     key: "setShowAxis",
     value: function setShowAxis(showAxis) {
       this.canvas3d.showAxis = showAxis;
       this.canvas3d.redraw();
     }
+
     /**
      * Enable or disable scale indicators.
      * @param showScaleBar
      */
-
   }, {
     key: "setShowScaleBar",
     value: function setShowScaleBar(showScaleBar) {
       var _this$image18;
-
       this.canvas3d.setShowOrthoScaleBar(showScaleBar);
       this.canvas3d.setShowPerspectiveScaleBar(showScaleBar && !!((_this$image18 = this.image) !== null && _this$image18 !== void 0 && _this$image18.showBoundingBox) && this.volumeRenderMode !== RENDERMODE_PATHTRACE);
     }
+
     /**
      * Enable or disable time indicator.
      * @param showTimestepIndicator
      */
-
   }, {
     key: "setShowTimestepIndicator",
     value: function setShowTimestepIndicator(showIndicator) {
       var _this$image19;
-
       var times = (_this$image19 = this.image) === null || _this$image19 === void 0 ? void 0 : _this$image19.volume.imageInfo.times;
       var hasTimes = !!times && times > 1;
       this.canvas3d.setShowTimestepIndicator(showIndicator && hasTimes);
     }
+
     /**
      * Set the position of the axis indicator, as a corner of the viewport and horizontal and vertical margins from the
      * edge of the viewport.
@@ -5737,17 +5415,16 @@ var View3d = /*#__PURE__*/function () {
      *  TypeScript users should use the `ViewportCorner` enum. Otherwise, corner is one of: `"top_left"`, `"top_right"`,
      *  `"bottom_left"`, `"bottom_right"`.
      */
-
   }, {
     key: "setAxisPosition",
     value: function setAxisPosition(marginX, marginY) {
       var corner = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _types__WEBPACK_IMPORTED_MODULE_8__.ViewportCorner.BOTTOM_LEFT;
       this.canvas3d.setAxisPosition(marginX, marginY, corner);
-
       if (this.canvas3d.showAxis) {
         this.canvas3d.redraw();
       }
     }
+
     /**
      * Set the position of the scale bar, as a corner of the viewport and horizontal and vertical margins from the edge
      * of the viewport.
@@ -5757,13 +5434,13 @@ var View3d = /*#__PURE__*/function () {
      *  TypeScript users should use the `ViewportCorner` enum. Otherwise, corner is one of: `"top_left"`, `"top_right"`,
      *  `"bottom_left"`, `"bottom_right"`.
      */
-
   }, {
     key: "setScaleBarPosition",
     value: function setScaleBarPosition(marginX, marginY) {
       var corner = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _types__WEBPACK_IMPORTED_MODULE_8__.ViewportCorner.BOTTOM_RIGHT;
       this.canvas3d.setIndicatorPosition(false, marginX, marginY, corner);
     }
+
     /**
      * Set the position of the time step indicator, as a corner of the viewport and horizontal and vertical margins from
      * the edge of the viewport.
@@ -5773,46 +5450,44 @@ var View3d = /*#__PURE__*/function () {
      *  TypeScript users should use the `ViewportCorner` enum. Otherwise, corner is one of: `"top_left"`, `"top_right"`,
      *  `"bottom_left"`, `"bottom_right"`.
      */
-
   }, {
     key: "setTimestepIndicatorPosition",
     value: function setTimestepIndicatorPosition(marginX, marginY) {
       var corner = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _types__WEBPACK_IMPORTED_MODULE_8__.ViewportCorner.BOTTOM_RIGHT;
       this.canvas3d.setIndicatorPosition(true, marginX, marginY, corner);
     }
+
     /**
      * Enable or disable a turntable rotation mode. The display will continuously spin about the vertical screen axis.
      * @param {boolean} autorotate
      */
-
   }, {
     key: "setAutoRotate",
     value: function setAutoRotate(autorotate) {
       this.canvas3d.setAutoRotate(autorotate);
-
       if (autorotate) {
         this.onStartControls();
       } else {
         this.onEndControls();
       }
     }
+
     /**
      * Set the unit symbol for the scale bar (e.g. µm)
      * @param {string} unit
      */
-
   }, {
     key: "setScaleUnit",
     value: function setScaleUnit(unit) {
       if (this.image) {
         this.image.volume.setUnitSymbol(unit);
         this.updatePerspectiveScaleBar(this.image.volume);
-
         if ((0,_types__WEBPACK_IMPORTED_MODULE_8__.isOrthographicCamera)(this.canvas3d.camera)) {
           this.updateOrthoScaleBar(this.image.volume);
         }
       }
     }
+
     /**
      * Invert axes of volume. -1 to invert, +1 NOT to invert.
      * @param {Object} volume
@@ -5820,12 +5495,10 @@ var View3d = /*#__PURE__*/function () {
      * @param {number} flipY y axis sense
      * @param {number} flipZ z axis sense
      */
-
   }, {
     key: "setFlipVolume",
     value: function setFlipVolume(volume, flipX, flipY, flipZ) {
       var _this$image20;
-
       (_this$image20 = this.image) === null || _this$image20 === void 0 ? void 0 : _this$image20.setFlipAxes(flipX, flipY, flipZ);
       this.redraw();
     }
@@ -5833,10 +5506,10 @@ var View3d = /*#__PURE__*/function () {
     key: "setInterpolationEnabled",
     value: function setInterpolationEnabled(volume, active) {
       var _this$image21;
-
       (_this$image21 = this.image) === null || _this$image21 === void 0 ? void 0 : _this$image21.setInterpolationEnabled(active);
       this.redraw();
     }
+
     /**
      * Notify the view that it has been resized.  This will automatically be connected to the window when the View3d is created.
      * @param {HTMLElement=} comp Ignored.
@@ -5846,43 +5519,40 @@ var View3d = /*#__PURE__*/function () {
      * @param {number=} oh Ignored.
      * @param {Object=} eOpts Ignored.
      */
-
   }, {
     key: "resize",
     value: function resize(comp, w, h, ow, oh, eOpts) {
       var _this$image22;
-
       this.canvas3d.resize(comp, w, h, ow, oh, eOpts);
       (_this$image22 = this.image) === null || _this$image22 === void 0 ? void 0 : _this$image22.setResolution(this.canvas3d);
       this.redraw();
     }
+
     /**
      * Set the volume scattering density
      * @param {Object} volume
      * @param {number} density 0..1 UI slider value
      */
-
   }, {
     key: "updateDensity",
     value: function updateDensity(volume, density) {
       var _this$image23;
-
       (_this$image23 = this.image) === null || _this$image23 === void 0 ? void 0 : _this$image23.setDensity(density);
       this.redraw();
     }
+
     /**
      * Set the shading method - applies to pathtraced render mode only
      * @param {Object} volume
      * @param {number} isbrdf 0: brdf, 1: isotropic phase function, 2: mixed
      */
-
   }, {
     key: "updateShadingMethod",
     value: function updateShadingMethod(volume, isbrdf) {
       var _this$image24;
-
       (_this$image24 = this.image) === null || _this$image24 === void 0 ? void 0 : _this$image24.updateShadingMethod(isbrdf);
     }
+
     /**
      * Set gamma levels: this affects the transparency and brightness of the single pass ray march volume render
      * @param {Object} volume
@@ -5890,98 +5560,91 @@ var View3d = /*#__PURE__*/function () {
      * @param {number} glevel
      * @param {number} gmax
      */
-
   }, {
     key: "setGamma",
     value: function setGamma(volume, gmin, glevel, gmax) {
       var _this$image25;
-
       (_this$image25 = this.image) === null || _this$image25 === void 0 ? void 0 : _this$image25.setGamma(gmin, glevel, gmax);
       this.redraw();
     }
+
     /**
      * Set max projection on or off - applies to single pass raymarch render mode only
      * @param {Object} volume
      * @param {boolean} isMaxProject true for max project, false for regular volume ray march integration
      */
-
   }, {
     key: "setMaxProjectMode",
     value: function setMaxProjectMode(volume, isMaxProject) {
       var _this$image26;
-
       (_this$image26 = this.image) === null || _this$image26 === void 0 ? void 0 : _this$image26.setMaxProjectMode(isMaxProject);
       this.redraw();
     }
+
     /**
      * Notify the view that the set of active volume channels has been modified.
      * @param {Object} volume
      */
-
   }, {
     key: "updateActiveChannels",
     value: function updateActiveChannels(_volume) {
       var _this$image27;
-
       (_this$image27 = this.image) === null || _this$image27 === void 0 ? void 0 : _this$image27.fuse();
       this.redraw();
     }
+
     /**
      * Notify the view that transfer function lookup table data has been modified.
      * @param {Object} volume
      */
-
   }, {
     key: "updateLuts",
     value: function updateLuts(_volume) {
       var _this$image28;
-
       (_this$image28 = this.image) === null || _this$image28 === void 0 ? void 0 : _this$image28.updateLuts();
       this.redraw();
     }
+
     /**
      * Notify the view that color and appearance settings have been modified.
      * @param {Object} volume
      */
-
   }, {
     key: "updateMaterial",
     value: function updateMaterial(_volume) {
       var _this$image29;
-
       (_this$image29 = this.image) === null || _this$image29 === void 0 ? void 0 : _this$image29.updateMaterial();
       this.redraw();
     }
+
     /**
      * Increase or decrease the overall brightness of the rendered image
      * @param {number} e 0..1
      */
-
   }, {
     key: "updateExposure",
     value: function updateExposure(e) {
       var _this$image30;
-
       this.exposure = e;
       (_this$image30 = this.image) === null || _this$image30 === void 0 ? void 0 : _this$image30.setBrightness(e);
       this.redraw();
     }
+
     /**
      * Set camera focus properties.
      * @param {number} fov Vertical field of view in degrees
      * @param {number} focalDistance view-space units for center of focus
      * @param {number} apertureSize view-space units for radius of camera aperture
      */
-
   }, {
     key: "updateCamera",
     value: function updateCamera(fov, focalDistance, apertureSize) {
       var _this$image31;
-
       this.canvas3d.updateCameraFocus(fov, focalDistance, apertureSize);
       (_this$image31 = this.image) === null || _this$image31 === void 0 ? void 0 : _this$image31.onCameraChanged(fov, focalDistance, apertureSize);
       this.redraw();
     }
+
     /**
      * Set clipping range (between 0 and 1, relative to bounds) for the current volume.
      * @param {Object} volume
@@ -5992,15 +5655,14 @@ var View3d = /*#__PURE__*/function () {
      * @param {number} zmin 0..1, should be less than zmax
      * @param {number} zmax 0..1, should be greater than zmin
      */
-
   }, {
     key: "updateClipRegion",
     value: function updateClipRegion(volume, xmin, xmax, ymin, ymax, zmin, zmax) {
       var _this$image32;
-
       (_this$image32 = this.image) === null || _this$image32 === void 0 ? void 0 : _this$image32.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
       this.redraw();
     }
+
     /**
      * Set clipping range (between 0 and 1) for a given axis.
      * Calling this allows the rendering to compensate for changes in thickness in orthographic views that affect how bright the volume is.
@@ -6010,75 +5672,69 @@ var View3d = /*#__PURE__*/function () {
      * @param {number} maxval 0..1, should be greater than minval
      * @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
      */
-
   }, {
     key: "setAxisClip",
     value: function setAxisClip(volume, axis, minval, maxval, isOrthoAxis) {
       var _this$image33;
-
       (_this$image33 = this.image) === null || _this$image33 === void 0 ? void 0 : _this$image33.setAxisClip(axis, minval, maxval, isOrthoAxis);
       this.redraw();
     }
+
     /**
      * Update lights
      * @param {Array} state array of Lights
      */
-
   }, {
     key: "updateLights",
     value: function updateLights(state) {
       var _this$image34;
-
       // TODO flesh this out
       this.lights = state;
       (_this$image34 = this.image) === null || _this$image34 === void 0 ? void 0 : _this$image34.updateLights(state);
     }
+
     /**
      * Set a sampling rate to trade performance for quality.
      * @param {number} value (+epsilon..1) 1 is max quality, ~0.1 for lowest quality and highest speed
      */
-
   }, {
     key: "updatePixelSamplingRate",
     value: function updatePixelSamplingRate(value) {
       var _this$image35;
-
       if (this.pixelSamplingRate === value) {
         return;
       }
-
       this.pixelSamplingRate = value;
       (_this$image35 = this.image) === null || _this$image35 === void 0 ? void 0 : _this$image35.setPixelSamplingRate(value);
     }
+
     /**
      * Set the opacity of the mask channel
      * @param {Object} volume
      * @param {number} value (0..1) 0 for full transparent, 1 for fully opaque
      */
-
   }, {
     key: "updateMaskAlpha",
     value: function updateMaskAlpha(volume, value) {
       var _this$image36;
-
       (_this$image36 = this.image) === null || _this$image36 === void 0 ? void 0 : _this$image36.setMaskAlpha(value);
       this.redraw();
     }
+
     /**
      * Show / hide volume channels
      * @param {Object} volume
      * @param {number} channel
      * @param {boolean} enabled
      */
-
   }, {
     key: "setVolumeChannelEnabled",
     value: function setVolumeChannelEnabled(volume, channel, enabled) {
       var _this$image37;
-
       (_this$image37 = this.image) === null || _this$image37 === void 0 ? void 0 : _this$image37.setVolumeChannelEnabled(channel, enabled);
       this.redraw();
     }
+
     /**
      * Set the material for a channel
      * @param {Object} volume
@@ -6088,102 +5744,92 @@ var View3d = /*#__PURE__*/function () {
      * @param {Array.<number>} emissivergb [r,g,b]
      * @param {number} glossiness
      */
-
   }, {
     key: "updateChannelMaterial",
     value: function updateChannelMaterial(volume, channelIndex, colorrgb, specularrgb, emissivergb, glossiness) {
       var _this$image38;
-
       (_this$image38 = this.image) === null || _this$image38 === void 0 ? void 0 : _this$image38.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
     }
+
     /**
      * Set the color for a channel
      * @param {Object} volume
      * @param {number} channelIndex
      * @param {Array.<number>} colorrgb [r,g,b]
      */
-
   }, {
     key: "updateChannelColor",
     value: function updateChannelColor(volume, channelIndex, colorrgb) {
       var _this$image39;
-
       (_this$image39 = this.image) === null || _this$image39 === void 0 ? void 0 : _this$image39.updateChannelColor(channelIndex, colorrgb);
     }
+
     /**
      * Switch between single pass ray-marched volume rendering and progressive path traced rendering.
      * @param {number} mode 0 for single pass ray march, 1 for progressive path trace
      */
-
   }, {
     key: "setVolumeRenderMode",
     value: function setVolumeRenderMode(mode) {
       var _this$image40;
-
       if (mode === this.volumeRenderMode) {
         return;
       }
-
       this.volumeRenderMode = mode;
-
       if (this.image) {
         if (mode === RENDERMODE_PATHTRACE && this.canvas3d.hasWebGL2) {
           this.image.setVolumeRendering(true);
-          this.image.updateLights(this.lights); // pathtrace is a continuous rendering mode
-
+          this.image.updateLights(this.lights);
+          // pathtrace is a continuous rendering mode
           this.canvas3d.startRenderLoop();
         } else {
           this.image.setVolumeRendering(false);
           this.canvas3d.redraw();
         }
-
         this.updatePixelSamplingRate(this.pixelSamplingRate);
         this.image.setIsOrtho((0,_types__WEBPACK_IMPORTED_MODULE_8__.isOrthographicCamera)(this.canvas3d.camera));
         this.image.setResolution(this.canvas3d);
         this.setAutoRotate(this.canvas3d.controls.autoRotate);
         this.image.setRenderUpdateListener(this.renderUpdateListener);
-      } // TODO remove when pathtrace supports a bounding box
+      }
 
-
+      // TODO remove when pathtrace supports a bounding box
       this.canvas3d.setShowPerspectiveScaleBar(this.canvas3d.showOrthoScaleBar && !!((_this$image40 = this.image) !== null && _this$image40 !== void 0 && _this$image40.showBoundingBox) && mode !== RENDERMODE_PATHTRACE);
     }
+
     /**
      *
      * @param {Object} volume
      * @param {Array.<number>} xyz
      */
-
   }, {
     key: "setVolumeTranslation",
     value: function setVolumeTranslation(volume, xyz) {
       var _this$image41;
-
       (_this$image41 = this.image) === null || _this$image41 === void 0 ? void 0 : _this$image41.setTranslation(new three__WEBPACK_IMPORTED_MODULE_9__.Vector3().fromArray(xyz));
       this.redraw();
     }
+
     /**
      *
      * @param {Object} volume
      * @param {Array.<number>} eulerXYZ
      */
-
   }, {
     key: "setVolumeRotation",
     value: function setVolumeRotation(volume, eulerXYZ) {
       var _this$image42;
-
       (_this$image42 = this.image) === null || _this$image42 === void 0 ? void 0 : _this$image42.setRotation(new three__WEBPACK_IMPORTED_MODULE_9__.Euler().fromArray(eulerXYZ));
       this.redraw();
     }
+
     /**
      * Reset the camera to its default position
      */
-
   }, {
     key: "resetCamera",
     value: function resetCamera() {
       var _this$image43;
-
       this.canvas3d.resetCamera();
       (_this$image43 = this.image) === null || _this$image43 === void 0 ? void 0 : _this$image43.onResetCamera();
       this.redraw();
@@ -6202,11 +5848,9 @@ var View3d = /*#__PURE__*/function () {
     key: "setupGui",
     value: function setupGui(container) {
       var _this$image44;
-
       if (this.tweakpane) {
         this.canvas3d.containerdiv.removeChild(this.tweakpane.element);
       }
-
       var pane = new tweakpane__WEBPACK_IMPORTED_MODULE_3__.Pane({
         title: "Advanced Settings",
         container: container
@@ -6217,12 +5861,12 @@ var View3d = /*#__PURE__*/function () {
         right: "0",
         display: "none"
       };
-      Object.assign(pane.element.style, paneStyle); // LIGHTS
+      Object.assign(pane.element.style, paneStyle);
 
+      // LIGHTS
       var lights = pane.addFolder({
         title: "Lights (isosurface)"
       });
-
       var addFolderForLight = function addFolderForLight(light, title) {
         var folder = lights.addFolder({
           title: title,
@@ -6236,12 +5880,10 @@ var View3d = /*#__PURE__*/function () {
         folder.addInput(light, "intensity", {
           min: 0
         });
-
         if (!light.isAmbientLight) {
           folder.addInput(light, "position");
         }
       };
-
       addFolderForLight(this.spotLight, "spot light");
       addFolderForLight(this.ambientLight, "ambient light");
       addFolderForLight(this.reflectedLight, "reflected light");
@@ -6250,7 +5892,6 @@ var View3d = /*#__PURE__*/function () {
       return pane;
     }
   }]);
-
   return View3d;
 }();
 
@@ -6266,7 +5907,7 @@ var View3d = /*#__PURE__*/function () {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ Volume),
-/* harmony export */   "getDefaultImageInfo": () => (/* binding */ getDefaultImageInfo)
+/* harmony export */   getDefaultImageInfo: () => (/* binding */ getDefaultImageInfo)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
@@ -6274,6 +5915,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Channel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Channel */ "./src/Channel.ts");
 /* harmony import */ var _constants_colors__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./constants/colors */ "./src/constants/colors.ts");
 /* harmony import */ var _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./loaders/IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
+
 
 
 
@@ -6311,8 +5953,8 @@ var getDefaultImageInfo = function getDefaultImageInfo() {
     time_unit: ""
   };
 };
-/* eslint-enable @typescript-eslint/naming-convention */
 
+/* eslint-enable @typescript-eslint/naming-convention */
 /**
  * Provide dimensions of the volume data, including dimensions for texture atlas data in which the volume z slices
  * are tiled across a single large 2d image plane.
@@ -6362,7 +6004,6 @@ var getDefaultImageInfo = function getDefaultImageInfo() {
   }
   };
  */
-
 /**
  * A renderable multichannel volume image with 8-bits per channel intensity values.
  * @class
@@ -6372,12 +6013,11 @@ var Volume = /*#__PURE__*/function () {
   /* eslint-disable @typescript-eslint/naming-convention */
 
   /* eslint-enable @typescript-eslint/naming-convention */
+
   function Volume() {
     var imageInfo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : getDefaultImageInfo();
     var loadSpec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__.LoadSpec();
-
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Volume);
-
     // imageMetadata to be filled in by Volume Loaders
     this.imageMetadata = {};
     this.scale = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
@@ -6387,8 +6027,9 @@ var Volume = /*#__PURE__*/function () {
     this.loaded = false;
     this.imageInfo = imageInfo;
     this.name = this.imageInfo.name;
-    this.loadSpec = loadSpec; // clean up some possibly bad data.
+    this.loadSpec = loadSpec;
 
+    // clean up some possibly bad data.
     this.imageInfo.pixel_size_x = imageInfo.pixel_size_x || 1.0;
     this.imageInfo.pixel_size_y = imageInfo.pixel_size_y || 1.0;
     this.imageInfo.pixel_size_z = imageInfo.pixel_size_z || 1.0;
@@ -6401,86 +6042,80 @@ var Volume = /*#__PURE__*/function () {
     this.channel_names = this.imageInfo.channel_names.slice();
     this.channel_colors_default = this.imageInfo.channel_colors ? this.imageInfo.channel_colors.slice() : this.channel_names.map(function (name, index) {
       return (0,_constants_colors__WEBPACK_IMPORTED_MODULE_3__.getColorByChannelIndex)(index);
-    }); // fill in gaps
-
+    });
+    // fill in gaps
     if (this.channel_colors_default.length < this.num_channels) {
       for (var i = this.channel_colors_default.length - 1; i < this.num_channels; ++i) {
         this.channel_colors_default[i] = (0,_constants_colors__WEBPACK_IMPORTED_MODULE_3__.getColorByChannelIndex)(i);
       }
     }
-
     this.atlasSize = [this.imageInfo.atlas_width, this.imageInfo.atlas_height];
     this.volumeSize = [this.x, this.y, this.z];
     this.channels = [];
-
     for (var _i = 0; _i < this.num_channels; ++_i) {
       var channel = new _Channel__WEBPACK_IMPORTED_MODULE_2__["default"](this.channel_names[_i]);
-      this.channels.push(channel); // TODO pass in channel constructor...
-
+      this.channels.push(channel);
+      // TODO pass in channel constructor...
       channel.dims = [this.x, this.y, this.z];
     }
-
     this.physicalUnitSymbol = this.imageInfo.pixel_size_unit;
     this.tickMarkPhysicalLength = 1;
-    this.setVoxelSize(this.pixel_size); // make sure a transform is specified
+    this.setVoxelSize(this.pixel_size);
 
+    // make sure a transform is specified
     if (!this.imageInfo.transform) {
       this.imageInfo.transform = {
         translation: [0, 0, 0],
         rotation: [0, 0, 0]
       };
     }
-
     if (!this.imageInfo.transform.translation) {
       this.imageInfo.transform.translation = [0, 0, 0];
     }
-
     if (!this.imageInfo.transform.rotation) {
       this.imageInfo.transform.rotation = [0, 0, 0];
     }
-
     this.volumeDataObservers = [];
-  } // we calculate the physical size of the volume (voxels*pixel_size)
+  }
+
+  // we calculate the physical size of the volume (voxels*pixel_size)
   // and then normalize to the max physical dimension
-
-
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Volume, [{
     key: "setVoxelSize",
     value: function setVoxelSize(values) {
       // basic error check.  bail out if we get something bad.
       if (!values.length || values.length < 3) {
         return;
-      } // only set the data if it is > 0.  zero is not an allowed value.
+      }
 
-
+      // only set the data if it is > 0.  zero is not an allowed value.
       if (values[0] > 0) {
         this.pixel_size[0] = values[0];
       }
-
       if (values[1] > 0) {
         this.pixel_size[1] = values[1];
       }
-
       if (values[2] > 0) {
         this.pixel_size[2] = values[2];
       }
-
       var physSizeMin = Math.min(this.pixel_size[0], this.pixel_size[1], this.pixel_size[2]);
       var pixelsMax = Math.max(this.imageInfo.width, this.imageInfo.height, this.z);
       var sx = this.pixel_size[0] / physSizeMin * this.imageInfo.width / pixelsMax;
       var sy = this.pixel_size[1] / physSizeMin * this.imageInfo.height / pixelsMax;
-      var sz = this.pixel_size[2] / physSizeMin * this.z / pixelsMax; // this works because image was scaled down in x and y but not z.
+      var sz = this.pixel_size[2] / physSizeMin * this.z / pixelsMax;
+
+      // this works because image was scaled down in x and y but not z.
       // so use original x and y dimensions from imageInfo.
-
-      this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(this.imageInfo.width * this.pixel_size[0], this.imageInfo.height * this.pixel_size[1], this.z * this.pixel_size[2]); // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
-
-      this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z); // Compute the volume's max extent - scaled to max dimension.
-
-      this.normalizedPhysicalSize = this.physicalSize.clone().divideScalar(this.physicalScale); // While we're here, pick a power of 10 that divides into our max dimension a reasonable number of times
+      this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(this.imageInfo.width * this.pixel_size[0], this.imageInfo.height * this.pixel_size[1], this.z * this.pixel_size[2]);
+      // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
+      this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z);
+      // Compute the volume's max extent - scaled to max dimension.
+      this.normalizedPhysicalSize = this.physicalSize.clone().divideScalar(this.physicalScale);
+      // While we're here, pick a power of 10 that divides into our max dimension a reasonable number of times
       // and save it to be the length of tick marks in 3d.
+      this.tickMarkPhysicalLength = Math.pow(10, Math.floor(Math.log10(this.physicalScale / 2)));
 
-      this.tickMarkPhysicalLength = Math.pow(10, Math.floor(Math.log10(this.physicalScale / 2))); // sx, sy, sz should be same as normalizedPhysicalSize
-
+      // sx, sy, sz should be same as normalizedPhysicalSize
       this.scale = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(sx, sy, sz);
     }
   }, {
@@ -6490,12 +6125,13 @@ var Volume = /*#__PURE__*/function () {
     }
   }, {
     key: "cleanup",
-    value: function cleanup() {// no op
+    value: function cleanup() {
+      // no op
     }
+
     /**
      * @return a reference to the list of channel names
      */
-
   }, {
     key: "channelNames",
     value: function channelNames() {
@@ -6515,11 +6151,11 @@ var Volume = /*#__PURE__*/function () {
       })) {
         this.loaded = true;
       }
-
       for (var i = 0; i < this.volumeDataObservers.length; ++i) {
         this.volumeDataObservers[i].onVolumeData(this, batch);
       }
     }
+
     /**
      * Assign volume data via a 2d array containing the z slices as tiles across it.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
      * @param {number} channelIndex
@@ -6527,35 +6163,34 @@ var Volume = /*#__PURE__*/function () {
      * @param {number} atlaswidth
      * @param {number} atlasheight
      */
-
   }, {
     key: "setChannelDataFromAtlas",
     value: function setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight) {
       this.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight);
       this.channels[channelIndex].unpackVolumeFromAtlas(this.x, this.y, this.z);
       this.onChannelLoaded([channelIndex]);
-    } // ASSUMES that this.channelData.options is already set and incoming data is consistent with it
+    }
 
+    // ASSUMES that this.channelData.options is already set and incoming data is consistent with it
     /**
      * Assign volume data as a 3d array ordered x,y,z. The xy size must be equal to tilewidth*tileheight from the imageInfo used to construct this Volume.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
      * @param {number} channelIndex
      * @param {Uint8Array} volumeData
      */
-
   }, {
     key: "setChannelDataFromVolume",
     value: function setChannelDataFromVolume(channelIndex, volumeData) {
       this.channels[channelIndex].setFromVolumeData(volumeData, this.x, this.y, this.z, this.atlasSize[0], this.atlasSize[1]);
       this.onChannelLoaded([channelIndex]);
-    } // TODO: decide if this should update imageInfo or not. For now, leave imageInfo alone as the "original" data
+    }
 
+    // TODO: decide if this should update imageInfo or not. For now, leave imageInfo alone as the "original" data
     /**
      * Add a new channel ready to receive data from one of the setChannelDataFrom* calls.
      * Name and color will be defaulted if not provided. For now, leave imageInfo alone as the "original" data
      * @param {string} name
      * @param {Array.<number>} color [r,g,b]
      */
-
   }, {
     key: "appendEmptyChannel",
     value: function appendEmptyChannel(name, color) {
@@ -6566,13 +6201,12 @@ var Volume = /*#__PURE__*/function () {
       this.channel_names.push(chname);
       this.channel_colors_default.push(chcolor);
       this.channels.push(new _Channel__WEBPACK_IMPORTED_MODULE_2__["default"](chname));
-
       for (var i = 0; i < this.volumeDataObservers.length; ++i) {
         this.volumeDataObservers[i].onVolumeChannelAdded(this, idx);
       }
-
       return idx;
     }
+
     /**
      * Get a value from the volume data
      * @return {number} the intensity value from the given channel at the given xyz location
@@ -6581,83 +6215,82 @@ var Volume = /*#__PURE__*/function () {
      * @param {number} y
      * @param {number} z
      */
-
   }, {
     key: "getIntensity",
     value: function getIntensity(c, x, y, z) {
       return this.channels[c].getIntensity(x, y, z);
     }
+
     /**
      * Get the 256-bin histogram for the given channel
      * @return {Histogram} the histogram
      * @param {number} c The channel index
      */
-
   }, {
     key: "getHistogram",
     value: function getHistogram(c) {
       return this.channels[c].getHistogram();
     }
+
     /**
      * Set the lut for the given channel
      * @param {number} c The channel index
      * @param {Array.<number>} lut The lut as a 256 element array
      */
-
   }, {
     key: "setLut",
     value: function setLut(c, lut) {
       this.channels[c].setLut(lut);
     }
+
     /**
      * Set the color palette for the given channel
      * @param {number} c The channel index
      * @param {Array.<number>} palette The colors as a 256 element array * RGBA
      */
-
   }, {
     key: "setColorPalette",
     value: function setColorPalette(c, palette) {
       this.channels[c].setColorPalette(palette);
     }
+
     /**
      * Set the color palette alpha multiplier for the given channel.
      * This will blend between the ordinary color lut and this colorPalette lut.
      * @param {number} c The channel index
      * @param {number} alpha The alpha value as a number from 0 to 1
      */
-
   }, {
     key: "setColorPaletteAlpha",
     value: function setColorPaletteAlpha(c, alpha) {
       this.channels[c].setColorPaletteAlpha(alpha);
     }
+
     /**
      * Return the intrinsic rotation associated with this volume (radians)
      * @return {Array.<number>} the xyz Euler angles (radians)
      */
-
   }, {
     key: "getRotation",
     value: function getRotation() {
       // default axis order is XYZ
       return this.imageInfo.transform.rotation;
     }
+
     /**
      * Return the intrinsic translation (pivot center delta) associated with this volume, in normalized volume units
      * @return {Array.<number>} the xyz translation in normalized volume units
      */
-
   }, {
     key: "getTranslation",
     value: function getTranslation() {
       return this.voxelsToWorldSpace(this.imageInfo.transform.translation);
     }
+
     /**
      * Return a translation in normalized volume units, given a translation in image voxels
      * @return {Array.<number>} the xyz translation in normalized volume units
      */
-
   }, {
     key: "voxelsToWorldSpace",
     value: function voxelsToWorldSpace(xyz) {
@@ -6677,7 +6310,6 @@ var Volume = /*#__PURE__*/function () {
     value: function removeVolumeDataObserver(o) {
       if (o) {
         var i = this.volumeDataObservers.indexOf(o);
-
         if (i !== -1) {
           this.volumeDataObservers.splice(i, 1);
         }
@@ -6699,10 +6331,8 @@ var Volume = /*#__PURE__*/function () {
       this.loaded = loaded;
     }
   }]);
-
   return Volume;
 }();
-
 
 
 /***/ }),
@@ -6716,8 +6346,8 @@ var Volume = /*#__PURE__*/function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "colorArrayToObject": () => (/* binding */ colorArrayToObject),
-/* harmony export */   "colorObjectToArray": () => (/* binding */ colorObjectToArray),
+/* harmony export */   colorArrayToObject: () => (/* binding */ colorArrayToObject),
+/* harmony export */   colorObjectToArray: () => (/* binding */ colorObjectToArray),
 /* harmony export */   "default": () => (/* binding */ VolumeDrawable)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
@@ -6736,12 +6366,14 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 var colorArrayToObject = function colorArrayToObject(_ref) {
   var _ref2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2__["default"])(_ref, 3),
-      r = _ref2[0],
-      g = _ref2[1],
-      b = _ref2[2];
-
+    r = _ref2[0],
+    g = _ref2[1],
+    b = _ref2[2];
   return {
     r: r,
     g: g,
@@ -6750,20 +6382,21 @@ var colorArrayToObject = function colorArrayToObject(_ref) {
 };
 var colorObjectToArray = function colorObjectToArray(_ref3) {
   var r = _ref3.r,
-      g = _ref3.g,
-      b = _ref3.b;
+    g = _ref3.g,
+    b = _ref3.b;
   return [r, g, b];
-}; // A renderable multichannel volume image with 8-bits per channel intensity values.
+};
 
+// A renderable multichannel volume image with 8-bits per channel intensity values.
 var VolumeDrawable = /*#__PURE__*/function () {
-  // these two should never coexist simultaneously. always one or the other is present
-  // a polymorphic interface implementation might be a better way to deal with this.
+  // these should never coexist simultaneously. always one or the other is present
   // this is a remnant of a pre-typescript world
+
   function VolumeDrawable(volume, options) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, VolumeDrawable);
+    this.PT = !!options.renderMode;
 
-    this.PT = !!options.renderMode; // THE VOLUME DATA
-
+    // THE VOLUME DATA
     this.volume = volume;
     this.onChannelDataReadyCallback = undefined;
     this.translation = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0);
@@ -6775,8 +6408,9 @@ var VolumeDrawable = /*#__PURE__*/function () {
     this.maskAlpha = 1.0;
     this.gammaMin = 0.0;
     this.gammaLevel = 1.0;
-    this.gammaMax = 1.0; // TODO verify that these are reasonable
+    this.gammaMax = 1.0;
 
+    // TODO verify that these are reasonable
     this.density = 0;
     this.brightness = 0;
     this.showBoundingBox = false;
@@ -6784,14 +6418,13 @@ var VolumeDrawable = /*#__PURE__*/function () {
     this.channelColors = this.volume.channel_colors_default.slice();
     this.channelOptions = new Array(this.volume.num_channels).fill({});
     this.fusion = this.channelColors.map(function (col, index) {
-      var rgbColor; // take copy of original channel color
-
+      var rgbColor;
+      // take copy of original channel color
       if (col[0] === 0 && col[1] === 0 && col[2] === 0) {
         rgbColor = 0;
       } else {
         rgbColor = [col[0], col[1], col[2]];
       }
-
       return {
         chIndex: index,
         lut: new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_6__.LUT_ARRAY_LENGTH),
@@ -6806,18 +6439,18 @@ var VolumeDrawable = /*#__PURE__*/function () {
     this.meshVolume = new _MeshVolume__WEBPACK_IMPORTED_MODULE_3__["default"](this.volume);
     this.primaryRayStepSize = 1.0;
     this.secondaryRayStepSize = 1.0;
-
     if (this.PT) {
-      this.volumeRendering = new _PathTracedVolume__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume);
-      this.pathTracedVolume = this.volumeRendering;
+      this.pathTracedVolume = new _PathTracedVolume__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume);
+      this.volumeRendering = this.pathTracedVolume;
     } else {
-      this.volumeRendering = new _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__["default"](this.volume);
-      this.rayMarchedAtlasVolume = this.volumeRendering;
-    } // draw meshes first, and volume last, for blending and depth test reasons with raymarch
+      this.rayMarchedAtlasVolume = new _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__["default"](this.volume);
+      this.volumeRendering = this.rayMarchedAtlasVolume;
+    }
 
-
+    // draw meshes first, and volume last, for blending and depth test reasons with raymarch
     !this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());
-    this.sceneRoot.add(this.volumeRendering.get3dObject()); // draw meshes last (as overlay) for pathtrace? (or not at all?)
+    this.sceneRoot.add(this.volumeRendering.get3dObject());
+    // draw meshes last (as overlay) for pathtrace? (or not at all?)
     //this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());
 
     this.bounds = {
@@ -6827,67 +6460,55 @@ var VolumeDrawable = /*#__PURE__*/function () {
     this.sceneRoot.position.set(0, 0, 0);
     this.scale = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1, 1, 1);
     this.currentScale = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1, 1, 1);
-    this.setScale(this.volume.scale); // apply the volume's default transformation
+    this.setScale(this.volume.scale);
 
+    // apply the volume's default transformation
     this.setTranslation(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().fromArray(this.volume.getTranslation()));
     this.setRotation(new three__WEBPACK_IMPORTED_MODULE_7__.Euler().fromArray(this.volume.getRotation()));
     this.setOptions(options);
   }
-
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(VolumeDrawable, [{
     key: "setOptions",
     value: function setOptions(options) {
       var _this = this;
-
       options = options || {};
-
       if (options.maskChannelIndex !== undefined) {
         this.setChannelAsMask(options.maskChannelIndex);
       }
-
       if (options.maskAlpha !== undefined) {
         this.setMaskAlpha(options.maskAlpha);
       }
-
       if (options.clipBounds !== undefined) {
         this.bounds = {
           bmin: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(options.clipBounds[0], options.clipBounds[2], options.clipBounds[4]),
           bmax: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5])
-        }; // note: dropping isOrthoAxis argument
-
+        };
+        // note: dropping isOrthoAxis argument
         this.setAxisClip("x", options.clipBounds[0], options.clipBounds[1]);
         this.setAxisClip("y", options.clipBounds[2], options.clipBounds[3]);
         this.setAxisClip("z", options.clipBounds[4], options.clipBounds[5]);
       }
-
       if (options.scale !== undefined) {
         this.setScale(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().fromArray(options.scale));
       }
-
       if (options.translation !== undefined) {
         this.setTranslation(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().fromArray(options.translation));
       }
-
       if (options.rotation !== undefined) {
         this.setRotation(new three__WEBPACK_IMPORTED_MODULE_7__.Euler().fromArray(options.rotation));
       }
-
       if (options.renderMode !== undefined) {
         this.setVolumeRendering(!!options.renderMode);
       }
-
       if (options.primaryRayStepSize !== undefined || options.secondaryRayStepSize !== undefined) {
         this.setRayStepSizes(options.primaryRayStepSize, options.secondaryRayStepSize);
       }
-
       if (options.showBoundingBox !== undefined) {
         this.setShowBoundingBox(options.showBoundingBox);
       }
-
       if (options.boundingBoxColor !== undefined) {
         this.setBoundingBoxColor(options.boundingBoxColor);
       }
-
       if (options.channels !== undefined) {
         // store channel options here!
         this.channelOptions = options.channels;
@@ -6901,43 +6522,34 @@ var VolumeDrawable = /*#__PURE__*/function () {
     value: function setChannelOptions(channelIndex, options) {
       // merge to current channel options
       this.channelOptions[channelIndex] = Object.assign(this.channelOptions[channelIndex], options);
-
       if (options.enabled !== undefined) {
         this.setVolumeChannelEnabled(channelIndex, options.enabled);
       }
-
       if (options.color !== undefined) {
         this.updateChannelColor(channelIndex, options.color);
       }
-
       if (options.isosurfaceEnabled !== undefined) {
         var hasIso = this.hasIsosurface(channelIndex);
-
         if (hasIso !== options.isosurfaceEnabled) {
           if (hasIso && !options.isosurfaceEnabled) {
             this.destroyIsosurface(channelIndex);
           } else if (!hasIso && options.isosurfaceEnabled) {
             // 127 is half of the intensity range 0..255
             var isovalue = 127;
-
             if (options.isovalue !== undefined) {
               isovalue = options.isovalue;
-            } // 1.0 is fully opaque
-
-
+            }
+            // 1.0 is fully opaque
             var isosurfaceOpacity = 1.0;
-
             if (options.isosurfaceOpacity !== undefined) {
               isosurfaceOpacity = options.isosurfaceOpacity;
             }
-
             this.createIsosurface(channelIndex, isovalue, isosurfaceOpacity, isosurfaceOpacity < 1.0);
           }
         } else if (options.isosurfaceEnabled) {
           if (options.isovalue !== undefined) {
             this.updateIsovalue(channelIndex, options.isovalue);
           }
-
           if (options.isosurfaceOpacity !== undefined) {
             this.updateOpacity(channelIndex, options.isosurfaceOpacity);
           }
@@ -6946,7 +6558,6 @@ var VolumeDrawable = /*#__PURE__*/function () {
         if (options.isovalue !== undefined) {
           this.updateIsovalue(channelIndex, options.isovalue);
         }
-
         if (options.isosurfaceOpacity !== undefined) {
           this.updateOpacity(channelIndex, options.isosurfaceOpacity);
         }
@@ -6958,11 +6569,9 @@ var VolumeDrawable = /*#__PURE__*/function () {
       if (primary !== undefined) {
         this.primaryRayStepSize = primary;
       }
-
       if (secondary !== undefined) {
         this.secondaryRayStepSize = secondary;
       }
-
       this.volumeRendering.setRayStepSizes(this.primaryRayStepSize, this.secondaryRayStepSize);
     }
   }, {
@@ -6985,13 +6594,14 @@ var VolumeDrawable = /*#__PURE__*/function () {
       var y = viewObj.getHeight();
       this.volumeRendering.setResolution(x, y);
       this.meshVolume.setResolution(x, y);
-    } // Set clipping range (between -0.5 and 0.5) for a given axis.
+    }
+
+    // Set clipping range (between -0.5 and 0.5) for a given axis.
     // Calling this allows the rendering to compensate for changes in thickness in orthographic views that affect how bright the volume is.
     // @param {number} axis 0, 1, or 2 for x, y, or z axis
     // @param {number} minval -0.5..0.5, should be less than maxval
     // @param {number} maxval -0.5..0.5, should be greater than minval
     // @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
-
   }, {
     key: "setAxisClip",
     value: function setAxisClip(axis, minval, maxval, isOrthoAxis) {
@@ -6999,9 +6609,10 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.bounds.bmin[axis] = minval;
       !this.PT && this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
       this.volumeRendering.setAxisClip(axis, minval, maxval, isOrthoAxis || false);
-    } // Tell this image that it needs to be drawn in an orthographic mode
-    // @param {boolean} isOrtho is this an orthographic projection or a perspective view
+    }
 
+    // Tell this image that it needs to be drawn in an orthographic mode
+    // @param {boolean} isOrtho is this an orthographic projection or a perspective view
   }, {
     key: "setIsOrtho",
     value: function setIsOrtho(isOrtho) {
@@ -7017,11 +6628,12 @@ var VolumeDrawable = /*#__PURE__*/function () {
     value: function setOrthoThickness(value) {
       !this.PT && this.meshVolume.setOrthoThickness(value);
       this.volumeRendering.setOrthoThickness(value);
-    } // Set parameters for gamma curve for volume rendering.
+    }
+
+    // Set parameters for gamma curve for volume rendering.
     // @param {number} gmin 0..1
     // @param {number} glevel 0..1
     // @param {number} gmax 0..1, should be > gmin
-
   }, {
     key: "setGamma",
     value: function setGamma(gmin, glevel, gmax) {
@@ -7050,12 +6662,14 @@ var VolumeDrawable = /*#__PURE__*/function () {
       // TODO: this is inefficient, as this work is duplicated by threejs.
       // we need camera matrix up to date before giving the 3d objects a chance to use it.
       canvas.camera.updateMatrixWorld(true);
-      canvas.camera.matrixWorldInverse.copy(canvas.camera.matrixWorld).invert(); // TODO confirm sequence
+      canvas.camera.matrixWorldInverse.copy(canvas.camera.matrixWorld).invert();
 
+      // TODO confirm sequence
       this.volumeRendering.doRender(canvas);
       !this.PT && this.meshVolume.doRender(canvas);
-    } // If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
+    }
 
+    // If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
   }, {
     key: "updateIsovalue",
     value: function updateIsovalue(channel, value) {
@@ -7065,8 +6679,9 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "getIsovalue",
     value: function getIsovalue(channel) {
       return this.meshVolume.getIsovalue(channel);
-    } // Set opacity for isosurface
+    }
 
+    // Set opacity for isosurface
   }, {
     key: "updateOpacity",
     value: function updateOpacity(channel, value) {
@@ -7076,14 +6691,16 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "hasIsosurface",
     value: function hasIsosurface(channel) {
       return this.meshVolume.hasIsosurface(channel);
-    } // If an isosurface is not already created, then create one.  Otherwise do nothing.
+    }
 
+    // If an isosurface is not already created, then create one.  Otherwise do nothing.
   }, {
     key: "createIsosurface",
     value: function createIsosurface(channel, value, alpha, transp) {
       this.meshVolume.createIsosurface(channel, this.channelColors[channel], value, alpha, transp);
-    } // If an isosurface exists for this channel, destroy it now. Don't just hide it - assume we can free up some resources.
+    }
 
+    // If an isosurface exists for this channel, destroy it now. Don't just hide it - assume we can free up some resources.
   }, {
     key: "destroyIsosurface",
     value: function destroyIsosurface(channel) {
@@ -7095,7 +6712,6 @@ var VolumeDrawable = /*#__PURE__*/function () {
       if (!this.volume) {
         return;
       }
-
       if (this.PT) {
         if (this.pathTracedVolume) {
           this.pathTracedVolume.updateActiveChannels(this);
@@ -7110,7 +6726,6 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "setRenderUpdateListener",
     value: function setRenderUpdateListener(callback) {
       this.renderUpdateListener = callback;
-
       if (this.PT && this.pathTracedVolume) {
         this.pathTracedVolume.setRenderUpdateListener(callback);
       }
@@ -7156,13 +6771,12 @@ var VolumeDrawable = /*#__PURE__*/function () {
     value: function onChannelLoaded(batch) {
       this.volumeRendering.onChannelData(batch);
       this.meshVolume.onChannelData(batch);
-
       for (var j = 0; j < batch.length; ++j) {
         var idx = batch[j];
         this.setChannelOptions(idx, this.channelOptions[idx]);
-      } // let the outside world have a chance
+      }
 
-
+      // let the outside world have a chance
       if (this.onChannelDataReadyCallback) {
         this.onChannelDataReadyCallback();
       }
@@ -7179,21 +6793,23 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.specular[newChannelIndex] = [0, 0, 0];
       this.emissive[newChannelIndex] = [0, 0, 0];
       this.glossiness[newChannelIndex] = 0;
-    } // Save a channel's isosurface as a triangle mesh to either STL or GLTF2 format.  File will be named automatically, using image name and channel name.
-    // @param {string} type Either 'GLTF' or 'STL'
+    }
 
+    // Save a channel's isosurface as a triangle mesh to either STL or GLTF2 format.  File will be named automatically, using image name and channel name.
+    // @param {string} type Either 'GLTF' or 'STL'
   }, {
     key: "saveChannelIsosurface",
     value: function saveChannelIsosurface(channelIndex, type) {
       this.meshVolume.saveChannelIsosurface(channelIndex, type, this.volume.name);
-    } // Hide or display volume data for a channel
+    }
 
+    // Hide or display volume data for a channel
   }, {
     key: "setVolumeChannelEnabled",
     value: function setVolumeChannelEnabled(channelIndex, enabled) {
       // flip the color to the "null" value
-      this.fusion[channelIndex].rgbColor = enabled ? this.channelColors[channelIndex] : 0; // if all are nulled out, then hide the volume element from the scene.
-
+      this.fusion[channelIndex].rgbColor = enabled ? this.channelColors[channelIndex] : 0;
+      // if all are nulled out, then hide the volume element from the scene.
       if (this.fusion.every(function (elem) {
         return elem.rgbColor === 0;
       })) {
@@ -7207,50 +6823,51 @@ var VolumeDrawable = /*#__PURE__*/function () {
     value: function isVolumeChannelEnabled(channelIndex) {
       // the zero value for the fusion rgbColor is the indicator that a channel is hidden.
       return this.fusion[channelIndex].rgbColor !== 0;
-    } // Set the color for a channel
-    // @param {Array.<number>} colorrgb [r,g,b]
+    }
 
+    // Set the color for a channel
+    // @param {Array.<number>} colorrgb [r,g,b]
   }, {
     key: "updateChannelColor",
     value: function updateChannelColor(channelIndex, colorrgb) {
       if (!this.channelColors[channelIndex]) {
         return;
       }
-
-      this.channelColors[channelIndex] = colorrgb; // if volume channel is zero'ed out, then don't update it until it is switched on again.
-
+      this.channelColors[channelIndex] = colorrgb;
+      // if volume channel is zero'ed out, then don't update it until it is switched on again.
       if (this.fusion[channelIndex].rgbColor !== 0) {
         this.fusion[channelIndex].rgbColor = colorrgb;
       }
-
       this.meshVolume.updateMeshColors(this.channelColors);
-    } // TODO remove this from public interface?
+    }
 
+    // TODO remove this from public interface?
   }, {
     key: "updateMeshColors",
     value: function updateMeshColors() {
       this.meshVolume.updateMeshColors(this.channelColors);
-    } // Get the color for a channel
-    // @return {Array.<number>} The color as array of [r,g,b]
+    }
 
+    // Get the color for a channel
+    // @return {Array.<number>} The color as array of [r,g,b]
   }, {
     key: "getChannelColor",
     value: function getChannelColor(channelIndex) {
       return this.channelColors[channelIndex];
-    } // Set the material for a channel
+    }
+
+    // Set the material for a channel
     // @param {number} channelIndex
     // @param {Array.<number>} colorrgb [r,g,b]
     // @param {Array.<number>} specularrgb [r,g,b]
     // @param {Array.<number>} emissivergb [r,g,b]
     // @param {number} glossiness
-
   }, {
     key: "updateChannelMaterial",
     value: function updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness) {
       if (!this.channelColors[channelIndex]) {
         return;
       }
-
       this.updateChannelColor(channelIndex, colorrgb);
       this.specular[channelIndex] = specularrgb;
       this.emissive[channelIndex] = emissivergb;
@@ -7262,10 +6879,10 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.density = density;
       this.volumeRendering.setDensity(density);
     }
+
     /**
      * Get the global density of the volume data
      */
-
   }, {
     key: "getDensity",
     value: function getDensity() {
@@ -7288,7 +6905,6 @@ var VolumeDrawable = /*#__PURE__*/function () {
       if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
         return false;
       }
-
       this.maskChannelIndex = channelIndex;
       return this.volumeRendering.setChannelAsMask(channelIndex);
     }
@@ -7339,8 +6955,9 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "onCameraChanged",
     value: function onCameraChanged(fov, focalDistance, apertureSize) {
       this.PT && this.pathTracedVolume && this.pathTracedVolume.updateCamera(fov, focalDistance, apertureSize);
-    } // values are in 0..1 range
+    }
 
+    // values are in 0..1 range
   }, {
     key: "updateClipRegion",
     value: function updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
@@ -7362,38 +6979,38 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "setVolumeRendering",
     value: function setVolumeRendering(isPathtrace) {
-      if (isPathtrace === this.PT) {
+      if (isPathtrace === this.PT && this.volumeRendering === this.pathTracedVolume) {
         return;
-      } // remove old 3d object from scene
+      }
 
-
+      // remove old 3d object from scene
       isPathtrace && this.sceneRoot.remove(this.meshVolume.get3dObject());
-      this.sceneRoot.remove(this.volumeRendering.get3dObject()); // destroy old resources.
+      this.sceneRoot.remove(this.volumeRendering.get3dObject());
 
-      this.volumeRendering.cleanup(); // create new
+      // destroy old resources.
+      this.volumeRendering.cleanup();
 
+      // create new
       if (isPathtrace) {
-        this.volumeRendering = new _PathTracedVolume__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume);
-        this.pathTracedVolume = this.volumeRendering;
+        this.pathTracedVolume = new _PathTracedVolume__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume);
+        this.volumeRendering = this.pathTracedVolume;
         this.rayMarchedAtlasVolume = undefined;
         this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
       } else {
-        this.volumeRendering = new _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__["default"](this.volume);
+        this.rayMarchedAtlasVolume = new _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__["default"](this.volume);
+        this.volumeRendering = this.rayMarchedAtlasVolume;
         this.pathTracedVolume = undefined;
-        this.rayMarchedAtlasVolume = this.volumeRendering;
-
         for (var i = 0; i < this.volume.num_channels; ++i) {
           if (this.volume.getChannel(i).loaded) {
             this.rayMarchedAtlasVolume.onChannelData([i]);
           }
         }
-
         if (this.renderUpdateListener) {
           this.renderUpdateListener(0);
         }
-      } // ensure transforms on new volume representation are up to date
+      }
 
-
+      // ensure transforms on new volume representation are up to date
       this.volumeRendering.setTranslation(this.translation);
       this.volumeRendering.setRotation(this.rotation);
       this.PT = isPathtrace;
@@ -7403,16 +7020,18 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.setBrightness(this.getBrightness());
       this.setDensity(this.getDensity());
       this.setGamma(this.gammaMin, this.gammaLevel, this.gammaMax);
-      this.setFlipAxes(this.flipX, this.flipY, this.flipZ); // reset clip bounds
+      this.setFlipAxes(this.flipX, this.flipY, this.flipZ);
 
+      // reset clip bounds
       this.setAxisClip("x", this.bounds.bmin.x, this.bounds.bmax.x);
       this.setAxisClip("y", this.bounds.bmin.y, this.bounds.bmax.y);
       this.setAxisClip("z", this.bounds.bmin.z, this.bounds.bmax.z);
       this.updateClipRegion(this.bounds.bmin.x + 0.5, this.bounds.bmax.x + 0.5, this.bounds.bmin.y + 0.5, this.bounds.bmax.y + 0.5, this.bounds.bmin.z + 0.5, this.bounds.bmax.z + 0.5);
       this.setRayStepSizes(this.primaryRayStepSize, this.secondaryRayStepSize);
       this.setShowBoundingBox(this.showBoundingBox);
-      this.setBoundingBoxColor(this.boundingBoxColor); // add new 3d object to scene
+      this.setBoundingBoxColor(this.boundingBoxColor);
 
+      // add new 3d object to scene
       !this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());
       this.sceneRoot.add(this.volumeRendering.get3dObject());
       this.fuse();
@@ -7435,7 +7054,6 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "setupGui",
     value: function setupGui(pane) {
       var _this2 = this;
-
       pane.addInput(this, "translation").on("change", function (_ref4) {
         var value = _ref4.value;
         return _this2.setTranslation(value);
@@ -7464,10 +7082,8 @@ var VolumeDrawable = /*#__PURE__*/function () {
       });
     }
   }]);
-
   return VolumeDrawable;
 }();
-
 
 
 /***/ }),
@@ -7487,7 +7103,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 
 
-
 /**
  * Basic utility functions to create sample volume data
  * @class
@@ -7496,7 +7111,6 @@ var VolumeMaker = /*#__PURE__*/function () {
   function VolumeMaker() {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, VolumeMaker);
   }
-
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(VolumeMaker, null, [{
     key: "createVolume",
     value:
@@ -7513,7 +7127,6 @@ var VolumeMaker = /*#__PURE__*/function () {
       var cy = vy / 2;
       var cz = vz / 2;
       var offset, px, py, pz;
-
       for (var i = 0; i < vz; ++i) {
         for (var j = 0; j < vy; ++j) {
           for (var k = 0; k < vx; ++k) {
@@ -7521,7 +7134,6 @@ var VolumeMaker = /*#__PURE__*/function () {
             px = k - cx;
             py = j - cy;
             pz = i - cz;
-
             if (sdFunc(px, py, pz) < 0) {
               data[offset] = 255;
             } else {
@@ -7530,9 +7142,9 @@ var VolumeMaker = /*#__PURE__*/function () {
           }
         }
       }
-
       return data;
     }
+
     /**
      * Create a volume filled with a sphere in the center
      * @param {number} vx
@@ -7540,7 +7152,6 @@ var VolumeMaker = /*#__PURE__*/function () {
      * @param {number} vz
      * @param {number} radius
      */
-
   }, {
     key: "createSphere",
     value: function createSphere(vx, vy, vz, radius) {
@@ -7548,6 +7159,7 @@ var VolumeMaker = /*#__PURE__*/function () {
         return Math.sqrt(px * px + py * py + pz * pz) - radius;
       });
     }
+
     /**
      * Create a volume with a cylinder centered inside.
      * @param {number} vx
@@ -7556,7 +7168,6 @@ var VolumeMaker = /*#__PURE__*/function () {
      * @param {number} hx width of cap (?)
      * @param {number} hy depth of cap (?)
      */
-
   }, {
     key: "createCylinder",
     value: function createCylinder(vx, vy, vz, hx, hy) {
@@ -7569,6 +7180,7 @@ var VolumeMaker = /*#__PURE__*/function () {
         return Math.min(Math.max(dx, dy), 0.0) + Math.sqrt(mdx * mdx + mdy * mdy);
       });
     }
+
     /**
      * Create a volume with a torus centered inside
      * @param {number} vx
@@ -7577,7 +7189,6 @@ var VolumeMaker = /*#__PURE__*/function () {
      * @param {number} tx inner radius
      * @param {number} ty outer radius
      */
-
   }, {
     key: "createTorus",
     value: function createTorus(vx, vy, vz, tx, ty) {
@@ -7588,6 +7199,7 @@ var VolumeMaker = /*#__PURE__*/function () {
         return Math.sqrt(qx * qx + qy * qy) - ty;
       });
     }
+
     /**
      * Create a volume with a cone centered inside.  cx, cy must be a 2d normalized pair...?
      * @param {number} vx
@@ -7596,7 +7208,6 @@ var VolumeMaker = /*#__PURE__*/function () {
      * @param {number} cx base radius
      * @param {number} cy height
      */
-
   }, {
     key: "createCone",
     value: function createCone(vx, vy, vz, cx, cy) {
@@ -7607,10 +7218,8 @@ var VolumeMaker = /*#__PURE__*/function () {
       });
     }
   }]);
-
   return VolumeMaker;
 }();
-
 
 
 /***/ }),
@@ -7624,77 +7233,66 @@ var VolumeMaker = /*#__PURE__*/function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "defaultColors": () => (/* binding */ defaultColors),
-/* harmony export */   "getColorByChannelIndex": () => (/* binding */ getColorByChannelIndex)
+/* harmony export */   defaultColors: () => (/* binding */ defaultColors),
+/* harmony export */   getColorByChannelIndex: () => (/* binding */ getColorByChannelIndex)
 /* harmony export */ });
 var defaultColors = [[255, 0, 255], [255, 255, 255], [0, 255, 255]];
-
 // 0 <= (h, s, v) <= 1
 // returns 0 <= (r, g, b) <= 255 rounded to nearest integer
 // you can also pass in just one arg as an object of {h, s, v} props.
 function HSVtoRGB(h, s, v) {
   var r, g, b;
   var hh = 0;
-
   if (arguments.length === 1) {
     var hsv = h;
     s = hsv.s, v = hsv.v, hh = hsv.h;
   } else {
     hh = h;
   }
-
   var i = Math.floor(hh * 6);
   var f = hh * 6 - i;
   var p = v * (1 - s);
   var q = v * (1 - f * s);
   var t = v * (1 - (1 - f) * s);
-
   switch (i % 6) {
     case 0:
       r = v, g = t, b = p;
       break;
-
     case 1:
       r = q, g = v, b = p;
       break;
-
     case 2:
       r = p, g = v, b = t;
       break;
-
     case 3:
       r = p, g = q, b = v;
       break;
-
     case 4:
       r = t, g = p, b = v;
       break;
-
     case 5:
       r = v, g = p, b = q;
       break;
   }
-
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-} // 1993 Park-Miller LCG
+}
 
-
+// 1993 Park-Miller LCG
 function LCG(s) {
   return function () {
     s = Math.imul(48271, s) | 0 % 2147483647;
     return (s & 2147483647) / 2147483648;
   };
-} // Use it like so:
+}
+// Use it like so:
+var myrand = LCG(123);
 
-
-var myrand = LCG(123); // if index exceeds defaultColors start choosing random ones
+// if index exceeds defaultColors start choosing random ones
 // returns [r,g,b] 0-255 range
-
 var getColorByChannelIndex = function getColorByChannelIndex(index) {
   if (!defaultColors[index]) {
     defaultColors[index] = HSVtoRGB(myrand(), myrand() * 0.5 + 0.5, myrand() * 0.5 + 0.5);
   }
-
   return defaultColors[index];
 };
 
@@ -7709,9 +7307,9 @@ var getColorByChannelIndex = function getColorByChannelIndex(index) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "denoiseFragmentShaderSrc": () => (/* binding */ denoiseFragmentShaderSrc),
-/* harmony export */   "denoiseShaderUniforms": () => (/* binding */ denoiseShaderUniforms),
-/* harmony export */   "denoiseVertexShaderSrc": () => (/* binding */ denoiseVertexShaderSrc)
+/* harmony export */   denoiseFragmentShaderSrc: () => (/* binding */ denoiseFragmentShaderSrc),
+/* harmony export */   denoiseShaderUniforms: () => (/* binding */ denoiseShaderUniforms),
+/* harmony export */   denoiseVertexShaderSrc: () => (/* binding */ denoiseVertexShaderSrc)
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
@@ -7770,8 +7368,8 @@ var denoiseFragmentShaderSrc = "\nprecision highp float;\nprecision highp int;\n
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "fuseShaderSrc": () => (/* binding */ fuseShaderSrc),
-/* harmony export */   "fuseVertexShaderSrc": () => (/* binding */ fuseVertexShaderSrc)
+/* harmony export */   fuseShaderSrc: () => (/* binding */ fuseShaderSrc),
+/* harmony export */   fuseVertexShaderSrc: () => (/* binding */ fuseVertexShaderSrc)
 /* harmony export */ });
 // threejs passthrough vertex shader for fullscreen quad
 var fuseVertexShaderSrc = "\nprecision highp float;\nprecision highp int;\nout vec2 vUv;\nvoid main()\n{\n  vUv = uv;\n  gl_Position = vec4( position, 1.0 );\n}\n";
@@ -7845,10 +7443,10 @@ var fillLightSettings = Object.freeze({
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "createShaderMaterial": () => (/* binding */ createShaderMaterial),
-/* harmony export */   "defaultMaterialSettings": () => (/* binding */ defaultMaterialSettings),
-/* harmony export */   "fresnelShaderSettings": () => (/* binding */ fresnelShaderSettings),
-/* harmony export */   "transparentMaterialSettings": () => (/* binding */ transparentMaterialSettings)
+/* harmony export */   createShaderMaterial: () => (/* binding */ createShaderMaterial),
+/* harmony export */   defaultMaterialSettings: () => (/* binding */ defaultMaterialSettings),
+/* harmony export */   fresnelShaderSettings: () => (/* binding */ fresnelShaderSettings),
+/* harmony export */   transparentMaterialSettings: () => (/* binding */ transparentMaterialSettings)
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
@@ -7930,19 +7528,24 @@ var scaleBarSVG = "\n<svg enable-background=\"new 0 0 150 75.3\" viewBox=\"0 0 1
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "pathTracingFragmentShaderSrc": () => (/* binding */ pathTracingFragmentShaderSrc),
-/* harmony export */   "pathTracingUniforms": () => (/* binding */ pathTracingUniforms),
-/* harmony export */   "pathTracingVertexShaderSrc": () => (/* binding */ pathTracingVertexShaderSrc)
+/* harmony export */   pathTracingFragmentShaderSrc: () => (/* binding */ pathTracingFragmentShaderSrc),
+/* harmony export */   pathTracingUniforms: () => (/* binding */ pathTracingUniforms),
+/* harmony export */   pathTracingVertexShaderSrc: () => (/* binding */ pathTracingVertexShaderSrc)
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _Light__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../Light */ "./src/Light.ts");
 
- // threejs passthrough vertex shader for fullscreen quad
 
-var pathTracingVertexShaderSrc = "\nprecision highp float;\nprecision highp int;\nout vec2 vUv;\nvoid main()\n{\n  vUv = uv;\n  gl_Position = vec4( position, 1.0 );\n}\n";
-var pathTracingFragmentShaderSrc = "\nprecision highp float;\nprecision highp int;\nprecision highp sampler2D;\nprecision highp sampler3D;\n\n#define PI (3.1415926535897932384626433832795)\n#define PI_OVER_2 (1.57079632679489661923)\n#define PI_OVER_4 (0.785398163397448309616)\n#define INV_PI (1.0/PI)\n#define INV_2_PI (0.5/PI)\n#define INV_4_PI (0.25/PI)\n\nconst vec3 BLACK = vec3(0,0,0);\nconst vec3 WHITE = vec3(1.0,1.0,1.0);\nconst int ShaderType_Brdf = 0;\nconst int ShaderType_Phase = 1;\nconst int ShaderType_Mixed = 2;\nconst float MAX_RAY_LEN = 1500000.0f;\n\nin vec2 vUv;\n\nstruct Camera {\n  vec3 mFrom;\n  vec3 mU, mV, mN;\n  vec4 mScreen;  // left, right, bottom, top\n  vec2 mInvScreen;  // 1/w, 1/h\n  float mFocalDistance;\n  float mApertureSize;\n  float mIsOrtho; // 1 or 0\n};\n\nuniform Camera gCamera;\n\nstruct Light {\n  float   mTheta;\n  float   mPhi;\n  float   mWidth;\n  float   mHalfWidth;\n  float   mHeight;\n  float   mHalfHeight;\n  float   mDistance;\n  float   mSkyRadius;\n  vec3    mP;\n  vec3    mTarget;\n  vec3    mN;\n  vec3    mU;\n  vec3    mV;\n  float   mArea;\n  float   mAreaPdf;\n  vec3    mColor;\n  vec3    mColorTop;\n  vec3    mColorMiddle;\n  vec3    mColorBottom;\n  int     mT;\n};\nconst int NUM_LIGHTS = 2;\nuniform Light gLights[2];\n\nuniform vec3 gClippedAaBbMin;\nuniform vec3 gClippedAaBbMax;\nuniform float gDensityScale;\nuniform float gStepSize;\nuniform float gStepSizeShadow;\nuniform sampler3D volumeTexture;\nuniform vec3 gInvAaBbMax;\nuniform int gNChannels;\nuniform int gShadingType;\nuniform vec3 gGradientDeltaX;\nuniform vec3 gGradientDeltaY;\nuniform vec3 gGradientDeltaZ;\nuniform float gInvGradientDelta;\nuniform float gGradientFactor;\nuniform float uShowLights;\nuniform vec3 flipVolume;\n\n// per channel\n// the luttexture is a 256x4 rgba texture\n// each row is a 256 element lookup table.\nuniform sampler2D gLutTexture;\nuniform vec4 gIntensityMax;\nuniform vec4 gIntensityMin;\nuniform float gOpacity[4];\nuniform vec3 gEmissive[4];\nuniform vec3 gDiffuse[4];\nuniform vec3 gSpecular[4];\nuniform float gGlossiness[4];\n\n// compositing / progressive render\nuniform float uFrameCounter;\nuniform float uSampleCounter;\nuniform vec2 uResolution;\nuniform sampler2D tPreviousTexture;\n\n// from iq https://www.shadertoy.com/view/4tXyWN\nfloat rand( inout uvec2 seed )\n{\n  seed += uvec2(1);\n  uvec2 q = 1103515245U * ( (seed >> 1U) ^ (seed.yx) );\n  uint  n = 1103515245U * ( (q.x) ^ (q.y >> 3U) );\n  return float(n) * (1.0 / float(0xffffffffU));\n}\n\nvec3 XYZtoRGB(vec3 xyz) {\n  return vec3(\n    3.240479f*xyz[0] - 1.537150f*xyz[1] - 0.498535f*xyz[2],\n    -0.969256f*xyz[0] + 1.875991f*xyz[1] + 0.041556f*xyz[2],\n    0.055648f*xyz[0] - 0.204043f*xyz[1] + 1.057311f*xyz[2]\n  );\n}\n\n// Used to convert from linear RGB to XYZ space\nconst mat3 RGB_2_XYZ = (mat3(\n  0.4124564, 0.3575761, 0.1804375,\n  0.2126729, 0.7151522, 0.0721750,\n  0.0193339, 0.1191920, 0.9503041\n));\nvec3 RGBtoXYZ(vec3 rgb) {\n  return rgb * RGB_2_XYZ;\n}\n\nvec3 getUniformSphereSample(in vec2 U)\n{\n  float z = 1.f - 2.f * U.x;\n  float r = sqrt(max(0.f, 1.f - z*z));\n  float phi = 2.f * PI * U.y;\n  float x = r * cos(phi);\n  float y = r * sin(phi);\n  return vec3(x, y, z);\n}\n\nfloat SphericalPhi(in vec3 Wl)\n{\n  float p = atan(Wl.z, Wl.x);\n  return (p < 0.f) ? p + 2.f * PI : p;\n}\n\nfloat SphericalTheta(in vec3 Wl)\n{\n  return acos(clamp(Wl.y, -1.f, 1.f));\n}\n\nbool SameHemisphere(in vec3 Ww1, in vec3 Ww2)\n{\n   return (Ww1.z * Ww2.z) > 0.0f;\n}\n\nvec2 getConcentricDiskSample(in vec2 U)\n{\n  float r, theta;\n  // Map 0..1 to -1..1\n  float sx = 2.0 * U.x - 1.0;\n  float sy = 2.0 * U.y - 1.0;\n\n  // Map square to (r,theta)\n\n  // Handle degeneracy at the origin\n  if (sx == 0.0 && sy == 0.0)\n  {\n    return vec2(0.0f, 0.0f);\n  }\n\n  // quadrants of disk\n  if (sx >= -sy)\n  {\n    if (sx > sy)\n    {\n      r = sx;\n      if (sy > 0.0)\n        theta = sy/r;\n      else\n        theta = 8.0f + sy/r;\n    }\n    else\n    {\n      r = sy;\n      theta = 2.0f - sx/r;\n    }\n  }\n  else\n  {\n    if (sx <= sy)\n    {\n      r = -sx;\n      theta = 4.0f - sy/r;\n    }\n    else\n    {\n      r = -sy;\n      theta = 6.0f + sx/r;\n    }\n  }\n\n  theta *= PI_OVER_4;\n\n  return vec2(r*cos(theta), r*sin(theta));\n}\n\nvec3 getCosineWeightedHemisphereSample(in vec2 U)\n{\n  vec2 ret = getConcentricDiskSample(U);\n  return vec3(ret.x, ret.y, sqrt(max(0.f, 1.f - ret.x * ret.x - ret.y * ret.y)));\n}\n\nstruct Ray {\n  vec3 m_O;\n  vec3 m_D;\n  float m_MinT, m_MaxT;\n};\n\nvec3 rayAt(Ray r, float t) {\n  return r.m_O + t*r.m_D;\n}\n\nRay GenerateCameraRay(in Camera cam, in vec2 Pixel, in vec2 ApertureRnd)\n{\n  // negating ScreenPoint.y flips the up/down direction. depends on whether you want pixel 0 at top or bottom\n  // we could also have flipped mScreen and mInvScreen, or cam.mV?\n  vec2 ScreenPoint = vec2(\n    cam.mScreen.x + (cam.mInvScreen.x * Pixel.x),\n    cam.mScreen.z + (cam.mInvScreen.y * Pixel.y)\n  );\n  vec3 dxy = (ScreenPoint.x * cam.mU) + (-ScreenPoint.y * cam.mV);\n\n  // orthographic camera ray: start at (camera pos + screen point), go in direction N\n  // perspective camera ray: start at camera pos, go in direction (N + screen point)\n  vec3 RayO = cam.mFrom + cam.mIsOrtho * dxy;\n  vec3 RayD = normalize(cam.mN + (1.0 - cam.mIsOrtho) * dxy);\n\n  if (cam.mApertureSize != 0.0f)\n  {\n    vec2 LensUV = cam.mApertureSize * getConcentricDiskSample(ApertureRnd);\n\n    vec3 LI = cam.mU * LensUV.x + cam.mV * LensUV.y;\n    RayO += LI;\n    RayD = normalize((RayD * cam.mFocalDistance) - LI);\n  }\n\n  return Ray(RayO, RayD, 0.0, MAX_RAY_LEN);\n}\n\nbool IntersectBox(in Ray R, out float pNearT, out float pFarT)\n{\n  vec3 invR\t\t= vec3(1.0f, 1.0f, 1.0f) / R.m_D;\n  vec3 bottomT\t\t= invR * (vec3(gClippedAaBbMin.x, gClippedAaBbMin.y, gClippedAaBbMin.z) - R.m_O);\n  vec3 topT\t\t= invR * (vec3(gClippedAaBbMax.x, gClippedAaBbMax.y, gClippedAaBbMax.z) - R.m_O);\n  vec3 minT\t\t= min(topT, bottomT);\n  vec3 maxT\t\t= max(topT, bottomT);\n  float largestMinT = max(max(minT.x, minT.y), max(minT.x, minT.z));\n  float smallestMaxT = min(min(maxT.x, maxT.y), min(maxT.x, maxT.z));\n\n  pNearT = largestMinT;\n  pFarT\t= smallestMaxT;\n\n  return smallestMaxT > largestMinT;\n}\n\n// assume volume is centered at 0,0,0 so p spans -bounds to + bounds\n// transform p to range from 0,0,0 to 1,1,1 for volume texture sampling.\n// optionally invert axes\nvec3 PtoVolumeTex(vec3 p) {\n  vec3 uvw = p*gInvAaBbMax + vec3(0.5, 0.5, 0.5);\n  // if flipVolume = 1, uvw is unchanged.\n  // if flipVolume = -1, uvw = 1 - uvw\n  uvw = (flipVolume*(uvw - 0.5) + 0.5);\n  return uvw;\n}\n\nconst float UINT8_MAX = 1.0;//255.0;\n\n// strategy: sample up to 4 channels, and take the post-LUT maximum intensity as the channel that wins\n// we will return the unmapped raw intensity value from the volume so that other luts can be applied again later.\nfloat GetNormalizedIntensityMax4ch(in vec3 P, out int ch)\n{\n  vec4 intensity = UINT8_MAX * texture(volumeTexture, PtoVolumeTex(P));\n\n  //intensity = (intensity - gIntensityMin) / (gIntensityMax - gIntensityMin);\n  vec4 ilut = vec4(0.0, 0.0, 0.0, 0.0);\n  // w in the lut texture is \"opacity\"\n  ilut.x = texture(gLutTexture, vec2(intensity.x, 0.5/4.0)).w / 255.0;\n  ilut.y = texture(gLutTexture, vec2(intensity.y, 1.5/4.0)).w / 255.0;\n  ilut.z = texture(gLutTexture, vec2(intensity.z, 2.5/4.0)).w / 255.0;\n  ilut.w = texture(gLutTexture, vec2(intensity.w, 3.5/4.0)).w / 255.0;\n\n  float maxIn = 0.0;\n  float iOut = 0.0;\n  ch = 0;\n  for (int i = 0; i < min(gNChannels, 4); ++i) {\n    if (ilut[i] > maxIn) {\n      maxIn = ilut[i];\n      ch = i;\n      iOut = intensity[i];\n    }\n  }\n\n  //return maxIn;\n  return iOut;\n}\n\nfloat GetNormalizedIntensity4ch(vec3 P, int ch)\n{\n  vec4 intensity = UINT8_MAX * texture(volumeTexture, PtoVolumeTex(P));\n  // select channel\n  float intensityf = intensity[ch];\n  //intensityf = (intensityf - gIntensityMin[ch]) / (gIntensityMax[ch] - gIntensityMin[ch]);\n  //intensityf = texture(gLutTexture, vec2(intensityf, (0.5+float(ch))/4.0)).x;\n\n  return intensityf;\n}\n\n// note that gInvGradientDelta is maxpixeldim of volume\n// gGradientDeltaX,Y,Z is 1/X,Y,Z of volume\nvec3 Gradient4ch(vec3 P, int ch)\n{\n  vec3 Gradient;\n\n  Gradient.x = (GetNormalizedIntensity4ch(P + (gGradientDeltaX), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaX), ch)) * gInvGradientDelta;\n  Gradient.y = (GetNormalizedIntensity4ch(P + (gGradientDeltaY), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaY), ch)) * gInvGradientDelta;\n  Gradient.z = (GetNormalizedIntensity4ch(P + (gGradientDeltaZ), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaZ), ch)) * gInvGradientDelta;\n\n  return Gradient;\n}\n\nfloat GetOpacity(float NormalizedIntensity, int ch)\n{\n  // apply lut\n  float o = texture(gLutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0)).w / 255.0;\n  float Intensity = o * gOpacity[ch];\n  return Intensity;\n}\n\nvec3 GetEmissionN(float NormalizedIntensity, int ch)\n{\n  return gEmissive[ch];\n}\n\nvec3 GetDiffuseN(float NormalizedIntensity, int ch)\n{\n  vec4 col = texture(gLutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0));\n  //vec3 col = vec3(1.0, 1.0, 1.0);\n  return col.xyz * gDiffuse[ch];\n}\n\nvec3 GetSpecularN(float NormalizedIntensity, int ch)\n{\n  return gSpecular[ch];\n}\n\nfloat GetGlossinessN(float NormalizedIntensity, int ch)\n{\n  return gGlossiness[ch];\n}\n\n// a bsdf sample, a sample on a light source, and a randomly chosen light index\nstruct LightingSample {\n  float m_bsdfComponent;\n  vec2  m_bsdfDir;\n  vec2  m_lightPos;\n  float m_lightComponent;\n  float m_LightNum;\n};\n\nLightingSample LightingSample_LargeStep(inout uvec2 seed) {\n  return LightingSample(\n    rand(seed),\n    vec2(rand(seed), rand(seed)),\n    vec2(rand(seed), rand(seed)),\n    rand(seed),\n    rand(seed)\n    );\n}\n\n// return a color xyz\nvec3 Light_Le(in Light light, in vec2 UV)\n{\n  if (light.mT == 0)\n    return RGBtoXYZ(light.mColor) / light.mArea;\n\n  if (light.mT == 1)\n  {\n    if (UV.y > 0.0f)\n      return RGBtoXYZ(mix(light.mColorMiddle, light.mColorTop, abs(UV.y)));\n    else\n      return RGBtoXYZ(mix(light.mColorMiddle, light.mColorBottom, abs(UV.y)));\n  }\n\n  return BLACK;\n}\n\n// return a color xyz\nvec3 Light_SampleL(in Light light, in vec3 P, out Ray Rl, out float Pdf, in LightingSample LS)\n{\n  vec3 L = BLACK;\n  Pdf = 0.0;\n  vec3 Ro = vec3(0,0,0), Rd = vec3(0,0,1);\n  if (light.mT == 0)\n  {\n    Ro = (light.mP + ((-0.5f + LS.m_lightPos.x) * light.mWidth * light.mU) + ((-0.5f + LS.m_lightPos.y) * light.mHeight * light.mV));\n    Rd = normalize(P - Ro);\n    L = dot(Rd, light.mN) > 0.0f ? Light_Le(light, vec2(0.0f)) : BLACK;\n    Pdf = abs(dot(Rd, light.mN)) > 0.0f ? dot(P-Ro, P-Ro) / (abs(dot(Rd, light.mN)) * light.mArea) : 0.0f;\n  }\n  else if (light.mT == 1)\n  {\n    Ro = light.mP + light.mSkyRadius * getUniformSphereSample(LS.m_lightPos);\n    Rd = normalize(P - Ro);\n    L = Light_Le(light, vec2(1.0f) - 2.0f * LS.m_lightPos);\n    Pdf = pow(light.mSkyRadius, 2.0f) / light.mArea;\n  }\n\n  Rl = Ray(Ro, Rd, 0.0f, length(P - Ro));\n\n  return L;\n}\n\n// Intersect ray with light\nbool Light_Intersect(Light light, inout Ray R, out float T, out vec3 L, out float pPdf)\n{\n  if (light.mT == 0)\n  {\n    // Compute projection\n    float DotN = dot(R.m_D, light.mN);\n\n    // Ray is coplanar with light surface\n    if (DotN >= 0.0f)\n      return false;\n\n    // Compute hit distance\n    T = (-light.mDistance - dot(R.m_O, light.mN)) / DotN;\n\n    // Intersection is in ray's negative direction\n    if (T < R.m_MinT || T > R.m_MaxT)\n      return false;\n\n    // Determine position on light\n    vec3 Pl = rayAt(R, T);\n\n    // Vector from point on area light to center of area light\n    vec3 Wl = Pl - light.mP;\n\n    // Compute texture coordinates\n    vec2 UV = vec2(dot(Wl, light.mU), dot(Wl, light.mV));\n\n    // Check if within bounds of light surface\n    if (UV.x > light.mHalfWidth || UV.x < -light.mHalfWidth || UV.y > light.mHalfHeight || UV.y < -light.mHalfHeight)\n      return false;\n\n    R.m_MaxT = T;\n\n    //pUV = UV;\n\n    if (DotN < 0.0f)\n      L = RGBtoXYZ(light.mColor) / light.mArea;\n    else\n      L = BLACK;\n\n    pPdf = dot(R.m_O-Pl, R.m_O-Pl) / (DotN * light.mArea);\n\n    return true;\n  }\n\n  else if (light.mT == 1)\n  {\n    T = light.mSkyRadius;\n\n    // Intersection is in ray's negative direction\n    if (T < R.m_MinT || T > R.m_MaxT)\n      return false;\n\n    R.m_MaxT = T;\n\n    vec2 UV = vec2(SphericalPhi(R.m_D) * INV_2_PI, SphericalTheta(R.m_D) * INV_PI);\n\n    L = Light_Le(light, vec2(1.0f,1.0f) - 2.0f * UV);\n\n    pPdf = pow(light.mSkyRadius, 2.0f) / light.mArea;\n    //pUV = UV;\n\n    return true;\n  }\n\n  return false;\n}\n\nfloat Light_Pdf(in Light light, in vec3 P, in vec3 Wi)\n{\n  vec3 L;\n  vec2 UV;\n  float Pdf = 1.0f;\n\n  Ray Rl = Ray(P, Wi, 0.0f, 100000.0f);\n\n  if (light.mT == 0)\n  {\n    float T = 0.0f;\n\n    if (!Light_Intersect(light, Rl, T, L, Pdf))\n      return 0.0f;\n\n    return pow(T, 2.0f) / (abs(dot(light.mN, -Wi)) * light.mArea);\n  }\n\n  else if (light.mT == 1)\n  {\n    return pow(light.mSkyRadius, 2.0f) / light.mArea;\n  }\n\n  return 0.0f;\n}\n\nstruct VolumeShader {\n  int m_Type; // 0 = bsdf, 1 = phase\n\n  vec3 m_Kd; // isotropic phase // xyz color\n  vec3 m_R; // specular reflectance\n  float m_Ior;\n  float m_Exponent;\n  vec3 m_Nn;\n  vec3 m_Nu;\n  vec3 m_Nv;\n};\n\n// return a xyz color\nvec3 ShaderPhase_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return shader.m_Kd * INV_PI;\n}\n\nfloat ShaderPhase_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return INV_4_PI;\n}\n\nvec3 ShaderPhase_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  Wi\t= getUniformSphereSample(U);\n  Pdf\t= ShaderPhase_Pdf(shader, Wo, Wi);\n\n  return ShaderPhase_F(shader, Wo, Wi);\n}\n\n// return a xyz color\nvec3 Lambertian_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return shader.m_Kd * INV_PI;\n}\n\nfloat Lambertian_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  //return abs(Wi.z)*INV_PI;\n  return SameHemisphere(Wo, Wi) ? abs(Wi.z) * INV_PI : 0.0f;\n}\n\n// return a xyz color\nvec3 Lambertian_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  Wi = getCosineWeightedHemisphereSample(U);\n\n  if (Wo.z < 0.0f)\n    Wi.z *= -1.0f;\n\n  Pdf = Lambertian_Pdf(shader, Wo, Wi);\n\n  return Lambertian_F(shader, Wo, Wi);\n}\n\nvec3 SphericalDirection(in float SinTheta, in float CosTheta, in float Phi)\n{\n  return vec3(SinTheta * cos(Phi), SinTheta * sin(Phi), CosTheta);\n}\n\nvoid Blinn_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  // Compute sampled half-angle vector wh for Blinn distribution\n  float costheta = pow(U.x, 1.f / (shader.m_Exponent+1.0));\n  float sintheta = sqrt(max(0.f, 1.f - costheta*costheta));\n  float phi = U.y * 2.f * PI;\n\n  vec3 wh = SphericalDirection(sintheta, costheta, phi);\n\n  if (!SameHemisphere(Wo, wh))\n    wh = -wh;\n\n  // Compute incident direction by reflecting about wh\n  Wi = -Wo + 2.f * dot(Wo, wh) * wh;\n\n  // Compute PDF for wi from Blinn distribution\n  float blinn_pdf = ((shader.m_Exponent + 1.f) * pow(costheta, shader.m_Exponent)) / (2.f * PI * 4.f * dot(Wo, wh));\n\n  if (dot(Wo, wh) <= 0.f)\n    blinn_pdf = 0.f;\n\n  Pdf = blinn_pdf;\n}\n\nfloat Blinn_D(in VolumeShader shader, in vec3 wh)\n{\n  float costhetah = abs(wh.z);//AbsCosTheta(wh);\n  return (shader.m_Exponent+2.0) * INV_2_PI * pow(costhetah, shader.m_Exponent);\n}\nfloat Microfacet_G(in VolumeShader shader, in vec3 wo, in vec3 wi, in vec3 wh)\n{\n  float NdotWh = abs(wh.z);//AbsCosTheta(wh);\n  float NdotWo = abs(wo.z);//AbsCosTheta(wo);\n  float NdotWi = abs(wi.z);//AbsCosTheta(wi);\n  float WOdotWh = abs(dot(wo, wh));\n\n  return min(1.f, min((2.f * NdotWh * NdotWo / WOdotWh), (2.f * NdotWh * NdotWi / WOdotWh)));\n}\n\nvec3 Microfacet_F(in VolumeShader shader, in vec3 wo, in vec3 wi)\n{\n  float cosThetaO = abs(wo.z);//AbsCosTheta(wo);\n  float cosThetaI = abs(wi.z);//AbsCosTheta(wi);\n\n  if (cosThetaI == 0.f || cosThetaO == 0.f)\n    return BLACK;\n\n  vec3 wh = wi + wo;\n\n  if (wh.x == 0. && wh.y == 0. && wh.z == 0.)\n    return BLACK;\n\n  wh = normalize(wh);\n  float cosThetaH = dot(wi, wh);\n\n  vec3 F = WHITE;//m_Fresnel.Evaluate(cosThetaH);\n\n  return shader.m_R * Blinn_D(shader, wh) * Microfacet_G(shader, wo, wi, wh) * F / (4.f * cosThetaI * cosThetaO);\n}\n\nvec3 ShaderBsdf_WorldToLocal(in VolumeShader shader, in vec3 W)\n{\n  return vec3(dot(W, shader.m_Nu), dot(W, shader.m_Nv), dot(W, shader.m_Nn));\n}\n\nvec3 ShaderBsdf_LocalToWorld(in VolumeShader shader, in vec3 W)\n{\n  return vec3(\tshader.m_Nu.x * W.x + shader.m_Nv.x * W.y + shader.m_Nn.x * W.z,\n    shader.m_Nu.y * W.x + shader.m_Nv.y * W.y + shader.m_Nn.y * W.z,\n    shader.m_Nu.z * W.x + shader.m_Nv.z * W.y + shader.m_Nn.z * W.z);\n}\n\nfloat Blinn_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 wh = normalize(Wo + Wi);\n\n  float costheta = abs(wh.z);//AbsCosTheta(wh);\n  // Compute PDF for wi from Blinn distribution\n  float blinn_pdf = ((shader.m_Exponent + 1.f) * pow(costheta, shader.m_Exponent)) / (2.f * PI * 4.f * dot(Wo, wh));\n\n  if (dot(Wo, wh) <= 0.0f)\n    blinn_pdf = 0.0f;\n\n  return blinn_pdf;\n}\n\nvec3 Microfacet_SampleF(in VolumeShader shader, in vec3 wo, out vec3 wi, out float Pdf, in vec2 U)\n{\n  Blinn_SampleF(shader, wo, wi, Pdf, U);\n\n  if (!SameHemisphere(wo, wi))\n    return BLACK;\n\n  return Microfacet_F(shader, wo, wi);\n}\n\nfloat Microfacet_Pdf(in VolumeShader shader, in vec3 wo, in vec3 wi)\n{\n  if (!SameHemisphere(wo, wi))\n    return 0.0f;\n\n  return Blinn_Pdf(shader, wo, wi);\n}\n\n// return a xyz color\nvec3 ShaderBsdf_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = ShaderBsdf_WorldToLocal(shader, Wi);\n\n  vec3 R = vec3(0,0,0);\n\n  R += Lambertian_F(shader, Wol, Wil);\n  R += Microfacet_F(shader, Wol, Wil);\n\n  return R;\n}\n\nfloat ShaderBsdf_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = ShaderBsdf_WorldToLocal(shader, Wi);\n\n  float Pdf = 0.0f;\n\n  Pdf += Lambertian_Pdf(shader, Wol, Wil);\n  Pdf += Microfacet_Pdf(shader, Wol, Wil);\n\n  return Pdf;\n}\n\n\nvec3 ShaderBsdf_SampleF(in VolumeShader shader, in LightingSample S, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = vec3(0,0,0);\n\n  vec3 R = vec3(0,0,0);\n\n  if (S.m_bsdfComponent <= 0.5f)\n  {\n    Lambertian_SampleF(shader, Wol, Wil, Pdf, S.m_bsdfDir);\n  }\n  else\n  {\n    Microfacet_SampleF(shader, Wol, Wil, Pdf, S.m_bsdfDir);\n  }\n\n  Pdf += Lambertian_Pdf(shader, Wol, Wil);\n  Pdf += Microfacet_Pdf(shader, Wol, Wil);\n\n  R += Lambertian_F(shader, Wol, Wil);\n  R += Microfacet_F(shader, Wol, Wil);\n\n  Wi = ShaderBsdf_LocalToWorld(shader, Wil);\n\n  //return vec3(1,1,1);\n  return R;\n}\n\n// return a xyz color\nvec3 Shader_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_F(shader, Wo, Wi);\n  }\n  else {\n    return ShaderPhase_F(shader, Wo, Wi);\n  }\n}\n\nfloat Shader_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_Pdf(shader, Wo, Wi);\n  }\n  else {\n    return ShaderPhase_Pdf(shader, Wo, Wi);\n  }\n}\n\nvec3 Shader_SampleF(in VolumeShader shader, in LightingSample S, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  //return vec3(1,0,0);\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_SampleF(shader, S, Wo, Wi, Pdf, U);\n  }\n  else {\n    return ShaderPhase_SampleF(shader, Wo, Wi, Pdf, U);\n  }\n}\n\n\nbool IsBlack(in vec3 v) {\n  return (v.x==0.0 && v.y == 0.0 && v.z == 0.0);\n}\n\nfloat PowerHeuristic(float nf, float fPdf, float ng, float gPdf)\n{\n  float f = nf * fPdf;\n  float g = ng * gPdf;\n  // The power heuristic is Veach's MIS balance heuristic except each component is being squared\n  // balance heuristic would be f/(f+g) ...?\n  return (f * f) / (f * f + g * g);\n}\n\nfloat MISContribution(float pdf1, float pdf2)\n{\n  return PowerHeuristic(1.0f, pdf1, 1.0f, pdf2);\n}\n\n// \"shadow ray\" using gStepSizeShadow, test whether it can exit the volume or not\nbool DoesSecondaryRayScatterInVolume(inout Ray R, inout uvec2 seed)\n{\n  float MinT;\n  float MaxT;\n  vec3 Ps;\n\n  if (!IntersectBox(R, MinT, MaxT))\n    return false;\n\n  MinT = max(MinT, R.m_MinT);\n  MaxT = min(MaxT, R.m_MaxT);\n\n  // delta (Woodcock) tracking\n  float S\t= -log(rand(seed)) / gDensityScale;\n  float Sum = 0.0f;\n  float SigmaT = 0.0f;\n\n  MinT += rand(seed) * gStepSizeShadow;\n  int ch = 0;\n  float intensity = 0.0;\n  while (Sum < S)\n  {\n    Ps = rayAt(R, MinT);  // R.m_O + MinT * R.m_D;\n\n    if (MinT > MaxT)\n      return false;\n\n    intensity = GetNormalizedIntensityMax4ch(Ps, ch);\n    SigmaT = gDensityScale * GetOpacity(intensity, ch);\n\n    Sum += SigmaT * gStepSizeShadow;\n    MinT += gStepSizeShadow;\n  }\n\n  return true;\n}\n\nint GetNearestLight(Ray R, out vec3 oLightColor, out vec3 Pl, out float oPdf)\n{\n  int hit = -1;\n  float T = 0.0f;\n  Ray rayCopy = R;\n  float pdf = 0.0f;\n\n  for (int i = 0; i < 2; i++)\n  {\n    if (Light_Intersect(gLights[i], rayCopy, T, oLightColor, pdf))\n    {\n      Pl = rayAt(R, T);\n      hit = i;\n    }\n  }\n  oPdf = pdf;\n\n  return hit;\n}\n\n// return a XYZ color\n// Wo is direction from scatter point out toward incident ray direction\n\n// Wi goes toward light sample and is not necessarily perfect reflection of Wo\n// ^Wi   ^N    ^Wo\n//  \\    |    //\n//   \\   |   //\n//    \\  |  //\n//     \\ | //\n//      \\|// Pe = volume sample where scattering occurs\n//   ---------\nvec3 EstimateDirectLight(int shaderType, float Density, int ch, in Light light, in LightingSample LS, in vec3 Wo, in vec3 Pe, in vec3 N, inout uvec2 seed)\n{\n  vec3 Ld = BLACK, Li = BLACK, F = BLACK;\n\n  vec3 diffuse = GetDiffuseN(Density, ch);\n  vec3 specular = GetSpecularN(Density, ch);\n  float glossiness = GetGlossinessN(Density, ch);\n\n  // can N and Wo be coincident????\n  vec3 nu = normalize(cross(N, Wo));\n  vec3 nv = normalize(cross(N, nu));\n\n  // the IoR here is hard coded... and unused!!!!\n  VolumeShader Shader = VolumeShader(shaderType, RGBtoXYZ(diffuse), RGBtoXYZ(specular), 2.5f, glossiness, N, nu, nv);\n\n  float LightPdf = 1.0f, ShaderPdf = 1.0f;\n\n  Ray Rl = Ray(vec3(0,0,0), vec3(0,0,1.0), 0.0, MAX_RAY_LEN);\n  // Rl is ray from light toward Pe in volume, with a max traversal of the distance from Pe to Light sample pos.\n  Li = Light_SampleL(light, Pe, Rl, LightPdf, LS);\n\n  // Wi: negate ray direction: from volume scatter point toward light...?\n  vec3 Wi = -Rl.m_D, P = vec3(0,0,0);\n\n  // we will calculate two lighting contributions and combine them by MIS.\n\n  F = Shader_F(Shader,Wo, Wi);\n\n  ShaderPdf = Shader_Pdf(Shader, Wo, Wi);\n\n  // get a lighting contribution along Rl;  see if Rl would scatter in the volume or not\n  if (!IsBlack(Li) && (ShaderPdf > 0.0f) && (LightPdf > 0.0f) && !DoesSecondaryRayScatterInVolume(Rl, seed))\n  {\n    // ray from light can see through volume to Pe!\n\n    float dotProd = 1.0;\n    if (shaderType == ShaderType_Brdf){\n\n      // (use abs or clamp here?)\n      dotProd = abs(dot(Wi, N));\n    }\n    Ld += F * Li * dotProd * MISContribution(LightPdf, ShaderPdf) / LightPdf;\n\n  }\n\n  // get a lighting contribution by sampling nearest light from the scattering point\n  F = Shader_SampleF(Shader, LS, Wo, Wi, ShaderPdf, LS.m_bsdfDir);\n  if (!IsBlack(F) && (ShaderPdf > 0.0f))\n  {\n    vec3 Pl = vec3(0,0,0);\n    int n = GetNearestLight(Ray(Pe, Wi, 0.0f, 1000000.0f), Li, Pl, LightPdf);\n    if (n > -1)\n    {\n      Light pLight = gLights[n];\n      LightPdf = Light_Pdf(pLight, Pe, Wi);\n\n      if ((LightPdf > 0.0f) && !IsBlack(Li)) {\n        Ray rr = Ray(Pl, normalize(Pe - Pl), 0.0f, length(Pe - Pl));\n        if (!DoesSecondaryRayScatterInVolume(rr, seed))\n        {\n          float dotProd = 1.0;\n          if (shaderType == ShaderType_Brdf){\n\n            // (use abs or clamp here?)\n            dotProd = abs(dot(Wi, N));\n          }\n          // note order of MIS params is swapped\n          Ld += F * Li * dotProd * MISContribution(ShaderPdf, LightPdf) / ShaderPdf;\n        }\n\n      }\n    }\n  }\n\n  return Ld;\n\n}\n\n// return a linear xyz color\nvec3 UniformSampleOneLight(int shaderType, float Density, int ch, in vec3 Wo, in vec3 Pe, in vec3 N, inout uvec2 seed)\n{\n  //if (NUM_LIGHTS == 0)\n  //  return BLACK;\n\n  // select a random light, a random 2d sample on light, and a random 2d sample on brdf\n  LightingSample LS = LightingSample_LargeStep(seed);\n\n  int WhichLight = int(floor(LS.m_LightNum * float(NUM_LIGHTS)));\n\n  Light light = gLights[WhichLight];\n\n  return float(NUM_LIGHTS) * EstimateDirectLight(shaderType, Density, ch, light, LS, Wo, Pe, N, seed);\n\n}\n\nbool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)\n{\n  float MinT;\n  float MaxT;\n\n  if (!IntersectBox(R, MinT, MaxT))\n    return false;\n\n  MinT = max(MinT, R.m_MinT);\n  MaxT = min(MaxT, R.m_MaxT);\n\n  // delta (Woodcock) tracking\n\n  // notes, not necessarily coherent:\n  // ray march along the ray's projected path and keep an average sigmaT value.\n  // The distance is weighted by the intensity at each ray step sample. High intensity increases the apparent distance.\n  // When the distance has become greater than the average sigmaT value given by -log(RandomFloat[0, 1]) / averageSigmaT\n  // then that would be considered the interaction position.\n\n  // sigmaT = sigmaA + sigmaS = absorption coeff + scattering coeff = extinction coeff\n\n  // Beer-Lambert law: transmittance T(t) = exp(-sigmaT*t)  where t is a distance!\n\n  // importance sampling the exponential function to produce a free path distance S\n  // the PDF is p(t) = sigmaT * exp(-sigmaT * t)\n  // In a homogeneous volume,\n  // S is the free-path distance = -ln(1-zeta)/sigmaT where zeta is a random variable\n  // density scale = 0   => S --> 0..inf.  Low density means randomly sized ray paths\n  // density scale = inf => S --> 0.       High density means short ray paths!\n\n  // note that ln(x:0..1) is negative\n\n  // here gDensityScale represents sigmaMax, a majorant of sigmaT\n  // it is a parameter that should be set as close to the max extinction coefficient as possible.\n  float S\t= -log(rand(seed)) / gDensityScale;\n\n  float Sum\t\t= 0.0f;\n  float SigmaT\t= 0.0f; // accumulated extinction along ray march\n\n  // start: take one step now.\n  MinT += rand(seed) * gStepSize;\n\n  int ch = 0;\n  float intensity = 0.0;\n\n  // ray march until we have traveled S (or hit the maxT of the ray)\n  while (Sum < S)\n  {\n    Ps = rayAt(R, MinT);  // R.m_O + MinT * R.m_D;\n\n    // if we exit the volume with no scattering\n    if (MinT > MaxT)\n      return false;\n\n    intensity = GetNormalizedIntensityMax4ch(Ps, ch);\n    SigmaT = gDensityScale * GetOpacity(intensity, ch);\n\n    Sum += SigmaT * gStepSize;\n    MinT += gStepSize;\n  }\n\n  // at this time, MinT - original MinT is the T transmission distance before a scatter event.\n  // Ps is the point\n\n  return true;\n}\n\n\nvec4 CalculateRadiance(inout uvec2 seed) {\n  float r = rand(seed);\n  //return vec4(r,0,0,1);\n\n  vec3 Lv = BLACK, Li = BLACK;\n\n  //Ray Re = Ray(vec3(0,0,0), vec3(0,0,1), 0.0, MAX_RAY_LEN);\n\n  vec2 UV = vUv*uResolution + vec2(rand(seed), rand(seed));\n\n  Ray Re = GenerateCameraRay(gCamera, UV, vec2(rand(seed), rand(seed)));\n\n  //return vec4(vUv, 0.0, 1.0);\n  //return vec4(0.5*(Re.m_D + 1.0), 1.0);\n  //return vec4(Re.m_D, 1.0);\n\n  //Re.m_MinT = 0.0f;\n  //Re.m_MaxT = MAX_RAY_LEN;\n\n  vec3 Pe = vec3(0,0,0), Pl = vec3(0,0,0);\n  float lpdf = 0.0;\n\n  float alpha = 0.0;\n  // find point Pe along ray Re\n  if (SampleScatteringEvent(Re, seed, Pe))\n  {\n    alpha = 1.0;\n    // is there a light between Re.m_O and Pe? (ray's maxT is distance to Pe)\n    // (test to see if area light was hit before volume.)\n    int i = GetNearestLight(Ray(Re.m_O, Re.m_D, 0.0f, length(Pe - Re.m_O)), Li, Pl, lpdf);\n    if (i > -1)\n    {\n      // set sample pixel value in frame estimate (prior to accumulation)\n      return vec4(Li, 1.0);\n    }\n\n    int ch = 0;\n    float D = GetNormalizedIntensityMax4ch(Pe, ch);\n\n    // emission from volume\n    Lv += RGBtoXYZ(GetEmissionN(D, ch));\n\n    vec3 gradient = Gradient4ch(Pe, ch);\n    // send ray out from Pe toward light\n    switch (gShadingType)\n    {\n      case ShaderType_Brdf:\n      {\n        Lv += UniformSampleOneLight(ShaderType_Brdf, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        break;\n      }\n\n      case ShaderType_Phase:\n      {\n        Lv += 0.5f * UniformSampleOneLight(ShaderType_Phase, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        break;\n      }\n\n      case ShaderType_Mixed:\n      {\n        //const float GradMag = GradientMagnitude(Pe, volumedata.gradientVolumeTexture[ch]) * (1.0/volumedata.intensityMax[ch]);\n        float GradMag = length(gradient);\n        float PdfBrdf = (1.0f - exp(-gGradientFactor * GradMag));\n\n        vec3 cls; // xyz color\n        if (rand(seed) < PdfBrdf) {\n          cls = UniformSampleOneLight(ShaderType_Brdf, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        }\n        else {\n          cls = 0.5f * UniformSampleOneLight(ShaderType_Phase, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        }\n\n        Lv += cls;\n\n        break;\n      }\n    }\n  }\n  else\n  {\n    // background color:\n    // set Lv to a selected color based on environment light source?\n//    if (uShowLights > 0.0) {\n//      int n = GetNearestLight(Ray(Re.m_O, Re.m_D, 0.0f, 1000000.0f), Li, Pl, lpdf);\n//      if (n > -1)\n//        Lv = Li;\n//    }\n\n    //Lv = vec3(r,0,0);\n\n  }\n\n  // set sample pixel value in frame estimate (prior to accumulation)\n\n  return vec4(Lv, alpha);\n}\n\nvec4 CumulativeMovingAverage(vec4 A, vec4 Ax, float N)\n{\n   return A + ((Ax - A) / max((N), 1.0f));\n}\n\nvoid main()\n{\n  // seed for rand(seed) function\n  uvec2 seed = uvec2(uFrameCounter, uFrameCounter + 1.0) * uvec2(gl_FragCoord);\n\n  // perform path tracing and get resulting pixel color\n  vec4 pixelColor = CalculateRadiance( seed );\n\n  vec4 previousColor = texture(tPreviousTexture, vUv);\n  if (uSampleCounter < 1.0) {\n    previousColor = vec4(0,0,0,0);\n  }\n\n  pc_fragColor = CumulativeMovingAverage(previousColor, pixelColor, uSampleCounter);\n}\n"; // Must match values in shader code above.
+/* babel-plugin-inline-import './shaders/pathtrace.vert' */
+var pathTraceVertexShader = "precision highp float;\nprecision highp int;\nout vec2 vUv;\nvoid main()\n{\n  vUv = uv;\n  gl_Position = vec4( position, 1.0 );\n}\n";
+/* babel-plugin-inline-import './shaders/pathtrace.frag' */
+var pathTraceFragmentShader = "precision highp float;\nprecision highp int;\nprecision highp sampler2D;\nprecision highp sampler3D;\n\n#define PI (3.1415926535897932384626433832795)\n#define PI_OVER_2 (1.57079632679489661923)\n#define PI_OVER_4 (0.785398163397448309616)\n#define INV_PI (1.0/PI)\n#define INV_2_PI (0.5/PI)\n#define INV_4_PI (0.25/PI)\n\nconst vec3 BLACK = vec3(0,0,0);\nconst vec3 WHITE = vec3(1.0,1.0,1.0);\nconst int ShaderType_Brdf = 0;\nconst int ShaderType_Phase = 1;\nconst int ShaderType_Mixed = 2;\nconst float MAX_RAY_LEN = 1500000.0f;\n\nin vec2 vUv;\n\nstruct Camera {\n  vec3 mFrom;\n  vec3 mU, mV, mN;\n  vec4 mScreen;  // left, right, bottom, top\n  vec2 mInvScreen;  // 1/w, 1/h\n  float mFocalDistance;\n  float mApertureSize;\n  float mIsOrtho; // 1 or 0\n};\n\nuniform Camera gCamera;\n\nstruct Light {\n  float   mTheta;\n  float   mPhi;\n  float   mWidth;\n  float   mHalfWidth;\n  float   mHeight;\n  float   mHalfHeight;\n  float   mDistance;\n  float   mSkyRadius;\n  vec3    mP;\n  vec3    mTarget;\n  vec3    mN;\n  vec3    mU;\n  vec3    mV;\n  float   mArea;\n  float   mAreaPdf;\n  vec3    mColor;\n  vec3    mColorTop;\n  vec3    mColorMiddle;\n  vec3    mColorBottom;\n  int     mT;\n};\nconst int NUM_LIGHTS = 2;\nuniform Light gLights[2];\n\nuniform vec3 gClippedAaBbMin;\nuniform vec3 gClippedAaBbMax;\nuniform float gDensityScale;\nuniform float gStepSize;\nuniform float gStepSizeShadow;\nuniform sampler3D volumeTexture;\nuniform vec3 gInvAaBbMax;\nuniform int gNChannels;\nuniform int gShadingType;\nuniform vec3 gGradientDeltaX;\nuniform vec3 gGradientDeltaY;\nuniform vec3 gGradientDeltaZ;\nuniform float gInvGradientDelta;\nuniform float gGradientFactor;\nuniform float uShowLights;\nuniform vec3 flipVolume;\n\n// per channel\n// the luttexture is a 256x4 rgba texture\n// each row is a 256 element lookup table.\nuniform sampler2D gLutTexture;\nuniform vec4 gIntensityMax;\nuniform vec4 gIntensityMin;\nuniform float gOpacity[4];\nuniform vec3 gEmissive[4];\nuniform vec3 gDiffuse[4];\nuniform vec3 gSpecular[4];\nuniform float gGlossiness[4];\n\n// compositing / progressive render\nuniform float uFrameCounter;\nuniform float uSampleCounter;\nuniform vec2 uResolution;\nuniform sampler2D tPreviousTexture;\n\n// from iq https://www.shadertoy.com/view/4tXyWN\nfloat rand( inout uvec2 seed )\n{\n  seed += uvec2(1);\n  uvec2 q = 1103515245U * ( (seed >> 1U) ^ (seed.yx) );\n  uint  n = 1103515245U * ( (q.x) ^ (q.y >> 3U) );\n  return float(n) * (1.0 / float(0xffffffffU));\n}\n\nvec3 XYZtoRGB(vec3 xyz) {\n  return vec3(\n    3.240479f*xyz[0] - 1.537150f*xyz[1] - 0.498535f*xyz[2],\n    -0.969256f*xyz[0] + 1.875991f*xyz[1] + 0.041556f*xyz[2],\n    0.055648f*xyz[0] - 0.204043f*xyz[1] + 1.057311f*xyz[2]\n  );\n}\n\n// Used to convert from linear RGB to XYZ space\nconst mat3 RGB_2_XYZ = (mat3(\n  0.4124564, 0.3575761, 0.1804375,\n  0.2126729, 0.7151522, 0.0721750,\n  0.0193339, 0.1191920, 0.9503041\n));\nvec3 RGBtoXYZ(vec3 rgb) {\n  return rgb * RGB_2_XYZ;\n}\n\nvec3 getUniformSphereSample(in vec2 U)\n{\n  float z = 1.f - 2.f * U.x;\n  float r = sqrt(max(0.f, 1.f - z*z));\n  float phi = 2.f * PI * U.y;\n  float x = r * cos(phi);\n  float y = r * sin(phi);\n  return vec3(x, y, z);\n}\n\nfloat SphericalPhi(in vec3 Wl)\n{\n  float p = atan(Wl.z, Wl.x);\n  return (p < 0.f) ? p + 2.f * PI : p;\n}\n\nfloat SphericalTheta(in vec3 Wl)\n{\n  return acos(clamp(Wl.y, -1.f, 1.f));\n}\n\nbool SameHemisphere(in vec3 Ww1, in vec3 Ww2)\n{\n   return (Ww1.z * Ww2.z) > 0.0f;\n}\n\nvec2 getConcentricDiskSample(in vec2 U)\n{\n  float r, theta;\n  // Map 0..1 to -1..1\n  float sx = 2.0 * U.x - 1.0;\n  float sy = 2.0 * U.y - 1.0;\n\n  // Map square to (r,theta)\n\n  // Handle degeneracy at the origin\n  if (sx == 0.0 && sy == 0.0)\n  {\n    return vec2(0.0f, 0.0f);\n  }\n\n  // quadrants of disk\n  if (sx >= -sy)\n  {\n    if (sx > sy)\n    {\n      r = sx;\n      if (sy > 0.0)\n        theta = sy/r;\n      else\n        theta = 8.0f + sy/r;\n    }\n    else\n    {\n      r = sy;\n      theta = 2.0f - sx/r;\n    }\n  }\n  else\n  {\n    if (sx <= sy)\n    {\n      r = -sx;\n      theta = 4.0f - sy/r;\n    }\n    else\n    {\n      r = -sy;\n      theta = 6.0f + sx/r;\n    }\n  }\n\n  theta *= PI_OVER_4;\n\n  return vec2(r*cos(theta), r*sin(theta));\n}\n\nvec3 getCosineWeightedHemisphereSample(in vec2 U)\n{\n  vec2 ret = getConcentricDiskSample(U);\n  return vec3(ret.x, ret.y, sqrt(max(0.f, 1.f - ret.x * ret.x - ret.y * ret.y)));\n}\n\nstruct Ray {\n  vec3 m_O;\n  vec3 m_D;\n  float m_MinT, m_MaxT;\n};\n\nvec3 rayAt(Ray r, float t) {\n  return r.m_O + t*r.m_D;\n}\n\nRay GenerateCameraRay(in Camera cam, in vec2 Pixel, in vec2 ApertureRnd)\n{\n  // negating ScreenPoint.y flips the up/down direction. depends on whether you want pixel 0 at top or bottom\n  // we could also have flipped mScreen and mInvScreen, or cam.mV?\n  vec2 ScreenPoint = vec2(\n    cam.mScreen.x + (cam.mInvScreen.x * Pixel.x),\n    cam.mScreen.z + (cam.mInvScreen.y * Pixel.y)\n  );\n  vec3 dxy = (ScreenPoint.x * cam.mU) + (-ScreenPoint.y * cam.mV);\n\n  // orthographic camera ray: start at (camera pos + screen point), go in direction N\n  // perspective camera ray: start at camera pos, go in direction (N + screen point)\n  vec3 RayO = cam.mFrom + cam.mIsOrtho * dxy;\n  vec3 RayD = normalize(cam.mN + (1.0 - cam.mIsOrtho) * dxy);\n\n  if (cam.mApertureSize != 0.0f)\n  {\n    vec2 LensUV = cam.mApertureSize * getConcentricDiskSample(ApertureRnd);\n\n    vec3 LI = cam.mU * LensUV.x + cam.mV * LensUV.y;\n    RayO += LI;\n    RayD = normalize((RayD * cam.mFocalDistance) - LI);\n  }\n\n  return Ray(RayO, RayD, 0.0, MAX_RAY_LEN);\n}\n\nbool IntersectBox(in Ray R, out float pNearT, out float pFarT)\n{\n  vec3 invR\t\t= vec3(1.0f, 1.0f, 1.0f) / R.m_D;\n  vec3 bottomT\t\t= invR * (vec3(gClippedAaBbMin.x, gClippedAaBbMin.y, gClippedAaBbMin.z) - R.m_O);\n  vec3 topT\t\t= invR * (vec3(gClippedAaBbMax.x, gClippedAaBbMax.y, gClippedAaBbMax.z) - R.m_O);\n  vec3 minT\t\t= min(topT, bottomT);\n  vec3 maxT\t\t= max(topT, bottomT);\n  float largestMinT = max(max(minT.x, minT.y), max(minT.x, minT.z));\n  float smallestMaxT = min(min(maxT.x, maxT.y), min(maxT.x, maxT.z));\n\n  pNearT = largestMinT;\n  pFarT\t= smallestMaxT;\n\n  return smallestMaxT > largestMinT;\n}\n\n// assume volume is centered at 0,0,0 so p spans -bounds to + bounds\n// transform p to range from 0,0,0 to 1,1,1 for volume texture sampling.\n// optionally invert axes\nvec3 PtoVolumeTex(vec3 p) {\n  vec3 uvw = p*gInvAaBbMax + vec3(0.5, 0.5, 0.5);\n  // if flipVolume = 1, uvw is unchanged.\n  // if flipVolume = -1, uvw = 1 - uvw\n  uvw = (flipVolume*(uvw - 0.5) + 0.5);\n  return uvw;\n}\n\nconst float UINT8_MAX = 1.0;//255.0;\n\n// strategy: sample up to 4 channels, and take the post-LUT maximum intensity as the channel that wins\n// we will return the unmapped raw intensity value from the volume so that other luts can be applied again later.\nfloat GetNormalizedIntensityMax4ch(in vec3 P, out int ch)\n{\n  vec4 intensity = UINT8_MAX * texture(volumeTexture, PtoVolumeTex(P));\n\n  //intensity = (intensity - gIntensityMin) / (gIntensityMax - gIntensityMin);\n  vec4 ilut = vec4(0.0, 0.0, 0.0, 0.0);\n  // w in the lut texture is \"opacity\"\n  ilut.x = texture(gLutTexture, vec2(intensity.x, 0.5/4.0)).w / 255.0;\n  ilut.y = texture(gLutTexture, vec2(intensity.y, 1.5/4.0)).w / 255.0;\n  ilut.z = texture(gLutTexture, vec2(intensity.z, 2.5/4.0)).w / 255.0;\n  ilut.w = texture(gLutTexture, vec2(intensity.w, 3.5/4.0)).w / 255.0;\n\n  float maxIn = 0.0;\n  float iOut = 0.0;\n  ch = 0;\n  for (int i = 0; i < min(gNChannels, 4); ++i) {\n    if (ilut[i] > maxIn) {\n      maxIn = ilut[i];\n      ch = i;\n      iOut = intensity[i];\n    }\n  }\n\n  //return maxIn;\n  return iOut;\n}\n\nfloat GetNormalizedIntensity4ch(vec3 P, int ch)\n{\n  vec4 intensity = UINT8_MAX * texture(volumeTexture, PtoVolumeTex(P));\n  // select channel\n  float intensityf = intensity[ch];\n  //intensityf = (intensityf - gIntensityMin[ch]) / (gIntensityMax[ch] - gIntensityMin[ch]);\n  //intensityf = texture(gLutTexture, vec2(intensityf, (0.5+float(ch))/4.0)).x;\n\n  return intensityf;\n}\n\n// note that gInvGradientDelta is maxpixeldim of volume\n// gGradientDeltaX,Y,Z is 1/X,Y,Z of volume\nvec3 Gradient4ch(vec3 P, int ch)\n{\n  vec3 Gradient;\n\n  Gradient.x = (GetNormalizedIntensity4ch(P + (gGradientDeltaX), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaX), ch)) * gInvGradientDelta;\n  Gradient.y = (GetNormalizedIntensity4ch(P + (gGradientDeltaY), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaY), ch)) * gInvGradientDelta;\n  Gradient.z = (GetNormalizedIntensity4ch(P + (gGradientDeltaZ), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaZ), ch)) * gInvGradientDelta;\n\n  return Gradient;\n}\n\nfloat GetOpacity(float NormalizedIntensity, int ch)\n{\n  // apply lut\n  float o = texture(gLutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0)).w / 255.0;\n  float Intensity = o * gOpacity[ch];\n  return Intensity;\n}\n\nvec3 GetEmissionN(float NormalizedIntensity, int ch)\n{\n  return gEmissive[ch];\n}\n\nvec3 GetDiffuseN(float NormalizedIntensity, int ch)\n{\n  vec4 col = texture(gLutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0));\n  //vec3 col = vec3(1.0, 1.0, 1.0);\n  return col.xyz * gDiffuse[ch];\n}\n\nvec3 GetSpecularN(float NormalizedIntensity, int ch)\n{\n  return gSpecular[ch];\n}\n\nfloat GetGlossinessN(float NormalizedIntensity, int ch)\n{\n  return gGlossiness[ch];\n}\n\n// a bsdf sample, a sample on a light source, and a randomly chosen light index\nstruct LightingSample {\n  float m_bsdfComponent;\n  vec2  m_bsdfDir;\n  vec2  m_lightPos;\n  float m_lightComponent;\n  float m_LightNum;\n};\n\nLightingSample LightingSample_LargeStep(inout uvec2 seed) {\n  return LightingSample(\n    rand(seed),\n    vec2(rand(seed), rand(seed)),\n    vec2(rand(seed), rand(seed)),\n    rand(seed),\n    rand(seed)\n    );\n}\n\n// return a color xyz\nvec3 Light_Le(in Light light, in vec2 UV)\n{\n  if (light.mT == 0)\n    return RGBtoXYZ(light.mColor) / light.mArea;\n\n  if (light.mT == 1)\n  {\n    if (UV.y > 0.0f)\n      return RGBtoXYZ(mix(light.mColorMiddle, light.mColorTop, abs(UV.y)));\n    else\n      return RGBtoXYZ(mix(light.mColorMiddle, light.mColorBottom, abs(UV.y)));\n  }\n\n  return BLACK;\n}\n\n// return a color xyz\nvec3 Light_SampleL(in Light light, in vec3 P, out Ray Rl, out float Pdf, in LightingSample LS)\n{\n  vec3 L = BLACK;\n  Pdf = 0.0;\n  vec3 Ro = vec3(0,0,0), Rd = vec3(0,0,1);\n  if (light.mT == 0)\n  {\n    Ro = (light.mP + ((-0.5f + LS.m_lightPos.x) * light.mWidth * light.mU) + ((-0.5f + LS.m_lightPos.y) * light.mHeight * light.mV));\n    Rd = normalize(P - Ro);\n    L = dot(Rd, light.mN) > 0.0f ? Light_Le(light, vec2(0.0f)) : BLACK;\n    Pdf = abs(dot(Rd, light.mN)) > 0.0f ? dot(P-Ro, P-Ro) / (abs(dot(Rd, light.mN)) * light.mArea) : 0.0f;\n  }\n  else if (light.mT == 1)\n  {\n    Ro = light.mP + light.mSkyRadius * getUniformSphereSample(LS.m_lightPos);\n    Rd = normalize(P - Ro);\n    L = Light_Le(light, vec2(1.0f) - 2.0f * LS.m_lightPos);\n    Pdf = pow(light.mSkyRadius, 2.0f) / light.mArea;\n  }\n\n  Rl = Ray(Ro, Rd, 0.0f, length(P - Ro));\n\n  return L;\n}\n\n// Intersect ray with light\nbool Light_Intersect(Light light, inout Ray R, out float T, out vec3 L, out float pPdf)\n{\n  if (light.mT == 0)\n  {\n    // Compute projection\n    float DotN = dot(R.m_D, light.mN);\n\n    // Ray is coplanar with light surface\n    if (DotN >= 0.0f)\n      return false;\n\n    // Compute hit distance\n    T = (-light.mDistance - dot(R.m_O, light.mN)) / DotN;\n\n    // Intersection is in ray's negative direction\n    if (T < R.m_MinT || T > R.m_MaxT)\n      return false;\n\n    // Determine position on light\n    vec3 Pl = rayAt(R, T);\n\n    // Vector from point on area light to center of area light\n    vec3 Wl = Pl - light.mP;\n\n    // Compute texture coordinates\n    vec2 UV = vec2(dot(Wl, light.mU), dot(Wl, light.mV));\n\n    // Check if within bounds of light surface\n    if (UV.x > light.mHalfWidth || UV.x < -light.mHalfWidth || UV.y > light.mHalfHeight || UV.y < -light.mHalfHeight)\n      return false;\n\n    R.m_MaxT = T;\n\n    //pUV = UV;\n\n    if (DotN < 0.0f)\n      L = RGBtoXYZ(light.mColor) / light.mArea;\n    else\n      L = BLACK;\n\n    pPdf = dot(R.m_O-Pl, R.m_O-Pl) / (DotN * light.mArea);\n\n    return true;\n  }\n\n  else if (light.mT == 1)\n  {\n    T = light.mSkyRadius;\n\n    // Intersection is in ray's negative direction\n    if (T < R.m_MinT || T > R.m_MaxT)\n      return false;\n\n    R.m_MaxT = T;\n\n    vec2 UV = vec2(SphericalPhi(R.m_D) * INV_2_PI, SphericalTheta(R.m_D) * INV_PI);\n\n    L = Light_Le(light, vec2(1.0f,1.0f) - 2.0f * UV);\n\n    pPdf = pow(light.mSkyRadius, 2.0f) / light.mArea;\n    //pUV = UV;\n\n    return true;\n  }\n\n  return false;\n}\n\nfloat Light_Pdf(in Light light, in vec3 P, in vec3 Wi)\n{\n  vec3 L;\n  vec2 UV;\n  float Pdf = 1.0f;\n\n  Ray Rl = Ray(P, Wi, 0.0f, 100000.0f);\n\n  if (light.mT == 0)\n  {\n    float T = 0.0f;\n\n    if (!Light_Intersect(light, Rl, T, L, Pdf))\n      return 0.0f;\n\n    return pow(T, 2.0f) / (abs(dot(light.mN, -Wi)) * light.mArea);\n  }\n\n  else if (light.mT == 1)\n  {\n    return pow(light.mSkyRadius, 2.0f) / light.mArea;\n  }\n\n  return 0.0f;\n}\n\nstruct VolumeShader {\n  int m_Type; // 0 = bsdf, 1 = phase\n\n  vec3 m_Kd; // isotropic phase // xyz color\n  vec3 m_R; // specular reflectance\n  float m_Ior;\n  float m_Exponent;\n  vec3 m_Nn;\n  vec3 m_Nu;\n  vec3 m_Nv;\n};\n\n// return a xyz color\nvec3 ShaderPhase_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return shader.m_Kd * INV_PI;\n}\n\nfloat ShaderPhase_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return INV_4_PI;\n}\n\nvec3 ShaderPhase_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  Wi\t= getUniformSphereSample(U);\n  Pdf\t= ShaderPhase_Pdf(shader, Wo, Wi);\n\n  return ShaderPhase_F(shader, Wo, Wi);\n}\n\n// return a xyz color\nvec3 Lambertian_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return shader.m_Kd * INV_PI;\n}\n\nfloat Lambertian_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  //return abs(Wi.z)*INV_PI;\n  return SameHemisphere(Wo, Wi) ? abs(Wi.z) * INV_PI : 0.0f;\n}\n\n// return a xyz color\nvec3 Lambertian_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  Wi = getCosineWeightedHemisphereSample(U);\n\n  if (Wo.z < 0.0f)\n    Wi.z *= -1.0f;\n\n  Pdf = Lambertian_Pdf(shader, Wo, Wi);\n\n  return Lambertian_F(shader, Wo, Wi);\n}\n\nvec3 SphericalDirection(in float SinTheta, in float CosTheta, in float Phi)\n{\n  return vec3(SinTheta * cos(Phi), SinTheta * sin(Phi), CosTheta);\n}\n\nvoid Blinn_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  // Compute sampled half-angle vector wh for Blinn distribution\n  float costheta = pow(U.x, 1.f / (shader.m_Exponent+1.0));\n  float sintheta = sqrt(max(0.f, 1.f - costheta*costheta));\n  float phi = U.y * 2.f * PI;\n\n  vec3 wh = SphericalDirection(sintheta, costheta, phi);\n\n  if (!SameHemisphere(Wo, wh))\n    wh = -wh;\n\n  // Compute incident direction by reflecting about wh\n  Wi = -Wo + 2.f * dot(Wo, wh) * wh;\n\n  // Compute PDF for wi from Blinn distribution\n  float blinn_pdf = ((shader.m_Exponent + 1.f) * pow(costheta, shader.m_Exponent)) / (2.f * PI * 4.f * dot(Wo, wh));\n\n  if (dot(Wo, wh) <= 0.f)\n    blinn_pdf = 0.f;\n\n  Pdf = blinn_pdf;\n}\n\nfloat Blinn_D(in VolumeShader shader, in vec3 wh)\n{\n  float costhetah = abs(wh.z);//AbsCosTheta(wh);\n  return (shader.m_Exponent+2.0) * INV_2_PI * pow(costhetah, shader.m_Exponent);\n}\nfloat Microfacet_G(in VolumeShader shader, in vec3 wo, in vec3 wi, in vec3 wh)\n{\n  float NdotWh = abs(wh.z);//AbsCosTheta(wh);\n  float NdotWo = abs(wo.z);//AbsCosTheta(wo);\n  float NdotWi = abs(wi.z);//AbsCosTheta(wi);\n  float WOdotWh = abs(dot(wo, wh));\n\n  return min(1.f, min((2.f * NdotWh * NdotWo / WOdotWh), (2.f * NdotWh * NdotWi / WOdotWh)));\n}\n\nvec3 Microfacet_F(in VolumeShader shader, in vec3 wo, in vec3 wi)\n{\n  float cosThetaO = abs(wo.z);//AbsCosTheta(wo);\n  float cosThetaI = abs(wi.z);//AbsCosTheta(wi);\n\n  if (cosThetaI == 0.f || cosThetaO == 0.f)\n    return BLACK;\n\n  vec3 wh = wi + wo;\n\n  if (wh.x == 0. && wh.y == 0. && wh.z == 0.)\n    return BLACK;\n\n  wh = normalize(wh);\n  float cosThetaH = dot(wi, wh);\n\n  vec3 F = WHITE;//m_Fresnel.Evaluate(cosThetaH);\n\n  return shader.m_R * Blinn_D(shader, wh) * Microfacet_G(shader, wo, wi, wh) * F / (4.f * cosThetaI * cosThetaO);\n}\n\nvec3 ShaderBsdf_WorldToLocal(in VolumeShader shader, in vec3 W)\n{\n  return vec3(dot(W, shader.m_Nu), dot(W, shader.m_Nv), dot(W, shader.m_Nn));\n}\n\nvec3 ShaderBsdf_LocalToWorld(in VolumeShader shader, in vec3 W)\n{\n  return vec3(\tshader.m_Nu.x * W.x + shader.m_Nv.x * W.y + shader.m_Nn.x * W.z,\n    shader.m_Nu.y * W.x + shader.m_Nv.y * W.y + shader.m_Nn.y * W.z,\n    shader.m_Nu.z * W.x + shader.m_Nv.z * W.y + shader.m_Nn.z * W.z);\n}\n\nfloat Blinn_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 wh = normalize(Wo + Wi);\n\n  float costheta = abs(wh.z);//AbsCosTheta(wh);\n  // Compute PDF for wi from Blinn distribution\n  float blinn_pdf = ((shader.m_Exponent + 1.f) * pow(costheta, shader.m_Exponent)) / (2.f * PI * 4.f * dot(Wo, wh));\n\n  if (dot(Wo, wh) <= 0.0f)\n    blinn_pdf = 0.0f;\n\n  return blinn_pdf;\n}\n\nvec3 Microfacet_SampleF(in VolumeShader shader, in vec3 wo, out vec3 wi, out float Pdf, in vec2 U)\n{\n  Blinn_SampleF(shader, wo, wi, Pdf, U);\n\n  if (!SameHemisphere(wo, wi))\n    return BLACK;\n\n  return Microfacet_F(shader, wo, wi);\n}\n\nfloat Microfacet_Pdf(in VolumeShader shader, in vec3 wo, in vec3 wi)\n{\n  if (!SameHemisphere(wo, wi))\n    return 0.0f;\n\n  return Blinn_Pdf(shader, wo, wi);\n}\n\n// return a xyz color\nvec3 ShaderBsdf_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = ShaderBsdf_WorldToLocal(shader, Wi);\n\n  vec3 R = vec3(0,0,0);\n\n  R += Lambertian_F(shader, Wol, Wil);\n  R += Microfacet_F(shader, Wol, Wil);\n\n  return R;\n}\n\nfloat ShaderBsdf_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = ShaderBsdf_WorldToLocal(shader, Wi);\n\n  float Pdf = 0.0f;\n\n  Pdf += Lambertian_Pdf(shader, Wol, Wil);\n  Pdf += Microfacet_Pdf(shader, Wol, Wil);\n\n  return Pdf;\n}\n\n\nvec3 ShaderBsdf_SampleF(in VolumeShader shader, in LightingSample S, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = vec3(0,0,0);\n\n  vec3 R = vec3(0,0,0);\n\n  if (S.m_bsdfComponent <= 0.5f)\n  {\n    Lambertian_SampleF(shader, Wol, Wil, Pdf, S.m_bsdfDir);\n  }\n  else\n  {\n    Microfacet_SampleF(shader, Wol, Wil, Pdf, S.m_bsdfDir);\n  }\n\n  Pdf += Lambertian_Pdf(shader, Wol, Wil);\n  Pdf += Microfacet_Pdf(shader, Wol, Wil);\n\n  R += Lambertian_F(shader, Wol, Wil);\n  R += Microfacet_F(shader, Wol, Wil);\n\n  Wi = ShaderBsdf_LocalToWorld(shader, Wil);\n\n  //return vec3(1,1,1);\n  return R;\n}\n\n// return a xyz color\nvec3 Shader_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_F(shader, Wo, Wi);\n  }\n  else {\n    return ShaderPhase_F(shader, Wo, Wi);\n  }\n}\n\nfloat Shader_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_Pdf(shader, Wo, Wi);\n  }\n  else {\n    return ShaderPhase_Pdf(shader, Wo, Wi);\n  }\n}\n\nvec3 Shader_SampleF(in VolumeShader shader, in LightingSample S, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  //return vec3(1,0,0);\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_SampleF(shader, S, Wo, Wi, Pdf, U);\n  }\n  else {\n    return ShaderPhase_SampleF(shader, Wo, Wi, Pdf, U);\n  }\n}\n\n\nbool IsBlack(in vec3 v) {\n  return (v.x==0.0 && v.y == 0.0 && v.z == 0.0);\n}\n\nfloat PowerHeuristic(float nf, float fPdf, float ng, float gPdf)\n{\n  float f = nf * fPdf;\n  float g = ng * gPdf;\n  // The power heuristic is Veach's MIS balance heuristic except each component is being squared\n  // balance heuristic would be f/(f+g) ...?\n  return (f * f) / (f * f + g * g);\n}\n\nfloat MISContribution(float pdf1, float pdf2)\n{\n  return PowerHeuristic(1.0f, pdf1, 1.0f, pdf2);\n}\n\n// \"shadow ray\" using gStepSizeShadow, test whether it can exit the volume or not\nbool DoesSecondaryRayScatterInVolume(inout Ray R, inout uvec2 seed)\n{\n  float MinT;\n  float MaxT;\n  vec3 Ps;\n\n  if (!IntersectBox(R, MinT, MaxT))\n    return false;\n\n  MinT = max(MinT, R.m_MinT);\n  MaxT = min(MaxT, R.m_MaxT);\n\n  // delta (Woodcock) tracking\n  float S\t= -log(rand(seed)) / gDensityScale;\n  float Sum = 0.0f;\n  float SigmaT = 0.0f;\n\n  MinT += rand(seed) * gStepSizeShadow;\n  int ch = 0;\n  float intensity = 0.0;\n  while (Sum < S)\n  {\n    Ps = rayAt(R, MinT);  // R.m_O + MinT * R.m_D;\n\n    if (MinT > MaxT)\n      return false;\n\n    intensity = GetNormalizedIntensityMax4ch(Ps, ch);\n    SigmaT = gDensityScale * GetOpacity(intensity, ch);\n\n    Sum += SigmaT * gStepSizeShadow;\n    MinT += gStepSizeShadow;\n  }\n\n  return true;\n}\n\nint GetNearestLight(Ray R, out vec3 oLightColor, out vec3 Pl, out float oPdf)\n{\n  int hit = -1;\n  float T = 0.0f;\n  Ray rayCopy = R;\n  float pdf = 0.0f;\n\n  for (int i = 0; i < 2; i++)\n  {\n    if (Light_Intersect(gLights[i], rayCopy, T, oLightColor, pdf))\n    {\n      Pl = rayAt(R, T);\n      hit = i;\n    }\n  }\n  oPdf = pdf;\n\n  return hit;\n}\n\n// return a XYZ color\n// Wo is direction from scatter point out toward incident ray direction\n\n// Wi goes toward light sample and is not necessarily perfect reflection of Wo\n// ^Wi   ^N    ^Wo\n//  \\\\    |    //\n//   \\\\   |   //\n//    \\\\  |  //\n//     \\\\ | //\n//      \\\\|// Pe = volume sample where scattering occurs\n//   ---------\nvec3 EstimateDirectLight(int shaderType, float Density, int ch, in Light light, in LightingSample LS, in vec3 Wo, in vec3 Pe, in vec3 N, inout uvec2 seed)\n{\n  vec3 Ld = BLACK, Li = BLACK, F = BLACK;\n\n  vec3 diffuse = GetDiffuseN(Density, ch);\n  vec3 specular = GetSpecularN(Density, ch);\n  float glossiness = GetGlossinessN(Density, ch);\n\n  // can N and Wo be coincident????\n  vec3 nu = normalize(cross(N, Wo));\n  vec3 nv = normalize(cross(N, nu));\n\n  // the IoR here is hard coded... and unused!!!!\n  VolumeShader Shader = VolumeShader(shaderType, RGBtoXYZ(diffuse), RGBtoXYZ(specular), 2.5f, glossiness, N, nu, nv);\n\n  float LightPdf = 1.0f, ShaderPdf = 1.0f;\n\n  Ray Rl = Ray(vec3(0,0,0), vec3(0,0,1.0), 0.0, MAX_RAY_LEN);\n  // Rl is ray from light toward Pe in volume, with a max traversal of the distance from Pe to Light sample pos.\n  Li = Light_SampleL(light, Pe, Rl, LightPdf, LS);\n\n  // Wi: negate ray direction: from volume scatter point toward light...?\n  vec3 Wi = -Rl.m_D, P = vec3(0,0,0);\n\n  // we will calculate two lighting contributions and combine them by MIS.\n\n  F = Shader_F(Shader,Wo, Wi);\n\n  ShaderPdf = Shader_Pdf(Shader, Wo, Wi);\n\n  // get a lighting contribution along Rl;  see if Rl would scatter in the volume or not\n  if (!IsBlack(Li) && (ShaderPdf > 0.0f) && (LightPdf > 0.0f) && !DoesSecondaryRayScatterInVolume(Rl, seed))\n  {\n    // ray from light can see through volume to Pe!\n\n    float dotProd = 1.0;\n    if (shaderType == ShaderType_Brdf){\n\n      // (use abs or clamp here?)\n      dotProd = abs(dot(Wi, N));\n    }\n    Ld += F * Li * dotProd * MISContribution(LightPdf, ShaderPdf) / LightPdf;\n\n  }\n\n  // get a lighting contribution by sampling nearest light from the scattering point\n  F = Shader_SampleF(Shader, LS, Wo, Wi, ShaderPdf, LS.m_bsdfDir);\n  if (!IsBlack(F) && (ShaderPdf > 0.0f))\n  {\n    vec3 Pl = vec3(0,0,0);\n    int n = GetNearestLight(Ray(Pe, Wi, 0.0f, 1000000.0f), Li, Pl, LightPdf);\n    if (n > -1)\n    {\n      Light pLight = gLights[n];\n      LightPdf = Light_Pdf(pLight, Pe, Wi);\n\n      if ((LightPdf > 0.0f) && !IsBlack(Li)) {\n        Ray rr = Ray(Pl, normalize(Pe - Pl), 0.0f, length(Pe - Pl));\n        if (!DoesSecondaryRayScatterInVolume(rr, seed))\n        {\n          float dotProd = 1.0;\n          if (shaderType == ShaderType_Brdf){\n\n            // (use abs or clamp here?)\n            dotProd = abs(dot(Wi, N));\n          }\n          // note order of MIS params is swapped\n          Ld += F * Li * dotProd * MISContribution(ShaderPdf, LightPdf) / ShaderPdf;\n        }\n\n      }\n    }\n  }\n\n  return Ld;\n\n}\n\n// return a linear xyz color\nvec3 UniformSampleOneLight(int shaderType, float Density, int ch, in vec3 Wo, in vec3 Pe, in vec3 N, inout uvec2 seed)\n{\n  //if (NUM_LIGHTS == 0)\n  //  return BLACK;\n\n  // select a random light, a random 2d sample on light, and a random 2d sample on brdf\n  LightingSample LS = LightingSample_LargeStep(seed);\n\n  int WhichLight = int(floor(LS.m_LightNum * float(NUM_LIGHTS)));\n\n  Light light = gLights[WhichLight];\n\n  return float(NUM_LIGHTS) * EstimateDirectLight(shaderType, Density, ch, light, LS, Wo, Pe, N, seed);\n\n}\n\nbool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)\n{\n  float MinT;\n  float MaxT;\n\n  if (!IntersectBox(R, MinT, MaxT))\n    return false;\n\n  MinT = max(MinT, R.m_MinT);\n  MaxT = min(MaxT, R.m_MaxT);\n\n  // delta (Woodcock) tracking\n\n  // notes, not necessarily coherent:\n  // ray march along the ray's projected path and keep an average sigmaT value.\n  // The distance is weighted by the intensity at each ray step sample. High intensity increases the apparent distance.\n  // When the distance has become greater than the average sigmaT value given by -log(RandomFloat[0, 1]) / averageSigmaT\n  // then that would be considered the interaction position.\n\n  // sigmaT = sigmaA + sigmaS = absorption coeff + scattering coeff = extinction coeff\n\n  // Beer-Lambert law: transmittance T(t) = exp(-sigmaT*t)  where t is a distance!\n\n  // importance sampling the exponential function to produce a free path distance S\n  // the PDF is p(t) = sigmaT * exp(-sigmaT * t)\n  // In a homogeneous volume,\n  // S is the free-path distance = -ln(1-zeta)/sigmaT where zeta is a random variable\n  // density scale = 0   => S --> 0..inf.  Low density means randomly sized ray paths\n  // density scale = inf => S --> 0.       High density means short ray paths!\n\n  // note that ln(x:0..1) is negative\n\n  // here gDensityScale represents sigmaMax, a majorant of sigmaT\n  // it is a parameter that should be set as close to the max extinction coefficient as possible.\n  float S\t= -log(rand(seed)) / gDensityScale;\n\n  float Sum\t\t= 0.0f;\n  float SigmaT\t= 0.0f; // accumulated extinction along ray march\n\n  // start: take one step now.\n  MinT += rand(seed) * gStepSize;\n\n  int ch = 0;\n  float intensity = 0.0;\n\n  // ray march until we have traveled S (or hit the maxT of the ray)\n  while (Sum < S)\n  {\n    Ps = rayAt(R, MinT);  // R.m_O + MinT * R.m_D;\n\n    // if we exit the volume with no scattering\n    if (MinT > MaxT)\n      return false;\n\n    intensity = GetNormalizedIntensityMax4ch(Ps, ch);\n    SigmaT = gDensityScale * GetOpacity(intensity, ch);\n\n    Sum += SigmaT * gStepSize;\n    MinT += gStepSize;\n  }\n\n  // at this time, MinT - original MinT is the T transmission distance before a scatter event.\n  // Ps is the point\n\n  return true;\n}\n\n\nvec4 CalculateRadiance(inout uvec2 seed) {\n  float r = rand(seed);\n  //return vec4(r,0,0,1);\n\n  vec3 Lv = BLACK, Li = BLACK;\n\n  //Ray Re = Ray(vec3(0,0,0), vec3(0,0,1), 0.0, MAX_RAY_LEN);\n\n  vec2 UV = vUv*uResolution + vec2(rand(seed), rand(seed));\n\n  Ray Re = GenerateCameraRay(gCamera, UV, vec2(rand(seed), rand(seed)));\n\n  //return vec4(vUv, 0.0, 1.0);\n  //return vec4(0.5*(Re.m_D + 1.0), 1.0);\n  //return vec4(Re.m_D, 1.0);\n\n  //Re.m_MinT = 0.0f;\n  //Re.m_MaxT = MAX_RAY_LEN;\n\n  vec3 Pe = vec3(0,0,0), Pl = vec3(0,0,0);\n  float lpdf = 0.0;\n\n  float alpha = 0.0;\n  // find point Pe along ray Re\n  if (SampleScatteringEvent(Re, seed, Pe))\n  {\n    alpha = 1.0;\n    // is there a light between Re.m_O and Pe? (ray's maxT is distance to Pe)\n    // (test to see if area light was hit before volume.)\n    int i = GetNearestLight(Ray(Re.m_O, Re.m_D, 0.0f, length(Pe - Re.m_O)), Li, Pl, lpdf);\n    if (i > -1)\n    {\n      // set sample pixel value in frame estimate (prior to accumulation)\n      return vec4(Li, 1.0);\n    }\n\n    int ch = 0;\n    float D = GetNormalizedIntensityMax4ch(Pe, ch);\n\n    // emission from volume\n    Lv += RGBtoXYZ(GetEmissionN(D, ch));\n\n    vec3 gradient = Gradient4ch(Pe, ch);\n    // send ray out from Pe toward light\n    switch (gShadingType)\n    {\n      case ShaderType_Brdf:\n      {\n        Lv += UniformSampleOneLight(ShaderType_Brdf, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        break;\n      }\n\n      case ShaderType_Phase:\n      {\n        Lv += 0.5f * UniformSampleOneLight(ShaderType_Phase, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        break;\n      }\n\n      case ShaderType_Mixed:\n      {\n        //const float GradMag = GradientMagnitude(Pe, volumedata.gradientVolumeTexture[ch]) * (1.0/volumedata.intensityMax[ch]);\n        float GradMag = length(gradient);\n        float PdfBrdf = (1.0f - exp(-gGradientFactor * GradMag));\n\n        vec3 cls; // xyz color\n        if (rand(seed) < PdfBrdf) {\n          cls = UniformSampleOneLight(ShaderType_Brdf, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        }\n        else {\n          cls = 0.5f * UniformSampleOneLight(ShaderType_Phase, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        }\n\n        Lv += cls;\n\n        break;\n      }\n    }\n  }\n  else\n  {\n    // background color:\n    // set Lv to a selected color based on environment light source?\n    // if (uShowLights > 0.0) {\n    //   int n = GetNearestLight(Ray(Re.m_O, Re.m_D, 0.0f, 1000000.0f), Li, Pl, lpdf);\n    //   if (n > -1)\n    //     Lv = Li;\n    // }\n    //Lv = vec3(r,0,0);\n  }\n\n  // set sample pixel value in frame estimate (prior to accumulation)\n\n  return vec4(Lv, alpha);\n}\n\nvec4 CumulativeMovingAverage(vec4 A, vec4 Ax, float N)\n{\n   return A + ((Ax - A) / max((N), 1.0f));\n}\n\nvoid main()\n{\n  // seed for rand(seed) function\n  uvec2 seed = uvec2(uFrameCounter, uFrameCounter + 1.0) * uvec2(gl_FragCoord);\n\n  // perform path tracing and get resulting pixel color\n  vec4 pixelColor = CalculateRadiance( seed );\n\n  vec4 previousColor = texture(tPreviousTexture, vUv);\n  if (uSampleCounter < 1.0) {\n    previousColor = vec4(0,0,0,0);\n  }\n\n  pc_fragColor = CumulativeMovingAverage(previousColor, pixelColor, uSampleCounter);\n}\n"; // threejs passthrough vertex shader for fullscreen quad
+var pathTracingVertexShaderSrc = pathTraceVertexShader;
+var pathTracingFragmentShaderSrc = pathTraceFragmentShader;
 
-var SHADERTYPE_BRDF = 0; // const ShaderType_Phase = 1;
+// Must match values in shader code above.
+var SHADERTYPE_BRDF = 0;
+// const ShaderType_Phase = 1;
 // const ShaderType_Mixed = 2;
 
 var pathTracingUniforms = {
@@ -8093,14 +7696,18 @@ var pathTracingUniforms = {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "rayMarchingFragmentShaderSrc": () => (/* binding */ rayMarchingFragmentShaderSrc),
-/* harmony export */   "rayMarchingShaderUniforms": () => (/* binding */ rayMarchingShaderUniforms),
-/* harmony export */   "rayMarchingVertexShaderSrc": () => (/* binding */ rayMarchingVertexShaderSrc)
+/* harmony export */   rayMarchingFragmentShaderSrc: () => (/* binding */ rayMarchingFragmentShaderSrc),
+/* harmony export */   rayMarchingShaderUniforms: () => (/* binding */ rayMarchingShaderUniforms),
+/* harmony export */   rayMarchingVertexShaderSrc: () => (/* binding */ rayMarchingVertexShaderSrc)
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
-var rayMarchingVertexShaderSrc = "\n// switch on high precision floats\n#ifdef GL_ES\nprecision highp float;\n#endif\nvarying vec3 pObj;\nvoid main() {\n  pObj = position;\n  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n}\n";
-var rayMarchingFragmentShaderSrc = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\n#define M_PI 3.14159265358979323846\n\nuniform vec2 iResolution;\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform float ATLAS_X;\nuniform float ATLAS_Y;\nuniform vec3 AABB_CLIP_MIN;\nuniform float CLIP_NEAR;\nuniform vec3 AABB_CLIP_MAX;\nuniform float CLIP_FAR;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform int BREAK_STEPS;\nuniform float SLICES;\nuniform float isOrtho;\nuniform float orthoThickness;\nuniform float orthoScale;\nuniform int maxProject;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\nuniform vec3 volumeScale;\n\n// view space to axis-aligned volume box\nuniform mat4 inverseModelViewMatrix;\n\nvarying vec3 pObj;\n\nfloat powf(float a, float b) {\n  return pow(a,b);\n}\n\nfloat rand(vec2 co) {\n  float threadId = gl_FragCoord.x/(gl_FragCoord.y + 1.0);\n  float bigVal = threadId*1299721.0/911.0;\n  vec2 smallVal = vec2(threadId*7927.0/577.0, threadId*104743.0/1039.0);\n  return fract(sin(dot(co, smallVal)) * bigVal);\n}\n\nvec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {\n  float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));\n  // float x = max(color[2], max(color[0],color[1]));\n  float xi = (x-vmin)/(vmax-vmin);\n  xi = clamp(xi,0.0,1.0);\n  float y = pow(xi,C);\n  y = clamp(y,0.0,1.0);\n  color[3] = y;\n  return color;\n}\n\nvec2 offsetFrontBack(float t, float nx, float ny) {\n  int a = int(t);\n  int ax = int(ATLAS_X);\n  vec2 os = vec2(float(a-(a/ax)*ax) / ATLAS_X, float(a/ax) / ATLAS_Y);\n  return clamp(os, vec2(0.0, 0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y));\n}\n\nvec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n  // get location within atlas tile\n  // TODO: get loc1 which follows ray to next slice along ray direction\n  // when flipvolume = 1:  pos\n  // when flipvolume = -1: 1-pos\n  vec2 loc0 = vec2(\n    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,\n    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);\n\n  // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y\n  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n  loc0 = vec2(0.5/textureRes.x, 0.5/textureRes.y) + loc0*vec2(1.0-(ATLAS_X)/textureRes.x, 1.0-(ATLAS_Y)/textureRes.y);\n  \n  // interpolate between two slices\n  float z = (pos.z)*(nSlices-1.0);\n  float z0 = floor(z);\n  float t = z-z0; //mod(z, 1.0);\n  float z1 = min(z0+1.0, nSlices-1.0);\n\n  // flipped:\n  if (flipVolume.z == -1.0) {\n    z0 = nSlices - z0 - 1.0;\n    z1 = nSlices - z1 - 1.0;\n    t = 1.0 - t;\n  }\n\n  // get slice offsets in texture atlas\n  vec2 o0 = offsetFrontBack(z0,ATLAS_X,ATLAS_Y) + loc0;\n  vec2 o1 = offsetFrontBack(z1,ATLAS_X,ATLAS_Y) + loc0;\n\n  vec4 slice0Color = texture2D(tex, o0);\n  vec4 slice1Color = texture2D(tex, o1);\n  // NOTE we could premultiply the mask in the fuse function,\n  // but that is slower to update the maskAlpha value than here in the shader.\n  // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?\n  float slice0Mask = texture2D(textureAtlasMask, o0).x;\n  float slice1Mask = texture2D(textureAtlasMask, o1).x;\n  // or use max for conservative 0 or 1 masking?\n  float maskVal = mix(slice0Mask, slice1Mask, t);\n  // take mask from 0..1 to alpha..1\n  maskVal = mix(maskVal, 1.0, maskAlpha);\n  vec4 retval = mix(slice0Color, slice1Color, t);\n  // only mask the rgb, not the alpha(?)\n  retval.rgb *= maskVal;\n  return bounds*retval;\n}\n\nvec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n  vec2 loc0 = vec2(\n    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,\n    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);\n\n  // No interpolation - sample just one slice at a pixel center.\n  // Ideally this would be accomplished in part by switching this texture to linear\n  //   filtering, but three makes this difficult to do through a WebGLRenderTarget.\n  loc0 = floor(loc0 * textureRes) / textureRes;\n  loc0 += vec2(0.5/textureRes.x, 0.5/textureRes.y);\n\n  float z = min(floor(pos.z * nSlices), nSlices-1.0);\n  \n  if (flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z, ATLAS_X, ATLAS_Y) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds*voxelColor;\n}\n\nbool intersectBox(in vec3 r_o, in vec3 r_d, in vec3 boxMin, in vec3 boxMax,\n                  out float tnear, out float tfar) {\n  // compute intersection of ray with all six bbox planes\n  vec3 invR = vec3(1.0,1.0,1.0) / r_d;\n  vec3 tbot = invR * (boxMin - r_o);\n  vec3 ttop = invR * (boxMax - r_o);\n\n  // re-order intersections to find smallest and largest on each axis\n  vec3 tmin = min(ttop, tbot);\n  vec3 tmax = max(ttop, tbot);\n\n  // find the largest tmin and the smallest tmax\n  float largest_tmin  = max(max(tmin.x, tmin.y), max(tmin.x, tmin.z));\n  float smallest_tmax = min(min(tmax.x, tmax.y), min(tmax.x, tmax.z));\n\n  tnear = largest_tmin;\n  tfar = smallest_tmax;\n\n  // use >= here?\n  return(smallest_tmax > largest_tmin);\n}\n\nvec4 accumulate(vec4 col, float s, vec4 C) {\n  float stepScale = (1.0 - powf((1.0-col.w),s));\n  col.w = stepScale;\n  col.xyz *= col.w;\n  col = clamp(col,0.0,1.0);\n\n  C = (1.0-C.w)*col + C;\n  return C;\n}\n\nvec4 integrateVolume(vec4 eye_o,vec4 eye_d,\n                     float tnear,   float tfar,\n                     float clipNear, float clipFar,\n                     sampler2D textureAtlas\n                     ) {\n  vec4 C = vec4(0.0);\n  float tend   = tfar;\n  float tbegin = tnear;\n\n  // march along ray from front to back, accumulating color\n\n  // estimate step length\n  const int maxSteps = 512;\n  // modify the 3 components of eye_d by volume scale\n  float scaledSteps = float(BREAK_STEPS) * length((eye_d.xyz/volumeScale));\n  float csteps = clamp(float(scaledSteps), 1.0, float(maxSteps));\n  float invstep = (tfar-tnear)/csteps;\n  // special-casing the single slice to remove the random ray dither.\n  // this removes a Moire pattern visible in single slice images, which we want to view as 2D images as best we can.\n  float r = (SLICES==1.0) ? 0.0 : rand(eye_d.xy);\n  // if ortho and clipped, make step size smaller so we still get same number of steps\n  float tstep = invstep*orthoThickness;\n  float tfarsurf = r*tstep;\n  float overflow = mod((tfarsurf - tend),tstep); // random dithering offset\n  float t = tbegin + overflow;\n  t += r*tstep; // random dithering offset\n  float tdist = 0.0;\n  int numSteps = 0;\n  vec4 pos, col;\n  // We need to be able to scale the alpha contrib with number of ray steps,\n  // in order to make the final color invariant to the step size(?)\n  // use maxSteps (a constant) as the numerator... Not sure if this is sound.\n  float s = 0.5 * float(maxSteps) / csteps;\n  for(int i=0; i<maxSteps; i++) {\n    pos = eye_o + eye_d*t;\n    // !!! assume box bounds are -0.5 .. 0.5.  pos = (pos-min)/(max-min)\n    // scaling is handled by model transform and already accounted for before we get here.\n    // AABB clip is independent of this and is only used to determine tnear and tfar.\n    pos.xyz = (pos.xyz-(-0.5))/((0.5)-(-0.5)); //0.5 * (pos + 1.0); // map position from [boxMin, boxMax] to [0, 1] coordinates\n\n    vec4 col = interpolationEnabled ? sampleAtlasLinear(textureAtlas, pos) : sampleAtlasNearest(textureAtlas, pos);\n\n    if (maxProject != 0) {\n      col.xyz *= BRIGHTNESS;\n      C = max(col, C);\n    } else {\n      col = luma2Alpha(col, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);\n      col.xyz *= BRIGHTNESS;\n      // for practical use the density only matters for regular volume integration\n      col.w *= DENSITY;\n      C = accumulate(col, s, C);\n    }\n    t += tstep;\n    numSteps = i;\n\n    if (t > tend || t > tbegin+clipFar ) break;\n    if (C.w > 1.0 ) break;\n  }\n\n  return C;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n  vec2 vUv = gl_FragCoord.xy/iResolution.xy;\n\n  vec3 eyeRay_o, eyeRay_d;\n\n  if (isOrtho == 0.0) {\n    // for perspective rays:\n    // world space camera coordinates\n    // transform to object space\n    eyeRay_o = (inverseModelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;\n    eyeRay_d = normalize(pObj - eyeRay_o);\n  } else {\n    // for ortho rays:\n    float zDist = 2.0;\n    eyeRay_d = (inverseModelViewMatrix*vec4(0.0, 0.0, -zDist, 0.0)).xyz;\n    vec4 ray_o = vec4(2.0*vUv - 1.0, 1.0, 1.0);\n    ray_o.xy *= orthoScale;\n    ray_o.x *= iResolution.x/iResolution.y;\n    eyeRay_o = (inverseModelViewMatrix*ray_o).xyz;\n  }\n\n  // -0.5..0.5 is full box. AABB_CLIP lets us clip to a box shaped ROI to look at\n  // I am applying it here at the earliest point so that the ray march does\n  // not waste steps.  For general shaped ROI, this has to be handled more\n  // generally (obviously)\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n\n  float tnear, tfar;\n  bool hit = intersectBox(eyeRay_o, eyeRay_d, boxMin, boxMax, tnear, tfar);\n\n  if (!hit) {\n    // return background color if ray misses the cube\n    // is this safe to do when there is other geometry / gObjects drawn?\n    gl_FragColor = vec4(0.0); //C1;//vec4(0.0);\n    return;\n  }\n\n  float clipNear = 0.0;//-(dot(eyeRay_o.xyz, eyeNorm) + dNear) / dot(eyeRay_d.xyz, eyeNorm);\n  float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);\n\n  vec4 C = integrateVolume(vec4(eyeRay_o,1.0), vec4(eyeRay_d,0.0),\n                           tnear,    tfar, //intersections of box\n                           clipNear, clipFar,\n                           textureAtlas);\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}\n";
+/* babel-plugin-inline-import './shaders/raymarch.vert' */
+var rayMarchVertexShader = "// switch on high precision floats\n#ifdef GL_ES\nprecision highp float;\n#endif\nvarying vec3 pObj;\nvoid main() {\n  pObj = position;\n  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n}\n";
+/* babel-plugin-inline-import './shaders/raymarch.frag' */
+var rayMarchFragmentShader = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\n#define M_PI 3.14159265358979323846\n\nuniform vec2 iResolution;\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform float ATLAS_X;\nuniform float ATLAS_Y;\nuniform vec3 AABB_CLIP_MIN;\nuniform float CLIP_NEAR;\nuniform vec3 AABB_CLIP_MAX;\nuniform float CLIP_FAR;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform int BREAK_STEPS;\nuniform float SLICES;\nuniform float isOrtho;\nuniform float orthoThickness;\nuniform float orthoScale;\nuniform int maxProject;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\nuniform vec3 volumeScale;\n\n// view space to axis-aligned volume box\nuniform mat4 inverseModelViewMatrix;\n\nvarying vec3 pObj;\n\nfloat powf(float a, float b) {\n  return pow(a,b);\n}\n\nfloat rand(vec2 co) {\n  float threadId = gl_FragCoord.x/(gl_FragCoord.y + 1.0);\n  float bigVal = threadId*1299721.0/911.0;\n  vec2 smallVal = vec2(threadId*7927.0/577.0, threadId*104743.0/1039.0);\n  return fract(sin(dot(co, smallVal)) * bigVal);\n}\n\nvec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {\n  float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));\n  // float x = max(color[2], max(color[0],color[1]));\n  float xi = (x-vmin)/(vmax-vmin);\n  xi = clamp(xi,0.0,1.0);\n  float y = pow(xi,C);\n  y = clamp(y,0.0,1.0);\n  color[3] = y;\n  return color;\n}\n\nvec2 offsetFrontBack(float t, float nx, float ny) {\n  int a = int(t);\n  int ax = int(ATLAS_X);\n  vec2 os = vec2(float(a-(a/ax)*ax) / ATLAS_X, float(a/ax) / ATLAS_Y);\n  return clamp(os, vec2(0.0, 0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y));\n}\n\nvec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n  // get location within atlas tile\n  // TODO: get loc1 which follows ray to next slice along ray direction\n  // when flipvolume = 1:  pos\n  // when flipvolume = -1: 1-pos\n  vec2 loc0 = vec2(\n    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,\n    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);\n\n  // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y\n  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n  loc0 = vec2(0.5/textureRes.x, 0.5/textureRes.y) + loc0*vec2(1.0-(ATLAS_X)/textureRes.x, 1.0-(ATLAS_Y)/textureRes.y);\n  \n  // interpolate between two slices\n  float z = (pos.z)*(nSlices-1.0);\n  float z0 = floor(z);\n  float t = z-z0; //mod(z, 1.0);\n  float z1 = min(z0+1.0, nSlices-1.0);\n\n  // flipped:\n  if (flipVolume.z == -1.0) {\n    z0 = nSlices - z0 - 1.0;\n    z1 = nSlices - z1 - 1.0;\n    t = 1.0 - t;\n  }\n\n  // get slice offsets in texture atlas\n  vec2 o0 = offsetFrontBack(z0,ATLAS_X,ATLAS_Y) + loc0;\n  vec2 o1 = offsetFrontBack(z1,ATLAS_X,ATLAS_Y) + loc0;\n\n  vec4 slice0Color = texture2D(tex, o0);\n  vec4 slice1Color = texture2D(tex, o1);\n  // NOTE we could premultiply the mask in the fuse function,\n  // but that is slower to update the maskAlpha value than here in the shader.\n  // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?\n  float slice0Mask = texture2D(textureAtlasMask, o0).x;\n  float slice1Mask = texture2D(textureAtlasMask, o1).x;\n  // or use max for conservative 0 or 1 masking?\n  float maskVal = mix(slice0Mask, slice1Mask, t);\n  // take mask from 0..1 to alpha..1\n  maskVal = mix(maskVal, 1.0, maskAlpha);\n  vec4 retval = mix(slice0Color, slice1Color, t);\n  // only mask the rgb, not the alpha(?)\n  retval.rgb *= maskVal;\n  return bounds*retval;\n}\n\nvec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n  vec2 loc0 = vec2(\n    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,\n    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);\n\n  // No interpolation - sample just one slice at a pixel center.\n  // Ideally this would be accomplished in part by switching this texture to linear\n  //   filtering, but three makes this difficult to do through a WebGLRenderTarget.\n  loc0 = floor(loc0 * textureRes) / textureRes;\n  loc0 += vec2(0.5/textureRes.x, 0.5/textureRes.y);\n\n  float z = min(floor(pos.z * nSlices), nSlices-1.0);\n  \n  if (flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z, ATLAS_X, ATLAS_Y) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds*voxelColor;\n}\n\nbool intersectBox(in vec3 r_o, in vec3 r_d, in vec3 boxMin, in vec3 boxMax,\n                  out float tnear, out float tfar) {\n  // compute intersection of ray with all six bbox planes\n  vec3 invR = vec3(1.0,1.0,1.0) / r_d;\n  vec3 tbot = invR * (boxMin - r_o);\n  vec3 ttop = invR * (boxMax - r_o);\n\n  // re-order intersections to find smallest and largest on each axis\n  vec3 tmin = min(ttop, tbot);\n  vec3 tmax = max(ttop, tbot);\n\n  // find the largest tmin and the smallest tmax\n  float largest_tmin  = max(max(tmin.x, tmin.y), max(tmin.x, tmin.z));\n  float smallest_tmax = min(min(tmax.x, tmax.y), min(tmax.x, tmax.z));\n\n  tnear = largest_tmin;\n  tfar = smallest_tmax;\n\n  // use >= here?\n  return(smallest_tmax > largest_tmin);\n}\n\nvec4 accumulate(vec4 col, float s, vec4 C) {\n  float stepScale = (1.0 - powf((1.0-col.w),s));\n  col.w = stepScale;\n  col.xyz *= col.w;\n  col = clamp(col,0.0,1.0);\n\n  C = (1.0-C.w)*col + C;\n  return C;\n}\n\nvec4 integrateVolume(vec4 eye_o,vec4 eye_d,\n                     float tnear,   float tfar,\n                     float clipNear, float clipFar,\n                     sampler2D textureAtlas\n                     ) {\n  vec4 C = vec4(0.0);\n  float tend   = tfar;\n  float tbegin = tnear;\n\n  // march along ray from front to back, accumulating color\n\n  // estimate step length\n  const int maxSteps = 512;\n  // modify the 3 components of eye_d by volume scale\n  float scaledSteps = float(BREAK_STEPS) * length((eye_d.xyz/volumeScale));\n  float csteps = clamp(float(scaledSteps), 1.0, float(maxSteps));\n  float invstep = (tfar-tnear)/csteps;\n  // special-casing the single slice to remove the random ray dither.\n  // this removes a Moire pattern visible in single slice images, which we want to view as 2D images as best we can.\n  float r = (SLICES==1.0) ? 0.0 : rand(eye_d.xy);\n  // if ortho and clipped, make step size smaller so we still get same number of steps\n  float tstep = invstep*orthoThickness;\n  float tfarsurf = r*tstep;\n  float overflow = mod((tfarsurf - tend),tstep); // random dithering offset\n  float t = tbegin + overflow;\n  t += r*tstep; // random dithering offset\n  float tdist = 0.0;\n  int numSteps = 0;\n  vec4 pos, col;\n  // We need to be able to scale the alpha contrib with number of ray steps,\n  // in order to make the final color invariant to the step size(?)\n  // use maxSteps (a constant) as the numerator... Not sure if this is sound.\n  float s = 0.5 * float(maxSteps) / csteps;\n  for(int i=0; i<maxSteps; i++) {\n    pos = eye_o + eye_d*t;\n    // !!! assume box bounds are -0.5 .. 0.5.  pos = (pos-min)/(max-min)\n    // scaling is handled by model transform and already accounted for before we get here.\n    // AABB clip is independent of this and is only used to determine tnear and tfar.\n    pos.xyz = (pos.xyz-(-0.5))/((0.5)-(-0.5)); //0.5 * (pos + 1.0); // map position from [boxMin, boxMax] to [0, 1] coordinates\n\n    vec4 col = interpolationEnabled ? sampleAtlasLinear(textureAtlas, pos) : sampleAtlasNearest(textureAtlas, pos);\n\n    if (maxProject != 0) {\n      col.xyz *= BRIGHTNESS;\n      C = max(col, C);\n    } else {\n      col = luma2Alpha(col, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);\n      col.xyz *= BRIGHTNESS;\n      // for practical use the density only matters for regular volume integration\n      col.w *= DENSITY;\n      C = accumulate(col, s, C);\n    }\n    t += tstep;\n    numSteps = i;\n\n    if (t > tend || t > tbegin+clipFar ) break;\n    if (C.w > 1.0 ) break;\n  }\n\n  return C;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n  vec2 vUv = gl_FragCoord.xy/iResolution.xy;\n\n  vec3 eyeRay_o, eyeRay_d;\n\n  if (isOrtho == 0.0) {\n    // for perspective rays:\n    // world space camera coordinates\n    // transform to object space\n    eyeRay_o = (inverseModelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;\n    eyeRay_d = normalize(pObj - eyeRay_o);\n  } else {\n    // for ortho rays:\n    float zDist = 2.0;\n    eyeRay_d = (inverseModelViewMatrix*vec4(0.0, 0.0, -zDist, 0.0)).xyz;\n    vec4 ray_o = vec4(2.0*vUv - 1.0, 1.0, 1.0);\n    ray_o.xy *= orthoScale;\n    ray_o.x *= iResolution.x/iResolution.y;\n    eyeRay_o = (inverseModelViewMatrix*ray_o).xyz;\n  }\n\n  // -0.5..0.5 is full box. AABB_CLIP lets us clip to a box shaped ROI to look at\n  // I am applying it here at the earliest point so that the ray march does\n  // not waste steps.  For general shaped ROI, this has to be handled more\n  // generally (obviously)\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n\n  float tnear, tfar;\n  bool hit = intersectBox(eyeRay_o, eyeRay_d, boxMin, boxMax, tnear, tfar);\n\n  if (!hit) {\n    // return background color if ray misses the cube\n    // is this safe to do when there is other geometry / gObjects drawn?\n    gl_FragColor = vec4(0.0); //C1;//vec4(0.0);\n    return;\n  }\n\n  float clipNear = 0.0;//-(dot(eyeRay_o.xyz, eyeNorm) + dNear) / dot(eyeRay_d.xyz, eyeNorm);\n  float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);\n\n  vec4 C = integrateVolume(vec4(eyeRay_o,1.0), vec4(eyeRay_d,0.0),\n                           tnear,    tfar, //intersections of box\n                           clipNear, clipFar,\n                           textureAtlas);\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}\n";
+var rayMarchingVertexShaderSrc = rayMarchVertexShader;
+var rayMarchingFragmentShaderSrc = rayMarchFragmentShader;
 var rayMarchingShaderUniforms = {
   iResolution: {
     type: "v2",
@@ -8165,8 +7772,8 @@ var rayMarchingShaderUniforms = {
   orthoScale: {
     type: "f",
     value: 0.5 // needs to come from ThreeJsPanel's setting
-
   },
+
   AABB_CLIP_MIN: {
     type: "v3",
     value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(-0.5, -0.5, -0.5)
@@ -8220,21 +7827,21 @@ var rayMarchingShaderUniforms = {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "AREA_LIGHT": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_10__.AREA_LIGHT),
-/* harmony export */   "Channel": () => (/* reexport safe */ _Channel__WEBPACK_IMPORTED_MODULE_2__["default"]),
-/* harmony export */   "Histogram": () => (/* reexport safe */ _Histogram__WEBPACK_IMPORTED_MODULE_4__["default"]),
-/* harmony export */   "JsonImageInfoLoader": () => (/* reexport safe */ _loaders_JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_6__.JsonImageInfoLoader),
-/* harmony export */   "Light": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_10__.Light),
-/* harmony export */   "LoadSpec": () => (/* reexport safe */ _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.LoadSpec),
-/* harmony export */   "OMEZarrLoader": () => (/* reexport safe */ _loaders_OmeZarrLoader__WEBPACK_IMPORTED_MODULE_8__.OMEZarrLoader),
-/* harmony export */   "RENDERMODE_PATHTRACE": () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_PATHTRACE),
-/* harmony export */   "RENDERMODE_RAYMARCH": () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_RAYMARCH),
-/* harmony export */   "SKY_LIGHT": () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_10__.SKY_LIGHT),
-/* harmony export */   "TiffLoader": () => (/* reexport safe */ _loaders_TiffLoader__WEBPACK_IMPORTED_MODULE_9__.TiffLoader),
-/* harmony export */   "View3d": () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.View3d),
-/* harmony export */   "ViewportCorner": () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_5__.ViewportCorner),
-/* harmony export */   "Volume": () => (/* reexport safe */ _Volume__WEBPACK_IMPORTED_MODULE_1__["default"]),
-/* harmony export */   "VolumeMaker": () => (/* reexport safe */ _VolumeMaker__WEBPACK_IMPORTED_MODULE_3__["default"])
+/* harmony export */   AREA_LIGHT: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_10__.AREA_LIGHT),
+/* harmony export */   Channel: () => (/* reexport safe */ _Channel__WEBPACK_IMPORTED_MODULE_2__["default"]),
+/* harmony export */   Histogram: () => (/* reexport safe */ _Histogram__WEBPACK_IMPORTED_MODULE_4__["default"]),
+/* harmony export */   JsonImageInfoLoader: () => (/* reexport safe */ _loaders_JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_6__.JsonImageInfoLoader),
+/* harmony export */   Light: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_10__.Light),
+/* harmony export */   LoadSpec: () => (/* reexport safe */ _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.LoadSpec),
+/* harmony export */   OMEZarrLoader: () => (/* reexport safe */ _loaders_OmeZarrLoader__WEBPACK_IMPORTED_MODULE_8__.OMEZarrLoader),
+/* harmony export */   RENDERMODE_PATHTRACE: () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_PATHTRACE),
+/* harmony export */   RENDERMODE_RAYMARCH: () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_RAYMARCH),
+/* harmony export */   SKY_LIGHT: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_10__.SKY_LIGHT),
+/* harmony export */   TiffLoader: () => (/* reexport safe */ _loaders_TiffLoader__WEBPACK_IMPORTED_MODULE_9__.TiffLoader),
+/* harmony export */   View3d: () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.View3d),
+/* harmony export */   ViewportCorner: () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_5__.ViewportCorner),
+/* harmony export */   Volume: () => (/* reexport safe */ _Volume__WEBPACK_IMPORTED_MODULE_1__["default"]),
+/* harmony export */   VolumeMaker: () => (/* reexport safe */ _VolumeMaker__WEBPACK_IMPORTED_MODULE_3__["default"])
 /* harmony export */ });
 /* harmony import */ var _View3d__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./View3d */ "./src/View3d.ts");
 /* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Volume */ "./src/Volume.ts");
@@ -8271,56 +7878,61 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "LoadSpec": () => (/* binding */ LoadSpec),
-/* harmony export */   "VolumeDims": () => (/* binding */ VolumeDims)
+/* harmony export */   LoadSpec: () => (/* binding */ LoadSpec),
+/* harmony export */   VolumeDims: () => (/* binding */ VolumeDims)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
 
 
 
-var LoadSpec = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__["default"])(function LoadSpec() {
-  (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, LoadSpec);
-
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "url", "");
-
+var LoadSpec = /*#__PURE__*/function () {
+  function LoadSpec() {
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, LoadSpec);
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "url", "");
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "subpath", "");
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "scene", 0);
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "time", 0);
+    // sub-region; if not specified, the entire volume is loaded
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "minx", 0);
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "miny", 0);
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "minz", 0);
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "maxx", 0);
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "maxy", 0);
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "maxz", 0);
+  }
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(LoadSpec, [{
+    key: "toString",
+    value: function toString() {
+      return "".concat(this.url, ":").concat(this.subpath).concat(this.scene, ":").concat(this.time, ":x(").concat(this.minx, ",").concat(this.maxx, "):y(").concat(this.miny, ",").concat(this.maxy, "):z(").concat(this.minz, ",").concat(this.maxz, ")");
+    }
+  }]);
+  return LoadSpec;
+}();
+var VolumeDims = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(function VolumeDims() {
+  (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, VolumeDims);
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "subpath", "");
-
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "scene", 0);
-
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "time", 0);
-
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "minx", 0);
-
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "miny", 0);
-
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "minz", 0);
-
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "maxx", 0);
-
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "maxy", 0);
-
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "maxz", 0);
-});
-var VolumeDims = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__["default"])(function VolumeDims() {
-  (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, VolumeDims);
-
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "subpath", "");
-
+  // shape: [t, c, z, y, x]
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "shape", [0, 0, 0, 0, 0]);
-
+  // spacing: [t, c, z, y, x]; generally expect 1 for non-spatial dimensions
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "spacing", [1, 1, 1, 1, 1]);
-
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "spatialUnit", "micron");
-
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "dataType", "uint8");
 });
+
 /**
  * @callback PerChannelCallback
  * @param {string} imageurl
  * @param {Volume} volume
  * @param {number} channelindex
+ */
+
+/**
+ * Loads volume data from a source specified by a `LoadSpec`.
+ *
+ * Loaders may keep state for reuse between volume creation and volume loading, and should be kept alive until volume
+ * loading is complete. (See `createVolume`)
  */
 
 /***/ }),
@@ -8334,7 +7946,7 @@ var VolumeDims = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMP
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "JsonImageInfoLoader": () => (/* binding */ JsonImageInfoLoader)
+/* harmony export */   JsonImageInfoLoader: () => (/* binding */ JsonImageInfoLoader)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
@@ -8353,60 +7965,47 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 var JsonImageInfoLoader = /*#__PURE__*/function () {
   function JsonImageInfoLoader() {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, JsonImageInfoLoader);
-
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "imageInfo", null);
-
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "imageArray", []);
   }
-
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(JsonImageInfoLoader, [{
     key: "getImageInfo",
     value: function () {
       var _getImageInfo = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(loadSpec) {
         var response, myJson, imageInfo;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee$(_context) {
-          while (1) {
-            switch (_context.prev = _context.next) {
-              case 0:
-                if (this.imageInfo) {
-                  _context.next = 11;
-                  break;
-                }
-
-                _context.next = 3;
-                return fetch(loadSpec.url);
-
-              case 3:
-                response = _context.sent;
-                _context.next = 6;
-                return response.json();
-
-              case 6:
-                myJson = _context.sent;
-                imageInfo = myJson;
-                imageInfo.pixel_size_unit = imageInfo.pixel_size_unit || "μm";
-                this.imageInfo = imageInfo;
-                this.imageArray = myJson.images;
-
-              case 11:
-                return _context.abrupt("return", this.imageInfo);
-
-              case 12:
-              case "end":
-                return _context.stop();
-            }
+          while (1) switch (_context.prev = _context.next) {
+            case 0:
+              if (this.imageInfo) {
+                _context.next = 11;
+                break;
+              }
+              _context.next = 3;
+              return fetch(loadSpec.url);
+            case 3:
+              response = _context.sent;
+              _context.next = 6;
+              return response.json();
+            case 6:
+              myJson = _context.sent;
+              imageInfo = myJson;
+              imageInfo.pixel_size_unit = imageInfo.pixel_size_unit || "μm";
+              this.imageInfo = imageInfo;
+              this.imageArray = myJson.images;
+            case 11:
+              return _context.abrupt("return", this.imageInfo);
+            case 12:
+            case "end":
+              return _context.stop();
           }
         }, _callee, this);
       }));
-
       function getImageInfo(_x) {
         return _getImageInfo.apply(this, arguments);
       }
-
       return getImageInfo;
     }()
   }, {
@@ -8415,34 +8014,28 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
       var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee2(loadSpec) {
         var imageInfo, d;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee2$(_context2) {
-          while (1) {
-            switch (_context2.prev = _context2.next) {
-              case 0:
-                _context2.next = 2;
-                return this.getImageInfo(loadSpec);
-
-              case 2:
-                imageInfo = _context2.sent;
-                d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__.VolumeDims();
-                d.subpath = "";
-                d.shape = [imageInfo.times, imageInfo.channels, imageInfo.tiles, imageInfo.tile_height, imageInfo.tile_width];
-                d.spacing = [1, 1, imageInfo.pixel_size_z, imageInfo.pixel_size_y, imageInfo.pixel_size_x];
-                d.spatialUnit = imageInfo.pixel_size_unit;
-                d.dataType = "uint8";
-                return _context2.abrupt("return", [d]);
-
-              case 10:
-              case "end":
-                return _context2.stop();
-            }
+          while (1) switch (_context2.prev = _context2.next) {
+            case 0:
+              _context2.next = 2;
+              return this.getImageInfo(loadSpec);
+            case 2:
+              imageInfo = _context2.sent;
+              d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__.VolumeDims();
+              d.subpath = "";
+              d.shape = [imageInfo.times, imageInfo.channels, imageInfo.tiles, imageInfo.tile_height, imageInfo.tile_width];
+              d.spacing = [1, 1, imageInfo.pixel_size_z, imageInfo.pixel_size_y, imageInfo.pixel_size_x];
+              d.spatialUnit = imageInfo.pixel_size_unit;
+              d.dataType = "uint8";
+              return _context2.abrupt("return", [d]);
+            case 10:
+            case "end":
+              return _context2.stop();
           }
         }, _callee2, this);
       }));
-
       function loadDims(_x2) {
         return _loadDims.apply(this, arguments);
       }
-
       return loadDims;
     }()
   }, {
@@ -8451,30 +8044,24 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
       var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(loadSpec) {
         var imageInfo, vol;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee3$(_context3) {
-          while (1) {
-            switch (_context3.prev = _context3.next) {
-              case 0:
-                _context3.next = 2;
-                return this.getImageInfo(loadSpec);
-
-              case 2:
-                imageInfo = _context3.sent;
-                vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imageInfo, loadSpec);
-                vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imageInfo);
-                return _context3.abrupt("return", vol);
-
-              case 6:
-              case "end":
-                return _context3.stop();
-            }
+          while (1) switch (_context3.prev = _context3.next) {
+            case 0:
+              _context3.next = 2;
+              return this.getImageInfo(loadSpec);
+            case 2:
+              imageInfo = _context3.sent;
+              vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imageInfo, loadSpec);
+              vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imageInfo);
+              return _context3.abrupt("return", vol);
+            case 6:
+            case "end":
+              return _context3.stop();
           }
         }, _callee3, this);
       }));
-
       function createVolume(_x3) {
         return _createVolume.apply(this, arguments);
       }
-
       return createVolume;
     }()
   }, {
@@ -8483,32 +8070,27 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
       var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee4(vol, onChannelLoaded) {
         var urlPrefix;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee4$(_context4) {
-          while (1) {
-            switch (_context4.prev = _context4.next) {
-              case 0:
-                // if you need to adjust image paths prior to download,
-                // now is the time to do it.
-                // Try to figure out the urlPrefix from the LoadSpec.
-                // For this format we assume the image data is in the same directory as the json file.
-                // This regex removes everything after the last slash, so the url had better be simple.
-                urlPrefix = vol.loadSpec.url.replace(/[^/]*$/, "");
-                this.imageArray.forEach(function (element) {
-                  element.name = urlPrefix + element.name;
-                });
-                JsonImageInfoLoader.loadVolumeAtlasData(vol, this.imageArray, onChannelLoaded);
-
-              case 3:
-              case "end":
-                return _context4.stop();
-            }
+          while (1) switch (_context4.prev = _context4.next) {
+            case 0:
+              // if you need to adjust image paths prior to download,
+              // now is the time to do it.
+              // Try to figure out the urlPrefix from the LoadSpec.
+              // For this format we assume the image data is in the same directory as the json file.
+              // This regex removes everything after the last slash, so the url had better be simple.
+              urlPrefix = vol.loadSpec.url.replace(/[^/]*$/, "");
+              this.imageArray.forEach(function (element) {
+                element.name = urlPrefix + element.name;
+              });
+              JsonImageInfoLoader.loadVolumeAtlasData(vol, this.imageArray, onChannelLoaded);
+            case 3:
+            case "end":
+              return _context4.stop();
           }
         }, _callee4, this);
       }));
-
       function loadVolumeData(_x4, _x5) {
         return _loadVolumeData.apply(this, arguments);
       }
-
       return loadVolumeData;
     }()
     /**
@@ -8530,60 +8112,56 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
      *     "channels": [6, 7, 8]
      * }], mycallback);
      */
-
   }], [{
     key: "loadVolumeAtlasData",
     value: function loadVolumeAtlasData(volume, imageArray, onChannelLoaded) {
       var numImages = imageArray.length;
-      var requests = {}; //console.log("BEGIN DOWNLOAD DATA");
-
-      var _loop = function _loop(i) {
+      var requests = {};
+      //console.log("BEGIN DOWNLOAD DATA");
+      var _loop = function _loop() {
         var url = imageArray[i].name;
-        var batch = imageArray[i].channels; // using Image is just a trick to download the bits as a png.
+        var batch = imageArray[i].channels;
+
+        // using Image is just a trick to download the bits as a png.
         // the Image will never be used again.
-
         var img = new Image();
-
         img.onerror = function () {
           console.log("ERROR LOADING " + url);
         };
-
         img.onload = function (thisbatch) {
           return function (event) {
             //console.log("GOT ch " + me.src);
             // extract pixels by drawing to canvas
-            var canvas = document.createElement("canvas"); // nice thing about this is i could downsample here
-
+            var canvas = document.createElement("canvas");
+            // nice thing about this is i could downsample here
             var w = Math.floor((event === null || event === void 0 ? void 0 : event.target).naturalWidth);
             var h = Math.floor((event === null || event === void 0 ? void 0 : event.target).naturalHeight);
             canvas.setAttribute("width", "" + w);
             canvas.setAttribute("height", "" + h);
             var ctx = canvas.getContext("2d");
-
             if (!ctx) {
               console.log("Error creating canvas 2d context for " + url);
               return;
             }
-
             ctx.globalCompositeOperation = "copy";
             ctx.globalAlpha = 1.0;
-            ctx.drawImage(event === null || event === void 0 ? void 0 : event.target, 0, 0, w, h); // getImageData returns rgba.
+            ctx.drawImage(event === null || event === void 0 ? void 0 : event.target, 0, 0, w, h);
+            // getImageData returns rgba.
             // optimize: collapse rgba to single channel arrays
-
             var iData = ctx.getImageData(0, 0, w, h);
-            var channelsBits = []; // allocate channels in batch
-
+            var channelsBits = [];
+            // allocate channels in batch
             for (var ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
               channelsBits.push(new Uint8Array(w * h));
-            } // extract the data
-
-
+            }
+            // extract the data
             for (var j = 0; j < Math.min(thisbatch.length, 4); ++j) {
               for (var px = 0; px < w * h; px++) {
                 channelsBits[j][px] = iData.data[px * 4 + j];
               }
-            } // done with img, iData, and canvas now.
+            }
 
+            // done with img, iData, and canvas now.
 
             for (var _ch = 0; _ch < Math.min(thisbatch.length, 4); ++_ch) {
               volume.setChannelDataFromAtlas(thisbatch[_ch], channelsBits[_ch], w, h);
@@ -8591,23 +8169,18 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
             }
           };
         }(batch);
-
         img.crossOrigin = "Anonymous";
         img.src = url;
         requests[url] = img;
       };
-
       for (var i = 0; i < numImages; ++i) {
-        _loop(i);
+        _loop();
       }
-
       return requests;
     }
   }]);
-
   return JsonImageInfoLoader;
 }();
-
 
 
 /***/ }),
@@ -8621,7 +8194,7 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "OMEZarrLoader": () => (/* binding */ OMEZarrLoader)
+/* harmony export */   OMEZarrLoader: () => (/* binding */ OMEZarrLoader)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
@@ -8640,55 +8213,48 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+// https://ngff.openmicroscopy.org/latest/#multiscale-md
+
 var DOWNSAMPLE_Z = 1; // z/downsampleZ is number of z slices in reduced volume
 
 function getScale(_ref) {
   var coordinateTransformations = _ref.coordinateTransformations;
-
   if (coordinateTransformations === undefined) {
     console.log("ERROR: no coordinate transformations for scale level");
     return [1, 1, 1, 1, 1];
-  } // this assumes we'll never encounter the "path" variant
+  }
 
-
+  // this assumes we'll never encounter the "path" variant
   var isScaleTransform = function isScaleTransform(t) {
     return t.type === "scale";
-  }; // there can be any number of coordinateTransformations
+  };
+
+  // there can be any number of coordinateTransformations
   // but there must be only one of type "scale".
-
-
   var scaleTransform = coordinateTransformations.find(isScaleTransform);
-
   if (!scaleTransform) {
     console.log("ERROR: no coordinate transformation of type \"scale\" for scale level");
     return [1, 1, 1, 1, 1];
   }
-
   return scaleTransform.scale;
 }
-
 function imageIndexFromLoadSpec(loadSpec, multiscales) {
   // each entry of multiscales is a multiscale image.
   var imageIndex = loadSpec.scene;
-
   if (imageIndex !== 0) {
     console.warn("WARNING: OMEZarrLoader does not support multiple scenes. Results may be invalid.");
   }
-
   if (imageIndex >= multiscales.length) {
     console.warn("WARNING: OMEZarrLoader: scene ".concat(imageIndex, " is invalid. Using scene 0."));
     imageIndex = 0;
   }
-
   return imageIndex;
 }
-
 function remapAxesToTCZYX(axes) {
   var axisTCZYX = [-1, -1, -1, -1, -1];
-
   for (var i = 0; i < axes.length; ++i) {
     var axis = axes[i];
-
     if (axis.name === "t") {
       axisTCZYX[0] = i;
     } else if (axis.name === "c") {
@@ -8703,267 +8269,210 @@ function remapAxesToTCZYX(axes) {
       console.log("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
     }
   }
-
   return axisTCZYX;
 }
-
 function findSpatialAxesZYX(axisTCZYX) {
   // return in ZYX order
   var spatialAxes = [-1, -1, -1];
-
   if (axisTCZYX[2] > -1) {
     spatialAxes[0] = axisTCZYX[2];
   }
-
   if (axisTCZYX[3] > -1) {
     spatialAxes[1] = axisTCZYX[3];
   }
-
   if (axisTCZYX[4] > -1) {
     spatialAxes[2] = axisTCZYX[4];
   }
-
   if (spatialAxes.some(function (el) {
     return el === -1;
   })) {
     console.log("ERROR: zarr loader expects a z, y, and x axis.");
   }
-
   return spatialAxes;
 }
-
 function fetchShapeOfLevel(_x, _x2, _x3) {
   return _fetchShapeOfLevel.apply(this, arguments);
 }
-
 function _fetchShapeOfLevel() {
   _fetchShapeOfLevel = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee5(store, imagegroup, multiscale) {
     var level, shape;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee5$(_context5) {
-      while (1) {
-        switch (_context5.prev = _context5.next) {
-          case 0:
-            _context5.next = 2;
-            return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openArray)({
-              store: store,
-              path: imagegroup + "/" + multiscale.path,
-              mode: "r"
-            });
-
-          case 2:
-            level = _context5.sent;
-            shape = level.meta.shape;
-            return _context5.abrupt("return", shape);
-
-          case 5:
-          case "end":
-            return _context5.stop();
-        }
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee5$(_context6) {
+      while (1) switch (_context6.prev = _context6.next) {
+        case 0:
+          _context6.next = 2;
+          return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openArray)({
+            store: store,
+            path: imagegroup + "/" + multiscale.path,
+            mode: "r"
+          });
+        case 2:
+          level = _context6.sent;
+          shape = level.meta.shape;
+          return _context6.abrupt("return", shape);
+        case 5:
+        case "end":
+          return _context6.stop();
       }
     }, _callee5);
   }));
   return _fetchShapeOfLevel.apply(this, arguments);
 }
-
 function pickLevelToLoad(_x4, _x5, _x6, _x7) {
   return _pickLevelToLoad.apply(this, arguments);
 }
-
 function _pickLevelToLoad() {
   _pickLevelToLoad = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee7(multiscale, store, loadSpec, cachedSpatialAxes) {
     var datasets, axes, numlevels, spatialAxes, axisTCZYX, shapePromises, spatialDims, levelToLoad, i, optimalLevel;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee7$(_context7) {
-      while (1) {
-        switch (_context7.prev = _context7.next) {
-          case 0:
-            datasets = multiscale.datasets, axes = multiscale.axes;
-            numlevels = datasets.length;
-
-            if (cachedSpatialAxes !== undefined) {
-              spatialAxes = cachedSpatialAxes;
-            } else {
-              axisTCZYX = remapAxesToTCZYX(axes);
-              spatialAxes = findSpatialAxesZYX(axisTCZYX);
-            }
-
-            shapePromises = datasets.map( /*#__PURE__*/function () {
-              var _ref3 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee6(dataset) {
-                var shape;
-                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee6$(_context6) {
-                  while (1) {
-                    switch (_context6.prev = _context6.next) {
-                      case 0:
-                        _context6.next = 2;
-                        return fetchShapeOfLevel(store, loadSpec.subpath, dataset);
-
-                      case 2:
-                        shape = _context6.sent;
-
-                        if (shape.length !== axes.length) {
-                          console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
-                        }
-
-                        return _context6.abrupt("return", [shape[spatialAxes[0]], shape[spatialAxes[1]], shape[spatialAxes[2]]]);
-
-                      case 5:
-                      case "end":
-                        return _context6.stop();
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee7$(_context8) {
+      while (1) switch (_context8.prev = _context8.next) {
+        case 0:
+          datasets = multiscale.datasets, axes = multiscale.axes;
+          numlevels = datasets.length;
+          if (cachedSpatialAxes !== undefined) {
+            spatialAxes = cachedSpatialAxes;
+          } else {
+            axisTCZYX = remapAxesToTCZYX(axes);
+            spatialAxes = findSpatialAxesZYX(axisTCZYX);
+          }
+          shapePromises = datasets.map( /*#__PURE__*/function () {
+            var _ref3 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee6(dataset) {
+              var shape;
+              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee6$(_context7) {
+                while (1) switch (_context7.prev = _context7.next) {
+                  case 0:
+                    _context7.next = 2;
+                    return fetchShapeOfLevel(store, loadSpec.subpath, dataset);
+                  case 2:
+                    shape = _context7.sent;
+                    if (shape.length !== axes.length) {
+                      console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
                     }
-                  }
-                }, _callee6);
-              }));
-
-              return function (_x13) {
-                return _ref3.apply(this, arguments);
-              };
-            }());
-            _context7.next = 6;
-            return Promise.all(shapePromises);
-
-          case 6:
-            spatialDims = _context7.sent;
-            // default to lowest level until we find the match
-            levelToLoad = numlevels - 1;
-            i = 0;
-
-          case 9:
-            if (!(i < numlevels)) {
-              _context7.next = 16;
-              break;
-            }
-
-            if (!(datasets[i].path == loadSpec.subpath)) {
-              _context7.next = 13;
-              break;
-            }
-
-            levelToLoad = i;
-            return _context7.abrupt("break", 16);
-
-          case 13:
-            ++i;
-            _context7.next = 9;
+                    return _context7.abrupt("return", [shape[spatialAxes[0]], shape[spatialAxes[1]], shape[spatialAxes[2]]]);
+                  case 5:
+                  case "end":
+                    return _context7.stop();
+                }
+              }, _callee6);
+            }));
+            return function (_x13) {
+              return _ref3.apply(this, arguments);
+            };
+          }());
+          _context8.next = 6;
+          return Promise.all(shapePromises);
+        case 6:
+          spatialDims = _context8.sent;
+          // default to lowest level until we find the match
+          levelToLoad = numlevels - 1;
+          i = 0;
+        case 9:
+          if (!(i < numlevels)) {
+            _context8.next = 16;
             break;
-
-          case 16:
-            optimalLevel = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.estimateLevelForAtlas)(spatialDims, 2048); // assume all levels are decreasing in size.  If a larger level is optimal then use it:
-
-            if (!(optimalLevel < levelToLoad)) {
-              _context7.next = 21;
-              break;
-            }
-
-            return _context7.abrupt("return", optimalLevel);
-
-          case 21:
-            return _context7.abrupt("return", levelToLoad);
-
-          case 22:
-          case "end":
-            return _context7.stop();
-        }
+          }
+          if (!(datasets[i].path == loadSpec.subpath)) {
+            _context8.next = 13;
+            break;
+          }
+          levelToLoad = i;
+          return _context8.abrupt("break", 16);
+        case 13:
+          ++i;
+          _context8.next = 9;
+          break;
+        case 16:
+          optimalLevel = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.estimateLevelForAtlas)(spatialDims, 2048); // assume all levels are decreasing in size.  If a larger level is optimal then use it:
+          if (!(optimalLevel < levelToLoad)) {
+            _context8.next = 21;
+            break;
+          }
+          return _context8.abrupt("return", optimalLevel);
+        case 21:
+          return _context8.abrupt("return", levelToLoad);
+        case 22:
+        case "end":
+          return _context8.stop();
       }
     }, _callee7);
   }));
   return _pickLevelToLoad.apply(this, arguments);
 }
-
 var OMEZarrLoader = /*#__PURE__*/function () {
   function OMEZarrLoader() {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, OMEZarrLoader);
   }
-
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(OMEZarrLoader, [{
     key: "loadDims",
     value: function () {
       var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(loadSpec) {
         var store, imagegroup, data, allmetadata, imageIndex, multiscales, axes, axisTCZYX, spatialAxes, unitName, unitSymbol, dimsPromises;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee2$(_context2) {
-          while (1) {
-            switch (_context2.prev = _context2.next) {
-              case 0:
-                store = new zarr__WEBPACK_IMPORTED_MODULE_7__.HTTPStore(loadSpec.url);
-                imagegroup = loadSpec.subpath;
-                _context2.next = 4;
-                return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openGroup)(store, imagegroup, "r");
-
-              case 4:
-                data = _context2.sent;
-                _context2.next = 7;
-                return data.attrs.asObject();
-
-              case 7:
-                allmetadata = _context2.sent;
-                // each entry of multiscales is a multiscale image.
-                imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
-                multiscales = allmetadata.multiscales[imageIndex].datasets;
-                axes = allmetadata.multiscales[imageIndex].axes;
-                axisTCZYX = remapAxesToTCZYX(axes); // ZYX
-
-                spatialAxes = findSpatialAxesZYX(axisTCZYX); // Assume all axes have the same units - we have no means of storing per-axis unit symbols
-
-                unitName = axes[spatialAxes[2]].unit;
-                unitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.unitNameToSymbol)(unitName) || unitName || "";
-                dimsPromises = multiscales.map( /*#__PURE__*/function () {
-                  var _ref2 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(multiscale) {
-                    var shape, scale5d, d, i;
-                    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
-                      while (1) {
-                        switch (_context.prev = _context.next) {
-                          case 0:
-                            _context.next = 2;
-                            return fetchShapeOfLevel(store, imagegroup, multiscale);
-
-                          case 2:
-                            shape = _context.sent;
-
-                            if (shape.length != axes.length) {
-                              console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
-                            }
-
-                            scale5d = getScale(multiscale);
-                            d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__.VolumeDims();
-                            d.subpath = "";
-                            d.shape = [1, 1, 1, 1, 1];
-
-                            for (i = 0; i < d.shape.length; ++i) {
-                              if (axisTCZYX[i] > -1) {
-                                d.shape[i] = shape[axisTCZYX[i]];
-                              }
-                            }
-
-                            d.spacing = [1, 1, scale5d[spatialAxes[0]], scale5d[spatialAxes[1]], scale5d[spatialAxes[2]]];
-                            d.spatialUnit = unitSymbol; // unknown unit.
-
-                            d.dataType = "uint8";
-                            return _context.abrupt("return", d);
-
-                          case 13:
-                          case "end":
-                            return _context.stop();
+          while (1) switch (_context2.prev = _context2.next) {
+            case 0:
+              store = new zarr__WEBPACK_IMPORTED_MODULE_7__.HTTPStore(loadSpec.url);
+              imagegroup = loadSpec.subpath;
+              _context2.next = 4;
+              return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openGroup)(store, imagegroup, "r");
+            case 4:
+              data = _context2.sent;
+              _context2.next = 7;
+              return data.attrs.asObject();
+            case 7:
+              allmetadata = _context2.sent;
+              // each entry of multiscales is a multiscale image.
+              imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
+              multiscales = allmetadata.multiscales[imageIndex].datasets;
+              axes = allmetadata.multiscales[imageIndex].axes;
+              axisTCZYX = remapAxesToTCZYX(axes); // ZYX
+              spatialAxes = findSpatialAxesZYX(axisTCZYX); // Assume all axes have the same units - we have no means of storing per-axis unit symbols
+              unitName = axes[spatialAxes[2]].unit;
+              unitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.unitNameToSymbol)(unitName) || unitName || "";
+              dimsPromises = multiscales.map( /*#__PURE__*/function () {
+                var _ref2 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(multiscale) {
+                  var shape, scale5d, d, i;
+                  return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
+                    while (1) switch (_context.prev = _context.next) {
+                      case 0:
+                        _context.next = 2;
+                        return fetchShapeOfLevel(store, imagegroup, multiscale);
+                      case 2:
+                        shape = _context.sent;
+                        if (shape.length != axes.length) {
+                          console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
                         }
-                      }
-                    }, _callee);
-                  }));
-
-                  return function (_x9) {
-                    return _ref2.apply(this, arguments);
-                  };
-                }());
-                return _context2.abrupt("return", Promise.all(dimsPromises));
-
-              case 17:
-              case "end":
-                return _context2.stop();
-            }
+                        scale5d = getScale(multiscale);
+                        d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__.VolumeDims();
+                        d.subpath = "";
+                        d.shape = [1, 1, 1, 1, 1];
+                        for (i = 0; i < d.shape.length; ++i) {
+                          if (axisTCZYX[i] > -1) {
+                            d.shape[i] = shape[axisTCZYX[i]];
+                          }
+                        }
+                        d.spacing = [1, 1, scale5d[spatialAxes[0]], scale5d[spatialAxes[1]], scale5d[spatialAxes[2]]];
+                        d.spatialUnit = unitSymbol; // unknown unit.
+                        d.dataType = "uint8";
+                        return _context.abrupt("return", d);
+                      case 13:
+                      case "end":
+                        return _context.stop();
+                    }
+                  }, _callee);
+                }));
+                return function (_x9) {
+                  return _ref2.apply(this, arguments);
+                };
+              }());
+              return _context2.abrupt("return", Promise.all(dimsPromises));
+            case 17:
+            case "end":
+              return _context2.stop();
           }
         }, _callee2);
       }));
-
       function loadDims(_x8) {
         return _loadDims.apply(this, arguments);
       }
-
       return loadDims;
     }()
   }, {
@@ -8971,137 +8480,119 @@ var OMEZarrLoader = /*#__PURE__*/function () {
     value: function () {
       var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee3(loadSpec) {
         var store, imagegroup, data, allmetadata, imageIndex, multiscale, datasets, axes, axisTCZYX, spatialAxes, spaceUnitName, spaceUnitSymbol, timeUnitName, timeUnitSymbol, levelToLoad, dataset, level, multiscaleShape, channels, sizeT, scale5d, timeScale, tw, th, tz, loadedZ, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, i, shape0, imgdata, vol;
-
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee3$(_context3) {
-          while (1) {
-            switch (_context3.prev = _context3.next) {
-              case 0:
-                store = new zarr__WEBPACK_IMPORTED_MODULE_7__.HTTPStore(loadSpec.url);
-                imagegroup = loadSpec.subpath;
-                _context3.next = 4;
-                return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openGroup)(store, imagegroup, "r");
+          while (1) switch (_context3.prev = _context3.next) {
+            case 0:
+              store = new zarr__WEBPACK_IMPORTED_MODULE_7__.HTTPStore(loadSpec.url);
+              imagegroup = loadSpec.subpath;
+              _context3.next = 4;
+              return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openGroup)(store, imagegroup, "r");
+            case 4:
+              data = _context3.sent;
+              _context3.next = 7;
+              return data.attrs.asObject();
+            case 7:
+              allmetadata = _context3.sent;
+              // each entry of multiscales is a multiscale image.
+              imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
+              multiscale = allmetadata.multiscales[imageIndex];
+              datasets = multiscale.datasets, axes = multiscale.axes;
+              axisTCZYX = remapAxesToTCZYX(axes);
+              this.hasT = axisTCZYX[0] > -1;
+              this.hasC = axisTCZYX[1] > -1;
+              // ZYX
+              spatialAxes = findSpatialAxesZYX(axisTCZYX); // Assume all axes have the same units - we have no means of storing per-axis unit symbols
+              spaceUnitName = axes[spatialAxes[2]].unit;
+              spaceUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
+              timeUnitName = this.hasT ? axes[axisTCZYX[0]].unit : undefined;
+              timeUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
+              _context3.next = 21;
+              return pickLevelToLoad(multiscale, store, loadSpec);
+            case 21:
+              levelToLoad = _context3.sent;
+              dataset = datasets[levelToLoad];
+              this.multiscalePath = dataset.path;
 
-              case 4:
-                data = _context3.sent;
-                _context3.next = 7;
-                return data.attrs.asObject();
+              // get the shape for the level we want to load
+              _context3.next = 26;
+              return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openArray)({
+                store: store,
+                path: imagegroup + "/" + dataset.path,
+                mode: "r"
+              });
+            case 26:
+              level = _context3.sent;
+              multiscaleShape = level.meta.shape;
+              if (multiscaleShape.length != axes.length) {
+                console.log("ERROR: shape length " + multiscaleShape.length + " does not match axes length " + axes.length);
+              }
+              channels = this.hasC ? multiscaleShape[axisTCZYX[1]] : 1;
+              sizeT = this.hasT ? multiscaleShape[axisTCZYX[0]] : 1; // we want scale of level 0
+              scale5d = getScale(datasets[0]);
+              timeScale = this.hasT ? scale5d[axisTCZYX[0]] : 1;
+              tw = multiscaleShape[spatialAxes[2]];
+              th = multiscaleShape[spatialAxes[1]];
+              tz = multiscaleShape[spatialAxes[0]]; // compute rows and cols and atlas width and ht, given tw and th
+              loadedZ = Math.ceil(tz / DOWNSAMPLE_Z);
+              _computePackedAtlasDi = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.computePackedAtlasDims)(loadedZ, tw, th), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols;
+              atlaswidth = ncols * tw;
+              atlasheight = nrows * th;
+              console.log("atlas width and height: " + atlaswidth + " " + atlasheight);
+              displayMetadata = allmetadata.omero;
+              chnames = [];
+              for (i = 0; i < displayMetadata.channels.length; ++i) {
+                chnames.push(displayMetadata.channels[i].label);
+              }
 
-              case 7:
-                allmetadata = _context3.sent;
-                // each entry of multiscales is a multiscale image.
-                imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
-                multiscale = allmetadata.multiscales[imageIndex];
-                datasets = multiscale.datasets, axes = multiscale.axes;
-                axisTCZYX = remapAxesToTCZYX(axes);
-                this.hasT = axisTCZYX[0] > -1;
-                this.hasC = axisTCZYX[1] > -1; // ZYX
-
-                spatialAxes = findSpatialAxesZYX(axisTCZYX); // Assume all axes have the same units - we have no means of storing per-axis unit symbols
-
-                spaceUnitName = axes[spatialAxes[2]].unit;
-                spaceUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
-                timeUnitName = this.hasT ? axes[axisTCZYX[0]].unit : undefined;
-                timeUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
-                _context3.next = 21;
-                return pickLevelToLoad(multiscale, store, loadSpec);
-
-              case 21:
-                levelToLoad = _context3.sent;
-                dataset = datasets[levelToLoad];
-                this.multiscalePath = dataset.path; // get the shape for the level we want to load
-
-                _context3.next = 26;
-                return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openArray)({
-                  store: store,
-                  path: imagegroup + "/" + dataset.path,
-                  mode: "r"
-                });
-
-              case 26:
-                level = _context3.sent;
-                multiscaleShape = level.meta.shape;
-
-                if (multiscaleShape.length != axes.length) {
-                  console.log("ERROR: shape length " + multiscaleShape.length + " does not match axes length " + axes.length);
-                }
-
-                channels = this.hasC ? multiscaleShape[axisTCZYX[1]] : 1;
-                sizeT = this.hasT ? multiscaleShape[axisTCZYX[0]] : 1; // we want scale of level 0
-
-                scale5d = getScale(datasets[0]);
-                timeScale = this.hasT ? scale5d[axisTCZYX[0]] : 1;
-                tw = multiscaleShape[spatialAxes[2]];
-                th = multiscaleShape[spatialAxes[1]];
-                tz = multiscaleShape[spatialAxes[0]]; // compute rows and cols and atlas width and ht, given tw and th
-
-                loadedZ = Math.ceil(tz / DOWNSAMPLE_Z);
-                _computePackedAtlasDi = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.computePackedAtlasDims)(loadedZ, tw, th), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols;
-                atlaswidth = ncols * tw;
-                atlasheight = nrows * th;
-                console.log("atlas width and height: " + atlaswidth + " " + atlasheight);
-                displayMetadata = allmetadata.omero;
-                chnames = [];
-
-                for (i = 0; i < displayMetadata.channels.length; ++i) {
-                  chnames.push(displayMetadata.channels[i].label);
-                } // get shape of level 0
-
-
-                _context3.next = 46;
-                return fetchShapeOfLevel(store, loadSpec.subpath, datasets[0]);
-
-              case 46:
-                shape0 = _context3.sent;
-
-                /* eslint-disable @typescript-eslint/naming-convention */
-                imgdata = {
-                  width: shape0[spatialAxes[2]],
-                  height: shape0[spatialAxes[1]],
-                  channels: channels,
-                  channel_names: chnames,
-                  rows: nrows,
-                  cols: ncols,
-                  tiles: loadedZ,
-                  // TODO original z????
-                  tile_width: tw,
-                  tile_height: th,
-                  // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-                  // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-                  atlas_width: atlaswidth,
-                  atlas_height: atlasheight,
-                  pixel_size_x: scale5d[spatialAxes[2]],
-                  pixel_size_y: scale5d[spatialAxes[1]],
-                  pixel_size_z: scale5d[spatialAxes[0]] * DOWNSAMPLE_Z,
-                  pixel_size_unit: spaceUnitSymbol,
-                  name: displayMetadata.name,
-                  version: displayMetadata.version,
-                  transform: {
-                    translation: [0, 0, 0],
-                    rotation: [0, 0, 0]
-                  },
-                  times: sizeT,
-                  time_scale: timeScale,
-                  time_unit: timeUnitSymbol
-                };
-                /* eslint-enable @typescript-eslint/naming-convention */
-                // got some data, now let's construct the volume.
-
-                vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata, loadSpec);
-                vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.buildDefaultMetadata)(imgdata);
-                return _context3.abrupt("return", vol);
-
-              case 51:
-              case "end":
-                return _context3.stop();
-            }
+              // get shape of level 0
+              _context3.next = 46;
+              return fetchShapeOfLevel(store, loadSpec.subpath, datasets[0]);
+            case 46:
+              shape0 = _context3.sent;
+              /* eslint-disable @typescript-eslint/naming-convention */
+              imgdata = {
+                width: shape0[spatialAxes[2]],
+                height: shape0[spatialAxes[1]],
+                channels: channels,
+                channel_names: chnames,
+                rows: nrows,
+                cols: ncols,
+                tiles: loadedZ,
+                // TODO original z????
+                tile_width: tw,
+                tile_height: th,
+                // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
+                // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
+                atlas_width: atlaswidth,
+                atlas_height: atlasheight,
+                pixel_size_x: scale5d[spatialAxes[2]],
+                pixel_size_y: scale5d[spatialAxes[1]],
+                pixel_size_z: scale5d[spatialAxes[0]] * DOWNSAMPLE_Z,
+                pixel_size_unit: spaceUnitSymbol,
+                name: displayMetadata.name,
+                version: displayMetadata.version,
+                transform: {
+                  translation: [0, 0, 0],
+                  rotation: [0, 0, 0]
+                },
+                times: sizeT,
+                time_scale: timeScale,
+                time_unit: timeUnitSymbol
+              };
+              /* eslint-enable @typescript-eslint/naming-convention */
+              // got some data, now let's construct the volume.
+              vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata, loadSpec);
+              vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.buildDefaultMetadata)(imgdata);
+              return _context3.abrupt("return", vol);
+            case 51:
+            case "end":
+              return _context3.stop();
           }
         }, _callee3, this);
       }));
-
       function createVolume(_x10) {
         return _createVolume.apply(this, arguments);
       }
-
       return createVolume;
     }()
   }, {
@@ -9109,104 +8600,99 @@ var OMEZarrLoader = /*#__PURE__*/function () {
     value: function () {
       var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee4(vol, onChannelLoaded) {
         var _this = this;
-
         var loadSpec, _vol$imageInfo, channels, times, store, data, allmetadata, imageIndex, multiscale, axisTCZYX, spatialAxes, levelToLoad, storepath, _loop, i;
-
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee4$(_context4) {
-          while (1) {
-            switch (_context4.prev = _context4.next) {
-              case 0:
-                loadSpec = vol.loadSpec;
-                _vol$imageInfo = vol.imageInfo, channels = _vol$imageInfo.channels, times = _vol$imageInfo.times;
-
-                if (!(this.multiscalePath === undefined || this.hasC === undefined || this.hasT === undefined)) {
-                  _context4.next = 20;
-                  break;
-                }
-
-                store = new zarr__WEBPACK_IMPORTED_MODULE_7__.HTTPStore(loadSpec.url);
-                _context4.next = 6;
-                return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openGroup)(store, loadSpec.subpath, "r");
-
-              case 6:
-                data = _context4.sent;
-                _context4.next = 9;
-                return data.attrs.asObject();
-
-              case 9:
-                allmetadata = _context4.sent;
-                imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
-                multiscale = allmetadata.multiscales[imageIndex];
-                axisTCZYX = remapAxesToTCZYX(multiscale.axes);
-                this.hasT = axisTCZYX[0] > -1;
-                this.hasC = axisTCZYX[1] > -1;
-                spatialAxes = findSpatialAxesZYX(axisTCZYX);
-                _context4.next = 18;
-                return pickLevelToLoad(multiscale, store, loadSpec, spatialAxes);
-
-              case 18:
-                levelToLoad = _context4.sent;
-                this.multiscalePath = multiscale.datasets[levelToLoad].path;
-
-              case 20:
-                storepath = loadSpec.subpath + "/" + this.multiscalePath; // do each channel on a worker
-
-                _loop = function _loop(i) {
-                  var worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchZarrWorker_ts"), __webpack_require__.b));
-
-                  worker.onmessage = function (e) {
-                    var u8 = e.data.data;
-                    var channel = e.data.channel;
-                    vol.setChannelDataFromVolume(channel, u8);
-
-                    if (onChannelLoaded) {
-                      // make up a unique name? or have caller pass this in?
-                      onChannelLoaded(loadSpec.url + "/" + loadSpec.subpath, vol, channel);
-                    }
-
-                    worker.terminate();
-                  };
-
-                  worker.onerror = function (e) {
-                    alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
-                  };
-
-                  worker.postMessage({
-                    urlStore: loadSpec.url,
-                    time: _this.hasT ? Math.min(loadSpec.time, times) : -1,
-                    channel: _this.hasC ? i : -1,
-                    downsampleZ: DOWNSAMPLE_Z,
-                    path: storepath
-                  });
-                };
-
-                for (i = 0; i < channels; ++i) {
-                  _loop(i);
-                }
-
-                this.multiscalePath = undefined;
-                this.hasC = undefined;
-                this.hasT = undefined;
-
-              case 26:
-              case "end":
-                return _context4.stop();
-            }
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee4$(_context5) {
+          while (1) switch (_context5.prev = _context5.next) {
+            case 0:
+              loadSpec = vol.loadSpec;
+              _vol$imageInfo = vol.imageInfo, channels = _vol$imageInfo.channels, times = _vol$imageInfo.times;
+              if (!(this.multiscalePath === undefined || this.hasC === undefined || this.hasT === undefined)) {
+                _context5.next = 20;
+                break;
+              }
+              store = new zarr__WEBPACK_IMPORTED_MODULE_7__.HTTPStore(loadSpec.url);
+              _context5.next = 6;
+              return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openGroup)(store, loadSpec.subpath, "r");
+            case 6:
+              data = _context5.sent;
+              _context5.next = 9;
+              return data.attrs.asObject();
+            case 9:
+              allmetadata = _context5.sent;
+              imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
+              multiscale = allmetadata.multiscales[imageIndex];
+              axisTCZYX = remapAxesToTCZYX(multiscale.axes);
+              this.hasT = axisTCZYX[0] > -1;
+              this.hasC = axisTCZYX[1] > -1;
+              spatialAxes = findSpatialAxesZYX(axisTCZYX);
+              _context5.next = 18;
+              return pickLevelToLoad(multiscale, store, loadSpec, spatialAxes);
+            case 18:
+              levelToLoad = _context5.sent;
+              this.multiscalePath = multiscale.datasets[levelToLoad].path;
+            case 20:
+              storepath = loadSpec.subpath + "/" + this.multiscalePath; // do each channel on a worker
+              _loop = /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _loop() {
+                var worker;
+                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _loop$(_context4) {
+                  while (1) switch (_context4.prev = _context4.next) {
+                    case 0:
+                      worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchZarrWorker_ts"), __webpack_require__.b));
+                      worker.onmessage = function (e) {
+                        var u8 = e.data.data;
+                        var channel = e.data.channel;
+                        vol.setChannelDataFromVolume(channel, u8);
+                        if (onChannelLoaded) {
+                          // make up a unique name? or have caller pass this in?
+                          onChannelLoaded(loadSpec.url + "/" + loadSpec.subpath, vol, channel);
+                        }
+                        worker.terminate();
+                      };
+                      worker.onerror = function (e) {
+                        alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
+                      };
+                      worker.postMessage({
+                        urlStore: loadSpec.url,
+                        time: _this.hasT ? Math.min(loadSpec.time, times) : -1,
+                        channel: _this.hasC ? i : -1,
+                        downsampleZ: DOWNSAMPLE_Z,
+                        path: storepath
+                      });
+                    case 4:
+                    case "end":
+                      return _context4.stop();
+                  }
+                }, _loop);
+              });
+              i = 0;
+            case 23:
+              if (!(i < channels)) {
+                _context5.next = 28;
+                break;
+              }
+              return _context5.delegateYield(_loop(), "t0", 25);
+            case 25:
+              ++i;
+              _context5.next = 23;
+              break;
+            case 28:
+              this.multiscalePath = undefined;
+              this.hasC = undefined;
+              this.hasT = undefined;
+            case 31:
+            case "end":
+              return _context5.stop();
           }
         }, _callee4, this);
       }));
-
       function loadVolumeData(_x11, _x12) {
         return _loadVolumeData.apply(this, arguments);
       }
-
       return loadVolumeData;
     }()
   }]);
-
   return OMEZarrLoader;
 }();
-
 
 
 /***/ }),
@@ -9220,7 +8706,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "OpenCellLoader": () => (/* binding */ OpenCellLoader)
+/* harmony export */   OpenCellLoader: () => (/* binding */ OpenCellLoader)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
@@ -9239,42 +8725,34 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 var OpenCellLoader = /*#__PURE__*/function () {
   function OpenCellLoader() {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, OpenCellLoader);
   }
-
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(OpenCellLoader, [{
     key: "loadDims",
     value: function () {
       var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(_) {
         var d;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
-          while (1) {
-            switch (_context.prev = _context.next) {
-              case 0:
-                d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__.VolumeDims();
-                d.subpath = "";
-                d.shape = [1, 2, 27, 600, 600];
-                d.spacing = [1, 1, 2, 1, 1];
-                d.spatialUnit = ""; // unknown unit.
-
-                d.dataType = "uint8";
-                return _context.abrupt("return", [d]);
-
-              case 7:
-              case "end":
-                return _context.stop();
-            }
+          while (1) switch (_context.prev = _context.next) {
+            case 0:
+              d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__.VolumeDims();
+              d.subpath = "";
+              d.shape = [1, 2, 27, 600, 600];
+              d.spacing = [1, 1, 2, 1, 1];
+              d.spatialUnit = ""; // unknown unit.
+              d.dataType = "uint8";
+              return _context.abrupt("return", [d]);
+            case 7:
+            case "end":
+              return _context.stop();
           }
         }, _callee);
       }));
-
       function loadDims(_x) {
         return _loadDims.apply(this, arguments);
       }
-
       return loadDims;
     }()
   }, {
@@ -9283,61 +8761,53 @@ var OpenCellLoader = /*#__PURE__*/function () {
       var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(_) {
         var numChannels, chnames, imgdata, vol;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee2$(_context2) {
-          while (1) {
-            switch (_context2.prev = _context2.next) {
-              case 0:
-                numChannels = 2; // we know these are standardized to 600x600, two channels, one channel per jpg.
-
-                chnames = ["DNA", "Structure"];
-                /* eslint-disable @typescript-eslint/naming-convention */
-
-                imgdata = {
-                  width: 600,
-                  height: 600,
-                  channels: numChannels,
-                  channel_names: chnames,
-                  rows: 27,
-                  cols: 1,
-                  tiles: 27,
-                  tile_width: 600,
-                  tile_height: 600,
-                  // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-                  // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-                  atlas_width: 600,
-                  atlas_height: 16200,
-                  pixel_size_x: 1,
-                  pixel_size_y: 1,
-                  pixel_size_z: 2,
-                  name: "TEST",
-                  version: "1.0",
-                  pixel_size_unit: "µm",
-                  transform: {
-                    translation: [0, 0, 0],
-                    rotation: [0, 0, 0]
-                  },
-                  times: 1,
-                  time_scale: 1,
-                  time_unit: ""
-                };
-                /* eslint-enable @typescript-eslint/naming-convention */
-                // got some data, now let's construct the volume.
-
-                vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata);
-                vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.buildDefaultMetadata)(imgdata);
-                return _context2.abrupt("return", vol);
-
-              case 6:
-              case "end":
-                return _context2.stop();
-            }
+          while (1) switch (_context2.prev = _context2.next) {
+            case 0:
+              numChannels = 2; // we know these are standardized to 600x600, two channels, one channel per jpg.
+              chnames = ["DNA", "Structure"];
+              /* eslint-disable @typescript-eslint/naming-convention */
+              imgdata = {
+                width: 600,
+                height: 600,
+                channels: numChannels,
+                channel_names: chnames,
+                rows: 27,
+                cols: 1,
+                tiles: 27,
+                tile_width: 600,
+                tile_height: 600,
+                // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
+                // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
+                atlas_width: 600,
+                atlas_height: 16200,
+                pixel_size_x: 1,
+                pixel_size_y: 1,
+                pixel_size_z: 2,
+                name: "TEST",
+                version: "1.0",
+                pixel_size_unit: "µm",
+                transform: {
+                  translation: [0, 0, 0],
+                  rotation: [0, 0, 0]
+                },
+                times: 1,
+                time_scale: 1,
+                time_unit: ""
+              };
+              /* eslint-enable @typescript-eslint/naming-convention */
+              // got some data, now let's construct the volume.
+              vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata);
+              vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.buildDefaultMetadata)(imgdata);
+              return _context2.abrupt("return", vol);
+            case 6:
+            case "end":
+              return _context2.stop();
           }
         }, _callee2);
       }));
-
       function createVolume(_x2) {
         return _createVolume.apply(this, arguments);
       }
-
       return createVolume;
     }()
   }, {
@@ -9355,10 +8825,8 @@ var OpenCellLoader = /*#__PURE__*/function () {
       _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_7__.JsonImageInfoLoader.loadVolumeAtlasData(vol, urls, onChannelLoaded);
     }
   }]);
-
   return OpenCellLoader;
 }();
-
 
 
 /***/ }),
@@ -9372,7 +8840,7 @@ var OpenCellLoader = /*#__PURE__*/function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "TiffLoader": () => (/* binding */ TiffLoader)
+/* harmony export */   TiffLoader: () => (/* binding */ TiffLoader)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
@@ -9393,49 +8861,33 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
 function prepareXML(xml) {
   // trim trailing unicode zeros?
   // eslint-disable-next-line no-control-regex
   var expr = /[\u0000]$/g;
   return xml.trim().replace(expr, "").trim();
 }
-
 function getOME(xml) {
   var parser = new DOMParser();
   var xmlDoc = parser.parseFromString(xml, "text/xml");
   var omeEl = xmlDoc.getElementsByTagName("OME")[0];
   return omeEl;
 }
-
 var OMEDims = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(function OMEDims() {
   (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, OMEDims);
-
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "sizex", 0);
-
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "sizey", 0);
-
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "sizez", 0);
-
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "sizec", 0);
-
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "sizet", 0);
-
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "unit", "");
-
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "pixeltype", "");
-
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "dimensionorder", "");
-
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "pixelsizex", 0);
-
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "pixelsizey", 0);
-
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "pixelsizez", 0);
-
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "channelnames", []);
 });
-
 function getOMEDims(imageEl) {
   var dims = new OMEDims();
   var pixelsEl = imageEl.getElementsByTagName("Pixels")[0];
@@ -9451,104 +8903,85 @@ function getOMEDims(imageEl) {
   dims.pixelsizey = Number(pixelsEl.getAttribute("PhysicalSizeY"));
   dims.pixelsizez = Number(pixelsEl.getAttribute("PhysicalSizeZ"));
   var channelsEls = pixelsEl.getElementsByTagName("Channel");
-
   for (var i = 0; i < channelsEls.length; ++i) {
     var name = channelsEls[i].getAttribute("Name");
     var id = channelsEls[i].getAttribute("ID");
     dims.channelnames.push(name ? name : id ? id : "Channel" + i);
   }
-
   return dims;
 }
-
 function getDimsFromUrl(_x) {
   return _getDimsFromUrl.apply(this, arguments);
 }
-
 function _getDimsFromUrl() {
   _getDimsFromUrl = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee4(url) {
     var tiff, image, tiffimgdesc, omeEl, image0El;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee4$(_context4) {
-      while (1) {
-        switch (_context4.prev = _context4.next) {
-          case 0:
-            _context4.next = 2;
-            return (0,geotiff__WEBPACK_IMPORTED_MODULE_8__.fromUrl)(url);
-
-          case 2:
-            tiff = _context4.sent;
-            _context4.next = 5;
-            return tiff.getImage();
-
-          case 5:
-            image = _context4.sent;
-            tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
-            omeEl = getOME(tiffimgdesc);
-            image0El = omeEl.getElementsByTagName("Image")[0];
-            return _context4.abrupt("return", getOMEDims(image0El));
-
-          case 10:
-          case "end":
-            return _context4.stop();
-        }
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee4$(_context5) {
+      while (1) switch (_context5.prev = _context5.next) {
+        case 0:
+          _context5.next = 2;
+          return (0,geotiff__WEBPACK_IMPORTED_MODULE_8__.fromUrl)(url);
+        case 2:
+          tiff = _context5.sent;
+          _context5.next = 5;
+          return tiff.getImage();
+        case 5:
+          image = _context5.sent;
+          tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
+          omeEl = getOME(tiffimgdesc);
+          image0El = omeEl.getElementsByTagName("Image")[0];
+          return _context5.abrupt("return", getOMEDims(image0El));
+        case 10:
+        case "end":
+          return _context5.stop();
       }
     }, _callee4);
   }));
   return _getDimsFromUrl.apply(this, arguments);
 }
-
 var getBytesPerSample = function getBytesPerSample(type) {
   return type === "uint8" ? 1 : type === "uint16" ? 2 : 4;
 };
-
 var TiffLoader = /*#__PURE__*/function () {
   function TiffLoader() {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, TiffLoader);
   }
-
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(TiffLoader, [{
     key: "loadDims",
     value: function () {
       var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(loadSpec) {
         var tiff, image, tiffimgdesc, omeEl, image0El, dims, d;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee$(_context) {
-          while (1) {
-            switch (_context.prev = _context.next) {
-              case 0:
-                _context.next = 2;
-                return (0,geotiff__WEBPACK_IMPORTED_MODULE_8__.fromUrl)(loadSpec.url);
-
-              case 2:
-                tiff = _context.sent;
-                _context.next = 5;
-                return tiff.getImage();
-
-              case 5:
-                image = _context.sent;
-                tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
-                omeEl = getOME(tiffimgdesc);
-                image0El = omeEl.getElementsByTagName("Image")[0];
-                dims = getOMEDims(image0El);
-                d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__.VolumeDims();
-                d.subpath = "";
-                d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
-                d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
-                d.spatialUnit = dims.unit ? dims.unit : "micron";
-                d.dataType = dims.pixeltype ? dims.pixeltype : "uint8";
-                return _context.abrupt("return", [d]);
-
-              case 17:
-              case "end":
-                return _context.stop();
-            }
+          while (1) switch (_context.prev = _context.next) {
+            case 0:
+              _context.next = 2;
+              return (0,geotiff__WEBPACK_IMPORTED_MODULE_8__.fromUrl)(loadSpec.url);
+            case 2:
+              tiff = _context.sent;
+              _context.next = 5;
+              return tiff.getImage();
+            case 5:
+              image = _context.sent;
+              tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
+              omeEl = getOME(tiffimgdesc);
+              image0El = omeEl.getElementsByTagName("Image")[0];
+              dims = getOMEDims(image0El);
+              d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__.VolumeDims();
+              d.subpath = "";
+              d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
+              d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
+              d.spatialUnit = dims.unit ? dims.unit : "micron";
+              d.dataType = dims.pixeltype ? dims.pixeltype : "uint8";
+              return _context.abrupt("return", [d]);
+            case 17:
+            case "end":
+              return _context.stop();
           }
         }, _callee);
       }));
-
       function loadDims(_x2) {
         return _loadDims.apply(this, arguments);
       }
-
       return loadDims;
     }()
   }, {
@@ -9556,77 +8989,66 @@ var TiffLoader = /*#__PURE__*/function () {
     value: function () {
       var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee2(loadSpec) {
         var dims, _computePackedAtlasDi, nrows, ncols, targetSize, tilesizex, tilesizey, imgdata, vol;
-
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee2$(_context2) {
-          while (1) {
-            switch (_context2.prev = _context2.next) {
-              case 0:
-                _context2.next = 2;
-                return getDimsFromUrl(loadSpec.url);
-
-              case 2:
-                dims = _context2.sent;
-                // compare with sizex, sizey
-                //const width = image.getWidth();
-                //const height = image.getHeight();
-                // TODO allow user setting of this downsampling info?
-                // TODO allow ROI selection: range of x,y,z,c for a given t
-                _computePackedAtlasDi = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.computePackedAtlasDims)(dims.sizez, dims.sizex, dims.sizey), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols; // fit tiles to max of 2048x2048?
-
-                targetSize = 2048;
-                tilesizex = Math.floor(targetSize / ncols);
-                tilesizey = Math.floor(targetSize / nrows); // load tiff and check metadata
-
-                /* eslint-disable @typescript-eslint/naming-convention */
-
-                imgdata = {
-                  width: dims.sizex,
-                  height: dims.sizey,
-                  channels: dims.sizec,
-                  channel_names: dims.channelnames,
-                  rows: nrows,
-                  cols: ncols,
-                  tiles: dims.sizez,
-                  tile_width: tilesizex,
-                  tile_height: tilesizey,
-                  // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-                  // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-                  atlas_width: tilesizex * ncols,
-                  atlas_height: tilesizey * nrows,
-                  pixel_size_x: dims.pixelsizex,
-                  pixel_size_y: dims.pixelsizey,
-                  pixel_size_z: dims.pixelsizez,
-                  name: "TEST",
-                  version: "1.0",
-                  pixel_size_unit: dims.unit || "",
-                  transform: {
-                    translation: [0, 0, 0],
-                    rotation: [0, 0, 0]
-                  },
-                  times: dims.sizet,
-                  time_scale: 1,
-                  time_unit: ""
-                };
-                /* eslint-enable @typescript-eslint/naming-convention */
-
-                vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imgdata, loadSpec);
-                vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imgdata);
-                this.dimensionOrder = dims.dimensionorder;
-                this.bytesPerSample = getBytesPerSample(dims.pixeltype);
-                return _context2.abrupt("return", vol);
-
-              case 13:
-              case "end":
-                return _context2.stop();
-            }
+          while (1) switch (_context2.prev = _context2.next) {
+            case 0:
+              _context2.next = 2;
+              return getDimsFromUrl(loadSpec.url);
+            case 2:
+              dims = _context2.sent;
+              // compare with sizex, sizey
+              //const width = image.getWidth();
+              //const height = image.getHeight();
+              // TODO allow user setting of this downsampling info?
+              // TODO allow ROI selection: range of x,y,z,c for a given t
+              _computePackedAtlasDi = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.computePackedAtlasDims)(dims.sizez, dims.sizex, dims.sizey), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols; // fit tiles to max of 2048x2048?
+              targetSize = 2048;
+              tilesizex = Math.floor(targetSize / ncols);
+              tilesizey = Math.floor(targetSize / nrows); // load tiff and check metadata
+              /* eslint-disable @typescript-eslint/naming-convention */
+              imgdata = {
+                width: dims.sizex,
+                height: dims.sizey,
+                channels: dims.sizec,
+                channel_names: dims.channelnames,
+                rows: nrows,
+                cols: ncols,
+                tiles: dims.sizez,
+                tile_width: tilesizex,
+                tile_height: tilesizey,
+                // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
+                // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
+                atlas_width: tilesizex * ncols,
+                atlas_height: tilesizey * nrows,
+                pixel_size_x: dims.pixelsizex,
+                pixel_size_y: dims.pixelsizey,
+                pixel_size_z: dims.pixelsizez,
+                name: "TEST",
+                version: "1.0",
+                pixel_size_unit: dims.unit || "",
+                transform: {
+                  translation: [0, 0, 0],
+                  rotation: [0, 0, 0]
+                },
+                times: dims.sizet,
+                time_scale: 1,
+                time_unit: ""
+              };
+              /* eslint-enable @typescript-eslint/naming-convention */
+              vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imgdata, loadSpec);
+              vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imgdata);
+              this.dimensionOrder = dims.dimensionorder;
+              this.bytesPerSample = getBytesPerSample(dims.pixeltype);
+              return _context2.abrupt("return", vol);
+            case 13:
+            case "end":
+              return _context2.stop();
           }
         }, _callee2, this);
       }));
-
       function createVolume(_x3) {
         return _createVolume.apply(this, arguments);
       }
-
       return createVolume;
     }()
   }, {
@@ -9634,90 +9056,88 @@ var TiffLoader = /*#__PURE__*/function () {
     value: function () {
       var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(vol, onChannelLoaded) {
         var _this = this;
-
         var dims, imageInfo, _loop, channel;
-
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee3$(_context3) {
-          while (1) {
-            switch (_context3.prev = _context3.next) {
-              case 0:
-                if (!(this.bytesPerSample === undefined || this.dimensionOrder === undefined)) {
-                  _context3.next = 6;
-                  break;
-                }
-
-                _context3.next = 3;
-                return getDimsFromUrl(vol.loadSpec.url);
-
-              case 3:
-                dims = _context3.sent;
-                this.dimensionOrder = dims.dimensionorder;
-                this.bytesPerSample = getBytesPerSample(dims.pixeltype);
-
-              case 6:
-                imageInfo = vol.imageInfo; // do each channel on a worker?
-
-                _loop = function _loop(channel) {
-                  var params = {
-                    channel: channel,
-                    // these are target xy sizes for the in-memory volume data
-                    // they may or may not be the same size as original xy sizes
-                    tilesizex: imageInfo.tile_width,
-                    tilesizey: imageInfo.tile_height,
-                    sizec: imageInfo.channels,
-                    sizez: imageInfo.tiles,
-                    dimensionOrder: _this.dimensionOrder,
-                    bytesPerSample: _this.bytesPerSample,
-                    url: vol.loadSpec.url
-                  };
-                  var worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchTiffWorker_ts"), __webpack_require__.b));
-
-                  worker.onmessage = function (e) {
-                    var u8 = e.data.data;
-                    var channel = e.data.channel;
-                    vol.setChannelDataFromVolume(channel, u8);
-
-                    if (onChannelLoaded) {
-                      // make up a unique name? or have caller pass this in?
-                      onChannelLoaded(vol.loadSpec.url, vol, channel);
-                    }
-
-                    worker.terminate();
-                  };
-
-                  worker.onerror = function (e) {
-                    alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
-                  };
-
-                  worker.postMessage(params);
-                };
-
-                for (channel = 0; channel < imageInfo.channels; ++channel) {
-                  _loop(channel);
-                }
-
-                this.dimensionOrder = undefined;
-                this.bytesPerSample = undefined;
-
-              case 11:
-              case "end":
-                return _context3.stop();
-            }
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee3$(_context4) {
+          while (1) switch (_context4.prev = _context4.next) {
+            case 0:
+              if (!(this.bytesPerSample === undefined || this.dimensionOrder === undefined)) {
+                _context4.next = 6;
+                break;
+              }
+              _context4.next = 3;
+              return getDimsFromUrl(vol.loadSpec.url);
+            case 3:
+              dims = _context4.sent;
+              this.dimensionOrder = dims.dimensionorder;
+              this.bytesPerSample = getBytesPerSample(dims.pixeltype);
+            case 6:
+              imageInfo = vol.imageInfo; // do each channel on a worker?
+              _loop = /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _loop() {
+                var params, worker;
+                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _loop$(_context3) {
+                  while (1) switch (_context3.prev = _context3.next) {
+                    case 0:
+                      params = {
+                        channel: channel,
+                        // these are target xy sizes for the in-memory volume data
+                        // they may or may not be the same size as original xy sizes
+                        tilesizex: imageInfo.tile_width,
+                        tilesizey: imageInfo.tile_height,
+                        sizec: imageInfo.channels,
+                        sizez: imageInfo.tiles,
+                        dimensionOrder: _this.dimensionOrder,
+                        bytesPerSample: _this.bytesPerSample,
+                        url: vol.loadSpec.url
+                      };
+                      worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchTiffWorker_ts"), __webpack_require__.b));
+                      worker.onmessage = function (e) {
+                        var u8 = e.data.data;
+                        var channel = e.data.channel;
+                        vol.setChannelDataFromVolume(channel, u8);
+                        if (onChannelLoaded) {
+                          // make up a unique name? or have caller pass this in?
+                          onChannelLoaded(vol.loadSpec.url, vol, channel);
+                        }
+                        worker.terminate();
+                      };
+                      worker.onerror = function (e) {
+                        alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
+                      };
+                      worker.postMessage(params);
+                    case 5:
+                    case "end":
+                      return _context3.stop();
+                  }
+                }, _loop);
+              });
+              channel = 0;
+            case 9:
+              if (!(channel < imageInfo.channels)) {
+                _context4.next = 14;
+                break;
+              }
+              return _context4.delegateYield(_loop(), "t0", 11);
+            case 11:
+              ++channel;
+              _context4.next = 9;
+              break;
+            case 14:
+              this.dimensionOrder = undefined;
+              this.bytesPerSample = undefined;
+            case 16:
+            case "end":
+              return _context4.stop();
           }
         }, _callee3, this);
       }));
-
       function loadVolumeData(_x4, _x5) {
         return _loadVolumeData.apply(this, arguments);
       }
-
       return loadVolumeData;
     }()
   }]);
-
   return TiffLoader;
 }();
-
 
 
 /***/ }),
@@ -9731,10 +9151,10 @@ var TiffLoader = /*#__PURE__*/function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "buildDefaultMetadata": () => (/* binding */ buildDefaultMetadata),
-/* harmony export */   "computePackedAtlasDims": () => (/* binding */ computePackedAtlasDims),
-/* harmony export */   "estimateLevelForAtlas": () => (/* binding */ estimateLevelForAtlas),
-/* harmony export */   "unitNameToSymbol": () => (/* binding */ unitNameToSymbol)
+/* harmony export */   buildDefaultMetadata: () => (/* binding */ buildDefaultMetadata),
+/* harmony export */   computePackedAtlasDims: () => (/* binding */ computePackedAtlasDims),
+/* harmony export */   estimateLevelForAtlas: () => (/* binding */ estimateLevelForAtlas),
+/* harmony export */   unitNameToSymbol: () => (/* binding */ unitNameToSymbol)
 /* harmony export */ });
 /* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! regenerator-runtime/runtime */ "./node_modules/regenerator-runtime/runtime.js");
 /* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0__);
@@ -9752,55 +9172,52 @@ var UNIT_SYMBOLS = {
   parsec: "pc",
   second: "s",
   yard: "yd"
-}; // Units which may take SI prefixes (e.g. micro-, tera-)
+};
 
-var SI_UNITS = ["meter", "second"]; // SI prefixes which abbreviate in nonstandard ways
+// Units which may take SI prefixes (e.g. micro-, tera-)
+var SI_UNITS = ["meter", "second"];
 
+// SI prefixes which abbreviate in nonstandard ways
 var SI_PREFIX_ABBVS = {
   micro: "μ",
   deca: "da"
 };
+
 /** Converts a full spatial or temporal unit name supported by OME-Zarr to its unit symbol */
 // (see https://ngff.openmicroscopy.org/latest/#axes-md)
-
 function unitNameToSymbol(unitName) {
   if (unitName === undefined) {
     return null;
   }
-
   if (UNIT_SYMBOLS[unitName]) {
     return UNIT_SYMBOLS[unitName];
   }
-
   var prefixedSIUnit = SI_UNITS.find(function (siUnit) {
     return unitName.endsWith(siUnit);
   });
-
   if (prefixedSIUnit) {
     var prefix = unitName.substring(0, unitName.length - prefixedSIUnit.length);
-
     if (SI_PREFIX_ABBVS[prefix]) {
       // "special" SI prefix
       return SI_PREFIX_ABBVS[prefix] + UNIT_SYMBOLS[prefixedSIUnit];
-    } // almost all SI prefixes are abbreviated by first letter, capitalized if prefix ends with "a"
+    }
 
-
+    // almost all SI prefixes are abbreviated by first letter, capitalized if prefix ends with "a"
     var capitalize = prefix.endsWith("a");
     var prefixAbbr = capitalize ? prefix[0].toUpperCase() : prefix[0];
     return prefixAbbr + UNIT_SYMBOLS[prefixedSIUnit];
   }
-
   return null;
-} // We want to find the most "square" packing of z tw by th tiles.
-// Compute number of rows and columns.
+}
 
+// We want to find the most "square" packing of z tw by th tiles.
+// Compute number of rows and columns.
 function computePackedAtlasDims(z, tw, th) {
   var nextrows = 1;
   var nextcols = z;
   var ratio = nextcols * tw / (nextrows * th);
   var nrows = nextrows;
   var ncols = nextcols;
-
   while (ratio > 1) {
     nrows = nextrows;
     ncols = nextcols;
@@ -9808,7 +9225,6 @@ function computePackedAtlasDims(z, tw, th) {
     nextrows = Math.ceil(z / nextcols);
     ratio = nextcols * tw / (nextrows * th);
   }
-
   return {
     nrows: nrows,
     ncols: ncols
@@ -9819,7 +9235,6 @@ function estimateLevelForAtlas(spatialDimsZYX) {
   // update levelToLoad after we get size info about multiscales.
   // decide to max out at a 4k x 4k texture.
   var levelToLoad = spatialDimsZYX.length - 1;
-
   for (var i = 0; i < spatialDimsZYX.length; ++i) {
     // estimate atlas size:
     var x = spatialDimsZYX[i][2];
@@ -9827,29 +9242,25 @@ function estimateLevelForAtlas(spatialDimsZYX) {
     var z = spatialDimsZYX[i][0];
     var xtiles = Math.floor(maxAtlasEdge / x);
     var ytiles = Math.floor(maxAtlasEdge / y);
-
     if (xtiles * ytiles >= z) {
       console.log("Will load level " + i);
       levelToLoad = i;
       break;
     }
   }
-
   return levelToLoad;
 }
-
 function isEmpty(obj) {
   for (var key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
       return false;
     }
   }
-
   return true;
-} // currently everything needed can come from the imageInfo
+}
+
+// currently everything needed can come from the imageInfo
 // but in the future each IVolumeLoader could have a completely separate implementation.
-
-
 function buildDefaultMetadata(imageInfo) {
   var metadata = {};
   metadata["Dimensions"] = {
@@ -9873,12 +9284,11 @@ function buildDefaultMetadata(imageInfo) {
     z: imageInfo.pixel_size_z + imageInfo.pixel_size_unit
   };
   metadata["Channels"] = imageInfo.channels;
-  metadata["Time series frames"] = imageInfo.times || 1; // don't add User data if it's empty
-
+  metadata["Time series frames"] = imageInfo.times || 1;
+  // don't add User data if it's empty
   if (imageInfo.userData && !isEmpty(imageInfo.userData)) {
     metadata["User data"] = imageInfo.userData;
   }
-
   return metadata;
 }
 
@@ -9893,10 +9303,10 @@ function buildDefaultMetadata(imageInfo) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "ViewportCorner": () => (/* binding */ ViewportCorner),
-/* harmony export */   "isOrthographicCamera": () => (/* binding */ isOrthographicCamera),
-/* harmony export */   "isRight": () => (/* binding */ isRight),
-/* harmony export */   "isTop": () => (/* binding */ isTop)
+/* harmony export */   ViewportCorner: () => (/* binding */ ViewportCorner),
+/* harmony export */   isOrthographicCamera: () => (/* binding */ isOrthographicCamera),
+/* harmony export */   isRight: () => (/* binding */ isRight),
+/* harmony export */   isTop: () => (/* binding */ isTop)
 /* harmony export */ });
 /**
  * Provide options to control the visual appearance of a Volume
@@ -9935,18 +9345,17 @@ __webpack_require__.r(__webpack_exports__);
  * @example let options = {
    };
  */
+
 var isOrthographicCamera = function isOrthographicCamera(def) {
   return def && def.isOrthographicCamera;
 };
-var ViewportCorner;
-
-(function (ViewportCorner) {
+var ViewportCorner = /*#__PURE__*/function (ViewportCorner) {
   ViewportCorner["TOP_LEFT"] = "top_left";
   ViewportCorner["TOP_RIGHT"] = "top_right";
   ViewportCorner["BOTTOM_LEFT"] = "bottom_left";
   ViewportCorner["BOTTOM_RIGHT"] = "bottom_right";
-})(ViewportCorner || (ViewportCorner = {}));
-
+  return ViewportCorner;
+}({});
 var isTop = function isTop(corner) {
   return corner === ViewportCorner.TOP_LEFT || corner === ViewportCorner.TOP_RIGHT;
 };
@@ -9965,12 +9374,12 @@ var isRight = function isRight(corner) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "GUI": () => (/* binding */ GUI$1),
-/* harmony export */   "color": () => (/* binding */ color),
-/* harmony export */   "controllers": () => (/* binding */ controllers),
+/* harmony export */   GUI: () => (/* binding */ GUI$1),
+/* harmony export */   color: () => (/* binding */ color),
+/* harmony export */   controllers: () => (/* binding */ controllers),
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__),
-/* harmony export */   "dom": () => (/* binding */ dom$1),
-/* harmony export */   "gui": () => (/* binding */ gui)
+/* harmony export */   dom: () => (/* binding */ dom$1),
+/* harmony export */   gui: () => (/* binding */ gui)
 /* harmony export */ });
 /**
  * dat-gui JavaScript Controller Library
@@ -12518,6 +11927,7 @@ var runtime = (function (exports) {
 
   var Op = Object.prototype;
   var hasOwn = Op.hasOwnProperty;
+  var defineProperty = Object.defineProperty || function (obj, key, desc) { obj[key] = desc.value; };
   var undefined; // More compressible than void 0.
   var $Symbol = typeof Symbol === "function" ? Symbol : {};
   var iteratorSymbol = $Symbol.iterator || "@@iterator";
@@ -12550,7 +11960,7 @@ var runtime = (function (exports) {
 
     // The ._invoke method unifies the implementations of the .next,
     // .throw, and .return methods.
-    generator._invoke = makeInvokeMethod(innerFn, self, context);
+    defineProperty(generator, "_invoke", { value: makeInvokeMethod(innerFn, self, context) });
 
     return generator;
   }
@@ -12611,8 +12021,12 @@ var runtime = (function (exports) {
   var Gp = GeneratorFunctionPrototype.prototype =
     Generator.prototype = Object.create(IteratorPrototype);
   GeneratorFunction.prototype = GeneratorFunctionPrototype;
-  define(Gp, "constructor", GeneratorFunctionPrototype);
-  define(GeneratorFunctionPrototype, "constructor", GeneratorFunction);
+  defineProperty(Gp, "constructor", { value: GeneratorFunctionPrototype, configurable: true });
+  defineProperty(
+    GeneratorFunctionPrototype,
+    "constructor",
+    { value: GeneratorFunction, configurable: true }
+  );
   GeneratorFunction.displayName = define(
     GeneratorFunctionPrototype,
     toStringTagSymbol,
@@ -12722,7 +12136,7 @@ var runtime = (function (exports) {
 
     // Define the unified helper method that is used to implement .next,
     // .throw, and .return (see defineIteratorMethods).
-    this._invoke = enqueue;
+    defineProperty(this, "_invoke", { value: enqueue });
   }
 
   defineIteratorMethods(AsyncIterator.prototype);
@@ -12832,31 +12246,32 @@ var runtime = (function (exports) {
   // delegate iterator, or by modifying context.method and context.arg,
   // setting context.delegate to null, and returning the ContinueSentinel.
   function maybeInvokeDelegate(delegate, context) {
-    var method = delegate.iterator[context.method];
+    var methodName = context.method;
+    var method = delegate.iterator[methodName];
     if (method === undefined) {
       // A .throw or .return when the delegate iterator has no .throw
-      // method always terminates the yield* loop.
+      // method, or a missing .next mehtod, always terminate the
+      // yield* loop.
       context.delegate = null;
 
-      if (context.method === "throw") {
-        // Note: ["return"] must be used for ES3 parsing compatibility.
-        if (delegate.iterator["return"]) {
-          // If the delegate iterator has a return method, give it a
-          // chance to clean up.
-          context.method = "return";
-          context.arg = undefined;
-          maybeInvokeDelegate(delegate, context);
+      // Note: ["return"] must be used for ES3 parsing compatibility.
+      if (methodName === "throw" && delegate.iterator["return"]) {
+        // If the delegate iterator has a return method, give it a
+        // chance to clean up.
+        context.method = "return";
+        context.arg = undefined;
+        maybeInvokeDelegate(delegate, context);
 
-          if (context.method === "throw") {
-            // If maybeInvokeDelegate(context) changed context.method from
-            // "return" to "throw", let that override the TypeError below.
-            return ContinueSentinel;
-          }
+        if (context.method === "throw") {
+          // If maybeInvokeDelegate(context) changed context.method from
+          // "return" to "throw", let that override the TypeError below.
+          return ContinueSentinel;
         }
-
+      }
+      if (methodName !== "return") {
         context.method = "throw";
         context.arg = new TypeError(
-          "The iterator does not provide a 'throw' method");
+          "The iterator does not provide a '" + methodName + "' method");
       }
 
       return ContinueSentinel;
@@ -12960,7 +12375,8 @@ var runtime = (function (exports) {
     this.reset(true);
   }
 
-  exports.keys = function(object) {
+  exports.keys = function(val) {
+    var object = Object(val);
     var keys = [];
     for (var key in object) {
       keys.push(key);
@@ -13270,7 +12686,7 @@ try {
   \**************************************************/
 /***/ (function(__unused_webpack_module, exports) {
 
-/*! Tweakpane 3.1.9 (c) 2016 cocopon, licensed under the MIT license. */
+/*! Tweakpane 3.1.10 (c) 2016 cocopon, licensed under the MIT license. */
 (function (global, factory) {
      true ? factory(exports) :
     0;
@@ -15799,16 +15215,6 @@ try {
             config.viewProps.bindClassModifiers(this.element);
             const selectElem = doc.createElement('select');
             selectElem.classList.add(className$j('s'));
-            bindValueMap(this.props_, 'options', (opts) => {
-                removeChildElements(selectElem);
-                opts.forEach((item, index) => {
-                    const optionElem = doc.createElement('option');
-                    optionElem.dataset.index = String(index);
-                    optionElem.textContent = item.text;
-                    optionElem.value = String(item.value);
-                    selectElem.appendChild(optionElem);
-                });
-            });
             config.viewProps.bindDisabled(selectElem);
             this.element.appendChild(selectElem);
             this.selectElement = selectElem;
@@ -15818,10 +15224,19 @@ try {
             this.element.appendChild(markElem);
             config.value.emitter.on('change', this.onValueChange_);
             this.value_ = config.value;
-            this.update_();
+            bindValueMap(this.props_, 'options', (opts) => {
+                removeChildElements(this.selectElement);
+                opts.forEach((item) => {
+                    const optionElem = doc.createElement('option');
+                    optionElem.textContent = item.text;
+                    this.selectElement.appendChild(optionElem);
+                });
+                this.update_();
+            });
         }
         update_() {
-            this.selectElement.value = String(this.value_.rawValue);
+            const values = this.props_.get('options').map((o) => o.value);
+            this.selectElement.selectedIndex = values.indexOf(this.value_.rawValue);
         }
         onValueChange_() {
             this.update_();
@@ -15843,12 +15258,8 @@ try {
         }
         onSelectChange_(e) {
             const selectElem = forceCast(e.currentTarget);
-            const optElem = selectElem.selectedOptions.item(0);
-            if (!optElem) {
-                return;
-            }
-            const itemIndex = Number(optElem.dataset.index);
-            this.value.rawValue = this.props.get('options')[itemIndex].value;
+            this.value.rawValue =
+                this.props.get('options')[selectElem.selectedIndex].value;
         }
     }
 
@@ -20886,7 +20297,7 @@ try {
         }
     }
 
-    const VERSION = new Semver('3.1.9');
+    const VERSION = new Semver('3.1.10');
 
     exports.BladeApi = BladeApi;
     exports.ButtonApi = ButtonApi;
@@ -20946,7 +20357,7 @@ function findTagByName(xml, tagName, options) {
 
   if (debug) console.log("[xml-utils] starting findTagByName with", tagName, " and ", options);
 
-  const start = indexOfMatch(xml, `\<${tagName}[ \>\/]`, startIndex);
+  const start = indexOfMatch(xml, `\<${tagName}[ \n\>\/]`, startIndex);
   if (debug) console.log("[xml-utils] start:", start);
   if (start === -1) return undefined;
 
@@ -20965,8 +20376,8 @@ function findTagByName(xml, tagName, options) {
       let closings = 0;
       while ((relativeEnd = indexOfMatchEnd(afterStart, "[ /]" + tagName + ">", startIndex)) !== -1) {
         const clip = afterStart.substring(startIndex, relativeEnd + 1);
-        openings += countSubstring(clip, "<" + tagName);
-        closings += countSubstring(clip, "/" + tagName + ">");
+        openings += countSubstring(clip, "<" + tagName + "[ \n\t>]");
+        closings += countSubstring(clip, "</" + tagName + ">");
         // we can't have more openings than closings
         if (closings >= openings) break;
         startIndex = relativeEnd;
@@ -21039,17 +20450,24 @@ module.exports["default"] = findTagsByName;
 
 function getAttribute(tag, attributeName, options) {
   const debug = (options && options.debug) || false;
-  if (debug) console.log("getting " + attributeName + " in " + tag);
+  if (debug) console.log("[xml-utils] getting " + attributeName + " in " + tag);
 
   const xml = typeof tag === "object" ? tag.outer : tag;
 
-  const pattern = `${attributeName}\\="\([^"]*\)"`;
-  if (debug) console.log("pattern:", pattern);
+  // only search for attributes in the opening tag
+  const opening = xml.slice(0, xml.indexOf(">") + 1);
 
-  const re = new RegExp(pattern);
-  const match = re.exec(xml);
-  if (debug) console.log("match:", match);
-  if (match) return match[1];
+  const quotechars = ['"', "'"];
+  for (let i = 0; i < quotechars.length; i++) {
+    const char = quotechars[i];
+    const pattern = attributeName + "\\=" + char + "([^" + char + "]*)" + char;
+    if (debug) console.log("[xml-utils] pattern:", pattern);
+
+    const re = new RegExp(pattern);
+    const match = re.exec(opening);
+    if (debug) console.log("[xml-utils] match:", match);
+    if (match) return match[1];
+  }
 }
 
 module.exports = getAttribute;
@@ -21143,22 +20561,21 @@ module.exports["default"] = indexOfMatch;
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 var _typeof = (__webpack_require__(/*! ./typeof.js */ "./node_modules/@babel/runtime/helpers/typeof.js")["default"]);
-
 function _regeneratorRuntime() {
-  "use strict";
-  /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */
-
+  "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */
   module.exports = _regeneratorRuntime = function _regeneratorRuntime() {
     return exports;
   }, module.exports.__esModule = true, module.exports["default"] = module.exports;
   var exports = {},
-      Op = Object.prototype,
-      hasOwn = Op.hasOwnProperty,
-      $Symbol = "function" == typeof Symbol ? Symbol : {},
-      iteratorSymbol = $Symbol.iterator || "@@iterator",
-      asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator",
-      toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
-
+    Op = Object.prototype,
+    hasOwn = Op.hasOwnProperty,
+    defineProperty = Object.defineProperty || function (obj, key, desc) {
+      obj[key] = desc.value;
+    },
+    $Symbol = "function" == typeof Symbol ? Symbol : {},
+    iteratorSymbol = $Symbol.iterator || "@@iterator",
+    asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator",
+    toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
   function define(obj, key, value) {
     return Object.defineProperty(obj, key, {
       value: value,
@@ -21167,7 +20584,6 @@ function _regeneratorRuntime() {
       writable: !0
     }), obj[key];
   }
-
   try {
     define({}, "");
   } catch (err) {
@@ -21175,54 +20591,14 @@ function _regeneratorRuntime() {
       return obj[key] = value;
     };
   }
-
   function wrap(innerFn, outerFn, self, tryLocsList) {
     var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator,
-        generator = Object.create(protoGenerator.prototype),
-        context = new Context(tryLocsList || []);
-    return generator._invoke = function (innerFn, self, context) {
-      var state = "suspendedStart";
-      return function (method, arg) {
-        if ("executing" === state) throw new Error("Generator is already running");
-
-        if ("completed" === state) {
-          if ("throw" === method) throw arg;
-          return doneResult();
-        }
-
-        for (context.method = method, context.arg = arg;;) {
-          var delegate = context.delegate;
-
-          if (delegate) {
-            var delegateResult = maybeInvokeDelegate(delegate, context);
-
-            if (delegateResult) {
-              if (delegateResult === ContinueSentinel) continue;
-              return delegateResult;
-            }
-          }
-
-          if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) {
-            if ("suspendedStart" === state) throw state = "completed", context.arg;
-            context.dispatchException(context.arg);
-          } else "return" === context.method && context.abrupt("return", context.arg);
-          state = "executing";
-          var record = tryCatch(innerFn, self, context);
-
-          if ("normal" === record.type) {
-            if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue;
-            return {
-              value: record.arg,
-              done: context.done
-            };
-          }
-
-          "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg);
-        }
-      };
-    }(innerFn, self, context), generator;
+      generator = Object.create(protoGenerator.prototype),
+      context = new Context(tryLocsList || []);
+    return defineProperty(generator, "_invoke", {
+      value: makeInvokeMethod(innerFn, self, context)
+    }), generator;
   }
-
   function tryCatch(fn, obj, arg) {
     try {
       return {
@@ -21236,25 +20612,19 @@ function _regeneratorRuntime() {
       };
     }
   }
-
   exports.wrap = wrap;
   var ContinueSentinel = {};
-
   function Generator() {}
-
   function GeneratorFunction() {}
-
   function GeneratorFunctionPrototype() {}
-
   var IteratorPrototype = {};
   define(IteratorPrototype, iteratorSymbol, function () {
     return this;
   });
   var getProto = Object.getPrototypeOf,
-      NativeIteratorPrototype = getProto && getProto(getProto(values([])));
+    NativeIteratorPrototype = getProto && getProto(getProto(values([])));
   NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype);
   var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype);
-
   function defineIteratorMethods(prototype) {
     ["next", "throw", "return"].forEach(function (method) {
       define(prototype, method, function (arg) {
@@ -21262,14 +20632,12 @@ function _regeneratorRuntime() {
       });
     });
   }
-
   function AsyncIterator(generator, PromiseImpl) {
     function invoke(method, arg, resolve, reject) {
       var record = tryCatch(generator[method], generator, arg);
-
       if ("throw" !== record.type) {
         var result = record.arg,
-            value = result.value;
+          value = result.value;
         return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) {
           invoke("next", value, resolve, reject);
         }, function (err) {
@@ -21280,92 +20648,109 @@ function _regeneratorRuntime() {
           return invoke("throw", error, resolve, reject);
         });
       }
-
       reject(record.arg);
     }
-
     var previousPromise;
-
-    this._invoke = function (method, arg) {
-      function callInvokeWithMethodAndArg() {
-        return new PromiseImpl(function (resolve, reject) {
-          invoke(method, arg, resolve, reject);
-        });
+    defineProperty(this, "_invoke", {
+      value: function value(method, arg) {
+        function callInvokeWithMethodAndArg() {
+          return new PromiseImpl(function (resolve, reject) {
+            invoke(method, arg, resolve, reject);
+          });
+        }
+        return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg();
       }
-
-      return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg();
+    });
+  }
+  function makeInvokeMethod(innerFn, self, context) {
+    var state = "suspendedStart";
+    return function (method, arg) {
+      if ("executing" === state) throw new Error("Generator is already running");
+      if ("completed" === state) {
+        if ("throw" === method) throw arg;
+        return doneResult();
+      }
+      for (context.method = method, context.arg = arg;;) {
+        var delegate = context.delegate;
+        if (delegate) {
+          var delegateResult = maybeInvokeDelegate(delegate, context);
+          if (delegateResult) {
+            if (delegateResult === ContinueSentinel) continue;
+            return delegateResult;
+          }
+        }
+        if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) {
+          if ("suspendedStart" === state) throw state = "completed", context.arg;
+          context.dispatchException(context.arg);
+        } else "return" === context.method && context.abrupt("return", context.arg);
+        state = "executing";
+        var record = tryCatch(innerFn, self, context);
+        if ("normal" === record.type) {
+          if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue;
+          return {
+            value: record.arg,
+            done: context.done
+          };
+        }
+        "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg);
+      }
     };
   }
-
   function maybeInvokeDelegate(delegate, context) {
-    var method = delegate.iterator[context.method];
-
-    if (undefined === method) {
-      if (context.delegate = null, "throw" === context.method) {
-        if (delegate.iterator["return"] && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method)) return ContinueSentinel;
-        context.method = "throw", context.arg = new TypeError("The iterator does not provide a 'throw' method");
-      }
-
-      return ContinueSentinel;
-    }
-
+    var methodName = context.method,
+      method = delegate.iterator[methodName];
+    if (undefined === method) return context.delegate = null, "throw" === methodName && delegate.iterator["return"] && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method) || "return" !== methodName && (context.method = "throw", context.arg = new TypeError("The iterator does not provide a '" + methodName + "' method")), ContinueSentinel;
     var record = tryCatch(method, delegate.iterator, context.arg);
     if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel;
     var info = record.arg;
     return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel);
   }
-
   function pushTryEntry(locs) {
     var entry = {
       tryLoc: locs[0]
     };
     1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry);
   }
-
   function resetTryEntry(entry) {
     var record = entry.completion || {};
     record.type = "normal", delete record.arg, entry.completion = record;
   }
-
   function Context(tryLocsList) {
     this.tryEntries = [{
       tryLoc: "root"
     }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0);
   }
-
   function values(iterable) {
     if (iterable) {
       var iteratorMethod = iterable[iteratorSymbol];
       if (iteratorMethod) return iteratorMethod.call(iterable);
       if ("function" == typeof iterable.next) return iterable;
-
       if (!isNaN(iterable.length)) {
         var i = -1,
-            next = function next() {
-          for (; ++i < iterable.length;) {
-            if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next;
-          }
-
-          return next.value = undefined, next.done = !0, next;
-        };
-
+          next = function next() {
+            for (; ++i < iterable.length;) if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next;
+            return next.value = undefined, next.done = !0, next;
+          };
         return next.next = next;
       }
     }
-
     return {
       next: doneResult
     };
   }
-
   function doneResult() {
     return {
       value: undefined,
       done: !0
     };
   }
-
-  return GeneratorFunction.prototype = GeneratorFunctionPrototype, define(Gp, "constructor", GeneratorFunctionPrototype), define(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) {
+  return GeneratorFunction.prototype = GeneratorFunctionPrototype, defineProperty(Gp, "constructor", {
+    value: GeneratorFunctionPrototype,
+    configurable: !0
+  }), defineProperty(GeneratorFunctionPrototype, "constructor", {
+    value: GeneratorFunction,
+    configurable: !0
+  }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) {
     var ctor = "function" == typeof genFun && genFun.constructor;
     return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name));
   }, exports.mark = function (genFun) {
@@ -21386,27 +20771,21 @@ function _regeneratorRuntime() {
     return this;
   }), define(Gp, "toString", function () {
     return "[object Generator]";
-  }), exports.keys = function (object) {
-    var keys = [];
-
-    for (var key in object) {
-      keys.push(key);
-    }
-
+  }), exports.keys = function (val) {
+    var object = Object(val),
+      keys = [];
+    for (var key in object) keys.push(key);
     return keys.reverse(), function next() {
       for (; keys.length;) {
         var key = keys.pop();
         if (key in object) return next.value = key, next.done = !1, next;
       }
-
       return next.done = !0, next;
     };
   }, exports.values = values, Context.prototype = {
     constructor: Context,
     reset: function reset(skipTempReset) {
-      if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) {
-        "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined);
-      }
+      if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined);
     },
     stop: function stop() {
       this.done = !0;
@@ -21417,20 +20796,16 @@ function _regeneratorRuntime() {
     dispatchException: function dispatchException(exception) {
       if (this.done) throw exception;
       var context = this;
-
       function handle(loc, caught) {
         return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught;
       }
-
       for (var i = this.tryEntries.length - 1; i >= 0; --i) {
         var entry = this.tryEntries[i],
-            record = entry.completion;
+          record = entry.completion;
         if ("root" === entry.tryLoc) return handle("end");
-
         if (entry.tryLoc <= this.prev) {
           var hasCatch = hasOwn.call(entry, "catchLoc"),
-              hasFinally = hasOwn.call(entry, "finallyLoc");
-
+            hasFinally = hasOwn.call(entry, "finallyLoc");
           if (hasCatch && hasFinally) {
             if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0);
             if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc);
@@ -21446,13 +20821,11 @@ function _regeneratorRuntime() {
     abrupt: function abrupt(type, arg) {
       for (var i = this.tryEntries.length - 1; i >= 0; --i) {
         var entry = this.tryEntries[i];
-
         if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) {
           var finallyEntry = entry;
           break;
         }
       }
-
       finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null);
       var record = finallyEntry ? finallyEntry.completion : {};
       return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record);
@@ -21470,19 +20843,15 @@ function _regeneratorRuntime() {
     "catch": function _catch(tryLoc) {
       for (var i = this.tryEntries.length - 1; i >= 0; --i) {
         var entry = this.tryEntries[i];
-
         if (entry.tryLoc === tryLoc) {
           var record = entry.completion;
-
           if ("throw" === record.type) {
             var thrown = record.arg;
             resetTryEntry(entry);
           }
-
           return thrown;
         }
       }
-
       throw new Error("illegal catch attempt");
     },
     delegateYield: function delegateYield(iterable, resultName, nextLoc) {
@@ -21494,7 +20863,6 @@ function _regeneratorRuntime() {
     }
   }, exports;
 }
-
 module.exports = _regeneratorRuntime, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
 /***/ }),
@@ -21514,7 +20882,6 @@ function _typeof(obj) {
     return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
   }, module.exports.__esModule = true, module.exports["default"] = module.exports), _typeof(obj);
 }
-
 module.exports = _typeof, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
 /***/ }),
@@ -21557,11 +20924,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 function _arrayLikeToArray(arr, len) {
   if (len == null || len > arr.length) len = arr.length;
-
-  for (var i = 0, arr2 = new Array(len); i < len; i++) {
-    arr2[i] = arr[i];
-  }
-
+  for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
   return arr2;
 }
 
@@ -21599,7 +20962,6 @@ function _assertThisInitialized(self) {
   if (self === void 0) {
     throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
   }
-
   return self;
 }
 
@@ -21624,29 +20986,24 @@ function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) {
     reject(error);
     return;
   }
-
   if (info.done) {
     resolve(value);
   } else {
     Promise.resolve(value).then(_next, _throw);
   }
 }
-
 function _asyncToGenerator(fn) {
   return function () {
     var self = this,
-        args = arguments;
+      args = arguments;
     return new Promise(function (resolve, reject) {
       var gen = fn.apply(self, args);
-
       function _next(value) {
         asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value);
       }
-
       function _throw(err) {
         asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err);
       }
-
       _next(undefined);
     });
   };
@@ -21684,16 +21041,17 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ _createClass)
 /* harmony export */ });
+/* harmony import */ var _toPropertyKey_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./toPropertyKey.js */ "./node_modules/@babel/runtime/helpers/esm/toPropertyKey.js");
+
 function _defineProperties(target, props) {
   for (var i = 0; i < props.length; i++) {
     var descriptor = props[i];
     descriptor.enumerable = descriptor.enumerable || false;
     descriptor.configurable = true;
     if ("value" in descriptor) descriptor.writable = true;
-    Object.defineProperty(target, descriptor.key, descriptor);
+    Object.defineProperty(target, (0,_toPropertyKey_js__WEBPACK_IMPORTED_MODULE_0__["default"])(descriptor.key), descriptor);
   }
 }
-
 function _createClass(Constructor, protoProps, staticProps) {
   if (protoProps) _defineProperties(Constructor.prototype, protoProps);
   if (staticProps) _defineProperties(Constructor, staticProps);
@@ -21716,7 +21074,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ _defineProperty)
 /* harmony export */ });
+/* harmony import */ var _toPropertyKey_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./toPropertyKey.js */ "./node_modules/@babel/runtime/helpers/esm/toPropertyKey.js");
+
 function _defineProperty(obj, key, value) {
+  key = (0,_toPropertyKey_js__WEBPACK_IMPORTED_MODULE_0__["default"])(key);
   if (key in obj) {
     Object.defineProperty(obj, key, {
       value: value,
@@ -21727,7 +21088,6 @@ function _defineProperty(obj, key, value) {
   } else {
     obj[key] = value;
   }
-
   return obj;
 }
 
@@ -21770,7 +21130,6 @@ function _inherits(subClass, superClass) {
   if (typeof superClass !== "function" && superClass !== null) {
     throw new TypeError("Super expression must either be null or a function");
   }
-
   subClass.prototype = Object.create(superClass && superClass.prototype, {
     constructor: {
       value: subClass,
@@ -21798,33 +21157,31 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (/* binding */ _iterableToArrayLimit)
 /* harmony export */ });
 function _iterableToArrayLimit(arr, i) {
-  var _i = arr == null ? null : typeof Symbol !== "undefined" && arr[Symbol.iterator] || arr["@@iterator"];
-
-  if (_i == null) return;
-  var _arr = [];
-  var _n = true;
-  var _d = false;
-
-  var _s, _e;
-
-  try {
-    for (_i = _i.call(arr); !(_n = (_s = _i.next()).done); _n = true) {
-      _arr.push(_s.value);
-
-      if (i && _arr.length === i) break;
-    }
-  } catch (err) {
-    _d = true;
-    _e = err;
-  } finally {
+  var _i = null == arr ? null : "undefined" != typeof Symbol && arr[Symbol.iterator] || arr["@@iterator"];
+  if (null != _i) {
+    var _s,
+      _e,
+      _x,
+      _r,
+      _arr = [],
+      _n = !0,
+      _d = !1;
     try {
-      if (!_n && _i["return"] != null) _i["return"]();
+      if (_x = (_i = _i.call(arr)).next, 0 === i) {
+        if (Object(_i) !== _i) return;
+        _n = !1;
+      } else for (; !(_n = (_s = _x.call(_i)).done) && (_arr.push(_s.value), _arr.length !== i); _n = !0);
+    } catch (err) {
+      _d = !0, _e = err;
     } finally {
-      if (_d) throw _e;
+      try {
+        if (!_n && null != _i["return"] && (_r = _i["return"](), Object(_r) !== _r)) return;
+      } finally {
+        if (_d) throw _e;
+      }
     }
+    return _arr;
   }
-
-  return _arr;
 }
 
 /***/ }),
@@ -21867,7 +21224,6 @@ function _possibleConstructorReturn(self, call) {
   } else if (call !== void 0) {
     throw new TypeError("Derived constructors may only return object or undefined");
   }
-
   return (0,_assertThisInitialized_js__WEBPACK_IMPORTED_MODULE_1__["default"])(self);
 }
 
@@ -21915,6 +21271,54 @@ __webpack_require__.r(__webpack_exports__);
 
 function _slicedToArray(arr, i) {
   return (0,_arrayWithHoles_js__WEBPACK_IMPORTED_MODULE_0__["default"])(arr) || (0,_iterableToArrayLimit_js__WEBPACK_IMPORTED_MODULE_1__["default"])(arr, i) || (0,_unsupportedIterableToArray_js__WEBPACK_IMPORTED_MODULE_2__["default"])(arr, i) || (0,_nonIterableRest_js__WEBPACK_IMPORTED_MODULE_3__["default"])();
+}
+
+/***/ }),
+
+/***/ "./node_modules/@babel/runtime/helpers/esm/toPrimitive.js":
+/*!****************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/esm/toPrimitive.js ***!
+  \****************************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ _toPrimitive)
+/* harmony export */ });
+/* harmony import */ var _typeof_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./typeof.js */ "./node_modules/@babel/runtime/helpers/esm/typeof.js");
+
+function _toPrimitive(input, hint) {
+  if ((0,_typeof_js__WEBPACK_IMPORTED_MODULE_0__["default"])(input) !== "object" || input === null) return input;
+  var prim = input[Symbol.toPrimitive];
+  if (prim !== undefined) {
+    var res = prim.call(input, hint || "default");
+    if ((0,_typeof_js__WEBPACK_IMPORTED_MODULE_0__["default"])(res) !== "object") return res;
+    throw new TypeError("@@toPrimitive must return a primitive value.");
+  }
+  return (hint === "string" ? String : Number)(input);
+}
+
+/***/ }),
+
+/***/ "./node_modules/@babel/runtime/helpers/esm/toPropertyKey.js":
+/*!******************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/esm/toPropertyKey.js ***!
+  \******************************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ _toPropertyKey)
+/* harmony export */ });
+/* harmony import */ var _typeof_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./typeof.js */ "./node_modules/@babel/runtime/helpers/esm/typeof.js");
+/* harmony import */ var _toPrimitive_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./toPrimitive.js */ "./node_modules/@babel/runtime/helpers/esm/toPrimitive.js");
+
+
+function _toPropertyKey(arg) {
+  var key = (0,_toPrimitive_js__WEBPACK_IMPORTED_MODULE_1__["default"])(arg, "string");
+  return (0,_typeof_js__WEBPACK_IMPORTED_MODULE_0__["default"])(key) === "symbol" ? key : String(key);
 }
 
 /***/ }),
@@ -21975,8 +21379,8 @@ function _unsupportedIterableToArray(o, minLen) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "getFloat16": () => (/* binding */ getFloat16),
-/* harmony export */   "setFloat16": () => (/* binding */ setFloat16)
+/* harmony export */   getFloat16: () => (/* binding */ getFloat16),
+/* harmony export */   setFloat16: () => (/* binding */ setFloat16)
 /* harmony export */ });
 /* harmony import */ var _util_arrayIterator_mjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./_util/arrayIterator.mjs */ "./node_modules/@petamoriken/float16/src/_util/arrayIterator.mjs");
 /* harmony import */ var _util_converter_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./_util/converter.mjs */ "./node_modules/@petamoriken/float16/src/_util/converter.mjs");
@@ -22028,8 +21432,8 @@ function setFloat16(dataView, byteOffset, value, ...opts) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "safeIfNeeded": () => (/* binding */ safeIfNeeded),
-/* harmony export */   "wrap": () => (/* binding */ wrap)
+/* harmony export */   safeIfNeeded: () => (/* binding */ safeIfNeeded),
+/* harmony export */   wrap: () => (/* binding */ wrap)
 /* harmony export */ });
 /* harmony import */ var _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./primordials.mjs */ "./node_modules/@petamoriken/float16/src/_util/primordials.mjs");
 
@@ -22058,7 +21462,10 @@ const SafeIteratorPrototype = (0,_primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.O
  * @type {<T>(array: T[]) => Iterable<T>}
  */
 function safeIfNeeded(array) {
-  if (array[_primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.SymbolIterator] === _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.NativeArrayPrototypeSymbolIterator) {
+  if (
+    array[_primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.SymbolIterator] === _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.NativeArrayPrototypeSymbolIterator &&
+    _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.ArrayIteratorPrototype.next === _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.ArrayIteratorPrototypeNext
+  ) {
     return array;
   }
 
@@ -22115,8 +21522,8 @@ function wrap(generator) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "convertToNumber": () => (/* binding */ convertToNumber),
-/* harmony export */   "roundToFloat16Bits": () => (/* binding */ roundToFloat16Bits)
+/* harmony export */   convertToNumber: () => (/* binding */ convertToNumber),
+/* harmony export */   roundToFloat16Bits: () => (/* binding */ roundToFloat16Bits)
 /* harmony export */ });
 /* harmony import */ var _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./primordials.mjs */ "./node_modules/@petamoriken/float16/src/_util/primordials.mjs");
 // algorithm: http://fox-toolkit.org/ftp/fasthalffloatconversion.pdf
@@ -22246,18 +21653,19 @@ function convertToNumber(float16bits) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "ATTEMPTING_TO_ACCESS_DETACHED_ARRAYBUFFER": () => (/* binding */ ATTEMPTING_TO_ACCESS_DETACHED_ARRAYBUFFER),
-/* harmony export */   "CANNOT_CONVERT_UNDEFINED_OR_NULL_TO_OBJECT": () => (/* binding */ CANNOT_CONVERT_UNDEFINED_OR_NULL_TO_OBJECT),
-/* harmony export */   "CANNOT_MIX_BIGINT_AND_OTHER_TYPES": () => (/* binding */ CANNOT_MIX_BIGINT_AND_OTHER_TYPES),
-/* harmony export */   "DERIVED_CONSTRUCTOR_CREATED_TYPEDARRAY_OBJECT_WHICH_WAS_TOO_SMALL_LENGTH": () => (/* binding */ DERIVED_CONSTRUCTOR_CREATED_TYPEDARRAY_OBJECT_WHICH_WAS_TOO_SMALL_LENGTH),
-/* harmony export */   "ITERATOR_PROPERTY_IS_NOT_CALLABLE": () => (/* binding */ ITERATOR_PROPERTY_IS_NOT_CALLABLE),
-/* harmony export */   "OFFSET_IS_OUT_OF_BOUNDS": () => (/* binding */ OFFSET_IS_OUT_OF_BOUNDS),
-/* harmony export */   "REDUCE_OF_EMPTY_ARRAY_WITH_NO_INITIAL_VALUE": () => (/* binding */ REDUCE_OF_EMPTY_ARRAY_WITH_NO_INITIAL_VALUE),
-/* harmony export */   "SPECIES_CONSTRUCTOR_DIDNT_RETURN_TYPEDARRAY_OBJECT": () => (/* binding */ SPECIES_CONSTRUCTOR_DIDNT_RETURN_TYPEDARRAY_OBJECT),
-/* harmony export */   "THE_CONSTRUCTOR_PROPERTY_VALUE_IS_NOT_AN_OBJECT": () => (/* binding */ THE_CONSTRUCTOR_PROPERTY_VALUE_IS_NOT_AN_OBJECT),
-/* harmony export */   "THIS_CONSTRUCTOR_IS_NOT_A_SUBCLASS_OF_FLOAT16ARRAY": () => (/* binding */ THIS_CONSTRUCTOR_IS_NOT_A_SUBCLASS_OF_FLOAT16ARRAY),
-/* harmony export */   "THIS_IS_NOT_AN_OBJECT": () => (/* binding */ THIS_IS_NOT_AN_OBJECT),
-/* harmony export */   "THIS_IS_NOT_A_FLOAT16ARRAY_OBJECT": () => (/* binding */ THIS_IS_NOT_A_FLOAT16ARRAY_OBJECT)
+/* harmony export */   ATTEMPTING_TO_ACCESS_DETACHED_ARRAYBUFFER: () => (/* binding */ ATTEMPTING_TO_ACCESS_DETACHED_ARRAYBUFFER),
+/* harmony export */   CANNOT_CONVERT_UNDEFINED_OR_NULL_TO_OBJECT: () => (/* binding */ CANNOT_CONVERT_UNDEFINED_OR_NULL_TO_OBJECT),
+/* harmony export */   CANNOT_MIX_BIGINT_AND_OTHER_TYPES: () => (/* binding */ CANNOT_MIX_BIGINT_AND_OTHER_TYPES),
+/* harmony export */   DERIVED_CONSTRUCTOR_CREATED_TYPEDARRAY_OBJECT_WHICH_WAS_TOO_SMALL_LENGTH: () => (/* binding */ DERIVED_CONSTRUCTOR_CREATED_TYPEDARRAY_OBJECT_WHICH_WAS_TOO_SMALL_LENGTH),
+/* harmony export */   ITERATOR_PROPERTY_IS_NOT_CALLABLE: () => (/* binding */ ITERATOR_PROPERTY_IS_NOT_CALLABLE),
+/* harmony export */   OFFSET_IS_OUT_OF_BOUNDS: () => (/* binding */ OFFSET_IS_OUT_OF_BOUNDS),
+/* harmony export */   REDUCE_OF_EMPTY_ARRAY_WITH_NO_INITIAL_VALUE: () => (/* binding */ REDUCE_OF_EMPTY_ARRAY_WITH_NO_INITIAL_VALUE),
+/* harmony export */   SPECIES_CONSTRUCTOR_DIDNT_RETURN_TYPEDARRAY_OBJECT: () => (/* binding */ SPECIES_CONSTRUCTOR_DIDNT_RETURN_TYPEDARRAY_OBJECT),
+/* harmony export */   THE_COMPARISON_FUNCTION_MUST_BE_EITHER_A_FUNCTION_OR_UNDEFINED: () => (/* binding */ THE_COMPARISON_FUNCTION_MUST_BE_EITHER_A_FUNCTION_OR_UNDEFINED),
+/* harmony export */   THE_CONSTRUCTOR_PROPERTY_VALUE_IS_NOT_AN_OBJECT: () => (/* binding */ THE_CONSTRUCTOR_PROPERTY_VALUE_IS_NOT_AN_OBJECT),
+/* harmony export */   THIS_CONSTRUCTOR_IS_NOT_A_SUBCLASS_OF_FLOAT16ARRAY: () => (/* binding */ THIS_CONSTRUCTOR_IS_NOT_A_SUBCLASS_OF_FLOAT16ARRAY),
+/* harmony export */   THIS_IS_NOT_AN_OBJECT: () => (/* binding */ THIS_IS_NOT_AN_OBJECT),
+/* harmony export */   THIS_IS_NOT_A_FLOAT16ARRAY_OBJECT: () => (/* binding */ THIS_IS_NOT_A_FLOAT16ARRAY_OBJECT)
 /* harmony export */ });
 const THIS_IS_NOT_AN_OBJECT = "This is not an object";
 const THIS_IS_NOT_A_FLOAT16ARRAY_OBJECT = "This is not a Float16Array object";
@@ -22278,6 +21686,8 @@ const CANNOT_MIX_BIGINT_AND_OTHER_TYPES =
 const ITERATOR_PROPERTY_IS_NOT_CALLABLE = "@@iterator property is not callable";
 const REDUCE_OF_EMPTY_ARRAY_WITH_NO_INITIAL_VALUE =
   "Reduce of empty array with no initial value";
+const THE_COMPARISON_FUNCTION_MUST_BE_EITHER_A_FUNCTION_OR_UNDEFINED =
+  "The comparison function must be either a function or undefined";
 const OFFSET_IS_OUT_OF_BOUNDS = "Offset is out of bounds";
 
 
@@ -22292,80 +21702,80 @@ const OFFSET_IS_OUT_OF_BOUNDS = "Offset is out of bounds";
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "ArrayBufferIsView": () => (/* binding */ ArrayBufferIsView),
-/* harmony export */   "ArrayBufferPrototypeGetByteLength": () => (/* binding */ ArrayBufferPrototypeGetByteLength),
-/* harmony export */   "ArrayBufferPrototypeSlice": () => (/* binding */ ArrayBufferPrototypeSlice),
-/* harmony export */   "ArrayIsArray": () => (/* binding */ ArrayIsArray),
-/* harmony export */   "ArrayIteratorPrototype": () => (/* binding */ ArrayIteratorPrototype),
-/* harmony export */   "ArrayIteratorPrototypeNext": () => (/* binding */ ArrayIteratorPrototypeNext),
-/* harmony export */   "ArrayPrototypeJoin": () => (/* binding */ ArrayPrototypeJoin),
-/* harmony export */   "ArrayPrototypePush": () => (/* binding */ ArrayPrototypePush),
-/* harmony export */   "ArrayPrototypeSymbolIterator": () => (/* binding */ ArrayPrototypeSymbolIterator),
-/* harmony export */   "ArrayPrototypeToLocaleString": () => (/* binding */ ArrayPrototypeToLocaleString),
-/* harmony export */   "DataViewPrototypeGetUint16": () => (/* binding */ DataViewPrototypeGetUint16),
-/* harmony export */   "DataViewPrototypeSetUint16": () => (/* binding */ DataViewPrototypeSetUint16),
-/* harmony export */   "GeneratorPrototypeNext": () => (/* binding */ GeneratorPrototypeNext),
-/* harmony export */   "IteratorPrototype": () => (/* binding */ IteratorPrototype),
-/* harmony export */   "MAX_SAFE_INTEGER": () => (/* binding */ MAX_SAFE_INTEGER),
-/* harmony export */   "MathTrunc": () => (/* binding */ MathTrunc),
-/* harmony export */   "NativeArrayBuffer": () => (/* binding */ NativeArrayBuffer),
-/* harmony export */   "NativeArrayPrototypeSymbolIterator": () => (/* binding */ NativeArrayPrototypeSymbolIterator),
-/* harmony export */   "NativeFloat32Array": () => (/* binding */ NativeFloat32Array),
-/* harmony export */   "NativeObject": () => (/* binding */ NativeObject),
-/* harmony export */   "NativeProxy": () => (/* binding */ NativeProxy),
-/* harmony export */   "NativeRangeError": () => (/* binding */ NativeRangeError),
-/* harmony export */   "NativeSharedArrayBuffer": () => (/* binding */ NativeSharedArrayBuffer),
-/* harmony export */   "NativeTypeError": () => (/* binding */ NativeTypeError),
-/* harmony export */   "NativeTypedArrayPrototypeSymbolIterator": () => (/* binding */ NativeTypedArrayPrototypeSymbolIterator),
-/* harmony export */   "NativeUint16Array": () => (/* binding */ NativeUint16Array),
-/* harmony export */   "NativeUint32Array": () => (/* binding */ NativeUint32Array),
-/* harmony export */   "NativeWeakMap": () => (/* binding */ NativeWeakMap),
-/* harmony export */   "NativeWeakSet": () => (/* binding */ NativeWeakSet),
-/* harmony export */   "NumberIsFinite": () => (/* binding */ NumberIsFinite),
-/* harmony export */   "NumberIsNaN": () => (/* binding */ NumberIsNaN),
-/* harmony export */   "ObjectCreate": () => (/* binding */ ObjectCreate),
-/* harmony export */   "ObjectDefineProperty": () => (/* binding */ ObjectDefineProperty),
-/* harmony export */   "ObjectFreeze": () => (/* binding */ ObjectFreeze),
-/* harmony export */   "ObjectHasOwn": () => (/* binding */ ObjectHasOwn),
-/* harmony export */   "ObjectIs": () => (/* binding */ ObjectIs),
-/* harmony export */   "ObjectPrototype__lookupGetter__": () => (/* binding */ ObjectPrototype__lookupGetter__),
-/* harmony export */   "ReflectApply": () => (/* binding */ ReflectApply),
-/* harmony export */   "ReflectConstruct": () => (/* binding */ ReflectConstruct),
-/* harmony export */   "ReflectDefineProperty": () => (/* binding */ ReflectDefineProperty),
-/* harmony export */   "ReflectGet": () => (/* binding */ ReflectGet),
-/* harmony export */   "ReflectGetOwnPropertyDescriptor": () => (/* binding */ ReflectGetOwnPropertyDescriptor),
-/* harmony export */   "ReflectGetPrototypeOf": () => (/* binding */ ReflectGetPrototypeOf),
-/* harmony export */   "ReflectHas": () => (/* binding */ ReflectHas),
-/* harmony export */   "ReflectOwnKeys": () => (/* binding */ ReflectOwnKeys),
-/* harmony export */   "ReflectSet": () => (/* binding */ ReflectSet),
-/* harmony export */   "ReflectSetPrototypeOf": () => (/* binding */ ReflectSetPrototypeOf),
-/* harmony export */   "SharedArrayBufferPrototypeGetByteLength": () => (/* binding */ SharedArrayBufferPrototypeGetByteLength),
-/* harmony export */   "SymbolFor": () => (/* binding */ SymbolFor),
-/* harmony export */   "SymbolIterator": () => (/* binding */ SymbolIterator),
-/* harmony export */   "SymbolSpecies": () => (/* binding */ SymbolSpecies),
-/* harmony export */   "SymbolToStringTag": () => (/* binding */ SymbolToStringTag),
-/* harmony export */   "TypedArray": () => (/* binding */ TypedArray),
-/* harmony export */   "TypedArrayPrototype": () => (/* binding */ TypedArrayPrototype),
-/* harmony export */   "TypedArrayPrototypeCopyWithin": () => (/* binding */ TypedArrayPrototypeCopyWithin),
-/* harmony export */   "TypedArrayPrototypeEntries": () => (/* binding */ TypedArrayPrototypeEntries),
-/* harmony export */   "TypedArrayPrototypeFill": () => (/* binding */ TypedArrayPrototypeFill),
-/* harmony export */   "TypedArrayPrototypeGetBuffer": () => (/* binding */ TypedArrayPrototypeGetBuffer),
-/* harmony export */   "TypedArrayPrototypeGetByteOffset": () => (/* binding */ TypedArrayPrototypeGetByteOffset),
-/* harmony export */   "TypedArrayPrototypeGetLength": () => (/* binding */ TypedArrayPrototypeGetLength),
-/* harmony export */   "TypedArrayPrototypeGetSymbolToStringTag": () => (/* binding */ TypedArrayPrototypeGetSymbolToStringTag),
-/* harmony export */   "TypedArrayPrototypeKeys": () => (/* binding */ TypedArrayPrototypeKeys),
-/* harmony export */   "TypedArrayPrototypeReverse": () => (/* binding */ TypedArrayPrototypeReverse),
-/* harmony export */   "TypedArrayPrototypeSet": () => (/* binding */ TypedArrayPrototypeSet),
-/* harmony export */   "TypedArrayPrototypeSlice": () => (/* binding */ TypedArrayPrototypeSlice),
-/* harmony export */   "TypedArrayPrototypeSort": () => (/* binding */ TypedArrayPrototypeSort),
-/* harmony export */   "TypedArrayPrototypeSubarray": () => (/* binding */ TypedArrayPrototypeSubarray),
-/* harmony export */   "TypedArrayPrototypeValues": () => (/* binding */ TypedArrayPrototypeValues),
-/* harmony export */   "Uint16ArrayFrom": () => (/* binding */ Uint16ArrayFrom),
-/* harmony export */   "WeakMapPrototypeGet": () => (/* binding */ WeakMapPrototypeGet),
-/* harmony export */   "WeakMapPrototypeHas": () => (/* binding */ WeakMapPrototypeHas),
-/* harmony export */   "WeakMapPrototypeSet": () => (/* binding */ WeakMapPrototypeSet),
-/* harmony export */   "WeakSetPrototypeAdd": () => (/* binding */ WeakSetPrototypeAdd),
-/* harmony export */   "WeakSetPrototypeHas": () => (/* binding */ WeakSetPrototypeHas)
+/* harmony export */   ArrayBufferIsView: () => (/* binding */ ArrayBufferIsView),
+/* harmony export */   ArrayBufferPrototypeGetByteLength: () => (/* binding */ ArrayBufferPrototypeGetByteLength),
+/* harmony export */   ArrayBufferPrototypeSlice: () => (/* binding */ ArrayBufferPrototypeSlice),
+/* harmony export */   ArrayIsArray: () => (/* binding */ ArrayIsArray),
+/* harmony export */   ArrayIteratorPrototype: () => (/* binding */ ArrayIteratorPrototype),
+/* harmony export */   ArrayIteratorPrototypeNext: () => (/* binding */ ArrayIteratorPrototypeNext),
+/* harmony export */   ArrayPrototypeJoin: () => (/* binding */ ArrayPrototypeJoin),
+/* harmony export */   ArrayPrototypePush: () => (/* binding */ ArrayPrototypePush),
+/* harmony export */   ArrayPrototypeSymbolIterator: () => (/* binding */ ArrayPrototypeSymbolIterator),
+/* harmony export */   ArrayPrototypeToLocaleString: () => (/* binding */ ArrayPrototypeToLocaleString),
+/* harmony export */   DataViewPrototypeGetUint16: () => (/* binding */ DataViewPrototypeGetUint16),
+/* harmony export */   DataViewPrototypeSetUint16: () => (/* binding */ DataViewPrototypeSetUint16),
+/* harmony export */   GeneratorPrototypeNext: () => (/* binding */ GeneratorPrototypeNext),
+/* harmony export */   IteratorPrototype: () => (/* binding */ IteratorPrototype),
+/* harmony export */   MAX_SAFE_INTEGER: () => (/* binding */ MAX_SAFE_INTEGER),
+/* harmony export */   MathTrunc: () => (/* binding */ MathTrunc),
+/* harmony export */   NativeArrayBuffer: () => (/* binding */ NativeArrayBuffer),
+/* harmony export */   NativeArrayPrototypeSymbolIterator: () => (/* binding */ NativeArrayPrototypeSymbolIterator),
+/* harmony export */   NativeFloat32Array: () => (/* binding */ NativeFloat32Array),
+/* harmony export */   NativeObject: () => (/* binding */ NativeObject),
+/* harmony export */   NativeProxy: () => (/* binding */ NativeProxy),
+/* harmony export */   NativeRangeError: () => (/* binding */ NativeRangeError),
+/* harmony export */   NativeSharedArrayBuffer: () => (/* binding */ NativeSharedArrayBuffer),
+/* harmony export */   NativeTypeError: () => (/* binding */ NativeTypeError),
+/* harmony export */   NativeTypedArrayPrototypeSymbolIterator: () => (/* binding */ NativeTypedArrayPrototypeSymbolIterator),
+/* harmony export */   NativeUint16Array: () => (/* binding */ NativeUint16Array),
+/* harmony export */   NativeUint32Array: () => (/* binding */ NativeUint32Array),
+/* harmony export */   NativeWeakMap: () => (/* binding */ NativeWeakMap),
+/* harmony export */   NativeWeakSet: () => (/* binding */ NativeWeakSet),
+/* harmony export */   NumberIsFinite: () => (/* binding */ NumberIsFinite),
+/* harmony export */   NumberIsNaN: () => (/* binding */ NumberIsNaN),
+/* harmony export */   ObjectCreate: () => (/* binding */ ObjectCreate),
+/* harmony export */   ObjectDefineProperty: () => (/* binding */ ObjectDefineProperty),
+/* harmony export */   ObjectFreeze: () => (/* binding */ ObjectFreeze),
+/* harmony export */   ObjectHasOwn: () => (/* binding */ ObjectHasOwn),
+/* harmony export */   ObjectIs: () => (/* binding */ ObjectIs),
+/* harmony export */   ObjectPrototype__lookupGetter__: () => (/* binding */ ObjectPrototype__lookupGetter__),
+/* harmony export */   ReflectApply: () => (/* binding */ ReflectApply),
+/* harmony export */   ReflectConstruct: () => (/* binding */ ReflectConstruct),
+/* harmony export */   ReflectDefineProperty: () => (/* binding */ ReflectDefineProperty),
+/* harmony export */   ReflectGet: () => (/* binding */ ReflectGet),
+/* harmony export */   ReflectGetOwnPropertyDescriptor: () => (/* binding */ ReflectGetOwnPropertyDescriptor),
+/* harmony export */   ReflectGetPrototypeOf: () => (/* binding */ ReflectGetPrototypeOf),
+/* harmony export */   ReflectHas: () => (/* binding */ ReflectHas),
+/* harmony export */   ReflectOwnKeys: () => (/* binding */ ReflectOwnKeys),
+/* harmony export */   ReflectSet: () => (/* binding */ ReflectSet),
+/* harmony export */   ReflectSetPrototypeOf: () => (/* binding */ ReflectSetPrototypeOf),
+/* harmony export */   SharedArrayBufferPrototypeGetByteLength: () => (/* binding */ SharedArrayBufferPrototypeGetByteLength),
+/* harmony export */   SymbolFor: () => (/* binding */ SymbolFor),
+/* harmony export */   SymbolIterator: () => (/* binding */ SymbolIterator),
+/* harmony export */   SymbolSpecies: () => (/* binding */ SymbolSpecies),
+/* harmony export */   SymbolToStringTag: () => (/* binding */ SymbolToStringTag),
+/* harmony export */   TypedArray: () => (/* binding */ TypedArray),
+/* harmony export */   TypedArrayPrototype: () => (/* binding */ TypedArrayPrototype),
+/* harmony export */   TypedArrayPrototypeCopyWithin: () => (/* binding */ TypedArrayPrototypeCopyWithin),
+/* harmony export */   TypedArrayPrototypeEntries: () => (/* binding */ TypedArrayPrototypeEntries),
+/* harmony export */   TypedArrayPrototypeFill: () => (/* binding */ TypedArrayPrototypeFill),
+/* harmony export */   TypedArrayPrototypeGetBuffer: () => (/* binding */ TypedArrayPrototypeGetBuffer),
+/* harmony export */   TypedArrayPrototypeGetByteOffset: () => (/* binding */ TypedArrayPrototypeGetByteOffset),
+/* harmony export */   TypedArrayPrototypeGetLength: () => (/* binding */ TypedArrayPrototypeGetLength),
+/* harmony export */   TypedArrayPrototypeGetSymbolToStringTag: () => (/* binding */ TypedArrayPrototypeGetSymbolToStringTag),
+/* harmony export */   TypedArrayPrototypeKeys: () => (/* binding */ TypedArrayPrototypeKeys),
+/* harmony export */   TypedArrayPrototypeReverse: () => (/* binding */ TypedArrayPrototypeReverse),
+/* harmony export */   TypedArrayPrototypeSet: () => (/* binding */ TypedArrayPrototypeSet),
+/* harmony export */   TypedArrayPrototypeSlice: () => (/* binding */ TypedArrayPrototypeSlice),
+/* harmony export */   TypedArrayPrototypeSort: () => (/* binding */ TypedArrayPrototypeSort),
+/* harmony export */   TypedArrayPrototypeSubarray: () => (/* binding */ TypedArrayPrototypeSubarray),
+/* harmony export */   TypedArrayPrototypeValues: () => (/* binding */ TypedArrayPrototypeValues),
+/* harmony export */   Uint16ArrayFrom: () => (/* binding */ Uint16ArrayFrom),
+/* harmony export */   WeakMapPrototypeGet: () => (/* binding */ WeakMapPrototypeGet),
+/* harmony export */   WeakMapPrototypeHas: () => (/* binding */ WeakMapPrototypeHas),
+/* harmony export */   WeakMapPrototypeSet: () => (/* binding */ WeakMapPrototypeSet),
+/* harmony export */   WeakSetPrototypeAdd: () => (/* binding */ WeakSetPrototypeAdd),
+/* harmony export */   WeakSetPrototypeHas: () => (/* binding */ WeakSetPrototypeHas)
 /* harmony export */ });
 /* harmony import */ var _messages_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./messages.mjs */ "./node_modules/@petamoriken/float16/src/_util/messages.mjs");
 /* eslint-disable no-restricted-globals, no-restricted-syntax */
@@ -22409,7 +21819,7 @@ const NativeProxy = Proxy;
 
 // Number
 const {
-  MAX_SAFE_INTEGER: MAX_SAFE_INTEGER,
+  MAX_SAFE_INTEGER,
   isFinite: NumberIsFinite,
   isNaN: NumberIsNaN,
 } = Number;
@@ -22666,8 +22076,8 @@ class BaseDecoder {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "addDecoder": () => (/* binding */ addDecoder),
-/* harmony export */   "getDecoder": () => (/* binding */ getDecoder)
+/* harmony export */   addDecoder: () => (/* binding */ addDecoder),
+/* harmony export */   getDecoder: () => (/* binding */ getDecoder)
 /* harmony export */ });
 const registry = new Map();
 
@@ -22979,23 +22389,23 @@ class DataView64 {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "BaseDecoder": () => (/* reexport safe */ _compression_basedecoder_js__WEBPACK_IMPORTED_MODULE_2__["default"]),
-/* harmony export */   "GeoTIFF": () => (/* binding */ GeoTIFF),
-/* harmony export */   "GeoTIFFImage": () => (/* reexport safe */ _geotiffimage_js__WEBPACK_IMPORTED_MODULE_6__["default"]),
-/* harmony export */   "MultiGeoTIFF": () => (/* binding */ MultiGeoTIFF),
-/* harmony export */   "Pool": () => (/* reexport safe */ _pool_js__WEBPACK_IMPORTED_MODULE_13__["default"]),
-/* harmony export */   "addDecoder": () => (/* reexport safe */ _compression_index_js__WEBPACK_IMPORTED_MODULE_3__.addDecoder),
+/* harmony export */   BaseDecoder: () => (/* reexport safe */ _compression_basedecoder_js__WEBPACK_IMPORTED_MODULE_2__["default"]),
+/* harmony export */   GeoTIFF: () => (/* binding */ GeoTIFF),
+/* harmony export */   GeoTIFFImage: () => (/* reexport safe */ _geotiffimage_js__WEBPACK_IMPORTED_MODULE_6__["default"]),
+/* harmony export */   MultiGeoTIFF: () => (/* binding */ MultiGeoTIFF),
+/* harmony export */   Pool: () => (/* reexport safe */ _pool_js__WEBPACK_IMPORTED_MODULE_13__["default"]),
+/* harmony export */   addDecoder: () => (/* reexport safe */ _compression_index_js__WEBPACK_IMPORTED_MODULE_3__.addDecoder),
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__),
-/* harmony export */   "fromArrayBuffer": () => (/* binding */ fromArrayBuffer),
-/* harmony export */   "fromBlob": () => (/* binding */ fromBlob),
-/* harmony export */   "fromFile": () => (/* binding */ fromFile),
-/* harmony export */   "fromUrl": () => (/* binding */ fromUrl),
-/* harmony export */   "fromUrls": () => (/* binding */ fromUrls),
-/* harmony export */   "getDecoder": () => (/* reexport safe */ _compression_index_js__WEBPACK_IMPORTED_MODULE_3__.getDecoder),
-/* harmony export */   "globals": () => (/* reexport module object */ _globals_js__WEBPACK_IMPORTED_MODULE_0__),
-/* harmony export */   "rgb": () => (/* reexport module object */ _rgb_js__WEBPACK_IMPORTED_MODULE_1__),
-/* harmony export */   "setLogger": () => (/* reexport safe */ _logging_js__WEBPACK_IMPORTED_MODULE_4__.setLogger),
-/* harmony export */   "writeArrayBuffer": () => (/* binding */ writeArrayBuffer)
+/* harmony export */   fromArrayBuffer: () => (/* binding */ fromArrayBuffer),
+/* harmony export */   fromBlob: () => (/* binding */ fromBlob),
+/* harmony export */   fromFile: () => (/* binding */ fromFile),
+/* harmony export */   fromUrl: () => (/* binding */ fromUrl),
+/* harmony export */   fromUrls: () => (/* binding */ fromUrls),
+/* harmony export */   getDecoder: () => (/* reexport safe */ _compression_index_js__WEBPACK_IMPORTED_MODULE_3__.getDecoder),
+/* harmony export */   globals: () => (/* reexport module object */ _globals_js__WEBPACK_IMPORTED_MODULE_0__),
+/* harmony export */   rgb: () => (/* reexport module object */ _rgb_js__WEBPACK_IMPORTED_MODULE_1__),
+/* harmony export */   setLogger: () => (/* reexport safe */ _logging_js__WEBPACK_IMPORTED_MODULE_4__.setLogger),
+/* harmony export */   writeArrayBuffer: () => (/* binding */ writeArrayBuffer)
 /* harmony export */ });
 /* harmony import */ var _geotiffimage_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./geotiffimage.js */ "./node_modules/geotiff/dist-module/geotiffimage.js");
 /* harmony import */ var _dataview64_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./dataview64.js */ "./node_modules/geotiff/dist-module/dataview64.js");
@@ -23038,6 +22448,31 @@ __webpack_require__.r(__webpack_exports__);
 /**
  * @typedef {Uint8Array | Int8Array | Uint16Array | Int16Array | Uint32Array | Int32Array | Float32Array | Float64Array}
  * TypedArray
+ */
+
+/**
+ * @typedef {{ height:number, width: number }} Dimensions
+ */
+
+/**
+ * The autogenerated docs are a little confusing here. The effective type is:
+ *
+ * `TypedArray & { height: number; width: number}`
+ * @typedef {TypedArray & Dimensions} TypedArrayWithDimensions
+ */
+
+/**
+ * The autogenerated docs are a little confusing here. The effective type is:
+ *
+ * `TypedArray[] & { height: number; width: number}`
+ * @typedef {TypedArray[] & Dimensions} TypedArrayArrayWithDimensions
+ */
+
+/**
+ *  The autogenerated docs are a little confusing here. The effective type is:
+ *
+ * `(TypedArray | TypedArray[]) & { height: number; width: number}`
+ * @typedef {TypedArrayWithDimensions | TypedArrayArrayWithDimensions} ReadRasterResult
  */
 
 function getFieldTypeLength(fieldType) {
@@ -23195,7 +22630,7 @@ class GeoTIFFBase {
    * image is called and the result returned.
    * @see GeoTIFFImage.readRasters
    * @param {import('./geotiffimage').ReadRasterOptions} [options={}] optional parameters
-   * @returns {Promise<(TypedArray|TypedArray[])>} the decoded arrays as a promise
+   * @returns {Promise<ReadRasterResult>} the decoded array(s), with `height` and `width`, as a promise
    */
   async readRasters(options = {}) {
     const { window: imageWindow, width, height } = options;
@@ -23801,6 +23236,7 @@ __webpack_require__.r(__webpack_exports__);
  */
 
 /** @typedef {import("./geotiff.js").TypedArray} TypedArray */
+/** @typedef {import("./geotiff.js").ReadRasterResult} ReadRasterResult */
 
 function sum(array, start, end) {
   let s = 0;
@@ -23949,7 +23385,7 @@ class GeoTIFFImage {
    * @param {DataView} dataView The DataView for the underlying file.
    * @param {Boolean} littleEndian Whether the file is encoded in little or big endian
    * @param {Boolean} cache Whether or not decoded tiles shall be cached
-   * @param {Source} source The datasource to read from
+   * @param {import('./source/basesource').BaseSource} source The datasource to read from
    */
   constructor(fileDirectory, geoKeys, dataView, littleEndian, cache, source) {
     this.fileDirectory = fileDirectory;
@@ -24125,7 +23561,7 @@ class GeoTIFFImage {
    * @param {Number} x the strip or tile x-offset
    * @param {Number} y the tile y-offset (0 for stripped images)
    * @param {Number} sample the sample to get for separated samples
-   * @param {import("./geotiff").Pool|AbstractDecoder} poolOrDecoder the decoder or decoder pool
+   * @param {import("./geotiff").Pool|import("./geotiff").BaseDecoder} poolOrDecoder the decoder or decoder pool
    * @param {AbortSignal} [signal] An AbortSignal that may be signalled if the request is
    *                               to be aborted
    * @returns {Promise.<ArrayBuffer>}
@@ -24191,7 +23627,7 @@ class GeoTIFFImage {
    * @private
    * @param {Array} imageWindow The image window in pixel coordinates
    * @param {Array} samples The selected samples (0-based indices)
-   * @param {TypedArray[]|TypedArray} valueArrays The array(s) to write into
+   * @param {TypedArray|TypedArray[]} valueArrays The array(s) to write into
    * @param {Boolean} interleave Whether or not to write in an interleaved manner
    * @param {import("./geotiff").Pool|AbstractDecoder} poolOrDecoder the decoder or decoder pool
    * @param {number} width the width of window to be read into
@@ -24199,7 +23635,7 @@ class GeoTIFFImage {
    * @param {number} resampleMethod the resampling method to be used when interpolating
    * @param {AbortSignal} [signal] An AbortSignal that may be signalled if the request is
    *                               to be aborted
-   * @returns {Promise<TypedArray[]>|Promise<TypedArray>}
+   * @returns {Promise<ReadRasterResult>}
    */
   async _readRaster(imageWindow, samples, valueArrays, interleave, poolOrDecoder, width,
     height, resampleMethod, signal) {
@@ -24323,7 +23759,7 @@ class GeoTIFFImage {
    * of the raster is read for each sample.
    *
    * @param {ReadRasterOptions} [options={}] optional parameters
-   * @returns {Promise.<(TypedArray|TypedArray[])>} the decoded arrays as a promise
+   * @returns {Promise<ReadRasterResult>} the decoded arrays as a promise
    */
   async readRasters({
     window: wnd, samples = [], interleave, pool = null,
@@ -24387,7 +23823,7 @@ class GeoTIFFImage {
    * interleaved typed array.
    * Colorspaces other than RGB will be transformed to RGB, color maps expanded.
    * When no other method is applicable, the first sample is used to produce a
-   * greayscale image.
+   * grayscale image.
    * When provided, only a subset of the raster is read for each sample.
    *
    * @param {Object} [options] optional parameters
@@ -24404,7 +23840,7 @@ class GeoTIFFImage {
    * @param {boolean} [options.enableAlpha=false] Enable reading alpha channel if present.
    * @param {AbortSignal} [options.signal] An AbortSignal that may be signalled if the request is
    *                                       to be aborted
-   * @returns {Promise<TypedArray|TypedArray[]>} the RGB array as a Promise
+   * @returns {Promise<ReadRasterResult>} the RGB array as a Promise
    */
   async readRGB({ window, interleave = true, pool = null, width, height,
     resampleMethod, enableAlpha = false, signal } = {}) {
@@ -24689,7 +24125,7 @@ class GeoTIFFImage {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "writeGeotiff": () => (/* binding */ writeGeotiff)
+/* harmony export */   writeGeotiff: () => (/* binding */ writeGeotiff)
 /* harmony export */ });
 /* harmony import */ var _globals_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./globals.js */ "./node_modules/geotiff/dist-module/globals.js");
 /* harmony import */ var _utils_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils.js */ "./node_modules/geotiff/dist-module/utils.js");
@@ -25162,18 +24598,18 @@ function writeGeotiff(data, metadata) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "ExtraSamplesValues": () => (/* binding */ ExtraSamplesValues),
-/* harmony export */   "LercAddCompression": () => (/* binding */ LercAddCompression),
-/* harmony export */   "LercParameters": () => (/* binding */ LercParameters),
-/* harmony export */   "arrayFields": () => (/* binding */ arrayFields),
-/* harmony export */   "fieldTagNames": () => (/* binding */ fieldTagNames),
-/* harmony export */   "fieldTagTypes": () => (/* binding */ fieldTagTypes),
-/* harmony export */   "fieldTags": () => (/* binding */ fieldTags),
-/* harmony export */   "fieldTypeNames": () => (/* binding */ fieldTypeNames),
-/* harmony export */   "fieldTypes": () => (/* binding */ fieldTypes),
-/* harmony export */   "geoKeyNames": () => (/* binding */ geoKeyNames),
-/* harmony export */   "geoKeys": () => (/* binding */ geoKeys),
-/* harmony export */   "photometricInterpretations": () => (/* binding */ photometricInterpretations)
+/* harmony export */   ExtraSamplesValues: () => (/* binding */ ExtraSamplesValues),
+/* harmony export */   LercAddCompression: () => (/* binding */ LercAddCompression),
+/* harmony export */   LercParameters: () => (/* binding */ LercParameters),
+/* harmony export */   arrayFields: () => (/* binding */ arrayFields),
+/* harmony export */   fieldTagNames: () => (/* binding */ fieldTagNames),
+/* harmony export */   fieldTagTypes: () => (/* binding */ fieldTagTypes),
+/* harmony export */   fieldTags: () => (/* binding */ fieldTags),
+/* harmony export */   fieldTypeNames: () => (/* binding */ fieldTypeNames),
+/* harmony export */   fieldTypes: () => (/* binding */ fieldTypes),
+/* harmony export */   geoKeyNames: () => (/* binding */ geoKeyNames),
+/* harmony export */   geoKeys: () => (/* binding */ geoKeys),
+/* harmony export */   photometricInterpretations: () => (/* binding */ photometricInterpretations)
 /* harmony export */ });
 const fieldTagNames = {
   // TIFF Baseline
@@ -25481,14 +24917,14 @@ for (const key in geoKeyNames) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "debug": () => (/* binding */ debug),
-/* harmony export */   "error": () => (/* binding */ error),
-/* harmony export */   "info": () => (/* binding */ info),
-/* harmony export */   "log": () => (/* binding */ log),
-/* harmony export */   "setLogger": () => (/* binding */ setLogger),
-/* harmony export */   "time": () => (/* binding */ time),
-/* harmony export */   "timeEnd": () => (/* binding */ timeEnd),
-/* harmony export */   "warn": () => (/* binding */ warn)
+/* harmony export */   debug: () => (/* binding */ debug),
+/* harmony export */   error: () => (/* binding */ error),
+/* harmony export */   info: () => (/* binding */ info),
+/* harmony export */   log: () => (/* binding */ log),
+/* harmony export */   setLogger: () => (/* binding */ setLogger),
+/* harmony export */   time: () => (/* binding */ time),
+/* harmony export */   timeEnd: () => (/* binding */ timeEnd),
+/* harmony export */   warn: () => (/* binding */ warn)
 /* harmony export */ });
 /**
  * A no-op logger
@@ -25676,7 +25112,7 @@ class Pool {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "applyPredictor": () => (/* binding */ applyPredictor)
+/* harmony export */   applyPredictor: () => (/* binding */ applyPredictor)
 /* harmony export */ });
 function decodeRowAcc(row, stride) {
   let length = row.length - stride;
@@ -25779,12 +25215,12 @@ function applyPredictor(block, predictor, width, height, bitsPerSample,
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "resample": () => (/* binding */ resample),
-/* harmony export */   "resampleBilinear": () => (/* binding */ resampleBilinear),
-/* harmony export */   "resampleBilinearInterleaved": () => (/* binding */ resampleBilinearInterleaved),
-/* harmony export */   "resampleInterleaved": () => (/* binding */ resampleInterleaved),
-/* harmony export */   "resampleNearest": () => (/* binding */ resampleNearest),
-/* harmony export */   "resampleNearestInterleaved": () => (/* binding */ resampleNearestInterleaved)
+/* harmony export */   resample: () => (/* binding */ resample),
+/* harmony export */   resampleBilinear: () => (/* binding */ resampleBilinear),
+/* harmony export */   resampleBilinearInterleaved: () => (/* binding */ resampleBilinearInterleaved),
+/* harmony export */   resampleInterleaved: () => (/* binding */ resampleInterleaved),
+/* harmony export */   resampleNearest: () => (/* binding */ resampleNearest),
+/* harmony export */   resampleNearestInterleaved: () => (/* binding */ resampleNearestInterleaved)
 /* harmony export */ });
 /**
  * @module resample
@@ -26010,12 +25446,12 @@ function resampleInterleaved(valueArray, inWidth, inHeight, outWidth, outHeight,
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "fromBlackIsZero": () => (/* binding */ fromBlackIsZero),
-/* harmony export */   "fromCIELab": () => (/* binding */ fromCIELab),
-/* harmony export */   "fromCMYK": () => (/* binding */ fromCMYK),
-/* harmony export */   "fromPalette": () => (/* binding */ fromPalette),
-/* harmony export */   "fromWhiteIsZero": () => (/* binding */ fromWhiteIsZero),
-/* harmony export */   "fromYCbCr": () => (/* binding */ fromYCbCr)
+/* harmony export */   fromBlackIsZero: () => (/* binding */ fromBlackIsZero),
+/* harmony export */   fromCIELab: () => (/* binding */ fromCIELab),
+/* harmony export */   fromCMYK: () => (/* binding */ fromCMYK),
+/* harmony export */   fromPalette: () => (/* binding */ fromPalette),
+/* harmony export */   fromWhiteIsZero: () => (/* binding */ fromWhiteIsZero),
+/* harmony export */   fromYCbCr: () => (/* binding */ fromYCbCr)
 /* harmony export */ });
 function fromWhiteIsZero(raster, max) {
   const { width, height } = raster;
@@ -26141,7 +25577,7 @@ function fromCIELab(cieLabRaster) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "makeBufferSource": () => (/* binding */ makeBufferSource)
+/* harmony export */   makeBufferSource: () => (/* binding */ makeBufferSource)
 /* harmony export */ });
 /* harmony import */ var _basesource_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./basesource.js */ "./node_modules/geotiff/dist-module/source/basesource.js");
 /* harmony import */ var _utils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils.js */ "./node_modules/geotiff/dist-module/utils.js");
@@ -26178,7 +25614,7 @@ function makeBufferSource(arrayBuffer) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "BaseSource": () => (/* binding */ BaseSource)
+/* harmony export */   BaseSource: () => (/* binding */ BaseSource)
 /* harmony export */ });
 /**
  * @typedef Slice
@@ -26231,7 +25667,7 @@ class BaseSource {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "BlockedSource": () => (/* binding */ BlockedSource)
+/* harmony export */   BlockedSource: () => (/* binding */ BlockedSource)
 /* harmony export */ });
 /* harmony import */ var quick_lru__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! quick-lru */ "./node_modules/quick-lru/index.js");
 /* harmony import */ var _basesource_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./basesource.js */ "./node_modules/geotiff/dist-module/source/basesource.js");
@@ -26278,15 +25714,25 @@ class BlockGroup {
 class BlockedSource extends _basesource_js__WEBPACK_IMPORTED_MODULE_1__.BaseSource {
   /**
    *
-   * @param {Source} source The underlying source that shall be blocked and cached
+   * @param {BaseSource} source The underlying source that shall be blocked and cached
    * @param {object} options
+   * @param {number} [options.blockSize]
+   * @param {number} [options.cacheSize]
    */
   constructor(source, { blockSize = 65536, cacheSize = 100 } = {}) {
     super();
     this.source = source;
     this.blockSize = blockSize;
 
-    this.blockCache = new quick_lru__WEBPACK_IMPORTED_MODULE_0__["default"]({ maxSize: cacheSize });
+    this.blockCache = new quick_lru__WEBPACK_IMPORTED_MODULE_0__["default"]({
+      maxSize: cacheSize,
+      onEviction: (blockId, block) => {
+        this.evictedBlocks.set(blockId, block);
+      },
+    });
+
+    /** @type {Map<number, Block>} */
+    this.evictedBlocks = new Map();
 
     // mapping blockId -> Block instance
     this.blockRequests = new Map();
@@ -26303,12 +25749,13 @@ class BlockedSource extends _basesource_js__WEBPACK_IMPORTED_MODULE_1__.BaseSour
 
   /**
    *
-   * @param {basesource/Slice[]} slices
+   * @param {import("./basesource").Slice[]} slices
    */
   async fetch(slices, signal) {
     const blockRequests = [];
     const missingBlockIds = [];
     const allBlockIds = [];
+    this.evictedBlocks.clear();
 
     for (const { offset, length } of slices) {
       let top = offset + length;
@@ -26374,7 +25821,7 @@ class BlockedSource extends _basesource_js__WEBPACK_IMPORTED_MODULE_1__.BaseSour
       throw new _utils_js__WEBPACK_IMPORTED_MODULE_2__.AbortError('Request was aborted');
     }
 
-    const blocks = allBlockIds.map((id) => this.blockCache.get(id));
+    const blocks = allBlockIds.map((id) => this.blockCache.get(id) || this.evictedBlocks.get(id));
     const failedBlocks = blocks.filter((i) => !i);
     if (failedBlocks.length) {
       throw new _utils_js__WEBPACK_IMPORTED_MODULE_2__.AggregateError(failedBlocks, 'Request failed');
@@ -26479,7 +25926,7 @@ class BlockedSource extends _basesource_js__WEBPACK_IMPORTED_MODULE_1__.BaseSour
 
   /**
    *
-   * @param {Slice[]} slices
+   * @param {import("./basesource").Slice[]} slices
    * @param {Map} blocks
    */
   readSliceData(slices, blocks) {
@@ -26534,8 +25981,8 @@ class BlockedSource extends _basesource_js__WEBPACK_IMPORTED_MODULE_1__.BaseSour
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "BaseClient": () => (/* binding */ BaseClient),
-/* harmony export */   "BaseResponse": () => (/* binding */ BaseResponse)
+/* harmony export */   BaseClient: () => (/* binding */ BaseClient),
+/* harmony export */   BaseResponse: () => (/* binding */ BaseResponse)
 /* harmony export */ });
 class BaseResponse {
   /**
@@ -26595,7 +26042,7 @@ class BaseClient {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "FetchClient": () => (/* binding */ FetchClient)
+/* harmony export */   FetchClient: () => (/* binding */ FetchClient)
 /* harmony export */ });
 /* harmony import */ var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./base.js */ "./node_modules/geotiff/dist-module/source/client/base.js");
 
@@ -26652,7 +26099,7 @@ class FetchClient extends _base_js__WEBPACK_IMPORTED_MODULE_0__.BaseClient {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "HttpClient": () => (/* binding */ HttpClient)
+/* harmony export */   HttpClient: () => (/* binding */ HttpClient)
 /* harmony export */ });
 /* harmony import */ var http__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! http */ "?cdec");
 /* harmony import */ var https__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! https */ "?753a");
@@ -26753,7 +26200,7 @@ class HttpClient extends _base_js__WEBPACK_IMPORTED_MODULE_3__.BaseClient {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "XHRClient": () => (/* binding */ XHRClient)
+/* harmony export */   XHRClient: () => (/* binding */ XHRClient)
 /* harmony export */ });
 /* harmony import */ var _base_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./base.js */ "./node_modules/geotiff/dist-module/source/client/base.js");
 /* harmony import */ var _utils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../utils.js */ "./node_modules/geotiff/dist-module/utils.js");
@@ -26831,7 +26278,7 @@ class XHRClient extends _base_js__WEBPACK_IMPORTED_MODULE_0__.BaseClient {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "makeFileSource": () => (/* binding */ makeFileSource)
+/* harmony export */   makeFileSource: () => (/* binding */ makeFileSource)
 /* harmony export */ });
 /* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! fs */ "?662e");
 /* harmony import */ var _basesource_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./basesource.js */ "./node_modules/geotiff/dist-module/source/basesource.js");
@@ -26916,7 +26363,7 @@ function makeFileSource(path) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "makeFileReaderSource": () => (/* binding */ makeFileReaderSource)
+/* harmony export */   makeFileReaderSource: () => (/* binding */ makeFileReaderSource)
 /* harmony export */ });
 /* harmony import */ var _basesource_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./basesource.js */ "./node_modules/geotiff/dist-module/source/basesource.js");
 
@@ -26964,9 +26411,9 @@ function makeFileReaderSource(file) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "parseByteRanges": () => (/* binding */ parseByteRanges),
-/* harmony export */   "parseContentRange": () => (/* binding */ parseContentRange),
-/* harmony export */   "parseContentType": () => (/* binding */ parseContentType)
+/* harmony export */   parseByteRanges: () => (/* binding */ parseByteRanges),
+/* harmony export */   parseContentRange: () => (/* binding */ parseContentRange),
+/* harmony export */   parseContentType: () => (/* binding */ parseContentType)
 /* harmony export */ });
 const CRLFCRLF = '\r\n\r\n';
 
@@ -27126,10 +26573,10 @@ function parseByteRanges(responseArrayBuffer, boundary) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "makeFetchSource": () => (/* binding */ makeFetchSource),
-/* harmony export */   "makeHttpSource": () => (/* binding */ makeHttpSource),
-/* harmony export */   "makeRemoteSource": () => (/* binding */ makeRemoteSource),
-/* harmony export */   "makeXHRSource": () => (/* binding */ makeXHRSource)
+/* harmony export */   makeFetchSource: () => (/* binding */ makeFetchSource),
+/* harmony export */   makeHttpSource: () => (/* binding */ makeHttpSource),
+/* harmony export */   makeRemoteSource: () => (/* binding */ makeRemoteSource),
+/* harmony export */   makeXHRSource: () => (/* binding */ makeXHRSource)
 /* harmony export */ });
 /* harmony import */ var _httputils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./httputils.js */ "./node_modules/geotiff/dist-module/source/httputils.js");
 /* harmony import */ var _basesource_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./basesource.js */ "./node_modules/geotiff/dist-module/source/basesource.js");
@@ -27224,9 +26671,9 @@ class RemoteSource extends _basesource_js__WEBPACK_IMPORTED_MODULE_0__.BaseSourc
       if (slices.length > 1) {
         // we requested more than one slice, but got only the first
         // unfortunately, some HTTP Servers don't support multi-ranges
-        // and return onyl the first
+        // and return only the first
 
-        // get the rest of the slices and fetch them iteratetively
+        // get the rest of the slices and fetch them iteratively
         const others = await Promise.all(slices.slice(1).map((slice) => this.fetchSlice(slice, signal)));
         return first.concat(others);
       }
@@ -27341,21 +26788,21 @@ function makeRemoteSource(url, { forceXHR = false, ...clientOptions } = {}) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "AbortError": () => (/* binding */ AbortError),
-/* harmony export */   "AggregateError": () => (/* binding */ AggregateError),
-/* harmony export */   "CustomAggregateError": () => (/* binding */ CustomAggregateError),
-/* harmony export */   "assign": () => (/* binding */ assign),
-/* harmony export */   "chunk": () => (/* binding */ chunk),
-/* harmony export */   "endsWith": () => (/* binding */ endsWith),
-/* harmony export */   "forEach": () => (/* binding */ forEach),
-/* harmony export */   "invert": () => (/* binding */ invert),
-/* harmony export */   "parseContentRange": () => (/* binding */ parseContentRange),
-/* harmony export */   "range": () => (/* binding */ range),
-/* harmony export */   "times": () => (/* binding */ times),
-/* harmony export */   "toArray": () => (/* binding */ toArray),
-/* harmony export */   "toArrayRecursively": () => (/* binding */ toArrayRecursively),
-/* harmony export */   "wait": () => (/* binding */ wait),
-/* harmony export */   "zip": () => (/* binding */ zip)
+/* harmony export */   AbortError: () => (/* binding */ AbortError),
+/* harmony export */   AggregateError: () => (/* binding */ AggregateError),
+/* harmony export */   CustomAggregateError: () => (/* binding */ CustomAggregateError),
+/* harmony export */   assign: () => (/* binding */ assign),
+/* harmony export */   chunk: () => (/* binding */ chunk),
+/* harmony export */   endsWith: () => (/* binding */ endsWith),
+/* harmony export */   forEach: () => (/* binding */ forEach),
+/* harmony export */   invert: () => (/* binding */ invert),
+/* harmony export */   parseContentRange: () => (/* binding */ parseContentRange),
+/* harmony export */   range: () => (/* binding */ range),
+/* harmony export */   times: () => (/* binding */ times),
+/* harmony export */   toArray: () => (/* binding */ toArray),
+/* harmony export */   toArrayRecursively: () => (/* binding */ toArrayRecursively),
+/* harmony export */   wait: () => (/* binding */ wait),
+/* harmony export */   zip: () => (/* binding */ zip)
 /* harmony export */ });
 function assign(target, source) {
   for (const key in source) {
@@ -27824,412 +27271,412 @@ class QuickLRU extends Map {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "ACESFilmicToneMapping": () => (/* binding */ ACESFilmicToneMapping),
-/* harmony export */   "AddEquation": () => (/* binding */ AddEquation),
-/* harmony export */   "AddOperation": () => (/* binding */ AddOperation),
-/* harmony export */   "AdditiveAnimationBlendMode": () => (/* binding */ AdditiveAnimationBlendMode),
-/* harmony export */   "AdditiveBlending": () => (/* binding */ AdditiveBlending),
-/* harmony export */   "AlphaFormat": () => (/* binding */ AlphaFormat),
-/* harmony export */   "AlwaysDepth": () => (/* binding */ AlwaysDepth),
-/* harmony export */   "AlwaysStencilFunc": () => (/* binding */ AlwaysStencilFunc),
-/* harmony export */   "AmbientLight": () => (/* binding */ AmbientLight),
-/* harmony export */   "AmbientLightProbe": () => (/* binding */ AmbientLightProbe),
-/* harmony export */   "AnimationClip": () => (/* binding */ AnimationClip),
-/* harmony export */   "AnimationLoader": () => (/* binding */ AnimationLoader),
-/* harmony export */   "AnimationMixer": () => (/* binding */ AnimationMixer),
-/* harmony export */   "AnimationObjectGroup": () => (/* binding */ AnimationObjectGroup),
-/* harmony export */   "AnimationUtils": () => (/* binding */ AnimationUtils),
-/* harmony export */   "ArcCurve": () => (/* binding */ ArcCurve),
-/* harmony export */   "ArrayCamera": () => (/* binding */ ArrayCamera),
-/* harmony export */   "ArrowHelper": () => (/* binding */ ArrowHelper),
-/* harmony export */   "Audio": () => (/* binding */ Audio),
-/* harmony export */   "AudioAnalyser": () => (/* binding */ AudioAnalyser),
-/* harmony export */   "AudioContext": () => (/* binding */ AudioContext),
-/* harmony export */   "AudioListener": () => (/* binding */ AudioListener),
-/* harmony export */   "AudioLoader": () => (/* binding */ AudioLoader),
-/* harmony export */   "AxesHelper": () => (/* binding */ AxesHelper),
-/* harmony export */   "BackSide": () => (/* binding */ BackSide),
-/* harmony export */   "BasicDepthPacking": () => (/* binding */ BasicDepthPacking),
-/* harmony export */   "BasicShadowMap": () => (/* binding */ BasicShadowMap),
-/* harmony export */   "Bone": () => (/* binding */ Bone),
-/* harmony export */   "BooleanKeyframeTrack": () => (/* binding */ BooleanKeyframeTrack),
-/* harmony export */   "Box2": () => (/* binding */ Box2),
-/* harmony export */   "Box3": () => (/* binding */ Box3),
-/* harmony export */   "Box3Helper": () => (/* binding */ Box3Helper),
-/* harmony export */   "BoxBufferGeometry": () => (/* binding */ BoxBufferGeometry),
-/* harmony export */   "BoxGeometry": () => (/* binding */ BoxGeometry),
-/* harmony export */   "BoxHelper": () => (/* binding */ BoxHelper),
-/* harmony export */   "BufferAttribute": () => (/* binding */ BufferAttribute),
-/* harmony export */   "BufferGeometry": () => (/* binding */ BufferGeometry),
-/* harmony export */   "BufferGeometryLoader": () => (/* binding */ BufferGeometryLoader),
-/* harmony export */   "ByteType": () => (/* binding */ ByteType),
-/* harmony export */   "Cache": () => (/* binding */ Cache),
-/* harmony export */   "Camera": () => (/* binding */ Camera),
-/* harmony export */   "CameraHelper": () => (/* binding */ CameraHelper),
-/* harmony export */   "CanvasTexture": () => (/* binding */ CanvasTexture),
-/* harmony export */   "CapsuleBufferGeometry": () => (/* binding */ CapsuleBufferGeometry),
-/* harmony export */   "CapsuleGeometry": () => (/* binding */ CapsuleGeometry),
-/* harmony export */   "CatmullRomCurve3": () => (/* binding */ CatmullRomCurve3),
-/* harmony export */   "CineonToneMapping": () => (/* binding */ CineonToneMapping),
-/* harmony export */   "CircleBufferGeometry": () => (/* binding */ CircleBufferGeometry),
-/* harmony export */   "CircleGeometry": () => (/* binding */ CircleGeometry),
-/* harmony export */   "ClampToEdgeWrapping": () => (/* binding */ ClampToEdgeWrapping),
-/* harmony export */   "Clock": () => (/* binding */ Clock),
-/* harmony export */   "Color": () => (/* binding */ Color),
-/* harmony export */   "ColorKeyframeTrack": () => (/* binding */ ColorKeyframeTrack),
-/* harmony export */   "ColorManagement": () => (/* binding */ ColorManagement),
-/* harmony export */   "CompressedTexture": () => (/* binding */ CompressedTexture),
-/* harmony export */   "CompressedTextureLoader": () => (/* binding */ CompressedTextureLoader),
-/* harmony export */   "ConeBufferGeometry": () => (/* binding */ ConeBufferGeometry),
-/* harmony export */   "ConeGeometry": () => (/* binding */ ConeGeometry),
-/* harmony export */   "CubeCamera": () => (/* binding */ CubeCamera),
-/* harmony export */   "CubeReflectionMapping": () => (/* binding */ CubeReflectionMapping),
-/* harmony export */   "CubeRefractionMapping": () => (/* binding */ CubeRefractionMapping),
-/* harmony export */   "CubeTexture": () => (/* binding */ CubeTexture),
-/* harmony export */   "CubeTextureLoader": () => (/* binding */ CubeTextureLoader),
-/* harmony export */   "CubeUVReflectionMapping": () => (/* binding */ CubeUVReflectionMapping),
-/* harmony export */   "CubicBezierCurve": () => (/* binding */ CubicBezierCurve),
-/* harmony export */   "CubicBezierCurve3": () => (/* binding */ CubicBezierCurve3),
-/* harmony export */   "CubicInterpolant": () => (/* binding */ CubicInterpolant),
-/* harmony export */   "CullFaceBack": () => (/* binding */ CullFaceBack),
-/* harmony export */   "CullFaceFront": () => (/* binding */ CullFaceFront),
-/* harmony export */   "CullFaceFrontBack": () => (/* binding */ CullFaceFrontBack),
-/* harmony export */   "CullFaceNone": () => (/* binding */ CullFaceNone),
-/* harmony export */   "Curve": () => (/* binding */ Curve),
-/* harmony export */   "CurvePath": () => (/* binding */ CurvePath),
-/* harmony export */   "CustomBlending": () => (/* binding */ CustomBlending),
-/* harmony export */   "CustomToneMapping": () => (/* binding */ CustomToneMapping),
-/* harmony export */   "CylinderBufferGeometry": () => (/* binding */ CylinderBufferGeometry),
-/* harmony export */   "CylinderGeometry": () => (/* binding */ CylinderGeometry),
-/* harmony export */   "Cylindrical": () => (/* binding */ Cylindrical),
-/* harmony export */   "Data3DTexture": () => (/* binding */ Data3DTexture),
-/* harmony export */   "DataArrayTexture": () => (/* binding */ DataArrayTexture),
-/* harmony export */   "DataTexture": () => (/* binding */ DataTexture),
-/* harmony export */   "DataTexture2DArray": () => (/* binding */ DataTexture2DArray),
-/* harmony export */   "DataTexture3D": () => (/* binding */ DataTexture3D),
-/* harmony export */   "DataTextureLoader": () => (/* binding */ DataTextureLoader),
-/* harmony export */   "DataUtils": () => (/* binding */ DataUtils),
-/* harmony export */   "DecrementStencilOp": () => (/* binding */ DecrementStencilOp),
-/* harmony export */   "DecrementWrapStencilOp": () => (/* binding */ DecrementWrapStencilOp),
-/* harmony export */   "DefaultLoadingManager": () => (/* binding */ DefaultLoadingManager),
-/* harmony export */   "DepthFormat": () => (/* binding */ DepthFormat),
-/* harmony export */   "DepthStencilFormat": () => (/* binding */ DepthStencilFormat),
-/* harmony export */   "DepthTexture": () => (/* binding */ DepthTexture),
-/* harmony export */   "DirectionalLight": () => (/* binding */ DirectionalLight),
-/* harmony export */   "DirectionalLightHelper": () => (/* binding */ DirectionalLightHelper),
-/* harmony export */   "DiscreteInterpolant": () => (/* binding */ DiscreteInterpolant),
-/* harmony export */   "DodecahedronBufferGeometry": () => (/* binding */ DodecahedronBufferGeometry),
-/* harmony export */   "DodecahedronGeometry": () => (/* binding */ DodecahedronGeometry),
-/* harmony export */   "DoubleSide": () => (/* binding */ DoubleSide),
-/* harmony export */   "DstAlphaFactor": () => (/* binding */ DstAlphaFactor),
-/* harmony export */   "DstColorFactor": () => (/* binding */ DstColorFactor),
-/* harmony export */   "DynamicCopyUsage": () => (/* binding */ DynamicCopyUsage),
-/* harmony export */   "DynamicDrawUsage": () => (/* binding */ DynamicDrawUsage),
-/* harmony export */   "DynamicReadUsage": () => (/* binding */ DynamicReadUsage),
-/* harmony export */   "EdgesGeometry": () => (/* binding */ EdgesGeometry),
-/* harmony export */   "EllipseCurve": () => (/* binding */ EllipseCurve),
-/* harmony export */   "EqualDepth": () => (/* binding */ EqualDepth),
-/* harmony export */   "EqualStencilFunc": () => (/* binding */ EqualStencilFunc),
-/* harmony export */   "EquirectangularReflectionMapping": () => (/* binding */ EquirectangularReflectionMapping),
-/* harmony export */   "EquirectangularRefractionMapping": () => (/* binding */ EquirectangularRefractionMapping),
-/* harmony export */   "Euler": () => (/* binding */ Euler),
-/* harmony export */   "EventDispatcher": () => (/* binding */ EventDispatcher),
-/* harmony export */   "ExtrudeBufferGeometry": () => (/* binding */ ExtrudeBufferGeometry),
-/* harmony export */   "ExtrudeGeometry": () => (/* binding */ ExtrudeGeometry),
-/* harmony export */   "FileLoader": () => (/* binding */ FileLoader),
-/* harmony export */   "Float16BufferAttribute": () => (/* binding */ Float16BufferAttribute),
-/* harmony export */   "Float32BufferAttribute": () => (/* binding */ Float32BufferAttribute),
-/* harmony export */   "Float64BufferAttribute": () => (/* binding */ Float64BufferAttribute),
-/* harmony export */   "FloatType": () => (/* binding */ FloatType),
-/* harmony export */   "Fog": () => (/* binding */ Fog),
-/* harmony export */   "FogExp2": () => (/* binding */ FogExp2),
-/* harmony export */   "FramebufferTexture": () => (/* binding */ FramebufferTexture),
-/* harmony export */   "FrontSide": () => (/* binding */ FrontSide),
-/* harmony export */   "Frustum": () => (/* binding */ Frustum),
-/* harmony export */   "GLBufferAttribute": () => (/* binding */ GLBufferAttribute),
-/* harmony export */   "GLSL1": () => (/* binding */ GLSL1),
-/* harmony export */   "GLSL3": () => (/* binding */ GLSL3),
-/* harmony export */   "GreaterDepth": () => (/* binding */ GreaterDepth),
-/* harmony export */   "GreaterEqualDepth": () => (/* binding */ GreaterEqualDepth),
-/* harmony export */   "GreaterEqualStencilFunc": () => (/* binding */ GreaterEqualStencilFunc),
-/* harmony export */   "GreaterStencilFunc": () => (/* binding */ GreaterStencilFunc),
-/* harmony export */   "GridHelper": () => (/* binding */ GridHelper),
-/* harmony export */   "Group": () => (/* binding */ Group),
-/* harmony export */   "HalfFloatType": () => (/* binding */ HalfFloatType),
-/* harmony export */   "HemisphereLight": () => (/* binding */ HemisphereLight),
-/* harmony export */   "HemisphereLightHelper": () => (/* binding */ HemisphereLightHelper),
-/* harmony export */   "HemisphereLightProbe": () => (/* binding */ HemisphereLightProbe),
-/* harmony export */   "IcosahedronBufferGeometry": () => (/* binding */ IcosahedronBufferGeometry),
-/* harmony export */   "IcosahedronGeometry": () => (/* binding */ IcosahedronGeometry),
-/* harmony export */   "ImageBitmapLoader": () => (/* binding */ ImageBitmapLoader),
-/* harmony export */   "ImageLoader": () => (/* binding */ ImageLoader),
-/* harmony export */   "ImageUtils": () => (/* binding */ ImageUtils),
-/* harmony export */   "ImmediateRenderObject": () => (/* binding */ ImmediateRenderObject),
-/* harmony export */   "IncrementStencilOp": () => (/* binding */ IncrementStencilOp),
-/* harmony export */   "IncrementWrapStencilOp": () => (/* binding */ IncrementWrapStencilOp),
-/* harmony export */   "InstancedBufferAttribute": () => (/* binding */ InstancedBufferAttribute),
-/* harmony export */   "InstancedBufferGeometry": () => (/* binding */ InstancedBufferGeometry),
-/* harmony export */   "InstancedInterleavedBuffer": () => (/* binding */ InstancedInterleavedBuffer),
-/* harmony export */   "InstancedMesh": () => (/* binding */ InstancedMesh),
-/* harmony export */   "Int16BufferAttribute": () => (/* binding */ Int16BufferAttribute),
-/* harmony export */   "Int32BufferAttribute": () => (/* binding */ Int32BufferAttribute),
-/* harmony export */   "Int8BufferAttribute": () => (/* binding */ Int8BufferAttribute),
-/* harmony export */   "IntType": () => (/* binding */ IntType),
-/* harmony export */   "InterleavedBuffer": () => (/* binding */ InterleavedBuffer),
-/* harmony export */   "InterleavedBufferAttribute": () => (/* binding */ InterleavedBufferAttribute),
-/* harmony export */   "Interpolant": () => (/* binding */ Interpolant),
-/* harmony export */   "InterpolateDiscrete": () => (/* binding */ InterpolateDiscrete),
-/* harmony export */   "InterpolateLinear": () => (/* binding */ InterpolateLinear),
-/* harmony export */   "InterpolateSmooth": () => (/* binding */ InterpolateSmooth),
-/* harmony export */   "InvertStencilOp": () => (/* binding */ InvertStencilOp),
-/* harmony export */   "KeepStencilOp": () => (/* binding */ KeepStencilOp),
-/* harmony export */   "KeyframeTrack": () => (/* binding */ KeyframeTrack),
-/* harmony export */   "LOD": () => (/* binding */ LOD),
-/* harmony export */   "LatheBufferGeometry": () => (/* binding */ LatheBufferGeometry),
-/* harmony export */   "LatheGeometry": () => (/* binding */ LatheGeometry),
-/* harmony export */   "Layers": () => (/* binding */ Layers),
-/* harmony export */   "LessDepth": () => (/* binding */ LessDepth),
-/* harmony export */   "LessEqualDepth": () => (/* binding */ LessEqualDepth),
-/* harmony export */   "LessEqualStencilFunc": () => (/* binding */ LessEqualStencilFunc),
-/* harmony export */   "LessStencilFunc": () => (/* binding */ LessStencilFunc),
-/* harmony export */   "Light": () => (/* binding */ Light),
-/* harmony export */   "LightProbe": () => (/* binding */ LightProbe),
-/* harmony export */   "Line": () => (/* binding */ Line),
-/* harmony export */   "Line3": () => (/* binding */ Line3),
-/* harmony export */   "LineBasicMaterial": () => (/* binding */ LineBasicMaterial),
-/* harmony export */   "LineCurve": () => (/* binding */ LineCurve),
-/* harmony export */   "LineCurve3": () => (/* binding */ LineCurve3),
-/* harmony export */   "LineDashedMaterial": () => (/* binding */ LineDashedMaterial),
-/* harmony export */   "LineLoop": () => (/* binding */ LineLoop),
-/* harmony export */   "LineSegments": () => (/* binding */ LineSegments),
-/* harmony export */   "LinearEncoding": () => (/* binding */ LinearEncoding),
-/* harmony export */   "LinearFilter": () => (/* binding */ LinearFilter),
-/* harmony export */   "LinearInterpolant": () => (/* binding */ LinearInterpolant),
-/* harmony export */   "LinearMipMapLinearFilter": () => (/* binding */ LinearMipMapLinearFilter),
-/* harmony export */   "LinearMipMapNearestFilter": () => (/* binding */ LinearMipMapNearestFilter),
-/* harmony export */   "LinearMipmapLinearFilter": () => (/* binding */ LinearMipmapLinearFilter),
-/* harmony export */   "LinearMipmapNearestFilter": () => (/* binding */ LinearMipmapNearestFilter),
-/* harmony export */   "LinearSRGBColorSpace": () => (/* binding */ LinearSRGBColorSpace),
-/* harmony export */   "LinearToneMapping": () => (/* binding */ LinearToneMapping),
-/* harmony export */   "Loader": () => (/* binding */ Loader),
-/* harmony export */   "LoaderUtils": () => (/* binding */ LoaderUtils),
-/* harmony export */   "LoadingManager": () => (/* binding */ LoadingManager),
-/* harmony export */   "LoopOnce": () => (/* binding */ LoopOnce),
-/* harmony export */   "LoopPingPong": () => (/* binding */ LoopPingPong),
-/* harmony export */   "LoopRepeat": () => (/* binding */ LoopRepeat),
-/* harmony export */   "LuminanceAlphaFormat": () => (/* binding */ LuminanceAlphaFormat),
-/* harmony export */   "LuminanceFormat": () => (/* binding */ LuminanceFormat),
-/* harmony export */   "MOUSE": () => (/* binding */ MOUSE),
-/* harmony export */   "Material": () => (/* binding */ Material),
-/* harmony export */   "MaterialLoader": () => (/* binding */ MaterialLoader),
-/* harmony export */   "MathUtils": () => (/* binding */ MathUtils),
-/* harmony export */   "Matrix3": () => (/* binding */ Matrix3),
-/* harmony export */   "Matrix4": () => (/* binding */ Matrix4),
-/* harmony export */   "MaxEquation": () => (/* binding */ MaxEquation),
-/* harmony export */   "Mesh": () => (/* binding */ Mesh),
-/* harmony export */   "MeshBasicMaterial": () => (/* binding */ MeshBasicMaterial),
-/* harmony export */   "MeshDepthMaterial": () => (/* binding */ MeshDepthMaterial),
-/* harmony export */   "MeshDistanceMaterial": () => (/* binding */ MeshDistanceMaterial),
-/* harmony export */   "MeshLambertMaterial": () => (/* binding */ MeshLambertMaterial),
-/* harmony export */   "MeshMatcapMaterial": () => (/* binding */ MeshMatcapMaterial),
-/* harmony export */   "MeshNormalMaterial": () => (/* binding */ MeshNormalMaterial),
-/* harmony export */   "MeshPhongMaterial": () => (/* binding */ MeshPhongMaterial),
-/* harmony export */   "MeshPhysicalMaterial": () => (/* binding */ MeshPhysicalMaterial),
-/* harmony export */   "MeshStandardMaterial": () => (/* binding */ MeshStandardMaterial),
-/* harmony export */   "MeshToonMaterial": () => (/* binding */ MeshToonMaterial),
-/* harmony export */   "MinEquation": () => (/* binding */ MinEquation),
-/* harmony export */   "MirroredRepeatWrapping": () => (/* binding */ MirroredRepeatWrapping),
-/* harmony export */   "MixOperation": () => (/* binding */ MixOperation),
-/* harmony export */   "MultiplyBlending": () => (/* binding */ MultiplyBlending),
-/* harmony export */   "MultiplyOperation": () => (/* binding */ MultiplyOperation),
-/* harmony export */   "NearestFilter": () => (/* binding */ NearestFilter),
-/* harmony export */   "NearestMipMapLinearFilter": () => (/* binding */ NearestMipMapLinearFilter),
-/* harmony export */   "NearestMipMapNearestFilter": () => (/* binding */ NearestMipMapNearestFilter),
-/* harmony export */   "NearestMipmapLinearFilter": () => (/* binding */ NearestMipmapLinearFilter),
-/* harmony export */   "NearestMipmapNearestFilter": () => (/* binding */ NearestMipmapNearestFilter),
-/* harmony export */   "NeverDepth": () => (/* binding */ NeverDepth),
-/* harmony export */   "NeverStencilFunc": () => (/* binding */ NeverStencilFunc),
-/* harmony export */   "NoBlending": () => (/* binding */ NoBlending),
-/* harmony export */   "NoColorSpace": () => (/* binding */ NoColorSpace),
-/* harmony export */   "NoToneMapping": () => (/* binding */ NoToneMapping),
-/* harmony export */   "NormalAnimationBlendMode": () => (/* binding */ NormalAnimationBlendMode),
-/* harmony export */   "NormalBlending": () => (/* binding */ NormalBlending),
-/* harmony export */   "NotEqualDepth": () => (/* binding */ NotEqualDepth),
-/* harmony export */   "NotEqualStencilFunc": () => (/* binding */ NotEqualStencilFunc),
-/* harmony export */   "NumberKeyframeTrack": () => (/* binding */ NumberKeyframeTrack),
-/* harmony export */   "Object3D": () => (/* binding */ Object3D),
-/* harmony export */   "ObjectLoader": () => (/* binding */ ObjectLoader),
-/* harmony export */   "ObjectSpaceNormalMap": () => (/* binding */ ObjectSpaceNormalMap),
-/* harmony export */   "OctahedronBufferGeometry": () => (/* binding */ OctahedronBufferGeometry),
-/* harmony export */   "OctahedronGeometry": () => (/* binding */ OctahedronGeometry),
-/* harmony export */   "OneFactor": () => (/* binding */ OneFactor),
-/* harmony export */   "OneMinusDstAlphaFactor": () => (/* binding */ OneMinusDstAlphaFactor),
-/* harmony export */   "OneMinusDstColorFactor": () => (/* binding */ OneMinusDstColorFactor),
-/* harmony export */   "OneMinusSrcAlphaFactor": () => (/* binding */ OneMinusSrcAlphaFactor),
-/* harmony export */   "OneMinusSrcColorFactor": () => (/* binding */ OneMinusSrcColorFactor),
-/* harmony export */   "OrthographicCamera": () => (/* binding */ OrthographicCamera),
-/* harmony export */   "PCFShadowMap": () => (/* binding */ PCFShadowMap),
-/* harmony export */   "PCFSoftShadowMap": () => (/* binding */ PCFSoftShadowMap),
-/* harmony export */   "PMREMGenerator": () => (/* binding */ PMREMGenerator),
-/* harmony export */   "Path": () => (/* binding */ Path),
-/* harmony export */   "PerspectiveCamera": () => (/* binding */ PerspectiveCamera),
-/* harmony export */   "Plane": () => (/* binding */ Plane),
-/* harmony export */   "PlaneBufferGeometry": () => (/* binding */ PlaneBufferGeometry),
-/* harmony export */   "PlaneGeometry": () => (/* binding */ PlaneGeometry),
-/* harmony export */   "PlaneHelper": () => (/* binding */ PlaneHelper),
-/* harmony export */   "PointLight": () => (/* binding */ PointLight),
-/* harmony export */   "PointLightHelper": () => (/* binding */ PointLightHelper),
-/* harmony export */   "Points": () => (/* binding */ Points),
-/* harmony export */   "PointsMaterial": () => (/* binding */ PointsMaterial),
-/* harmony export */   "PolarGridHelper": () => (/* binding */ PolarGridHelper),
-/* harmony export */   "PolyhedronBufferGeometry": () => (/* binding */ PolyhedronBufferGeometry),
-/* harmony export */   "PolyhedronGeometry": () => (/* binding */ PolyhedronGeometry),
-/* harmony export */   "PositionalAudio": () => (/* binding */ PositionalAudio),
-/* harmony export */   "PropertyBinding": () => (/* binding */ PropertyBinding),
-/* harmony export */   "PropertyMixer": () => (/* binding */ PropertyMixer),
-/* harmony export */   "QuadraticBezierCurve": () => (/* binding */ QuadraticBezierCurve),
-/* harmony export */   "QuadraticBezierCurve3": () => (/* binding */ QuadraticBezierCurve3),
-/* harmony export */   "Quaternion": () => (/* binding */ Quaternion),
-/* harmony export */   "QuaternionKeyframeTrack": () => (/* binding */ QuaternionKeyframeTrack),
-/* harmony export */   "QuaternionLinearInterpolant": () => (/* binding */ QuaternionLinearInterpolant),
-/* harmony export */   "REVISION": () => (/* binding */ REVISION),
-/* harmony export */   "RGBADepthPacking": () => (/* binding */ RGBADepthPacking),
-/* harmony export */   "RGBAFormat": () => (/* binding */ RGBAFormat),
-/* harmony export */   "RGBAIntegerFormat": () => (/* binding */ RGBAIntegerFormat),
-/* harmony export */   "RGBA_ASTC_10x10_Format": () => (/* binding */ RGBA_ASTC_10x10_Format),
-/* harmony export */   "RGBA_ASTC_10x5_Format": () => (/* binding */ RGBA_ASTC_10x5_Format),
-/* harmony export */   "RGBA_ASTC_10x6_Format": () => (/* binding */ RGBA_ASTC_10x6_Format),
-/* harmony export */   "RGBA_ASTC_10x8_Format": () => (/* binding */ RGBA_ASTC_10x8_Format),
-/* harmony export */   "RGBA_ASTC_12x10_Format": () => (/* binding */ RGBA_ASTC_12x10_Format),
-/* harmony export */   "RGBA_ASTC_12x12_Format": () => (/* binding */ RGBA_ASTC_12x12_Format),
-/* harmony export */   "RGBA_ASTC_4x4_Format": () => (/* binding */ RGBA_ASTC_4x4_Format),
-/* harmony export */   "RGBA_ASTC_5x4_Format": () => (/* binding */ RGBA_ASTC_5x4_Format),
-/* harmony export */   "RGBA_ASTC_5x5_Format": () => (/* binding */ RGBA_ASTC_5x5_Format),
-/* harmony export */   "RGBA_ASTC_6x5_Format": () => (/* binding */ RGBA_ASTC_6x5_Format),
-/* harmony export */   "RGBA_ASTC_6x6_Format": () => (/* binding */ RGBA_ASTC_6x6_Format),
-/* harmony export */   "RGBA_ASTC_8x5_Format": () => (/* binding */ RGBA_ASTC_8x5_Format),
-/* harmony export */   "RGBA_ASTC_8x6_Format": () => (/* binding */ RGBA_ASTC_8x6_Format),
-/* harmony export */   "RGBA_ASTC_8x8_Format": () => (/* binding */ RGBA_ASTC_8x8_Format),
-/* harmony export */   "RGBA_BPTC_Format": () => (/* binding */ RGBA_BPTC_Format),
-/* harmony export */   "RGBA_ETC2_EAC_Format": () => (/* binding */ RGBA_ETC2_EAC_Format),
-/* harmony export */   "RGBA_PVRTC_2BPPV1_Format": () => (/* binding */ RGBA_PVRTC_2BPPV1_Format),
-/* harmony export */   "RGBA_PVRTC_4BPPV1_Format": () => (/* binding */ RGBA_PVRTC_4BPPV1_Format),
-/* harmony export */   "RGBA_S3TC_DXT1_Format": () => (/* binding */ RGBA_S3TC_DXT1_Format),
-/* harmony export */   "RGBA_S3TC_DXT3_Format": () => (/* binding */ RGBA_S3TC_DXT3_Format),
-/* harmony export */   "RGBA_S3TC_DXT5_Format": () => (/* binding */ RGBA_S3TC_DXT5_Format),
-/* harmony export */   "RGBFormat": () => (/* binding */ RGBFormat),
-/* harmony export */   "RGB_ETC1_Format": () => (/* binding */ RGB_ETC1_Format),
-/* harmony export */   "RGB_ETC2_Format": () => (/* binding */ RGB_ETC2_Format),
-/* harmony export */   "RGB_PVRTC_2BPPV1_Format": () => (/* binding */ RGB_PVRTC_2BPPV1_Format),
-/* harmony export */   "RGB_PVRTC_4BPPV1_Format": () => (/* binding */ RGB_PVRTC_4BPPV1_Format),
-/* harmony export */   "RGB_S3TC_DXT1_Format": () => (/* binding */ RGB_S3TC_DXT1_Format),
-/* harmony export */   "RGFormat": () => (/* binding */ RGFormat),
-/* harmony export */   "RGIntegerFormat": () => (/* binding */ RGIntegerFormat),
-/* harmony export */   "RawShaderMaterial": () => (/* binding */ RawShaderMaterial),
-/* harmony export */   "Ray": () => (/* binding */ Ray),
-/* harmony export */   "Raycaster": () => (/* binding */ Raycaster),
-/* harmony export */   "RectAreaLight": () => (/* binding */ RectAreaLight),
-/* harmony export */   "RedFormat": () => (/* binding */ RedFormat),
-/* harmony export */   "RedIntegerFormat": () => (/* binding */ RedIntegerFormat),
-/* harmony export */   "ReinhardToneMapping": () => (/* binding */ ReinhardToneMapping),
-/* harmony export */   "RepeatWrapping": () => (/* binding */ RepeatWrapping),
-/* harmony export */   "ReplaceStencilOp": () => (/* binding */ ReplaceStencilOp),
-/* harmony export */   "ReverseSubtractEquation": () => (/* binding */ ReverseSubtractEquation),
-/* harmony export */   "RingBufferGeometry": () => (/* binding */ RingBufferGeometry),
-/* harmony export */   "RingGeometry": () => (/* binding */ RingGeometry),
-/* harmony export */   "SRGBColorSpace": () => (/* binding */ SRGBColorSpace),
-/* harmony export */   "Scene": () => (/* binding */ Scene),
-/* harmony export */   "ShaderChunk": () => (/* binding */ ShaderChunk),
-/* harmony export */   "ShaderLib": () => (/* binding */ ShaderLib),
-/* harmony export */   "ShaderMaterial": () => (/* binding */ ShaderMaterial),
-/* harmony export */   "ShadowMaterial": () => (/* binding */ ShadowMaterial),
-/* harmony export */   "Shape": () => (/* binding */ Shape),
-/* harmony export */   "ShapeBufferGeometry": () => (/* binding */ ShapeBufferGeometry),
-/* harmony export */   "ShapeGeometry": () => (/* binding */ ShapeGeometry),
-/* harmony export */   "ShapePath": () => (/* binding */ ShapePath),
-/* harmony export */   "ShapeUtils": () => (/* binding */ ShapeUtils),
-/* harmony export */   "ShortType": () => (/* binding */ ShortType),
-/* harmony export */   "Skeleton": () => (/* binding */ Skeleton),
-/* harmony export */   "SkeletonHelper": () => (/* binding */ SkeletonHelper),
-/* harmony export */   "SkinnedMesh": () => (/* binding */ SkinnedMesh),
-/* harmony export */   "Source": () => (/* binding */ Source),
-/* harmony export */   "Sphere": () => (/* binding */ Sphere),
-/* harmony export */   "SphereBufferGeometry": () => (/* binding */ SphereBufferGeometry),
-/* harmony export */   "SphereGeometry": () => (/* binding */ SphereGeometry),
-/* harmony export */   "Spherical": () => (/* binding */ Spherical),
-/* harmony export */   "SphericalHarmonics3": () => (/* binding */ SphericalHarmonics3),
-/* harmony export */   "SplineCurve": () => (/* binding */ SplineCurve),
-/* harmony export */   "SpotLight": () => (/* binding */ SpotLight),
-/* harmony export */   "SpotLightHelper": () => (/* binding */ SpotLightHelper),
-/* harmony export */   "Sprite": () => (/* binding */ Sprite),
-/* harmony export */   "SpriteMaterial": () => (/* binding */ SpriteMaterial),
-/* harmony export */   "SrcAlphaFactor": () => (/* binding */ SrcAlphaFactor),
-/* harmony export */   "SrcAlphaSaturateFactor": () => (/* binding */ SrcAlphaSaturateFactor),
-/* harmony export */   "SrcColorFactor": () => (/* binding */ SrcColorFactor),
-/* harmony export */   "StaticCopyUsage": () => (/* binding */ StaticCopyUsage),
-/* harmony export */   "StaticDrawUsage": () => (/* binding */ StaticDrawUsage),
-/* harmony export */   "StaticReadUsage": () => (/* binding */ StaticReadUsage),
-/* harmony export */   "StereoCamera": () => (/* binding */ StereoCamera),
-/* harmony export */   "StreamCopyUsage": () => (/* binding */ StreamCopyUsage),
-/* harmony export */   "StreamDrawUsage": () => (/* binding */ StreamDrawUsage),
-/* harmony export */   "StreamReadUsage": () => (/* binding */ StreamReadUsage),
-/* harmony export */   "StringKeyframeTrack": () => (/* binding */ StringKeyframeTrack),
-/* harmony export */   "SubtractEquation": () => (/* binding */ SubtractEquation),
-/* harmony export */   "SubtractiveBlending": () => (/* binding */ SubtractiveBlending),
-/* harmony export */   "TOUCH": () => (/* binding */ TOUCH),
-/* harmony export */   "TangentSpaceNormalMap": () => (/* binding */ TangentSpaceNormalMap),
-/* harmony export */   "TetrahedronBufferGeometry": () => (/* binding */ TetrahedronBufferGeometry),
-/* harmony export */   "TetrahedronGeometry": () => (/* binding */ TetrahedronGeometry),
-/* harmony export */   "Texture": () => (/* binding */ Texture),
-/* harmony export */   "TextureLoader": () => (/* binding */ TextureLoader),
-/* harmony export */   "TorusBufferGeometry": () => (/* binding */ TorusBufferGeometry),
-/* harmony export */   "TorusGeometry": () => (/* binding */ TorusGeometry),
-/* harmony export */   "TorusKnotBufferGeometry": () => (/* binding */ TorusKnotBufferGeometry),
-/* harmony export */   "TorusKnotGeometry": () => (/* binding */ TorusKnotGeometry),
-/* harmony export */   "Triangle": () => (/* binding */ Triangle),
-/* harmony export */   "TriangleFanDrawMode": () => (/* binding */ TriangleFanDrawMode),
-/* harmony export */   "TriangleStripDrawMode": () => (/* binding */ TriangleStripDrawMode),
-/* harmony export */   "TrianglesDrawMode": () => (/* binding */ TrianglesDrawMode),
-/* harmony export */   "TubeBufferGeometry": () => (/* binding */ TubeBufferGeometry),
-/* harmony export */   "TubeGeometry": () => (/* binding */ TubeGeometry),
-/* harmony export */   "UVMapping": () => (/* binding */ UVMapping),
-/* harmony export */   "Uint16BufferAttribute": () => (/* binding */ Uint16BufferAttribute),
-/* harmony export */   "Uint32BufferAttribute": () => (/* binding */ Uint32BufferAttribute),
-/* harmony export */   "Uint8BufferAttribute": () => (/* binding */ Uint8BufferAttribute),
-/* harmony export */   "Uint8ClampedBufferAttribute": () => (/* binding */ Uint8ClampedBufferAttribute),
-/* harmony export */   "Uniform": () => (/* binding */ Uniform),
-/* harmony export */   "UniformsGroup": () => (/* binding */ UniformsGroup),
-/* harmony export */   "UniformsLib": () => (/* binding */ UniformsLib),
-/* harmony export */   "UniformsUtils": () => (/* binding */ UniformsUtils),
-/* harmony export */   "UnsignedByteType": () => (/* binding */ UnsignedByteType),
-/* harmony export */   "UnsignedInt248Type": () => (/* binding */ UnsignedInt248Type),
-/* harmony export */   "UnsignedIntType": () => (/* binding */ UnsignedIntType),
-/* harmony export */   "UnsignedShort4444Type": () => (/* binding */ UnsignedShort4444Type),
-/* harmony export */   "UnsignedShort5551Type": () => (/* binding */ UnsignedShort5551Type),
-/* harmony export */   "UnsignedShortType": () => (/* binding */ UnsignedShortType),
-/* harmony export */   "VSMShadowMap": () => (/* binding */ VSMShadowMap),
-/* harmony export */   "Vector2": () => (/* binding */ Vector2),
-/* harmony export */   "Vector3": () => (/* binding */ Vector3),
-/* harmony export */   "Vector4": () => (/* binding */ Vector4),
-/* harmony export */   "VectorKeyframeTrack": () => (/* binding */ VectorKeyframeTrack),
-/* harmony export */   "VideoTexture": () => (/* binding */ VideoTexture),
-/* harmony export */   "WebGL1Renderer": () => (/* binding */ WebGL1Renderer),
-/* harmony export */   "WebGL3DRenderTarget": () => (/* binding */ WebGL3DRenderTarget),
-/* harmony export */   "WebGLArrayRenderTarget": () => (/* binding */ WebGLArrayRenderTarget),
-/* harmony export */   "WebGLCubeRenderTarget": () => (/* binding */ WebGLCubeRenderTarget),
-/* harmony export */   "WebGLMultipleRenderTargets": () => (/* binding */ WebGLMultipleRenderTargets),
-/* harmony export */   "WebGLMultisampleRenderTarget": () => (/* binding */ WebGLMultisampleRenderTarget),
-/* harmony export */   "WebGLRenderTarget": () => (/* binding */ WebGLRenderTarget),
-/* harmony export */   "WebGLRenderer": () => (/* binding */ WebGLRenderer),
-/* harmony export */   "WebGLUtils": () => (/* binding */ WebGLUtils),
-/* harmony export */   "WireframeGeometry": () => (/* binding */ WireframeGeometry),
-/* harmony export */   "WrapAroundEnding": () => (/* binding */ WrapAroundEnding),
-/* harmony export */   "ZeroCurvatureEnding": () => (/* binding */ ZeroCurvatureEnding),
-/* harmony export */   "ZeroFactor": () => (/* binding */ ZeroFactor),
-/* harmony export */   "ZeroSlopeEnding": () => (/* binding */ ZeroSlopeEnding),
-/* harmony export */   "ZeroStencilOp": () => (/* binding */ ZeroStencilOp),
-/* harmony export */   "_SRGBAFormat": () => (/* binding */ _SRGBAFormat),
-/* harmony export */   "sRGBEncoding": () => (/* binding */ sRGBEncoding)
+/* harmony export */   ACESFilmicToneMapping: () => (/* binding */ ACESFilmicToneMapping),
+/* harmony export */   AddEquation: () => (/* binding */ AddEquation),
+/* harmony export */   AddOperation: () => (/* binding */ AddOperation),
+/* harmony export */   AdditiveAnimationBlendMode: () => (/* binding */ AdditiveAnimationBlendMode),
+/* harmony export */   AdditiveBlending: () => (/* binding */ AdditiveBlending),
+/* harmony export */   AlphaFormat: () => (/* binding */ AlphaFormat),
+/* harmony export */   AlwaysDepth: () => (/* binding */ AlwaysDepth),
+/* harmony export */   AlwaysStencilFunc: () => (/* binding */ AlwaysStencilFunc),
+/* harmony export */   AmbientLight: () => (/* binding */ AmbientLight),
+/* harmony export */   AmbientLightProbe: () => (/* binding */ AmbientLightProbe),
+/* harmony export */   AnimationClip: () => (/* binding */ AnimationClip),
+/* harmony export */   AnimationLoader: () => (/* binding */ AnimationLoader),
+/* harmony export */   AnimationMixer: () => (/* binding */ AnimationMixer),
+/* harmony export */   AnimationObjectGroup: () => (/* binding */ AnimationObjectGroup),
+/* harmony export */   AnimationUtils: () => (/* binding */ AnimationUtils),
+/* harmony export */   ArcCurve: () => (/* binding */ ArcCurve),
+/* harmony export */   ArrayCamera: () => (/* binding */ ArrayCamera),
+/* harmony export */   ArrowHelper: () => (/* binding */ ArrowHelper),
+/* harmony export */   Audio: () => (/* binding */ Audio),
+/* harmony export */   AudioAnalyser: () => (/* binding */ AudioAnalyser),
+/* harmony export */   AudioContext: () => (/* binding */ AudioContext),
+/* harmony export */   AudioListener: () => (/* binding */ AudioListener),
+/* harmony export */   AudioLoader: () => (/* binding */ AudioLoader),
+/* harmony export */   AxesHelper: () => (/* binding */ AxesHelper),
+/* harmony export */   BackSide: () => (/* binding */ BackSide),
+/* harmony export */   BasicDepthPacking: () => (/* binding */ BasicDepthPacking),
+/* harmony export */   BasicShadowMap: () => (/* binding */ BasicShadowMap),
+/* harmony export */   Bone: () => (/* binding */ Bone),
+/* harmony export */   BooleanKeyframeTrack: () => (/* binding */ BooleanKeyframeTrack),
+/* harmony export */   Box2: () => (/* binding */ Box2),
+/* harmony export */   Box3: () => (/* binding */ Box3),
+/* harmony export */   Box3Helper: () => (/* binding */ Box3Helper),
+/* harmony export */   BoxBufferGeometry: () => (/* binding */ BoxBufferGeometry),
+/* harmony export */   BoxGeometry: () => (/* binding */ BoxGeometry),
+/* harmony export */   BoxHelper: () => (/* binding */ BoxHelper),
+/* harmony export */   BufferAttribute: () => (/* binding */ BufferAttribute),
+/* harmony export */   BufferGeometry: () => (/* binding */ BufferGeometry),
+/* harmony export */   BufferGeometryLoader: () => (/* binding */ BufferGeometryLoader),
+/* harmony export */   ByteType: () => (/* binding */ ByteType),
+/* harmony export */   Cache: () => (/* binding */ Cache),
+/* harmony export */   Camera: () => (/* binding */ Camera),
+/* harmony export */   CameraHelper: () => (/* binding */ CameraHelper),
+/* harmony export */   CanvasTexture: () => (/* binding */ CanvasTexture),
+/* harmony export */   CapsuleBufferGeometry: () => (/* binding */ CapsuleBufferGeometry),
+/* harmony export */   CapsuleGeometry: () => (/* binding */ CapsuleGeometry),
+/* harmony export */   CatmullRomCurve3: () => (/* binding */ CatmullRomCurve3),
+/* harmony export */   CineonToneMapping: () => (/* binding */ CineonToneMapping),
+/* harmony export */   CircleBufferGeometry: () => (/* binding */ CircleBufferGeometry),
+/* harmony export */   CircleGeometry: () => (/* binding */ CircleGeometry),
+/* harmony export */   ClampToEdgeWrapping: () => (/* binding */ ClampToEdgeWrapping),
+/* harmony export */   Clock: () => (/* binding */ Clock),
+/* harmony export */   Color: () => (/* binding */ Color),
+/* harmony export */   ColorKeyframeTrack: () => (/* binding */ ColorKeyframeTrack),
+/* harmony export */   ColorManagement: () => (/* binding */ ColorManagement),
+/* harmony export */   CompressedTexture: () => (/* binding */ CompressedTexture),
+/* harmony export */   CompressedTextureLoader: () => (/* binding */ CompressedTextureLoader),
+/* harmony export */   ConeBufferGeometry: () => (/* binding */ ConeBufferGeometry),
+/* harmony export */   ConeGeometry: () => (/* binding */ ConeGeometry),
+/* harmony export */   CubeCamera: () => (/* binding */ CubeCamera),
+/* harmony export */   CubeReflectionMapping: () => (/* binding */ CubeReflectionMapping),
+/* harmony export */   CubeRefractionMapping: () => (/* binding */ CubeRefractionMapping),
+/* harmony export */   CubeTexture: () => (/* binding */ CubeTexture),
+/* harmony export */   CubeTextureLoader: () => (/* binding */ CubeTextureLoader),
+/* harmony export */   CubeUVReflectionMapping: () => (/* binding */ CubeUVReflectionMapping),
+/* harmony export */   CubicBezierCurve: () => (/* binding */ CubicBezierCurve),
+/* harmony export */   CubicBezierCurve3: () => (/* binding */ CubicBezierCurve3),
+/* harmony export */   CubicInterpolant: () => (/* binding */ CubicInterpolant),
+/* harmony export */   CullFaceBack: () => (/* binding */ CullFaceBack),
+/* harmony export */   CullFaceFront: () => (/* binding */ CullFaceFront),
+/* harmony export */   CullFaceFrontBack: () => (/* binding */ CullFaceFrontBack),
+/* harmony export */   CullFaceNone: () => (/* binding */ CullFaceNone),
+/* harmony export */   Curve: () => (/* binding */ Curve),
+/* harmony export */   CurvePath: () => (/* binding */ CurvePath),
+/* harmony export */   CustomBlending: () => (/* binding */ CustomBlending),
+/* harmony export */   CustomToneMapping: () => (/* binding */ CustomToneMapping),
+/* harmony export */   CylinderBufferGeometry: () => (/* binding */ CylinderBufferGeometry),
+/* harmony export */   CylinderGeometry: () => (/* binding */ CylinderGeometry),
+/* harmony export */   Cylindrical: () => (/* binding */ Cylindrical),
+/* harmony export */   Data3DTexture: () => (/* binding */ Data3DTexture),
+/* harmony export */   DataArrayTexture: () => (/* binding */ DataArrayTexture),
+/* harmony export */   DataTexture: () => (/* binding */ DataTexture),
+/* harmony export */   DataTexture2DArray: () => (/* binding */ DataTexture2DArray),
+/* harmony export */   DataTexture3D: () => (/* binding */ DataTexture3D),
+/* harmony export */   DataTextureLoader: () => (/* binding */ DataTextureLoader),
+/* harmony export */   DataUtils: () => (/* binding */ DataUtils),
+/* harmony export */   DecrementStencilOp: () => (/* binding */ DecrementStencilOp),
+/* harmony export */   DecrementWrapStencilOp: () => (/* binding */ DecrementWrapStencilOp),
+/* harmony export */   DefaultLoadingManager: () => (/* binding */ DefaultLoadingManager),
+/* harmony export */   DepthFormat: () => (/* binding */ DepthFormat),
+/* harmony export */   DepthStencilFormat: () => (/* binding */ DepthStencilFormat),
+/* harmony export */   DepthTexture: () => (/* binding */ DepthTexture),
+/* harmony export */   DirectionalLight: () => (/* binding */ DirectionalLight),
+/* harmony export */   DirectionalLightHelper: () => (/* binding */ DirectionalLightHelper),
+/* harmony export */   DiscreteInterpolant: () => (/* binding */ DiscreteInterpolant),
+/* harmony export */   DodecahedronBufferGeometry: () => (/* binding */ DodecahedronBufferGeometry),
+/* harmony export */   DodecahedronGeometry: () => (/* binding */ DodecahedronGeometry),
+/* harmony export */   DoubleSide: () => (/* binding */ DoubleSide),
+/* harmony export */   DstAlphaFactor: () => (/* binding */ DstAlphaFactor),
+/* harmony export */   DstColorFactor: () => (/* binding */ DstColorFactor),
+/* harmony export */   DynamicCopyUsage: () => (/* binding */ DynamicCopyUsage),
+/* harmony export */   DynamicDrawUsage: () => (/* binding */ DynamicDrawUsage),
+/* harmony export */   DynamicReadUsage: () => (/* binding */ DynamicReadUsage),
+/* harmony export */   EdgesGeometry: () => (/* binding */ EdgesGeometry),
+/* harmony export */   EllipseCurve: () => (/* binding */ EllipseCurve),
+/* harmony export */   EqualDepth: () => (/* binding */ EqualDepth),
+/* harmony export */   EqualStencilFunc: () => (/* binding */ EqualStencilFunc),
+/* harmony export */   EquirectangularReflectionMapping: () => (/* binding */ EquirectangularReflectionMapping),
+/* harmony export */   EquirectangularRefractionMapping: () => (/* binding */ EquirectangularRefractionMapping),
+/* harmony export */   Euler: () => (/* binding */ Euler),
+/* harmony export */   EventDispatcher: () => (/* binding */ EventDispatcher),
+/* harmony export */   ExtrudeBufferGeometry: () => (/* binding */ ExtrudeBufferGeometry),
+/* harmony export */   ExtrudeGeometry: () => (/* binding */ ExtrudeGeometry),
+/* harmony export */   FileLoader: () => (/* binding */ FileLoader),
+/* harmony export */   Float16BufferAttribute: () => (/* binding */ Float16BufferAttribute),
+/* harmony export */   Float32BufferAttribute: () => (/* binding */ Float32BufferAttribute),
+/* harmony export */   Float64BufferAttribute: () => (/* binding */ Float64BufferAttribute),
+/* harmony export */   FloatType: () => (/* binding */ FloatType),
+/* harmony export */   Fog: () => (/* binding */ Fog),
+/* harmony export */   FogExp2: () => (/* binding */ FogExp2),
+/* harmony export */   FramebufferTexture: () => (/* binding */ FramebufferTexture),
+/* harmony export */   FrontSide: () => (/* binding */ FrontSide),
+/* harmony export */   Frustum: () => (/* binding */ Frustum),
+/* harmony export */   GLBufferAttribute: () => (/* binding */ GLBufferAttribute),
+/* harmony export */   GLSL1: () => (/* binding */ GLSL1),
+/* harmony export */   GLSL3: () => (/* binding */ GLSL3),
+/* harmony export */   GreaterDepth: () => (/* binding */ GreaterDepth),
+/* harmony export */   GreaterEqualDepth: () => (/* binding */ GreaterEqualDepth),
+/* harmony export */   GreaterEqualStencilFunc: () => (/* binding */ GreaterEqualStencilFunc),
+/* harmony export */   GreaterStencilFunc: () => (/* binding */ GreaterStencilFunc),
+/* harmony export */   GridHelper: () => (/* binding */ GridHelper),
+/* harmony export */   Group: () => (/* binding */ Group),
+/* harmony export */   HalfFloatType: () => (/* binding */ HalfFloatType),
+/* harmony export */   HemisphereLight: () => (/* binding */ HemisphereLight),
+/* harmony export */   HemisphereLightHelper: () => (/* binding */ HemisphereLightHelper),
+/* harmony export */   HemisphereLightProbe: () => (/* binding */ HemisphereLightProbe),
+/* harmony export */   IcosahedronBufferGeometry: () => (/* binding */ IcosahedronBufferGeometry),
+/* harmony export */   IcosahedronGeometry: () => (/* binding */ IcosahedronGeometry),
+/* harmony export */   ImageBitmapLoader: () => (/* binding */ ImageBitmapLoader),
+/* harmony export */   ImageLoader: () => (/* binding */ ImageLoader),
+/* harmony export */   ImageUtils: () => (/* binding */ ImageUtils),
+/* harmony export */   ImmediateRenderObject: () => (/* binding */ ImmediateRenderObject),
+/* harmony export */   IncrementStencilOp: () => (/* binding */ IncrementStencilOp),
+/* harmony export */   IncrementWrapStencilOp: () => (/* binding */ IncrementWrapStencilOp),
+/* harmony export */   InstancedBufferAttribute: () => (/* binding */ InstancedBufferAttribute),
+/* harmony export */   InstancedBufferGeometry: () => (/* binding */ InstancedBufferGeometry),
+/* harmony export */   InstancedInterleavedBuffer: () => (/* binding */ InstancedInterleavedBuffer),
+/* harmony export */   InstancedMesh: () => (/* binding */ InstancedMesh),
+/* harmony export */   Int16BufferAttribute: () => (/* binding */ Int16BufferAttribute),
+/* harmony export */   Int32BufferAttribute: () => (/* binding */ Int32BufferAttribute),
+/* harmony export */   Int8BufferAttribute: () => (/* binding */ Int8BufferAttribute),
+/* harmony export */   IntType: () => (/* binding */ IntType),
+/* harmony export */   InterleavedBuffer: () => (/* binding */ InterleavedBuffer),
+/* harmony export */   InterleavedBufferAttribute: () => (/* binding */ InterleavedBufferAttribute),
+/* harmony export */   Interpolant: () => (/* binding */ Interpolant),
+/* harmony export */   InterpolateDiscrete: () => (/* binding */ InterpolateDiscrete),
+/* harmony export */   InterpolateLinear: () => (/* binding */ InterpolateLinear),
+/* harmony export */   InterpolateSmooth: () => (/* binding */ InterpolateSmooth),
+/* harmony export */   InvertStencilOp: () => (/* binding */ InvertStencilOp),
+/* harmony export */   KeepStencilOp: () => (/* binding */ KeepStencilOp),
+/* harmony export */   KeyframeTrack: () => (/* binding */ KeyframeTrack),
+/* harmony export */   LOD: () => (/* binding */ LOD),
+/* harmony export */   LatheBufferGeometry: () => (/* binding */ LatheBufferGeometry),
+/* harmony export */   LatheGeometry: () => (/* binding */ LatheGeometry),
+/* harmony export */   Layers: () => (/* binding */ Layers),
+/* harmony export */   LessDepth: () => (/* binding */ LessDepth),
+/* harmony export */   LessEqualDepth: () => (/* binding */ LessEqualDepth),
+/* harmony export */   LessEqualStencilFunc: () => (/* binding */ LessEqualStencilFunc),
+/* harmony export */   LessStencilFunc: () => (/* binding */ LessStencilFunc),
+/* harmony export */   Light: () => (/* binding */ Light),
+/* harmony export */   LightProbe: () => (/* binding */ LightProbe),
+/* harmony export */   Line: () => (/* binding */ Line),
+/* harmony export */   Line3: () => (/* binding */ Line3),
+/* harmony export */   LineBasicMaterial: () => (/* binding */ LineBasicMaterial),
+/* harmony export */   LineCurve: () => (/* binding */ LineCurve),
+/* harmony export */   LineCurve3: () => (/* binding */ LineCurve3),
+/* harmony export */   LineDashedMaterial: () => (/* binding */ LineDashedMaterial),
+/* harmony export */   LineLoop: () => (/* binding */ LineLoop),
+/* harmony export */   LineSegments: () => (/* binding */ LineSegments),
+/* harmony export */   LinearEncoding: () => (/* binding */ LinearEncoding),
+/* harmony export */   LinearFilter: () => (/* binding */ LinearFilter),
+/* harmony export */   LinearInterpolant: () => (/* binding */ LinearInterpolant),
+/* harmony export */   LinearMipMapLinearFilter: () => (/* binding */ LinearMipMapLinearFilter),
+/* harmony export */   LinearMipMapNearestFilter: () => (/* binding */ LinearMipMapNearestFilter),
+/* harmony export */   LinearMipmapLinearFilter: () => (/* binding */ LinearMipmapLinearFilter),
+/* harmony export */   LinearMipmapNearestFilter: () => (/* binding */ LinearMipmapNearestFilter),
+/* harmony export */   LinearSRGBColorSpace: () => (/* binding */ LinearSRGBColorSpace),
+/* harmony export */   LinearToneMapping: () => (/* binding */ LinearToneMapping),
+/* harmony export */   Loader: () => (/* binding */ Loader),
+/* harmony export */   LoaderUtils: () => (/* binding */ LoaderUtils),
+/* harmony export */   LoadingManager: () => (/* binding */ LoadingManager),
+/* harmony export */   LoopOnce: () => (/* binding */ LoopOnce),
+/* harmony export */   LoopPingPong: () => (/* binding */ LoopPingPong),
+/* harmony export */   LoopRepeat: () => (/* binding */ LoopRepeat),
+/* harmony export */   LuminanceAlphaFormat: () => (/* binding */ LuminanceAlphaFormat),
+/* harmony export */   LuminanceFormat: () => (/* binding */ LuminanceFormat),
+/* harmony export */   MOUSE: () => (/* binding */ MOUSE),
+/* harmony export */   Material: () => (/* binding */ Material),
+/* harmony export */   MaterialLoader: () => (/* binding */ MaterialLoader),
+/* harmony export */   MathUtils: () => (/* binding */ MathUtils),
+/* harmony export */   Matrix3: () => (/* binding */ Matrix3),
+/* harmony export */   Matrix4: () => (/* binding */ Matrix4),
+/* harmony export */   MaxEquation: () => (/* binding */ MaxEquation),
+/* harmony export */   Mesh: () => (/* binding */ Mesh),
+/* harmony export */   MeshBasicMaterial: () => (/* binding */ MeshBasicMaterial),
+/* harmony export */   MeshDepthMaterial: () => (/* binding */ MeshDepthMaterial),
+/* harmony export */   MeshDistanceMaterial: () => (/* binding */ MeshDistanceMaterial),
+/* harmony export */   MeshLambertMaterial: () => (/* binding */ MeshLambertMaterial),
+/* harmony export */   MeshMatcapMaterial: () => (/* binding */ MeshMatcapMaterial),
+/* harmony export */   MeshNormalMaterial: () => (/* binding */ MeshNormalMaterial),
+/* harmony export */   MeshPhongMaterial: () => (/* binding */ MeshPhongMaterial),
+/* harmony export */   MeshPhysicalMaterial: () => (/* binding */ MeshPhysicalMaterial),
+/* harmony export */   MeshStandardMaterial: () => (/* binding */ MeshStandardMaterial),
+/* harmony export */   MeshToonMaterial: () => (/* binding */ MeshToonMaterial),
+/* harmony export */   MinEquation: () => (/* binding */ MinEquation),
+/* harmony export */   MirroredRepeatWrapping: () => (/* binding */ MirroredRepeatWrapping),
+/* harmony export */   MixOperation: () => (/* binding */ MixOperation),
+/* harmony export */   MultiplyBlending: () => (/* binding */ MultiplyBlending),
+/* harmony export */   MultiplyOperation: () => (/* binding */ MultiplyOperation),
+/* harmony export */   NearestFilter: () => (/* binding */ NearestFilter),
+/* harmony export */   NearestMipMapLinearFilter: () => (/* binding */ NearestMipMapLinearFilter),
+/* harmony export */   NearestMipMapNearestFilter: () => (/* binding */ NearestMipMapNearestFilter),
+/* harmony export */   NearestMipmapLinearFilter: () => (/* binding */ NearestMipmapLinearFilter),
+/* harmony export */   NearestMipmapNearestFilter: () => (/* binding */ NearestMipmapNearestFilter),
+/* harmony export */   NeverDepth: () => (/* binding */ NeverDepth),
+/* harmony export */   NeverStencilFunc: () => (/* binding */ NeverStencilFunc),
+/* harmony export */   NoBlending: () => (/* binding */ NoBlending),
+/* harmony export */   NoColorSpace: () => (/* binding */ NoColorSpace),
+/* harmony export */   NoToneMapping: () => (/* binding */ NoToneMapping),
+/* harmony export */   NormalAnimationBlendMode: () => (/* binding */ NormalAnimationBlendMode),
+/* harmony export */   NormalBlending: () => (/* binding */ NormalBlending),
+/* harmony export */   NotEqualDepth: () => (/* binding */ NotEqualDepth),
+/* harmony export */   NotEqualStencilFunc: () => (/* binding */ NotEqualStencilFunc),
+/* harmony export */   NumberKeyframeTrack: () => (/* binding */ NumberKeyframeTrack),
+/* harmony export */   Object3D: () => (/* binding */ Object3D),
+/* harmony export */   ObjectLoader: () => (/* binding */ ObjectLoader),
+/* harmony export */   ObjectSpaceNormalMap: () => (/* binding */ ObjectSpaceNormalMap),
+/* harmony export */   OctahedronBufferGeometry: () => (/* binding */ OctahedronBufferGeometry),
+/* harmony export */   OctahedronGeometry: () => (/* binding */ OctahedronGeometry),
+/* harmony export */   OneFactor: () => (/* binding */ OneFactor),
+/* harmony export */   OneMinusDstAlphaFactor: () => (/* binding */ OneMinusDstAlphaFactor),
+/* harmony export */   OneMinusDstColorFactor: () => (/* binding */ OneMinusDstColorFactor),
+/* harmony export */   OneMinusSrcAlphaFactor: () => (/* binding */ OneMinusSrcAlphaFactor),
+/* harmony export */   OneMinusSrcColorFactor: () => (/* binding */ OneMinusSrcColorFactor),
+/* harmony export */   OrthographicCamera: () => (/* binding */ OrthographicCamera),
+/* harmony export */   PCFShadowMap: () => (/* binding */ PCFShadowMap),
+/* harmony export */   PCFSoftShadowMap: () => (/* binding */ PCFSoftShadowMap),
+/* harmony export */   PMREMGenerator: () => (/* binding */ PMREMGenerator),
+/* harmony export */   Path: () => (/* binding */ Path),
+/* harmony export */   PerspectiveCamera: () => (/* binding */ PerspectiveCamera),
+/* harmony export */   Plane: () => (/* binding */ Plane),
+/* harmony export */   PlaneBufferGeometry: () => (/* binding */ PlaneBufferGeometry),
+/* harmony export */   PlaneGeometry: () => (/* binding */ PlaneGeometry),
+/* harmony export */   PlaneHelper: () => (/* binding */ PlaneHelper),
+/* harmony export */   PointLight: () => (/* binding */ PointLight),
+/* harmony export */   PointLightHelper: () => (/* binding */ PointLightHelper),
+/* harmony export */   Points: () => (/* binding */ Points),
+/* harmony export */   PointsMaterial: () => (/* binding */ PointsMaterial),
+/* harmony export */   PolarGridHelper: () => (/* binding */ PolarGridHelper),
+/* harmony export */   PolyhedronBufferGeometry: () => (/* binding */ PolyhedronBufferGeometry),
+/* harmony export */   PolyhedronGeometry: () => (/* binding */ PolyhedronGeometry),
+/* harmony export */   PositionalAudio: () => (/* binding */ PositionalAudio),
+/* harmony export */   PropertyBinding: () => (/* binding */ PropertyBinding),
+/* harmony export */   PropertyMixer: () => (/* binding */ PropertyMixer),
+/* harmony export */   QuadraticBezierCurve: () => (/* binding */ QuadraticBezierCurve),
+/* harmony export */   QuadraticBezierCurve3: () => (/* binding */ QuadraticBezierCurve3),
+/* harmony export */   Quaternion: () => (/* binding */ Quaternion),
+/* harmony export */   QuaternionKeyframeTrack: () => (/* binding */ QuaternionKeyframeTrack),
+/* harmony export */   QuaternionLinearInterpolant: () => (/* binding */ QuaternionLinearInterpolant),
+/* harmony export */   REVISION: () => (/* binding */ REVISION),
+/* harmony export */   RGBADepthPacking: () => (/* binding */ RGBADepthPacking),
+/* harmony export */   RGBAFormat: () => (/* binding */ RGBAFormat),
+/* harmony export */   RGBAIntegerFormat: () => (/* binding */ RGBAIntegerFormat),
+/* harmony export */   RGBA_ASTC_10x10_Format: () => (/* binding */ RGBA_ASTC_10x10_Format),
+/* harmony export */   RGBA_ASTC_10x5_Format: () => (/* binding */ RGBA_ASTC_10x5_Format),
+/* harmony export */   RGBA_ASTC_10x6_Format: () => (/* binding */ RGBA_ASTC_10x6_Format),
+/* harmony export */   RGBA_ASTC_10x8_Format: () => (/* binding */ RGBA_ASTC_10x8_Format),
+/* harmony export */   RGBA_ASTC_12x10_Format: () => (/* binding */ RGBA_ASTC_12x10_Format),
+/* harmony export */   RGBA_ASTC_12x12_Format: () => (/* binding */ RGBA_ASTC_12x12_Format),
+/* harmony export */   RGBA_ASTC_4x4_Format: () => (/* binding */ RGBA_ASTC_4x4_Format),
+/* harmony export */   RGBA_ASTC_5x4_Format: () => (/* binding */ RGBA_ASTC_5x4_Format),
+/* harmony export */   RGBA_ASTC_5x5_Format: () => (/* binding */ RGBA_ASTC_5x5_Format),
+/* harmony export */   RGBA_ASTC_6x5_Format: () => (/* binding */ RGBA_ASTC_6x5_Format),
+/* harmony export */   RGBA_ASTC_6x6_Format: () => (/* binding */ RGBA_ASTC_6x6_Format),
+/* harmony export */   RGBA_ASTC_8x5_Format: () => (/* binding */ RGBA_ASTC_8x5_Format),
+/* harmony export */   RGBA_ASTC_8x6_Format: () => (/* binding */ RGBA_ASTC_8x6_Format),
+/* harmony export */   RGBA_ASTC_8x8_Format: () => (/* binding */ RGBA_ASTC_8x8_Format),
+/* harmony export */   RGBA_BPTC_Format: () => (/* binding */ RGBA_BPTC_Format),
+/* harmony export */   RGBA_ETC2_EAC_Format: () => (/* binding */ RGBA_ETC2_EAC_Format),
+/* harmony export */   RGBA_PVRTC_2BPPV1_Format: () => (/* binding */ RGBA_PVRTC_2BPPV1_Format),
+/* harmony export */   RGBA_PVRTC_4BPPV1_Format: () => (/* binding */ RGBA_PVRTC_4BPPV1_Format),
+/* harmony export */   RGBA_S3TC_DXT1_Format: () => (/* binding */ RGBA_S3TC_DXT1_Format),
+/* harmony export */   RGBA_S3TC_DXT3_Format: () => (/* binding */ RGBA_S3TC_DXT3_Format),
+/* harmony export */   RGBA_S3TC_DXT5_Format: () => (/* binding */ RGBA_S3TC_DXT5_Format),
+/* harmony export */   RGBFormat: () => (/* binding */ RGBFormat),
+/* harmony export */   RGB_ETC1_Format: () => (/* binding */ RGB_ETC1_Format),
+/* harmony export */   RGB_ETC2_Format: () => (/* binding */ RGB_ETC2_Format),
+/* harmony export */   RGB_PVRTC_2BPPV1_Format: () => (/* binding */ RGB_PVRTC_2BPPV1_Format),
+/* harmony export */   RGB_PVRTC_4BPPV1_Format: () => (/* binding */ RGB_PVRTC_4BPPV1_Format),
+/* harmony export */   RGB_S3TC_DXT1_Format: () => (/* binding */ RGB_S3TC_DXT1_Format),
+/* harmony export */   RGFormat: () => (/* binding */ RGFormat),
+/* harmony export */   RGIntegerFormat: () => (/* binding */ RGIntegerFormat),
+/* harmony export */   RawShaderMaterial: () => (/* binding */ RawShaderMaterial),
+/* harmony export */   Ray: () => (/* binding */ Ray),
+/* harmony export */   Raycaster: () => (/* binding */ Raycaster),
+/* harmony export */   RectAreaLight: () => (/* binding */ RectAreaLight),
+/* harmony export */   RedFormat: () => (/* binding */ RedFormat),
+/* harmony export */   RedIntegerFormat: () => (/* binding */ RedIntegerFormat),
+/* harmony export */   ReinhardToneMapping: () => (/* binding */ ReinhardToneMapping),
+/* harmony export */   RepeatWrapping: () => (/* binding */ RepeatWrapping),
+/* harmony export */   ReplaceStencilOp: () => (/* binding */ ReplaceStencilOp),
+/* harmony export */   ReverseSubtractEquation: () => (/* binding */ ReverseSubtractEquation),
+/* harmony export */   RingBufferGeometry: () => (/* binding */ RingBufferGeometry),
+/* harmony export */   RingGeometry: () => (/* binding */ RingGeometry),
+/* harmony export */   SRGBColorSpace: () => (/* binding */ SRGBColorSpace),
+/* harmony export */   Scene: () => (/* binding */ Scene),
+/* harmony export */   ShaderChunk: () => (/* binding */ ShaderChunk),
+/* harmony export */   ShaderLib: () => (/* binding */ ShaderLib),
+/* harmony export */   ShaderMaterial: () => (/* binding */ ShaderMaterial),
+/* harmony export */   ShadowMaterial: () => (/* binding */ ShadowMaterial),
+/* harmony export */   Shape: () => (/* binding */ Shape),
+/* harmony export */   ShapeBufferGeometry: () => (/* binding */ ShapeBufferGeometry),
+/* harmony export */   ShapeGeometry: () => (/* binding */ ShapeGeometry),
+/* harmony export */   ShapePath: () => (/* binding */ ShapePath),
+/* harmony export */   ShapeUtils: () => (/* binding */ ShapeUtils),
+/* harmony export */   ShortType: () => (/* binding */ ShortType),
+/* harmony export */   Skeleton: () => (/* binding */ Skeleton),
+/* harmony export */   SkeletonHelper: () => (/* binding */ SkeletonHelper),
+/* harmony export */   SkinnedMesh: () => (/* binding */ SkinnedMesh),
+/* harmony export */   Source: () => (/* binding */ Source),
+/* harmony export */   Sphere: () => (/* binding */ Sphere),
+/* harmony export */   SphereBufferGeometry: () => (/* binding */ SphereBufferGeometry),
+/* harmony export */   SphereGeometry: () => (/* binding */ SphereGeometry),
+/* harmony export */   Spherical: () => (/* binding */ Spherical),
+/* harmony export */   SphericalHarmonics3: () => (/* binding */ SphericalHarmonics3),
+/* harmony export */   SplineCurve: () => (/* binding */ SplineCurve),
+/* harmony export */   SpotLight: () => (/* binding */ SpotLight),
+/* harmony export */   SpotLightHelper: () => (/* binding */ SpotLightHelper),
+/* harmony export */   Sprite: () => (/* binding */ Sprite),
+/* harmony export */   SpriteMaterial: () => (/* binding */ SpriteMaterial),
+/* harmony export */   SrcAlphaFactor: () => (/* binding */ SrcAlphaFactor),
+/* harmony export */   SrcAlphaSaturateFactor: () => (/* binding */ SrcAlphaSaturateFactor),
+/* harmony export */   SrcColorFactor: () => (/* binding */ SrcColorFactor),
+/* harmony export */   StaticCopyUsage: () => (/* binding */ StaticCopyUsage),
+/* harmony export */   StaticDrawUsage: () => (/* binding */ StaticDrawUsage),
+/* harmony export */   StaticReadUsage: () => (/* binding */ StaticReadUsage),
+/* harmony export */   StereoCamera: () => (/* binding */ StereoCamera),
+/* harmony export */   StreamCopyUsage: () => (/* binding */ StreamCopyUsage),
+/* harmony export */   StreamDrawUsage: () => (/* binding */ StreamDrawUsage),
+/* harmony export */   StreamReadUsage: () => (/* binding */ StreamReadUsage),
+/* harmony export */   StringKeyframeTrack: () => (/* binding */ StringKeyframeTrack),
+/* harmony export */   SubtractEquation: () => (/* binding */ SubtractEquation),
+/* harmony export */   SubtractiveBlending: () => (/* binding */ SubtractiveBlending),
+/* harmony export */   TOUCH: () => (/* binding */ TOUCH),
+/* harmony export */   TangentSpaceNormalMap: () => (/* binding */ TangentSpaceNormalMap),
+/* harmony export */   TetrahedronBufferGeometry: () => (/* binding */ TetrahedronBufferGeometry),
+/* harmony export */   TetrahedronGeometry: () => (/* binding */ TetrahedronGeometry),
+/* harmony export */   Texture: () => (/* binding */ Texture),
+/* harmony export */   TextureLoader: () => (/* binding */ TextureLoader),
+/* harmony export */   TorusBufferGeometry: () => (/* binding */ TorusBufferGeometry),
+/* harmony export */   TorusGeometry: () => (/* binding */ TorusGeometry),
+/* harmony export */   TorusKnotBufferGeometry: () => (/* binding */ TorusKnotBufferGeometry),
+/* harmony export */   TorusKnotGeometry: () => (/* binding */ TorusKnotGeometry),
+/* harmony export */   Triangle: () => (/* binding */ Triangle),
+/* harmony export */   TriangleFanDrawMode: () => (/* binding */ TriangleFanDrawMode),
+/* harmony export */   TriangleStripDrawMode: () => (/* binding */ TriangleStripDrawMode),
+/* harmony export */   TrianglesDrawMode: () => (/* binding */ TrianglesDrawMode),
+/* harmony export */   TubeBufferGeometry: () => (/* binding */ TubeBufferGeometry),
+/* harmony export */   TubeGeometry: () => (/* binding */ TubeGeometry),
+/* harmony export */   UVMapping: () => (/* binding */ UVMapping),
+/* harmony export */   Uint16BufferAttribute: () => (/* binding */ Uint16BufferAttribute),
+/* harmony export */   Uint32BufferAttribute: () => (/* binding */ Uint32BufferAttribute),
+/* harmony export */   Uint8BufferAttribute: () => (/* binding */ Uint8BufferAttribute),
+/* harmony export */   Uint8ClampedBufferAttribute: () => (/* binding */ Uint8ClampedBufferAttribute),
+/* harmony export */   Uniform: () => (/* binding */ Uniform),
+/* harmony export */   UniformsGroup: () => (/* binding */ UniformsGroup),
+/* harmony export */   UniformsLib: () => (/* binding */ UniformsLib),
+/* harmony export */   UniformsUtils: () => (/* binding */ UniformsUtils),
+/* harmony export */   UnsignedByteType: () => (/* binding */ UnsignedByteType),
+/* harmony export */   UnsignedInt248Type: () => (/* binding */ UnsignedInt248Type),
+/* harmony export */   UnsignedIntType: () => (/* binding */ UnsignedIntType),
+/* harmony export */   UnsignedShort4444Type: () => (/* binding */ UnsignedShort4444Type),
+/* harmony export */   UnsignedShort5551Type: () => (/* binding */ UnsignedShort5551Type),
+/* harmony export */   UnsignedShortType: () => (/* binding */ UnsignedShortType),
+/* harmony export */   VSMShadowMap: () => (/* binding */ VSMShadowMap),
+/* harmony export */   Vector2: () => (/* binding */ Vector2),
+/* harmony export */   Vector3: () => (/* binding */ Vector3),
+/* harmony export */   Vector4: () => (/* binding */ Vector4),
+/* harmony export */   VectorKeyframeTrack: () => (/* binding */ VectorKeyframeTrack),
+/* harmony export */   VideoTexture: () => (/* binding */ VideoTexture),
+/* harmony export */   WebGL1Renderer: () => (/* binding */ WebGL1Renderer),
+/* harmony export */   WebGL3DRenderTarget: () => (/* binding */ WebGL3DRenderTarget),
+/* harmony export */   WebGLArrayRenderTarget: () => (/* binding */ WebGLArrayRenderTarget),
+/* harmony export */   WebGLCubeRenderTarget: () => (/* binding */ WebGLCubeRenderTarget),
+/* harmony export */   WebGLMultipleRenderTargets: () => (/* binding */ WebGLMultipleRenderTargets),
+/* harmony export */   WebGLMultisampleRenderTarget: () => (/* binding */ WebGLMultisampleRenderTarget),
+/* harmony export */   WebGLRenderTarget: () => (/* binding */ WebGLRenderTarget),
+/* harmony export */   WebGLRenderer: () => (/* binding */ WebGLRenderer),
+/* harmony export */   WebGLUtils: () => (/* binding */ WebGLUtils),
+/* harmony export */   WireframeGeometry: () => (/* binding */ WireframeGeometry),
+/* harmony export */   WrapAroundEnding: () => (/* binding */ WrapAroundEnding),
+/* harmony export */   ZeroCurvatureEnding: () => (/* binding */ ZeroCurvatureEnding),
+/* harmony export */   ZeroFactor: () => (/* binding */ ZeroFactor),
+/* harmony export */   ZeroSlopeEnding: () => (/* binding */ ZeroSlopeEnding),
+/* harmony export */   ZeroStencilOp: () => (/* binding */ ZeroStencilOp),
+/* harmony export */   _SRGBAFormat: () => (/* binding */ _SRGBAFormat),
+/* harmony export */   sRGBEncoding: () => (/* binding */ sRGBEncoding)
 /* harmony export */ });
 /**
  * @license
@@ -77892,7 +77339,7 @@ if ( typeof window !== 'undefined' ) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "GLTFExporter": () => (/* binding */ GLTFExporter)
+/* harmony export */   GLTFExporter: () => (/* binding */ GLTFExporter)
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
@@ -80640,7 +80087,7 @@ GLTFExporter.Utils = {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "STLExporter": () => (/* binding */ STLExporter)
+/* harmony export */   STLExporter: () => (/* binding */ STLExporter)
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
@@ -80851,178 +80298,178 @@ class STLExporter {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "ACESFilmicToneMapping": () => (/* binding */ ACESFilmicToneMapping),
-/* harmony export */   "AddEquation": () => (/* binding */ AddEquation),
-/* harmony export */   "AddOperation": () => (/* binding */ AddOperation),
-/* harmony export */   "AdditiveAnimationBlendMode": () => (/* binding */ AdditiveAnimationBlendMode),
-/* harmony export */   "AdditiveBlending": () => (/* binding */ AdditiveBlending),
-/* harmony export */   "AlphaFormat": () => (/* binding */ AlphaFormat),
-/* harmony export */   "AlwaysDepth": () => (/* binding */ AlwaysDepth),
-/* harmony export */   "AlwaysStencilFunc": () => (/* binding */ AlwaysStencilFunc),
-/* harmony export */   "BackSide": () => (/* binding */ BackSide),
-/* harmony export */   "BasicDepthPacking": () => (/* binding */ BasicDepthPacking),
-/* harmony export */   "BasicShadowMap": () => (/* binding */ BasicShadowMap),
-/* harmony export */   "ByteType": () => (/* binding */ ByteType),
-/* harmony export */   "CineonToneMapping": () => (/* binding */ CineonToneMapping),
-/* harmony export */   "ClampToEdgeWrapping": () => (/* binding */ ClampToEdgeWrapping),
-/* harmony export */   "CubeReflectionMapping": () => (/* binding */ CubeReflectionMapping),
-/* harmony export */   "CubeRefractionMapping": () => (/* binding */ CubeRefractionMapping),
-/* harmony export */   "CubeUVReflectionMapping": () => (/* binding */ CubeUVReflectionMapping),
-/* harmony export */   "CullFaceBack": () => (/* binding */ CullFaceBack),
-/* harmony export */   "CullFaceFront": () => (/* binding */ CullFaceFront),
-/* harmony export */   "CullFaceFrontBack": () => (/* binding */ CullFaceFrontBack),
-/* harmony export */   "CullFaceNone": () => (/* binding */ CullFaceNone),
-/* harmony export */   "CustomBlending": () => (/* binding */ CustomBlending),
-/* harmony export */   "CustomToneMapping": () => (/* binding */ CustomToneMapping),
-/* harmony export */   "DecrementStencilOp": () => (/* binding */ DecrementStencilOp),
-/* harmony export */   "DecrementWrapStencilOp": () => (/* binding */ DecrementWrapStencilOp),
-/* harmony export */   "DepthFormat": () => (/* binding */ DepthFormat),
-/* harmony export */   "DepthStencilFormat": () => (/* binding */ DepthStencilFormat),
-/* harmony export */   "DoubleSide": () => (/* binding */ DoubleSide),
-/* harmony export */   "DstAlphaFactor": () => (/* binding */ DstAlphaFactor),
-/* harmony export */   "DstColorFactor": () => (/* binding */ DstColorFactor),
-/* harmony export */   "DynamicCopyUsage": () => (/* binding */ DynamicCopyUsage),
-/* harmony export */   "DynamicDrawUsage": () => (/* binding */ DynamicDrawUsage),
-/* harmony export */   "DynamicReadUsage": () => (/* binding */ DynamicReadUsage),
-/* harmony export */   "EqualDepth": () => (/* binding */ EqualDepth),
-/* harmony export */   "EqualStencilFunc": () => (/* binding */ EqualStencilFunc),
-/* harmony export */   "EquirectangularReflectionMapping": () => (/* binding */ EquirectangularReflectionMapping),
-/* harmony export */   "EquirectangularRefractionMapping": () => (/* binding */ EquirectangularRefractionMapping),
-/* harmony export */   "FloatType": () => (/* binding */ FloatType),
-/* harmony export */   "FrontSide": () => (/* binding */ FrontSide),
-/* harmony export */   "GLSL1": () => (/* binding */ GLSL1),
-/* harmony export */   "GLSL3": () => (/* binding */ GLSL3),
-/* harmony export */   "GreaterDepth": () => (/* binding */ GreaterDepth),
-/* harmony export */   "GreaterEqualDepth": () => (/* binding */ GreaterEqualDepth),
-/* harmony export */   "GreaterEqualStencilFunc": () => (/* binding */ GreaterEqualStencilFunc),
-/* harmony export */   "GreaterStencilFunc": () => (/* binding */ GreaterStencilFunc),
-/* harmony export */   "HalfFloatType": () => (/* binding */ HalfFloatType),
-/* harmony export */   "IncrementStencilOp": () => (/* binding */ IncrementStencilOp),
-/* harmony export */   "IncrementWrapStencilOp": () => (/* binding */ IncrementWrapStencilOp),
-/* harmony export */   "IntType": () => (/* binding */ IntType),
-/* harmony export */   "InterpolateDiscrete": () => (/* binding */ InterpolateDiscrete),
-/* harmony export */   "InterpolateLinear": () => (/* binding */ InterpolateLinear),
-/* harmony export */   "InterpolateSmooth": () => (/* binding */ InterpolateSmooth),
-/* harmony export */   "InvertStencilOp": () => (/* binding */ InvertStencilOp),
-/* harmony export */   "KeepStencilOp": () => (/* binding */ KeepStencilOp),
-/* harmony export */   "LessDepth": () => (/* binding */ LessDepth),
-/* harmony export */   "LessEqualDepth": () => (/* binding */ LessEqualDepth),
-/* harmony export */   "LessEqualStencilFunc": () => (/* binding */ LessEqualStencilFunc),
-/* harmony export */   "LessStencilFunc": () => (/* binding */ LessStencilFunc),
-/* harmony export */   "LinearEncoding": () => (/* binding */ LinearEncoding),
-/* harmony export */   "LinearFilter": () => (/* binding */ LinearFilter),
-/* harmony export */   "LinearMipMapLinearFilter": () => (/* binding */ LinearMipMapLinearFilter),
-/* harmony export */   "LinearMipMapNearestFilter": () => (/* binding */ LinearMipMapNearestFilter),
-/* harmony export */   "LinearMipmapLinearFilter": () => (/* binding */ LinearMipmapLinearFilter),
-/* harmony export */   "LinearMipmapNearestFilter": () => (/* binding */ LinearMipmapNearestFilter),
-/* harmony export */   "LinearSRGBColorSpace": () => (/* binding */ LinearSRGBColorSpace),
-/* harmony export */   "LinearToneMapping": () => (/* binding */ LinearToneMapping),
-/* harmony export */   "LoopOnce": () => (/* binding */ LoopOnce),
-/* harmony export */   "LoopPingPong": () => (/* binding */ LoopPingPong),
-/* harmony export */   "LoopRepeat": () => (/* binding */ LoopRepeat),
-/* harmony export */   "LuminanceAlphaFormat": () => (/* binding */ LuminanceAlphaFormat),
-/* harmony export */   "LuminanceFormat": () => (/* binding */ LuminanceFormat),
-/* harmony export */   "MOUSE": () => (/* binding */ MOUSE),
-/* harmony export */   "MaxEquation": () => (/* binding */ MaxEquation),
-/* harmony export */   "MinEquation": () => (/* binding */ MinEquation),
-/* harmony export */   "MirroredRepeatWrapping": () => (/* binding */ MirroredRepeatWrapping),
-/* harmony export */   "MixOperation": () => (/* binding */ MixOperation),
-/* harmony export */   "MultiplyBlending": () => (/* binding */ MultiplyBlending),
-/* harmony export */   "MultiplyOperation": () => (/* binding */ MultiplyOperation),
-/* harmony export */   "NearestFilter": () => (/* binding */ NearestFilter),
-/* harmony export */   "NearestMipMapLinearFilter": () => (/* binding */ NearestMipMapLinearFilter),
-/* harmony export */   "NearestMipMapNearestFilter": () => (/* binding */ NearestMipMapNearestFilter),
-/* harmony export */   "NearestMipmapLinearFilter": () => (/* binding */ NearestMipmapLinearFilter),
-/* harmony export */   "NearestMipmapNearestFilter": () => (/* binding */ NearestMipmapNearestFilter),
-/* harmony export */   "NeverDepth": () => (/* binding */ NeverDepth),
-/* harmony export */   "NeverStencilFunc": () => (/* binding */ NeverStencilFunc),
-/* harmony export */   "NoBlending": () => (/* binding */ NoBlending),
-/* harmony export */   "NoColorSpace": () => (/* binding */ NoColorSpace),
-/* harmony export */   "NoToneMapping": () => (/* binding */ NoToneMapping),
-/* harmony export */   "NormalAnimationBlendMode": () => (/* binding */ NormalAnimationBlendMode),
-/* harmony export */   "NormalBlending": () => (/* binding */ NormalBlending),
-/* harmony export */   "NotEqualDepth": () => (/* binding */ NotEqualDepth),
-/* harmony export */   "NotEqualStencilFunc": () => (/* binding */ NotEqualStencilFunc),
-/* harmony export */   "ObjectSpaceNormalMap": () => (/* binding */ ObjectSpaceNormalMap),
-/* harmony export */   "OneFactor": () => (/* binding */ OneFactor),
-/* harmony export */   "OneMinusDstAlphaFactor": () => (/* binding */ OneMinusDstAlphaFactor),
-/* harmony export */   "OneMinusDstColorFactor": () => (/* binding */ OneMinusDstColorFactor),
-/* harmony export */   "OneMinusSrcAlphaFactor": () => (/* binding */ OneMinusSrcAlphaFactor),
-/* harmony export */   "OneMinusSrcColorFactor": () => (/* binding */ OneMinusSrcColorFactor),
-/* harmony export */   "PCFShadowMap": () => (/* binding */ PCFShadowMap),
-/* harmony export */   "PCFSoftShadowMap": () => (/* binding */ PCFSoftShadowMap),
-/* harmony export */   "REVISION": () => (/* binding */ REVISION),
-/* harmony export */   "RGBADepthPacking": () => (/* binding */ RGBADepthPacking),
-/* harmony export */   "RGBAFormat": () => (/* binding */ RGBAFormat),
-/* harmony export */   "RGBAIntegerFormat": () => (/* binding */ RGBAIntegerFormat),
-/* harmony export */   "RGBA_ASTC_10x10_Format": () => (/* binding */ RGBA_ASTC_10x10_Format),
-/* harmony export */   "RGBA_ASTC_10x5_Format": () => (/* binding */ RGBA_ASTC_10x5_Format),
-/* harmony export */   "RGBA_ASTC_10x6_Format": () => (/* binding */ RGBA_ASTC_10x6_Format),
-/* harmony export */   "RGBA_ASTC_10x8_Format": () => (/* binding */ RGBA_ASTC_10x8_Format),
-/* harmony export */   "RGBA_ASTC_12x10_Format": () => (/* binding */ RGBA_ASTC_12x10_Format),
-/* harmony export */   "RGBA_ASTC_12x12_Format": () => (/* binding */ RGBA_ASTC_12x12_Format),
-/* harmony export */   "RGBA_ASTC_4x4_Format": () => (/* binding */ RGBA_ASTC_4x4_Format),
-/* harmony export */   "RGBA_ASTC_5x4_Format": () => (/* binding */ RGBA_ASTC_5x4_Format),
-/* harmony export */   "RGBA_ASTC_5x5_Format": () => (/* binding */ RGBA_ASTC_5x5_Format),
-/* harmony export */   "RGBA_ASTC_6x5_Format": () => (/* binding */ RGBA_ASTC_6x5_Format),
-/* harmony export */   "RGBA_ASTC_6x6_Format": () => (/* binding */ RGBA_ASTC_6x6_Format),
-/* harmony export */   "RGBA_ASTC_8x5_Format": () => (/* binding */ RGBA_ASTC_8x5_Format),
-/* harmony export */   "RGBA_ASTC_8x6_Format": () => (/* binding */ RGBA_ASTC_8x6_Format),
-/* harmony export */   "RGBA_ASTC_8x8_Format": () => (/* binding */ RGBA_ASTC_8x8_Format),
-/* harmony export */   "RGBA_BPTC_Format": () => (/* binding */ RGBA_BPTC_Format),
-/* harmony export */   "RGBA_ETC2_EAC_Format": () => (/* binding */ RGBA_ETC2_EAC_Format),
-/* harmony export */   "RGBA_PVRTC_2BPPV1_Format": () => (/* binding */ RGBA_PVRTC_2BPPV1_Format),
-/* harmony export */   "RGBA_PVRTC_4BPPV1_Format": () => (/* binding */ RGBA_PVRTC_4BPPV1_Format),
-/* harmony export */   "RGBA_S3TC_DXT1_Format": () => (/* binding */ RGBA_S3TC_DXT1_Format),
-/* harmony export */   "RGBA_S3TC_DXT3_Format": () => (/* binding */ RGBA_S3TC_DXT3_Format),
-/* harmony export */   "RGBA_S3TC_DXT5_Format": () => (/* binding */ RGBA_S3TC_DXT5_Format),
-/* harmony export */   "RGBFormat": () => (/* binding */ RGBFormat),
-/* harmony export */   "RGB_ETC1_Format": () => (/* binding */ RGB_ETC1_Format),
-/* harmony export */   "RGB_ETC2_Format": () => (/* binding */ RGB_ETC2_Format),
-/* harmony export */   "RGB_PVRTC_2BPPV1_Format": () => (/* binding */ RGB_PVRTC_2BPPV1_Format),
-/* harmony export */   "RGB_PVRTC_4BPPV1_Format": () => (/* binding */ RGB_PVRTC_4BPPV1_Format),
-/* harmony export */   "RGB_S3TC_DXT1_Format": () => (/* binding */ RGB_S3TC_DXT1_Format),
-/* harmony export */   "RGFormat": () => (/* binding */ RGFormat),
-/* harmony export */   "RGIntegerFormat": () => (/* binding */ RGIntegerFormat),
-/* harmony export */   "RedFormat": () => (/* binding */ RedFormat),
-/* harmony export */   "RedIntegerFormat": () => (/* binding */ RedIntegerFormat),
-/* harmony export */   "ReinhardToneMapping": () => (/* binding */ ReinhardToneMapping),
-/* harmony export */   "RepeatWrapping": () => (/* binding */ RepeatWrapping),
-/* harmony export */   "ReplaceStencilOp": () => (/* binding */ ReplaceStencilOp),
-/* harmony export */   "ReverseSubtractEquation": () => (/* binding */ ReverseSubtractEquation),
-/* harmony export */   "SRGBColorSpace": () => (/* binding */ SRGBColorSpace),
-/* harmony export */   "ShortType": () => (/* binding */ ShortType),
-/* harmony export */   "SrcAlphaFactor": () => (/* binding */ SrcAlphaFactor),
-/* harmony export */   "SrcAlphaSaturateFactor": () => (/* binding */ SrcAlphaSaturateFactor),
-/* harmony export */   "SrcColorFactor": () => (/* binding */ SrcColorFactor),
-/* harmony export */   "StaticCopyUsage": () => (/* binding */ StaticCopyUsage),
-/* harmony export */   "StaticDrawUsage": () => (/* binding */ StaticDrawUsage),
-/* harmony export */   "StaticReadUsage": () => (/* binding */ StaticReadUsage),
-/* harmony export */   "StreamCopyUsage": () => (/* binding */ StreamCopyUsage),
-/* harmony export */   "StreamDrawUsage": () => (/* binding */ StreamDrawUsage),
-/* harmony export */   "StreamReadUsage": () => (/* binding */ StreamReadUsage),
-/* harmony export */   "SubtractEquation": () => (/* binding */ SubtractEquation),
-/* harmony export */   "SubtractiveBlending": () => (/* binding */ SubtractiveBlending),
-/* harmony export */   "TOUCH": () => (/* binding */ TOUCH),
-/* harmony export */   "TangentSpaceNormalMap": () => (/* binding */ TangentSpaceNormalMap),
-/* harmony export */   "TriangleFanDrawMode": () => (/* binding */ TriangleFanDrawMode),
-/* harmony export */   "TriangleStripDrawMode": () => (/* binding */ TriangleStripDrawMode),
-/* harmony export */   "TrianglesDrawMode": () => (/* binding */ TrianglesDrawMode),
-/* harmony export */   "UVMapping": () => (/* binding */ UVMapping),
-/* harmony export */   "UnsignedByteType": () => (/* binding */ UnsignedByteType),
-/* harmony export */   "UnsignedInt248Type": () => (/* binding */ UnsignedInt248Type),
-/* harmony export */   "UnsignedIntType": () => (/* binding */ UnsignedIntType),
-/* harmony export */   "UnsignedShort4444Type": () => (/* binding */ UnsignedShort4444Type),
-/* harmony export */   "UnsignedShort5551Type": () => (/* binding */ UnsignedShort5551Type),
-/* harmony export */   "UnsignedShortType": () => (/* binding */ UnsignedShortType),
-/* harmony export */   "VSMShadowMap": () => (/* binding */ VSMShadowMap),
-/* harmony export */   "WrapAroundEnding": () => (/* binding */ WrapAroundEnding),
-/* harmony export */   "ZeroCurvatureEnding": () => (/* binding */ ZeroCurvatureEnding),
-/* harmony export */   "ZeroFactor": () => (/* binding */ ZeroFactor),
-/* harmony export */   "ZeroSlopeEnding": () => (/* binding */ ZeroSlopeEnding),
-/* harmony export */   "ZeroStencilOp": () => (/* binding */ ZeroStencilOp),
-/* harmony export */   "_SRGBAFormat": () => (/* binding */ _SRGBAFormat),
-/* harmony export */   "sRGBEncoding": () => (/* binding */ sRGBEncoding)
+/* harmony export */   ACESFilmicToneMapping: () => (/* binding */ ACESFilmicToneMapping),
+/* harmony export */   AddEquation: () => (/* binding */ AddEquation),
+/* harmony export */   AddOperation: () => (/* binding */ AddOperation),
+/* harmony export */   AdditiveAnimationBlendMode: () => (/* binding */ AdditiveAnimationBlendMode),
+/* harmony export */   AdditiveBlending: () => (/* binding */ AdditiveBlending),
+/* harmony export */   AlphaFormat: () => (/* binding */ AlphaFormat),
+/* harmony export */   AlwaysDepth: () => (/* binding */ AlwaysDepth),
+/* harmony export */   AlwaysStencilFunc: () => (/* binding */ AlwaysStencilFunc),
+/* harmony export */   BackSide: () => (/* binding */ BackSide),
+/* harmony export */   BasicDepthPacking: () => (/* binding */ BasicDepthPacking),
+/* harmony export */   BasicShadowMap: () => (/* binding */ BasicShadowMap),
+/* harmony export */   ByteType: () => (/* binding */ ByteType),
+/* harmony export */   CineonToneMapping: () => (/* binding */ CineonToneMapping),
+/* harmony export */   ClampToEdgeWrapping: () => (/* binding */ ClampToEdgeWrapping),
+/* harmony export */   CubeReflectionMapping: () => (/* binding */ CubeReflectionMapping),
+/* harmony export */   CubeRefractionMapping: () => (/* binding */ CubeRefractionMapping),
+/* harmony export */   CubeUVReflectionMapping: () => (/* binding */ CubeUVReflectionMapping),
+/* harmony export */   CullFaceBack: () => (/* binding */ CullFaceBack),
+/* harmony export */   CullFaceFront: () => (/* binding */ CullFaceFront),
+/* harmony export */   CullFaceFrontBack: () => (/* binding */ CullFaceFrontBack),
+/* harmony export */   CullFaceNone: () => (/* binding */ CullFaceNone),
+/* harmony export */   CustomBlending: () => (/* binding */ CustomBlending),
+/* harmony export */   CustomToneMapping: () => (/* binding */ CustomToneMapping),
+/* harmony export */   DecrementStencilOp: () => (/* binding */ DecrementStencilOp),
+/* harmony export */   DecrementWrapStencilOp: () => (/* binding */ DecrementWrapStencilOp),
+/* harmony export */   DepthFormat: () => (/* binding */ DepthFormat),
+/* harmony export */   DepthStencilFormat: () => (/* binding */ DepthStencilFormat),
+/* harmony export */   DoubleSide: () => (/* binding */ DoubleSide),
+/* harmony export */   DstAlphaFactor: () => (/* binding */ DstAlphaFactor),
+/* harmony export */   DstColorFactor: () => (/* binding */ DstColorFactor),
+/* harmony export */   DynamicCopyUsage: () => (/* binding */ DynamicCopyUsage),
+/* harmony export */   DynamicDrawUsage: () => (/* binding */ DynamicDrawUsage),
+/* harmony export */   DynamicReadUsage: () => (/* binding */ DynamicReadUsage),
+/* harmony export */   EqualDepth: () => (/* binding */ EqualDepth),
+/* harmony export */   EqualStencilFunc: () => (/* binding */ EqualStencilFunc),
+/* harmony export */   EquirectangularReflectionMapping: () => (/* binding */ EquirectangularReflectionMapping),
+/* harmony export */   EquirectangularRefractionMapping: () => (/* binding */ EquirectangularRefractionMapping),
+/* harmony export */   FloatType: () => (/* binding */ FloatType),
+/* harmony export */   FrontSide: () => (/* binding */ FrontSide),
+/* harmony export */   GLSL1: () => (/* binding */ GLSL1),
+/* harmony export */   GLSL3: () => (/* binding */ GLSL3),
+/* harmony export */   GreaterDepth: () => (/* binding */ GreaterDepth),
+/* harmony export */   GreaterEqualDepth: () => (/* binding */ GreaterEqualDepth),
+/* harmony export */   GreaterEqualStencilFunc: () => (/* binding */ GreaterEqualStencilFunc),
+/* harmony export */   GreaterStencilFunc: () => (/* binding */ GreaterStencilFunc),
+/* harmony export */   HalfFloatType: () => (/* binding */ HalfFloatType),
+/* harmony export */   IncrementStencilOp: () => (/* binding */ IncrementStencilOp),
+/* harmony export */   IncrementWrapStencilOp: () => (/* binding */ IncrementWrapStencilOp),
+/* harmony export */   IntType: () => (/* binding */ IntType),
+/* harmony export */   InterpolateDiscrete: () => (/* binding */ InterpolateDiscrete),
+/* harmony export */   InterpolateLinear: () => (/* binding */ InterpolateLinear),
+/* harmony export */   InterpolateSmooth: () => (/* binding */ InterpolateSmooth),
+/* harmony export */   InvertStencilOp: () => (/* binding */ InvertStencilOp),
+/* harmony export */   KeepStencilOp: () => (/* binding */ KeepStencilOp),
+/* harmony export */   LessDepth: () => (/* binding */ LessDepth),
+/* harmony export */   LessEqualDepth: () => (/* binding */ LessEqualDepth),
+/* harmony export */   LessEqualStencilFunc: () => (/* binding */ LessEqualStencilFunc),
+/* harmony export */   LessStencilFunc: () => (/* binding */ LessStencilFunc),
+/* harmony export */   LinearEncoding: () => (/* binding */ LinearEncoding),
+/* harmony export */   LinearFilter: () => (/* binding */ LinearFilter),
+/* harmony export */   LinearMipMapLinearFilter: () => (/* binding */ LinearMipMapLinearFilter),
+/* harmony export */   LinearMipMapNearestFilter: () => (/* binding */ LinearMipMapNearestFilter),
+/* harmony export */   LinearMipmapLinearFilter: () => (/* binding */ LinearMipmapLinearFilter),
+/* harmony export */   LinearMipmapNearestFilter: () => (/* binding */ LinearMipmapNearestFilter),
+/* harmony export */   LinearSRGBColorSpace: () => (/* binding */ LinearSRGBColorSpace),
+/* harmony export */   LinearToneMapping: () => (/* binding */ LinearToneMapping),
+/* harmony export */   LoopOnce: () => (/* binding */ LoopOnce),
+/* harmony export */   LoopPingPong: () => (/* binding */ LoopPingPong),
+/* harmony export */   LoopRepeat: () => (/* binding */ LoopRepeat),
+/* harmony export */   LuminanceAlphaFormat: () => (/* binding */ LuminanceAlphaFormat),
+/* harmony export */   LuminanceFormat: () => (/* binding */ LuminanceFormat),
+/* harmony export */   MOUSE: () => (/* binding */ MOUSE),
+/* harmony export */   MaxEquation: () => (/* binding */ MaxEquation),
+/* harmony export */   MinEquation: () => (/* binding */ MinEquation),
+/* harmony export */   MirroredRepeatWrapping: () => (/* binding */ MirroredRepeatWrapping),
+/* harmony export */   MixOperation: () => (/* binding */ MixOperation),
+/* harmony export */   MultiplyBlending: () => (/* binding */ MultiplyBlending),
+/* harmony export */   MultiplyOperation: () => (/* binding */ MultiplyOperation),
+/* harmony export */   NearestFilter: () => (/* binding */ NearestFilter),
+/* harmony export */   NearestMipMapLinearFilter: () => (/* binding */ NearestMipMapLinearFilter),
+/* harmony export */   NearestMipMapNearestFilter: () => (/* binding */ NearestMipMapNearestFilter),
+/* harmony export */   NearestMipmapLinearFilter: () => (/* binding */ NearestMipmapLinearFilter),
+/* harmony export */   NearestMipmapNearestFilter: () => (/* binding */ NearestMipmapNearestFilter),
+/* harmony export */   NeverDepth: () => (/* binding */ NeverDepth),
+/* harmony export */   NeverStencilFunc: () => (/* binding */ NeverStencilFunc),
+/* harmony export */   NoBlending: () => (/* binding */ NoBlending),
+/* harmony export */   NoColorSpace: () => (/* binding */ NoColorSpace),
+/* harmony export */   NoToneMapping: () => (/* binding */ NoToneMapping),
+/* harmony export */   NormalAnimationBlendMode: () => (/* binding */ NormalAnimationBlendMode),
+/* harmony export */   NormalBlending: () => (/* binding */ NormalBlending),
+/* harmony export */   NotEqualDepth: () => (/* binding */ NotEqualDepth),
+/* harmony export */   NotEqualStencilFunc: () => (/* binding */ NotEqualStencilFunc),
+/* harmony export */   ObjectSpaceNormalMap: () => (/* binding */ ObjectSpaceNormalMap),
+/* harmony export */   OneFactor: () => (/* binding */ OneFactor),
+/* harmony export */   OneMinusDstAlphaFactor: () => (/* binding */ OneMinusDstAlphaFactor),
+/* harmony export */   OneMinusDstColorFactor: () => (/* binding */ OneMinusDstColorFactor),
+/* harmony export */   OneMinusSrcAlphaFactor: () => (/* binding */ OneMinusSrcAlphaFactor),
+/* harmony export */   OneMinusSrcColorFactor: () => (/* binding */ OneMinusSrcColorFactor),
+/* harmony export */   PCFShadowMap: () => (/* binding */ PCFShadowMap),
+/* harmony export */   PCFSoftShadowMap: () => (/* binding */ PCFSoftShadowMap),
+/* harmony export */   REVISION: () => (/* binding */ REVISION),
+/* harmony export */   RGBADepthPacking: () => (/* binding */ RGBADepthPacking),
+/* harmony export */   RGBAFormat: () => (/* binding */ RGBAFormat),
+/* harmony export */   RGBAIntegerFormat: () => (/* binding */ RGBAIntegerFormat),
+/* harmony export */   RGBA_ASTC_10x10_Format: () => (/* binding */ RGBA_ASTC_10x10_Format),
+/* harmony export */   RGBA_ASTC_10x5_Format: () => (/* binding */ RGBA_ASTC_10x5_Format),
+/* harmony export */   RGBA_ASTC_10x6_Format: () => (/* binding */ RGBA_ASTC_10x6_Format),
+/* harmony export */   RGBA_ASTC_10x8_Format: () => (/* binding */ RGBA_ASTC_10x8_Format),
+/* harmony export */   RGBA_ASTC_12x10_Format: () => (/* binding */ RGBA_ASTC_12x10_Format),
+/* harmony export */   RGBA_ASTC_12x12_Format: () => (/* binding */ RGBA_ASTC_12x12_Format),
+/* harmony export */   RGBA_ASTC_4x4_Format: () => (/* binding */ RGBA_ASTC_4x4_Format),
+/* harmony export */   RGBA_ASTC_5x4_Format: () => (/* binding */ RGBA_ASTC_5x4_Format),
+/* harmony export */   RGBA_ASTC_5x5_Format: () => (/* binding */ RGBA_ASTC_5x5_Format),
+/* harmony export */   RGBA_ASTC_6x5_Format: () => (/* binding */ RGBA_ASTC_6x5_Format),
+/* harmony export */   RGBA_ASTC_6x6_Format: () => (/* binding */ RGBA_ASTC_6x6_Format),
+/* harmony export */   RGBA_ASTC_8x5_Format: () => (/* binding */ RGBA_ASTC_8x5_Format),
+/* harmony export */   RGBA_ASTC_8x6_Format: () => (/* binding */ RGBA_ASTC_8x6_Format),
+/* harmony export */   RGBA_ASTC_8x8_Format: () => (/* binding */ RGBA_ASTC_8x8_Format),
+/* harmony export */   RGBA_BPTC_Format: () => (/* binding */ RGBA_BPTC_Format),
+/* harmony export */   RGBA_ETC2_EAC_Format: () => (/* binding */ RGBA_ETC2_EAC_Format),
+/* harmony export */   RGBA_PVRTC_2BPPV1_Format: () => (/* binding */ RGBA_PVRTC_2BPPV1_Format),
+/* harmony export */   RGBA_PVRTC_4BPPV1_Format: () => (/* binding */ RGBA_PVRTC_4BPPV1_Format),
+/* harmony export */   RGBA_S3TC_DXT1_Format: () => (/* binding */ RGBA_S3TC_DXT1_Format),
+/* harmony export */   RGBA_S3TC_DXT3_Format: () => (/* binding */ RGBA_S3TC_DXT3_Format),
+/* harmony export */   RGBA_S3TC_DXT5_Format: () => (/* binding */ RGBA_S3TC_DXT5_Format),
+/* harmony export */   RGBFormat: () => (/* binding */ RGBFormat),
+/* harmony export */   RGB_ETC1_Format: () => (/* binding */ RGB_ETC1_Format),
+/* harmony export */   RGB_ETC2_Format: () => (/* binding */ RGB_ETC2_Format),
+/* harmony export */   RGB_PVRTC_2BPPV1_Format: () => (/* binding */ RGB_PVRTC_2BPPV1_Format),
+/* harmony export */   RGB_PVRTC_4BPPV1_Format: () => (/* binding */ RGB_PVRTC_4BPPV1_Format),
+/* harmony export */   RGB_S3TC_DXT1_Format: () => (/* binding */ RGB_S3TC_DXT1_Format),
+/* harmony export */   RGFormat: () => (/* binding */ RGFormat),
+/* harmony export */   RGIntegerFormat: () => (/* binding */ RGIntegerFormat),
+/* harmony export */   RedFormat: () => (/* binding */ RedFormat),
+/* harmony export */   RedIntegerFormat: () => (/* binding */ RedIntegerFormat),
+/* harmony export */   ReinhardToneMapping: () => (/* binding */ ReinhardToneMapping),
+/* harmony export */   RepeatWrapping: () => (/* binding */ RepeatWrapping),
+/* harmony export */   ReplaceStencilOp: () => (/* binding */ ReplaceStencilOp),
+/* harmony export */   ReverseSubtractEquation: () => (/* binding */ ReverseSubtractEquation),
+/* harmony export */   SRGBColorSpace: () => (/* binding */ SRGBColorSpace),
+/* harmony export */   ShortType: () => (/* binding */ ShortType),
+/* harmony export */   SrcAlphaFactor: () => (/* binding */ SrcAlphaFactor),
+/* harmony export */   SrcAlphaSaturateFactor: () => (/* binding */ SrcAlphaSaturateFactor),
+/* harmony export */   SrcColorFactor: () => (/* binding */ SrcColorFactor),
+/* harmony export */   StaticCopyUsage: () => (/* binding */ StaticCopyUsage),
+/* harmony export */   StaticDrawUsage: () => (/* binding */ StaticDrawUsage),
+/* harmony export */   StaticReadUsage: () => (/* binding */ StaticReadUsage),
+/* harmony export */   StreamCopyUsage: () => (/* binding */ StreamCopyUsage),
+/* harmony export */   StreamDrawUsage: () => (/* binding */ StreamDrawUsage),
+/* harmony export */   StreamReadUsage: () => (/* binding */ StreamReadUsage),
+/* harmony export */   SubtractEquation: () => (/* binding */ SubtractEquation),
+/* harmony export */   SubtractiveBlending: () => (/* binding */ SubtractiveBlending),
+/* harmony export */   TOUCH: () => (/* binding */ TOUCH),
+/* harmony export */   TangentSpaceNormalMap: () => (/* binding */ TangentSpaceNormalMap),
+/* harmony export */   TriangleFanDrawMode: () => (/* binding */ TriangleFanDrawMode),
+/* harmony export */   TriangleStripDrawMode: () => (/* binding */ TriangleStripDrawMode),
+/* harmony export */   TrianglesDrawMode: () => (/* binding */ TrianglesDrawMode),
+/* harmony export */   UVMapping: () => (/* binding */ UVMapping),
+/* harmony export */   UnsignedByteType: () => (/* binding */ UnsignedByteType),
+/* harmony export */   UnsignedInt248Type: () => (/* binding */ UnsignedInt248Type),
+/* harmony export */   UnsignedIntType: () => (/* binding */ UnsignedIntType),
+/* harmony export */   UnsignedShort4444Type: () => (/* binding */ UnsignedShort4444Type),
+/* harmony export */   UnsignedShort5551Type: () => (/* binding */ UnsignedShort5551Type),
+/* harmony export */   UnsignedShortType: () => (/* binding */ UnsignedShortType),
+/* harmony export */   VSMShadowMap: () => (/* binding */ VSMShadowMap),
+/* harmony export */   WrapAroundEnding: () => (/* binding */ WrapAroundEnding),
+/* harmony export */   ZeroCurvatureEnding: () => (/* binding */ ZeroCurvatureEnding),
+/* harmony export */   ZeroFactor: () => (/* binding */ ZeroFactor),
+/* harmony export */   ZeroSlopeEnding: () => (/* binding */ ZeroSlopeEnding),
+/* harmony export */   ZeroStencilOp: () => (/* binding */ ZeroStencilOp),
+/* harmony export */   _SRGBAFormat: () => (/* binding */ _SRGBAFormat),
+/* harmony export */   sRGBEncoding: () => (/* binding */ sRGBEncoding)
 /* harmony export */ });
 const REVISION = '144';
 const MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2 };
@@ -81218,44 +80665,44 @@ const _SRGBAFormat = 1035; // fallback for WebGL 1
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "ArrayNotFoundError": () => (/* binding */ ArrayNotFoundError),
-/* harmony export */   "BoundsCheckError": () => (/* binding */ BoundsCheckError),
-/* harmony export */   "ContainsArrayError": () => (/* binding */ ContainsArrayError),
-/* harmony export */   "ContainsGroupError": () => (/* binding */ ContainsGroupError),
-/* harmony export */   "Group": () => (/* binding */ Group),
-/* harmony export */   "GroupNotFoundError": () => (/* binding */ GroupNotFoundError),
-/* harmony export */   "HTTPError": () => (/* binding */ HTTPError),
-/* harmony export */   "HTTPStore": () => (/* binding */ HTTPStore),
-/* harmony export */   "InvalidSliceError": () => (/* binding */ InvalidSliceError),
-/* harmony export */   "KeyError": () => (/* binding */ KeyError),
-/* harmony export */   "MemoryStore": () => (/* binding */ MemoryStore),
-/* harmony export */   "NegativeStepError": () => (/* binding */ NegativeStepError),
-/* harmony export */   "NestedArray": () => (/* binding */ NestedArray),
-/* harmony export */   "ObjectStore": () => (/* binding */ ObjectStore),
-/* harmony export */   "PathNotFoundError": () => (/* binding */ PathNotFoundError),
-/* harmony export */   "PermissionError": () => (/* binding */ PermissionError),
-/* harmony export */   "TooManyIndicesError": () => (/* binding */ TooManyIndicesError),
-/* harmony export */   "ValueError": () => (/* binding */ ValueError),
-/* harmony export */   "ZarrArray": () => (/* binding */ ZarrArray),
-/* harmony export */   "addCodec": () => (/* binding */ addCodec),
-/* harmony export */   "array": () => (/* binding */ array),
-/* harmony export */   "create": () => (/* binding */ create),
-/* harmony export */   "createProxy": () => (/* binding */ createProxy),
-/* harmony export */   "empty": () => (/* binding */ empty),
-/* harmony export */   "full": () => (/* binding */ full),
-/* harmony export */   "getCodec": () => (/* binding */ getCodec),
-/* harmony export */   "getTypedArrayCtr": () => (/* binding */ getTypedArrayCtr),
-/* harmony export */   "getTypedArrayDtypeString": () => (/* binding */ getTypedArrayDtypeString),
-/* harmony export */   "group": () => (/* binding */ group),
-/* harmony export */   "isKeyError": () => (/* binding */ isKeyError),
-/* harmony export */   "normalizeStoreArgument": () => (/* binding */ normalizeStoreArgument),
-/* harmony export */   "ones": () => (/* binding */ ones),
-/* harmony export */   "openArray": () => (/* binding */ openArray),
-/* harmony export */   "openGroup": () => (/* binding */ openGroup),
-/* harmony export */   "rangeTypedArray": () => (/* binding */ rangeTypedArray),
-/* harmony export */   "slice": () => (/* binding */ slice),
-/* harmony export */   "sliceIndices": () => (/* binding */ sliceIndices),
-/* harmony export */   "zeros": () => (/* binding */ zeros)
+/* harmony export */   ArrayNotFoundError: () => (/* binding */ ArrayNotFoundError),
+/* harmony export */   BoundsCheckError: () => (/* binding */ BoundsCheckError),
+/* harmony export */   ContainsArrayError: () => (/* binding */ ContainsArrayError),
+/* harmony export */   ContainsGroupError: () => (/* binding */ ContainsGroupError),
+/* harmony export */   Group: () => (/* binding */ Group),
+/* harmony export */   GroupNotFoundError: () => (/* binding */ GroupNotFoundError),
+/* harmony export */   HTTPError: () => (/* binding */ HTTPError),
+/* harmony export */   HTTPStore: () => (/* binding */ HTTPStore),
+/* harmony export */   InvalidSliceError: () => (/* binding */ InvalidSliceError),
+/* harmony export */   KeyError: () => (/* binding */ KeyError),
+/* harmony export */   MemoryStore: () => (/* binding */ MemoryStore),
+/* harmony export */   NegativeStepError: () => (/* binding */ NegativeStepError),
+/* harmony export */   NestedArray: () => (/* binding */ NestedArray),
+/* harmony export */   ObjectStore: () => (/* binding */ ObjectStore),
+/* harmony export */   PathNotFoundError: () => (/* binding */ PathNotFoundError),
+/* harmony export */   PermissionError: () => (/* binding */ PermissionError),
+/* harmony export */   TooManyIndicesError: () => (/* binding */ TooManyIndicesError),
+/* harmony export */   ValueError: () => (/* binding */ ValueError),
+/* harmony export */   ZarrArray: () => (/* binding */ ZarrArray),
+/* harmony export */   addCodec: () => (/* binding */ addCodec),
+/* harmony export */   array: () => (/* binding */ array),
+/* harmony export */   create: () => (/* binding */ create),
+/* harmony export */   createProxy: () => (/* binding */ createProxy),
+/* harmony export */   empty: () => (/* binding */ empty),
+/* harmony export */   full: () => (/* binding */ full),
+/* harmony export */   getCodec: () => (/* binding */ getCodec),
+/* harmony export */   getTypedArrayCtr: () => (/* binding */ getTypedArrayCtr),
+/* harmony export */   getTypedArrayDtypeString: () => (/* binding */ getTypedArrayDtypeString),
+/* harmony export */   group: () => (/* binding */ group),
+/* harmony export */   isKeyError: () => (/* binding */ isKeyError),
+/* harmony export */   normalizeStoreArgument: () => (/* binding */ normalizeStoreArgument),
+/* harmony export */   ones: () => (/* binding */ ones),
+/* harmony export */   openArray: () => (/* binding */ openArray),
+/* harmony export */   openGroup: () => (/* binding */ openGroup),
+/* harmony export */   rangeTypedArray: () => (/* binding */ rangeTypedArray),
+/* harmony export */   slice: () => (/* binding */ slice),
+/* harmony export */   sliceIndices: () => (/* binding */ sliceIndices),
+/* harmony export */   zeros: () => (/* binding */ zeros)
 /* harmony export */ });
 const registry = new Map();
 function addCodec(id, importFn) {
@@ -84890,44 +84337,44 @@ class ObjectStore {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "ArrayNotFoundError": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.ArrayNotFoundError),
-/* harmony export */   "BoundsCheckError": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.BoundsCheckError),
-/* harmony export */   "ContainsArrayError": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.ContainsArrayError),
-/* harmony export */   "ContainsGroupError": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.ContainsGroupError),
-/* harmony export */   "Group": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.Group),
-/* harmony export */   "GroupNotFoundError": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.GroupNotFoundError),
-/* harmony export */   "HTTPError": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.HTTPError),
-/* harmony export */   "HTTPStore": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.HTTPStore),
-/* harmony export */   "InvalidSliceError": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.InvalidSliceError),
-/* harmony export */   "KeyError": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.KeyError),
-/* harmony export */   "MemoryStore": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.MemoryStore),
-/* harmony export */   "NegativeStepError": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.NegativeStepError),
-/* harmony export */   "NestedArray": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.NestedArray),
-/* harmony export */   "ObjectStore": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.ObjectStore),
-/* harmony export */   "PathNotFoundError": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.PathNotFoundError),
-/* harmony export */   "PermissionError": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.PermissionError),
-/* harmony export */   "TooManyIndicesError": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.TooManyIndicesError),
-/* harmony export */   "ValueError": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.ValueError),
-/* harmony export */   "ZarrArray": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.ZarrArray),
-/* harmony export */   "addCodec": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.addCodec),
-/* harmony export */   "array": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.array),
-/* harmony export */   "create": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.create),
-/* harmony export */   "createProxy": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.createProxy),
-/* harmony export */   "empty": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.empty),
-/* harmony export */   "full": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.full),
-/* harmony export */   "getCodec": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.getCodec),
-/* harmony export */   "getTypedArrayCtr": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.getTypedArrayCtr),
-/* harmony export */   "getTypedArrayDtypeString": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.getTypedArrayDtypeString),
-/* harmony export */   "group": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.group),
-/* harmony export */   "isKeyError": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.isKeyError),
-/* harmony export */   "normalizeStoreArgument": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.normalizeStoreArgument),
-/* harmony export */   "ones": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.ones),
-/* harmony export */   "openArray": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.openArray),
-/* harmony export */   "openGroup": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.openGroup),
-/* harmony export */   "rangeTypedArray": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.rangeTypedArray),
-/* harmony export */   "slice": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.slice),
-/* harmony export */   "sliceIndices": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.sliceIndices),
-/* harmony export */   "zeros": () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.zeros)
+/* harmony export */   ArrayNotFoundError: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.ArrayNotFoundError),
+/* harmony export */   BoundsCheckError: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.BoundsCheckError),
+/* harmony export */   ContainsArrayError: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.ContainsArrayError),
+/* harmony export */   ContainsGroupError: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.ContainsGroupError),
+/* harmony export */   Group: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.Group),
+/* harmony export */   GroupNotFoundError: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.GroupNotFoundError),
+/* harmony export */   HTTPError: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.HTTPError),
+/* harmony export */   HTTPStore: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.HTTPStore),
+/* harmony export */   InvalidSliceError: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.InvalidSliceError),
+/* harmony export */   KeyError: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.KeyError),
+/* harmony export */   MemoryStore: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.MemoryStore),
+/* harmony export */   NegativeStepError: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.NegativeStepError),
+/* harmony export */   NestedArray: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.NestedArray),
+/* harmony export */   ObjectStore: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.ObjectStore),
+/* harmony export */   PathNotFoundError: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.PathNotFoundError),
+/* harmony export */   PermissionError: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.PermissionError),
+/* harmony export */   TooManyIndicesError: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.TooManyIndicesError),
+/* harmony export */   ValueError: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.ValueError),
+/* harmony export */   ZarrArray: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.ZarrArray),
+/* harmony export */   addCodec: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.addCodec),
+/* harmony export */   array: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.array),
+/* harmony export */   create: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.create),
+/* harmony export */   createProxy: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.createProxy),
+/* harmony export */   empty: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.empty),
+/* harmony export */   full: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.full),
+/* harmony export */   getCodec: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.getCodec),
+/* harmony export */   getTypedArrayCtr: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.getTypedArrayCtr),
+/* harmony export */   getTypedArrayDtypeString: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.getTypedArrayDtypeString),
+/* harmony export */   group: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.group),
+/* harmony export */   isKeyError: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.isKeyError),
+/* harmony export */   normalizeStoreArgument: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.normalizeStoreArgument),
+/* harmony export */   ones: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.ones),
+/* harmony export */   openArray: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.openArray),
+/* harmony export */   openGroup: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.openGroup),
+/* harmony export */   rangeTypedArray: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.rangeTypedArray),
+/* harmony export */   slice: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.slice),
+/* harmony export */   sliceIndices: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.sliceIndices),
+/* harmony export */   zeros: () => (/* reexport safe */ _core_mjs__WEBPACK_IMPORTED_MODULE_0__.zeros)
 /* harmony export */ });
 /* harmony import */ var _core_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./core.mjs */ "./node_modules/zarr/core.mjs");
 
@@ -92788,6 +92235,7 @@ var Blosc$1 = Blosc;
 /******/ 					script.setAttribute("nonce", __webpack_require__.nc);
 /******/ 				}
 /******/ 				script.setAttribute("data-webpack", dataWebpackPrefix + key);
+/******/ 		
 /******/ 				script.src = url;
 /******/ 			}
 /******/ 			inProgress[url] = [done];
@@ -92800,7 +92248,7 @@ var Blosc$1 = Blosc;
 /******/ 				script.parentNode && script.parentNode.removeChild(script);
 /******/ 				doneFns && doneFns.forEach((fn) => (fn(event)));
 /******/ 				if(prev) return prev(event);
-/******/ 			};
+/******/ 			}
 /******/ 			var timeout = setTimeout(onScriptComplete.bind(null, undefined, { type: 'timeout', target: script }), 120000);
 /******/ 			script.onerror = onScriptComplete.bind(null, script.onerror);
 /******/ 			script.onload = onScriptComplete.bind(null, script.onload);
@@ -92826,10 +92274,13 @@ var Blosc$1 = Blosc;
 /******/ 		var document = __webpack_require__.g.document;
 /******/ 		if (!scriptUrl && document) {
 /******/ 			if (document.currentScript)
-/******/ 				scriptUrl = document.currentScript.src
+/******/ 				scriptUrl = document.currentScript.src;
 /******/ 			if (!scriptUrl) {
 /******/ 				var scripts = document.getElementsByTagName("script");
-/******/ 				if(scripts.length) scriptUrl = scripts[scripts.length - 1].src
+/******/ 				if(scripts.length) {
+/******/ 					var i = scripts.length - 1;
+/******/ 					while (i > -1 && !scriptUrl) scriptUrl = scripts[i--].src;
+/******/ 				}
 /******/ 			}
 /******/ 		}
 /******/ 		// When supporting browsers where an automatic publicPath is not supported you must specify an output.publicPath manually via configuration
@@ -92884,7 +92335,7 @@ var Blosc$1 = Blosc;
 /******/ 								}
 /******/ 							};
 /******/ 							__webpack_require__.l(url, loadingEnded, "chunk-" + chunkId, chunkId);
-/******/ 						} else installedChunks[chunkId] = 0;
+/******/ 						}
 /******/ 					}
 /******/ 				}
 /******/ 		};
@@ -92953,8 +92404,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
- // special loader really just for this demo app but lives with the other loaders
 
+// special loader really just for this demo app but lives with the other loaders
 
 
 var TEST_DATA = {
@@ -93060,6 +92511,7 @@ var myState = {
   //deg
   lightPhi: 54,
   //deg
+
   xmin: 0.0,
   ymin: 0.0,
   zmin: 0.0,
@@ -93088,10 +92540,10 @@ var myState = {
   currentImageStore: "",
   currentImageName: ""
 };
-
 function densitySliderToView3D(density) {
   return density / 50.0;
-} // controlPoints is array of [{offset:number, color:cssstring}]
+}
+// controlPoints is array of [{offset:number, color:cssstring}]
 // where offset is a value from 0.0 to 1.0, and color is a string encoding a css color value.
 // first and last control points should be at offsets 0 and 1
 // TODO: what if offsets 0 and 1 are not provided?
@@ -93102,7 +92554,6 @@ function densitySliderToView3D(density) {
 //    {offset:0.5, color:"orange"}
 //    {offset:1.0, color:"yellow"}
 //]);
-
 /*
 function makeColorGradient(controlPoints) {
   const c = document.createElement("canvas");
@@ -93131,8 +92582,6 @@ function makeColorGradient(controlPoints) {
   return imgData.data;
 }
 */
-
-
 function initLights() {
   myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
   myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
@@ -93142,20 +92591,17 @@ function initLights() {
   myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
   view3D.updateLights(myState.lights);
 }
-
 function setInitialRenderMode() {
   if (myState.isPT && myState.isMP) {
     myState.isMP = false;
   }
-
   view3D.setVolumeRenderMode(myState.isPT ? _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_RAYMARCH);
   view3D.setMaxProjectMode(myState.volume, myState.isMP);
 }
-
 var gui;
-
 function setupGui() {
-  gui = new dat_gui__WEBPACK_IMPORTED_MODULE_3__.GUI(); //gui = new dat.GUI({autoPlace:false, width:200});
+  gui = new dat_gui__WEBPACK_IMPORTED_MODULE_3__.GUI();
+  //gui = new dat.GUI({autoPlace:false, width:200});
 
   gui.add(myState, "density").max(100.0).min(0.0).step(0.001).onChange(function (value) {
     view3D.updateDensity(myState.volume, densitySliderToView3D(value));
@@ -93255,71 +92701,56 @@ function setupGui() {
   });
   initLights();
 }
-
 function removeFolderByName(name) {
   var folder = gui.__folders[name];
-
   if (!folder) {
     return;
   }
-
-  folder.close(); // @ts-expect-error __ul doesn't exist in the type declaration
-
+  folder.close();
+  // @ts-expect-error __ul doesn't exist in the type declaration
   gui.__ul.removeChild(folder.domElement.parentNode);
-
-  delete gui.__folders[name]; // @ts-expect-error onResize doesn't exist in the type declaration
-
+  delete gui.__folders[name];
+  // @ts-expect-error onResize doesn't exist in the type declaration
   gui.onResize();
 }
-
 function updateTimeUI(volume) {
   // TODO: we have stashed sizeT in volume.imageInfo.times
   // but the Volume doesn't store any other info that would help
   if (volume.imageInfo.times) {
     myState.totalFrames = volume.imageInfo.times;
-  } else {//myState.totalFrames = 1;
+  } else {
+    //myState.totalFrames = 1;
   }
-
   var timeSlider = document.getElementById("timeSlider");
-
   if (timeSlider) {
     timeSlider.max = "".concat(myState.totalFrames - 1);
   }
-
   var timeInput = document.getElementById("timeValue");
-
   if (timeInput) {
     timeInput.max = "".concat(myState.totalFrames - 1);
   }
-
   var playBtn = document.getElementById("playBtn");
-
   if (myState.totalFrames < 2) {
     playBtn.disabled = true;
   } else {
     playBtn.disabled = false;
   }
-
   var pauseBtn = document.getElementById("pauseBtn");
-
   if (myState.totalFrames < 2) {
     pauseBtn.disabled = true;
   } else {
     pauseBtn.disabled = false;
   }
 }
-
 function showChannelUI(volume) {
   if (myState && myState.channelFolderNames) {
     for (var i = 0; i < myState.channelFolderNames.length; ++i) {
       removeFolderByName(myState.channelFolderNames[i]);
     }
   }
-
   myState.infoObj = volume.imageInfo;
   myState.channelGui = [];
   myState.channelFolderNames = [];
-
   for (var _i = 0; _i < myState.infoObj.channels; ++_i) {
     myState.channelGui.push({
       colorD: volume.channel_colors_default[_i],
@@ -93336,7 +92767,8 @@ function showChannelUI(volume) {
       // this doesn't give good results currently but is an example of a per-channel button callback
       autoIJ: function (j) {
         return function () {
-          var lut = volume.getHistogram(j).lutGenerator_auto2(); // TODO: get a proper transfer function editor
+          var lut = volume.getHistogram(j).lutGenerator_auto2();
+          // TODO: get a proper transfer function editor
           // const lut = { lut: makeColorGradient([
           //     {offset:0, color:"black"},
           //     {offset:0.2, color:"black"},
@@ -93344,7 +92776,6 @@ function showChannelUI(volume) {
           //     {offset:0.5, color:"orange"},
           //     {offset:1.0, color:"yellow"}])
           // };
-
           volume.setLut(j, lut.lut);
           view3D.updateLuts(volume);
         };
@@ -93379,13 +92810,11 @@ function showChannelUI(volume) {
           var lut = volume.getHistogram(j).lutGenerator_labelColors();
           volume.setColorPalette(j, lut.lut);
           myState.channelGui[j].colorizeEnabled = !myState.channelGui[j].colorizeEnabled;
-
           if (myState.channelGui[j].colorizeEnabled) {
             volume.setColorPaletteAlpha(j, myState.channelGui[j].colorizeAlpha);
           } else {
             volume.setColorPaletteAlpha(j, 0);
           }
-
           view3D.updateLuts(volume);
         };
       }(_i),
@@ -93464,14 +92893,15 @@ function showChannelUI(volume) {
     }(_i));
   }
 }
-
 function loadImageData(jsonData, volumeData) {
   var vol = new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(jsonData);
-  myState.volume = vol; // tell the viewer about the image AFTER it's loaded
+  myState.volume = vol;
+
+  // tell the viewer about the image AFTER it's loaded
   //view3D.removeAllVolumes();
   //view3D.addVolume(vol);
-  // get data into the image
 
+  // get data into the image
   for (var i = 0; i < volumeData.length; ++i) {
     // where each volumeData element is a flat Uint8Array of xyz data
     // according to jsonData.tile_width*jsonData.tile_height*jsonData.tiles
@@ -93480,12 +92910,12 @@ function loadImageData(jsonData, volumeData) {
     vol.setChannelDataFromVolume(i, volumeData[i]);
     setInitialRenderMode();
     view3D.removeAllVolumes();
-    view3D.addVolume(vol); // first 3 channels for starters
+    view3D.addVolume(vol);
 
+    // first 3 channels for starters
     for (var ch = 0; ch < vol.num_channels; ++ch) {
       view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
     }
-
     var maskChannelIndex = jsonData.channel_names.indexOf("SEG_Memb");
     view3D.setVolumeChannelAsMask(vol, maskChannelIndex);
     view3D.updateActiveChannels(vol);
@@ -93494,48 +92924,39 @@ function loadImageData(jsonData, volumeData) {
     view3D.updateDensity(vol, densitySliderToView3D(myState.density));
     view3D.updateExposure(myState.exposure);
   }
-
   showChannelUI(vol);
   return vol;
 }
-
 function cacheTimeSeriesImageData(jsonData, frameNumber) {
   var vol = new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(jsonData);
   myState.timeSeriesVolumes[frameNumber] = vol;
   return vol;
 }
-
 function onChannelDataArrived(url, v, channelIndex) {
   var cacheForTimeSeries = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
   var frameNumber = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
-
   if (cacheForTimeSeries) {
     if (v.isLoaded()) {
       var _currentVol = cacheTimeSeriesImageData(v.imageInfo, frameNumber);
-
       console.log("currentVol with name " + v.name + " is loaded");
       myState.numberOfVolumesCached++;
-
       if (myState.numberOfVolumesCached >= myState.totalFrames) {
         console.log("ALL FRAMES RECEIVED");
       }
-
       copyVolumeToVolume(v, _currentVol);
-
       if (frameNumber === 0) {
-        copyVolumeToVolume(v, myState.volume); // has assumption that only 3 channels
-
+        copyVolumeToVolume(v, myState.volume);
+        // has assumption that only 3 channels
         view3D.onVolumeData(myState.volume, [0, 1, 2]);
         view3D.updateActiveChannels(myState.volume);
         view3D.updateLuts(myState.volume);
         myState.volume.setIsLoaded(true);
-      } else {//copyVolumeToVolume(v, currentVol);
+      } else {
+        //copyVolumeToVolume(v, currentVol);
       }
-
       return;
     }
   }
-
   var currentVol = v; // myState.volume;
 
   currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
@@ -93543,61 +92964,56 @@ function onChannelDataArrived(url, v, channelIndex) {
   view3D.setVolumeChannelEnabled(currentVol, channelIndex, channelIndex < 3);
   view3D.updateActiveChannels(currentVol);
   view3D.updateLuts(currentVol);
-
   if (currentVol.isLoaded()) {
     console.log("currentVol with name " + currentVol.name + " is loaded");
   }
-
   view3D.redraw();
 }
-
 function onVolumeCreated(volume) {
   var isTimeSeries = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
   var frameNumber = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
   var myJson = volume.imageInfo;
-
   if (isTimeSeries) {
     if (frameNumber === 0) {
       // create the main volume and add to view (this is the only place)
-      myState.volume = new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(myJson); // TODO: this can go in the Volume and Channel constructors!
-      // preallocate some memory to be filled in later
+      myState.volume = new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(myJson);
 
+      // TODO: this can go in the Volume and Channel constructors!
+      // preallocate some memory to be filled in later
       for (var i = 0; i < myState.volume.num_channels; ++i) {
         myState.volume.channels[i].imgData = {
           data: new Uint8ClampedArray(myJson.atlas_width * myJson.atlas_height),
           width: myJson.atlas_width,
           height: myJson.atlas_height
         };
-        myState.volume.channels[i].volumeData = new Uint8Array(myJson.tile_width * myJson.tile_height * myJson.tiles); // TODO also preallocate the Fused data texture
+        myState.volume.channels[i].volumeData = new Uint8Array(myJson.tile_width * myJson.tile_height * myJson.tiles);
+        // TODO also preallocate the Fused data texture
       }
 
       view3D.removeAllVolumes();
       view3D.addVolume(myState.volume);
-      setInitialRenderMode(); // first 3 channels for starters
-
+      setInitialRenderMode();
+      // first 3 channels for starters
       for (var ch = 0; ch < myState.volume.num_channels; ++ch) {
         view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
       }
-
       view3D.setVolumeChannelAsMask(myState.volume, myJson.channel_names.indexOf("SEG_Memb"));
       view3D.updateActiveChannels(myState.volume);
       view3D.updateLuts(myState.volume);
       view3D.updateLights(myState.lights);
       view3D.updateDensity(myState.volume, densitySliderToView3D(myState.density));
-      view3D.updateExposure(myState.exposure); // apply a volume transform from an external source:
-
+      view3D.updateExposure(myState.exposure);
+      // apply a volume transform from an external source:
       if (myJson.transform) {
         var alignTransform = myJson.transform;
         view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(alignTransform.translation));
         view3D.setVolumeRotation(myState.volume, alignTransform.rotation);
       }
     }
-
     updateTimeUI(myState.volume);
     showChannelUI(myState.volume);
     return;
   }
-
   myState.volume = volume;
   view3D.removeAllVolumes();
   view3D.addVolume(myState.volume);
@@ -93606,20 +93022,20 @@ function onVolumeCreated(volume) {
   view3D.updateLuts(myState.volume);
   view3D.updateLights(myState.lights);
   view3D.updateDensity(myState.volume, densitySliderToView3D(myState.density));
-  view3D.updateExposure(myState.exposure); // apply a volume transform from an external source:
+  view3D.updateExposure(myState.exposure);
 
+  // apply a volume transform from an external source:
   if (myJson.transform) {
     var _alignTransform = myJson.transform;
     view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(_alignTransform.translation));
     view3D.setVolumeRotation(myState.volume, _alignTransform.rotation);
   }
-
   updateTimeUI(myState.volume);
   showChannelUI(myState.volume);
 }
-
 function copyVolumeToVolume(src, dest) {
   // assumes volumes already have identical dimensions!!!
+
   // grab references to data from each channel and put it in myState.volume
   for (var i = 0; i < src.num_channels; ++i) {
     // dest.channels[i].imgData.data.set(src.channels[i].imgData.data);
@@ -93631,83 +93047,70 @@ function copyVolumeToVolume(src, dest) {
       height: src.channels[i].imgData.height
     };
     dest.channels[i].volumeData = src.channels[i].volumeData;
-    dest.channels[i].lut = src.channels[i].lut; // danger: not a copy!
+    dest.channels[i].lut = src.channels[i].lut;
 
+    // danger: not a copy!
     dest.channels[i].histogram = src.channels[i].histogram;
     dest.channels[i].dataTexture = src.channels[i].dataTexture;
     dest.channels[i].lutTexture = src.channels[i].lutTexture;
     dest.channels[i].loaded = true;
   }
 }
-
 function updateViewForNewVolume() {
   view3D.onVolumeData(myState.volume, [0, 1, 2]);
   myState.volume.setIsLoaded(true);
-
   if (myState.isPT) {
     view3D.updateActiveChannels(myState.volume);
   } else {
     view3D.updateLuts(myState.volume);
   }
-
   for (var i = 0; i < myState.volume.num_channels; ++i) {
     view3D.updateIsosurface(myState.volume, i, myState.channelGui[i].isovalue);
   }
 }
-
 function playTimeSeries(onNewFrameCallback) {
   clearInterval(myState.timerId);
-
   var loadNextFrame = function loadNextFrame() {
     var nextFrame = myState.currentFrame + 1;
-
     if (nextFrame >= myState.totalFrames) {
       nextFrame = 0;
     }
-
     var nextFrameVolume = myState.timeSeriesVolumes[nextFrame];
     copyVolumeToVolume(nextFrameVolume, myState.volume);
     updateViewForNewVolume();
     myState.currentFrame = nextFrame;
     onNewFrameCallback();
   };
-
   myState.timerId = window.setInterval(loadNextFrame, 80);
 }
-
 function getCurrentFrame() {
   return myState.currentFrame;
 }
-
 function goToFrame(targetFrame) {
   console.log("going to Frame " + targetFrame);
   var outOfBounds = targetFrame > myState.totalFrames - 1 || targetFrame < 0;
-
   if (outOfBounds) {
     console.log("frame ".concat(targetFrame, " out of bounds"));
     return false;
-  } // check to see if we have pre-cached the volume
+  }
 
-
+  // check to see if we have pre-cached the volume
   var targetFrameVolume = myState.timeSeriesVolumes[targetFrame];
-
   if (targetFrameVolume) {
     copyVolumeToVolume(targetFrameVolume, myState.volume);
     updateViewForNewVolume();
   } else {
-    console.log("frame ".concat(targetFrame, " not yet loaded")); // try our loader
-
+    console.log("frame ".concat(targetFrame, " not yet loaded"));
+    // try our loader
     var loadSpec = new _src__WEBPACK_IMPORTED_MODULE_4__.LoadSpec();
     loadSpec.time = targetFrame;
-    loadSpec.url = myState.currentImageStore; // TODO loadspec needs to know proper multiresolution level here
-
+    loadSpec.url = myState.currentImageStore;
+    // TODO loadspec needs to know proper multiresolution level here
     loadVolume(loadSpec, myState.loader, false);
   }
-
   myState.currentFrame = targetFrame;
   return true;
 }
-
 function createTestVolume() {
   /* eslint-disable @typescript-eslint/naming-convention */
   var imgData = {
@@ -93745,80 +93148,66 @@ function createTestVolume() {
     time_unit: ""
   };
   /* eslint-enable @typescript-eslint/naming-convention */
-  // generate some raw volume data
 
+  // generate some raw volume data
   var channelVolumes = [_src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createSphere(imgData.tile_width, imgData.tile_height, imgData.tiles, 24), _src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createTorus(imgData.tile_width, imgData.tile_height, imgData.tiles, 24, 8), _src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createCone(imgData.tile_width, imgData.tile_height, imgData.tiles, 24, 24)];
   return {
     imgData: imgData,
     volumeData: channelVolumes
   };
 }
-
 function createLoader(type) {
   switch (type) {
     case "opencell":
       return new _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_5__.OpenCellLoader();
-
     case "omezarr":
       return new _src__WEBPACK_IMPORTED_MODULE_4__.OMEZarrLoader();
-
     case "ometiff":
       return new _src__WEBPACK_IMPORTED_MODULE_4__.TiffLoader();
     // case "procedural":
     //   return new RawVolumeLoader();
-
     case "jsonatlas":
       return new _src__WEBPACK_IMPORTED_MODULE_4__.JsonImageInfoLoader();
-
     default:
       throw new Error("Unknown loader type: " + type);
   }
 }
-
 function loadVolume(_x, _x2, _x3) {
   return _loadVolume.apply(this, arguments);
 }
-
 function _loadVolume() {
   _loadVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().mark(function _callee(loadSpec, loader, cacheTimeSeries) {
     var volume;
     return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().wrap(function _callee$(_context) {
-      while (1) {
-        switch (_context.prev = _context.next) {
-          case 0:
-            _context.next = 2;
-            return loader.createVolume(loadSpec);
-
-          case 2:
-            volume = _context.sent;
-            onVolumeCreated(volume, cacheTimeSeries, loadSpec.time);
-            loader.loadVolumeData(volume, function (url, v, channelIndex) {
-              onChannelDataArrived(url, v, channelIndex, cacheTimeSeries, loadSpec.time);
-            });
-            myState.currentImageStore = loadSpec.url;
-            myState.currentImageName = loadSpec.url;
-
-          case 7:
-          case "end":
-            return _context.stop();
-        }
+      while (1) switch (_context.prev = _context.next) {
+        case 0:
+          _context.next = 2;
+          return loader.createVolume(loadSpec);
+        case 2:
+          volume = _context.sent;
+          onVolumeCreated(volume, cacheTimeSeries, loadSpec.time);
+          loader.loadVolumeData(volume, function (url, v, channelIndex) {
+            onChannelDataArrived(url, v, channelIndex, cacheTimeSeries, loadSpec.time);
+          });
+          myState.currentImageStore = loadSpec.url;
+          myState.currentImageName = loadSpec.url;
+        case 7:
+        case "end":
+          return _context.stop();
       }
     }, _callee);
   }));
   return _loadVolume.apply(this, arguments);
 }
-
 function loadTestData(testdata) {
   if (testdata.type === "procedural") {
     var volumeInfo = createTestVolume();
     loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
     return;
   }
-
   var loader = createLoader(testdata.type);
   myState.loader = loader;
   var isTimeSeries = testdata.tend > testdata.tstart;
-
   for (var t = testdata.tstart; t <= testdata.tend; t++) {
     // replace %% with frame number
     var url = testdata.url.replace("%%", t.toString());
@@ -93827,17 +93216,13 @@ function loadTestData(testdata) {
     loadSpec.time = t;
     loadVolume(loadSpec, loader, isTimeSeries);
   }
-
   myState.totalFrames = testdata.tend - testdata.tstart + 1;
 }
-
 function main() {
   var el = document.getElementById("volume-viewer");
-
   if (!el) {
     return;
   }
-
   view3D = new _src__WEBPACK_IMPORTED_MODULE_4__.View3d({
     parentElement: el
   });
@@ -93846,7 +93231,6 @@ function main() {
     var currentTarget = _ref.currentTarget;
     var selected = currentTarget === null || currentTarget === void 0 ? void 0 : currentTarget.value;
     var testdata = TEST_DATA[selected];
-
     if (testdata) {
       loadTestData(testdata);
     }
@@ -93886,24 +93270,22 @@ function main() {
   showScaleBarBtn === null || showScaleBarBtn === void 0 ? void 0 : showScaleBarBtn.addEventListener("click", function () {
     myState.showScaleBar = !myState.showScaleBar;
     view3D.setShowScaleBar(myState.showScaleBar);
-  }); // convert value to rgb array
+  });
 
+  // convert value to rgb array
   function hexToRgb(hex, last) {
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? [parseInt(result[1], 16) / 255.0, parseInt(result[2], 16) / 255.0, parseInt(result[3], 16) / 255.0] : last;
   }
-
   var boundsColorBtn = document.getElementById("boundingBoxColor");
   boundsColorBtn === null || boundsColorBtn === void 0 ? void 0 : boundsColorBtn.addEventListener("change", function (event) {
     var _event$target;
-
     myState.boundingBoxColor = hexToRgb((_event$target = event.target) === null || _event$target === void 0 ? void 0 : _event$target.value, myState.boundingBoxColor);
     view3D.setBoundingBoxColor(myState.volume, myState.boundingBoxColor);
   });
   var backgroundColorBtn = document.getElementById("backgroundColor");
   backgroundColorBtn === null || backgroundColorBtn === void 0 ? void 0 : backgroundColorBtn.addEventListener("change", function (event) {
     var _event$target2;
-
     myState.backgroundColor = hexToRgb((_event$target2 = event.target) === null || _event$target2 === void 0 ? void 0 : _event$target2.value, myState.backgroundColor);
     view3D.setBackgroundColor(myState.backgroundColor);
   });
@@ -93927,12 +93309,10 @@ function main() {
     if (myState.currentFrame >= myState.totalFrames - 1) {
       myState.currentFrame = -1;
     }
-
     playTimeSeries(function () {
       if (timeInput) {
         timeInput.value = "" + getCurrentFrame();
       }
-
       if (timeSlider) {
         timeSlider.value = "" + getCurrentFrame();
       }
@@ -93951,7 +93331,6 @@ function main() {
       if (timeInput) {
         timeInput.value = "" + getCurrentFrame();
       }
-
       if (timeSlider) {
         timeSlider.value = "" + getCurrentFrame();
       }
@@ -93962,13 +93341,12 @@ function main() {
       if (timeInput) {
         timeInput.value = "" + getCurrentFrame();
       }
-
       if (timeSlider) {
         timeSlider.value = "" + getCurrentFrame();
       }
     }
-  }); // only update when DONE sliding: change event
-
+  });
+  // only update when DONE sliding: change event
   timeSlider === null || timeSlider === void 0 ? void 0 : timeSlider.addEventListener("change", function () {
     // trigger loading new time
     if (goToFrame(timeSlider === null || timeSlider === void 0 ? void 0 : timeSlider.valueAsNumber)) {
@@ -93997,30 +93375,26 @@ function main() {
     view3D.resetCamera();
   });
   var counterSpan = document.getElementById("counter");
-
   if (counterSpan) {
     view3D.setRenderUpdateListener(function (count) {
       counterSpan.innerHTML = "" + count;
     });
   }
-
   var renderModeSelect = document.getElementById("renderMode");
-
   var changeRenderMode = function changeRenderMode(pt, mp) {
     myState.isPT = pt;
     myState.isMP = mp;
     view3D.setVolumeRenderMode(pt ? _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_RAYMARCH);
     view3D.setMaxProjectMode(myState.volume, mp);
   };
-
   renderModeSelect === null || renderModeSelect === void 0 ? void 0 : renderModeSelect.addEventListener("change", function (_ref2) {
     var currentTarget = _ref2.currentTarget;
-
-    if (currentTarget.value === "PT") {
+    var target = currentTarget;
+    if (target.value === "PT") {
       if (view3D.hasWebGL2()) {
         changeRenderMode(true, false);
       }
-    } else if (currentTarget.value === "MP") {
+    } else if (target.value === "MP") {
       changeRenderMode(false, true);
     } else {
       changeRenderMode(false, false);
@@ -94044,7 +93418,6 @@ function main() {
   loadTestData(TEST_DATA[testDataSelect === null || testDataSelect === void 0 ? void 0 : testDataSelect.value]);
   console.log(myState.timeSeriesVolumes);
 }
-
 document.body.onload = function () {
   main();
 };

@@ -11,12 +11,10 @@
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var zarr__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! zarr */ "./node_modules/zarr/zarr.mjs");
 
-
 function convertChannel(channelData, nx, ny, nz, dtype, downsampleZ) {
   var nresultpixels = nx * ny * Math.ceil(nz / downsampleZ);
   var u8 = new Uint8Array(nresultpixels);
   var xy = nx * ny;
-
   if (dtype === "|u1") {
     // flatten the 3d array and convert to uint8
     // todo test perf with a loop over x,y,z instead
@@ -29,41 +27,32 @@ function convertChannel(channelData, nx, ny, nz, dtype, downsampleZ) {
     }
   } else {
     var chmin = channelData[0][0][0];
-    var chmax = channelData[0][0][0]; // find min and max (only of data we are sampling?)
-
+    var chmax = channelData[0][0][0];
+    // find min and max (only of data we are sampling?)
     for (var _z = 0; _z < nz; _z += downsampleZ) {
       for (var _j = 0; _j < xy; ++_j) {
         var _yrow = Math.floor(_j / nx);
-
         var _xcol = _j % nx;
-
         var val = channelData[_z][_yrow][_xcol];
-
         if (val < chmin) {
           chmin = val;
         }
-
         if (val > chmax) {
           chmax = val;
         }
       }
-    } // flatten the 3d array and convert to uint8
-
-
+    }
+    // flatten the 3d array and convert to uint8
     for (var _z2 = 0, _slice = 0; _z2 < nz; _z2 += downsampleZ, ++_slice) {
       for (var _j2 = 0; _j2 < xy; ++_j2) {
         var _yrow2 = Math.floor(_j2 / nx);
-
         var _xcol2 = _j2 % nx;
-
         u8[_j2 + _slice * xy] = (channelData[_z2][_yrow2][_xcol2] - chmin) / (chmax - chmin) * 255;
       }
     }
   }
-
   return u8;
 }
-
 self.onmessage = function (e) {
   var time = e.data.time;
   var channelIndex = e.data.channel;
@@ -77,15 +66,12 @@ self.onmessage = function (e) {
     // build slice spec
     // assuming ZYX are the last three dimensions:
     var sliceSpec = [null, null, null];
-
     if (channelIndex > -1) {
       sliceSpec.unshift(channelIndex);
     }
-
     if (time > -1) {
       sliceSpec.unshift(time);
     }
-
     return level.get(sliceSpec);
   }).then(function (channel) {
     channel = channel;
@@ -243,10 +229,13 @@ self.onmessage = function (e) {
 /******/ 		var document = __webpack_require__.g.document;
 /******/ 		if (!scriptUrl && document) {
 /******/ 			if (document.currentScript)
-/******/ 				scriptUrl = document.currentScript.src
+/******/ 				scriptUrl = document.currentScript.src;
 /******/ 			if (!scriptUrl) {
 /******/ 				var scripts = document.getElementsByTagName("script");
-/******/ 				if(scripts.length) scriptUrl = scripts[scripts.length - 1].src
+/******/ 				if(scripts.length) {
+/******/ 					var i = scripts.length - 1;
+/******/ 					while (i > -1 && !scriptUrl) scriptUrl = scripts[i--].src;
+/******/ 				}
 /******/ 			}
 /******/ 		}
 /******/ 		// When supporting browsers where an automatic publicPath is not supported you must specify an output.publicPath manually via configuration
