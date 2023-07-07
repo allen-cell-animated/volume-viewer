@@ -13,6 +13,7 @@ import {
   Matrix4,
   Mesh,
   ShaderMaterial,
+  ShapeGeometry,
   Vector2,
   Vector3,
 } from "three";
@@ -35,15 +36,15 @@ const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   public volume: Volume;
   public bounds: Bounds;
-  private cube: BoxGeometry;
-  private cubeMesh: Mesh<BufferGeometry, Material>;
-  private boxHelper: Box3Helper;
-  private tickMarksMesh: LineSegments;
-  private cubeTransformNode: Group;
-  private uniforms: typeof rayMarchingShaderUniforms;
-  private channelData: FusedChannelData;
-  private scale: Vector3;
-  private isOrtho: boolean;
+  protected geometry: ShapeGeometry;
+  protected geometryMesh: Mesh<BufferGeometry, Material>;
+  protected boxHelper: Box3Helper;
+  protected tickMarksMesh: LineSegments;
+  protected geometryTransformNode: Group;
+  protected uniforms: ReturnType<typeof rayMarchingShaderUniforms>;
+  protected channelData: FusedChannelData;
+  protected scale: Vector3;
+  protected isOrtho: boolean;
 
   constructor(volume: Volume) {
     // need?
@@ -58,9 +59,8 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.scale = new Vector3(1.0, 1.0, 1.0);
     this.isOrtho = false;
 
-    this.cube = new BoxGeometry(1.0, 1.0, 1.0);
-    this.cubeMesh = new Mesh(this.cube);
-    this.cubeMesh.name = "Volume";
+    this.uniforms = rayMarchingShaderUniforms();
+    [this.geometry, this.geometryMesh] = this.createGeometry(this.uniforms);
 
     this.boxHelper = new Box3Helper(
       new Box3(new Vector3(-0.5, -0.5, -0.5), new Vector3(0.5, 0.5, 0.5)),
@@ -73,27 +73,10 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.tickMarksMesh.updateMatrixWorld();
     this.tickMarksMesh.visible = false;
 
-    this.cubeTransformNode = new Group();
-    this.cubeTransformNode.name = "VolumeContainerNode";
+    this.geometryTransformNode = new Group();
+    this.geometryTransformNode.name = "VolumeContainerNode";
 
-    this.cubeTransformNode.add(this.boxHelper, this.tickMarksMesh, this.cubeMesh);
-
-    this.uniforms = rayMarchingShaderUniforms;
-
-    // shader,vtx and frag.
-    const vtxsrc = rayMarchingVertexShaderSrc;
-    const fgmtsrc = rayMarchingFragmentShaderSrc;
-
-    const threeMaterial = new ShaderMaterial({
-      uniforms: this.uniforms,
-      vertexShader: vtxsrc,
-      fragmentShader: fgmtsrc,
-      transparent: true,
-      depthTest: true,
-      depthWrite: false,
-    });
-
-    this.cubeMesh.material = threeMaterial;
+    this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
 
     this.setUniform("ATLAS_X", volume.imageInfo.cols);
     this.setUniform("ATLAS_Y", volume.imageInfo.rows);
@@ -102,6 +85,36 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.setScale(this.scale);
 
     this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
+  }
+
+  // TODO: Change uniforms to be a generic type in a abstract parent class?
+  /**
+   * Creates the geometry mesh and material for rendering the volume.
+   * @param uniforms object containing uniforms to pass to the shader material.
+   * @returns the new geometry and geometry mesh.
+   */
+  protected createGeometry(
+    uniforms: ReturnType<typeof rayMarchingShaderUniforms>
+  ): [ShapeGeometry, Mesh<BufferGeometry, Material>] {
+    const geom = new BoxGeometry(1.0, 1.0, 1.0);
+    const mesh: Mesh<BufferGeometry, Material> = new Mesh(geom);
+    mesh.name = "Volume";
+
+    // shader,vtx and frag.
+    const vtxsrc = rayMarchingVertexShaderSrc;
+    const fgmtsrc = rayMarchingFragmentShaderSrc;
+
+    const threeMaterial = new ShaderMaterial({
+      uniforms: uniforms,
+      vertexShader: vtxsrc,
+      fragmentShader: fgmtsrc,
+      transparent: true,
+      depthTest: true,
+      depthWrite: false,
+    });
+
+    mesh.material = threeMaterial;
+    return [geom, mesh];
   }
 
   private createTickMarks(): LineSegments {
@@ -174,14 +187,14 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   }
 
   public cleanup(): void {
-    this.cube.dispose();
-    this.cubeMesh.material.dispose();
+    this.geometry.dispose();
+    this.geometryMesh.material.dispose();
 
     this.channelData.cleanup();
   }
 
   public setVisible(isVisible: boolean): void {
-    this.cubeMesh.visible = isVisible;
+    this.geometryMesh.visible = isVisible;
     // note that this does not affect bounding box visibility
   }
 
@@ -201,17 +214,17 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   }
 
   public doRender(canvas: ThreeJsPanel): void {
-    if (!this.cubeMesh.visible) {
+    if (!this.geometryMesh.visible) {
       return;
     }
 
     this.channelData.gpuFuse(canvas.renderer);
     this.setUniform("textureAtlas", this.channelData.getFusedTexture());
 
-    this.cubeTransformNode.updateMatrixWorld(true);
+    this.geometryTransformNode.updateMatrixWorld(true);
 
     const mvm = new Matrix4();
-    mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.cubeMesh.matrixWorld);
+    mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
     const mi = new Matrix4();
     mi.copy(mvm).invert();
 
@@ -219,7 +232,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   }
 
   public get3dObject(): Group {
-    return this.cubeTransformNode;
+    return this.geometryTransformNode;
   }
 
   public onChannelData(_batch: number[]): void {
@@ -229,7 +242,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   public setScale(scale: Vector3): void {
     this.scale = scale;
 
-    this.cubeMesh.scale.copy(scale);
+    this.geometryMesh.scale.copy(scale);
     this.setUniform("volumeScale", scale);
     this.boxHelper.box.set(
       new Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z),
@@ -243,11 +256,11 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   }
 
   public setTranslation(vec3xyz: Vector3): void {
-    this.cubeTransformNode.position.copy(vec3xyz);
+    this.geometryTransformNode.position.copy(vec3xyz);
   }
 
   public setRotation(eulerXYZ: Euler): void {
-    this.cubeTransformNode.rotation.copy(eulerXYZ);
+    this.geometryTransformNode.rotation.copy(eulerXYZ);
   }
 
   public setOrthoScale(value: number): void {
@@ -330,6 +343,10 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.setUniform("AABB_CLIP_MAX", this.bounds.bmax);
   }
 
+  public setZSlice(_slice: number): boolean {
+    return true;
+  }
+
   public setChannelAsMask(channelIndex: number): boolean {
     if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
       return false;
@@ -348,15 +365,15 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   //////////////////////////////////////////
   //////////////////////////////////////////
 
-  private setUniform<U extends keyof typeof rayMarchingShaderUniforms>(
+  protected setUniform<U extends keyof ReturnType<typeof rayMarchingShaderUniforms>>(
     name: U,
-    value: (typeof rayMarchingShaderUniforms)[U]["value"]
+    value: (ReturnType<typeof rayMarchingShaderUniforms>)[U]["value"]
   ) {
     if (!this.uniforms[name]) {
       return;
     }
     this.uniforms[name].value = value;
-    this.cubeMesh.material.needsUpdate = true;
+    this.geometryMesh.material.needsUpdate = true;
   }
 
   // channelcolors is array of {rgbColor, lut} and channeldata is volume.channels

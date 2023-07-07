@@ -12,6 +12,7 @@ import { Light } from "./Light";
 import Channel from "./Channel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 import { Pane } from "tweakpane";
+import Atlas2DSlice from "./Atlas2DSlice";
 
 type ColorArray = [number, number, number];
 type ColorObject = { r: number; g: number; b: number };
@@ -33,6 +34,7 @@ export default class VolumeDrawable {
   private flipX: number;
   private flipY: number;
   private flipZ: number;
+  private viewMode: string;
   private maskChannelIndex: number;
   private maskAlpha: number;
   private gammaMin: number;
@@ -41,6 +43,7 @@ export default class VolumeDrawable {
   private channelColors: [number, number, number][];
   private channelOptions: VolumeChannelDisplayOptions[];
   private fusion: FuseChannel[];
+  private zSlice: number;
   public specular: [number, number, number][];
   public emissive: [number, number, number][];
   public glossiness: number[];
@@ -55,6 +58,7 @@ export default class VolumeDrawable {
   // this is a remnant of a pre-typescript world
   private pathTracedVolume?: PathTracedVolume;
   private rayMarchedAtlasVolume?: RayMarchedAtlasVolume;
+  private atlas2DSlice?: Atlas2DSlice;
 
   private volumeRendering: VolumeRenderImpl;
 
@@ -78,6 +82,9 @@ export default class VolumeDrawable {
     this.flipX = 1;
     this.flipY = 1;
     this.flipZ = 1;
+
+    // TODO: Replace with enum
+    this.viewMode = "3D";
 
     this.maskChannelIndex = -1;
 
@@ -155,6 +162,8 @@ export default class VolumeDrawable {
     this.setRotation(new Euler().fromArray(this.volume.getRotation()));
 
     this.setOptions(options);
+    this.zSlice = Math.floor(this.volume.z / 2);
+    this.volumeRendering.setZSlice(this.zSlice);
   }
 
   setOptions(options: VolumeDisplayOptions): void {
@@ -297,6 +306,26 @@ export default class VolumeDrawable {
     this.volumeRendering.setAxisClip(axis, minval, maxval, isOrthoAxis || false);
   }
 
+  // TODO: Change mode to an enum
+  /**
+   * Sets the camera mode of the VolumeDrawable.
+   * @param mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X", or "XZ" or "Y".
+   */
+  setViewMode(mode: string): void {
+    this.viewMode = mode;
+    if (mode === "XY" || mode === "Z") {
+      // If currently in 3D raymarch mode, hotswap the 2D slice
+      if (this.rayMarchedAtlasVolume && !this.atlas2DSlice) {
+        this.setVolumeRendering(false);
+      }
+    } else {
+      // If in 2D slice mode, switch back to 3D raymarch mode
+      if (!this.rayMarchedAtlasVolume && this.atlas2DSlice) {
+        this.setVolumeRendering(false);
+      }
+    }
+  }
+
   // Tell this image that it needs to be drawn in an orthographic mode
   // @param {boolean} isOrtho is this an orthographic projection or a perspective view
   setIsOrtho(isOrtho: boolean): void {
@@ -385,8 +414,8 @@ export default class VolumeDrawable {
         this.pathTracedVolume.updateActiveChannels(this);
       }
     } else {
-      if (this.rayMarchedAtlasVolume) {
-        this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
+      if (this.volumeRendering instanceof RayMarchedAtlasVolume) {
+        this.volumeRendering.fuse(this.fusion, this.volume.channels);
       }
     }
   }
@@ -627,20 +656,29 @@ export default class VolumeDrawable {
     // destroy old resources.
     this.volumeRendering.cleanup();
 
+    this.atlas2DSlice = undefined;
+    this.pathTracedVolume = undefined;
+    this.rayMarchedAtlasVolume = undefined;
+
     // create new
     if (isPathtrace) {
       this.pathTracedVolume = new PathTracedVolume(this.volume);
       this.volumeRendering = this.pathTracedVolume;
-      this.rayMarchedAtlasVolume = undefined;
       this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
     } else {
-      this.rayMarchedAtlasVolume = new RayMarchedAtlasVolume(this.volume);
-      this.volumeRendering = this.rayMarchedAtlasVolume;
-      this.pathTracedVolume = undefined;
+      // Quietly swap the RayMarchedAtlasVolume for a 2D slice renderer when our render mode
+      // is XY/Z mode.
+      if (this.viewMode === "XY" || this.viewMode === "Z") {
+        this.atlas2DSlice = new Atlas2DSlice(this.volume);
+        this.volumeRendering = this.atlas2DSlice;
+      } else {
+        this.rayMarchedAtlasVolume = new RayMarchedAtlasVolume(this.volume);
+        this.volumeRendering = this.rayMarchedAtlasVolume;
+      }
 
       for (let i = 0; i < this.volume.num_channels; ++i) {
         if (this.volume.getChannel(i).loaded) {
-          this.rayMarchedAtlasVolume.onChannelData([i]);
+          this.volumeRendering.onChannelData([i]);
         }
       }
       if (this.renderUpdateListener) {
@@ -661,6 +699,7 @@ export default class VolumeDrawable {
     this.setDensity(this.getDensity());
     this.setGamma(this.gammaMin, this.gammaLevel, this.gammaMax);
     this.setFlipAxes(this.flipX, this.flipY, this.flipZ);
+    this.setZSlice(this.zSlice);
 
     // reset clip bounds
     this.setAxisClip("x", this.bounds.bmin.x, this.bounds.bmax.x);
@@ -709,5 +748,13 @@ export default class VolumeDrawable {
     pathtrace
       .addInput(this, "secondaryRayStepSize", { min: 1, max: 100 })
       .on("change", ({ value }) => this.setRayStepSizes(undefined, value));
+  }
+
+  setZSlice(slice: number): boolean {
+    if (this.volumeRendering.setZSlice(slice)) {
+      this.zSlice = slice;
+      return true;
+    }
+    return false;
   }
 }
