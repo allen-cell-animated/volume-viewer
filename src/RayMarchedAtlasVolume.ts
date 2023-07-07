@@ -35,7 +35,7 @@ import { defaultVolumeRenderSettings, VolumeRenderSettingUtils, VolumeRenderSett
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
 export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
-  private settings: VolumeRenderSettings;
+  private settings: VolumeRenderSettings | undefined;
   public volume: Volume;
 
   private geometry: ShapeGeometry;
@@ -47,12 +47,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   private channelData: FusedChannelData;
 
   constructor(volume: Volume, settings?: VolumeRenderSettings) {
-    if (!settings) {
-      settings = defaultVolumeRenderSettings();
-      VolumeRenderSettingUtils.updateWithVolume(settings, volume);
-    }
-    this.settings = settings;
-
     // need?
     this.volume = volume;
 
@@ -82,7 +76,11 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
     this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
 
-    this.updateSettings(this.settings);
+    if (!settings) {
+      settings = defaultVolumeRenderSettings();
+      VolumeRenderSettingUtils.updateWithVolume(settings, volume);
+    } 
+    this.updateSettings(settings);
   }
   
   public viewpointMoved(): void {
@@ -93,8 +91,13 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   }
 
   public updateSettings(newSettings: VolumeRenderSettings) {
-    const oldSettings = VolumeRenderSettingUtils.clone(this.settings);
-    this.settings = newSettings;
+    if (this.settings && VolumeRenderSettingUtils.isEqual(this.settings, newSettings)) {
+      console.log("No new settings, skipping update");
+      return;
+    }
+  
+    console.log("New settings update");
+    this.settings = VolumeRenderSettingUtils.clone(newSettings);
 
     this.geometryMesh.visible = this.settings.visible;
 
@@ -134,9 +137,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       bmin: new Vector3(bounds.bmin.x * 2.0, bounds.bmin.y * 2.0, bounds.bmin.z * 2.0),
       bmax: new Vector3(bounds.bmax.x * 2.0, bounds.bmax.y * 2.0, bounds.bmax.z * 2.0)
     };
-    console.log(bounds);
-    console.log(boundsNormalized);
-    
+
     // Axis clipping and line thickness for ortho
     if (this.settings.isOrtho) {
       // TODO: configure based on ortho axis

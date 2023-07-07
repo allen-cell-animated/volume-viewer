@@ -73,19 +73,12 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   private renderUpdateListener?: (iteration: number) => void;
 
   constructor(volume: Volume, settings?: VolumeRenderSettings) {
-    if (!settings) {
-      settings = defaultVolumeRenderSettings();
-      VolumeRenderSettingUtils.updateWithVolume(settings, volume);
-    }
-    this.settings = settings;
-
+    this.pathTracingUniforms = pathTracingUniforms();
     this.volume = volume;
     this.viewChannels = [-1, -1, -1, -1];
 
     // scale factor is a huge optimization.  Maybe use 1/dpi scale
     this.pixelSamplingRate = 0.75;
-
-    this.pathTracingUniforms = pathTracingUniforms();
 
     // create volume texture
     const sx = volume.x,
@@ -320,9 +313,16 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       1.0 / physicalSize.y,
       1.0 / physicalSize.z
     );
-    this.updateClipRegion(0, 1, 0, 1, 0, 1);
-
     this.updateLightsSecondary();
+
+    // Update settings
+    // Must be done after all other state is initialized
+    if (!settings) {
+      settings = defaultVolumeRenderSettings();
+      VolumeRenderSettingUtils.updateWithVolume(settings, volume);
+    } 
+    this.updateSettings(settings);
+    this.settings = VolumeRenderSettingUtils.clone(settings);  // turns off ts initialization warning
   }
 
   public cleanup(): void {
@@ -339,18 +339,19 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       this.renderUpdateListener(0);
     }
     this.sampleCounter = 0;
-    console.trace();
   }
 
   public updateSettings(newSettings: VolumeRenderSettings): void {
     // bounding box not implemented yet
-    // scale, do nothing
-    // translation
-    // rotation
-    // gamma
-    // ortho
-    const oldSettings = VolumeRenderSettingUtils.clone(this.settings);
-    this.settings = newSettings;
+
+    if (this.settings && VolumeRenderSettingUtils.isEqual(this.settings, newSettings)) {
+      console.log("No new settings, skipping update");
+      return;
+    }
+    console.log("UPDATING");
+
+    const oldSettings = this.settings;
+    this.settings = VolumeRenderSettingUtils.clone(newSettings);
 
     this.pathTracingUniforms.flipVolume.value = this.settings.flipAxes;
     this.pathTracingUniforms.gDensityScale.value = this.settings.density * 150.0;
@@ -374,13 +375,13 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.updateExposure(this.settings.brightness);
 
     // Update channel and alpha mask if they have changed
-    if (oldSettings.maskChannelIndex !== newSettings.maskChannelIndex || oldSettings.maskAlpha !== newSettings.maskAlpha) {
+    if (!oldSettings || oldSettings.maskChannelIndex !== newSettings.maskChannelIndex || oldSettings.maskAlpha !== newSettings.maskAlpha) {
       this.updateVolumeData4();
     }
 
     this.pathTracingUniforms.gCamera.value.mIsOrtho = this.settings.isOrtho ? 1 : 0;
     // Update interpolation settings
-    if (oldSettings.useInterpolation !== newSettings.useInterpolation) {
+    if (!oldSettings || oldSettings.useInterpolation !== newSettings.useInterpolation) {
       this.volumeTexture.minFilter = this.volumeTexture.magFilter = newSettings.useInterpolation ? LinearFilter : NearestFilter;
       this.volumeTexture.needsUpdate = true;
     }
