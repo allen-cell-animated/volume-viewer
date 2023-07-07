@@ -41,7 +41,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   protected boxHelper: Box3Helper;
   protected tickMarksMesh: LineSegments;
   protected geometryTransformNode: Group;
-  protected uniforms: typeof rayMarchingShaderUniforms;
+  protected uniforms: ReturnType<typeof rayMarchingShaderUniforms>;
   protected channelData: FusedChannelData;
   protected scale: Vector3;
   protected isOrtho: boolean;
@@ -59,7 +59,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.scale = new Vector3(1.0, 1.0, 1.0);
     this.isOrtho = false;
 
-    this.uniforms = rayMarchingShaderUniforms;
+    this.uniforms = rayMarchingShaderUniforms();
     [this.geometry, this.geometryMesh] = this.createGeometry(this.uniforms);
 
     this.boxHelper = new Box3Helper(
@@ -94,7 +94,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
    * @returns the new geometry and geometry mesh.
    */
   protected createGeometry(
-    uniforms: typeof rayMarchingShaderUniforms
+    uniforms: ReturnType<typeof rayMarchingShaderUniforms>
   ): [ShapeGeometry, Mesh<BufferGeometry, Material>] {
     const geom = new BoxGeometry(1.0, 1.0, 1.0);
     const mesh: Mesh<BufferGeometry, Material> = new Mesh(geom);
@@ -365,9 +365,9 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   //////////////////////////////////////////
   //////////////////////////////////////////
 
-  protected setUniform<U extends keyof typeof rayMarchingShaderUniforms>(
+  protected setUniform<U extends keyof ReturnType<typeof rayMarchingShaderUniforms>>(
     name: U,
-    value: (typeof rayMarchingShaderUniforms)[U]["value"]
+    value: (ReturnType<typeof rayMarchingShaderUniforms>)[U]["value"]
   ) {
     if (!this.uniforms[name]) {
       return;
