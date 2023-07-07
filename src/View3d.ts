@@ -477,8 +477,7 @@ export class View3d {
   }
 
   setZSlice(volume: Volume, slice: number): boolean {
-    const ret = this.image?.setZSlice(slice);
-    if (ret) {
+    if (this.image?.setZSlice(slice)) {
       this.canvas3d.redraw();
       return true;
     }

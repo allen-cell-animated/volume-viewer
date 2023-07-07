@@ -634,8 +634,6 @@ export default class VolumeDrawable {
     // ensure transforms on new volume representation are up to date
     this.PT = isPathtrace;
 
-
-
     // add new 3d object to scene
     !this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());
     this.sceneRoot.add(this.volumeRendering.get3dObject());

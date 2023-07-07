@@ -17,7 +17,7 @@ export default class Atlas2DSlice extends RayMarchedAtlasVolume {
   // (this requires a refactor of some of the render implementation classes)
   // Overload geometry to create plane instead of a cube mesh
   protected createGeometry(
-    uniforms: typeof rayMarchingShaderUniforms
+    uniforms: ReturnType<typeof rayMarchingShaderUniforms>
   ): [ShapeGeometry, Mesh<BufferGeometry, Material>] {
     const geom = new PlaneGeometry(1.0, 1.0);
     const mesh: Mesh<BufferGeometry, Material> = new Mesh(geom);
@@ -40,14 +40,13 @@ export default class Atlas2DSlice extends RayMarchedAtlasVolume {
     return [geom, mesh];
   }
 
-  public setZSlice(_slice: number): boolean {
+  public setZSlice(slice: number): boolean {
     // Clamp the slice value
-    _slice = Math.floor(_slice);
-    if (_slice < 0 || _slice > this.volume.z - 1) {
+    slice = Math.floor(slice);
+    if (slice < 0 || slice > this.volume.z - 1) {
       return false;
     }
-    this.setUniform("Z_SLICE", _slice);
-    this.geometryMesh.material.needsUpdate = true;
+    this.setUniform("Z_SLICE", slice);
     return true;
   }
 }
