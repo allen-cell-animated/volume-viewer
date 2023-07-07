@@ -10,6 +10,7 @@ export type VolumeRenderSettings = {
   scale: Vector3;
   isOrtho: boolean;
   orthoScale: number;
+  // TODO: Replace with enum
   orthoAxis: "x" | "y" | "z" | null;
   currentScale: Vector3;
 
@@ -87,15 +88,83 @@ export class VolumeRenderSettingUtils {
     renderSettings.glossiness = new Array(volume.num_channels).fill(0);
   }
 
-  public static isEqual(s1: VolumeRenderSettings, s2: VolumeRenderSettings): boolean {
-    for (let key of Object.keys(s1)) {
-      
+  private static compareArray(a1: unknown[], a2: unknown[]): boolean {
+    if (a1.length !== a2.length) {
+      return false;
     }
+    for (let i = 0; i < a1.length; i++) {
+      const elem1 = a1[i];
+      const elem2 = a2[i];
+      if (elem1 instanceof Array && elem2 instanceof Array) {
+        if (!this.compareArray(elem1, elem2)) {
+          return false;
+        }
+      } else if (elem1 !== elem2) {
+        return false;
+      }
+    }
+    return true;
   }
 
-  // TODO: Replace JSON stringify/parsing
-  public static clone(sourceSettings: VolumeRenderSettings): VolumeRenderSettings {
-    return JSON.parse(JSON.stringify(sourceSettings));
+  public static isEqual(s1: VolumeRenderSettings, s2: VolumeRenderSettings): boolean {
+    for (let key of Object.keys(s1)) {  
+      const v1 = s1[key];
+      const v2 = s2[key];
+      if (v1 instanceof Array) {
+        if (!this.compareArray(s1[key], s2[key])) {
+          return false;
+        }
+      } else if (v1 && v1.bmin !== undefined) {  // Bounds object
+        const bounds1 = v1 as Bounds;
+        const bounds2 = v2 as Bounds;
+        if (!bounds1.bmin.equals(bounds2.bmin) || !bounds1.bmax.equals(bounds2.bmax)) {
+          return false;
+        }
+      } else if (v1 instanceof Vector3 || v1 instanceof Euler) {
+        if(!v1.equals(s2[key])) {
+          return false;
+        }
+      } else {  // Vector3, Euler, number, boolean, string
+        if (v1 !== s2[key]) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  private static deepCopyArray<T>(a: unknown[]): unknown[] {
+    const b: unknown[] = new Array(a.length);
+    for (let i = 0; i < a.length; i++) { 
+      const val = a[i];
+      // Currently assumes only arrays of numbers (or arrays of arrays of numbers).
+      if (val instanceof Array) {
+        b[i] = this.deepCopyArray(val);
+      } else {
+        b[i] = val;
+      }
+    } 
+    return b;
+  }
+
+  public static clone(src: VolumeRenderSettings): VolumeRenderSettings {
+    const dst = defaultVolumeRenderSettings();
+    for (let key of Object.keys(src)) { 
+      const val = src[key];
+      if (val instanceof Array) {
+        dst[key] = this.deepCopyArray(val);
+      } else if (key === "bounds") { // Bounds
+        dst.bounds.bmax = src.bounds.bmax.clone();
+        dst.bounds.bmin = src.bounds.bmin.clone();
+      } else if (val instanceof Vector3 || val instanceof Euler) {
+        dst[key] = val.clone();
+      } else if (val instanceof String) {
+        dst[key] = "" + val;
+      } else {  // boolean, number, other primitives
+        dst[key] = val;
+      }
+    }
+    return dst;
   }
 }
 
