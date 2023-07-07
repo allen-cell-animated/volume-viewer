@@ -351,6 +351,8 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
     // Update resolution
     const resolution = this.settings.resolution;
+    console.log(resolution);
+    console.log(this.settings.pixelSamplingRate);
     this.fullTargetResolution = resolution;
     const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
     const nx = Math.floor((resolution.x * this.settings.pixelSamplingRate) / dpr);

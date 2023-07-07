@@ -60,5 +60,14 @@ describe("VolumeRenderSettingUtils", () => {
         s4.bounds.bmax = s1.bounds.bmax;
         expect(VolumeRenderSettingUtils.isEqual(s4, s1)).to.be.true;
     });
+
+    it("flags string changes", () => {
+        const s1 = defaultVolumeRenderSettings();
+        const s2 = defaultVolumeRenderSettings();
+
+        s1.orthoAxis = null;
+        s2.orthoAxis = "x";
+        expect(VolumeRenderSettingUtils.isEqual(s1, s2)).to.be.false;
+    });
     
 });

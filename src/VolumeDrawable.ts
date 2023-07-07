@@ -235,6 +235,7 @@ export default class VolumeDrawable {
     const y = viewObj.getHeight();
     this.meshVolume.setResolution(x, y);
     this.settings.resolution = new Vector2(x, y);
+    this.volumeRendering.updateSettings(this.settings);
   }
 
   // Set clipping range (between -0.5 and 0.5) for a given axis.
@@ -246,6 +247,8 @@ export default class VolumeDrawable {
   setAxisClip(axis: "x" | "y" | "z", minval: number, maxval: number, isOrthoAxis?: boolean): void {
     this.settings.bounds.bmax[axis] = maxval;
     this.settings.bounds.bmin[axis] = minval;
+    this.settings.orthoAxis = axis;
+    this.settings.isOrtho = isOrthoAxis || false;
 
     !this.PT && this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
     this.volumeRendering.updateSettings(this.settings);
