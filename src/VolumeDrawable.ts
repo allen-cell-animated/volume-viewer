@@ -1,4 +1,4 @@
-import { Vector3, Object3D, Euler } from "three";
+import { Vector3, Object3D, Euler, Vector2 } from "three";
 
 import MeshVolume from "./MeshVolume";
 import RayMarchedAtlasVolume from "./RayMarchedAtlasVolume";
@@ -233,8 +233,8 @@ export default class VolumeDrawable {
   setResolution(viewObj: ThreeJsPanel): void {
     const x = viewObj.getWidth();
     const y = viewObj.getHeight();
-    this.volumeRendering.setResolution(x, y);
     this.meshVolume.setResolution(x, y);
+    this.settings.resolution = new Vector2(x, y);
   }
 
   // Set clipping range (between -0.5 and 0.5) for a given axis.
@@ -591,7 +591,8 @@ export default class VolumeDrawable {
   }
 
   setPixelSamplingRate(value: number): void {
-    this.volumeRendering.setPixelSamplingRate(value);
+    this.settings.pixelSamplingRate = value;
+    this.volumeRendering.updateSettings(this.settings);
   }
 
   setVolumeRendering(isPathtrace: boolean): void {

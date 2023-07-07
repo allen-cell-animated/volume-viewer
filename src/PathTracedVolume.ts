@@ -42,7 +42,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   private volume: Volume;
   private viewChannels: number[]; // should have 4 or less elements
 
-  private pixelSamplingRate: number;
   private pathTracingUniforms: ReturnType<typeof pathTracingUniforms>;
   private volumeTexture: Data3DTexture;
 
@@ -76,9 +75,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.pathTracingUniforms = pathTracingUniforms();
     this.volume = volume;
     this.viewChannels = [-1, -1, -1, -1];
-
-    // scale factor is a huge optimization.  Maybe use 1/dpi scale
-    this.pixelSamplingRate = 0.75;
 
     // create volume texture
     const sx = volume.x,
@@ -353,6 +349,15 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     const oldSettings = this.settings;
     this.settings = VolumeRenderSettingUtils.clone(newSettings);
 
+    // Update resolution
+    const resolution = this.settings.resolution;
+    this.fullTargetResolution = resolution;
+    const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
+    const nx = Math.floor((resolution.x * this.settings.pixelSamplingRate) / dpr);
+    const ny = Math.floor((resolution.y * this.settings.pixelSamplingRate) / dpr);
+    this.pathTracingUniforms.uResolution.value.x = nx;
+    this.pathTracingUniforms.uResolution.value.y = ny;
+
     this.pathTracingUniforms.flipVolume.value = this.settings.flipAxes;
     this.pathTracingUniforms.gDensityScale.value = this.settings.density * 150.0;
 
@@ -501,32 +506,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
   public get3dObject(): Mesh {
     return this.screenOutputMesh;
-  }
-
-  public setResolution(x: number, y: number): void {
-    this.fullTargetResolution = new Vector2(x, y);
-    const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
-    const nx = Math.floor((x * this.pixelSamplingRate) / dpr);
-    const ny = Math.floor((y * this.pixelSamplingRate) / dpr);
-    this.pathTracingUniforms.uResolution.value.x = nx;
-    this.pathTracingUniforms.uResolution.value.y = ny;
-
-    // TODO optimization: scale this value down when nx,ny is small.  For now can leave it at 3 (a 7x7 pixel filter).
-    const denoiseFilterR = 3;
-    this.screenOutputDenoiseMaterial.uniforms.gDenoiseWindowRadius.value = denoiseFilterR;
-    this.screenOutputDenoiseMaterial.uniforms.gDenoiseInvWindowArea.value =
-      1.0 / ((2.0 * denoiseFilterR + 1.0) * (2.0 * denoiseFilterR + 1.0));
-
-    this.pathTracingRenderTarget.setSize(nx, ny);
-    this.screenTextureRenderTarget.setSize(nx, ny);
-
-    this.resetProgress();
-  }
-
-  setPixelSamplingRate(rate: number): void {
-    this.pixelSamplingRate = rate;
-    this.setResolution(this.fullTargetResolution.x, this.fullTargetResolution.y);
-    this.resetProgress();
   }
 
   //////////////////////////////////////////

@@ -1,7 +1,6 @@
-import { Euler, Vector3 } from "three";
+import { Euler, Vector2, Vector3 } from "three";
 import Volume from "./Volume";
 import { Bounds } from "./types";
-import VolumeDrawable from "./VolumeDrawable";
 
 export type VolumeRenderSettings = {
   translation: Vector3;
@@ -37,6 +36,10 @@ export type VolumeRenderSettings = {
 
   primaryRayStepSize: number;
   secondaryRayStepSize: number;
+
+  // scale factor is a huge optimization.  Maybe use 1/dpi scale
+  pixelSamplingRate: number;
+  resolution: Vector2;
 };
 
 /**
@@ -76,6 +79,9 @@ export const defaultVolumeRenderSettings = (): VolumeRenderSettings => {
     specular: new Array(1).fill([0, 0, 0]),
     emissive: new Array(1).fill([0, 0, 0]),
     glossiness: new Array(1).fill(0),
+
+    pixelSamplingRate: 0.75,
+    resolution: new Vector2(1, 1),
   };
 };
 
@@ -120,7 +126,7 @@ export class VolumeRenderSettingUtils {
         if (!bounds1.bmin.equals(bounds2.bmin) || !bounds1.bmax.equals(bounds2.bmax)) {
           return false;
         }
-      } else if (v1 instanceof Vector3 || v1 instanceof Euler) {
+      } else if (v1 instanceof Vector3 || v1 instanceof Vector2 || v1 instanceof Euler) {
         if(!v1.equals(s2[key])) {
           return false;
         }
@@ -156,7 +162,7 @@ export class VolumeRenderSettingUtils {
       } else if (key === "bounds") { // Bounds
         dst.bounds.bmax = src.bounds.bmax.clone();
         dst.bounds.bmin = src.bounds.bmin.clone();
-      } else if (val instanceof Vector3 || val instanceof Euler) {
+      } else if (val instanceof Vector3 || val instanceof Vector2 ||val instanceof Euler) {
         dst[key] = val.clone();
       } else if (val instanceof String) {
         dst[key] = "" + val;

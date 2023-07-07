@@ -84,10 +84,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   }
   
   public viewpointMoved(): void {
-    return
-  }
-  public setPixelSamplingRate (_rate: number): void {
-    return
+    return;
   }
 
   public updateSettings(newSettings: VolumeRenderSettings) {
@@ -161,6 +158,8 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.setUniform("maskAlpha", this.settings.maskAlpha);
     this.setUniform("maskAlpha", this.settings.maskAlpha);
     this.geometryMesh.visible = this.settings.visible;
+
+    this.setUniform("iResolution", this.settings.resolution);
   };
 
   // TODO: Change uniforms to be a generic type in a abstract parent class?
@@ -291,20 +290,8 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     return this.geometryTransformNode;
   }
 
-
-  public setResolution(x: number, y: number): void {
-    this.setUniform("iResolution", new Vector2(x, y));
-  }
-
   public setMaxProjectMode(isMaxProject: boolean): void {
     this.setUniform("maxProject", isMaxProject ? 1 : 0);
-  }
-
-  public setChannelAsMask(channelIndex: number): boolean {
-    if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
-      return false;
-    }
-    return this.channelData.setChannelAsMask(channelIndex, this.volume.channels[channelIndex]);
   }
 
   //////////////////////////////////////////

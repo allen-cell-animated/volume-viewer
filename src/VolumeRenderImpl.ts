@@ -10,7 +10,7 @@ export interface VolumeRenderImpl {
   // setRayStepSizes: (_rayStepSize: number, _secondaryRayStepSize: number) => void;
   // setScale: (_scale: Vector3) => void;
   // setOrthoScale: (_scale: number) => void;
-  setResolution: (_x: number, _y: number) => void;
+  // setResolution: (_x: number, _y: number) => void;
   // !!!!!!!!!!!!!!!!!!!!!!!!
   // setAxisClip: (_axis: "x" | "y" | "z", _minval: number, _maxval: number, _isOrthoAxis: boolean) => void;
   // setIsOrtho: (_isOrtho: boolean) => void;
@@ -36,7 +36,7 @@ export interface VolumeRenderImpl {
    */
   // setZSlice: (_slice: number) => boolean;
   // updateClipRegion: (_xmin: number, _xmax: number, _ymin: number, _ymax: number, _zmin: number, _zmax: number) => void;
-  setPixelSamplingRate: (_rate: number) => void;
+  // setPixelSamplingRate: (_rate: number) => void;
   setRenderUpdateListener: (_listener?: (iteration: number) => void) => void;
   // setTranslation: (_translation: Vector3) => void;
   // setRotation: (_rotation: Euler) => void;
