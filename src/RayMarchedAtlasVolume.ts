@@ -48,7 +48,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
   constructor(volume: Volume, settings?: VolumeRenderSettings) {
     if (!settings) {
-      settings = defaultVolumeRenderSettings;
+      settings = defaultVolumeRenderSettings();
       updateDefaultVolumeRenderSettings(settings, volume);
     }
     this.settings = settings;

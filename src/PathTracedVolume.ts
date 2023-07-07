@@ -74,7 +74,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
   constructor(volume: Volume, settings?: VolumeRenderSettings) {
     if (!settings) {
-      settings = defaultVolumeRenderSettings;
+      settings = defaultVolumeRenderSettings();
       updateDefaultVolumeRenderSettings(settings, volume);
     }
     this.settings = settings;
@@ -339,6 +339,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       this.renderUpdateListener(0);
     }
     this.sampleCounter = 0;
+    console.trace();
   }
 
   public updateSettings(newSettings: VolumeRenderSettings): void {
@@ -385,18 +386,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     }
 
     this.resetProgress();
-  }
-
-  public setVisible(_isVisible: boolean): void {
-    // this.visible = isVisible;
-  }
-
-  public setShowBoundingBox(_showBoundingBox: boolean): void {
-    // TODO: NOT IMPLEMENTED YET
-  }
-
-  public setBoundingBoxColor(_color: [number, number, number]): void {
-    // TODO: NOT IMPLEMENTED YET
   }
 
   public doRender(canvas: ThreeJsPanel): void {

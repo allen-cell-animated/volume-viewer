@@ -54,7 +54,7 @@ export default class VolumeDrawable {
     // THE VOLUME DATA
     this.volume = volume;
     // TODO: clone?
-    this.settings = defaultVolumeRenderSettings;
+    this.settings = defaultVolumeRenderSettings();
     updateDefaultVolumeRenderSettings(this.settings, volume);
 
     this.onChannelDataReadyCallback = undefined;
