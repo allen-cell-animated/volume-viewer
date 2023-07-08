@@ -1,6 +1,91 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./src/Atlas2DSlice.ts":
+/*!*****************************!*\
+  !*** ./src/Atlas2DSlice.ts ***!
+  \*****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ Atlas2DSlice)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
+/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
+/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./constants/volumeSliceShader */ "./src/constants/volumeSliceShader.ts");
+/* harmony import */ var _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./RayMarchedAtlasVolume */ "./src/RayMarchedAtlasVolume.ts");
+
+
+
+
+
+function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_4__["default"])(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_4__["default"])(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_3__["default"])(this, result); }; }
+function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+
+
+/**
+ * Creates a plane that renders a 2D XY slice of volume atlas data.
+ */
+var Atlas2DSlice = /*#__PURE__*/function (_RayMarchedAtlasVolum) {
+  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_2__["default"])(Atlas2DSlice, _RayMarchedAtlasVolum);
+  var _super = _createSuper(Atlas2DSlice);
+  function Atlas2DSlice(volume) {
+    var _this;
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Atlas2DSlice);
+    _this = _super.call(this, volume);
+    _this.setUniform("Z_SLICE", Math.floor(volume.z / 2));
+    return _this;
+  }
+
+  // TODO: Change uniforms so that it can be a different/custom type
+  // (this requires a refactor of some of the render implementation classes)
+  // Overload geometry to create plane instead of a cube mesh
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Atlas2DSlice, [{
+    key: "createGeometry",
+    value: function createGeometry(uniforms) {
+      var geom = new three__WEBPACK_IMPORTED_MODULE_7__.PlaneGeometry(1.0, 1.0);
+      var mesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom);
+      mesh.name = "Plane";
+
+      // shader,vtx and frag.
+      var vtxsrc = _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_5__.sliceVertexShaderSrc;
+      var fgmtsrc = _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_5__.sliceFragmentShaderSrc;
+      var threeMaterial = new three__WEBPACK_IMPORTED_MODULE_7__.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: vtxsrc,
+        fragmentShader: fgmtsrc,
+        transparent: true,
+        depthTest: true,
+        depthWrite: false
+      });
+      mesh.material = threeMaterial;
+      return [geom, mesh];
+    }
+  }, {
+    key: "setZSlice",
+    value: function setZSlice(slice) {
+      // Clamp the slice value
+      slice = Math.floor(slice);
+      if (slice < 0 || slice > this.volume.z - 1) {
+        return false;
+      }
+      this.setUniform("Z_SLICE", slice);
+      return true;
+    }
+  }]);
+  return Atlas2DSlice;
+}(_RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_6__["default"]);
+
+
+/***/ }),
+
 /***/ "./src/Channel.ts":
 /*!************************!*\
   !*** ./src/Channel.ts ***!
@@ -2599,7 +2684,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
 
     // scale factor is a huge optimization.  Maybe use 1/dpi scale
     this.pixelSamplingRate = 0.75;
-    this.pathTracingUniforms = _constants_volumePTshader__WEBPACK_IMPORTED_MODULE_4__.pathTracingUniforms;
+    this.pathTracingUniforms = (0,_constants_volumePTshader__WEBPACK_IMPORTED_MODULE_4__.pathTracingUniforms)();
 
     // create volume texture
     var sx = volume.x,
@@ -3233,6 +3318,11 @@ var PathTracedVolume = /*#__PURE__*/function () {
       this.pathTracingUniforms.gClippedAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(xmax * physicalSize.x - 0.5 * physicalSize.x, ymax * physicalSize.y - 0.5 * physicalSize.y, zmax * physicalSize.z - 0.5 * physicalSize.z);
       this.resetProgress();
     }
+  }, {
+    key: "setZSlice",
+    value: function setZSlice(_slice) {
+      return true;
+    }
   }]);
   return PathTracedVolume;
 }();
@@ -3251,65 +3341,83 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ RayMarchedAtlasVolume)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _FusedChannelData__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./FusedChannelData */ "./src/FusedChannelData.ts");
-/* harmony import */ var _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./constants/volumeRayMarchShader */ "./src/constants/volumeRayMarchShader.ts");
+/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _FusedChannelData__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./FusedChannelData */ "./src/FusedChannelData.ts");
+/* harmony import */ var _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./constants/volumeRayMarchShader */ "./src/constants/volumeRayMarchShader.ts");
 
 
 
 
 
-var BOUNDING_BOX_DEFAULT_COLOR = new three__WEBPACK_IMPORTED_MODULE_4__.Color(0xffff00);
+
+var BOUNDING_BOX_DEFAULT_COLOR = new three__WEBPACK_IMPORTED_MODULE_5__.Color(0xffff00);
 var RayMarchedAtlasVolume = /*#__PURE__*/function () {
   function RayMarchedAtlasVolume(volume) {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, RayMarchedAtlasVolume);
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, RayMarchedAtlasVolume);
     // need?
     this.volume = volume;
 
     // note that these bounds are the clipped region of interest,
     // and not always the whole volume
     this.bounds = {
-      bmin: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(-0.5, -0.5, -0.5),
-      bmax: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0.5, 0.5, 0.5)
+      bmin: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(-0.5, -0.5, -0.5),
+      bmax: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0.5, 0.5, 0.5)
     };
-    this.scale = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1.0, 1.0, 1.0);
+    this.scale = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1.0, 1.0, 1.0);
     this.isOrtho = false;
-    this.cube = new three__WEBPACK_IMPORTED_MODULE_4__.BoxGeometry(1.0, 1.0, 1.0);
-    this.cubeMesh = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(this.cube);
-    this.cubeMesh.name = "Volume";
-    this.boxHelper = new three__WEBPACK_IMPORTED_MODULE_4__.Box3Helper(new three__WEBPACK_IMPORTED_MODULE_4__.Box3(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(-0.5, -0.5, -0.5), new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0.5, 0.5, 0.5)), BOUNDING_BOX_DEFAULT_COLOR);
+    this.uniforms = (0,_constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_4__.rayMarchingShaderUniforms)();
+    var _this$createGeometry = this.createGeometry(this.uniforms);
+    var _this$createGeometry2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_this$createGeometry, 2);
+    this.geometry = _this$createGeometry2[0];
+    this.geometryMesh = _this$createGeometry2[1];
+    this.boxHelper = new three__WEBPACK_IMPORTED_MODULE_5__.Box3Helper(new three__WEBPACK_IMPORTED_MODULE_5__.Box3(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(-0.5, -0.5, -0.5), new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0.5, 0.5, 0.5)), BOUNDING_BOX_DEFAULT_COLOR);
     this.boxHelper.updateMatrixWorld();
     this.boxHelper.visible = false;
     this.tickMarksMesh = this.createTickMarks();
     this.tickMarksMesh.updateMatrixWorld();
     this.tickMarksMesh.visible = false;
-    this.cubeTransformNode = new three__WEBPACK_IMPORTED_MODULE_4__.Group();
-    this.cubeTransformNode.name = "VolumeContainerNode";
-    this.cubeTransformNode.add(this.boxHelper, this.tickMarksMesh, this.cubeMesh);
-    this.uniforms = _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_3__.rayMarchingShaderUniforms;
-
-    // shader,vtx and frag.
-    var vtxsrc = _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_3__.rayMarchingVertexShaderSrc;
-    var fgmtsrc = _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_3__.rayMarchingFragmentShaderSrc;
-    var threeMaterial = new three__WEBPACK_IMPORTED_MODULE_4__.ShaderMaterial({
-      uniforms: this.uniforms,
-      vertexShader: vtxsrc,
-      fragmentShader: fgmtsrc,
-      transparent: true,
-      depthTest: true,
-      depthWrite: false
-    });
-    this.cubeMesh.material = threeMaterial;
+    this.geometryTransformNode = new three__WEBPACK_IMPORTED_MODULE_5__.Group();
+    this.geometryTransformNode.name = "VolumeContainerNode";
+    this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
     this.setUniform("ATLAS_X", volume.imageInfo.cols);
     this.setUniform("ATLAS_Y", volume.imageInfo.rows);
-    this.setUniform("textureRes", new three__WEBPACK_IMPORTED_MODULE_4__.Vector2(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height));
+    this.setUniform("textureRes", new three__WEBPACK_IMPORTED_MODULE_5__.Vector2(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height));
     this.setUniform("SLICES", volume.z);
     this.setScale(this.scale);
-    this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_2__["default"](volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
+    this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_3__["default"](volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
   }
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(RayMarchedAtlasVolume, [{
+
+  // TODO: Change uniforms to be a generic type in a abstract parent class?
+  /**
+   * Creates the geometry mesh and material for rendering the volume.
+   * @param uniforms object containing uniforms to pass to the shader material.
+   * @returns the new geometry and geometry mesh.
+   */
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(RayMarchedAtlasVolume, [{
+    key: "createGeometry",
+    value: function createGeometry(uniforms) {
+      var geom = new three__WEBPACK_IMPORTED_MODULE_5__.BoxGeometry(1.0, 1.0, 1.0);
+      var mesh = new three__WEBPACK_IMPORTED_MODULE_5__.Mesh(geom);
+      mesh.name = "Volume";
+
+      // shader,vtx and frag.
+      var vtxsrc = _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_4__.rayMarchingVertexShaderSrc;
+      var fgmtsrc = _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_4__.rayMarchingFragmentShaderSrc;
+      var threeMaterial = new three__WEBPACK_IMPORTED_MODULE_5__.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: vtxsrc,
+        fragmentShader: fgmtsrc,
+        transparent: true,
+        depthTest: true,
+        depthWrite: false
+      });
+      mesh.material = threeMaterial;
+      return [geom, mesh];
+    }
+  }, {
     key: "createTickMarks",
     value: function createTickMarks() {
       // Length of tick mark lines in world units
@@ -3337,23 +3445,23 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
         // prettier-ignore
         vertices.push(-0.5, 0.5, z, -tickEndX, 0.5, z, -0.5, -0.5, z, -tickEndX, -0.5, z, 0.5, -0.5, z, tickEndX, -0.5, z, 0.5, 0.5, z, tickEndX, 0.5, z);
       }
-      var geometry = new three__WEBPACK_IMPORTED_MODULE_4__.BufferGeometry();
-      geometry.setAttribute("position", new three__WEBPACK_IMPORTED_MODULE_4__.BufferAttribute(new Float32Array(vertices), 3));
-      return new three__WEBPACK_IMPORTED_MODULE_4__.LineSegments(geometry, new three__WEBPACK_IMPORTED_MODULE_4__.LineBasicMaterial({
+      var geometry = new three__WEBPACK_IMPORTED_MODULE_5__.BufferGeometry();
+      geometry.setAttribute("position", new three__WEBPACK_IMPORTED_MODULE_5__.BufferAttribute(new Float32Array(vertices), 3));
+      return new three__WEBPACK_IMPORTED_MODULE_5__.LineSegments(geometry, new three__WEBPACK_IMPORTED_MODULE_5__.LineBasicMaterial({
         color: BOUNDING_BOX_DEFAULT_COLOR
       }));
     }
   }, {
     key: "cleanup",
     value: function cleanup() {
-      this.cube.dispose();
-      this.cubeMesh.material.dispose();
+      this.geometry.dispose();
+      this.geometryMesh.material.dispose();
       this.channelData.cleanup();
     }
   }, {
     key: "setVisible",
     value: function setVisible(isVisible) {
-      this.cubeMesh.visible = isVisible;
+      this.geometryMesh.visible = isVisible;
       // note that this does not affect bounding box visibility
     }
   }, {
@@ -3365,7 +3473,7 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
   }, {
     key: "setBoundingBoxColor",
     value: function setBoundingBoxColor(color) {
-      var newBoxColor = new three__WEBPACK_IMPORTED_MODULE_4__.Color(color[0], color[1], color[2]);
+      var newBoxColor = new three__WEBPACK_IMPORTED_MODULE_5__.Color(color[0], color[1], color[2]);
       // note this material update is supposed to be a hidden implementation detail
       // but I didn't want to re-create a whole boxHelper again.
       // I could also create a new LineBasicMaterial but that would also rely on knowledge
@@ -3376,22 +3484,22 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
   }, {
     key: "doRender",
     value: function doRender(canvas) {
-      if (!this.cubeMesh.visible) {
+      if (!this.geometryMesh.visible) {
         return;
       }
       this.channelData.gpuFuse(canvas.renderer);
       this.setUniform("textureAtlas", this.channelData.getFusedTexture());
-      this.cubeTransformNode.updateMatrixWorld(true);
-      var mvm = new three__WEBPACK_IMPORTED_MODULE_4__.Matrix4();
-      mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.cubeMesh.matrixWorld);
-      var mi = new three__WEBPACK_IMPORTED_MODULE_4__.Matrix4();
+      this.geometryTransformNode.updateMatrixWorld(true);
+      var mvm = new three__WEBPACK_IMPORTED_MODULE_5__.Matrix4();
+      mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
+      var mi = new three__WEBPACK_IMPORTED_MODULE_5__.Matrix4();
       mi.copy(mvm).invert();
       this.setUniform("inverseModelViewMatrix", mi);
     }
   }, {
     key: "get3dObject",
     value: function get3dObject() {
-      return this.cubeTransformNode;
+      return this.geometryTransformNode;
     }
   }, {
     key: "onChannelData",
@@ -3402,9 +3510,9 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     key: "setScale",
     value: function setScale(scale) {
       this.scale = scale;
-      this.cubeMesh.scale.copy(scale);
+      this.geometryMesh.scale.copy(scale);
       this.setUniform("volumeScale", scale);
-      this.boxHelper.box.set(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z), new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z));
+      this.boxHelper.box.set(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z), new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z));
       this.tickMarksMesh.scale.copy(scale);
     }
   }, {
@@ -3415,12 +3523,12 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
   }, {
     key: "setTranslation",
     value: function setTranslation(vec3xyz) {
-      this.cubeTransformNode.position.copy(vec3xyz);
+      this.geometryTransformNode.position.copy(vec3xyz);
     }
   }, {
     key: "setRotation",
     value: function setRotation(eulerXYZ) {
-      this.cubeTransformNode.rotation.copy(eulerXYZ);
+      this.geometryTransformNode.rotation.copy(eulerXYZ);
     }
   }, {
     key: "setOrthoScale",
@@ -3430,7 +3538,7 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
   }, {
     key: "setResolution",
     value: function setResolution(x, y) {
-      this.setUniform("iResolution", new three__WEBPACK_IMPORTED_MODULE_4__.Vector2(x, y));
+      this.setUniform("iResolution", new three__WEBPACK_IMPORTED_MODULE_5__.Vector2(x, y));
     }
   }, {
     key: "setPixelSamplingRate",
@@ -3501,7 +3609,7 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
   }, {
     key: "setFlipAxes",
     value: function setFlipAxes(flipX, flipY, flipZ) {
-      this.setUniform("flipVolume", new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(flipX, flipY, flipZ));
+      this.setUniform("flipVolume", new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(flipX, flipY, flipZ));
     }
 
     // 0..1
@@ -3509,11 +3617,16 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     key: "updateClipRegion",
     value: function updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
       this.bounds = {
-        bmin: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
-        bmax: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5)
+        bmin: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
+        bmax: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5)
       };
       this.setUniform("AABB_CLIP_MIN", this.bounds.bmin);
       this.setUniform("AABB_CLIP_MAX", this.bounds.bmax);
+    }
+  }, {
+    key: "setZSlice",
+    value: function setZSlice(_slice) {
+      return true;
     }
   }, {
     key: "setChannelAsMask",
@@ -3543,7 +3656,7 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
         return;
       }
       this.uniforms[name].value = value;
-      this.cubeMesh.material.needsUpdate = true;
+      this.geometryMesh.material.needsUpdate = true;
     }
 
     // channelcolors is array of {rgbColor, lut} and channeldata is volume.channels
@@ -5357,6 +5470,7 @@ var View3d = /*#__PURE__*/function () {
       this.scene.add(this.lightContainer);
     }
 
+    // TODO: Change mode to an enum
     /**
      * Change the camera projection to look along an axis, or to view in a 3d perspective camera.
      * @param {string} mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X", or "XZ" or "Y".  3D is a perspective view, and all the others are orthographic projections
@@ -5364,10 +5478,21 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setCameraMode",
     value: function setCameraMode(mode) {
-      var _this$image17;
+      var _this$image17, _this$image18;
       this.canvas3d.switchViewMode(mode);
-      (_this$image17 = this.image) === null || _this$image17 === void 0 ? void 0 : _this$image17.setIsOrtho(mode !== "3D");
+      (_this$image17 = this.image) === null || _this$image17 === void 0 ? void 0 : _this$image17.setViewMode(mode);
+      (_this$image18 = this.image) === null || _this$image18 === void 0 ? void 0 : _this$image18.setIsOrtho(mode !== "3D");
       this.canvas3d.redraw();
+    }
+  }, {
+    key: "setZSlice",
+    value: function setZSlice(volume, slice) {
+      var _this$image19;
+      if ((_this$image19 = this.image) !== null && _this$image19 !== void 0 && _this$image19.setZSlice(slice)) {
+        this.canvas3d.redraw();
+        return true;
+      }
+      return false;
     }
 
     /**
@@ -5388,9 +5513,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setShowScaleBar",
     value: function setShowScaleBar(showScaleBar) {
-      var _this$image18;
+      var _this$image20;
       this.canvas3d.setShowOrthoScaleBar(showScaleBar);
-      this.canvas3d.setShowPerspectiveScaleBar(showScaleBar && !!((_this$image18 = this.image) !== null && _this$image18 !== void 0 && _this$image18.showBoundingBox) && this.volumeRenderMode !== RENDERMODE_PATHTRACE);
+      this.canvas3d.setShowPerspectiveScaleBar(showScaleBar && !!((_this$image20 = this.image) !== null && _this$image20 !== void 0 && _this$image20.showBoundingBox) && this.volumeRenderMode !== RENDERMODE_PATHTRACE);
     }
 
     /**
@@ -5400,8 +5525,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setShowTimestepIndicator",
     value: function setShowTimestepIndicator(showIndicator) {
-      var _this$image19;
-      var times = (_this$image19 = this.image) === null || _this$image19 === void 0 ? void 0 : _this$image19.volume.imageInfo.times;
+      var _this$image21;
+      var times = (_this$image21 = this.image) === null || _this$image21 === void 0 ? void 0 : _this$image21.volume.imageInfo.times;
       var hasTimes = !!times && times > 1;
       this.canvas3d.setShowTimestepIndicator(showIndicator && hasTimes);
     }
@@ -5498,15 +5623,15 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setFlipVolume",
     value: function setFlipVolume(volume, flipX, flipY, flipZ) {
-      var _this$image20;
-      (_this$image20 = this.image) === null || _this$image20 === void 0 ? void 0 : _this$image20.setFlipAxes(flipX, flipY, flipZ);
+      var _this$image22;
+      (_this$image22 = this.image) === null || _this$image22 === void 0 ? void 0 : _this$image22.setFlipAxes(flipX, flipY, flipZ);
       this.redraw();
     }
   }, {
     key: "setInterpolationEnabled",
     value: function setInterpolationEnabled(volume, active) {
-      var _this$image21;
-      (_this$image21 = this.image) === null || _this$image21 === void 0 ? void 0 : _this$image21.setInterpolationEnabled(active);
+      var _this$image23;
+      (_this$image23 = this.image) === null || _this$image23 === void 0 ? void 0 : _this$image23.setInterpolationEnabled(active);
       this.redraw();
     }
 
@@ -5522,9 +5647,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "resize",
     value: function resize(comp, w, h, ow, oh, eOpts) {
-      var _this$image22;
+      var _this$image24;
       this.canvas3d.resize(comp, w, h, ow, oh, eOpts);
-      (_this$image22 = this.image) === null || _this$image22 === void 0 ? void 0 : _this$image22.setResolution(this.canvas3d);
+      (_this$image24 = this.image) === null || _this$image24 === void 0 ? void 0 : _this$image24.setResolution(this.canvas3d);
       this.redraw();
     }
 
@@ -5536,8 +5661,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateDensity",
     value: function updateDensity(volume, density) {
-      var _this$image23;
-      (_this$image23 = this.image) === null || _this$image23 === void 0 ? void 0 : _this$image23.setDensity(density);
+      var _this$image25;
+      (_this$image25 = this.image) === null || _this$image25 === void 0 ? void 0 : _this$image25.setDensity(density);
       this.redraw();
     }
 
@@ -5549,8 +5674,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateShadingMethod",
     value: function updateShadingMethod(volume, isbrdf) {
-      var _this$image24;
-      (_this$image24 = this.image) === null || _this$image24 === void 0 ? void 0 : _this$image24.updateShadingMethod(isbrdf);
+      var _this$image26;
+      (_this$image26 = this.image) === null || _this$image26 === void 0 ? void 0 : _this$image26.updateShadingMethod(isbrdf);
     }
 
     /**
@@ -5563,8 +5688,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setGamma",
     value: function setGamma(volume, gmin, glevel, gmax) {
-      var _this$image25;
-      (_this$image25 = this.image) === null || _this$image25 === void 0 ? void 0 : _this$image25.setGamma(gmin, glevel, gmax);
+      var _this$image27;
+      (_this$image27 = this.image) === null || _this$image27 === void 0 ? void 0 : _this$image27.setGamma(gmin, glevel, gmax);
       this.redraw();
     }
 
@@ -5576,8 +5701,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setMaxProjectMode",
     value: function setMaxProjectMode(volume, isMaxProject) {
-      var _this$image26;
-      (_this$image26 = this.image) === null || _this$image26 === void 0 ? void 0 : _this$image26.setMaxProjectMode(isMaxProject);
+      var _this$image28;
+      (_this$image28 = this.image) === null || _this$image28 === void 0 ? void 0 : _this$image28.setMaxProjectMode(isMaxProject);
       this.redraw();
     }
 
@@ -5588,8 +5713,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateActiveChannels",
     value: function updateActiveChannels(_volume) {
-      var _this$image27;
-      (_this$image27 = this.image) === null || _this$image27 === void 0 ? void 0 : _this$image27.fuse();
+      var _this$image29;
+      (_this$image29 = this.image) === null || _this$image29 === void 0 ? void 0 : _this$image29.fuse();
       this.redraw();
     }
 
@@ -5600,8 +5725,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateLuts",
     value: function updateLuts(_volume) {
-      var _this$image28;
-      (_this$image28 = this.image) === null || _this$image28 === void 0 ? void 0 : _this$image28.updateLuts();
+      var _this$image30;
+      (_this$image30 = this.image) === null || _this$image30 === void 0 ? void 0 : _this$image30.updateLuts();
       this.redraw();
     }
 
@@ -5612,8 +5737,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateMaterial",
     value: function updateMaterial(_volume) {
-      var _this$image29;
-      (_this$image29 = this.image) === null || _this$image29 === void 0 ? void 0 : _this$image29.updateMaterial();
+      var _this$image31;
+      (_this$image31 = this.image) === null || _this$image31 === void 0 ? void 0 : _this$image31.updateMaterial();
       this.redraw();
     }
 
@@ -5624,9 +5749,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateExposure",
     value: function updateExposure(e) {
-      var _this$image30;
+      var _this$image32;
       this.exposure = e;
-      (_this$image30 = this.image) === null || _this$image30 === void 0 ? void 0 : _this$image30.setBrightness(e);
+      (_this$image32 = this.image) === null || _this$image32 === void 0 ? void 0 : _this$image32.setBrightness(e);
       this.redraw();
     }
 
@@ -5639,9 +5764,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateCamera",
     value: function updateCamera(fov, focalDistance, apertureSize) {
-      var _this$image31;
+      var _this$image33;
       this.canvas3d.updateCameraFocus(fov, focalDistance, apertureSize);
-      (_this$image31 = this.image) === null || _this$image31 === void 0 ? void 0 : _this$image31.onCameraChanged(fov, focalDistance, apertureSize);
+      (_this$image33 = this.image) === null || _this$image33 === void 0 ? void 0 : _this$image33.onCameraChanged(fov, focalDistance, apertureSize);
       this.redraw();
     }
 
@@ -5658,8 +5783,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateClipRegion",
     value: function updateClipRegion(volume, xmin, xmax, ymin, ymax, zmin, zmax) {
-      var _this$image32;
-      (_this$image32 = this.image) === null || _this$image32 === void 0 ? void 0 : _this$image32.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
+      var _this$image34;
+      (_this$image34 = this.image) === null || _this$image34 === void 0 ? void 0 : _this$image34.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
       this.redraw();
     }
 
@@ -5675,8 +5800,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setAxisClip",
     value: function setAxisClip(volume, axis, minval, maxval, isOrthoAxis) {
-      var _this$image33;
-      (_this$image33 = this.image) === null || _this$image33 === void 0 ? void 0 : _this$image33.setAxisClip(axis, minval, maxval, isOrthoAxis);
+      var _this$image35;
+      (_this$image35 = this.image) === null || _this$image35 === void 0 ? void 0 : _this$image35.setAxisClip(axis, minval, maxval, isOrthoAxis);
       this.redraw();
     }
 
@@ -5687,10 +5812,10 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateLights",
     value: function updateLights(state) {
-      var _this$image34;
+      var _this$image36;
       // TODO flesh this out
       this.lights = state;
-      (_this$image34 = this.image) === null || _this$image34 === void 0 ? void 0 : _this$image34.updateLights(state);
+      (_this$image36 = this.image) === null || _this$image36 === void 0 ? void 0 : _this$image36.updateLights(state);
     }
 
     /**
@@ -5700,12 +5825,12 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updatePixelSamplingRate",
     value: function updatePixelSamplingRate(value) {
-      var _this$image35;
+      var _this$image37;
       if (this.pixelSamplingRate === value) {
         return;
       }
       this.pixelSamplingRate = value;
-      (_this$image35 = this.image) === null || _this$image35 === void 0 ? void 0 : _this$image35.setPixelSamplingRate(value);
+      (_this$image37 = this.image) === null || _this$image37 === void 0 ? void 0 : _this$image37.setPixelSamplingRate(value);
     }
 
     /**
@@ -5716,8 +5841,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateMaskAlpha",
     value: function updateMaskAlpha(volume, value) {
-      var _this$image36;
-      (_this$image36 = this.image) === null || _this$image36 === void 0 ? void 0 : _this$image36.setMaskAlpha(value);
+      var _this$image38;
+      (_this$image38 = this.image) === null || _this$image38 === void 0 ? void 0 : _this$image38.setMaskAlpha(value);
       this.redraw();
     }
 
@@ -5730,8 +5855,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeChannelEnabled",
     value: function setVolumeChannelEnabled(volume, channel, enabled) {
-      var _this$image37;
-      (_this$image37 = this.image) === null || _this$image37 === void 0 ? void 0 : _this$image37.setVolumeChannelEnabled(channel, enabled);
+      var _this$image39;
+      (_this$image39 = this.image) === null || _this$image39 === void 0 ? void 0 : _this$image39.setVolumeChannelEnabled(channel, enabled);
       this.redraw();
     }
 
@@ -5747,8 +5872,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateChannelMaterial",
     value: function updateChannelMaterial(volume, channelIndex, colorrgb, specularrgb, emissivergb, glossiness) {
-      var _this$image38;
-      (_this$image38 = this.image) === null || _this$image38 === void 0 ? void 0 : _this$image38.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
+      var _this$image40;
+      (_this$image40 = this.image) === null || _this$image40 === void 0 ? void 0 : _this$image40.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
     }
 
     /**
@@ -5760,8 +5885,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateChannelColor",
     value: function updateChannelColor(volume, channelIndex, colorrgb) {
-      var _this$image39;
-      (_this$image39 = this.image) === null || _this$image39 === void 0 ? void 0 : _this$image39.updateChannelColor(channelIndex, colorrgb);
+      var _this$image41;
+      (_this$image41 = this.image) === null || _this$image41 === void 0 ? void 0 : _this$image41.updateChannelColor(channelIndex, colorrgb);
     }
 
     /**
@@ -5771,7 +5896,7 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeRenderMode",
     value: function setVolumeRenderMode(mode) {
-      var _this$image40;
+      var _this$image42;
       if (mode === this.volumeRenderMode) {
         return;
       }
@@ -5794,7 +5919,7 @@ var View3d = /*#__PURE__*/function () {
       }
 
       // TODO remove when pathtrace supports a bounding box
-      this.canvas3d.setShowPerspectiveScaleBar(this.canvas3d.showOrthoScaleBar && !!((_this$image40 = this.image) !== null && _this$image40 !== void 0 && _this$image40.showBoundingBox) && mode !== RENDERMODE_PATHTRACE);
+      this.canvas3d.setShowPerspectiveScaleBar(this.canvas3d.showOrthoScaleBar && !!((_this$image42 = this.image) !== null && _this$image42 !== void 0 && _this$image42.showBoundingBox) && mode !== RENDERMODE_PATHTRACE);
     }
 
     /**
@@ -5805,8 +5930,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeTranslation",
     value: function setVolumeTranslation(volume, xyz) {
-      var _this$image41;
-      (_this$image41 = this.image) === null || _this$image41 === void 0 ? void 0 : _this$image41.setTranslation(new three__WEBPACK_IMPORTED_MODULE_9__.Vector3().fromArray(xyz));
+      var _this$image43;
+      (_this$image43 = this.image) === null || _this$image43 === void 0 ? void 0 : _this$image43.setTranslation(new three__WEBPACK_IMPORTED_MODULE_9__.Vector3().fromArray(xyz));
       this.redraw();
     }
 
@@ -5818,8 +5943,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeRotation",
     value: function setVolumeRotation(volume, eulerXYZ) {
-      var _this$image42;
-      (_this$image42 = this.image) === null || _this$image42 === void 0 ? void 0 : _this$image42.setRotation(new three__WEBPACK_IMPORTED_MODULE_9__.Euler().fromArray(eulerXYZ));
+      var _this$image44;
+      (_this$image44 = this.image) === null || _this$image44 === void 0 ? void 0 : _this$image44.setRotation(new three__WEBPACK_IMPORTED_MODULE_9__.Euler().fromArray(eulerXYZ));
       this.redraw();
     }
 
@@ -5829,9 +5954,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "resetCamera",
     value: function resetCamera() {
-      var _this$image43;
+      var _this$image45;
       this.canvas3d.resetCamera();
-      (_this$image43 = this.image) === null || _this$image43 === void 0 ? void 0 : _this$image43.onResetCamera();
+      (_this$image45 = this.image) === null || _this$image45 === void 0 ? void 0 : _this$image45.onResetCamera();
       this.redraw();
     }
   }, {
@@ -5847,7 +5972,7 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setupGui",
     value: function setupGui(container) {
-      var _this$image44;
+      var _this$image46;
       if (this.tweakpane) {
         this.canvas3d.containerdiv.removeChild(this.tweakpane.element);
       }
@@ -5888,7 +6013,7 @@ var View3d = /*#__PURE__*/function () {
       addFolderForLight(this.ambientLight, "ambient light");
       addFolderForLight(this.reflectedLight, "reflected light");
       addFolderForLight(this.fillLight, "fill light");
-      (_this$image44 = this.image) === null || _this$image44 === void 0 ? void 0 : _this$image44.setupGui(pane);
+      (_this$image46 = this.image) === null || _this$image46 === void 0 ? void 0 : _this$image46.setupGui(pane);
       return pane;
     }
   }]);
@@ -6353,11 +6478,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _MeshVolume__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./MeshVolume */ "./src/MeshVolume.ts");
 /* harmony import */ var _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./RayMarchedAtlasVolume */ "./src/RayMarchedAtlasVolume.ts");
 /* harmony import */ var _PathTracedVolume__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./PathTracedVolume */ "./src/PathTracedVolume.ts");
 /* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
+/* harmony import */ var _Atlas2DSlice__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Atlas2DSlice */ "./src/Atlas2DSlice.ts");
+
 
 
 
@@ -6399,11 +6526,14 @@ var VolumeDrawable = /*#__PURE__*/function () {
     // THE VOLUME DATA
     this.volume = volume;
     this.onChannelDataReadyCallback = undefined;
-    this.translation = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0);
-    this.rotation = new three__WEBPACK_IMPORTED_MODULE_7__.Euler();
+    this.translation = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0);
+    this.rotation = new three__WEBPACK_IMPORTED_MODULE_8__.Euler();
     this.flipX = 1;
     this.flipY = 1;
     this.flipZ = 1;
+
+    // TODO: Replace with enum
+    this.viewMode = "3D";
     this.maskChannelIndex = -1;
     this.maskAlpha = 1.0;
     this.gammaMin = 0.0;
@@ -6434,7 +6564,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
     this.specular = new Array(this.volume.num_channels).fill([0, 0, 0]);
     this.emissive = new Array(this.volume.num_channels).fill([0, 0, 0]);
     this.glossiness = new Array(this.volume.num_channels).fill(0);
-    this.sceneRoot = new three__WEBPACK_IMPORTED_MODULE_7__.Object3D(); //create an empty container
+    this.sceneRoot = new three__WEBPACK_IMPORTED_MODULE_8__.Object3D(); //create an empty container
 
     this.meshVolume = new _MeshVolume__WEBPACK_IMPORTED_MODULE_3__["default"](this.volume);
     this.primaryRayStepSize = 1.0;
@@ -6454,18 +6584,20 @@ var VolumeDrawable = /*#__PURE__*/function () {
     //this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());
 
     this.bounds = {
-      bmin: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(-0.5, -0.5, -0.5),
-      bmax: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0.5, 0.5, 0.5)
+      bmin: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(-0.5, -0.5, -0.5),
+      bmax: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0.5, 0.5, 0.5)
     };
     this.sceneRoot.position.set(0, 0, 0);
-    this.scale = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1, 1, 1);
-    this.currentScale = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1, 1, 1);
+    this.scale = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1, 1, 1);
+    this.currentScale = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1, 1, 1);
     this.setScale(this.volume.scale);
 
     // apply the volume's default transformation
-    this.setTranslation(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().fromArray(this.volume.getTranslation()));
-    this.setRotation(new three__WEBPACK_IMPORTED_MODULE_7__.Euler().fromArray(this.volume.getRotation()));
+    this.setTranslation(new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().fromArray(this.volume.getTranslation()));
+    this.setRotation(new three__WEBPACK_IMPORTED_MODULE_8__.Euler().fromArray(this.volume.getRotation()));
     this.setOptions(options);
+    this.zSlice = Math.floor(this.volume.z / 2);
+    this.volumeRendering.setZSlice(this.zSlice);
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(VolumeDrawable, [{
     key: "setOptions",
@@ -6480,8 +6612,8 @@ var VolumeDrawable = /*#__PURE__*/function () {
       }
       if (options.clipBounds !== undefined) {
         this.bounds = {
-          bmin: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(options.clipBounds[0], options.clipBounds[2], options.clipBounds[4]),
-          bmax: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5])
+          bmin: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(options.clipBounds[0], options.clipBounds[2], options.clipBounds[4]),
+          bmax: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5])
         };
         // note: dropping isOrthoAxis argument
         this.setAxisClip("x", options.clipBounds[0], options.clipBounds[1]);
@@ -6489,13 +6621,13 @@ var VolumeDrawable = /*#__PURE__*/function () {
         this.setAxisClip("z", options.clipBounds[4], options.clipBounds[5]);
       }
       if (options.scale !== undefined) {
-        this.setScale(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().fromArray(options.scale));
+        this.setScale(new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().fromArray(options.scale));
       }
       if (options.translation !== undefined) {
-        this.setTranslation(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().fromArray(options.translation));
+        this.setTranslation(new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().fromArray(options.translation));
       }
       if (options.rotation !== undefined) {
-        this.setRotation(new three__WEBPACK_IMPORTED_MODULE_7__.Euler().fromArray(options.rotation));
+        this.setRotation(new three__WEBPACK_IMPORTED_MODULE_8__.Euler().fromArray(options.rotation));
       }
       if (options.renderMode !== undefined) {
         this.setVolumeRendering(!!options.renderMode);
@@ -6611,6 +6743,28 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.volumeRendering.setAxisClip(axis, minval, maxval, isOrthoAxis || false);
     }
 
+    // TODO: Change mode to an enum
+    /**
+     * Sets the camera mode of the VolumeDrawable.
+     * @param mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X", or "XZ" or "Y".
+     */
+  }, {
+    key: "setViewMode",
+    value: function setViewMode(mode) {
+      this.viewMode = mode;
+      if (mode === "XY" || mode === "Z") {
+        // If currently in 3D raymarch mode, hotswap the 2D slice
+        if (this.rayMarchedAtlasVolume && !this.atlas2DSlice) {
+          this.setVolumeRendering(false);
+        }
+      } else {
+        // If in 2D slice mode, switch back to 3D raymarch mode
+        if (!this.rayMarchedAtlasVolume && this.atlas2DSlice) {
+          this.setVolumeRendering(false);
+        }
+      }
+    }
+
     // Tell this image that it needs to be drawn in an orthographic mode
     // @param {boolean} isOrtho is this an orthographic projection or a perspective view
   }, {
@@ -6717,8 +6871,8 @@ var VolumeDrawable = /*#__PURE__*/function () {
           this.pathTracedVolume.updateActiveChannels(this);
         }
       } else {
-        if (this.rayMarchedAtlasVolume) {
-          this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
+        if (this.volumeRendering instanceof _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__["default"]) {
+          this.volumeRendering.fuse(this.fusion, this.volume.channels);
         }
       }
     }
@@ -6961,8 +7115,8 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "updateClipRegion",
     value: function updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
-      this.bounds.bmin = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5);
-      this.bounds.bmax = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5);
+      this.bounds.bmin = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5);
+      this.bounds.bmax = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5);
       this.volumeRendering.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
       this.meshVolume.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
     }
@@ -6989,20 +7143,28 @@ var VolumeDrawable = /*#__PURE__*/function () {
 
       // destroy old resources.
       this.volumeRendering.cleanup();
+      this.atlas2DSlice = undefined;
+      this.pathTracedVolume = undefined;
+      this.rayMarchedAtlasVolume = undefined;
 
       // create new
       if (isPathtrace) {
         this.pathTracedVolume = new _PathTracedVolume__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume);
         this.volumeRendering = this.pathTracedVolume;
-        this.rayMarchedAtlasVolume = undefined;
         this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
       } else {
-        this.rayMarchedAtlasVolume = new _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__["default"](this.volume);
-        this.volumeRendering = this.rayMarchedAtlasVolume;
-        this.pathTracedVolume = undefined;
+        // Quietly swap the RayMarchedAtlasVolume for a 2D slice renderer when our render mode
+        // is XY/Z mode.
+        if (this.viewMode === "XY" || this.viewMode === "Z") {
+          this.atlas2DSlice = new _Atlas2DSlice__WEBPACK_IMPORTED_MODULE_7__["default"](this.volume);
+          this.volumeRendering = this.atlas2DSlice;
+        } else {
+          this.rayMarchedAtlasVolume = new _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__["default"](this.volume);
+          this.volumeRendering = this.rayMarchedAtlasVolume;
+        }
         for (var i = 0; i < this.volume.num_channels; ++i) {
           if (this.volume.getChannel(i).loaded) {
-            this.rayMarchedAtlasVolume.onChannelData([i]);
+            this.volumeRendering.onChannelData([i]);
           }
         }
         if (this.renderUpdateListener) {
@@ -7021,6 +7183,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.setDensity(this.getDensity());
       this.setGamma(this.gammaMin, this.gammaLevel, this.gammaMax);
       this.setFlipAxes(this.flipX, this.flipY, this.flipZ);
+      this.setZSlice(this.zSlice);
 
       // reset clip bounds
       this.setAxisClip("x", this.bounds.bmin.x, this.bounds.bmax.x);
@@ -7080,6 +7243,15 @@ var VolumeDrawable = /*#__PURE__*/function () {
         var value = _ref7.value;
         return _this2.setRayStepSizes(undefined, value);
       });
+    }
+  }, {
+    key: "setZSlice",
+    value: function setZSlice(slice) {
+      if (this.volumeRendering.setZSlice(slice)) {
+        this.zSlice = slice;
+        return true;
+      }
+      return false;
     }
   }]);
   return VolumeDrawable;
@@ -7548,141 +7720,143 @@ var SHADERTYPE_BRDF = 0;
 // const ShaderType_Phase = 1;
 // const ShaderType_Mixed = 2;
 
-var pathTracingUniforms = {
-  tPreviousTexture: {
-    type: "t",
-    value: new three__WEBPACK_IMPORTED_MODULE_1__.Texture()
-  },
-  uSampleCounter: {
-    type: "f",
-    value: 0.0
-  },
-  uFrameCounter: {
-    type: "f",
-    value: 1.0
-  },
-  uResolution: {
-    type: "v2",
-    value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector2()
-  },
-  ///////////////////////////
-  gClippedAaBbMin: {
-    type: "v3",
-    value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0)
-  },
-  gClippedAaBbMax: {
-    type: "v3",
-    value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(1, 1, 1)
-  },
-  gDensityScale: {
-    type: "f",
-    value: 50.0
-  },
-  gStepSize: {
-    type: "f",
-    value: 1.0
-  },
-  gStepSizeShadow: {
-    type: "f",
-    value: 1.0
-  },
-  gInvAaBbMax: {
-    type: "v3",
-    value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3()
-  },
-  gNChannels: {
-    type: "i",
-    value: 0
-  },
-  gShadingType: {
-    type: "i",
-    value: SHADERTYPE_BRDF
-  },
-  gGradientDeltaX: {
-    type: "v3",
-    value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0.01, 0, 0)
-  },
-  gGradientDeltaY: {
-    type: "v3",
-    value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0.01, 0)
-  },
-  gGradientDeltaZ: {
-    type: "v3",
-    value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0.01)
-  },
-  gInvGradientDelta: {
-    type: "f",
-    value: 0.0
-  },
-  // controls the amount of BRDF-like versus phase-function-like shading
-  gGradientFactor: {
-    type: "f",
-    value: 0.25
-  },
-  gCamera: {
-    value: {
-      // Camera struct
-      mFrom: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(),
-      mU: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(),
-      mV: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(),
-      mN: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(),
-      mScreen: new three__WEBPACK_IMPORTED_MODULE_1__.Vector4(),
-      // left, right, bottom, top
-      mInvScreen: new three__WEBPACK_IMPORTED_MODULE_1__.Vector2(),
-      // 1/w, 1/h
-      mFocalDistance: 0.0,
-      mApertureSize: 0.0,
-      mIsOrtho: 0.0
+var pathTracingUniforms = function pathTracingUniforms() {
+  return {
+    tPreviousTexture: {
+      type: "t",
+      value: new three__WEBPACK_IMPORTED_MODULE_1__.Texture()
+    },
+    uSampleCounter: {
+      type: "f",
+      value: 0.0
+    },
+    uFrameCounter: {
+      type: "f",
+      value: 1.0
+    },
+    uResolution: {
+      type: "v2",
+      value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector2()
+    },
+    ///////////////////////////
+    gClippedAaBbMin: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0)
+    },
+    gClippedAaBbMax: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(1, 1, 1)
+    },
+    gDensityScale: {
+      type: "f",
+      value: 50.0
+    },
+    gStepSize: {
+      type: "f",
+      value: 1.0
+    },
+    gStepSizeShadow: {
+      type: "f",
+      value: 1.0
+    },
+    gInvAaBbMax: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3()
+    },
+    gNChannels: {
+      type: "i",
+      value: 0
+    },
+    gShadingType: {
+      type: "i",
+      value: SHADERTYPE_BRDF
+    },
+    gGradientDeltaX: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0.01, 0, 0)
+    },
+    gGradientDeltaY: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0.01, 0)
+    },
+    gGradientDeltaZ: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0.01)
+    },
+    gInvGradientDelta: {
+      type: "f",
+      value: 0.0
+    },
+    // controls the amount of BRDF-like versus phase-function-like shading
+    gGradientFactor: {
+      type: "f",
+      value: 0.25
+    },
+    gCamera: {
+      value: {
+        // Camera struct
+        mFrom: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(),
+        mU: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(),
+        mV: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(),
+        mN: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(),
+        mScreen: new three__WEBPACK_IMPORTED_MODULE_1__.Vector4(),
+        // left, right, bottom, top
+        mInvScreen: new three__WEBPACK_IMPORTED_MODULE_1__.Vector2(),
+        // 1/w, 1/h
+        mFocalDistance: 0.0,
+        mApertureSize: 0.0,
+        mIsOrtho: 0.0
+      }
+    },
+    gLights: {
+      value: [new _Light__WEBPACK_IMPORTED_MODULE_0__.Light(_Light__WEBPACK_IMPORTED_MODULE_0__.SKY_LIGHT), new _Light__WEBPACK_IMPORTED_MODULE_0__.Light(_Light__WEBPACK_IMPORTED_MODULE_0__.AREA_LIGHT)]
+    },
+    volumeTexture: {
+      type: "t",
+      value: new three__WEBPACK_IMPORTED_MODULE_1__.Texture()
+    },
+    // per channel
+    gLutTexture: {
+      type: "t",
+      value: new three__WEBPACK_IMPORTED_MODULE_1__.Texture()
+    },
+    gIntensityMax: {
+      type: "v4",
+      value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector4(1, 1, 1, 1)
+    },
+    gIntensityMin: {
+      type: "v4",
+      value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector4(0, 0, 0, 0)
+    },
+    gOpacity: {
+      type: "1fv",
+      value: [1, 1, 1, 1]
+    },
+    gEmissive: {
+      type: "v3v",
+      value: [new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0)]
+    },
+    gDiffuse: {
+      type: "v3v",
+      value: [new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(1, 0, 0), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 1, 0), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 1), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(1, 0, 1)]
+    },
+    gSpecular: {
+      type: "v3v",
+      value: [new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0)]
+    },
+    gGlossiness: {
+      type: "1fv",
+      value: [1, 1, 1, 1]
+    },
+    uShowLights: {
+      type: "f",
+      value: 0
+    },
+    flipVolume: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(1, 1, 1)
     }
-  },
-  gLights: {
-    value: [new _Light__WEBPACK_IMPORTED_MODULE_0__.Light(_Light__WEBPACK_IMPORTED_MODULE_0__.SKY_LIGHT), new _Light__WEBPACK_IMPORTED_MODULE_0__.Light(_Light__WEBPACK_IMPORTED_MODULE_0__.AREA_LIGHT)]
-  },
-  volumeTexture: {
-    type: "t",
-    value: new three__WEBPACK_IMPORTED_MODULE_1__.Texture()
-  },
-  // per channel
-  gLutTexture: {
-    type: "t",
-    value: new three__WEBPACK_IMPORTED_MODULE_1__.Texture()
-  },
-  gIntensityMax: {
-    type: "v4",
-    value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector4(1, 1, 1, 1)
-  },
-  gIntensityMin: {
-    type: "v4",
-    value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector4(0, 0, 0, 0)
-  },
-  gOpacity: {
-    type: "1fv",
-    value: [1, 1, 1, 1]
-  },
-  gEmissive: {
-    type: "v3v",
-    value: [new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0)]
-  },
-  gDiffuse: {
-    type: "v3v",
-    value: [new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(1, 0, 0), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 1, 0), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 1), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(1, 0, 1)]
-  },
-  gSpecular: {
-    type: "v3v",
-    value: [new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0)]
-  },
-  gGlossiness: {
-    type: "1fv",
-    value: [1, 1, 1, 1]
-  },
-  uShowLights: {
-    type: "f",
-    value: 0
-  },
-  flipVolume: {
-    type: "v3",
-    value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(1, 1, 1)
-  }
+  };
 };
 
 /***/ }),
@@ -7708,113 +7882,141 @@ var rayMarchVertexShader = "// switch on high precision floats\n#ifdef GL_ES\npr
 var rayMarchFragmentShader = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\n#define M_PI 3.14159265358979323846\n\nuniform vec2 iResolution;\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform float ATLAS_X;\nuniform float ATLAS_Y;\nuniform vec3 AABB_CLIP_MIN;\nuniform float CLIP_NEAR;\nuniform vec3 AABB_CLIP_MAX;\nuniform float CLIP_FAR;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform int BREAK_STEPS;\nuniform float SLICES;\nuniform float isOrtho;\nuniform float orthoThickness;\nuniform float orthoScale;\nuniform int maxProject;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\nuniform vec3 volumeScale;\n\n// view space to axis-aligned volume box\nuniform mat4 inverseModelViewMatrix;\n\nvarying vec3 pObj;\n\nfloat powf(float a, float b) {\n  return pow(a,b);\n}\n\nfloat rand(vec2 co) {\n  float threadId = gl_FragCoord.x/(gl_FragCoord.y + 1.0);\n  float bigVal = threadId*1299721.0/911.0;\n  vec2 smallVal = vec2(threadId*7927.0/577.0, threadId*104743.0/1039.0);\n  return fract(sin(dot(co, smallVal)) * bigVal);\n}\n\nvec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {\n  float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));\n  // float x = max(color[2], max(color[0],color[1]));\n  float xi = (x-vmin)/(vmax-vmin);\n  xi = clamp(xi,0.0,1.0);\n  float y = pow(xi,C);\n  y = clamp(y,0.0,1.0);\n  color[3] = y;\n  return color;\n}\n\nvec2 offsetFrontBack(float t, float nx, float ny) {\n  int a = int(t);\n  int ax = int(ATLAS_X);\n  vec2 os = vec2(float(a-(a/ax)*ax) / ATLAS_X, float(a/ax) / ATLAS_Y);\n  return clamp(os, vec2(0.0, 0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y));\n}\n\nvec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n  // get location within atlas tile\n  // TODO: get loc1 which follows ray to next slice along ray direction\n  // when flipvolume = 1:  pos\n  // when flipvolume = -1: 1-pos\n  vec2 loc0 = vec2(\n    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,\n    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);\n\n  // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y\n  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n  loc0 = vec2(0.5/textureRes.x, 0.5/textureRes.y) + loc0*vec2(1.0-(ATLAS_X)/textureRes.x, 1.0-(ATLAS_Y)/textureRes.y);\n  \n  // interpolate between two slices\n  float z = (pos.z)*(nSlices-1.0);\n  float z0 = floor(z);\n  float t = z-z0; //mod(z, 1.0);\n  float z1 = min(z0+1.0, nSlices-1.0);\n\n  // flipped:\n  if (flipVolume.z == -1.0) {\n    z0 = nSlices - z0 - 1.0;\n    z1 = nSlices - z1 - 1.0;\n    t = 1.0 - t;\n  }\n\n  // get slice offsets in texture atlas\n  vec2 o0 = offsetFrontBack(z0,ATLAS_X,ATLAS_Y) + loc0;\n  vec2 o1 = offsetFrontBack(z1,ATLAS_X,ATLAS_Y) + loc0;\n\n  vec4 slice0Color = texture2D(tex, o0);\n  vec4 slice1Color = texture2D(tex, o1);\n  // NOTE we could premultiply the mask in the fuse function,\n  // but that is slower to update the maskAlpha value than here in the shader.\n  // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?\n  float slice0Mask = texture2D(textureAtlasMask, o0).x;\n  float slice1Mask = texture2D(textureAtlasMask, o1).x;\n  // or use max for conservative 0 or 1 masking?\n  float maskVal = mix(slice0Mask, slice1Mask, t);\n  // take mask from 0..1 to alpha..1\n  maskVal = mix(maskVal, 1.0, maskAlpha);\n  vec4 retval = mix(slice0Color, slice1Color, t);\n  // only mask the rgb, not the alpha(?)\n  retval.rgb *= maskVal;\n  return bounds*retval;\n}\n\nvec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n  vec2 loc0 = vec2(\n    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,\n    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);\n\n  // No interpolation - sample just one slice at a pixel center.\n  // Ideally this would be accomplished in part by switching this texture to linear\n  //   filtering, but three makes this difficult to do through a WebGLRenderTarget.\n  loc0 = floor(loc0 * textureRes) / textureRes;\n  loc0 += vec2(0.5/textureRes.x, 0.5/textureRes.y);\n\n  float z = min(floor(pos.z * nSlices), nSlices-1.0);\n  \n  if (flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z, ATLAS_X, ATLAS_Y) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds*voxelColor;\n}\n\nbool intersectBox(in vec3 r_o, in vec3 r_d, in vec3 boxMin, in vec3 boxMax,\n                  out float tnear, out float tfar) {\n  // compute intersection of ray with all six bbox planes\n  vec3 invR = vec3(1.0,1.0,1.0) / r_d;\n  vec3 tbot = invR * (boxMin - r_o);\n  vec3 ttop = invR * (boxMax - r_o);\n\n  // re-order intersections to find smallest and largest on each axis\n  vec3 tmin = min(ttop, tbot);\n  vec3 tmax = max(ttop, tbot);\n\n  // find the largest tmin and the smallest tmax\n  float largest_tmin  = max(max(tmin.x, tmin.y), max(tmin.x, tmin.z));\n  float smallest_tmax = min(min(tmax.x, tmax.y), min(tmax.x, tmax.z));\n\n  tnear = largest_tmin;\n  tfar = smallest_tmax;\n\n  // use >= here?\n  return(smallest_tmax > largest_tmin);\n}\n\nvec4 accumulate(vec4 col, float s, vec4 C) {\n  float stepScale = (1.0 - powf((1.0-col.w),s));\n  col.w = stepScale;\n  col.xyz *= col.w;\n  col = clamp(col,0.0,1.0);\n\n  C = (1.0-C.w)*col + C;\n  return C;\n}\n\nvec4 integrateVolume(vec4 eye_o,vec4 eye_d,\n                     float tnear,   float tfar,\n                     float clipNear, float clipFar,\n                     sampler2D textureAtlas\n                     ) {\n  vec4 C = vec4(0.0);\n  float tend   = tfar;\n  float tbegin = tnear;\n\n  // march along ray from front to back, accumulating color\n\n  // estimate step length\n  const int maxSteps = 512;\n  // modify the 3 components of eye_d by volume scale\n  float scaledSteps = float(BREAK_STEPS) * length((eye_d.xyz/volumeScale));\n  float csteps = clamp(float(scaledSteps), 1.0, float(maxSteps));\n  float invstep = (tfar-tnear)/csteps;\n  // special-casing the single slice to remove the random ray dither.\n  // this removes a Moire pattern visible in single slice images, which we want to view as 2D images as best we can.\n  float r = (SLICES==1.0) ? 0.0 : rand(eye_d.xy);\n  // if ortho and clipped, make step size smaller so we still get same number of steps\n  float tstep = invstep*orthoThickness;\n  float tfarsurf = r*tstep;\n  float overflow = mod((tfarsurf - tend),tstep); // random dithering offset\n  float t = tbegin + overflow;\n  t += r*tstep; // random dithering offset\n  float tdist = 0.0;\n  int numSteps = 0;\n  vec4 pos, col;\n  // We need to be able to scale the alpha contrib with number of ray steps,\n  // in order to make the final color invariant to the step size(?)\n  // use maxSteps (a constant) as the numerator... Not sure if this is sound.\n  float s = 0.5 * float(maxSteps) / csteps;\n  for(int i=0; i<maxSteps; i++) {\n    pos = eye_o + eye_d*t;\n    // !!! assume box bounds are -0.5 .. 0.5.  pos = (pos-min)/(max-min)\n    // scaling is handled by model transform and already accounted for before we get here.\n    // AABB clip is independent of this and is only used to determine tnear and tfar.\n    pos.xyz = (pos.xyz-(-0.5))/((0.5)-(-0.5)); //0.5 * (pos + 1.0); // map position from [boxMin, boxMax] to [0, 1] coordinates\n\n    vec4 col = interpolationEnabled ? sampleAtlasLinear(textureAtlas, pos) : sampleAtlasNearest(textureAtlas, pos);\n\n    if (maxProject != 0) {\n      col.xyz *= BRIGHTNESS;\n      C = max(col, C);\n    } else {\n      col = luma2Alpha(col, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);\n      col.xyz *= BRIGHTNESS;\n      // for practical use the density only matters for regular volume integration\n      col.w *= DENSITY;\n      C = accumulate(col, s, C);\n    }\n    t += tstep;\n    numSteps = i;\n\n    if (t > tend || t > tbegin+clipFar ) break;\n    if (C.w > 1.0 ) break;\n  }\n\n  return C;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n  vec2 vUv = gl_FragCoord.xy/iResolution.xy;\n\n  vec3 eyeRay_o, eyeRay_d;\n\n  if (isOrtho == 0.0) {\n    // for perspective rays:\n    // world space camera coordinates\n    // transform to object space\n    eyeRay_o = (inverseModelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;\n    eyeRay_d = normalize(pObj - eyeRay_o);\n  } else {\n    // for ortho rays:\n    float zDist = 2.0;\n    eyeRay_d = (inverseModelViewMatrix*vec4(0.0, 0.0, -zDist, 0.0)).xyz;\n    vec4 ray_o = vec4(2.0*vUv - 1.0, 1.0, 1.0);\n    ray_o.xy *= orthoScale;\n    ray_o.x *= iResolution.x/iResolution.y;\n    eyeRay_o = (inverseModelViewMatrix*ray_o).xyz;\n  }\n\n  // -0.5..0.5 is full box. AABB_CLIP lets us clip to a box shaped ROI to look at\n  // I am applying it here at the earliest point so that the ray march does\n  // not waste steps.  For general shaped ROI, this has to be handled more\n  // generally (obviously)\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n\n  float tnear, tfar;\n  bool hit = intersectBox(eyeRay_o, eyeRay_d, boxMin, boxMax, tnear, tfar);\n\n  if (!hit) {\n    // return background color if ray misses the cube\n    // is this safe to do when there is other geometry / gObjects drawn?\n    gl_FragColor = vec4(0.0); //C1;//vec4(0.0);\n    return;\n  }\n\n  float clipNear = 0.0;//-(dot(eyeRay_o.xyz, eyeNorm) + dNear) / dot(eyeRay_d.xyz, eyeNorm);\n  float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);\n\n  vec4 C = integrateVolume(vec4(eyeRay_o,1.0), vec4(eyeRay_d,0.0),\n                           tnear,    tfar, //intersections of box\n                           clipNear, clipFar,\n                           textureAtlas);\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}\n";
 var rayMarchingVertexShaderSrc = rayMarchVertexShader;
 var rayMarchingFragmentShaderSrc = rayMarchFragmentShader;
-var rayMarchingShaderUniforms = {
-  iResolution: {
-    type: "v2",
-    value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector2(100, 100)
-  },
-  CLIP_NEAR: {
-    type: "f",
-    value: 0.0
-  },
-  CLIP_FAR: {
-    type: "f",
-    value: 10000.0
-  },
-  maskAlpha: {
-    type: "f",
-    value: 1.0
-  },
-  BRIGHTNESS: {
-    type: "f",
-    value: 0.0
-  },
-  DENSITY: {
-    type: "f",
-    value: 1.0
-  },
-  GAMMA_MIN: {
-    type: "f",
-    value: 0.0
-  },
-  GAMMA_MAX: {
-    type: "f",
-    value: 1.0
-  },
-  GAMMA_SCALE: {
-    type: "f",
-    value: 1.0
-  },
-  BREAK_STEPS: {
-    type: "i",
-    value: 128
-  },
-  ATLAS_X: {
-    type: "f",
-    value: 6
-  },
-  ATLAS_Y: {
-    type: "f",
-    value: 6
-  },
-  SLICES: {
-    type: "f",
-    value: 50
-  },
-  isOrtho: {
-    type: "f",
-    value: 0.0
-  },
-  orthoThickness: {
-    type: "f",
-    value: 1.0
-  },
-  orthoScale: {
-    type: "f",
-    value: 0.5 // needs to come from ThreeJsPanel's setting
-  },
+var rayMarchingShaderUniforms = function rayMarchingShaderUniforms() {
+  return {
+    iResolution: {
+      type: "v2",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector2(100, 100)
+    },
+    CLIP_NEAR: {
+      type: "f",
+      value: 0.0
+    },
+    CLIP_FAR: {
+      type: "f",
+      value: 10000.0
+    },
+    maskAlpha: {
+      type: "f",
+      value: 1.0
+    },
+    BRIGHTNESS: {
+      type: "f",
+      value: 0.0
+    },
+    DENSITY: {
+      type: "f",
+      value: 1.0
+    },
+    GAMMA_MIN: {
+      type: "f",
+      value: 0.0
+    },
+    GAMMA_MAX: {
+      type: "f",
+      value: 1.0
+    },
+    GAMMA_SCALE: {
+      type: "f",
+      value: 1.0
+    },
+    BREAK_STEPS: {
+      type: "i",
+      value: 128
+    },
+    ATLAS_X: {
+      type: "f",
+      value: 6
+    },
+    ATLAS_Y: {
+      type: "f",
+      value: 6
+    },
+    Z_SLICE: {
+      // Used by slice shader that extends ray march shader
+      type: "i",
+      value: 0
+    },
+    SLICES: {
+      type: "f",
+      value: 50
+    },
+    isOrtho: {
+      type: "f",
+      value: 0.0
+    },
+    orthoThickness: {
+      type: "f",
+      value: 1.0
+    },
+    orthoScale: {
+      type: "f",
+      value: 0.5 // needs to come from ThreeJsPanel's setting
+    },
 
-  AABB_CLIP_MIN: {
-    type: "v3",
-    value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(-0.5, -0.5, -0.5)
-  },
-  AABB_CLIP_MAX: {
-    type: "v3",
-    value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0.5, 0.5, 0.5)
-  },
-  inverseModelViewMatrix: {
-    type: "m4",
-    value: new three__WEBPACK_IMPORTED_MODULE_0__.Matrix4()
-  },
-  textureAtlas: {
-    type: "t",
-    value: new three__WEBPACK_IMPORTED_MODULE_0__.Texture()
-  },
-  textureAtlasMask: {
-    type: "t",
-    value: new three__WEBPACK_IMPORTED_MODULE_0__.Texture()
-  },
-  maxProject: {
-    type: "i",
-    value: 0
-  },
-  interpolationEnabled: {
-    type: "b",
-    value: true
-  },
-  flipVolume: {
-    type: "v3",
-    value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(1.0, 1.0, 1.0)
-  },
-  volumeScale: {
-    type: "v3",
-    value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(1.0, 1.0, 1.0)
-  },
-  textureRes: {
-    type: "v2",
-    value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector2(1.0, 1.0)
-  }
+    AABB_CLIP_MIN: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(-0.5, -0.5, -0.5)
+    },
+    AABB_CLIP_MAX: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0.5, 0.5, 0.5)
+    },
+    inverseModelViewMatrix: {
+      type: "m4",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Matrix4()
+    },
+    textureAtlas: {
+      type: "t",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Texture()
+    },
+    textureAtlasMask: {
+      type: "t",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Texture()
+    },
+    maxProject: {
+      type: "i",
+      value: 0
+    },
+    interpolationEnabled: {
+      type: "b",
+      value: true
+    },
+    flipVolume: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(1.0, 1.0, 1.0)
+    },
+    volumeScale: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(1.0, 1.0, 1.0)
+    },
+    textureRes: {
+      type: "v2",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector2(1.0, 1.0)
+    }
+  };
 };
+
+/***/ }),
+
+/***/ "./src/constants/volumeSliceShader.ts":
+/*!********************************************!*\
+  !*** ./src/constants/volumeSliceShader.ts ***!
+  \********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   sliceFragmentShaderSrc: () => (/* binding */ sliceFragmentShaderSrc),
+/* harmony export */   sliceVertexShaderSrc: () => (/* binding */ sliceVertexShaderSrc)
+/* harmony export */ });
+/* babel-plugin-inline-import './shaders/slice.vert' */
+var sliceVertexShader = "precision highp float;\nprecision highp int;\n\nvarying vec2 vUv;\n\nvoid main() {\n  vUv = uv;\n  gl_Position = projectionMatrix *\n    modelViewMatrix *\n    vec4(position, 1.0);\n}\n";
+/* babel-plugin-inline-import './shaders/slice.frag' */
+var sliceFragShader = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform float ATLAS_X;\nuniform float ATLAS_Y;\nuniform vec3 AABB_CLIP_MIN;\nuniform vec3 AABB_CLIP_MAX;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform int Z_SLICE;\nuniform float SLICES;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\n\nvarying vec2 vUv;\n\nvec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {\n  float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));\n  float xi = (x - vmin) / (vmax - vmin);\n  xi = clamp(xi, 0.0, 1.0);\n  float y = pow(xi, C);\n  y = clamp(y, 0.0, 1.0);\n  color[3] = y;\n  return color;\n}\n\nvec2 offsetFrontBack(float t, float nx, float ny) {\n  int a = int(t);\n  int ax = int(ATLAS_X);\n  vec2 os = vec2(float(a - (a / ax) * ax) / ATLAS_X, float(a / ax) / ATLAS_Y);\n  return clamp(os, vec2(0.0, 0.0), vec2(1.0 - 1.0 / ATLAS_X, 1.0 - 1.0 / ATLAS_Y));\n}\n\nvec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n    pos[1] >= 0.0 && pos[1] <= 1.0 &&\n    pos[2] >= 0.0 && pos[2] <= 1.0);\n  float nSlices = float(SLICES);\n  vec2 loc0 = vec2((flipVolume.x * (pos.x - 0.5) + 0.5) / ATLAS_X, (flipVolume.y * (pos.y - 0.5) + 0.5) / ATLAS_Y);\n\n  // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y\n  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n  loc0 = vec2(0.5 / textureRes.x, 0.5 / textureRes.y) + loc0 * vec2(1.0 - (ATLAS_X) / textureRes.x, 1.0 - (ATLAS_Y) / textureRes.y);\n\n  // interpolate between two slices\n  float z = (pos.z) * (nSlices - 1.0);\n  float z0 = floor(z);\n  float t = z - z0; //mod(z, 1.0);\n  float z1 = min(z0 + 1.0, nSlices - 1.0);\n\n  // flipped:\n  if(flipVolume.z == -1.0) {\n    z0 = nSlices - z0 - 1.0;\n    z1 = nSlices - z1 - 1.0;\n    t = 1.0 - t;\n  }\n\n  // get slice offsets in texture atlas\n  vec2 o0 = offsetFrontBack(z0, ATLAS_X, ATLAS_Y) + loc0;\n  vec2 o1 = offsetFrontBack(z1, ATLAS_X, ATLAS_Y) + loc0;\n\n  vec4 slice0Color = texture2D(tex, o0);\n  vec4 slice1Color = texture2D(tex, o1);\n  // NOTE we could premultiply the mask in the fuse function,\n  // but that is slower to update the maskAlpha value than here in the shader.\n  // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?\n  float slice0Mask = texture2D(textureAtlasMask, o0).x;\n  float slice1Mask = texture2D(textureAtlasMask, o1).x;\n  // or use max for conservative 0 or 1 masking?\n  float maskVal = mix(slice0Mask, slice1Mask, t);\n  // take mask from 0..1 to alpha..1\n  maskVal = mix(maskVal, 1.0, maskAlpha);\n  vec4 retval = mix(slice0Color, slice1Color, t);\n  // only mask the rgb, not the alpha(?)\n  retval.rgb *= maskVal;\n  return bounds * retval;\n}\n\nvec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n    pos[1] >= 0.0 && pos[1] <= 1.0 &&\n    pos[2] >= 0.0 && pos[2] <= 1.0);\n  float nSlices = float(SLICES);\n  vec2 loc0 = vec2((flipVolume.x * (pos.x - 0.5) + 0.5) / ATLAS_X, (flipVolume.y * (pos.y - 0.5) + 0.5) / ATLAS_Y);\n\n  // No interpolation - sample just one slice at a pixel center.\n  // Ideally this would be accomplished in part by switching this texture to linear\n  //   filtering, but three makes this difficult to do through a WebGLRenderTarget.\n  loc0 = floor(loc0 * textureRes) / textureRes;\n  loc0 += vec2(0.5 / textureRes.x, 0.5 / textureRes.y);\n\n  float z = min(floor(pos.z * nSlices), nSlices - 1.0);\n\n  if(flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z, ATLAS_X, ATLAS_Y) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds * voxelColor;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n  // Normalize UV for [-0.5, 0.5] range\n  vec2 normUv = vUv - vec2(0.5);\n\n  // Return background color if outside of clipping box\n  if(normUv.x < boxMin.x || normUv.x > boxMax.x || normUv.y < boxMin.y || normUv.y > boxMax.y) {\n    gl_FragColor = vec4(0.0);\n    return;\n  }\n\n  // Normalize z-slice by total slices\n  vec4 pos = vec4(vUv, float(Z_SLICE) / (SLICES - 1.0), 0.0);\n\n  vec4 C;\n  if(interpolationEnabled) {\n    C = sampleAtlasLinear(textureAtlas, pos);\n  } else {\n    C = sampleAtlasNearest(textureAtlas, pos);\n  }\n  C = luma2Alpha(C, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);\n  C.xyz *= BRIGHTNESS;\n  // C.w *= DENSITY;  // Density disabled because it causes XY mode to render very dark on default settings\n\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}";
+var sliceVertexShaderSrc = sliceVertexShader;
+var sliceFragmentShaderSrc = sliceFragShader;
 
 /***/ }),
 
@@ -92742,6 +92944,13 @@ function updateTimeUI(volume) {
     pauseBtn.disabled = false;
   }
 }
+function updateZSliceUI(volume) {
+  var zSlider = document.getElementById("zSlider");
+  var zInput = document.getElementById("zValue");
+  var totalZSlices = volume.z;
+  zSlider.max = "".concat(totalZSlices);
+  zInput.max = "".concat(totalZSlices);
+}
 function showChannelUI(volume) {
   if (myState && myState.channelFolderNames) {
     for (var i = 0; i < myState.channelFolderNames.length; ++i) {
@@ -93011,6 +93220,7 @@ function onVolumeCreated(volume) {
       }
     }
     updateTimeUI(myState.volume);
+    updateZSliceUI(myState.volume);
     showChannelUI(myState.volume);
     return;
   }
@@ -93031,6 +93241,7 @@ function onVolumeCreated(volume) {
     view3D.setVolumeRotation(myState.volume, _alignTransform.rotation);
   }
   updateTimeUI(myState.volume);
+  updateZSliceUI(myState.volume);
   showChannelUI(myState.volume);
 }
 function copyVolumeToVolume(src, dest) {
@@ -93111,6 +93322,20 @@ function goToFrame(targetFrame) {
   myState.currentFrame = targetFrame;
   return true;
 }
+function goToZSlice(slice) {
+  if (view3D.setZSlice(myState.volume, slice)) {
+    var zSlider = document.getElementById("zSlider");
+    var zInput = document.getElementById("zValue");
+    zInput.value = "".concat(slice);
+    zSlider.value = "".concat(slice);
+    return true;
+  } else {
+    return false;
+  }
+
+  // update UI if successful
+}
+
 function createTestVolume() {
   /* eslint-disable @typescript-eslint/naming-convention */
   var imgData = {
@@ -93191,7 +93416,10 @@ function _loadVolume() {
           });
           myState.currentImageStore = loadSpec.url;
           myState.currentImageName = loadSpec.url;
-        case 7:
+
+          // Set default zSlice
+          goToZSlice(Math.floor(volume.z / 2));
+        case 8:
         case "end":
           return _context.stop();
       }
@@ -93363,6 +93591,16 @@ function main() {
         timeSlider.value = timeInput.value;
       }
     }
+  });
+
+  // Set up Z-slice UI
+  var zSlider = document.getElementById("zSlider");
+  var zInput = document.getElementById("zValue");
+  zSlider === null || zSlider === void 0 ? void 0 : zSlider.addEventListener("change", function () {
+    goToZSlice(zSlider === null || zSlider === void 0 ? void 0 : zSlider.valueAsNumber);
+  });
+  zInput === null || zInput === void 0 ? void 0 : zInput.addEventListener("change", function () {
+    goToZSlice(zInput === null || zInput === void 0 ? void 0 : zInput.valueAsNumber);
   });
   var alignBtn = document.getElementById("xfBtn");
   alignBtn === null || alignBtn === void 0 ? void 0 : alignBtn.addEventListener("click", function () {
