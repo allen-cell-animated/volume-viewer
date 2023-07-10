@@ -353,7 +353,7 @@ class OMEZarrLoader implements IVolumeLoader {
     // do each channel on a worker
     for (let i = 0; i < channels; ++i) {
       const worker = new Worker(new URL("../workers/FetchZarrWorker", import.meta.url));
-      worker.onmessage = function (e) {
+      worker.onmessage = (e) => {
         const u8 = e.data.data;
         const channel = e.data.channel;
         vol.setChannelDataFromVolume(channel, u8);
@@ -363,12 +363,14 @@ class OMEZarrLoader implements IVolumeLoader {
         }
         worker.terminate();
       };
-      worker.onerror = function (e) {
+      worker.onerror = (e) => {
         alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
       };
       worker.postMessage({
-        urlStore: loadSpec.url,
-        time: this.hasT ? Math.min(loadSpec.time, times) : -1,
+        spec: {
+          ...loadSpec,
+          time: this.hasT ? Math.min(loadSpec.time, times) : -1,
+        },
         channel: this.hasC ? i : -1,
         downsampleZ: DOWNSAMPLE_Z,
         path: storepath,

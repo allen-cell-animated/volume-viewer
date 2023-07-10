@@ -1,4 +1,13 @@
-import { HTTPStore, openArray, NestedArray, TypedArray } from "zarr";
+import { HTTPStore, openArray, NestedArray, slice, TypedArray } from "zarr";
+import { LoadSpec } from "../loaders/IVolumeLoader";
+import { Slice } from "zarr/types/core/types";
+
+export type FetchZarrMessage = {
+  spec: LoadSpec;
+  channel: number;
+  downsampleZ: number;
+  path: string;
+};
 
 function convertChannel(
   channelData: TypedArray[][],
@@ -52,16 +61,17 @@ function convertChannel(
   return u8;
 }
 
-self.onmessage = async (e) => {
-  const time = e.data.time;
+self.onmessage = async (e: MessageEvent<FetchZarrMessage>) => {
+  const time = e.data.spec.time;
   const channelIndex = e.data.channel;
   const downsampleZ = e.data.downsampleZ;
-  const store = new HTTPStore(e.data.urlStore);
+  const store = new HTTPStore(e.data.spec.url);
   const level = await openArray({ store: store, path: e.data.path, mode: "r" });
 
   // build slice spec
   // assuming ZYX are the last three dimensions:
-  const sliceSpec = [null, null, null];
+  const { minx, maxx, miny, maxy, minz, maxz } = e.data.spec;
+  const sliceSpec: (Slice | number | null)[] = [slice(minz, maxz), slice(miny, maxy), slice(minx, maxx)];
   if (channelIndex > -1) {
     sliceSpec.unshift(channelIndex);
   }
@@ -69,10 +79,9 @@ self.onmessage = async (e) => {
     sliceSpec.unshift(time);
   }
   const channel = (await level.get(sliceSpec)) as NestedArray<TypedArray>;
+  // const channelRaw = await level.getRaw(sliceSpec);
 
-  const nz = channel.shape[0];
-  const ny = channel.shape[1];
-  const nx = channel.shape[2];
+  const [nz, ny, nx] = channel.shape;
 
   const u8: Uint8Array = convertChannel(channel.data as TypedArray[][], nx, ny, nz, channel.dtype, downsampleZ);
   const results = { data: u8, channel: channelIndex === -1 ? 0 : channelIndex };
