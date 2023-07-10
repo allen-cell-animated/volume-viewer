@@ -351,7 +351,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.settings = VolumeRenderSettingUtils.clone(newSettings);
 
     // Update resolution
-    const resolution = this.settings.resolution;
+    const resolution = this.settings.resolution.clone();
     console.log(resolution);
     console.log(this.settings.pixelSamplingRate);
     this.fullTargetResolution = resolution;
@@ -363,6 +363,9 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
     this.pathTracingUniforms.flipVolume.value = this.settings.flipAxes;
     this.pathTracingUniforms.gDensityScale.value = this.settings.density * 150.0;
+
+    this.pathTracingRenderTarget.setSize(nx, ny);
+    this.screenTextureRenderTarget.setSize(nx, ny);
 
     // update ray step size
     this.pathTracingUniforms.gStepSize.value = this.settings.primaryRayStepSize * this.gradientDelta;
@@ -383,15 +386,17 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.updateExposure(this.settings.brightness);
 
     // Update channel and alpha mask if they have changed
-    if (!oldSettings || oldSettings.maskChannelIndex !== newSettings.maskChannelIndex || oldSettings.maskAlpha !== newSettings.maskAlpha) {
+    if (true || !oldSettings || oldSettings.maskChannelIndex !== newSettings.maskChannelIndex || oldSettings.maskAlpha !== newSettings.maskAlpha) {
       this.updateVolumeData4();
+      console.log("Update mask channel / alpha mask");
     }
 
     this.pathTracingUniforms.gCamera.value.mIsOrtho = this.settings.isOrtho ? 1 : 0;
     // Update interpolation settings
-    if (!oldSettings || oldSettings.useInterpolation !== newSettings.useInterpolation) {
+    if (true || !oldSettings || oldSettings.useInterpolation !== newSettings.useInterpolation) {
       this.volumeTexture.minFilter = this.volumeTexture.magFilter = newSettings.useInterpolation ? LinearFilter : NearestFilter;
       this.volumeTexture.needsUpdate = true;
+      console.log("Update interpolation");
     }
 
     this.resetProgress();
