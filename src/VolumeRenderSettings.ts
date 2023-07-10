@@ -3,44 +3,69 @@ import Volume from "./Volume";
 import { Bounds } from "./types";
 
 /**
+ * Marks groups of related settings that may have changed.
+ */
+export enum SettingsFlags {
+  NONE = 0,
+  TRANSFORM = 1 << 1,
+  ORTHO = 1 << 2,
+  BOUNDING_BOX = 1 << 3,
+  BOUNDS = 1 << 4,
+  MASK = 1 << 5,
+  LIGHTING = 1 << 6,
+  /** parameters = density, specular, emissive, glossiness */
+  MATERIAL = 1 << 7,
+  RESOLUTION_AND_SAMPLING = 1 << 8,
+  ALL = ~(~0 << 9),
+}
+
+/**
  * Holds shared settings for configuring `VolumeRenderImpl` instances.
  */
 export type VolumeRenderSettings = {
+  // TRANSFORM
   translation: Vector3;
   rotation: Euler;
-
   scale: Vector3;
+  currentScale: Vector3;
+  flipAxes: Vector3;
+
+  // ORTHO
   isOrtho: boolean;
   orthoScale: number;
-  // TODO: Replace with enum
-  orthoAxis: "x" | "y" | "z" | null;
-  currentScale: Vector3;
+  orthoAxis: "x" | "y" | "z" | null; // // TODO: Replace with enum
 
-  flipAxes: Vector3;
+  // MASK
   maskChannelIndex: number;
   maskAlpha: number;
+
+  // LIGHTING
   gammaMin: number;
   gammaLevel: number;
   gammaMax: number;
-  density: number;
   brightness: number;
 
-  showBoundingBox: boolean;
-  bounds: Bounds;
-  boundingBoxColor: [number, number, number];
-
-  useInterpolation: boolean;
-  visible: boolean;
-
-  zSlice: number;
+  // MATERIAL
+  density: number;
   specular: [number, number, number][];
   emissive: [number, number, number][];
   glossiness: number[];
 
+  // BOUNDS
+  bounds: Bounds;
+  zSlice: number;
+  
+  // BOUNDING_BOX
+  showBoundingBox: boolean;
+  boundingBoxColor: [number, number, number];
+  
+  // RESOLUTION_AND_SAMPLING  
+  resolution: Vector2;
+  visible: boolean;
+  useInterpolation: boolean;
+  pixelSamplingRate: number;
   primaryRayStepSize: number;
   secondaryRayStepSize: number;
-  pixelSamplingRate: number;
-  resolution: Vector2;
 };
 
 /**

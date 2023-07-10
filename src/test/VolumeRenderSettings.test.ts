@@ -69,5 +69,4 @@ describe("VolumeRenderSettingUtils", () => {
         s2.orthoAxis = "x";
         expect(VolumeRenderSettingUtils.isEqual(s1, s2)).to.be.false;
     });
-    
 });

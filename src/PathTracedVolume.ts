@@ -33,7 +33,7 @@ import { FuseChannel, isOrthographicCamera } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
-import { VolumeRenderSettings, defaultVolumeRenderSettings, VolumeRenderSettingUtils } from "./VolumeRenderSettings";
+import { VolumeRenderSettings, defaultVolumeRenderSettings, VolumeRenderSettingUtils, SettingsFlags } from "./VolumeRenderSettings";
 import Channel from "./Channel";
 
 export default class PathTracedVolume implements VolumeRenderImpl {
@@ -342,46 +342,59 @@ export default class PathTracedVolume implements VolumeRenderImpl {
    * @param newSettings
    * @returns
    */
-  public updateSettings(newSettings: VolumeRenderSettings): void {
+  public updateSettings(newSettings: VolumeRenderSettings, changed?: SettingsFlags): void {
     if (this.settings && VolumeRenderSettingUtils.isEqual(this.settings, newSettings)) {
       return;
+    }
+
+    if (changed === undefined) {
+      changed = SettingsFlags.ALL;
     }
 
     const oldSettings = this.settings;
     this.settings = VolumeRenderSettingUtils.clone(newSettings);
 
     // Update resolution
-    const resolution = this.settings.resolution.clone();
-    this.fullTargetResolution = resolution;
-    const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
-    const nx = Math.floor((resolution.x * this.settings.pixelSamplingRate) / dpr);
-    const ny = Math.floor((resolution.y * this.settings.pixelSamplingRate) / dpr);
-    this.pathTracingUniforms.uResolution.value.x = nx;
-    this.pathTracingUniforms.uResolution.value.y = ny;
+    if (changed & SettingsFlags.RESOLUTION_AND_SAMPLING) {
+      const resolution = this.settings.resolution.clone();
+      this.fullTargetResolution = resolution;
+      const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
+      const nx = Math.floor((resolution.x * this.settings.pixelSamplingRate) / dpr);
+      const ny = Math.floor((resolution.y * this.settings.pixelSamplingRate) / dpr);
+      this.pathTracingUniforms.uResolution.value.x = nx;
+      this.pathTracingUniforms.uResolution.value.y = ny;
+      this.pathTracingRenderTarget.setSize(nx, ny);
+      this.screenTextureRenderTarget.setSize(nx, ny);
 
-    this.pathTracingUniforms.flipVolume.value = this.settings.flipAxes;
-    this.pathTracingUniforms.gDensityScale.value = this.settings.density * 150.0;
+      // update ray step size
+      this.pathTracingUniforms.gStepSize.value = this.settings.primaryRayStepSize * this.gradientDelta;
+      this.pathTracingUniforms.gStepSizeShadow.value = this.settings.secondaryRayStepSize * this.gradientDelta;
+    }
 
-    this.pathTracingRenderTarget.setSize(nx, ny);
-    this.screenTextureRenderTarget.setSize(nx, ny);
+    if (changed & SettingsFlags.TRANSFORM) {
+      this.pathTracingUniforms.flipVolume.value = this.settings.flipAxes;
+      this.pathTracingUniforms.gDensityScale.value = this.settings.density * 150.0;
+    }
 
-    // update ray step size
-    this.pathTracingUniforms.gStepSize.value = this.settings.primaryRayStepSize * this.gradientDelta;
-    this.pathTracingUniforms.gStepSizeShadow.value = this.settings.secondaryRayStepSize * this.gradientDelta;
 
     // update bounds
-    const physicalSize = this.volume.normalizedPhysicalSize;
-    this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
+    if (changed & SettingsFlags.BOUNDS) {
+      const physicalSize = this.volume.normalizedPhysicalSize;
+      this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
       this.settings.bounds.bmin.x * physicalSize.x,
       this.settings.bounds.bmin.y * physicalSize.y,
       this.settings.bounds.bmin.z * physicalSize.z
-    );
-    this.pathTracingUniforms.gClippedAaBbMax.value = new Vector3(
-      this.settings.bounds.bmax.x * physicalSize.x,
-      this.settings.bounds.bmax.y * physicalSize.y,
-      this.settings.bounds.bmax.z * physicalSize.z
-    );
-    this.updateExposure(this.settings.brightness);
+      );
+      this.pathTracingUniforms.gClippedAaBbMax.value = new Vector3(
+        this.settings.bounds.bmax.x * physicalSize.x,
+        this.settings.bounds.bmax.y * physicalSize.y,
+        this.settings.bounds.bmax.z * physicalSize.z
+        );
+      }
+    
+    if (changed & SettingsFlags.LIGHTING) {
+      this.updateExposure(this.settings.brightness);
+    }
 
     // Update channel and alpha mask if they have changed
     if (

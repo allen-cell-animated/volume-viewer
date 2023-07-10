@@ -217,9 +217,11 @@ export default class VolumeDrawable {
   }
 
   setScale(scale: Vector3): void {
+    if (this.settings.scale === scale) {
+      return;
+    }
     this.settings.scale = scale;
     this.settings.currentScale = scale.clone();
-
     this.meshVolume.setScale(scale);
     this.volumeRendering.updateSettings(this.settings);
   }
