@@ -464,14 +464,24 @@ export class View3d {
     this.scene.add(this.lightContainer);
   }
 
+  // TODO: Change mode to an enum
   /**
    * Change the camera projection to look along an axis, or to view in a 3d perspective camera.
    * @param {string} mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X", or "XZ" or "Y".  3D is a perspective view, and all the others are orthographic projections
    */
   setCameraMode(mode: string): void {
     this.canvas3d.switchViewMode(mode);
+    this.image?.setViewMode(mode);
     this.image?.setIsOrtho(mode !== "3D");
     this.canvas3d.redraw();
+  }
+
+  setZSlice(volume: Volume, slice: number): boolean {
+    if (this.image?.setZSlice(slice)) {
+      this.canvas3d.redraw();
+      return true;
+    }
+    return false;
   }
 
   /**

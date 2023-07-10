@@ -43,7 +43,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   private translation: Vector3;
   private rotation: Euler;
   private pixelSamplingRate: number;
-  private pathTracingUniforms: typeof pathTracingUniforms;
+  private pathTracingUniforms: ReturnType<typeof pathTracingUniforms>;
   private volumeTexture: Data3DTexture;
   private maskChannelIndex: number;
   private maskAlpha: number;
@@ -87,7 +87,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     // scale factor is a huge optimization.  Maybe use 1/dpi scale
     this.pixelSamplingRate = 0.75;
 
-    this.pathTracingUniforms = pathTracingUniforms;
+    this.pathTracingUniforms = pathTracingUniforms();
 
     // create volume texture
     const sx = volume.x,
@@ -830,5 +830,9 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       zmax * physicalSize.z - 0.5 * physicalSize.z
     );
     this.resetProgress();
+  }
+
+  public setZSlice(_slice: number): boolean {
+    return true;
   }
 }

@@ -3,7 +3,7 @@
 
 name: NPM Package
 env:
-  NODE_VERSION: "14.x"
+  NODE_VERSION: "18"
 on:
   push:
     # Sequence of patterns matched against refs/tags
