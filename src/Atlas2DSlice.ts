@@ -4,6 +4,7 @@ import { sliceFragmentShaderSrc, sliceVertexShaderSrc } from "./constants/volume
 import RayMarchedAtlasVolume from "./RayMarchedAtlasVolume";
 import { rayMarchingShaderUniforms } from "./constants/volumeRayMarchShader";
 
+// TODO: Update to use the new VolumeRenderSettings and make independent from RayMarchedAtlasVolume.
 /**
  * Creates a plane that renders a 2D XY slice of volume atlas data.
  */

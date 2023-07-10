@@ -133,10 +133,13 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     };
 
     // Axis clipping and line thickness for ortho
-    if (this.settings.isOrtho) {
-      // TODO: configure based on ortho axis
-      // const thicknessPct = maxval - minval;
-      // this.setOrthoThickness(thicknessPct);
+    const axis = this.settings.orthoAxis;
+    if (this.settings.isOrtho && axis !== null) {
+      // TODO: Does this code do any relevant changes?
+      const maxVal = this.settings.bounds.bmax[axis];
+      const minVal = this.settings.bounds.bmin[axis];
+      const thicknessPct = maxVal - minVal;
+      this.setUniform("orthoThickness", thicknessPct);
     } else {
       this.setUniform("orthoThickness", 1.0);
     }
