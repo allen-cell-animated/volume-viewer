@@ -162,7 +162,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.setUniform("iResolution", this.settings.resolution);
   };
 
-  // TODO: Change uniforms to be a generic type in a abstract parent class?
   /**
    * Creates the geometry mesh and material for rendering the volume.
    * @param uniforms object containing uniforms to pass to the shader material.
@@ -309,7 +308,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   }
 
   // channelcolors is array of {rgbColor, lut} and channeldata is volume.channels
-  public fuse(channelcolors: FuseChannel[], channeldata: Channel[]): void {
+  public updateActiveChannels(channelcolors: FuseChannel[], channeldata: Channel[]): void {
     this.channelData.fuse(channelcolors, channeldata);
 
     // update to fused texture

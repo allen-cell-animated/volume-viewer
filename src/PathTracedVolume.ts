@@ -29,12 +29,13 @@ import {
 } from "./constants/volumePTshader";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
 import Volume from "./Volume";
-import { isOrthographicCamera } from "./types";
+import { FuseChannel, isOrthographicCamera } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 import { VolumeRenderSettings, defaultVolumeRenderSettings, VolumeRenderSettingUtils } from "./VolumeRenderSettings";
 import VolumeDrawable from "./VolumeDrawable";
+import Channel from "./Channel";
 
 export default class PathTracedVolume implements VolumeRenderImpl {
   private settings: VolumeRenderSettings;
@@ -530,14 +531,14 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.resetProgress();
   }
 
-  // TODO: Remove VolumeDrawable dependency.
-  updateActiveChannels(image: VolumeDrawable): void {
+  updateActiveChannels(channelColors: FuseChannel[], channelData: Channel[]): void {
     const ch = [-1, -1, -1, -1];
     let activeChannel = 0;
     const NC = this.volume.num_channels;
     const maxch = 4;
     for (let i = 0; i < NC && activeChannel < maxch; ++i) {
-      if (image.isVolumeChannelEnabled(i) && image.getChannel(i).loaded) {
+      // check that channel is not hidden (rgbColor !== 0) and is loaded
+      if (channelColors[i].rgbColor !== 0 && channelData[i].loaded) {
         ch[activeChannel] = i;
         activeChannel++;
       }
@@ -554,10 +555,8 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     // update volume data according to channels selected.
     this.updateVolumeData4();
     this.resetProgress();
-    this.updateLuts(image);
-    this.updateMaterial(image);
-
-    // console.log(this.pathTracingUniforms);
+    this.updateLuts(channelColors, channelData);
+    this.updateMaterial(channelColors, channelData);
   }
 
   updateVolumeData4(): void {
@@ -606,10 +605,10 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.volumeTexture.needsUpdate = true;
   }
 
-  updateLuts(image: VolumeDrawable): void {
+  updateLuts(channelColors: FuseChannel[], channelData: Channel[]): void {
     for (let i = 0; i < this.pathTracingUniforms.gNChannels.value; ++i) {
       const channel = this.viewChannels[i];
-      const combinedLut = image.getChannel(channel).combineLuts(image.getChannelColor(channel));
+      const combinedLut = channelData[channel].combineLuts(channelColors[channel].rgbColor);
 
       this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, i * LUT_ARRAY_LENGTH);
 
@@ -629,12 +628,12 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
   // image is a material interface that supports per-channel color, spec,
   // emissive, glossiness
-  updateMaterial(image: VolumeDrawable): void {
+  updateMaterial(channelColors: FuseChannel[], channelData: Channel[]): void {
     for (let c = 0; c < this.viewChannels.length; ++c) {
       const i = this.viewChannels[c];
       if (i > -1) {
         // diffuse color is actually blended into the LUT now.
-        const combinedLut = image.getChannel(i).combineLuts(image.getChannelColor(i));
+        const combinedLut = channelData[i].combineLuts(channelColors[i].rgbColor);
         this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, c * LUT_ARRAY_LENGTH);
         this.pathTracingUniforms.gLutTexture.value.needsUpdate = true;
         this.pathTracingUniforms.gDiffuse.value[c] = new Vector3(1.0, 1.0, 1.0);

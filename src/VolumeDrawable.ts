@@ -53,7 +53,6 @@ export default class VolumeDrawable {
 
     // THE VOLUME DATA
     this.volume = volume;
-    // TODO: clone?
     this.settings = defaultVolumeRenderSettings();
     VolumeRenderSettingUtils.updateWithVolume(this.settings, volume);
 
@@ -360,16 +359,7 @@ export default class VolumeDrawable {
     if (!this.volume) {
       return;
     }
-
-    if (this.PT) {
-      if (this.pathTracedVolume) {
-        this.pathTracedVolume.updateActiveChannels(this);
-      }
-    } else {
-      if (this.volumeRendering instanceof RayMarchedAtlasVolume) {
-        this.volumeRendering.fuse(this.fusion, this.volume.channels);
-      }
-    }
+    this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
   }
 
   setRenderUpdateListener(callback?: (iteration: number) => void): void {
@@ -386,13 +376,13 @@ export default class VolumeDrawable {
   }
 
   updateMaterial(): void {
-    this.PT && this.pathTracedVolume && this.pathTracedVolume.updateMaterial(this);
-    !this.PT && this.rayMarchedAtlasVolume && this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
+    //this.PT && this.pathTracedVolume && this.pathTracedVolume.updateMaterial(this);
+    this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
   }
 
   updateLuts(): void {
-    this.PT && this.pathTracedVolume && this.pathTracedVolume.updateLuts(this);
-    !this.PT && this.rayMarchedAtlasVolume && this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
+    // this.PT && this.pathTracedVolume && this.pathTracedVolume.updateLuts(this);
+    this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
   }
 
   setVoxelSize(values: number[]): void {

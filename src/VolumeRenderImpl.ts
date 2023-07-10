@@ -2,6 +2,8 @@ import { Euler, Object3D, Vector3 } from "three";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { VolumeRenderSettings } from "./VolumeRenderSettings";
 import Volume from "./Volume";
+import { FuseChannel } from "./types";
+import Channel from "./Channel";
 
 export interface VolumeRenderImpl {
   updateSettings: (settings: VolumeRenderSettings) => void;
@@ -11,4 +13,5 @@ export interface VolumeRenderImpl {
   cleanup: () => void;
   viewpointMoved: () => void;
   setRenderUpdateListener: (_listener?: (iteration: number) => void) => void;
+  updateActiveChannels: (channelcolors: FuseChannel[], channeldata: Channel[])=> void;
 }
