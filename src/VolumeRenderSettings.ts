@@ -39,8 +39,6 @@ export type VolumeRenderSettings = {
 
   primaryRayStepSize: number;
   secondaryRayStepSize: number;
-
-  // scale factor is a huge optimization.  Maybe use 1/dpi scale
   pixelSamplingRate: number;
   resolution: Vector2;
 };
@@ -48,7 +46,7 @@ export type VolumeRenderSettings = {
 /**
  * Returns a VolumeRenderSettings object with default fields. Default objects
  * created with this method will not have shared references.
- * 
+ *
  * Note that default objects have volume-dependent properties that should be updated
  * with `VolumeRenderSettingUtils.updateWithVolume()`.
  */
@@ -94,7 +92,6 @@ export const defaultVolumeRenderSettings = (): VolumeRenderSettings => {
  * Static utility class for interacting with VolumeRenderSettings.
  */
 export class VolumeRenderSettingUtils {
-
   public static updateWithVolume(renderSettings: VolumeRenderSettings, volume: Volume): void {
     renderSettings.zSlice = Math.floor(volume.z / 2);
     renderSettings.specular = new Array(volume.num_channels).fill([0, 0, 0]);
@@ -102,7 +99,7 @@ export class VolumeRenderSettingUtils {
     renderSettings.glossiness = new Array(volume.num_channels).fill(0);
   }
 
-  /** 
+  /**
    * Recursively compares two arrays.
    * Non-array elements are compared using strict equality comparison.
    */
@@ -129,24 +126,26 @@ export class VolumeRenderSettingUtils {
    * @returns true if both objects have identical settings.
    */
   public static isEqual(o1: VolumeRenderSettings, o2: VolumeRenderSettings): boolean {
-    for (const key of Object.keys(o1)) {  
+    for (const key of Object.keys(o1)) {
       const v1 = o1[key];
       const v2 = o2[key];
       if (v1 instanceof Array) {
         if (!this.compareArray(o1[key], o2[key])) {
           return false;
         }
-      } else if (v1 && v1.bmin !== undefined) {  // Bounds object
+      } else if (v1 && v1.bmin !== undefined) {
+        // Bounds object
         const bounds1 = v1 as Bounds;
         const bounds2 = v2 as Bounds;
         if (!bounds1.bmin.equals(bounds2.bmin) || !bounds1.bmax.equals(bounds2.bmax)) {
           return false;
         }
       } else if (v1 instanceof Vector3 || v1 instanceof Vector2 || v1 instanceof Euler) {
-        if(!v1.equals(o2[key])) {
+        if (!v1.equals(o2[key])) {
           return false;
         }
-      } else {  // number, boolean, string
+      } else {
+        // number, boolean, string
         if (v1 !== o2[key]) {
           return false;
         }
@@ -161,14 +160,14 @@ export class VolumeRenderSettingUtils {
    */
   private static deepCopyArray(a: unknown[]): unknown[] {
     const b: unknown[] = new Array(a.length);
-    for (let i = 0; i < a.length; i++) { 
+    for (let i = 0; i < a.length; i++) {
       const val = a[i];
       if (val instanceof Array) {
         b[i] = this.deepCopyArray(val);
       } else {
         b[i] = val;
       }
-    } 
+    }
     return b;
   }
 
@@ -180,23 +179,23 @@ export class VolumeRenderSettingUtils {
    */
   public static clone(src: VolumeRenderSettings): VolumeRenderSettings {
     const dst = defaultVolumeRenderSettings();
-    for (const key of Object.keys(src)) { 
+    for (const key of Object.keys(src)) {
       const val = src[key];
       if (val instanceof Array) {
         dst[key] = this.deepCopyArray(val);
-      } else if (key === "bounds") { // Bounds
+      } else if (key === "bounds") {
+        // Bounds
         dst.bounds.bmax = src.bounds.bmax.clone();
         dst.bounds.bmin = src.bounds.bmin.clone();
-      } else if (val instanceof Vector3 || val instanceof Vector2 ||val instanceof Euler) {
+      } else if (val instanceof Vector3 || val instanceof Vector2 || val instanceof Euler) {
         dst[key] = val.clone();
       } else if (val instanceof String) {
         dst[key] = "" + val;
-      } else {  // boolean, number, other primitives
+      } else {
+        // boolean, number, other primitives
         dst[key] = val;
       }
     }
     return dst;
   }
 }
-
-

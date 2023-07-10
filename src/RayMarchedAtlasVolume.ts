@@ -78,10 +78,10 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     if (!settings) {
       settings = defaultVolumeRenderSettings();
       VolumeRenderSettingUtils.updateWithVolume(settings, volume);
-    } 
+    }
     this.updateSettings(settings);
   }
-  
+
   public viewpointMoved(): void {
     return;
   }
@@ -90,7 +90,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     if (this.settings && VolumeRenderSettingUtils.isEqual(this.settings, newSettings)) {
       return;
     }
-  
+
     this.settings = VolumeRenderSettingUtils.clone(newSettings);
 
     this.geometryMesh.visible = this.settings.visible;
@@ -120,7 +120,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.setUniform("DENSITY", this.settings.density);
     // TODO brightness and exposure should be the same thing?
     this.setUniform("BRIGHTNESS", this.settings.brightness * 2.0);
-    
+
     // Configure ortho
     this.setUniform("orthoScale", this.settings.orthoScale);
     this.setUniform("isOrtho", this.settings.isOrtho ? 1.0 : 0.0);
@@ -129,7 +129,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     const bounds = this.settings.bounds;
     const boundsNormalized = {
       bmin: new Vector3(bounds.bmin.x * 2.0, bounds.bmin.y * 2.0, bounds.bmin.z * 2.0),
-      bmax: new Vector3(bounds.bmax.x * 2.0, bounds.bmax.y * 2.0, bounds.bmax.z * 2.0)
+      bmax: new Vector3(bounds.bmax.x * 2.0, bounds.bmax.y * 2.0, bounds.bmax.z * 2.0),
     };
 
     // Axis clipping and line thickness for ortho
@@ -144,20 +144,20 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.setUniform("AABB_CLIP_MAX", boundsNormalized.bmax);
 
     this.setUniform("interpolationEnabled", this.settings.useInterpolation);
-    
+
     // Gamma
     this.setUniform("GAMMA_MIN", this.settings.gammaMin);
     this.setUniform("GAMMA_MAX", this.settings.gammaMax);
     this.setUniform("GAMMA_SCALE", this.settings.gammaLevel);
 
     this.setUniform("flipVolume", this.settings.flipAxes);
-    
+
     this.setUniform("maskAlpha", this.settings.maskAlpha);
     this.setUniform("maskAlpha", this.settings.maskAlpha);
     this.geometryMesh.visible = this.settings.visible;
 
     this.setUniform("iResolution", this.settings.resolution);
-  };
+  }
 
   /**
    * Creates the geometry mesh and material for rendering the volume.
@@ -295,7 +295,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
   protected setUniform<U extends keyof ReturnType<typeof rayMarchingShaderUniforms>>(
     name: U,
-    value: (ReturnType<typeof rayMarchingShaderUniforms>)[U]["value"]
+    value: ReturnType<typeof rayMarchingShaderUniforms>[U]["value"]
   ) {
     if (!this.uniforms[name]) {
       return;

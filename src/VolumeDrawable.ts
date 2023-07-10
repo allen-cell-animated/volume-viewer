@@ -13,7 +13,7 @@ import Channel from "./Channel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 import { Pane } from "tweakpane";
 import Atlas2DSlice from "./Atlas2DSlice";
-import {VolumeRenderSettings, defaultVolumeRenderSettings, VolumeRenderSettingUtils } from "./VolumeRenderSettings";
+import { VolumeRenderSettings, defaultVolumeRenderSettings, VolumeRenderSettingUtils } from "./VolumeRenderSettings";
 
 type ColorArray = [number, number, number];
 type ColorObject = { r: number; g: number; b: number };
@@ -29,7 +29,7 @@ export const colorObjectToArray = ({ r, g, b }: ColorObject): ColorArray => [r, 
 export default class VolumeDrawable {
   public PT: boolean;
   public volume: Volume;
-  private settings: VolumeRenderSettings; 
+  private settings: VolumeRenderSettings;
   private onChannelDataReadyCallback?: () => void;
   private viewMode: string;
   private channelColors: [number, number, number][];
@@ -252,7 +252,7 @@ export default class VolumeDrawable {
     !this.PT && this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
     this.volumeRendering.updateSettings(this.settings);
 
-   //  this.volumeRendering.setAxisClip(axis, minval, maxval, isOrthoAxis || false);
+    //  this.volumeRendering.setAxisClip(axis, minval, maxval, isOrthoAxis || false);
   }
 
   // TODO: Change mode to an enum
