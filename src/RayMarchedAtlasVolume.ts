@@ -5,7 +5,6 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
-  Euler,
   Group,
   LineBasicMaterial,
   LineSegments,
@@ -29,7 +28,7 @@ import Channel from "./Channel";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 
-import { Bounds, FuseChannel } from "./types";
+import { FuseChannel } from "./types";
 import { defaultVolumeRenderSettings, VolumeRenderSettingUtils, VolumeRenderSettings } from "./VolumeRenderSettings";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
@@ -89,11 +88,9 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
   public updateSettings(newSettings: VolumeRenderSettings) {
     if (this.settings && VolumeRenderSettingUtils.isEqual(this.settings, newSettings)) {
-      console.log("No new settings, skipping update");
       return;
     }
   
-    console.log("New settings update");
     this.settings = VolumeRenderSettingUtils.clone(newSettings);
 
     this.geometryMesh.visible = this.settings.visible;

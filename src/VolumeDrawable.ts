@@ -6,7 +6,7 @@ import PathTracedVolume from "./PathTracedVolume";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
 import Volume from "./Volume";
 import { VolumeDisplayOptions, VolumeChannelDisplayOptions } from "./types";
-import { Bounds, FuseChannel } from "./types";
+import { FuseChannel } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import Channel from "./Channel";

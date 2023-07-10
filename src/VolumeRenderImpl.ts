@@ -1,7 +1,6 @@
-import { Euler, Object3D, Vector3 } from "three";
+import { Object3D } from "three";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { VolumeRenderSettings } from "./VolumeRenderSettings";
-import Volume from "./Volume";
 import { FuseChannel } from "./types";
 import Channel from "./Channel";
 

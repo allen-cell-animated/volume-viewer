@@ -34,7 +34,6 @@ import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 import { VolumeRenderSettings, defaultVolumeRenderSettings, VolumeRenderSettingUtils } from "./VolumeRenderSettings";
-import VolumeDrawable from "./VolumeDrawable";
 import Channel from "./Channel";
 
 export default class PathTracedVolume implements VolumeRenderImpl {
@@ -342,18 +341,14 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     // bounding box not implemented yet
 
     if (this.settings && VolumeRenderSettingUtils.isEqual(this.settings, newSettings)) {
-      console.log("No new settings, skipping update");
       return;
     }
-    console.log("UPDATING");
 
     const oldSettings = this.settings;
     this.settings = VolumeRenderSettingUtils.clone(newSettings);
 
     // Update resolution
     const resolution = this.settings.resolution.clone();
-    console.log(resolution);
-    console.log(this.settings.pixelSamplingRate);
     this.fullTargetResolution = resolution;
     const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
     const nx = Math.floor((resolution.x * this.settings.pixelSamplingRate) / dpr);
@@ -386,17 +381,15 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.updateExposure(this.settings.brightness);
 
     // Update channel and alpha mask if they have changed
-    if (true || !oldSettings || oldSettings.maskChannelIndex !== newSettings.maskChannelIndex || oldSettings.maskAlpha !== newSettings.maskAlpha) {
+    if (!oldSettings || oldSettings.maskChannelIndex !== newSettings.maskChannelIndex || oldSettings.maskAlpha !== newSettings.maskAlpha) {
       this.updateVolumeData4();
-      console.log("Update mask channel / alpha mask");
     }
 
     this.pathTracingUniforms.gCamera.value.mIsOrtho = this.settings.isOrtho ? 1 : 0;
     // Update interpolation settings
-    if (true || !oldSettings || oldSettings.useInterpolation !== newSettings.useInterpolation) {
+    if (!oldSettings || oldSettings.useInterpolation !== newSettings.useInterpolation) {
       this.volumeTexture.minFilter = this.volumeTexture.magFilter = newSettings.useInterpolation ? LinearFilter : NearestFilter;
       this.volumeTexture.needsUpdate = true;
-      console.log("Update interpolation");
     }
 
     this.resetProgress();

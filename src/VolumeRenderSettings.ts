@@ -2,6 +2,9 @@ import { Euler, Vector2, Vector3 } from "three";
 import Volume from "./Volume";
 import { Bounds } from "./types";
 
+/**
+ * Holds shared settings for configuring `VolumeRenderImpl` instances.
+ */
 export type VolumeRenderSettings = {
   translation: Vector3;
   rotation: Euler;
@@ -43,9 +46,11 @@ export type VolumeRenderSettings = {
 };
 
 /**
- * Returns
- * @param volume
- * @returns
+ * Returns a VolumeRenderSettings object with default fields. Default objects
+ * created with this method will not have shared references.
+ * 
+ * Note that default objects have volume-dependent properties that should be updated
+ * with `VolumeRenderSettingUtils.updateWithVolume()`.
  */
 export const defaultVolumeRenderSettings = (): VolumeRenderSettings => {
   return {
@@ -85,6 +90,9 @@ export const defaultVolumeRenderSettings = (): VolumeRenderSettings => {
   };
 };
 
+/**
+ * Static utility class for interacting with VolumeRenderSettings.
+ */
 export class VolumeRenderSettingUtils {
 
   public static updateWithVolume(renderSettings: VolumeRenderSettings, volume: Volume): void {
@@ -94,6 +102,10 @@ export class VolumeRenderSettingUtils {
     renderSettings.glossiness = new Array(volume.num_channels).fill(0);
   }
 
+  /** 
+   * Recursively compares two arrays.
+   * Non-array elements are compared using strict equality comparison.
+   */
   private static compareArray(a1: unknown[], a2: unknown[]): boolean {
     if (a1.length !== a2.length) {
       return false;
@@ -112,12 +124,16 @@ export class VolumeRenderSettingUtils {
     return true;
   }
 
-  public static isEqual(s1: VolumeRenderSettings, s2: VolumeRenderSettings): boolean {
-    for (let key of Object.keys(s1)) {  
-      const v1 = s1[key];
-      const v2 = s2[key];
+  /**
+   * Compares two VolumeRenderSettings objects.
+   * @returns true if both objects have identical settings.
+   */
+  public static isEqual(o1: VolumeRenderSettings, o2: VolumeRenderSettings): boolean {
+    for (const key of Object.keys(o1)) {  
+      const v1 = o1[key];
+      const v2 = o2[key];
       if (v1 instanceof Array) {
-        if (!this.compareArray(s1[key], s2[key])) {
+        if (!this.compareArray(o1[key], o2[key])) {
           return false;
         }
       } else if (v1 && v1.bmin !== undefined) {  // Bounds object
@@ -127,11 +143,11 @@ export class VolumeRenderSettingUtils {
           return false;
         }
       } else if (v1 instanceof Vector3 || v1 instanceof Vector2 || v1 instanceof Euler) {
-        if(!v1.equals(s2[key])) {
+        if(!v1.equals(o2[key])) {
           return false;
         }
-      } else {  // Vector3, Euler, number, boolean, string
-        if (v1 !== s2[key]) {
+      } else {  // number, boolean, string
+        if (v1 !== o2[key]) {
           return false;
         }
       }
@@ -139,11 +155,14 @@ export class VolumeRenderSettingUtils {
     return true;
   }
 
-  private static deepCopyArray<T>(a: unknown[]): unknown[] {
+  /**
+   * Recursively creates and returns a deep copy of an array.
+   * Note: assumes values in the array are either primitives (numbers) or arrays of primitives.
+   */
+  private static deepCopyArray(a: unknown[]): unknown[] {
     const b: unknown[] = new Array(a.length);
     for (let i = 0; i < a.length; i++) { 
       const val = a[i];
-      // Currently assumes only arrays of numbers (or arrays of arrays of numbers).
       if (val instanceof Array) {
         b[i] = this.deepCopyArray(val);
       } else {
@@ -153,9 +172,15 @@ export class VolumeRenderSettingUtils {
     return b;
   }
 
+  /**
+   * Creates a deep copy of a VolumeRenderSettings object.
+   * @param src The object to create a clone of.
+   * @returns a new VolumeRenderSettings object with identical fields that do not
+   * share references with the original settings object.
+   */
   public static clone(src: VolumeRenderSettings): VolumeRenderSettings {
     const dst = defaultVolumeRenderSettings();
-    for (let key of Object.keys(src)) { 
+    for (const key of Object.keys(src)) { 
       const val = src[key];
       if (val instanceof Array) {
         dst[key] = this.deepCopyArray(val);
