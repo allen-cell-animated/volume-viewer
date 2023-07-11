@@ -6,12 +6,12 @@ export class LoadSpec {
   scene = 0;
   time = 0;
   // sub-region; if not specified, the entire volume is loaded
-  minx: number | null = null;
-  miny: number | null = null;
-  minz: number | null = null;
-  maxx: number | null = null;
-  maxy: number | null = null;
-  maxz: number | null = null;
+  minx?: number;
+  miny?: number;
+  minz?: number;
+  maxx?: number;
+  maxy?: number;
+  maxz?: number;
 
   toString(): string {
     return `${this.url}:${this.subpath}${this.scene}:${this.time}:x(${this.minx},${this.maxx}):y(${this.miny},${this.maxy}):z(${this.minz},${this.maxz})`;
