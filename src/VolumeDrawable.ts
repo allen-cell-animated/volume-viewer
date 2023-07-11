@@ -264,14 +264,14 @@ export default class VolumeDrawable {
     if (
       this.settings.bounds.bmax[axis] === maxval &&
       this.settings.bounds.bmin[axis] === minval &&
-      this.settings.orthoAxis === axis &&
+      this.settings.viewAxis === axis &&
       this.settings.isOrtho === (isOrthoAxis || false)
     ) {
       return;
     }
     this.settings.bounds.bmax[axis] = maxval;
     this.settings.bounds.bmin[axis] = minval;
-    this.settings.orthoAxis = axis;
+    this.settings.viewAxis = axis;
     this.settings.isOrtho = isOrthoAxis || false;
 
     !this.PT && this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
@@ -296,6 +296,24 @@ export default class VolumeDrawable {
       if (!this.rayMarchedAtlasVolume && this.atlas2DSlice) {
         this.setVolumeRendering(false);
       }
+    }
+    let axis: typeof this.settings.viewAxis = "3D";
+    switch(mode) {
+      case "XY":
+      case "Z":
+        axis = "z";
+        break;
+      case "YZ":
+      case "X":
+        axis = "x";
+        break;
+      case "XZ":
+      case "Y":
+        axis = "y"
+    }
+    if (this.settings.viewAxis !== axis) {
+      this.settings.viewAxis = axis;
+      this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
     }
   }
 

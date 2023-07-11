@@ -65,8 +65,8 @@ describe("VolumeRenderSettingUtils", () => {
         const s1 = defaultVolumeRenderSettings();
         const s2 = defaultVolumeRenderSettings();
 
-        s1.orthoAxis = null;
-        s2.orthoAxis = "x";
+        s1.viewAxis = "3D";
+        s2.viewAxis = "x";
         expect(VolumeRenderSettingUtils.isEqual(s1, s2)).to.be.false;
     });
 });

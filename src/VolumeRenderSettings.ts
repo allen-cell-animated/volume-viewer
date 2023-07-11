@@ -8,21 +8,21 @@ import { Bounds } from "./types";
 export enum SettingsFlags {
   NONE = 0,
   /** parameters: translation, rotation, scale, currentScale, flipAxes */
-  TRANSFORM = 1 << 1,
+  TRANSFORM = 1,
   /** parameters: gammaMin, gammaLevel, gammaMax, brightness*/
-  CAMERA = 1 << 2,
+  CAMERA = 2,
   /** parameters: showBoundingBox, boundingBoxColor */
-  BOUNDING_BOX = 1 << 3,
+  BOUNDING_BOX = 4,
   /** parameters: bounds, zSlice */
-  ROI = 1 << 4,
+  ROI = 8,
   /** parameters: maskChannelIndex, maskAlpha */
-  MASK = 1 << 5,
+  MASK = 16,
   /** parameters: density, specular, emissive, glossiness */
-  MATERIAL = 1 << 6,
+  MATERIAL = 32,
   /** parameters: resolution, useInterpolation, pixelSamplingRate, primaryRayStepSize, secondaryRayStepSize*/
-  RESOLUTION_AND_SAMPLING = 1 << 7,
-  /** parameters: isOrtho, orthoScale, orthoAxis, visible */
-  VIEW = 1 << 8,
+  RESOLUTION_AND_SAMPLING = 64,
+  /** parameters: isOrtho, orthoScale, viewAxis, visible */
+  VIEW = 128,
   ALL = Number.MAX_SAFE_INTEGER,
 }
 
@@ -40,7 +40,7 @@ export type VolumeRenderSettings = {
   // VIEW
   isOrtho: boolean;
   orthoScale: number;
-  orthoAxis: "x" | "y" | "z" | null; // TODO: Replace with enum
+  viewAxis: "x" | "y" | "z" | "3D"; // TODO: Replace with enum
   visible: boolean;
 
   // CAMERA
@@ -89,7 +89,7 @@ export const defaultVolumeRenderSettings = (): VolumeRenderSettings => {
     scale: new Vector3(1, 1, 1),
     currentScale: new Vector3(1, 1, 1),
     isOrtho: false,
-    orthoAxis: null,
+    viewAxis: "3D",
     orthoScale: 1.0,
     flipAxes: new Vector3(1, 1, 1),
     maskChannelIndex: -1,
