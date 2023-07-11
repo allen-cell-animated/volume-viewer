@@ -9,7 +9,7 @@ export type FetchZarrMessage = {
   path: string;
 };
 
-function convertChannelRaw(channelData: TypedArray, dtype: string): Uint8Array {
+function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
   if (dtype === "|u1") {
     return channelData as Uint8Array;
   }
@@ -55,7 +55,7 @@ self.onmessage = async (e: MessageEvent<FetchZarrMessage>) => {
   }
   const channel = (await level.getRaw(sliceSpec)) as RawArray;
 
-  const u8: Uint8Array = convertChannelRaw(channel.data, channel.dtype);
+  const u8: Uint8Array = convertChannel(channel.data, channel.dtype);
   const results = { data: u8, channel: channelIndex === -1 ? 0 : channelIndex };
   postMessage(results, [results.data.buffer]);
 };
