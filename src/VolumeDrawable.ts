@@ -364,7 +364,11 @@ export default class VolumeDrawable {
   }
 
   setMaxProjectMode(isMaxProject: boolean): void {
-    !this.PT && this.rayMarchedAtlasVolume && this.rayMarchedAtlasVolume.setMaxProjectMode(isMaxProject);
+    if (this.settings.maxProjectMode === isMaxProject) {
+      return;
+    }
+    this.settings.maxProjectMode = isMaxProject;
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
   }
 
   onAnimate(canvas: ThreeJsPanel): void {

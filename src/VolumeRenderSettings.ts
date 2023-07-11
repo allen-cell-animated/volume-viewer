@@ -21,7 +21,7 @@ export enum SettingsFlags {
   MATERIAL = 32,
   /** parameters: resolution, useInterpolation, pixelSamplingRate, primaryRayStepSize, secondaryRayStepSize*/
   RESOLUTION_AND_SAMPLING = 64,
-  /** parameters: isOrtho, orthoScale, viewAxis, visible */
+  /** parameters: isOrtho, orthoScale, viewAxis, visible, maxProjectMode */
   VIEW = 128,
   ALL = Number.MAX_SAFE_INTEGER,
 }
@@ -42,6 +42,7 @@ export type VolumeRenderSettings = {
   orthoScale: number;
   viewAxis: "x" | "y" | "z" | "3D"; // TODO: Replace with enum
   visible: boolean;
+  maxProjectMode: boolean;
 
   // CAMERA
   gammaMin: number;
@@ -109,6 +110,7 @@ export const defaultVolumeRenderSettings = (): VolumeRenderSettings => {
     secondaryRayStepSize: 1.0,
     useInterpolation: true,
     visible: true,
+    maxProjectMode: false,
     // volume-dependent properties
     zSlice: 0,
     specular: new Array(1).fill([0, 0, 0]),

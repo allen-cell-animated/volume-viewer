@@ -121,6 +121,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     if (_dirtyFlags & SettingsFlags.VIEW || _dirtyFlags & SettingsFlags.BOUNDING_BOX) {
       // Update tick marks with either view or bounding box changes
       this.tickMarksMesh.visible = this.settings.showBoundingBox && !this.settings.isOrtho;
+      this.setUniform("maxProject", this.settings.maxProjectMode ? 1 : 0);
     }
 
     if (_dirtyFlags & SettingsFlags.BOUNDING_BOX) {
@@ -308,10 +309,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
   public get3dObject(): Group {
     return this.geometryTransformNode;
-  }
-
-  public setMaxProjectMode(isMaxProject: boolean): void {
-    this.setUniform("maxProject", isMaxProject ? 1 : 0);
   }
 
   //////////////////////////////////////////
