@@ -33,7 +33,12 @@ import { FuseChannel, isOrthographicCamera } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
-import { VolumeRenderSettings, defaultVolumeRenderSettings, VolumeRenderSettingUtils, SettingsFlags } from "./VolumeRenderSettings";
+import {
+  VolumeRenderSettings,
+  defaultVolumeRenderSettings,
+  VolumeRenderSettingUtils,
+  SettingsFlags,
+} from "./VolumeRenderSettings";
 import Channel from "./Channel";
 
 export default class PathTracedVolume implements VolumeRenderImpl {
@@ -346,13 +351,10 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     if (_dirtyFlags === undefined) {
       _dirtyFlags = SettingsFlags.ALL;
     }
-    if (_dirtyFlags === SettingsFlags.NONE) {
-      return;
-    }
     this.settings = newSettings;
 
     // Update resolution
-    if (_dirtyFlags & SettingsFlags.RESOLUTION_AND_SAMPLING) {
+    if (_dirtyFlags & SettingsFlags.SAMPLING) {
       const resolution = this.settings.resolution.clone();
       this.fullTargetResolution = resolution;
       const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
@@ -380,9 +382,9 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     if (_dirtyFlags & SettingsFlags.ROI) {
       const physicalSize = this.volume.normalizedPhysicalSize;
       this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
-      this.settings.bounds.bmin.x * physicalSize.x,
-      this.settings.bounds.bmin.y * physicalSize.y,
-      this.settings.bounds.bmin.z * physicalSize.z
+        this.settings.bounds.bmin.x * physicalSize.x,
+        this.settings.bounds.bmin.y * physicalSize.y,
+        this.settings.bounds.bmin.z * physicalSize.z
       );
       this.pathTracingUniforms.gClippedAaBbMax.value = new Vector3(
         this.settings.bounds.bmax.x * physicalSize.x,
@@ -390,20 +392,20 @@ export default class PathTracedVolume implements VolumeRenderImpl {
         this.settings.bounds.bmax.z * physicalSize.z
       );
     }
-    
+
     if (_dirtyFlags & SettingsFlags.CAMERA) {
       this.updateExposure(this.settings.brightness);
     }
 
     if (_dirtyFlags & SettingsFlags.MASK) {
       // Update channel and alpha mask if they have changed
-        this.updateVolumeData4(); 
+      this.updateVolumeData4();
     }
     if (_dirtyFlags & SettingsFlags.VIEW) {
       this.pathTracingUniforms.gCamera.value.mIsOrtho = this.settings.isOrtho ? 1 : 0;
     }
 
-    if (_dirtyFlags & SettingsFlags.RESOLUTION_AND_SAMPLING) {
+    if (_dirtyFlags & SettingsFlags.SAMPLING) {
       this.volumeTexture.minFilter = this.volumeTexture.magFilter = newSettings.useInterpolation
         ? LinearFilter
         : NearestFilter;

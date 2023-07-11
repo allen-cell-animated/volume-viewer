@@ -6,7 +6,6 @@ import { Bounds } from "./types";
  * Marks groups of related settings that may have changed.
  */
 export enum SettingsFlags {
-  NONE = 0,
   /** parameters: translation, rotation, scale, currentScale, flipAxes */
   TRANSFORM = 1,
   /** parameters: gammaMin, gammaLevel, gammaMax, brightness*/
@@ -20,7 +19,7 @@ export enum SettingsFlags {
   /** parameters: density, specular, emissive, glossiness */
   MATERIAL = 32,
   /** parameters: resolution, useInterpolation, pixelSamplingRate, primaryRayStepSize, secondaryRayStepSize*/
-  RESOLUTION_AND_SAMPLING = 64,
+  SAMPLING = 64,
   /** parameters: isOrtho, orthoScale, viewAxis, visible, maxProjectMode */
   VIEW = 128,
   ALL = Number.MAX_SAFE_INTEGER,
@@ -70,12 +69,12 @@ export type VolumeRenderSettings = {
   // ROI
   bounds: Bounds;
   zSlice: number;
-  
+
   // BOUNDING_BOX
   showBoundingBox: boolean;
   boundingBoxColor: [number, number, number];
-  
-  // RESOLUTION_AND_SAMPLING  
+
+  // SAMPLING
   resolution: Vector2;
   useInterpolation: boolean;
   pixelSamplingRate: number;

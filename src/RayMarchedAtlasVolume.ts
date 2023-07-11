@@ -94,8 +94,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   public updateSettings(newSettings: VolumeRenderSettings, _dirtyFlags?: number | SettingsFlags) {
     if (_dirtyFlags === undefined) {
       _dirtyFlags = SettingsFlags.ALL;
-    } else if (_dirtyFlags === SettingsFlags.NONE) {
-      return;
     }
 
     this.settings = newSettings;
@@ -173,7 +171,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       this.setUniform("AABB_CLIP_MAX", boundsNormalized.bmax);
     }
 
-    if (_dirtyFlags & SettingsFlags.RESOLUTION_AND_SAMPLING) {
+    if (_dirtyFlags & SettingsFlags.SAMPLING) {
       this.setUniform("interpolationEnabled", this.settings.useInterpolation);
       this.setUniform("iResolution", this.settings.resolution);
     }

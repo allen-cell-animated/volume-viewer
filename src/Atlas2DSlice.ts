@@ -1,8 +1,28 @@
-import { Box3, Box3Helper, BufferGeometry, Color, Group, LineBasicMaterial, Material, Matrix4, Mesh, PlaneGeometry, ShaderMaterial, ShapeGeometry, Vector2, Vector3 } from "three";
+import {
+  Box3,
+  Box3Helper,
+  BufferGeometry,
+  Color,
+  Group,
+  LineBasicMaterial,
+  Material,
+  Matrix4,
+  Mesh,
+  PlaneGeometry,
+  ShaderMaterial,
+  ShapeGeometry,
+  Vector2,
+  Vector3,
+} from "three";
 import { Channel, Volume } from ".";
 import { sliceFragmentShaderSrc, sliceShaderUniforms, sliceVertexShaderSrc } from "./constants/volumeSliceShader";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
-import { SettingsFlags, VolumeRenderSettingUtils, VolumeRenderSettings, defaultVolumeRenderSettings } from "./VolumeRenderSettings";
+import {
+  SettingsFlags,
+  VolumeRenderSettingUtils,
+  VolumeRenderSettings,
+  defaultVolumeRenderSettings,
+} from "./VolumeRenderSettings";
 import FusedChannelData from "./FusedChannelData";
 import { FuseChannel } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
@@ -57,8 +77,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
   public updateSettings(newSettings: VolumeRenderSettings, _dirtyFlags?: number | SettingsFlags) {
     if (_dirtyFlags === undefined) {
       _dirtyFlags = SettingsFlags.ALL;
-    } else if (_dirtyFlags === SettingsFlags.NONE) {
-      return;
     }
 
     this.settings = newSettings;
@@ -130,7 +148,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
       }
     }
 
-    if (_dirtyFlags & SettingsFlags.RESOLUTION_AND_SAMPLING) {
+    if (_dirtyFlags & SettingsFlags.SAMPLING) {
       this.setUniform("interpolationEnabled", this.settings.useInterpolation);
       this.setUniform("iResolution", this.settings.resolution);
     }

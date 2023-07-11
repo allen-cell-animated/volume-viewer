@@ -221,7 +221,7 @@ export default class VolumeDrawable {
     if (secondary !== undefined) {
       this.settings.secondaryRayStepSize = secondary;
     }
-    this.volumeRendering.updateSettings(this.settings, SettingsFlags.RESOLUTION_AND_SAMPLING);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.SAMPLING);
   }
 
   setScale(scale: Vector3): void {
@@ -249,7 +249,7 @@ export default class VolumeDrawable {
     if (!this.settings.resolution.equals(resolution)) {
       this.meshVolume.setResolution(x, y);
       this.settings.resolution = resolution;
-      this.volumeRendering.updateSettings(this.settings, SettingsFlags.RESOLUTION_AND_SAMPLING);
+      this.volumeRendering.updateSettings(this.settings, SettingsFlags.SAMPLING);
     }
   }
 
@@ -339,7 +339,7 @@ export default class VolumeDrawable {
       return;
     }
     this.settings.useInterpolation = active;
-    this.volumeRendering.updateSettings(this.settings, SettingsFlags.RESOLUTION_AND_SAMPLING);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.SAMPLING);
   }
 
   setOrthoThickness(value: number): void {
@@ -646,7 +646,7 @@ export default class VolumeDrawable {
 
   setPixelSamplingRate(value: number): void {
     this.settings.pixelSamplingRate = value;
-    this.volumeRendering.updateSettings(this.settings, SettingsFlags.RESOLUTION_AND_SAMPLING);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.SAMPLING);
   }
 
   setVolumeRendering(isPathtrace: boolean): void {
