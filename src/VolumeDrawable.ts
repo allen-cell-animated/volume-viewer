@@ -13,7 +13,7 @@ import Channel from "./Channel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 import { Pane } from "tweakpane";
 import Atlas2DSlice from "./Atlas2DSlice";
-import { VolumeRenderSettings, defaultVolumeRenderSettings, VolumeRenderSettingUtils } from "./VolumeRenderSettings";
+import { VolumeRenderSettings, defaultVolumeRenderSettings, VolumeRenderSettingUtils, SettingsFlags } from "./VolumeRenderSettings";
 
 type ColorArray = [number, number, number];
 type ColorObject = { r: number; g: number; b: number };
@@ -213,7 +213,7 @@ export default class VolumeDrawable {
     if (secondary !== undefined) {
       this.settings.secondaryRayStepSize = secondary;
     }
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.RESOLUTION_AND_SAMPLING);
   }
 
   setScale(scale: Vector3): void {
@@ -223,12 +223,12 @@ export default class VolumeDrawable {
     this.settings.scale = scale;
     this.settings.currentScale = scale.clone();
     this.meshVolume.setScale(scale);
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.TRANSFORM);
   }
 
   setOrthoScale(value: number): void {
     this.settings.orthoScale = value;
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
   }
 
   setResolution(viewObj: ThreeJsPanel): void {
@@ -236,7 +236,7 @@ export default class VolumeDrawable {
     const y = viewObj.getHeight();
     this.meshVolume.setResolution(x, y);
     this.settings.resolution = new Vector2(x, y);
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.RESOLUTION_AND_SAMPLING);
   }
 
   // Set clipping range (between -0.5 and 0.5) for a given axis.
@@ -252,9 +252,7 @@ export default class VolumeDrawable {
     this.settings.isOrtho = isOrthoAxis || false;
 
     !this.PT && this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
-    this.volumeRendering.updateSettings(this.settings);
-
-    //  this.volumeRendering.setAxisClip(axis, minval, maxval, isOrthoAxis || false);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.ROI | SettingsFlags.VIEW);
   }
 
   // TODO: Change mode to an enum
@@ -281,19 +279,17 @@ export default class VolumeDrawable {
   // @param {boolean} isOrtho is this an orthographic projection or a perspective view
   setIsOrtho(isOrtho: boolean): void {
     this.settings.isOrtho = isOrtho;
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
   }
 
   setInterpolationEnabled(active: boolean): void {
     this.settings.useInterpolation = active;
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.RESOLUTION_AND_SAMPLING);
   }
 
   setOrthoThickness(value: number): void {
     !this.PT && this.meshVolume.setOrthoThickness(value);
-    // TODO: ortho thickness is calculated at renderer already? Implement an override?
-    // this.volumeRendering.setOrthoThickness(value);
-    this.volumeRendering.updateSettings(this.settings);
+    // No settings update because ortho thickness is calculated in the renderer
   }
 
   // Set parameters for gamma curve for volume rendering.
@@ -304,13 +300,13 @@ export default class VolumeDrawable {
     this.settings.gammaMin = gmin;
     this.settings.gammaLevel = glevel;
     this.settings.gammaMax = gmax;
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.CAMERA);
   }
 
   setFlipAxes(flipX: number, flipY: number, flipZ: number): void {
     this.settings.flipAxes = new Vector3(flipX, flipY, flipZ);
     this.meshVolume.setFlipAxes(flipX, flipY, flipZ);
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.TRANSFORM);
   }
 
   setMaxProjectMode(isMaxProject: boolean): void {
@@ -450,7 +446,7 @@ export default class VolumeDrawable {
     } else {
       this.settings.visible = true;
     }
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
   }
 
   isVolumeChannelEnabled(channelIndex: number): boolean {
@@ -507,7 +503,7 @@ export default class VolumeDrawable {
 
   setDensity(density: number): void {
     this.settings.density = density;
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.MATERIAL);
   }
 
   /**
@@ -519,7 +515,7 @@ export default class VolumeDrawable {
 
   setBrightness(brightness: number): void {
     this.settings.brightness = brightness;
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.CAMERA);
   }
 
   getBrightness(): number {
@@ -531,22 +527,22 @@ export default class VolumeDrawable {
       return;
     }
     this.settings.maskChannelIndex = channelIndex;
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.MASK);
   }
 
   setMaskAlpha(maskAlpha: number): void {
     this.settings.maskAlpha = maskAlpha;
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.MASK);
   }
 
   setShowBoundingBox(showBoundingBox: boolean): void {
     this.settings.showBoundingBox = showBoundingBox;
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.BOUNDING_BOX);
   }
 
   setBoundingBoxColor(color: [number, number, number]): void {
     this.settings.boundingBoxColor = color;
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.BOUNDING_BOX);
   }
 
   getIntensity(c: number, x: number, y: number, z: number): number {
@@ -578,7 +574,7 @@ export default class VolumeDrawable {
     this.settings.bounds.bmin = new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5);
     this.settings.bounds.bmax = new Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5);
     this.meshVolume.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.ROI);
   }
 
   updateLights(state: Light[]): void {
@@ -587,7 +583,7 @@ export default class VolumeDrawable {
 
   setPixelSamplingRate(value: number): void {
     this.settings.pixelSamplingRate = value;
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.RESOLUTION_AND_SAMPLING);
   }
 
   setVolumeRendering(isPathtrace: boolean): void {
@@ -640,7 +636,7 @@ export default class VolumeDrawable {
   setTranslation(xyz: Vector3): void {
     this.settings.translation.copy(xyz);
     this.meshVolume.setTranslation(this.settings.translation);
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.TRANSFORM);
   }
 
   setRotation(eulerXYZ: Euler): void {
@@ -665,7 +661,7 @@ export default class VolumeDrawable {
   setZSlice(slice: number): boolean {
     if (slice < this.volume.z && slice > 0) {
       this.settings.zSlice = slice;
-      this.volumeRendering.updateSettings(this.settings);
+      this.volumeRendering.updateSettings(this.settings, SettingsFlags.ROI);
       return true;
     }
     return false;

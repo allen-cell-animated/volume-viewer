@@ -84,7 +84,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       settings = defaultVolumeRenderSettings();
       VolumeRenderSettingUtils.updateWithVolume(settings, volume);
     }
-    this.updateSettings(settings);
+    this.updateSettings(settings, SettingsFlags.ALL);
   }
 
   public viewpointMoved(): void {
@@ -130,6 +130,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       const newBoxColor = new Color(colorVector[0], colorVector[1], colorVector[2]);
       (this.boxHelper.material as LineBasicMaterial).color = newBoxColor;
       (this.tickMarksMesh.material as LineBasicMaterial).color = newBoxColor;
+      console.log("bounds updated");
     }
 
     if (_dirtyFlags & SettingsFlags.TRANSFORM) {

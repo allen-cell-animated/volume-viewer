@@ -370,9 +370,11 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
     if (changed & SettingsFlags.TRANSFORM) {
       this.pathTracingUniforms.flipVolume.value = this.settings.flipAxes;
-      this.pathTracingUniforms.gDensityScale.value = this.settings.density * 150.0;
     }
 
+    if (changed & SettingsFlags.MATERIAL) {
+      this.pathTracingUniforms.gDensityScale.value = this.settings.density * 150.0;
+    }
 
     // update bounds
     if (changed & SettingsFlags.ROI) {
