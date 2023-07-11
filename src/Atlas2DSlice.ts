@@ -71,7 +71,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
       // Ortho line thickness
       const axis = this.settings.viewAxis;
       if (this.settings.isOrtho && axis !== null) {
-        // TODO: Does this code do any relevant changes?
         const maxVal = this.settings.bounds.bmax[axis];
         const minVal = this.settings.bounds.bmin[axis];
         const thicknessPct = maxVal - minVal;
@@ -109,7 +108,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     }
 
     if (_dirtyFlags & SettingsFlags.CAMERA) {
-      // TODO brightness and exposure should be the same thing?
       this.setUniform("BRIGHTNESS", this.settings.brightness * 2.0);
       // Gamma
       this.setUniform("GAMMA_MIN", this.settings.gammaMin);

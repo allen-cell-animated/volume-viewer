@@ -18,6 +18,7 @@ import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
 import { IVolumeLoader, PerChannelCallback } from "./loaders/IVolumeLoader";
 import Volume from "./Volume";
 import { VolumeChannelDisplayOptions, VolumeDisplayOptions, isOrthographicCamera, ViewportCorner } from "./types";
+import { Axis } from "./VolumeRenderSettings";
 
 export const RENDERMODE_RAYMARCH = 0;
 export const RENDERMODE_PATHTRACE = 1;
@@ -734,13 +735,13 @@ export class View3d {
    * Set clipping range (between 0 and 1) for a given axis.
    * Calling this allows the rendering to compensate for changes in thickness in orthographic views that affect how bright the volume is.
    * @param {Object} volume
-   * @param {number} axis 0, 1, or 2 for x, y, or z axis
+   * @param {number} axis x, y, or z axis
    * @param {number} minval 0..1, should be less than maxval
    * @param {number} maxval 0..1, should be greater than minval
    * @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
    */
   setAxisClip(volume: Volume, axis: "x" | "y" | "z", minval: number, maxval: number, isOrthoAxis: boolean): void {
-    this.image?.setAxisClip(axis, minval, maxval, isOrthoAxis);
+    this.image?.setAxisClip(axis as Axis, minval, maxval, isOrthoAxis);
     this.redraw();
   }
 

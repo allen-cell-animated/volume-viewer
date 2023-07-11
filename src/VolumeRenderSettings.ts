@@ -26,6 +26,13 @@ export enum SettingsFlags {
   ALL = Number.MAX_SAFE_INTEGER,
 }
 
+export enum Axis {
+  X = "x",
+  Y = "y",
+  Z = "z",
+  NONE = "",
+}
+
 /**
  * Holds shared settings for configuring `VolumeRenderImpl` instances.
  */
@@ -40,7 +47,7 @@ export type VolumeRenderSettings = {
   // VIEW
   isOrtho: boolean;
   orthoScale: number;
-  viewAxis: "x" | "y" | "z" | "3D"; // TODO: Replace with enum
+  viewAxis: Axis;
   visible: boolean;
   maxProjectMode: boolean;
 
@@ -90,7 +97,7 @@ export const defaultVolumeRenderSettings = (): VolumeRenderSettings => {
     scale: new Vector3(1, 1, 1),
     currentScale: new Vector3(1, 1, 1),
     isOrtho: false,
-    viewAxis: "3D",
+    viewAxis: Axis.NONE,
     orthoScale: 1.0,
     flipAxes: new Vector3(1, 1, 1),
     maskChannelIndex: -1,

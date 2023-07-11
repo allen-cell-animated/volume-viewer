@@ -18,6 +18,7 @@ import {
   defaultVolumeRenderSettings,
   VolumeRenderSettingUtils,
   SettingsFlags,
+  Axis,
 } from "./VolumeRenderSettings";
 
 type ColorArray = [number, number, number];
@@ -36,7 +37,7 @@ export default class VolumeDrawable {
   public volume: Volume;
   private settings: VolumeRenderSettings;
   private onChannelDataReadyCallback?: () => void;
-  private viewMode: string;
+  private viewMode: Axis;
   private channelColors: [number, number, number][];
   private channelOptions: VolumeChannelDisplayOptions[];
   private fusion: FuseChannel[];
@@ -63,8 +64,7 @@ export default class VolumeDrawable {
 
     this.onChannelDataReadyCallback = undefined;
 
-    // TODO: Replace with enum
-    this.viewMode = "3D";
+    this.viewMode = Axis.NONE;
 
     this.channelColors = this.volume.channel_colors_default.slice();
 
@@ -129,9 +129,9 @@ export default class VolumeDrawable {
         bmax: new Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5]),
       };
       // note: dropping isOrthoAxis argument
-      this.setAxisClip("x", options.clipBounds[0], options.clipBounds[1]);
-      this.setAxisClip("y", options.clipBounds[2], options.clipBounds[3]);
-      this.setAxisClip("z", options.clipBounds[4], options.clipBounds[5]);
+      this.setAxisClip(Axis.X, options.clipBounds[0], options.clipBounds[1]);
+      this.setAxisClip(Axis.Y, options.clipBounds[2], options.clipBounds[3]);
+      this.setAxisClip(Axis.Z, options.clipBounds[4], options.clipBounds[5]);
     }
     if (options.scale !== undefined) {
       this.setScale(new Vector3().fromArray(options.scale));
@@ -259,7 +259,7 @@ export default class VolumeDrawable {
   // @param {number} minval -0.5..0.5, should be less than maxval
   // @param {number} maxval -0.5..0.5, should be greater than minval
   // @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
-  setAxisClip(axis: "x" | "y" | "z", minval: number, maxval: number, isOrthoAxis?: boolean): void {
+  setAxisClip(axis: Axis, minval: number, maxval: number, isOrthoAxis?: boolean): void {
     // Skip settings update if nothing has changed
     if (
       this.settings.bounds.bmax[axis] === maxval &&
@@ -274,19 +274,40 @@ export default class VolumeDrawable {
     this.settings.viewAxis = axis;
     this.settings.isOrtho = isOrthoAxis || false;
 
-    !this.PT && this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
+    if (axis !== Axis.NONE) {
+      !this.PT && this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
+    }
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.ROI | SettingsFlags.VIEW);
   }
 
-  // TODO: Change mode to an enum
+  private modeStringToAxis(mode: string): Axis {
+    let axis: Axis = Axis.NONE;
+    switch (mode) {
+      case "YZ":
+      case "X":
+        axis = Axis.X;
+        break;
+      case "XZ":
+      case "Y":
+        axis = Axis.Y;
+        break;
+      case "XY":
+      case "Z":
+        axis = Axis.Z;
+        break;
+    }
+    return axis;
+  }
+
   /**
    * Sets the camera mode of the VolumeDrawable.
    * @param mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X", or "XZ" or "Y".
    */
   setViewMode(mode: string): void {
-    this.viewMode = mode;
-    // Force a volume render reset if we have switched to or from XY mode while raymarching is enabled.
-    if (mode === "XY" || mode === "Z") {
+    const axis = this.modeStringToAxis(mode);
+    this.viewMode = axis;
+    // Force a volume render reset if we have switched to or from Z mode while raymarching is enabled.
+    if (axis === Axis.Z) {
       // If currently in 3D raymarch mode, hotswap the 2D slice
       if (this.rayMarchedAtlasVolume && !this.atlas2DSlice) {
         this.setVolumeRendering(false);
@@ -296,20 +317,6 @@ export default class VolumeDrawable {
       if (!this.rayMarchedAtlasVolume && this.atlas2DSlice) {
         this.setVolumeRendering(false);
       }
-    }
-    let axis: typeof this.settings.viewAxis = "3D";
-    switch(mode) {
-      case "XY":
-      case "Z":
-        axis = "z";
-        break;
-      case "YZ":
-      case "X":
-        axis = "x";
-        break;
-      case "XZ":
-      case "Y":
-        axis = "y"
     }
     if (this.settings.viewAxis !== axis) {
       this.settings.viewAxis = axis;
@@ -666,7 +673,7 @@ export default class VolumeDrawable {
     } else {
       // Quietly swap the RayMarchedAtlasVolume for a 2D slice renderer when our render mode
       // is XY/Z mode.
-      if (this.viewMode === "XY" || this.viewMode === "Z") {
+      if (this.viewMode === Axis.Z) {
         this.atlas2DSlice = new Atlas2DSlice(this.volume, this.settings);
         this.volumeRendering = this.atlas2DSlice;
       } else {
