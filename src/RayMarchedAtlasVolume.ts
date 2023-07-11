@@ -43,7 +43,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   public volume: Volume;
 
   private geometry: ShapeGeometry;
-  protected geometryMesh: Mesh<BufferGeometry, Material>;
+  private geometryMesh: Mesh<BufferGeometry, Material>;
   private boxHelper: Box3Helper;
   private tickMarksMesh: LineSegments;
   private geometryTransformNode: Group;
@@ -82,7 +82,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
     if (!settings) {
       settings = defaultVolumeRenderSettings();
-      VolumeRenderSettingUtils.updateWithVolume(settings, volume);
+      VolumeRenderSettingUtils.resizeWithVolume(settings, volume);
     }
     this.updateSettings(settings, SettingsFlags.ALL);
   }
@@ -91,7 +91,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     return;
   }
 
-  public updateSettings(newSettings: VolumeRenderSettings, _dirtyFlags?: number) {
+  public updateSettings(newSettings: VolumeRenderSettings, _dirtyFlags?: number | SettingsFlags) {
     if (_dirtyFlags === undefined) {
       _dirtyFlags = SettingsFlags.ALL;
     } else if (_dirtyFlags === SettingsFlags.NONE) {
@@ -130,7 +130,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       const newBoxColor = new Color(colorVector[0], colorVector[1], colorVector[2]);
       (this.boxHelper.material as LineBasicMaterial).color = newBoxColor;
       (this.tickMarksMesh.material as LineBasicMaterial).color = newBoxColor;
-      console.log("bounds updated");
     }
 
     if (_dirtyFlags & SettingsFlags.TRANSFORM) {
@@ -189,7 +188,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
    * @param uniforms object containing uniforms to pass to the shader material.
    * @returns the new geometry and geometry mesh.
    */
-  protected createGeometry(
+  private createGeometry(
     uniforms: ReturnType<typeof rayMarchingShaderUniforms>
   ): [ShapeGeometry, Mesh<BufferGeometry, Material>] {
     const geom = new BoxGeometry(1.0, 1.0, 1.0);
@@ -318,7 +317,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   //////////////////////////////////////////
   //////////////////////////////////////////
 
-  protected setUniform<U extends keyof ReturnType<typeof rayMarchingShaderUniforms>>(
+  private setUniform<U extends keyof ReturnType<typeof rayMarchingShaderUniforms>>(
     name: U,
     value: ReturnType<typeof rayMarchingShaderUniforms>[U]["value"]
   ) {

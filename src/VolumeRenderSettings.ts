@@ -124,7 +124,7 @@ export const defaultVolumeRenderSettings = (): VolumeRenderSettings => {
  * Static utility class for interacting with VolumeRenderSettings.
  */
 export class VolumeRenderSettingUtils {
-  public static updateWithVolume(renderSettings: VolumeRenderSettings, volume: Volume): void {
+  public static resizeWithVolume(renderSettings: VolumeRenderSettings, volume: Volume): void {
     renderSettings.zSlice = Math.floor(volume.z / 2);
     renderSettings.specular = new Array(volume.num_channels).fill([0, 0, 0]);
     renderSettings.emissive = new Array(volume.num_channels).fill([0, 0, 0]);

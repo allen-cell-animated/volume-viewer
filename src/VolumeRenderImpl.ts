@@ -1,6 +1,6 @@
 import { Object3D } from "three";
 import { ThreeJsPanel } from "./ThreeJsPanel";
-import { VolumeRenderSettings } from "./VolumeRenderSettings";
+import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings";
 import { FuseChannel } from "./types";
 import Channel from "./Channel";
 
@@ -13,7 +13,7 @@ export interface VolumeRenderImpl {
    * If unset, forces recompute of all settings-based renderer configuration. 
    * See the `SettingsFlags` enum for recognized values.
    */
-  updateSettings: (settings: VolumeRenderSettings, _dirtyFlags?: number) => void;
+  updateSettings: (settings: VolumeRenderSettings, _dirtyFlags?: number | SettingsFlags) => void;
 
   get3dObject: () => Object3D;
   doRender: (_canvas: ThreeJsPanel) => void;

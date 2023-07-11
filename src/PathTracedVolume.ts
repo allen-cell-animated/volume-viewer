@@ -315,7 +315,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     // Must be done after all other state is initialized
     if (!settings) {
       settings = defaultVolumeRenderSettings();
-      VolumeRenderSettingUtils.updateWithVolume(settings, volume);
+      VolumeRenderSettingUtils.resizeWithVolume(settings, volume);
     }
     this.updateSettings(settings);
     this.settings = VolumeRenderSettingUtils.clone(settings); // turns off ts initialization warning
@@ -342,17 +342,17 @@ export default class PathTracedVolume implements VolumeRenderImpl {
    * @param newSettings
    * @returns
    */
-  public updateSettings(newSettings: VolumeRenderSettings, changed?: number): void {
-    if (changed === undefined) {
-      changed = SettingsFlags.ALL;
+  public updateSettings(newSettings: VolumeRenderSettings, _dirtyFlags?: number | SettingsFlags): void {
+    if (_dirtyFlags === undefined) {
+      _dirtyFlags = SettingsFlags.ALL;
     }
-    if (changed === SettingsFlags.NONE) {
+    if (_dirtyFlags === SettingsFlags.NONE) {
       return;
     }
     this.settings = newSettings;
 
     // Update resolution
-    if (changed & SettingsFlags.RESOLUTION_AND_SAMPLING) {
+    if (_dirtyFlags & SettingsFlags.RESOLUTION_AND_SAMPLING) {
       const resolution = this.settings.resolution.clone();
       this.fullTargetResolution = resolution;
       const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
@@ -368,16 +368,16 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       this.pathTracingUniforms.gStepSizeShadow.value = this.settings.secondaryRayStepSize * this.gradientDelta;
     }
 
-    if (changed & SettingsFlags.TRANSFORM) {
+    if (_dirtyFlags & SettingsFlags.TRANSFORM) {
       this.pathTracingUniforms.flipVolume.value = this.settings.flipAxes;
     }
 
-    if (changed & SettingsFlags.MATERIAL) {
+    if (_dirtyFlags & SettingsFlags.MATERIAL) {
       this.pathTracingUniforms.gDensityScale.value = this.settings.density * 150.0;
     }
 
     // update bounds
-    if (changed & SettingsFlags.ROI) {
+    if (_dirtyFlags & SettingsFlags.ROI) {
       const physicalSize = this.volume.normalizedPhysicalSize;
       this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
       this.settings.bounds.bmin.x * physicalSize.x,
@@ -391,19 +391,19 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       );
     }
     
-    if (changed & SettingsFlags.CAMERA) {
+    if (_dirtyFlags & SettingsFlags.CAMERA) {
       this.updateExposure(this.settings.brightness);
     }
 
-    if (changed & SettingsFlags.MASK) {
+    if (_dirtyFlags & SettingsFlags.MASK) {
       // Update channel and alpha mask if they have changed
         this.updateVolumeData4(); 
     }
-    if (changed & SettingsFlags.VIEW) {
+    if (_dirtyFlags & SettingsFlags.VIEW) {
       this.pathTracingUniforms.gCamera.value.mIsOrtho = this.settings.isOrtho ? 1 : 0;
     }
 
-    if (changed & SettingsFlags.RESOLUTION_AND_SAMPLING) {
+    if (_dirtyFlags & SettingsFlags.RESOLUTION_AND_SAMPLING) {
       this.volumeTexture.minFilter = this.volumeTexture.magFilter = newSettings.useInterpolation
         ? LinearFilter
         : NearestFilter;
