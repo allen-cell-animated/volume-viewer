@@ -48,8 +48,8 @@ describe("test RequestQueue", () => {
       const rq = new RequestQueue();
       const startTime = Date.now();
       const delayMs = 15;
-      const immediatePromise = rq.addRequest("a", async () => {});
-      const delayedPromise = rq.addRequest("b", async () => {}, delayMs);
+      const immediatePromise = rq.addRequest("a", () => Promise.resolve());
+      const delayedPromise = rq.addRequest("b", () => Promise.resolve(), delayMs);
 
       const promises: Promise<unknown>[] = [];
       promises.push(
