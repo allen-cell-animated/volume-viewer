@@ -13,7 +13,12 @@ import Channel from "./Channel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 import { Pane } from "tweakpane";
 import Atlas2DSlice from "./Atlas2DSlice";
-import { VolumeRenderSettings, defaultVolumeRenderSettings, VolumeRenderSettingUtils, SettingsFlags } from "./VolumeRenderSettings";
+import {
+  VolumeRenderSettings,
+  defaultVolumeRenderSettings,
+  VolumeRenderSettingUtils,
+  SettingsFlags,
+} from "./VolumeRenderSettings";
 
 type ColorArray = [number, number, number];
 type ColorObject = { r: number; g: number; b: number };
@@ -54,7 +59,7 @@ export default class VolumeDrawable {
     // THE VOLUME DATA
     this.volume = volume;
     this.settings = defaultVolumeRenderSettings();
-    VolumeRenderSettingUtils.updateWithVolume(this.settings, volume);
+    VolumeRenderSettingUtils.resizeWithVolume(this.settings, volume);
 
     this.onChannelDataReadyCallback = undefined;
 
@@ -207,6 +212,9 @@ export default class VolumeDrawable {
   }
 
   setRayStepSizes(primary?: number, secondary?: number): void {
+    if (primary === this.settings.primaryRayStepSize && secondary === this.settings.secondaryRayStepSize) {
+      return;
+    }
     if (primary !== undefined) {
       this.settings.primaryRayStepSize = primary;
     }
@@ -227,6 +235,9 @@ export default class VolumeDrawable {
   }
 
   setOrthoScale(value: number): void {
+    if (this.settings.orthoScale === value) {
+      return;
+    }
     this.settings.orthoScale = value;
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
   }
@@ -234,9 +245,12 @@ export default class VolumeDrawable {
   setResolution(viewObj: ThreeJsPanel): void {
     const x = viewObj.getWidth();
     const y = viewObj.getHeight();
-    this.meshVolume.setResolution(x, y);
-    this.settings.resolution = new Vector2(x, y);
-    this.volumeRendering.updateSettings(this.settings, SettingsFlags.RESOLUTION_AND_SAMPLING);
+    const resolution = new Vector2(x, y);
+    if (!this.settings.resolution.equals(resolution)) {
+      this.meshVolume.setResolution(x, y);
+      this.settings.resolution = resolution;
+      this.volumeRendering.updateSettings(this.settings, SettingsFlags.RESOLUTION_AND_SAMPLING);
+    }
   }
 
   // Set clipping range (between -0.5 and 0.5) for a given axis.
@@ -246,6 +260,15 @@ export default class VolumeDrawable {
   // @param {number} maxval -0.5..0.5, should be greater than minval
   // @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
   setAxisClip(axis: "x" | "y" | "z", minval: number, maxval: number, isOrthoAxis?: boolean): void {
+    // Skip settings update if nothing has changed
+    if (
+      this.settings.bounds.bmax[axis] === maxval &&
+      this.settings.bounds.bmin[axis] === minval &&
+      this.settings.orthoAxis === axis &&
+      this.settings.isOrtho === (isOrthoAxis || false)
+    ) {
+      return;
+    }
     this.settings.bounds.bmax[axis] = maxval;
     this.settings.bounds.bmin[axis] = minval;
     this.settings.orthoAxis = axis;
@@ -262,6 +285,7 @@ export default class VolumeDrawable {
    */
   setViewMode(mode: string): void {
     this.viewMode = mode;
+    // Force a volume render reset if we have switched to or from XY mode while raymarching is enabled.
     if (mode === "XY" || mode === "Z") {
       // If currently in 3D raymarch mode, hotswap the 2D slice
       if (this.rayMarchedAtlasVolume && !this.atlas2DSlice) {
@@ -278,18 +302,24 @@ export default class VolumeDrawable {
   // Tell this image that it needs to be drawn in an orthographic mode
   // @param {boolean} isOrtho is this an orthographic projection or a perspective view
   setIsOrtho(isOrtho: boolean): void {
+    if (this.settings.isOrtho === isOrtho) {
+      return;
+    }
     this.settings.isOrtho = isOrtho;
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
   }
 
   setInterpolationEnabled(active: boolean): void {
+    if (this.settings.useInterpolation === active) {
+      return;
+    }
     this.settings.useInterpolation = active;
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.RESOLUTION_AND_SAMPLING);
   }
 
   setOrthoThickness(value: number): void {
     !this.PT && this.meshVolume.setOrthoThickness(value);
-    // No settings update because ortho thickness is calculated in the renderer
+    // No settings update because ortho thickness is calculated in the renderers
   }
 
   // Set parameters for gamma curve for volume rendering.
@@ -297,6 +327,9 @@ export default class VolumeDrawable {
   // @param {number} glevel 0..1
   // @param {number} gmax 0..1, should be > gmin
   setGamma(gmin: number, glevel: number, gmax: number): void {
+    if (this.settings.gammaMin === gmin || this.settings.gammaLevel === glevel || this.settings.gammaMax === gmax) {
+      return;
+    }
     this.settings.gammaMin = gmin;
     this.settings.gammaLevel = glevel;
     this.settings.gammaMax = gmax;
@@ -304,9 +337,12 @@ export default class VolumeDrawable {
   }
 
   setFlipAxes(flipX: number, flipY: number, flipZ: number): void {
-    this.settings.flipAxes = new Vector3(flipX, flipY, flipZ);
-    this.meshVolume.setFlipAxes(flipX, flipY, flipZ);
-    this.volumeRendering.updateSettings(this.settings, SettingsFlags.TRANSFORM);
+    const flipAxes = new Vector3(flipX, flipY, flipZ);
+    if (!this.settings.flipAxes.equals(flipAxes)) {
+      this.settings.flipAxes = flipAxes;
+      this.meshVolume.setFlipAxes(flipX, flipY, flipZ);
+      this.volumeRendering.updateSettings(this.settings, SettingsFlags.TRANSFORM);
+    }
   }
 
   setMaxProjectMode(isMaxProject: boolean): void {
@@ -374,12 +410,10 @@ export default class VolumeDrawable {
   }
 
   updateMaterial(): void {
-    //this.PT && this.pathTracedVolume && this.pathTracedVolume.updateMaterial(this);
     this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
   }
 
   updateLuts(): void {
-    // this.PT && this.pathTracedVolume && this.pathTracedVolume.updateLuts(this);
     this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
   }
 
@@ -611,7 +645,7 @@ export default class VolumeDrawable {
       // Quietly swap the RayMarchedAtlasVolume for a 2D slice renderer when our render mode
       // is XY/Z mode.
       if (this.viewMode === "XY" || this.viewMode === "Z") {
-        this.atlas2DSlice = new Atlas2DSlice(this.volume);
+        this.atlas2DSlice = new Atlas2DSlice(this.volume, this.settings);
         this.volumeRendering = this.atlas2DSlice;
       } else {
         this.rayMarchedAtlasVolume = new RayMarchedAtlasVolume(this.volume, this.settings);
@@ -642,7 +676,7 @@ export default class VolumeDrawable {
   setRotation(eulerXYZ: Euler): void {
     this.settings.rotation.copy(eulerXYZ);
     this.meshVolume.setRotation(this.settings.rotation);
-    this.volumeRendering.updateSettings(this.settings);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.TRANSFORM);
   }
 
   setupGui(pane: Pane): void {
