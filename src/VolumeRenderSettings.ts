@@ -7,16 +7,23 @@ import { Bounds } from "./types";
  */
 export enum SettingsFlags {
   NONE = 0,
+  /** parameters: translation, rotation, scale, currentScale, flipAxes */
   TRANSFORM = 1 << 1,
-  ORTHO = 1 << 2,
+  /** parameters: gammaMin, gammaLevel, gammaMax, brightness*/
+  CAMERA = 1 << 2,
+  /** parameters: showBoundingBox, boundingBoxColor */
   BOUNDING_BOX = 1 << 3,
-  BOUNDS = 1 << 4,
+  /** parameters: bounds, zSlice */
+  ROI = 1 << 4,
+  /** parameters: maskChannelIndex, maskAlpha */
   MASK = 1 << 5,
-  LIGHTING = 1 << 6,
-  /** parameters = density, specular, emissive, glossiness */
-  MATERIAL = 1 << 7,
-  RESOLUTION_AND_SAMPLING = 1 << 8,
-  ALL = ~(~0 << 9),
+  /** parameters: density, specular, emissive, glossiness */
+  MATERIAL = 1 << 6,
+  /** parameters: resolution, useInterpolation, pixelSamplingRate, primaryRayStepSize, secondaryRayStepSize*/
+  RESOLUTION_AND_SAMPLING = 1 << 7,
+  /** parameters: isOrtho, orthoScale, orthoAxis, visible */
+  VIEW = 1 << 8,
+  ALL = Number.MAX_SAFE_INTEGER,
 }
 
 /**
@@ -30,20 +37,21 @@ export type VolumeRenderSettings = {
   currentScale: Vector3;
   flipAxes: Vector3;
 
-  // ORTHO
+  // VIEW
   isOrtho: boolean;
   orthoScale: number;
-  orthoAxis: "x" | "y" | "z" | null; // // TODO: Replace with enum
+  orthoAxis: "x" | "y" | "z" | null; // TODO: Replace with enum
+  visible: boolean;
 
-  // MASK
-  maskChannelIndex: number;
-  maskAlpha: number;
-
-  // LIGHTING
+  // CAMERA
   gammaMin: number;
   gammaLevel: number;
   gammaMax: number;
   brightness: number;
+
+  // MASK
+  maskChannelIndex: number;
+  maskAlpha: number;
 
   // MATERIAL
   density: number;
@@ -51,7 +59,7 @@ export type VolumeRenderSettings = {
   emissive: [number, number, number][];
   glossiness: number[];
 
-  // BOUNDS
+  // ROI
   bounds: Bounds;
   zSlice: number;
   
@@ -61,7 +69,6 @@ export type VolumeRenderSettings = {
   
   // RESOLUTION_AND_SAMPLING  
   resolution: Vector2;
-  visible: boolean;
   useInterpolation: boolean;
   pixelSamplingRate: number;
   primaryRayStepSize: number;

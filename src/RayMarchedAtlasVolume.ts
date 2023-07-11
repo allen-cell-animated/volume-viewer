@@ -29,7 +29,12 @@ import { ThreeJsPanel } from "./ThreeJsPanel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 
 import { FuseChannel } from "./types";
-import { defaultVolumeRenderSettings, VolumeRenderSettingUtils, VolumeRenderSettings } from "./VolumeRenderSettings";
+import {
+  defaultVolumeRenderSettings,
+  VolumeRenderSettingUtils,
+  VolumeRenderSettings,
+  SettingsFlags,
+} from "./VolumeRenderSettings";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
@@ -86,80 +91,96 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     return;
   }
 
-  public updateSettings(newSettings: VolumeRenderSettings) {
-    if (this.settings && VolumeRenderSettingUtils.isEqual(this.settings, newSettings)) {
+  public updateSettings(newSettings: VolumeRenderSettings, _dirtyFlags?: number) {
+    if (_dirtyFlags === undefined) {
+      _dirtyFlags = SettingsFlags.ALL;
+    } else if (_dirtyFlags === SettingsFlags.NONE) {
       return;
     }
 
-    this.settings = VolumeRenderSettingUtils.clone(newSettings);
+    this.settings = newSettings;
 
-    this.geometryMesh.visible = this.settings.visible;
-
-    // Configure bounding box
-    this.boxHelper.visible = this.settings.showBoundingBox;
-    this.tickMarksMesh.visible = this.settings.showBoundingBox && !this.settings.isOrtho;
-    const colorVector = this.settings.boundingBoxColor;
-    const newBoxColor = new Color(colorVector[0], colorVector[1], colorVector[2]);
-    (this.boxHelper.material as LineBasicMaterial).color = newBoxColor;
-    (this.tickMarksMesh.material as LineBasicMaterial).color = newBoxColor;
-
-    // Set scale
-    const scale = this.settings.scale;
-    this.geometryMesh.scale.copy(scale);
-    this.setUniform("volumeScale", scale);
-    this.boxHelper.box.set(
-      new Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z),
-      new Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z)
-    );
-    this.tickMarksMesh.scale.copy(scale);
-
-    // Set rotation and translation
-    this.geometryTransformNode.position.copy(this.settings.translation);
-    this.geometryTransformNode.rotation.copy(this.settings.rotation);
-
-    this.setUniform("DENSITY", this.settings.density);
-    // TODO brightness and exposure should be the same thing?
-    this.setUniform("BRIGHTNESS", this.settings.brightness * 2.0);
-
-    // Configure ortho
-    this.setUniform("orthoScale", this.settings.orthoScale);
-    this.setUniform("isOrtho", this.settings.isOrtho ? 1.0 : 0.0);
-
-    // Normalize bounds
-    const bounds = this.settings.bounds;
-    const boundsNormalized = {
-      bmin: new Vector3(bounds.bmin.x * 2.0, bounds.bmin.y * 2.0, bounds.bmin.z * 2.0),
-      bmax: new Vector3(bounds.bmax.x * 2.0, bounds.bmax.y * 2.0, bounds.bmax.z * 2.0),
-    };
-
-    // Axis clipping and line thickness for ortho
-    const axis = this.settings.orthoAxis;
-    if (this.settings.isOrtho && axis !== null) {
-      // TODO: Does this code do any relevant changes?
-      const maxVal = this.settings.bounds.bmax[axis];
-      const minVal = this.settings.bounds.bmin[axis];
-      const thicknessPct = maxVal - minVal;
-      this.setUniform("orthoThickness", thicknessPct);
-    } else {
-      this.setUniform("orthoThickness", 1.0);
+    if (_dirtyFlags & SettingsFlags.VIEW) {
+      this.geometryMesh.visible = this.settings.visible;
+      // Configure ortho
+      this.setUniform("orthoScale", this.settings.orthoScale);
+      this.setUniform("isOrtho", this.settings.isOrtho ? 1.0 : 0.0);
+      // Ortho line thickness
+      const axis = this.settings.orthoAxis;
+      if (this.settings.isOrtho && axis !== null) {
+        // TODO: Does this code do any relevant changes?
+        const maxVal = this.settings.bounds.bmax[axis];
+        const minVal = this.settings.bounds.bmin[axis];
+        const thicknessPct = maxVal - minVal;
+        this.setUniform("orthoThickness", thicknessPct);
+      } else {
+        this.setUniform("orthoThickness", 1.0);
+      }
     }
-    this.setUniform("AABB_CLIP_MIN", boundsNormalized.bmin);
-    this.setUniform("AABB_CLIP_MAX", boundsNormalized.bmax);
 
-    this.setUniform("interpolationEnabled", this.settings.useInterpolation);
+    if (_dirtyFlags & SettingsFlags.VIEW || _dirtyFlags & SettingsFlags.BOUNDING_BOX) {
+      // Update tick marks with either view or bounding box changes
+      this.tickMarksMesh.visible = this.settings.showBoundingBox && !this.settings.isOrtho;
+    }
 
-    // Gamma
-    this.setUniform("GAMMA_MIN", this.settings.gammaMin);
-    this.setUniform("GAMMA_MAX", this.settings.gammaMax);
-    this.setUniform("GAMMA_SCALE", this.settings.gammaLevel);
+    if (_dirtyFlags & SettingsFlags.BOUNDING_BOX) {
+      // Configure bounding box
+      this.boxHelper.visible = this.settings.showBoundingBox;
+      const colorVector = this.settings.boundingBoxColor;
+      const newBoxColor = new Color(colorVector[0], colorVector[1], colorVector[2]);
+      (this.boxHelper.material as LineBasicMaterial).color = newBoxColor;
+      (this.tickMarksMesh.material as LineBasicMaterial).color = newBoxColor;
+    }
 
-    this.setUniform("flipVolume", this.settings.flipAxes);
+    if (_dirtyFlags & SettingsFlags.TRANSFORM) {
+      // Set scale
+      const scale = this.settings.scale;
+      this.geometryMesh.scale.copy(scale);
+      this.setUniform("volumeScale", scale);
+      this.boxHelper.box.set(
+        new Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z),
+        new Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z)
+      );
+      this.tickMarksMesh.scale.copy(scale);
+      // Set rotation and translation
+      this.geometryTransformNode.position.copy(this.settings.translation);
+      this.geometryTransformNode.rotation.copy(this.settings.rotation);
+      this.setUniform("flipVolume", this.settings.flipAxes);
+    }
 
-    this.setUniform("maskAlpha", this.settings.maskAlpha);
-    this.setUniform("maskAlpha", this.settings.maskAlpha);
-    this.geometryMesh.visible = this.settings.visible;
+    if (_dirtyFlags & SettingsFlags.MATERIAL) {
+      this.setUniform("DENSITY", this.settings.density);
+    }
 
-    this.setUniform("iResolution", this.settings.resolution);
+    if (_dirtyFlags & SettingsFlags.CAMERA) {
+      // TODO brightness and exposure should be the same thing?
+      this.setUniform("BRIGHTNESS", this.settings.brightness * 2.0);
+      // Gamma
+      this.setUniform("GAMMA_MIN", this.settings.gammaMin);
+      this.setUniform("GAMMA_MAX", this.settings.gammaMax);
+      this.setUniform("GAMMA_SCALE", this.settings.gammaLevel);
+    }
+
+    if (_dirtyFlags & SettingsFlags.ROI) {
+      // Normalize and set bounds
+      const bounds = this.settings.bounds;
+      const boundsNormalized = {
+        bmin: new Vector3(bounds.bmin.x * 2.0, bounds.bmin.y * 2.0, bounds.bmin.z * 2.0),
+        bmax: new Vector3(bounds.bmax.x * 2.0, bounds.bmax.y * 2.0, bounds.bmax.z * 2.0),
+      };
+      this.setUniform("AABB_CLIP_MIN", boundsNormalized.bmin);
+      this.setUniform("AABB_CLIP_MAX", boundsNormalized.bmax);
+    }
+
+    if (_dirtyFlags & SettingsFlags.RESOLUTION_AND_SAMPLING) {
+      this.setUniform("interpolationEnabled", this.settings.useInterpolation);
+      this.setUniform("iResolution", this.settings.resolution);
+    }
+
+    if (_dirtyFlags & SettingsFlags.MASK) {
+      this.setUniform("maskAlpha", this.settings.maskAlpha);
+      this.setUniform("maskAlpha", this.settings.maskAlpha);
+    }
   }
 
   /**

@@ -342,17 +342,14 @@ export default class PathTracedVolume implements VolumeRenderImpl {
    * @param newSettings
    * @returns
    */
-  public updateSettings(newSettings: VolumeRenderSettings, changed?: SettingsFlags): void {
-    if (this.settings && VolumeRenderSettingUtils.isEqual(this.settings, newSettings)) {
-      return;
-    }
-
+  public updateSettings(newSettings: VolumeRenderSettings, changed?: number): void {
     if (changed === undefined) {
       changed = SettingsFlags.ALL;
     }
-
-    const oldSettings = this.settings;
-    this.settings = VolumeRenderSettingUtils.clone(newSettings);
+    if (changed === SettingsFlags.NONE) {
+      return;
+    }
+    this.settings = newSettings;
 
     // Update resolution
     if (changed & SettingsFlags.RESOLUTION_AND_SAMPLING) {
@@ -378,7 +375,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
 
     // update bounds
-    if (changed & SettingsFlags.BOUNDS) {
+    if (changed & SettingsFlags.ROI) {
       const physicalSize = this.volume.normalizedPhysicalSize;
       this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
       this.settings.bounds.bmin.x * physicalSize.x,
@@ -389,25 +386,22 @@ export default class PathTracedVolume implements VolumeRenderImpl {
         this.settings.bounds.bmax.x * physicalSize.x,
         this.settings.bounds.bmax.y * physicalSize.y,
         this.settings.bounds.bmax.z * physicalSize.z
-        );
-      }
+      );
+    }
     
-    if (changed & SettingsFlags.LIGHTING) {
+    if (changed & SettingsFlags.CAMERA) {
       this.updateExposure(this.settings.brightness);
     }
 
-    // Update channel and alpha mask if they have changed
-    if (
-      !oldSettings ||
-      oldSettings.maskChannelIndex !== newSettings.maskChannelIndex ||
-      oldSettings.maskAlpha !== newSettings.maskAlpha
-    ) {
-      this.updateVolumeData4();
+    if (changed & SettingsFlags.MASK) {
+      // Update channel and alpha mask if they have changed
+        this.updateVolumeData4(); 
+    }
+    if (changed & SettingsFlags.VIEW) {
+      this.pathTracingUniforms.gCamera.value.mIsOrtho = this.settings.isOrtho ? 1 : 0;
     }
 
-    this.pathTracingUniforms.gCamera.value.mIsOrtho = this.settings.isOrtho ? 1 : 0;
-    // Update interpolation settings
-    if (!oldSettings || oldSettings.useInterpolation !== newSettings.useInterpolation) {
+    if (changed & SettingsFlags.RESOLUTION_AND_SAMPLING) {
       this.volumeTexture.minFilter = this.volumeTexture.magFilter = newSettings.useInterpolation
         ? LinearFilter
         : NearestFilter;
