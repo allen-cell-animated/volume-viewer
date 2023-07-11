@@ -318,7 +318,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       VolumeRenderSettingUtils.resizeWithVolume(settings, volume);
     }
     this.updateSettings(settings);
-    this.settings = VolumeRenderSettingUtils.clone(settings); // turns off ts initialization warning
+    this.settings = settings; // turns off ts initialization warning
   }
 
   public cleanup(): void {
