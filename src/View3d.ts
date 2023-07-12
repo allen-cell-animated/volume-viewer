@@ -592,7 +592,7 @@ export class View3d {
    * @param {number} flipY y axis sense
    * @param {number} flipZ z axis sense
    */
-  setFlipVolume(volume: Volume, flipX: number, flipY: number, flipZ: number): void {
+  setFlipVolume(volume: Volume, flipX: -1 | 1, flipY: -1 | 1, flipZ: -1 | 1): void {
     this.image?.setFlipAxes(flipX, flipY, flipZ);
     this.redraw();
   }
@@ -735,7 +735,7 @@ export class View3d {
    * Set clipping range (between 0 and 1) for a given axis.
    * Calling this allows the rendering to compensate for changes in thickness in orthographic views that affect how bright the volume is.
    * @param {Object} volume
-   * @param {number} axis x, y, or z axis
+   * @param {string} axis x, y, or z axis
    * @param {number} minval 0..1, should be less than maxval
    * @param {number} maxval 0..1, should be greater than minval
    * @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view

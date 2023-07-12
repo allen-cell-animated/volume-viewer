@@ -361,7 +361,7 @@ export default class VolumeDrawable {
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.CAMERA);
   }
 
-  setFlipAxes(flipX: number, flipY: number, flipZ: number): void {
+  setFlipAxes(flipX: -1 | 1, flipY: -1 | 1, flipZ: -1 | 1): void {
     const flipAxes = new Vector3(flipX, flipY, flipZ);
     if (!this.settings.flipAxes.equals(flipAxes)) {
       this.settings.flipAxes = flipAxes;
