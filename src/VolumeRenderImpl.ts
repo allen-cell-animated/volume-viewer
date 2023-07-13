@@ -8,12 +8,12 @@ export interface VolumeRenderImpl {
   /**
    * Applies the given VolumeRenderSettings to this volume renderer.
    * @param settings a VolumeRenderSettings object to update values from.
-   * @param _dirtyFlags bitwise flag used to mark groups of changed settings in the
+   * @param dirtyFlags bitwise flag used to mark groups of changed settings in the
    * provided `settings` object.
    * If unset, forces recompute of all settings-based renderer configuration.
    * See the `SettingsFlags` enum for recognized values.
    */
-  updateSettings: (settings: VolumeRenderSettings, _dirtyFlags?: number | SettingsFlags) => void;
+  updateSettings: (settings: VolumeRenderSettings, dirtyFlags?: number | SettingsFlags) => void;
 
   get3dObject: () => Object3D;
   doRender: (_canvas: ThreeJsPanel) => void;

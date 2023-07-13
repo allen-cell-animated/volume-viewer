@@ -42,7 +42,13 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
   private uniforms: ReturnType<typeof sliceShaderUniforms>;
   private channelData: FusedChannelData;
 
-  constructor(volume: Volume, settings?: VolumeRenderSettings) {
+  /**
+   * Creates a new Atlas2DSlice.
+   * @param volume The volume that this renderer should render data from.
+   * @param settings Optional settings object. If set, updates the renderer with
+   * the given settings. (By default, uses the result of `defaultVolumeRenderSettings(volume)`).
+   */
+  constructor(volume: Volume, settings: VolumeRenderSettings = defaultVolumeRenderSettings(volume)) {
     this.volume = volume;
     this.uniforms = sliceShaderUniforms();
     [this.geometry, this.geometryMesh] = this.createGeometry(this.uniforms);
@@ -66,22 +72,17 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.setUniform("Z_SLICE", Math.floor(volume.z / 2));
 
     this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
-
-    if (!settings) {
-      settings = defaultVolumeRenderSettings();
-      VolumeRenderSettingUtils.resizeWithVolume(settings, volume);
-    }
     this.updateSettings(settings, SettingsFlags.ALL);
   }
 
-  public updateSettings(newSettings: VolumeRenderSettings, _dirtyFlags?: number | SettingsFlags) {
-    if (_dirtyFlags === undefined) {
-      _dirtyFlags = SettingsFlags.ALL;
+  public updateSettings(newSettings: VolumeRenderSettings, dirtyFlags?: number | SettingsFlags) {
+    if (dirtyFlags === undefined) {
+      dirtyFlags = SettingsFlags.ALL;
     }
 
     this.settings = newSettings;
 
-    if (_dirtyFlags & SettingsFlags.VIEW) {
+    if (dirtyFlags & SettingsFlags.VIEW) {
       this.geometryMesh.visible = this.settings.visible;
       // Configure ortho
       this.setUniform("orthoScale", this.settings.orthoScale);
@@ -98,7 +99,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
       }
     }
 
-    if (_dirtyFlags & SettingsFlags.BOUNDING_BOX) {
+    if (dirtyFlags & SettingsFlags.BOUNDING_BOX) {
       // Configure bounding box
       this.boxHelper.visible = this.settings.showBoundingBox;
       const colorVector = this.settings.boundingBoxColor;
@@ -106,7 +107,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
       (this.boxHelper.material as LineBasicMaterial).color = newBoxColor;
     }
 
-    if (_dirtyFlags & SettingsFlags.TRANSFORM) {
+    if (dirtyFlags & SettingsFlags.TRANSFORM) {
       // Set scale
       const scale = this.settings.scale;
       this.geometryMesh.scale.copy(scale);
@@ -121,11 +122,11 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
       this.setUniform("flipVolume", this.settings.flipAxes);
     }
 
-    if (_dirtyFlags & SettingsFlags.MATERIAL) {
+    if (dirtyFlags & SettingsFlags.MATERIAL) {
       this.setUniform("DENSITY", this.settings.density);
     }
 
-    if (_dirtyFlags & SettingsFlags.CAMERA) {
+    if (dirtyFlags & SettingsFlags.CAMERA) {
       this.setUniform("BRIGHTNESS", this.settings.brightness * 2.0);
       // Gamma
       this.setUniform("GAMMA_MIN", this.settings.gammaMin);
@@ -133,7 +134,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
       this.setUniform("GAMMA_SCALE", this.settings.gammaLevel);
     }
 
-    if (_dirtyFlags & SettingsFlags.ROI) {
+    if (dirtyFlags & SettingsFlags.ROI) {
       // Normalize and set bounds
       const bounds = this.settings.bounds;
       const boundsNormalized = {
@@ -148,12 +149,12 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
       }
     }
 
-    if (_dirtyFlags & SettingsFlags.SAMPLING) {
+    if (dirtyFlags & SettingsFlags.SAMPLING) {
       this.setUniform("interpolationEnabled", this.settings.useInterpolation);
       this.setUniform("iResolution", this.settings.resolution);
     }
 
-    if (_dirtyFlags & SettingsFlags.MASK) {
+    if (dirtyFlags & SettingsFlags.MASK) {
       this.setUniform("maskAlpha", this.settings.maskAlpha);
       this.setUniform("maskAlpha", this.settings.maskAlpha);
     }

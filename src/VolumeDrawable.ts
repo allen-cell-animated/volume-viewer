@@ -59,7 +59,7 @@ export default class VolumeDrawable {
 
     // THE VOLUME DATA
     this.volume = volume;
-    this.settings = defaultVolumeRenderSettings();
+    this.settings = defaultVolumeRenderSettings(volume);
     VolumeRenderSettingUtils.resizeWithVolume(this.settings, volume);
 
     this.onChannelDataReadyCallback = undefined;

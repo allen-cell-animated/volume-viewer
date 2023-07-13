@@ -76,7 +76,13 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   private gradientDelta: number;
   private renderUpdateListener?: (iteration: number) => void;
 
-  constructor(volume: Volume, settings?: VolumeRenderSettings) {
+  /**
+   * Creates a new PathTracedVolume.
+   * @param volume The volume that this renderer should render data from.
+   * @param settings Optional settings object. If set, updates the renderer with
+   * the given settings. (By default, uses the result of `defaultVolumeRenderSettings(volume)`).
+   */
+  constructor(volume: Volume, settings: VolumeRenderSettings = defaultVolumeRenderSettings(volume)) {
     this.pathTracingUniforms = pathTracingUniforms();
     this.volume = volume;
     this.viewChannels = [-1, -1, -1, -1];
@@ -317,11 +323,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.updateLightsSecondary();
 
     // Update settings
-    // Must be done after all other state is initialized
-    if (!settings) {
-      settings = defaultVolumeRenderSettings();
-      VolumeRenderSettingUtils.resizeWithVolume(settings, volume);
-    }
     this.updateSettings(settings);
     this.settings = settings; // turns off ts initialization warning
   }
@@ -347,14 +348,14 @@ export default class PathTracedVolume implements VolumeRenderImpl {
    * @param newSettings
    * @returns
    */
-  public updateSettings(newSettings: VolumeRenderSettings, _dirtyFlags?: number | SettingsFlags): void {
-    if (_dirtyFlags === undefined) {
-      _dirtyFlags = SettingsFlags.ALL;
+  public updateSettings(newSettings: VolumeRenderSettings, dirtyFlags?: number | SettingsFlags): void {
+    if (dirtyFlags === undefined) {
+      dirtyFlags = SettingsFlags.ALL;
     }
     this.settings = newSettings;
 
     // Update resolution
-    if (_dirtyFlags & SettingsFlags.SAMPLING) {
+    if (dirtyFlags & SettingsFlags.SAMPLING) {
       const resolution = this.settings.resolution.clone();
       this.fullTargetResolution = resolution;
       const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
@@ -370,16 +371,16 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       this.pathTracingUniforms.gStepSizeShadow.value = this.settings.secondaryRayStepSize * this.gradientDelta;
     }
 
-    if (_dirtyFlags & SettingsFlags.TRANSFORM) {
+    if (dirtyFlags & SettingsFlags.TRANSFORM) {
       this.pathTracingUniforms.flipVolume.value = this.settings.flipAxes;
     }
 
-    if (_dirtyFlags & SettingsFlags.MATERIAL) {
+    if (dirtyFlags & SettingsFlags.MATERIAL) {
       this.pathTracingUniforms.gDensityScale.value = this.settings.density * 150.0;
     }
 
     // update bounds
-    if (_dirtyFlags & SettingsFlags.ROI) {
+    if (dirtyFlags & SettingsFlags.ROI) {
       const physicalSize = this.volume.normalizedPhysicalSize;
       this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
         this.settings.bounds.bmin.x * physicalSize.x,
@@ -393,19 +394,19 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       );
     }
 
-    if (_dirtyFlags & SettingsFlags.CAMERA) {
+    if (dirtyFlags & SettingsFlags.CAMERA) {
       this.updateExposure(this.settings.brightness);
     }
 
-    if (_dirtyFlags & SettingsFlags.MASK) {
+    if (dirtyFlags & SettingsFlags.MASK) {
       // Update channel and alpha mask if they have changed
       this.updateVolumeData4();
     }
-    if (_dirtyFlags & SettingsFlags.VIEW) {
+    if (dirtyFlags & SettingsFlags.VIEW) {
       this.pathTracingUniforms.gCamera.value.mIsOrtho = this.settings.isOrtho ? 1 : 0;
     }
 
-    if (_dirtyFlags & SettingsFlags.SAMPLING) {
+    if (dirtyFlags & SettingsFlags.SAMPLING) {
       this.volumeTexture.minFilter = this.volumeTexture.magFilter = newSettings.useInterpolation
         ? LinearFilter
         : NearestFilter;

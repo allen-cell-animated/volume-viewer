@@ -86,10 +86,9 @@ export type VolumeRenderSettings = {
  * Returns a VolumeRenderSettings object with default fields. Default objects
  * created with this method will not have shared references.
  *
- * Note that default objects have volume-dependent properties that should be updated
- * with `VolumeRenderSettingUtils.updateWithVolume()`.
+ * @param volume Volume data used to initialize size-dependent settings.
  */
-export const defaultVolumeRenderSettings = (): VolumeRenderSettings => {
+export const defaultVolumeRenderSettings = (volume: Volume): VolumeRenderSettings => {
   return {
     translation: new Vector3(0, 0, 0),
     rotation: new Euler(),
@@ -118,10 +117,10 @@ export const defaultVolumeRenderSettings = (): VolumeRenderSettings => {
     visible: true,
     maxProjectMode: false,
     // volume-dependent properties
-    zSlice: 0,
-    specular: new Array(1).fill([0, 0, 0]),
-    emissive: new Array(1).fill([0, 0, 0]),
-    glossiness: new Array(1).fill(0),
+    zSlice: Math.floor(volume.z / 2),
+    specular: new Array(volume.num_channels).fill([0, 0, 0]),
+    emissive: new Array(volume.num_channels).fill([0, 0, 0]),
+    glossiness: new Array(volume.num_channels).fill(0),
 
     pixelSamplingRate: 0.75,
     resolution: new Vector2(1, 1),
