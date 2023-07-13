@@ -19,9 +19,9 @@ export const FUSE_DISABLED_RGB_COLOR = 0;
  * Provide options to control the visual appearance of a Volume
  * @typedef {Object} VolumeChannelDisplayOptions
  * @property {boolean} enabled array of boolean per channel
- * @property {<Array.<number>} color array of rgb per channel
- * @property {<Array.<number>} specularColor array of rgb per channel
- * @property {<Array.<number>} emissiveColor array of rgb per channel
+ * @property {Array.<number>} color array of rgb per channel
+ * @property {Array.<number>} specularColor array of rgb per channel
+ * @property {Array.<number>} emissiveColor array of rgb per channel
  * @property {number} glossiness array of float per channel
  * @property {boolean} isosurfaceEnabled array of boolean per channel
  * @property {number} isovalue array of number per channel
