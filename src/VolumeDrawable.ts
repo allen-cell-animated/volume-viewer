@@ -44,6 +44,7 @@ export default class VolumeDrawable {
   private meshVolume: MeshVolume;
 
   private volumeRendering: VolumeRenderImpl;
+  private renderMode: RenderMode;
 
   private renderUpdateListener?: (iteration: number) => void;
 
@@ -83,11 +84,13 @@ export default class VolumeDrawable {
     options.renderMode = options.renderMode || RenderMode.RAYMARCH;
     switch (options.renderMode) {
       case RenderMode.PATHTRACE:
+        this.renderMode = RenderMode.PATHTRACE;
         this.volumeRendering = new PathTracedVolume(this.volume, this.settings);
         break;
       case RenderMode.SLICE: // default to raymarch even when slice is selected
       case RenderMode.RAYMARCH:
       default:
+        this.renderMode = RenderMode.RAYMARCH;
         this.volumeRendering = new RayMarchedAtlasVolume(this.volume, this.settings);
     }
 
@@ -270,7 +273,7 @@ export default class VolumeDrawable {
     this.settings.viewAxis = axis;
     this.settings.isOrtho = isOrthoAxis || false;
 
-    if (axis !== Axis.NONE && !(this.volumeRendering instanceof PathTracedVolume)) {
+    if (axis !== Axis.NONE && this.renderMode !== RenderMode.PATHTRACE) {
       this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
     }
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.ROI | SettingsFlags.VIEW);
@@ -305,12 +308,12 @@ export default class VolumeDrawable {
     // Force a volume render reset if we have switched to or from Z mode while raymarching is enabled.
     if (axis === Axis.Z) {
       // If currently in 3D raymarch mode, hotswap the 2D slice
-      if (this.volumeRendering instanceof RayMarchedAtlasVolume) {
+      if (this.renderMode === RenderMode.RAYMARCH) {
         this.setVolumeRendering(RenderMode.SLICE);
       }
     } else {
       // If in 2D slice mode, switch back to 3D raymarch mode
-      if (this.volumeRendering instanceof Atlas2DSlice) {
+      if (this.renderMode === RenderMode.SLICE) {
         this.setVolumeRendering(RenderMode.RAYMARCH);
       }
     }
@@ -339,7 +342,7 @@ export default class VolumeDrawable {
   }
 
   setOrthoThickness(value: number): void {
-    if (this.volumeRendering instanceof PathTracedVolume) {
+    if (this.renderMode === RenderMode.PATHTRACE) {
       return;
     }
     this.meshVolume.setOrthoThickness(value);
@@ -386,7 +389,7 @@ export default class VolumeDrawable {
 
     // TODO confirm sequence
     this.volumeRendering.doRender(canvas);
-    if (!(this.volumeRendering instanceof PathTracedVolume)) {
+    if (this.renderMode !== RenderMode.PATHTRACE) {
       this.meshVolume.doRender(canvas);
     }
   }
@@ -428,13 +431,13 @@ export default class VolumeDrawable {
 
   setRenderUpdateListener(callback?: (iteration: number) => void): void {
     this.renderUpdateListener = callback;
-    if (this.volumeRendering instanceof PathTracedVolume) {
+    if (this.renderMode === RenderMode.PATHTRACE) {
       (this.volumeRendering as PathTracedVolume).setRenderUpdateListener(callback);
     }
   }
 
   updateShadingMethod(isbrdf: boolean): void {
-    if (this.volumeRendering instanceof PathTracedVolume) {
+    if (this.renderMode === RenderMode.PATHTRACE) {
       (this.volumeRendering as PathTracedVolume).updateShadingMethod(isbrdf ? 1 : 0);
     }
   }
@@ -462,7 +465,6 @@ export default class VolumeDrawable {
   }
 
   onChannelLoaded(batch: number[]): void {
-    // this.volumeRendering.onChannelData(batch);
     this.meshVolume.onChannelData(batch);
 
     for (let j = 0; j < batch.length; ++j) {
@@ -614,19 +616,19 @@ export default class VolumeDrawable {
   }
 
   onStartControls(): void {
-    if (this.volumeRendering instanceof PathTracedVolume) {
+    if (this.renderMode === RenderMode.PATHTRACE) {
       (this.volumeRendering as PathTracedVolume).onStartControls();
     }
   }
 
   onChangeControls(): void {
-    if (this.volumeRendering instanceof PathTracedVolume) {
+    if (this.renderMode === RenderMode.PATHTRACE) {
       (this.volumeRendering as PathTracedVolume).onChangeControls();
     }
   }
 
   onEndControls(): void {
-    if (this.volumeRendering instanceof PathTracedVolume) {
+    if (this.renderMode === RenderMode.PATHTRACE) {
       (this.volumeRendering as PathTracedVolume).onEndControls();
     }
   }
@@ -636,7 +638,7 @@ export default class VolumeDrawable {
   }
 
   onCameraChanged(fov: number, focalDistance: number, apertureSize: number): void {
-    if (this.volumeRendering instanceof PathTracedVolume) {
+    if (this.renderMode === RenderMode.PATHTRACE) {
       (this.volumeRendering as PathTracedVolume).updateCamera(fov, focalDistance, apertureSize);
     }
   }
@@ -650,7 +652,7 @@ export default class VolumeDrawable {
   }
 
   updateLights(state: Light[]): void {
-    if (this.volumeRendering instanceof PathTracedVolume) {
+    if (this.renderMode === RenderMode.PATHTRACE) {
       (this.volumeRendering as PathTracedVolume).updateLights(state);
     }
   }
@@ -660,25 +662,14 @@ export default class VolumeDrawable {
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.SAMPLING);
   }
 
-  getCurrentRenderMode(): RenderMode {
-    if (this.volumeRendering instanceof PathTracedVolume) {
-      return RenderMode.PATHTRACE;
-    } else if (this.volumeRendering instanceof Atlas2DSlice) {
-      return RenderMode.SLICE;
-    }
-
-    return RenderMode.RAYMARCH;
-  }
-
-  setVolumeRendering(renderMode: RenderMode): void {
-    const currentRenderMode = this.getCurrentRenderMode();
+  setVolumeRendering(newRenderMode: RenderMode): void {
     // Skip reassignment of Pathtrace renderer if already using
-    if (renderMode === RenderMode.PATHTRACE && currentRenderMode === RenderMode.PATHTRACE) {
+    if (newRenderMode === RenderMode.PATHTRACE && this.renderMode === RenderMode.PATHTRACE) {
       return;
     }
 
     // remove old 3d object from scene
-    if (currentRenderMode === RenderMode.SLICE || currentRenderMode === RenderMode.RAYMARCH) {
+    if (this.renderMode === RenderMode.SLICE || this.renderMode === RenderMode.RAYMARCH) {
       this.sceneRoot.remove(this.meshVolume.get3dObject());
     }
     this.sceneRoot.remove(this.volumeRendering.get3dObject());
@@ -687,7 +678,7 @@ export default class VolumeDrawable {
     this.volumeRendering.cleanup();
 
     // create new
-    switch (renderMode) {
+    switch (newRenderMode) {
       case RenderMode.PATHTRACE:
         this.volumeRendering = new PathTracedVolume(this.volume, this.settings);
         this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
@@ -701,7 +692,7 @@ export default class VolumeDrawable {
         break;
     }
 
-    if (renderMode === RenderMode.RAYMARCH || renderMode === RenderMode.SLICE) {
+    if (newRenderMode === RenderMode.RAYMARCH || newRenderMode === RenderMode.SLICE) {
       if (this.renderUpdateListener) {
         this.renderUpdateListener(0);
       }
@@ -710,7 +701,7 @@ export default class VolumeDrawable {
 
     // add new 3d object to scene
     this.sceneRoot.add(this.volumeRendering.get3dObject());
-
+    this.renderMode = newRenderMode;
     this.fuse();
   }
 

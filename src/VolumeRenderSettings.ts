@@ -217,7 +217,7 @@ export class VolumeRenderSettingUtils {
    * share references with the original settings object.
    */
   public static clone(src: VolumeRenderSettings): VolumeRenderSettings {
-    const dst = {};
+    const dst = defaultVolumeRenderSettings(new Volume()); // initialize with empty volume
     for (const key of Object.keys(src)) {
       const val = src[key];
       if (val instanceof Array) {
