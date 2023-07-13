@@ -29,6 +29,9 @@ export enum Axis {
   X = "x",
   Y = "y",
   Z = "z",
+  /** Alias for NONE, indicates volumetric/3D mode */
+  _3D = "",
+  /** No current axis, indicates volumetric/3D mode */
   NONE = "",
 }
 
@@ -169,7 +172,7 @@ export class VolumeRenderSettingUtils {
       const v1 = o1[key];
       const v2 = o2[key];
       if (v1 instanceof Array) {
-        if (!this.compareArray(o1[key], o2[key])) {
+        if (!this.compareArray(v1, v2)) {
           return false;
         }
       } else if (v1 && v1.bmin !== undefined) {
@@ -180,12 +183,12 @@ export class VolumeRenderSettingUtils {
           return false;
         }
       } else if (v1 instanceof Vector3 || v1 instanceof Vector2 || v1 instanceof Euler) {
-        if (!v1.equals(o2[key])) {
+        if (!v1.equals(v2)) {
           return false;
         }
       } else {
         // number, boolean, string
-        if (v1 !== o2[key]) {
+        if (v1 !== v2) {
           return false;
         }
       }
@@ -223,10 +226,9 @@ export class VolumeRenderSettingUtils {
       if (val instanceof Array) {
         dst[key] = this.deepCopyArray(val);
       } else if (key === "bounds") {
-        // Bounds
-        dst["bounds"] = { bmax: new Vector3(), bmin: new Vector3() } as Bounds;
-        dst["bounds"].bmax = src.bounds.bmax.clone();
-        dst["bounds"].bmin = src.bounds.bmin.clone();
+        // must use key string here because Bounds is a type alias and not a class
+        dst.bounds.bmax = src.bounds.bmax.clone();
+        dst.bounds.bmin = src.bounds.bmin.clone();
       } else if (val instanceof Vector3 || val instanceof Vector2 || val instanceof Euler) {
         dst[key] = val.clone();
       } else if (val instanceof String) {
