@@ -43,9 +43,9 @@ self.onmessage = async (e: MessageEvent<FetchZarrMessage>) => {
   // assuming ZYX are the last three dimensions:
   const { minx, maxx, miny, maxy, minz, maxz } = e.data.spec;
   const sliceSpec: (Slice | number)[] = [
-    slice(minz || null, maxz),
-    slice(miny || null, maxy),
-    slice(minx || null, maxx),
+    slice(minz === undefined ? null : minz, maxz),
+    slice(miny === undefined ? null : miny, maxy),
+    slice(minx === undefined ? null : minx, maxx),
   ];
   if (channelIndex > -1) {
     sliceSpec.unshift(channelIndex);
