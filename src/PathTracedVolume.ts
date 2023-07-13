@@ -33,12 +33,7 @@ import { FUSE_DISABLED_RGB_COLOR, FuseChannel, isOrthographicCamera } from "./ty
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
-import {
-  VolumeRenderSettings,
-  defaultVolumeRenderSettings,
-  VolumeRenderSettingUtils,
-  SettingsFlags,
-} from "./VolumeRenderSettings";
+import { VolumeRenderSettings, defaultVolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings";
 import Channel from "./Channel";
 
 export default class PathTracedVolume implements VolumeRenderImpl {

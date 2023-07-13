@@ -29,12 +29,7 @@ import { ThreeJsPanel } from "./ThreeJsPanel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 
 import { FuseChannel } from "./types";
-import {
-  defaultVolumeRenderSettings,
-  VolumeRenderSettingUtils,
-  VolumeRenderSettings,
-  SettingsFlags,
-} from "./VolumeRenderSettings";
+import { defaultVolumeRenderSettings, VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 

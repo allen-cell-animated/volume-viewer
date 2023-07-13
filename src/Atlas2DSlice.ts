@@ -17,12 +17,7 @@ import {
 import { Channel, Volume } from ".";
 import { sliceFragmentShaderSrc, sliceShaderUniforms, sliceVertexShaderSrc } from "./constants/volumeSliceShader";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
-import {
-  SettingsFlags,
-  VolumeRenderSettingUtils,
-  VolumeRenderSettings,
-  defaultVolumeRenderSettings,
-} from "./VolumeRenderSettings";
+import { SettingsFlags, VolumeRenderSettings, defaultVolumeRenderSettings } from "./VolumeRenderSettings";
 import FusedChannelData from "./FusedChannelData";
 import { FuseChannel } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
