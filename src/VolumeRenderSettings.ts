@@ -29,9 +29,9 @@ export enum Axis {
   X = "x",
   Y = "y",
   Z = "z",
-  /** Alias for NONE, indicates volumetric/3D mode */
-  _3D = "",
-  /** No current axis, indicates volumetric/3D mode */
+  /** Alias for NONE, indicates 3D mode */
+  XYZ = "",
+  /** No current axis, indicates 3D mode */
   NONE = "",
 }
 

@@ -280,25 +280,23 @@ export default class VolumeDrawable {
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.ROI | SettingsFlags.VIEW);
   }
 
-  modeToAxis = {
-    X: Axis.X,
-    YZ: Axis.X,
-    Y: Axis.Y,
-    XZ: Axis.Y,
-    Z: Axis.Z,
-    XY: Axis.Z,
-    "3D": Axis._3D,
-  };
+  private modeStringToAxis(mode: string): Axis {
+    const modeToAxis = {
+      X: Axis.X,
+      YZ: Axis.X,
+      Y: Axis.Y,
+      XZ: Axis.Y,
+      Z: Axis.Z,
+      XY: Axis.Z,
+    };
+    return modeToAxis[mode] || Axis.NONE;
+  }
   /**
    * Sets the camera mode of the VolumeDrawable.
    * @param mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X", or "XZ" or "Y".
    */
   setViewMode(mode: string): void {
-    const axis = this.modeToAxis[mode];
-    if (axis === undefined) {
-      return;
-    }
-
+    const axis = this.modeStringToAxis(mode);
     this.viewMode = axis;
     // Force a volume render reset if we have switched to or from Z mode while raymarching is enabled.
     if (axis === Axis.Z) {
