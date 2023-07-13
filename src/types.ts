@@ -12,6 +12,9 @@ export interface FuseChannel {
   rgbColor: [number, number, number] | number;
 }
 
+/** If `FuseChannel.rgbColor` is this value, it is disabled from fusion. */
+export const FUSE_DISABLED_RGB_COLOR = 0;
+
 /**
  * Provide options to control the visual appearance of a Volume
  * @typedef {Object} VolumeChannelDisplayOptions
