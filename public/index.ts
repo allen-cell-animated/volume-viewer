@@ -1268,17 +1268,17 @@ function main() {
   const flipXBtn = document.getElementById("flipXBtn");
   flipXBtn?.addEventListener("click", () => {
     myState.flipX *= -1;
-    view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
+    view3D.setFlipVolume(myState.volume, myState.flipX as -1 | 1, myState.flipY, myState.flipZ);
   });
   const flipYBtn = document.getElementById("flipYBtn");
   flipYBtn?.addEventListener("click", () => {
     myState.flipY *= -1;
-    view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
+    view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY as -1 | 1, myState.flipZ);
   });
   const flipZBtn = document.getElementById("flipZBtn");
   flipZBtn?.addEventListener("click", () => {
     myState.flipZ *= -1;
-    view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
+    view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ as -1 | 1);
   });
   const playBtn = document.getElementById("playBtn");
   playBtn?.addEventListener("click", () => {
@@ -1350,7 +1350,7 @@ function main() {
   });
   zInput?.addEventListener("change", () => {
     goToZSlice(zInput?.valueAsNumber);
-  })
+  });
 
   const alignBtn = document.getElementById("xfBtn");
   alignBtn?.addEventListener("click", () => {

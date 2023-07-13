@@ -67,9 +67,9 @@ export interface State {
 
   backgroundColor: [number, number, number];
 
-  flipX: number;
-  flipY: number;
-  flipZ: number;
+  flipX: -1 | 1;
+  flipY: -1 | 1;
+  flipZ: -1 | 1;
 
   channelFolderNames: string[];
   infoObj: ImageInfo;
