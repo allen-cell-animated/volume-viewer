@@ -157,10 +157,11 @@ class TiffLoader implements IVolumeLoader {
     return vol;
   }
 
-  async loadVolumeData(vol: Volume, onChannelLoaded: PerChannelCallback): Promise<void> {
+  async loadVolumeData(vol: Volume, onChannelLoaded: PerChannelCallback, explicitLoadSpec?: LoadSpec): Promise<void> {
+    const url = explicitLoadSpec?.url || vol.loadSpec.url;
     //
     if (this.bytesPerSample === undefined || this.dimensionOrder === undefined) {
-      const dims = await getDimsFromUrl(vol.loadSpec.url);
+      const dims = await getDimsFromUrl(url);
 
       this.dimensionOrder = dims.dimensionorder;
       this.bytesPerSample = getBytesPerSample(dims.pixeltype);
@@ -180,7 +181,7 @@ class TiffLoader implements IVolumeLoader {
         sizez: imageInfo.tiles,
         dimensionOrder: this.dimensionOrder,
         bytesPerSample: this.bytesPerSample,
-        url: vol.loadSpec.url,
+        url: url,
       };
       const worker = new Worker(new URL("../workers/FetchTiffWorker", import.meta.url));
       worker.onmessage = function (e) {
@@ -189,7 +190,7 @@ class TiffLoader implements IVolumeLoader {
         vol.setChannelDataFromVolume(channel, u8);
         if (onChannelLoaded) {
           // make up a unique name? or have caller pass this in?
-          onChannelLoaded(vol.loadSpec.url, vol, channel);
+          onChannelLoaded(url, vol, channel);
         }
         worker.terminate();
       };

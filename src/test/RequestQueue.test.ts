@@ -48,18 +48,22 @@ describe("test RequestQueue", () => {
       const rq = new RequestQueue();
       const startTime = Date.now();
       const delayMs = 15;
-      const immediatePromise = rq.addRequest("a", async () => {return;});
-      const delayedPromise = rq.addRequest("b", async () => {return;}, delayMs);
+      const immediatePromise = rq.addRequest("a", () => Promise.resolve());
+      const delayedPromise = rq.addRequest("b", () => Promise.resolve(), delayMs);
 
       const promises: Promise<unknown>[] = [];
-      promises.push(immediatePromise.then(() => {
-        expect(Date.now() - startTime).to.be.lessThan(delayMs);
-      }));
-      promises.push(delayedPromise.then(() => {
-        expect(Date.now() - startTime).to.be.greaterThanOrEqual(delayMs);
-      }));
+      promises.push(
+        immediatePromise.then(() => {
+          expect(Date.now() - startTime).to.be.lessThan(delayMs);
+        })
+      );
+      promises.push(
+        delayedPromise.then(() => {
+          expect(Date.now() - startTime).to.be.greaterThanOrEqual(delayMs);
+        })
+      );
       await Promise.all(promises);
-    })
+    });
 
     // Test that same promise is returned
 
@@ -329,7 +333,7 @@ describe("test RequestQueue", () => {
       expect(count).to.equal(0);
     });
 
-    async function mockLoader(loadSpec: LoadSpec, maxDelayMs = 10.0): Promise<TypedArray> {
+    async function mockLoader(loadSpec: Required<LoadSpec>, maxDelayMs = 10.0): Promise<TypedArray> {
       const x = loadSpec.maxx - loadSpec.minx;
       const y = loadSpec.maxy - loadSpec.miny;
       const z = loadSpec.maxz - loadSpec.minz;
@@ -349,7 +353,7 @@ describe("test RequestQueue", () => {
       frames: number,
       xDim: number,
       yDim: number,
-      action: (LoadSpec) => Promise<T>
+      action: (loadSpec: Required<LoadSpec>) => Promise<T>
     ): Request<T>[] {
       const requests: Request<T>[] = [];
       for (let i = startingFrame; i < startingFrame + frames; i++) {
@@ -364,7 +368,7 @@ describe("test RequestQueue", () => {
         requests.push({
           key: loadSpec.toString(),
           requestAction: () => {
-            return action(loadSpec);
+            return action(loadSpec as Required<LoadSpec>);
           },
         });
       }
@@ -379,10 +383,10 @@ describe("test RequestQueue", () => {
       const maxDelayMs = 10;
       let workCount = 0;
 
-      const action = async (loadSpec: LoadSpec) => {
+      const action = async (loadSpec: Required<LoadSpec>) => {
         // Check if the work we were going to do has been cancelled.
         if (rq.hasRequest(loadSpec.toString())) {
-          const ret = await mockLoader(loadSpec, maxDelayMs)
+          const ret = await mockLoader(loadSpec, maxDelayMs);
           workCount++;
           return ret;
         }
@@ -394,7 +398,7 @@ describe("test RequestQueue", () => {
       // Allow some but not all requests to complete
       await sleep(maxDelayMs * 0.5);
       rq.cancelAllRequests();
-      await sleep(maxDelayMs);  // Wait for all async actions to finish
+      await sleep(maxDelayMs); // Wait for all async actions to finish
       expect(workCount).to.be.greaterThan(0);
       expect(workCount).to.be.lessThan(numFrames - 1);
 

@@ -49,8 +49,6 @@ type OMEMultiscale = {
   metadata?: Record<string, unknown>;
 };
 
-const DOWNSAMPLE_Z = 1; // z/downsampleZ is number of z slices in reduced volume
-
 function getScale({ coordinateTransformations }: OMEDataset | OMEMultiscale): number[] {
   if (coordinateTransformations === undefined) {
     console.log("ERROR: no coordinate transformations for scale level");
@@ -276,8 +274,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const tz = multiscaleShape[spatialAxes[0]];
 
     // compute rows and cols and atlas width and ht, given tw and th
-    const loadedZ = Math.ceil(tz / DOWNSAMPLE_Z);
-    const { nrows, ncols } = computePackedAtlasDims(loadedZ, tw, th);
+    const { nrows, ncols } = computePackedAtlasDims(tz, tw, th);
     const atlaswidth = ncols * tw;
     const atlasheight = nrows * th;
     console.log("atlas width and height: " + atlaswidth + " " + atlasheight);
@@ -299,7 +296,7 @@ class OMEZarrLoader implements IVolumeLoader {
       channel_names: chnames,
       rows: nrows,
       cols: ncols,
-      tiles: loadedZ, // TODO original z????
+      tiles: tz,
       tile_width: tw,
       tile_height: th,
       // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
@@ -308,7 +305,7 @@ class OMEZarrLoader implements IVolumeLoader {
       atlas_height: atlasheight,
       pixel_size_x: scale5d[spatialAxes[2]],
       pixel_size_y: scale5d[spatialAxes[1]],
-      pixel_size_z: scale5d[spatialAxes[0]] * DOWNSAMPLE_Z,
+      pixel_size_z: scale5d[spatialAxes[0]],
       pixel_size_unit: spaceUnitSymbol,
       name: displayMetadata.name,
       version: displayMetadata.version,
@@ -328,8 +325,8 @@ class OMEZarrLoader implements IVolumeLoader {
     return vol;
   }
 
-  async loadVolumeData(vol: Volume, onChannelLoaded: PerChannelCallback): Promise<void> {
-    const { loadSpec } = vol;
+  async loadVolumeData(vol: Volume, onChannelLoaded: PerChannelCallback, explicitLoadSpec?: LoadSpec): Promise<void> {
+    const loadSpec = explicitLoadSpec || vol.loadSpec;
     const { channels, times } = vol.imageInfo;
 
     if (this.multiscalePath === undefined || this.hasC === undefined || this.hasT === undefined) {
@@ -353,7 +350,7 @@ class OMEZarrLoader implements IVolumeLoader {
     // do each channel on a worker
     for (let i = 0; i < channels; ++i) {
       const worker = new Worker(new URL("../workers/FetchZarrWorker", import.meta.url));
-      worker.onmessage = function (e) {
+      worker.onmessage = (e) => {
         const u8 = e.data.data;
         const channel = e.data.channel;
         vol.setChannelDataFromVolume(channel, u8);
@@ -363,14 +360,15 @@ class OMEZarrLoader implements IVolumeLoader {
         }
         worker.terminate();
       };
-      worker.onerror = function (e) {
+      worker.onerror = (e) => {
         alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
       };
       worker.postMessage({
-        urlStore: loadSpec.url,
-        time: this.hasT ? Math.min(loadSpec.time, times) : -1,
+        spec: {
+          ...loadSpec,
+          time: this.hasT ? Math.min(loadSpec.time, times) : -1,
+        },
         channel: this.hasC ? i : -1,
-        downsampleZ: DOWNSAMPLE_Z,
         path: storepath,
       });
     }
