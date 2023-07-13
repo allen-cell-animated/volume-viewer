@@ -273,37 +273,32 @@ export default class VolumeDrawable {
     this.settings.viewAxis = axis;
     this.settings.isOrtho = isOrthoAxis || false;
 
+    // Configure mesh volume when in an orthographic axis alignment
     if (axis !== Axis.NONE && this.renderMode !== RenderMode.PATHTRACE) {
       this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
     }
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.ROI | SettingsFlags.VIEW);
   }
 
-  private modeStringToAxis(mode: string): Axis {
-    let axis: Axis = Axis.NONE;
-    switch (mode) {
-      case "YZ":
-      case "X":
-        axis = Axis.X;
-        break;
-      case "XZ":
-      case "Y":
-        axis = Axis.Y;
-        break;
-      case "XY":
-      case "Z":
-        axis = Axis.Z;
-        break;
-    }
-    return axis;
-  }
-
+  modeToAxis = {
+    X: Axis.X,
+    YZ: Axis.X,
+    Y: Axis.Y,
+    XZ: Axis.Y,
+    Z: Axis.Z,
+    XY: Axis.Z,
+    "3D": Axis._3D,
+  };
   /**
    * Sets the camera mode of the VolumeDrawable.
    * @param mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X", or "XZ" or "Y".
    */
   setViewMode(mode: string): void {
-    const axis = this.modeStringToAxis(mode);
+    const axis = this.modeToAxis[mode];
+    if (axis === undefined) {
+      return;
+    }
+
     this.viewMode = axis;
     // Force a volume render reset if we have switched to or from Z mode while raymarching is enabled.
     if (axis === Axis.Z) {
