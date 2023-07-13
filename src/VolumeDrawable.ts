@@ -6,7 +6,7 @@ import PathTracedVolume from "./PathTracedVolume";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
 import Volume from "./Volume";
 import { VolumeDisplayOptions, VolumeChannelDisplayOptions } from "./types";
-import { FuseChannel } from "./types";
+import { FuseChannel, RenderMode } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import Channel from "./Channel";
@@ -33,7 +33,6 @@ export const colorObjectToArray = ({ r, g, b }: ColorObject): ColorArray => [r, 
 
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 export default class VolumeDrawable {
-  public PT: boolean;
   public volume: Volume;
   private settings: VolumeRenderSettings;
   private onChannelDataReadyCallback?: () => void;
@@ -44,19 +43,11 @@ export default class VolumeDrawable {
   public sceneRoot: Object3D;
   private meshVolume: MeshVolume;
 
-  // these should never coexist simultaneously. always one or the other is present
-  // this is a remnant of a pre-typescript world
-  private pathTracedVolume?: PathTracedVolume;
-  private rayMarchedAtlasVolume?: RayMarchedAtlasVolume;
-  private atlas2DSlice?: Atlas2DSlice;
-
   private volumeRendering: VolumeRenderImpl;
 
   private renderUpdateListener?: (iteration: number) => void;
 
   constructor(volume: Volume, options: VolumeDisplayOptions) {
-    this.PT = !!options.renderMode;
-
     // THE VOLUME DATA
     this.volume = volume;
     this.settings = defaultVolumeRenderSettings(volume);
@@ -89,16 +80,21 @@ export default class VolumeDrawable {
 
     this.meshVolume = new MeshVolume(this.volume);
 
-    if (this.PT) {
-      this.pathTracedVolume = new PathTracedVolume(this.volume, this.settings);
-      this.volumeRendering = this.pathTracedVolume;
-    } else {
-      this.rayMarchedAtlasVolume = new RayMarchedAtlasVolume(this.volume, this.settings);
-      this.volumeRendering = this.rayMarchedAtlasVolume;
+    options.renderMode = options.renderMode || RenderMode.RAYMARCH;
+    switch (options.renderMode) {
+      case RenderMode.PATHTRACE:
+        this.volumeRendering = new PathTracedVolume(this.volume, this.settings);
+        break;
+      case RenderMode.SLICE: // default to raymarch even when slice is selected
+      case RenderMode.RAYMARCH:
+      default:
+        this.volumeRendering = new RayMarchedAtlasVolume(this.volume, this.settings);
     }
 
     // draw meshes first, and volume last, for blending and depth test reasons with raymarch
-    !this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());
+    if (options.renderMode === RenderMode.RAYMARCH || options.renderMode === RenderMode.SLICE) {
+      this.sceneRoot.add(this.meshVolume.get3dObject());
+    }
     this.sceneRoot.add(this.volumeRendering.get3dObject());
     // draw meshes last (as overlay) for pathtrace? (or not at all?)
     //this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());
@@ -144,7 +140,7 @@ export default class VolumeDrawable {
     }
 
     if (options.renderMode !== undefined) {
-      this.setVolumeRendering(!!options.renderMode);
+      this.setVolumeRendering(options.renderMode);
     }
     if (options.primaryRayStepSize !== undefined || options.secondaryRayStepSize !== undefined) {
       this.setRayStepSizes(options.primaryRayStepSize, options.secondaryRayStepSize);
@@ -274,8 +270,8 @@ export default class VolumeDrawable {
     this.settings.viewAxis = axis;
     this.settings.isOrtho = isOrthoAxis || false;
 
-    if (axis !== Axis.NONE) {
-      !this.PT && this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
+    if (axis !== Axis.NONE && !(this.volumeRendering instanceof PathTracedVolume)) {
+      this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
     }
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.ROI | SettingsFlags.VIEW);
   }
@@ -309,13 +305,13 @@ export default class VolumeDrawable {
     // Force a volume render reset if we have switched to or from Z mode while raymarching is enabled.
     if (axis === Axis.Z) {
       // If currently in 3D raymarch mode, hotswap the 2D slice
-      if (this.rayMarchedAtlasVolume && !this.atlas2DSlice) {
-        this.setVolumeRendering(false);
+      if (this.volumeRendering instanceof RayMarchedAtlasVolume) {
+        this.setVolumeRendering(RenderMode.SLICE);
       }
     } else {
       // If in 2D slice mode, switch back to 3D raymarch mode
-      if (!this.rayMarchedAtlasVolume && this.atlas2DSlice) {
-        this.setVolumeRendering(false);
+      if (this.volumeRendering instanceof Atlas2DSlice) {
+        this.setVolumeRendering(RenderMode.RAYMARCH);
       }
     }
     if (this.settings.viewAxis !== axis) {
@@ -343,7 +339,10 @@ export default class VolumeDrawable {
   }
 
   setOrthoThickness(value: number): void {
-    !this.PT && this.meshVolume.setOrthoThickness(value);
+    if (this.volumeRendering instanceof PathTracedVolume) {
+      return;
+    }
+    this.meshVolume.setOrthoThickness(value);
     // No settings update because ortho thickness is calculated in the renderers
   }
 
@@ -387,7 +386,9 @@ export default class VolumeDrawable {
 
     // TODO confirm sequence
     this.volumeRendering.doRender(canvas);
-    !this.PT && this.meshVolume.doRender(canvas);
+    if (!(this.volumeRendering instanceof PathTracedVolume)) {
+      this.meshVolume.doRender(canvas);
+    }
   }
 
   // If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
@@ -427,14 +428,14 @@ export default class VolumeDrawable {
 
   setRenderUpdateListener(callback?: (iteration: number) => void): void {
     this.renderUpdateListener = callback;
-    if (this.PT && this.pathTracedVolume) {
-      this.pathTracedVolume.setRenderUpdateListener(callback);
+    if (this.volumeRendering instanceof PathTracedVolume) {
+      (this.volumeRendering as PathTracedVolume).setRenderUpdateListener(callback);
     }
   }
 
   updateShadingMethod(isbrdf: boolean): void {
-    if (this.PT && this.pathTracedVolume) {
-      this.pathTracedVolume.updateShadingMethod(isbrdf ? 1 : 0);
+    if (this.volumeRendering instanceof PathTracedVolume) {
+      (this.volumeRendering as PathTracedVolume).updateShadingMethod(isbrdf ? 1 : 0);
     }
   }
 
@@ -613,15 +614,21 @@ export default class VolumeDrawable {
   }
 
   onStartControls(): void {
-    this.PT && this.pathTracedVolume && this.pathTracedVolume.onStartControls();
+    if (this.volumeRendering instanceof PathTracedVolume) {
+      (this.volumeRendering as PathTracedVolume).onStartControls();
+    }
   }
 
   onChangeControls(): void {
-    this.PT && this.pathTracedVolume && this.pathTracedVolume.onChangeControls();
+    if (this.volumeRendering instanceof PathTracedVolume) {
+      (this.volumeRendering as PathTracedVolume).onChangeControls();
+    }
   }
 
   onEndControls(): void {
-    this.PT && this.pathTracedVolume && this.pathTracedVolume.onEndControls();
+    if (this.volumeRendering instanceof PathTracedVolume) {
+      (this.volumeRendering as PathTracedVolume).onEndControls();
+    }
   }
 
   onResetCamera(): void {
@@ -629,7 +636,9 @@ export default class VolumeDrawable {
   }
 
   onCameraChanged(fov: number, focalDistance: number, apertureSize: number): void {
-    this.PT && this.pathTracedVolume && this.pathTracedVolume.updateCamera(fov, focalDistance, apertureSize);
+    if (this.volumeRendering instanceof PathTracedVolume) {
+      (this.volumeRendering as PathTracedVolume).updateCamera(fov, focalDistance, apertureSize);
+    }
   }
 
   // values are in 0..1 range
@@ -641,7 +650,9 @@ export default class VolumeDrawable {
   }
 
   updateLights(state: Light[]): void {
-    this.PT && this.pathTracedVolume && this.pathTracedVolume.updateLights(state);
+    if (this.volumeRendering instanceof PathTracedVolume) {
+      (this.volumeRendering as PathTracedVolume).updateLights(state);
+    }
   }
 
   setPixelSamplingRate(value: number): void {
@@ -649,48 +660,55 @@ export default class VolumeDrawable {
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.SAMPLING);
   }
 
-  setVolumeRendering(isPathtrace: boolean): void {
-    if (isPathtrace === this.PT && this.volumeRendering === this.pathTracedVolume) {
+  getCurrentRenderMode(): RenderMode {
+    if (this.volumeRendering instanceof PathTracedVolume) {
+      return RenderMode.PATHTRACE;
+    } else if (this.volumeRendering instanceof Atlas2DSlice) {
+      return RenderMode.SLICE;
+    }
+
+    return RenderMode.RAYMARCH;
+  }
+
+  setVolumeRendering(renderMode: RenderMode): void {
+    const currentRenderMode = this.getCurrentRenderMode();
+    // Skip reassignment of Pathtrace renderer if already using
+    if (renderMode === RenderMode.PATHTRACE && currentRenderMode === RenderMode.PATHTRACE) {
       return;
     }
 
     // remove old 3d object from scene
-    isPathtrace && this.sceneRoot.remove(this.meshVolume.get3dObject());
+    if (currentRenderMode === RenderMode.SLICE || currentRenderMode === RenderMode.RAYMARCH) {
+      this.sceneRoot.remove(this.meshVolume.get3dObject());
+    }
     this.sceneRoot.remove(this.volumeRendering.get3dObject());
 
     // destroy old resources.
     this.volumeRendering.cleanup();
 
-    this.atlas2DSlice = undefined;
-    this.pathTracedVolume = undefined;
-    this.rayMarchedAtlasVolume = undefined;
-
     // create new
-    if (isPathtrace) {
-      this.pathTracedVolume = new PathTracedVolume(this.volume, this.settings);
-      this.volumeRendering = this.pathTracedVolume;
-      this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
-    } else {
-      // Quietly swap the RayMarchedAtlasVolume for a 2D slice renderer when our render mode
-      // is XY/Z mode.
-      if (this.viewMode === Axis.Z) {
-        this.atlas2DSlice = new Atlas2DSlice(this.volume, this.settings);
-        this.volumeRendering = this.atlas2DSlice;
-      } else {
-        this.rayMarchedAtlasVolume = new RayMarchedAtlasVolume(this.volume, this.settings);
-        this.volumeRendering = this.rayMarchedAtlasVolume;
-      }
+    switch (renderMode) {
+      case RenderMode.PATHTRACE:
+        this.volumeRendering = new PathTracedVolume(this.volume, this.settings);
+        this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
+        break;
+      case RenderMode.SLICE:
+        this.volumeRendering = new Atlas2DSlice(this.volume, this.settings);
+        break;
+      case RenderMode.RAYMARCH:
+      default:
+        this.volumeRendering = new RayMarchedAtlasVolume(this.volume, this.settings);
+        break;
+    }
 
+    if (renderMode === RenderMode.RAYMARCH || renderMode === RenderMode.SLICE) {
       if (this.renderUpdateListener) {
         this.renderUpdateListener(0);
       }
+      this.sceneRoot.add(this.meshVolume.get3dObject());
     }
 
-    // ensure transforms on new volume representation are up to date
-    this.PT = isPathtrace;
-
     // add new 3d object to scene
-    !this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());
     this.sceneRoot.add(this.volumeRendering.get3dObject());
 
     this.fuse();

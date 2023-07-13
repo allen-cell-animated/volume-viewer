@@ -40,6 +40,12 @@ export interface VolumeChannelDisplayOptions {
   isosurfaceOpacity?: number;
 }
 
+export enum RenderMode {
+  RAYMARCH = 0,
+  PATHTRACE = 1,
+  SLICE = 2,
+}
+
 /**
  * Provide options to control the visual appearance of a Volume
  * @typedef {Object} VolumeDisplayOptions
@@ -72,7 +78,7 @@ export interface VolumeDisplayOptions {
   clipBounds?: [number, number, number, number, number, number];
   scale?: [number, number, number];
   maxProjection?: boolean;
-  renderMode?: number;
+  renderMode?: RenderMode;
   shadingMethod?: number;
   gamma?: [number, number, number];
   primaryRayStepSize?: number;
