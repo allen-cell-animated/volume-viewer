@@ -8096,17 +8096,13 @@ var LoadSpec = /*#__PURE__*/function () {
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "subpath", "");
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "scene", 0);
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "time", 0);
-    // sub-region; if not specified, the entire volume is loaded
-    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "minx", 0);
-    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "miny", 0);
-    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "minz", 0);
-    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "maxx", 0);
-    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "maxy", 0);
-    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "maxz", 0);
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(LoadSpec, [{
     key: "toString",
-    value: function toString() {
+    value:
+    // sub-region; if not specified, the entire volume is loaded
+
+    function toString() {
       return "".concat(this.url, ":").concat(this.subpath).concat(this.scene, ":").concat(this.time, ":x(").concat(this.minx, ",").concat(this.maxx, "):y(").concat(this.miny, ",").concat(this.maxy, "):z(").concat(this.minz, ",").concat(this.maxz, ")");
     }
   }]);
@@ -8269,28 +8265,28 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
   }, {
     key: "loadVolumeData",
     value: function () {
-      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee4(vol, onChannelLoaded) {
-        var urlPrefix;
+      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee4(vol, onChannelLoaded, explicitLoadSpec) {
+        var loadSpec, urlPrefix;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee4$(_context4) {
           while (1) switch (_context4.prev = _context4.next) {
             case 0:
-              // if you need to adjust image paths prior to download,
+              loadSpec = explicitLoadSpec || vol.loadSpec; // if you need to adjust image paths prior to download,
               // now is the time to do it.
               // Try to figure out the urlPrefix from the LoadSpec.
               // For this format we assume the image data is in the same directory as the json file.
               // This regex removes everything after the last slash, so the url had better be simple.
-              urlPrefix = vol.loadSpec.url.replace(/[^/]*$/, "");
+              urlPrefix = loadSpec.url.replace(/[^/]*$/, "");
               this.imageArray.forEach(function (element) {
                 element.name = urlPrefix + element.name;
               });
               JsonImageInfoLoader.loadVolumeAtlasData(vol, this.imageArray, onChannelLoaded);
-            case 3:
+            case 4:
             case "end":
               return _context4.stop();
           }
         }, _callee4, this);
       }));
-      function loadVolumeData(_x4, _x5) {
+      function loadVolumeData(_x4, _x5, _x6) {
         return _loadVolumeData.apply(this, arguments);
       }
       return loadVolumeData;
@@ -8398,18 +8394,22 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   OMEZarrLoader: () => (/* binding */ OMEZarrLoader)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
-/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
-/* harmony import */ var zarr__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! zarr */ "./node_modules/zarr/zarr.mjs");
+/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
+/* harmony import */ var zarr__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! zarr */ "./node_modules/zarr/zarr.mjs");
 
 
 
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
 
 
 
@@ -8417,8 +8417,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 // https://ngff.openmicroscopy.org/latest/#multiscale-md
-
-var DOWNSAMPLE_Z = 1; // z/downsampleZ is number of z slices in reduced volume
 
 function getScale(_ref) {
   var coordinateTransformations = _ref.coordinateTransformations;
@@ -8496,13 +8494,13 @@ function fetchShapeOfLevel(_x, _x2, _x3) {
   return _fetchShapeOfLevel.apply(this, arguments);
 }
 function _fetchShapeOfLevel() {
-  _fetchShapeOfLevel = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee5(store, imagegroup, multiscale) {
+  _fetchShapeOfLevel = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_3__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee5(store, imagegroup, multiscale) {
     var level, shape;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee5$(_context6) {
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee5$(_context6) {
       while (1) switch (_context6.prev = _context6.next) {
         case 0:
           _context6.next = 2;
-          return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openArray)({
+          return (0,zarr__WEBPACK_IMPORTED_MODULE_8__.openArray)({
             store: store,
             path: imagegroup + "/" + multiscale.path,
             mode: "r"
@@ -8523,9 +8521,9 @@ function pickLevelToLoad(_x4, _x5, _x6, _x7) {
   return _pickLevelToLoad.apply(this, arguments);
 }
 function _pickLevelToLoad() {
-  _pickLevelToLoad = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee7(multiscale, store, loadSpec, cachedSpatialAxes) {
+  _pickLevelToLoad = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_3__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee7(multiscale, store, loadSpec, cachedSpatialAxes) {
     var datasets, axes, numlevels, spatialAxes, axisTCZYX, shapePromises, spatialDims, levelToLoad, i, optimalLevel;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee7$(_context8) {
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee7$(_context8) {
       while (1) switch (_context8.prev = _context8.next) {
         case 0:
           datasets = multiscale.datasets, axes = multiscale.axes;
@@ -8537,9 +8535,9 @@ function _pickLevelToLoad() {
             spatialAxes = findSpatialAxesZYX(axisTCZYX);
           }
           shapePromises = datasets.map( /*#__PURE__*/function () {
-            var _ref3 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee6(dataset) {
+            var _ref3 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_3__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee6(dataset) {
               var shape;
-              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee6$(_context7) {
+              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee6$(_context7) {
                 while (1) switch (_context7.prev = _context7.next) {
                   case 0:
                     _context7.next = 2;
@@ -8556,7 +8554,7 @@ function _pickLevelToLoad() {
                 }
               }, _callee6);
             }));
-            return function (_x13) {
+            return function (_x14) {
               return _ref3.apply(this, arguments);
             };
           }());
@@ -8583,7 +8581,7 @@ function _pickLevelToLoad() {
           _context8.next = 9;
           break;
         case 16:
-          optimalLevel = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.estimateLevelForAtlas)(spatialDims, 2048); // assume all levels are decreasing in size.  If a larger level is optimal then use it:
+          optimalLevel = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.estimateLevelForAtlas)(spatialDims, 2048); // assume all levels are decreasing in size.  If a larger level is optimal then use it:
           if (!(optimalLevel < levelToLoad)) {
             _context8.next = 21;
             break;
@@ -8601,20 +8599,20 @@ function _pickLevelToLoad() {
 }
 var OMEZarrLoader = /*#__PURE__*/function () {
   function OMEZarrLoader() {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, OMEZarrLoader);
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, OMEZarrLoader);
   }
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(OMEZarrLoader, [{
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(OMEZarrLoader, [{
     key: "loadDims",
     value: function () {
-      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(loadSpec) {
+      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_3__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee2(loadSpec) {
         var store, imagegroup, data, allmetadata, imageIndex, multiscales, axes, axisTCZYX, spatialAxes, unitName, unitSymbol, dimsPromises;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee2$(_context2) {
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee2$(_context2) {
           while (1) switch (_context2.prev = _context2.next) {
             case 0:
-              store = new zarr__WEBPACK_IMPORTED_MODULE_7__.HTTPStore(loadSpec.url);
+              store = new zarr__WEBPACK_IMPORTED_MODULE_8__.HTTPStore(loadSpec.url);
               imagegroup = loadSpec.subpath;
               _context2.next = 4;
-              return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openGroup)(store, imagegroup, "r");
+              return (0,zarr__WEBPACK_IMPORTED_MODULE_8__.openGroup)(store, imagegroup, "r");
             case 4:
               data = _context2.sent;
               _context2.next = 7;
@@ -8628,11 +8626,11 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               axisTCZYX = remapAxesToTCZYX(axes); // ZYX
               spatialAxes = findSpatialAxesZYX(axisTCZYX); // Assume all axes have the same units - we have no means of storing per-axis unit symbols
               unitName = axes[spatialAxes[2]].unit;
-              unitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.unitNameToSymbol)(unitName) || unitName || "";
+              unitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.unitNameToSymbol)(unitName) || unitName || "";
               dimsPromises = multiscales.map( /*#__PURE__*/function () {
-                var _ref2 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(multiscale) {
+                var _ref2 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_3__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(multiscale) {
                   var shape, scale5d, d, i;
-                  return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
+                  return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee$(_context) {
                     while (1) switch (_context.prev = _context.next) {
                       case 0:
                         _context.next = 2;
@@ -8643,7 +8641,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                           console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
                         }
                         scale5d = getScale(multiscale);
-                        d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__.VolumeDims();
+                        d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__.VolumeDims();
                         d.subpath = "";
                         d.shape = [1, 1, 1, 1, 1];
                         for (i = 0; i < d.shape.length; ++i) {
@@ -8680,15 +8678,15 @@ var OMEZarrLoader = /*#__PURE__*/function () {
   }, {
     key: "createVolume",
     value: function () {
-      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee3(loadSpec) {
-        var store, imagegroup, data, allmetadata, imageIndex, multiscale, datasets, axes, axisTCZYX, spatialAxes, spaceUnitName, spaceUnitSymbol, timeUnitName, timeUnitSymbol, levelToLoad, dataset, level, multiscaleShape, channels, sizeT, scale5d, timeScale, tw, th, tz, loadedZ, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, i, shape0, imgdata, vol;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee3$(_context3) {
+      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_3__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(loadSpec) {
+        var store, imagegroup, data, allmetadata, imageIndex, multiscale, datasets, axes, axisTCZYX, spatialAxes, spaceUnitName, spaceUnitSymbol, timeUnitName, timeUnitSymbol, levelToLoad, dataset, level, multiscaleShape, channels, sizeT, scale5d, timeScale, tw, th, tz, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, i, shape0, imgdata, vol;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee3$(_context3) {
           while (1) switch (_context3.prev = _context3.next) {
             case 0:
-              store = new zarr__WEBPACK_IMPORTED_MODULE_7__.HTTPStore(loadSpec.url);
+              store = new zarr__WEBPACK_IMPORTED_MODULE_8__.HTTPStore(loadSpec.url);
               imagegroup = loadSpec.subpath;
               _context3.next = 4;
-              return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openGroup)(store, imagegroup, "r");
+              return (0,zarr__WEBPACK_IMPORTED_MODULE_8__.openGroup)(store, imagegroup, "r");
             case 4:
               data = _context3.sent;
               _context3.next = 7;
@@ -8705,9 +8703,9 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               // ZYX
               spatialAxes = findSpatialAxesZYX(axisTCZYX); // Assume all axes have the same units - we have no means of storing per-axis unit symbols
               spaceUnitName = axes[spatialAxes[2]].unit;
-              spaceUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
+              spaceUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
               timeUnitName = this.hasT ? axes[axisTCZYX[0]].unit : undefined;
-              timeUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
+              timeUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
               _context3.next = 21;
               return pickLevelToLoad(multiscale, store, loadSpec);
             case 21:
@@ -8717,7 +8715,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
 
               // get the shape for the level we want to load
               _context3.next = 26;
-              return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openArray)({
+              return (0,zarr__WEBPACK_IMPORTED_MODULE_8__.openArray)({
                 store: store,
                 path: imagegroup + "/" + dataset.path,
                 mode: "r"
@@ -8735,8 +8733,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               tw = multiscaleShape[spatialAxes[2]];
               th = multiscaleShape[spatialAxes[1]];
               tz = multiscaleShape[spatialAxes[0]]; // compute rows and cols and atlas width and ht, given tw and th
-              loadedZ = Math.ceil(tz / DOWNSAMPLE_Z);
-              _computePackedAtlasDi = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.computePackedAtlasDims)(loadedZ, tw, th), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols;
+              _computePackedAtlasDi = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.computePackedAtlasDims)(tz, tw, th), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols;
               atlaswidth = ncols * tw;
               atlasheight = nrows * th;
               console.log("atlas width and height: " + atlaswidth + " " + atlasheight);
@@ -8747,9 +8744,9 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               }
 
               // get shape of level 0
-              _context3.next = 46;
+              _context3.next = 45;
               return fetchShapeOfLevel(store, loadSpec.subpath, datasets[0]);
-            case 46:
+            case 45:
               shape0 = _context3.sent;
               /* eslint-disable @typescript-eslint/naming-convention */
               imgdata = {
@@ -8759,8 +8756,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 channel_names: chnames,
                 rows: nrows,
                 cols: ncols,
-                tiles: loadedZ,
-                // TODO original z????
+                tiles: tz,
                 tile_width: tw,
                 tile_height: th,
                 // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
@@ -8769,7 +8765,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 atlas_height: atlasheight,
                 pixel_size_x: scale5d[spatialAxes[2]],
                 pixel_size_y: scale5d[spatialAxes[1]],
-                pixel_size_z: scale5d[spatialAxes[0]] * DOWNSAMPLE_Z,
+                pixel_size_z: scale5d[spatialAxes[0]],
                 pixel_size_unit: spaceUnitSymbol,
                 name: displayMetadata.name,
                 version: displayMetadata.version,
@@ -8783,10 +8779,10 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               };
               /* eslint-enable @typescript-eslint/naming-convention */
               // got some data, now let's construct the volume.
-              vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata, loadSpec);
-              vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.buildDefaultMetadata)(imgdata);
+              vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imgdata, loadSpec);
+              vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imgdata);
               return _context3.abrupt("return", vol);
-            case 51:
+            case 50:
             case "end":
               return _context3.stop();
           }
@@ -8800,21 +8796,21 @@ var OMEZarrLoader = /*#__PURE__*/function () {
   }, {
     key: "loadVolumeData",
     value: function () {
-      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_2__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee4(vol, onChannelLoaded) {
+      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_3__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee4(vol, onChannelLoaded, explicitLoadSpec) {
         var _this = this;
         var loadSpec, _vol$imageInfo, channels, times, store, data, allmetadata, imageIndex, multiscale, axisTCZYX, spatialAxes, levelToLoad, storepath, _loop, i;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee4$(_context5) {
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee4$(_context5) {
           while (1) switch (_context5.prev = _context5.next) {
             case 0:
-              loadSpec = vol.loadSpec;
+              loadSpec = explicitLoadSpec || vol.loadSpec;
               _vol$imageInfo = vol.imageInfo, channels = _vol$imageInfo.channels, times = _vol$imageInfo.times;
               if (!(this.multiscalePath === undefined || this.hasC === undefined || this.hasT === undefined)) {
                 _context5.next = 20;
                 break;
               }
-              store = new zarr__WEBPACK_IMPORTED_MODULE_7__.HTTPStore(loadSpec.url);
+              store = new zarr__WEBPACK_IMPORTED_MODULE_8__.HTTPStore(loadSpec.url);
               _context5.next = 6;
-              return (0,zarr__WEBPACK_IMPORTED_MODULE_7__.openGroup)(store, loadSpec.subpath, "r");
+              return (0,zarr__WEBPACK_IMPORTED_MODULE_8__.openGroup)(store, loadSpec.subpath, "r");
             case 6:
               data = _context5.sent;
               _context5.next = 9;
@@ -8834,9 +8830,9 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               this.multiscalePath = multiscale.datasets[levelToLoad].path;
             case 20:
               storepath = loadSpec.subpath + "/" + this.multiscalePath; // do each channel on a worker
-              _loop = /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _loop() {
+              _loop = /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _loop() {
                 var worker;
-                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _loop$(_context4) {
+                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _loop$(_context4) {
                   while (1) switch (_context4.prev = _context4.next) {
                     case 0:
                       worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchZarrWorker_ts"), __webpack_require__.b));
@@ -8854,10 +8850,10 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                         alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
                       };
                       worker.postMessage({
-                        urlStore: loadSpec.url,
-                        time: _this.hasT ? Math.min(loadSpec.time, times) : -1,
+                        spec: _objectSpread(_objectSpread({}, loadSpec), {}, {
+                          time: _this.hasT ? Math.min(loadSpec.time, times) : -1
+                        }),
                         channel: _this.hasC ? i : -1,
-                        downsampleZ: DOWNSAMPLE_Z,
                         path: storepath
                       });
                     case 4:
@@ -8887,7 +8883,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
           }
         }, _callee4, this);
       }));
-      function loadVolumeData(_x11, _x12) {
+      function loadVolumeData(_x11, _x12, _x13) {
         return _loadVolumeData.apply(this, arguments);
       }
       return loadVolumeData;
@@ -9256,23 +9252,24 @@ var TiffLoader = /*#__PURE__*/function () {
   }, {
     key: "loadVolumeData",
     value: function () {
-      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(vol, onChannelLoaded) {
+      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(vol, onChannelLoaded, explicitLoadSpec) {
         var _this = this;
-        var dims, imageInfo, _loop, channel;
+        var url, dims, imageInfo, _loop, channel;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee3$(_context4) {
           while (1) switch (_context4.prev = _context4.next) {
             case 0:
+              url = (explicitLoadSpec === null || explicitLoadSpec === void 0 ? void 0 : explicitLoadSpec.url) || vol.loadSpec.url; //
               if (!(this.bytesPerSample === undefined || this.dimensionOrder === undefined)) {
-                _context4.next = 6;
+                _context4.next = 7;
                 break;
               }
-              _context4.next = 3;
-              return getDimsFromUrl(vol.loadSpec.url);
-            case 3:
+              _context4.next = 4;
+              return getDimsFromUrl(url);
+            case 4:
               dims = _context4.sent;
               this.dimensionOrder = dims.dimensionorder;
               this.bytesPerSample = getBytesPerSample(dims.pixeltype);
-            case 6:
+            case 7:
               imageInfo = vol.imageInfo; // do each channel on a worker?
               _loop = /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _loop() {
                 var params, worker;
@@ -9289,7 +9286,7 @@ var TiffLoader = /*#__PURE__*/function () {
                         sizez: imageInfo.tiles,
                         dimensionOrder: _this.dimensionOrder,
                         bytesPerSample: _this.bytesPerSample,
-                        url: vol.loadSpec.url
+                        url: url
                       };
                       worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchTiffWorker_ts"), __webpack_require__.b));
                       worker.onmessage = function (e) {
@@ -9298,7 +9295,7 @@ var TiffLoader = /*#__PURE__*/function () {
                         vol.setChannelDataFromVolume(channel, u8);
                         if (onChannelLoaded) {
                           // make up a unique name? or have caller pass this in?
-                          onChannelLoaded(vol.loadSpec.url, vol, channel);
+                          onChannelLoaded(url, vol, channel);
                         }
                         worker.terminate();
                       };
@@ -9313,26 +9310,26 @@ var TiffLoader = /*#__PURE__*/function () {
                 }, _loop);
               });
               channel = 0;
-            case 9:
+            case 10:
               if (!(channel < imageInfo.channels)) {
-                _context4.next = 14;
+                _context4.next = 15;
                 break;
               }
-              return _context4.delegateYield(_loop(), "t0", 11);
-            case 11:
+              return _context4.delegateYield(_loop(), "t0", 12);
+            case 12:
               ++channel;
-              _context4.next = 9;
+              _context4.next = 10;
               break;
-            case 14:
+            case 15:
               this.dimensionOrder = undefined;
               this.bytesPerSample = undefined;
-            case 16:
+            case 17:
             case "end":
               return _context4.stop();
           }
         }, _callee3, this);
       }));
-      function loadVolumeData(_x4, _x5) {
+      function loadVolumeData(_x4, _x5, _x6) {
         return _loadVolumeData.apply(this, arguments);
       }
       return loadVolumeData;

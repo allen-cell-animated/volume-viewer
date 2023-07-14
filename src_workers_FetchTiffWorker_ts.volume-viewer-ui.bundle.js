@@ -231,7 +231,7 @@ self.onmessage = /*#__PURE__*/function () {
 /******/ 	__webpack_require__.x = () => {
 /******/ 		// Load entry module and return exports
 /******/ 		// This entry module depends on other loaded chunks and execution need to be delayed
-/******/ 		var __webpack_exports__ = __webpack_require__.O(undefined, ["vendors-node_modules_babel_runtime_regenerator_index_js-node_modules_babel_runtime_helpers_es-31f4f7"], () => (__webpack_require__("./src/workers/FetchTiffWorker.ts")))
+/******/ 		var __webpack_exports__ = __webpack_require__.O(undefined, ["vendors-node_modules_babel_runtime_regenerator_index_js-node_modules_babel_runtime_helpers_es-58772e","vendors-node_modules_geotiff_dist-module_geotiff_js"], () => (__webpack_require__("./src/workers/FetchTiffWorker.ts")))
 /******/ 		__webpack_exports__ = __webpack_require__.O(__webpack_exports__);
 /******/ 		return __webpack_exports__;
 /******/ 	};
@@ -411,7 +411,10 @@ self.onmessage = /*#__PURE__*/function () {
 /******/ 	(() => {
 /******/ 		var next = __webpack_require__.x;
 /******/ 		__webpack_require__.x = () => {
-/******/ 			return __webpack_require__.e("vendors-node_modules_babel_runtime_regenerator_index_js-node_modules_babel_runtime_helpers_es-31f4f7").then(next);
+/******/ 			return Promise.all([
+/******/ 				__webpack_require__.e("vendors-node_modules_babel_runtime_regenerator_index_js-node_modules_babel_runtime_helpers_es-58772e"),
+/******/ 				__webpack_require__.e("vendors-node_modules_geotiff_dist-module_geotiff_js")
+/******/ 			]).then(next);
 /******/ 		};
 /******/ 	})();
 /******/ 	
