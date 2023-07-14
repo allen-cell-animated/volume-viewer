@@ -5,7 +5,6 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
-  Euler,
   Group,
   LineBasicMaterial,
   LineSegments,
@@ -29,35 +28,31 @@ import Channel from "./Channel";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 
-import { Bounds, FuseChannel } from "./types";
+import { FuseChannel } from "./types";
+import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
 export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
+  private settings: VolumeRenderSettings | undefined;
   public volume: Volume;
-  public bounds: Bounds;
-  protected geometry: ShapeGeometry;
-  protected geometryMesh: Mesh<BufferGeometry, Material>;
-  protected boxHelper: Box3Helper;
-  protected tickMarksMesh: LineSegments;
-  protected geometryTransformNode: Group;
-  protected uniforms: ReturnType<typeof rayMarchingShaderUniforms>;
-  protected channelData: FusedChannelData;
-  protected scale: Vector3;
-  protected isOrtho: boolean;
 
-  constructor(volume: Volume) {
-    // need?
+  private geometry: ShapeGeometry;
+  private geometryMesh: Mesh<BufferGeometry, Material>;
+  private boxHelper: Box3Helper;
+  private tickMarksMesh: LineSegments;
+  private geometryTransformNode: Group;
+  private uniforms: ReturnType<typeof rayMarchingShaderUniforms>;
+  private channelData: FusedChannelData;
+
+  /**
+   * Creates a new RayMarchedAtlasVolume.
+   * @param volume The volume that this renderer should render data from.
+   * @param settings Optional settings object. If set, updates the renderer with
+   * the given settings. Otherwise, uses the default VolumeRenderSettings.
+   */
+  constructor(volume: Volume, settings: VolumeRenderSettings = new VolumeRenderSettings(volume)) {
     this.volume = volume;
-
-    // note that these bounds are the clipped region of interest,
-    // and not always the whole volume
-    this.bounds = {
-      bmin: new Vector3(-0.5, -0.5, -0.5),
-      bmax: new Vector3(0.5, 0.5, 0.5),
-    };
-    this.scale = new Vector3(1.0, 1.0, 1.0);
-    this.isOrtho = false;
 
     this.uniforms = rayMarchingShaderUniforms();
     [this.geometry, this.geometryMesh] = this.createGeometry(this.uniforms);
@@ -82,18 +77,112 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.setUniform("ATLAS_Y", volume.imageInfo.rows);
     this.setUniform("textureRes", new Vector2(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height));
     this.setUniform("SLICES", volume.z);
-    this.setScale(this.scale);
 
     this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
+    this.updateSettings(settings, SettingsFlags.ALL);
   }
 
-  // TODO: Change uniforms to be a generic type in a abstract parent class?
+  public viewpointMoved(): void {
+    return;
+  }
+
+  public updateSettings(newSettings: VolumeRenderSettings, dirtyFlags?: number | SettingsFlags) {
+    if (dirtyFlags === undefined) {
+      dirtyFlags = SettingsFlags.ALL;
+    }
+
+    this.settings = newSettings;
+
+    if (dirtyFlags & SettingsFlags.VIEW) {
+      this.geometryMesh.visible = this.settings.visible;
+      // Configure ortho
+      this.setUniform("orthoScale", this.settings.orthoScale);
+      this.setUniform("isOrtho", this.settings.isOrtho ? 1.0 : 0.0);
+      // Ortho line thickness
+      const axis = this.settings.viewAxis;
+      if (this.settings.isOrtho && axis !== null) {
+        // TODO: Does this code do any relevant changes?
+        const maxVal = this.settings.bounds.bmax[axis];
+        const minVal = this.settings.bounds.bmin[axis];
+        const thicknessPct = maxVal - minVal;
+        this.setUniform("orthoThickness", thicknessPct);
+      } else {
+        this.setUniform("orthoThickness", 1.0);
+      }
+    }
+
+    if (dirtyFlags & SettingsFlags.VIEW || dirtyFlags & SettingsFlags.BOUNDING_BOX) {
+      // Update tick marks with either view or bounding box changes
+      this.tickMarksMesh.visible = this.settings.showBoundingBox && !this.settings.isOrtho;
+      this.setUniform("maxProject", this.settings.maxProjectMode ? 1 : 0);
+    }
+
+    if (dirtyFlags & SettingsFlags.BOUNDING_BOX) {
+      // Configure bounding box
+      this.boxHelper.visible = this.settings.showBoundingBox;
+      const colorVector = this.settings.boundingBoxColor;
+      const newBoxColor = new Color(colorVector[0], colorVector[1], colorVector[2]);
+      (this.boxHelper.material as LineBasicMaterial).color = newBoxColor;
+      (this.tickMarksMesh.material as LineBasicMaterial).color = newBoxColor;
+    }
+
+    if (dirtyFlags & SettingsFlags.TRANSFORM) {
+      // Set scale
+      const scale = this.settings.scale;
+      this.geometryMesh.scale.copy(scale);
+      this.setUniform("volumeScale", scale);
+      this.boxHelper.box.set(
+        new Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z),
+        new Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z)
+      );
+      this.tickMarksMesh.scale.copy(scale);
+      // Set rotation and translation
+      this.geometryTransformNode.position.copy(this.settings.translation);
+      this.geometryTransformNode.rotation.copy(this.settings.rotation);
+      this.setUniform("flipVolume", this.settings.flipAxes);
+    }
+
+    if (dirtyFlags & SettingsFlags.MATERIAL) {
+      this.setUniform("DENSITY", this.settings.density);
+    }
+
+    if (dirtyFlags & SettingsFlags.CAMERA) {
+      // TODO brightness and exposure should be the same thing?
+      this.setUniform("BRIGHTNESS", this.settings.brightness * 2.0);
+      // Gamma
+      this.setUniform("GAMMA_MIN", this.settings.gammaMin);
+      this.setUniform("GAMMA_MAX", this.settings.gammaMax);
+      this.setUniform("GAMMA_SCALE", this.settings.gammaLevel);
+    }
+
+    if (dirtyFlags & SettingsFlags.ROI) {
+      // Normalize and set bounds
+      const bounds = this.settings.bounds;
+      const boundsNormalized = {
+        bmin: new Vector3(bounds.bmin.x * 2.0, bounds.bmin.y * 2.0, bounds.bmin.z * 2.0),
+        bmax: new Vector3(bounds.bmax.x * 2.0, bounds.bmax.y * 2.0, bounds.bmax.z * 2.0),
+      };
+      this.setUniform("AABB_CLIP_MIN", boundsNormalized.bmin);
+      this.setUniform("AABB_CLIP_MAX", boundsNormalized.bmax);
+    }
+
+    if (dirtyFlags & SettingsFlags.SAMPLING) {
+      this.setUniform("interpolationEnabled", this.settings.useInterpolation);
+      this.setUniform("iResolution", this.settings.resolution);
+    }
+
+    if (dirtyFlags & SettingsFlags.MASK) {
+      this.setUniform("maskAlpha", this.settings.maskAlpha);
+      this.setUniform("maskAlpha", this.settings.maskAlpha);
+    }
+  }
+
   /**
    * Creates the geometry mesh and material for rendering the volume.
    * @param uniforms object containing uniforms to pass to the shader material.
    * @returns the new geometry and geometry mesh.
    */
-  protected createGeometry(
+  private createGeometry(
     uniforms: ReturnType<typeof rayMarchingShaderUniforms>
   ): [ShapeGeometry, Mesh<BufferGeometry, Material>] {
     const geom = new BoxGeometry(1.0, 1.0, 1.0);
@@ -193,26 +282,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.channelData.cleanup();
   }
 
-  public setVisible(isVisible: boolean): void {
-    this.geometryMesh.visible = isVisible;
-    // note that this does not affect bounding box visibility
-  }
-
-  public setShowBoundingBox(showBoundingBox: boolean): void {
-    this.boxHelper.visible = showBoundingBox;
-    this.tickMarksMesh.visible = showBoundingBox && !this.isOrtho;
-  }
-
-  public setBoundingBoxColor(color: [number, number, number]): void {
-    const newBoxColor = new Color(color[0], color[1], color[2]);
-    // note this material update is supposed to be a hidden implementation detail
-    // but I didn't want to re-create a whole boxHelper again.
-    // I could also create a new LineBasicMaterial but that would also rely on knowledge
-    // that Box3Helper expects that type.
-    (this.boxHelper.material as LineBasicMaterial).color = newBoxColor;
-    (this.tickMarksMesh.material as LineBasicMaterial).color = newBoxColor;
-  }
-
   public doRender(canvas: ThreeJsPanel): void {
     if (!this.geometryMesh.visible) {
       return;
@@ -235,139 +304,12 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     return this.geometryTransformNode;
   }
 
-  public onChannelData(_batch: number[]): void {
-    // no op
-  }
-
-  public setScale(scale: Vector3): void {
-    this.scale = scale;
-
-    this.geometryMesh.scale.copy(scale);
-    this.setUniform("volumeScale", scale);
-    this.boxHelper.box.set(
-      new Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z),
-      new Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z)
-    );
-    this.tickMarksMesh.scale.copy(scale);
-  }
-
-  public setRayStepSizes(_primary: number, _secondary: number): void {
-    // no op
-  }
-
-  public setTranslation(vec3xyz: Vector3): void {
-    this.geometryTransformNode.position.copy(vec3xyz);
-  }
-
-  public setRotation(eulerXYZ: Euler): void {
-    this.geometryTransformNode.rotation.copy(eulerXYZ);
-  }
-
-  public setOrthoScale(value: number): void {
-    this.setUniform("orthoScale", value);
-  }
-
-  public setResolution(x: number, y: number): void {
-    this.setUniform("iResolution", new Vector2(x, y));
-  }
-
-  public setPixelSamplingRate(_value: number): void {
-    // no op
-  }
-
-  public setDensity(density: number): void {
-    this.setUniform("DENSITY", density);
-  }
-
-  // TODO brightness and exposure should be the same thing?
-  public setBrightness(brightness: number): void {
-    this.setUniform("BRIGHTNESS", brightness * 2.0);
-  }
-
-  public setIsOrtho(isOrthoAxis: boolean): void {
-    this.isOrtho = isOrthoAxis;
-    this.tickMarksMesh.visible = this.boxHelper.visible && !isOrthoAxis;
-    this.setUniform("isOrtho", isOrthoAxis ? 1.0 : 0.0);
-    if (!isOrthoAxis) {
-      this.setOrthoThickness(1.0);
-    }
-  }
-
-  public setInterpolationEnabled(active: boolean): void {
-    this.setUniform("interpolationEnabled", active);
-  }
-
-  public viewpointMoved(): void {
-    // no op
-  }
-
-  public setGamma(gmin: number, glevel: number, gmax: number): void {
-    this.setUniform("GAMMA_MIN", gmin);
-    this.setUniform("GAMMA_MAX", gmax);
-    this.setUniform("GAMMA_SCALE", glevel);
-  }
-
-  public setMaxProjectMode(isMaxProject: boolean): void {
-    this.setUniform("maxProject", isMaxProject ? 1 : 0);
-  }
-
-  public setAxisClip(axis: "x" | "y" | "z", minval: number, maxval: number, isOrthoAxis: boolean): void {
-    this.bounds.bmax[axis] = maxval;
-    this.bounds.bmin[axis] = minval;
-
-    if (isOrthoAxis) {
-      const thicknessPct = maxval - minval;
-      this.setOrthoThickness(thicknessPct);
-    } else {
-      // it is possible this is overly aggressive resetting this value here
-      // but testing has shown no ill effects and it is better to have a definite
-      // known value when in perspective mode
-      this.setOrthoThickness(1.0);
-    }
-
-    this.setUniform("AABB_CLIP_MIN", this.bounds.bmin);
-    this.setUniform("AABB_CLIP_MAX", this.bounds.bmax);
-  }
-
-  public setFlipAxes(flipX: number, flipY: number, flipZ: number): void {
-    this.setUniform("flipVolume", new Vector3(flipX, flipY, flipZ));
-  }
-
-  // 0..1
-  public updateClipRegion(xmin: number, xmax: number, ymin: number, ymax: number, zmin: number, zmax: number): void {
-    this.bounds = {
-      bmin: new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
-      bmax: new Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5),
-    };
-    this.setUniform("AABB_CLIP_MIN", this.bounds.bmin);
-    this.setUniform("AABB_CLIP_MAX", this.bounds.bmax);
-  }
-
-  public setZSlice(_slice: number): boolean {
-    return true;
-  }
-
-  public setChannelAsMask(channelIndex: number): boolean {
-    if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
-      return false;
-    }
-    return this.channelData.setChannelAsMask(channelIndex, this.volume.channels[channelIndex]);
-  }
-
-  public setMaskAlpha(maskAlpha: number): void {
-    this.setUniform("maskAlpha", maskAlpha);
-  }
-
-  public setOrthoThickness(value: number): void {
-    this.setUniform("orthoThickness", value);
-  }
-
   //////////////////////////////////////////
   //////////////////////////////////////////
 
-  protected setUniform<U extends keyof ReturnType<typeof rayMarchingShaderUniforms>>(
+  private setUniform<U extends keyof ReturnType<typeof rayMarchingShaderUniforms>>(
     name: U,
-    value: (ReturnType<typeof rayMarchingShaderUniforms>)[U]["value"]
+    value: ReturnType<typeof rayMarchingShaderUniforms>[U]["value"]
   ) {
     if (!this.uniforms[name]) {
       return;
@@ -377,7 +319,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   }
 
   // channelcolors is array of {rgbColor, lut} and channeldata is volume.channels
-  public fuse(channelcolors: FuseChannel[], channeldata: Channel[]): void {
+  public updateActiveChannels(channelcolors: FuseChannel[], channeldata: Channel[]): void {
     this.channelData.fuse(channelcolors, channeldata);
 
     // update to fused texture

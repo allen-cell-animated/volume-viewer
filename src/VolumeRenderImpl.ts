@@ -1,38 +1,24 @@
-import { Euler, Object3D, Vector3 } from "three";
+import { Object3D } from "three";
 import { ThreeJsPanel } from "./ThreeJsPanel";
+import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings";
+import { FuseChannel } from "./types";
+import Channel from "./Channel";
 
 export interface VolumeRenderImpl {
+  /**
+   * Applies the given VolumeRenderSettings to this volume renderer.
+   * @param settings a VolumeRenderSettings object to update values from.
+   * @param dirtyFlags bitwise flag used to mark groups of changed settings in the
+   * provided `settings` object.
+   * If unset, forces recompute of all settings-based renderer configuration.
+   * See the `SettingsFlags` enum for recognized values.
+   */
+  updateSettings: (settings: VolumeRenderSettings, dirtyFlags?: number | SettingsFlags) => void;
+
   get3dObject: () => Object3D;
-  setRayStepSizes: (_rayStepSize: number, _secondaryRayStepSize: number) => void;
-  setScale: (_scale: Vector3) => void;
-  setOrthoScale: (_scale: number) => void;
-  setResolution: (_x: number, _y: number) => void;
-  setAxisClip: (_axis: "x" | "y" | "z", _minval: number, _maxval: number, _isOrthoAxis: boolean) => void;
-  setIsOrtho: (_isOrtho: boolean) => void;
-  setOrthoThickness: (_thickness: number) => void;
-  setInterpolationEnabled: (_enabled: boolean) => void;
-  setGamma: (_gmin: number, _glevel: number, _gmax: number) => void;
-  setFlipAxes: (_flipX: number, _flipY: number, _flipZ: number) => void;
   doRender: (_canvas: ThreeJsPanel) => void;
   cleanup: () => void;
-  onChannelData: (_batch: number[]) => void;
-  setVisible: (_visible: boolean) => void;
-  setBrightness: (_brightness: number) => void;
-  setDensity: (_density: number) => void;
-  setChannelAsMask: (_channel: number) => boolean;
-  setMaskAlpha: (_alpha: number) => void;
-  setShowBoundingBox: (_show: boolean) => void;
-  setBoundingBoxColor: (_color: [number, number, number]) => void;
   viewpointMoved: () => void;
-  /**
-   * Sets the visible z slice, for volume renderers that support it.
-   * @returns true if the z slice was set correctly, false if the slice is out of range.
-   * Defaults to true if z-slice rendering is not implemented on the volume renderer.
-   */
-  setZSlice: (_slice: number) => boolean;
-  updateClipRegion: (_xmin: number, _xmax: number, _ymin: number, _ymax: number, _zmin: number, _zmax: number) => void;
-  setPixelSamplingRate: (_rate: number) => void;
   setRenderUpdateListener: (_listener?: (iteration: number) => void) => void;
-  setTranslation: (_translation: Vector3) => void;
-  setRotation: (_rotation: Euler) => void;
+  updateActiveChannels: (channelcolors: FuseChannel[], channeldata: Channel[]) => void;
 }

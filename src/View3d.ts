@@ -17,10 +17,18 @@ import VolumeDrawable from "./VolumeDrawable";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
 import { IVolumeLoader, PerChannelCallback } from "./loaders/IVolumeLoader";
 import Volume from "./Volume";
-import { VolumeChannelDisplayOptions, VolumeDisplayOptions, isOrthographicCamera, ViewportCorner } from "./types";
+import {
+  VolumeChannelDisplayOptions,
+  VolumeDisplayOptions,
+  isOrthographicCamera,
+  ViewportCorner,
+  RenderMode,
+} from "./types";
+import { Axis } from "./VolumeRenderSettings";
 
-export const RENDERMODE_RAYMARCH = 0;
-export const RENDERMODE_PATHTRACE = 1;
+// Constants are kept for compatibility reasons.
+export const RENDERMODE_RAYMARCH = RenderMode.RAYMARCH;
+export const RENDERMODE_PATHTRACE = RenderMode.PATHTRACE;
 
 export interface View3dOptions {
   parentElement?: HTMLElement;
@@ -36,7 +44,7 @@ export class View3d {
   private backgroundColor: Color;
   private pixelSamplingRate: number;
   private exposure: number;
-  private volumeRenderMode: number;
+  private volumeRenderMode: RenderMode;
   private renderUpdateListener?: (iteration: number) => void;
   private image?: VolumeDrawable;
 
@@ -67,7 +75,7 @@ export class View3d {
 
     this.pixelSamplingRate = 0.75;
     this.exposure = 0.5;
-    this.volumeRenderMode = RENDERMODE_RAYMARCH;
+    this.volumeRenderMode = RenderMode.RAYMARCH;
 
     window.addEventListener("resize", () => this.resize(null));
 
@@ -151,7 +159,7 @@ export class View3d {
   addVolume(volume: Volume, options?: VolumeDisplayOptions): void {
     volume.addVolumeDataObserver(this);
     options = options || {};
-    options.renderMode = this.volumeRenderMode === RENDERMODE_PATHTRACE ? 1 : 0;
+    options.renderMode = this.volumeRenderMode;
     this.setImage(new VolumeDrawable(volume, options));
   }
 
@@ -264,7 +272,7 @@ export class View3d {
   setShowBoundingBox(volume: Volume, showBoundingBox: boolean): void {
     this.image?.setShowBoundingBox(showBoundingBox);
     this.canvas3d.setShowPerspectiveScaleBar(
-      showBoundingBox && this.canvas3d.showOrthoScaleBar && this.volumeRenderMode !== RENDERMODE_PATHTRACE
+      showBoundingBox && this.canvas3d.showOrthoScaleBar && this.volumeRenderMode !== RenderMode.PATHTRACE
     );
     this.redraw();
   }
@@ -388,7 +396,7 @@ export class View3d {
   }
 
   onStartControls(): void {
-    if (this.volumeRenderMode !== RENDERMODE_PATHTRACE) {
+    if (this.volumeRenderMode !== RenderMode.PATHTRACE) {
       // TODO: VR display requires a running renderloop
       this.canvas3d.startRenderLoop();
     }
@@ -402,7 +410,7 @@ export class View3d {
   onEndControls(): void {
     this.image?.onEndControls();
     // If we are pathtracing or autorotating, then keep rendering. Otherwise stop now.
-    if (this.volumeRenderMode !== RENDERMODE_PATHTRACE && !this.canvas3d.controls.autoRotate) {
+    if (this.volumeRenderMode !== RenderMode.PATHTRACE && !this.canvas3d.controls.autoRotate) {
       // TODO: VR display requires a running renderloop
       this.canvas3d.stopRenderLoop();
     }
@@ -500,7 +508,7 @@ export class View3d {
   setShowScaleBar(showScaleBar: boolean): void {
     this.canvas3d.setShowOrthoScaleBar(showScaleBar);
     this.canvas3d.setShowPerspectiveScaleBar(
-      showScaleBar && !!this.image?.showBoundingBox && this.volumeRenderMode !== RENDERMODE_PATHTRACE
+      showScaleBar && !!this.image?.showBoundingBox && this.volumeRenderMode !== RenderMode.PATHTRACE
     );
   }
 
@@ -591,7 +599,7 @@ export class View3d {
    * @param {number} flipY y axis sense
    * @param {number} flipZ z axis sense
    */
-  setFlipVolume(volume: Volume, flipX: number, flipY: number, flipZ: number): void {
+  setFlipVolume(volume: Volume, flipX: -1 | 1, flipY: -1 | 1, flipZ: -1 | 1): void {
     this.image?.setFlipAxes(flipX, flipY, flipZ);
     this.redraw();
   }
@@ -734,13 +742,13 @@ export class View3d {
    * Set clipping range (between 0 and 1) for a given axis.
    * Calling this allows the rendering to compensate for changes in thickness in orthographic views that affect how bright the volume is.
    * @param {Object} volume
-   * @param {number} axis 0, 1, or 2 for x, y, or z axis
+   * @param {string} axis x, y, or z axis
    * @param {number} minval 0..1, should be less than maxval
    * @param {number} maxval 0..1, should be greater than minval
    * @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
    */
   setAxisClip(volume: Volume, axis: "x" | "y" | "z", minval: number, maxval: number, isOrthoAxis: boolean): void {
-    this.image?.setAxisClip(axis, minval, maxval, isOrthoAxis);
+    this.image?.setAxisClip(axis as Axis, minval, maxval, isOrthoAxis);
     this.redraw();
   }
 
@@ -829,13 +837,13 @@ export class View3d {
 
     this.volumeRenderMode = mode;
     if (this.image) {
-      if (mode === RENDERMODE_PATHTRACE && this.canvas3d.hasWebGL2) {
-        this.image.setVolumeRendering(true);
+      if (mode === RenderMode.PATHTRACE && this.canvas3d.hasWebGL2) {
+        this.image.setVolumeRendering(RenderMode.PATHTRACE);
         this.image.updateLights(this.lights);
         // pathtrace is a continuous rendering mode
         this.canvas3d.startRenderLoop();
       } else {
-        this.image.setVolumeRendering(false);
+        this.image.setVolumeRendering(RenderMode.RAYMARCH);
         this.canvas3d.redraw();
       }
       this.updatePixelSamplingRate(this.pixelSamplingRate);
@@ -848,7 +856,7 @@ export class View3d {
 
     // TODO remove when pathtrace supports a bounding box
     this.canvas3d.setShowPerspectiveScaleBar(
-      this.canvas3d.showOrthoScaleBar && !!this.image?.showBoundingBox && mode !== RENDERMODE_PATHTRACE
+      this.canvas3d.showOrthoScaleBar && !!this.image?.showBoundingBox && mode !== RenderMode.PATHTRACE
     );
   }
 
