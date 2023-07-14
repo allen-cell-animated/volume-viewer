@@ -59,7 +59,8 @@ describe("test RequestQueue", () => {
       );
       promises.push(
         delayedPromise.then(() => {
-          expect(Date.now() - startTime).to.be.greaterThanOrEqual(delayMs);
+          // Need to add a 1 ms buffer due to variation in setTimeout
+          expect(Date.now() - startTime).to.be.greaterThanOrEqual(delayMs - 1);
         })
       );
       await Promise.all(promises);
