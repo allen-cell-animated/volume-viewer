@@ -29,7 +29,7 @@ import { ThreeJsPanel } from "./ThreeJsPanel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 
 import { FuseChannel } from "./types";
-import { defaultVolumeRenderSettings, VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings";
+import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
@@ -49,9 +49,9 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
    * Creates a new RayMarchedAtlasVolume.
    * @param volume The volume that this renderer should render data from.
    * @param settings Optional settings object. If set, updates the renderer with
-   * the given settings. (By default, uses the result of `defaultVolumeRenderSettings(volume)`).
+   * the given settings. Otherwise, uses the default VolumeRenderSettings.
    */
-  constructor(volume: Volume, settings: VolumeRenderSettings = defaultVolumeRenderSettings(volume)) {
+  constructor(volume: Volume, settings: VolumeRenderSettings = new VolumeRenderSettings(volume)) {
     this.volume = volume;
 
     this.uniforms = rayMarchingShaderUniforms();

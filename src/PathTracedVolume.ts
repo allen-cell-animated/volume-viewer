@@ -33,7 +33,7 @@ import { FUSE_DISABLED_RGB_COLOR, FuseChannel, isOrthographicCamera } from "./ty
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
-import { VolumeRenderSettings, defaultVolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings";
+import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings";
 import Channel from "./Channel";
 
 export default class PathTracedVolume implements VolumeRenderImpl {
@@ -75,9 +75,9 @@ export default class PathTracedVolume implements VolumeRenderImpl {
    * Creates a new PathTracedVolume.
    * @param volume The volume that this renderer should render data from.
    * @param settings Optional settings object. If set, updates the renderer with
-   * the given settings. (By default, uses the result of `defaultVolumeRenderSettings(volume)`).
+   * the given settings. Otherwise, uses the default VolumeRenderSettings.
    */
-  constructor(volume: Volume, settings: VolumeRenderSettings = defaultVolumeRenderSettings(volume)) {
+  constructor(volume: Volume, settings: VolumeRenderSettings = new VolumeRenderSettings(volume)) {
     this.pathTracingUniforms = pathTracingUniforms();
     this.volume = volume;
     this.viewChannels = [-1, -1, -1, -1];

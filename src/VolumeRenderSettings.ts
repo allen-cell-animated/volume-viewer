@@ -38,107 +38,96 @@ export enum Axis {
 /**
  * Holds shared settings for configuring `VolumeRenderImpl` instances.
  */
-export type VolumeRenderSettings = {
+export class VolumeRenderSettings {
   // TRANSFORM
-  translation: Vector3;
-  rotation: Euler;
-  scale: Vector3;
-  currentScale: Vector3;
-  flipAxes: Vector3;
+  public translation: Vector3;
+  public rotation: Euler;
+  public scale: Vector3;
+  public currentScale: Vector3;
+  public flipAxes: Vector3;
 
   // VIEW
-  isOrtho: boolean;
-  orthoScale: number;
-  viewAxis: Axis;
-  visible: boolean;
-  maxProjectMode: boolean;
-
+  public isOrtho: boolean;
+  public orthoScale: number;
+  public viewAxis: Axis;
+  public visible: boolean;
+  public maxProjectMode: boolean;
   // CAMERA
-  gammaMin: number;
-  gammaLevel: number;
-  gammaMax: number;
-  brightness: number;
+  public gammaMin: number;
+  public gammaLevel: number;
+  public gammaMax: number;
+  public brightness: number;
 
   // MASK
-  maskChannelIndex: number;
-  maskAlpha: number;
+  public maskChannelIndex: number;
+  public maskAlpha: number;
 
   // MATERIAL
-  density: number;
-  specular: [number, number, number][];
-  emissive: [number, number, number][];
-  glossiness: number[];
+  public density: number;
+  public specular: [number, number, number][];
+  public emissive: [number, number, number][];
+  public glossiness: number[];
 
   // ROI
-  bounds: Bounds;
-  zSlice: number;
+  public bounds: Bounds;
+  public zSlice: number;
 
   // BOUNDING_BOX
-  showBoundingBox: boolean;
-  boundingBoxColor: [number, number, number];
+  public showBoundingBox: boolean;
+  public boundingBoxColor: [number, number, number];
 
   // SAMPLING
-  resolution: Vector2;
-  useInterpolation: boolean;
-  pixelSamplingRate: number;
-  primaryRayStepSize: number;
-  secondaryRayStepSize: number;
-};
+  public resolution: Vector2;
+  public useInterpolation: boolean;
+  public pixelSamplingRate: number;
+  public primaryRayStepSize: number;
+  public secondaryRayStepSize: number;
 
-/**
- * Returns a VolumeRenderSettings object with default fields. Default objects
- * created with this method will not have shared references.
- *
- * @param volume Volume data used to initialize size-dependent settings.
- */
-export const defaultVolumeRenderSettings = (volume: Volume): VolumeRenderSettings => {
-  return {
-    translation: new Vector3(0, 0, 0),
-    rotation: new Euler(),
-    scale: new Vector3(1, 1, 1),
-    currentScale: new Vector3(1, 1, 1),
-    isOrtho: false,
-    viewAxis: Axis.NONE,
-    orthoScale: 1.0,
-    flipAxes: new Vector3(1, 1, 1),
-    maskChannelIndex: -1,
-    maskAlpha: 1.0,
-    gammaMin: 0.0,
-    gammaLevel: 1.0,
-    gammaMax: 1.0,
-    density: 0,
-    brightness: 0,
-    showBoundingBox: false,
-    bounds: {
+  /**
+   * Creates a new VolumeRenderSettings object with default fields.
+   * @param volume Volume data used to initialize size-dependent settings.
+   */
+  constructor(volume: Volume) {
+    this.translation = new Vector3(0, 0, 0);
+    this.rotation = new Euler();
+    this.scale = new Vector3(1, 1, 1);
+    this.currentScale = new Vector3(1, 1, 1);
+    this.isOrtho = false;
+    this.viewAxis = Axis.NONE;
+    this.orthoScale = 1.0;
+    this.flipAxes = new Vector3(1, 1, 1);
+    this.maskChannelIndex = -1;
+    this.maskAlpha = 1.0;
+    this.gammaMin = 0.0;
+    this.gammaLevel = 1.0;
+    this.gammaMax = 1.0;
+    this.density = 0;
+    this.brightness = 0;
+    this.showBoundingBox = false;
+    (this.bounds = {
       bmin: new Vector3(-0.5, -0.5, -0.5),
       bmax: new Vector3(0.5, 0.5, 0.5),
-    },
-    boundingBoxColor: [1.0, 1.0, 0.0],
-    primaryRayStepSize: 1.0,
-    secondaryRayStepSize: 1.0,
-    useInterpolation: true,
-    visible: true,
-    maxProjectMode: false,
+    }),
+      (this.boundingBoxColor = [1.0, 1.0, 0.0]);
+    this.primaryRayStepSize = 1.0;
+    this.secondaryRayStepSize = 1.0;
+    this.useInterpolation = true;
+    this.visible = true;
+    this.maxProjectMode = false;
     // volume-dependent properties
-    zSlice: Math.floor(volume.z / 2),
-    specular: new Array(volume.num_channels).fill([0, 0, 0]),
-    emissive: new Array(volume.num_channels).fill([0, 0, 0]),
-    glossiness: new Array(volume.num_channels).fill(0),
+    this.zSlice = Math.floor(volume.z / 2);
+    this.specular = new Array(volume.num_channels).fill([0, 0, 0]);
+    this.emissive = new Array(volume.num_channels).fill([0, 0, 0]);
+    this.glossiness = new Array(volume.num_channels).fill(0);
+    this.pixelSamplingRate = 0.75;
+    this.resolution = new Vector2(1, 1);
+  }
 
-    pixelSamplingRate: 0.75,
-    resolution: new Vector2(1, 1),
-  };
-};
-
-/**
- * Static utility class for interacting with VolumeRenderSettings.
- */
-export class VolumeRenderSettingUtils {
-  public static resizeWithVolume(renderSettings: VolumeRenderSettings, volume: Volume): void {
-    renderSettings.zSlice = Math.floor(volume.z / 2);
-    renderSettings.specular = new Array(volume.num_channels).fill([0, 0, 0]);
-    renderSettings.emissive = new Array(volume.num_channels).fill([0, 0, 0]);
-    renderSettings.glossiness = new Array(volume.num_channels).fill(0);
+  public resizeWithVolume(volume: Volume): void {
+    this.zSlice = Math.floor(volume.z / 2);
+    this.specular = new Array(volume.num_channels).fill([0, 0, 0]);
+    this.emissive = new Array(volume.num_channels).fill([0, 0, 0]);
+    this.glossiness = new Array(volume.num_channels).fill(0);
   }
 
   /**
@@ -167,12 +156,12 @@ export class VolumeRenderSettingUtils {
    * Compares two VolumeRenderSettings objects.
    * @returns true if both objects have identical settings.
    */
-  public static isEqual(o1: VolumeRenderSettings, o2: VolumeRenderSettings): boolean {
-    for (const key of Object.keys(o1)) {
-      const v1 = o1[key];
+  public isEqual(o2: VolumeRenderSettings): boolean {
+    for (const key of Object.keys(this)) {
+      const v1 = this[key];
       const v2 = o2[key];
       if (v1 instanceof Array) {
-        if (!this.compareArray(v1, v2)) {
+        if (!VolumeRenderSettings.compareArray(v1, v2)) {
           return false;
         }
       } else if (v1 && v1.bmin !== undefined) {
@@ -214,21 +203,21 @@ export class VolumeRenderSettingUtils {
   }
 
   /**
-   * Creates a deep copy of a VolumeRenderSettings object.
+   * Creates a deep copy of this VolumeRenderSettings object.
    * @param src The object to create a clone of.
    * @returns a new VolumeRenderSettings object with identical fields that do not
    * share references with the original settings object.
    */
-  public static clone(src: VolumeRenderSettings): VolumeRenderSettings {
-    const dst = defaultVolumeRenderSettings(new Volume()); // initialize with empty volume
-    for (const key of Object.keys(src)) {
-      const val = src[key];
+  public clone(): VolumeRenderSettings {
+    const dst = new VolumeRenderSettings(new Volume()); // initialize with empty volume
+    for (const key of Object.keys(this)) {
+      const val = this[key];
       if (val instanceof Array) {
-        dst[key] = this.deepCopyArray(val);
+        dst[key] = VolumeRenderSettings.deepCopyArray(val);
       } else if (key === "bounds") {
         // must use key string here because Bounds is a type alias and not a class
-        dst.bounds.bmax = src.bounds.bmax.clone();
-        dst.bounds.bmin = src.bounds.bmin.clone();
+        dst.bounds.bmax = this.bounds.bmax.clone();
+        dst.bounds.bmin = this.bounds.bmin.clone();
       } else if (val instanceof Vector3 || val instanceof Vector2 || val instanceof Euler) {
         dst[key] = val.clone();
       } else if (val instanceof String) {
@@ -238,6 +227,6 @@ export class VolumeRenderSettingUtils {
         dst[key] = val;
       }
     }
-    return dst as VolumeRenderSettings;
+    return dst;
   }
 }

@@ -17,7 +17,7 @@ import {
 import { Channel, Volume } from ".";
 import { sliceFragmentShaderSrc, sliceShaderUniforms, sliceVertexShaderSrc } from "./constants/volumeSliceShader";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
-import { SettingsFlags, VolumeRenderSettings, defaultVolumeRenderSettings } from "./VolumeRenderSettings";
+import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings";
 import FusedChannelData from "./FusedChannelData";
 import { FuseChannel } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
@@ -41,9 +41,9 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
    * Creates a new Atlas2DSlice.
    * @param volume The volume that this renderer should render data from.
    * @param settings Optional settings object. If set, updates the renderer with
-   * the given settings. (By default, uses the result of `defaultVolumeRenderSettings(volume)`).
+   * the given settings. Otherwise, uses the default VolumeRenderSettings.
    */
-  constructor(volume: Volume, settings: VolumeRenderSettings = defaultVolumeRenderSettings(volume)) {
+  constructor(volume: Volume, settings: VolumeRenderSettings = new VolumeRenderSettings(volume)) {
     this.volume = volume;
     this.uniforms = sliceShaderUniforms();
     [this.geometry, this.geometryMesh] = this.createGeometry(this.uniforms);
