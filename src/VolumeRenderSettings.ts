@@ -85,9 +85,9 @@ export class VolumeRenderSettings {
 
   /**
    * Creates a new VolumeRenderSettings object with default fields.
-   * @param volume Volume data used to initialize size-dependent settings.
+   * @param volume Optional volume data parameter used to initialize size-dependent settings.
    */
-  constructor(volume: Volume) {
+  constructor(volume?: Volume) {
     this.translation = new Vector3(0, 0, 0);
     this.rotation = new Euler();
     this.scale = new Vector3(1, 1, 1);
@@ -104,21 +104,28 @@ export class VolumeRenderSettings {
     this.density = 0;
     this.brightness = 0;
     this.showBoundingBox = false;
-    (this.bounds = {
+    this.bounds = {
       bmin: new Vector3(-0.5, -0.5, -0.5),
       bmax: new Vector3(0.5, 0.5, 0.5),
-    }),
-      (this.boundingBoxColor = [1.0, 1.0, 0.0]);
+    };
+    this.boundingBoxColor = [1.0, 1.0, 0.0];
     this.primaryRayStepSize = 1.0;
     this.secondaryRayStepSize = 1.0;
     this.useInterpolation = true;
     this.visible = true;
     this.maxProjectMode = false;
     // volume-dependent properties
-    this.zSlice = Math.floor(volume.z / 2);
-    this.specular = new Array(volume.num_channels).fill([0, 0, 0]);
-    this.emissive = new Array(volume.num_channels).fill([0, 0, 0]);
-    this.glossiness = new Array(volume.num_channels).fill(0);
+    if (volume) {
+      this.zSlice = Math.floor(volume.z / 2);
+      this.specular = new Array(volume.num_channels).fill([0, 0, 0]);
+      this.emissive = new Array(volume.num_channels).fill([0, 0, 0]);
+      this.glossiness = new Array(volume.num_channels).fill(0);
+    } else {
+      this.zSlice = 0;
+      this.specular = [[0, 0, 0]];
+      this.emissive = [[0, 0, 0]];
+      this.glossiness = [0];
+    }
     this.pixelSamplingRate = 0.75;
     this.resolution = new Vector2(1, 1);
   }
@@ -209,7 +216,7 @@ export class VolumeRenderSettings {
    * share references with the original settings object.
    */
   public clone(): VolumeRenderSettings {
-    const dst = new VolumeRenderSettings(new Volume()); // initialize with empty volume
+    const dst = new VolumeRenderSettings(); // initialize with empty volume
     for (const key of Object.keys(this)) {
       const val = this[key];
       if (val instanceof Array) {
