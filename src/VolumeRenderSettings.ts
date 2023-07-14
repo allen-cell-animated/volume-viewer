@@ -7,22 +7,22 @@ import { Bounds } from "./types";
  */
 export enum SettingsFlags {
   /** parameters: translation, rotation, scale, currentScale, flipAxes */
-  TRANSFORM = 1,
+  TRANSFORM = 0b00000001,
   /** parameters: gammaMin, gammaLevel, gammaMax, brightness*/
-  CAMERA = 2,
+  CAMERA = 0b00000010,
   /** parameters: showBoundingBox, boundingBoxColor */
-  BOUNDING_BOX = 4,
+  BOUNDING_BOX = 0b00000100,
   /** parameters: bounds, zSlice */
-  ROI = 8,
+  ROI = 0b00001000,
   /** parameters: maskChannelIndex, maskAlpha */
-  MASK = 16,
+  MASK = 0b00010000,
   /** parameters: density, specular, emissive, glossiness */
-  MATERIAL = 32,
+  MATERIAL = 0b00100000,
   /** parameters: resolution, useInterpolation, pixelSamplingRate, primaryRayStepSize, secondaryRayStepSize*/
-  SAMPLING = 64,
+  SAMPLING = 0b01000000,
   /** parameters: isOrtho, orthoScale, viewAxis, visible, maxProjectMode */
-  VIEW = 128,
-  ALL = Number.MAX_SAFE_INTEGER,
+  VIEW = 0b10000000,
+  ALL = 0b11111111,
 }
 
 export enum Axis {
