@@ -12,52 +12,140 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ Atlas2DSlice)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
-/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
-/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./constants/volumeSliceShader */ "./src/constants/volumeSliceShader.ts");
-/* harmony import */ var _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./RayMarchedAtlasVolume */ "./src/RayMarchedAtlasVolume.ts");
+/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./constants/volumeSliceShader */ "./src/constants/volumeSliceShader.ts");
+/* harmony import */ var _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./VolumeRenderSettings */ "./src/VolumeRenderSettings.ts");
+/* harmony import */ var _FusedChannelData__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./FusedChannelData */ "./src/FusedChannelData.ts");
 
 
 
 
 
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_4__["default"])(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_4__["default"])(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_3__["default"])(this, result); }; }
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
 
 
+var BOUNDING_BOX_DEFAULT_COLOR = new three__WEBPACK_IMPORTED_MODULE_6__.Color(0xffff00);
 
 /**
  * Creates a plane that renders a 2D XY slice of volume atlas data.
  */
-var Atlas2DSlice = /*#__PURE__*/function (_RayMarchedAtlasVolum) {
-  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_2__["default"])(Atlas2DSlice, _RayMarchedAtlasVolum);
-  var _super = _createSuper(Atlas2DSlice);
+var Atlas2DSlice = /*#__PURE__*/function () {
+  /**
+   * Creates a new Atlas2DSlice.
+   * @param volume The volume that this renderer should render data from.
+   * @param settings Optional settings object. If set, updates the renderer with
+   * the given settings. Otherwise, uses the default VolumeRenderSettings.
+   */
   function Atlas2DSlice(volume) {
-    var _this;
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Atlas2DSlice);
-    _this = _super.call(this, volume);
-    _this.setUniform("Z_SLICE", Math.floor(volume.z / 2));
-    return _this;
+    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.VolumeRenderSettings(volume);
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, Atlas2DSlice);
+    this.volume = volume;
+    this.uniforms = (0,_constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_3__.sliceShaderUniforms)();
+    var _this$createGeometry = this.createGeometry(this.uniforms);
+    var _this$createGeometry2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_this$createGeometry, 2);
+    this.geometry = _this$createGeometry2[0];
+    this.geometryMesh = _this$createGeometry2[1];
+    this.boxHelper = new three__WEBPACK_IMPORTED_MODULE_6__.Box3Helper(new three__WEBPACK_IMPORTED_MODULE_6__.Box3(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(-0.5, -0.5, -0.5), new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0.5, 0.5, 0.5)), BOUNDING_BOX_DEFAULT_COLOR);
+    this.boxHelper.updateMatrixWorld();
+    this.boxHelper.visible = false;
+    this.geometryTransformNode = new three__WEBPACK_IMPORTED_MODULE_6__.Group();
+    this.geometryTransformNode.name = "VolumeContainerNode";
+    this.geometryTransformNode.add(this.boxHelper, this.geometryMesh);
+    this.setUniform("ATLAS_X", volume.imageInfo.cols);
+    this.setUniform("ATLAS_Y", volume.imageInfo.rows);
+    this.setUniform("textureRes", new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height));
+    this.setUniform("SLICES", volume.z);
+    this.setUniform("Z_SLICE", Math.floor(volume.z / 2));
+    this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_5__["default"](volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
+    this.updateSettings(settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.ALL);
   }
-
-  // TODO: Change uniforms so that it can be a different/custom type
-  // (this requires a refactor of some of the render implementation classes)
-  // Overload geometry to create plane instead of a cube mesh
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Atlas2DSlice, [{
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(Atlas2DSlice, [{
+    key: "updateSettings",
+    value: function updateSettings(newSettings, dirtyFlags) {
+      if (dirtyFlags === undefined) {
+        dirtyFlags = _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.ALL;
+      }
+      this.settings = newSettings;
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.VIEW) {
+        this.geometryMesh.visible = this.settings.visible;
+        // Configure ortho
+        this.setUniform("orthoScale", this.settings.orthoScale);
+        this.setUniform("isOrtho", this.settings.isOrtho ? 1.0 : 0.0);
+        // Ortho line thickness
+        var axis = this.settings.viewAxis;
+        if (this.settings.isOrtho && axis !== null) {
+          var maxVal = this.settings.bounds.bmax[axis];
+          var minVal = this.settings.bounds.bmin[axis];
+          var thicknessPct = maxVal - minVal;
+          this.setUniform("orthoThickness", thicknessPct);
+        } else {
+          this.setUniform("orthoThickness", 1.0);
+        }
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.BOUNDING_BOX) {
+        // Configure bounding box
+        this.boxHelper.visible = this.settings.showBoundingBox;
+        var colorVector = this.settings.boundingBoxColor;
+        var newBoxColor = new three__WEBPACK_IMPORTED_MODULE_6__.Color(colorVector[0], colorVector[1], colorVector[2]);
+        this.boxHelper.material.color = newBoxColor;
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.TRANSFORM) {
+        // Set scale
+        var scale = this.settings.scale;
+        this.geometryMesh.scale.copy(scale);
+        this.setUniform("volumeScale", scale);
+        this.boxHelper.box.set(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z), new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z));
+        // Set rotation and translation
+        this.geometryTransformNode.position.copy(this.settings.translation);
+        this.geometryTransformNode.rotation.copy(this.settings.rotation);
+        this.setUniform("flipVolume", this.settings.flipAxes);
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.MATERIAL) {
+        this.setUniform("DENSITY", this.settings.density);
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.CAMERA) {
+        this.setUniform("BRIGHTNESS", this.settings.brightness * 2.0);
+        // Gamma
+        this.setUniform("GAMMA_MIN", this.settings.gammaMin);
+        this.setUniform("GAMMA_MAX", this.settings.gammaMax);
+        this.setUniform("GAMMA_SCALE", this.settings.gammaLevel);
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.ROI) {
+        // Normalize and set bounds
+        var bounds = this.settings.bounds;
+        var boundsNormalized = {
+          bmin: new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(bounds.bmin.x * 2.0, bounds.bmin.y * 2.0, bounds.bmin.z * 2.0),
+          bmax: new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(bounds.bmax.x * 2.0, bounds.bmax.y * 2.0, bounds.bmax.z * 2.0)
+        };
+        this.setUniform("AABB_CLIP_MIN", boundsNormalized.bmin);
+        this.setUniform("AABB_CLIP_MAX", boundsNormalized.bmax);
+        var slice = Math.floor(this.settings.zSlice);
+        if (slice >= 0 && slice <= this.volume.z - 1) {
+          this.setUniform("Z_SLICE", slice);
+        }
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.SAMPLING) {
+        this.setUniform("interpolationEnabled", this.settings.useInterpolation);
+        this.setUniform("iResolution", this.settings.resolution);
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.MASK) {
+        this.setUniform("maskAlpha", this.settings.maskAlpha);
+        this.setUniform("maskAlpha", this.settings.maskAlpha);
+      }
+    }
+  }, {
     key: "createGeometry",
     value: function createGeometry(uniforms) {
-      var geom = new three__WEBPACK_IMPORTED_MODULE_7__.PlaneGeometry(1.0, 1.0);
-      var mesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom);
+      var geom = new three__WEBPACK_IMPORTED_MODULE_6__.PlaneGeometry(1.0, 1.0);
+      var mesh = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(geom);
       mesh.name = "Plane";
 
       // shader,vtx and frag.
-      var vtxsrc = _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_5__.sliceVertexShaderSrc;
-      var fgmtsrc = _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_5__.sliceFragmentShaderSrc;
-      var threeMaterial = new three__WEBPACK_IMPORTED_MODULE_7__.ShaderMaterial({
+      var vtxsrc = _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_3__.sliceVertexShaderSrc;
+      var fgmtsrc = _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_3__.sliceFragmentShaderSrc;
+      var threeMaterial = new three__WEBPACK_IMPORTED_MODULE_6__.ShaderMaterial({
         uniforms: uniforms,
         vertexShader: vtxsrc,
         fragmentShader: fgmtsrc,
@@ -69,19 +157,65 @@ var Atlas2DSlice = /*#__PURE__*/function (_RayMarchedAtlasVolum) {
       return [geom, mesh];
     }
   }, {
-    key: "setZSlice",
-    value: function setZSlice(slice) {
-      // Clamp the slice value
-      slice = Math.floor(slice);
-      if (slice < 0 || slice > this.volume.z - 1) {
-        return false;
+    key: "cleanup",
+    value: function cleanup() {
+      this.geometry.dispose();
+      this.geometryMesh.material.dispose();
+      this.channelData.cleanup();
+    }
+  }, {
+    key: "viewpointMoved",
+    value: function viewpointMoved() {
+      return;
+    }
+  }, {
+    key: "doRender",
+    value: function doRender(canvas) {
+      if (!this.geometryMesh.visible) {
+        return;
       }
-      this.setUniform("Z_SLICE", slice);
-      return true;
+      this.channelData.gpuFuse(canvas.renderer);
+      this.setUniform("textureAtlas", this.channelData.getFusedTexture());
+      this.geometryTransformNode.updateMatrixWorld(true);
+      var mvm = new three__WEBPACK_IMPORTED_MODULE_6__.Matrix4();
+      mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
+      var mi = new three__WEBPACK_IMPORTED_MODULE_6__.Matrix4();
+      mi.copy(mvm).invert();
+      this.setUniform("inverseModelViewMatrix", mi);
+    }
+  }, {
+    key: "get3dObject",
+    value: function get3dObject() {
+      return this.geometryTransformNode;
+    }
+
+    // channelcolors is array of {rgbColor, lut} and channeldata is volume.channels
+  }, {
+    key: "updateActiveChannels",
+    value: function updateActiveChannels(channelcolors, channeldata) {
+      this.channelData.fuse(channelcolors, channeldata);
+
+      // update to fused texture
+      this.setUniform("textureAtlas", this.channelData.getFusedTexture());
+      this.setUniform("textureAtlasMask", this.channelData.maskTexture);
+    }
+  }, {
+    key: "setUniform",
+    value: function setUniform(name, value) {
+      if (!this.uniforms[name]) {
+        return;
+      }
+      this.uniforms[name].value = value;
+      this.geometryMesh.material.needsUpdate = true;
+    }
+  }, {
+    key: "setRenderUpdateListener",
+    value: function setRenderUpdateListener(_listener) {
+      return;
     }
   }]);
   return Atlas2DSlice;
-}(_RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_6__["default"]);
+}();
 
 
 /***/ }),
@@ -2655,12 +2789,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_src_constants__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three/src/constants */ "./node_modules/three/src/constants.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three_src_constants__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three/src/constants */ "./node_modules/three/src/constants.js");
 /* harmony import */ var _constants_denoiseShader__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./constants/denoiseShader */ "./src/constants/denoiseShader.ts");
 /* harmony import */ var _constants_volumePTshader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./constants/volumePTshader */ "./src/constants/volumePTshader.ts");
 /* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
 /* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./types */ "./src/types.ts");
+/* harmony import */ var _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./VolumeRenderSettings */ "./src/VolumeRenderSettings.ts");
+
 
 
 
@@ -2671,20 +2807,20 @@ __webpack_require__.r(__webpack_exports__);
 
 
 var PathTracedVolume = /*#__PURE__*/function () {
+  /**
+   * Creates a new PathTracedVolume.
+   * @param volume The volume that this renderer should render data from.
+   * @param settings Optional settings object. If set, updates the renderer with
+   * the given settings. Otherwise, uses the default VolumeRenderSettings.
+   */
   function PathTracedVolume(volume) {
+    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.VolumeRenderSettings(volume);
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, PathTracedVolume);
     // should have 4 or less elements
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "denoiseShaderUniforms", (0,_constants_denoiseShader__WEBPACK_IMPORTED_MODULE_3__.denoiseShaderUniforms)());
-    // need?
+    this.pathTracingUniforms = (0,_constants_volumePTshader__WEBPACK_IMPORTED_MODULE_4__.pathTracingUniforms)();
     this.volume = volume;
     this.viewChannels = [-1, -1, -1, -1];
-    this.scale = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1, 1, 1);
-    this.translation = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0);
-    this.rotation = new three__WEBPACK_IMPORTED_MODULE_7__.Euler();
-
-    // scale factor is a huge optimization.  Maybe use 1/dpi scale
-    this.pixelSamplingRate = 0.75;
-    this.pathTracingUniforms = (0,_constants_volumePTshader__WEBPACK_IMPORTED_MODULE_4__.pathTracingUniforms)();
 
     // create volume texture
     var sx = volume.x,
@@ -2692,57 +2828,49 @@ var PathTracedVolume = /*#__PURE__*/function () {
       sz = volume.z;
     var data = new Uint8Array(sx * sy * sz * 4).fill(0);
     // defaults to rgba and unsignedbytetype so dont need to supply format this time.
-    this.volumeTexture = new three__WEBPACK_IMPORTED_MODULE_7__.Data3DTexture(data, volume.x, volume.y, volume.z);
-    this.volumeTexture.minFilter = this.volumeTexture.magFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_8__.LinearFilter;
+    this.volumeTexture = new three__WEBPACK_IMPORTED_MODULE_8__.Data3DTexture(data, volume.x, volume.y, volume.z);
+    this.volumeTexture.minFilter = this.volumeTexture.magFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_9__.LinearFilter;
     this.volumeTexture.generateMipmaps = false;
     this.volumeTexture.needsUpdate = true;
-    this.maskChannelIndex = -1;
-    this.maskAlpha = 1.0;
 
     // create Lut textures
     // empty array
     var lutData = new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH * 4).fill(1);
-    var lut0 = new three__WEBPACK_IMPORTED_MODULE_7__.DataTexture(lutData, 256, 4, three__WEBPACK_IMPORTED_MODULE_7__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_7__.UnsignedByteType);
-    lut0.minFilter = lut0.magFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_8__.LinearFilter;
+    var lut0 = new three__WEBPACK_IMPORTED_MODULE_8__.DataTexture(lutData, 256, 4, three__WEBPACK_IMPORTED_MODULE_8__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_8__.UnsignedByteType);
+    lut0.minFilter = lut0.magFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_9__.LinearFilter;
     lut0.needsUpdate = true;
     this.pathTracingUniforms.gLutTexture.value = lut0;
-    this.bounds = {
-      bmin: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(-0.5, -0.5, -0.5),
-      bmax: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0.5, 0.5, 0.5)
-    };
     this.cameraIsMoving = false;
     this.sampleCounter = 0;
     this.frameCounter = 0;
-    this.stepSizePrimaryRayVoxels = 1.0;
-    this.stepSizeSecondaryRayVoxels = 1.0;
-    this.pathTracingScene = new three__WEBPACK_IMPORTED_MODULE_7__.Scene();
-    this.screenTextureScene = new three__WEBPACK_IMPORTED_MODULE_7__.Scene();
+    this.pathTracingScene = new three__WEBPACK_IMPORTED_MODULE_8__.Scene();
+    this.screenTextureScene = new three__WEBPACK_IMPORTED_MODULE_8__.Scene();
 
     // quadCamera is simply the camera to help render the full screen quad (2 triangles),
     // hence the name.  It is an Orthographic camera that sits facing the view plane, which serves as
     // the window into our 3d world. This camera will not move or rotate for the duration of the app.
-    this.quadCamera = new three__WEBPACK_IMPORTED_MODULE_7__.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    this.fullTargetResolution = new three__WEBPACK_IMPORTED_MODULE_7__.Vector2(2, 2);
-    this.pathTracingRenderTarget = new three__WEBPACK_IMPORTED_MODULE_7__.WebGLRenderTarget(2, 2, {
-      minFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_8__.NearestFilter,
-      magFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_8__.NearestFilter,
-      format: three__WEBPACK_IMPORTED_MODULE_7__.RGBAFormat,
-      type: three__WEBPACK_IMPORTED_MODULE_7__.FloatType,
+    this.quadCamera = new three__WEBPACK_IMPORTED_MODULE_8__.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    this.fullTargetResolution = new three__WEBPACK_IMPORTED_MODULE_8__.Vector2(2, 2);
+    this.pathTracingRenderTarget = new three__WEBPACK_IMPORTED_MODULE_8__.WebGLRenderTarget(2, 2, {
+      minFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_9__.NearestFilter,
+      magFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_9__.NearestFilter,
+      format: three__WEBPACK_IMPORTED_MODULE_8__.RGBAFormat,
+      type: three__WEBPACK_IMPORTED_MODULE_8__.FloatType,
       depthBuffer: false,
       stencilBuffer: false
     });
     this.pathTracingRenderTarget.texture.generateMipmaps = false;
-    this.screenTextureRenderTarget = new three__WEBPACK_IMPORTED_MODULE_7__.WebGLRenderTarget(2, 2, {
-      minFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_8__.NearestFilter,
-      magFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_8__.NearestFilter,
-      format: three__WEBPACK_IMPORTED_MODULE_7__.RGBAFormat,
-      type: three__WEBPACK_IMPORTED_MODULE_7__.FloatType,
+    this.screenTextureRenderTarget = new three__WEBPACK_IMPORTED_MODULE_8__.WebGLRenderTarget(2, 2, {
+      minFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_9__.NearestFilter,
+      magFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_9__.NearestFilter,
+      format: three__WEBPACK_IMPORTED_MODULE_8__.RGBAFormat,
+      type: three__WEBPACK_IMPORTED_MODULE_8__.FloatType,
       depthBuffer: false,
       stencilBuffer: false
     });
     this.screenTextureRenderTarget.texture.generateMipmaps = false;
     this.screenTextureShader = {
-      uniforms: three__WEBPACK_IMPORTED_MODULE_7__.UniformsUtils.merge([{
+      uniforms: three__WEBPACK_IMPORTED_MODULE_8__.UniformsUtils.merge([{
         tTexture0: {
           type: "t",
           value: null
@@ -2752,7 +2880,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
       fragmentShader: ["precision highp float;", "precision highp int;", "precision highp sampler2D;", "uniform sampler2D tTexture0;", "in vec2 vUv;", "void main()", "{", "pc_fragColor = texture(tTexture0, vUv);", "}"].join("\n")
     };
     this.screenOutputShader = {
-      uniforms: three__WEBPACK_IMPORTED_MODULE_7__.UniformsUtils.merge([{
+      uniforms: three__WEBPACK_IMPORTED_MODULE_8__.UniformsUtils.merge([{
         gInvExposure: {
           type: "f",
           value: 1.0 / (1.0 - 0.75)
@@ -2772,12 +2900,12 @@ var PathTracedVolume = /*#__PURE__*/function () {
       //'out_FragColor = pow(pixelColor, vec4(1.0/2.2));',
       "}"].join("\n")
     };
-    this.pathTracingGeometry = new three__WEBPACK_IMPORTED_MODULE_7__.PlaneGeometry(2, 2);
+    this.pathTracingGeometry = new three__WEBPACK_IMPORTED_MODULE_8__.PlaneGeometry(2, 2);
 
     // initialize texture.
     this.pathTracingUniforms.volumeTexture.value = this.volumeTexture;
     this.pathTracingUniforms.tPreviousTexture.value = this.screenTextureRenderTarget.texture;
-    this.pathTracingMaterial = new three__WEBPACK_IMPORTED_MODULE_7__.ShaderMaterial({
+    this.pathTracingMaterial = new three__WEBPACK_IMPORTED_MODULE_8__.ShaderMaterial({
       uniforms: this.pathTracingUniforms,
       // defines: pathTracingDefines,
       vertexShader: _constants_volumePTshader__WEBPACK_IMPORTED_MODULE_4__.pathTracingVertexShaderSrc,
@@ -2785,10 +2913,10 @@ var PathTracedVolume = /*#__PURE__*/function () {
       depthTest: false,
       depthWrite: false
     });
-    this.pathTracingMesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(this.pathTracingGeometry, this.pathTracingMaterial);
+    this.pathTracingMesh = new three__WEBPACK_IMPORTED_MODULE_8__.Mesh(this.pathTracingGeometry, this.pathTracingMaterial);
     this.pathTracingScene.add(this.pathTracingMesh);
-    this.screenTextureGeometry = new three__WEBPACK_IMPORTED_MODULE_7__.PlaneGeometry(2, 2);
-    this.screenTextureMaterial = new three__WEBPACK_IMPORTED_MODULE_7__.ShaderMaterial({
+    this.screenTextureGeometry = new three__WEBPACK_IMPORTED_MODULE_8__.PlaneGeometry(2, 2);
+    this.screenTextureMaterial = new three__WEBPACK_IMPORTED_MODULE_8__.ShaderMaterial({
       uniforms: this.screenTextureShader.uniforms,
       vertexShader: this.screenTextureShader.vertexShader,
       fragmentShader: this.screenTextureShader.fragmentShader,
@@ -2796,48 +2924,49 @@ var PathTracedVolume = /*#__PURE__*/function () {
       depthTest: false
     });
     this.screenTextureMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;
-    this.screenTextureMesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(this.screenTextureGeometry, this.screenTextureMaterial);
+    this.screenTextureMesh = new three__WEBPACK_IMPORTED_MODULE_8__.Mesh(this.screenTextureGeometry, this.screenTextureMaterial);
     this.screenTextureScene.add(this.screenTextureMesh);
-    this.screenOutputGeometry = new three__WEBPACK_IMPORTED_MODULE_7__.PlaneGeometry(2, 2);
-    this.screenOutputMaterial = new three__WEBPACK_IMPORTED_MODULE_7__.ShaderMaterial({
+    this.screenOutputGeometry = new three__WEBPACK_IMPORTED_MODULE_8__.PlaneGeometry(2, 2);
+    this.screenOutputMaterial = new three__WEBPACK_IMPORTED_MODULE_8__.ShaderMaterial({
       uniforms: this.screenOutputShader.uniforms,
       vertexShader: this.screenOutputShader.vertexShader,
       fragmentShader: this.screenOutputShader.fragmentShader,
       depthWrite: false,
       depthTest: false,
-      blending: three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending,
+      blending: three__WEBPACK_IMPORTED_MODULE_8__.NormalBlending,
       transparent: true
     });
     this.denoiseShaderUniforms = (0,_constants_denoiseShader__WEBPACK_IMPORTED_MODULE_3__.denoiseShaderUniforms)();
-    this.screenOutputDenoiseMaterial = new three__WEBPACK_IMPORTED_MODULE_7__.ShaderMaterial({
+    this.screenOutputDenoiseMaterial = new three__WEBPACK_IMPORTED_MODULE_8__.ShaderMaterial({
       uniforms: this.denoiseShaderUniforms,
       vertexShader: _constants_denoiseShader__WEBPACK_IMPORTED_MODULE_3__.denoiseVertexShaderSrc,
       fragmentShader: _constants_denoiseShader__WEBPACK_IMPORTED_MODULE_3__.denoiseFragmentShaderSrc,
       depthWrite: false,
       depthTest: false,
-      blending: three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending,
+      blending: three__WEBPACK_IMPORTED_MODULE_8__.NormalBlending,
       transparent: true
     });
     this.screenOutputMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;
     this.screenOutputDenoiseMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;
-    this.screenOutputMesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(this.screenOutputGeometry, this.screenOutputMaterial);
+    this.screenOutputMesh = new three__WEBPACK_IMPORTED_MODULE_8__.Mesh(this.screenOutputGeometry, this.screenOutputMaterial);
     this.gradientDelta = 1.0 / Math.max(sx, Math.max(sy, sz));
     var invGradientDelta = 1.0 / this.gradientDelta; // a voxel count...
 
-    this.pathTracingUniforms.gGradientDeltaX.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(this.gradientDelta, 0, 0);
-    this.pathTracingUniforms.gGradientDeltaY.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, this.gradientDelta, 0);
-    this.pathTracingUniforms.gGradientDeltaZ.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, this.gradientDelta);
+    this.pathTracingUniforms.gGradientDeltaX.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(this.gradientDelta, 0, 0);
+    this.pathTracingUniforms.gGradientDeltaY.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, this.gradientDelta, 0);
+    this.pathTracingUniforms.gGradientDeltaZ.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, this.gradientDelta);
     // can this be a per-x,y,z value?
     this.pathTracingUniforms.gInvGradientDelta.value = invGradientDelta; // a voxel count
     this.pathTracingUniforms.gGradientFactor.value = 50.0; // related to voxel counts also
 
-    this.setRayStepSizes(1.0, 1.0);
-
     // bounds will go from 0 to physicalSize
     var physicalSize = volume.normalizedPhysicalSize;
-    this.pathTracingUniforms.gInvAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1.0 / physicalSize.x, 1.0 / physicalSize.y, 1.0 / physicalSize.z);
-    this.updateClipRegion(0, 1, 0, 1, 0, 1);
+    this.pathTracingUniforms.gInvAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1.0 / physicalSize.x, 1.0 / physicalSize.y, 1.0 / physicalSize.z);
     this.updateLightsSecondary();
+
+    // Update settings
+    this.updateSettings(settings);
+    this.settings = settings; // turns off ts initialization warning
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(PathTracedVolume, [{
     key: "cleanup",
@@ -2858,20 +2987,64 @@ var PathTracedVolume = /*#__PURE__*/function () {
       }
       this.sampleCounter = 0;
     }
+
+    /**
+     * If the new settings have changed, applies all changes to this volume renderer.
+     * @param newSettings
+     * @returns
+     */
   }, {
-    key: "setVisible",
-    value: function setVisible(_isVisible) {
-      // this.visible = isVisible;
-    }
-  }, {
-    key: "setShowBoundingBox",
-    value: function setShowBoundingBox(_showBoundingBox) {
-      // TODO: NOT IMPLEMENTED YET
-    }
-  }, {
-    key: "setBoundingBoxColor",
-    value: function setBoundingBoxColor(_color) {
-      // TODO: NOT IMPLEMENTED YET
+    key: "updateSettings",
+    value: function updateSettings(newSettings, dirtyFlags) {
+      if (dirtyFlags === undefined) {
+        dirtyFlags = _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.ALL;
+      }
+      this.settings = newSettings;
+
+      // Update resolution
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.SAMPLING) {
+        var resolution = this.settings.resolution.clone();
+        this.fullTargetResolution = resolution;
+        var dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
+        var nx = Math.floor(resolution.x * this.settings.pixelSamplingRate / dpr);
+        var ny = Math.floor(resolution.y * this.settings.pixelSamplingRate / dpr);
+        this.pathTracingUniforms.uResolution.value.x = nx;
+        this.pathTracingUniforms.uResolution.value.y = ny;
+        this.pathTracingRenderTarget.setSize(nx, ny);
+        this.screenTextureRenderTarget.setSize(nx, ny);
+
+        // update ray step size
+        this.pathTracingUniforms.gStepSize.value = this.settings.primaryRayStepSize * this.gradientDelta;
+        this.pathTracingUniforms.gStepSizeShadow.value = this.settings.secondaryRayStepSize * this.gradientDelta;
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.TRANSFORM) {
+        this.pathTracingUniforms.flipVolume.value = this.settings.flipAxes;
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.MATERIAL) {
+        this.pathTracingUniforms.gDensityScale.value = this.settings.density * 150.0;
+      }
+
+      // update bounds
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.ROI) {
+        var physicalSize = this.volume.normalizedPhysicalSize;
+        this.pathTracingUniforms.gClippedAaBbMin.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(this.settings.bounds.bmin.x * physicalSize.x, this.settings.bounds.bmin.y * physicalSize.y, this.settings.bounds.bmin.z * physicalSize.z);
+        this.pathTracingUniforms.gClippedAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(this.settings.bounds.bmax.x * physicalSize.x, this.settings.bounds.bmax.y * physicalSize.y, this.settings.bounds.bmax.z * physicalSize.z);
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.CAMERA) {
+        this.updateExposure(this.settings.brightness);
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.MASK) {
+        // Update channel and alpha mask if they have changed
+        this.updateVolumeData4();
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.VIEW) {
+        this.pathTracingUniforms.gCamera.value.mIsOrtho = this.settings.isOrtho ? 1 : 0;
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.SAMPLING) {
+        this.volumeTexture.minFilter = this.volumeTexture.magFilter = newSettings.useInterpolation ? three_src_constants__WEBPACK_IMPORTED_MODULE_9__.LinearFilter : three_src_constants__WEBPACK_IMPORTED_MODULE_9__.NearestFilter;
+        this.volumeTexture.needsUpdate = true;
+      }
+      this.resetProgress();
     }
   }, {
     key: "doRender",
@@ -2901,18 +3074,18 @@ var PathTracedVolume = /*#__PURE__*/function () {
       // this code is analogous to this threejs code from View3d.preRender:
       // this.scene.getObjectByName('lightContainer').rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
       var mycamxform = cam.matrixWorld.clone();
-      mycamxform.setPosition(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0));
+      mycamxform.setPosition(new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0));
       this.updateLightsSecondary(mycamxform);
-      var mydir = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3();
+      var mydir = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3();
       mydir = cam.getWorldDirection(mydir);
-      var myup = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().copy(cam.up);
+      var myup = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().copy(cam.up);
       // don't rotate this vector.  we are using translation as the pivot point of the object, and THEN rotating.
-      var mypos = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().copy(cam.position);
+      var mypos = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().copy(cam.position);
 
       // apply volume translation and rotation:
       // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
-      var m = new three__WEBPACK_IMPORTED_MODULE_7__.Matrix4().makeRotationFromQuaternion(new three__WEBPACK_IMPORTED_MODULE_7__.Quaternion().setFromEuler(this.rotation).invert());
-      mypos.sub(this.translation);
+      var m = new three__WEBPACK_IMPORTED_MODULE_8__.Matrix4().makeRotationFromQuaternion(new three__WEBPACK_IMPORTED_MODULE_8__.Quaternion().setFromEuler(this.settings.rotation).invert());
+      mypos.sub(this.settings.translation);
       mypos.applyMatrix4(m);
       myup.applyMatrix4(m);
       mydir.applyMatrix4(m);
@@ -2973,148 +3146,6 @@ var PathTracedVolume = /*#__PURE__*/function () {
     value: function get3dObject() {
       return this.screenOutputMesh;
     }
-  }, {
-    key: "onChannelData",
-    value: function onChannelData(_batch) {
-      // no op
-    }
-  }, {
-    key: "setScale",
-    value: function setScale(scale) {
-      this.scale = scale;
-    }
-  }, {
-    key: "setRayStepSizes",
-    value: function setRayStepSizes(primary, secondary) {
-      // reset render if changed
-      if (this.stepSizePrimaryRayVoxels !== primary || this.stepSizeSecondaryRayVoxels !== secondary) {
-        this.resetProgress();
-      }
-      this.stepSizePrimaryRayVoxels = primary;
-      this.stepSizeSecondaryRayVoxels = secondary;
-      this.pathTracingUniforms.gStepSize.value = this.stepSizePrimaryRayVoxels * this.gradientDelta;
-      this.pathTracingUniforms.gStepSizeShadow.value = this.stepSizeSecondaryRayVoxels * this.gradientDelta;
-    }
-  }, {
-    key: "setTranslation",
-    value: function setTranslation(vec3xyz) {
-      this.translation.copy(vec3xyz);
-      this.resetProgress();
-    }
-  }, {
-    key: "setRotation",
-    value: function setRotation(eulerXYZ) {
-      this.rotation.copy(eulerXYZ);
-      this.resetProgress();
-    }
-  }, {
-    key: "setOrthoScale",
-    value: function setOrthoScale(_value) {
-      // no op
-    }
-  }, {
-    key: "setGamma",
-    value: function setGamma(_gmin, _glevel, _gmax) {
-      // no op
-    }
-  }, {
-    key: "setFlipAxes",
-    value: function setFlipAxes(flipX, flipY, flipZ) {
-      this.pathTracingUniforms.flipVolume.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(flipX, flipY, flipZ);
-      // TODO: only reset if changed!
-      this.resetProgress();
-    }
-  }, {
-    key: "setResolution",
-    value: function setResolution(x, y) {
-      this.fullTargetResolution = new three__WEBPACK_IMPORTED_MODULE_7__.Vector2(x, y);
-      var dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
-      var nx = Math.floor(x * this.pixelSamplingRate / dpr);
-      var ny = Math.floor(y * this.pixelSamplingRate / dpr);
-      this.pathTracingUniforms.uResolution.value.x = nx;
-      this.pathTracingUniforms.uResolution.value.y = ny;
-
-      // TODO optimization: scale this value down when nx,ny is small.  For now can leave it at 3 (a 7x7 pixel filter).
-      var denoiseFilterR = 3;
-      this.screenOutputDenoiseMaterial.uniforms.gDenoiseWindowRadius.value = denoiseFilterR;
-      this.screenOutputDenoiseMaterial.uniforms.gDenoiseInvWindowArea.value = 1.0 / ((2.0 * denoiseFilterR + 1.0) * (2.0 * denoiseFilterR + 1.0));
-      this.pathTracingRenderTarget.setSize(nx, ny);
-      this.screenTextureRenderTarget.setSize(nx, ny);
-      this.resetProgress();
-    }
-  }, {
-    key: "setPixelSamplingRate",
-    value: function setPixelSamplingRate(rate) {
-      this.pixelSamplingRate = rate;
-      this.setResolution(this.fullTargetResolution.x, this.fullTargetResolution.y);
-      this.resetProgress();
-    }
-  }, {
-    key: "setDensity",
-    value: function setDensity(density) {
-      this.pathTracingUniforms.gDensityScale.value = density * 150.0;
-      this.resetProgress();
-    }
-
-    // TODO brightness and exposure should be the same thing? or gamma?
-  }, {
-    key: "setBrightness",
-    value: function setBrightness(brightness) {
-      // convert to an exposure value
-      if (brightness === 1.0) {
-        brightness = 0.999;
-      }
-      this.updateExposure(brightness);
-    }
-
-    // -0.5 .. 0.5
-  }, {
-    key: "setAxisClip",
-    value: function setAxisClip(axis, minval, maxval, _isOrthoAxis) {
-      this.bounds.bmax[axis] = maxval;
-      this.bounds.bmin[axis] = minval;
-      var physicalSize = this.volume.normalizedPhysicalSize;
-      this.pathTracingUniforms.gClippedAaBbMin.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(this.bounds.bmin.x * physicalSize.x, this.bounds.bmin.y * physicalSize.y, this.bounds.bmin.z * physicalSize.z);
-      this.pathTracingUniforms.gClippedAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(this.bounds.bmax.x * physicalSize.x, this.bounds.bmax.y * physicalSize.y, this.bounds.bmax.z * physicalSize.z);
-      this.resetProgress();
-    }
-  }, {
-    key: "setChannelAsMask",
-    value: function setChannelAsMask(channelIndex) {
-      if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
-        return false;
-      }
-      if (this.maskChannelIndex !== channelIndex) {
-        this.maskChannelIndex = channelIndex;
-        this.updateVolumeData4();
-        this.resetProgress();
-      }
-      return true;
-    }
-  }, {
-    key: "setMaskAlpha",
-    value: function setMaskAlpha(maskAlpha) {
-      this.maskAlpha = maskAlpha;
-      this.updateVolumeData4();
-      this.resetProgress();
-    }
-  }, {
-    key: "setOrthoThickness",
-    value: function setOrthoThickness(_value) {
-      // no op
-    }
-  }, {
-    key: "setIsOrtho",
-    value: function setIsOrtho(isOrthoAxis) {
-      this.pathTracingUniforms.gCamera.value.mIsOrtho = isOrthoAxis ? 1 : 0;
-      this.resetProgress();
-    }
-  }, {
-    key: "setInterpolationEnabled",
-    value: function setInterpolationEnabled(active) {
-      this.volumeTexture.minFilter = this.volumeTexture.magFilter = active ? three_src_constants__WEBPACK_IMPORTED_MODULE_8__.LinearFilter : three_src_constants__WEBPACK_IMPORTED_MODULE_8__.NearestFilter;
-      this.volumeTexture.needsUpdate = true;
-    }
 
     //////////////////////////////////////////
     //////////////////////////////////////////
@@ -3141,14 +3172,15 @@ var PathTracedVolume = /*#__PURE__*/function () {
     }
   }, {
     key: "updateActiveChannels",
-    value: function updateActiveChannels(image) {
+    value: function updateActiveChannels(channelColors, channelData) {
       var _this = this;
       var ch = [-1, -1, -1, -1];
       var activeChannel = 0;
       var NC = this.volume.num_channels;
       var maxch = 4;
       for (var i = 0; i < NC && activeChannel < maxch; ++i) {
-        if (image.isVolumeChannelEnabled(i) && image.getChannel(i).loaded) {
+        // check that channel is not disabled and is loaded
+        if (channelColors[i].rgbColor !== _types__WEBPACK_IMPORTED_MODULE_6__.FUSE_DISABLED_RGB_COLOR && channelData[i].loaded) {
           ch[activeChannel] = i;
           activeChannel++;
         }
@@ -3164,10 +3196,8 @@ var PathTracedVolume = /*#__PURE__*/function () {
       // update volume data according to channels selected.
       this.updateVolumeData4();
       this.resetProgress();
-      this.updateLuts(image);
-      this.updateMaterial(image);
-
-      // console.log(this.pathTracingUniforms);
+      this.updateLuts(channelColors, channelData);
+      this.updateMaterial(channelColors, channelData);
     }
   }, {
     key: "updateVolumeData4",
@@ -3189,11 +3219,11 @@ var PathTracedVolume = /*#__PURE__*/function () {
             }
           }
         }
-        if (this.maskChannelIndex !== -1 && this.maskAlpha < 1.0) {
-          var maskChannel = this.volume.getChannel(this.maskChannelIndex);
+        if (this.settings.maskChannelIndex !== -1 && this.settings.maskAlpha < 1.0) {
+          var maskChannel = this.volume.getChannel(this.settings.maskChannelIndex);
           // const maskMax = maskChannel.getHistogram().dataMax;
           var maskVal = 1.0;
-          var maskAlpha = this.maskAlpha;
+          var maskAlpha = this.settings.maskAlpha;
           for (var _iz = 0; _iz < sz; ++_iz) {
             for (var _iy = 0; _iy < sy; ++_iy) {
               for (var _ix = 0; _ix < sx; ++_ix) {
@@ -3214,10 +3244,10 @@ var PathTracedVolume = /*#__PURE__*/function () {
     }
   }, {
     key: "updateLuts",
-    value: function updateLuts(image) {
+    value: function updateLuts(channelColors, channelData) {
       for (var i = 0; i < this.pathTracingUniforms.gNChannels.value; ++i) {
         var channel = this.viewChannels[i];
-        var combinedLut = image.getChannel(channel).combineLuts(image.getChannelColor(channel));
+        var combinedLut = channelData[channel].combineLuts(channelColors[channel].rgbColor);
         this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, i * _Histogram__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH);
         this.pathTracingUniforms.gIntensityMax.value.setComponent(i, this.volume.channels[channel].histogram.getMax() / 255.0);
         this.pathTracingUniforms.gIntensityMin.value.setComponent(i, this.volume.channels[channel].histogram.getMin() / 255.0);
@@ -3230,18 +3260,18 @@ var PathTracedVolume = /*#__PURE__*/function () {
     // emissive, glossiness
   }, {
     key: "updateMaterial",
-    value: function updateMaterial(image) {
+    value: function updateMaterial(channelColors, channelData) {
       for (var c = 0; c < this.viewChannels.length; ++c) {
         var i = this.viewChannels[c];
         if (i > -1) {
           // diffuse color is actually blended into the LUT now.
-          var combinedLut = image.getChannel(i).combineLuts(image.getChannelColor(i));
+          var combinedLut = channelData[i].combineLuts(channelColors[i].rgbColor);
           this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, c * _Histogram__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH);
           this.pathTracingUniforms.gLutTexture.value.needsUpdate = true;
-          this.pathTracingUniforms.gDiffuse.value[c] = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1.0, 1.0, 1.0);
-          this.pathTracingUniforms.gSpecular.value[c] = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().fromArray(image.specular[i]).multiplyScalar(1.0 / 255.0);
-          this.pathTracingUniforms.gEmissive.value[c] = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().fromArray(image.emissive[i]).multiplyScalar(1.0 / 255.0);
-          this.pathTracingUniforms.gGlossiness.value[c] = image.glossiness[i];
+          this.pathTracingUniforms.gDiffuse.value[c] = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1.0, 1.0, 1.0);
+          this.pathTracingUniforms.gSpecular.value[c] = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().fromArray(this.settings.specular[i]).multiplyScalar(1.0 / 255.0);
+          this.pathTracingUniforms.gEmissive.value[c] = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().fromArray(this.settings.emissive[i]).multiplyScalar(1.0 / 255.0);
+          this.pathTracingUniforms.gGlossiness.value[c] = this.settings.glossiness[i];
         }
       }
       this.resetProgress();
@@ -3280,12 +3310,12 @@ var PathTracedVolume = /*#__PURE__*/function () {
     key: "updateLights",
     value: function updateLights(state) {
       // 0th light in state array is sphere light
-      this.pathTracingUniforms.gLights.value[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().copy(state[0].mColorTop);
-      this.pathTracingUniforms.gLights.value[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().copy(state[0].mColorMiddle);
-      this.pathTracingUniforms.gLights.value[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().copy(state[0].mColorBottom);
+      this.pathTracingUniforms.gLights.value[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().copy(state[0].mColorTop);
+      this.pathTracingUniforms.gLights.value[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().copy(state[0].mColorMiddle);
+      this.pathTracingUniforms.gLights.value[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().copy(state[0].mColorBottom);
 
       // 1st light in state array is area light
-      this.pathTracingUniforms.gLights.value[1].mColor = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().copy(state[1].mColor);
+      this.pathTracingUniforms.gLights.value[1].mColor = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().copy(state[1].mColor);
       this.pathTracingUniforms.gLights.value[1].mTheta = state[1].mTheta;
       this.pathTracingUniforms.gLights.value[1].mPhi = state[1].mPhi;
       this.pathTracingUniforms.gLights.value[1].mDistance = state[1].mDistance;
@@ -3298,7 +3328,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
     key: "updateLightsSecondary",
     value: function updateLightsSecondary(cameraMatrix) {
       var physicalSize = this.volume.normalizedPhysicalSize;
-      var bbctr = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(physicalSize.x * 0.5, physicalSize.y * 0.5, physicalSize.z * 0.5);
+      var bbctr = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(physicalSize.x * 0.5, physicalSize.y * 0.5, physicalSize.z * 0.5);
       for (var i = 0; i < 2; ++i) {
         var lt = this.pathTracingUniforms.gLights.value[i];
         lt.update(bbctr, cameraMatrix);
@@ -3309,13 +3339,13 @@ var PathTracedVolume = /*#__PURE__*/function () {
   }, {
     key: "updateClipRegion",
     value: function updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
-      this.bounds = {
-        bmin: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
-        bmax: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5)
+      this.settings.bounds = {
+        bmin: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
+        bmax: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5)
       };
       var physicalSize = this.volume.normalizedPhysicalSize;
-      this.pathTracingUniforms.gClippedAaBbMin.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(xmin * physicalSize.x - 0.5 * physicalSize.x, ymin * physicalSize.y - 0.5 * physicalSize.y, zmin * physicalSize.z - 0.5 * physicalSize.z);
-      this.pathTracingUniforms.gClippedAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(xmax * physicalSize.x - 0.5 * physicalSize.x, ymax * physicalSize.y - 0.5 * physicalSize.y, zmax * physicalSize.z - 0.5 * physicalSize.z);
+      this.pathTracingUniforms.gClippedAaBbMin.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmin * physicalSize.x - 0.5 * physicalSize.x, ymin * physicalSize.y - 0.5 * physicalSize.y, zmin * physicalSize.z - 0.5 * physicalSize.z);
+      this.pathTracingUniforms.gClippedAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmax * physicalSize.x - 0.5 * physicalSize.x, ymax * physicalSize.y - 0.5 * physicalSize.y, zmax * physicalSize.z - 0.5 * physicalSize.z);
       this.resetProgress();
     }
   }, {
@@ -3344,69 +3374,151 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _FusedChannelData__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./FusedChannelData */ "./src/FusedChannelData.ts");
 /* harmony import */ var _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./constants/volumeRayMarchShader */ "./src/constants/volumeRayMarchShader.ts");
+/* harmony import */ var _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VolumeRenderSettings */ "./src/VolumeRenderSettings.ts");
 
 
 
 
 
 
-var BOUNDING_BOX_DEFAULT_COLOR = new three__WEBPACK_IMPORTED_MODULE_5__.Color(0xffff00);
+
+var BOUNDING_BOX_DEFAULT_COLOR = new three__WEBPACK_IMPORTED_MODULE_6__.Color(0xffff00);
 var RayMarchedAtlasVolume = /*#__PURE__*/function () {
+  /**
+   * Creates a new RayMarchedAtlasVolume.
+   * @param volume The volume that this renderer should render data from.
+   * @param settings Optional settings object. If set, updates the renderer with
+   * the given settings. Otherwise, uses the default VolumeRenderSettings.
+   */
   function RayMarchedAtlasVolume(volume) {
+    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.VolumeRenderSettings(volume);
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, RayMarchedAtlasVolume);
-    // need?
     this.volume = volume;
-
-    // note that these bounds are the clipped region of interest,
-    // and not always the whole volume
-    this.bounds = {
-      bmin: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(-0.5, -0.5, -0.5),
-      bmax: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0.5, 0.5, 0.5)
-    };
-    this.scale = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1.0, 1.0, 1.0);
-    this.isOrtho = false;
     this.uniforms = (0,_constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_4__.rayMarchingShaderUniforms)();
     var _this$createGeometry = this.createGeometry(this.uniforms);
     var _this$createGeometry2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_this$createGeometry, 2);
     this.geometry = _this$createGeometry2[0];
     this.geometryMesh = _this$createGeometry2[1];
-    this.boxHelper = new three__WEBPACK_IMPORTED_MODULE_5__.Box3Helper(new three__WEBPACK_IMPORTED_MODULE_5__.Box3(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(-0.5, -0.5, -0.5), new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0.5, 0.5, 0.5)), BOUNDING_BOX_DEFAULT_COLOR);
+    this.boxHelper = new three__WEBPACK_IMPORTED_MODULE_6__.Box3Helper(new three__WEBPACK_IMPORTED_MODULE_6__.Box3(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(-0.5, -0.5, -0.5), new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0.5, 0.5, 0.5)), BOUNDING_BOX_DEFAULT_COLOR);
     this.boxHelper.updateMatrixWorld();
     this.boxHelper.visible = false;
     this.tickMarksMesh = this.createTickMarks();
     this.tickMarksMesh.updateMatrixWorld();
     this.tickMarksMesh.visible = false;
-    this.geometryTransformNode = new three__WEBPACK_IMPORTED_MODULE_5__.Group();
+    this.geometryTransformNode = new three__WEBPACK_IMPORTED_MODULE_6__.Group();
     this.geometryTransformNode.name = "VolumeContainerNode";
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
     this.setUniform("ATLAS_X", volume.imageInfo.cols);
     this.setUniform("ATLAS_Y", volume.imageInfo.rows);
-    this.setUniform("textureRes", new three__WEBPACK_IMPORTED_MODULE_5__.Vector2(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height));
+    this.setUniform("textureRes", new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height));
     this.setUniform("SLICES", volume.z);
-    this.setScale(this.scale);
     this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_3__["default"](volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
+    this.updateSettings(settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ALL);
   }
-
-  // TODO: Change uniforms to be a generic type in a abstract parent class?
-  /**
-   * Creates the geometry mesh and material for rendering the volume.
-   * @param uniforms object containing uniforms to pass to the shader material.
-   * @returns the new geometry and geometry mesh.
-   */
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(RayMarchedAtlasVolume, [{
+    key: "viewpointMoved",
+    value: function viewpointMoved() {
+      return;
+    }
+  }, {
+    key: "updateSettings",
+    value: function updateSettings(newSettings, dirtyFlags) {
+      if (dirtyFlags === undefined) {
+        dirtyFlags = _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ALL;
+      }
+      this.settings = newSettings;
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.VIEW) {
+        this.geometryMesh.visible = this.settings.visible;
+        // Configure ortho
+        this.setUniform("orthoScale", this.settings.orthoScale);
+        this.setUniform("isOrtho", this.settings.isOrtho ? 1.0 : 0.0);
+        // Ortho line thickness
+        var axis = this.settings.viewAxis;
+        if (this.settings.isOrtho && axis !== null) {
+          // TODO: Does this code do any relevant changes?
+          var maxVal = this.settings.bounds.bmax[axis];
+          var minVal = this.settings.bounds.bmin[axis];
+          var thicknessPct = maxVal - minVal;
+          this.setUniform("orthoThickness", thicknessPct);
+        } else {
+          this.setUniform("orthoThickness", 1.0);
+        }
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.VIEW || dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.BOUNDING_BOX) {
+        // Update tick marks with either view or bounding box changes
+        this.tickMarksMesh.visible = this.settings.showBoundingBox && !this.settings.isOrtho;
+        this.setUniform("maxProject", this.settings.maxProjectMode ? 1 : 0);
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.BOUNDING_BOX) {
+        // Configure bounding box
+        this.boxHelper.visible = this.settings.showBoundingBox;
+        var colorVector = this.settings.boundingBoxColor;
+        var newBoxColor = new three__WEBPACK_IMPORTED_MODULE_6__.Color(colorVector[0], colorVector[1], colorVector[2]);
+        this.boxHelper.material.color = newBoxColor;
+        this.tickMarksMesh.material.color = newBoxColor;
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.TRANSFORM) {
+        // Set scale
+        var scale = this.settings.scale;
+        this.geometryMesh.scale.copy(scale);
+        this.setUniform("volumeScale", scale);
+        this.boxHelper.box.set(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z), new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z));
+        this.tickMarksMesh.scale.copy(scale);
+        // Set rotation and translation
+        this.geometryTransformNode.position.copy(this.settings.translation);
+        this.geometryTransformNode.rotation.copy(this.settings.rotation);
+        this.setUniform("flipVolume", this.settings.flipAxes);
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MATERIAL) {
+        this.setUniform("DENSITY", this.settings.density);
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.CAMERA) {
+        // TODO brightness and exposure should be the same thing?
+        this.setUniform("BRIGHTNESS", this.settings.brightness * 2.0);
+        // Gamma
+        this.setUniform("GAMMA_MIN", this.settings.gammaMin);
+        this.setUniform("GAMMA_MAX", this.settings.gammaMax);
+        this.setUniform("GAMMA_SCALE", this.settings.gammaLevel);
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ROI) {
+        // Normalize and set bounds
+        var bounds = this.settings.bounds;
+        var boundsNormalized = {
+          bmin: new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(bounds.bmin.x * 2.0, bounds.bmin.y * 2.0, bounds.bmin.z * 2.0),
+          bmax: new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(bounds.bmax.x * 2.0, bounds.bmax.y * 2.0, bounds.bmax.z * 2.0)
+        };
+        this.setUniform("AABB_CLIP_MIN", boundsNormalized.bmin);
+        this.setUniform("AABB_CLIP_MAX", boundsNormalized.bmax);
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.SAMPLING) {
+        this.setUniform("interpolationEnabled", this.settings.useInterpolation);
+        this.setUniform("iResolution", this.settings.resolution);
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MASK) {
+        this.setUniform("maskAlpha", this.settings.maskAlpha);
+        this.setUniform("maskAlpha", this.settings.maskAlpha);
+      }
+    }
+
+    /**
+     * Creates the geometry mesh and material for rendering the volume.
+     * @param uniforms object containing uniforms to pass to the shader material.
+     * @returns the new geometry and geometry mesh.
+     */
+  }, {
     key: "createGeometry",
     value: function createGeometry(uniforms) {
-      var geom = new three__WEBPACK_IMPORTED_MODULE_5__.BoxGeometry(1.0, 1.0, 1.0);
-      var mesh = new three__WEBPACK_IMPORTED_MODULE_5__.Mesh(geom);
+      var geom = new three__WEBPACK_IMPORTED_MODULE_6__.BoxGeometry(1.0, 1.0, 1.0);
+      var mesh = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(geom);
       mesh.name = "Volume";
 
       // shader,vtx and frag.
       var vtxsrc = _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_4__.rayMarchingVertexShaderSrc;
       var fgmtsrc = _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_4__.rayMarchingFragmentShaderSrc;
-      var threeMaterial = new three__WEBPACK_IMPORTED_MODULE_5__.ShaderMaterial({
+      var threeMaterial = new three__WEBPACK_IMPORTED_MODULE_6__.ShaderMaterial({
         uniforms: uniforms,
         vertexShader: vtxsrc,
         fragmentShader: fgmtsrc,
@@ -3445,9 +3557,9 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
         // prettier-ignore
         vertices.push(-0.5, 0.5, z, -tickEndX, 0.5, z, -0.5, -0.5, z, -tickEndX, -0.5, z, 0.5, -0.5, z, tickEndX, -0.5, z, 0.5, 0.5, z, tickEndX, 0.5, z);
       }
-      var geometry = new three__WEBPACK_IMPORTED_MODULE_5__.BufferGeometry();
-      geometry.setAttribute("position", new three__WEBPACK_IMPORTED_MODULE_5__.BufferAttribute(new Float32Array(vertices), 3));
-      return new three__WEBPACK_IMPORTED_MODULE_5__.LineSegments(geometry, new three__WEBPACK_IMPORTED_MODULE_5__.LineBasicMaterial({
+      var geometry = new three__WEBPACK_IMPORTED_MODULE_6__.BufferGeometry();
+      geometry.setAttribute("position", new three__WEBPACK_IMPORTED_MODULE_6__.BufferAttribute(new Float32Array(vertices), 3));
+      return new three__WEBPACK_IMPORTED_MODULE_6__.LineSegments(geometry, new three__WEBPACK_IMPORTED_MODULE_6__.LineBasicMaterial({
         color: BOUNDING_BOX_DEFAULT_COLOR
       }));
     }
@@ -3459,29 +3571,6 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
       this.channelData.cleanup();
     }
   }, {
-    key: "setVisible",
-    value: function setVisible(isVisible) {
-      this.geometryMesh.visible = isVisible;
-      // note that this does not affect bounding box visibility
-    }
-  }, {
-    key: "setShowBoundingBox",
-    value: function setShowBoundingBox(showBoundingBox) {
-      this.boxHelper.visible = showBoundingBox;
-      this.tickMarksMesh.visible = showBoundingBox && !this.isOrtho;
-    }
-  }, {
-    key: "setBoundingBoxColor",
-    value: function setBoundingBoxColor(color) {
-      var newBoxColor = new three__WEBPACK_IMPORTED_MODULE_5__.Color(color[0], color[1], color[2]);
-      // note this material update is supposed to be a hidden implementation detail
-      // but I didn't want to re-create a whole boxHelper again.
-      // I could also create a new LineBasicMaterial but that would also rely on knowledge
-      // that Box3Helper expects that type.
-      this.boxHelper.material.color = newBoxColor;
-      this.tickMarksMesh.material.color = newBoxColor;
-    }
-  }, {
     key: "doRender",
     value: function doRender(canvas) {
       if (!this.geometryMesh.visible) {
@@ -3490,9 +3579,9 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
       this.channelData.gpuFuse(canvas.renderer);
       this.setUniform("textureAtlas", this.channelData.getFusedTexture());
       this.geometryTransformNode.updateMatrixWorld(true);
-      var mvm = new three__WEBPACK_IMPORTED_MODULE_5__.Matrix4();
+      var mvm = new three__WEBPACK_IMPORTED_MODULE_6__.Matrix4();
       mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
-      var mi = new three__WEBPACK_IMPORTED_MODULE_5__.Matrix4();
+      var mi = new three__WEBPACK_IMPORTED_MODULE_6__.Matrix4();
       mi.copy(mvm).invert();
       this.setUniform("inverseModelViewMatrix", mi);
     }
@@ -3500,151 +3589,6 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     key: "get3dObject",
     value: function get3dObject() {
       return this.geometryTransformNode;
-    }
-  }, {
-    key: "onChannelData",
-    value: function onChannelData(_batch) {
-      // no op
-    }
-  }, {
-    key: "setScale",
-    value: function setScale(scale) {
-      this.scale = scale;
-      this.geometryMesh.scale.copy(scale);
-      this.setUniform("volumeScale", scale);
-      this.boxHelper.box.set(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z), new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z));
-      this.tickMarksMesh.scale.copy(scale);
-    }
-  }, {
-    key: "setRayStepSizes",
-    value: function setRayStepSizes(_primary, _secondary) {
-      // no op
-    }
-  }, {
-    key: "setTranslation",
-    value: function setTranslation(vec3xyz) {
-      this.geometryTransformNode.position.copy(vec3xyz);
-    }
-  }, {
-    key: "setRotation",
-    value: function setRotation(eulerXYZ) {
-      this.geometryTransformNode.rotation.copy(eulerXYZ);
-    }
-  }, {
-    key: "setOrthoScale",
-    value: function setOrthoScale(value) {
-      this.setUniform("orthoScale", value);
-    }
-  }, {
-    key: "setResolution",
-    value: function setResolution(x, y) {
-      this.setUniform("iResolution", new three__WEBPACK_IMPORTED_MODULE_5__.Vector2(x, y));
-    }
-  }, {
-    key: "setPixelSamplingRate",
-    value: function setPixelSamplingRate(_value) {
-      // no op
-    }
-  }, {
-    key: "setDensity",
-    value: function setDensity(density) {
-      this.setUniform("DENSITY", density);
-    }
-
-    // TODO brightness and exposure should be the same thing?
-  }, {
-    key: "setBrightness",
-    value: function setBrightness(brightness) {
-      this.setUniform("BRIGHTNESS", brightness * 2.0);
-    }
-  }, {
-    key: "setIsOrtho",
-    value: function setIsOrtho(isOrthoAxis) {
-      this.isOrtho = isOrthoAxis;
-      this.tickMarksMesh.visible = this.boxHelper.visible && !isOrthoAxis;
-      this.setUniform("isOrtho", isOrthoAxis ? 1.0 : 0.0);
-      if (!isOrthoAxis) {
-        this.setOrthoThickness(1.0);
-      }
-    }
-  }, {
-    key: "setInterpolationEnabled",
-    value: function setInterpolationEnabled(active) {
-      this.setUniform("interpolationEnabled", active);
-    }
-  }, {
-    key: "viewpointMoved",
-    value: function viewpointMoved() {
-      // no op
-    }
-  }, {
-    key: "setGamma",
-    value: function setGamma(gmin, glevel, gmax) {
-      this.setUniform("GAMMA_MIN", gmin);
-      this.setUniform("GAMMA_MAX", gmax);
-      this.setUniform("GAMMA_SCALE", glevel);
-    }
-  }, {
-    key: "setMaxProjectMode",
-    value: function setMaxProjectMode(isMaxProject) {
-      this.setUniform("maxProject", isMaxProject ? 1 : 0);
-    }
-  }, {
-    key: "setAxisClip",
-    value: function setAxisClip(axis, minval, maxval, isOrthoAxis) {
-      this.bounds.bmax[axis] = maxval;
-      this.bounds.bmin[axis] = minval;
-      if (isOrthoAxis) {
-        var thicknessPct = maxval - minval;
-        this.setOrthoThickness(thicknessPct);
-      } else {
-        // it is possible this is overly aggressive resetting this value here
-        // but testing has shown no ill effects and it is better to have a definite
-        // known value when in perspective mode
-        this.setOrthoThickness(1.0);
-      }
-      this.setUniform("AABB_CLIP_MIN", this.bounds.bmin);
-      this.setUniform("AABB_CLIP_MAX", this.bounds.bmax);
-    }
-  }, {
-    key: "setFlipAxes",
-    value: function setFlipAxes(flipX, flipY, flipZ) {
-      this.setUniform("flipVolume", new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(flipX, flipY, flipZ));
-    }
-
-    // 0..1
-  }, {
-    key: "updateClipRegion",
-    value: function updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
-      this.bounds = {
-        bmin: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
-        bmax: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5)
-      };
-      this.setUniform("AABB_CLIP_MIN", this.bounds.bmin);
-      this.setUniform("AABB_CLIP_MAX", this.bounds.bmax);
-    }
-  }, {
-    key: "setZSlice",
-    value: function setZSlice(_slice) {
-      return true;
-    }
-  }, {
-    key: "setChannelAsMask",
-    value: function setChannelAsMask(channelIndex) {
-      if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
-        return false;
-      }
-      return this.channelData.setChannelAsMask(channelIndex, this.volume.channels[channelIndex]);
-    }
-  }, {
-    key: "setMaskAlpha",
-    value: function setMaskAlpha(maskAlpha) {
-      this.setUniform("maskAlpha", maskAlpha);
-    }
-  }, {
-    key: "setOrthoThickness",
-    value: function setOrthoThickness(value) {
-      this.setUniform("orthoThickness", value);
     }
 
     //////////////////////////////////////////
@@ -3661,8 +3605,8 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
 
     // channelcolors is array of {rgbColor, lut} and channeldata is volume.channels
   }, {
-    key: "fuse",
-    value: function fuse(channelcolors, channeldata) {
+    key: "updateActiveChannels",
+    value: function updateActiveChannels(channelcolors, channeldata) {
       this.channelData.fuse(channelcolors, channeldata);
 
       // update to fused texture
@@ -5005,8 +4949,9 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-var RENDERMODE_RAYMARCH = 0;
-var RENDERMODE_PATHTRACE = 1;
+// Constants are kept for compatibility reasons.
+var RENDERMODE_RAYMARCH = _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH;
+var RENDERMODE_PATHTRACE = _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE;
 /**
  * @class
  */
@@ -5035,7 +4980,7 @@ var View3d = /*#__PURE__*/function () {
     this.lights = [];
     this.pixelSamplingRate = 0.75;
     this.exposure = 0.5;
-    this.volumeRenderMode = RENDERMODE_RAYMARCH;
+    this.volumeRenderMode = _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH;
     window.addEventListener("resize", function () {
       return _this.resize(null);
     });
@@ -5134,7 +5079,7 @@ var View3d = /*#__PURE__*/function () {
     value: function addVolume(volume, options) {
       volume.addVolumeDataObserver(this);
       options = options || {};
-      options.renderMode = this.volumeRenderMode === RENDERMODE_PATHTRACE ? 1 : 0;
+      options.renderMode = this.volumeRenderMode;
       this.setImage(new _VolumeDrawable__WEBPACK_IMPORTED_MODULE_6__["default"](volume, options));
     }
 
@@ -5273,7 +5218,7 @@ var View3d = /*#__PURE__*/function () {
     value: function setShowBoundingBox(volume, showBoundingBox) {
       var _this$image8;
       (_this$image8 = this.image) === null || _this$image8 === void 0 ? void 0 : _this$image8.setShowBoundingBox(showBoundingBox);
-      this.canvas3d.setShowPerspectiveScaleBar(showBoundingBox && this.canvas3d.showOrthoScaleBar && this.volumeRenderMode !== RENDERMODE_PATHTRACE);
+      this.canvas3d.setShowPerspectiveScaleBar(showBoundingBox && this.canvas3d.showOrthoScaleBar && this.volumeRenderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
       this.redraw();
     }
   }, {
@@ -5409,7 +5354,7 @@ var View3d = /*#__PURE__*/function () {
     key: "onStartControls",
     value: function onStartControls() {
       var _this$image14;
-      if (this.volumeRenderMode !== RENDERMODE_PATHTRACE) {
+      if (this.volumeRenderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         // TODO: VR display requires a running renderloop
         this.canvas3d.startRenderLoop();
       }
@@ -5427,7 +5372,7 @@ var View3d = /*#__PURE__*/function () {
       var _this$image16;
       (_this$image16 = this.image) === null || _this$image16 === void 0 ? void 0 : _this$image16.onEndControls();
       // If we are pathtracing or autorotating, then keep rendering. Otherwise stop now.
-      if (this.volumeRenderMode !== RENDERMODE_PATHTRACE && !this.canvas3d.controls.autoRotate) {
+      if (this.volumeRenderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE && !this.canvas3d.controls.autoRotate) {
         // TODO: VR display requires a running renderloop
         this.canvas3d.stopRenderLoop();
       }
@@ -5515,7 +5460,7 @@ var View3d = /*#__PURE__*/function () {
     value: function setShowScaleBar(showScaleBar) {
       var _this$image20;
       this.canvas3d.setShowOrthoScaleBar(showScaleBar);
-      this.canvas3d.setShowPerspectiveScaleBar(showScaleBar && !!((_this$image20 = this.image) !== null && _this$image20 !== void 0 && _this$image20.showBoundingBox) && this.volumeRenderMode !== RENDERMODE_PATHTRACE);
+      this.canvas3d.setShowPerspectiveScaleBar(showScaleBar && !!((_this$image20 = this.image) !== null && _this$image20 !== void 0 && _this$image20.showBoundingBox) && this.volumeRenderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
     }
 
     /**
@@ -5792,7 +5737,7 @@ var View3d = /*#__PURE__*/function () {
      * Set clipping range (between 0 and 1) for a given axis.
      * Calling this allows the rendering to compensate for changes in thickness in orthographic views that affect how bright the volume is.
      * @param {Object} volume
-     * @param {number} axis 0, 1, or 2 for x, y, or z axis
+     * @param {string} axis x, y, or z axis
      * @param {number} minval 0..1, should be less than maxval
      * @param {number} maxval 0..1, should be greater than minval
      * @param {boolean} isOrthoAxis is this an orthographic projection or just a clipping of the range for perspective view
@@ -5902,13 +5847,13 @@ var View3d = /*#__PURE__*/function () {
       }
       this.volumeRenderMode = mode;
       if (this.image) {
-        if (mode === RENDERMODE_PATHTRACE && this.canvas3d.hasWebGL2) {
-          this.image.setVolumeRendering(true);
+        if (mode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE && this.canvas3d.hasWebGL2) {
+          this.image.setVolumeRendering(_types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
           this.image.updateLights(this.lights);
           // pathtrace is a continuous rendering mode
           this.canvas3d.startRenderLoop();
         } else {
-          this.image.setVolumeRendering(false);
+          this.image.setVolumeRendering(_types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH);
           this.canvas3d.redraw();
         }
         this.updatePixelSamplingRate(this.pixelSamplingRate);
@@ -5919,7 +5864,7 @@ var View3d = /*#__PURE__*/function () {
       }
 
       // TODO remove when pathtrace supports a bounding box
-      this.canvas3d.setShowPerspectiveScaleBar(this.canvas3d.showOrthoScaleBar && !!((_this$image42 = this.image) !== null && _this$image42 !== void 0 && _this$image42.showBoundingBox) && mode !== RENDERMODE_PATHTRACE);
+      this.canvas3d.setShowPerspectiveScaleBar(this.canvas3d.showOrthoScaleBar && !!((_this$image42 = this.image) !== null && _this$image42 !== void 0 && _this$image42.showBoundingBox) && mode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
     }
 
     /**
@@ -6478,12 +6423,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _MeshVolume__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./MeshVolume */ "./src/MeshVolume.ts");
 /* harmony import */ var _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./RayMarchedAtlasVolume */ "./src/RayMarchedAtlasVolume.ts");
 /* harmony import */ var _PathTracedVolume__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./PathTracedVolume */ "./src/PathTracedVolume.ts");
 /* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
-/* harmony import */ var _Atlas2DSlice__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Atlas2DSlice */ "./src/Atlas2DSlice.ts");
+/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./types */ "./src/types.ts");
+/* harmony import */ var _Atlas2DSlice__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./Atlas2DSlice */ "./src/Atlas2DSlice.ts");
+/* harmony import */ var _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./VolumeRenderSettings */ "./src/VolumeRenderSettings.ts");
+
+
 
 
 
@@ -6516,35 +6465,14 @@ var colorObjectToArray = function colorObjectToArray(_ref3) {
 
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 var VolumeDrawable = /*#__PURE__*/function () {
-  // these should never coexist simultaneously. always one or the other is present
-  // this is a remnant of a pre-typescript world
-
   function VolumeDrawable(volume, options) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, VolumeDrawable);
-    this.PT = !!options.renderMode;
-
     // THE VOLUME DATA
     this.volume = volume;
+    this.settings = new _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.VolumeRenderSettings(volume);
     this.onChannelDataReadyCallback = undefined;
-    this.translation = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0);
-    this.rotation = new three__WEBPACK_IMPORTED_MODULE_8__.Euler();
-    this.flipX = 1;
-    this.flipY = 1;
-    this.flipZ = 1;
+    this.viewMode = _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.NONE; // 3D mode
 
-    // TODO: Replace with enum
-    this.viewMode = "3D";
-    this.maskChannelIndex = -1;
-    this.maskAlpha = 1.0;
-    this.gammaMin = 0.0;
-    this.gammaLevel = 1.0;
-    this.gammaMax = 1.0;
-
-    // TODO verify that these are reasonable
-    this.density = 0;
-    this.brightness = 0;
-    this.showBoundingBox = false;
-    this.boundingBoxColor = [1.0, 1.0, 0.0];
     this.channelColors = this.volume.channel_colors_default.slice();
     this.channelOptions = new Array(this.volume.num_channels).fill({});
     this.fusion = this.channelColors.map(function (col, index) {
@@ -6561,43 +6489,38 @@ var VolumeDrawable = /*#__PURE__*/function () {
         rgbColor: rgbColor
       };
     });
-    this.specular = new Array(this.volume.num_channels).fill([0, 0, 0]);
-    this.emissive = new Array(this.volume.num_channels).fill([0, 0, 0]);
-    this.glossiness = new Array(this.volume.num_channels).fill(0);
-    this.sceneRoot = new three__WEBPACK_IMPORTED_MODULE_8__.Object3D(); //create an empty container
+    this.sceneRoot = new three__WEBPACK_IMPORTED_MODULE_10__.Object3D(); //create an empty container
 
     this.meshVolume = new _MeshVolume__WEBPACK_IMPORTED_MODULE_3__["default"](this.volume);
-    this.primaryRayStepSize = 1.0;
-    this.secondaryRayStepSize = 1.0;
-    if (this.PT) {
-      this.pathTracedVolume = new _PathTracedVolume__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume);
-      this.volumeRendering = this.pathTracedVolume;
-    } else {
-      this.rayMarchedAtlasVolume = new _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__["default"](this.volume);
-      this.volumeRendering = this.rayMarchedAtlasVolume;
+    options.renderMode = options.renderMode || _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH;
+    switch (options.renderMode) {
+      case _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE:
+        this.renderMode = _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE;
+        this.volumeRendering = new _PathTracedVolume__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume, this.settings);
+        break;
+      case _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.SLICE: // default to raymarch even when slice is selected
+      case _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH:
+      default:
+        this.renderMode = _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH;
+        this.volumeRendering = new _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__["default"](this.volume, this.settings);
     }
 
     // draw meshes first, and volume last, for blending and depth test reasons with raymarch
-    !this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());
+    if (options.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH || options.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.SLICE) {
+      this.sceneRoot.add(this.meshVolume.get3dObject());
+    }
     this.sceneRoot.add(this.volumeRendering.get3dObject());
     // draw meshes last (as overlay) for pathtrace? (or not at all?)
     //this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());
 
-    this.bounds = {
-      bmin: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(-0.5, -0.5, -0.5),
-      bmax: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0.5, 0.5, 0.5)
-    };
     this.sceneRoot.position.set(0, 0, 0);
-    this.scale = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1, 1, 1);
-    this.currentScale = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1, 1, 1);
     this.setScale(this.volume.scale);
 
     // apply the volume's default transformation
-    this.setTranslation(new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().fromArray(this.volume.getTranslation()));
-    this.setRotation(new three__WEBPACK_IMPORTED_MODULE_8__.Euler().fromArray(this.volume.getRotation()));
+    this.settings.translation = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(this.volume.getTranslation());
+    this.settings.rotation = new three__WEBPACK_IMPORTED_MODULE_10__.Euler().fromArray(this.volume.getRotation());
     this.setOptions(options);
-    this.zSlice = Math.floor(this.volume.z / 2);
-    this.volumeRendering.setZSlice(this.zSlice);
+    // this.volumeRendering.setZSlice(this.zSlice);
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(VolumeDrawable, [{
     key: "setOptions",
@@ -6611,26 +6534,26 @@ var VolumeDrawable = /*#__PURE__*/function () {
         this.setMaskAlpha(options.maskAlpha);
       }
       if (options.clipBounds !== undefined) {
-        this.bounds = {
-          bmin: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(options.clipBounds[0], options.clipBounds[2], options.clipBounds[4]),
-          bmax: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5])
+        this.settings.bounds = {
+          bmin: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(options.clipBounds[0], options.clipBounds[2], options.clipBounds[4]),
+          bmax: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5])
         };
         // note: dropping isOrthoAxis argument
-        this.setAxisClip("x", options.clipBounds[0], options.clipBounds[1]);
-        this.setAxisClip("y", options.clipBounds[2], options.clipBounds[3]);
-        this.setAxisClip("z", options.clipBounds[4], options.clipBounds[5]);
+        this.setAxisClip(_VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.X, options.clipBounds[0], options.clipBounds[1]);
+        this.setAxisClip(_VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Y, options.clipBounds[2], options.clipBounds[3]);
+        this.setAxisClip(_VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Z, options.clipBounds[4], options.clipBounds[5]);
       }
       if (options.scale !== undefined) {
-        this.setScale(new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().fromArray(options.scale));
+        this.setScale(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(options.scale));
       }
       if (options.translation !== undefined) {
-        this.setTranslation(new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().fromArray(options.translation));
+        this.setTranslation(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(options.translation));
       }
       if (options.rotation !== undefined) {
-        this.setRotation(new three__WEBPACK_IMPORTED_MODULE_8__.Euler().fromArray(options.rotation));
+        this.setRotation(new three__WEBPACK_IMPORTED_MODULE_10__.Euler().fromArray(options.rotation));
       }
       if (options.renderMode !== undefined) {
-        this.setVolumeRendering(!!options.renderMode);
+        this.setVolumeRendering(options.renderMode);
       }
       if (options.primaryRayStepSize !== undefined || options.secondaryRayStepSize !== undefined) {
         this.setRayStepSizes(options.primaryRayStepSize, options.secondaryRayStepSize);
@@ -6698,34 +6621,48 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "setRayStepSizes",
     value: function setRayStepSizes(primary, secondary) {
+      if (primary === this.settings.primaryRayStepSize && secondary === this.settings.secondaryRayStepSize) {
+        return;
+      }
       if (primary !== undefined) {
-        this.primaryRayStepSize = primary;
+        this.settings.primaryRayStepSize = primary;
       }
       if (secondary !== undefined) {
-        this.secondaryRayStepSize = secondary;
+        this.settings.secondaryRayStepSize = secondary;
       }
-      this.volumeRendering.setRayStepSizes(this.primaryRayStepSize, this.secondaryRayStepSize);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.SAMPLING);
     }
   }, {
     key: "setScale",
     value: function setScale(scale) {
-      this.scale = scale;
-      this.currentScale = scale.clone();
+      if (this.settings.scale === scale) {
+        return;
+      }
+      this.settings.scale = scale;
+      this.settings.currentScale = scale.clone();
       this.meshVolume.setScale(scale);
-      this.volumeRendering.setScale(scale);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.TRANSFORM);
     }
   }, {
     key: "setOrthoScale",
     value: function setOrthoScale(value) {
-      this.volumeRendering.setOrthoScale(value);
+      if (this.settings.orthoScale === value) {
+        return;
+      }
+      this.settings.orthoScale = value;
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.VIEW);
     }
   }, {
     key: "setResolution",
     value: function setResolution(viewObj) {
       var x = viewObj.getWidth();
       var y = viewObj.getHeight();
-      this.volumeRendering.setResolution(x, y);
-      this.meshVolume.setResolution(x, y);
+      var resolution = new three__WEBPACK_IMPORTED_MODULE_10__.Vector2(x, y);
+      if (!this.settings.resolution.equals(resolution)) {
+        this.meshVolume.setResolution(x, y);
+        this.settings.resolution = resolution;
+        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.SAMPLING);
+      }
     }
 
     // Set clipping range (between -0.5 and 0.5) for a given axis.
@@ -6737,13 +6674,34 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "setAxisClip",
     value: function setAxisClip(axis, minval, maxval, isOrthoAxis) {
-      this.bounds.bmax[axis] = maxval;
-      this.bounds.bmin[axis] = minval;
-      !this.PT && this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
-      this.volumeRendering.setAxisClip(axis, minval, maxval, isOrthoAxis || false);
-    }
+      // Skip settings update if nothing has changed
+      if (this.settings.bounds.bmax[axis] === maxval && this.settings.bounds.bmin[axis] === minval && this.settings.viewAxis === axis && this.settings.isOrtho === (isOrthoAxis || false)) {
+        return;
+      }
+      this.settings.bounds.bmax[axis] = maxval;
+      this.settings.bounds.bmin[axis] = minval;
+      this.settings.viewAxis = axis;
+      this.settings.isOrtho = isOrthoAxis || false;
 
-    // TODO: Change mode to an enum
+      // Configure mesh volume when in an orthographic axis alignment
+      if (axis !== _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.NONE && this.renderMode !== _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+        this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
+      }
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.ROI | _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.VIEW);
+    }
+  }, {
+    key: "modeStringToAxis",
+    value: function modeStringToAxis(mode) {
+      var modeToAxis = {
+        X: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.X,
+        YZ: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.X,
+        Y: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Y,
+        XZ: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Y,
+        Z: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Z,
+        XY: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Z
+      };
+      return modeToAxis[mode] || _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.NONE;
+    }
     /**
      * Sets the camera mode of the VolumeDrawable.
      * @param mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X", or "XZ" or "Y".
@@ -6751,17 +6709,23 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "setViewMode",
     value: function setViewMode(mode) {
-      this.viewMode = mode;
-      if (mode === "XY" || mode === "Z") {
+      var axis = this.modeStringToAxis(mode);
+      this.viewMode = axis;
+      // Force a volume render reset if we have switched to or from Z mode while raymarching is enabled.
+      if (axis === _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Z) {
         // If currently in 3D raymarch mode, hotswap the 2D slice
-        if (this.rayMarchedAtlasVolume && !this.atlas2DSlice) {
-          this.setVolumeRendering(false);
+        if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH) {
+          this.setVolumeRendering(_types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.SLICE);
         }
       } else {
         // If in 2D slice mode, switch back to 3D raymarch mode
-        if (!this.rayMarchedAtlasVolume && this.atlas2DSlice) {
-          this.setVolumeRendering(false);
+        if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.SLICE) {
+          this.setVolumeRendering(_types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH);
         }
+      }
+      if (this.settings.viewAxis !== axis) {
+        this.settings.viewAxis = axis;
+        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.VIEW);
       }
     }
 
@@ -6770,18 +6734,29 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "setIsOrtho",
     value: function setIsOrtho(isOrtho) {
-      this.volumeRendering.setIsOrtho(isOrtho);
+      if (this.settings.isOrtho === isOrtho) {
+        return;
+      }
+      this.settings.isOrtho = isOrtho;
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.VIEW);
     }
   }, {
     key: "setInterpolationEnabled",
     value: function setInterpolationEnabled(active) {
-      this.volumeRendering.setInterpolationEnabled(active);
+      if (this.settings.useInterpolation === active) {
+        return;
+      }
+      this.settings.useInterpolation = active;
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.SAMPLING);
     }
   }, {
     key: "setOrthoThickness",
     value: function setOrthoThickness(value) {
-      !this.PT && this.meshVolume.setOrthoThickness(value);
-      this.volumeRendering.setOrthoThickness(value);
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+        return;
+      }
+      this.meshVolume.setOrthoThickness(value);
+      // No settings update because ortho thickness is calculated in the renderers
     }
 
     // Set parameters for gamma curve for volume rendering.
@@ -6791,24 +6766,32 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "setGamma",
     value: function setGamma(gmin, glevel, gmax) {
-      this.gammaMin = gmin;
-      this.gammaLevel = glevel;
-      this.gammaMax = gmax;
-      this.volumeRendering.setGamma(gmin, glevel, gmax);
+      if (this.settings.gammaMin === gmin || this.settings.gammaLevel === glevel || this.settings.gammaMax === gmax) {
+        return;
+      }
+      this.settings.gammaMin = gmin;
+      this.settings.gammaLevel = glevel;
+      this.settings.gammaMax = gmax;
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.CAMERA);
     }
   }, {
     key: "setFlipAxes",
     value: function setFlipAxes(flipX, flipY, flipZ) {
-      this.flipX = flipX;
-      this.flipY = flipY;
-      this.flipZ = flipZ;
-      this.volumeRendering.setFlipAxes(flipX, flipY, flipZ);
-      this.meshVolume.setFlipAxes(flipX, flipY, flipZ);
+      var flipAxes = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(flipX, flipY, flipZ);
+      if (!this.settings.flipAxes.equals(flipAxes)) {
+        this.settings.flipAxes = flipAxes;
+        this.meshVolume.setFlipAxes(flipX, flipY, flipZ);
+        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.TRANSFORM);
+      }
     }
   }, {
     key: "setMaxProjectMode",
     value: function setMaxProjectMode(isMaxProject) {
-      !this.PT && this.rayMarchedAtlasVolume && this.rayMarchedAtlasVolume.setMaxProjectMode(isMaxProject);
+      if (this.settings.maxProjectMode === isMaxProject) {
+        return;
+      }
+      this.settings.maxProjectMode = isMaxProject;
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.VIEW);
     }
   }, {
     key: "onAnimate",
@@ -6820,7 +6803,9 @@ var VolumeDrawable = /*#__PURE__*/function () {
 
       // TODO confirm sequence
       this.volumeRendering.doRender(canvas);
-      !this.PT && this.meshVolume.doRender(canvas);
+      if (this.renderMode !== _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+        this.meshVolume.doRender(canvas);
+      }
     }
 
     // If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
@@ -6866,42 +6851,32 @@ var VolumeDrawable = /*#__PURE__*/function () {
       if (!this.volume) {
         return;
       }
-      if (this.PT) {
-        if (this.pathTracedVolume) {
-          this.pathTracedVolume.updateActiveChannels(this);
-        }
-      } else {
-        if (this.volumeRendering instanceof _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__["default"]) {
-          this.volumeRendering.fuse(this.fusion, this.volume.channels);
-        }
-      }
+      this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
     }
   }, {
     key: "setRenderUpdateListener",
     value: function setRenderUpdateListener(callback) {
       this.renderUpdateListener = callback;
-      if (this.PT && this.pathTracedVolume) {
-        this.pathTracedVolume.setRenderUpdateListener(callback);
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+        this.volumeRendering.setRenderUpdateListener(callback);
       }
     }
   }, {
     key: "updateShadingMethod",
     value: function updateShadingMethod(isbrdf) {
-      if (this.PT && this.pathTracedVolume) {
-        this.pathTracedVolume.updateShadingMethod(isbrdf ? 1 : 0);
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+        this.volumeRendering.updateShadingMethod(isbrdf ? 1 : 0);
       }
     }
   }, {
     key: "updateMaterial",
     value: function updateMaterial() {
-      this.PT && this.pathTracedVolume && this.pathTracedVolume.updateMaterial(this);
-      !this.PT && this.rayMarchedAtlasVolume && this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
+      this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
     }
   }, {
     key: "updateLuts",
     value: function updateLuts() {
-      this.PT && this.pathTracedVolume && this.pathTracedVolume.updateLuts(this);
-      !this.PT && this.rayMarchedAtlasVolume && this.rayMarchedAtlasVolume.fuse(this.fusion, this.volume.channels);
+      this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
     }
   }, {
     key: "setVoxelSize",
@@ -6923,7 +6898,6 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "onChannelLoaded",
     value: function onChannelLoaded(batch) {
-      this.volumeRendering.onChannelData(batch);
       this.meshVolume.onChannelData(batch);
       for (var j = 0; j < batch.length; ++j) {
         var idx = batch[j];
@@ -6944,9 +6918,9 @@ var VolumeDrawable = /*#__PURE__*/function () {
         lut: new Uint8Array[_Histogram__WEBPACK_IMPORTED_MODULE_6__.LUT_ARRAY_LENGTH](),
         rgbColor: [this.channelColors[newChannelIndex][0], this.channelColors[newChannelIndex][1], this.channelColors[newChannelIndex][2]]
       };
-      this.specular[newChannelIndex] = [0, 0, 0];
-      this.emissive[newChannelIndex] = [0, 0, 0];
-      this.glossiness[newChannelIndex] = 0;
+      this.settings.specular[newChannelIndex] = [0, 0, 0];
+      this.settings.emissive[newChannelIndex] = [0, 0, 0];
+      this.settings.glossiness[newChannelIndex] = 0;
     }
 
     // Save a channel's isosurface as a triangle mesh to either STL or GLTF2 format.  File will be named automatically, using image name and channel name.
@@ -6967,10 +6941,11 @@ var VolumeDrawable = /*#__PURE__*/function () {
       if (this.fusion.every(function (elem) {
         return elem.rgbColor === 0;
       })) {
-        this.volumeRendering.setVisible(false);
+        this.settings.visible = false;
       } else {
-        this.volumeRendering.setVisible(true);
+        this.settings.visible = true;
       }
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.VIEW);
     }
   }, {
     key: "isVolumeChannelEnabled",
@@ -7023,15 +6998,15 @@ var VolumeDrawable = /*#__PURE__*/function () {
         return;
       }
       this.updateChannelColor(channelIndex, colorrgb);
-      this.specular[channelIndex] = specularrgb;
-      this.emissive[channelIndex] = emissivergb;
-      this.glossiness[channelIndex] = glossiness;
+      this.settings.specular[channelIndex] = specularrgb;
+      this.settings.emissive[channelIndex] = emissivergb;
+      this.settings.glossiness[channelIndex] = glossiness;
     }
   }, {
     key: "setDensity",
     value: function setDensity(density) {
-      this.density = density;
-      this.volumeRendering.setDensity(density);
+      this.settings.density = density;
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.MATERIAL);
     }
 
     /**
@@ -7040,45 +7015,45 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "getDensity",
     value: function getDensity() {
-      return this.density;
+      return this.settings.density;
     }
   }, {
     key: "setBrightness",
     value: function setBrightness(brightness) {
-      this.brightness = brightness;
-      this.volumeRendering.setBrightness(brightness);
+      this.settings.brightness = brightness;
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.CAMERA);
     }
   }, {
     key: "getBrightness",
     value: function getBrightness() {
-      return this.brightness;
+      return this.settings.brightness;
     }
   }, {
     key: "setChannelAsMask",
     value: function setChannelAsMask(channelIndex) {
       if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
-        return false;
+        return;
       }
-      this.maskChannelIndex = channelIndex;
-      return this.volumeRendering.setChannelAsMask(channelIndex);
+      this.settings.maskChannelIndex = channelIndex;
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.MASK);
     }
   }, {
     key: "setMaskAlpha",
     value: function setMaskAlpha(maskAlpha) {
-      this.maskAlpha = maskAlpha;
-      this.volumeRendering.setMaskAlpha(maskAlpha);
+      this.settings.maskAlpha = maskAlpha;
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.MASK);
     }
   }, {
     key: "setShowBoundingBox",
     value: function setShowBoundingBox(showBoundingBox) {
-      this.showBoundingBox = showBoundingBox;
-      this.volumeRendering.setShowBoundingBox(showBoundingBox);
+      this.settings.showBoundingBox = showBoundingBox;
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.BOUNDING_BOX);
     }
   }, {
     key: "setBoundingBoxColor",
     value: function setBoundingBoxColor(color) {
-      this.boundingBoxColor = color;
-      this.volumeRendering.setBoundingBoxColor(color);
+      this.settings.boundingBoxColor = color;
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.BOUNDING_BOX);
     }
   }, {
     key: "getIntensity",
@@ -7088,17 +7063,23 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "onStartControls",
     value: function onStartControls() {
-      this.PT && this.pathTracedVolume && this.pathTracedVolume.onStartControls();
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+        this.volumeRendering.onStartControls();
+      }
     }
   }, {
     key: "onChangeControls",
     value: function onChangeControls() {
-      this.PT && this.pathTracedVolume && this.pathTracedVolume.onChangeControls();
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+        this.volumeRendering.onChangeControls();
+      }
     }
   }, {
     key: "onEndControls",
     value: function onEndControls() {
-      this.PT && this.pathTracedVolume && this.pathTracedVolume.onEndControls();
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+        this.volumeRendering.onEndControls();
+      }
     }
   }, {
     key: "onResetCamera",
@@ -7108,120 +7089,99 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "onCameraChanged",
     value: function onCameraChanged(fov, focalDistance, apertureSize) {
-      this.PT && this.pathTracedVolume && this.pathTracedVolume.updateCamera(fov, focalDistance, apertureSize);
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+        this.volumeRendering.updateCamera(fov, focalDistance, apertureSize);
+      }
     }
 
     // values are in 0..1 range
   }, {
     key: "updateClipRegion",
     value: function updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
-      this.bounds.bmin = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5);
-      this.bounds.bmax = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5);
-      this.volumeRendering.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
+      this.settings.bounds.bmin = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5);
+      this.settings.bounds.bmax = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5);
       this.meshVolume.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.ROI);
     }
   }, {
     key: "updateLights",
     value: function updateLights(state) {
-      this.PT && this.pathTracedVolume && this.pathTracedVolume.updateLights(state);
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+        this.volumeRendering.updateLights(state);
+      }
     }
   }, {
     key: "setPixelSamplingRate",
     value: function setPixelSamplingRate(value) {
-      this.volumeRendering.setPixelSamplingRate(value);
+      this.settings.pixelSamplingRate = value;
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.SAMPLING);
     }
   }, {
     key: "setVolumeRendering",
-    value: function setVolumeRendering(isPathtrace) {
-      if (isPathtrace === this.PT && this.volumeRendering === this.pathTracedVolume) {
+    value: function setVolumeRendering(newRenderMode) {
+      // Skip reassignment of Pathtrace renderer if already using
+      if (newRenderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE && this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
         return;
       }
 
       // remove old 3d object from scene
-      isPathtrace && this.sceneRoot.remove(this.meshVolume.get3dObject());
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.SLICE || this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH) {
+        this.sceneRoot.remove(this.meshVolume.get3dObject());
+      }
       this.sceneRoot.remove(this.volumeRendering.get3dObject());
 
       // destroy old resources.
       this.volumeRendering.cleanup();
-      this.atlas2DSlice = undefined;
-      this.pathTracedVolume = undefined;
-      this.rayMarchedAtlasVolume = undefined;
 
       // create new
-      if (isPathtrace) {
-        this.pathTracedVolume = new _PathTracedVolume__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume);
-        this.volumeRendering = this.pathTracedVolume;
-        this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
-      } else {
-        // Quietly swap the RayMarchedAtlasVolume for a 2D slice renderer when our render mode
-        // is XY/Z mode.
-        if (this.viewMode === "XY" || this.viewMode === "Z") {
-          this.atlas2DSlice = new _Atlas2DSlice__WEBPACK_IMPORTED_MODULE_7__["default"](this.volume);
-          this.volumeRendering = this.atlas2DSlice;
-        } else {
-          this.rayMarchedAtlasVolume = new _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__["default"](this.volume);
-          this.volumeRendering = this.rayMarchedAtlasVolume;
-        }
-        for (var i = 0; i < this.volume.num_channels; ++i) {
-          if (this.volume.getChannel(i).loaded) {
-            this.volumeRendering.onChannelData([i]);
-          }
-        }
+      switch (newRenderMode) {
+        case _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE:
+          this.volumeRendering = new _PathTracedVolume__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume, this.settings);
+          this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
+          break;
+        case _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.SLICE:
+          this.volumeRendering = new _Atlas2DSlice__WEBPACK_IMPORTED_MODULE_8__["default"](this.volume, this.settings);
+          break;
+        case _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH:
+        default:
+          this.volumeRendering = new _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__["default"](this.volume, this.settings);
+          break;
+      }
+      if (newRenderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH || newRenderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.SLICE) {
         if (this.renderUpdateListener) {
           this.renderUpdateListener(0);
         }
+        this.sceneRoot.add(this.meshVolume.get3dObject());
       }
 
-      // ensure transforms on new volume representation are up to date
-      this.volumeRendering.setTranslation(this.translation);
-      this.volumeRendering.setRotation(this.rotation);
-      this.PT = isPathtrace;
-      this.setChannelAsMask(this.maskChannelIndex);
-      this.setMaskAlpha(this.maskAlpha);
-      this.setScale(this.volume.scale);
-      this.setBrightness(this.getBrightness());
-      this.setDensity(this.getDensity());
-      this.setGamma(this.gammaMin, this.gammaLevel, this.gammaMax);
-      this.setFlipAxes(this.flipX, this.flipY, this.flipZ);
-      this.setZSlice(this.zSlice);
-
-      // reset clip bounds
-      this.setAxisClip("x", this.bounds.bmin.x, this.bounds.bmax.x);
-      this.setAxisClip("y", this.bounds.bmin.y, this.bounds.bmax.y);
-      this.setAxisClip("z", this.bounds.bmin.z, this.bounds.bmax.z);
-      this.updateClipRegion(this.bounds.bmin.x + 0.5, this.bounds.bmax.x + 0.5, this.bounds.bmin.y + 0.5, this.bounds.bmax.y + 0.5, this.bounds.bmin.z + 0.5, this.bounds.bmax.z + 0.5);
-      this.setRayStepSizes(this.primaryRayStepSize, this.secondaryRayStepSize);
-      this.setShowBoundingBox(this.showBoundingBox);
-      this.setBoundingBoxColor(this.boundingBoxColor);
-
       // add new 3d object to scene
-      !this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());
       this.sceneRoot.add(this.volumeRendering.get3dObject());
+      this.renderMode = newRenderMode;
       this.fuse();
     }
   }, {
     key: "setTranslation",
     value: function setTranslation(xyz) {
-      this.translation.copy(xyz);
-      this.volumeRendering.setTranslation(this.translation);
-      this.meshVolume.setTranslation(this.translation);
+      this.settings.translation.copy(xyz);
+      this.meshVolume.setTranslation(this.settings.translation);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.TRANSFORM);
     }
   }, {
     key: "setRotation",
     value: function setRotation(eulerXYZ) {
-      this.rotation.copy(eulerXYZ);
-      this.volumeRendering.setRotation(this.rotation);
-      this.meshVolume.setRotation(this.rotation);
+      this.settings.rotation.copy(eulerXYZ);
+      this.meshVolume.setRotation(this.settings.rotation);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.TRANSFORM);
     }
   }, {
     key: "setupGui",
     value: function setupGui(pane) {
       var _this2 = this;
-      pane.addInput(this, "translation").on("change", function (_ref4) {
+      pane.addInput(this.settings, "translation").on("change", function (_ref4) {
         var value = _ref4.value;
         return _this2.setTranslation(value);
       });
-      pane.addInput(this, "rotation").on("change", function (_ref5) {
+      pane.addInput(this.settings, "rotation").on("change", function (_ref5) {
         var value = _ref5.value;
         return _this2.setRotation(value);
       });
@@ -7229,14 +7189,14 @@ var VolumeDrawable = /*#__PURE__*/function () {
         title: "Pathtrace",
         expanded: false
       });
-      pathtrace.addInput(this, "primaryRayStepSize", {
+      pathtrace.addInput(this.settings, "primaryRayStepSize", {
         min: 1,
         max: 100
       }).on("change", function (_ref6) {
         var value = _ref6.value;
         return _this2.setRayStepSizes(value);
       });
-      pathtrace.addInput(this, "secondaryRayStepSize", {
+      pathtrace.addInput(this.settings, "secondaryRayStepSize", {
         min: 1,
         max: 100
       }).on("change", function (_ref7) {
@@ -7247,11 +7207,17 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "setZSlice",
     value: function setZSlice(slice) {
-      if (this.volumeRendering.setZSlice(slice)) {
-        this.zSlice = slice;
+      if (this.settings.zSlice !== slice && slice < this.volume.z && slice > 0) {
+        this.settings.zSlice = slice;
+        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.ROI);
         return true;
       }
       return false;
+    }
+  }, {
+    key: "showBoundingBox",
+    get: function get() {
+      return this.settings.showBoundingBox;
     }
   }]);
   return VolumeDrawable;
@@ -7393,6 +7359,240 @@ var VolumeMaker = /*#__PURE__*/function () {
   return VolumeMaker;
 }();
 
+
+/***/ }),
+
+/***/ "./src/VolumeRenderSettings.ts":
+/*!*************************************!*\
+  !*** ./src/VolumeRenderSettings.ts ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Axis: () => (/* binding */ Axis),
+/* harmony export */   SettingsFlags: () => (/* binding */ SettingsFlags),
+/* harmony export */   VolumeRenderSettings: () => (/* binding */ VolumeRenderSettings)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+
+
+
+/**
+ * Marks groups of related settings that may have changed.
+ */
+var SettingsFlags = /*#__PURE__*/function (SettingsFlags) {
+  SettingsFlags[SettingsFlags["TRANSFORM"] = 1] = "TRANSFORM";
+  SettingsFlags[SettingsFlags["CAMERA"] = 2] = "CAMERA";
+  SettingsFlags[SettingsFlags["BOUNDING_BOX"] = 4] = "BOUNDING_BOX";
+  SettingsFlags[SettingsFlags["ROI"] = 8] = "ROI";
+  SettingsFlags[SettingsFlags["MASK"] = 16] = "MASK";
+  SettingsFlags[SettingsFlags["MATERIAL"] = 32] = "MATERIAL";
+  SettingsFlags[SettingsFlags["SAMPLING"] = 64] = "SAMPLING";
+  SettingsFlags[SettingsFlags["VIEW"] = 128] = "VIEW";
+  SettingsFlags[SettingsFlags["ALL"] = 255] = "ALL";
+  return SettingsFlags;
+}({});
+var Axis = /*#__PURE__*/function (Axis) {
+  Axis["X"] = "x";
+  Axis["Y"] = "y";
+  Axis["Z"] = "z";
+  Axis["XYZ"] = "";
+  Axis["NONE"] = "";
+  return Axis;
+}({});
+
+/**
+ * Holds shared settings for configuring `VolumeRenderImpl` instances.
+ */
+var VolumeRenderSettings = /*#__PURE__*/function () {
+  // TRANSFORM
+
+  // VIEW
+
+  // CAMERA
+
+  // MASK
+
+  // MATERIAL
+
+  // ROI
+
+  // BOUNDING_BOX
+
+  // SAMPLING
+
+  /**
+   * Creates a new VolumeRenderSettings object with default fields.
+   * @param volume Optional volume data parameter used to initialize size-dependent settings.
+   */
+  function VolumeRenderSettings(volume) {
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, VolumeRenderSettings);
+    this.translation = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0);
+    this.rotation = new three__WEBPACK_IMPORTED_MODULE_2__.Euler();
+    this.scale = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(1, 1, 1);
+    this.currentScale = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(1, 1, 1);
+    this.isOrtho = false;
+    this.viewAxis = Axis.NONE;
+    this.orthoScale = 1.0;
+    this.flipAxes = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(1, 1, 1);
+    this.maskChannelIndex = -1;
+    this.maskAlpha = 1.0;
+    this.gammaMin = 0.0;
+    this.gammaLevel = 1.0;
+    this.gammaMax = 1.0;
+    this.density = 0;
+    this.brightness = 0;
+    this.showBoundingBox = false;
+    this.bounds = {
+      bmin: new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(-0.5, -0.5, -0.5),
+      bmax: new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0.5, 0.5, 0.5)
+    };
+    this.boundingBoxColor = [1.0, 1.0, 0.0];
+    this.primaryRayStepSize = 1.0;
+    this.secondaryRayStepSize = 1.0;
+    this.useInterpolation = true;
+    this.visible = true;
+    this.maxProjectMode = false;
+    // volume-dependent properties
+    if (volume) {
+      this.zSlice = Math.floor(volume.z / 2);
+      this.specular = new Array(volume.num_channels).fill([0, 0, 0]);
+      this.emissive = new Array(volume.num_channels).fill([0, 0, 0]);
+      this.glossiness = new Array(volume.num_channels).fill(0);
+    } else {
+      this.zSlice = 0;
+      this.specular = [[0, 0, 0]];
+      this.emissive = [[0, 0, 0]];
+      this.glossiness = [0];
+    }
+    this.pixelSamplingRate = 0.75;
+    this.resolution = new three__WEBPACK_IMPORTED_MODULE_2__.Vector2(1, 1);
+  }
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(VolumeRenderSettings, [{
+    key: "resizeWithVolume",
+    value: function resizeWithVolume(volume) {
+      this.zSlice = Math.floor(volume.z / 2);
+      this.specular = new Array(volume.num_channels).fill([0, 0, 0]);
+      this.emissive = new Array(volume.num_channels).fill([0, 0, 0]);
+      this.glossiness = new Array(volume.num_channels).fill(0);
+    }
+
+    /**
+     * Recursively compares two arrays.
+     * Non-array elements are compared using strict equality comparison.
+     */
+  }, {
+    key: "isEqual",
+    value:
+    /**
+     * Compares two VolumeRenderSettings objects.
+     * @returns true if both objects have identical settings.
+     */
+    function isEqual(o2) {
+      for (var _i = 0, _Object$keys = Object.keys(this); _i < _Object$keys.length; _i++) {
+        var key = _Object$keys[_i];
+        var v1 = this[key];
+        var v2 = o2[key];
+        if (v1 instanceof Array) {
+          if (!VolumeRenderSettings.compareArray(v1, v2)) {
+            return false;
+          }
+        } else if (v1 && v1.bmin !== undefined) {
+          // Bounds object
+          var bounds1 = v1;
+          var bounds2 = v2;
+          if (!bounds1.bmin.equals(bounds2.bmin) || !bounds1.bmax.equals(bounds2.bmax)) {
+            return false;
+          }
+        } else if (v1 instanceof three__WEBPACK_IMPORTED_MODULE_2__.Vector3 || v1 instanceof three__WEBPACK_IMPORTED_MODULE_2__.Vector2 || v1 instanceof three__WEBPACK_IMPORTED_MODULE_2__.Euler) {
+          if (!v1.equals(v2)) {
+            return false;
+          }
+        } else {
+          // number, boolean, string
+          if (v1 !== v2) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    /**
+     * Recursively creates and returns a deep copy of an array.
+     * Note: assumes values in the array are either primitives (numbers) or arrays of primitives.
+     */
+  }, {
+    key: "clone",
+    value:
+    /**
+     * Creates a deep copy of this VolumeRenderSettings object.
+     * @param src The object to create a clone of.
+     * @returns a new VolumeRenderSettings object with identical fields that do not
+     * share references with the original settings object.
+     */
+    function clone() {
+      var dst = new VolumeRenderSettings(); // initialize with empty volume
+      for (var _i2 = 0, _Object$keys2 = Object.keys(this); _i2 < _Object$keys2.length; _i2++) {
+        var key = _Object$keys2[_i2];
+        var val = this[key];
+        if (val instanceof Array) {
+          dst[key] = VolumeRenderSettings.deepCopyArray(val);
+        } else if (key === "bounds") {
+          // must use key string here because Bounds is a type alias and not a class
+          dst.bounds.bmax = this.bounds.bmax.clone();
+          dst.bounds.bmin = this.bounds.bmin.clone();
+        } else if (val instanceof three__WEBPACK_IMPORTED_MODULE_2__.Vector3 || val instanceof three__WEBPACK_IMPORTED_MODULE_2__.Vector2 || val instanceof three__WEBPACK_IMPORTED_MODULE_2__.Euler) {
+          dst[key] = val.clone();
+        } else if (val instanceof String) {
+          dst[key] = "" + val;
+        } else {
+          // boolean, number, other primitives
+          dst[key] = val;
+        }
+      }
+      return dst;
+    }
+  }], [{
+    key: "compareArray",
+    value: function compareArray(a1, a2) {
+      if (a1.length !== a2.length) {
+        return false;
+      }
+      for (var i = 0; i < a1.length; i++) {
+        var elem1 = a1[i];
+        var elem2 = a2[i];
+        if (elem1 instanceof Array && elem2 instanceof Array) {
+          if (!this.compareArray(elem1, elem2)) {
+            return false;
+          }
+        } else if (elem1 !== elem2) {
+          return false;
+        }
+      }
+      return true;
+    }
+  }, {
+    key: "deepCopyArray",
+    value: function deepCopyArray(a) {
+      var b = new Array(a.length);
+      for (var i = 0; i < a.length; i++) {
+        var val = a[i];
+        if (val instanceof Array) {
+          b[i] = this.deepCopyArray(val);
+        } else {
+          b[i] = val;
+        }
+      }
+      return b;
+    }
+  }]);
+  return VolumeRenderSettings;
+}();
 
 /***/ }),
 
@@ -7932,11 +8132,6 @@ var rayMarchingShaderUniforms = function rayMarchingShaderUniforms() {
       type: "f",
       value: 6
     },
-    Z_SLICE: {
-      // Used by slice shader that extends ray march shader
-      type: "i",
-      value: 0
-    },
     SLICES: {
       type: "f",
       value: 50
@@ -8009,14 +8204,130 @@ var rayMarchingShaderUniforms = function rayMarchingShaderUniforms() {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   sliceFragmentShaderSrc: () => (/* binding */ sliceFragmentShaderSrc),
+/* harmony export */   sliceShaderUniforms: () => (/* binding */ sliceShaderUniforms),
 /* harmony export */   sliceVertexShaderSrc: () => (/* binding */ sliceVertexShaderSrc)
 /* harmony export */ });
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* babel-plugin-inline-import './shaders/slice.vert' */
 var sliceVertexShader = "precision highp float;\nprecision highp int;\n\nvarying vec2 vUv;\n\nvoid main() {\n  vUv = uv;\n  gl_Position = projectionMatrix *\n    modelViewMatrix *\n    vec4(position, 1.0);\n}\n";
 /* babel-plugin-inline-import './shaders/slice.frag' */
 var sliceFragShader = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform float ATLAS_X;\nuniform float ATLAS_Y;\nuniform vec3 AABB_CLIP_MIN;\nuniform vec3 AABB_CLIP_MAX;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform int Z_SLICE;\nuniform float SLICES;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\n\nvarying vec2 vUv;\n\nvec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {\n  float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));\n  float xi = (x - vmin) / (vmax - vmin);\n  xi = clamp(xi, 0.0, 1.0);\n  float y = pow(xi, C);\n  y = clamp(y, 0.0, 1.0);\n  color[3] = y;\n  return color;\n}\n\nvec2 offsetFrontBack(float t, float nx, float ny) {\n  int a = int(t);\n  int ax = int(ATLAS_X);\n  vec2 os = vec2(float(a - (a / ax) * ax) / ATLAS_X, float(a / ax) / ATLAS_Y);\n  return clamp(os, vec2(0.0, 0.0), vec2(1.0 - 1.0 / ATLAS_X, 1.0 - 1.0 / ATLAS_Y));\n}\n\nvec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n    pos[1] >= 0.0 && pos[1] <= 1.0 &&\n    pos[2] >= 0.0 && pos[2] <= 1.0);\n  float nSlices = float(SLICES);\n  vec2 loc0 = vec2((flipVolume.x * (pos.x - 0.5) + 0.5) / ATLAS_X, (flipVolume.y * (pos.y - 0.5) + 0.5) / ATLAS_Y);\n\n  // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y\n  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n  loc0 = vec2(0.5 / textureRes.x, 0.5 / textureRes.y) + loc0 * vec2(1.0 - (ATLAS_X) / textureRes.x, 1.0 - (ATLAS_Y) / textureRes.y);\n\n  // interpolate between two slices\n  float z = (pos.z) * (nSlices - 1.0);\n  float z0 = floor(z);\n  float t = z - z0; //mod(z, 1.0);\n  float z1 = min(z0 + 1.0, nSlices - 1.0);\n\n  // flipped:\n  if(flipVolume.z == -1.0) {\n    z0 = nSlices - z0 - 1.0;\n    z1 = nSlices - z1 - 1.0;\n    t = 1.0 - t;\n  }\n\n  // get slice offsets in texture atlas\n  vec2 o0 = offsetFrontBack(z0, ATLAS_X, ATLAS_Y) + loc0;\n  vec2 o1 = offsetFrontBack(z1, ATLAS_X, ATLAS_Y) + loc0;\n\n  vec4 slice0Color = texture2D(tex, o0);\n  vec4 slice1Color = texture2D(tex, o1);\n  // NOTE we could premultiply the mask in the fuse function,\n  // but that is slower to update the maskAlpha value than here in the shader.\n  // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?\n  float slice0Mask = texture2D(textureAtlasMask, o0).x;\n  float slice1Mask = texture2D(textureAtlasMask, o1).x;\n  // or use max for conservative 0 or 1 masking?\n  float maskVal = mix(slice0Mask, slice1Mask, t);\n  // take mask from 0..1 to alpha..1\n  maskVal = mix(maskVal, 1.0, maskAlpha);\n  vec4 retval = mix(slice0Color, slice1Color, t);\n  // only mask the rgb, not the alpha(?)\n  retval.rgb *= maskVal;\n  return bounds * retval;\n}\n\nvec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n    pos[1] >= 0.0 && pos[1] <= 1.0 &&\n    pos[2] >= 0.0 && pos[2] <= 1.0);\n  float nSlices = float(SLICES);\n  vec2 loc0 = vec2((flipVolume.x * (pos.x - 0.5) + 0.5) / ATLAS_X, (flipVolume.y * (pos.y - 0.5) + 0.5) / ATLAS_Y);\n\n  // No interpolation - sample just one slice at a pixel center.\n  // Ideally this would be accomplished in part by switching this texture to linear\n  //   filtering, but three makes this difficult to do through a WebGLRenderTarget.\n  loc0 = floor(loc0 * textureRes) / textureRes;\n  loc0 += vec2(0.5 / textureRes.x, 0.5 / textureRes.y);\n\n  float z = min(floor(pos.z * nSlices), nSlices - 1.0);\n\n  if(flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z, ATLAS_X, ATLAS_Y) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds * voxelColor;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n  // Normalize UV for [-0.5, 0.5] range\n  vec2 normUv = vUv - vec2(0.5);\n\n  // Return background color if outside of clipping box\n  if(normUv.x < boxMin.x || normUv.x > boxMax.x || normUv.y < boxMin.y || normUv.y > boxMax.y) {\n    gl_FragColor = vec4(0.0);\n    return;\n  }\n\n  // Normalize z-slice by total slices\n  vec4 pos = vec4(vUv, float(Z_SLICE) / (SLICES - 1.0), 0.0);\n\n  vec4 C;\n  if(interpolationEnabled) {\n    C = sampleAtlasLinear(textureAtlas, pos);\n  } else {\n    C = sampleAtlasNearest(textureAtlas, pos);\n  }\n  C = luma2Alpha(C, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);\n  C.xyz *= BRIGHTNESS;\n  // C.w *= DENSITY;  // Density disabled because it causes XY mode to render very dark on default settings\n\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}";
+
 var sliceVertexShaderSrc = sliceVertexShader;
 var sliceFragmentShaderSrc = sliceFragShader;
+var sliceShaderUniforms = function sliceShaderUniforms() {
+  return {
+    iResolution: {
+      type: "v2",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector2(100, 100)
+    },
+    CLIP_NEAR: {
+      type: "f",
+      value: 0.0
+    },
+    CLIP_FAR: {
+      type: "f",
+      value: 10000.0
+    },
+    maskAlpha: {
+      type: "f",
+      value: 1.0
+    },
+    BRIGHTNESS: {
+      type: "f",
+      value: 0.0
+    },
+    DENSITY: {
+      type: "f",
+      value: 1.0
+    },
+    GAMMA_MIN: {
+      type: "f",
+      value: 0.0
+    },
+    GAMMA_MAX: {
+      type: "f",
+      value: 1.0
+    },
+    GAMMA_SCALE: {
+      type: "f",
+      value: 1.0
+    },
+    BREAK_STEPS: {
+      type: "i",
+      value: 128
+    },
+    ATLAS_X: {
+      type: "f",
+      value: 6
+    },
+    ATLAS_Y: {
+      type: "f",
+      value: 6
+    },
+    Z_SLICE: {
+      type: "i",
+      value: 0
+    },
+    SLICES: {
+      type: "f",
+      value: 50
+    },
+    isOrtho: {
+      type: "f",
+      value: 0.0
+    },
+    orthoThickness: {
+      type: "f",
+      value: 1.0
+    },
+    orthoScale: {
+      type: "f",
+      value: 0.5 // needs to come from ThreeJsPanel's setting
+    },
+
+    AABB_CLIP_MIN: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(-0.5, -0.5, -0.5)
+    },
+    AABB_CLIP_MAX: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0.5, 0.5, 0.5)
+    },
+    inverseModelViewMatrix: {
+      type: "m4",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Matrix4()
+    },
+    textureAtlas: {
+      type: "t",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Texture()
+    },
+    textureAtlasMask: {
+      type: "t",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Texture()
+    },
+    maxProject: {
+      type: "i",
+      value: 0
+    },
+    interpolationEnabled: {
+      type: "b",
+      value: true
+    },
+    flipVolume: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(1.0, 1.0, 1.0)
+    },
+    volumeScale: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(1.0, 1.0, 1.0)
+    },
+    textureRes: {
+      type: "v2",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector2(1.0, 1.0)
+    }
+  };
+};
 
 /***/ }),
 
@@ -9502,18 +9813,23 @@ function buildDefaultMetadata(imageInfo) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   FUSE_DISABLED_RGB_COLOR: () => (/* binding */ FUSE_DISABLED_RGB_COLOR),
+/* harmony export */   RenderMode: () => (/* binding */ RenderMode),
 /* harmony export */   ViewportCorner: () => (/* binding */ ViewportCorner),
 /* harmony export */   isOrthographicCamera: () => (/* binding */ isOrthographicCamera),
 /* harmony export */   isRight: () => (/* binding */ isRight),
 /* harmony export */   isTop: () => (/* binding */ isTop)
 /* harmony export */ });
+/** If `FuseChannel.rgbColor` is this value, it is disabled from fusion. */
+var FUSE_DISABLED_RGB_COLOR = 0;
+
 /**
  * Provide options to control the visual appearance of a Volume
  * @typedef {Object} VolumeChannelDisplayOptions
  * @property {boolean} enabled array of boolean per channel
- * @property {<Array.<number>} color array of rgb per channel
- * @property {<Array.<number>} specularColor array of rgb per channel
- * @property {<Array.<number>} emissiveColor array of rgb per channel
+ * @property {Array.<number>} color array of rgb per channel
+ * @property {Array.<number>} specularColor array of rgb per channel
+ * @property {Array.<number>} emissiveColor array of rgb per channel
  * @property {number} glossiness array of float per channel
  * @property {boolean} isosurfaceEnabled array of boolean per channel
  * @property {number} isovalue array of number per channel
@@ -9521,6 +9837,13 @@ __webpack_require__.r(__webpack_exports__);
  * @example let options = {
    };
  */
+
+var RenderMode = /*#__PURE__*/function (RenderMode) {
+  RenderMode[RenderMode["RAYMARCH"] = 0] = "RAYMARCH";
+  RenderMode[RenderMode["PATHTRACE"] = 1] = "PATHTRACE";
+  RenderMode[RenderMode["SLICE"] = 2] = "SLICE";
+  return RenderMode;
+}({});
 
 /**
  * Provide options to control the visual appearance of a Volume
