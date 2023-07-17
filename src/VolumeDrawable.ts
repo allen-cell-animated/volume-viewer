@@ -7,14 +7,12 @@ import PathTracedVolume from "./PathTracedVolume";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
 import Volume from "./Volume";
 import { VolumeDisplayOptions, VolumeChannelDisplayOptions } from "./types";
-import { FuseChannel, RenderMode } from "./types";
+import { FuseChannel, isFuseChannelEnabled, setFuseChannelDisabled, RenderMode } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import Channel from "./Channel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
 
-// TODO set up enum for this
-const RENDERMODE_AGAVE = 2;
 import { Pane } from "tweakpane";
 import Atlas2DSlice from "./Atlas2DSlice";
 import { VolumeRenderSettings, SettingsFlags, Axis } from "./VolumeRenderSettings";
@@ -495,9 +493,13 @@ export default class VolumeDrawable {
   // Hide or display volume data for a channel
   setVolumeChannelEnabled(channelIndex: number, enabled: boolean): void {
     // flip the color to the "null" value
-    this.fusion[channelIndex].rgbColor = enabled ? this.channelColors[channelIndex] : 0;
-    // if all are nulled out, then hide the volume element from the scene.
-    if (this.fusion.every((elem) => elem.rgbColor === 0)) {
+    if (enabled) {
+      this.fusion[channelIndex].rgbColor = this.channelColors[channelIndex];
+    } else {
+      setFuseChannelDisabled(this.fusion[channelIndex]);
+    }
+    // if all are disabled, then hide the volume element from the scene.
+    if (this.fusion.every((elem) => !isFuseChannelEnabled(elem))) {
       this.settings.visible = false;
     } else {
       this.settings.visible = true;
@@ -507,7 +509,7 @@ export default class VolumeDrawable {
 
   isVolumeChannelEnabled(channelIndex: number): boolean {
     // the zero value for the fusion rgbColor is the indicator that a channel is hidden.
-    return this.fusion[channelIndex].rgbColor !== 0;
+    return isFuseChannelEnabled(this.fusion[channelIndex]);
   }
 
   // Set the color for a channel
@@ -518,7 +520,7 @@ export default class VolumeDrawable {
     }
     this.channelColors[channelIndex] = colorrgb;
     // if volume channel is zero'ed out, then don't update it until it is switched on again.
-    if (this.fusion[channelIndex].rgbColor !== 0) {
+    if (isFuseChannelEnabled(this.fusion[channelIndex])) {
       this.fusion[channelIndex].rgbColor = colorrgb;
     }
     this.meshVolume.updateMeshColors(this.channelColors);
@@ -606,21 +608,15 @@ export default class VolumeDrawable {
   }
 
   onStartControls(): void {
-    if (this.renderMode === RenderMode.PATHTRACE) {
-      (this.volumeRendering as PathTracedVolume).onStartControls();
-    }
+    this.volumeRendering.onStartControls();
   }
 
   onChangeControls(): void {
-    if (this.renderMode === RenderMode.PATHTRACE) {
-      (this.volumeRendering as PathTracedVolume).onChangeControls();
-    }
+    this.volumeRendering.onChangeControls();
   }
 
   onEndControls(): void {
-    if (this.renderMode === RenderMode.PATHTRACE) {
-      (this.volumeRendering as PathTracedVolume).onEndControls();
-    }
+    this.volumeRendering.onEndControls();
   }
 
   onResetCamera(): void {
@@ -635,6 +631,7 @@ export default class VolumeDrawable {
 
   // values are in 0..1 range
   updateClipRegion(xmin: number, xmax: number, ymin: number, ymax: number, zmin: number, zmax: number): void {
+    // set bounds back to [-0.5, 0.5] range for the volume rendering
     this.settings.bounds.bmin = new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5);
     this.settings.bounds.bmax = new Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5);
     this.meshVolume.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
@@ -652,12 +649,12 @@ export default class VolumeDrawable {
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.SAMPLING);
   }
 
-  setVolumeRendering(newRenderMode: RenderMode): void {
+  async setVolumeRendering(newRenderMode: RenderMode): Promise<void> {
     // Skip reassignment of Pathtrace renderer if already using
     if (newRenderMode === RenderMode.PATHTRACE && this.renderMode === RenderMode.PATHTRACE) {
       return;
     }
-    if (renderMode === RENDERMODE_AGAVE && this.volumeRendering === this.remoteAgaveVolume) {
+    if (newRenderMode === RenderMode.AGAVE && this.renderMode === RenderMode.AGAVE) {
       return;
     }
 
@@ -675,6 +672,14 @@ export default class VolumeDrawable {
       case RenderMode.PATHTRACE:
         this.volumeRendering = new PathTracedVolume(this.volume, this.settings);
         this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
+        break;
+      case RenderMode.AGAVE:
+        {
+          const agaveRenderImpl = new RemoteAgaveVolume(this.volume, this.settings);
+          await agaveRenderImpl.init();
+          this.volumeRendering = agaveRenderImpl;
+          //this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
+        }
         break;
       case RenderMode.SLICE:
         this.volumeRendering = new Atlas2DSlice(this.volume, this.settings);

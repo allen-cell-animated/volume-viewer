@@ -13,16 +13,19 @@ import {
   UniformsUtils,
   Vector3,
 } from "three";
-import { ThreeJsPanel } from "./ThreeJsPanel";
 
+import { ThreeJsPanel } from "./ThreeJsPanel";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
+import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings";
 import { AgaveClient, JSONValue } from "./temp_agave/agave";
 import Volume from "./Volume";
-import { Bounds, FuseChannel, isOrthographicCamera } from "./types";
+import Channel from "./Channel";
+import { Bounds, FuseChannel, isFuseChannelEnabled, isOrthographicCamera } from "./types";
 
 export default class RemoteAgaveVolume implements VolumeRenderImpl {
   private agave: AgaveClient;
   private volume: Volume;
+  private settings: VolumeRenderSettings;
   private translation: Vector3;
   private rotation: Euler;
 
@@ -36,7 +39,7 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
   private bounds: Bounds;
   private pixelSamplingRate = 0.75;
 
-  constructor(volume: Volume) {
+  constructor(volume: Volume, settings: VolumeRenderSettings = new VolumeRenderSettings(volume)) {
     this.volume = volume;
     this.translation = new Vector3(0, 0, 0);
     this.rotation = new Euler();
@@ -107,6 +110,7 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
       this.onJsonReceived.bind(this),
       this.onImageReceived.bind(this)
     );
+    this.settings = settings;
   }
 
   async init() {
@@ -132,22 +136,23 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
       this.volume.loadSpec.time,
       [],
       [
-        this.volume.loadSpec.minx,
-        this.volume.loadSpec.maxx,
-        this.volume.loadSpec.miny,
-        this.volume.loadSpec.maxy,
-        this.volume.loadSpec.minz,
-        this.volume.loadSpec.maxz,
+        this.volume.loadSpec.minx || 0,
+        this.volume.loadSpec.maxx || 0,
+        this.volume.loadSpec.miny || 0,
+        this.volume.loadSpec.maxy || 0,
+        this.volume.loadSpec.minz || 0,
+        this.volume.loadSpec.maxz || 0,
       ]
     );
     this.agave.streamMode(1);
     this.cameraDirty = true;
-    this.agave.enableChannel(0, 1);
-    this.agave.setPercentileThreshold(0, 0.5, 0.98);
-    this.agave.enableChannel(1, 1);
-    this.agave.setPercentileThreshold(1, 0.5, 0.98);
-    this.agave.enableChannel(2, 1);
-    this.agave.setPercentileThreshold(2, 0.5, 0.98);
+    this.updateSettings(this.settings);
+    // this.agave.enableChannel(0, 1);
+    // this.agave.setPercentileThreshold(0, 0.5, 0.98);
+    // this.agave.enableChannel(1, 1);
+    // this.agave.setPercentileThreshold(1, 0.5, 0.98);
+    // this.agave.enableChannel(2, 1);
+    // this.agave.setPercentileThreshold(2, 0.5, 0.98);
     this.agave.redraw();
     this.agave.flushCommandBuffer();
   }
@@ -185,56 +190,6 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
 
   get3dObject(): Object3D {
     return this.object;
-  }
-  setRayStepSizes(rayStepSize: number, secondaryRayStepSize: number): void {
-    this.agave.setPrimaryRayStepSize(rayStepSize);
-    this.agave.setSecondaryRayStepSize(secondaryRayStepSize);
-  }
-  setScale(_scale: Vector3): void {
-    console.log("RemoteAgaveVolume.setScale not implemented");
-  }
-  setOrthoScale(_scale: number): void {
-    console.log("RemoteAgaveVolume.setOrthoScale not implemented");
-  }
-  setResolution(x: number, y: number): void {
-    const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
-    const nx = Math.floor((x * this.pixelSamplingRate) / dpr);
-    const ny = Math.floor((y * this.pixelSamplingRate) / dpr);
-    this.agave.setResolution(nx, ny);
-  }
-
-  // -0.5 .. 0.5
-  setAxisClip(axis: "x" | "y" | "z", minval: number, maxval: number, _isOrthoAxis: boolean): void {
-    this.bounds.bmax[axis] = maxval + 0.5;
-    this.bounds.bmin[axis] = minval + 0.5;
-    this.agave.setClipRegion(
-      this.bounds.bmin.x,
-      this.bounds.bmax.x,
-      this.bounds.bmin.y,
-      this.bounds.bmax.y,
-      this.bounds.bmin.z,
-      this.bounds.bmax.z
-    );
-  }
-
-  setIsOrtho(_isOrtho: boolean): void {
-    return;
-  }
-
-  setOrthoThickness(_thickness: number): void {
-    return;
-  }
-
-  setInterpolationEnabled(_enabled: boolean): void {
-    return;
-  }
-
-  setGamma(_gmin: number, _glevel: number, _gmax: number): void {
-    // TODO is there some exposure control in agave this can map to?
-  }
-
-  setFlipAxes(_flipX: number, _flipY: number, _flipZ: number): void {
-    console.log("RemoteAgaveVolume.setFlipAxes not implemented");
   }
 
   doRender(canvas: ThreeJsPanel): void {
@@ -279,92 +234,81 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
 
     this.agave.flushCommandBuffer();
   }
+  updateSettings(newSettings: VolumeRenderSettings, dirtyFlags?: number | SettingsFlags): void {
+    if (dirtyFlags === undefined) {
+      dirtyFlags = SettingsFlags.ALL;
+    }
+
+    this.settings = newSettings;
+
+    // Update resolution
+    if (dirtyFlags & SettingsFlags.SAMPLING) {
+      const { x, y } = this.settings.resolution;
+      const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
+      const nx = Math.floor((x * this.pixelSamplingRate) / dpr);
+      const ny = Math.floor((y * this.pixelSamplingRate) / dpr);
+      this.agave.setResolution(nx, ny);
+      this.agave.setPrimaryRayStepSize(this.settings.primaryRayStepSize);
+      this.agave.setSecondaryRayStepSize(this.settings.secondaryRayStepSize);
+    }
+
+    if (dirtyFlags & SettingsFlags.TRANSFORM) {
+      // not implemented yet
+      // flipAxes
+      this.translation.copy(this.settings.translation);
+      this.rotation.copy(this.settings.rotation);
+    }
+
+    if (dirtyFlags & SettingsFlags.MATERIAL) {
+      // massive fudge factor
+      this.agave.density(this.settings.density * 150.0);
+    }
+    if (dirtyFlags & SettingsFlags.ROI) {
+      // translate to [0,1] range
+      this.agave.setClipRegion(
+        this.settings.bounds.bmin.x + 0.5,
+        this.settings.bounds.bmax.x + 0.5,
+        this.settings.bounds.bmin.y + 0.5,
+        this.settings.bounds.bmax.y + 0.5,
+        this.settings.bounds.bmin.z + 0.5,
+        this.settings.bounds.bmax.z + 0.5
+      );
+    }
+
+    if (dirtyFlags & SettingsFlags.CAMERA) {
+      // convert to an exposure value
+      if (this.settings.brightness === 1.0) {
+        this.settings.brightness = 0.999;
+      }
+      this.agave.exposure(this.settings.brightness);
+    }
+    if (dirtyFlags & SettingsFlags.MASK) {
+      // not implemented yet
+    }
+    if (dirtyFlags & SettingsFlags.VIEW) {
+      // not implemented yet
+    }
+
+    if (dirtyFlags & SettingsFlags.BOUNDING_BOX) {
+      this.agave.showBoundingBox(this.settings.showBoundingBox ? 1 : 0);
+      this.agave.boundingBoxColor(
+        this.settings.boundingBoxColor[0],
+        this.settings.boundingBoxColor[1],
+        this.settings.boundingBoxColor[2]
+      );
+    }
+  }
 
   cleanup(): void {
     this.agave.disconnect();
-  }
-
-  onChannelData(_batch: number[]): void {
-    // all channel data is loaded separately by agave on the back end
-  }
-
-  setVisible(_visible: boolean): void {
-    return;
-  }
-
-  setBrightness(brightness: number): void {
-    // convert to an exposure value
-    if (brightness === 1.0) {
-      brightness = 0.999;
-    }
-    this.agave.exposure(brightness);
-  }
-
-  setDensity(density: number): void {
-    // massive fudge factor
-    this.agave.density(density * 150.0);
-  }
-
-  setChannelAsMask(_channel: number): boolean {
-    return false;
-  }
-
-  setMaskAlpha(_alpha: number): void {
-    return;
-  }
-
-  setShowBoundingBox(show: boolean): void {
-    this.agave.showBoundingBox(show ? 1 : 0);
-  }
-
-  setBoundingBoxColor(color: [number, number, number]): void {
-    this.agave.boundingBoxColor(color[0], color[1], color[2]);
   }
 
   viewpointMoved(): void {
     this.cameraDirty = true;
   }
 
-  // 0..1 ranges as input
-  updateClipRegion(xmin: number, xmax: number, ymin: number, ymax: number, zmin: number, zmax: number): void {
-    this.bounds = {
-      bmin: new Vector3(xmin, ymin, zmin),
-      bmax: new Vector3(xmax, ymax, zmax),
-    };
-    // const physicalSize = this.volume.normalizedPhysicalSize;
-    // this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
-    //   xmin * physicalSize.x - 0.5 * physicalSize.x,
-    //   ymin * physicalSize.y - 0.5 * physicalSize.y,
-    //   zmin * physicalSize.z - 0.5 * physicalSize.z
-    // );
-    // this.pathTracingUniforms.gClippedAaBbMax.value = new Vector3(
-    //   xmax * physicalSize.x - 0.5 * physicalSize.x,
-    //   ymax * physicalSize.y - 0.5 * physicalSize.y,
-    //   zmax * physicalSize.z - 0.5 * physicalSize.z
-    // );
-
-    this.agave.setClipRegion(
-      this.bounds.bmin.x,
-      this.bounds.bmax.x,
-      this.bounds.bmin.y,
-      this.bounds.bmax.y,
-      this.bounds.bmin.z,
-      this.bounds.bmax.z
-    );
-  }
-  setPixelSamplingRate(_rate: number): void {
-    console.log("RemoteAgaveVolume.setPixelSamplingRate not implemented");
-  }
   setRenderUpdateListener(_listener?: (iteration: number) => void): void {
     console.log("RemoteAgaveVolume.setRenderUpdateListener not implemented");
-  }
-
-  setTranslation(vec3xyz: Vector3): void {
-    this.translation.copy(vec3xyz);
-  }
-
-  setRotation(eulerXYZ: Euler): void {
-    this.rotation.copy(eulerXYZ);
   }
 
   onStartControls(): void {
@@ -377,12 +321,12 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     return;
   }
 
-  updateChannelFusion(settings: FuseChannel[]): void {
+  updateActiveChannels(channelcolors: FuseChannel[], _channeldata: Channel[]): void {
     for (let i = 0; i < this.volume.num_channels; i++) {
       this.agave.enableChannel(i, 0);
     }
-    for (const channel of settings) {
-      const enabled = channel.rgbColor !== 0;
+    for (const channel of channelcolors) {
+      const enabled = isFuseChannelEnabled(channel);
       this.agave.enableChannel(channel.chIndex, enabled ? 1 : 0);
       if (enabled) {
         this.agave.matDiffuse(

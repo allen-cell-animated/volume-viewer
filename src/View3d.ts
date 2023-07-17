@@ -29,6 +29,7 @@ import { Axis } from "./VolumeRenderSettings";
 // Constants are kept for compatibility reasons.
 export const RENDERMODE_RAYMARCH = RenderMode.RAYMARCH;
 export const RENDERMODE_PATHTRACE = RenderMode.PATHTRACE;
+export const RENDERMODE_AGAVE = RenderMode.AGAVE;
 
 export interface View3dOptions {
   parentElement?: HTMLElement;
@@ -839,6 +840,11 @@ export class View3d {
     if (this.image) {
       if (mode === RenderMode.PATHTRACE && this.canvas3d.hasWebGL2) {
         this.image.setVolumeRendering(RenderMode.PATHTRACE);
+        this.image.updateLights(this.lights);
+        // pathtrace is a continuous rendering mode
+        this.canvas3d.startRenderLoop();
+      } else if (mode === RenderMode.AGAVE) {
+        this.image.setVolumeRendering(RenderMode.AGAVE);
         this.image.updateLights(this.lights);
         // pathtrace is a continuous rendering mode
         this.canvas3d.startRenderLoop();

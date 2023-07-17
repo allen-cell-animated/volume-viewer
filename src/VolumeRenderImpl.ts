@@ -21,4 +21,8 @@ export interface VolumeRenderImpl {
   viewpointMoved: () => void;
   setRenderUpdateListener: (_listener?: (iteration: number) => void) => void;
   updateActiveChannels: (channelcolors: FuseChannel[], channeldata: Channel[]) => void;
+
+  onStartControls: () => void;
+  onChangeControls: () => void;
+  onEndControls: () => void;
 }

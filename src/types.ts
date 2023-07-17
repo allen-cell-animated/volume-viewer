@@ -5,15 +5,21 @@ export interface Bounds {
   bmax: Vector3;
 }
 
+/** If `FuseChannel.rgbColor` is this value, it is disabled from fusion. */
+// zero is a sentinel value to disable from fusion
+const FUSE_DISABLED_RGB_COLOR = 0;
+
 export interface FuseChannel {
   chIndex: number;
   lut: Uint8Array;
-  // zero is a sentinel value to disable from fusion
-  rgbColor: [number, number, number] | 0;
+  rgbColor: [number, number, number] | typeof FUSE_DISABLED_RGB_COLOR;
 }
-
-/** If `FuseChannel.rgbColor` is this value, it is disabled from fusion. */
-export const FUSE_DISABLED_RGB_COLOR = 0;
+export function isFuseChannelEnabled(fuseChannel: FuseChannel): boolean {
+  return fuseChannel.rgbColor !== FUSE_DISABLED_RGB_COLOR;
+}
+export function setFuseChannelDisabled(fuseChannel: FuseChannel): void {
+  fuseChannel.rgbColor = FUSE_DISABLED_RGB_COLOR;
+}
 
 /**
  * Provide options to control the visual appearance of a Volume
@@ -44,6 +50,7 @@ export enum RenderMode {
   RAYMARCH = 0,
   PATHTRACE = 1,
   SLICE = 2,
+  AGAVE = 3,
 }
 
 /**

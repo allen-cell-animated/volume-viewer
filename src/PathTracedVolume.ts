@@ -29,7 +29,7 @@ import {
 } from "./constants/volumePTshader";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
 import Volume from "./Volume";
-import { FUSE_DISABLED_RGB_COLOR, FuseChannel, isOrthographicCamera } from "./types";
+import { isFuseChannelEnabled, FuseChannel, isOrthographicCamera } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
@@ -550,7 +550,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     const maxch = 4;
     for (let i = 0; i < NC && activeChannel < maxch; ++i) {
       // check that channel is not disabled and is loaded
-      if (channelColors[i].rgbColor !== FUSE_DISABLED_RGB_COLOR && channelData[i].loaded) {
+      if (isFuseChannelEnabled(channelColors[i]) && channelData[i].loaded) {
         ch[activeChannel] = i;
         activeChannel++;
       }
@@ -716,26 +716,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       const lt = this.pathTracingUniforms.gLights.value[i];
       lt.update(bbctr, cameraMatrix);
     }
-  }
-
-  // 0..1 ranges as input
-  updateClipRegion(xmin: number, xmax: number, ymin: number, ymax: number, zmin: number, zmax: number): void {
-    this.settings.bounds = {
-      bmin: new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
-      bmax: new Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5),
-    };
-    const physicalSize = this.volume.normalizedPhysicalSize;
-    this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
-      xmin * physicalSize.x - 0.5 * physicalSize.x,
-      ymin * physicalSize.y - 0.5 * physicalSize.y,
-      zmin * physicalSize.z - 0.5 * physicalSize.z
-    );
-    this.pathTracingUniforms.gClippedAaBbMax.value = new Vector3(
-      xmax * physicalSize.x - 0.5 * physicalSize.x,
-      ymax * physicalSize.y - 0.5 * physicalSize.y,
-      zmax * physicalSize.z - 0.5 * physicalSize.z
-    );
-    this.resetProgress();
   }
 
   public setZSlice(_slice: number): boolean {

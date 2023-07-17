@@ -235,4 +235,14 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
   public setRenderUpdateListener(_listener?: ((iteration: number) => void) | undefined) {
     return;
   }
+
+  onStartControls(): void {
+    return;
+  }
+  onChangeControls(): void {
+    return;
+  }
+  onEndControls(): void {
+    return;
+  }
 }

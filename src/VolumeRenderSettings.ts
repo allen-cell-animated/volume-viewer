@@ -69,6 +69,7 @@ export class VolumeRenderSettings {
   public glossiness: number[];
 
   // ROI
+  // bounds in [-0.5, 0.5] space
   public bounds: Bounds;
   public zSlice: number;
 
