@@ -1,7 +1,6 @@
 import {
   DataTexture,
   Data3DTexture,
-  Euler,
   FloatType,
   Matrix4,
   Mesh,
@@ -30,29 +29,26 @@ import {
 } from "./constants/volumePTshader";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
 import Volume from "./Volume";
-import { Bounds, FuseChannel, isOrthographicCamera } from "./types";
+import { FUSE_DISABLED_RGB_COLOR, FuseChannel, isOrthographicCamera } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
-import VolumeDrawable from "./VolumeDrawable";
 import { Light } from "./Light";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
+import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings";
+import Channel from "./Channel";
 
 export default class PathTracedVolume implements VolumeRenderImpl {
+  private settings: VolumeRenderSettings;
+
   private volume: Volume;
   private viewChannels: number[]; // should have 4 or less elements
-  private scale: Vector3;
-  private translation: Vector3;
-  private rotation: Euler;
-  private pixelSamplingRate: number;
-  private pathTracingUniforms: typeof pathTracingUniforms;
+
+  private pathTracingUniforms: ReturnType<typeof pathTracingUniforms>;
   private volumeTexture: Data3DTexture;
-  private maskChannelIndex: number;
-  private maskAlpha: number;
-  private bounds: Bounds;
+
   private cameraIsMoving: boolean;
   private sampleCounter: number;
   private frameCounter: number;
-  private stepSizePrimaryRayVoxels: number;
-  private stepSizeSecondaryRayVoxels: number;
+
   private pathTracingScene: Scene;
   private screenTextureScene: Scene;
   private quadCamera: OrthographicCamera;
@@ -75,19 +71,16 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   private gradientDelta: number;
   private renderUpdateListener?: (iteration: number) => void;
 
-  constructor(volume: Volume) {
-    // need?
+  /**
+   * Creates a new PathTracedVolume.
+   * @param volume The volume that this renderer should render data from.
+   * @param settings Optional settings object. If set, updates the renderer with
+   * the given settings. Otherwise, uses the default VolumeRenderSettings.
+   */
+  constructor(volume: Volume, settings: VolumeRenderSettings = new VolumeRenderSettings(volume)) {
+    this.pathTracingUniforms = pathTracingUniforms();
     this.volume = volume;
     this.viewChannels = [-1, -1, -1, -1];
-
-    this.scale = new Vector3(1, 1, 1);
-    this.translation = new Vector3(0, 0, 0);
-    this.rotation = new Euler();
-
-    // scale factor is a huge optimization.  Maybe use 1/dpi scale
-    this.pixelSamplingRate = 0.75;
-
-    this.pathTracingUniforms = pathTracingUniforms;
 
     // create volume texture
     const sx = volume.x,
@@ -101,9 +94,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
     this.volumeTexture.needsUpdate = true;
 
-    this.maskChannelIndex = -1;
-    this.maskAlpha = 1.0;
-
     // create Lut textures
     // empty array
     const lutData = new Uint8Array(LUT_ARRAY_LENGTH * 4).fill(1);
@@ -112,17 +102,9 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     lut0.needsUpdate = true;
     this.pathTracingUniforms.gLutTexture.value = lut0;
 
-    this.bounds = {
-      bmin: new Vector3(-0.5, -0.5, -0.5),
-      bmax: new Vector3(0.5, 0.5, 0.5),
-    };
-
     this.cameraIsMoving = false;
     this.sampleCounter = 0;
     this.frameCounter = 0;
-
-    this.stepSizePrimaryRayVoxels = 1.0;
-    this.stepSizeSecondaryRayVoxels = 1.0;
 
     this.pathTracingScene = new Scene();
     this.screenTextureScene = new Scene();
@@ -325,8 +307,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.pathTracingUniforms.gInvGradientDelta.value = invGradientDelta; // a voxel count
     this.pathTracingUniforms.gGradientFactor.value = 50.0; // related to voxel counts also
 
-    this.setRayStepSizes(1.0, 1.0);
-
     // bounds will go from 0 to physicalSize
     const physicalSize = volume.normalizedPhysicalSize;
 
@@ -335,9 +315,11 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       1.0 / physicalSize.y,
       1.0 / physicalSize.z
     );
-    this.updateClipRegion(0, 1, 0, 1, 0, 1);
-
     this.updateLightsSecondary();
+
+    // Update settings
+    this.updateSettings(settings);
+    this.settings = settings; // turns off ts initialization warning
   }
 
   public cleanup(): void {
@@ -356,16 +338,77 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.sampleCounter = 0;
   }
 
-  public setVisible(_isVisible: boolean): void {
-    // this.visible = isVisible;
-  }
+  /**
+   * If the new settings have changed, applies all changes to this volume renderer.
+   * @param newSettings
+   * @returns
+   */
+  public updateSettings(newSettings: VolumeRenderSettings, dirtyFlags?: number | SettingsFlags): void {
+    if (dirtyFlags === undefined) {
+      dirtyFlags = SettingsFlags.ALL;
+    }
+    this.settings = newSettings;
 
-  public setShowBoundingBox(_showBoundingBox: boolean): void {
-    // TODO: NOT IMPLEMENTED YET
-  }
+    // Update resolution
+    if (dirtyFlags & SettingsFlags.SAMPLING) {
+      const resolution = this.settings.resolution.clone();
+      this.fullTargetResolution = resolution;
+      const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
+      const nx = Math.floor((resolution.x * this.settings.pixelSamplingRate) / dpr);
+      const ny = Math.floor((resolution.y * this.settings.pixelSamplingRate) / dpr);
+      this.pathTracingUniforms.uResolution.value.x = nx;
+      this.pathTracingUniforms.uResolution.value.y = ny;
+      this.pathTracingRenderTarget.setSize(nx, ny);
+      this.screenTextureRenderTarget.setSize(nx, ny);
 
-  public setBoundingBoxColor(_color: [number, number, number]): void {
-    // TODO: NOT IMPLEMENTED YET
+      // update ray step size
+      this.pathTracingUniforms.gStepSize.value = this.settings.primaryRayStepSize * this.gradientDelta;
+      this.pathTracingUniforms.gStepSizeShadow.value = this.settings.secondaryRayStepSize * this.gradientDelta;
+    }
+
+    if (dirtyFlags & SettingsFlags.TRANSFORM) {
+      this.pathTracingUniforms.flipVolume.value = this.settings.flipAxes;
+    }
+
+    if (dirtyFlags & SettingsFlags.MATERIAL) {
+      this.pathTracingUniforms.gDensityScale.value = this.settings.density * 150.0;
+    }
+
+    // update bounds
+    if (dirtyFlags & SettingsFlags.ROI) {
+      const physicalSize = this.volume.normalizedPhysicalSize;
+      this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
+        this.settings.bounds.bmin.x * physicalSize.x,
+        this.settings.bounds.bmin.y * physicalSize.y,
+        this.settings.bounds.bmin.z * physicalSize.z
+      );
+      this.pathTracingUniforms.gClippedAaBbMax.value = new Vector3(
+        this.settings.bounds.bmax.x * physicalSize.x,
+        this.settings.bounds.bmax.y * physicalSize.y,
+        this.settings.bounds.bmax.z * physicalSize.z
+      );
+    }
+
+    if (dirtyFlags & SettingsFlags.CAMERA) {
+      this.updateExposure(this.settings.brightness);
+    }
+
+    if (dirtyFlags & SettingsFlags.MASK) {
+      // Update channel and alpha mask if they have changed
+      this.updateVolumeData4();
+    }
+    if (dirtyFlags & SettingsFlags.VIEW) {
+      this.pathTracingUniforms.gCamera.value.mIsOrtho = this.settings.isOrtho ? 1 : 0;
+    }
+
+    if (dirtyFlags & SettingsFlags.SAMPLING) {
+      this.volumeTexture.minFilter = this.volumeTexture.magFilter = newSettings.useInterpolation
+        ? LinearFilter
+        : NearestFilter;
+      this.volumeTexture.needsUpdate = true;
+    }
+
+    this.resetProgress();
   }
 
   public doRender(canvas: ThreeJsPanel): void {
@@ -405,8 +448,8 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
     // apply volume translation and rotation:
     // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
-    const m = new Matrix4().makeRotationFromQuaternion(new Quaternion().setFromEuler(this.rotation).invert());
-    mypos.sub(this.translation);
+    const m = new Matrix4().makeRotationFromQuaternion(new Quaternion().setFromEuler(this.settings.rotation).invert());
+    mypos.sub(this.settings.translation);
     mypos.applyMatrix4(m);
     myup.applyMatrix4(m);
     mydir.applyMatrix4(m);
@@ -480,140 +523,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     return this.screenOutputMesh;
   }
 
-  public onChannelData(_batch: number[]): void {
-    // no op
-  }
-
-  public setScale(scale: Vector3): void {
-    this.scale = scale;
-  }
-
-  public setRayStepSizes(primary: number, secondary: number): void {
-    // reset render if changed
-    if (this.stepSizePrimaryRayVoxels !== primary || this.stepSizeSecondaryRayVoxels !== secondary) {
-      this.resetProgress();
-    }
-    this.stepSizePrimaryRayVoxels = primary;
-    this.stepSizeSecondaryRayVoxels = secondary;
-
-    this.pathTracingUniforms.gStepSize.value = this.stepSizePrimaryRayVoxels * this.gradientDelta;
-    this.pathTracingUniforms.gStepSizeShadow.value = this.stepSizeSecondaryRayVoxels * this.gradientDelta;
-  }
-
-  public setTranslation(vec3xyz: Vector3): void {
-    this.translation.copy(vec3xyz);
-    this.resetProgress();
-  }
-
-  public setRotation(eulerXYZ: Euler): void {
-    this.rotation.copy(eulerXYZ);
-    this.resetProgress();
-  }
-
-  public setOrthoScale(_value: number): void {
-    // no op
-  }
-
-  public setGamma(_gmin: number, _glevel: number, _gmax: number): void {
-    // no op
-  }
-
-  public setFlipAxes(flipX: number, flipY: number, flipZ: number): void {
-    this.pathTracingUniforms.flipVolume.value = new Vector3(flipX, flipY, flipZ);
-    // TODO: only reset if changed!
-    this.resetProgress();
-  }
-
-  public setResolution(x: number, y: number): void {
-    this.fullTargetResolution = new Vector2(x, y);
-    const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
-    const nx = Math.floor((x * this.pixelSamplingRate) / dpr);
-    const ny = Math.floor((y * this.pixelSamplingRate) / dpr);
-    this.pathTracingUniforms.uResolution.value.x = nx;
-    this.pathTracingUniforms.uResolution.value.y = ny;
-
-    // TODO optimization: scale this value down when nx,ny is small.  For now can leave it at 3 (a 7x7 pixel filter).
-    const denoiseFilterR = 3;
-    this.screenOutputDenoiseMaterial.uniforms.gDenoiseWindowRadius.value = denoiseFilterR;
-    this.screenOutputDenoiseMaterial.uniforms.gDenoiseInvWindowArea.value =
-      1.0 / ((2.0 * denoiseFilterR + 1.0) * (2.0 * denoiseFilterR + 1.0));
-
-    this.pathTracingRenderTarget.setSize(nx, ny);
-    this.screenTextureRenderTarget.setSize(nx, ny);
-
-    this.resetProgress();
-  }
-
-  setPixelSamplingRate(rate: number): void {
-    this.pixelSamplingRate = rate;
-    this.setResolution(this.fullTargetResolution.x, this.fullTargetResolution.y);
-    this.resetProgress();
-  }
-
-  setDensity(density: number): void {
-    this.pathTracingUniforms.gDensityScale.value = density * 150.0;
-    this.resetProgress();
-  }
-
-  // TODO brightness and exposure should be the same thing? or gamma?
-  setBrightness(brightness: number): void {
-    // convert to an exposure value
-    if (brightness === 1.0) {
-      brightness = 0.999;
-    }
-    this.updateExposure(brightness);
-  }
-
-  // -0.5 .. 0.5
-  setAxisClip(axis: "x" | "y" | "z", minval: number, maxval: number, _isOrthoAxis: boolean): void {
-    this.bounds.bmax[axis] = maxval;
-    this.bounds.bmin[axis] = minval;
-    const physicalSize = this.volume.normalizedPhysicalSize;
-    this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
-      this.bounds.bmin.x * physicalSize.x,
-      this.bounds.bmin.y * physicalSize.y,
-      this.bounds.bmin.z * physicalSize.z
-    );
-    this.pathTracingUniforms.gClippedAaBbMax.value = new Vector3(
-      this.bounds.bmax.x * physicalSize.x,
-      this.bounds.bmax.y * physicalSize.y,
-      this.bounds.bmax.z * physicalSize.z
-    );
-    this.resetProgress();
-  }
-
-  setChannelAsMask(channelIndex: number): boolean {
-    if (!this.volume.channels[channelIndex] || !this.volume.channels[channelIndex].loaded) {
-      return false;
-    }
-    if (this.maskChannelIndex !== channelIndex) {
-      this.maskChannelIndex = channelIndex;
-      this.updateVolumeData4();
-      this.resetProgress();
-    }
-    return true;
-  }
-
-  setMaskAlpha(maskAlpha: number): void {
-    this.maskAlpha = maskAlpha;
-    this.updateVolumeData4();
-    this.resetProgress();
-  }
-
-  setOrthoThickness(_value: number): void {
-    // no op
-  }
-
-  setIsOrtho(isOrthoAxis: boolean): void {
-    this.pathTracingUniforms.gCamera.value.mIsOrtho = isOrthoAxis ? 1 : 0;
-    this.resetProgress();
-  }
-
-  setInterpolationEnabled(active: boolean): void {
-    this.volumeTexture.minFilter = this.volumeTexture.magFilter = active ? LinearFilter : NearestFilter;
-    this.volumeTexture.needsUpdate = true;
-  }
-
   //////////////////////////////////////////
   //////////////////////////////////////////
 
@@ -634,17 +543,14 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.resetProgress();
   }
 
-  updateChannelFusion(_settings: FuseChannel[]): void {
-    return;
-  }
-
-  updateActiveChannels(image: VolumeDrawable): void {
+  updateActiveChannels(channelColors: FuseChannel[], channelData: Channel[]): void {
     const ch = [-1, -1, -1, -1];
     let activeChannel = 0;
     const NC = this.volume.num_channels;
     const maxch = 4;
     for (let i = 0; i < NC && activeChannel < maxch; ++i) {
-      if (image.isVolumeChannelEnabled(i) && image.getChannel(i).loaded) {
+      // check that channel is not disabled and is loaded
+      if (channelColors[i].rgbColor !== FUSE_DISABLED_RGB_COLOR && channelData[i].loaded) {
         ch[activeChannel] = i;
         activeChannel++;
       }
@@ -661,10 +567,8 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     // update volume data according to channels selected.
     this.updateVolumeData4();
     this.resetProgress();
-    this.updateLuts(image);
-    this.updateMaterial(image);
-
-    // console.log(this.pathTracingUniforms);
+    this.updateLuts(channelColors, channelData);
+    this.updateMaterial(channelColors, channelData);
   }
 
   updateVolumeData4(): void {
@@ -688,11 +592,11 @@ export default class PathTracedVolume implements VolumeRenderImpl {
           }
         }
       }
-      if (this.maskChannelIndex !== -1 && this.maskAlpha < 1.0) {
-        const maskChannel = this.volume.getChannel(this.maskChannelIndex);
+      if (this.settings.maskChannelIndex !== -1 && this.settings.maskAlpha < 1.0) {
+        const maskChannel = this.volume.getChannel(this.settings.maskChannelIndex);
         // const maskMax = maskChannel.getHistogram().dataMax;
         let maskVal = 1.0;
-        const maskAlpha = this.maskAlpha;
+        const maskAlpha = this.settings.maskAlpha;
         for (let iz = 0; iz < sz; ++iz) {
           for (let iy = 0; iy < sy; ++iy) {
             for (let ix = 0; ix < sx; ++ix) {
@@ -713,10 +617,10 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.volumeTexture.needsUpdate = true;
   }
 
-  updateLuts(image: VolumeDrawable): void {
+  updateLuts(channelColors: FuseChannel[], channelData: Channel[]): void {
     for (let i = 0; i < this.pathTracingUniforms.gNChannels.value; ++i) {
       const channel = this.viewChannels[i];
-      const combinedLut = image.getChannel(channel).combineLuts(image.getChannelColor(channel));
+      const combinedLut = channelData[channel].combineLuts(channelColors[channel].rgbColor);
 
       this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, i * LUT_ARRAY_LENGTH);
 
@@ -736,23 +640,23 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
   // image is a material interface that supports per-channel color, spec,
   // emissive, glossiness
-  updateMaterial(image: VolumeDrawable): void {
+  updateMaterial(channelColors: FuseChannel[], channelData: Channel[]): void {
     for (let c = 0; c < this.viewChannels.length; ++c) {
       const i = this.viewChannels[c];
       if (i > -1) {
         // diffuse color is actually blended into the LUT now.
-        const combinedLut = image.getChannel(i).combineLuts(image.getChannelColor(i));
+        const combinedLut = channelData[i].combineLuts(channelColors[i].rgbColor);
         this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, c * LUT_ARRAY_LENGTH);
         this.pathTracingUniforms.gLutTexture.value.needsUpdate = true;
         this.pathTracingUniforms.gDiffuse.value[c] = new Vector3(1.0, 1.0, 1.0);
 
         this.pathTracingUniforms.gSpecular.value[c] = new Vector3()
-          .fromArray(image.specular[i])
+          .fromArray(this.settings.specular[i])
           .multiplyScalar(1.0 / 255.0);
         this.pathTracingUniforms.gEmissive.value[c] = new Vector3()
-          .fromArray(image.emissive[i])
+          .fromArray(this.settings.emissive[i])
           .multiplyScalar(1.0 / 255.0);
-        this.pathTracingUniforms.gGlossiness.value[c] = image.glossiness[i];
+        this.pathTracingUniforms.gGlossiness.value[c] = this.settings.glossiness[i];
       }
     }
     this.resetProgress();
@@ -816,7 +720,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
   // 0..1 ranges as input
   updateClipRegion(xmin: number, xmax: number, ymin: number, ymax: number, zmin: number, zmax: number): void {
-    this.bounds = {
+    this.settings.bounds = {
       bmin: new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
       bmax: new Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5),
     };
@@ -832,5 +736,9 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       zmax * physicalSize.z - 0.5 * physicalSize.z
     );
     this.resetProgress();
+  }
+
+  public setZSlice(_slice: number): boolean {
+    return true;
   }
 }

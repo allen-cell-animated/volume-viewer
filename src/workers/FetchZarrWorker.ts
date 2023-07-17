@@ -1,83 +1,61 @@
-import { HTTPStore, openArray, NestedArray, TypedArray } from "zarr";
+import { HTTPStore, openArray, slice, TypedArray } from "zarr";
+import { RawArray } from "zarr/types/rawArray";
+import { Slice } from "zarr/types/core/types";
+import { LoadSpec } from "../loaders/IVolumeLoader";
 
-function convertChannel(
-  channelData: TypedArray[][],
-  nx: number,
-  ny: number,
-  nz: number,
-  dtype: string,
-  downsampleZ: number
-): Uint8Array {
-  const nresultpixels = nx * ny * Math.ceil(nz / downsampleZ);
-  const u8 = new Uint8Array(nresultpixels);
-  const xy = nx * ny;
+export type FetchZarrMessage = {
+  spec: LoadSpec;
+  channel: number;
+  path: string;
+};
 
+function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
   if (dtype === "|u1") {
-    // flatten the 3d array and convert to uint8
-    // todo test perf with a loop over x,y,z instead
-    for (let z = 0, slice = 0; z < nz; z += downsampleZ, ++slice) {
-      for (let j = 0; j < xy; ++j) {
-        const yrow = Math.floor(j / nx);
-        const xcol = j % nx;
-        u8[j + slice * xy] = channelData[z][yrow][xcol];
-      }
-    }
-  } else {
-    let chmin = channelData[0][0][0];
-    let chmax = channelData[0][0][0];
-    // find min and max (only of data we are sampling?)
-    for (let z = 0; z < nz; z += downsampleZ) {
-      for (let j = 0; j < xy; ++j) {
-        const yrow = Math.floor(j / nx);
-        const xcol = j % nx;
-        const val = channelData[z][yrow][xcol];
-        if (val < chmin) {
-          chmin = val;
-        }
-        if (val > chmax) {
-          chmax = val;
-        }
-      }
-    }
-    // flatten the 3d array and convert to uint8
-    for (let z = 0, slice = 0; z < nz; z += downsampleZ, ++slice) {
-      for (let j = 0; j < xy; ++j) {
-        const yrow = Math.floor(j / nx);
-        const xcol = j % nx;
-        u8[j + slice * xy] = ((channelData[z][yrow][xcol] - chmin) / (chmax - chmin)) * 255;
-      }
-    }
+    return channelData as Uint8Array;
   }
+
+  const u8 = new Uint8Array(channelData.length);
+
+  // get min and max
+  let min = channelData[0];
+  let max = channelData[0];
+  channelData.forEach((val: number) => {
+    min = Math.min(min, val);
+    max = Math.max(max, val);
+  });
+
+  // normalize and convert to u8
+  const range = max - min;
+  channelData.forEach((val: number, idx: number) => {
+    u8[idx] = ((val - min) / range) * 255;
+  });
 
   return u8;
 }
 
-self.onmessage = function (e) {
-  const time = e.data.time;
+self.onmessage = async (e: MessageEvent<FetchZarrMessage>) => {
+  const time = e.data.spec.time;
   const channelIndex = e.data.channel;
-  const downsampleZ = e.data.downsampleZ;
-  const store = new HTTPStore(e.data.urlStore);
-  openArray({ store: store, path: e.data.path, mode: "r" })
-    .then((level) => {
-      // build slice spec
-      // assuming ZYX are the last three dimensions:
-      const sliceSpec = [null, null, null];
-      if (channelIndex > -1) {
-        sliceSpec.unshift(channelIndex);
-      }
-      if (time > -1) {
-        sliceSpec.unshift(time);
-      }
-      return level.get(sliceSpec);
-    })
-    .then((channel) => {
-      channel = channel as NestedArray<TypedArray>;
-      const nz = channel.shape[0];
-      const ny = channel.shape[1];
-      const nx = channel.shape[2];
+  const store = new HTTPStore(e.data.spec.url);
+  const level = await openArray({ store: store, path: e.data.path, mode: "r" });
 
-      const u8: Uint8Array = convertChannel(channel.data as TypedArray[][], nx, ny, nz, channel.dtype, downsampleZ);
-      const results = { data: u8, channel: channelIndex === -1 ? 0 : channelIndex };
-      postMessage(results, [results.data.buffer]);
-    });
+  // build slice spec
+  // assuming ZYX are the last three dimensions:
+  const { minx, maxx, miny, maxy, minz, maxz } = e.data.spec;
+  const sliceSpec: (Slice | number)[] = [
+    slice(minz === undefined ? null : minz, maxz),
+    slice(miny === undefined ? null : miny, maxy),
+    slice(minx === undefined ? null : minx, maxx),
+  ];
+  if (channelIndex > -1) {
+    sliceSpec.unshift(channelIndex);
+  }
+  if (time > -1) {
+    sliceSpec.unshift(time);
+  }
+  const channel = (await level.getRaw(sliceSpec)) as RawArray;
+
+  const u8: Uint8Array = convertChannel(channel.data, channel.dtype);
+  const results = { data: u8, channel: channelIndex === -1 ? 0 : channelIndex };
+  postMessage(results, [results.data.buffer]);
 };

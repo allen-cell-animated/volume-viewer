@@ -6,12 +6,12 @@ export class LoadSpec {
   scene = 0;
   time = 0;
   // sub-region; if not specified, the entire volume is loaded
-  minx = 0;
-  miny = 0;
-  minz = 0;
-  maxx = 0;
-  maxy = 0;
-  maxz = 0;
+  minx?: number;
+  miny?: number;
+  minz?: number;
+  maxx?: number;
+  maxy?: number;
+  maxz?: number;
 
   toString(): string {
     return `${this.url}:${this.subpath}${this.scene}:${this.time}:x(${this.minx},${this.maxx}):y(${this.miny},${this.maxy}):z(${this.minz},${this.maxz})`;
@@ -61,5 +61,5 @@ export interface IVolumeLoader {
   // TODO make this return a promise that resolves when loading is done?
   // TODO this is not cancellable in the sense that any async requests initiated here are not stored
   // in a way that they can be interrupted.
-  loadVolumeData(volume: Volume, onChannelLoaded?: PerChannelCallback): void;
+  loadVolumeData(volume: Volume, onChannelLoaded?: PerChannelCallback, loadSpec?: LoadSpec): void;
 }

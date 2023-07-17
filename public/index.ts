@@ -596,6 +596,15 @@ function updateTimeUI(volume: Volume) {
   }
 }
 
+function updateZSliceUI(volume: Volume) {
+  const zSlider = document.getElementById("zSlider") as HTMLInputElement;
+  const zInput = document.getElementById("zValue") as HTMLInputElement;
+
+  const totalZSlices = volume.z;
+  zSlider.max = `${totalZSlices}`;
+  zInput.max = `${totalZSlices}`;
+}
+
 function showChannelUI(volume: Volume) {
   if (myState && myState.channelFolderNames) {
     for (let i = 0; i < myState.channelFolderNames.length; ++i) {
@@ -953,6 +962,7 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
     }
 
     updateTimeUI(myState.volume);
+    updateZSliceUI(myState.volume);
     showChannelUI(myState.volume);
     return;
   }
@@ -977,6 +987,7 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
   }
 
   updateTimeUI(myState.volume);
+  updateZSliceUI(myState.volume);
   showChannelUI(myState.volume);
 }
 
@@ -1067,6 +1078,20 @@ function goToFrame(targetFrame) {
   return true;
 }
 
+function goToZSlice(slice: number): boolean {
+  if (view3D.setZSlice(myState.volume, slice)) {
+    const zSlider = document.getElementById("zSlider") as HTMLInputElement;
+    const zInput = document.getElementById("zValue") as HTMLInputElement;
+    zInput.value = `${slice}`;
+    zSlider.value = `${slice}`;
+    return true;
+  } else {
+    return false;
+  }
+
+  // update UI if successful
+}
+
 function createTestVolume() {
   /* eslint-disable @typescript-eslint/naming-convention */
   const imgData: ImageInfo = {
@@ -1142,6 +1167,9 @@ async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader, cacheTimeSe
 
   myState.currentImageStore = loadSpec.url;
   myState.currentImageName = loadSpec.url;
+
+  // Set default zSlice
+  goToZSlice(Math.floor(volume.z / 2));
 }
 
 function loadTestData(testdata: TestDataSpec) {
@@ -1241,17 +1269,17 @@ function main() {
   const flipXBtn = document.getElementById("flipXBtn");
   flipXBtn?.addEventListener("click", () => {
     myState.flipX *= -1;
-    view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
+    view3D.setFlipVolume(myState.volume, myState.flipX as -1 | 1, myState.flipY, myState.flipZ);
   });
   const flipYBtn = document.getElementById("flipYBtn");
   flipYBtn?.addEventListener("click", () => {
     myState.flipY *= -1;
-    view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
+    view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY as -1 | 1, myState.flipZ);
   });
   const flipZBtn = document.getElementById("flipZBtn");
   flipZBtn?.addEventListener("click", () => {
     myState.flipZ *= -1;
-    view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
+    view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ as -1 | 1);
   });
   const playBtn = document.getElementById("playBtn");
   playBtn?.addEventListener("click", () => {
@@ -1313,6 +1341,16 @@ function main() {
         timeSlider.value = timeInput.value;
       }
     }
+  });
+
+  // Set up Z-slice UI
+  const zSlider = document.getElementById("zSlider") as HTMLInputElement;
+  const zInput = document.getElementById("zValue") as HTMLInputElement;
+  zSlider?.addEventListener("change", () => {
+    goToZSlice(zSlider?.valueAsNumber);
+  });
+  zInput?.addEventListener("change", () => {
+    goToZSlice(zInput?.valueAsNumber);
   });
 
   const alignBtn = document.getElementById("xfBtn");

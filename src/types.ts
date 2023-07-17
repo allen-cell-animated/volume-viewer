@@ -12,13 +12,16 @@ export interface FuseChannel {
   rgbColor: [number, number, number] | 0;
 }
 
+/** If `FuseChannel.rgbColor` is this value, it is disabled from fusion. */
+export const FUSE_DISABLED_RGB_COLOR = 0;
+
 /**
  * Provide options to control the visual appearance of a Volume
  * @typedef {Object} VolumeChannelDisplayOptions
  * @property {boolean} enabled array of boolean per channel
- * @property {<Array.<number>} color array of rgb per channel
- * @property {<Array.<number>} specularColor array of rgb per channel
- * @property {<Array.<number>} emissiveColor array of rgb per channel
+ * @property {Array.<number>} color array of rgb per channel
+ * @property {Array.<number>} specularColor array of rgb per channel
+ * @property {Array.<number>} emissiveColor array of rgb per channel
  * @property {number} glossiness array of float per channel
  * @property {boolean} isosurfaceEnabled array of boolean per channel
  * @property {number} isovalue array of number per channel
@@ -35,6 +38,12 @@ export interface VolumeChannelDisplayOptions {
   isosurfaceEnabled?: boolean;
   isovalue?: number;
   isosurfaceOpacity?: number;
+}
+
+export enum RenderMode {
+  RAYMARCH = 0,
+  PATHTRACE = 1,
+  SLICE = 2,
 }
 
 /**
@@ -69,7 +78,7 @@ export interface VolumeDisplayOptions {
   clipBounds?: [number, number, number, number, number, number];
   scale?: [number, number, number];
   maxProjection?: boolean;
-  renderMode?: number;
+  renderMode?: RenderMode;
   shadingMethod?: number;
   gamma?: [number, number, number];
   primaryRayStepSize?: number;

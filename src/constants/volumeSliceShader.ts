@@ -1,11 +1,12 @@
+import sliceVertexShader from "./shaders/slice.vert";
+import sliceFragShader from "./shaders/slice.frag";
 import { Vector2, Vector3, Matrix4, Texture } from "three";
-import rayMarchVertexShader from "./shaders/raymarch.vert";
-import rayMarchFragmentShader from "./shaders/raymarch.frag";
 
-export const rayMarchingVertexShaderSrc = rayMarchVertexShader;
-export const rayMarchingFragmentShaderSrc = rayMarchFragmentShader;
+export const sliceVertexShaderSrc = sliceVertexShader;
 
-export const rayMarchingShaderUniforms = () => {
+export const sliceFragmentShaderSrc = sliceFragShader;
+
+export const sliceShaderUniforms = () => {
   return {
     iResolution: {
       type: "v2",
@@ -54,6 +55,10 @@ export const rayMarchingShaderUniforms = () => {
     ATLAS_Y: {
       type: "f",
       value: 6,
+    },
+    Z_SLICE: {
+      type: "i",
+      value: 0,
     },
     SLICES: {
       type: "f",

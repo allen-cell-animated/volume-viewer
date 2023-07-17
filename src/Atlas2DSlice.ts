@@ -1,60 +1,51 @@
 import {
   Box3,
   Box3Helper,
-  BoxGeometry,
-  BufferAttribute,
   BufferGeometry,
   Color,
   Group,
   LineBasicMaterial,
-  LineSegments,
   Material,
   Matrix4,
   Mesh,
+  PlaneGeometry,
   ShaderMaterial,
   ShapeGeometry,
   Vector2,
   Vector3,
 } from "three";
-
-import FusedChannelData from "./FusedChannelData";
-import {
-  rayMarchingVertexShaderSrc,
-  rayMarchingFragmentShaderSrc,
-  rayMarchingShaderUniforms,
-} from "./constants/volumeRayMarchShader";
-import { Volume } from ".";
-import Channel from "./Channel";
-import { ThreeJsPanel } from "./ThreeJsPanel";
+import { Channel, Volume } from ".";
+import { sliceFragmentShaderSrc, sliceShaderUniforms, sliceVertexShaderSrc } from "./constants/volumeSliceShader";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
-
+import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings";
+import FusedChannelData from "./FusedChannelData";
 import { FuseChannel } from "./types";
-import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings";
+import { ThreeJsPanel } from "./ThreeJsPanel";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
-export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
+/**
+ * Creates a plane that renders a 2D XY slice of volume atlas data.
+ */
+export default class Atlas2DSlice implements VolumeRenderImpl {
   private settings: VolumeRenderSettings | undefined;
   public volume: Volume;
-
   private geometry: ShapeGeometry;
-  private geometryMesh: Mesh<BufferGeometry, Material>;
-  private boxHelper: Box3Helper;
-  private tickMarksMesh: LineSegments;
+  protected geometryMesh: Mesh<BufferGeometry, Material>;
   private geometryTransformNode: Group;
-  private uniforms: ReturnType<typeof rayMarchingShaderUniforms>;
+  private boxHelper: Box3Helper;
+  private uniforms: ReturnType<typeof sliceShaderUniforms>;
   private channelData: FusedChannelData;
 
   /**
-   * Creates a new RayMarchedAtlasVolume.
+   * Creates a new Atlas2DSlice.
    * @param volume The volume that this renderer should render data from.
    * @param settings Optional settings object. If set, updates the renderer with
    * the given settings. Otherwise, uses the default VolumeRenderSettings.
    */
   constructor(volume: Volume, settings: VolumeRenderSettings = new VolumeRenderSettings(volume)) {
     this.volume = volume;
-
-    this.uniforms = rayMarchingShaderUniforms();
+    this.uniforms = sliceShaderUniforms();
     [this.geometry, this.geometryMesh] = this.createGeometry(this.uniforms);
 
     this.boxHelper = new Box3Helper(
@@ -64,26 +55,19 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.boxHelper.updateMatrixWorld();
     this.boxHelper.visible = false;
 
-    this.tickMarksMesh = this.createTickMarks();
-    this.tickMarksMesh.updateMatrixWorld();
-    this.tickMarksMesh.visible = false;
-
     this.geometryTransformNode = new Group();
     this.geometryTransformNode.name = "VolumeContainerNode";
 
-    this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
+    this.geometryTransformNode.add(this.boxHelper, this.geometryMesh);
 
     this.setUniform("ATLAS_X", volume.imageInfo.cols);
     this.setUniform("ATLAS_Y", volume.imageInfo.rows);
     this.setUniform("textureRes", new Vector2(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height));
     this.setUniform("SLICES", volume.z);
+    this.setUniform("Z_SLICE", Math.floor(volume.z / 2));
 
     this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
     this.updateSettings(settings, SettingsFlags.ALL);
-  }
-
-  public viewpointMoved(): void {
-    return;
   }
 
   public updateSettings(newSettings: VolumeRenderSettings, dirtyFlags?: number | SettingsFlags) {
@@ -101,7 +85,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       // Ortho line thickness
       const axis = this.settings.viewAxis;
       if (this.settings.isOrtho && axis !== null) {
-        // TODO: Does this code do any relevant changes?
         const maxVal = this.settings.bounds.bmax[axis];
         const minVal = this.settings.bounds.bmin[axis];
         const thicknessPct = maxVal - minVal;
@@ -111,19 +94,12 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       }
     }
 
-    if (dirtyFlags & SettingsFlags.VIEW || dirtyFlags & SettingsFlags.BOUNDING_BOX) {
-      // Update tick marks with either view or bounding box changes
-      this.tickMarksMesh.visible = this.settings.showBoundingBox && !this.settings.isOrtho;
-      this.setUniform("maxProject", this.settings.maxProjectMode ? 1 : 0);
-    }
-
     if (dirtyFlags & SettingsFlags.BOUNDING_BOX) {
       // Configure bounding box
       this.boxHelper.visible = this.settings.showBoundingBox;
       const colorVector = this.settings.boundingBoxColor;
       const newBoxColor = new Color(colorVector[0], colorVector[1], colorVector[2]);
       (this.boxHelper.material as LineBasicMaterial).color = newBoxColor;
-      (this.tickMarksMesh.material as LineBasicMaterial).color = newBoxColor;
     }
 
     if (dirtyFlags & SettingsFlags.TRANSFORM) {
@@ -135,7 +111,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
         new Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z),
         new Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z)
       );
-      this.tickMarksMesh.scale.copy(scale);
       // Set rotation and translation
       this.geometryTransformNode.position.copy(this.settings.translation);
       this.geometryTransformNode.rotation.copy(this.settings.rotation);
@@ -147,7 +122,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     }
 
     if (dirtyFlags & SettingsFlags.CAMERA) {
-      // TODO brightness and exposure should be the same thing?
       this.setUniform("BRIGHTNESS", this.settings.brightness * 2.0);
       // Gamma
       this.setUniform("GAMMA_MIN", this.settings.gammaMin);
@@ -164,6 +138,10 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       };
       this.setUniform("AABB_CLIP_MIN", boundsNormalized.bmin);
       this.setUniform("AABB_CLIP_MAX", boundsNormalized.bmax);
+      const slice = Math.floor(this.settings.zSlice);
+      if (slice >= 0 && slice <= this.volume.z - 1) {
+        this.setUniform("Z_SLICE", slice);
+      }
     }
 
     if (dirtyFlags & SettingsFlags.SAMPLING) {
@@ -177,21 +155,16 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     }
   }
 
-  /**
-   * Creates the geometry mesh and material for rendering the volume.
-   * @param uniforms object containing uniforms to pass to the shader material.
-   * @returns the new geometry and geometry mesh.
-   */
   private createGeometry(
-    uniforms: ReturnType<typeof rayMarchingShaderUniforms>
+    uniforms: ReturnType<typeof sliceShaderUniforms>
   ): [ShapeGeometry, Mesh<BufferGeometry, Material>] {
-    const geom = new BoxGeometry(1.0, 1.0, 1.0);
+    const geom = new PlaneGeometry(1.0, 1.0);
     const mesh: Mesh<BufferGeometry, Material> = new Mesh(geom);
-    mesh.name = "Volume";
+    mesh.name = "Plane";
 
     // shader,vtx and frag.
-    const vtxsrc = rayMarchingVertexShaderSrc;
-    const fgmtsrc = rayMarchingFragmentShaderSrc;
+    const vtxsrc = sliceVertexShaderSrc;
+    const fgmtsrc = sliceFragmentShaderSrc;
 
     const threeMaterial = new ShaderMaterial({
       uniforms: uniforms,
@@ -206,80 +179,15 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     return [geom, mesh];
   }
 
-  private createTickMarks(): LineSegments {
-    // Length of tick mark lines in world units
-    const TICK_LENGTH = 0.025;
-    const { tickMarkPhysicalLength, physicalScale, normalizedPhysicalSize } = this.volume;
-    const numTickMarks = physicalScale / tickMarkPhysicalLength;
-
-    const vertices: number[] = [];
-
-    const tickEndY = TICK_LENGTH / normalizedPhysicalSize.y + 0.5;
-    const tickSpacingX = 1 / (normalizedPhysicalSize.x * numTickMarks);
-    for (let x = -0.5; x <= 0.5; x += tickSpacingX) {
-      // prettier-ignore
-      vertices.push(
-        x, 0.5,       0.5,
-        x, tickEndY,  0.5,
-
-        x, -0.5,      -0.5,
-        x, -tickEndY, -0.5,
-
-        x, 0.5,       -0.5,
-        x, tickEndY,  -0.5,
-
-        x, -0.5,      0.5,
-        x, -tickEndY, 0.5,
-      );
-    }
-
-    const tickEndX = TICK_LENGTH / normalizedPhysicalSize.x + 0.5;
-    const tickSpacingY = 1 / (normalizedPhysicalSize.y * numTickMarks);
-    for (let y = 0.5; y >= -0.5; y -= tickSpacingY) {
-      // prettier-ignore
-      vertices.push(
-        -0.5,      y, 0.5,
-        -tickEndX, y, 0.5,
-
-        -0.5,      y, -0.5,
-        -tickEndX, y, -0.5,
-
-        0.5,       y, -0.5,
-        tickEndX,  y, -0.5,
-
-        0.5,       y, 0.5,
-        tickEndX,  y, 0.5,
-      );
-    }
-
-    const tickSpacingZ = 1 / (normalizedPhysicalSize.z * numTickMarks);
-    for (let z = 0.5; z >= -0.5; z -= tickSpacingZ) {
-      // prettier-ignore
-      vertices.push(
-        -0.5,      0.5,  z,
-        -tickEndX, 0.5,  z,
-
-        -0.5,      -0.5, z,
-        -tickEndX, -0.5, z,
-
-        0.5,       -0.5, z,
-        tickEndX,  -0.5, z,
-
-        0.5,       0.5,  z,
-        tickEndX,  0.5,  z,
-      );
-    }
-
-    const geometry = new BufferGeometry();
-    geometry.setAttribute("position", new BufferAttribute(new Float32Array(vertices), 3));
-    return new LineSegments(geometry, new LineBasicMaterial({ color: BOUNDING_BOX_DEFAULT_COLOR }));
-  }
-
   public cleanup(): void {
     this.geometry.dispose();
     this.geometryMesh.material.dispose();
 
     this.channelData.cleanup();
+  }
+
+  public viewpointMoved(): void {
+    return;
   }
 
   public doRender(canvas: ThreeJsPanel): void {
@@ -304,20 +212,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     return this.geometryTransformNode;
   }
 
-  //////////////////////////////////////////
-  //////////////////////////////////////////
-
-  private setUniform<U extends keyof ReturnType<typeof rayMarchingShaderUniforms>>(
-    name: U,
-    value: ReturnType<typeof rayMarchingShaderUniforms>[U]["value"]
-  ) {
-    if (!this.uniforms[name]) {
-      return;
-    }
-    this.uniforms[name].value = value;
-    this.geometryMesh.material.needsUpdate = true;
-  }
-
   // channelcolors is array of {rgbColor, lut} and channeldata is volume.channels
   public updateActiveChannels(channelcolors: FuseChannel[], channeldata: Channel[]): void {
     this.channelData.fuse(channelcolors, channeldata);
@@ -327,21 +221,18 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.setUniform("textureAtlasMask", this.channelData.maskTexture);
   }
 
+  private setUniform<U extends keyof ReturnType<typeof sliceShaderUniforms>>(
+    name: U,
+    value: ReturnType<typeof sliceShaderUniforms>[U]["value"]
+  ) {
+    if (!this.uniforms[name]) {
+      return;
+    }
+    this.uniforms[name].value = value;
+    this.geometryMesh.material.needsUpdate = true;
+  }
+
   public setRenderUpdateListener(_listener?: ((iteration: number) => void) | undefined) {
-    return;
-  }
-
-  public onStartControls(): void {
-    return;
-  }
-  public onChangeControls(): void {
-    return;
-  }
-  public onEndControls(): void {
-    return;
-  }
-
-  updateChannelFusion(_settings: FuseChannel[]): void {
     return;
   }
 }

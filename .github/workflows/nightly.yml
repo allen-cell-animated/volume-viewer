@@ -1,7 +1,7 @@
 name: github pages
 
 env:
-  NODE_VERSION: "14.x"
+  NODE_VERSION: "18"
 
 on:
   schedule:
