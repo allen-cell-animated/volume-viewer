@@ -676,8 +676,10 @@ export default class VolumeDrawable {
       case RenderMode.AGAVE:
         {
           const agaveRenderImpl = new RemoteAgaveVolume(this.volume, this.settings);
-          await agaveRenderImpl.init();
-          this.volumeRendering = agaveRenderImpl;
+          const success = await agaveRenderImpl.init();
+          if (success) {
+            this.volumeRendering = agaveRenderImpl;
+          }
           //this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
         }
         break;

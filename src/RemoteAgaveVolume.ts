@@ -106,23 +106,28 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
     this.agave = new AgaveClient(
       wsUri,
       "pathtrace",
-      this.onConnectionOpened.bind(this),
+      undefined, // this.onConnectionOpened.bind(this),
       this.onJsonReceived.bind(this),
       this.onImageReceived.bind(this)
     );
     this.settings = settings;
   }
 
-  async init() {
+  async init(): Promise<boolean> {
     //await this.agave.connect();
-    this.agave
-      .connect()
-      .then(() => {
-        return;
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+    return (
+      this.agave
+        .connect()
+        .then(() => {
+          this.onConnectionOpened();
+          return true;
+        })
+        // without an explicit reject handler, promise rejection drops into the catch block
+        .catch((err) => {
+          console.log(err);
+          return false;
+        })
+    );
   }
 
   private onConnectionOpened() {
