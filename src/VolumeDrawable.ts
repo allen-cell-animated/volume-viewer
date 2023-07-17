@@ -488,11 +488,9 @@ export default class VolumeDrawable {
 
   // Hide or display volume data for a channel
   setVolumeChannelEnabled(channelIndex: number, enabled: boolean): void {
-    // flip the color to the "null" value
+    this.fusion[channelIndex].enabled = enabled;
     if (enabled) {
       this.fusion[channelIndex].rgbColor = this.channelColors[channelIndex];
-    } else {
-      this.fusion[channelIndex].enabled = false;
     }
     // if all are disabled, then hide the volume element from the scene.
     if (this.fusion.every((elem) => !elem.enabled)) {
