@@ -29,7 +29,7 @@ import {
 } from "./constants/volumePTshader";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
 import Volume from "./Volume";
-import { isFuseChannelEnabled, FuseChannel, isOrthographicCamera } from "./types";
+import { FuseChannel, isOrthographicCamera } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import { VolumeRenderImpl } from "./VolumeRenderImpl";
@@ -550,7 +550,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     const maxch = 4;
     for (let i = 0; i < NC && activeChannel < maxch; ++i) {
       // check that channel is not disabled and is loaded
-      if (isFuseChannelEnabled(channelColors[i]) && channelData[i].loaded) {
+      if (channelColors[i].enabled && channelData[i].loaded) {
         ch[activeChannel] = i;
         activeChannel++;
       }

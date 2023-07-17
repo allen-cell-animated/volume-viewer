@@ -5,20 +5,11 @@ export interface Bounds {
   bmax: Vector3;
 }
 
-/** If `FuseChannel.rgbColor` is this value, it is disabled from fusion. */
-// zero is a sentinel value to disable from fusion
-const FUSE_DISABLED_RGB_COLOR = 0;
-
 export interface FuseChannel {
   chIndex: number;
   lut: Uint8Array;
-  rgbColor: [number, number, number] | typeof FUSE_DISABLED_RGB_COLOR;
-}
-export function isFuseChannelEnabled(fuseChannel: FuseChannel): boolean {
-  return fuseChannel.rgbColor !== FUSE_DISABLED_RGB_COLOR;
-}
-export function setFuseChannelDisabled(fuseChannel: FuseChannel): void {
-  fuseChannel.rgbColor = FUSE_DISABLED_RGB_COLOR;
+  rgbColor: [number, number, number];
+  enabled: boolean;
 }
 
 /**

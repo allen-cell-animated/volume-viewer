@@ -7,7 +7,7 @@ import PathTracedVolume from "./PathTracedVolume";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
 import Volume from "./Volume";
 import { VolumeDisplayOptions, VolumeChannelDisplayOptions } from "./types";
-import { FuseChannel, isFuseChannelEnabled, setFuseChannelDisabled, RenderMode } from "./types";
+import { FuseChannel, RenderMode } from "./types";
 import { ThreeJsPanel } from "./ThreeJsPanel";
 import { Light } from "./Light";
 import Channel from "./Channel";
@@ -58,17 +58,11 @@ export default class VolumeDrawable {
     this.channelOptions = new Array<VolumeChannelDisplayOptions>(this.volume.num_channels).fill({});
 
     this.fusion = this.channelColors.map((col, index) => {
-      let rgbColor: 0 | [number, number, number];
-      // take copy of original channel color
-      if (col[0] === 0 && col[1] === 0 && col[2] === 0) {
-        rgbColor = 0;
-      } else {
-        rgbColor = [col[0], col[1], col[2]];
-      }
       return {
         chIndex: index,
         lut: new Uint8Array(LUT_ARRAY_LENGTH),
-        rgbColor: rgbColor,
+        rgbColor: [col[0], col[1], col[2]],
+        enabled: !(col[0] === 0 && col[1] === 0 && col[2] === 0),
       };
     });
 
@@ -420,12 +414,13 @@ export default class VolumeDrawable {
   setRenderUpdateListener(callback?: (iteration: number) => void): void {
     this.renderUpdateListener = callback;
     if (this.renderMode === RenderMode.PATHTRACE) {
-      (this.volumeRendering as PathTracedVolume).setRenderUpdateListener(callback);
+      this.volumeRendering.setRenderUpdateListener(callback);
     }
   }
 
   updateShadingMethod(isbrdf: boolean): void {
     if (this.renderMode === RenderMode.PATHTRACE) {
+      // TODO FIX put this info in VolumeRenderSettings so we don't have to use `as`
       (this.volumeRendering as PathTracedVolume).updateShadingMethod(isbrdf ? 1 : 0);
     }
   }
@@ -477,6 +472,7 @@ export default class VolumeDrawable {
         this.channelColors[newChannelIndex][1],
         this.channelColors[newChannelIndex][2],
       ],
+      enabled: true,
     };
 
     this.settings.specular[newChannelIndex] = [0, 0, 0];
@@ -496,10 +492,10 @@ export default class VolumeDrawable {
     if (enabled) {
       this.fusion[channelIndex].rgbColor = this.channelColors[channelIndex];
     } else {
-      setFuseChannelDisabled(this.fusion[channelIndex]);
+      this.fusion[channelIndex].enabled = false;
     }
     // if all are disabled, then hide the volume element from the scene.
-    if (this.fusion.every((elem) => !isFuseChannelEnabled(elem))) {
+    if (this.fusion.every((elem) => !elem.enabled)) {
       this.settings.visible = false;
     } else {
       this.settings.visible = true;
@@ -509,7 +505,7 @@ export default class VolumeDrawable {
 
   isVolumeChannelEnabled(channelIndex: number): boolean {
     // the zero value for the fusion rgbColor is the indicator that a channel is hidden.
-    return isFuseChannelEnabled(this.fusion[channelIndex]);
+    return this.fusion[channelIndex].enabled;
   }
 
   // Set the color for a channel
@@ -520,7 +516,7 @@ export default class VolumeDrawable {
     }
     this.channelColors[channelIndex] = colorrgb;
     // if volume channel is zero'ed out, then don't update it until it is switched on again.
-    if (isFuseChannelEnabled(this.fusion[channelIndex])) {
+    if (this.fusion[channelIndex].enabled) {
       this.fusion[channelIndex].rgbColor = colorrgb;
     }
     this.meshVolume.updateMeshColors(this.channelColors);
@@ -624,6 +620,7 @@ export default class VolumeDrawable {
   }
 
   onCameraChanged(fov: number, focalDistance: number, apertureSize: number): void {
+    // TODO FIX put this info in VolumeRenderSettings so we don't have to use `as`
     if (this.renderMode === RenderMode.PATHTRACE) {
       (this.volumeRendering as PathTracedVolume).updateCamera(fov, focalDistance, apertureSize);
     }
@@ -639,6 +636,7 @@ export default class VolumeDrawable {
   }
 
   updateLights(state: Light[]): void {
+    // updateLights could be an interface call on VolumeRenderImpl
     if (this.renderMode === RenderMode.PATHTRACE) {
       (this.volumeRendering as PathTracedVolume).updateLights(state);
     }

@@ -22,7 +22,7 @@ import { LinearFilter } from "three/src/constants";
 
 import Channel from "./Channel";
 import { fuseShaderSrc, fuseVertexShaderSrc } from "./constants/fuseShader";
-import { FuseChannel, isFuseChannelEnabled } from "./types";
+import { FuseChannel } from "./types";
 
 // This is the owner of the fused RGBA volume texture atlas, and the mask texture atlas.
 // This module is responsible for updating the fused texture, given the read-only volume channel data.
@@ -145,7 +145,7 @@ export default class FusedChannelData {
     // webgl draw one mesh per channel to fuse.  clear texture to 0,0,0,0
     this.fuseScene.clear();
     for (let i = 0; i < combination.length; ++i) {
-      if (isFuseChannelEnabled(combination[i])) {
+      if (combination[i].enabled) {
         const chIndex = combination[i].chIndex;
         // add a draw call per channel here.
         // TODO create these at channel creation time!

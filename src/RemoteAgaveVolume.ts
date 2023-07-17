@@ -20,7 +20,7 @@ import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings";
 import { AgaveClient, JSONValue } from "./temp_agave/agave";
 import Volume from "./Volume";
 import Channel from "./Channel";
-import { Bounds, FuseChannel, isFuseChannelEnabled, isOrthographicCamera } from "./types";
+import { Bounds, FuseChannel, isOrthographicCamera } from "./types";
 
 export default class RemoteAgaveVolume implements VolumeRenderImpl {
   private agave: AgaveClient;
@@ -331,7 +331,7 @@ export default class RemoteAgaveVolume implements VolumeRenderImpl {
       this.agave.enableChannel(i, 0);
     }
     for (const channel of channelcolors) {
-      const enabled = isFuseChannelEnabled(channel);
+      const enabled = channel.enabled;
       this.agave.enableChannel(channel.chIndex, enabled ? 1 : 0);
       if (enabled) {
         this.agave.matDiffuse(
