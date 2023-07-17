@@ -679,8 +679,10 @@ export default class VolumeDrawable {
           const success = await agaveRenderImpl.init();
           if (success) {
             this.volumeRendering = agaveRenderImpl;
+          } else {
+            // TODO: re-create old volume that we just cleaned up
+            this.volumeRendering.updateSettings(this.settings);
           }
-          //this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
         }
         break;
       case RenderMode.SLICE:
