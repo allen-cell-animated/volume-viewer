@@ -1,14 +1,20 @@
-import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
+import { openArray, openGroup, HTTPStore } from "zarr";
+
+import {
+  IVolumeLoader,
+  LoadSpec,
+  PerChannelCallback,
+  VolumeDims,
+  convertLoadSpecRegionToPixels,
+} from "./IVolumeLoader";
 import {
   buildDefaultMetadata,
   computePackedAtlasDims,
   estimateLevelForAtlas,
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
-import { ImageInfo } from "../Volume";
-import Volume from "../Volume";
-
-import { openArray, openGroup, HTTPStore } from "zarr";
+import Volume, { ImageInfo } from "../Volume";
+import { FetchZarrMessage } from "../workers/FetchZarrWorker";
 
 type CoordinateTransformation =
   | {
@@ -127,6 +133,7 @@ async function fetchShapeOfLevel(store: HTTPStore, imagegroup: string, multiscal
   return shape;
 }
 
+// TODO should this become aware of volume subsets? maybe not
 async function pickLevelToLoad(
   multiscale: OMEMultiscale,
   store: HTTPStore,
@@ -173,6 +180,7 @@ async function pickLevelToLoad(
 
 class OMEZarrLoader implements IVolumeLoader {
   multiscalePath?: string;
+  spatialAxes?: [number, number, number];
   hasT?: boolean;
   hasC?: boolean;
 
@@ -241,10 +249,10 @@ class OMEZarrLoader implements IVolumeLoader {
     this.hasT = axisTCZYX[0] > -1;
     this.hasC = axisTCZYX[1] > -1;
     // ZYX
-    const spatialAxes = findSpatialAxesZYX(axisTCZYX);
+    this.spatialAxes = findSpatialAxesZYX(axisTCZYX);
 
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
-    const spaceUnitName = axes[spatialAxes[2]].unit;
+    const spaceUnitName = axes[this.spatialAxes[2]].unit;
     const spaceUnitSymbol = unitNameToSymbol(spaceUnitName) || spaceUnitName || "";
 
     const timeUnitName = this.hasT ? axes[axisTCZYX[0]].unit : undefined;
@@ -269,9 +277,15 @@ class OMEZarrLoader implements IVolumeLoader {
     const scale5d = getScale(datasets[0]);
 
     const timeScale = this.hasT ? scale5d[axisTCZYX[0]] : 1;
-    const tw = multiscaleShape[spatialAxes[2]];
-    const th = multiscaleShape[spatialAxes[1]];
-    const tz = multiscaleShape[spatialAxes[0]];
+    const multiscaleX = multiscaleShape[this.spatialAxes[2]];
+    const multiscaleY = multiscaleShape[this.spatialAxes[1]];
+    const multiscaleZ = multiscaleShape[this.spatialAxes[0]];
+
+    const pxSpec = convertLoadSpecRegionToPixels(loadSpec, multiscaleX, multiscaleY, multiscaleZ);
+
+    const tw = pxSpec.maxx - pxSpec.minx;
+    const th = pxSpec.maxy - pxSpec.miny;
+    const tz = pxSpec.maxz - pxSpec.minz;
 
     // compute rows and cols and atlas width and ht, given tw and th
     const { nrows, ncols } = computePackedAtlasDims(tz, tw, th);
@@ -290,8 +304,8 @@ class OMEZarrLoader implements IVolumeLoader {
 
     /* eslint-disable @typescript-eslint/naming-convention */
     const imgdata: ImageInfo = {
-      width: shape0[spatialAxes[2]],
-      height: shape0[spatialAxes[1]],
+      width: shape0[this.spatialAxes[2]],
+      height: shape0[this.spatialAxes[1]],
       channels: channels,
       channel_names: chnames,
       rows: nrows,
@@ -301,9 +315,15 @@ class OMEZarrLoader implements IVolumeLoader {
       //   This generally implies downsampling the original volume data for display in this viewer.
       tile_width: tw,
       tile_height: th,
-      pixel_size_x: scale5d[spatialAxes[2]],
-      pixel_size_y: scale5d[spatialAxes[1]],
-      pixel_size_z: scale5d[spatialAxes[0]],
+      vol_size_x: multiscaleX,
+      vol_size_y: multiscaleY,
+      vol_size_z: multiscaleZ,
+      offset_x: pxSpec.minx,
+      offset_y: pxSpec.miny,
+      offset_z: pxSpec.minz,
+      pixel_size_x: scale5d[this.spatialAxes[2]],
+      pixel_size_y: scale5d[this.spatialAxes[1]],
+      pixel_size_z: scale5d[this.spatialAxes[0]],
       pixel_size_unit: spaceUnitSymbol,
       name: displayMetadata.name,
       version: displayMetadata.version,
@@ -327,7 +347,12 @@ class OMEZarrLoader implements IVolumeLoader {
     const loadSpec = explicitLoadSpec || vol.loadSpec;
     const { channels, times } = vol.imageInfo;
 
-    if (this.multiscalePath === undefined || this.hasC === undefined || this.hasT === undefined) {
+    if (
+      this.multiscalePath === undefined ||
+      this.hasC === undefined ||
+      this.hasT === undefined ||
+      this.spatialAxes === undefined
+    ) {
       const store = new HTTPStore(loadSpec.url);
       const data = await openGroup(store, loadSpec.subpath, "r");
       const allmetadata = await data.attrs.asObject();
@@ -338,9 +363,9 @@ class OMEZarrLoader implements IVolumeLoader {
       const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
       this.hasT = axisTCZYX[0] > -1;
       this.hasC = axisTCZYX[1] > -1;
-      const spatialAxes = findSpatialAxesZYX(axisTCZYX);
+      this.spatialAxes = findSpatialAxesZYX(axisTCZYX);
 
-      const levelToLoad = await pickLevelToLoad(multiscale, store, loadSpec, spatialAxes);
+      const levelToLoad = await pickLevelToLoad(multiscale, store, loadSpec, this.spatialAxes);
       this.multiscalePath = multiscale.datasets[levelToLoad].path;
     }
 
@@ -361,17 +386,21 @@ class OMEZarrLoader implements IVolumeLoader {
       worker.onerror = (e) => {
         alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
       };
-      worker.postMessage({
+
+      const msg: FetchZarrMessage = {
         spec: {
           ...loadSpec,
           time: this.hasT ? Math.min(loadSpec.time, times) : -1,
         },
         channel: this.hasC ? i : -1,
         path: storepath,
-      });
+        axesZYX: this.spatialAxes,
+      };
+      worker.postMessage(msg);
     }
 
     this.multiscalePath = undefined;
+    this.spatialAxes = undefined;
     this.hasC = undefined;
     this.hasT = undefined;
   }

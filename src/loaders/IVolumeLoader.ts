@@ -6,6 +6,7 @@ export class LoadSpec {
   scene = 0;
   time = 0;
   // sub-region; if not specified, the entire volume is loaded
+  // specify as floats between 0 and 1
   minx?: number;
   miny?: number;
   minz?: number;
@@ -16,6 +17,23 @@ export class LoadSpec {
   toString(): string {
     return `${this.url}:${this.subpath}${this.scene}:${this.time}:x(${this.minx},${this.maxx}):y(${this.miny},${this.maxy}):z(${this.minz},${this.maxz})`;
   }
+}
+
+/** Converts `LoadSpec` sub-region fields (`minx`, `maxy`, etc.) from 0-1 range to pixels */
+export function convertLoadSpecRegionToPixels(
+  loadSpec: LoadSpec,
+  sizex: number,
+  sizey: number,
+  sizez: number
+): Required<LoadSpec> {
+  const minx = loadSpec.minx ? Math.floor(sizex * loadSpec.minx) : 0;
+  const maxx = loadSpec.maxx ? Math.ceil(sizex * loadSpec.maxx) : sizex;
+  const miny = loadSpec.miny ? Math.floor(sizey * loadSpec.miny) : 0;
+  const maxy = loadSpec.maxy ? Math.ceil(sizey * loadSpec.maxy) : sizey;
+  const minz = loadSpec.minz ? Math.floor(sizez * loadSpec.minz) : 0;
+  const maxz = loadSpec.maxz ? Math.ceil(sizez * loadSpec.maxz) : sizez;
+
+  return { ...loadSpec, minx, maxx, miny, maxy, minz, maxz };
 }
 
 export class VolumeDims {

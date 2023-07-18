@@ -1,12 +1,13 @@
 import { HTTPStore, openArray, slice, TypedArray } from "zarr";
 import { RawArray } from "zarr/types/rawArray";
 import { Slice } from "zarr/types/core/types";
-import { LoadSpec } from "../loaders/IVolumeLoader";
+import { LoadSpec, convertLoadSpecRegionToPixels } from "../loaders/IVolumeLoader";
 
 export type FetchZarrMessage = {
   spec: LoadSpec;
   channel: number;
   path: string;
+  axesZYX: [number, number, number];
 };
 
 function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
@@ -40,13 +41,13 @@ self.onmessage = async (e: MessageEvent<FetchZarrMessage>) => {
   const level = await openArray({ store: store, path: e.data.path, mode: "r" });
 
   // build slice spec
+  const [iz, iy, ix] = e.data.axesZYX;
+  const { shape } = level.meta;
+  const pxSpec = convertLoadSpecRegionToPixels(e.data.spec, shape[ix], shape[iy], shape[iz]);
+  const { minx, maxx, miny, maxy, minz, maxz } = pxSpec;
   // assuming ZYX are the last three dimensions:
-  const { minx, maxx, miny, maxy, minz, maxz } = e.data.spec;
-  const sliceSpec: (Slice | number)[] = [
-    slice(minz === undefined ? null : minz, maxz),
-    slice(miny === undefined ? null : miny, maxy),
-    slice(minx === undefined ? null : minx, maxx),
-  ];
+  // TODO spatial dimension indexes are now avaliable to the worker. use those?
+  const sliceSpec: (Slice | number)[] = [slice(minz, maxz), slice(miny, maxy), slice(minx, maxx)];
   if (channelIndex > -1) {
     sliceSpec.unshift(channelIndex);
   }
