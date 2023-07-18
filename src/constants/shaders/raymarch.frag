@@ -19,6 +19,8 @@ uniform vec3 AABB_CLIP_MIN;
 uniform float CLIP_NEAR;
 uniform vec3 AABB_CLIP_MAX;
 uniform float CLIP_FAR;
+uniform vec3 SUBSET_SCALE;
+uniform vec3 SUBSET_OFFSET;
 uniform sampler2D textureAtlas;
 uniform sampler2D textureAtlasMask;
 uniform int BREAK_STEPS;
@@ -213,12 +215,13 @@ vec4 integrateVolume(vec4 eye_o,vec4 eye_d,
   // in order to make the final color invariant to the step size(?)
   // use maxSteps (a constant) as the numerator... Not sure if this is sound.
   float s = 0.5 * float(maxSteps) / csteps;
-  for(int i=0; i<maxSteps; i++) {
+  for (int i = 0; i < maxSteps; i++) {
     pos = eye_o + eye_d*t;
     // !!! assume box bounds are -0.5 .. 0.5.  pos = (pos-min)/(max-min)
     // scaling is handled by model transform and already accounted for before we get here.
     // AABB clip is independent of this and is only used to determine tnear and tfar.
     pos.xyz = (pos.xyz-(-0.5))/((0.5)-(-0.5)); //0.5 * (pos + 1.0); // map position from [boxMin, boxMax] to [0, 1] coordinates
+    pos.xyz = (pos.xyz - SUBSET_OFFSET) / SUBSET_SCALE;
 
     vec4 col = interpolationEnabled ? sampleAtlasLinear(textureAtlas, pos) : sampleAtlasNearest(textureAtlas, pos);
 
