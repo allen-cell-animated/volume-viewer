@@ -9,29 +9,31 @@ import { LoadSpec } from "./loaders/IVolumeLoader";
 export interface ImageInfo {
   name: string;
   version: string;
+
   width: number;
   height: number;
-  channels: number;
+  rows: number;
+  cols: number;
+  tile_width: number;
+  tile_height: number;
   tiles: number;
   pixel_size_x: number;
   pixel_size_y: number;
   pixel_size_z: number;
   pixel_size_unit: string;
+
+  channels: number;
   channel_names: string[];
   channel_colors?: [number, number, number][];
-  rows: number;
-  cols: number;
-  tile_width: number;
-  tile_height: number;
-  atlas_width: number;
-  atlas_height: number;
+
+  times: number;
+  time_scale: number;
+  time_unit: string;
+
   transform: {
     translation: [number, number, number];
     rotation: [number, number, number];
   };
-  times: number;
-  time_scale: number;
-  time_unit: string;
   userData?: Record<string, unknown>;
 }
 
@@ -53,8 +55,6 @@ export const getDefaultImageInfo = (): ImageInfo => {
     cols: 1,
     tile_width: 1,
     tile_height: 1,
-    atlas_width: 1,
-    atlas_height: 1,
     transform: {
       translation: [0, 0, 0],
       rotation: [0, 0, 0],
@@ -135,9 +135,6 @@ export default class Volume {
   public x: number;
   public y: number;
   public z: number;
-  private t: number;
-  private atlasSize: [number, number];
-  private volumeSize: [number, number, number];
   public channels: Channel[];
   private volumeDataObservers: VolumeDataObserver[];
   public scale: Vector3;
@@ -176,7 +173,6 @@ export default class Volume {
     this.x = this.imageInfo.tile_width;
     this.y = this.imageInfo.tile_height;
     this.z = this.imageInfo.tiles;
-    this.t = 1;
 
     this.num_channels = this.imageInfo.channels;
 
@@ -190,9 +186,6 @@ export default class Volume {
         this.channel_colors_default[i] = getColorByChannelIndex(i);
       }
     }
-
-    this.atlasSize = [this.imageInfo.atlas_width, this.imageInfo.atlas_height];
-    this.volumeSize = [this.x, this.y, this.z];
 
     this.channels = [];
     for (let i = 0; i < this.num_channels; ++i) {
@@ -321,8 +314,8 @@ export default class Volume {
       this.x,
       this.y,
       this.z,
-      this.atlasSize[0],
-      this.atlasSize[1]
+      this.imageInfo.cols * this.imageInfo.tile_width,
+      this.imageInfo.rows * this.imageInfo.tile_height
     );
     this.onChannelLoaded([channelIndex]);
   }

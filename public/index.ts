@@ -927,13 +927,16 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
       // create the main volume and add to view (this is the only place)
       myState.volume = new Volume(myJson);
 
+      const atlasWidth = myJson.tile_width * myJson.cols;
+      const atlasHeight = myJson.tile_height * myJson.rows;
+
       // TODO: this can go in the Volume and Channel constructors!
       // preallocate some memory to be filled in later
       for (let i = 0; i < myState.volume.num_channels; ++i) {
         myState.volume.channels[i].imgData = {
-          data: new Uint8ClampedArray(myJson.atlas_width * myJson.atlas_height),
-          width: myJson.atlas_width,
-          height: myJson.atlas_height,
+          data: new Uint8ClampedArray(atlasWidth * atlasHeight),
+          width: atlasWidth,
+          height: atlasHeight,
         };
         myState.volume.channels[i].volumeData = new Uint8Array(myJson.tile_width * myJson.tile_height * myJson.tiles);
         // TODO also preallocate the Fused data texture
@@ -1100,20 +1103,15 @@ function createTestVolume() {
     height: 64,
     channels: 3,
     channel_names: ["DRAQ5", "EGFP", "SEG_Memb"],
+    // These dimensions are used to prepare the raw volume arrays for rendering as tiled texture atlases
+    // for webgl reasons, it is best for atlas width (cols*tile_width) and height (rows*tile_height)
+    // to be <= 2048 and ideally a power of 2. (adjust other dimensions accordingly)
     rows: 8,
     cols: 8,
     // tiles <= rows*cols, tiles is number of z slices
     tiles: 64,
     tile_width: 64,
     tile_height: 64,
-
-    // These dimensions are used to prepare the raw volume arrays for rendering as tiled texture atlases
-    // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-    // and ideally a power of 2. (adjust other dimensions accordingly)
-    // atlas_width === cols*tile_width
-    atlas_width: 512,
-    // atlas_height === rows*tile_height
-    atlas_height: 512,
 
     pixel_size_x: 1,
     pixel_size_y: 1,

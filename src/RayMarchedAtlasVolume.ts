@@ -73,12 +73,18 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
 
-    this.setUniform("ATLAS_X", volume.imageInfo.cols);
-    this.setUniform("ATLAS_Y", volume.imageInfo.rows);
-    this.setUniform("textureRes", new Vector2(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height));
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const { cols, rows, tile_width, tile_height } = volume.imageInfo;
+    const atlasWidth = tile_width * cols;
+    const atlasHeight = tile_height * rows;
+
+    this.setUniform("ATLAS_X", cols);
+    this.setUniform("ATLAS_Y", rows);
+
+    this.setUniform("textureRes", new Vector2(atlasWidth, atlasHeight));
     this.setUniform("SLICES", volume.z);
 
-    this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
+    this.channelData = new FusedChannelData(atlasWidth, atlasHeight);
     this.updateSettings(settings, SettingsFlags.ALL);
   }
 

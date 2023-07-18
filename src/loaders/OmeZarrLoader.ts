@@ -297,12 +297,10 @@ class OMEZarrLoader implements IVolumeLoader {
       rows: nrows,
       cols: ncols,
       tiles: tz,
+      // for webgl reasons, it is best for total atlas width and height to be <= 2048 and ideally a power of 2.
+      //   This generally implies downsampling the original volume data for display in this viewer.
       tile_width: tw,
       tile_height: th,
-      // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-      // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-      atlas_width: atlaswidth,
-      atlas_height: atlasheight,
       pixel_size_x: scale5d[spatialAxes[2]],
       pixel_size_y: scale5d[spatialAxes[1]],
       pixel_size_z: scale5d[spatialAxes[0]],
