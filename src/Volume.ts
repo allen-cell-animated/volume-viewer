@@ -10,17 +10,42 @@ export interface ImageInfo {
   name: string;
   version: string;
 
+  /** X size of the *original* (not downsampled) volume, in pixels */
   width: number;
+  /** Y size of the *original* (not downsampled) volume, in pixels */
   height: number;
+  /** Number of rows of z-slice tiles in the texture atlas */
   rows: number;
+  /** Number of columns of z-slice tiles in the texture atlas */
   cols: number;
+  /** Width of a single atlas tile in pixels */
   tile_width: number;
+  /** Height of a single atlas tile in pixels */
   tile_height: number;
+  /** Number of tiles in the texture atlas (or number of z-slices in the volume segment) */
   tiles: number;
+  /** Physical x size of a single *original* (not downsampled) pixel */
   pixel_size_x: number;
+  /** Physical y size of a single *original* (not downsampled) pixel */
   pixel_size_y: number;
+  /** Physical z size of a single pixel */
   pixel_size_z: number;
+  /** Symbol of physical unit used by `pixel_size_(x|y|z)` fields */
   pixel_size_unit: string;
+
+  // backwards compatibility: these are optional
+  /** Full x size of the volume. `tile_width` will be used if unspecified */
+  vol_size_x?: number;
+  /** Full y size of the volume. `tile_height` will be used if unspecified */
+  vol_size_y?: number;
+  /** Full z size of the volume. `tiles` will be used if unspecified */
+  vol_size_z?: number;
+  /** x offset of the volume subset into the volume */
+  offset_x?: number;
+  /** y offset of the volume subset into the volume */
+  offset_y?: number;
+  /** z offset of the volume subset into the volume */
+  offset_z?: number;
 
   channels: number;
   channel_names: string[];
