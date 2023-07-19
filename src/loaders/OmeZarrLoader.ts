@@ -16,6 +16,8 @@ import {
 import Volume, { ImageInfo } from "../Volume";
 import { FetchZarrMessage } from "../workers/FetchZarrWorker";
 
+const MAX_ATLAS_DIMENSION = 2048;
+
 type CoordinateTransformation =
   | {
       type: "identity";
@@ -127,48 +129,91 @@ function findSpatialAxesZYX(axisTCZYX: number[]): [number, number, number] {
   return spatialAxes;
 }
 
-async function fetchShapeOfLevel(store: HTTPStore, imagegroup: string, multiscale: OMEDataset): Promise<number[]> {
-  const level = await openArray({ store: store, path: imagegroup + "/" + multiscale.path, mode: "r" });
-  const shape = level.meta.shape;
-  return shape;
-}
+// async function fetchShapeOfLevel(store: HTTPStore, imagegroup: string, multiscale: OMEDataset): Promise<number[]> {
+//   const level = await openArray({ store: store, path: imagegroup + "/" + multiscale.path, mode: "r" });
+//   const shape = level.meta.shape;
+//   return shape;
+// }
 
-// TODO should this become aware of volume subsets? maybe not
-async function pickLevelToLoad(
-  multiscale: OMEMultiscale,
-  store: HTTPStore,
-  loadSpec: LoadSpec,
-  cachedSpatialAxes?: [number, number, number]
-): Promise<number> {
+async function fetchLevelShapes(store: HTTPStore, multiscale: OMEMultiscale): Promise<number[][]> {
   const { datasets, axes } = multiscale;
-  const numlevels = datasets.length;
 
-  let spatialAxes: [number, number, number];
-  if (cachedSpatialAxes !== undefined) {
-    spatialAxes = cachedSpatialAxes;
-  } else {
-    const axisTCZYX = remapAxesToTCZYX(axes);
-    spatialAxes = findSpatialAxesZYX(axisTCZYX);
-  }
-
-  const shapePromises = datasets.map(async (dataset): Promise<[number, number, number]> => {
-    const shape = await fetchShapeOfLevel(store, loadSpec.subpath, dataset);
+  const shapePromises = datasets.map(async ({ path }): Promise<number[]> => {
+    const level = await openArray({ store, path, mode: "r" });
+    const shape = level.meta.shape;
     if (shape.length !== axes.length) {
       console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
     }
-    return [shape[spatialAxes[0]], shape[spatialAxes[1]], shape[spatialAxes[2]]];
+    return shape;
   });
-  const spatialDims = await Promise.all(shapePromises);
 
+  return await Promise.all(shapePromises);
+}
+
+// async function pickLevelToLoad(
+//   multiscale: OMEMultiscale,
+//   store: HTTPStore,
+//   loadSpec: LoadSpec,
+//   cachedSpatialAxes?: [number, number, number]
+// ): Promise<number> {
+//   const { datasets, axes } = multiscale;
+//   const numlevels = datasets.length;
+
+//   let spatialAxes: [number, number, number];
+//   if (cachedSpatialAxes !== undefined) {
+//     spatialAxes = cachedSpatialAxes;
+//   } else {
+//     const axisTCZYX = remapAxesToTCZYX(axes);
+//     spatialAxes = findSpatialAxesZYX(axisTCZYX);
+//   }
+
+//   const shapePromises = datasets.map(async (dataset): Promise<[number, number, number]> => {
+//     const shape = await fetchShapeOfLevel(store, loadSpec.subpath, dataset);
+//     if (shape.length !== axes.length) {
+//       console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
+//     }
+//     return [shape[spatialAxes[0]], shape[spatialAxes[1]], shape[spatialAxes[2]]];
+//   });
+//   const spatialDims = await Promise.all(shapePromises);
+
+//   // default to lowest level until we find the match
+//   let levelToLoad = numlevels - 1;
+//   for (let i = 0; i < numlevels; ++i) {
+//     if (datasets[i].path == loadSpec.subpath) {
+//       levelToLoad = i;
+//       break;
+//     }
+//   }
+
+//   const optimalLevel = estimateLevelForAtlas(spatialDims, 2048);
+//   // assume all levels are decreasing in size.  If a larger level is optimal then use it:
+//   if (optimalLevel < levelToLoad) {
+//     return optimalLevel;
+//   } else {
+//     return levelToLoad;
+//   }
+// }
+
+function pickLevelToLoad(multiscaleDims: VolumeDims[], loadSpec: LoadSpec): number {
+  const numlevels = multiscaleDims.length;
   // default to lowest level until we find the match
   let levelToLoad = numlevels - 1;
   for (let i = 0; i < numlevels; ++i) {
-    if (datasets[i].path == loadSpec.subpath) {
+    if (multiscaleDims[i].subpath == loadSpec.subpath) {
       levelToLoad = i;
       break;
     }
   }
 
+  const { minx = 0, maxx = 1, miny = 0, maxy = 1, minz = 0, maxz = 1 } = loadSpec;
+  const xSize = maxx - minx;
+  const ySize = maxy - miny;
+  const zSize = maxz - minz;
+
+  const spatialDims = multiscaleDims.map(({ shape }) => {
+    const [z, y, x] = shape.slice(-3);
+    return [z * zSize, y * ySize, x * xSize];
+  });
   const optimalLevel = estimateLevelForAtlas(spatialDims, 2048);
   // assume all levels are decreasing in size.  If a larger level is optimal then use it:
   if (optimalLevel < levelToLoad) {
@@ -183,19 +228,18 @@ class OMEZarrLoader implements IVolumeLoader {
   spatialAxes?: [number, number, number];
   hasT?: boolean;
   hasC?: boolean;
+  multiscaleDims?: VolumeDims[];
 
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const store = new HTTPStore(loadSpec.url);
 
-    const imagegroup = loadSpec.subpath;
-
-    const data = await openGroup(store, imagegroup, "r");
+    const data = await openGroup(store, loadSpec.subpath, "r");
 
     // get top-level metadata for this zarr image
     const allmetadata = await data.attrs.asObject();
     // each entry of multiscales is a multiscale image.
     const imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
-    const multiscales: OMEDataset[] = allmetadata.multiscales[imageIndex].datasets;
+    const datasets: OMEDataset[] = allmetadata.multiscales[imageIndex].datasets;
     const axes: Axis[] = allmetadata.multiscales[imageIndex].axes;
 
     const axisTCZYX = remapAxesToTCZYX(axes);
@@ -203,27 +247,32 @@ class OMEZarrLoader implements IVolumeLoader {
     const spatialAxes = findSpatialAxesZYX(axisTCZYX);
 
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
-    const unitName = axes[spatialAxes[2]].unit;
-    const unitSymbol = unitNameToSymbol(unitName) || unitName || "";
+    const spaceUnitName = axes[spatialAxes[2]].unit;
+    const spaceUnitSymbol = unitNameToSymbol(spaceUnitName) || spaceUnitName || "";
 
-    const dimsPromises = multiscales.map(async (multiscale): Promise<VolumeDims> => {
-      const shape = await fetchShapeOfLevel(store, imagegroup, multiscale);
+    const timeUnitName = this.hasT ? axes[axisTCZYX[0]].unit : undefined;
+    const timeUnitSymbol = unitNameToSymbol(timeUnitName) || timeUnitName || "";
+
+    const dimsPromises = datasets.map(async (dataset): Promise<VolumeDims> => {
+      const level = await openArray({ store, path: dataset.path, mode: "r" });
+      const shape = level.meta.shape;
       if (shape.length != axes.length) {
         console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
       }
 
-      const scale5d = getScale(multiscale);
+      const scale5d = getScale(dataset);
 
       const d = new VolumeDims();
-      d.subpath = "";
-      d.shape = [1, 1, 1, 1, 1];
+      d.subpath = loadSpec.subpath;
+      d.shape = [-1, -1, -1, -1, -1];
       for (let i = 0; i < d.shape.length; ++i) {
         if (axisTCZYX[i] > -1) {
           d.shape[i] = shape[axisTCZYX[i]];
         }
       }
       d.spacing = [1, 1, scale5d[spatialAxes[0]], scale5d[spatialAxes[1]], scale5d[spatialAxes[2]]];
-      d.spatialUnit = unitSymbol; // unknown unit.
+      d.spaceUnit = spaceUnitSymbol;
+      d.timeUnit = timeUnitSymbol;
       d.dataType = "uint8";
       return d;
     });
@@ -232,43 +281,45 @@ class OMEZarrLoader implements IVolumeLoader {
   }
 
   async createVolume(loadSpec: LoadSpec): Promise<Volume> {
-    const store = new HTTPStore(loadSpec.url);
+    // const store = new HTTPStore(loadSpec.url);
 
-    const imagegroup = loadSpec.subpath;
+    // const imagegroup = loadSpec.subpath;
 
-    const data = await openGroup(store, imagegroup, "r");
+    // const data = await openGroup(store, imagegroup, "r");
 
-    // get top-level metadata for this zarr image
-    const allmetadata = await data.attrs.asObject();
-    // each entry of multiscales is a multiscale image.
-    const imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
-    const multiscale: OMEMultiscale = allmetadata.multiscales[imageIndex];
-    const { datasets, axes } = multiscale;
+    // // get top-level metadata for this zarr image
+    // const allmetadata = await data.attrs.asObject();
+    // // each entry of multiscales is a multiscale image.
+    // const imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
+    // const multiscale: OMEMultiscale = allmetadata.multiscales[imageIndex];
+    // const { datasets, axes } = multiscale;
 
-    const axisTCZYX = remapAxesToTCZYX(axes);
-    this.hasT = axisTCZYX[0] > -1;
-    this.hasC = axisTCZYX[1] > -1;
-    // ZYX
-    this.spatialAxes = findSpatialAxesZYX(axisTCZYX);
+    // const axisTCZYX = remapAxesToTCZYX(axes);
+    // this.hasT = axisTCZYX[0] > -1;
+    // this.hasC = axisTCZYX[1] > -1;
+    // // ZYX
+    // this.spatialAxes = findSpatialAxesZYX(axisTCZYX);
 
-    // Assume all axes have the same units - we have no means of storing per-axis unit symbols
-    const spaceUnitName = axes[this.spatialAxes[2]].unit;
-    const spaceUnitSymbol = unitNameToSymbol(spaceUnitName) || spaceUnitName || "";
+    // // Assume all axes have the same units - we have no means of storing per-axis unit symbols
+    // const spaceUnitName = axes[this.spatialAxes[2]].unit;
+    // const spaceUnitSymbol = unitNameToSymbol(spaceUnitName) || spaceUnitName || "";
 
-    const timeUnitName = this.hasT ? axes[axisTCZYX[0]].unit : undefined;
-    const timeUnitSymbol = unitNameToSymbol(timeUnitName) || timeUnitName || "";
+    // const timeUnitName = this.hasT ? axes[axisTCZYX[0]].unit : undefined;
+    // const timeUnitSymbol = unitNameToSymbol(timeUnitName) || timeUnitName || "";
 
-    const levelToLoad = await pickLevelToLoad(multiscale, store, loadSpec);
-    const dataset = datasets[levelToLoad];
-    this.multiscalePath = dataset.path;
+    // const levelToLoad = await pickLevelToLoad(multiscale, store, loadSpec);
+    // const dataset = datasets[levelToLoad];
+    // this.multiscalePath = dataset.path;
 
-    // get the shape for the level we want to load
-    const level = await openArray({ store: store, path: imagegroup + "/" + dataset.path, mode: "r" });
+    // // get the shape for the level we want to load
+    // const level = await openArray({ store: store, path: imagegroup + "/" + dataset.path, mode: "r" });
 
-    const multiscaleShape = level.meta.shape;
-    if (multiscaleShape.length != axes.length) {
-      console.log("ERROR: shape length " + multiscaleShape.length + " does not match axes length " + axes.length);
-    }
+    // const multiscaleShape = level.meta.shape;
+    // if (multiscaleShape.length != axes.length) {
+    //   console.log("ERROR: shape length " + multiscaleShape.length + " does not match axes length " + axes.length);
+    // }
+
+    this.multiscaleDims = await this.loadDims(loadSpec);
 
     const channels = this.hasC ? multiscaleShape[axisTCZYX[1]] : 1;
     const sizeT = this.hasT ? multiscaleShape[axisTCZYX[0]] : 1;

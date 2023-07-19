@@ -42,7 +42,9 @@ export class VolumeDims {
   shape: number[] = [0, 0, 0, 0, 0];
   // spacing: [t, c, z, y, x]; generally expect 1 for non-spatial dimensions
   spacing: number[] = [1, 1, 1, 1, 1];
-  spatialUnit = "micron";
+  spaceUnit = "μm";
+  timeUnit = "s";
+  // TODO make this an enum?
   dataType = "uint8";
 }
 

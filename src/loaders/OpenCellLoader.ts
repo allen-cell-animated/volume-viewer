@@ -10,7 +10,7 @@ class OpenCellLoader implements IVolumeLoader {
     d.subpath = "";
     d.shape = [1, 2, 27, 600, 600];
     d.spacing = [1, 1, 2, 1, 1];
-    d.spatialUnit = ""; // unknown unit.
+    d.spaceUnit = ""; // unknown unit.
     d.dataType = "uint8";
     return [d];
   }

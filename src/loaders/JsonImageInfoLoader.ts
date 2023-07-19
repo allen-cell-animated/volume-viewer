@@ -34,7 +34,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
     d.subpath = "";
     d.shape = [imageInfo.times, imageInfo.channels, imageInfo.tiles, imageInfo.tile_height, imageInfo.tile_width];
     d.spacing = [1, 1, imageInfo.pixel_size_z, imageInfo.pixel_size_y, imageInfo.pixel_size_x];
-    d.spatialUnit = imageInfo.pixel_size_unit;
+    d.spaceUnit = imageInfo.pixel_size_unit;
     d.dataType = "uint8";
     return [d];
   }

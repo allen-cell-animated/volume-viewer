@@ -96,7 +96,7 @@ class TiffLoader implements IVolumeLoader {
     d.subpath = "";
     d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
     d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
-    d.spatialUnit = dims.unit ? dims.unit : "micron";
+    d.spaceUnit = dims.unit ? dims.unit : "micron";
     d.dataType = dims.pixeltype ? dims.pixeltype : "uint8";
     return [d];
   }
