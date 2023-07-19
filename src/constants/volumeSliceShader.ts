@@ -84,6 +84,14 @@ export const sliceShaderUniforms = () => {
       type: "v3",
       value: new Vector3(0.5, 0.5, 0.5),
     },
+    SUBSET_SCALE: {
+      type: "v3",
+      value: new Vector3(1, 1, 1),
+    },
+    SUBSET_OFFSET: {
+      type: "v3",
+      value: new Vector3(0, 0, 0),
+    },
     inverseModelViewMatrix: {
       type: "m4",
       value: new Matrix4(),

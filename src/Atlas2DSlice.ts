@@ -60,8 +60,17 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
 
     this.geometryTransformNode.add(this.boxHelper, this.geometryMesh);
 
-    // eslint-disable-next-line @typescript-eslint/naming-convention
-    const { cols, rows, tile_width, tile_height } = volume.imageInfo;
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const { cols, rows, tile_width, tile_height, tiles } = volume.imageInfo;
+    const {
+      vol_size_x = tile_width,
+      vol_size_y = tile_height,
+      vol_size_z = tiles,
+      offset_x = 0,
+      offset_y = 0,
+      offset_z = 0,
+    } = volume.imageInfo;
+    /* eslint-enable @typescript-eslint/naming-convention */
     const atlasWidth = tile_width * cols;
     const atlasHeight = tile_height * rows;
 
@@ -69,6 +78,8 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.setUniform("ATLAS_Y", rows);
     this.setUniform("textureRes", new Vector2(atlasWidth, atlasHeight));
     this.setUniform("SLICES", volume.z);
+    this.setUniform("SUBSET_SCALE", new Vector3(tile_width / vol_size_x, tile_height / vol_size_y, tiles / vol_size_z));
+    this.setUniform("SUBSET_OFFSET", new Vector3(offset_x / vol_size_x, offset_y / vol_size_y, offset_z / vol_size_z));
     this.setUniform("Z_SLICE", Math.floor(volume.z / 2));
 
     this.channelData = new FusedChannelData(atlasWidth, atlasHeight);
