@@ -8,7 +8,7 @@ export type FetchZarrMessage = {
   spec: LoadSpec;
   channel: number;
   path: string;
-  axesZYX: [number, number, number];
+  axesZYX: number[];
 };
 
 function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
