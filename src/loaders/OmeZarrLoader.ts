@@ -140,30 +140,6 @@ function remapAxesToTCZYX(axes: Axis[]): [number, number, number, number, number
   return axisTCZYX;
 }
 
-// function findSpatialAxesZYX(axisTCZYX: number[]): [number, number, number] {
-//   // return in ZYX order
-//   const spatialAxes: [number, number, number] = [-1, -1, -1];
-//   if (axisTCZYX[2] > -1) {
-//     spatialAxes[0] = axisTCZYX[2];
-//   }
-//   if (axisTCZYX[3] > -1) {
-//     spatialAxes[1] = axisTCZYX[3];
-//   }
-//   if (axisTCZYX[4] > -1) {
-//     spatialAxes[2] = axisTCZYX[4];
-//   }
-//   if (spatialAxes.some((el) => el === -1)) {
-//     console.log("ERROR: zarr loader expects a z, y, and x axis.");
-//   }
-//   return spatialAxes;
-// }
-
-// async function fetchShapeOfLevel(store: HTTPStore, imagegroup: string, multiscale: OMEDataset): Promise<number[]> {
-//   const level = await openArray({ store: store, path: imagegroup + "/" + multiscale.path, mode: "r" });
-//   const shape = level.meta.shape;
-//   return shape;
-// }
-
 async function loadLevelShapes(store: HTTPStore, multiscale: OMEMultiscale): Promise<number[][]> {
   const { datasets, axes } = multiscale;
 
@@ -183,50 +159,6 @@ async function loadMetadata(store: HTTPStore, loadSpec: LoadSpec): Promise<OMEZa
   const data = await openGroup(store, loadSpec.subpath, "r");
   return (await data.attrs.asObject()) as OMEZarrMetadata;
 }
-
-// async function pickLevelToLoad(
-//   multiscale: OMEMultiscale,
-//   store: HTTPStore,
-//   loadSpec: LoadSpec,
-//   cachedSpatialAxes?: [number, number, number]
-// ): Promise<number> {
-//   const { datasets, axes } = multiscale;
-//   const numlevels = datasets.length;
-
-//   let spatialAxes: [number, number, number];
-//   if (cachedSpatialAxes !== undefined) {
-//     spatialAxes = cachedSpatialAxes;
-//   } else {
-//     const axisTCZYX = remapAxesToTCZYX(axes);
-//     spatialAxes = findSpatialAxesZYX(axisTCZYX);
-//   }
-
-//   const shapePromises = datasets.map(async (dataset): Promise<[number, number, number]> => {
-//     const shape = await fetchShapeOfLevel(store, loadSpec.subpath, dataset);
-//     if (shape.length !== axes.length) {
-//       console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
-//     }
-//     return [shape[spatialAxes[0]], shape[spatialAxes[1]], shape[spatialAxes[2]]];
-//   });
-//   const spatialDims = await Promise.all(shapePromises);
-
-//   // default to lowest level until we find the match
-//   let levelToLoad = numlevels - 1;
-//   for (let i = 0; i < numlevels; ++i) {
-//     if (datasets[i].path == loadSpec.subpath) {
-//       levelToLoad = i;
-//       break;
-//     }
-//   }
-
-//   const optimalLevel = estimateLevelForAtlas(spatialDims, 2048);
-//   // assume all levels are decreasing in size.  If a larger level is optimal then use it:
-//   if (optimalLevel < levelToLoad) {
-//     return optimalLevel;
-//   } else {
-//     return levelToLoad;
-//   }
-// }
 
 function pickLevelToLoad(loadSpec: LoadSpec, multiscaleDims: number[][], [_t, _c, zi, yi, xi]: number[]): number {
   const numlevels = multiscaleDims.length;
@@ -311,44 +243,6 @@ class OMEZarrLoader implements IVolumeLoader {
   }
 
   async createVolume(loadSpec: LoadSpec): Promise<Volume> {
-    // const store = new HTTPStore(loadSpec.url);
-
-    // const imagegroup = loadSpec.subpath;
-
-    // const data = await openGroup(store, imagegroup, "r");
-
-    // // get top-level metadata for this zarr image
-    // const allmetadata = await data.attrs.asObject();
-    // // each entry of multiscales is a multiscale image.
-    // const imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
-    // const multiscale: OMEMultiscale = allmetadata.multiscales[imageIndex];
-    // const { datasets, axes } = multiscale;
-
-    // const axisTCZYX = remapAxesToTCZYX(axes);
-    // this.hasT = axisTCZYX[0] > -1;
-    // this.hasC = axisTCZYX[1] > -1;
-    // // ZYX
-    // this.spatialAxes = findSpatialAxesZYX(axisTCZYX);
-
-    // // Assume all axes have the same units - we have no means of storing per-axis unit symbols
-    // const spaceUnitName = axes[this.spatialAxes[2]].unit;
-    // const spaceUnitSymbol = unitNameToSymbol(spaceUnitName) || spaceUnitName || "";
-
-    // const timeUnitName = this.hasT ? axes[axisTCZYX[0]].unit : undefined;
-    // const timeUnitSymbol = unitNameToSymbol(timeUnitName) || timeUnitName || "";
-
-    // const levelToLoad = await pickLevelToLoad(multiscale, store, loadSpec);
-    // const dataset = datasets[levelToLoad];
-    // this.multiscalePath = dataset.path;
-
-    // // get the shape for the level we want to load
-    // const level = await openArray({ store: store, path: imagegroup + "/" + dataset.path, mode: "r" });
-
-    // const multiscaleShape = level.meta.shape;
-    // if (multiscaleShape.length != axes.length) {
-    //   console.log("ERROR: shape length " + multiscaleShape.length + " does not match axes length " + axes.length);
-    // }
-
     // Load metadata and dimensions. After this point we consider the loader "open."
     const store = new HTTPStore(loadSpec.url);
     this.metadata = await loadMetadata(store, loadSpec);
@@ -445,27 +339,6 @@ class OMEZarrLoader implements IVolumeLoader {
     const loadSpec = explicitLoadSpec || vol.loadSpec;
     const { channels, times } = vol.imageInfo;
 
-    // if (
-    //   this.multiscalePath === undefined ||
-    //   this.hasC === undefined ||
-    //   this.hasT === undefined ||
-    //   this.spatialAxes === undefined
-    // ) {
-    //   const store = new HTTPStore(loadSpec.url);
-    //   const data = await openGroup(store, loadSpec.subpath, "r");
-    //   const allmetadata = await data.attrs.asObject();
-
-    //   const imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
-    //   const multiscale = allmetadata.multiscales[imageIndex];
-
-    //   const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
-    //   this.hasT = axisTCZYX[0] > -1;
-    //   this.hasC = axisTCZYX[1] > -1;
-    //   this.spatialAxes = findSpatialAxesZYX(axisTCZYX);
-
-    //   const levelToLoad = await pickLevelToLoad(multiscale, store, loadSpec, this.spatialAxes);
-    //   this.multiscalePath = multiscale.datasets[levelToLoad].path;
-    // }
     if (this.axesTCZYX === undefined || this.metadata === undefined || this.multiscaleDims === undefined) {
       console.error("ERROR: called `loadVolumeData` on zarr loader without first opening with `createVolume`!");
       return;
