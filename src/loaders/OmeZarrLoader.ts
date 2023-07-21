@@ -142,6 +142,7 @@ function remapAxesToTCZYX(axes: Axis[]): [number, number, number, number, number
   return axisTCZYX;
 }
 
+// TODO use in `loadDims`
 async function loadLevelShapes(store: HTTPStore, multiscale: OMEMultiscale): Promise<number[][]> {
   const { datasets, axes } = multiscale;
 
@@ -162,16 +163,20 @@ async function loadMetadata(store: HTTPStore, loadSpec: LoadSpec): Promise<OMEZa
   return (await data.attrs.asObject()) as OMEZarrMetadata;
 }
 
-function pickLevelToLoad(loadSpec: LoadSpec, multiscaleDims: number[][], dimIndexes: number[]): number {
+function pickLevelToLoad(
+  loadSpec: LoadSpec,
+  multiscaleDims: number[][],
+  { datasets }: OMEMultiscale,
+  dimIndexes: number[]
+): number {
   const numlevels = multiscaleDims.length;
   // default to lowest level until we find the match
-  const levelToLoad = numlevels - 1;
+  let levelToLoad = numlevels - 1;
   for (let i = 0; i < numlevels; ++i) {
-    // TODO put this back
-    // if (multiscaleDims[i].subpath == loadSpec.subpath) {
-    //   levelToLoad = i;
-    //   break;
-    // }
+    if (datasets[i].path == loadSpec.subpath) {
+      levelToLoad = i;
+      break;
+    }
   }
 
   const { minx = 0, maxx = 1, miny = 0, maxy = 1, minz = 0, maxz = 1 } = loadSpec;
@@ -267,7 +272,7 @@ class OMEZarrLoader implements IVolumeLoader {
     // After this point we consider the loader "open" (bound to one remote source)
 
     const [t, c, z, y, x] = this.axesTCZYX;
-    const levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, this.axesTCZYX);
+    const levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
     const multiscaleShape = this.multiscaleDims[levelToLoad];
 
     const shape0 = this.multiscaleDims[0];
@@ -369,7 +374,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const imageIndex = imageIndexFromLoadSpec(normLoadSpec, this.metadata.multiscales);
     const multiscale = this.metadata.multiscales[imageIndex];
 
-    const levelToLoad = pickLevelToLoad(normLoadSpec, this.multiscaleDims, this.axesTCZYX);
+    const levelToLoad = pickLevelToLoad(normLoadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
     const datasetPath = multiscale.datasets[levelToLoad].path;
     const datasetShape = this.multiscaleDims[levelToLoad];
 
