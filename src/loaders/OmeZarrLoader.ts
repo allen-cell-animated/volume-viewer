@@ -3,9 +3,11 @@ import { openArray, openGroup, HTTPStore } from "zarr";
 import {
   IVolumeLoader,
   LoadSpec,
+  LoadSpecExtent,
   PerChannelCallback,
   VolumeDims,
   convertLoadSpecRegionToPixels,
+  fitLoadSpecRegionToExtent,
 } from "./IVolumeLoader";
 import {
   buildDefaultMetadata,
@@ -160,12 +162,12 @@ async function loadMetadata(store: HTTPStore, loadSpec: LoadSpec): Promise<OMEZa
   return (await data.attrs.asObject()) as OMEZarrMetadata;
 }
 
-function pickLevelToLoad(loadSpec: LoadSpec, multiscaleDims: number[][], [_t, _c, zi, yi, xi]: number[]): number {
+function pickLevelToLoad(loadSpec: LoadSpec, multiscaleDims: number[][], dimIndexes: number[]): number {
   const numlevels = multiscaleDims.length;
   // default to lowest level until we find the match
   const levelToLoad = numlevels - 1;
   for (let i = 0; i < numlevels; ++i) {
-    // TODO
+    // TODO put this back
     // if (multiscaleDims[i].subpath == loadSpec.subpath) {
     //   levelToLoad = i;
     //   break;
@@ -176,6 +178,7 @@ function pickLevelToLoad(loadSpec: LoadSpec, multiscaleDims: number[][], [_t, _c
   const xSize = maxx - minx;
   const ySize = maxy - miny;
   const zSize = maxz - minz;
+  const [zi, yi, xi] = dimIndexes.slice(-3);
 
   const spatialDims = multiscaleDims.map((shape) => {
     return [shape[zi] * zSize, shape[yi] * ySize, shape[xi] * xSize];
@@ -193,6 +196,7 @@ class OMEZarrLoader implements IVolumeLoader {
   multiscaleDims?: number[][];
   metadata?: OMEZarrMetadata;
   axesTCZYX?: [number, number, number, number, number];
+  maxExtent?: LoadSpecExtent;
 
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const store = new HTTPStore(loadSpec.url);
@@ -243,13 +247,25 @@ class OMEZarrLoader implements IVolumeLoader {
   }
 
   async createVolume(loadSpec: LoadSpec): Promise<Volume> {
-    // Load metadata and dimensions. After this point we consider the loader "open."
+    // Load metadata and dimensions.
     const store = new HTTPStore(loadSpec.url);
     this.metadata = await loadMetadata(store, loadSpec);
     const imageIndex = imageIndexFromLoadSpec(loadSpec, this.metadata.multiscales);
     const multiscale = this.metadata.multiscales[imageIndex];
     this.multiscaleDims = await loadLevelShapes(store, multiscale);
     this.axesTCZYX = remapAxesToTCZYX(multiscale.axes);
+
+    const { minx, maxx, miny, maxy, minz, maxz } = loadSpec;
+    this.maxExtent = {
+      minx: minx || 0,
+      miny: miny || 0,
+      minz: minz || 0,
+      maxx: maxx === undefined ? 1 : maxx,
+      maxy: maxy === undefined ? 1 : maxy,
+      maxz: maxz === undefined ? 1 : maxz,
+    };
+    // After this point we consider the loader "open" (bound to one remote source)
+
     const [t, c, z, y, x] = this.axesTCZYX;
     const levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, this.axesTCZYX);
     const multiscaleShape = this.multiscaleDims[levelToLoad];
@@ -302,17 +318,14 @@ class OMEZarrLoader implements IVolumeLoader {
       channel_names: chnames,
       rows: nrows,
       cols: ncols,
-      tiles: tz,
       // for webgl reasons, it is best for total atlas width and height to be <= 2048 and ideally a power of 2.
       //   This generally implies downsampling the original volume data for display in this viewer.
       tile_width: tw,
       tile_height: th,
-      vol_size_x: multiscaleX,
-      vol_size_y: multiscaleY,
-      vol_size_z: multiscaleZ,
-      offset_x: pxSpec.minx,
-      offset_y: pxSpec.miny,
-      offset_z: pxSpec.minz,
+      tiles: tz,
+      vol_size_x: tw,
+      vol_size_y: th,
+      vol_size_z: tz,
       pixel_size_x: scale5d[x],
       pixel_size_y: scale5d[y],
       pixel_size_z: scale5d[z],
@@ -329,28 +342,46 @@ class OMEZarrLoader implements IVolumeLoader {
     };
     /* eslint-enable @typescript-eslint/naming-convention */
 
+    const fullExtentLoadSpec = { ...loadSpec, minx: 0, miny: 0, minz: 0, maxx: 1, maxy: 1, maxz: 1 };
+
     // got some data, now let's construct the volume.
-    const vol = new Volume(imgdata, loadSpec);
+    const vol = new Volume(imgdata, fullExtentLoadSpec);
     vol.imageMetadata = buildDefaultMetadata(imgdata);
     return vol;
   }
 
   async loadVolumeData(vol: Volume, onChannelLoaded: PerChannelCallback, explicitLoadSpec?: LoadSpec): Promise<void> {
-    const loadSpec = explicitLoadSpec || vol.loadSpec;
-    const { channels, times } = vol.imageInfo;
-
-    if (this.axesTCZYX === undefined || this.metadata === undefined || this.multiscaleDims === undefined) {
+    if (
+      this.axesTCZYX === undefined ||
+      this.metadata === undefined ||
+      this.multiscaleDims === undefined ||
+      this.maxExtent === undefined
+    ) {
       console.error("ERROR: called `loadVolumeData` on zarr loader without first opening with `createVolume`!");
       return;
     }
 
-    const imageIndex = imageIndexFromLoadSpec(loadSpec, this.metadata.multiscales);
+    const loadSpec = explicitLoadSpec || vol.loadSpec;
+    vol.loadSpec = loadSpec;
+    const normLoadSpec = fitLoadSpecRegionToExtent(loadSpec, this.maxExtent);
+    const { channels, times } = vol.imageInfo;
+
+    const imageIndex = imageIndexFromLoadSpec(normLoadSpec, this.metadata.multiscales);
     const multiscale = this.metadata.multiscales[imageIndex];
 
-    const levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, this.axesTCZYX);
-    const multiscalePath = multiscale.datasets[levelToLoad].path;
+    const levelToLoad = pickLevelToLoad(normLoadSpec, this.multiscaleDims, this.axesTCZYX);
+    const datasetPath = multiscale.datasets[levelToLoad].path;
+    const datasetShape = this.multiscaleDims[levelToLoad];
 
-    const storepath = loadSpec.subpath + "/" + multiscalePath;
+    const [zi, yi, xi] = this.axesTCZYX.slice(-3);
+    const pxSpec = convertLoadSpecRegionToPixels(normLoadSpec, datasetShape[xi], datasetShape[yi], datasetShape[zi]);
+    const tw = pxSpec.maxx - pxSpec.minx;
+    const th = pxSpec.maxy - pxSpec.miny;
+    const tz = pxSpec.maxz - pxSpec.minz;
+
+    const { nrows, ncols } = computePackedAtlasDims(tz, tw, th);
+
+    const storepath = normLoadSpec.subpath + "/" + datasetPath;
     // do each channel on a worker
     for (let i = 0; i < channels; ++i) {
       const worker = new Worker(new URL("../workers/FetchZarrWorker", import.meta.url));
@@ -360,7 +391,7 @@ class OMEZarrLoader implements IVolumeLoader {
         vol.setChannelDataFromVolume(channel, u8);
         if (onChannelLoaded) {
           // make up a unique name? or have caller pass this in?
-          onChannelLoaded(loadSpec.url + "/" + loadSpec.subpath, vol, channel);
+          onChannelLoaded(normLoadSpec.url + "/" + normLoadSpec.subpath, vol, channel);
         }
         worker.terminate();
       };
@@ -370,8 +401,8 @@ class OMEZarrLoader implements IVolumeLoader {
 
       const msg: FetchZarrMessage = {
         spec: {
-          ...loadSpec,
-          time: this.axesTCZYX[0] > -1 ? Math.min(loadSpec.time, times) : -1,
+          ...pxSpec,
+          time: this.axesTCZYX[0] > -1 ? Math.min(normLoadSpec.time, times) : -1,
         },
         channel: this.axesTCZYX[1] > -1 ? i : -1,
         path: storepath,
@@ -379,6 +410,22 @@ class OMEZarrLoader implements IVolumeLoader {
       };
       worker.postMessage(msg);
     }
+
+    // Update volume `imageInfo` to reflect potentially new dimensions
+    /* eslint-disable @typescript-eslint/naming-convention */
+    vol.imageInfo = {
+      ...vol.imageInfo,
+      rows: nrows,
+      cols: ncols,
+      tile_width: tw,
+      tile_height: th,
+      tiles: tz,
+      offset_x: pxSpec.minx,
+      offset_y: pxSpec.miny,
+      offset_z: pxSpec.minz,
+    };
+    // TODO induce some sort of uniforms update
+    /* eslint-enable @typescript-eslint/naming-convention */
   }
 }
 

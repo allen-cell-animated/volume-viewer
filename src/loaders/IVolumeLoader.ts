@@ -19,21 +19,62 @@ export class LoadSpec {
   }
 }
 
-/** Converts `LoadSpec` sub-region fields (`minx`, `maxy`, etc.) from 0-1 range to pixels */
-export function convertLoadSpecRegionToPixels(
-  loadSpec: LoadSpec,
+export type LoadSpecExtent = {
+  minx: number;
+  miny: number;
+  minz: number;
+  maxx: number;
+  maxy: number;
+  maxz: number;
+};
+
+/** Converts `LoadSpec` sub-region fields (`minx`, `maxy`, etc.) from [0, 1) range to pixels */
+export function convertLoadSpecRegionToPixels<T extends Partial<LoadSpecExtent>>(
+  loadSpec: T,
   sizex: number,
   sizey: number,
   sizez: number
-): Required<LoadSpec> {
+): T & LoadSpecExtent {
   const minx = loadSpec.minx ? Math.floor(sizex * loadSpec.minx) : 0;
-  const maxx = loadSpec.maxx ? Math.ceil(sizex * loadSpec.maxx) : sizex;
+  let maxx = loadSpec.maxx ? Math.ceil(sizex * loadSpec.maxx) : sizex;
   const miny = loadSpec.miny ? Math.floor(sizey * loadSpec.miny) : 0;
-  const maxy = loadSpec.maxy ? Math.ceil(sizey * loadSpec.maxy) : sizey;
+  let maxy = loadSpec.maxy ? Math.ceil(sizey * loadSpec.maxy) : sizey;
   const minz = loadSpec.minz ? Math.floor(sizez * loadSpec.minz) : 0;
-  const maxz = loadSpec.maxz ? Math.ceil(sizez * loadSpec.maxz) : sizez;
+  let maxz = loadSpec.maxz ? Math.ceil(sizez * loadSpec.maxz) : sizez;
+
+  // ensure it's always valid to specify the same number at both ends and get a single slice
+  if (minx === maxx && minx < sizex) {
+    maxx += 1;
+  }
+  if (miny === maxy && miny < sizey) {
+    maxy += 1;
+  }
+  if (minz === maxz && minz < sizez) {
+    maxz += 1;
+  }
 
   return { ...loadSpec, minx, maxx, miny, maxy, minz, maxz };
+}
+
+/** Shrinks a `LoadSpec` to fit within a provided extent */
+export function fitLoadSpecRegionToExtent<T extends Partial<LoadSpecExtent>>(
+  loadSpec: T,
+  extent: LoadSpecExtent
+): T & LoadSpecExtent {
+  const sizex = extent.maxx - extent.minx;
+  const sizey = extent.maxy - extent.miny;
+  const sizez = extent.maxz - extent.minz;
+  const { minx = 0, maxx = 1, miny = 0, maxy = 1, minz = 0, maxz = 1 } = loadSpec;
+
+  return {
+    ...loadSpec,
+    minx: minx * sizex + extent.minx,
+    maxx: maxx * sizex + extent.minx,
+    miny: miny * sizey + extent.miny,
+    maxy: maxy * sizey + extent.miny,
+    minz: minz * sizez + extent.minz,
+    maxz: maxz * sizez + extent.minz,
+  };
 }
 
 export class VolumeDims {
