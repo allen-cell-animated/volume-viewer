@@ -77,6 +77,12 @@ export function fitLoadSpecRegionToExtent<T extends Partial<LoadSpecExtent>>(
   };
 }
 
+export const getExtentSize = (extent: LoadSpecExtent): [number, number, number] => [
+  extent.maxx - extent.minx,
+  extent.maxy - extent.miny,
+  extent.maxz - extent.minz,
+];
+
 export class VolumeDims {
   subpath = "";
   // shape: [t, c, z, y, x]

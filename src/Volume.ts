@@ -241,6 +241,13 @@ export default class Volume {
     this.volumeDataObservers = [];
   }
 
+  updateDimensions() {
+    this.x = this.imageInfo.tile_width;
+    this.y = this.imageInfo.tile_height;
+    this.z = this.imageInfo.tiles;
+    this.setVoxelSize(this.pixel_size);
+  }
+
   // we calculate the physical size of the volume (voxels*pixel_size)
   // and then normalize to the max physical dimension
   setVoxelSize(values: number[]): void {

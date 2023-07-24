@@ -8,6 +8,7 @@ import {
   VolumeDims,
   convertLoadSpecRegionToPixels,
   fitLoadSpecRegionToExtent,
+  getExtentSize,
 } from "./IVolumeLoader";
 import {
   buildDefaultMetadata,
@@ -273,7 +274,7 @@ class OMEZarrLoader implements IVolumeLoader {
 
     const [t, c, z, y, x] = this.axesTCZYX;
     const levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
-    const multiscaleShape = this.multiscaleDims[levelToLoad];
+    const levelShape = this.multiscaleDims[levelToLoad];
 
     const shape0 = this.multiscaleDims[0];
     const hasT = t > -1;
@@ -286,18 +287,16 @@ class OMEZarrLoader implements IVolumeLoader {
     const timeUnitName = hasT ? multiscale.axes[t].unit : undefined;
     const timeUnitSymbol = unitNameToSymbol(timeUnitName) || timeUnitName || "";
 
-    const channels = hasC ? multiscaleShape[c] : 1;
-    const sizeT = hasT ? multiscaleShape[t] : 1;
+    const channels = hasC ? levelShape[c] : 1;
+    const sizeT = hasT ? levelShape[t] : 1;
 
     // we want scale of level 0
     const scale5d = getScale(multiscale.datasets[0]);
 
     const timeScale = hasT ? scale5d[t] : 1;
-    const multiscaleX = multiscaleShape[x];
-    const multiscaleY = multiscaleShape[y];
-    const multiscaleZ = multiscaleShape[z];
 
-    const pxSpec = convertLoadSpecRegionToPixels(loadSpec, multiscaleX, multiscaleY, multiscaleZ);
+    const pxSpec = convertLoadSpecRegionToPixels(loadSpec, levelShape[x], levelShape[y], levelShape[z]);
+    const spec0 = convertLoadSpecRegionToPixels(loadSpec, shape0[x], shape0[y], shape0[z]);
 
     const tw = pxSpec.maxx - pxSpec.minx;
     const th = pxSpec.maxy - pxSpec.miny;
@@ -317,8 +316,8 @@ class OMEZarrLoader implements IVolumeLoader {
 
     /* eslint-disable @typescript-eslint/naming-convention */
     const imgdata: ImageInfo = {
-      width: shape0[x],
-      height: shape0[y],
+      width: spec0.maxx - spec0.minx,
+      height: spec0.maxy - spec0.miny,
       channels: channels,
       channel_names: chnames,
       rows: nrows,
@@ -347,6 +346,8 @@ class OMEZarrLoader implements IVolumeLoader {
     };
     /* eslint-enable @typescript-eslint/naming-convention */
 
+    // The `LoadSpec` passed in at this stage should represent the subset which this loader loads, not that
+    // which the volume contains. The volume contains the full extent of the subset recognized by this loader.
     const fullExtentLoadSpec = { ...loadSpec, minx: 0, miny: 0, minz: 0, maxx: 1, maxy: 1, maxz: 1 };
 
     // got some data, now let's construct the volume.
@@ -355,7 +356,7 @@ class OMEZarrLoader implements IVolumeLoader {
     return vol;
   }
 
-  async loadVolumeData(vol: Volume, onChannelLoaded: PerChannelCallback, explicitLoadSpec?: LoadSpec): Promise<void> {
+  loadVolumeData(vol: Volume, onChannelLoaded: PerChannelCallback, explicitLoadSpec?: LoadSpec) {
     if (
       this.axesTCZYX === undefined ||
       this.metadata === undefined ||
@@ -366,9 +367,8 @@ class OMEZarrLoader implements IVolumeLoader {
       return;
     }
 
-    const loadSpec = explicitLoadSpec || vol.loadSpec;
-    vol.loadSpec = loadSpec;
-    const normLoadSpec = fitLoadSpecRegionToExtent(loadSpec, this.maxExtent);
+    vol.loadSpec = explicitLoadSpec || vol.loadSpec;
+    const normLoadSpec = fitLoadSpecRegionToExtent(vol.loadSpec, this.maxExtent);
     const { channels, times } = vol.imageInfo;
 
     const imageIndex = imageIndexFromLoadSpec(normLoadSpec, this.metadata.multiscales);
@@ -376,13 +376,11 @@ class OMEZarrLoader implements IVolumeLoader {
 
     const levelToLoad = pickLevelToLoad(normLoadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
     const datasetPath = multiscale.datasets[levelToLoad].path;
-    const datasetShape = this.multiscaleDims[levelToLoad];
+    const levelShape = this.multiscaleDims[levelToLoad];
 
     const [zi, yi, xi] = this.axesTCZYX.slice(-3);
-    const pxSpec = convertLoadSpecRegionToPixels(normLoadSpec, datasetShape[xi], datasetShape[yi], datasetShape[zi]);
-    const tw = pxSpec.maxx - pxSpec.minx;
-    const th = pxSpec.maxy - pxSpec.miny;
-    const tz = pxSpec.maxz - pxSpec.minz;
+    const pxSpec = convertLoadSpecRegionToPixels(normLoadSpec, levelShape[xi], levelShape[yi], levelShape[zi]);
+    const [tw, th, tz] = getExtentSize(pxSpec);
 
     const { nrows, ncols } = computePackedAtlasDims(tz, tw, th);
 
@@ -417,6 +415,9 @@ class OMEZarrLoader implements IVolumeLoader {
     }
 
     // Update volume `imageInfo` to reflect potentially new dimensions
+    const volsize = convertLoadSpecRegionToPixels(this.maxExtent, levelShape[xi], levelShape[yi], levelShape[zi]);
+    const [vx, vy, vz] = getExtentSize(volsize);
+    const offset = convertLoadSpecRegionToPixels(vol.loadSpec, vx, vy, vz);
     /* eslint-disable @typescript-eslint/naming-convention */
     vol.imageInfo = {
       ...vol.imageInfo,
@@ -425,12 +426,15 @@ class OMEZarrLoader implements IVolumeLoader {
       tile_width: tw,
       tile_height: th,
       tiles: tz,
-      offset_x: pxSpec.minx,
-      offset_y: pxSpec.miny,
-      offset_z: pxSpec.minz,
+      vol_size_x: vx,
+      vol_size_y: vy,
+      vol_size_z: vz,
+      offset_x: offset.minx,
+      offset_y: offset.miny,
+      offset_z: offset.minz,
     };
-    // TODO induce some sort of uniforms update
     /* eslint-enable @typescript-eslint/naming-convention */
+    vol.updateDimensions();
   }
 }
 
