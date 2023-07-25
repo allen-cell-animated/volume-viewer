@@ -163,6 +163,8 @@ export default class Volume {
   public channels: Channel[];
   private volumeDataObservers: VolumeDataObserver[];
   public scale: Vector3;
+  public contentSize: Vector3;
+  public contentOffset: Vector3;
   private physicalSize: Vector3;
   public physicalScale: number;
   public physicalUnitSymbol: string;
@@ -180,6 +182,8 @@ export default class Volume {
     // imageMetadata to be filled in by Volume Loaders
     this.imageMetadata = {};
     this.scale = new Vector3(1, 1, 1);
+    this.contentSize = new Vector3(1, 1, 1);
+    this.contentOffset = new Vector3(0, 0, 0);
     this.physicalSize = new Vector3(1, 1, 1);
     this.physicalScale = 1;
     this.normalizedPhysicalSize = new Vector3(1, 1, 1);
@@ -246,6 +250,22 @@ export default class Volume {
     this.y = this.imageInfo.tile_height;
     this.z = this.imageInfo.tiles;
     this.setVoxelSize(this.pixel_size);
+
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const {
+      tile_width,
+      tile_height,
+      tiles,
+      vol_size_x = tile_width,
+      vol_size_y = tile_height,
+      vol_size_z = tiles,
+      offset_x = 0,
+      offset_y = 0,
+      offset_z = 0,
+    } = this.imageInfo;
+    /* eslint-enable @typescript-eslint/naming-convention */
+    this.contentSize = new Vector3(tile_width / vol_size_x, tile_height / vol_size_y, tiles / vol_size_z);
+    this.contentOffset = new Vector3(offset_x / vol_size_x, offset_y / vol_size_y, offset_z / vol_size_z);
   }
 
   // we calculate the physical size of the volume (voxels*pixel_size)

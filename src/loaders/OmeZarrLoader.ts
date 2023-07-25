@@ -426,12 +426,13 @@ class OMEZarrLoader implements IVolumeLoader {
       tile_width: tw,
       tile_height: th,
       tiles: tz,
-      vol_size_x: vx,
-      vol_size_y: vy,
-      vol_size_z: vz,
       offset_x: offset.minx,
       offset_y: offset.miny,
       offset_z: offset.minz,
+      // scale level may have changed
+      vol_size_x: vx,
+      vol_size_y: vy,
+      vol_size_z: vz,
     };
     /* eslint-enable @typescript-eslint/naming-convention */
     vol.updateDimensions();

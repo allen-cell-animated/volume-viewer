@@ -217,12 +217,21 @@ export default class VolumeDrawable {
   }
 
   setScale(scale: Vector3): void {
-    if (this.settings.scale === scale) {
+    if (this.settings.scale.equals(scale)) {
       return;
     }
     this.settings.scale = scale;
     this.settings.currentScale = scale.clone();
     this.meshVolume.setScale(scale);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.TRANSFORM);
+  }
+
+  setContentPosition(size: Vector3, offset: Vector3): void {
+    if (this.settings.contentSize.equals(size) && this.settings.contentOffset.equals(offset)) {
+      return;
+    }
+    this.settings.contentSize = size;
+    this.settings.contentOffset = offset;
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.TRANSFORM);
   }
 

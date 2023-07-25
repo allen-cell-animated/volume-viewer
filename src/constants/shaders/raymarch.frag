@@ -221,7 +221,7 @@ vec4 integrateVolume(vec4 eye_o,vec4 eye_d,
     // scaling is handled by model transform and already accounted for before we get here.
     // AABB clip is independent of this and is only used to determine tnear and tfar.
     pos.xyz = (pos.xyz-(-0.5))/((0.5)-(-0.5)); //0.5 * (pos + 1.0); // map position from [boxMin, boxMax] to [0, 1] coordinates
-    pos.xyz = (pos.xyz - SUBSET_OFFSET) / SUBSET_SCALE;
+    // pos.xyz = (pos.xyz - SUBSET_OFFSET) / SUBSET_SCALE;
 
     vec4 col = interpolationEnabled ? sampleAtlasLinear(textureAtlas, pos) : sampleAtlasNearest(textureAtlas, pos);
 

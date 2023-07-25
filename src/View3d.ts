@@ -218,6 +218,8 @@ export class View3d {
 
   // channels is an array of channel indices for which new data just arrived.
   onVolumeData(volume: Volume, channels: number[]): void {
+    this.image?.setScale(volume.scale);
+    this.image?.setContentPosition(volume.contentSize, volume.contentOffset);
     this.image?.onChannelLoaded(channels);
     if (volume.isLoaded()) {
       this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
