@@ -6,7 +6,7 @@ import { Bounds } from "./types";
  * Marks groups of related settings that may have changed.
  */
 export enum SettingsFlags {
-  /** parameters: translation, rotation, scale, currentScale, contentSize, contentOffset, flipAxes */
+  /** parameters: translation, rotation, scale, contentSize, contentOffset, flipAxes */
   TRANSFORM = 0b00000001,
   /** parameters: gammaMin, gammaLevel, gammaMax, brightness*/
   CAMERA = 0b00000010,
@@ -45,7 +45,6 @@ export class VolumeRenderSettings {
   public scale: Vector3;
   public contentSize: Vector3;
   public contentOffset: Vector3;
-  public currentScale: Vector3;
   public flipAxes: Vector3;
 
   // VIEW
@@ -95,7 +94,6 @@ export class VolumeRenderSettings {
     this.scale = new Vector3(1, 1, 1);
     this.contentSize = new Vector3(1, 1, 1);
     this.contentOffset = new Vector3(0, 0, 0);
-    this.currentScale = new Vector3(1, 1, 1);
     this.isOrtho = false;
     this.viewAxis = Axis.NONE;
     this.orthoScale = 1.0;

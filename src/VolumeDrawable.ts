@@ -221,7 +221,6 @@ export default class VolumeDrawable {
       return;
     }
     this.settings.scale = scale;
-    this.settings.currentScale = scale.clone();
     this.meshVolume.setScale(scale);
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.TRANSFORM);
   }
