@@ -186,9 +186,11 @@ function pickLevelToLoad(
   const zSize = maxz - minz;
   const [zi, yi, xi] = dimIndexes.slice(-3);
 
-  const spatialDims = multiscaleDims.map((shape) => {
-    return [shape[zi] * zSize, shape[yi] * ySize, shape[xi] * xSize];
-  });
+  const spatialDims = multiscaleDims.map((shape) => [
+    Math.max(shape[zi] * zSize, 1),
+    Math.max(shape[yi] * ySize, 1),
+    Math.max(shape[xi] * xSize, 1),
+  ]);
   const optimalLevel = estimateLevelForAtlas(spatialDims, MAX_ATLAS_DIMENSION);
   // assume all levels are decreasing in size.  If a larger level is optimal then use it:
   if (optimalLevel < levelToLoad) {

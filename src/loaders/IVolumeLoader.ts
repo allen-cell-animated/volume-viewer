@@ -35,12 +35,12 @@ export function convertLoadSpecRegionToPixels<T extends Partial<LoadSpecExtent>>
   sizey: number,
   sizez: number
 ): T & LoadSpecExtent {
-  const minx = loadSpec.minx ? Math.floor(sizex * loadSpec.minx) : 0;
-  let maxx = loadSpec.maxx ? Math.ceil(sizex * loadSpec.maxx) : sizex;
-  const miny = loadSpec.miny ? Math.floor(sizey * loadSpec.miny) : 0;
-  let maxy = loadSpec.maxy ? Math.ceil(sizey * loadSpec.maxy) : sizey;
-  const minz = loadSpec.minz ? Math.floor(sizez * loadSpec.minz) : 0;
-  let maxz = loadSpec.maxz ? Math.ceil(sizez * loadSpec.maxz) : sizez;
+  const minx = loadSpec.minx !== undefined ? Math.floor(sizex * loadSpec.minx) : 0;
+  let maxx = loadSpec.maxx !== undefined ? Math.ceil(sizex * loadSpec.maxx) : sizex;
+  const miny = loadSpec.miny !== undefined ? Math.floor(sizey * loadSpec.miny) : 0;
+  let maxy = loadSpec.maxy !== undefined ? Math.ceil(sizey * loadSpec.maxy) : sizey;
+  const minz = loadSpec.minz !== undefined ? Math.floor(sizez * loadSpec.minz) : 0;
+  let maxz = loadSpec.maxz !== undefined ? Math.ceil(sizez * loadSpec.maxz) : sizez;
 
   // ensure it's always valid to specify the same number at both ends and get a single slice
   if (minx === maxx && minx < sizex) {
