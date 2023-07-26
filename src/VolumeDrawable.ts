@@ -216,22 +216,20 @@ export default class VolumeDrawable {
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.SAMPLING);
   }
 
-  setScale(scale: Vector3): void {
-    if (this.settings.scale.equals(scale)) {
+  setScale(scale: Vector3, size = this.settings.contentSize, offset = this.settings.contentOffset): void {
+    if (
+      this.settings.scale.equals(scale) &&
+      this.settings.contentSize.equals(size) &&
+      this.settings.contentOffset.equals(offset)
+    ) {
       return;
     }
     this.settings.scale = scale;
-    this.meshVolume.setScale(scale);
-    this.volumeRendering.updateSettings(this.settings, SettingsFlags.TRANSFORM);
-  }
-
-  setContentPosition(size: Vector3, offset: Vector3): void {
-    if (this.settings.contentSize.equals(size) && this.settings.contentOffset.equals(offset)) {
-      return;
-    }
     this.settings.contentSize = size;
     this.settings.contentOffset = offset;
-    this.volumeRendering.updateSettings(this.settings, SettingsFlags.TRANSFORM);
+    this.meshVolume.setScale(scale);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.DATA_SIZE);
+    this.fuse();
   }
 
   setOrthoScale(value: number): void {

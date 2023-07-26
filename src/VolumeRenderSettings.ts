@@ -6,23 +6,25 @@ import { Bounds } from "./types";
  * Marks groups of related settings that may have changed.
  */
 export enum SettingsFlags {
-  /** parameters: translation, rotation, scale, contentSize, contentOffset, flipAxes */
-  TRANSFORM = 0b00000001,
+  /** parameters: translation, rotation, flipAxes */
+  TRANSFORM = 0b000000001,
   /** parameters: gammaMin, gammaLevel, gammaMax, brightness*/
-  CAMERA = 0b00000010,
+  CAMERA = 0b000000010,
   /** parameters: showBoundingBox, boundingBoxColor */
-  BOUNDING_BOX = 0b00000100,
+  BOUNDING_BOX = 0b000000100,
   /** parameters: bounds, zSlice */
-  ROI = 0b00001000,
+  ROI = 0b000001000,
   /** parameters: maskChannelIndex, maskAlpha */
-  MASK = 0b00010000,
+  MASK = 0b000010000,
   /** parameters: density, specular, emissive, glossiness */
-  MATERIAL = 0b00100000,
+  MATERIAL = 0b000100000,
   /** parameters: resolution, useInterpolation, pixelSamplingRate, primaryRayStepSize, secondaryRayStepSize*/
-  SAMPLING = 0b01000000,
+  SAMPLING = 0b001000000,
   /** parameters: isOrtho, orthoScale, viewAxis, visible, maxProjectMode */
-  VIEW = 0b10000000,
-  ALL = 0b11111111,
+  VIEW = 0b010000000,
+  /** parameters: scale, contentSize, contentOffset */
+  DATA_SIZE = 0b100000000,
+  ALL = 0b111111111,
 }
 
 export enum Axis {

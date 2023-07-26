@@ -43,7 +43,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   private tickMarksMesh: LineSegments;
   private geometryTransformNode: Group;
   private uniforms: ReturnType<typeof rayMarchingShaderUniforms>;
-  private channelData: FusedChannelData;
+  private channelData!: FusedChannelData;
 
   /**
    * Creates a new RayMarchedAtlasVolume.
@@ -73,8 +73,13 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
 
+    this.initChannelData();
+    this.updateSettings(settings, SettingsFlags.ALL);
+  }
+
+  private initChannelData() {
     /* eslint-disable-next-line @typescript-eslint/naming-convention */
-    const { cols, rows, tile_width, tile_height } = volume.imageInfo;
+    const { cols, rows, tile_width, tile_height } = this.volume.imageInfo;
     const atlasWidth = tile_width * cols;
     const atlasHeight = tile_height * rows;
 
@@ -82,10 +87,12 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.setUniform("ATLAS_Y", rows);
 
     this.setUniform("textureRes", new Vector2(atlasWidth, atlasHeight));
-    this.setUniform("SLICES", volume.z);
+    this.setUniform("SLICES", this.volume.z);
 
-    this.channelData = new FusedChannelData(atlasWidth, atlasHeight);
-    this.updateSettings(settings, SettingsFlags.ALL);
+    if (!this.channelData || this.channelData.width !== atlasWidth || this.channelData.height !== atlasHeight) {
+      this.channelData?.cleanup();
+      this.channelData = new FusedChannelData(atlasWidth, atlasHeight);
+    }
   }
 
   public viewpointMoved(): void {
@@ -133,20 +140,24 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     }
 
     if (dirtyFlags & SettingsFlags.TRANSFORM) {
-      // Set scale
-      const { scale, contentSize, contentOffset } = this.settings;
-      this.geometryMesh.scale.copy(contentSize).multiply(scale);
-      this.geometryMesh.position.copy(contentSize).divideScalar(2).add(contentOffset).subScalar(0.5).multiply(scale);
-      this.setUniform("volumeScale", scale);
-      this.boxHelper.box.set(
-        new Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z),
-        new Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z)
-      );
-      this.tickMarksMesh.scale.copy(scale);
       // Set rotation and translation
       this.geometryTransformNode.position.copy(this.settings.translation);
       this.geometryTransformNode.rotation.copy(this.settings.rotation);
       this.setUniform("flipVolume", this.settings.flipAxes);
+    }
+
+    if (dirtyFlags & SettingsFlags.DATA_SIZE) {
+      const { scale, contentSize, contentOffset } = this.settings;
+      // Set offset
+      this.geometryMesh.position.copy(contentSize).divideScalar(2).add(contentOffset).subScalar(0.5).multiply(scale);
+      // Set scale
+      this.geometryMesh.scale.copy(contentSize).multiply(scale);
+      this.setUniform("volumeScale", scale);
+      this.boxHelper.box.set(scale.clone().multiplyScalar(-0.5), scale.clone().multiplyScalar(0.5));
+      this.tickMarksMesh = this.createTickMarks();
+      this.tickMarksMesh.scale.copy(scale);
+      // Reset uniforms and channel data
+      this.initChannelData();
     }
 
     if (dirtyFlags & SettingsFlags.MATERIAL) {
@@ -166,8 +177,8 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       // Normalize and set bounds
       const bounds = this.settings.bounds;
       const boundsNormalized = {
-        bmin: new Vector3(bounds.bmin.x * 2.0, bounds.bmin.y * 2.0, bounds.bmin.z * 2.0),
-        bmax: new Vector3(bounds.bmax.x * 2.0, bounds.bmax.y * 2.0, bounds.bmax.z * 2.0),
+        bmin: bounds.bmin.clone().multiplyScalar(2),
+        bmax: bounds.bmax.clone().multiplyScalar(2),
       };
       this.setUniform("AABB_CLIP_MIN", boundsNormalized.bmin);
       this.setUniform("AABB_CLIP_MAX", boundsNormalized.bmax);
@@ -179,7 +190,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     }
 
     if (dirtyFlags & SettingsFlags.MASK) {
-      this.setUniform("maskAlpha", this.settings.maskAlpha);
       this.setUniform("maskAlpha", this.settings.maskAlpha);
     }
   }

@@ -27,8 +27,8 @@ import { FuseChannel } from "./types";
 // This is the owner of the fused RGBA volume texture atlas, and the mask texture atlas.
 // This module is responsible for updating the fused texture, given the read-only volume channel data.
 export default class FusedChannelData {
-  private width: number;
-  private height: number;
+  public width: number;
+  public height: number;
 
   public maskTexture: DataTexture;
 
