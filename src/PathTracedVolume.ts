@@ -314,7 +314,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       1.0 / physicalSize.x,
       1.0 / physicalSize.y,
       1.0 / physicalSize.z
-    );
+    ).divide(volume.contentSize);
     this.updateLightsSecondary();
 
     // Update settings
@@ -376,16 +376,24 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
     // update bounds
     if (dirtyFlags & SettingsFlags.ROI) {
-      const physicalSize = this.volume.normalizedPhysicalSize;
-      this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
-        this.settings.bounds.bmin.x * physicalSize.x,
-        this.settings.bounds.bmin.y * physicalSize.y,
-        this.settings.bounds.bmin.z * physicalSize.z
-      );
+      const { normalizedPhysicalSize: physicalSize, contentSize, contentOffset } = this.volume;
+      const { bmin, bmax } = this.settings.bounds;
+      // this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
+      //   bmin.x * physicalSize.x,
+      //   bmin.y * physicalSize.y,
+      //   bmin.z * physicalSize.z
+      // );
+      const clipMin = bmin.clone().multiply(physicalSize);
+      const boundsMin = contentOffset.clone().subScalar(0.5).multiply(physicalSize);
+      console.log(clipMin, boundsMin);
+      this.pathTracingUniforms.gClippedAaBbMin.value = clipMin.max(boundsMin);
+
+      const clipMax = bmax.clone().multiply(physicalSize);
+      const boundsMax = contentOffset.clone().add(contentSize).subScalar(0.5).multiply(physicalSize);
       this.pathTracingUniforms.gClippedAaBbMax.value = new Vector3(
-        this.settings.bounds.bmax.x * physicalSize.x,
-        this.settings.bounds.bmax.y * physicalSize.y,
-        this.settings.bounds.bmax.z * physicalSize.z
+        bmax.x * physicalSize.x,
+        bmax.y * physicalSize.y,
+        bmax.z * physicalSize.z
       );
     }
 
