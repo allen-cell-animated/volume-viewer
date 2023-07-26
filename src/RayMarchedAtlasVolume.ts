@@ -154,7 +154,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       this.geometryMesh.scale.copy(contentSize).multiply(scale);
       this.setUniform("volumeScale", scale);
       this.boxHelper.box.set(scale.clone().multiplyScalar(-0.5), scale.clone().multiplyScalar(0.5));
-      this.tickMarksMesh = this.createTickMarks();
+      // TODO do tickmarks need to be regenerated here to remain accurate?
       this.tickMarksMesh.scale.copy(scale);
       // Reset uniforms and channel data
       this.initChannelData();
