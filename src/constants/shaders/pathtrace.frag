@@ -58,6 +58,7 @@ uniform Light gLights[2];
 
 uniform vec3 gClippedAaBbMin;
 uniform vec3 gClippedAaBbMax;
+uniform vec3 gVolCenter;
 uniform float gDensityScale;
 uniform float gStepSize;
 uniform float gStepSizeShadow;
@@ -258,7 +259,7 @@ bool IntersectBox(in Ray R, out float pNearT, out float pFarT)
 // transform p to range from 0,0,0 to 1,1,1 for volume texture sampling.
 // optionally invert axes
 vec3 PtoVolumeTex(vec3 p) {
-  vec3 uvw = p*gInvAaBbMax + vec3(0.5, 0.5, 0.5);
+  vec3 uvw = (p - gVolCenter) * gInvAaBbMax + vec3(0.5, 0.5, 0.5);
   // if flipVolume = 1, uvw is unchanged.
   // if flipVolume = -1, uvw = 1 - uvw
   uvw = (flipVolume*(uvw - 0.5) + 0.5);
