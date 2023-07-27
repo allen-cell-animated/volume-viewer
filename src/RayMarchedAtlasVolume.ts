@@ -176,12 +176,9 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     if (dirtyFlags & SettingsFlags.ROI) {
       // Normalize and set bounds
       const bounds = this.settings.bounds;
-      const boundsNormalized = {
-        bmin: bounds.bmin.clone().multiplyScalar(2),
-        bmax: bounds.bmax.clone().multiplyScalar(2),
-      };
-      this.setUniform("AABB_CLIP_MIN", boundsNormalized.bmin);
-      this.setUniform("AABB_CLIP_MAX", boundsNormalized.bmax);
+      const { contentSize } = this.volume;
+      this.setUniform("AABB_CLIP_MIN", bounds.bmin.clone().sub(this.volume.getCenter()).divide(contentSize));
+      this.setUniform("AABB_CLIP_MAX", bounds.bmax.clone().sub(this.volume.getCenter()).divide(contentSize));
     }
 
     if (dirtyFlags & SettingsFlags.SAMPLING) {
