@@ -147,12 +147,9 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     if (dirtyFlags & SettingsFlags.ROI) {
       // Normalize and set bounds
       const bounds = this.settings.bounds;
-      const boundsNormalized = {
-        bmin: new Vector3(bounds.bmin.x * 2.0, bounds.bmin.y * 2.0, bounds.bmin.z * 2.0),
-        bmax: new Vector3(bounds.bmax.x * 2.0, bounds.bmax.y * 2.0, bounds.bmax.z * 2.0),
-      };
-      this.setUniform("AABB_CLIP_MIN", boundsNormalized.bmin);
-      this.setUniform("AABB_CLIP_MAX", boundsNormalized.bmax);
+
+      this.setUniform("AABB_CLIP_MIN", bounds.bmin);
+      this.setUniform("AABB_CLIP_MAX", bounds.bmax);
       const slice = Math.floor(this.settings.zSlice);
       if (slice >= 0 && slice <= this.volume.z - 1) {
         this.setUniform("Z_SLICE", slice);
