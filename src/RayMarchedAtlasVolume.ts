@@ -147,9 +147,9 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     }
 
     if (dirtyFlags & SettingsFlags.DATA_SIZE) {
-      const { scale, contentSize, contentOffset } = this.settings;
+      const { scale, contentSize } = this.settings;
       // Set offset
-      this.geometryMesh.position.copy(contentSize).divideScalar(2).add(contentOffset).subScalar(0.5).multiply(scale);
+      this.geometryMesh.position.copy(this.volume.getCenter());
       // Set scale
       this.geometryMesh.scale.copy(contentSize).multiply(scale);
       this.setUniform("volumeScale", scale);

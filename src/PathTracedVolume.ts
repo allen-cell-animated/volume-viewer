@@ -387,8 +387,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       const boundsMax = contentOffset.clone().add(contentSize).subScalar(0.5).multiply(physicalSize);
       this.pathTracingUniforms.gClippedAaBbMax.value = clipMax.min(boundsMax);
 
-      const volCenter = contentSize.clone().divideScalar(2).add(contentOffset).subScalar(0.5).multiply(physicalSize);
-      this.pathTracingUniforms.gVolCenter.value = volCenter;
+      this.pathTracingUniforms.gVolCenter.value = this.volume.getCenter();
     }
 
     if (dirtyFlags & SettingsFlags.CAMERA) {

@@ -316,6 +316,11 @@ export default class Volume {
     this.physicalUnitSymbol = symbol;
   }
 
+  /** Computes the center of the volume subset */
+  getCenter(): Vector3 {
+    return this.contentSize.clone().divideScalar(2).add(this.contentOffset).subScalar(0.5).multiply(this.scale);
+  }
+
   cleanup(): void {
     // no op
   }
