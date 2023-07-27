@@ -149,7 +149,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     if (dirtyFlags & SettingsFlags.DATA_SIZE) {
       const { scale, contentSize } = this.settings;
       // Set offset
-      this.geometryMesh.position.copy(this.volume.getCenter());
+      this.geometryMesh.position.copy(this.volume.getContentCenter());
       // Set scale
       this.geometryMesh.scale.copy(contentSize).multiply(scale);
       this.setUniform("volumeScale", scale);
@@ -177,8 +177,8 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       // Normalize and set bounds
       const bounds = this.settings.bounds;
       const { contentSize } = this.volume;
-      this.setUniform("AABB_CLIP_MIN", bounds.bmin.clone().sub(this.volume.getCenter()).divide(contentSize));
-      this.setUniform("AABB_CLIP_MAX", bounds.bmax.clone().sub(this.volume.getCenter()).divide(contentSize));
+      this.setUniform("AABB_CLIP_MIN", bounds.bmin.clone().sub(this.volume.getContentCenter()).divide(contentSize));
+      this.setUniform("AABB_CLIP_MAX", bounds.bmax.clone().sub(this.volume.getContentCenter()).divide(contentSize));
     }
 
     if (dirtyFlags & SettingsFlags.SAMPLING) {

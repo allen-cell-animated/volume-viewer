@@ -227,7 +227,7 @@ export default class VolumeDrawable {
     this.settings.scale = scale;
     this.settings.contentSize = size;
     this.settings.contentOffset = offset;
-    this.meshVolume.setScale(scale.clone().multiply(size), this.volume.getCenter());
+    this.meshVolume.setScale(scale.clone().multiply(size), this.volume.getContentCenter());
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.DATA_SIZE);
     this.fuse();
   }

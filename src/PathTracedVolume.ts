@@ -388,7 +388,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       const clipMax = bmax.clone().multiply(physicalSize);
       this.pathTracingUniforms.gClippedAaBbMax.value = clipMax.clamp(sizeMin, sizeMax);
 
-      this.pathTracingUniforms.gVolCenter.value = this.volume.getCenter();
+      this.pathTracingUniforms.gVolCenter.value = this.volume.getContentCenter();
     }
 
     if (dirtyFlags & SettingsFlags.CAMERA) {
