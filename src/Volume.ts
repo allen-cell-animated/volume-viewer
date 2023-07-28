@@ -287,9 +287,9 @@ export default class Volume {
       this.pixel_size[2] = values[2];
     }
 
-    const physSizeMin = Math.min(this.pixel_size[0], this.pixel_size[1], this.pixel_size[2]);
-    const pixelsMax = Math.max(this.imageInfo.width, this.imageInfo.height, this.z);
     const sizez = this.imageInfo.vol_size_z || this.z;
+    const physSizeMin = Math.min(this.pixel_size[0], this.pixel_size[1], this.pixel_size[2]);
+    const pixelsMax = Math.max(this.imageInfo.width, this.imageInfo.height, sizez);
     const sx = ((this.pixel_size[0] / physSizeMin) * this.imageInfo.width) / pixelsMax;
     const sy = ((this.pixel_size[1] / physSizeMin) * this.imageInfo.height) / pixelsMax;
     const sz = ((this.pixel_size[2] / physSizeMin) * sizez) / pixelsMax;
@@ -299,7 +299,7 @@ export default class Volume {
     this.physicalSize = new Vector3(
       this.imageInfo.width * this.pixel_size[0],
       this.imageInfo.height * this.pixel_size[1],
-      this.z * this.pixel_size[2]
+      sizez * this.pixel_size[2]
     );
     // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
     this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z);
@@ -311,7 +311,6 @@ export default class Volume {
 
     // sx, sy, sz should be same as normalizedPhysicalSize
     this.scale = new Vector3(sx, sy, sz);
-    console.log(this.scale, this.physicalSize);
   }
 
   setUnitSymbol(symbol: string): void {

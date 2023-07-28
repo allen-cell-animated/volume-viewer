@@ -723,7 +723,8 @@ export default class VolumeDrawable {
   }
 
   setZSlice(slice: number): boolean {
-    if (this.settings.zSlice !== slice && slice < this.volume.z && slice > 0) {
+    const sizez = this.volume.imageInfo.vol_size_z || this.volume.z;
+    if (this.settings.zSlice !== slice && slice < sizez && slice > 0) {
       this.settings.zSlice = slice;
       this.volumeRendering.updateSettings(this.settings, SettingsFlags.ROI);
       return true;
