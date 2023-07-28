@@ -599,7 +599,7 @@ function updateZSliceUI(volume: Volume) {
   const zSlider = document.getElementById("zSlider") as HTMLInputElement;
   const zInput = document.getElementById("zValue") as HTMLInputElement;
 
-  const totalZSlices = volume.z;
+  const totalZSlices = volume.imageInfo.vol_size_z || volume.z;
   zSlider.max = `${totalZSlices}`;
   zInput.max = `${totalZSlices}`;
 }
