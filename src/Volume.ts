@@ -289,9 +289,10 @@ export default class Volume {
 
     const physSizeMin = Math.min(this.pixel_size[0], this.pixel_size[1], this.pixel_size[2]);
     const pixelsMax = Math.max(this.imageInfo.width, this.imageInfo.height, this.z);
+    const sizez = this.imageInfo.vol_size_z || this.z;
     const sx = ((this.pixel_size[0] / physSizeMin) * this.imageInfo.width) / pixelsMax;
     const sy = ((this.pixel_size[1] / physSizeMin) * this.imageInfo.height) / pixelsMax;
-    const sz = ((this.pixel_size[2] / physSizeMin) * this.z) / pixelsMax;
+    const sz = ((this.pixel_size[2] / physSizeMin) * sizez) / pixelsMax;
 
     // this works because image was scaled down in x and y but not z.
     // so use original x and y dimensions from imageInfo.
@@ -310,6 +311,7 @@ export default class Volume {
 
     // sx, sy, sz should be same as normalizedPhysicalSize
     this.scale = new Vector3(sx, sy, sz);
+    console.log(this.scale, this.physicalSize);
   }
 
   setUnitSymbol(symbol: string): void {
