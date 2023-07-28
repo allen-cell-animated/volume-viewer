@@ -180,6 +180,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       const offsetToCenter = contentSize.clone().divideScalar(2).add(contentOffset).subScalar(0.5);
       const bmin = bounds.bmin.clone().sub(offsetToCenter).divide(contentSize).clampScalar(-0.5, 0.5);
       const bmax = bounds.bmax.clone().sub(offsetToCenter).divide(contentSize).clampScalar(-0.5, 0.5);
+
       this.setUniform("AABB_CLIP_MIN", bmin);
       this.setUniform("AABB_CLIP_MAX", bmax);
     }

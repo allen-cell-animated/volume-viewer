@@ -60,7 +60,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
 
     this.geometryTransformNode.add(this.boxHelper, this.geometryMesh);
 
-    this.setUniform("Z_SLICE", Math.floor(volume.z / 2));
+    this.setUniform("Z_SLICE", Math.floor((volume.imageInfo.vol_size_z || volume.z) / 2));
     this.initChannelData();
     this.updateSettings(settings, SettingsFlags.ALL);
   }
@@ -74,7 +74,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.setUniform("ATLAS_X", cols);
     this.setUniform("ATLAS_Y", rows);
     this.setUniform("textureRes", new Vector2(atlasWidth, atlasHeight));
-    this.setUniform("SLICES", this.volume.z);
+    this.setUniform("SLICES", this.volume.imageInfo.vol_size_z || this.volume.z);
     this.setUniform("SUBSET_SCALE", this.volume.contentSize);
     this.setUniform("SUBSET_OFFSET", this.volume.contentOffset);
 
@@ -151,7 +151,8 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
       this.setUniform("AABB_CLIP_MIN", bounds.bmin);
       this.setUniform("AABB_CLIP_MAX", bounds.bmax);
       const slice = Math.floor(this.settings.zSlice);
-      if (slice >= 0 && slice <= this.volume.z - 1) {
+      const sizez = this.volume.imageInfo.vol_size_z || this.volume.z;
+      if (slice >= 0 && slice <= sizez - 1) {
         this.setUniform("Z_SLICE", slice);
       }
     }
