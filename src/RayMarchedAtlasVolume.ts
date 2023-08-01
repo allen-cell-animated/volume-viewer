@@ -183,15 +183,18 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   }
 
   public updateVolumeDimensions(): void {
-    const { scale, contentSize } = this.volume;
+    const { normalizedPhysicalSize, contentSize } = this.volume;
     // Set offset
     this.geometryMesh.position.copy(this.volume.getContentCenter());
     // Set scale
-    this.geometryMesh.scale.copy(contentSize).multiply(scale);
-    this.setUniform("volumeScale", scale);
-    this.boxHelper.box.set(scale.clone().multiplyScalar(-0.5), scale.clone().multiplyScalar(0.5));
+    this.geometryMesh.scale.copy(contentSize).multiply(normalizedPhysicalSize);
+    this.setUniform("volumeScale", normalizedPhysicalSize);
+    this.boxHelper.box.set(
+      normalizedPhysicalSize.clone().multiplyScalar(-0.5),
+      normalizedPhysicalSize.clone().multiplyScalar(0.5)
+    );
     // TODO do tickmarks need to be regenerated here to remain accurate?
-    this.tickMarksMesh.scale.copy(scale);
+    this.tickMarksMesh.scale.copy(normalizedPhysicalSize);
     this.settings && this.updateSettings(this.settings, SettingsFlags.ROI);
     // Reset uniforms and channel data
     this.initChannelData();

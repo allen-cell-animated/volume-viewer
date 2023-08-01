@@ -162,7 +162,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
   }
 
   public updateVolumeDimensions(): void {
-    const scale = this.volume.scale;
+    const scale = this.volume.normalizedPhysicalSize;
     this.geometryMesh.scale.copy(scale);
     this.setUniform("volumeScale", scale);
     this.boxHelper.box.set(scale.clone().multiplyScalar(-0.5), scale.clone().multiplyScalar(0.5));
