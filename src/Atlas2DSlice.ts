@@ -28,7 +28,7 @@ const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
  * Creates a plane that renders a 2D XY slice of volume atlas data.
  */
 export default class Atlas2DSlice implements VolumeRenderImpl {
-  private settings: VolumeRenderSettings | undefined;
+  private settings: VolumeRenderSettings;
   public volume: Volume;
   private geometry: ShapeGeometry;
   protected geometryMesh: Mesh<BufferGeometry, Material>;
@@ -62,6 +62,8 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
 
     this.setUniform("Z_SLICE", Math.floor((volume.imageInfo.vol_size_z || volume.z) / 2));
     this.initChannelData();
+    this.updateVolumeDimensions();
+    this.settings = settings;
     this.updateSettings(settings, SettingsFlags.ALL);
   }
 
@@ -123,15 +125,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
       this.setUniform("flipVolume", this.settings.flipAxes);
     }
 
-    if (dirtyFlags & SettingsFlags.DATA_SIZE) {
-      // Set scale
-      const scale = this.settings.scale;
-      this.geometryMesh.scale.copy(scale);
-      this.setUniform("volumeScale", scale);
-      this.boxHelper.box.set(scale.clone().multiplyScalar(-0.5), scale.clone().multiplyScalar(0.5));
-      this.initChannelData();
-    }
-
     if (dirtyFlags & SettingsFlags.MATERIAL) {
       this.setUniform("DENSITY", this.settings.density);
     }
@@ -166,6 +159,14 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
       this.setUniform("maskAlpha", this.settings.maskAlpha);
       this.setUniform("maskAlpha", this.settings.maskAlpha);
     }
+  }
+
+  public updateVolumeDimensions(): void {
+    const scale = this.volume.scale;
+    this.geometryMesh.scale.copy(scale);
+    this.setUniform("volumeScale", scale);
+    this.boxHelper.box.set(scale.clone().multiplyScalar(-0.5), scale.clone().multiplyScalar(0.5));
+    this.initChannelData();
   }
 
   private createGeometry(

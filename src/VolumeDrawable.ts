@@ -97,7 +97,7 @@ export default class VolumeDrawable {
 
     this.sceneRoot.position.set(0, 0, 0);
 
-    this.setScale(this.volume.scale);
+    this.updateScale();
 
     // apply the volume's default transformation
     this.settings.translation = new Vector3().fromArray(this.volume.getTranslation());
@@ -124,9 +124,6 @@ export default class VolumeDrawable {
       this.setAxisClip(Axis.X, options.clipBounds[0], options.clipBounds[1]);
       this.setAxisClip(Axis.Y, options.clipBounds[2], options.clipBounds[3]);
       this.setAxisClip(Axis.Z, options.clipBounds[4], options.clipBounds[5]);
-    }
-    if (options.scale !== undefined) {
-      this.setScale(new Vector3().fromArray(options.scale));
     }
     if (options.translation !== undefined) {
       this.setTranslation(new Vector3().fromArray(options.translation));
@@ -216,20 +213,10 @@ export default class VolumeDrawable {
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.SAMPLING);
   }
 
-  setScale(scale: Vector3, size = this.settings.contentSize, offset = this.settings.contentOffset): void {
-    if (
-      this.settings.scale.equals(scale) &&
-      this.settings.contentSize.equals(size) &&
-      this.settings.contentOffset.equals(offset)
-    ) {
-      return;
-    }
-    this.settings.scale = scale;
-    this.settings.contentSize = size;
-    this.settings.contentOffset = offset;
-    this.meshVolume.setScale(scale.clone().multiply(size), this.volume.getContentCenter());
-    this.volumeRendering.updateSettings(this.settings, SettingsFlags.DATA_SIZE | SettingsFlags.ROI);
-    this.fuse();
+  updateScale(): void {
+    const { scale, contentSize } = this.volume;
+    this.meshVolume.setScale(scale.clone().multiply(contentSize), this.volume.getContentCenter());
+    this.volumeRendering.updateVolumeDimensions();
   }
 
   setOrthoScale(value: number): void {
@@ -444,7 +431,7 @@ export default class VolumeDrawable {
 
   setVoxelSize(values: number[]): void {
     this.volume.setVoxelSize(values);
-    this.setScale(this.volume.scale);
+    this.updateScale();
   }
 
   cleanup(): void {

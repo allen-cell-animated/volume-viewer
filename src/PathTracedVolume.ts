@@ -375,7 +375,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     }
 
     // update bounds
-    if (dirtyFlags & SettingsFlags.ROI || dirtyFlags & SettingsFlags.DATA_SIZE) {
+    if (dirtyFlags & SettingsFlags.ROI) {
       const { normalizedPhysicalSize: physicalSize, contentSize, contentOffset } = this.volume;
       const { bmin, bmax } = this.settings.bounds;
 
@@ -411,6 +411,10 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     }
 
     this.resetProgress();
+  }
+
+  public updateVolumeDimensions(): void {
+    this.updateSettings(this.settings, SettingsFlags.ROI);
   }
 
   public doRender(canvas: ThreeJsPanel): void {

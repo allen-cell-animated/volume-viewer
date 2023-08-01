@@ -17,6 +17,7 @@ export interface VolumeRenderImpl {
 
   get3dObject: () => Object3D;
   doRender: (_canvas: ThreeJsPanel) => void;
+  updateVolumeDimensions: () => void;
   cleanup: () => void;
   viewpointMoved: () => void;
   setRenderUpdateListener: (_listener?: (iteration: number) => void) => void;

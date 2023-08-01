@@ -34,7 +34,7 @@ import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings";
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
 export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
-  private settings: VolumeRenderSettings | undefined;
+  private settings: VolumeRenderSettings;
   public volume: Volume;
 
   private geometry: ShapeGeometry;
@@ -74,6 +74,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
 
     this.initChannelData();
+    this.settings = settings;
     this.updateSettings(settings, SettingsFlags.ALL);
   }
 
@@ -146,20 +147,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       this.setUniform("flipVolume", this.settings.flipAxes);
     }
 
-    if (dirtyFlags & SettingsFlags.DATA_SIZE) {
-      const { scale, contentSize } = this.settings;
-      // Set offset
-      this.geometryMesh.position.copy(this.volume.getContentCenter());
-      // Set scale
-      this.geometryMesh.scale.copy(contentSize).multiply(scale);
-      this.setUniform("volumeScale", scale);
-      this.boxHelper.box.set(scale.clone().multiplyScalar(-0.5), scale.clone().multiplyScalar(0.5));
-      // TODO do tickmarks need to be regenerated here to remain accurate?
-      this.tickMarksMesh.scale.copy(scale);
-      // Reset uniforms and channel data
-      this.initChannelData();
-    }
-
     if (dirtyFlags & SettingsFlags.MATERIAL) {
       this.setUniform("DENSITY", this.settings.density);
     }
@@ -193,6 +180,21 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     if (dirtyFlags & SettingsFlags.MASK) {
       this.setUniform("maskAlpha", this.settings.maskAlpha);
     }
+  }
+
+  public updateVolumeDimensions(): void {
+    const { scale, contentSize } = this.volume;
+    // Set offset
+    this.geometryMesh.position.copy(this.volume.getContentCenter());
+    // Set scale
+    this.geometryMesh.scale.copy(contentSize).multiply(scale);
+    this.setUniform("volumeScale", scale);
+    this.boxHelper.box.set(scale.clone().multiplyScalar(-0.5), scale.clone().multiplyScalar(0.5));
+    // TODO do tickmarks need to be regenerated here to remain accurate?
+    this.tickMarksMesh.scale.copy(scale);
+    this.settings && this.updateSettings(this.settings, SettingsFlags.ROI);
+    // Reset uniforms and channel data
+    this.initChannelData();
   }
 
   /**
