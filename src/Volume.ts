@@ -308,7 +308,7 @@ export default class Volume {
 
   /** Computes the center of the volume subset */
   getContentCenter(): Vector3 {
-    // center point: (contentSize / 2 + contentOffset - 0.5) / scale;
+    // center point: (contentSize / 2 + contentOffset - 0.5) * normalizedPhysicalSize;
     return this.contentSize
       .clone()
       .divideScalar(2)
