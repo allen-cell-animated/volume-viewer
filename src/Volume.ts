@@ -162,13 +162,12 @@ export default class Volume {
   public z: number;
   public channels: Channel[];
   private volumeDataObservers: VolumeDataObserver[];
-  public scale: Vector3;
-  public contentSize: Vector3;
-  public contentOffset: Vector3;
   private physicalSize: Vector3;
   public physicalScale: number;
-  public physicalUnitSymbol: string;
   public normalizedPhysicalSize: Vector3;
+  public contentSize: Vector3;
+  public contentOffset: Vector3;
+  public physicalUnitSymbol: string;
   public tickMarkPhysicalLength: number;
   private loaded: boolean;
   /* eslint-disable @typescript-eslint/naming-convention */
@@ -181,7 +180,6 @@ export default class Volume {
   constructor(imageInfo: ImageInfo = getDefaultImageInfo(), loadSpec: LoadSpec = new LoadSpec()) {
     // imageMetadata to be filled in by Volume Loaders
     this.imageMetadata = {};
-    this.scale = new Vector3(1, 1, 1);
     this.contentSize = new Vector3(1, 1, 1);
     this.contentOffset = new Vector3(0, 0, 0);
     this.physicalSize = new Vector3(1, 1, 1);
@@ -287,15 +285,9 @@ export default class Volume {
       this.pixel_size[2] = values[2];
     }
 
-    const sizez = this.imageInfo.vol_size_z || this.z;
-    const physSizeMin = Math.min(this.pixel_size[0], this.pixel_size[1], this.pixel_size[2]);
-    const pixelsMax = Math.max(this.imageInfo.width, this.imageInfo.height, sizez);
-    const sx = ((this.pixel_size[0] / physSizeMin) * this.imageInfo.width) / pixelsMax;
-    const sy = ((this.pixel_size[1] / physSizeMin) * this.imageInfo.height) / pixelsMax;
-    const sz = ((this.pixel_size[2] / physSizeMin) * sizez) / pixelsMax;
-
     // this works because image was scaled down in x and y but not z.
     // so use original x and y dimensions from imageInfo.
+    const sizez = this.imageInfo.vol_size_z || this.z;
     this.physicalSize = new Vector3(
       this.imageInfo.width * this.pixel_size[0],
       this.imageInfo.height * this.pixel_size[1],
@@ -308,9 +300,6 @@ export default class Volume {
     // While we're here, pick a power of 10 that divides into our max dimension a reasonable number of times
     // and save it to be the length of tick marks in 3d.
     this.tickMarkPhysicalLength = 10 ** Math.floor(Math.log10(this.physicalScale / 2));
-
-    // sx, sy, sz should be same as normalizedPhysicalSize
-    this.scale = new Vector3(sx, sy, sz);
   }
 
   setUnitSymbol(symbol: string): void {
@@ -320,7 +309,12 @@ export default class Volume {
   /** Computes the center of the volume subset */
   getContentCenter(): Vector3 {
     // center point: (contentSize / 2 + contentOffset - 0.5) / scale;
-    return this.contentSize.clone().divideScalar(2).add(this.contentOffset).subScalar(0.5).multiply(this.scale);
+    return this.contentSize
+      .clone()
+      .divideScalar(2)
+      .add(this.contentOffset)
+      .subScalar(0.5)
+      .multiply(this.normalizedPhysicalSize);
   }
 
   cleanup(): void {
