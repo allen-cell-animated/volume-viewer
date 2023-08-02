@@ -60,5 +60,5 @@ self.onmessage = async (e: MessageEvent<FetchZarrMessage>) => {
 
   const u8 = convertChannel(channel.data, channel.dtype);
   const results = { data: u8, channel: channelIndex === -1 ? 0 : channelIndex };
-  postMessage(results, [results.data.buffer]);
+  (self as unknown as Worker).postMessage(results, [results.data.buffer]);
 };

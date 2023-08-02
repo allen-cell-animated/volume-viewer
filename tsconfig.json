@@ -15,17 +15,8 @@
     "sourceMap": true,
     "strict": true,
     "target": "ES6",
-    "typeRoots": ["src/types", "node_modules/@types"],
+    "typeRoots": ["src/types", "node_modules/@types"]
   },
-  "files": [
-    "src/index.ts",
-    "public/index.ts"
-  ],
-  "include": [
-    "src/**/*",
-    "public/**/*"
-  ],
-  "exclude": [
-    "src/workers/**/*",
-  ]
+  "files": ["src/index.ts", "public/index.ts"],
+  "include": ["src/**/*", "public/**/*"]
 }
