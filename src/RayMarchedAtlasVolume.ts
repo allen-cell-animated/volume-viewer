@@ -74,6 +74,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
 
     this.initChannelData();
+    this.updateVolumeDimensions();
     this.settings = settings;
     this.updateSettings(settings, SettingsFlags.ALL);
   }
