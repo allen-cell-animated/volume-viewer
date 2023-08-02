@@ -358,7 +358,7 @@ class OMEZarrLoader implements IVolumeLoader {
     return vol;
   }
 
-  loadVolumeData(vol: Volume, onChannelLoaded: PerChannelCallback, explicitLoadSpec?: LoadSpec) {
+  loadVolumeData(vol: Volume, onChannelLoaded: PerChannelCallback, explicitLoadSpec?: LoadSpec): void {
     if (
       this.axesTCZYX === undefined ||
       this.metadata === undefined ||
