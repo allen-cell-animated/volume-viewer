@@ -1,5 +1,4 @@
 import { expect } from "chai";
-import { Vector3 } from "three";
 
 import Volume from "../Volume";
 import VolumeMaker from "../VolumeMaker";
