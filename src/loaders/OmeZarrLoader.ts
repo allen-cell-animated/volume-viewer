@@ -407,11 +407,11 @@ class OMEZarrLoader implements IVolumeLoader {
       const msg: FetchZarrMessage = {
         spec: {
           ...pxSpec,
-          time: this.axesTCZYX[0] > -1 ? Math.min(normLoadSpec.time, times) : -1,
+          time: Math.min(normLoadSpec.time, times),
         },
-        channel: this.axesTCZYX[1] > -1 ? i : -1,
+        channel: i,
         path: storepath,
-        axesZYX: this.axesTCZYX.slice(-3),
+        axesTCZYX: this.axesTCZYX,
       };
       worker.postMessage(msg);
     }
