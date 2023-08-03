@@ -73,28 +73,9 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
 
-    this.initChannelData();
     this.updateVolumeDimensions();
     this.settings = settings;
     this.updateSettings(settings, SettingsFlags.ALL);
-  }
-
-  private initChannelData() {
-    /* eslint-disable-next-line @typescript-eslint/naming-convention */
-    const { cols, rows, tile_width, tile_height } = this.volume.imageInfo;
-    const atlasWidth = tile_width * cols;
-    const atlasHeight = tile_height * rows;
-
-    this.setUniform("ATLAS_X", cols);
-    this.setUniform("ATLAS_Y", rows);
-
-    this.setUniform("textureRes", new Vector2(atlasWidth, atlasHeight));
-    this.setUniform("SLICES", this.volume.z);
-
-    if (!this.channelData || this.channelData.width !== atlasWidth || this.channelData.height !== atlasHeight) {
-      this.channelData?.cleanup();
-      this.channelData = new FusedChannelData(atlasWidth, atlasHeight);
-    }
   }
 
   public viewpointMoved(): void {
@@ -194,11 +175,26 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       normalizedPhysicalSize.clone().multiplyScalar(-0.5),
       normalizedPhysicalSize.clone().multiplyScalar(0.5)
     );
-    // TODO do tickmarks need to be regenerated here to remain accurate?
     this.tickMarksMesh.scale.copy(normalizedPhysicalSize);
     this.settings && this.updateSettings(this.settings, SettingsFlags.ROI);
-    // Reset uniforms and channel data
-    this.initChannelData();
+
+    // Set atlas dimension uniforms
+    /* eslint-disable-next-line @typescript-eslint/naming-convention */
+    const { cols, rows, tile_width, tile_height } = this.volume.imageInfo;
+    const atlasWidth = tile_width * cols;
+    const atlasHeight = tile_height * rows;
+
+    this.setUniform("ATLAS_X", cols);
+    this.setUniform("ATLAS_Y", rows);
+
+    this.setUniform("textureRes", new Vector2(atlasWidth, atlasHeight));
+    this.setUniform("SLICES", this.volume.z);
+
+    // (re)create channel data
+    if (!this.channelData || this.channelData.width !== atlasWidth || this.channelData.height !== atlasHeight) {
+      this.channelData?.cleanup();
+      this.channelData = new FusedChannelData(atlasWidth, atlasHeight);
+    }
   }
 
   /**
@@ -339,7 +335,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       return;
     }
     this.uniforms[name].value = value;
-    this.geometryMesh.material.needsUpdate = true;
   }
 
   // channelcolors is array of {rgbColor, lut} and channeldata is volume.channels
