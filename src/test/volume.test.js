@@ -67,11 +67,6 @@ function checkVolumeConstruction(v, imgdata) {
   const mx = Math.max(Math.max(v.normalizedPhysicalSize.x, v.normalizedPhysicalSize.y), v.normalizedPhysicalSize.z);
   expect(mx).to.equal(1.0);
 
-  const epsilon = 0.0000001;
-  expect(v.scale.x).to.be.closeTo(v.normalizedPhysicalSize.x, epsilon);
-  expect(v.scale.y).to.be.closeTo(v.normalizedPhysicalSize.y, epsilon);
-  expect(v.scale.z).to.be.closeTo(v.normalizedPhysicalSize.z, epsilon);
-
   expect(v.x).to.equal(imgdata.tile_width);
   expect(v.y).to.equal(imgdata.tile_height);
   expect(v.z).to.equal(imgdata.tiles);
@@ -113,6 +108,30 @@ describe("test volume", () => {
 
       expect(v.getIntensity(1, Math.floor(v.x / 2), Math.floor(v.y / 2), Math.floor(v.z / 2))).to.equal(255);
       expect(v.getIntensity(1, 0, 0, 0)).to.equal(0);
+    });
+  });
+
+  describe("property validation", () => {
+    it("has a correct value for normalizedPhysicalSize", () => {
+      // `Volume` formerly derived a `scale` property by a different means than `normalizedPhysicalSize`, but depended
+      // on `scale` and `normalizedPhysicalSize` being equal. With `scale` gone, this test ensures the equality stays.
+      const v = new Volume(testimgdata);
+      /* eslint-disable-next-line @typescript-eslint/naming-convention */
+      const { height, width, vol_size_z, tiles } = v.imageInfo;
+      const sizez = vol_size_z || tiles;
+      const sizemax = Math.max(height, width, sizez);
+
+      const [pxx, pxy, pxz] = v.pixel_size;
+      const pxmin = Math.min(pxx, pxy, pxz);
+
+      const sx = ((pxx / pxmin) * width) / sizemax;
+      const sy = ((pxy / pxmin) * height) / sizemax;
+      const sz = ((pxz / pxmin) * sizez) / sizemax;
+
+      const EPSILON = 0.000000001;
+      expect(v.normalizedPhysicalSize.x).to.be.closeTo(sx, EPSILON);
+      expect(v.normalizedPhysicalSize.y).to.be.closeTo(sy, EPSILON);
+      expect(v.normalizedPhysicalSize.z).to.be.closeTo(sz, EPSILON);
     });
   });
 });

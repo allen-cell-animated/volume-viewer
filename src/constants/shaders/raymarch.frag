@@ -213,7 +213,7 @@ vec4 integrateVolume(vec4 eye_o,vec4 eye_d,
   // in order to make the final color invariant to the step size(?)
   // use maxSteps (a constant) as the numerator... Not sure if this is sound.
   float s = 0.5 * float(maxSteps) / csteps;
-  for(int i=0; i<maxSteps; i++) {
+  for (int i = 0; i < maxSteps; i++) {
     pos = eye_o + eye_d*t;
     // !!! assume box bounds are -0.5 .. 0.5.  pos = (pos-min)/(max-min)
     // scaling is handled by model transform and already accounted for before we get here.

@@ -96,7 +96,7 @@ class TiffLoader implements IVolumeLoader {
     d.subpath = "";
     d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
     d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
-    d.spatialUnit = dims.unit ? dims.unit : "micron";
+    d.spaceUnit = dims.unit ? dims.unit : "micron";
     d.dataType = dims.pixeltype ? dims.pixeltype : "uint8";
     return [d];
   }
@@ -123,15 +123,13 @@ class TiffLoader implements IVolumeLoader {
       height: dims.sizey,
       channels: dims.sizec,
       channel_names: dims.channelnames,
+      // for webgl reasons, it is best for total atlas width and height to be <= 2048 and ideally a power of 2.
+      //   This generally implies downsampling the original volume data for display in this viewer.
       rows: nrows,
       cols: ncols,
       tiles: dims.sizez,
       tile_width: tilesizex,
       tile_height: tilesizey,
-      // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-      // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-      atlas_width: tilesizex * ncols,
-      atlas_height: tilesizey * nrows,
       pixel_size_x: dims.pixelsizex,
       pixel_size_y: dims.pixelsizey,
       pixel_size_z: dims.pixelsizez,

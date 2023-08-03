@@ -314,7 +314,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       1.0 / physicalSize.x,
       1.0 / physicalSize.y,
       1.0 / physicalSize.z
-    );
+    ).divide(volume.contentSize);
     this.updateLightsSecondary();
 
     // Update settings
@@ -376,17 +376,19 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
     // update bounds
     if (dirtyFlags & SettingsFlags.ROI) {
-      const physicalSize = this.volume.normalizedPhysicalSize;
-      this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
-        this.settings.bounds.bmin.x * physicalSize.x,
-        this.settings.bounds.bmin.y * physicalSize.y,
-        this.settings.bounds.bmin.z * physicalSize.z
-      );
-      this.pathTracingUniforms.gClippedAaBbMax.value = new Vector3(
-        this.settings.bounds.bmax.x * physicalSize.x,
-        this.settings.bounds.bmax.y * physicalSize.y,
-        this.settings.bounds.bmax.z * physicalSize.z
-      );
+      const { normalizedPhysicalSize: physicalSize, contentSize, contentOffset } = this.volume;
+      const { bmin, bmax } = this.settings.bounds;
+
+      const sizeMin = contentOffset.clone().subScalar(0.5).multiply(physicalSize);
+      const sizeMax = contentOffset.clone().add(contentSize).subScalar(0.5).multiply(physicalSize);
+
+      const clipMin = bmin.clone().multiply(physicalSize);
+      this.pathTracingUniforms.gClippedAaBbMin.value = clipMin.clamp(sizeMin, sizeMax);
+
+      const clipMax = bmax.clone().multiply(physicalSize);
+      this.pathTracingUniforms.gClippedAaBbMax.value = clipMax.clamp(sizeMin, sizeMax);
+
+      this.pathTracingUniforms.gVolCenter.value = this.volume.getContentCenter();
     }
 
     if (dirtyFlags & SettingsFlags.CAMERA) {
@@ -409,6 +411,10 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     }
 
     this.resetProgress();
+  }
+
+  public updateVolumeDimensions(): void {
+    this.updateSettings(this.settings, SettingsFlags.ROI);
   }
 
   public doRender(canvas: ThreeJsPanel): void {

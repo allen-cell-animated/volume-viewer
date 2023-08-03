@@ -24,6 +24,7 @@ export const pathTracingUniforms = () => {
     ///////////////////////////
     gClippedAaBbMin: { type: "v3", value: new Vector3(0, 0, 0) },
     gClippedAaBbMax: { type: "v3", value: new Vector3(1, 1, 1) },
+    gVolCenter: { type: "v3", value: new Vector3(0, 0, 0) },
     gDensityScale: { type: "f", value: 50.0 },
     gStepSize: { type: "f", value: 1.0 },
     gStepSizeShadow: { type: "f", value: 1.0 },

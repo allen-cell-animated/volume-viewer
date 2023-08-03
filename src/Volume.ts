@@ -9,29 +9,56 @@ import { LoadSpec } from "./loaders/IVolumeLoader";
 export interface ImageInfo {
   name: string;
   version: string;
+
+  /** X size of the *original* (not downsampled) volume, in pixels */
   width: number;
+  /** Y size of the *original* (not downsampled) volume, in pixels */
   height: number;
-  channels: number;
+  /** Number of rows of z-slice tiles in the texture atlas */
+  rows: number;
+  /** Number of columns of z-slice tiles in the texture atlas */
+  cols: number;
+  /** Width of a single atlas tile in pixels */
+  tile_width: number;
+  /** Height of a single atlas tile in pixels */
+  tile_height: number;
+  /** Number of tiles in the texture atlas (or number of z-slices in the volume segment) */
   tiles: number;
+  /** Physical x size of a single *original* (not downsampled) pixel */
   pixel_size_x: number;
+  /** Physical y size of a single *original* (not downsampled) pixel */
   pixel_size_y: number;
+  /** Physical z size of a single pixel */
   pixel_size_z: number;
+  /** Symbol of physical unit used by `pixel_size_(x|y|z)` fields */
   pixel_size_unit: string;
+
+  // backwards compatibility: these are optional
+  /** Full x size of the volume. `tile_width` will be used if unspecified */
+  vol_size_x?: number;
+  /** Full y size of the volume. `tile_height` will be used if unspecified */
+  vol_size_y?: number;
+  /** Full z size of the volume. `tiles` will be used if unspecified */
+  vol_size_z?: number;
+  /** x offset of the volume subset into the volume */
+  offset_x?: number;
+  /** y offset of the volume subset into the volume */
+  offset_y?: number;
+  /** z offset of the volume subset into the volume */
+  offset_z?: number;
+
+  channels: number;
   channel_names: string[];
   channel_colors?: [number, number, number][];
-  rows: number;
-  cols: number;
-  tile_width: number;
-  tile_height: number;
-  atlas_width: number;
-  atlas_height: number;
+
+  times: number;
+  time_scale: number;
+  time_unit: string;
+
   transform: {
     translation: [number, number, number];
     rotation: [number, number, number];
   };
-  times: number;
-  time_scale: number;
-  time_unit: string;
   userData?: Record<string, unknown>;
 }
 
@@ -53,8 +80,6 @@ export const getDefaultImageInfo = (): ImageInfo => {
     cols: 1,
     tile_width: 1,
     tile_height: 1,
-    atlas_width: 1,
-    atlas_height: 1,
     transform: {
       translation: [0, 0, 0],
       rotation: [0, 0, 0],
@@ -135,16 +160,14 @@ export default class Volume {
   public x: number;
   public y: number;
   public z: number;
-  private t: number;
-  private atlasSize: [number, number];
-  private volumeSize: [number, number, number];
   public channels: Channel[];
   private volumeDataObservers: VolumeDataObserver[];
-  public scale: Vector3;
   private physicalSize: Vector3;
   public physicalScale: number;
-  public physicalUnitSymbol: string;
   public normalizedPhysicalSize: Vector3;
+  public contentSize: Vector3;
+  public contentOffset: Vector3;
+  public physicalUnitSymbol: string;
   public tickMarkPhysicalLength: number;
   private loaded: boolean;
   /* eslint-disable @typescript-eslint/naming-convention */
@@ -157,7 +180,8 @@ export default class Volume {
   constructor(imageInfo: ImageInfo = getDefaultImageInfo(), loadSpec: LoadSpec = new LoadSpec()) {
     // imageMetadata to be filled in by Volume Loaders
     this.imageMetadata = {};
-    this.scale = new Vector3(1, 1, 1);
+    this.contentSize = new Vector3(1, 1, 1);
+    this.contentOffset = new Vector3(0, 0, 0);
     this.physicalSize = new Vector3(1, 1, 1);
     this.physicalScale = 1;
     this.normalizedPhysicalSize = new Vector3(1, 1, 1);
@@ -176,7 +200,6 @@ export default class Volume {
     this.x = this.imageInfo.tile_width;
     this.y = this.imageInfo.tile_height;
     this.z = this.imageInfo.tiles;
-    this.t = 1;
 
     this.num_channels = this.imageInfo.channels;
 
@@ -190,9 +213,6 @@ export default class Volume {
         this.channel_colors_default[i] = getColorByChannelIndex(i);
       }
     }
-
-    this.atlasSize = [this.imageInfo.atlas_width, this.imageInfo.atlas_height];
-    this.volumeSize = [this.x, this.y, this.z];
 
     this.channels = [];
     for (let i = 0; i < this.num_channels; ++i) {
@@ -223,6 +243,29 @@ export default class Volume {
     this.volumeDataObservers = [];
   }
 
+  updateDimensions() {
+    this.x = this.imageInfo.tile_width;
+    this.y = this.imageInfo.tile_height;
+    this.z = this.imageInfo.tiles;
+    this.setVoxelSize(this.pixel_size);
+
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const {
+      tile_width,
+      tile_height,
+      tiles,
+      vol_size_x = tile_width,
+      vol_size_y = tile_height,
+      vol_size_z = tiles,
+      offset_x = 0,
+      offset_y = 0,
+      offset_z = 0,
+    } = this.imageInfo;
+    /* eslint-enable @typescript-eslint/naming-convention */
+    this.contentSize = new Vector3(tile_width / vol_size_x, tile_height / vol_size_y, tiles / vol_size_z);
+    this.contentOffset = new Vector3(offset_x / vol_size_x, offset_y / vol_size_y, offset_z / vol_size_z);
+  }
+
   // we calculate the physical size of the volume (voxels*pixel_size)
   // and then normalize to the max physical dimension
   setVoxelSize(values: number[]): void {
@@ -242,18 +285,13 @@ export default class Volume {
       this.pixel_size[2] = values[2];
     }
 
-    const physSizeMin = Math.min(this.pixel_size[0], this.pixel_size[1], this.pixel_size[2]);
-    const pixelsMax = Math.max(this.imageInfo.width, this.imageInfo.height, this.z);
-    const sx = ((this.pixel_size[0] / physSizeMin) * this.imageInfo.width) / pixelsMax;
-    const sy = ((this.pixel_size[1] / physSizeMin) * this.imageInfo.height) / pixelsMax;
-    const sz = ((this.pixel_size[2] / physSizeMin) * this.z) / pixelsMax;
-
     // this works because image was scaled down in x and y but not z.
     // so use original x and y dimensions from imageInfo.
+    const sizez = this.imageInfo.vol_size_z || this.z;
     this.physicalSize = new Vector3(
       this.imageInfo.width * this.pixel_size[0],
       this.imageInfo.height * this.pixel_size[1],
-      this.z * this.pixel_size[2]
+      sizez * this.pixel_size[2]
     );
     // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
     this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z);
@@ -262,13 +300,21 @@ export default class Volume {
     // While we're here, pick a power of 10 that divides into our max dimension a reasonable number of times
     // and save it to be the length of tick marks in 3d.
     this.tickMarkPhysicalLength = 10 ** Math.floor(Math.log10(this.physicalScale / 2));
-
-    // sx, sy, sz should be same as normalizedPhysicalSize
-    this.scale = new Vector3(sx, sy, sz);
   }
 
   setUnitSymbol(symbol: string): void {
     this.physicalUnitSymbol = symbol;
+  }
+
+  /** Computes the center of the volume subset */
+  getContentCenter(): Vector3 {
+    // center point: (contentSize / 2 + contentOffset - 0.5) * normalizedPhysicalSize;
+    return this.contentSize
+      .clone()
+      .divideScalar(2)
+      .add(this.contentOffset)
+      .subScalar(0.5)
+      .multiply(this.normalizedPhysicalSize);
   }
 
   cleanup(): void {
@@ -321,8 +367,8 @@ export default class Volume {
       this.x,
       this.y,
       this.z,
-      this.atlasSize[0],
-      this.atlasSize[1]
+      this.imageInfo.cols * this.imageInfo.tile_width,
+      this.imageInfo.rows * this.imageInfo.tile_height
     );
     this.onChannelLoaded([channelIndex]);
   }

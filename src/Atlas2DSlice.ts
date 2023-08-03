@@ -28,14 +28,14 @@ const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
  * Creates a plane that renders a 2D XY slice of volume atlas data.
  */
 export default class Atlas2DSlice implements VolumeRenderImpl {
-  private settings: VolumeRenderSettings | undefined;
+  private settings: VolumeRenderSettings;
   public volume: Volume;
   private geometry: ShapeGeometry;
   protected geometryMesh: Mesh<BufferGeometry, Material>;
   private geometryTransformNode: Group;
   private boxHelper: Box3Helper;
   private uniforms: ReturnType<typeof sliceShaderUniforms>;
-  private channelData: FusedChannelData;
+  private channelData!: FusedChannelData;
 
   /**
    * Creates a new Atlas2DSlice.
@@ -60,14 +60,37 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
 
     this.geometryTransformNode.add(this.boxHelper, this.geometryMesh);
 
-    this.setUniform("ATLAS_X", volume.imageInfo.cols);
-    this.setUniform("ATLAS_Y", volume.imageInfo.rows);
-    this.setUniform("textureRes", new Vector2(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height));
-    this.setUniform("SLICES", volume.z);
-    this.setUniform("Z_SLICE", Math.floor(volume.z / 2));
-
-    this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
+    this.setUniform("Z_SLICE", Math.floor((volume.imageInfo.vol_size_z || volume.z) / 2));
+    this.updateVolumeDimensions();
+    this.settings = settings;
     this.updateSettings(settings, SettingsFlags.ALL);
+  }
+
+  public updateVolumeDimensions(): void {
+    const scale = this.volume.normalizedPhysicalSize;
+    // set scale
+    this.geometryMesh.scale.copy(scale);
+    this.setUniform("volumeScale", scale);
+    this.boxHelper.box.set(scale.clone().multiplyScalar(-0.5), scale.clone().multiplyScalar(0.5));
+
+    /* eslint-disable-next-line @typescript-eslint/naming-convention */
+    const { cols, rows, tile_width, tile_height } = this.volume.imageInfo;
+    const atlasWidth = tile_width * cols;
+    const atlasHeight = tile_height * rows;
+
+    // set lots of dimension uniforms
+    this.setUniform("ATLAS_X", cols);
+    this.setUniform("ATLAS_Y", rows);
+    this.setUniform("textureRes", new Vector2(atlasWidth, atlasHeight));
+    this.setUniform("SLICES", this.volume.imageInfo.vol_size_z || this.volume.z);
+    this.setUniform("SUBSET_SCALE", this.volume.contentSize);
+    this.setUniform("SUBSET_OFFSET", this.volume.contentOffset);
+
+    // (re)create channel data
+    if (!this.channelData || this.channelData.width !== atlasWidth || this.channelData.height !== atlasHeight) {
+      this.channelData?.cleanup();
+      this.channelData = new FusedChannelData(atlasWidth, atlasHeight);
+    }
   }
 
   public updateSettings(newSettings: VolumeRenderSettings, dirtyFlags?: number | SettingsFlags) {
@@ -103,14 +126,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     }
 
     if (dirtyFlags & SettingsFlags.TRANSFORM) {
-      // Set scale
-      const scale = this.settings.scale;
-      this.geometryMesh.scale.copy(scale);
-      this.setUniform("volumeScale", scale);
-      this.boxHelper.box.set(
-        new Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z),
-        new Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z)
-      );
       // Set rotation and translation
       this.geometryTransformNode.position.copy(this.settings.translation);
       this.geometryTransformNode.rotation.copy(this.settings.rotation);
@@ -132,14 +147,12 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     if (dirtyFlags & SettingsFlags.ROI) {
       // Normalize and set bounds
       const bounds = this.settings.bounds;
-      const boundsNormalized = {
-        bmin: new Vector3(bounds.bmin.x * 2.0, bounds.bmin.y * 2.0, bounds.bmin.z * 2.0),
-        bmax: new Vector3(bounds.bmax.x * 2.0, bounds.bmax.y * 2.0, bounds.bmax.z * 2.0),
-      };
-      this.setUniform("AABB_CLIP_MIN", boundsNormalized.bmin);
-      this.setUniform("AABB_CLIP_MAX", boundsNormalized.bmax);
+
+      this.setUniform("AABB_CLIP_MIN", bounds.bmin);
+      this.setUniform("AABB_CLIP_MAX", bounds.bmax);
       const slice = Math.floor(this.settings.zSlice);
-      if (slice >= 0 && slice <= this.volume.z - 1) {
+      const sizez = this.volume.imageInfo.vol_size_z || this.volume.z;
+      if (slice >= 0 && slice <= sizez - 1) {
         this.setUniform("Z_SLICE", slice);
       }
     }
@@ -229,7 +242,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
       return;
     }
     this.uniforms[name].value = value;
-    this.geometryMesh.material.needsUpdate = true;
   }
 
   public setRenderUpdateListener(_listener?: ((iteration: number) => void) | undefined) {

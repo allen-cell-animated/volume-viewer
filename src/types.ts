@@ -76,7 +76,6 @@ export interface VolumeDisplayOptions {
   maskChannelIndex?: number;
   maskAlpha?: number;
   clipBounds?: [number, number, number, number, number, number];
-  scale?: [number, number, number];
   maxProjection?: boolean;
   renderMode?: RenderMode;
   shadingMethod?: number;

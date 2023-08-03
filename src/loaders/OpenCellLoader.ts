@@ -10,7 +10,7 @@ class OpenCellLoader implements IVolumeLoader {
     d.subpath = "";
     d.shape = [1, 2, 27, 600, 600];
     d.spacing = [1, 1, 2, 1, 1];
-    d.spatialUnit = ""; // unknown unit.
+    d.spaceUnit = ""; // unknown unit.
     d.dataType = "uint8";
     return [d];
   }
@@ -30,12 +30,10 @@ class OpenCellLoader implements IVolumeLoader {
       rows: 27,
       cols: 1,
       tiles: 27,
+      // for webgl reasons, it is best for total atlas width and height to be <= 2048 and ideally a power of 2.
+      //   This generally implies downsampling the original volume data for display in this viewer.
       tile_width: 600,
       tile_height: 600,
-      // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-      // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-      atlas_width: 600,
-      atlas_height: 16200,
       pixel_size_x: 1,
       pixel_size_y: 1,
       pixel_size_z: 2,

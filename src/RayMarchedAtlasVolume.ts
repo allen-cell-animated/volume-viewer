@@ -34,7 +34,7 @@ import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings";
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
 export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
-  private settings: VolumeRenderSettings | undefined;
+  private settings: VolumeRenderSettings;
   public volume: Volume;
 
   private geometry: ShapeGeometry;
@@ -43,7 +43,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   private tickMarksMesh: LineSegments;
   private geometryTransformNode: Group;
   private uniforms: ReturnType<typeof rayMarchingShaderUniforms>;
-  private channelData: FusedChannelData;
+  private channelData!: FusedChannelData;
 
   /**
    * Creates a new RayMarchedAtlasVolume.
@@ -73,13 +73,42 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
 
-    this.setUniform("ATLAS_X", volume.imageInfo.cols);
-    this.setUniform("ATLAS_Y", volume.imageInfo.rows);
-    this.setUniform("textureRes", new Vector2(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height));
-    this.setUniform("SLICES", volume.z);
-
-    this.channelData = new FusedChannelData(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
+    this.updateVolumeDimensions();
+    this.settings = settings;
     this.updateSettings(settings, SettingsFlags.ALL);
+  }
+
+  public updateVolumeDimensions(): void {
+    const { normalizedPhysicalSize, contentSize } = this.volume;
+    // Set offset
+    this.geometryMesh.position.copy(this.volume.getContentCenter());
+    // Set scale
+    this.geometryMesh.scale.copy(contentSize).multiply(normalizedPhysicalSize);
+    this.setUniform("volumeScale", normalizedPhysicalSize);
+    this.boxHelper.box.set(
+      normalizedPhysicalSize.clone().multiplyScalar(-0.5),
+      normalizedPhysicalSize.clone().multiplyScalar(0.5)
+    );
+    this.tickMarksMesh.scale.copy(normalizedPhysicalSize);
+    this.settings && this.updateSettings(this.settings, SettingsFlags.ROI);
+
+    // Set atlas dimension uniforms
+    /* eslint-disable-next-line @typescript-eslint/naming-convention */
+    const { cols, rows, tile_width, tile_height } = this.volume.imageInfo;
+    const atlasWidth = tile_width * cols;
+    const atlasHeight = tile_height * rows;
+
+    this.setUniform("ATLAS_X", cols);
+    this.setUniform("ATLAS_Y", rows);
+
+    this.setUniform("textureRes", new Vector2(atlasWidth, atlasHeight));
+    this.setUniform("SLICES", this.volume.z);
+
+    // (re)create channel data
+    if (!this.channelData || this.channelData.width !== atlasWidth || this.channelData.height !== atlasHeight) {
+      this.channelData?.cleanup();
+      this.channelData = new FusedChannelData(atlasWidth, atlasHeight);
+    }
   }
 
   public viewpointMoved(): void {
@@ -127,15 +156,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     }
 
     if (dirtyFlags & SettingsFlags.TRANSFORM) {
-      // Set scale
-      const scale = this.settings.scale;
-      this.geometryMesh.scale.copy(scale);
-      this.setUniform("volumeScale", scale);
-      this.boxHelper.box.set(
-        new Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z),
-        new Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z)
-      );
-      this.tickMarksMesh.scale.copy(scale);
       // Set rotation and translation
       this.geometryTransformNode.position.copy(this.settings.translation);
       this.geometryTransformNode.rotation.copy(this.settings.rotation);
@@ -158,12 +178,13 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     if (dirtyFlags & SettingsFlags.ROI) {
       // Normalize and set bounds
       const bounds = this.settings.bounds;
-      const boundsNormalized = {
-        bmin: new Vector3(bounds.bmin.x * 2.0, bounds.bmin.y * 2.0, bounds.bmin.z * 2.0),
-        bmax: new Vector3(bounds.bmax.x * 2.0, bounds.bmax.y * 2.0, bounds.bmax.z * 2.0),
-      };
-      this.setUniform("AABB_CLIP_MIN", boundsNormalized.bmin);
-      this.setUniform("AABB_CLIP_MAX", boundsNormalized.bmax);
+      const { contentSize, contentOffset } = this.volume;
+      const offsetToCenter = contentSize.clone().divideScalar(2).add(contentOffset).subScalar(0.5);
+      const bmin = bounds.bmin.clone().sub(offsetToCenter).divide(contentSize).clampScalar(-0.5, 0.5);
+      const bmax = bounds.bmax.clone().sub(offsetToCenter).divide(contentSize).clampScalar(-0.5, 0.5);
+
+      this.setUniform("AABB_CLIP_MIN", bmin);
+      this.setUniform("AABB_CLIP_MAX", bmax);
     }
 
     if (dirtyFlags & SettingsFlags.SAMPLING) {
@@ -172,7 +193,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     }
 
     if (dirtyFlags & SettingsFlags.MASK) {
-      this.setUniform("maskAlpha", this.settings.maskAlpha);
       this.setUniform("maskAlpha", this.settings.maskAlpha);
     }
   }
@@ -315,7 +335,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       return;
     }
     this.uniforms[name].value = value;
-    this.geometryMesh.material.needsUpdate = true;
   }
 
   // channelcolors is array of {rgbColor, lut} and channeldata is volume.channels

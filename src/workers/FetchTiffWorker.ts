@@ -115,5 +115,5 @@ self.onmessage = async function (e) {
     out[j] = ((src[j] - chmin) / (chmax - chmin)) * 255;
   }
   const results = { data: out, channel: channelIndex };
-  postMessage(results, [results.data.buffer]);
+  (self as unknown as Worker).postMessage(results, [results.data.buffer]);
 };

@@ -14,6 +14,8 @@ uniform float ATLAS_X;
 uniform float ATLAS_Y;
 uniform vec3 AABB_CLIP_MIN;
 uniform vec3 AABB_CLIP_MAX;
+uniform vec3 SUBSET_SCALE;
+uniform vec3 SUBSET_OFFSET;
 uniform sampler2D textureAtlas;
 uniform sampler2D textureAtlasMask;
 uniform int Z_SLICE;
@@ -131,6 +133,7 @@ void main() {
 
   // Normalize z-slice by total slices
   vec4 pos = vec4(vUv, float(Z_SLICE) / (SLICES - 1.0), 0.0);
+  pos.xyz = (pos.xyz - SUBSET_OFFSET) / SUBSET_SCALE;
 
   vec4 C;
   if(interpolationEnabled) {

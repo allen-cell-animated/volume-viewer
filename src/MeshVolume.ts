@@ -90,10 +90,11 @@ export default class MeshVolume {
     }
   }
 
-  setScale(scale: Vector3): void {
+  setScale(scale: Vector3, position = new Vector3(0, 0, 0)): void {
     this.scale = scale;
 
-    this.meshRoot.scale.copy(new Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z));
+    this.meshRoot.scale.copy(scale).multiplyScalar(0.5);
+    this.meshRoot.position.copy(position);
   }
 
   setFlipAxes(flipX: number, flipY: number, flipZ: number): void {
