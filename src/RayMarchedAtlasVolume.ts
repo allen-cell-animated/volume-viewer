@@ -78,6 +78,39 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.updateSettings(settings, SettingsFlags.ALL);
   }
 
+  public updateVolumeDimensions(): void {
+    const { normalizedPhysicalSize, contentSize } = this.volume;
+    // Set offset
+    this.geometryMesh.position.copy(this.volume.getContentCenter());
+    // Set scale
+    this.geometryMesh.scale.copy(contentSize).multiply(normalizedPhysicalSize);
+    this.setUniform("volumeScale", normalizedPhysicalSize);
+    this.boxHelper.box.set(
+      normalizedPhysicalSize.clone().multiplyScalar(-0.5),
+      normalizedPhysicalSize.clone().multiplyScalar(0.5)
+    );
+    this.tickMarksMesh.scale.copy(normalizedPhysicalSize);
+    this.settings && this.updateSettings(this.settings, SettingsFlags.ROI);
+
+    // Set atlas dimension uniforms
+    /* eslint-disable-next-line @typescript-eslint/naming-convention */
+    const { cols, rows, tile_width, tile_height } = this.volume.imageInfo;
+    const atlasWidth = tile_width * cols;
+    const atlasHeight = tile_height * rows;
+
+    this.setUniform("ATLAS_X", cols);
+    this.setUniform("ATLAS_Y", rows);
+
+    this.setUniform("textureRes", new Vector2(atlasWidth, atlasHeight));
+    this.setUniform("SLICES", this.volume.z);
+
+    // (re)create channel data
+    if (!this.channelData || this.channelData.width !== atlasWidth || this.channelData.height !== atlasHeight) {
+      this.channelData?.cleanup();
+      this.channelData = new FusedChannelData(atlasWidth, atlasHeight);
+    }
+  }
+
   public viewpointMoved(): void {
     return;
   }
@@ -161,39 +194,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
     if (dirtyFlags & SettingsFlags.MASK) {
       this.setUniform("maskAlpha", this.settings.maskAlpha);
-    }
-  }
-
-  public updateVolumeDimensions(): void {
-    const { normalizedPhysicalSize, contentSize } = this.volume;
-    // Set offset
-    this.geometryMesh.position.copy(this.volume.getContentCenter());
-    // Set scale
-    this.geometryMesh.scale.copy(contentSize).multiply(normalizedPhysicalSize);
-    this.setUniform("volumeScale", normalizedPhysicalSize);
-    this.boxHelper.box.set(
-      normalizedPhysicalSize.clone().multiplyScalar(-0.5),
-      normalizedPhysicalSize.clone().multiplyScalar(0.5)
-    );
-    this.tickMarksMesh.scale.copy(normalizedPhysicalSize);
-    this.settings && this.updateSettings(this.settings, SettingsFlags.ROI);
-
-    // Set atlas dimension uniforms
-    /* eslint-disable-next-line @typescript-eslint/naming-convention */
-    const { cols, rows, tile_width, tile_height } = this.volume.imageInfo;
-    const atlasWidth = tile_width * cols;
-    const atlasHeight = tile_height * rows;
-
-    this.setUniform("ATLAS_X", cols);
-    this.setUniform("ATLAS_Y", rows);
-
-    this.setUniform("textureRes", new Vector2(atlasWidth, atlasHeight));
-    this.setUniform("SLICES", this.volume.z);
-
-    // (re)create channel data
-    if (!this.channelData || this.channelData.width !== atlasWidth || this.channelData.height !== atlasHeight) {
-      this.channelData?.cleanup();
-      this.channelData = new FusedChannelData(atlasWidth, atlasHeight);
     }
   }
 

@@ -61,18 +61,24 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.geometryTransformNode.add(this.boxHelper, this.geometryMesh);
 
     this.setUniform("Z_SLICE", Math.floor((volume.imageInfo.vol_size_z || volume.z) / 2));
-    this.initChannelData();
     this.updateVolumeDimensions();
     this.settings = settings;
     this.updateSettings(settings, SettingsFlags.ALL);
   }
 
-  private initChannelData() {
+  public updateVolumeDimensions(): void {
+    const scale = this.volume.normalizedPhysicalSize;
+    // set scale
+    this.geometryMesh.scale.copy(scale);
+    this.setUniform("volumeScale", scale);
+    this.boxHelper.box.set(scale.clone().multiplyScalar(-0.5), scale.clone().multiplyScalar(0.5));
+
     /* eslint-disable-next-line @typescript-eslint/naming-convention */
     const { cols, rows, tile_width, tile_height } = this.volume.imageInfo;
     const atlasWidth = tile_width * cols;
     const atlasHeight = tile_height * rows;
 
+    // set lots of dimension uniforms
     this.setUniform("ATLAS_X", cols);
     this.setUniform("ATLAS_Y", rows);
     this.setUniform("textureRes", new Vector2(atlasWidth, atlasHeight));
@@ -80,6 +86,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.setUniform("SUBSET_SCALE", this.volume.contentSize);
     this.setUniform("SUBSET_OFFSET", this.volume.contentOffset);
 
+    // (re)create channel data
     if (!this.channelData || this.channelData.width !== atlasWidth || this.channelData.height !== atlasHeight) {
       this.channelData?.cleanup();
       this.channelData = new FusedChannelData(atlasWidth, atlasHeight);
@@ -161,14 +168,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     }
   }
 
-  public updateVolumeDimensions(): void {
-    const scale = this.volume.normalizedPhysicalSize;
-    this.geometryMesh.scale.copy(scale);
-    this.setUniform("volumeScale", scale);
-    this.boxHelper.box.set(scale.clone().multiplyScalar(-0.5), scale.clone().multiplyScalar(0.5));
-    this.initChannelData();
-  }
-
   private createGeometry(
     uniforms: ReturnType<typeof sliceShaderUniforms>
   ): [ShapeGeometry, Mesh<BufferGeometry, Material>] {
@@ -243,7 +242,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
       return;
     }
     this.uniforms[name].value = value;
-    this.geometryMesh.material.needsUpdate = true;
   }
 
   public setRenderUpdateListener(_listener?: ((iteration: number) => void) | undefined) {
