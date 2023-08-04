@@ -39,42 +39,43 @@ function convertChannel(channelData, dtype) {
 }
 self.onmessage = /*#__PURE__*/function () {
   var _ref = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().mark(function _callee(e) {
-    var time, channelIndex, store, level, _e$data$spec, minx, maxx, miny, maxy, minz, maxz, sliceSpec, channel, u8, results;
+    var time, channelIndex, axesTCZYX, store, level, _e$data$spec, minx, maxx, miny, maxy, minz, maxz, unorderedSpec, specLen, sliceSpec, channel, u8, results;
     return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
           time = e.data.spec.time;
           channelIndex = e.data.channel;
+          axesTCZYX = e.data.axesTCZYX;
           store = new zarr__WEBPACK_IMPORTED_MODULE_2__.HTTPStore(e.data.spec.url);
-          _context.next = 5;
+          _context.next = 6;
           return (0,zarr__WEBPACK_IMPORTED_MODULE_2__.openArray)({
             store: store,
             path: e.data.path,
             mode: "r"
           });
-        case 5:
+        case 6:
           level = _context.sent;
           // build slice spec
-          // assuming ZYX are the last three dimensions:
           _e$data$spec = e.data.spec, minx = _e$data$spec.minx, maxx = _e$data$spec.maxx, miny = _e$data$spec.miny, maxy = _e$data$spec.maxy, minz = _e$data$spec.minz, maxz = _e$data$spec.maxz;
-          sliceSpec = [(0,zarr__WEBPACK_IMPORTED_MODULE_2__.slice)(minz === undefined ? null : minz, maxz), (0,zarr__WEBPACK_IMPORTED_MODULE_2__.slice)(miny === undefined ? null : miny, maxy), (0,zarr__WEBPACK_IMPORTED_MODULE_2__.slice)(minx === undefined ? null : minx, maxx)];
-          if (channelIndex > -1) {
-            sliceSpec.unshift(channelIndex);
-          }
-          if (time > -1) {
-            sliceSpec.unshift(time);
-          }
-          _context.next = 12;
+          unorderedSpec = [time, channelIndex, (0,zarr__WEBPACK_IMPORTED_MODULE_2__.slice)(minz, maxz), (0,zarr__WEBPACK_IMPORTED_MODULE_2__.slice)(miny, maxy), (0,zarr__WEBPACK_IMPORTED_MODULE_2__.slice)(minx, maxx)];
+          specLen = 3 + Number(axesTCZYX[0] > -1) + Number(axesTCZYX[1] > -1);
+          sliceSpec = Array(specLen);
+          axesTCZYX.forEach(function (val, idx) {
+            if (val > -1) {
+              sliceSpec[val] = unorderedSpec[idx];
+            }
+          });
+          _context.next = 14;
           return level.getRaw(sliceSpec);
-        case 12:
+        case 14:
           channel = _context.sent;
           u8 = convertChannel(channel.data, channel.dtype);
           results = {
             data: u8,
             channel: channelIndex === -1 ? 0 : channelIndex
           };
-          postMessage(results, [results.data.buffer]);
-        case 16:
+          self.postMessage(results, [results.data.buffer]);
+        case 18:
         case "end":
           return _context.stop();
       }

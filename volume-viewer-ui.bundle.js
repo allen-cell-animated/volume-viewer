@@ -53,15 +53,45 @@ var Atlas2DSlice = /*#__PURE__*/function () {
     this.geometryTransformNode = new three__WEBPACK_IMPORTED_MODULE_6__.Group();
     this.geometryTransformNode.name = "VolumeContainerNode";
     this.geometryTransformNode.add(this.boxHelper, this.geometryMesh);
-    this.setUniform("ATLAS_X", volume.imageInfo.cols);
-    this.setUniform("ATLAS_Y", volume.imageInfo.rows);
-    this.setUniform("textureRes", new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height));
-    this.setUniform("SLICES", volume.z);
-    this.setUniform("Z_SLICE", Math.floor(volume.z / 2));
-    this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_5__["default"](volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
+    this.setUniform("Z_SLICE", Math.floor((volume.imageInfo.vol_size_z || volume.z) / 2));
+    this.updateVolumeDimensions();
+    this.settings = settings;
     this.updateSettings(settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.ALL);
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(Atlas2DSlice, [{
+    key: "updateVolumeDimensions",
+    value: function updateVolumeDimensions() {
+      var scale = this.volume.normalizedPhysicalSize;
+      // set scale
+      this.geometryMesh.scale.copy(scale);
+      this.setUniform("volumeScale", scale);
+      this.boxHelper.box.set(scale.clone().multiplyScalar(-0.5), scale.clone().multiplyScalar(0.5));
+
+      /* eslint-disable-next-line @typescript-eslint/naming-convention */
+      var _this$volume$imageInf = this.volume.imageInfo,
+        cols = _this$volume$imageInf.cols,
+        rows = _this$volume$imageInf.rows,
+        tile_width = _this$volume$imageInf.tile_width,
+        tile_height = _this$volume$imageInf.tile_height;
+      var atlasWidth = tile_width * cols;
+      var atlasHeight = tile_height * rows;
+
+      // set lots of dimension uniforms
+      this.setUniform("ATLAS_X", cols);
+      this.setUniform("ATLAS_Y", rows);
+      this.setUniform("textureRes", new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(atlasWidth, atlasHeight));
+      this.setUniform("SLICES", this.volume.imageInfo.vol_size_z || this.volume.z);
+      this.setUniform("SUBSET_SCALE", this.volume.contentSize);
+      this.setUniform("SUBSET_OFFSET", this.volume.contentOffset);
+
+      // (re)create channel data
+      if (!this.channelData || this.channelData.width !== atlasWidth || this.channelData.height !== atlasHeight) {
+        var _this$channelData;
+        (_this$channelData = this.channelData) === null || _this$channelData === void 0 ? void 0 : _this$channelData.cleanup();
+        this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_5__["default"](atlasWidth, atlasHeight);
+      }
+    }
+  }, {
     key: "updateSettings",
     value: function updateSettings(newSettings, dirtyFlags) {
       if (dirtyFlags === undefined) {
@@ -92,11 +122,6 @@ var Atlas2DSlice = /*#__PURE__*/function () {
         this.boxHelper.material.color = newBoxColor;
       }
       if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.TRANSFORM) {
-        // Set scale
-        var scale = this.settings.scale;
-        this.geometryMesh.scale.copy(scale);
-        this.setUniform("volumeScale", scale);
-        this.boxHelper.box.set(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z), new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z));
         // Set rotation and translation
         this.geometryTransformNode.position.copy(this.settings.translation);
         this.geometryTransformNode.rotation.copy(this.settings.rotation);
@@ -115,14 +140,11 @@ var Atlas2DSlice = /*#__PURE__*/function () {
       if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.ROI) {
         // Normalize and set bounds
         var bounds = this.settings.bounds;
-        var boundsNormalized = {
-          bmin: new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(bounds.bmin.x * 2.0, bounds.bmin.y * 2.0, bounds.bmin.z * 2.0),
-          bmax: new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(bounds.bmax.x * 2.0, bounds.bmax.y * 2.0, bounds.bmax.z * 2.0)
-        };
-        this.setUniform("AABB_CLIP_MIN", boundsNormalized.bmin);
-        this.setUniform("AABB_CLIP_MAX", boundsNormalized.bmax);
+        this.setUniform("AABB_CLIP_MIN", bounds.bmin);
+        this.setUniform("AABB_CLIP_MAX", bounds.bmax);
         var slice = Math.floor(this.settings.zSlice);
-        if (slice >= 0 && slice <= this.volume.z - 1) {
+        var sizez = this.volume.imageInfo.vol_size_z || this.volume.z;
+        if (slice >= 0 && slice <= sizez - 1) {
           this.setUniform("Z_SLICE", slice);
         }
       }
@@ -206,7 +228,6 @@ var Atlas2DSlice = /*#__PURE__*/function () {
         return;
       }
       this.uniforms[name].value = value;
-      this.geometryMesh.material.needsUpdate = true;
     }
   }, {
     key: "setRenderUpdateListener",
@@ -2162,8 +2183,10 @@ var MeshVolume = /*#__PURE__*/function () {
   }, {
     key: "setScale",
     value: function setScale(scale) {
+      var position = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, 0);
       this.scale = scale;
-      this.meshRoot.scale.copy(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z));
+      this.meshRoot.scale.copy(scale).multiplyScalar(0.5);
+      this.meshRoot.position.copy(position);
     }
   }, {
     key: "setFlipAxes",
@@ -2961,7 +2984,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
 
     // bounds will go from 0 to physicalSize
     var physicalSize = volume.normalizedPhysicalSize;
-    this.pathTracingUniforms.gInvAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1.0 / physicalSize.x, 1.0 / physicalSize.y, 1.0 / physicalSize.z);
+    this.pathTracingUniforms.gInvAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1.0 / physicalSize.x, 1.0 / physicalSize.y, 1.0 / physicalSize.z).divide(volume.contentSize);
     this.updateLightsSecondary();
 
     // Update settings
@@ -3026,9 +3049,20 @@ var PathTracedVolume = /*#__PURE__*/function () {
 
       // update bounds
       if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.ROI) {
-        var physicalSize = this.volume.normalizedPhysicalSize;
-        this.pathTracingUniforms.gClippedAaBbMin.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(this.settings.bounds.bmin.x * physicalSize.x, this.settings.bounds.bmin.y * physicalSize.y, this.settings.bounds.bmin.z * physicalSize.z);
-        this.pathTracingUniforms.gClippedAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(this.settings.bounds.bmax.x * physicalSize.x, this.settings.bounds.bmax.y * physicalSize.y, this.settings.bounds.bmax.z * physicalSize.z);
+        var _this$volume = this.volume,
+          physicalSize = _this$volume.normalizedPhysicalSize,
+          contentSize = _this$volume.contentSize,
+          contentOffset = _this$volume.contentOffset;
+        var _this$settings$bounds = this.settings.bounds,
+          bmin = _this$settings$bounds.bmin,
+          bmax = _this$settings$bounds.bmax;
+        var sizeMin = contentOffset.clone().subScalar(0.5).multiply(physicalSize);
+        var sizeMax = contentOffset.clone().add(contentSize).subScalar(0.5).multiply(physicalSize);
+        var clipMin = bmin.clone().multiply(physicalSize);
+        this.pathTracingUniforms.gClippedAaBbMin.value = clipMin.clamp(sizeMin, sizeMax);
+        var clipMax = bmax.clone().multiply(physicalSize);
+        this.pathTracingUniforms.gClippedAaBbMax.value = clipMax.clamp(sizeMin, sizeMax);
+        this.pathTracingUniforms.gVolCenter.value = this.volume.getContentCenter();
       }
       if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.CAMERA) {
         this.updateExposure(this.settings.brightness);
@@ -3045,6 +3079,11 @@ var PathTracedVolume = /*#__PURE__*/function () {
         this.volumeTexture.needsUpdate = true;
       }
       this.resetProgress();
+    }
+  }, {
+    key: "updateVolumeDimensions",
+    value: function updateVolumeDimensions() {
+      this.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.ROI);
     }
   }, {
     key: "doRender",
@@ -3411,14 +3450,47 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     this.geometryTransformNode = new three__WEBPACK_IMPORTED_MODULE_6__.Group();
     this.geometryTransformNode.name = "VolumeContainerNode";
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
-    this.setUniform("ATLAS_X", volume.imageInfo.cols);
-    this.setUniform("ATLAS_Y", volume.imageInfo.rows);
-    this.setUniform("textureRes", new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(volume.imageInfo.atlas_width, volume.imageInfo.atlas_height));
-    this.setUniform("SLICES", volume.z);
-    this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_3__["default"](volume.imageInfo.atlas_width, volume.imageInfo.atlas_height);
+    this.updateVolumeDimensions();
+    this.settings = settings;
     this.updateSettings(settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ALL);
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(RayMarchedAtlasVolume, [{
+    key: "updateVolumeDimensions",
+    value: function updateVolumeDimensions() {
+      var _this$volume = this.volume,
+        normalizedPhysicalSize = _this$volume.normalizedPhysicalSize,
+        contentSize = _this$volume.contentSize;
+      // Set offset
+      this.geometryMesh.position.copy(this.volume.getContentCenter());
+      // Set scale
+      this.geometryMesh.scale.copy(contentSize).multiply(normalizedPhysicalSize);
+      this.setUniform("volumeScale", normalizedPhysicalSize);
+      this.boxHelper.box.set(normalizedPhysicalSize.clone().multiplyScalar(-0.5), normalizedPhysicalSize.clone().multiplyScalar(0.5));
+      this.tickMarksMesh.scale.copy(normalizedPhysicalSize);
+      this.settings && this.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ROI);
+
+      // Set atlas dimension uniforms
+      /* eslint-disable-next-line @typescript-eslint/naming-convention */
+      var _this$volume$imageInf = this.volume.imageInfo,
+        cols = _this$volume$imageInf.cols,
+        rows = _this$volume$imageInf.rows,
+        tile_width = _this$volume$imageInf.tile_width,
+        tile_height = _this$volume$imageInf.tile_height;
+      var atlasWidth = tile_width * cols;
+      var atlasHeight = tile_height * rows;
+      this.setUniform("ATLAS_X", cols);
+      this.setUniform("ATLAS_Y", rows);
+      this.setUniform("textureRes", new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(atlasWidth, atlasHeight));
+      this.setUniform("SLICES", this.volume.z);
+
+      // (re)create channel data
+      if (!this.channelData || this.channelData.width !== atlasWidth || this.channelData.height !== atlasHeight) {
+        var _this$channelData;
+        (_this$channelData = this.channelData) === null || _this$channelData === void 0 ? void 0 : _this$channelData.cleanup();
+        this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_3__["default"](atlasWidth, atlasHeight);
+      }
+    }
+  }, {
     key: "viewpointMoved",
     value: function viewpointMoved() {
       return;
@@ -3461,12 +3533,6 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
         this.tickMarksMesh.material.color = newBoxColor;
       }
       if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.TRANSFORM) {
-        // Set scale
-        var scale = this.settings.scale;
-        this.geometryMesh.scale.copy(scale);
-        this.setUniform("volumeScale", scale);
-        this.boxHelper.box.set(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(-0.5 * scale.x, -0.5 * scale.y, -0.5 * scale.z), new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0.5 * scale.x, 0.5 * scale.y, 0.5 * scale.z));
-        this.tickMarksMesh.scale.copy(scale);
         // Set rotation and translation
         this.geometryTransformNode.position.copy(this.settings.translation);
         this.geometryTransformNode.rotation.copy(this.settings.rotation);
@@ -3486,19 +3552,20 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
       if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ROI) {
         // Normalize and set bounds
         var bounds = this.settings.bounds;
-        var boundsNormalized = {
-          bmin: new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(bounds.bmin.x * 2.0, bounds.bmin.y * 2.0, bounds.bmin.z * 2.0),
-          bmax: new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(bounds.bmax.x * 2.0, bounds.bmax.y * 2.0, bounds.bmax.z * 2.0)
-        };
-        this.setUniform("AABB_CLIP_MIN", boundsNormalized.bmin);
-        this.setUniform("AABB_CLIP_MAX", boundsNormalized.bmax);
+        var _this$volume2 = this.volume,
+          contentSize = _this$volume2.contentSize,
+          contentOffset = _this$volume2.contentOffset;
+        var offsetToCenter = contentSize.clone().divideScalar(2).add(contentOffset).subScalar(0.5);
+        var bmin = bounds.bmin.clone().sub(offsetToCenter).divide(contentSize).clampScalar(-0.5, 0.5);
+        var bmax = bounds.bmax.clone().sub(offsetToCenter).divide(contentSize).clampScalar(-0.5, 0.5);
+        this.setUniform("AABB_CLIP_MIN", bmin);
+        this.setUniform("AABB_CLIP_MAX", bmax);
       }
       if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.SAMPLING) {
         this.setUniform("interpolationEnabled", this.settings.useInterpolation);
         this.setUniform("iResolution", this.settings.resolution);
       }
       if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MASK) {
-        this.setUniform("maskAlpha", this.settings.maskAlpha);
         this.setUniform("maskAlpha", this.settings.maskAlpha);
       }
     }
@@ -3534,10 +3601,10 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     value: function createTickMarks() {
       // Length of tick mark lines in world units
       var TICK_LENGTH = 0.025;
-      var _this$volume = this.volume,
-        tickMarkPhysicalLength = _this$volume.tickMarkPhysicalLength,
-        physicalScale = _this$volume.physicalScale,
-        normalizedPhysicalSize = _this$volume.normalizedPhysicalSize;
+      var _this$volume3 = this.volume,
+        tickMarkPhysicalLength = _this$volume3.tickMarkPhysicalLength,
+        physicalScale = _this$volume3.physicalScale,
+        normalizedPhysicalSize = _this$volume3.normalizedPhysicalSize;
       var numTickMarks = physicalScale / tickMarkPhysicalLength;
       var vertices = [];
       var tickEndY = TICK_LENGTH / normalizedPhysicalSize.y + 0.5;
@@ -3600,7 +3667,6 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
         return;
       }
       this.uniforms[name].value = value;
-      this.geometryMesh.material.needsUpdate = true;
     }
 
     // channelcolors is array of {rgbColor, lut} and channeldata is volume.channels
@@ -5153,8 +5219,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "onVolumeData",
     value: function onVolumeData(volume, channels) {
-      var _this$image4;
-      (_this$image4 = this.image) === null || _this$image4 === void 0 ? void 0 : _this$image4.onChannelLoaded(channels);
+      var _this$image4, _this$image5;
+      (_this$image4 = this.image) === null || _this$image4 === void 0 ? void 0 : _this$image4.updateScale();
+      (_this$image5 = this.image) === null || _this$image5 === void 0 ? void 0 : _this$image5.onChannelLoaded(channels);
       if (volume.isLoaded()) {
         this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
       }
@@ -5164,8 +5231,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "onVolumeChannelAdded",
     value: function onVolumeChannelAdded(volume, newChannelIndex) {
-      var _this$image5;
-      (_this$image5 = this.image) === null || _this$image5 === void 0 ? void 0 : _this$image5.onChannelAdded(newChannelIndex);
+      var _this$image6;
+      (_this$image6 = this.image) === null || _this$image6 === void 0 ? void 0 : _this$image6.onChannelAdded(newChannelIndex);
     }
   }, {
     key: "setTime",
@@ -5183,8 +5250,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeChannelAsMask",
     value: function setVolumeChannelAsMask(volume, maskChannelIndex) {
-      var _this$image6;
-      (_this$image6 = this.image) === null || _this$image6 === void 0 ? void 0 : _this$image6.setChannelAsMask(maskChannelIndex);
+      var _this$image7;
+      (_this$image7 = this.image) === null || _this$image7 === void 0 ? void 0 : _this$image7.setChannelAsMask(maskChannelIndex);
       this.redraw();
     }
 
@@ -5209,23 +5276,23 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setRayStepSizes",
     value: function setRayStepSizes(volume, primary, secondary) {
-      var _this$image7;
-      (_this$image7 = this.image) === null || _this$image7 === void 0 ? void 0 : _this$image7.setRayStepSizes(primary, secondary);
+      var _this$image8;
+      (_this$image8 = this.image) === null || _this$image8 === void 0 ? void 0 : _this$image8.setRayStepSizes(primary, secondary);
       this.redraw();
     }
   }, {
     key: "setShowBoundingBox",
     value: function setShowBoundingBox(volume, showBoundingBox) {
-      var _this$image8;
-      (_this$image8 = this.image) === null || _this$image8 === void 0 ? void 0 : _this$image8.setShowBoundingBox(showBoundingBox);
+      var _this$image9;
+      (_this$image9 = this.image) === null || _this$image9 === void 0 ? void 0 : _this$image9.setShowBoundingBox(showBoundingBox);
       this.canvas3d.setShowPerspectiveScaleBar(showBoundingBox && this.canvas3d.showOrthoScaleBar && this.volumeRenderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
       this.redraw();
     }
   }, {
     key: "setBoundingBoxColor",
     value: function setBoundingBoxColor(volume, color) {
-      var _this$image9;
-      (_this$image9 = this.image) === null || _this$image9 === void 0 ? void 0 : _this$image9.setBoundingBoxColor(color);
+      var _this$image10;
+      (_this$image10 = this.image) === null || _this$image10 === void 0 ? void 0 : _this$image10.setBoundingBoxColor(color);
       this.canvas3d.setPerspectiveScaleBarColor(color);
       this.redraw();
     }
@@ -5268,8 +5335,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "hasIsosurface",
     value: function hasIsosurface(volume, channel) {
-      var _this$image10;
-      return ((_this$image10 = this.image) === null || _this$image10 === void 0 ? void 0 : _this$image10.hasIsosurface(channel)) || false;
+      var _this$image11;
+      return ((_this$image11 = this.image) === null || _this$image11 === void 0 ? void 0 : _this$image11.hasIsosurface(channel)) || false;
     }
 
     /**
@@ -5297,8 +5364,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateOpacity",
     value: function updateOpacity(volume, channel, opacity) {
-      var _this$image11;
-      (_this$image11 = this.image) === null || _this$image11 === void 0 ? void 0 : _this$image11.updateOpacity(channel, opacity);
+      var _this$image12;
+      (_this$image12 = this.image) === null || _this$image12 === void 0 ? void 0 : _this$image12.updateOpacity(channel, opacity);
       this.redraw();
     }
 
@@ -5310,8 +5377,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "clearIsosurface",
     value: function clearIsosurface(volume, channel) {
-      var _this$image12;
-      (_this$image12 = this.image) === null || _this$image12 === void 0 ? void 0 : _this$image12.destroyIsosurface(channel);
+      var _this$image13;
+      (_this$image13 = this.image) === null || _this$image13 === void 0 ? void 0 : _this$image13.destroyIsosurface(channel);
       this.redraw();
     }
 
@@ -5324,8 +5391,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "saveChannelIsosurface",
     value: function saveChannelIsosurface(volume, channelIndex, type) {
-      var _this$image13;
-      (_this$image13 = this.image) === null || _this$image13 === void 0 ? void 0 : _this$image13.saveChannelIsosurface(channelIndex, type);
+      var _this$image14;
+      (_this$image14 = this.image) === null || _this$image14 === void 0 ? void 0 : _this$image14.saveChannelIsosurface(channelIndex, type);
     }
 
     // Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will return any prior existing image.
@@ -5353,24 +5420,24 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "onStartControls",
     value: function onStartControls() {
-      var _this$image14;
+      var _this$image15;
       if (this.volumeRenderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         // TODO: VR display requires a running renderloop
         this.canvas3d.startRenderLoop();
       }
-      (_this$image14 = this.image) === null || _this$image14 === void 0 ? void 0 : _this$image14.onStartControls();
+      (_this$image15 = this.image) === null || _this$image15 === void 0 ? void 0 : _this$image15.onStartControls();
     }
   }, {
     key: "onChangeControls",
     value: function onChangeControls() {
-      var _this$image15;
-      (_this$image15 = this.image) === null || _this$image15 === void 0 ? void 0 : _this$image15.onChangeControls();
+      var _this$image16;
+      (_this$image16 = this.image) === null || _this$image16 === void 0 ? void 0 : _this$image16.onChangeControls();
     }
   }, {
     key: "onEndControls",
     value: function onEndControls() {
-      var _this$image16;
-      (_this$image16 = this.image) === null || _this$image16 === void 0 ? void 0 : _this$image16.onEndControls();
+      var _this$image17;
+      (_this$image17 = this.image) === null || _this$image17 === void 0 ? void 0 : _this$image17.onEndControls();
       // If we are pathtracing or autorotating, then keep rendering. Otherwise stop now.
       if (this.volumeRenderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE && !this.canvas3d.controls.autoRotate) {
         // TODO: VR display requires a running renderloop
@@ -5423,17 +5490,17 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setCameraMode",
     value: function setCameraMode(mode) {
-      var _this$image17, _this$image18;
+      var _this$image18, _this$image19;
       this.canvas3d.switchViewMode(mode);
-      (_this$image17 = this.image) === null || _this$image17 === void 0 ? void 0 : _this$image17.setViewMode(mode);
-      (_this$image18 = this.image) === null || _this$image18 === void 0 ? void 0 : _this$image18.setIsOrtho(mode !== "3D");
+      (_this$image18 = this.image) === null || _this$image18 === void 0 ? void 0 : _this$image18.setViewMode(mode);
+      (_this$image19 = this.image) === null || _this$image19 === void 0 ? void 0 : _this$image19.setIsOrtho(mode !== "3D");
       this.canvas3d.redraw();
     }
   }, {
     key: "setZSlice",
     value: function setZSlice(volume, slice) {
-      var _this$image19;
-      if ((_this$image19 = this.image) !== null && _this$image19 !== void 0 && _this$image19.setZSlice(slice)) {
+      var _this$image20;
+      if ((_this$image20 = this.image) !== null && _this$image20 !== void 0 && _this$image20.setZSlice(slice)) {
         this.canvas3d.redraw();
         return true;
       }
@@ -5458,9 +5525,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setShowScaleBar",
     value: function setShowScaleBar(showScaleBar) {
-      var _this$image20;
+      var _this$image21;
       this.canvas3d.setShowOrthoScaleBar(showScaleBar);
-      this.canvas3d.setShowPerspectiveScaleBar(showScaleBar && !!((_this$image20 = this.image) !== null && _this$image20 !== void 0 && _this$image20.showBoundingBox) && this.volumeRenderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
+      this.canvas3d.setShowPerspectiveScaleBar(showScaleBar && !!((_this$image21 = this.image) !== null && _this$image21 !== void 0 && _this$image21.showBoundingBox) && this.volumeRenderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
     }
 
     /**
@@ -5470,8 +5537,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setShowTimestepIndicator",
     value: function setShowTimestepIndicator(showIndicator) {
-      var _this$image21;
-      var times = (_this$image21 = this.image) === null || _this$image21 === void 0 ? void 0 : _this$image21.volume.imageInfo.times;
+      var _this$image22;
+      var times = (_this$image22 = this.image) === null || _this$image22 === void 0 ? void 0 : _this$image22.volume.imageInfo.times;
       var hasTimes = !!times && times > 1;
       this.canvas3d.setShowTimestepIndicator(showIndicator && hasTimes);
     }
@@ -5568,15 +5635,15 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setFlipVolume",
     value: function setFlipVolume(volume, flipX, flipY, flipZ) {
-      var _this$image22;
-      (_this$image22 = this.image) === null || _this$image22 === void 0 ? void 0 : _this$image22.setFlipAxes(flipX, flipY, flipZ);
+      var _this$image23;
+      (_this$image23 = this.image) === null || _this$image23 === void 0 ? void 0 : _this$image23.setFlipAxes(flipX, flipY, flipZ);
       this.redraw();
     }
   }, {
     key: "setInterpolationEnabled",
     value: function setInterpolationEnabled(volume, active) {
-      var _this$image23;
-      (_this$image23 = this.image) === null || _this$image23 === void 0 ? void 0 : _this$image23.setInterpolationEnabled(active);
+      var _this$image24;
+      (_this$image24 = this.image) === null || _this$image24 === void 0 ? void 0 : _this$image24.setInterpolationEnabled(active);
       this.redraw();
     }
 
@@ -5592,9 +5659,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "resize",
     value: function resize(comp, w, h, ow, oh, eOpts) {
-      var _this$image24;
+      var _this$image25;
       this.canvas3d.resize(comp, w, h, ow, oh, eOpts);
-      (_this$image24 = this.image) === null || _this$image24 === void 0 ? void 0 : _this$image24.setResolution(this.canvas3d);
+      (_this$image25 = this.image) === null || _this$image25 === void 0 ? void 0 : _this$image25.setResolution(this.canvas3d);
       this.redraw();
     }
 
@@ -5606,8 +5673,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateDensity",
     value: function updateDensity(volume, density) {
-      var _this$image25;
-      (_this$image25 = this.image) === null || _this$image25 === void 0 ? void 0 : _this$image25.setDensity(density);
+      var _this$image26;
+      (_this$image26 = this.image) === null || _this$image26 === void 0 ? void 0 : _this$image26.setDensity(density);
       this.redraw();
     }
 
@@ -5619,8 +5686,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateShadingMethod",
     value: function updateShadingMethod(volume, isbrdf) {
-      var _this$image26;
-      (_this$image26 = this.image) === null || _this$image26 === void 0 ? void 0 : _this$image26.updateShadingMethod(isbrdf);
+      var _this$image27;
+      (_this$image27 = this.image) === null || _this$image27 === void 0 ? void 0 : _this$image27.updateShadingMethod(isbrdf);
     }
 
     /**
@@ -5633,8 +5700,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setGamma",
     value: function setGamma(volume, gmin, glevel, gmax) {
-      var _this$image27;
-      (_this$image27 = this.image) === null || _this$image27 === void 0 ? void 0 : _this$image27.setGamma(gmin, glevel, gmax);
+      var _this$image28;
+      (_this$image28 = this.image) === null || _this$image28 === void 0 ? void 0 : _this$image28.setGamma(gmin, glevel, gmax);
       this.redraw();
     }
 
@@ -5646,8 +5713,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setMaxProjectMode",
     value: function setMaxProjectMode(volume, isMaxProject) {
-      var _this$image28;
-      (_this$image28 = this.image) === null || _this$image28 === void 0 ? void 0 : _this$image28.setMaxProjectMode(isMaxProject);
+      var _this$image29;
+      (_this$image29 = this.image) === null || _this$image29 === void 0 ? void 0 : _this$image29.setMaxProjectMode(isMaxProject);
       this.redraw();
     }
 
@@ -5658,8 +5725,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateActiveChannels",
     value: function updateActiveChannels(_volume) {
-      var _this$image29;
-      (_this$image29 = this.image) === null || _this$image29 === void 0 ? void 0 : _this$image29.fuse();
+      var _this$image30;
+      (_this$image30 = this.image) === null || _this$image30 === void 0 ? void 0 : _this$image30.fuse();
       this.redraw();
     }
 
@@ -5670,8 +5737,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateLuts",
     value: function updateLuts(_volume) {
-      var _this$image30;
-      (_this$image30 = this.image) === null || _this$image30 === void 0 ? void 0 : _this$image30.updateLuts();
+      var _this$image31;
+      (_this$image31 = this.image) === null || _this$image31 === void 0 ? void 0 : _this$image31.updateLuts();
       this.redraw();
     }
 
@@ -5682,8 +5749,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateMaterial",
     value: function updateMaterial(_volume) {
-      var _this$image31;
-      (_this$image31 = this.image) === null || _this$image31 === void 0 ? void 0 : _this$image31.updateMaterial();
+      var _this$image32;
+      (_this$image32 = this.image) === null || _this$image32 === void 0 ? void 0 : _this$image32.updateMaterial();
       this.redraw();
     }
 
@@ -5694,9 +5761,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateExposure",
     value: function updateExposure(e) {
-      var _this$image32;
+      var _this$image33;
       this.exposure = e;
-      (_this$image32 = this.image) === null || _this$image32 === void 0 ? void 0 : _this$image32.setBrightness(e);
+      (_this$image33 = this.image) === null || _this$image33 === void 0 ? void 0 : _this$image33.setBrightness(e);
       this.redraw();
     }
 
@@ -5709,9 +5776,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateCamera",
     value: function updateCamera(fov, focalDistance, apertureSize) {
-      var _this$image33;
+      var _this$image34;
       this.canvas3d.updateCameraFocus(fov, focalDistance, apertureSize);
-      (_this$image33 = this.image) === null || _this$image33 === void 0 ? void 0 : _this$image33.onCameraChanged(fov, focalDistance, apertureSize);
+      (_this$image34 = this.image) === null || _this$image34 === void 0 ? void 0 : _this$image34.onCameraChanged(fov, focalDistance, apertureSize);
       this.redraw();
     }
 
@@ -5728,8 +5795,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateClipRegion",
     value: function updateClipRegion(volume, xmin, xmax, ymin, ymax, zmin, zmax) {
-      var _this$image34;
-      (_this$image34 = this.image) === null || _this$image34 === void 0 ? void 0 : _this$image34.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
+      var _this$image35;
+      (_this$image35 = this.image) === null || _this$image35 === void 0 ? void 0 : _this$image35.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
       this.redraw();
     }
 
@@ -5745,8 +5812,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setAxisClip",
     value: function setAxisClip(volume, axis, minval, maxval, isOrthoAxis) {
-      var _this$image35;
-      (_this$image35 = this.image) === null || _this$image35 === void 0 ? void 0 : _this$image35.setAxisClip(axis, minval, maxval, isOrthoAxis);
+      var _this$image36;
+      (_this$image36 = this.image) === null || _this$image36 === void 0 ? void 0 : _this$image36.setAxisClip(axis, minval, maxval, isOrthoAxis);
       this.redraw();
     }
 
@@ -5757,10 +5824,10 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateLights",
     value: function updateLights(state) {
-      var _this$image36;
+      var _this$image37;
       // TODO flesh this out
       this.lights = state;
-      (_this$image36 = this.image) === null || _this$image36 === void 0 ? void 0 : _this$image36.updateLights(state);
+      (_this$image37 = this.image) === null || _this$image37 === void 0 ? void 0 : _this$image37.updateLights(state);
     }
 
     /**
@@ -5770,12 +5837,12 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updatePixelSamplingRate",
     value: function updatePixelSamplingRate(value) {
-      var _this$image37;
+      var _this$image38;
       if (this.pixelSamplingRate === value) {
         return;
       }
       this.pixelSamplingRate = value;
-      (_this$image37 = this.image) === null || _this$image37 === void 0 ? void 0 : _this$image37.setPixelSamplingRate(value);
+      (_this$image38 = this.image) === null || _this$image38 === void 0 ? void 0 : _this$image38.setPixelSamplingRate(value);
     }
 
     /**
@@ -5786,8 +5853,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateMaskAlpha",
     value: function updateMaskAlpha(volume, value) {
-      var _this$image38;
-      (_this$image38 = this.image) === null || _this$image38 === void 0 ? void 0 : _this$image38.setMaskAlpha(value);
+      var _this$image39;
+      (_this$image39 = this.image) === null || _this$image39 === void 0 ? void 0 : _this$image39.setMaskAlpha(value);
       this.redraw();
     }
 
@@ -5800,8 +5867,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeChannelEnabled",
     value: function setVolumeChannelEnabled(volume, channel, enabled) {
-      var _this$image39;
-      (_this$image39 = this.image) === null || _this$image39 === void 0 ? void 0 : _this$image39.setVolumeChannelEnabled(channel, enabled);
+      var _this$image40;
+      (_this$image40 = this.image) === null || _this$image40 === void 0 ? void 0 : _this$image40.setVolumeChannelEnabled(channel, enabled);
       this.redraw();
     }
 
@@ -5817,8 +5884,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateChannelMaterial",
     value: function updateChannelMaterial(volume, channelIndex, colorrgb, specularrgb, emissivergb, glossiness) {
-      var _this$image40;
-      (_this$image40 = this.image) === null || _this$image40 === void 0 ? void 0 : _this$image40.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
+      var _this$image41;
+      (_this$image41 = this.image) === null || _this$image41 === void 0 ? void 0 : _this$image41.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
     }
 
     /**
@@ -5830,8 +5897,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateChannelColor",
     value: function updateChannelColor(volume, channelIndex, colorrgb) {
-      var _this$image41;
-      (_this$image41 = this.image) === null || _this$image41 === void 0 ? void 0 : _this$image41.updateChannelColor(channelIndex, colorrgb);
+      var _this$image42;
+      (_this$image42 = this.image) === null || _this$image42 === void 0 ? void 0 : _this$image42.updateChannelColor(channelIndex, colorrgb);
     }
 
     /**
@@ -5841,7 +5908,7 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeRenderMode",
     value: function setVolumeRenderMode(mode) {
-      var _this$image42;
+      var _this$image43;
       if (mode === this.volumeRenderMode) {
         return;
       }
@@ -5864,7 +5931,7 @@ var View3d = /*#__PURE__*/function () {
       }
 
       // TODO remove when pathtrace supports a bounding box
-      this.canvas3d.setShowPerspectiveScaleBar(this.canvas3d.showOrthoScaleBar && !!((_this$image42 = this.image) !== null && _this$image42 !== void 0 && _this$image42.showBoundingBox) && mode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
+      this.canvas3d.setShowPerspectiveScaleBar(this.canvas3d.showOrthoScaleBar && !!((_this$image43 = this.image) !== null && _this$image43 !== void 0 && _this$image43.showBoundingBox) && mode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
     }
 
     /**
@@ -5875,8 +5942,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeTranslation",
     value: function setVolumeTranslation(volume, xyz) {
-      var _this$image43;
-      (_this$image43 = this.image) === null || _this$image43 === void 0 ? void 0 : _this$image43.setTranslation(new three__WEBPACK_IMPORTED_MODULE_9__.Vector3().fromArray(xyz));
+      var _this$image44;
+      (_this$image44 = this.image) === null || _this$image44 === void 0 ? void 0 : _this$image44.setTranslation(new three__WEBPACK_IMPORTED_MODULE_9__.Vector3().fromArray(xyz));
       this.redraw();
     }
 
@@ -5888,8 +5955,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeRotation",
     value: function setVolumeRotation(volume, eulerXYZ) {
-      var _this$image44;
-      (_this$image44 = this.image) === null || _this$image44 === void 0 ? void 0 : _this$image44.setRotation(new three__WEBPACK_IMPORTED_MODULE_9__.Euler().fromArray(eulerXYZ));
+      var _this$image45;
+      (_this$image45 = this.image) === null || _this$image45 === void 0 ? void 0 : _this$image45.setRotation(new three__WEBPACK_IMPORTED_MODULE_9__.Euler().fromArray(eulerXYZ));
       this.redraw();
     }
 
@@ -5899,9 +5966,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "resetCamera",
     value: function resetCamera() {
-      var _this$image45;
+      var _this$image46;
       this.canvas3d.resetCamera();
-      (_this$image45 = this.image) === null || _this$image45 === void 0 ? void 0 : _this$image45.onResetCamera();
+      (_this$image46 = this.image) === null || _this$image46 === void 0 ? void 0 : _this$image46.onResetCamera();
       this.redraw();
     }
   }, {
@@ -5917,7 +5984,7 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setupGui",
     value: function setupGui(container) {
-      var _this$image46;
+      var _this$image47;
       if (this.tweakpane) {
         this.canvas3d.containerdiv.removeChild(this.tweakpane.element);
       }
@@ -5958,7 +6025,7 @@ var View3d = /*#__PURE__*/function () {
       addFolderForLight(this.ambientLight, "ambient light");
       addFolderForLight(this.reflectedLight, "reflected light");
       addFolderForLight(this.fillLight, "fill light");
-      (_this$image46 = this.image) === null || _this$image46 === void 0 ? void 0 : _this$image46.setupGui(pane);
+      (_this$image47 = this.image) === null || _this$image47 === void 0 ? void 0 : _this$image47.setupGui(pane);
       return pane;
     }
   }]);
@@ -6012,8 +6079,6 @@ var getDefaultImageInfo = function getDefaultImageInfo() {
     cols: 1,
     tile_width: 1,
     tile_height: 1,
-    atlas_width: 1,
-    atlas_height: 1,
     transform: {
       translation: [0, 0, 0],
       rotation: [0, 0, 0]
@@ -6090,7 +6155,8 @@ var Volume = /*#__PURE__*/function () {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Volume);
     // imageMetadata to be filled in by Volume Loaders
     this.imageMetadata = {};
-    this.scale = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
+    this.contentSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
+    this.contentOffset = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0);
     this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
     this.physicalScale = 1;
     this.normalizedPhysicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
@@ -6107,7 +6173,6 @@ var Volume = /*#__PURE__*/function () {
     this.x = this.imageInfo.tile_width;
     this.y = this.imageInfo.tile_height;
     this.z = this.imageInfo.tiles;
-    this.t = 1;
     this.num_channels = this.imageInfo.channels;
     this.channel_names = this.imageInfo.channel_names.slice();
     this.channel_colors_default = this.imageInfo.channel_colors ? this.imageInfo.channel_colors.slice() : this.channel_names.map(function (name, index) {
@@ -6119,8 +6184,6 @@ var Volume = /*#__PURE__*/function () {
         this.channel_colors_default[i] = (0,_constants_colors__WEBPACK_IMPORTED_MODULE_3__.getColorByChannelIndex)(i);
       }
     }
-    this.atlasSize = [this.imageInfo.atlas_width, this.imageInfo.atlas_height];
-    this.volumeSize = [this.x, this.y, this.z];
     this.channels = [];
     for (var _i = 0; _i < this.num_channels; ++_i) {
       var channel = new _Channel__WEBPACK_IMPORTED_MODULE_2__["default"](this.channel_names[_i]);
@@ -6147,10 +6210,39 @@ var Volume = /*#__PURE__*/function () {
     }
     this.volumeDataObservers = [];
   }
-
-  // we calculate the physical size of the volume (voxels*pixel_size)
-  // and then normalize to the max physical dimension
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Volume, [{
+    key: "updateDimensions",
+    value: function updateDimensions() {
+      this.x = this.imageInfo.tile_width;
+      this.y = this.imageInfo.tile_height;
+      this.z = this.imageInfo.tiles;
+      this.setVoxelSize(this.pixel_size);
+
+      /* eslint-disable @typescript-eslint/naming-convention */
+      var _this$imageInfo = this.imageInfo,
+        tile_width = _this$imageInfo.tile_width,
+        tile_height = _this$imageInfo.tile_height,
+        tiles = _this$imageInfo.tiles,
+        _this$imageInfo$vol_s = _this$imageInfo.vol_size_x,
+        vol_size_x = _this$imageInfo$vol_s === void 0 ? tile_width : _this$imageInfo$vol_s,
+        _this$imageInfo$vol_s2 = _this$imageInfo.vol_size_y,
+        vol_size_y = _this$imageInfo$vol_s2 === void 0 ? tile_height : _this$imageInfo$vol_s2,
+        _this$imageInfo$vol_s3 = _this$imageInfo.vol_size_z,
+        vol_size_z = _this$imageInfo$vol_s3 === void 0 ? tiles : _this$imageInfo$vol_s3,
+        _this$imageInfo$offse = _this$imageInfo.offset_x,
+        offset_x = _this$imageInfo$offse === void 0 ? 0 : _this$imageInfo$offse,
+        _this$imageInfo$offse2 = _this$imageInfo.offset_y,
+        offset_y = _this$imageInfo$offse2 === void 0 ? 0 : _this$imageInfo$offse2,
+        _this$imageInfo$offse3 = _this$imageInfo.offset_z,
+        offset_z = _this$imageInfo$offse3 === void 0 ? 0 : _this$imageInfo$offse3;
+      /* eslint-enable @typescript-eslint/naming-convention */
+      this.contentSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(tile_width / vol_size_x, tile_height / vol_size_y, tiles / vol_size_z);
+      this.contentOffset = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(offset_x / vol_size_x, offset_y / vol_size_y, offset_z / vol_size_z);
+    }
+
+    // we calculate the physical size of the volume (voxels*pixel_size)
+    // and then normalize to the max physical dimension
+  }, {
     key: "setVoxelSize",
     value: function setVoxelSize(values) {
       // basic error check.  bail out if we get something bad.
@@ -6168,15 +6260,11 @@ var Volume = /*#__PURE__*/function () {
       if (values[2] > 0) {
         this.pixel_size[2] = values[2];
       }
-      var physSizeMin = Math.min(this.pixel_size[0], this.pixel_size[1], this.pixel_size[2]);
-      var pixelsMax = Math.max(this.imageInfo.width, this.imageInfo.height, this.z);
-      var sx = this.pixel_size[0] / physSizeMin * this.imageInfo.width / pixelsMax;
-      var sy = this.pixel_size[1] / physSizeMin * this.imageInfo.height / pixelsMax;
-      var sz = this.pixel_size[2] / physSizeMin * this.z / pixelsMax;
 
       // this works because image was scaled down in x and y but not z.
       // so use original x and y dimensions from imageInfo.
-      this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(this.imageInfo.width * this.pixel_size[0], this.imageInfo.height * this.pixel_size[1], this.z * this.pixel_size[2]);
+      var sizez = this.imageInfo.vol_size_z || this.z;
+      this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(this.imageInfo.width * this.pixel_size[0], this.imageInfo.height * this.pixel_size[1], sizez * this.pixel_size[2]);
       // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
       this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z);
       // Compute the volume's max extent - scaled to max dimension.
@@ -6184,14 +6272,19 @@ var Volume = /*#__PURE__*/function () {
       // While we're here, pick a power of 10 that divides into our max dimension a reasonable number of times
       // and save it to be the length of tick marks in 3d.
       this.tickMarkPhysicalLength = Math.pow(10, Math.floor(Math.log10(this.physicalScale / 2)));
-
-      // sx, sy, sz should be same as normalizedPhysicalSize
-      this.scale = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(sx, sy, sz);
     }
   }, {
     key: "setUnitSymbol",
     value: function setUnitSymbol(symbol) {
       this.physicalUnitSymbol = symbol;
+    }
+
+    /** Computes the center of the volume subset */
+  }, {
+    key: "getContentCenter",
+    value: function getContentCenter() {
+      // center point: (contentSize / 2 + contentOffset - 0.5) * normalizedPhysicalSize;
+      return this.contentSize.clone().divideScalar(2).add(this.contentOffset).subScalar(0.5).multiply(this.normalizedPhysicalSize);
     }
   }, {
     key: "cleanup",
@@ -6250,7 +6343,7 @@ var Volume = /*#__PURE__*/function () {
   }, {
     key: "setChannelDataFromVolume",
     value: function setChannelDataFromVolume(channelIndex, volumeData) {
-      this.channels[channelIndex].setFromVolumeData(volumeData, this.x, this.y, this.z, this.atlasSize[0], this.atlasSize[1]);
+      this.channels[channelIndex].setFromVolumeData(volumeData, this.x, this.y, this.z, this.imageInfo.cols * this.imageInfo.tile_width, this.imageInfo.rows * this.imageInfo.tile_height);
       this.onChannelLoaded([channelIndex]);
     }
 
@@ -6514,7 +6607,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
     //this.PT && this.sceneRoot.add(this.meshVolume.get3dObject());
 
     this.sceneRoot.position.set(0, 0, 0);
-    this.setScale(this.volume.scale);
+    this.updateScale();
 
     // apply the volume's default transformation
     this.settings.translation = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(this.volume.getTranslation());
@@ -6542,9 +6635,6 @@ var VolumeDrawable = /*#__PURE__*/function () {
         this.setAxisClip(_VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.X, options.clipBounds[0], options.clipBounds[1]);
         this.setAxisClip(_VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Y, options.clipBounds[2], options.clipBounds[3]);
         this.setAxisClip(_VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Z, options.clipBounds[4], options.clipBounds[5]);
-      }
-      if (options.scale !== undefined) {
-        this.setScale(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(options.scale));
       }
       if (options.translation !== undefined) {
         this.setTranslation(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(options.translation));
@@ -6633,15 +6723,13 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.SAMPLING);
     }
   }, {
-    key: "setScale",
-    value: function setScale(scale) {
-      if (this.settings.scale === scale) {
-        return;
-      }
-      this.settings.scale = scale;
-      this.settings.currentScale = scale.clone();
-      this.meshVolume.setScale(scale);
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.TRANSFORM);
+    key: "updateScale",
+    value: function updateScale() {
+      var _this$volume = this.volume,
+        normalizedPhysicalSize = _this$volume.normalizedPhysicalSize,
+        contentSize = _this$volume.contentSize;
+      this.meshVolume.setScale(normalizedPhysicalSize.clone().multiply(contentSize), this.volume.getContentCenter());
+      this.volumeRendering.updateVolumeDimensions();
     }
   }, {
     key: "setOrthoScale",
@@ -6882,7 +6970,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "setVoxelSize",
     value: function setVoxelSize(values) {
       this.volume.setVoxelSize(values);
-      this.setScale(this.volume.scale);
+      this.updateScale();
     }
   }, {
     key: "cleanup",
@@ -7207,7 +7295,8 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "setZSlice",
     value: function setZSlice(slice) {
-      if (this.settings.zSlice !== slice && slice < this.volume.z && slice > 0) {
+      var sizez = this.volume.imageInfo.vol_size_z || this.volume.z;
+      if (this.settings.zSlice !== slice && slice < sizez && slice > 0) {
         this.settings.zSlice = slice;
         this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.ROI);
         return true;
@@ -7393,7 +7482,7 @@ var SettingsFlags = /*#__PURE__*/function (SettingsFlags) {
   SettingsFlags[SettingsFlags["MATERIAL"] = 32] = "MATERIAL";
   SettingsFlags[SettingsFlags["SAMPLING"] = 64] = "SAMPLING";
   SettingsFlags[SettingsFlags["VIEW"] = 128] = "VIEW";
-  SettingsFlags[SettingsFlags["ALL"] = 255] = "ALL";
+  SettingsFlags[SettingsFlags["ALL"] = 511] = "ALL";
   return SettingsFlags;
 }({});
 var Axis = /*#__PURE__*/function (Axis) {
@@ -7433,8 +7522,6 @@ var VolumeRenderSettings = /*#__PURE__*/function () {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, VolumeRenderSettings);
     this.translation = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0);
     this.rotation = new three__WEBPACK_IMPORTED_MODULE_2__.Euler();
-    this.scale = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(1, 1, 1);
-    this.currentScale = new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(1, 1, 1);
     this.isOrtho = false;
     this.viewAxis = Axis.NONE;
     this.orthoScale = 1.0;
@@ -7911,7 +7998,7 @@ __webpack_require__.r(__webpack_exports__);
 /* babel-plugin-inline-import './shaders/pathtrace.vert' */
 var pathTraceVertexShader = "precision highp float;\nprecision highp int;\nout vec2 vUv;\nvoid main()\n{\n  vUv = uv;\n  gl_Position = vec4( position, 1.0 );\n}\n";
 /* babel-plugin-inline-import './shaders/pathtrace.frag' */
-var pathTraceFragmentShader = "precision highp float;\nprecision highp int;\nprecision highp sampler2D;\nprecision highp sampler3D;\n\n#define PI (3.1415926535897932384626433832795)\n#define PI_OVER_2 (1.57079632679489661923)\n#define PI_OVER_4 (0.785398163397448309616)\n#define INV_PI (1.0/PI)\n#define INV_2_PI (0.5/PI)\n#define INV_4_PI (0.25/PI)\n\nconst vec3 BLACK = vec3(0,0,0);\nconst vec3 WHITE = vec3(1.0,1.0,1.0);\nconst int ShaderType_Brdf = 0;\nconst int ShaderType_Phase = 1;\nconst int ShaderType_Mixed = 2;\nconst float MAX_RAY_LEN = 1500000.0f;\n\nin vec2 vUv;\n\nstruct Camera {\n  vec3 mFrom;\n  vec3 mU, mV, mN;\n  vec4 mScreen;  // left, right, bottom, top\n  vec2 mInvScreen;  // 1/w, 1/h\n  float mFocalDistance;\n  float mApertureSize;\n  float mIsOrtho; // 1 or 0\n};\n\nuniform Camera gCamera;\n\nstruct Light {\n  float   mTheta;\n  float   mPhi;\n  float   mWidth;\n  float   mHalfWidth;\n  float   mHeight;\n  float   mHalfHeight;\n  float   mDistance;\n  float   mSkyRadius;\n  vec3    mP;\n  vec3    mTarget;\n  vec3    mN;\n  vec3    mU;\n  vec3    mV;\n  float   mArea;\n  float   mAreaPdf;\n  vec3    mColor;\n  vec3    mColorTop;\n  vec3    mColorMiddle;\n  vec3    mColorBottom;\n  int     mT;\n};\nconst int NUM_LIGHTS = 2;\nuniform Light gLights[2];\n\nuniform vec3 gClippedAaBbMin;\nuniform vec3 gClippedAaBbMax;\nuniform float gDensityScale;\nuniform float gStepSize;\nuniform float gStepSizeShadow;\nuniform sampler3D volumeTexture;\nuniform vec3 gInvAaBbMax;\nuniform int gNChannels;\nuniform int gShadingType;\nuniform vec3 gGradientDeltaX;\nuniform vec3 gGradientDeltaY;\nuniform vec3 gGradientDeltaZ;\nuniform float gInvGradientDelta;\nuniform float gGradientFactor;\nuniform float uShowLights;\nuniform vec3 flipVolume;\n\n// per channel\n// the luttexture is a 256x4 rgba texture\n// each row is a 256 element lookup table.\nuniform sampler2D gLutTexture;\nuniform vec4 gIntensityMax;\nuniform vec4 gIntensityMin;\nuniform float gOpacity[4];\nuniform vec3 gEmissive[4];\nuniform vec3 gDiffuse[4];\nuniform vec3 gSpecular[4];\nuniform float gGlossiness[4];\n\n// compositing / progressive render\nuniform float uFrameCounter;\nuniform float uSampleCounter;\nuniform vec2 uResolution;\nuniform sampler2D tPreviousTexture;\n\n// from iq https://www.shadertoy.com/view/4tXyWN\nfloat rand( inout uvec2 seed )\n{\n  seed += uvec2(1);\n  uvec2 q = 1103515245U * ( (seed >> 1U) ^ (seed.yx) );\n  uint  n = 1103515245U * ( (q.x) ^ (q.y >> 3U) );\n  return float(n) * (1.0 / float(0xffffffffU));\n}\n\nvec3 XYZtoRGB(vec3 xyz) {\n  return vec3(\n    3.240479f*xyz[0] - 1.537150f*xyz[1] - 0.498535f*xyz[2],\n    -0.969256f*xyz[0] + 1.875991f*xyz[1] + 0.041556f*xyz[2],\n    0.055648f*xyz[0] - 0.204043f*xyz[1] + 1.057311f*xyz[2]\n  );\n}\n\n// Used to convert from linear RGB to XYZ space\nconst mat3 RGB_2_XYZ = (mat3(\n  0.4124564, 0.3575761, 0.1804375,\n  0.2126729, 0.7151522, 0.0721750,\n  0.0193339, 0.1191920, 0.9503041\n));\nvec3 RGBtoXYZ(vec3 rgb) {\n  return rgb * RGB_2_XYZ;\n}\n\nvec3 getUniformSphereSample(in vec2 U)\n{\n  float z = 1.f - 2.f * U.x;\n  float r = sqrt(max(0.f, 1.f - z*z));\n  float phi = 2.f * PI * U.y;\n  float x = r * cos(phi);\n  float y = r * sin(phi);\n  return vec3(x, y, z);\n}\n\nfloat SphericalPhi(in vec3 Wl)\n{\n  float p = atan(Wl.z, Wl.x);\n  return (p < 0.f) ? p + 2.f * PI : p;\n}\n\nfloat SphericalTheta(in vec3 Wl)\n{\n  return acos(clamp(Wl.y, -1.f, 1.f));\n}\n\nbool SameHemisphere(in vec3 Ww1, in vec3 Ww2)\n{\n   return (Ww1.z * Ww2.z) > 0.0f;\n}\n\nvec2 getConcentricDiskSample(in vec2 U)\n{\n  float r, theta;\n  // Map 0..1 to -1..1\n  float sx = 2.0 * U.x - 1.0;\n  float sy = 2.0 * U.y - 1.0;\n\n  // Map square to (r,theta)\n\n  // Handle degeneracy at the origin\n  if (sx == 0.0 && sy == 0.0)\n  {\n    return vec2(0.0f, 0.0f);\n  }\n\n  // quadrants of disk\n  if (sx >= -sy)\n  {\n    if (sx > sy)\n    {\n      r = sx;\n      if (sy > 0.0)\n        theta = sy/r;\n      else\n        theta = 8.0f + sy/r;\n    }\n    else\n    {\n      r = sy;\n      theta = 2.0f - sx/r;\n    }\n  }\n  else\n  {\n    if (sx <= sy)\n    {\n      r = -sx;\n      theta = 4.0f - sy/r;\n    }\n    else\n    {\n      r = -sy;\n      theta = 6.0f + sx/r;\n    }\n  }\n\n  theta *= PI_OVER_4;\n\n  return vec2(r*cos(theta), r*sin(theta));\n}\n\nvec3 getCosineWeightedHemisphereSample(in vec2 U)\n{\n  vec2 ret = getConcentricDiskSample(U);\n  return vec3(ret.x, ret.y, sqrt(max(0.f, 1.f - ret.x * ret.x - ret.y * ret.y)));\n}\n\nstruct Ray {\n  vec3 m_O;\n  vec3 m_D;\n  float m_MinT, m_MaxT;\n};\n\nvec3 rayAt(Ray r, float t) {\n  return r.m_O + t*r.m_D;\n}\n\nRay GenerateCameraRay(in Camera cam, in vec2 Pixel, in vec2 ApertureRnd)\n{\n  // negating ScreenPoint.y flips the up/down direction. depends on whether you want pixel 0 at top or bottom\n  // we could also have flipped mScreen and mInvScreen, or cam.mV?\n  vec2 ScreenPoint = vec2(\n    cam.mScreen.x + (cam.mInvScreen.x * Pixel.x),\n    cam.mScreen.z + (cam.mInvScreen.y * Pixel.y)\n  );\n  vec3 dxy = (ScreenPoint.x * cam.mU) + (-ScreenPoint.y * cam.mV);\n\n  // orthographic camera ray: start at (camera pos + screen point), go in direction N\n  // perspective camera ray: start at camera pos, go in direction (N + screen point)\n  vec3 RayO = cam.mFrom + cam.mIsOrtho * dxy;\n  vec3 RayD = normalize(cam.mN + (1.0 - cam.mIsOrtho) * dxy);\n\n  if (cam.mApertureSize != 0.0f)\n  {\n    vec2 LensUV = cam.mApertureSize * getConcentricDiskSample(ApertureRnd);\n\n    vec3 LI = cam.mU * LensUV.x + cam.mV * LensUV.y;\n    RayO += LI;\n    RayD = normalize((RayD * cam.mFocalDistance) - LI);\n  }\n\n  return Ray(RayO, RayD, 0.0, MAX_RAY_LEN);\n}\n\nbool IntersectBox(in Ray R, out float pNearT, out float pFarT)\n{\n  vec3 invR\t\t= vec3(1.0f, 1.0f, 1.0f) / R.m_D;\n  vec3 bottomT\t\t= invR * (vec3(gClippedAaBbMin.x, gClippedAaBbMin.y, gClippedAaBbMin.z) - R.m_O);\n  vec3 topT\t\t= invR * (vec3(gClippedAaBbMax.x, gClippedAaBbMax.y, gClippedAaBbMax.z) - R.m_O);\n  vec3 minT\t\t= min(topT, bottomT);\n  vec3 maxT\t\t= max(topT, bottomT);\n  float largestMinT = max(max(minT.x, minT.y), max(minT.x, minT.z));\n  float smallestMaxT = min(min(maxT.x, maxT.y), min(maxT.x, maxT.z));\n\n  pNearT = largestMinT;\n  pFarT\t= smallestMaxT;\n\n  return smallestMaxT > largestMinT;\n}\n\n// assume volume is centered at 0,0,0 so p spans -bounds to + bounds\n// transform p to range from 0,0,0 to 1,1,1 for volume texture sampling.\n// optionally invert axes\nvec3 PtoVolumeTex(vec3 p) {\n  vec3 uvw = p*gInvAaBbMax + vec3(0.5, 0.5, 0.5);\n  // if flipVolume = 1, uvw is unchanged.\n  // if flipVolume = -1, uvw = 1 - uvw\n  uvw = (flipVolume*(uvw - 0.5) + 0.5);\n  return uvw;\n}\n\nconst float UINT8_MAX = 1.0;//255.0;\n\n// strategy: sample up to 4 channels, and take the post-LUT maximum intensity as the channel that wins\n// we will return the unmapped raw intensity value from the volume so that other luts can be applied again later.\nfloat GetNormalizedIntensityMax4ch(in vec3 P, out int ch)\n{\n  vec4 intensity = UINT8_MAX * texture(volumeTexture, PtoVolumeTex(P));\n\n  //intensity = (intensity - gIntensityMin) / (gIntensityMax - gIntensityMin);\n  vec4 ilut = vec4(0.0, 0.0, 0.0, 0.0);\n  // w in the lut texture is \"opacity\"\n  ilut.x = texture(gLutTexture, vec2(intensity.x, 0.5/4.0)).w / 255.0;\n  ilut.y = texture(gLutTexture, vec2(intensity.y, 1.5/4.0)).w / 255.0;\n  ilut.z = texture(gLutTexture, vec2(intensity.z, 2.5/4.0)).w / 255.0;\n  ilut.w = texture(gLutTexture, vec2(intensity.w, 3.5/4.0)).w / 255.0;\n\n  float maxIn = 0.0;\n  float iOut = 0.0;\n  ch = 0;\n  for (int i = 0; i < min(gNChannels, 4); ++i) {\n    if (ilut[i] > maxIn) {\n      maxIn = ilut[i];\n      ch = i;\n      iOut = intensity[i];\n    }\n  }\n\n  //return maxIn;\n  return iOut;\n}\n\nfloat GetNormalizedIntensity4ch(vec3 P, int ch)\n{\n  vec4 intensity = UINT8_MAX * texture(volumeTexture, PtoVolumeTex(P));\n  // select channel\n  float intensityf = intensity[ch];\n  //intensityf = (intensityf - gIntensityMin[ch]) / (gIntensityMax[ch] - gIntensityMin[ch]);\n  //intensityf = texture(gLutTexture, vec2(intensityf, (0.5+float(ch))/4.0)).x;\n\n  return intensityf;\n}\n\n// note that gInvGradientDelta is maxpixeldim of volume\n// gGradientDeltaX,Y,Z is 1/X,Y,Z of volume\nvec3 Gradient4ch(vec3 P, int ch)\n{\n  vec3 Gradient;\n\n  Gradient.x = (GetNormalizedIntensity4ch(P + (gGradientDeltaX), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaX), ch)) * gInvGradientDelta;\n  Gradient.y = (GetNormalizedIntensity4ch(P + (gGradientDeltaY), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaY), ch)) * gInvGradientDelta;\n  Gradient.z = (GetNormalizedIntensity4ch(P + (gGradientDeltaZ), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaZ), ch)) * gInvGradientDelta;\n\n  return Gradient;\n}\n\nfloat GetOpacity(float NormalizedIntensity, int ch)\n{\n  // apply lut\n  float o = texture(gLutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0)).w / 255.0;\n  float Intensity = o * gOpacity[ch];\n  return Intensity;\n}\n\nvec3 GetEmissionN(float NormalizedIntensity, int ch)\n{\n  return gEmissive[ch];\n}\n\nvec3 GetDiffuseN(float NormalizedIntensity, int ch)\n{\n  vec4 col = texture(gLutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0));\n  //vec3 col = vec3(1.0, 1.0, 1.0);\n  return col.xyz * gDiffuse[ch];\n}\n\nvec3 GetSpecularN(float NormalizedIntensity, int ch)\n{\n  return gSpecular[ch];\n}\n\nfloat GetGlossinessN(float NormalizedIntensity, int ch)\n{\n  return gGlossiness[ch];\n}\n\n// a bsdf sample, a sample on a light source, and a randomly chosen light index\nstruct LightingSample {\n  float m_bsdfComponent;\n  vec2  m_bsdfDir;\n  vec2  m_lightPos;\n  float m_lightComponent;\n  float m_LightNum;\n};\n\nLightingSample LightingSample_LargeStep(inout uvec2 seed) {\n  return LightingSample(\n    rand(seed),\n    vec2(rand(seed), rand(seed)),\n    vec2(rand(seed), rand(seed)),\n    rand(seed),\n    rand(seed)\n    );\n}\n\n// return a color xyz\nvec3 Light_Le(in Light light, in vec2 UV)\n{\n  if (light.mT == 0)\n    return RGBtoXYZ(light.mColor) / light.mArea;\n\n  if (light.mT == 1)\n  {\n    if (UV.y > 0.0f)\n      return RGBtoXYZ(mix(light.mColorMiddle, light.mColorTop, abs(UV.y)));\n    else\n      return RGBtoXYZ(mix(light.mColorMiddle, light.mColorBottom, abs(UV.y)));\n  }\n\n  return BLACK;\n}\n\n// return a color xyz\nvec3 Light_SampleL(in Light light, in vec3 P, out Ray Rl, out float Pdf, in LightingSample LS)\n{\n  vec3 L = BLACK;\n  Pdf = 0.0;\n  vec3 Ro = vec3(0,0,0), Rd = vec3(0,0,1);\n  if (light.mT == 0)\n  {\n    Ro = (light.mP + ((-0.5f + LS.m_lightPos.x) * light.mWidth * light.mU) + ((-0.5f + LS.m_lightPos.y) * light.mHeight * light.mV));\n    Rd = normalize(P - Ro);\n    L = dot(Rd, light.mN) > 0.0f ? Light_Le(light, vec2(0.0f)) : BLACK;\n    Pdf = abs(dot(Rd, light.mN)) > 0.0f ? dot(P-Ro, P-Ro) / (abs(dot(Rd, light.mN)) * light.mArea) : 0.0f;\n  }\n  else if (light.mT == 1)\n  {\n    Ro = light.mP + light.mSkyRadius * getUniformSphereSample(LS.m_lightPos);\n    Rd = normalize(P - Ro);\n    L = Light_Le(light, vec2(1.0f) - 2.0f * LS.m_lightPos);\n    Pdf = pow(light.mSkyRadius, 2.0f) / light.mArea;\n  }\n\n  Rl = Ray(Ro, Rd, 0.0f, length(P - Ro));\n\n  return L;\n}\n\n// Intersect ray with light\nbool Light_Intersect(Light light, inout Ray R, out float T, out vec3 L, out float pPdf)\n{\n  if (light.mT == 0)\n  {\n    // Compute projection\n    float DotN = dot(R.m_D, light.mN);\n\n    // Ray is coplanar with light surface\n    if (DotN >= 0.0f)\n      return false;\n\n    // Compute hit distance\n    T = (-light.mDistance - dot(R.m_O, light.mN)) / DotN;\n\n    // Intersection is in ray's negative direction\n    if (T < R.m_MinT || T > R.m_MaxT)\n      return false;\n\n    // Determine position on light\n    vec3 Pl = rayAt(R, T);\n\n    // Vector from point on area light to center of area light\n    vec3 Wl = Pl - light.mP;\n\n    // Compute texture coordinates\n    vec2 UV = vec2(dot(Wl, light.mU), dot(Wl, light.mV));\n\n    // Check if within bounds of light surface\n    if (UV.x > light.mHalfWidth || UV.x < -light.mHalfWidth || UV.y > light.mHalfHeight || UV.y < -light.mHalfHeight)\n      return false;\n\n    R.m_MaxT = T;\n\n    //pUV = UV;\n\n    if (DotN < 0.0f)\n      L = RGBtoXYZ(light.mColor) / light.mArea;\n    else\n      L = BLACK;\n\n    pPdf = dot(R.m_O-Pl, R.m_O-Pl) / (DotN * light.mArea);\n\n    return true;\n  }\n\n  else if (light.mT == 1)\n  {\n    T = light.mSkyRadius;\n\n    // Intersection is in ray's negative direction\n    if (T < R.m_MinT || T > R.m_MaxT)\n      return false;\n\n    R.m_MaxT = T;\n\n    vec2 UV = vec2(SphericalPhi(R.m_D) * INV_2_PI, SphericalTheta(R.m_D) * INV_PI);\n\n    L = Light_Le(light, vec2(1.0f,1.0f) - 2.0f * UV);\n\n    pPdf = pow(light.mSkyRadius, 2.0f) / light.mArea;\n    //pUV = UV;\n\n    return true;\n  }\n\n  return false;\n}\n\nfloat Light_Pdf(in Light light, in vec3 P, in vec3 Wi)\n{\n  vec3 L;\n  vec2 UV;\n  float Pdf = 1.0f;\n\n  Ray Rl = Ray(P, Wi, 0.0f, 100000.0f);\n\n  if (light.mT == 0)\n  {\n    float T = 0.0f;\n\n    if (!Light_Intersect(light, Rl, T, L, Pdf))\n      return 0.0f;\n\n    return pow(T, 2.0f) / (abs(dot(light.mN, -Wi)) * light.mArea);\n  }\n\n  else if (light.mT == 1)\n  {\n    return pow(light.mSkyRadius, 2.0f) / light.mArea;\n  }\n\n  return 0.0f;\n}\n\nstruct VolumeShader {\n  int m_Type; // 0 = bsdf, 1 = phase\n\n  vec3 m_Kd; // isotropic phase // xyz color\n  vec3 m_R; // specular reflectance\n  float m_Ior;\n  float m_Exponent;\n  vec3 m_Nn;\n  vec3 m_Nu;\n  vec3 m_Nv;\n};\n\n// return a xyz color\nvec3 ShaderPhase_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return shader.m_Kd * INV_PI;\n}\n\nfloat ShaderPhase_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return INV_4_PI;\n}\n\nvec3 ShaderPhase_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  Wi\t= getUniformSphereSample(U);\n  Pdf\t= ShaderPhase_Pdf(shader, Wo, Wi);\n\n  return ShaderPhase_F(shader, Wo, Wi);\n}\n\n// return a xyz color\nvec3 Lambertian_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return shader.m_Kd * INV_PI;\n}\n\nfloat Lambertian_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  //return abs(Wi.z)*INV_PI;\n  return SameHemisphere(Wo, Wi) ? abs(Wi.z) * INV_PI : 0.0f;\n}\n\n// return a xyz color\nvec3 Lambertian_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  Wi = getCosineWeightedHemisphereSample(U);\n\n  if (Wo.z < 0.0f)\n    Wi.z *= -1.0f;\n\n  Pdf = Lambertian_Pdf(shader, Wo, Wi);\n\n  return Lambertian_F(shader, Wo, Wi);\n}\n\nvec3 SphericalDirection(in float SinTheta, in float CosTheta, in float Phi)\n{\n  return vec3(SinTheta * cos(Phi), SinTheta * sin(Phi), CosTheta);\n}\n\nvoid Blinn_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  // Compute sampled half-angle vector wh for Blinn distribution\n  float costheta = pow(U.x, 1.f / (shader.m_Exponent+1.0));\n  float sintheta = sqrt(max(0.f, 1.f - costheta*costheta));\n  float phi = U.y * 2.f * PI;\n\n  vec3 wh = SphericalDirection(sintheta, costheta, phi);\n\n  if (!SameHemisphere(Wo, wh))\n    wh = -wh;\n\n  // Compute incident direction by reflecting about wh\n  Wi = -Wo + 2.f * dot(Wo, wh) * wh;\n\n  // Compute PDF for wi from Blinn distribution\n  float blinn_pdf = ((shader.m_Exponent + 1.f) * pow(costheta, shader.m_Exponent)) / (2.f * PI * 4.f * dot(Wo, wh));\n\n  if (dot(Wo, wh) <= 0.f)\n    blinn_pdf = 0.f;\n\n  Pdf = blinn_pdf;\n}\n\nfloat Blinn_D(in VolumeShader shader, in vec3 wh)\n{\n  float costhetah = abs(wh.z);//AbsCosTheta(wh);\n  return (shader.m_Exponent+2.0) * INV_2_PI * pow(costhetah, shader.m_Exponent);\n}\nfloat Microfacet_G(in VolumeShader shader, in vec3 wo, in vec3 wi, in vec3 wh)\n{\n  float NdotWh = abs(wh.z);//AbsCosTheta(wh);\n  float NdotWo = abs(wo.z);//AbsCosTheta(wo);\n  float NdotWi = abs(wi.z);//AbsCosTheta(wi);\n  float WOdotWh = abs(dot(wo, wh));\n\n  return min(1.f, min((2.f * NdotWh * NdotWo / WOdotWh), (2.f * NdotWh * NdotWi / WOdotWh)));\n}\n\nvec3 Microfacet_F(in VolumeShader shader, in vec3 wo, in vec3 wi)\n{\n  float cosThetaO = abs(wo.z);//AbsCosTheta(wo);\n  float cosThetaI = abs(wi.z);//AbsCosTheta(wi);\n\n  if (cosThetaI == 0.f || cosThetaO == 0.f)\n    return BLACK;\n\n  vec3 wh = wi + wo;\n\n  if (wh.x == 0. && wh.y == 0. && wh.z == 0.)\n    return BLACK;\n\n  wh = normalize(wh);\n  float cosThetaH = dot(wi, wh);\n\n  vec3 F = WHITE;//m_Fresnel.Evaluate(cosThetaH);\n\n  return shader.m_R * Blinn_D(shader, wh) * Microfacet_G(shader, wo, wi, wh) * F / (4.f * cosThetaI * cosThetaO);\n}\n\nvec3 ShaderBsdf_WorldToLocal(in VolumeShader shader, in vec3 W)\n{\n  return vec3(dot(W, shader.m_Nu), dot(W, shader.m_Nv), dot(W, shader.m_Nn));\n}\n\nvec3 ShaderBsdf_LocalToWorld(in VolumeShader shader, in vec3 W)\n{\n  return vec3(\tshader.m_Nu.x * W.x + shader.m_Nv.x * W.y + shader.m_Nn.x * W.z,\n    shader.m_Nu.y * W.x + shader.m_Nv.y * W.y + shader.m_Nn.y * W.z,\n    shader.m_Nu.z * W.x + shader.m_Nv.z * W.y + shader.m_Nn.z * W.z);\n}\n\nfloat Blinn_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 wh = normalize(Wo + Wi);\n\n  float costheta = abs(wh.z);//AbsCosTheta(wh);\n  // Compute PDF for wi from Blinn distribution\n  float blinn_pdf = ((shader.m_Exponent + 1.f) * pow(costheta, shader.m_Exponent)) / (2.f * PI * 4.f * dot(Wo, wh));\n\n  if (dot(Wo, wh) <= 0.0f)\n    blinn_pdf = 0.0f;\n\n  return blinn_pdf;\n}\n\nvec3 Microfacet_SampleF(in VolumeShader shader, in vec3 wo, out vec3 wi, out float Pdf, in vec2 U)\n{\n  Blinn_SampleF(shader, wo, wi, Pdf, U);\n\n  if (!SameHemisphere(wo, wi))\n    return BLACK;\n\n  return Microfacet_F(shader, wo, wi);\n}\n\nfloat Microfacet_Pdf(in VolumeShader shader, in vec3 wo, in vec3 wi)\n{\n  if (!SameHemisphere(wo, wi))\n    return 0.0f;\n\n  return Blinn_Pdf(shader, wo, wi);\n}\n\n// return a xyz color\nvec3 ShaderBsdf_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = ShaderBsdf_WorldToLocal(shader, Wi);\n\n  vec3 R = vec3(0,0,0);\n\n  R += Lambertian_F(shader, Wol, Wil);\n  R += Microfacet_F(shader, Wol, Wil);\n\n  return R;\n}\n\nfloat ShaderBsdf_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = ShaderBsdf_WorldToLocal(shader, Wi);\n\n  float Pdf = 0.0f;\n\n  Pdf += Lambertian_Pdf(shader, Wol, Wil);\n  Pdf += Microfacet_Pdf(shader, Wol, Wil);\n\n  return Pdf;\n}\n\n\nvec3 ShaderBsdf_SampleF(in VolumeShader shader, in LightingSample S, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = vec3(0,0,0);\n\n  vec3 R = vec3(0,0,0);\n\n  if (S.m_bsdfComponent <= 0.5f)\n  {\n    Lambertian_SampleF(shader, Wol, Wil, Pdf, S.m_bsdfDir);\n  }\n  else\n  {\n    Microfacet_SampleF(shader, Wol, Wil, Pdf, S.m_bsdfDir);\n  }\n\n  Pdf += Lambertian_Pdf(shader, Wol, Wil);\n  Pdf += Microfacet_Pdf(shader, Wol, Wil);\n\n  R += Lambertian_F(shader, Wol, Wil);\n  R += Microfacet_F(shader, Wol, Wil);\n\n  Wi = ShaderBsdf_LocalToWorld(shader, Wil);\n\n  //return vec3(1,1,1);\n  return R;\n}\n\n// return a xyz color\nvec3 Shader_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_F(shader, Wo, Wi);\n  }\n  else {\n    return ShaderPhase_F(shader, Wo, Wi);\n  }\n}\n\nfloat Shader_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_Pdf(shader, Wo, Wi);\n  }\n  else {\n    return ShaderPhase_Pdf(shader, Wo, Wi);\n  }\n}\n\nvec3 Shader_SampleF(in VolumeShader shader, in LightingSample S, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  //return vec3(1,0,0);\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_SampleF(shader, S, Wo, Wi, Pdf, U);\n  }\n  else {\n    return ShaderPhase_SampleF(shader, Wo, Wi, Pdf, U);\n  }\n}\n\n\nbool IsBlack(in vec3 v) {\n  return (v.x==0.0 && v.y == 0.0 && v.z == 0.0);\n}\n\nfloat PowerHeuristic(float nf, float fPdf, float ng, float gPdf)\n{\n  float f = nf * fPdf;\n  float g = ng * gPdf;\n  // The power heuristic is Veach's MIS balance heuristic except each component is being squared\n  // balance heuristic would be f/(f+g) ...?\n  return (f * f) / (f * f + g * g);\n}\n\nfloat MISContribution(float pdf1, float pdf2)\n{\n  return PowerHeuristic(1.0f, pdf1, 1.0f, pdf2);\n}\n\n// \"shadow ray\" using gStepSizeShadow, test whether it can exit the volume or not\nbool DoesSecondaryRayScatterInVolume(inout Ray R, inout uvec2 seed)\n{\n  float MinT;\n  float MaxT;\n  vec3 Ps;\n\n  if (!IntersectBox(R, MinT, MaxT))\n    return false;\n\n  MinT = max(MinT, R.m_MinT);\n  MaxT = min(MaxT, R.m_MaxT);\n\n  // delta (Woodcock) tracking\n  float S\t= -log(rand(seed)) / gDensityScale;\n  float Sum = 0.0f;\n  float SigmaT = 0.0f;\n\n  MinT += rand(seed) * gStepSizeShadow;\n  int ch = 0;\n  float intensity = 0.0;\n  while (Sum < S)\n  {\n    Ps = rayAt(R, MinT);  // R.m_O + MinT * R.m_D;\n\n    if (MinT > MaxT)\n      return false;\n\n    intensity = GetNormalizedIntensityMax4ch(Ps, ch);\n    SigmaT = gDensityScale * GetOpacity(intensity, ch);\n\n    Sum += SigmaT * gStepSizeShadow;\n    MinT += gStepSizeShadow;\n  }\n\n  return true;\n}\n\nint GetNearestLight(Ray R, out vec3 oLightColor, out vec3 Pl, out float oPdf)\n{\n  int hit = -1;\n  float T = 0.0f;\n  Ray rayCopy = R;\n  float pdf = 0.0f;\n\n  for (int i = 0; i < 2; i++)\n  {\n    if (Light_Intersect(gLights[i], rayCopy, T, oLightColor, pdf))\n    {\n      Pl = rayAt(R, T);\n      hit = i;\n    }\n  }\n  oPdf = pdf;\n\n  return hit;\n}\n\n// return a XYZ color\n// Wo is direction from scatter point out toward incident ray direction\n\n// Wi goes toward light sample and is not necessarily perfect reflection of Wo\n// ^Wi   ^N    ^Wo\n//  \\\\    |    //\n//   \\\\   |   //\n//    \\\\  |  //\n//     \\\\ | //\n//      \\\\|// Pe = volume sample where scattering occurs\n//   ---------\nvec3 EstimateDirectLight(int shaderType, float Density, int ch, in Light light, in LightingSample LS, in vec3 Wo, in vec3 Pe, in vec3 N, inout uvec2 seed)\n{\n  vec3 Ld = BLACK, Li = BLACK, F = BLACK;\n\n  vec3 diffuse = GetDiffuseN(Density, ch);\n  vec3 specular = GetSpecularN(Density, ch);\n  float glossiness = GetGlossinessN(Density, ch);\n\n  // can N and Wo be coincident????\n  vec3 nu = normalize(cross(N, Wo));\n  vec3 nv = normalize(cross(N, nu));\n\n  // the IoR here is hard coded... and unused!!!!\n  VolumeShader Shader = VolumeShader(shaderType, RGBtoXYZ(diffuse), RGBtoXYZ(specular), 2.5f, glossiness, N, nu, nv);\n\n  float LightPdf = 1.0f, ShaderPdf = 1.0f;\n\n  Ray Rl = Ray(vec3(0,0,0), vec3(0,0,1.0), 0.0, MAX_RAY_LEN);\n  // Rl is ray from light toward Pe in volume, with a max traversal of the distance from Pe to Light sample pos.\n  Li = Light_SampleL(light, Pe, Rl, LightPdf, LS);\n\n  // Wi: negate ray direction: from volume scatter point toward light...?\n  vec3 Wi = -Rl.m_D, P = vec3(0,0,0);\n\n  // we will calculate two lighting contributions and combine them by MIS.\n\n  F = Shader_F(Shader,Wo, Wi);\n\n  ShaderPdf = Shader_Pdf(Shader, Wo, Wi);\n\n  // get a lighting contribution along Rl;  see if Rl would scatter in the volume or not\n  if (!IsBlack(Li) && (ShaderPdf > 0.0f) && (LightPdf > 0.0f) && !DoesSecondaryRayScatterInVolume(Rl, seed))\n  {\n    // ray from light can see through volume to Pe!\n\n    float dotProd = 1.0;\n    if (shaderType == ShaderType_Brdf){\n\n      // (use abs or clamp here?)\n      dotProd = abs(dot(Wi, N));\n    }\n    Ld += F * Li * dotProd * MISContribution(LightPdf, ShaderPdf) / LightPdf;\n\n  }\n\n  // get a lighting contribution by sampling nearest light from the scattering point\n  F = Shader_SampleF(Shader, LS, Wo, Wi, ShaderPdf, LS.m_bsdfDir);\n  if (!IsBlack(F) && (ShaderPdf > 0.0f))\n  {\n    vec3 Pl = vec3(0,0,0);\n    int n = GetNearestLight(Ray(Pe, Wi, 0.0f, 1000000.0f), Li, Pl, LightPdf);\n    if (n > -1)\n    {\n      Light pLight = gLights[n];\n      LightPdf = Light_Pdf(pLight, Pe, Wi);\n\n      if ((LightPdf > 0.0f) && !IsBlack(Li)) {\n        Ray rr = Ray(Pl, normalize(Pe - Pl), 0.0f, length(Pe - Pl));\n        if (!DoesSecondaryRayScatterInVolume(rr, seed))\n        {\n          float dotProd = 1.0;\n          if (shaderType == ShaderType_Brdf){\n\n            // (use abs or clamp here?)\n            dotProd = abs(dot(Wi, N));\n          }\n          // note order of MIS params is swapped\n          Ld += F * Li * dotProd * MISContribution(ShaderPdf, LightPdf) / ShaderPdf;\n        }\n\n      }\n    }\n  }\n\n  return Ld;\n\n}\n\n// return a linear xyz color\nvec3 UniformSampleOneLight(int shaderType, float Density, int ch, in vec3 Wo, in vec3 Pe, in vec3 N, inout uvec2 seed)\n{\n  //if (NUM_LIGHTS == 0)\n  //  return BLACK;\n\n  // select a random light, a random 2d sample on light, and a random 2d sample on brdf\n  LightingSample LS = LightingSample_LargeStep(seed);\n\n  int WhichLight = int(floor(LS.m_LightNum * float(NUM_LIGHTS)));\n\n  Light light = gLights[WhichLight];\n\n  return float(NUM_LIGHTS) * EstimateDirectLight(shaderType, Density, ch, light, LS, Wo, Pe, N, seed);\n\n}\n\nbool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)\n{\n  float MinT;\n  float MaxT;\n\n  if (!IntersectBox(R, MinT, MaxT))\n    return false;\n\n  MinT = max(MinT, R.m_MinT);\n  MaxT = min(MaxT, R.m_MaxT);\n\n  // delta (Woodcock) tracking\n\n  // notes, not necessarily coherent:\n  // ray march along the ray's projected path and keep an average sigmaT value.\n  // The distance is weighted by the intensity at each ray step sample. High intensity increases the apparent distance.\n  // When the distance has become greater than the average sigmaT value given by -log(RandomFloat[0, 1]) / averageSigmaT\n  // then that would be considered the interaction position.\n\n  // sigmaT = sigmaA + sigmaS = absorption coeff + scattering coeff = extinction coeff\n\n  // Beer-Lambert law: transmittance T(t) = exp(-sigmaT*t)  where t is a distance!\n\n  // importance sampling the exponential function to produce a free path distance S\n  // the PDF is p(t) = sigmaT * exp(-sigmaT * t)\n  // In a homogeneous volume,\n  // S is the free-path distance = -ln(1-zeta)/sigmaT where zeta is a random variable\n  // density scale = 0   => S --> 0..inf.  Low density means randomly sized ray paths\n  // density scale = inf => S --> 0.       High density means short ray paths!\n\n  // note that ln(x:0..1) is negative\n\n  // here gDensityScale represents sigmaMax, a majorant of sigmaT\n  // it is a parameter that should be set as close to the max extinction coefficient as possible.\n  float S\t= -log(rand(seed)) / gDensityScale;\n\n  float Sum\t\t= 0.0f;\n  float SigmaT\t= 0.0f; // accumulated extinction along ray march\n\n  // start: take one step now.\n  MinT += rand(seed) * gStepSize;\n\n  int ch = 0;\n  float intensity = 0.0;\n\n  // ray march until we have traveled S (or hit the maxT of the ray)\n  while (Sum < S)\n  {\n    Ps = rayAt(R, MinT);  // R.m_O + MinT * R.m_D;\n\n    // if we exit the volume with no scattering\n    if (MinT > MaxT)\n      return false;\n\n    intensity = GetNormalizedIntensityMax4ch(Ps, ch);\n    SigmaT = gDensityScale * GetOpacity(intensity, ch);\n\n    Sum += SigmaT * gStepSize;\n    MinT += gStepSize;\n  }\n\n  // at this time, MinT - original MinT is the T transmission distance before a scatter event.\n  // Ps is the point\n\n  return true;\n}\n\n\nvec4 CalculateRadiance(inout uvec2 seed) {\n  float r = rand(seed);\n  //return vec4(r,0,0,1);\n\n  vec3 Lv = BLACK, Li = BLACK;\n\n  //Ray Re = Ray(vec3(0,0,0), vec3(0,0,1), 0.0, MAX_RAY_LEN);\n\n  vec2 UV = vUv*uResolution + vec2(rand(seed), rand(seed));\n\n  Ray Re = GenerateCameraRay(gCamera, UV, vec2(rand(seed), rand(seed)));\n\n  //return vec4(vUv, 0.0, 1.0);\n  //return vec4(0.5*(Re.m_D + 1.0), 1.0);\n  //return vec4(Re.m_D, 1.0);\n\n  //Re.m_MinT = 0.0f;\n  //Re.m_MaxT = MAX_RAY_LEN;\n\n  vec3 Pe = vec3(0,0,0), Pl = vec3(0,0,0);\n  float lpdf = 0.0;\n\n  float alpha = 0.0;\n  // find point Pe along ray Re\n  if (SampleScatteringEvent(Re, seed, Pe))\n  {\n    alpha = 1.0;\n    // is there a light between Re.m_O and Pe? (ray's maxT is distance to Pe)\n    // (test to see if area light was hit before volume.)\n    int i = GetNearestLight(Ray(Re.m_O, Re.m_D, 0.0f, length(Pe - Re.m_O)), Li, Pl, lpdf);\n    if (i > -1)\n    {\n      // set sample pixel value in frame estimate (prior to accumulation)\n      return vec4(Li, 1.0);\n    }\n\n    int ch = 0;\n    float D = GetNormalizedIntensityMax4ch(Pe, ch);\n\n    // emission from volume\n    Lv += RGBtoXYZ(GetEmissionN(D, ch));\n\n    vec3 gradient = Gradient4ch(Pe, ch);\n    // send ray out from Pe toward light\n    switch (gShadingType)\n    {\n      case ShaderType_Brdf:\n      {\n        Lv += UniformSampleOneLight(ShaderType_Brdf, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        break;\n      }\n\n      case ShaderType_Phase:\n      {\n        Lv += 0.5f * UniformSampleOneLight(ShaderType_Phase, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        break;\n      }\n\n      case ShaderType_Mixed:\n      {\n        //const float GradMag = GradientMagnitude(Pe, volumedata.gradientVolumeTexture[ch]) * (1.0/volumedata.intensityMax[ch]);\n        float GradMag = length(gradient);\n        float PdfBrdf = (1.0f - exp(-gGradientFactor * GradMag));\n\n        vec3 cls; // xyz color\n        if (rand(seed) < PdfBrdf) {\n          cls = UniformSampleOneLight(ShaderType_Brdf, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        }\n        else {\n          cls = 0.5f * UniformSampleOneLight(ShaderType_Phase, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        }\n\n        Lv += cls;\n\n        break;\n      }\n    }\n  }\n  else\n  {\n    // background color:\n    // set Lv to a selected color based on environment light source?\n    // if (uShowLights > 0.0) {\n    //   int n = GetNearestLight(Ray(Re.m_O, Re.m_D, 0.0f, 1000000.0f), Li, Pl, lpdf);\n    //   if (n > -1)\n    //     Lv = Li;\n    // }\n    //Lv = vec3(r,0,0);\n  }\n\n  // set sample pixel value in frame estimate (prior to accumulation)\n\n  return vec4(Lv, alpha);\n}\n\nvec4 CumulativeMovingAverage(vec4 A, vec4 Ax, float N)\n{\n   return A + ((Ax - A) / max((N), 1.0f));\n}\n\nvoid main()\n{\n  // seed for rand(seed) function\n  uvec2 seed = uvec2(uFrameCounter, uFrameCounter + 1.0) * uvec2(gl_FragCoord);\n\n  // perform path tracing and get resulting pixel color\n  vec4 pixelColor = CalculateRadiance( seed );\n\n  vec4 previousColor = texture(tPreviousTexture, vUv);\n  if (uSampleCounter < 1.0) {\n    previousColor = vec4(0,0,0,0);\n  }\n\n  pc_fragColor = CumulativeMovingAverage(previousColor, pixelColor, uSampleCounter);\n}\n"; // threejs passthrough vertex shader for fullscreen quad
+var pathTraceFragmentShader = "precision highp float;\nprecision highp int;\nprecision highp sampler2D;\nprecision highp sampler3D;\n\n#define PI (3.1415926535897932384626433832795)\n#define PI_OVER_2 (1.57079632679489661923)\n#define PI_OVER_4 (0.785398163397448309616)\n#define INV_PI (1.0/PI)\n#define INV_2_PI (0.5/PI)\n#define INV_4_PI (0.25/PI)\n\nconst vec3 BLACK = vec3(0,0,0);\nconst vec3 WHITE = vec3(1.0,1.0,1.0);\nconst int ShaderType_Brdf = 0;\nconst int ShaderType_Phase = 1;\nconst int ShaderType_Mixed = 2;\nconst float MAX_RAY_LEN = 1500000.0f;\n\nin vec2 vUv;\n\nstruct Camera {\n  vec3 mFrom;\n  vec3 mU, mV, mN;\n  vec4 mScreen;  // left, right, bottom, top\n  vec2 mInvScreen;  // 1/w, 1/h\n  float mFocalDistance;\n  float mApertureSize;\n  float mIsOrtho; // 1 or 0\n};\n\nuniform Camera gCamera;\n\nstruct Light {\n  float   mTheta;\n  float   mPhi;\n  float   mWidth;\n  float   mHalfWidth;\n  float   mHeight;\n  float   mHalfHeight;\n  float   mDistance;\n  float   mSkyRadius;\n  vec3    mP;\n  vec3    mTarget;\n  vec3    mN;\n  vec3    mU;\n  vec3    mV;\n  float   mArea;\n  float   mAreaPdf;\n  vec3    mColor;\n  vec3    mColorTop;\n  vec3    mColorMiddle;\n  vec3    mColorBottom;\n  int     mT;\n};\nconst int NUM_LIGHTS = 2;\nuniform Light gLights[2];\n\nuniform vec3 gClippedAaBbMin;\nuniform vec3 gClippedAaBbMax;\nuniform vec3 gVolCenter;\nuniform float gDensityScale;\nuniform float gStepSize;\nuniform float gStepSizeShadow;\nuniform sampler3D volumeTexture;\nuniform vec3 gInvAaBbMax;\nuniform int gNChannels;\nuniform int gShadingType;\nuniform vec3 gGradientDeltaX;\nuniform vec3 gGradientDeltaY;\nuniform vec3 gGradientDeltaZ;\nuniform float gInvGradientDelta;\nuniform float gGradientFactor;\nuniform float uShowLights;\nuniform vec3 flipVolume;\n\n// per channel\n// the luttexture is a 256x4 rgba texture\n// each row is a 256 element lookup table.\nuniform sampler2D gLutTexture;\nuniform vec4 gIntensityMax;\nuniform vec4 gIntensityMin;\nuniform float gOpacity[4];\nuniform vec3 gEmissive[4];\nuniform vec3 gDiffuse[4];\nuniform vec3 gSpecular[4];\nuniform float gGlossiness[4];\n\n// compositing / progressive render\nuniform float uFrameCounter;\nuniform float uSampleCounter;\nuniform vec2 uResolution;\nuniform sampler2D tPreviousTexture;\n\n// from iq https://www.shadertoy.com/view/4tXyWN\nfloat rand( inout uvec2 seed )\n{\n  seed += uvec2(1);\n  uvec2 q = 1103515245U * ( (seed >> 1U) ^ (seed.yx) );\n  uint  n = 1103515245U * ( (q.x) ^ (q.y >> 3U) );\n  return float(n) * (1.0 / float(0xffffffffU));\n}\n\nvec3 XYZtoRGB(vec3 xyz) {\n  return vec3(\n    3.240479f*xyz[0] - 1.537150f*xyz[1] - 0.498535f*xyz[2],\n    -0.969256f*xyz[0] + 1.875991f*xyz[1] + 0.041556f*xyz[2],\n    0.055648f*xyz[0] - 0.204043f*xyz[1] + 1.057311f*xyz[2]\n  );\n}\n\n// Used to convert from linear RGB to XYZ space\nconst mat3 RGB_2_XYZ = (mat3(\n  0.4124564, 0.3575761, 0.1804375,\n  0.2126729, 0.7151522, 0.0721750,\n  0.0193339, 0.1191920, 0.9503041\n));\nvec3 RGBtoXYZ(vec3 rgb) {\n  return rgb * RGB_2_XYZ;\n}\n\nvec3 getUniformSphereSample(in vec2 U)\n{\n  float z = 1.f - 2.f * U.x;\n  float r = sqrt(max(0.f, 1.f - z*z));\n  float phi = 2.f * PI * U.y;\n  float x = r * cos(phi);\n  float y = r * sin(phi);\n  return vec3(x, y, z);\n}\n\nfloat SphericalPhi(in vec3 Wl)\n{\n  float p = atan(Wl.z, Wl.x);\n  return (p < 0.f) ? p + 2.f * PI : p;\n}\n\nfloat SphericalTheta(in vec3 Wl)\n{\n  return acos(clamp(Wl.y, -1.f, 1.f));\n}\n\nbool SameHemisphere(in vec3 Ww1, in vec3 Ww2)\n{\n   return (Ww1.z * Ww2.z) > 0.0f;\n}\n\nvec2 getConcentricDiskSample(in vec2 U)\n{\n  float r, theta;\n  // Map 0..1 to -1..1\n  float sx = 2.0 * U.x - 1.0;\n  float sy = 2.0 * U.y - 1.0;\n\n  // Map square to (r,theta)\n\n  // Handle degeneracy at the origin\n  if (sx == 0.0 && sy == 0.0)\n  {\n    return vec2(0.0f, 0.0f);\n  }\n\n  // quadrants of disk\n  if (sx >= -sy)\n  {\n    if (sx > sy)\n    {\n      r = sx;\n      if (sy > 0.0)\n        theta = sy/r;\n      else\n        theta = 8.0f + sy/r;\n    }\n    else\n    {\n      r = sy;\n      theta = 2.0f - sx/r;\n    }\n  }\n  else\n  {\n    if (sx <= sy)\n    {\n      r = -sx;\n      theta = 4.0f - sy/r;\n    }\n    else\n    {\n      r = -sy;\n      theta = 6.0f + sx/r;\n    }\n  }\n\n  theta *= PI_OVER_4;\n\n  return vec2(r*cos(theta), r*sin(theta));\n}\n\nvec3 getCosineWeightedHemisphereSample(in vec2 U)\n{\n  vec2 ret = getConcentricDiskSample(U);\n  return vec3(ret.x, ret.y, sqrt(max(0.f, 1.f - ret.x * ret.x - ret.y * ret.y)));\n}\n\nstruct Ray {\n  vec3 m_O;\n  vec3 m_D;\n  float m_MinT, m_MaxT;\n};\n\nvec3 rayAt(Ray r, float t) {\n  return r.m_O + t*r.m_D;\n}\n\nRay GenerateCameraRay(in Camera cam, in vec2 Pixel, in vec2 ApertureRnd)\n{\n  // negating ScreenPoint.y flips the up/down direction. depends on whether you want pixel 0 at top or bottom\n  // we could also have flipped mScreen and mInvScreen, or cam.mV?\n  vec2 ScreenPoint = vec2(\n    cam.mScreen.x + (cam.mInvScreen.x * Pixel.x),\n    cam.mScreen.z + (cam.mInvScreen.y * Pixel.y)\n  );\n  vec3 dxy = (ScreenPoint.x * cam.mU) + (-ScreenPoint.y * cam.mV);\n\n  // orthographic camera ray: start at (camera pos + screen point), go in direction N\n  // perspective camera ray: start at camera pos, go in direction (N + screen point)\n  vec3 RayO = cam.mFrom + cam.mIsOrtho * dxy;\n  vec3 RayD = normalize(cam.mN + (1.0 - cam.mIsOrtho) * dxy);\n\n  if (cam.mApertureSize != 0.0f)\n  {\n    vec2 LensUV = cam.mApertureSize * getConcentricDiskSample(ApertureRnd);\n\n    vec3 LI = cam.mU * LensUV.x + cam.mV * LensUV.y;\n    RayO += LI;\n    RayD = normalize((RayD * cam.mFocalDistance) - LI);\n  }\n\n  return Ray(RayO, RayD, 0.0, MAX_RAY_LEN);\n}\n\nbool IntersectBox(in Ray R, out float pNearT, out float pFarT)\n{\n  vec3 invR\t\t= vec3(1.0f, 1.0f, 1.0f) / R.m_D;\n  vec3 bottomT\t\t= invR * (vec3(gClippedAaBbMin.x, gClippedAaBbMin.y, gClippedAaBbMin.z) - R.m_O);\n  vec3 topT\t\t= invR * (vec3(gClippedAaBbMax.x, gClippedAaBbMax.y, gClippedAaBbMax.z) - R.m_O);\n  vec3 minT\t\t= min(topT, bottomT);\n  vec3 maxT\t\t= max(topT, bottomT);\n  float largestMinT = max(max(minT.x, minT.y), max(minT.x, minT.z));\n  float smallestMaxT = min(min(maxT.x, maxT.y), min(maxT.x, maxT.z));\n\n  pNearT = largestMinT;\n  pFarT\t= smallestMaxT;\n\n  return smallestMaxT > largestMinT;\n}\n\n// assume volume is centered at 0,0,0 so p spans -bounds to + bounds\n// transform p to range from 0,0,0 to 1,1,1 for volume texture sampling.\n// optionally invert axes\nvec3 PtoVolumeTex(vec3 p) {\n  vec3 uvw = (p - gVolCenter) * gInvAaBbMax + vec3(0.5, 0.5, 0.5);\n  // if flipVolume = 1, uvw is unchanged.\n  // if flipVolume = -1, uvw = 1 - uvw\n  uvw = (flipVolume*(uvw - 0.5) + 0.5);\n  return uvw;\n}\n\nconst float UINT8_MAX = 1.0;//255.0;\n\n// strategy: sample up to 4 channels, and take the post-LUT maximum intensity as the channel that wins\n// we will return the unmapped raw intensity value from the volume so that other luts can be applied again later.\nfloat GetNormalizedIntensityMax4ch(in vec3 P, out int ch)\n{\n  vec4 intensity = UINT8_MAX * texture(volumeTexture, PtoVolumeTex(P));\n\n  //intensity = (intensity - gIntensityMin) / (gIntensityMax - gIntensityMin);\n  vec4 ilut = vec4(0.0, 0.0, 0.0, 0.0);\n  // w in the lut texture is \"opacity\"\n  ilut.x = texture(gLutTexture, vec2(intensity.x, 0.5/4.0)).w / 255.0;\n  ilut.y = texture(gLutTexture, vec2(intensity.y, 1.5/4.0)).w / 255.0;\n  ilut.z = texture(gLutTexture, vec2(intensity.z, 2.5/4.0)).w / 255.0;\n  ilut.w = texture(gLutTexture, vec2(intensity.w, 3.5/4.0)).w / 255.0;\n\n  float maxIn = 0.0;\n  float iOut = 0.0;\n  ch = 0;\n  for (int i = 0; i < min(gNChannels, 4); ++i) {\n    if (ilut[i] > maxIn) {\n      maxIn = ilut[i];\n      ch = i;\n      iOut = intensity[i];\n    }\n  }\n\n  //return maxIn;\n  return iOut;\n}\n\nfloat GetNormalizedIntensity4ch(vec3 P, int ch)\n{\n  vec4 intensity = UINT8_MAX * texture(volumeTexture, PtoVolumeTex(P));\n  // select channel\n  float intensityf = intensity[ch];\n  //intensityf = (intensityf - gIntensityMin[ch]) / (gIntensityMax[ch] - gIntensityMin[ch]);\n  //intensityf = texture(gLutTexture, vec2(intensityf, (0.5+float(ch))/4.0)).x;\n\n  return intensityf;\n}\n\n// note that gInvGradientDelta is maxpixeldim of volume\n// gGradientDeltaX,Y,Z is 1/X,Y,Z of volume\nvec3 Gradient4ch(vec3 P, int ch)\n{\n  vec3 Gradient;\n\n  Gradient.x = (GetNormalizedIntensity4ch(P + (gGradientDeltaX), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaX), ch)) * gInvGradientDelta;\n  Gradient.y = (GetNormalizedIntensity4ch(P + (gGradientDeltaY), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaY), ch)) * gInvGradientDelta;\n  Gradient.z = (GetNormalizedIntensity4ch(P + (gGradientDeltaZ), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaZ), ch)) * gInvGradientDelta;\n\n  return Gradient;\n}\n\nfloat GetOpacity(float NormalizedIntensity, int ch)\n{\n  // apply lut\n  float o = texture(gLutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0)).w / 255.0;\n  float Intensity = o * gOpacity[ch];\n  return Intensity;\n}\n\nvec3 GetEmissionN(float NormalizedIntensity, int ch)\n{\n  return gEmissive[ch];\n}\n\nvec3 GetDiffuseN(float NormalizedIntensity, int ch)\n{\n  vec4 col = texture(gLutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0));\n  //vec3 col = vec3(1.0, 1.0, 1.0);\n  return col.xyz * gDiffuse[ch];\n}\n\nvec3 GetSpecularN(float NormalizedIntensity, int ch)\n{\n  return gSpecular[ch];\n}\n\nfloat GetGlossinessN(float NormalizedIntensity, int ch)\n{\n  return gGlossiness[ch];\n}\n\n// a bsdf sample, a sample on a light source, and a randomly chosen light index\nstruct LightingSample {\n  float m_bsdfComponent;\n  vec2  m_bsdfDir;\n  vec2  m_lightPos;\n  float m_lightComponent;\n  float m_LightNum;\n};\n\nLightingSample LightingSample_LargeStep(inout uvec2 seed) {\n  return LightingSample(\n    rand(seed),\n    vec2(rand(seed), rand(seed)),\n    vec2(rand(seed), rand(seed)),\n    rand(seed),\n    rand(seed)\n    );\n}\n\n// return a color xyz\nvec3 Light_Le(in Light light, in vec2 UV)\n{\n  if (light.mT == 0)\n    return RGBtoXYZ(light.mColor) / light.mArea;\n\n  if (light.mT == 1)\n  {\n    if (UV.y > 0.0f)\n      return RGBtoXYZ(mix(light.mColorMiddle, light.mColorTop, abs(UV.y)));\n    else\n      return RGBtoXYZ(mix(light.mColorMiddle, light.mColorBottom, abs(UV.y)));\n  }\n\n  return BLACK;\n}\n\n// return a color xyz\nvec3 Light_SampleL(in Light light, in vec3 P, out Ray Rl, out float Pdf, in LightingSample LS)\n{\n  vec3 L = BLACK;\n  Pdf = 0.0;\n  vec3 Ro = vec3(0,0,0), Rd = vec3(0,0,1);\n  if (light.mT == 0)\n  {\n    Ro = (light.mP + ((-0.5f + LS.m_lightPos.x) * light.mWidth * light.mU) + ((-0.5f + LS.m_lightPos.y) * light.mHeight * light.mV));\n    Rd = normalize(P - Ro);\n    L = dot(Rd, light.mN) > 0.0f ? Light_Le(light, vec2(0.0f)) : BLACK;\n    Pdf = abs(dot(Rd, light.mN)) > 0.0f ? dot(P-Ro, P-Ro) / (abs(dot(Rd, light.mN)) * light.mArea) : 0.0f;\n  }\n  else if (light.mT == 1)\n  {\n    Ro = light.mP + light.mSkyRadius * getUniformSphereSample(LS.m_lightPos);\n    Rd = normalize(P - Ro);\n    L = Light_Le(light, vec2(1.0f) - 2.0f * LS.m_lightPos);\n    Pdf = pow(light.mSkyRadius, 2.0f) / light.mArea;\n  }\n\n  Rl = Ray(Ro, Rd, 0.0f, length(P - Ro));\n\n  return L;\n}\n\n// Intersect ray with light\nbool Light_Intersect(Light light, inout Ray R, out float T, out vec3 L, out float pPdf)\n{\n  if (light.mT == 0)\n  {\n    // Compute projection\n    float DotN = dot(R.m_D, light.mN);\n\n    // Ray is coplanar with light surface\n    if (DotN >= 0.0f)\n      return false;\n\n    // Compute hit distance\n    T = (-light.mDistance - dot(R.m_O, light.mN)) / DotN;\n\n    // Intersection is in ray's negative direction\n    if (T < R.m_MinT || T > R.m_MaxT)\n      return false;\n\n    // Determine position on light\n    vec3 Pl = rayAt(R, T);\n\n    // Vector from point on area light to center of area light\n    vec3 Wl = Pl - light.mP;\n\n    // Compute texture coordinates\n    vec2 UV = vec2(dot(Wl, light.mU), dot(Wl, light.mV));\n\n    // Check if within bounds of light surface\n    if (UV.x > light.mHalfWidth || UV.x < -light.mHalfWidth || UV.y > light.mHalfHeight || UV.y < -light.mHalfHeight)\n      return false;\n\n    R.m_MaxT = T;\n\n    //pUV = UV;\n\n    if (DotN < 0.0f)\n      L = RGBtoXYZ(light.mColor) / light.mArea;\n    else\n      L = BLACK;\n\n    pPdf = dot(R.m_O-Pl, R.m_O-Pl) / (DotN * light.mArea);\n\n    return true;\n  }\n\n  else if (light.mT == 1)\n  {\n    T = light.mSkyRadius;\n\n    // Intersection is in ray's negative direction\n    if (T < R.m_MinT || T > R.m_MaxT)\n      return false;\n\n    R.m_MaxT = T;\n\n    vec2 UV = vec2(SphericalPhi(R.m_D) * INV_2_PI, SphericalTheta(R.m_D) * INV_PI);\n\n    L = Light_Le(light, vec2(1.0f,1.0f) - 2.0f * UV);\n\n    pPdf = pow(light.mSkyRadius, 2.0f) / light.mArea;\n    //pUV = UV;\n\n    return true;\n  }\n\n  return false;\n}\n\nfloat Light_Pdf(in Light light, in vec3 P, in vec3 Wi)\n{\n  vec3 L;\n  vec2 UV;\n  float Pdf = 1.0f;\n\n  Ray Rl = Ray(P, Wi, 0.0f, 100000.0f);\n\n  if (light.mT == 0)\n  {\n    float T = 0.0f;\n\n    if (!Light_Intersect(light, Rl, T, L, Pdf))\n      return 0.0f;\n\n    return pow(T, 2.0f) / (abs(dot(light.mN, -Wi)) * light.mArea);\n  }\n\n  else if (light.mT == 1)\n  {\n    return pow(light.mSkyRadius, 2.0f) / light.mArea;\n  }\n\n  return 0.0f;\n}\n\nstruct VolumeShader {\n  int m_Type; // 0 = bsdf, 1 = phase\n\n  vec3 m_Kd; // isotropic phase // xyz color\n  vec3 m_R; // specular reflectance\n  float m_Ior;\n  float m_Exponent;\n  vec3 m_Nn;\n  vec3 m_Nu;\n  vec3 m_Nv;\n};\n\n// return a xyz color\nvec3 ShaderPhase_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return shader.m_Kd * INV_PI;\n}\n\nfloat ShaderPhase_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return INV_4_PI;\n}\n\nvec3 ShaderPhase_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  Wi\t= getUniformSphereSample(U);\n  Pdf\t= ShaderPhase_Pdf(shader, Wo, Wi);\n\n  return ShaderPhase_F(shader, Wo, Wi);\n}\n\n// return a xyz color\nvec3 Lambertian_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return shader.m_Kd * INV_PI;\n}\n\nfloat Lambertian_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  //return abs(Wi.z)*INV_PI;\n  return SameHemisphere(Wo, Wi) ? abs(Wi.z) * INV_PI : 0.0f;\n}\n\n// return a xyz color\nvec3 Lambertian_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  Wi = getCosineWeightedHemisphereSample(U);\n\n  if (Wo.z < 0.0f)\n    Wi.z *= -1.0f;\n\n  Pdf = Lambertian_Pdf(shader, Wo, Wi);\n\n  return Lambertian_F(shader, Wo, Wi);\n}\n\nvec3 SphericalDirection(in float SinTheta, in float CosTheta, in float Phi)\n{\n  return vec3(SinTheta * cos(Phi), SinTheta * sin(Phi), CosTheta);\n}\n\nvoid Blinn_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  // Compute sampled half-angle vector wh for Blinn distribution\n  float costheta = pow(U.x, 1.f / (shader.m_Exponent+1.0));\n  float sintheta = sqrt(max(0.f, 1.f - costheta*costheta));\n  float phi = U.y * 2.f * PI;\n\n  vec3 wh = SphericalDirection(sintheta, costheta, phi);\n\n  if (!SameHemisphere(Wo, wh))\n    wh = -wh;\n\n  // Compute incident direction by reflecting about wh\n  Wi = -Wo + 2.f * dot(Wo, wh) * wh;\n\n  // Compute PDF for wi from Blinn distribution\n  float blinn_pdf = ((shader.m_Exponent + 1.f) * pow(costheta, shader.m_Exponent)) / (2.f * PI * 4.f * dot(Wo, wh));\n\n  if (dot(Wo, wh) <= 0.f)\n    blinn_pdf = 0.f;\n\n  Pdf = blinn_pdf;\n}\n\nfloat Blinn_D(in VolumeShader shader, in vec3 wh)\n{\n  float costhetah = abs(wh.z);//AbsCosTheta(wh);\n  return (shader.m_Exponent+2.0) * INV_2_PI * pow(costhetah, shader.m_Exponent);\n}\nfloat Microfacet_G(in VolumeShader shader, in vec3 wo, in vec3 wi, in vec3 wh)\n{\n  float NdotWh = abs(wh.z);//AbsCosTheta(wh);\n  float NdotWo = abs(wo.z);//AbsCosTheta(wo);\n  float NdotWi = abs(wi.z);//AbsCosTheta(wi);\n  float WOdotWh = abs(dot(wo, wh));\n\n  return min(1.f, min((2.f * NdotWh * NdotWo / WOdotWh), (2.f * NdotWh * NdotWi / WOdotWh)));\n}\n\nvec3 Microfacet_F(in VolumeShader shader, in vec3 wo, in vec3 wi)\n{\n  float cosThetaO = abs(wo.z);//AbsCosTheta(wo);\n  float cosThetaI = abs(wi.z);//AbsCosTheta(wi);\n\n  if (cosThetaI == 0.f || cosThetaO == 0.f)\n    return BLACK;\n\n  vec3 wh = wi + wo;\n\n  if (wh.x == 0. && wh.y == 0. && wh.z == 0.)\n    return BLACK;\n\n  wh = normalize(wh);\n  float cosThetaH = dot(wi, wh);\n\n  vec3 F = WHITE;//m_Fresnel.Evaluate(cosThetaH);\n\n  return shader.m_R * Blinn_D(shader, wh) * Microfacet_G(shader, wo, wi, wh) * F / (4.f * cosThetaI * cosThetaO);\n}\n\nvec3 ShaderBsdf_WorldToLocal(in VolumeShader shader, in vec3 W)\n{\n  return vec3(dot(W, shader.m_Nu), dot(W, shader.m_Nv), dot(W, shader.m_Nn));\n}\n\nvec3 ShaderBsdf_LocalToWorld(in VolumeShader shader, in vec3 W)\n{\n  return vec3(\tshader.m_Nu.x * W.x + shader.m_Nv.x * W.y + shader.m_Nn.x * W.z,\n    shader.m_Nu.y * W.x + shader.m_Nv.y * W.y + shader.m_Nn.y * W.z,\n    shader.m_Nu.z * W.x + shader.m_Nv.z * W.y + shader.m_Nn.z * W.z);\n}\n\nfloat Blinn_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 wh = normalize(Wo + Wi);\n\n  float costheta = abs(wh.z);//AbsCosTheta(wh);\n  // Compute PDF for wi from Blinn distribution\n  float blinn_pdf = ((shader.m_Exponent + 1.f) * pow(costheta, shader.m_Exponent)) / (2.f * PI * 4.f * dot(Wo, wh));\n\n  if (dot(Wo, wh) <= 0.0f)\n    blinn_pdf = 0.0f;\n\n  return blinn_pdf;\n}\n\nvec3 Microfacet_SampleF(in VolumeShader shader, in vec3 wo, out vec3 wi, out float Pdf, in vec2 U)\n{\n  Blinn_SampleF(shader, wo, wi, Pdf, U);\n\n  if (!SameHemisphere(wo, wi))\n    return BLACK;\n\n  return Microfacet_F(shader, wo, wi);\n}\n\nfloat Microfacet_Pdf(in VolumeShader shader, in vec3 wo, in vec3 wi)\n{\n  if (!SameHemisphere(wo, wi))\n    return 0.0f;\n\n  return Blinn_Pdf(shader, wo, wi);\n}\n\n// return a xyz color\nvec3 ShaderBsdf_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = ShaderBsdf_WorldToLocal(shader, Wi);\n\n  vec3 R = vec3(0,0,0);\n\n  R += Lambertian_F(shader, Wol, Wil);\n  R += Microfacet_F(shader, Wol, Wil);\n\n  return R;\n}\n\nfloat ShaderBsdf_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = ShaderBsdf_WorldToLocal(shader, Wi);\n\n  float Pdf = 0.0f;\n\n  Pdf += Lambertian_Pdf(shader, Wol, Wil);\n  Pdf += Microfacet_Pdf(shader, Wol, Wil);\n\n  return Pdf;\n}\n\n\nvec3 ShaderBsdf_SampleF(in VolumeShader shader, in LightingSample S, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = vec3(0,0,0);\n\n  vec3 R = vec3(0,0,0);\n\n  if (S.m_bsdfComponent <= 0.5f)\n  {\n    Lambertian_SampleF(shader, Wol, Wil, Pdf, S.m_bsdfDir);\n  }\n  else\n  {\n    Microfacet_SampleF(shader, Wol, Wil, Pdf, S.m_bsdfDir);\n  }\n\n  Pdf += Lambertian_Pdf(shader, Wol, Wil);\n  Pdf += Microfacet_Pdf(shader, Wol, Wil);\n\n  R += Lambertian_F(shader, Wol, Wil);\n  R += Microfacet_F(shader, Wol, Wil);\n\n  Wi = ShaderBsdf_LocalToWorld(shader, Wil);\n\n  //return vec3(1,1,1);\n  return R;\n}\n\n// return a xyz color\nvec3 Shader_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_F(shader, Wo, Wi);\n  }\n  else {\n    return ShaderPhase_F(shader, Wo, Wi);\n  }\n}\n\nfloat Shader_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_Pdf(shader, Wo, Wi);\n  }\n  else {\n    return ShaderPhase_Pdf(shader, Wo, Wi);\n  }\n}\n\nvec3 Shader_SampleF(in VolumeShader shader, in LightingSample S, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  //return vec3(1,0,0);\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_SampleF(shader, S, Wo, Wi, Pdf, U);\n  }\n  else {\n    return ShaderPhase_SampleF(shader, Wo, Wi, Pdf, U);\n  }\n}\n\n\nbool IsBlack(in vec3 v) {\n  return (v.x==0.0 && v.y == 0.0 && v.z == 0.0);\n}\n\nfloat PowerHeuristic(float nf, float fPdf, float ng, float gPdf)\n{\n  float f = nf * fPdf;\n  float g = ng * gPdf;\n  // The power heuristic is Veach's MIS balance heuristic except each component is being squared\n  // balance heuristic would be f/(f+g) ...?\n  return (f * f) / (f * f + g * g);\n}\n\nfloat MISContribution(float pdf1, float pdf2)\n{\n  return PowerHeuristic(1.0f, pdf1, 1.0f, pdf2);\n}\n\n// \"shadow ray\" using gStepSizeShadow, test whether it can exit the volume or not\nbool DoesSecondaryRayScatterInVolume(inout Ray R, inout uvec2 seed)\n{\n  float MinT;\n  float MaxT;\n  vec3 Ps;\n\n  if (!IntersectBox(R, MinT, MaxT))\n    return false;\n\n  MinT = max(MinT, R.m_MinT);\n  MaxT = min(MaxT, R.m_MaxT);\n\n  // delta (Woodcock) tracking\n  float S\t= -log(rand(seed)) / gDensityScale;\n  float Sum = 0.0f;\n  float SigmaT = 0.0f;\n\n  MinT += rand(seed) * gStepSizeShadow;\n  int ch = 0;\n  float intensity = 0.0;\n  while (Sum < S)\n  {\n    Ps = rayAt(R, MinT);  // R.m_O + MinT * R.m_D;\n\n    if (MinT > MaxT)\n      return false;\n\n    intensity = GetNormalizedIntensityMax4ch(Ps, ch);\n    SigmaT = gDensityScale * GetOpacity(intensity, ch);\n\n    Sum += SigmaT * gStepSizeShadow;\n    MinT += gStepSizeShadow;\n  }\n\n  return true;\n}\n\nint GetNearestLight(Ray R, out vec3 oLightColor, out vec3 Pl, out float oPdf)\n{\n  int hit = -1;\n  float T = 0.0f;\n  Ray rayCopy = R;\n  float pdf = 0.0f;\n\n  for (int i = 0; i < 2; i++)\n  {\n    if (Light_Intersect(gLights[i], rayCopy, T, oLightColor, pdf))\n    {\n      Pl = rayAt(R, T);\n      hit = i;\n    }\n  }\n  oPdf = pdf;\n\n  return hit;\n}\n\n// return a XYZ color\n// Wo is direction from scatter point out toward incident ray direction\n\n// Wi goes toward light sample and is not necessarily perfect reflection of Wo\n// ^Wi   ^N    ^Wo\n//  \\\\    |    //\n//   \\\\   |   //\n//    \\\\  |  //\n//     \\\\ | //\n//      \\\\|// Pe = volume sample where scattering occurs\n//   ---------\nvec3 EstimateDirectLight(int shaderType, float Density, int ch, in Light light, in LightingSample LS, in vec3 Wo, in vec3 Pe, in vec3 N, inout uvec2 seed)\n{\n  vec3 Ld = BLACK, Li = BLACK, F = BLACK;\n\n  vec3 diffuse = GetDiffuseN(Density, ch);\n  vec3 specular = GetSpecularN(Density, ch);\n  float glossiness = GetGlossinessN(Density, ch);\n\n  // can N and Wo be coincident????\n  vec3 nu = normalize(cross(N, Wo));\n  vec3 nv = normalize(cross(N, nu));\n\n  // the IoR here is hard coded... and unused!!!!\n  VolumeShader Shader = VolumeShader(shaderType, RGBtoXYZ(diffuse), RGBtoXYZ(specular), 2.5f, glossiness, N, nu, nv);\n\n  float LightPdf = 1.0f, ShaderPdf = 1.0f;\n\n  Ray Rl = Ray(vec3(0,0,0), vec3(0,0,1.0), 0.0, MAX_RAY_LEN);\n  // Rl is ray from light toward Pe in volume, with a max traversal of the distance from Pe to Light sample pos.\n  Li = Light_SampleL(light, Pe, Rl, LightPdf, LS);\n\n  // Wi: negate ray direction: from volume scatter point toward light...?\n  vec3 Wi = -Rl.m_D, P = vec3(0,0,0);\n\n  // we will calculate two lighting contributions and combine them by MIS.\n\n  F = Shader_F(Shader,Wo, Wi);\n\n  ShaderPdf = Shader_Pdf(Shader, Wo, Wi);\n\n  // get a lighting contribution along Rl;  see if Rl would scatter in the volume or not\n  if (!IsBlack(Li) && (ShaderPdf > 0.0f) && (LightPdf > 0.0f) && !DoesSecondaryRayScatterInVolume(Rl, seed))\n  {\n    // ray from light can see through volume to Pe!\n\n    float dotProd = 1.0;\n    if (shaderType == ShaderType_Brdf){\n\n      // (use abs or clamp here?)\n      dotProd = abs(dot(Wi, N));\n    }\n    Ld += F * Li * dotProd * MISContribution(LightPdf, ShaderPdf) / LightPdf;\n\n  }\n\n  // get a lighting contribution by sampling nearest light from the scattering point\n  F = Shader_SampleF(Shader, LS, Wo, Wi, ShaderPdf, LS.m_bsdfDir);\n  if (!IsBlack(F) && (ShaderPdf > 0.0f))\n  {\n    vec3 Pl = vec3(0,0,0);\n    int n = GetNearestLight(Ray(Pe, Wi, 0.0f, 1000000.0f), Li, Pl, LightPdf);\n    if (n > -1)\n    {\n      Light pLight = gLights[n];\n      LightPdf = Light_Pdf(pLight, Pe, Wi);\n\n      if ((LightPdf > 0.0f) && !IsBlack(Li)) {\n        Ray rr = Ray(Pl, normalize(Pe - Pl), 0.0f, length(Pe - Pl));\n        if (!DoesSecondaryRayScatterInVolume(rr, seed))\n        {\n          float dotProd = 1.0;\n          if (shaderType == ShaderType_Brdf){\n\n            // (use abs or clamp here?)\n            dotProd = abs(dot(Wi, N));\n          }\n          // note order of MIS params is swapped\n          Ld += F * Li * dotProd * MISContribution(ShaderPdf, LightPdf) / ShaderPdf;\n        }\n\n      }\n    }\n  }\n\n  return Ld;\n\n}\n\n// return a linear xyz color\nvec3 UniformSampleOneLight(int shaderType, float Density, int ch, in vec3 Wo, in vec3 Pe, in vec3 N, inout uvec2 seed)\n{\n  //if (NUM_LIGHTS == 0)\n  //  return BLACK;\n\n  // select a random light, a random 2d sample on light, and a random 2d sample on brdf\n  LightingSample LS = LightingSample_LargeStep(seed);\n\n  int WhichLight = int(floor(LS.m_LightNum * float(NUM_LIGHTS)));\n\n  Light light = gLights[WhichLight];\n\n  return float(NUM_LIGHTS) * EstimateDirectLight(shaderType, Density, ch, light, LS, Wo, Pe, N, seed);\n\n}\n\nbool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)\n{\n  float MinT;\n  float MaxT;\n\n  if (!IntersectBox(R, MinT, MaxT))\n    return false;\n\n  MinT = max(MinT, R.m_MinT);\n  MaxT = min(MaxT, R.m_MaxT);\n\n  // delta (Woodcock) tracking\n\n  // notes, not necessarily coherent:\n  // ray march along the ray's projected path and keep an average sigmaT value.\n  // The distance is weighted by the intensity at each ray step sample. High intensity increases the apparent distance.\n  // When the distance has become greater than the average sigmaT value given by -log(RandomFloat[0, 1]) / averageSigmaT\n  // then that would be considered the interaction position.\n\n  // sigmaT = sigmaA + sigmaS = absorption coeff + scattering coeff = extinction coeff\n\n  // Beer-Lambert law: transmittance T(t) = exp(-sigmaT*t)  where t is a distance!\n\n  // importance sampling the exponential function to produce a free path distance S\n  // the PDF is p(t) = sigmaT * exp(-sigmaT * t)\n  // In a homogeneous volume,\n  // S is the free-path distance = -ln(1-zeta)/sigmaT where zeta is a random variable\n  // density scale = 0   => S --> 0..inf.  Low density means randomly sized ray paths\n  // density scale = inf => S --> 0.       High density means short ray paths!\n\n  // note that ln(x:0..1) is negative\n\n  // here gDensityScale represents sigmaMax, a majorant of sigmaT\n  // it is a parameter that should be set as close to the max extinction coefficient as possible.\n  float S\t= -log(rand(seed)) / gDensityScale;\n\n  float Sum\t\t= 0.0f;\n  float SigmaT\t= 0.0f; // accumulated extinction along ray march\n\n  // start: take one step now.\n  MinT += rand(seed) * gStepSize;\n\n  int ch = 0;\n  float intensity = 0.0;\n\n  // ray march until we have traveled S (or hit the maxT of the ray)\n  while (Sum < S)\n  {\n    Ps = rayAt(R, MinT);  // R.m_O + MinT * R.m_D;\n\n    // if we exit the volume with no scattering\n    if (MinT > MaxT)\n      return false;\n\n    intensity = GetNormalizedIntensityMax4ch(Ps, ch);\n    SigmaT = gDensityScale * GetOpacity(intensity, ch);\n\n    Sum += SigmaT * gStepSize;\n    MinT += gStepSize;\n  }\n\n  // at this time, MinT - original MinT is the T transmission distance before a scatter event.\n  // Ps is the point\n\n  return true;\n}\n\n\nvec4 CalculateRadiance(inout uvec2 seed) {\n  float r = rand(seed);\n  //return vec4(r,0,0,1);\n\n  vec3 Lv = BLACK, Li = BLACK;\n\n  //Ray Re = Ray(vec3(0,0,0), vec3(0,0,1), 0.0, MAX_RAY_LEN);\n\n  vec2 UV = vUv*uResolution + vec2(rand(seed), rand(seed));\n\n  Ray Re = GenerateCameraRay(gCamera, UV, vec2(rand(seed), rand(seed)));\n\n  //return vec4(vUv, 0.0, 1.0);\n  //return vec4(0.5*(Re.m_D + 1.0), 1.0);\n  //return vec4(Re.m_D, 1.0);\n\n  //Re.m_MinT = 0.0f;\n  //Re.m_MaxT = MAX_RAY_LEN;\n\n  vec3 Pe = vec3(0,0,0), Pl = vec3(0,0,0);\n  float lpdf = 0.0;\n\n  float alpha = 0.0;\n  // find point Pe along ray Re\n  if (SampleScatteringEvent(Re, seed, Pe))\n  {\n    alpha = 1.0;\n    // is there a light between Re.m_O and Pe? (ray's maxT is distance to Pe)\n    // (test to see if area light was hit before volume.)\n    int i = GetNearestLight(Ray(Re.m_O, Re.m_D, 0.0f, length(Pe - Re.m_O)), Li, Pl, lpdf);\n    if (i > -1)\n    {\n      // set sample pixel value in frame estimate (prior to accumulation)\n      return vec4(Li, 1.0);\n    }\n\n    int ch = 0;\n    float D = GetNormalizedIntensityMax4ch(Pe, ch);\n\n    // emission from volume\n    Lv += RGBtoXYZ(GetEmissionN(D, ch));\n\n    vec3 gradient = Gradient4ch(Pe, ch);\n    // send ray out from Pe toward light\n    switch (gShadingType)\n    {\n      case ShaderType_Brdf:\n      {\n        Lv += UniformSampleOneLight(ShaderType_Brdf, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        break;\n      }\n\n      case ShaderType_Phase:\n      {\n        Lv += 0.5f * UniformSampleOneLight(ShaderType_Phase, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        break;\n      }\n\n      case ShaderType_Mixed:\n      {\n        //const float GradMag = GradientMagnitude(Pe, volumedata.gradientVolumeTexture[ch]) * (1.0/volumedata.intensityMax[ch]);\n        float GradMag = length(gradient);\n        float PdfBrdf = (1.0f - exp(-gGradientFactor * GradMag));\n\n        vec3 cls; // xyz color\n        if (rand(seed) < PdfBrdf) {\n          cls = UniformSampleOneLight(ShaderType_Brdf, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        }\n        else {\n          cls = 0.5f * UniformSampleOneLight(ShaderType_Phase, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        }\n\n        Lv += cls;\n\n        break;\n      }\n    }\n  }\n  else\n  {\n    // background color:\n    // set Lv to a selected color based on environment light source?\n    // if (uShowLights > 0.0) {\n    //   int n = GetNearestLight(Ray(Re.m_O, Re.m_D, 0.0f, 1000000.0f), Li, Pl, lpdf);\n    //   if (n > -1)\n    //     Lv = Li;\n    // }\n    //Lv = vec3(r,0,0);\n  }\n\n  // set sample pixel value in frame estimate (prior to accumulation)\n\n  return vec4(Lv, alpha);\n}\n\nvec4 CumulativeMovingAverage(vec4 A, vec4 Ax, float N)\n{\n   return A + ((Ax - A) / max((N), 1.0f));\n}\n\nvoid main()\n{\n  // seed for rand(seed) function\n  uvec2 seed = uvec2(uFrameCounter, uFrameCounter + 1.0) * uvec2(gl_FragCoord);\n\n  // perform path tracing and get resulting pixel color\n  vec4 pixelColor = CalculateRadiance( seed );\n\n  vec4 previousColor = texture(tPreviousTexture, vUv);\n  if (uSampleCounter < 1.0) {\n    previousColor = vec4(0,0,0,0);\n  }\n\n  pc_fragColor = CumulativeMovingAverage(previousColor, pixelColor, uSampleCounter);\n}\n"; // threejs passthrough vertex shader for fullscreen quad
 var pathTracingVertexShaderSrc = pathTraceVertexShader;
 var pathTracingFragmentShaderSrc = pathTraceFragmentShader;
 
@@ -7946,6 +8033,10 @@ var pathTracingUniforms = function pathTracingUniforms() {
     gClippedAaBbMax: {
       type: "v3",
       value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(1, 1, 1)
+    },
+    gVolCenter: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(0, 0, 0)
     },
     gDensityScale: {
       type: "f",
@@ -8079,7 +8170,7 @@ __webpack_require__.r(__webpack_exports__);
 /* babel-plugin-inline-import './shaders/raymarch.vert' */
 var rayMarchVertexShader = "// switch on high precision floats\n#ifdef GL_ES\nprecision highp float;\n#endif\nvarying vec3 pObj;\nvoid main() {\n  pObj = position;\n  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n}\n";
 /* babel-plugin-inline-import './shaders/raymarch.frag' */
-var rayMarchFragmentShader = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\n#define M_PI 3.14159265358979323846\n\nuniform vec2 iResolution;\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform float ATLAS_X;\nuniform float ATLAS_Y;\nuniform vec3 AABB_CLIP_MIN;\nuniform float CLIP_NEAR;\nuniform vec3 AABB_CLIP_MAX;\nuniform float CLIP_FAR;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform int BREAK_STEPS;\nuniform float SLICES;\nuniform float isOrtho;\nuniform float orthoThickness;\nuniform float orthoScale;\nuniform int maxProject;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\nuniform vec3 volumeScale;\n\n// view space to axis-aligned volume box\nuniform mat4 inverseModelViewMatrix;\n\nvarying vec3 pObj;\n\nfloat powf(float a, float b) {\n  return pow(a,b);\n}\n\nfloat rand(vec2 co) {\n  float threadId = gl_FragCoord.x/(gl_FragCoord.y + 1.0);\n  float bigVal = threadId*1299721.0/911.0;\n  vec2 smallVal = vec2(threadId*7927.0/577.0, threadId*104743.0/1039.0);\n  return fract(sin(dot(co, smallVal)) * bigVal);\n}\n\nvec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {\n  float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));\n  // float x = max(color[2], max(color[0],color[1]));\n  float xi = (x-vmin)/(vmax-vmin);\n  xi = clamp(xi,0.0,1.0);\n  float y = pow(xi,C);\n  y = clamp(y,0.0,1.0);\n  color[3] = y;\n  return color;\n}\n\nvec2 offsetFrontBack(float t, float nx, float ny) {\n  int a = int(t);\n  int ax = int(ATLAS_X);\n  vec2 os = vec2(float(a-(a/ax)*ax) / ATLAS_X, float(a/ax) / ATLAS_Y);\n  return clamp(os, vec2(0.0, 0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y));\n}\n\nvec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n  // get location within atlas tile\n  // TODO: get loc1 which follows ray to next slice along ray direction\n  // when flipvolume = 1:  pos\n  // when flipvolume = -1: 1-pos\n  vec2 loc0 = vec2(\n    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,\n    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);\n\n  // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y\n  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n  loc0 = vec2(0.5/textureRes.x, 0.5/textureRes.y) + loc0*vec2(1.0-(ATLAS_X)/textureRes.x, 1.0-(ATLAS_Y)/textureRes.y);\n  \n  // interpolate between two slices\n  float z = (pos.z)*(nSlices-1.0);\n  float z0 = floor(z);\n  float t = z-z0; //mod(z, 1.0);\n  float z1 = min(z0+1.0, nSlices-1.0);\n\n  // flipped:\n  if (flipVolume.z == -1.0) {\n    z0 = nSlices - z0 - 1.0;\n    z1 = nSlices - z1 - 1.0;\n    t = 1.0 - t;\n  }\n\n  // get slice offsets in texture atlas\n  vec2 o0 = offsetFrontBack(z0,ATLAS_X,ATLAS_Y) + loc0;\n  vec2 o1 = offsetFrontBack(z1,ATLAS_X,ATLAS_Y) + loc0;\n\n  vec4 slice0Color = texture2D(tex, o0);\n  vec4 slice1Color = texture2D(tex, o1);\n  // NOTE we could premultiply the mask in the fuse function,\n  // but that is slower to update the maskAlpha value than here in the shader.\n  // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?\n  float slice0Mask = texture2D(textureAtlasMask, o0).x;\n  float slice1Mask = texture2D(textureAtlasMask, o1).x;\n  // or use max for conservative 0 or 1 masking?\n  float maskVal = mix(slice0Mask, slice1Mask, t);\n  // take mask from 0..1 to alpha..1\n  maskVal = mix(maskVal, 1.0, maskAlpha);\n  vec4 retval = mix(slice0Color, slice1Color, t);\n  // only mask the rgb, not the alpha(?)\n  retval.rgb *= maskVal;\n  return bounds*retval;\n}\n\nvec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n  vec2 loc0 = vec2(\n    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,\n    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);\n\n  // No interpolation - sample just one slice at a pixel center.\n  // Ideally this would be accomplished in part by switching this texture to linear\n  //   filtering, but three makes this difficult to do through a WebGLRenderTarget.\n  loc0 = floor(loc0 * textureRes) / textureRes;\n  loc0 += vec2(0.5/textureRes.x, 0.5/textureRes.y);\n\n  float z = min(floor(pos.z * nSlices), nSlices-1.0);\n  \n  if (flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z, ATLAS_X, ATLAS_Y) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds*voxelColor;\n}\n\nbool intersectBox(in vec3 r_o, in vec3 r_d, in vec3 boxMin, in vec3 boxMax,\n                  out float tnear, out float tfar) {\n  // compute intersection of ray with all six bbox planes\n  vec3 invR = vec3(1.0,1.0,1.0) / r_d;\n  vec3 tbot = invR * (boxMin - r_o);\n  vec3 ttop = invR * (boxMax - r_o);\n\n  // re-order intersections to find smallest and largest on each axis\n  vec3 tmin = min(ttop, tbot);\n  vec3 tmax = max(ttop, tbot);\n\n  // find the largest tmin and the smallest tmax\n  float largest_tmin  = max(max(tmin.x, tmin.y), max(tmin.x, tmin.z));\n  float smallest_tmax = min(min(tmax.x, tmax.y), min(tmax.x, tmax.z));\n\n  tnear = largest_tmin;\n  tfar = smallest_tmax;\n\n  // use >= here?\n  return(smallest_tmax > largest_tmin);\n}\n\nvec4 accumulate(vec4 col, float s, vec4 C) {\n  float stepScale = (1.0 - powf((1.0-col.w),s));\n  col.w = stepScale;\n  col.xyz *= col.w;\n  col = clamp(col,0.0,1.0);\n\n  C = (1.0-C.w)*col + C;\n  return C;\n}\n\nvec4 integrateVolume(vec4 eye_o,vec4 eye_d,\n                     float tnear,   float tfar,\n                     float clipNear, float clipFar,\n                     sampler2D textureAtlas\n                     ) {\n  vec4 C = vec4(0.0);\n  float tend   = tfar;\n  float tbegin = tnear;\n\n  // march along ray from front to back, accumulating color\n\n  // estimate step length\n  const int maxSteps = 512;\n  // modify the 3 components of eye_d by volume scale\n  float scaledSteps = float(BREAK_STEPS) * length((eye_d.xyz/volumeScale));\n  float csteps = clamp(float(scaledSteps), 1.0, float(maxSteps));\n  float invstep = (tfar-tnear)/csteps;\n  // special-casing the single slice to remove the random ray dither.\n  // this removes a Moire pattern visible in single slice images, which we want to view as 2D images as best we can.\n  float r = (SLICES==1.0) ? 0.0 : rand(eye_d.xy);\n  // if ortho and clipped, make step size smaller so we still get same number of steps\n  float tstep = invstep*orthoThickness;\n  float tfarsurf = r*tstep;\n  float overflow = mod((tfarsurf - tend),tstep); // random dithering offset\n  float t = tbegin + overflow;\n  t += r*tstep; // random dithering offset\n  float tdist = 0.0;\n  int numSteps = 0;\n  vec4 pos, col;\n  // We need to be able to scale the alpha contrib with number of ray steps,\n  // in order to make the final color invariant to the step size(?)\n  // use maxSteps (a constant) as the numerator... Not sure if this is sound.\n  float s = 0.5 * float(maxSteps) / csteps;\n  for(int i=0; i<maxSteps; i++) {\n    pos = eye_o + eye_d*t;\n    // !!! assume box bounds are -0.5 .. 0.5.  pos = (pos-min)/(max-min)\n    // scaling is handled by model transform and already accounted for before we get here.\n    // AABB clip is independent of this and is only used to determine tnear and tfar.\n    pos.xyz = (pos.xyz-(-0.5))/((0.5)-(-0.5)); //0.5 * (pos + 1.0); // map position from [boxMin, boxMax] to [0, 1] coordinates\n\n    vec4 col = interpolationEnabled ? sampleAtlasLinear(textureAtlas, pos) : sampleAtlasNearest(textureAtlas, pos);\n\n    if (maxProject != 0) {\n      col.xyz *= BRIGHTNESS;\n      C = max(col, C);\n    } else {\n      col = luma2Alpha(col, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);\n      col.xyz *= BRIGHTNESS;\n      // for practical use the density only matters for regular volume integration\n      col.w *= DENSITY;\n      C = accumulate(col, s, C);\n    }\n    t += tstep;\n    numSteps = i;\n\n    if (t > tend || t > tbegin+clipFar ) break;\n    if (C.w > 1.0 ) break;\n  }\n\n  return C;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n  vec2 vUv = gl_FragCoord.xy/iResolution.xy;\n\n  vec3 eyeRay_o, eyeRay_d;\n\n  if (isOrtho == 0.0) {\n    // for perspective rays:\n    // world space camera coordinates\n    // transform to object space\n    eyeRay_o = (inverseModelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;\n    eyeRay_d = normalize(pObj - eyeRay_o);\n  } else {\n    // for ortho rays:\n    float zDist = 2.0;\n    eyeRay_d = (inverseModelViewMatrix*vec4(0.0, 0.0, -zDist, 0.0)).xyz;\n    vec4 ray_o = vec4(2.0*vUv - 1.0, 1.0, 1.0);\n    ray_o.xy *= orthoScale;\n    ray_o.x *= iResolution.x/iResolution.y;\n    eyeRay_o = (inverseModelViewMatrix*ray_o).xyz;\n  }\n\n  // -0.5..0.5 is full box. AABB_CLIP lets us clip to a box shaped ROI to look at\n  // I am applying it here at the earliest point so that the ray march does\n  // not waste steps.  For general shaped ROI, this has to be handled more\n  // generally (obviously)\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n\n  float tnear, tfar;\n  bool hit = intersectBox(eyeRay_o, eyeRay_d, boxMin, boxMax, tnear, tfar);\n\n  if (!hit) {\n    // return background color if ray misses the cube\n    // is this safe to do when there is other geometry / gObjects drawn?\n    gl_FragColor = vec4(0.0); //C1;//vec4(0.0);\n    return;\n  }\n\n  float clipNear = 0.0;//-(dot(eyeRay_o.xyz, eyeNorm) + dNear) / dot(eyeRay_d.xyz, eyeNorm);\n  float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);\n\n  vec4 C = integrateVolume(vec4(eyeRay_o,1.0), vec4(eyeRay_d,0.0),\n                           tnear,    tfar, //intersections of box\n                           clipNear, clipFar,\n                           textureAtlas);\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}\n";
+var rayMarchFragmentShader = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\n#define M_PI 3.14159265358979323846\n\nuniform vec2 iResolution;\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform float ATLAS_X;\nuniform float ATLAS_Y;\nuniform vec3 AABB_CLIP_MIN;\nuniform float CLIP_NEAR;\nuniform vec3 AABB_CLIP_MAX;\nuniform float CLIP_FAR;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform int BREAK_STEPS;\nuniform float SLICES;\nuniform float isOrtho;\nuniform float orthoThickness;\nuniform float orthoScale;\nuniform int maxProject;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\nuniform vec3 volumeScale;\n\n// view space to axis-aligned volume box\nuniform mat4 inverseModelViewMatrix;\n\nvarying vec3 pObj;\n\nfloat powf(float a, float b) {\n  return pow(a,b);\n}\n\nfloat rand(vec2 co) {\n  float threadId = gl_FragCoord.x/(gl_FragCoord.y + 1.0);\n  float bigVal = threadId*1299721.0/911.0;\n  vec2 smallVal = vec2(threadId*7927.0/577.0, threadId*104743.0/1039.0);\n  return fract(sin(dot(co, smallVal)) * bigVal);\n}\n\nvec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {\n  float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));\n  // float x = max(color[2], max(color[0],color[1]));\n  float xi = (x-vmin)/(vmax-vmin);\n  xi = clamp(xi,0.0,1.0);\n  float y = pow(xi,C);\n  y = clamp(y,0.0,1.0);\n  color[3] = y;\n  return color;\n}\n\nvec2 offsetFrontBack(float t, float nx, float ny) {\n  int a = int(t);\n  int ax = int(ATLAS_X);\n  vec2 os = vec2(float(a-(a/ax)*ax) / ATLAS_X, float(a/ax) / ATLAS_Y);\n  return clamp(os, vec2(0.0, 0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y));\n}\n\nvec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n  // get location within atlas tile\n  // TODO: get loc1 which follows ray to next slice along ray direction\n  // when flipvolume = 1:  pos\n  // when flipvolume = -1: 1-pos\n  vec2 loc0 = vec2(\n    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,\n    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);\n\n  // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y\n  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n  loc0 = vec2(0.5/textureRes.x, 0.5/textureRes.y) + loc0*vec2(1.0-(ATLAS_X)/textureRes.x, 1.0-(ATLAS_Y)/textureRes.y);\n  \n  // interpolate between two slices\n  float z = (pos.z)*(nSlices-1.0);\n  float z0 = floor(z);\n  float t = z-z0; //mod(z, 1.0);\n  float z1 = min(z0+1.0, nSlices-1.0);\n\n  // flipped:\n  if (flipVolume.z == -1.0) {\n    z0 = nSlices - z0 - 1.0;\n    z1 = nSlices - z1 - 1.0;\n    t = 1.0 - t;\n  }\n\n  // get slice offsets in texture atlas\n  vec2 o0 = offsetFrontBack(z0,ATLAS_X,ATLAS_Y) + loc0;\n  vec2 o1 = offsetFrontBack(z1,ATLAS_X,ATLAS_Y) + loc0;\n\n  vec4 slice0Color = texture2D(tex, o0);\n  vec4 slice1Color = texture2D(tex, o1);\n  // NOTE we could premultiply the mask in the fuse function,\n  // but that is slower to update the maskAlpha value than here in the shader.\n  // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?\n  float slice0Mask = texture2D(textureAtlasMask, o0).x;\n  float slice1Mask = texture2D(textureAtlasMask, o1).x;\n  // or use max for conservative 0 or 1 masking?\n  float maskVal = mix(slice0Mask, slice1Mask, t);\n  // take mask from 0..1 to alpha..1\n  maskVal = mix(maskVal, 1.0, maskAlpha);\n  vec4 retval = mix(slice0Color, slice1Color, t);\n  // only mask the rgb, not the alpha(?)\n  retval.rgb *= maskVal;\n  return bounds*retval;\n}\n\nvec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n  vec2 loc0 = vec2(\n    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,\n    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);\n\n  // No interpolation - sample just one slice at a pixel center.\n  // Ideally this would be accomplished in part by switching this texture to linear\n  //   filtering, but three makes this difficult to do through a WebGLRenderTarget.\n  loc0 = floor(loc0 * textureRes) / textureRes;\n  loc0 += vec2(0.5/textureRes.x, 0.5/textureRes.y);\n\n  float z = min(floor(pos.z * nSlices), nSlices-1.0);\n  \n  if (flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z, ATLAS_X, ATLAS_Y) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds*voxelColor;\n}\n\nbool intersectBox(in vec3 r_o, in vec3 r_d, in vec3 boxMin, in vec3 boxMax,\n                  out float tnear, out float tfar) {\n  // compute intersection of ray with all six bbox planes\n  vec3 invR = vec3(1.0,1.0,1.0) / r_d;\n  vec3 tbot = invR * (boxMin - r_o);\n  vec3 ttop = invR * (boxMax - r_o);\n\n  // re-order intersections to find smallest and largest on each axis\n  vec3 tmin = min(ttop, tbot);\n  vec3 tmax = max(ttop, tbot);\n\n  // find the largest tmin and the smallest tmax\n  float largest_tmin  = max(max(tmin.x, tmin.y), max(tmin.x, tmin.z));\n  float smallest_tmax = min(min(tmax.x, tmax.y), min(tmax.x, tmax.z));\n\n  tnear = largest_tmin;\n  tfar = smallest_tmax;\n\n  // use >= here?\n  return(smallest_tmax > largest_tmin);\n}\n\nvec4 accumulate(vec4 col, float s, vec4 C) {\n  float stepScale = (1.0 - powf((1.0-col.w),s));\n  col.w = stepScale;\n  col.xyz *= col.w;\n  col = clamp(col,0.0,1.0);\n\n  C = (1.0-C.w)*col + C;\n  return C;\n}\n\nvec4 integrateVolume(vec4 eye_o,vec4 eye_d,\n                     float tnear,   float tfar,\n                     float clipNear, float clipFar,\n                     sampler2D textureAtlas\n                     ) {\n  vec4 C = vec4(0.0);\n  float tend   = tfar;\n  float tbegin = tnear;\n\n  // march along ray from front to back, accumulating color\n\n  // estimate step length\n  const int maxSteps = 512;\n  // modify the 3 components of eye_d by volume scale\n  float scaledSteps = float(BREAK_STEPS) * length((eye_d.xyz/volumeScale));\n  float csteps = clamp(float(scaledSteps), 1.0, float(maxSteps));\n  float invstep = (tfar-tnear)/csteps;\n  // special-casing the single slice to remove the random ray dither.\n  // this removes a Moire pattern visible in single slice images, which we want to view as 2D images as best we can.\n  float r = (SLICES==1.0) ? 0.0 : rand(eye_d.xy);\n  // if ortho and clipped, make step size smaller so we still get same number of steps\n  float tstep = invstep*orthoThickness;\n  float tfarsurf = r*tstep;\n  float overflow = mod((tfarsurf - tend),tstep); // random dithering offset\n  float t = tbegin + overflow;\n  t += r*tstep; // random dithering offset\n  float tdist = 0.0;\n  int numSteps = 0;\n  vec4 pos, col;\n  // We need to be able to scale the alpha contrib with number of ray steps,\n  // in order to make the final color invariant to the step size(?)\n  // use maxSteps (a constant) as the numerator... Not sure if this is sound.\n  float s = 0.5 * float(maxSteps) / csteps;\n  for (int i = 0; i < maxSteps; i++) {\n    pos = eye_o + eye_d*t;\n    // !!! assume box bounds are -0.5 .. 0.5.  pos = (pos-min)/(max-min)\n    // scaling is handled by model transform and already accounted for before we get here.\n    // AABB clip is independent of this and is only used to determine tnear and tfar.\n    pos.xyz = (pos.xyz-(-0.5))/((0.5)-(-0.5)); //0.5 * (pos + 1.0); // map position from [boxMin, boxMax] to [0, 1] coordinates\n\n    vec4 col = interpolationEnabled ? sampleAtlasLinear(textureAtlas, pos) : sampleAtlasNearest(textureAtlas, pos);\n\n    if (maxProject != 0) {\n      col.xyz *= BRIGHTNESS;\n      C = max(col, C);\n    } else {\n      col = luma2Alpha(col, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);\n      col.xyz *= BRIGHTNESS;\n      // for practical use the density only matters for regular volume integration\n      col.w *= DENSITY;\n      C = accumulate(col, s, C);\n    }\n    t += tstep;\n    numSteps = i;\n\n    if (t > tend || t > tbegin+clipFar ) break;\n    if (C.w > 1.0 ) break;\n  }\n\n  return C;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n  vec2 vUv = gl_FragCoord.xy/iResolution.xy;\n\n  vec3 eyeRay_o, eyeRay_d;\n\n  if (isOrtho == 0.0) {\n    // for perspective rays:\n    // world space camera coordinates\n    // transform to object space\n    eyeRay_o = (inverseModelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;\n    eyeRay_d = normalize(pObj - eyeRay_o);\n  } else {\n    // for ortho rays:\n    float zDist = 2.0;\n    eyeRay_d = (inverseModelViewMatrix*vec4(0.0, 0.0, -zDist, 0.0)).xyz;\n    vec4 ray_o = vec4(2.0*vUv - 1.0, 1.0, 1.0);\n    ray_o.xy *= orthoScale;\n    ray_o.x *= iResolution.x/iResolution.y;\n    eyeRay_o = (inverseModelViewMatrix*ray_o).xyz;\n  }\n\n  // -0.5..0.5 is full box. AABB_CLIP lets us clip to a box shaped ROI to look at\n  // I am applying it here at the earliest point so that the ray march does\n  // not waste steps.  For general shaped ROI, this has to be handled more\n  // generally (obviously)\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n\n  float tnear, tfar;\n  bool hit = intersectBox(eyeRay_o, eyeRay_d, boxMin, boxMax, tnear, tfar);\n\n  if (!hit) {\n    // return background color if ray misses the cube\n    // is this safe to do when there is other geometry / gObjects drawn?\n    gl_FragColor = vec4(0.0); //C1;//vec4(0.0);\n    return;\n  }\n\n  float clipNear = 0.0;//-(dot(eyeRay_o.xyz, eyeNorm) + dNear) / dot(eyeRay_d.xyz, eyeNorm);\n  float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);\n\n  vec4 C = integrateVolume(vec4(eyeRay_o,1.0), vec4(eyeRay_d,0.0),\n                           tnear,    tfar, //intersections of box\n                           clipNear, clipFar,\n                           textureAtlas);\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}\n";
 var rayMarchingVertexShaderSrc = rayMarchVertexShader;
 var rayMarchingFragmentShaderSrc = rayMarchFragmentShader;
 var rayMarchingShaderUniforms = function rayMarchingShaderUniforms() {
@@ -8211,7 +8302,7 @@ __webpack_require__.r(__webpack_exports__);
 /* babel-plugin-inline-import './shaders/slice.vert' */
 var sliceVertexShader = "precision highp float;\nprecision highp int;\n\nvarying vec2 vUv;\n\nvoid main() {\n  vUv = uv;\n  gl_Position = projectionMatrix *\n    modelViewMatrix *\n    vec4(position, 1.0);\n}\n";
 /* babel-plugin-inline-import './shaders/slice.frag' */
-var sliceFragShader = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform float ATLAS_X;\nuniform float ATLAS_Y;\nuniform vec3 AABB_CLIP_MIN;\nuniform vec3 AABB_CLIP_MAX;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform int Z_SLICE;\nuniform float SLICES;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\n\nvarying vec2 vUv;\n\nvec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {\n  float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));\n  float xi = (x - vmin) / (vmax - vmin);\n  xi = clamp(xi, 0.0, 1.0);\n  float y = pow(xi, C);\n  y = clamp(y, 0.0, 1.0);\n  color[3] = y;\n  return color;\n}\n\nvec2 offsetFrontBack(float t, float nx, float ny) {\n  int a = int(t);\n  int ax = int(ATLAS_X);\n  vec2 os = vec2(float(a - (a / ax) * ax) / ATLAS_X, float(a / ax) / ATLAS_Y);\n  return clamp(os, vec2(0.0, 0.0), vec2(1.0 - 1.0 / ATLAS_X, 1.0 - 1.0 / ATLAS_Y));\n}\n\nvec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n    pos[1] >= 0.0 && pos[1] <= 1.0 &&\n    pos[2] >= 0.0 && pos[2] <= 1.0);\n  float nSlices = float(SLICES);\n  vec2 loc0 = vec2((flipVolume.x * (pos.x - 0.5) + 0.5) / ATLAS_X, (flipVolume.y * (pos.y - 0.5) + 0.5) / ATLAS_Y);\n\n  // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y\n  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n  loc0 = vec2(0.5 / textureRes.x, 0.5 / textureRes.y) + loc0 * vec2(1.0 - (ATLAS_X) / textureRes.x, 1.0 - (ATLAS_Y) / textureRes.y);\n\n  // interpolate between two slices\n  float z = (pos.z) * (nSlices - 1.0);\n  float z0 = floor(z);\n  float t = z - z0; //mod(z, 1.0);\n  float z1 = min(z0 + 1.0, nSlices - 1.0);\n\n  // flipped:\n  if(flipVolume.z == -1.0) {\n    z0 = nSlices - z0 - 1.0;\n    z1 = nSlices - z1 - 1.0;\n    t = 1.0 - t;\n  }\n\n  // get slice offsets in texture atlas\n  vec2 o0 = offsetFrontBack(z0, ATLAS_X, ATLAS_Y) + loc0;\n  vec2 o1 = offsetFrontBack(z1, ATLAS_X, ATLAS_Y) + loc0;\n\n  vec4 slice0Color = texture2D(tex, o0);\n  vec4 slice1Color = texture2D(tex, o1);\n  // NOTE we could premultiply the mask in the fuse function,\n  // but that is slower to update the maskAlpha value than here in the shader.\n  // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?\n  float slice0Mask = texture2D(textureAtlasMask, o0).x;\n  float slice1Mask = texture2D(textureAtlasMask, o1).x;\n  // or use max for conservative 0 or 1 masking?\n  float maskVal = mix(slice0Mask, slice1Mask, t);\n  // take mask from 0..1 to alpha..1\n  maskVal = mix(maskVal, 1.0, maskAlpha);\n  vec4 retval = mix(slice0Color, slice1Color, t);\n  // only mask the rgb, not the alpha(?)\n  retval.rgb *= maskVal;\n  return bounds * retval;\n}\n\nvec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n    pos[1] >= 0.0 && pos[1] <= 1.0 &&\n    pos[2] >= 0.0 && pos[2] <= 1.0);\n  float nSlices = float(SLICES);\n  vec2 loc0 = vec2((flipVolume.x * (pos.x - 0.5) + 0.5) / ATLAS_X, (flipVolume.y * (pos.y - 0.5) + 0.5) / ATLAS_Y);\n\n  // No interpolation - sample just one slice at a pixel center.\n  // Ideally this would be accomplished in part by switching this texture to linear\n  //   filtering, but three makes this difficult to do through a WebGLRenderTarget.\n  loc0 = floor(loc0 * textureRes) / textureRes;\n  loc0 += vec2(0.5 / textureRes.x, 0.5 / textureRes.y);\n\n  float z = min(floor(pos.z * nSlices), nSlices - 1.0);\n\n  if(flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z, ATLAS_X, ATLAS_Y) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds * voxelColor;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n  // Normalize UV for [-0.5, 0.5] range\n  vec2 normUv = vUv - vec2(0.5);\n\n  // Return background color if outside of clipping box\n  if(normUv.x < boxMin.x || normUv.x > boxMax.x || normUv.y < boxMin.y || normUv.y > boxMax.y) {\n    gl_FragColor = vec4(0.0);\n    return;\n  }\n\n  // Normalize z-slice by total slices\n  vec4 pos = vec4(vUv, float(Z_SLICE) / (SLICES - 1.0), 0.0);\n\n  vec4 C;\n  if(interpolationEnabled) {\n    C = sampleAtlasLinear(textureAtlas, pos);\n  } else {\n    C = sampleAtlasNearest(textureAtlas, pos);\n  }\n  C = luma2Alpha(C, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);\n  C.xyz *= BRIGHTNESS;\n  // C.w *= DENSITY;  // Density disabled because it causes XY mode to render very dark on default settings\n\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}";
+var sliceFragShader = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform float ATLAS_X;\nuniform float ATLAS_Y;\nuniform vec3 AABB_CLIP_MIN;\nuniform vec3 AABB_CLIP_MAX;\nuniform vec3 SUBSET_SCALE;\nuniform vec3 SUBSET_OFFSET;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform int Z_SLICE;\nuniform float SLICES;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\n\nvarying vec2 vUv;\n\nvec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {\n  float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));\n  float xi = (x - vmin) / (vmax - vmin);\n  xi = clamp(xi, 0.0, 1.0);\n  float y = pow(xi, C);\n  y = clamp(y, 0.0, 1.0);\n  color[3] = y;\n  return color;\n}\n\nvec2 offsetFrontBack(float t, float nx, float ny) {\n  int a = int(t);\n  int ax = int(ATLAS_X);\n  vec2 os = vec2(float(a - (a / ax) * ax) / ATLAS_X, float(a / ax) / ATLAS_Y);\n  return clamp(os, vec2(0.0, 0.0), vec2(1.0 - 1.0 / ATLAS_X, 1.0 - 1.0 / ATLAS_Y));\n}\n\nvec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n    pos[1] >= 0.0 && pos[1] <= 1.0 &&\n    pos[2] >= 0.0 && pos[2] <= 1.0);\n  float nSlices = float(SLICES);\n  vec2 loc0 = vec2((flipVolume.x * (pos.x - 0.5) + 0.5) / ATLAS_X, (flipVolume.y * (pos.y - 0.5) + 0.5) / ATLAS_Y);\n\n  // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y\n  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n  loc0 = vec2(0.5 / textureRes.x, 0.5 / textureRes.y) + loc0 * vec2(1.0 - (ATLAS_X) / textureRes.x, 1.0 - (ATLAS_Y) / textureRes.y);\n\n  // interpolate between two slices\n  float z = (pos.z) * (nSlices - 1.0);\n  float z0 = floor(z);\n  float t = z - z0; //mod(z, 1.0);\n  float z1 = min(z0 + 1.0, nSlices - 1.0);\n\n  // flipped:\n  if(flipVolume.z == -1.0) {\n    z0 = nSlices - z0 - 1.0;\n    z1 = nSlices - z1 - 1.0;\n    t = 1.0 - t;\n  }\n\n  // get slice offsets in texture atlas\n  vec2 o0 = offsetFrontBack(z0, ATLAS_X, ATLAS_Y) + loc0;\n  vec2 o1 = offsetFrontBack(z1, ATLAS_X, ATLAS_Y) + loc0;\n\n  vec4 slice0Color = texture2D(tex, o0);\n  vec4 slice1Color = texture2D(tex, o1);\n  // NOTE we could premultiply the mask in the fuse function,\n  // but that is slower to update the maskAlpha value than here in the shader.\n  // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?\n  float slice0Mask = texture2D(textureAtlasMask, o0).x;\n  float slice1Mask = texture2D(textureAtlasMask, o1).x;\n  // or use max for conservative 0 or 1 masking?\n  float maskVal = mix(slice0Mask, slice1Mask, t);\n  // take mask from 0..1 to alpha..1\n  maskVal = mix(maskVal, 1.0, maskAlpha);\n  vec4 retval = mix(slice0Color, slice1Color, t);\n  // only mask the rgb, not the alpha(?)\n  retval.rgb *= maskVal;\n  return bounds * retval;\n}\n\nvec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n    pos[1] >= 0.0 && pos[1] <= 1.0 &&\n    pos[2] >= 0.0 && pos[2] <= 1.0);\n  float nSlices = float(SLICES);\n  vec2 loc0 = vec2((flipVolume.x * (pos.x - 0.5) + 0.5) / ATLAS_X, (flipVolume.y * (pos.y - 0.5) + 0.5) / ATLAS_Y);\n\n  // No interpolation - sample just one slice at a pixel center.\n  // Ideally this would be accomplished in part by switching this texture to linear\n  //   filtering, but three makes this difficult to do through a WebGLRenderTarget.\n  loc0 = floor(loc0 * textureRes) / textureRes;\n  loc0 += vec2(0.5 / textureRes.x, 0.5 / textureRes.y);\n\n  float z = min(floor(pos.z * nSlices), nSlices - 1.0);\n\n  if(flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z, ATLAS_X, ATLAS_Y) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds * voxelColor;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n  // Normalize UV for [-0.5, 0.5] range\n  vec2 normUv = vUv - vec2(0.5);\n\n  // Return background color if outside of clipping box\n  if(normUv.x < boxMin.x || normUv.x > boxMax.x || normUv.y < boxMin.y || normUv.y > boxMax.y) {\n    gl_FragColor = vec4(0.0);\n    return;\n  }\n\n  // Normalize z-slice by total slices\n  vec4 pos = vec4(vUv, float(Z_SLICE) / (SLICES - 1.0), 0.0);\n  pos.xyz = (pos.xyz - SUBSET_OFFSET) / SUBSET_SCALE;\n\n  vec4 C;\n  if(interpolationEnabled) {\n    C = sampleAtlasLinear(textureAtlas, pos);\n  } else {\n    C = sampleAtlasNearest(textureAtlas, pos);\n  }\n  C = luma2Alpha(C, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);\n  C.xyz *= BRIGHTNESS;\n  // C.w *= DENSITY;  // Density disabled because it causes XY mode to render very dark on default settings\n\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}";
 
 var sliceVertexShaderSrc = sliceVertexShader;
 var sliceFragmentShaderSrc = sliceFragShader;
@@ -8293,6 +8384,14 @@ var sliceShaderUniforms = function sliceShaderUniforms() {
     AABB_CLIP_MAX: {
       type: "v3",
       value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0.5, 0.5, 0.5)
+    },
+    SUBSET_SCALE: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(1, 1, 1)
+    },
+    SUBSET_OFFSET: {
+      type: "v3",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0, 0, 0)
     },
     inverseModelViewMatrix: {
       type: "m4",
@@ -8392,7 +8491,10 @@ __webpack_require__.r(__webpack_exports__);
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   LoadSpec: () => (/* binding */ LoadSpec),
-/* harmony export */   VolumeDims: () => (/* binding */ VolumeDims)
+/* harmony export */   VolumeDims: () => (/* binding */ VolumeDims),
+/* harmony export */   convertLoadSpecRegionToPixels: () => (/* binding */ convertLoadSpecRegionToPixels),
+/* harmony export */   fitLoadSpecRegionToExtent: () => (/* binding */ fitLoadSpecRegionToExtent),
+/* harmony export */   getExtentSize: () => (/* binding */ getExtentSize)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
@@ -8400,6 +8502,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
 var LoadSpec = /*#__PURE__*/function () {
   function LoadSpec() {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, LoadSpec);
@@ -8412,13 +8516,71 @@ var LoadSpec = /*#__PURE__*/function () {
     key: "toString",
     value:
     // sub-region; if not specified, the entire volume is loaded
-
+    // specify as floats between 0 and 1
     function toString() {
       return "".concat(this.url, ":").concat(this.subpath).concat(this.scene, ":").concat(this.time, ":x(").concat(this.minx, ",").concat(this.maxx, "):y(").concat(this.miny, ",").concat(this.maxy, "):z(").concat(this.minz, ",").concat(this.maxz, ")");
     }
   }]);
   return LoadSpec;
 }();
+/** Converts `LoadSpec` sub-region fields (`minx`, `maxy`, etc.) from [0, 1) range to pixels */
+function convertLoadSpecRegionToPixels(loadSpec, sizex, sizey, sizez) {
+  var minx = loadSpec.minx !== undefined ? Math.floor(sizex * loadSpec.minx) : 0;
+  var maxx = loadSpec.maxx !== undefined ? Math.ceil(sizex * loadSpec.maxx) : sizex;
+  var miny = loadSpec.miny !== undefined ? Math.floor(sizey * loadSpec.miny) : 0;
+  var maxy = loadSpec.maxy !== undefined ? Math.ceil(sizey * loadSpec.maxy) : sizey;
+  var minz = loadSpec.minz !== undefined ? Math.floor(sizez * loadSpec.minz) : 0;
+  var maxz = loadSpec.maxz !== undefined ? Math.ceil(sizez * loadSpec.maxz) : sizez;
+
+  // ensure it's always valid to specify the same number at both ends and get a single slice
+  if (minx === maxx && minx < sizex) {
+    maxx += 1;
+  }
+  if (miny === maxy && miny < sizey) {
+    maxy += 1;
+  }
+  if (minz === maxz && minz < sizez) {
+    maxz += 1;
+  }
+  return _objectSpread(_objectSpread({}, loadSpec), {}, {
+    minx: minx,
+    maxx: maxx,
+    miny: miny,
+    maxy: maxy,
+    minz: minz,
+    maxz: maxz
+  });
+}
+
+/** Shrinks a `LoadSpec` to fit within a provided extent */
+function fitLoadSpecRegionToExtent(loadSpec, extent) {
+  var sizex = extent.maxx - extent.minx;
+  var sizey = extent.maxy - extent.miny;
+  var sizez = extent.maxz - extent.minz;
+  var _loadSpec$minx = loadSpec.minx,
+    minx = _loadSpec$minx === void 0 ? 0 : _loadSpec$minx,
+    _loadSpec$maxx = loadSpec.maxx,
+    maxx = _loadSpec$maxx === void 0 ? 1 : _loadSpec$maxx,
+    _loadSpec$miny = loadSpec.miny,
+    miny = _loadSpec$miny === void 0 ? 0 : _loadSpec$miny,
+    _loadSpec$maxy = loadSpec.maxy,
+    maxy = _loadSpec$maxy === void 0 ? 1 : _loadSpec$maxy,
+    _loadSpec$minz = loadSpec.minz,
+    minz = _loadSpec$minz === void 0 ? 0 : _loadSpec$minz,
+    _loadSpec$maxz = loadSpec.maxz,
+    maxz = _loadSpec$maxz === void 0 ? 1 : _loadSpec$maxz;
+  return _objectSpread(_objectSpread({}, loadSpec), {}, {
+    minx: minx * sizex + extent.minx,
+    maxx: maxx * sizex + extent.minx,
+    miny: miny * sizey + extent.miny,
+    maxy: maxy * sizey + extent.miny,
+    minz: minz * sizez + extent.minz,
+    maxz: maxz * sizez + extent.minz
+  });
+}
+var getExtentSize = function getExtentSize(extent) {
+  return [extent.maxx - extent.minx, extent.maxy - extent.miny, extent.maxz - extent.minz];
+};
 var VolumeDims = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(function VolumeDims() {
   (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, VolumeDims);
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "subpath", "");
@@ -8426,7 +8588,9 @@ var VolumeDims = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMP
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "shape", [0, 0, 0, 0, 0]);
   // spacing: [t, c, z, y, x]; generally expect 1 for non-spatial dimensions
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "spacing", [1, 1, 1, 1, 1]);
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "spatialUnit", "micron");
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "spaceUnit", "μm");
+  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "timeUnit", "s");
+  // TODO make this an enum?
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "dataType", "uint8");
 });
 
@@ -8533,7 +8697,7 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
               d.subpath = "";
               d.shape = [imageInfo.times, imageInfo.channels, imageInfo.tiles, imageInfo.tile_height, imageInfo.tile_width];
               d.spacing = [1, 1, imageInfo.pixel_size_z, imageInfo.pixel_size_y, imageInfo.pixel_size_x];
-              d.spatialUnit = imageInfo.pixel_size_unit;
+              d.spaceUnit = imageInfo.pixel_size_unit;
               d.dataType = "uint8";
               return _context2.abrupt("return", [d]);
             case 10:
@@ -8708,13 +8872,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
-/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
-/* harmony import */ var zarr__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! zarr */ "./node_modules/zarr/zarr.mjs");
+/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
+/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var zarr__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! zarr */ "./node_modules/zarr/zarr.mjs");
+/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
+
 
 
 
@@ -8726,8 +8892,11 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 
 
+var MAX_ATLAS_DIMENSION = 2048;
 
 // https://ngff.openmicroscopy.org/latest/#multiscale-md
+
+// https://ngff.openmicroscopy.org/latest/#omero-md
 
 function getScale(_ref) {
   var coordinateTransformations = _ref.coordinateTransformations;
@@ -8780,133 +8949,131 @@ function remapAxesToTCZYX(axes) {
       console.log("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
     }
   }
-  return axisTCZYX;
-}
-function findSpatialAxesZYX(axisTCZYX) {
-  // return in ZYX order
-  var spatialAxes = [-1, -1, -1];
-  if (axisTCZYX[2] > -1) {
-    spatialAxes[0] = axisTCZYX[2];
-  }
-  if (axisTCZYX[3] > -1) {
-    spatialAxes[1] = axisTCZYX[3];
-  }
-  if (axisTCZYX[4] > -1) {
-    spatialAxes[2] = axisTCZYX[4];
-  }
-  if (spatialAxes.some(function (el) {
-    return el === -1;
-  })) {
+  if (axisTCZYX[2] === -1 || axisTCZYX[3] === -1 || axisTCZYX[4] === -1) {
     console.log("ERROR: zarr loader expects a z, y, and x axis.");
   }
-  return spatialAxes;
+  return axisTCZYX;
 }
-function fetchShapeOfLevel(_x, _x2, _x3) {
-  return _fetchShapeOfLevel.apply(this, arguments);
+
+// TODO use in `loadDims`
+function loadLevelShapes(_x, _x2) {
+  return _loadLevelShapes.apply(this, arguments);
 }
-function _fetchShapeOfLevel() {
-  _fetchShapeOfLevel = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_3__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee5(store, imagegroup, multiscale) {
-    var level, shape;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee5$(_context6) {
-      while (1) switch (_context6.prev = _context6.next) {
-        case 0:
-          _context6.next = 2;
-          return (0,zarr__WEBPACK_IMPORTED_MODULE_8__.openArray)({
-            store: store,
-            path: imagegroup + "/" + multiscale.path,
-            mode: "r"
-          });
-        case 2:
-          level = _context6.sent;
-          shape = level.meta.shape;
-          return _context6.abrupt("return", shape);
-        case 5:
-        case "end":
-          return _context6.stop();
-      }
-    }, _callee5);
-  }));
-  return _fetchShapeOfLevel.apply(this, arguments);
-}
-function pickLevelToLoad(_x4, _x5, _x6, _x7) {
-  return _pickLevelToLoad.apply(this, arguments);
-}
-function _pickLevelToLoad() {
-  _pickLevelToLoad = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_3__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee7(multiscale, store, loadSpec, cachedSpatialAxes) {
-    var datasets, axes, numlevels, spatialAxes, axisTCZYX, shapePromises, spatialDims, levelToLoad, i, optimalLevel;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee7$(_context8) {
-      while (1) switch (_context8.prev = _context8.next) {
+function _loadLevelShapes() {
+  _loadLevelShapes = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee5(store, multiscale) {
+    var datasets, axes, shapePromises;
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee5$(_context5) {
+      while (1) switch (_context5.prev = _context5.next) {
         case 0:
           datasets = multiscale.datasets, axes = multiscale.axes;
-          numlevels = datasets.length;
-          if (cachedSpatialAxes !== undefined) {
-            spatialAxes = cachedSpatialAxes;
-          } else {
-            axisTCZYX = remapAxesToTCZYX(axes);
-            spatialAxes = findSpatialAxesZYX(axisTCZYX);
-          }
           shapePromises = datasets.map( /*#__PURE__*/function () {
-            var _ref3 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_3__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee6(dataset) {
-              var shape;
-              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee6$(_context7) {
-                while (1) switch (_context7.prev = _context7.next) {
+            var _ref5 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee4(_ref4) {
+              var path, level, shape;
+              return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee4$(_context4) {
+                while (1) switch (_context4.prev = _context4.next) {
                   case 0:
-                    _context7.next = 2;
-                    return fetchShapeOfLevel(store, loadSpec.subpath, dataset);
-                  case 2:
-                    shape = _context7.sent;
+                    path = _ref4.path;
+                    _context4.next = 3;
+                    return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openArray)({
+                      store: store,
+                      path: path,
+                      mode: "r"
+                    });
+                  case 3:
+                    level = _context4.sent;
+                    shape = level.meta.shape;
                     if (shape.length !== axes.length) {
                       console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
                     }
-                    return _context7.abrupt("return", [shape[spatialAxes[0]], shape[spatialAxes[1]], shape[spatialAxes[2]]]);
-                  case 5:
+                    return _context4.abrupt("return", shape);
+                  case 7:
                   case "end":
-                    return _context7.stop();
+                    return _context4.stop();
                 }
-              }, _callee6);
+              }, _callee4);
             }));
-            return function (_x14) {
-              return _ref3.apply(this, arguments);
+            return function (_x8) {
+              return _ref5.apply(this, arguments);
             };
           }());
-          _context8.next = 6;
+          _context5.next = 4;
           return Promise.all(shapePromises);
-        case 6:
-          spatialDims = _context8.sent;
-          // default to lowest level until we find the match
-          levelToLoad = numlevels - 1;
-          i = 0;
-        case 9:
-          if (!(i < numlevels)) {
-            _context8.next = 16;
-            break;
-          }
-          if (!(datasets[i].path == loadSpec.subpath)) {
-            _context8.next = 13;
-            break;
-          }
-          levelToLoad = i;
-          return _context8.abrupt("break", 16);
-        case 13:
-          ++i;
-          _context8.next = 9;
-          break;
-        case 16:
-          optimalLevel = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.estimateLevelForAtlas)(spatialDims, 2048); // assume all levels are decreasing in size.  If a larger level is optimal then use it:
-          if (!(optimalLevel < levelToLoad)) {
-            _context8.next = 21;
-            break;
-          }
-          return _context8.abrupt("return", optimalLevel);
-        case 21:
-          return _context8.abrupt("return", levelToLoad);
-        case 22:
+        case 4:
+          return _context5.abrupt("return", _context5.sent);
+        case 5:
         case "end":
-          return _context8.stop();
+          return _context5.stop();
       }
-    }, _callee7);
+    }, _callee5);
   }));
-  return _pickLevelToLoad.apply(this, arguments);
+  return _loadLevelShapes.apply(this, arguments);
+}
+function loadMetadata(_x3, _x4) {
+  return _loadMetadata.apply(this, arguments);
+}
+function _loadMetadata() {
+  _loadMetadata = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee6(store, loadSpec) {
+    var data;
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee6$(_context6) {
+      while (1) switch (_context6.prev = _context6.next) {
+        case 0:
+          _context6.next = 2;
+          return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openGroup)(store, loadSpec.subpath, "r");
+        case 2:
+          data = _context6.sent;
+          _context6.next = 5;
+          return data.attrs.asObject();
+        case 5:
+          return _context6.abrupt("return", _context6.sent);
+        case 6:
+        case "end":
+          return _context6.stop();
+      }
+    }, _callee6);
+  }));
+  return _loadMetadata.apply(this, arguments);
+}
+function pickLevelToLoad(loadSpec, multiscaleDims, _ref2, dimIndexes) {
+  var datasets = _ref2.datasets;
+  var numlevels = multiscaleDims.length;
+  // default to lowest level until we find the match
+  var levelToLoad = numlevels - 1;
+  for (var i = 0; i < numlevels; ++i) {
+    if (datasets[i].path == loadSpec.subpath) {
+      levelToLoad = i;
+      break;
+    }
+  }
+  var _loadSpec$minx = loadSpec.minx,
+    minx = _loadSpec$minx === void 0 ? 0 : _loadSpec$minx,
+    _loadSpec$maxx = loadSpec.maxx,
+    maxx = _loadSpec$maxx === void 0 ? 1 : _loadSpec$maxx,
+    _loadSpec$miny = loadSpec.miny,
+    miny = _loadSpec$miny === void 0 ? 0 : _loadSpec$miny,
+    _loadSpec$maxy = loadSpec.maxy,
+    maxy = _loadSpec$maxy === void 0 ? 1 : _loadSpec$maxy,
+    _loadSpec$minz = loadSpec.minz,
+    minz = _loadSpec$minz === void 0 ? 0 : _loadSpec$minz,
+    _loadSpec$maxz = loadSpec.maxz,
+    maxz = _loadSpec$maxz === void 0 ? 1 : _loadSpec$maxz;
+  var xSize = maxx - minx;
+  var ySize = maxy - miny;
+  var zSize = maxz - minz;
+  var _dimIndexes$slice = dimIndexes.slice(-3),
+    _dimIndexes$slice2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_3__["default"])(_dimIndexes$slice, 3),
+    zi = _dimIndexes$slice2[0],
+    yi = _dimIndexes$slice2[1],
+    xi = _dimIndexes$slice2[2];
+  var spatialDims = multiscaleDims.map(function (shape) {
+    return [Math.max(shape[zi] * zSize, 1), Math.max(shape[yi] * ySize, 1), Math.max(shape[xi] * xSize, 1)];
+  });
+  var optimalLevel = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.estimateLevelForAtlas)(spatialDims, MAX_ATLAS_DIMENSION);
+  // assume all levels are decreasing in size.  If a larger level is optimal then use it:
+  if (optimalLevel < levelToLoad) {
+    return optimalLevel;
+  } else {
+    return levelToLoad;
+  }
 }
 var OMEZarrLoader = /*#__PURE__*/function () {
   function OMEZarrLoader() {
@@ -8915,63 +9082,69 @@ var OMEZarrLoader = /*#__PURE__*/function () {
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(OMEZarrLoader, [{
     key: "loadDims",
     value: function () {
-      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_3__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee2(loadSpec) {
-        var store, imagegroup, data, allmetadata, imageIndex, multiscales, axes, axisTCZYX, spatialAxes, unitName, unitSymbol, dimsPromises;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee2$(_context2) {
+      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee2(loadSpec) {
+        var store, data, allmetadata, imageIndex, datasets, axes, axisTCZYX, spaceUnitName, spaceUnitSymbol, timeUnitName, timeUnitSymbol, dimsPromises;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee2$(_context2) {
           while (1) switch (_context2.prev = _context2.next) {
             case 0:
-              store = new zarr__WEBPACK_IMPORTED_MODULE_8__.HTTPStore(loadSpec.url);
-              imagegroup = loadSpec.subpath;
-              _context2.next = 4;
-              return (0,zarr__WEBPACK_IMPORTED_MODULE_8__.openGroup)(store, imagegroup, "r");
-            case 4:
+              store = new zarr__WEBPACK_IMPORTED_MODULE_6__.HTTPStore(loadSpec.url);
+              _context2.next = 3;
+              return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openGroup)(store, loadSpec.subpath, "r");
+            case 3:
               data = _context2.sent;
-              _context2.next = 7;
+              _context2.next = 6;
               return data.attrs.asObject();
-            case 7:
+            case 6:
               allmetadata = _context2.sent;
               // each entry of multiscales is a multiscale image.
               imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
-              multiscales = allmetadata.multiscales[imageIndex].datasets;
+              datasets = allmetadata.multiscales[imageIndex].datasets;
               axes = allmetadata.multiscales[imageIndex].axes;
-              axisTCZYX = remapAxesToTCZYX(axes); // ZYX
-              spatialAxes = findSpatialAxesZYX(axisTCZYX); // Assume all axes have the same units - we have no means of storing per-axis unit symbols
-              unitName = axes[spatialAxes[2]].unit;
-              unitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.unitNameToSymbol)(unitName) || unitName || "";
-              dimsPromises = multiscales.map( /*#__PURE__*/function () {
-                var _ref2 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_3__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(multiscale) {
-                  var shape, scale5d, d, i;
-                  return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee$(_context) {
+              axisTCZYX = remapAxesToTCZYX(axes); // Assume all axes have the same units - we have no means of storing per-axis unit symbols
+              spaceUnitName = axes[axisTCZYX[4]].unit;
+              spaceUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
+              timeUnitName = axisTCZYX[0] > -1 ? axes[axisTCZYX[0]].unit : undefined;
+              timeUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
+              dimsPromises = datasets.map( /*#__PURE__*/function () {
+                var _ref3 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee(dataset) {
+                  var level, shape, scale5d, d, i;
+                  return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee$(_context) {
                     while (1) switch (_context.prev = _context.next) {
                       case 0:
                         _context.next = 2;
-                        return fetchShapeOfLevel(store, imagegroup, multiscale);
+                        return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openArray)({
+                          store: store,
+                          path: dataset.path,
+                          mode: "r"
+                        });
                       case 2:
-                        shape = _context.sent;
+                        level = _context.sent;
+                        shape = level.meta.shape;
                         if (shape.length != axes.length) {
                           console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
                         }
-                        scale5d = getScale(multiscale);
-                        d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__.VolumeDims();
-                        d.subpath = "";
-                        d.shape = [1, 1, 1, 1, 1];
+                        scale5d = getScale(dataset);
+                        d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.VolumeDims();
+                        d.subpath = loadSpec.subpath;
+                        d.shape = [-1, -1, -1, -1, -1];
                         for (i = 0; i < d.shape.length; ++i) {
                           if (axisTCZYX[i] > -1) {
                             d.shape[i] = shape[axisTCZYX[i]];
                           }
                         }
-                        d.spacing = [1, 1, scale5d[spatialAxes[0]], scale5d[spatialAxes[1]], scale5d[spatialAxes[2]]];
-                        d.spatialUnit = unitSymbol; // unknown unit.
+                        d.spacing = [1, 1, scale5d[axisTCZYX[2]], scale5d[axisTCZYX[3]], scale5d[axisTCZYX[4]]];
+                        d.spaceUnit = spaceUnitSymbol;
+                        d.timeUnit = timeUnitSymbol;
                         d.dataType = "uint8";
                         return _context.abrupt("return", d);
-                      case 13:
+                      case 15:
                       case "end":
                         return _context.stop();
                     }
                   }, _callee);
                 }));
-                return function (_x9) {
-                  return _ref2.apply(this, arguments);
+                return function (_x6) {
+                  return _ref3.apply(this, arguments);
                 };
               }());
               return _context2.abrupt("return", Promise.all(dimsPromises));
@@ -8981,7 +9154,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
           }
         }, _callee2);
       }));
-      function loadDims(_x8) {
+      function loadDims(_x5) {
         return _loadDims.apply(this, arguments);
       }
       return loadDims;
@@ -8989,94 +9162,82 @@ var OMEZarrLoader = /*#__PURE__*/function () {
   }, {
     key: "createVolume",
     value: function () {
-      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_3__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(loadSpec) {
-        var store, imagegroup, data, allmetadata, imageIndex, multiscale, datasets, axes, axisTCZYX, spatialAxes, spaceUnitName, spaceUnitSymbol, timeUnitName, timeUnitSymbol, levelToLoad, dataset, level, multiscaleShape, channels, sizeT, scale5d, timeScale, tw, th, tz, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, i, shape0, imgdata, vol;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee3$(_context3) {
+      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee3(loadSpec) {
+        var store, imageIndex, multiscale, minx, maxx, miny, maxy, minz, maxz, _this$axesTCZYX, t, c, z, y, x, levelToLoad, levelShape, shape0, hasT, hasC, spaceUnitName, spaceUnitSymbol, timeUnitName, timeUnitSymbol, channels, sizeT, scale5d, timeScale, pxSpec, spec0, tw, th, tz, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, i, imgdata, fullExtentLoadSpec, vol;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee3$(_context3) {
           while (1) switch (_context3.prev = _context3.next) {
             case 0:
-              store = new zarr__WEBPACK_IMPORTED_MODULE_8__.HTTPStore(loadSpec.url);
-              imagegroup = loadSpec.subpath;
-              _context3.next = 4;
-              return (0,zarr__WEBPACK_IMPORTED_MODULE_8__.openGroup)(store, imagegroup, "r");
-            case 4:
-              data = _context3.sent;
-              _context3.next = 7;
-              return data.attrs.asObject();
-            case 7:
-              allmetadata = _context3.sent;
-              // each entry of multiscales is a multiscale image.
-              imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
-              multiscale = allmetadata.multiscales[imageIndex];
-              datasets = multiscale.datasets, axes = multiscale.axes;
-              axisTCZYX = remapAxesToTCZYX(axes);
-              this.hasT = axisTCZYX[0] > -1;
-              this.hasC = axisTCZYX[1] > -1;
-              // ZYX
-              spatialAxes = findSpatialAxesZYX(axisTCZYX); // Assume all axes have the same units - we have no means of storing per-axis unit symbols
-              spaceUnitName = axes[spatialAxes[2]].unit;
-              spaceUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
-              timeUnitName = this.hasT ? axes[axisTCZYX[0]].unit : undefined;
-              timeUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
-              _context3.next = 21;
-              return pickLevelToLoad(multiscale, store, loadSpec);
-            case 21:
-              levelToLoad = _context3.sent;
-              dataset = datasets[levelToLoad];
-              this.multiscalePath = dataset.path;
-
-              // get the shape for the level we want to load
-              _context3.next = 26;
-              return (0,zarr__WEBPACK_IMPORTED_MODULE_8__.openArray)({
-                store: store,
-                path: imagegroup + "/" + dataset.path,
-                mode: "r"
-              });
-            case 26:
-              level = _context3.sent;
-              multiscaleShape = level.meta.shape;
-              if (multiscaleShape.length != axes.length) {
-                console.log("ERROR: shape length " + multiscaleShape.length + " does not match axes length " + axes.length);
-              }
-              channels = this.hasC ? multiscaleShape[axisTCZYX[1]] : 1;
-              sizeT = this.hasT ? multiscaleShape[axisTCZYX[0]] : 1; // we want scale of level 0
-              scale5d = getScale(datasets[0]);
-              timeScale = this.hasT ? scale5d[axisTCZYX[0]] : 1;
-              tw = multiscaleShape[spatialAxes[2]];
-              th = multiscaleShape[spatialAxes[1]];
-              tz = multiscaleShape[spatialAxes[0]]; // compute rows and cols and atlas width and ht, given tw and th
-              _computePackedAtlasDi = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.computePackedAtlasDims)(tz, tw, th), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols;
+              // Load metadata and dimensions.
+              store = new zarr__WEBPACK_IMPORTED_MODULE_6__.HTTPStore(loadSpec.url);
+              _context3.next = 3;
+              return loadMetadata(store, loadSpec);
+            case 3:
+              this.metadata = _context3.sent;
+              imageIndex = imageIndexFromLoadSpec(loadSpec, this.metadata.multiscales);
+              multiscale = this.metadata.multiscales[imageIndex];
+              _context3.next = 8;
+              return loadLevelShapes(store, multiscale);
+            case 8:
+              this.multiscaleDims = _context3.sent;
+              this.axesTCZYX = remapAxesToTCZYX(multiscale.axes);
+              minx = loadSpec.minx, maxx = loadSpec.maxx, miny = loadSpec.miny, maxy = loadSpec.maxy, minz = loadSpec.minz, maxz = loadSpec.maxz;
+              this.maxExtent = {
+                minx: minx || 0,
+                miny: miny || 0,
+                minz: minz || 0,
+                maxx: maxx === undefined ? 1 : maxx,
+                maxy: maxy === undefined ? 1 : maxy,
+                maxz: maxz === undefined ? 1 : maxz
+              };
+              // After this point we consider the loader "open" (bound to one remote source)
+              _this$axesTCZYX = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_3__["default"])(this.axesTCZYX, 5), t = _this$axesTCZYX[0], c = _this$axesTCZYX[1], z = _this$axesTCZYX[2], y = _this$axesTCZYX[3], x = _this$axesTCZYX[4];
+              levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
+              levelShape = this.multiscaleDims[levelToLoad];
+              shape0 = this.multiscaleDims[0];
+              hasT = t > -1;
+              hasC = c > -1; // Assume all axes have the same units - we have no means of storing per-axis unit symbols
+              spaceUnitName = multiscale.axes[x].unit;
+              spaceUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
+              timeUnitName = hasT ? multiscale.axes[t].unit : undefined;
+              timeUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
+              channels = hasC ? levelShape[c] : 1;
+              sizeT = hasT ? levelShape[t] : 1; // we want scale of level 0
+              scale5d = getScale(multiscale.datasets[0]);
+              timeScale = hasT ? scale5d[t] : 1;
+              pxSpec = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.convertLoadSpecRegionToPixels)(loadSpec, levelShape[x], levelShape[y], levelShape[z]);
+              spec0 = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.convertLoadSpecRegionToPixels)(loadSpec, shape0[x], shape0[y], shape0[z]);
+              tw = pxSpec.maxx - pxSpec.minx;
+              th = pxSpec.maxy - pxSpec.miny;
+              tz = pxSpec.maxz - pxSpec.minz; // compute rows and cols and atlas width and ht, given tw and th
+              _computePackedAtlasDi = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.computePackedAtlasDims)(tz, tw, th), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols;
               atlaswidth = ncols * tw;
               atlasheight = nrows * th;
               console.log("atlas width and height: " + atlaswidth + " " + atlasheight);
-              displayMetadata = allmetadata.omero;
+              displayMetadata = this.metadata.omero;
               chnames = [];
               for (i = 0; i < displayMetadata.channels.length; ++i) {
                 chnames.push(displayMetadata.channels[i].label);
               }
 
-              // get shape of level 0
-              _context3.next = 45;
-              return fetchShapeOfLevel(store, loadSpec.subpath, datasets[0]);
-            case 45:
-              shape0 = _context3.sent;
               /* eslint-disable @typescript-eslint/naming-convention */
               imgdata = {
-                width: shape0[spatialAxes[2]],
-                height: shape0[spatialAxes[1]],
+                width: spec0.maxx - spec0.minx,
+                height: spec0.maxy - spec0.miny,
                 channels: channels,
                 channel_names: chnames,
                 rows: nrows,
                 cols: ncols,
-                tiles: tz,
+                // for webgl reasons, it is best for total atlas width and height to be <= 2048 and ideally a power of 2.
+                //   This generally implies downsampling the original volume data for display in this viewer.
                 tile_width: tw,
                 tile_height: th,
-                // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-                // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-                atlas_width: atlaswidth,
-                atlas_height: atlasheight,
-                pixel_size_x: scale5d[spatialAxes[2]],
-                pixel_size_y: scale5d[spatialAxes[1]],
-                pixel_size_z: scale5d[spatialAxes[0]],
+                tiles: tz,
+                vol_size_x: tw,
+                vol_size_y: th,
+                vol_size_z: tz,
+                pixel_size_x: scale5d[x],
+                pixel_size_y: scale5d[y],
+                pixel_size_z: scale5d[z],
                 pixel_size_unit: spaceUnitSymbol,
                 name: displayMetadata.name,
                 version: displayMetadata.version,
@@ -9089,116 +9250,119 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 time_unit: timeUnitSymbol
               };
               /* eslint-enable @typescript-eslint/naming-convention */
-              // got some data, now let's construct the volume.
-              vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imgdata, loadSpec);
-              vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imgdata);
+              // The `LoadSpec` passed in at this stage should represent the subset which this loader loads, not that
+              // which the volume contains. The volume contains the full extent of the subset recognized by this loader.
+              fullExtentLoadSpec = _objectSpread(_objectSpread({}, loadSpec), {}, {
+                minx: 0,
+                miny: 0,
+                minz: 0,
+                maxx: 1,
+                maxy: 1,
+                maxz: 1
+              }); // got some data, now let's construct the volume.
+              vol = new _Volume__WEBPACK_IMPORTED_MODULE_9__["default"](imgdata, fullExtentLoadSpec);
+              vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.buildDefaultMetadata)(imgdata);
               return _context3.abrupt("return", vol);
-            case 50:
+            case 43:
             case "end":
               return _context3.stop();
           }
         }, _callee3, this);
       }));
-      function createVolume(_x10) {
+      function createVolume(_x7) {
         return _createVolume.apply(this, arguments);
       }
       return createVolume;
     }()
   }, {
     key: "loadVolumeData",
-    value: function () {
-      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_3__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee4(vol, onChannelLoaded, explicitLoadSpec) {
-        var _this = this;
-        var loadSpec, _vol$imageInfo, channels, times, store, data, allmetadata, imageIndex, multiscale, axisTCZYX, spatialAxes, levelToLoad, storepath, _loop, i;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee4$(_context5) {
-          while (1) switch (_context5.prev = _context5.next) {
-            case 0:
-              loadSpec = explicitLoadSpec || vol.loadSpec;
-              _vol$imageInfo = vol.imageInfo, channels = _vol$imageInfo.channels, times = _vol$imageInfo.times;
-              if (!(this.multiscalePath === undefined || this.hasC === undefined || this.hasT === undefined)) {
-                _context5.next = 20;
-                break;
-              }
-              store = new zarr__WEBPACK_IMPORTED_MODULE_8__.HTTPStore(loadSpec.url);
-              _context5.next = 6;
-              return (0,zarr__WEBPACK_IMPORTED_MODULE_8__.openGroup)(store, loadSpec.subpath, "r");
-            case 6:
-              data = _context5.sent;
-              _context5.next = 9;
-              return data.attrs.asObject();
-            case 9:
-              allmetadata = _context5.sent;
-              imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
-              multiscale = allmetadata.multiscales[imageIndex];
-              axisTCZYX = remapAxesToTCZYX(multiscale.axes);
-              this.hasT = axisTCZYX[0] > -1;
-              this.hasC = axisTCZYX[1] > -1;
-              spatialAxes = findSpatialAxesZYX(axisTCZYX);
-              _context5.next = 18;
-              return pickLevelToLoad(multiscale, store, loadSpec, spatialAxes);
-            case 18:
-              levelToLoad = _context5.sent;
-              this.multiscalePath = multiscale.datasets[levelToLoad].path;
-            case 20:
-              storepath = loadSpec.subpath + "/" + this.multiscalePath; // do each channel on a worker
-              _loop = /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _loop() {
-                var worker;
-                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _loop$(_context4) {
-                  while (1) switch (_context4.prev = _context4.next) {
-                    case 0:
-                      worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchZarrWorker_ts"), __webpack_require__.b));
-                      worker.onmessage = function (e) {
-                        var u8 = e.data.data;
-                        var channel = e.data.channel;
-                        vol.setChannelDataFromVolume(channel, u8);
-                        if (onChannelLoaded) {
-                          // make up a unique name? or have caller pass this in?
-                          onChannelLoaded(loadSpec.url + "/" + loadSpec.subpath, vol, channel);
-                        }
-                        worker.terminate();
-                      };
-                      worker.onerror = function (e) {
-                        alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
-                      };
-                      worker.postMessage({
-                        spec: _objectSpread(_objectSpread({}, loadSpec), {}, {
-                          time: _this.hasT ? Math.min(loadSpec.time, times) : -1
-                        }),
-                        channel: _this.hasC ? i : -1,
-                        path: storepath
-                      });
-                    case 4:
-                    case "end":
-                      return _context4.stop();
-                  }
-                }, _loop);
-              });
-              i = 0;
-            case 23:
-              if (!(i < channels)) {
-                _context5.next = 28;
-                break;
-              }
-              return _context5.delegateYield(_loop(), "t0", 25);
-            case 25:
-              ++i;
-              _context5.next = 23;
-              break;
-            case 28:
-              this.multiscalePath = undefined;
-              this.hasC = undefined;
-              this.hasT = undefined;
-            case 31:
-            case "end":
-              return _context5.stop();
-          }
-        }, _callee4, this);
-      }));
-      function loadVolumeData(_x11, _x12, _x13) {
-        return _loadVolumeData.apply(this, arguments);
+    value: function loadVolumeData(vol, onChannelLoaded, explicitLoadSpec) {
+      var _this = this;
+      if (this.axesTCZYX === undefined || this.metadata === undefined || this.multiscaleDims === undefined || this.maxExtent === undefined) {
+        console.error("ERROR: called `loadVolumeData` on zarr loader without first opening with `createVolume`!");
+        return;
       }
-      return loadVolumeData;
-    }()
+      vol.loadSpec = explicitLoadSpec || vol.loadSpec;
+      var normLoadSpec = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.fitLoadSpecRegionToExtent)(vol.loadSpec, this.maxExtent);
+      var _vol$imageInfo = vol.imageInfo,
+        channels = _vol$imageInfo.channels,
+        times = _vol$imageInfo.times;
+      var imageIndex = imageIndexFromLoadSpec(normLoadSpec, this.metadata.multiscales);
+      var multiscale = this.metadata.multiscales[imageIndex];
+      var levelToLoad = pickLevelToLoad(normLoadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
+      var datasetPath = multiscale.datasets[levelToLoad].path;
+      var levelShape = this.multiscaleDims[levelToLoad];
+      var _this$axesTCZYX$slice = this.axesTCZYX.slice(-3),
+        _this$axesTCZYX$slice2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_3__["default"])(_this$axesTCZYX$slice, 3),
+        zi = _this$axesTCZYX$slice2[0],
+        yi = _this$axesTCZYX$slice2[1],
+        xi = _this$axesTCZYX$slice2[2];
+      var pxSpec = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.convertLoadSpecRegionToPixels)(normLoadSpec, levelShape[xi], levelShape[yi], levelShape[zi]);
+      var _getExtentSize = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.getExtentSize)(pxSpec),
+        _getExtentSize2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_3__["default"])(_getExtentSize, 3),
+        tw = _getExtentSize2[0],
+        th = _getExtentSize2[1],
+        tz = _getExtentSize2[2];
+      var _computePackedAtlasDi2 = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.computePackedAtlasDims)(tz, tw, th),
+        nrows = _computePackedAtlasDi2.nrows,
+        ncols = _computePackedAtlasDi2.ncols;
+      var storepath = normLoadSpec.subpath + "/" + datasetPath;
+      // do each channel on a worker
+      var _loop = function _loop() {
+        var worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchZarrWorker_ts"), __webpack_require__.b));
+        worker.onmessage = function (e) {
+          var u8 = e.data.data;
+          var channel = e.data.channel;
+          vol.setChannelDataFromVolume(channel, u8);
+          if (onChannelLoaded) {
+            // make up a unique name? or have caller pass this in?
+            onChannelLoaded(normLoadSpec.url + "/" + normLoadSpec.subpath, vol, channel);
+          }
+          worker.terminate();
+        };
+        worker.onerror = function (e) {
+          alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
+        };
+        var msg = {
+          spec: _objectSpread(_objectSpread({}, pxSpec), {}, {
+            time: Math.min(normLoadSpec.time, times)
+          }),
+          channel: i,
+          path: storepath,
+          axesTCZYX: _this.axesTCZYX
+        };
+        worker.postMessage(msg);
+      };
+      for (var i = 0; i < channels; ++i) {
+        _loop();
+      }
+
+      // Update volume `imageInfo` to reflect potentially new dimensions
+      var volsize = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.convertLoadSpecRegionToPixels)(this.maxExtent, levelShape[xi], levelShape[yi], levelShape[zi]);
+      var _getExtentSize3 = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.getExtentSize)(volsize),
+        _getExtentSize4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_3__["default"])(_getExtentSize3, 3),
+        vx = _getExtentSize4[0],
+        vy = _getExtentSize4[1],
+        vz = _getExtentSize4[2];
+      var offset = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.convertLoadSpecRegionToPixels)(vol.loadSpec, vx, vy, vz);
+      /* eslint-disable @typescript-eslint/naming-convention */
+      vol.imageInfo = _objectSpread(_objectSpread({}, vol.imageInfo), {}, {
+        rows: nrows,
+        cols: ncols,
+        tile_width: tw,
+        tile_height: th,
+        tiles: tz,
+        offset_x: offset.minx,
+        offset_y: offset.miny,
+        offset_z: offset.minz,
+        // scale level may have changed
+        vol_size_x: vx,
+        vol_size_y: vy,
+        vol_size_z: vz
+      });
+      /* eslint-enable @typescript-eslint/naming-convention */
+      vol.updateDimensions();
+    }
   }]);
   return OMEZarrLoader;
 }();
@@ -9250,7 +9414,7 @@ var OpenCellLoader = /*#__PURE__*/function () {
               d.subpath = "";
               d.shape = [1, 2, 27, 600, 600];
               d.spacing = [1, 1, 2, 1, 1];
-              d.spatialUnit = ""; // unknown unit.
+              d.spaceUnit = ""; // unknown unit.
               d.dataType = "uint8";
               return _context.abrupt("return", [d]);
             case 7:
@@ -9283,12 +9447,10 @@ var OpenCellLoader = /*#__PURE__*/function () {
                 rows: 27,
                 cols: 1,
                 tiles: 27,
+                // for webgl reasons, it is best for total atlas width and height to be <= 2048 and ideally a power of 2.
+                //   This generally implies downsampling the original volume data for display in this viewer.
                 tile_width: 600,
                 tile_height: 600,
-                // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-                // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-                atlas_width: 600,
-                atlas_height: 16200,
                 pixel_size_x: 1,
                 pixel_size_y: 1,
                 pixel_size_z: 2,
@@ -9479,7 +9641,7 @@ var TiffLoader = /*#__PURE__*/function () {
               d.subpath = "";
               d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
               d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
-              d.spatialUnit = dims.unit ? dims.unit : "micron";
+              d.spaceUnit = dims.unit ? dims.unit : "micron";
               d.dataType = dims.pixeltype ? dims.pixeltype : "uint8";
               return _context.abrupt("return", [d]);
             case 17:
@@ -9520,15 +9682,13 @@ var TiffLoader = /*#__PURE__*/function () {
                 height: dims.sizey,
                 channels: dims.sizec,
                 channel_names: dims.channelnames,
+                // for webgl reasons, it is best for total atlas width and height to be <= 2048 and ideally a power of 2.
+                //   This generally implies downsampling the original volume data for display in this viewer.
                 rows: nrows,
                 cols: ncols,
                 tiles: dims.sizez,
                 tile_width: tilesizex,
                 tile_height: tilesizey,
-                // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-                // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-                atlas_width: tilesizex * ncols,
-                atlas_height: tilesizey * nrows,
                 pixel_size_x: dims.pixelsizex,
                 pixel_size_y: dims.pixelsizey,
                 pixel_size_z: dims.pixelsizez,
@@ -93267,7 +93427,7 @@ function updateTimeUI(volume) {
 function updateZSliceUI(volume) {
   var zSlider = document.getElementById("zSlider");
   var zInput = document.getElementById("zValue");
-  var totalZSlices = volume.z;
+  var totalZSlices = volume.imageInfo.vol_size_z || volume.z;
   zSlider.max = "".concat(totalZSlices);
   zInput.max = "".concat(totalZSlices);
 }
@@ -93506,14 +93666,16 @@ function onVolumeCreated(volume) {
     if (frameNumber === 0) {
       // create the main volume and add to view (this is the only place)
       myState.volume = new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(myJson);
+      var atlasWidth = myJson.tile_width * myJson.cols;
+      var atlasHeight = myJson.tile_height * myJson.rows;
 
       // TODO: this can go in the Volume and Channel constructors!
       // preallocate some memory to be filled in later
       for (var i = 0; i < myState.volume.num_channels; ++i) {
         myState.volume.channels[i].imgData = {
-          data: new Uint8ClampedArray(myJson.atlas_width * myJson.atlas_height),
-          width: myJson.atlas_width,
-          height: myJson.atlas_height
+          data: new Uint8ClampedArray(atlasWidth * atlasHeight),
+          width: atlasWidth,
+          height: atlasHeight
         };
         myState.volume.channels[i].volumeData = new Uint8Array(myJson.tile_width * myJson.tile_height * myJson.tiles);
         // TODO also preallocate the Fused data texture
@@ -93665,19 +93827,15 @@ function createTestVolume() {
     height: 64,
     channels: 3,
     channel_names: ["DRAQ5", "EGFP", "SEG_Memb"],
+    // These dimensions are used to prepare the raw volume arrays for rendering as tiled texture atlases
+    // for webgl reasons, it is best for atlas width (cols*tile_width) and height (rows*tile_height)
+    // to be <= 2048 and ideally a power of 2. (adjust other dimensions accordingly)
     rows: 8,
     cols: 8,
     // tiles <= rows*cols, tiles is number of z slices
     tiles: 64,
     tile_width: 64,
     tile_height: 64,
-    // These dimensions are used to prepare the raw volume arrays for rendering as tiled texture atlases
-    // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-    // and ideally a power of 2. (adjust other dimensions accordingly)
-    // atlas_width === cols*tile_width
-    atlas_width: 512,
-    // atlas_height === rows*tile_height
-    atlas_height: 512,
     pixel_size_x: 1,
     pixel_size_y: 1,
     pixel_size_z: 1,

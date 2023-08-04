@@ -144,7 +144,7 @@ self.onmessage = /*#__PURE__*/function () {
             data: out,
             channel: channelIndex
           };
-          postMessage(results, [results.data.buffer]);
+          self.postMessage(results, [results.data.buffer]);
         case 42:
         case "end":
           return _context.stop();
