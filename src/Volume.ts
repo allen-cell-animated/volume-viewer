@@ -1,4 +1,4 @@
-import { Vector3 } from "three";
+import { Vector2, Vector3 } from "three";
 
 import Channel from "./Channel";
 import Histogram from "./Histogram";
@@ -61,6 +61,61 @@ export interface ImageInfo {
   };
   userData?: Record<string, unknown>;
 }
+
+export type NewImageInfo = {
+  // TODO necessary?
+  name: string;
+  version: string;
+
+  /** XY size of the *original* (not downsampled) volume, in pixels */
+  originalSize: Vector2;
+  /** Number of rows and columns in the texture atlas */
+  atlasDims: Vector2;
+  /** Size of the volume, in pixels */
+  volumeSize: Vector3;
+  /** Size of the currently loaded subregion, in pixels */
+  regionSize: Vector3;
+  /** Offset of the loaded subregion into the total volume, in pixels */
+  regionOffset: Vector3;
+  /** Size of a single *original* (not downsampled) pixel, in spatial units */
+  pixelSize: Vector3;
+  /** Symbol of physical spatial unit used by `pixelSize` */
+  spatialUnit: string;
+
+  numChannels: number;
+  channelNames: string[];
+  // TODO type? Use THREE.Color?
+  channelColors: [number, number, number][];
+
+  times: number;
+  timeScale: number;
+  timeUnit: string;
+
+  translate: Vector3;
+  rotate: Vector3;
+
+  userData?: Record<string, unknown>;
+};
+
+export const getDefaultNewImageInfo = (): NewImageInfo => ({
+  name: "",
+  version: "",
+  originalSize: new Vector2(1, 1),
+  atlasDims: new Vector2(1, 1),
+  volumeSize: new Vector3(1, 1, 1),
+  regionSize: new Vector3(1, 1, 1),
+  regionOffset: new Vector3(1, 1, 1),
+  pixelSize: new Vector3(1, 1, 1),
+  spatialUnit: "",
+  numChannels: 0,
+  channelNames: [],
+  channelColors: [],
+  times: 1,
+  timeScale: 1,
+  timeUnit: "",
+  translate: new Vector3(0, 0, 0),
+  rotate: new Vector3(0, 0, 0),
+});
 
 export const getDefaultImageInfo = (): ImageInfo => {
   return {
