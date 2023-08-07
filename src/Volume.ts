@@ -5,69 +5,13 @@ import Histogram from "./Histogram";
 import { getColorByChannelIndex } from "./constants/colors";
 import { LoadSpec } from "./loaders/IVolumeLoader";
 
-/* eslint-disable @typescript-eslint/naming-convention */
-export interface ImageInfo {
-  name: string;
-  version: string;
-
-  /** X size of the *original* (not downsampled) volume, in pixels */
-  width: number;
-  /** Y size of the *original* (not downsampled) volume, in pixels */
-  height: number;
-  /** Number of rows of z-slice tiles in the texture atlas */
-  rows: number;
-  /** Number of columns of z-slice tiles in the texture atlas */
-  cols: number;
-  /** Width of a single atlas tile in pixels */
-  tile_width: number;
-  /** Height of a single atlas tile in pixels */
-  tile_height: number;
-  /** Number of tiles in the texture atlas (or number of z-slices in the volume segment) */
-  tiles: number;
-  /** Physical x size of a single *original* (not downsampled) pixel */
-  pixel_size_x: number;
-  /** Physical y size of a single *original* (not downsampled) pixel */
-  pixel_size_y: number;
-  /** Physical z size of a single pixel */
-  pixel_size_z: number;
-  /** Symbol of physical unit used by `pixel_size_(x|y|z)` fields */
-  pixel_size_unit: string;
-
-  // backwards compatibility: these are optional
-  /** Full x size of the volume. `tile_width` will be used if unspecified */
-  vol_size_x?: number;
-  /** Full y size of the volume. `tile_height` will be used if unspecified */
-  vol_size_y?: number;
-  /** Full z size of the volume. `tiles` will be used if unspecified */
-  vol_size_z?: number;
-  /** x offset of the volume subset into the volume */
-  offset_x?: number;
-  /** y offset of the volume subset into the volume */
-  offset_y?: number;
-  /** z offset of the volume subset into the volume */
-  offset_z?: number;
-
-  channels: number;
-  channel_names: string[];
-  channel_colors?: [number, number, number][];
-
-  times: number;
-  time_scale: number;
-  time_unit: string;
-
-  transform: {
-    translation: [number, number, number];
-    rotation: [number, number, number];
-  };
-  userData?: Record<string, unknown>;
-}
-
-export type NewImageInfo = {
+export type ImageInfo = {
   // TODO necessary?
   name: string;
   version: string;
 
   /** XY size of the *original* (not downsampled) volume, in pixels */
+  // If we ever allow downsampling in z, replace with Vector3
   originalSize: Vector2;
   /** Number of rows and columns in the texture atlas */
   atlasDims: Vector2;
@@ -91,13 +35,15 @@ export type NewImageInfo = {
   timeScale: number;
   timeUnit: string;
 
-  translate: Vector3;
-  rotate: Vector3;
+  transform: {
+    translation: Vector3;
+    rotation: Vector3;
+  };
 
   userData?: Record<string, unknown>;
 };
 
-export const getDefaultNewImageInfo = (): NewImageInfo => ({
+export const getDefaultImageInfo = (): ImageInfo => ({
   name: "",
   version: "",
   originalSize: new Vector2(1, 1),
@@ -113,45 +59,24 @@ export const getDefaultNewImageInfo = (): NewImageInfo => ({
   times: 1,
   timeScale: 1,
   timeUnit: "",
-  translate: new Vector3(0, 0, 0),
-  rotate: new Vector3(0, 0, 0),
+  transform: {
+    translation: new Vector3(0, 0, 0),
+    rotation: new Vector3(0, 0, 0),
+  },
 });
 
-export const getDefaultImageInfo = (): ImageInfo => {
-  return {
-    name: "",
-    version: "",
-    width: 1,
-    height: 1,
-    channels: 0,
-    tiles: 1,
-    pixel_size_x: 1,
-    pixel_size_y: 1,
-    pixel_size_z: 1,
-    pixel_size_unit: "",
-    channel_names: [],
-    channel_colors: [],
-    rows: 1,
-    cols: 1,
-    tile_width: 1,
-    tile_height: 1,
-    transform: {
-      translation: [0, 0, 0],
-      rotation: [0, 0, 0],
-    },
-    times: 1,
-    time_scale: 1,
-    time_unit: "",
-  };
-};
-
-/* eslint-enable @typescript-eslint/naming-convention */
+/**
+ * Volumes may be downsampled in X and Y but not Z.
+ * Construct a `Vector3` of original volume size using `x` and `y` from `originalSize` and `z` from `volumeSize`.
+ */
+const getOriginalSize3 = ({ originalSize: { x, y }, volumeSize: { z } }: ImageInfo) => new Vector3(x, y, z);
 
 interface VolumeDataObserver {
   onVolumeData: (vol: Volume, batch: number[]) => void;
   onVolumeChannelAdded: (vol: Volume, idx: number) => void;
 }
 
+// TODO update docs
 /**
  * Provide dimensions of the volume data, including dimensions for texture atlas data in which the volume z slices
  * are tiled across a single large 2d image plane.
@@ -212,31 +137,31 @@ export default class Volume {
   public loadSpec: LoadSpec;
   public imageMetadata: Record<string, unknown>;
   public name: string;
-  public x: number;
-  public y: number;
-  public z: number;
+  // public x: number;
+  // public y: number;
+  // public z: number;
   public channels: Channel[];
   private volumeDataObservers: VolumeDataObserver[];
   private physicalSize: Vector3;
   public physicalScale: number;
   public normalizedPhysicalSize: Vector3;
-  public contentSize: Vector3;
-  public contentOffset: Vector3;
+  public normalizedRegionSize: Vector3;
+  public normalizedRegionOffset: Vector3;
   public physicalUnitSymbol: string;
   public tickMarkPhysicalLength: number;
   private loaded: boolean;
   /* eslint-disable @typescript-eslint/naming-convention */
-  public num_channels: number;
-  public channel_names: string[];
+  // public num_channels: number;
+  public channelNames: string[];
   public channel_colors_default: [number, number, number][];
-  public pixel_size: [number, number, number];
+  // public pixel_size: [number, number, number];
   /* eslint-enable @typescript-eslint/naming-convention */
 
   constructor(imageInfo: ImageInfo = getDefaultImageInfo(), loadSpec: LoadSpec = new LoadSpec()) {
     // imageMetadata to be filled in by Volume Loaders
     this.imageMetadata = {};
-    this.contentSize = new Vector3(1, 1, 1);
-    this.contentOffset = new Vector3(0, 0, 0);
+    this.normalizedRegionSize = new Vector3(1, 1, 1);
+    this.normalizedRegionOffset = new Vector3(0, 0, 0);
     this.physicalSize = new Vector3(1, 1, 1);
     this.physicalScale = 1;
     this.normalizedPhysicalSize = new Vector3(1, 1, 1);
@@ -247,107 +172,87 @@ export default class Volume {
     this.loadSpec = loadSpec;
 
     // clean up some possibly bad data.
-    this.imageInfo.pixel_size_x = imageInfo.pixel_size_x || 1.0;
-    this.imageInfo.pixel_size_y = imageInfo.pixel_size_y || 1.0;
-    this.imageInfo.pixel_size_z = imageInfo.pixel_size_z || 1.0;
+    this.validatePixelSize();
 
-    this.pixel_size = [this.imageInfo.pixel_size_x, this.imageInfo.pixel_size_y, this.imageInfo.pixel_size_z];
-    this.x = this.imageInfo.tile_width;
-    this.y = this.imageInfo.tile_height;
-    this.z = this.imageInfo.tiles;
+    // TODO clean up these unused properties or replace them with whatever seems most sensible
+    // this.pixel_size = [this.imageInfo.pixel_size_x, this.imageInfo.pixel_size_y, this.imageInfo.pixel_size_z];
+    // this.x = this.imageInfo.tile_width;
+    // this.y = this.imageInfo.tile_height;
+    // this.z = this.imageInfo.tiles;
 
-    this.num_channels = this.imageInfo.channels;
+    // this.num_channels = this.imageInfo.channels;
 
-    this.channel_names = this.imageInfo.channel_names.slice();
-    this.channel_colors_default = this.imageInfo.channel_colors
-      ? this.imageInfo.channel_colors.slice()
-      : this.channel_names.map((name, index) => getColorByChannelIndex(index));
+    // TODO do we really want this copied value?
+    this.channelNames = this.imageInfo.channelNames.slice();
+    this.channel_colors_default = this.imageInfo.channelColors
+      ? this.imageInfo.channelColors.slice()
+      : this.channelNames.map((name, index) => getColorByChannelIndex(index));
     // fill in gaps
-    if (this.channel_colors_default.length < this.num_channels) {
-      for (let i = this.channel_colors_default.length - 1; i < this.num_channels; ++i) {
+    if (this.channel_colors_default.length < this.imageInfo.numChannels) {
+      for (let i = this.channel_colors_default.length - 1; i < this.imageInfo.numChannels; ++i) {
         this.channel_colors_default[i] = getColorByChannelIndex(i);
       }
     }
 
     this.channels = [];
-    for (let i = 0; i < this.num_channels; ++i) {
-      const channel = new Channel(this.channel_names[i]);
+    for (let i = 0; i < this.imageInfo.numChannels; ++i) {
+      const channel = new Channel(this.channelNames[i]);
       this.channels.push(channel);
       // TODO pass in channel constructor...
-      channel.dims = [this.x, this.y, this.z];
+      channel.dims = this.imageInfo.regionSize.toArray();
     }
 
-    this.physicalUnitSymbol = this.imageInfo.pixel_size_unit;
+    this.physicalUnitSymbol = this.imageInfo.spatialUnit;
     this.tickMarkPhysicalLength = 1;
-    this.setVoxelSize(this.pixel_size);
+    this.setVoxelSize(this.imageInfo.pixelSize);
 
+    // TODO do we still need this fallback code?
     // make sure a transform is specified
-    if (!this.imageInfo.transform) {
-      this.imageInfo.transform = {
-        translation: [0, 0, 0],
-        rotation: [0, 0, 0],
-      };
-    }
-    if (!this.imageInfo.transform.translation) {
-      this.imageInfo.transform.translation = [0, 0, 0];
-    }
-    if (!this.imageInfo.transform.rotation) {
-      this.imageInfo.transform.rotation = [0, 0, 0];
-    }
+    // if (!this.imageInfo.transform) {
+    //   this.imageInfo.transform = {
+    //     translation: new Vector3(0, 0, 0),
+    //     rotation: new Vector3(0, 0, 0),
+    //   };
+    // } else {
+    //   if (!this.imageInfo.transform.translation) {
+    //     this.imageInfo.transform.translation = new Vector3(0, 0, 0);
+    //   }
+    //   if (!this.imageInfo.transform.rotation) {
+    //     this.imageInfo.transform.rotation = new Vector3(0, 0, 0);
+    //   }
+    // }
 
     this.volumeDataObservers = [];
   }
 
-  updateDimensions() {
-    this.x = this.imageInfo.tile_width;
-    this.y = this.imageInfo.tile_height;
-    this.z = this.imageInfo.tiles;
-    this.setVoxelSize(this.pixel_size);
+  private validatePixelSize() {
+    this.imageInfo.pixelSize.x = this.imageInfo.pixelSize.x || 1.0;
+    this.imageInfo.pixelSize.y = this.imageInfo.pixelSize.y || 1.0;
+    this.imageInfo.pixelSize.z = this.imageInfo.pixelSize.z || 1.0;
+  }
 
-    /* eslint-disable @typescript-eslint/naming-convention */
-    const {
-      tile_width,
-      tile_height,
-      tiles,
-      vol_size_x = tile_width,
-      vol_size_y = tile_height,
-      vol_size_z = tiles,
-      offset_x = 0,
-      offset_y = 0,
-      offset_z = 0,
-    } = this.imageInfo;
-    /* eslint-enable @typescript-eslint/naming-convention */
-    this.contentSize = new Vector3(tile_width / vol_size_x, tile_height / vol_size_y, tiles / vol_size_z);
-    this.contentOffset = new Vector3(offset_x / vol_size_x, offset_y / vol_size_y, offset_z / vol_size_z);
+  updateDimensions() {
+    // TODO cleanup here too!
+    // this.x = this.imageInfo.tile_width;
+    // this.y = this.imageInfo.tile_height;
+    // this.z = this.imageInfo.tiles;
+    const { pixelSize, volumeSize, regionSize, regionOffset } = this.imageInfo;
+
+    this.setVoxelSize(pixelSize);
+
+    this.normalizedRegionSize = regionSize.clone().divide(volumeSize);
+    this.normalizedRegionOffset = regionOffset.clone().divide(volumeSize);
   }
 
   // we calculate the physical size of the volume (voxels*pixel_size)
   // and then normalize to the max physical dimension
-  setVoxelSize(values: number[]): void {
-    // basic error check.  bail out if we get something bad.
-    if (!values.length || values.length < 3) {
-      return;
-    }
-
+  setVoxelSize(size: Vector3): void {
     // only set the data if it is > 0.  zero is not an allowed value.
-    if (values[0] > 0) {
-      this.pixel_size[0] = values[0];
-    }
-    if (values[1] > 0) {
-      this.pixel_size[1] = values[1];
-    }
-    if (values[2] > 0) {
-      this.pixel_size[2] = values[2];
-    }
+    // TODO this indicates that maybe pixel size should stick around?
+    this.imageInfo.pixelSize = size;
+    this.validatePixelSize();
 
-    // this works because image was scaled down in x and y but not z.
-    // so use original x and y dimensions from imageInfo.
-    const sizez = this.imageInfo.vol_size_z || this.z;
-    this.physicalSize = new Vector3(
-      this.imageInfo.width * this.pixel_size[0],
-      this.imageInfo.height * this.pixel_size[1],
-      sizez * this.pixel_size[2]
-    );
+    this.physicalSize = getOriginalSize3(this.imageInfo).multiply(this.imageInfo.pixelSize);
     // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
     this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z);
     // Compute the volume's max extent - scaled to max dimension.
@@ -363,24 +268,17 @@ export default class Volume {
 
   /** Computes the center of the volume subset */
   getContentCenter(): Vector3 {
-    // center point: (contentSize / 2 + contentOffset - 0.5) * normalizedPhysicalSize;
-    return this.contentSize
+    // center point: (normalizedRegionSize / 2 + normalizedRegionOffset - 0.5) * normalizedPhysicalSize;
+    return this.normalizedRegionSize
       .clone()
       .divideScalar(2)
-      .add(this.contentOffset)
+      .add(this.normalizedRegionOffset)
       .subScalar(0.5)
       .multiply(this.normalizedPhysicalSize);
   }
 
   cleanup(): void {
     // no op
-  }
-
-  /**
-   * @return a reference to the list of channel names
-   */
-  channelNames(): string[] {
-    return this.channel_names;
   }
 
   getChannel(channelIndex: number): Channel {
@@ -406,7 +304,8 @@ export default class Volume {
    */
   setChannelDataFromAtlas(channelIndex: number, atlasdata: Uint8Array, atlaswidth: number, atlasheight: number): void {
     this.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight);
-    this.channels[channelIndex].unpackVolumeFromAtlas(this.x, this.y, this.z);
+    const { x, y, z } = this.imageInfo.regionSize;
+    this.channels[channelIndex].unpackVolumeFromAtlas(x, y, z);
     this.onChannelLoaded([channelIndex]);
   }
 
@@ -417,13 +316,14 @@ export default class Volume {
    * @param {Uint8Array} volumeData
    */
   setChannelDataFromVolume(channelIndex: number, volumeData: Uint8Array): void {
+    const { regionSize, atlasDims } = this.imageInfo;
     this.channels[channelIndex].setFromVolumeData(
       volumeData,
-      this.x,
-      this.y,
-      this.z,
-      this.imageInfo.cols * this.imageInfo.tile_width,
-      this.imageInfo.rows * this.imageInfo.tile_height
+      regionSize.x,
+      regionSize.y,
+      regionSize.z,
+      atlasDims.x * regionSize.x,
+      atlasDims.y * regionSize.y
     );
     this.onChannelLoaded([channelIndex]);
   }
@@ -436,11 +336,11 @@ export default class Volume {
    * @param {Array.<number>} color [r,g,b]
    */
   appendEmptyChannel(name: string, color?: [number, number, number]): number {
-    const idx = this.num_channels;
+    const idx = this.imageInfo.numChannels;
     const chname = name || "channel_" + idx;
     const chcolor = color || getColorByChannelIndex(idx);
-    this.num_channels += 1;
-    this.channel_names.push(chname);
+    this.imageInfo.numChannels += 1;
+    this.channelNames.push(chname);
     this.channel_colors_default.push(chcolor);
 
     this.channels.push(new Channel(chname));
@@ -507,7 +407,7 @@ export default class Volume {
    */
   getRotation(): [number, number, number] {
     // default axis order is XYZ
-    return this.imageInfo.transform.rotation;
+    return this.imageInfo.transform.rotation.toArray();
   }
 
   /**
@@ -515,7 +415,7 @@ export default class Volume {
    * @return {Array.<number>} the xyz translation in normalized volume units
    */
   getTranslation(): [number, number, number] {
-    return this.voxelsToWorldSpace(this.imageInfo.transform.translation);
+    return this.voxelsToWorldSpace(this.imageInfo.transform.translation.toArray());
   }
 
   /**
@@ -526,8 +426,7 @@ export default class Volume {
     // ASSUME: translation is in original image voxels.
     // account for pixel_size and normalized scaling in the threejs volume representation we're using
     const m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
-    const pixelSizeVec = new Vector3().fromArray(this.pixel_size);
-    return new Vector3().fromArray(xyz).multiply(pixelSizeVec).multiplyScalar(m).toArray();
+    return new Vector3().fromArray(xyz).multiply(this.imageInfo.pixelSize).multiplyScalar(m).toArray();
   }
 
   addVolumeDataObserver(o: VolumeDataObserver): void {
