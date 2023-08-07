@@ -109,16 +109,16 @@ export class View3d {
   }
 
   private updateOrthoScaleBar(volume: Volume): void {
-    this.canvas3d.updateOrthoScaleBar(volume.physicalScale, volume.imageInfo.pixel_size_unit);
+    this.canvas3d.updateOrthoScaleBar(volume.physicalScale, volume.imageInfo.spatialUnit);
   }
 
   private updatePerspectiveScaleBar(volume: Volume): void {
-    this.canvas3d.updatePerspectiveScaleBar(volume.tickMarkPhysicalLength, volume.imageInfo.pixel_size_unit);
+    this.canvas3d.updatePerspectiveScaleBar(volume.tickMarkPhysicalLength, volume.imageInfo.spatialUnit);
   }
 
   private updateTimestepIndicator(volume: Volume): void {
     // convert names to camel case to keep eslint happy
-    const { times, time_scale: timeScale, time_unit: timeUnit } = volume.imageInfo;
+    const { times, timeScale, timeUnit } = volume.imageInfo;
     const currentTime = volume.loadSpec.time;
     this.canvas3d.updateTimestepIndicator(currentTime * timeScale, times * timeScale, timeUnit);
   }
@@ -254,7 +254,7 @@ export class View3d {
    */
   setVoxelSize(volume: Volume, values: number[], unit?: string): void {
     if (this.image) {
-      this.image.setVoxelSize(values);
+      this.image.setVoxelSize(new Vector3().fromArray(values));
 
       if (unit) {
         this.image.volume.setUnitSymbol(unit);

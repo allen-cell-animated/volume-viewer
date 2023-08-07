@@ -79,11 +79,11 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   }
 
   public updateVolumeDimensions(): void {
-    const { normalizedPhysicalSize, contentSize } = this.volume;
+    const { normalizedPhysicalSize, normalizedRegionSize } = this.volume;
     // Set offset
     this.geometryMesh.position.copy(this.volume.getContentCenter());
     // Set scale
-    this.geometryMesh.scale.copy(contentSize).multiply(normalizedPhysicalSize);
+    this.geometryMesh.scale.copy(normalizedRegionSize).multiply(normalizedPhysicalSize);
     this.setUniform("volumeScale", normalizedPhysicalSize);
     this.boxHelper.box.set(
       normalizedPhysicalSize.clone().multiplyScalar(-0.5),
@@ -93,21 +93,20 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.settings && this.updateSettings(this.settings, SettingsFlags.ROI);
 
     // Set atlas dimension uniforms
-    /* eslint-disable-next-line @typescript-eslint/naming-convention */
-    const { cols, rows, tile_width, tile_height } = this.volume.imageInfo;
-    const atlasWidth = tile_width * cols;
-    const atlasHeight = tile_height * rows;
+    const { atlasDims, regionSize } = this.volume.imageInfo;
+    const atlasSize = new Vector2(regionSize.x, regionSize.y).multiply(atlasDims);
 
-    this.setUniform("ATLAS_X", cols);
-    this.setUniform("ATLAS_Y", rows);
+    // TODO consolidate this uniform in a vec2?
+    this.setUniform("ATLAS_X", atlasDims.x);
+    this.setUniform("ATLAS_Y", atlasDims.y);
 
-    this.setUniform("textureRes", new Vector2(atlasWidth, atlasHeight));
-    this.setUniform("SLICES", this.volume.z);
+    this.setUniform("textureRes", atlasSize);
+    this.setUniform("SLICES", this.volume.imageInfo.volumeSize.z);
 
     // (re)create channel data
-    if (!this.channelData || this.channelData.width !== atlasWidth || this.channelData.height !== atlasHeight) {
+    if (!this.channelData || this.channelData.width !== atlasSize.x || this.channelData.height !== atlasSize.y) {
       this.channelData?.cleanup();
-      this.channelData = new FusedChannelData(atlasWidth, atlasHeight);
+      this.channelData = new FusedChannelData(atlasSize.x, atlasSize.y);
     }
   }
 
@@ -178,10 +177,10 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     if (dirtyFlags & SettingsFlags.ROI) {
       // Normalize and set bounds
       const bounds = this.settings.bounds;
-      const { contentSize, contentOffset } = this.volume;
-      const offsetToCenter = contentSize.clone().divideScalar(2).add(contentOffset).subScalar(0.5);
-      const bmin = bounds.bmin.clone().sub(offsetToCenter).divide(contentSize).clampScalar(-0.5, 0.5);
-      const bmax = bounds.bmax.clone().sub(offsetToCenter).divide(contentSize).clampScalar(-0.5, 0.5);
+      const { normalizedRegionSize, normalizedRegionOffset } = this.volume;
+      const offsetToCenter = normalizedRegionSize.clone().divideScalar(2).add(normalizedRegionOffset).subScalar(0.5);
+      const bmin = bounds.bmin.clone().sub(offsetToCenter).divide(normalizedRegionSize).clampScalar(-0.5, 0.5);
+      const bmax = bounds.bmax.clone().sub(offsetToCenter).divide(normalizedRegionSize).clampScalar(-0.5, 0.5);
 
       this.setUniform("AABB_CLIP_MIN", bmin);
       this.setUniform("AABB_CLIP_MAX", bmax);

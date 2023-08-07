@@ -53,7 +53,7 @@ export default class VolumeDrawable {
 
     this.channelColors = this.volume.channel_colors_default.slice();
 
-    this.channelOptions = new Array<VolumeChannelDisplayOptions>(this.volume.num_channels).fill({});
+    this.channelOptions = new Array<VolumeChannelDisplayOptions>(this.volume.imageInfo.numChannels).fill({});
 
     this.fusion = this.channelColors.map((col, index) => {
       let rgbColor: number | [number, number, number];
@@ -214,8 +214,11 @@ export default class VolumeDrawable {
   }
 
   updateScale(): void {
-    const { normalizedPhysicalSize, contentSize } = this.volume;
-    this.meshVolume.setScale(normalizedPhysicalSize.clone().multiply(contentSize), this.volume.getContentCenter());
+    const { normalizedPhysicalSize, normalizedRegionSize } = this.volume;
+    this.meshVolume.setScale(
+      normalizedPhysicalSize.clone().multiply(normalizedRegionSize),
+      this.volume.getContentCenter()
+    );
     this.volumeRendering.updateVolumeDimensions();
   }
 
@@ -429,7 +432,7 @@ export default class VolumeDrawable {
     this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
   }
 
-  setVoxelSize(values: number[]): void {
+  setVoxelSize(values: Vector3): void {
     this.volume.setVoxelSize(values);
     this.updateScale();
   }
@@ -710,7 +713,7 @@ export default class VolumeDrawable {
   }
 
   setZSlice(slice: number): boolean {
-    const sizez = this.volume.imageInfo.vol_size_z || this.volume.z;
+    const sizez = this.volume.imageInfo.volumeSize.z;
     if (this.settings.zSlice !== slice && slice < sizez && slice > 0) {
       this.settings.zSlice = slice;
       this.volumeRendering.updateSettings(this.settings, SettingsFlags.ROI);
