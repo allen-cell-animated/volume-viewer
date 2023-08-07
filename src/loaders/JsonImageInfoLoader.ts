@@ -1,6 +1,5 @@
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import { buildDefaultMetadata } from "./VolumeLoaderUtils";
-import { ImageInfo } from "../Volume";
 import Volume from "../Volume";
 
 interface PackedChannelsImage {
@@ -9,16 +8,61 @@ interface PackedChannelsImage {
 }
 type PackedChannelsImageRequests = Record<string, HTMLImageElement>;
 
+/* eslint-disable @typescript-eslint/naming-convention */
+type JsonImageInfo = {
+  name: string;
+  version?: string;
+
+  /** X size of the *original* (not downsampled) volume, in pixels */
+  width: number;
+  /** Y size of the *original* (not downsampled) volume, in pixels */
+  height: number;
+  /** Number of rows of z-slice tiles in the texture atlas */
+  rows: number;
+  /** Number of columns of z-slice tiles in the texture atlas */
+  cols: number;
+  /** Width of a single atlas tile in pixels */
+  tile_width: number;
+  /** Height of a single atlas tile in pixels */
+  tile_height: number;
+  /** Number of tiles in the texture atlas (or number of z-slices in the volume segment) */
+  tiles: number;
+  /** Physical x size of a single *original* (not downsampled) pixel */
+  pixel_size_x: number;
+  /** Physical y size of a single *original* (not downsampled) pixel */
+  pixel_size_y: number;
+  /** Physical z size of a single pixel */
+  pixel_size_z: number;
+  /** Symbol of physical unit used by `pixel_size_(x|y|z)` fields */
+  pixel_size_unit: string;
+
+  channels: number;
+  channel_names: string[];
+  channel_colors?: [number, number, number][];
+
+  times?: number;
+  time_scale?: number;
+  time_unit?: string;
+
+  // TODO should be optional?
+  transform: {
+    translation: [number, number, number];
+    rotation: [number, number, number];
+  };
+  userData?: Record<string, unknown>;
+};
+
 class JsonImageInfoLoader implements IVolumeLoader {
-  imageInfo: ImageInfo | null = null;
+  imageInfo: JsonImageInfo | null = null;
   imageArray: PackedChannelsImage[] = [];
 
-  async getImageInfo(loadSpec: LoadSpec): Promise<ImageInfo> {
+  async getImageInfo(loadSpec: LoadSpec): Promise<JsonImageInfo> {
     if (!this.imageInfo) {
       const response = await fetch(loadSpec.url);
       const myJson = await response.json();
 
-      const imageInfo = myJson as ImageInfo;
+      const imageInfo = myJson as JsonImageInfo;
+      console.log(imageInfo);
       imageInfo.pixel_size_unit = imageInfo.pixel_size_unit || "μm";
       this.imageInfo = imageInfo;
 
@@ -32,7 +76,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
 
     const d = new VolumeDims();
     d.subpath = "";
-    d.shape = [imageInfo.times, imageInfo.channels, imageInfo.tiles, imageInfo.tile_height, imageInfo.tile_width];
+    d.shape = [imageInfo.times || 1, imageInfo.channels, imageInfo.tiles, imageInfo.tile_height, imageInfo.tile_width];
     d.spacing = [1, 1, imageInfo.pixel_size_z, imageInfo.pixel_size_y, imageInfo.pixel_size_x];
     d.spaceUnit = imageInfo.pixel_size_unit;
     d.dataType = "uint8";
