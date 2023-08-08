@@ -93,9 +93,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     const { atlasDims, regionSize } = this.volume.imageInfo;
     const atlasSize = new Vector2(regionSize.x, regionSize.y).multiply(atlasDims);
 
-    // TODO consolidate this uniform in a vec2?
-    this.setUniform("ATLAS_X", atlasDims.x);
-    this.setUniform("ATLAS_Y", atlasDims.y);
+    this.setUniform("ATLAS_DIMS", atlasDims);
 
     this.setUniform("textureRes", atlasSize);
     this.setUniform("SLICES", this.volume.imageInfo.volumeSize.z);

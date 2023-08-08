@@ -13,8 +13,9 @@ uniform float GAMMA_SCALE;
 uniform float BRIGHTNESS;
 uniform float DENSITY;
 uniform float maskAlpha;
-uniform float ATLAS_X;
-uniform float ATLAS_Y;
+// uniform float ATLAS_X;
+// uniform float ATLAS_Y;
+uniform vec2 ATLAS_DIMS;
 uniform vec3 AABB_CLIP_MIN;
 uniform float CLIP_NEAR;
 uniform vec3 AABB_CLIP_MAX;
@@ -60,9 +61,9 @@ vec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {
 
 vec2 offsetFrontBack(float t) {
   int a = int(t);
-  int ax = int(ATLAS_X);
-  vec2 os = vec2(float(a-(a/ax)*ax) / ATLAS_X, float(a/ax) / ATLAS_Y);
-  return clamp(os, vec2(0.0, 0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y));
+  int ax = int(ATLAS_DIMS.x);
+  vec2 os = vec2(float(a-(a/ax)*ax), float(a/ax)) / ATLAS_DIMS;
+  return clamp(os, vec2(0.0, 0.0), vec2(1.0) - vec2(1.0) / ATLAS_DIMS);
 }
 
 vec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {
@@ -74,13 +75,11 @@ vec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {
   // TODO: get loc1 which follows ray to next slice along ray direction
   // when flipvolume = 1:  pos
   // when flipvolume = -1: 1-pos
-  vec2 loc0 = vec2(
-    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,
-    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);
+  vec2 loc0 = ((pos.xy - 0.5) * flipVolume.xy + 0.5) / ATLAS_DIMS;
 
-  // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y
+  // loc ranges from 0 to 1/ATLAS_DIMS
   // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.
-  loc0 = vec2(0.5/textureRes.x, 0.5/textureRes.y) + loc0*vec2(1.0-(ATLAS_X)/textureRes.x, 1.0-(ATLAS_Y)/textureRes.y);
+  loc0 = vec2(0.5) / textureRes + loc0 * (vec2(1.0) - ATLAS_DIMS / textureRes);
   
   // interpolate between two slices
   float z = (pos.z)*(nSlices-1.0);
@@ -121,9 +120,8 @@ vec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {
                        pos[1] >= 0.0 && pos[1] <= 1.0 &&
                        pos[2] >= 0.0 && pos[2] <= 1.0 );
   float nSlices = float(SLICES);
-  vec2 loc0 = vec2(
-    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,
-    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);
+
+  vec2 loc0 = ((pos.xy - 0.5) * flipVolume.xy + 0.5) / ATLAS_DIMS;
 
   // No interpolation - sample just one slice at a pixel center.
   // Ideally this would be accomplished in part by switching this texture to linear
