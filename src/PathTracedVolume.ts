@@ -306,13 +306,13 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.pathTracingUniforms.gGradientFactor.value = 50.0; // related to voxel counts also
 
     // bounds will go from 0 to physicalSize
-    const physicalSize = volume.normalizedPhysicalSize;
+    const physicalSize = volume.normPhysicalSize;
 
     this.pathTracingUniforms.gInvAaBbMax.value = new Vector3(
       1.0 / physicalSize.x,
       1.0 / physicalSize.y,
       1.0 / physicalSize.z
-    ).divide(volume.normalizedRegionSize);
+    ).divide(volume.normRegionSize);
     this.updateLightsSecondary();
 
     // Update settings
@@ -374,20 +374,16 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
     // update bounds
     if (dirtyFlags & SettingsFlags.ROI) {
-      const { normalizedPhysicalSize, normalizedRegionSize, normalizedRegionOffset } = this.volume;
+      const { normPhysicalSize, normRegionSize, normRegionOffset } = this.volume;
       const { bmin, bmax } = this.settings.bounds;
 
-      const sizeMin = normalizedRegionOffset.clone().subScalar(0.5).multiply(normalizedPhysicalSize);
-      const sizeMax = normalizedRegionOffset
-        .clone()
-        .add(normalizedRegionSize)
-        .subScalar(0.5)
-        .multiply(normalizedPhysicalSize);
+      const sizeMin = normRegionOffset.clone().subScalar(0.5).multiply(normPhysicalSize);
+      const sizeMax = normRegionOffset.clone().add(normRegionSize).subScalar(0.5).multiply(normPhysicalSize);
 
-      const clipMin = bmin.clone().multiply(normalizedPhysicalSize);
+      const clipMin = bmin.clone().multiply(normPhysicalSize);
       this.pathTracingUniforms.gClippedAaBbMin.value = clipMin.clamp(sizeMin, sizeMax);
 
-      const clipMax = bmax.clone().multiply(normalizedPhysicalSize);
+      const clipMax = bmax.clone().multiply(normPhysicalSize);
       this.pathTracingUniforms.gClippedAaBbMax.value = clipMax.clamp(sizeMin, sizeMax);
 
       this.pathTracingUniforms.gVolCenter.value = this.volume.getContentCenter();
@@ -717,7 +713,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   }
 
   updateLightsSecondary(cameraMatrix?: Matrix4): void {
-    const physicalSize = this.volume.normalizedPhysicalSize;
+    const physicalSize = this.volume.normPhysicalSize;
     const bbctr = new Vector3(physicalSize.x * 0.5, physicalSize.y * 0.5, physicalSize.z * 0.5);
 
     for (let i = 0; i < 2; ++i) {
@@ -732,7 +728,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       bmin: new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
       bmax: new Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5),
     };
-    const physicalSize = this.volume.normalizedPhysicalSize;
+    const physicalSize = this.volume.normPhysicalSize;
     this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
       xmin * physicalSize.x - 0.5 * physicalSize.x,
       ymin * physicalSize.y - 0.5 * physicalSize.y,

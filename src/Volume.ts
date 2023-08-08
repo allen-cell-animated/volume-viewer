@@ -142,11 +142,11 @@ export default class Volume {
   // public z: number;
   public channels: Channel[];
   private volumeDataObservers: VolumeDataObserver[];
-  public physicalSize: Vector3;
   public physicalScale: number;
-  public normalizedPhysicalSize: Vector3;
-  public normalizedRegionSize: Vector3;
-  public normalizedRegionOffset: Vector3;
+  public physicalSize: Vector3;
+  public normPhysicalSize: Vector3;
+  public normRegionSize: Vector3;
+  public normRegionOffset: Vector3;
   public physicalUnitSymbol: string;
   public tickMarkPhysicalLength: number;
   private loaded: boolean;
@@ -160,11 +160,11 @@ export default class Volume {
   constructor(imageInfo: ImageInfo = getDefaultImageInfo(), loadSpec: LoadSpec = new LoadSpec()) {
     // imageMetadata to be filled in by Volume Loaders
     this.imageMetadata = {};
-    this.normalizedRegionSize = new Vector3(1, 1, 1);
-    this.normalizedRegionOffset = new Vector3(0, 0, 0);
+    this.normRegionSize = new Vector3(1, 1, 1);
+    this.normRegionOffset = new Vector3(0, 0, 0);
     this.physicalSize = new Vector3(1, 1, 1);
     this.physicalScale = 1;
-    this.normalizedPhysicalSize = new Vector3(1, 1, 1);
+    this.normPhysicalSize = new Vector3(1, 1, 1);
 
     this.loaded = false;
     this.imageInfo = imageInfo;
@@ -224,8 +224,8 @@ export default class Volume {
 
     this.setVoxelSize(pixelSize);
 
-    this.normalizedRegionSize = regionSize.clone().divide(volumeSize);
-    this.normalizedRegionOffset = regionOffset.clone().divide(volumeSize);
+    this.normRegionSize = regionSize.clone().divide(volumeSize);
+    this.normRegionOffset = regionOffset.clone().divide(volumeSize);
   }
 
   // we calculate the physical size of the volume (voxels*pixel_size)
@@ -240,7 +240,7 @@ export default class Volume {
     // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
     this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z);
     // Compute the volume's max extent - scaled to max dimension.
-    this.normalizedPhysicalSize = this.physicalSize.clone().divideScalar(this.physicalScale);
+    this.normPhysicalSize = this.physicalSize.clone().divideScalar(this.physicalScale);
     // While we're here, pick a power of 10 that divides into our max dimension a reasonable number of times
     // and save it to be the length of tick marks in 3d.
     this.tickMarkPhysicalLength = 10 ** Math.floor(Math.log10(this.physicalScale / 2));
@@ -252,13 +252,13 @@ export default class Volume {
 
   /** Computes the center of the volume subset */
   getContentCenter(): Vector3 {
-    // center point: (normalizedRegionSize / 2 + normalizedRegionOffset - 0.5) * normalizedPhysicalSize;
-    return this.normalizedRegionSize
+    // center point: (normRegionSize / 2 + normRegionOffset - 0.5) * normPhysicalSize;
+    return this.normRegionSize
       .clone()
       .divideScalar(2)
-      .add(this.normalizedRegionOffset)
+      .add(this.normRegionOffset)
       .subScalar(0.5)
-      .multiply(this.normalizedPhysicalSize);
+      .multiply(this.normPhysicalSize);
   }
 
   cleanup(): void {

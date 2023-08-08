@@ -67,7 +67,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
   }
 
   public updateVolumeDimensions(): void {
-    const scale = this.volume.normalizedPhysicalSize;
+    const scale = this.volume.normPhysicalSize;
     // set scale
     this.geometryMesh.scale.copy(scale);
     this.setUniform("volumeScale", scale);
@@ -81,8 +81,8 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.setUniform("ATLAS_Y", atlasDims.y);
     this.setUniform("textureRes", atlasSize);
     this.setUniform("SLICES", volumeSize.z);
-    this.setUniform("SUBSET_SCALE", this.volume.normalizedRegionSize);
-    this.setUniform("SUBSET_OFFSET", this.volume.normalizedRegionOffset);
+    this.setUniform("SUBSET_SCALE", this.volume.normRegionSize);
+    this.setUniform("SUBSET_OFFSET", this.volume.normRegionOffset);
 
     // (re)create channel data
     if (!this.channelData || this.channelData.width !== atlasSize.x || this.channelData.height !== atlasSize.y) {

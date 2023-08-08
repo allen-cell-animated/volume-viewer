@@ -214,11 +214,8 @@ export default class VolumeDrawable {
   }
 
   updateScale(): void {
-    const { normalizedPhysicalSize, normalizedRegionSize } = this.volume;
-    this.meshVolume.setScale(
-      normalizedPhysicalSize.clone().multiply(normalizedRegionSize),
-      this.volume.getContentCenter()
-    );
+    const { normPhysicalSize, normRegionSize } = this.volume;
+    this.meshVolume.setScale(normPhysicalSize.clone().multiply(normRegionSize), this.volume.getContentCenter());
     this.volumeRendering.updateVolumeDimensions();
   }
 
