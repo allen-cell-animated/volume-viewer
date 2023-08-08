@@ -54,7 +54,7 @@ function checkVolumeConstruction(v: Volume, imgdata: ImageInfo) {
   expect(v.channelNames.length).to.equal(imgdata.numChannels);
   expect(v.channels.length).to.equal(imgdata.numChannels);
 
-  const mx = Math.max(Math.max(v.normalizedPhysicalSize.x, v.normalizedPhysicalSize.y), v.normalizedPhysicalSize.z);
+  const mx = Math.max(Math.max(v.normPhysicalSize.x, v.normPhysicalSize.y), v.normPhysicalSize.z);
   expect(mx).to.equal(1.0);
 
   // TODO cleanup?
@@ -121,9 +121,9 @@ describe("test volume", () => {
       const sz = ((pixelSize.z / pxmin) * volumeSize.z) / sizemax;
 
       const EPSILON = 0.000000001;
-      expect(v.normalizedPhysicalSize.x).to.be.closeTo(sx, EPSILON);
-      expect(v.normalizedPhysicalSize.y).to.be.closeTo(sy, EPSILON);
-      expect(v.normalizedPhysicalSize.z).to.be.closeTo(sz, EPSILON);
+      expect(v.normPhysicalSize.x).to.be.closeTo(sx, EPSILON);
+      expect(v.normPhysicalSize.y).to.be.closeTo(sy, EPSILON);
+      expect(v.normPhysicalSize.z).to.be.closeTo(sz, EPSILON);
     });
   });
 });
