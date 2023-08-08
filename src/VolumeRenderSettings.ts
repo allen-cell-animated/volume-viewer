@@ -112,10 +112,10 @@ export class VolumeRenderSettings {
     this.maxProjectMode = false;
     // volume-dependent properties
     if (volume) {
-      this.zSlice = Math.floor(volume.z / 2);
-      this.specular = new Array(volume.num_channels).fill([0, 0, 0]);
-      this.emissive = new Array(volume.num_channels).fill([0, 0, 0]);
-      this.glossiness = new Array(volume.num_channels).fill(0);
+      this.zSlice = Math.floor(volume.imageInfo.regionSize.z / 2);
+      this.specular = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
+      this.emissive = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
+      this.glossiness = new Array(volume.imageInfo.numChannels).fill(0);
     } else {
       this.zSlice = 0;
       this.specular = [[0, 0, 0]];
@@ -127,10 +127,10 @@ export class VolumeRenderSettings {
   }
 
   public resizeWithVolume(volume: Volume): void {
-    this.zSlice = Math.floor(volume.z / 2);
-    this.specular = new Array(volume.num_channels).fill([0, 0, 0]);
-    this.emissive = new Array(volume.num_channels).fill([0, 0, 0]);
-    this.glossiness = new Array(volume.num_channels).fill(0);
+    this.zSlice = Math.floor(volume.imageInfo.regionSize.z / 2);
+    this.specular = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
+    this.emissive = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
+    this.glossiness = new Array(volume.imageInfo.numChannels).fill(0);
   }
 
   /**

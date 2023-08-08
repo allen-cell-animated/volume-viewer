@@ -5,7 +5,7 @@ import { getDefaultImageInfo } from "../Volume";
 
 describe("VolumeRenderSettingUtils", () => {
   const defaultImageInfo = getDefaultImageInfo();
-  defaultImageInfo.channels = 1;
+  defaultImageInfo.numChannels = 1;
 
   it("deeply-copies bounds", () => {
     const s1 = new VolumeRenderSettings();
