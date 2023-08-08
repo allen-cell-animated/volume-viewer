@@ -13,8 +13,6 @@ uniform float GAMMA_SCALE;
 uniform float BRIGHTNESS;
 uniform float DENSITY;
 uniform float maskAlpha;
-// uniform float ATLAS_X;
-// uniform float ATLAS_Y;
 uniform vec2 ATLAS_DIMS;
 uniform vec3 AABB_CLIP_MIN;
 uniform float CLIP_NEAR;
@@ -62,8 +60,8 @@ vec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {
 vec2 offsetFrontBack(float t) {
   int a = int(t);
   int ax = int(ATLAS_DIMS.x);
-  vec2 os = vec2(float(a-(a/ax)*ax), float(a/ax)) / ATLAS_DIMS;
-  return clamp(os, vec2(0.0, 0.0), vec2(1.0) - vec2(1.0) / ATLAS_DIMS);
+  vec2 os = vec2(float(a - (a / ax) * ax), float(a / ax)) / ATLAS_DIMS;
+  return clamp(os, vec2(0.0), vec2(1.0) - vec2(1.0) / ATLAS_DIMS);
 }
 
 vec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {
@@ -127,7 +125,7 @@ vec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {
   // Ideally this would be accomplished in part by switching this texture to linear
   //   filtering, but three makes this difficult to do through a WebGLRenderTarget.
   loc0 = floor(loc0 * textureRes) / textureRes;
-  loc0 += vec2(0.5/textureRes.x, 0.5/textureRes.y);
+  loc0 += vec2(0.5) / textureRes;
 
   float z = min(floor(pos.z * nSlices), nSlices-1.0);
   
