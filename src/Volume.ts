@@ -206,22 +206,6 @@ export default class Volume {
     this.tickMarkPhysicalLength = 1;
     this.setVoxelSize(this.imageInfo.pixelSize);
 
-    // TODO do we still need this fallback code?
-    // make sure a transform is specified
-    // if (!this.imageInfo.transform) {
-    //   this.imageInfo.transform = {
-    //     translation: new Vector3(0, 0, 0),
-    //     rotation: new Vector3(0, 0, 0),
-    //   };
-    // } else {
-    //   if (!this.imageInfo.transform.translation) {
-    //     this.imageInfo.transform.translation = new Vector3(0, 0, 0);
-    //   }
-    //   if (!this.imageInfo.transform.rotation) {
-    //     this.imageInfo.transform.rotation = new Vector3(0, 0, 0);
-    //   }
-    // }
-
     this.volumeDataObservers = [];
   }
 
