@@ -1,5 +1,5 @@
 import "regenerator-runtime/runtime";
-import { Vector3 } from "three";
+import { Vector2, Vector3 } from "three";
 import * as dat from "dat.gui";
 
 import {
@@ -599,7 +599,7 @@ function updateZSliceUI(volume: Volume) {
   const zSlider = document.getElementById("zSlider") as HTMLInputElement;
   const zInput = document.getElementById("zValue") as HTMLInputElement;
 
-  const totalZSlices = volume.imageInfo.vol_size_z || volume.z;
+  const totalZSlices = volume.imageInfo.volumeSize.z;
   zSlider.max = `${totalZSlices}`;
   zInput.max = `${totalZSlices}`;
 }
@@ -616,7 +616,7 @@ function showChannelUI(volume: Volume) {
   myState.channelGui = [];
 
   myState.channelFolderNames = [];
-  for (let i = 0; i < myState.infoObj.channels; ++i) {
+  for (let i = 0; i < myState.infoObj.numChannels; ++i) {
     myState.channelGui.push({
       colorD: volume.channel_colors_default[i],
       colorS: [0, 0, 0],
@@ -685,8 +685,8 @@ function showChannelUI(volume: Volume) {
       })(i),
       colorizeAlpha: 0.0,
     });
-    const f = gui.addFolder("Channel " + myState.infoObj.channel_names[i]);
-    myState.channelFolderNames.push("Channel " + myState.infoObj.channel_names[i]);
+    const f = gui.addFolder("Channel " + myState.infoObj.channelNames[i]);
+    myState.channelFolderNames.push("Channel " + myState.infoObj.channelNames[i]);
     f.add(myState.channelGui[i], "enabled").onChange(
       (function (j) {
         return function (value) {
@@ -855,7 +855,7 @@ function loadImageData(jsonData, volumeData) {
     view3D.addVolume(vol);
 
     // first 3 channels for starters
-    for (let ch = 0; ch < vol.num_channels; ++ch) {
+    for (let ch = 0; ch < vol.imageInfo.numChannels; ++ch) {
       view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
     }
 
@@ -927,18 +927,20 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
       // create the main volume and add to view (this is the only place)
       myState.volume = new Volume(myJson);
 
-      const atlasWidth = myJson.tile_width * myJson.cols;
-      const atlasHeight = myJson.tile_height * myJson.rows;
+      const atlasWidth = myJson.regionSize.x * myJson.atlasDims.x;
+      const atlasHeight = myJson.regionSize.y * myJson.atlasDims.y;
 
       // TODO: this can go in the Volume and Channel constructors!
       // preallocate some memory to be filled in later
-      for (let i = 0; i < myState.volume.num_channels; ++i) {
+      for (let i = 0; i < volume.imageInfo.numChannels; ++i) {
         myState.volume.channels[i].imgData = {
           data: new Uint8ClampedArray(atlasWidth * atlasHeight),
           width: atlasWidth,
           height: atlasHeight,
         };
-        myState.volume.channels[i].volumeData = new Uint8Array(myJson.tile_width * myJson.tile_height * myJson.tiles);
+        myState.volume.channels[i].volumeData = new Uint8Array(
+          myJson.regionSize.x * myJson.regionSize.y * myJson.regionSize.z
+        );
         // TODO also preallocate the Fused data texture
       }
 
@@ -946,10 +948,10 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
       view3D.addVolume(myState.volume);
       setInitialRenderMode();
       // first 3 channels for starters
-      for (let ch = 0; ch < myState.volume.num_channels; ++ch) {
+      for (let ch = 0; ch < myState.volume.imageInfo.numChannels; ++ch) {
         view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
       }
-      view3D.setVolumeChannelAsMask(myState.volume, myJson.channel_names.indexOf("SEG_Memb"));
+      view3D.setVolumeChannelAsMask(myState.volume, myJson.channelNames.indexOf("SEG_Memb"));
       view3D.updateActiveChannels(myState.volume);
       view3D.updateLuts(myState.volume);
       view3D.updateLights(myState.lights);
@@ -958,8 +960,11 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
       // apply a volume transform from an external source:
       if (myJson.transform) {
         const alignTransform = myJson.transform;
-        view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(alignTransform.translation));
-        view3D.setVolumeRotation(myState.volume, alignTransform.rotation);
+        view3D.setVolumeTranslation(
+          myState.volume,
+          myState.volume.voxelsToWorldSpace(alignTransform.translation.toArray())
+        );
+        view3D.setVolumeRotation(myState.volume, alignTransform.rotation.toArray());
       }
     }
 
@@ -984,8 +989,11 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
   // apply a volume transform from an external source:
   if (myJson.transform) {
     const alignTransform = myJson.transform;
-    view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(alignTransform.translation));
-    view3D.setVolumeRotation(myState.volume, alignTransform.rotation);
+    view3D.setVolumeTranslation(
+      myState.volume,
+      myState.volume.voxelsToWorldSpace(alignTransform.translation.toArray())
+    );
+    view3D.setVolumeRotation(myState.volume, alignTransform.rotation.toArray());
   }
 
   updateTimeUI(myState.volume);
@@ -1027,7 +1035,7 @@ function updateViewForNewVolume() {
     view3D.updateLuts(myState.volume);
   }
 
-  for (let i = 0; i < myState.volume.num_channels; ++i) {
+  for (let i = 0; i < myState.volume.imageInfo.numChannels; ++i) {
     view3D.updateIsosurface(myState.volume, i, myState.channelGui[i].isovalue);
   }
 }
@@ -1097,40 +1105,33 @@ function goToZSlice(slice: number): boolean {
 function createTestVolume() {
   /* eslint-disable @typescript-eslint/naming-convention */
   const imgData: ImageInfo = {
-    // width := original full size image width
-    width: 64,
-    // height := original full size image height
-    height: 64,
-    channels: 3,
-    channel_names: ["DRAQ5", "EGFP", "SEG_Memb"],
-    // These dimensions are used to prepare the raw volume arrays for rendering as tiled texture atlases
-    // for webgl reasons, it is best for atlas width (cols*tile_width) and height (rows*tile_height)
-    // to be <= 2048 and ideally a power of 2. (adjust other dimensions accordingly)
-    rows: 8,
-    cols: 8,
-    // tiles <= rows*cols, tiles is number of z slices
-    tiles: 64,
-    tile_width: 64,
-    tile_height: 64,
-
-    pixel_size_x: 1,
-    pixel_size_y: 1,
-    pixel_size_z: 1,
     name: "AICS-10_5_5",
     version: "0.0.0",
-    pixel_size_unit: "",
-    transform: { translation: [0, 0, 0], rotation: [0, 0, 0] },
+
+    originalSize: new Vector2(64, 64),
+    atlasDims: new Vector2(8, 8),
+    volumeSize: new Vector3(64, 64, 64),
+    regionSize: new Vector3(64, 64, 64),
+    regionOffset: new Vector3(0, 0, 0),
+    pixelSize: new Vector3(1, 1, 1),
+    spatialUnit: "",
+
+    numChannels: 3,
+    channelNames: ["DRAQ5", "EGFP", "SEG_Memb"],
+
     times: 1,
-    time_scale: 1,
-    time_unit: "",
+    timeScale: 1,
+    timeUnit: "",
+
+    transform: { translation: new Vector3(0, 0, 0), rotation: new Vector3(0, 0, 0) },
   };
   /* eslint-enable @typescript-eslint/naming-convention */
 
   // generate some raw volume data
   const channelVolumes = [
-    VolumeMaker.createSphere(imgData.tile_width, imgData.tile_height, imgData.tiles, 24),
-    VolumeMaker.createTorus(imgData.tile_width, imgData.tile_height, imgData.tiles, 24, 8),
-    VolumeMaker.createCone(imgData.tile_width, imgData.tile_height, imgData.tiles, 24, 24),
+    VolumeMaker.createSphere(imgData.regionSize.x, imgData.regionSize.y, imgData.regionSize.z, 24),
+    VolumeMaker.createTorus(imgData.regionSize.x, imgData.regionSize.y, imgData.regionSize.z, 24, 8),
+    VolumeMaker.createCone(imgData.regionSize.x, imgData.regionSize.y, imgData.regionSize.z, 24, 24),
   ];
   return {
     imgData: imgData,
@@ -1166,7 +1167,7 @@ async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader, cacheTimeSe
   myState.currentImageName = loadSpec.url;
 
   // Set default zSlice
-  goToZSlice(Math.floor(volume.z / 2));
+  goToZSlice(Math.floor(volume.imageInfo.regionSize.z / 2));
 }
 
 function loadTestData(testdata: TestDataSpec) {
