@@ -29,7 +29,7 @@ export type ImageInfo = {
   numChannels: number;
   channelNames: string[];
   // TODO type? Use THREE.Color?
-  channelColors: [number, number, number][];
+  channelColors?: [number, number, number][];
 
   times: number;
   timeScale: number;

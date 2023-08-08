@@ -1,6 +1,8 @@
+import { Vector2, Vector3 } from "three";
+
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import { buildDefaultMetadata } from "./VolumeLoaderUtils";
-import Volume from "../Volume";
+import Volume, { ImageInfo } from "../Volume";
 
 interface PackedChannelsImage {
   name: string;
@@ -34,7 +36,7 @@ type JsonImageInfo = {
   /** Physical z size of a single pixel */
   pixel_size_z: number;
   /** Symbol of physical unit used by `pixel_size_(x|y|z)` fields */
-  pixel_size_unit: string;
+  pixel_size_unit?: string;
 
   channels: number;
   channel_names: string[];
@@ -51,6 +53,37 @@ type JsonImageInfo = {
   };
   userData?: Record<string, unknown>;
 };
+/* eslint-enable @typescript-eslint/naming-convention */
+
+const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
+  name: json.name,
+  version: json.version || "",
+
+  originalSize: new Vector2(json.width, json.height),
+  atlasDims: new Vector2(json.rows, json.cols),
+  volumeSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
+  regionSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
+  regionOffset: new Vector3(0, 0, 0),
+  pixelSize: new Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
+  spatialUnit: json.pixel_size_unit || "μm",
+
+  numChannels: json.channels,
+  channelNames: json.channel_names,
+  channelColors: json.channel_colors,
+
+  times: json.times || 1,
+  timeScale: json.time_scale || 1,
+  timeUnit: json.time_unit || "s",
+
+  transform: {
+    translation: json.transform?.translation
+      ? new Vector3().fromArray(json.transform.translation)
+      : new Vector3(0, 0, 0),
+    rotation: json.transform?.rotation ? new Vector3().fromArray(json.transform.rotation) : new Vector3(0, 0, 0),
+  },
+
+  userData: json.userData,
+});
 
 class JsonImageInfoLoader implements IVolumeLoader {
   imageInfo: JsonImageInfo | null = null;
@@ -72,19 +105,20 @@ class JsonImageInfoLoader implements IVolumeLoader {
   }
 
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
-    const imageInfo = await this.getImageInfo(loadSpec);
+    const jsonInfo = await this.getImageInfo(loadSpec);
 
     const d = new VolumeDims();
     d.subpath = "";
-    d.shape = [imageInfo.times || 1, imageInfo.channels, imageInfo.tiles, imageInfo.tile_height, imageInfo.tile_width];
-    d.spacing = [1, 1, imageInfo.pixel_size_z, imageInfo.pixel_size_y, imageInfo.pixel_size_x];
-    d.spaceUnit = imageInfo.pixel_size_unit;
+    d.shape = [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tile_height, jsonInfo.tile_width];
+    d.spacing = [1, 1, jsonInfo.pixel_size_z, jsonInfo.pixel_size_y, jsonInfo.pixel_size_x];
+    d.spaceUnit = jsonInfo.pixel_size_unit || "μm";
     d.dataType = "uint8";
     return [d];
   }
 
   async createVolume(loadSpec: LoadSpec): Promise<Volume> {
-    const imageInfo = await this.getImageInfo(loadSpec);
+    const jsonInfo = await this.getImageInfo(loadSpec);
+    const imageInfo = convertImageInfo(jsonInfo);
 
     const vol = new Volume(imageInfo, loadSpec);
     vol.imageMetadata = buildDefaultMetadata(imageInfo);

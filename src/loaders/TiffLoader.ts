@@ -1,9 +1,10 @@
+import { fromUrl } from "geotiff";
+import { Vector2, Vector3 } from "three";
+
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import { buildDefaultMetadata, computePackedAtlasDims } from "./VolumeLoaderUtils";
 import { ImageInfo } from "../Volume";
 import Volume from "../Volume";
-
-import { fromUrl } from "geotiff";
 
 function prepareXML(xml: string): string {
   // trim trailing unicode zeros?
@@ -117,34 +118,30 @@ class TiffLoader implements IVolumeLoader {
 
     // load tiff and check metadata
 
-    /* eslint-disable @typescript-eslint/naming-convention */
     const imgdata: ImageInfo = {
-      width: dims.sizex,
-      height: dims.sizey,
-      channels: dims.sizec,
-      channel_names: dims.channelnames,
-      // for webgl reasons, it is best for total atlas width and height to be <= 2048 and ideally a power of 2.
-      //   This generally implies downsampling the original volume data for display in this viewer.
-      rows: nrows,
-      cols: ncols,
-      tiles: dims.sizez,
-      tile_width: tilesizex,
-      tile_height: tilesizey,
-      pixel_size_x: dims.pixelsizex,
-      pixel_size_y: dims.pixelsizey,
-      pixel_size_z: dims.pixelsizez,
       name: "TEST",
       version: "1.0",
-      pixel_size_unit: dims.unit || "",
-      transform: {
-        translation: [0, 0, 0],
-        rotation: [0, 0, 0],
-      },
+
+      originalSize: new Vector2(dims.sizex, dims.sizey),
+      atlasDims: new Vector2(nrows, ncols),
+      volumeSize: new Vector3(tilesizex, tilesizey, dims.sizez),
+      regionSize: new Vector3(tilesizex, tilesizey, dims.sizez),
+      regionOffset: new Vector3(0, 0, 0),
+      pixelSize: new Vector3(dims.pixelsizex, dims.pixelsizey, dims.pixelsizez),
+      spatialUnit: dims.unit || "",
+
+      numChannels: dims.sizec,
+      channelNames: dims.channelnames,
+
       times: dims.sizet,
-      time_scale: 1,
-      time_unit: "",
+      timeScale: 1,
+      timeUnit: "",
+
+      transform: {
+        translation: new Vector3(0, 0, 0),
+        rotation: new Vector3(0, 0, 0),
+      },
     };
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     const vol = new Volume(imgdata, loadSpec);
     vol.imageMetadata = buildDefaultMetadata(imgdata);
@@ -168,15 +165,15 @@ class TiffLoader implements IVolumeLoader {
     const imageInfo = vol.imageInfo;
 
     // do each channel on a worker?
-    for (let channel = 0; channel < imageInfo.channels; ++channel) {
+    for (let channel = 0; channel < imageInfo.numChannels; ++channel) {
       const params = {
         channel: channel,
         // these are target xy sizes for the in-memory volume data
         // they may or may not be the same size as original xy sizes
-        tilesizex: imageInfo.tile_width,
-        tilesizey: imageInfo.tile_height,
-        sizec: imageInfo.channels,
-        sizez: imageInfo.tiles,
+        tilesizex: imageInfo.volumeSize.x,
+        tilesizey: imageInfo.volumeSize.y,
+        sizec: imageInfo.numChannels,
+        sizez: imageInfo.volumeSize.z,
         dimensionOrder: this.dimensionOrder,
         bytesPerSample: this.bytesPerSample,
         url: url,
