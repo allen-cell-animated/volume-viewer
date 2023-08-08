@@ -13,7 +13,7 @@ export type ImageInfo = {
   /** XY size of the *original* (not downsampled) volume, in pixels */
   // If we ever allow downsampling in z, replace with Vector3
   originalSize: Vector2;
-  /** Number of rows and columns (of full xy slices, not pixels) in the texture atlas */
+  /** Number of rows and columns of z-slice tiles (not pixels) in the texture atlas */
   atlasDims: Vector2;
   /** Size of the volume, in pixels */
   volumeSize: Vector3;
@@ -50,7 +50,7 @@ export const getDefaultImageInfo = (): ImageInfo => ({
   atlasDims: new Vector2(1, 1),
   volumeSize: new Vector3(1, 1, 1),
   regionSize: new Vector3(1, 1, 1),
-  regionOffset: new Vector3(1, 1, 1),
+  regionOffset: new Vector3(0, 0, 0),
   pixelSize: new Vector3(1, 1, 1),
   spatialUnit: "",
   numChannels: 0,

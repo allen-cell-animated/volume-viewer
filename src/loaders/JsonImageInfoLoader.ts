@@ -27,6 +27,10 @@ type JsonImageInfo = {
   tile_width: number;
   /** Height of a single atlas tile in pixels */
   tile_height: number;
+  /** Width of the texture atlas in pixels; equivalent to `tile_width * cols` */
+  atlas_width: number;
+  /** Height of the texture atlas in pixels; equivalent to `tile_height * rows` */
+  atlas_height: number;
   /** Number of tiles in the texture atlas (or number of z-slices in the volume segment) */
   tiles: number;
   /** Physical x size of a single *original* (not downsampled) pixel */
