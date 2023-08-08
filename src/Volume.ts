@@ -13,7 +13,7 @@ export type ImageInfo = {
   /** XY size of the *original* (not downsampled) volume, in pixels */
   // If we ever allow downsampling in z, replace with Vector3
   originalSize: Vector2;
-  /** Number of rows and columns in the texture atlas */
+  /** Number of rows and columns (of full xy slices, not pixels) in the texture atlas */
   atlasDims: Vector2;
   /** Size of the volume, in pixels */
   volumeSize: Vector3;
@@ -142,7 +142,7 @@ export default class Volume {
   // public z: number;
   public channels: Channel[];
   private volumeDataObservers: VolumeDataObserver[];
-  private physicalSize: Vector3;
+  public physicalSize: Vector3;
   public physicalScale: number;
   public normalizedPhysicalSize: Vector3;
   public normalizedRegionSize: Vector3;
