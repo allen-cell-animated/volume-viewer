@@ -58,7 +58,7 @@ vec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {
   return color;
 }
 
-vec2 offsetFrontBack(float t, float nx, float ny) {
+vec2 offsetFrontBack(float t) {
   int a = int(t);
   int ax = int(ATLAS_X);
   vec2 os = vec2(float(a-(a/ax)*ax) / ATLAS_X, float(a/ax) / ATLAS_Y);
@@ -96,8 +96,8 @@ vec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {
   }
 
   // get slice offsets in texture atlas
-  vec2 o0 = offsetFrontBack(z0,ATLAS_X,ATLAS_Y) + loc0;
-  vec2 o1 = offsetFrontBack(z1,ATLAS_X,ATLAS_Y) + loc0;
+  vec2 o0 = offsetFrontBack(z0) + loc0;
+  vec2 o1 = offsetFrontBack(z1) + loc0;
 
   vec4 slice0Color = texture2D(tex, o0);
   vec4 slice1Color = texture2D(tex, o1);
@@ -137,7 +137,7 @@ vec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {
     z = nSlices - z - 1.0;
   }
 
-  vec2 o = offsetFrontBack(z, ATLAS_X, ATLAS_Y) + loc0;
+  vec2 o = offsetFrontBack(z) + loc0;
   vec4 voxelColor = texture2D(tex, o);
 
   // Apply mask
