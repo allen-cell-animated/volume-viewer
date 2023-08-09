@@ -14,6 +14,7 @@ type PackedChannelsImageRequests = Record<string, HTMLImageElement>;
 type JsonImageInfo = {
   name: string;
   version?: string;
+  images: PackedChannelsImage[];
 
   /** X size of the *original* (not downsampled) volume, in pixels */
   width: number;
@@ -96,13 +97,12 @@ class JsonImageInfoLoader implements IVolumeLoader {
   async getImageInfo(loadSpec: LoadSpec): Promise<JsonImageInfo> {
     if (!this.imageInfo) {
       const response = await fetch(loadSpec.url);
-      const myJson = await response.json();
+      const imageInfo = (await response.json()) as JsonImageInfo;
 
-      const imageInfo = myJson as JsonImageInfo;
       imageInfo.pixel_size_unit = imageInfo.pixel_size_unit || "μm";
       this.imageInfo = imageInfo;
 
-      this.imageArray = myJson.images;
+      this.imageArray = imageInfo.images;
     }
     return this.imageInfo;
   }
