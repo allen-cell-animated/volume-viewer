@@ -19,9 +19,9 @@ type JsonImageInfo = {
   width: number;
   /** Y size of the *original* (not downsampled) volume, in pixels */
   height: number;
-  /** Number of rows of z-slice tiles in the texture atlas */
+  /** Number of rows of z-slice tiles (not pixels) in the texture atlas */
   rows: number;
-  /** Number of columns of z-slice tiles in the texture atlas */
+  /** Number of columns of z-slice tiles (not pixels) in the texture atlas */
   cols: number;
   /** Width of a single atlas tile in pixels */
   tile_width: number;
@@ -64,7 +64,7 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
   version: json.version || "",
 
   originalSize: new Vector2(json.width, json.height),
-  atlasDims: new Vector2(json.rows, json.cols),
+  atlasDims: new Vector2(json.cols, json.rows),
   volumeSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
   regionSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
   regionOffset: new Vector3(0, 0, 0),
@@ -99,7 +99,6 @@ class JsonImageInfoLoader implements IVolumeLoader {
       const myJson = await response.json();
 
       const imageInfo = myJson as JsonImageInfo;
-      console.log(imageInfo);
       imageInfo.pixel_size_unit = imageInfo.pixel_size_unit || "μm";
       this.imageInfo = imageInfo;
 
