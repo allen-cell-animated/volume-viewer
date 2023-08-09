@@ -6,9 +6,8 @@ import { getColorByChannelIndex } from "./constants/colors";
 import { LoadSpec } from "./loaders/IVolumeLoader";
 
 export type ImageInfo = {
-  // TODO necessary?
   name: string;
-  version: string;
+  version?: string;
 
   /** XY size of the *original* (not downsampled) volume, in pixels */
   // If we ever allow downsampling in z, replace with Vector3
@@ -28,7 +27,6 @@ export type ImageInfo = {
 
   numChannels: number;
   channelNames: string[];
-  // TODO type? Use THREE.Color?
   channelColors?: [number, number, number][];
 
   times: number;
@@ -76,54 +74,46 @@ interface VolumeDataObserver {
   onVolumeChannelAdded: (vol: Volume, idx: number) => void;
 }
 
-// TODO update docs
 /**
  * Provide dimensions of the volume data, including dimensions for texture atlas data in which the volume z slices
  * are tiled across a single large 2d image plane.
  * @typedef {Object} ImageInfo
  * @property {string} name Base name of image
- * @property {string} version schema version preferably in semver format.
- * @property {number} width Width of original volumetric data prior to downsampling
- * @property {number} height Height of original volumetric data prior to downsampling
- * @property {number} channels Number of channels
+ * @property {string} [version] Schema version preferably in semver format.
+ * @property {Vector2} originalSize XY size of the *original* (not downsampled) volume, in pixels
+ * @property {Vector2} atlasDims Number of rows and columns of z-slice tiles (not pixels) in the texture atlas
+ * @property {Vector3} volumeSize Size of the volume, in pixels
+ * @property {Vector3} regionSize Size of the currently loaded subregion, in pixels
+ * @property {Vector3} regionOffset Offset of the loaded subregion into the total volume, in pixels
+ * @property {Vector3} pixelSize Size of a single *original* (not downsampled) pixel, in spatial units
+ * @property {string} spatialUnit Symbol of physical spatial unit used by `pixelSize`
+ * @property {number} numChannels Number of channels
+ * @property {Array.<string>} channelNames Names of each of the channels to be rendered, in order. Unique identifier expected
+ * @property {Array.<Array.<number>>} [channelColors] Colors of each of the channels to be rendered, as an ordered list of [r, g, b] arrays
  * @property {number} times Number of times (default = 1)
- * @property {number} tiles Number of tiles, which must be equal to the number of z-slices in original volumetric data
- * @property {number} pixel_size_x Size of pixel in volumetric data to be rendered, in x-dimension, unitless
- * @property {number} pixel_size_y Size of pixel in volumetric data to be rendered, in y-dimension, unitless
- * @property {number} pixel_size_z Size of pixel in volumetric data to be rendered, in z-dimension, unitless
- * @property {Array.<string>} channel_names Names of each of the channels to be rendered, in order. Unique identifier expected
- * @property {number} rows Number of rows in tile array in each image.  Note tiles <= rows*cols
- * @property {number} cols Number of columns in tile array in each image.  Note tiles <= rows*cols
- * @property {number} tile_width Width of each tile in volumetric dataset to be rendered, in pixels
- * @property {number} tile_height Height of each tile in volumetric dataset to be rendered, in pixels
- * @property {number} atlas_width Total width of image containing all the tiles, in pixels.  Note atlas_width === cols*tile_width
- * @property {number} atlas_height Total height of image containing all the tiles, in pixels. Note atlas_height === rows*tile_height
+ * @property {number} timeScale Size of each time step in `timeUnit` units
+ * @property {number} timeUnit Unit symbol for `timeScale` (e.g. min)
  * @property {Object} transform translation and rotation as arrays of 3 numbers. Translation is in voxels (to be multiplied by pixel_size values). Rotation is Euler angles in radians, appled in XYZ order.
- * @example let imgdata = {
-  "width": 306,
-  "height": 494,
-  "channels": 9,
-  "channel_names": ["DRAQ5", "EGFP", "Hoechst 33258", "TL Brightfield", "SEG_STRUCT", "SEG_Memb", "SEG_DNA", "CON_Memb", "CON_DNA"],
-  "rows": 7,
-  "cols": 10,
-  "tiles": 65,
-  "tile_width": 204,
-  "tile_height": 292,
-  // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-  // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-  "atlas_width": 2040,
-  "atlas_height": 2044,
-  "pixel_size_x": 0.065,
-  "pixel_size_y": 0.065,
-  "pixel_size_z": 0.29,
+ * @property {Object} userData Arbitrary metadata not covered by above properties
+ * @example const imgdata = {
   "name": "AICS-10_5_5",
-  "status": "OK",
   "version": "0.0.0",
-  "aicsImageVersion": "0.3.0",
+  originalSize: new Vector2(306, 494),
+  atlasDims: new Vector2(10, 7),
+  volumeSize: new Vector3(204, 292, 65),
+  regionSize: new Vector3(204, 292, 65),
+  regionOffset: new Vector3(0, 0, 0),
+  pixelSize: new Vector3(0.065, 0.065, 0.29),
+  spatialUnit: "μm",
+  "numChannels": 9,
+  "channelNames": ["DRAQ5", "EGFP", "Hoechst 33258", "TL Brightfield", "SEG_STRUCT", "SEG_Memb", "SEG_DNA", "CON_Memb", "CON_DNA"],
+  "times": 5,
+  "timeScale": 1,
+  "timeUnit": "hr",
   "transform": {
-    "translation": [5, 5, 1],
-    "rotation": [0, 3.14159, 1.57]
-  }
+    "translation": new Vector3(5, 5, 1),
+    "rotation": new Vector3(0, 3.14159, 1.57),
+  },
   };
  */
 
