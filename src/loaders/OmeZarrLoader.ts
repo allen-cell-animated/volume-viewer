@@ -317,7 +317,6 @@ class OMEZarrLoader implements IVolumeLoader {
       chnames.push(displayMetadata.channels[i].label);
     }
 
-    /* eslint-disable @typescript-eslint/naming-convention */
     const imgdata: ImageInfo = {
       name: displayMetadata.name,
       version: displayMetadata.version,
@@ -341,7 +340,6 @@ class OMEZarrLoader implements IVolumeLoader {
         rotation: new Vector3(0, 0, 0),
       },
     };
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     // The `LoadSpec` passed in at this stage should represent the subset which this loader loads, not that
     // which the volume contains. The volume contains the full extent of the subset recognized by this loader.
@@ -415,7 +413,6 @@ class OMEZarrLoader implements IVolumeLoader {
     const volsize = convertLoadSpecRegionToPixels(this.maxExtent, levelShape[xi], levelShape[yi], levelShape[zi]);
     const [vx, vy, vz] = getExtentSize(volsize);
     const offset = convertLoadSpecRegionToPixels(vol.loadSpec, vx, vy, vz);
-    /* eslint-disable @typescript-eslint/naming-convention */
     vol.imageInfo = {
       ...vol.imageInfo,
       atlasDims: new Vector2(nrows, ncols),
@@ -423,7 +420,6 @@ class OMEZarrLoader implements IVolumeLoader {
       regionSize: new Vector3(tw, th, tz),
       regionOffset: new Vector3(offset.minx, offset.miny, offset.minz),
     };
-    /* eslint-enable @typescript-eslint/naming-convention */
     vol.updateDimensions();
   }
 }

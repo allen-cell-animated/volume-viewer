@@ -140,12 +140,9 @@ export default class Volume {
   public physicalUnitSymbol: string;
   public tickMarkPhysicalLength: number;
   private loaded: boolean;
-  /* eslint-disable @typescript-eslint/naming-convention */
-  // public num_channels: number;
   public channelNames: string[];
+  /* eslint-disable-next-line @typescript-eslint/naming-convention */
   public channel_colors_default: [number, number, number][];
-  // public pixel_size: [number, number, number];
-  /* eslint-enable @typescript-eslint/naming-convention */
 
   constructor(imageInfo: ImageInfo = getDefaultImageInfo(), loadSpec: LoadSpec = new LoadSpec()) {
     // imageMetadata to be filled in by Volume Loaders

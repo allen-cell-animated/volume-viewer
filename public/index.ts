@@ -1103,7 +1103,6 @@ function goToZSlice(slice: number): boolean {
 }
 
 function createTestVolume() {
-  /* eslint-disable @typescript-eslint/naming-convention */
   const imgData: ImageInfo = {
     name: "AICS-10_5_5",
     version: "0.0.0",
@@ -1125,7 +1124,6 @@ function createTestVolume() {
 
     transform: { translation: new Vector3(0, 0, 0), rotation: new Vector3(0, 0, 0) },
   };
-  /* eslint-enable @typescript-eslint/naming-convention */
 
   // generate some raw volume data
   const channelVolumes = [
