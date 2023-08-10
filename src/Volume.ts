@@ -127,9 +127,6 @@ export default class Volume {
   public loadSpec: LoadSpec;
   public imageMetadata: Record<string, unknown>;
   public name: string;
-  // public x: number;
-  // public y: number;
-  // public z: number;
   public channels: Channel[];
   private volumeDataObservers: VolumeDataObserver[];
   public physicalScale: number;
@@ -160,14 +157,6 @@ export default class Volume {
 
     // clean up some possibly bad data.
     this.validatePixelSize();
-
-    // TODO clean up these unused properties or replace them with whatever seems most sensible
-    // this.pixel_size = [this.imageInfo.pixel_size_x, this.imageInfo.pixel_size_y, this.imageInfo.pixel_size_z];
-    // this.x = this.imageInfo.tile_width;
-    // this.y = this.imageInfo.tile_height;
-    // this.z = this.imageInfo.tiles;
-
-    // this.num_channels = this.imageInfo.channels;
 
     // TODO do we really want this copied value?
     this.channelNames = this.imageInfo.channelNames.slice();
@@ -203,10 +192,6 @@ export default class Volume {
   }
 
   updateDimensions() {
-    // TODO cleanup here too!
-    // this.x = this.imageInfo.tile_width;
-    // this.y = this.imageInfo.tile_height;
-    // this.z = this.imageInfo.tiles;
     const { pixelSize, volumeSize, regionSize, regionOffset } = this.imageInfo;
 
     this.setVoxelSize(pixelSize);
