@@ -56,11 +56,6 @@ function checkVolumeConstruction(v: Volume, imgdata: ImageInfo) {
 
   const mx = Math.max(Math.max(v.normPhysicalSize.x, v.normPhysicalSize.y), v.normPhysicalSize.z);
   expect(mx).to.equal(1.0);
-
-  // TODO cleanup?
-  // expect(v.x).to.equal(imgdata.tile_width);
-  // expect(v.y).to.equal(imgdata.tile_height);
-  // expect(v.z).to.equal(imgdata.tiles);
 }
 
 function checkChannelDataConstruction(c: Channel, index: number, imgdata: ImageInfo) {
@@ -108,8 +103,8 @@ describe("test volume", () => {
 
   describe("property validation", () => {
     it("has a correct value for normalizedPhysicalSize", () => {
-      // `Volume` formerly derived a `scale` property by a different means than `normalizedPhysicalSize`, but depended
-      // on `scale` and `normalizedPhysicalSize` being equal. With `scale` gone, this test ensures the equality stays.
+      // `Volume` formerly derived a `scale` property by a different means than `normPhysicalSize`, but depended
+      // on `scale` and `normPhysicalSize` being equal. With `scale` gone, this test ensures the equality stays.
       const v = new Volume(testimgdata);
       const { originalSize, volumeSize, pixelSize } = v.imageInfo;
       const sizemax = Math.max(originalSize.x, originalSize.y, volumeSize.z);
