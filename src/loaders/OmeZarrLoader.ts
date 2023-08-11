@@ -322,7 +322,7 @@ class OMEZarrLoader implements IVolumeLoader {
       version: displayMetadata.version,
 
       originalSize: new Vector2(spec0.maxx - spec0.minx, spec0.maxy - spec0.miny),
-      atlasDims: new Vector2(nrows, ncols),
+      atlasTileDims: new Vector2(nrows, ncols),
       volumeSize: new Vector3(tw, th, tz),
       regionSize: new Vector3(tw, th, tz),
       regionOffset: new Vector3(0, 0, 0),
@@ -415,7 +415,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const offset = convertLoadSpecRegionToPixels(vol.loadSpec, vx, vy, vz);
     vol.imageInfo = {
       ...vol.imageInfo,
-      atlasDims: new Vector2(nrows, ncols),
+      atlasTileDims: new Vector2(nrows, ncols),
       volumeSize: new Vector3(vx, vy, vz),
       regionSize: new Vector3(tw, th, tz),
       regionOffset: new Vector3(offset.minx, offset.miny, offset.minz),

@@ -12,7 +12,7 @@ const testimgdata: ImageInfo = {
   version: "0.0.0",
 
   originalSize: new Vector2(306, 494),
-  atlasDims: new Vector2(7, 10),
+  atlasTileDims: new Vector2(7, 10),
   volumeSize: new Vector3(204, 292, 65),
   regionSize: new Vector3(204, 292, 65),
   regionOffset: new Vector3(0, 0, 0),
@@ -61,8 +61,8 @@ function checkVolumeConstruction(v: Volume, imgdata: ImageInfo) {
 function checkChannelDataConstruction(c: Channel, index: number, imgdata: ImageInfo) {
   expect(c.loaded).to.be.true;
   expect(c.name).to.equal(imgdata.channelNames[index]);
-  const atlasWidth = imgdata.atlasDims.x * imgdata.regionSize.x;
-  const atlasHeight = imgdata.atlasDims.y * imgdata.regionSize.y;
+  const atlasWidth = imgdata.atlasTileDims.x * imgdata.regionSize.x;
+  const atlasHeight = imgdata.atlasTileDims.y * imgdata.regionSize.y;
   expect(c.imgData.width).to.equal(atlasWidth);
   expect(c.imgData.height).to.equal(atlasHeight);
   expect(c.imgData.data).to.be.a("Uint8ClampedArray");

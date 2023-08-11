@@ -73,11 +73,11 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.setUniform("volumeScale", scale);
     this.boxHelper.box.set(scale.clone().multiplyScalar(-0.5), scale.clone().multiplyScalar(0.5));
 
-    const { atlasDims, regionSize, volumeSize } = this.volume.imageInfo;
-    const atlasSize = new Vector2(regionSize.x, regionSize.y).multiply(atlasDims);
+    const { atlasTileDims, regionSize, volumeSize } = this.volume.imageInfo;
+    const atlasSize = new Vector2(regionSize.x, regionSize.y).multiply(atlasTileDims);
 
     // set lots of dimension uniforms
-    this.setUniform("ATLAS_DIMS", atlasDims);
+    this.setUniform("ATLAS_DIMS", atlasTileDims);
     this.setUniform("textureRes", atlasSize);
     this.setUniform("SLICES", volumeSize.z);
     this.setUniform("SUBSET_SCALE", this.volume.normRegionSize);

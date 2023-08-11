@@ -123,7 +123,7 @@ class TiffLoader implements IVolumeLoader {
       version: "1.0",
 
       originalSize: new Vector2(dims.sizex, dims.sizey),
-      atlasDims: new Vector2(nrows, ncols),
+      atlasTileDims: new Vector2(nrows, ncols),
       volumeSize: new Vector3(tilesizex, tilesizey, dims.sizez),
       regionSize: new Vector3(tilesizex, tilesizey, dims.sizez),
       regionOffset: new Vector3(0, 0, 0),

@@ -12,8 +12,11 @@ export type ImageInfo = {
   /** XY size of the *original* (not downsampled) volume, in pixels */
   // If we ever allow downsampling in z, replace with Vector3
   originalSize: Vector2;
-  /** Number of rows and columns of z-slice tiles (not pixels) in the texture atlas */
-  atlasDims: Vector2;
+  /**
+   * XY dimensions of the texture atlas used by `RayMarchedAtlasVolume` and `Atlas2DSlice`, in number of z-slice
+   * tiles (not pixels). Chosen by the loader to lay out the 3D volume in the squarest possible 2D texture atlas.
+   */
+  atlasTileDims: Vector2;
   /** Size of the volume, in pixels */
   volumeSize: Vector3;
   /** Size of the currently loaded subregion, in pixels */
@@ -45,7 +48,7 @@ export const getDefaultImageInfo = (): ImageInfo => ({
   name: "",
   version: "",
   originalSize: new Vector2(1, 1),
-  atlasDims: new Vector2(1, 1),
+  atlasTileDims: new Vector2(1, 1),
   volumeSize: new Vector3(1, 1, 1),
   regionSize: new Vector3(1, 1, 1),
   regionOffset: new Vector3(0, 0, 0),
@@ -272,14 +275,14 @@ export default class Volume {
    * @param {Uint8Array} volumeData
    */
   setChannelDataFromVolume(channelIndex: number, volumeData: Uint8Array): void {
-    const { regionSize, atlasDims } = this.imageInfo;
+    const { regionSize, atlasTileDims } = this.imageInfo;
     this.channels[channelIndex].setFromVolumeData(
       volumeData,
       regionSize.x,
       regionSize.y,
       regionSize.z,
-      atlasDims.x * regionSize.x,
-      atlasDims.y * regionSize.y
+      atlasTileDims.x * regionSize.x,
+      atlasTileDims.y * regionSize.y
     );
     this.onChannelLoaded([channelIndex]);
   }

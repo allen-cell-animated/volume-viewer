@@ -927,8 +927,8 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
       // create the main volume and add to view (this is the only place)
       myState.volume = new Volume(myJson);
 
-      const atlasWidth = myJson.regionSize.x * myJson.atlasDims.x;
-      const atlasHeight = myJson.regionSize.y * myJson.atlasDims.y;
+      const atlasWidth = myJson.regionSize.x * myJson.atlasTileDims.x;
+      const atlasHeight = myJson.regionSize.y * myJson.atlasTileDims.y;
 
       // TODO: this can go in the Volume and Channel constructors!
       // preallocate some memory to be filled in later
@@ -1108,7 +1108,7 @@ function createTestVolume() {
     version: "0.0.0",
 
     originalSize: new Vector2(64, 64),
-    atlasDims: new Vector2(8, 8),
+    atlasTileDims: new Vector2(8, 8),
     volumeSize: new Vector3(64, 64, 64),
     regionSize: new Vector3(64, 64, 64),
     regionOffset: new Vector3(0, 0, 0),
