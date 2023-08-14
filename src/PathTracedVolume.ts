@@ -83,7 +83,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.viewChannels = [-1, -1, -1, -1];
 
     // create volume texture
-    const { x: sx, y: sy, z: sz } = volume.imageInfo.regionSize;
+    const { x: sx, y: sy, z: sz } = volume.imageInfo.subregionSize;
     const data = new Uint8Array(sx * sy * sz * 4).fill(0);
     // defaults to rgba and unsignedbytetype so dont need to supply format this time.
     this.volumeTexture = new Data3DTexture(data, sx, sy, sz);
@@ -578,7 +578,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   }
 
   updateVolumeData4(): void {
-    const { x: sx, y: sy, z: sz } = this.volume.imageInfo.regionSize;
+    const { x: sx, y: sy, z: sz } = this.volume.imageInfo.subregionSize;
 
     const data = new Uint8Array(sx * sy * sz * 4);
     data.fill(0);

@@ -66,8 +66,8 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
   originalSize: new Vector2(json.width, json.height),
   atlasTileDims: new Vector2(json.cols, json.rows),
   volumeSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
-  regionSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
-  regionOffset: new Vector3(0, 0, 0),
+  subregionSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
+  subregionOffset: new Vector3(0, 0, 0),
   physicalPixelSize: new Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
   spatialUnit: json.pixel_size_unit || "μm",
 

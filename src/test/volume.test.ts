@@ -13,8 +13,8 @@ const testimgdata: ImageInfo = {
   originalSize: new Vector2(306, 494),
   atlasTileDims: new Vector2(7, 10),
   volumeSize: new Vector3(204, 292, 65),
-  regionSize: new Vector3(204, 292, 65),
-  regionOffset: new Vector3(0, 0, 0),
+  subregionSize: new Vector3(204, 292, 65),
+  subregionOffset: new Vector3(0, 0, 0),
   physicalPixelSize: new Vector3(0.065, 0.065, 0.29),
   spatialUnit: "",
 
@@ -60,8 +60,8 @@ function checkVolumeConstruction(v: Volume, imgdata: ImageInfo) {
 function checkChannelDataConstruction(c: Channel, index: number, imgdata: ImageInfo) {
   expect(c.loaded).to.be.true;
   expect(c.name).to.equal(imgdata.channelNames[index]);
-  const atlasWidth = imgdata.atlasTileDims.x * imgdata.regionSize.x;
-  const atlasHeight = imgdata.atlasTileDims.y * imgdata.regionSize.y;
+  const atlasWidth = imgdata.atlasTileDims.x * imgdata.subregionSize.x;
+  const atlasHeight = imgdata.atlasTileDims.y * imgdata.subregionSize.y;
   expect(c.imgData.width).to.equal(atlasWidth);
   expect(c.imgData.height).to.equal(atlasHeight);
   expect(c.imgData.data).to.be.a("Uint8ClampedArray");
@@ -79,7 +79,7 @@ describe("test volume", () => {
     });
 
     it("loaded channel data", () => {
-      const size = v.imageInfo.regionSize;
+      const size = v.imageInfo.subregionSize;
 
       const conedata = VolumeMaker.createCone(size.x, size.y, size.z, size.x / 8, size.z);
 

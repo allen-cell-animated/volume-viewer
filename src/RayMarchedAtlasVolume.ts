@@ -90,8 +90,8 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.settings && this.updateSettings(this.settings, SettingsFlags.ROI);
 
     // Set atlas dimension uniforms
-    const { atlasTileDims, regionSize } = this.volume.imageInfo;
-    const atlasSize = new Vector2(regionSize.x, regionSize.y).multiply(atlasTileDims);
+    const { atlasTileDims, subregionSize } = this.volume.imageInfo;
+    const atlasSize = new Vector2(subregionSize.x, subregionSize.y).multiply(atlasTileDims);
 
     this.setUniform("ATLAS_DIMS", atlasTileDims);
 

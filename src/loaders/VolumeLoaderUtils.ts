@@ -118,8 +118,8 @@ function isEmpty(obj) {
 export function buildDefaultMetadata(imageInfo: ImageInfo): Record<string, unknown> {
   const physicalSize = imageInfo.volumeSize.clone().multiply(imageInfo.physicalPixelSize);
   const metadata = {};
-  metadata["Dimensions"] = { ...imageInfo.regionSize };
-  metadata["Original dimensions"] = { ...imageInfo.originalSize, z: imageInfo.regionSize.z };
+  metadata["Dimensions"] = { ...imageInfo.subregionSize };
+  metadata["Original dimensions"] = { ...imageInfo.originalSize, z: imageInfo.subregionSize.z };
   metadata["Physical size"] = {
     x: physicalSize.x + imageInfo.spatialUnit,
     y: physicalSize.y + imageInfo.spatialUnit,

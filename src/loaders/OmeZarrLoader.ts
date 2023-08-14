@@ -323,8 +323,8 @@ class OMEZarrLoader implements IVolumeLoader {
       originalSize: new Vector2(spec0.maxx - spec0.minx, spec0.maxy - spec0.miny),
       atlasTileDims: new Vector2(nrows, ncols),
       volumeSize: new Vector3(tw, th, tz),
-      regionSize: new Vector3(tw, th, tz),
-      regionOffset: new Vector3(0, 0, 0),
+      subregionSize: new Vector3(tw, th, tz),
+      subregionOffset: new Vector3(0, 0, 0),
       physicalPixelSize: new Vector3(scale5d[x], scale5d[y], scale5d[z]),
       spatialUnit: spaceUnitSymbol,
 
@@ -416,8 +416,8 @@ class OMEZarrLoader implements IVolumeLoader {
       ...vol.imageInfo,
       atlasTileDims: new Vector2(nrows, ncols),
       volumeSize: new Vector3(vx, vy, vz),
-      regionSize: new Vector3(tw, th, tz),
-      regionOffset: new Vector3(offset.minx, offset.miny, offset.minz),
+      subregionSize: new Vector3(tw, th, tz),
+      subregionOffset: new Vector3(offset.minx, offset.miny, offset.minz),
     };
     vol.updateDimensions();
   }

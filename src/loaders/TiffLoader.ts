@@ -124,8 +124,8 @@ class TiffLoader implements IVolumeLoader {
       originalSize: new Vector2(dims.sizex, dims.sizey),
       atlasTileDims: new Vector2(nrows, ncols),
       volumeSize: new Vector3(tilesizex, tilesizey, dims.sizez),
-      regionSize: new Vector3(tilesizex, tilesizey, dims.sizez),
-      regionOffset: new Vector3(0, 0, 0),
+      subregionSize: new Vector3(tilesizex, tilesizey, dims.sizez),
+      subregionOffset: new Vector3(0, 0, 0),
       physicalPixelSize: new Vector3(dims.pixelsizex, dims.pixelsizey, dims.pixelsizez),
       spatialUnit: dims.unit || "",
 

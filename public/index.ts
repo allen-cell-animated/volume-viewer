@@ -927,8 +927,8 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
       // create the main volume and add to view (this is the only place)
       myState.volume = new Volume(myJson);
 
-      const atlasWidth = myJson.regionSize.x * myJson.atlasTileDims.x;
-      const atlasHeight = myJson.regionSize.y * myJson.atlasTileDims.y;
+      const atlasWidth = myJson.subregionSize.x * myJson.atlasTileDims.x;
+      const atlasHeight = myJson.subregionSize.y * myJson.atlasTileDims.y;
 
       // TODO: this can go in the Volume and Channel constructors!
       // preallocate some memory to be filled in later
@@ -939,7 +939,7 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
           height: atlasHeight,
         };
         myState.volume.channels[i].volumeData = new Uint8Array(
-          myJson.regionSize.x * myJson.regionSize.y * myJson.regionSize.z
+          myJson.subregionSize.x * myJson.subregionSize.y * myJson.subregionSize.z
         );
         // TODO also preallocate the Fused data texture
       }
@@ -1109,8 +1109,8 @@ function createTestVolume() {
     originalSize: new Vector2(64, 64),
     atlasTileDims: new Vector2(8, 8),
     volumeSize: new Vector3(64, 64, 64),
-    regionSize: new Vector3(64, 64, 64),
-    regionOffset: new Vector3(0, 0, 0),
+    subregionSize: new Vector3(64, 64, 64),
+    subregionOffset: new Vector3(0, 0, 0),
     physicalPixelSize: new Vector3(1, 1, 1),
     spatialUnit: "",
 
@@ -1126,9 +1126,9 @@ function createTestVolume() {
 
   // generate some raw volume data
   const channelVolumes = [
-    VolumeMaker.createSphere(imgData.regionSize.x, imgData.regionSize.y, imgData.regionSize.z, 24),
-    VolumeMaker.createTorus(imgData.regionSize.x, imgData.regionSize.y, imgData.regionSize.z, 24, 8),
-    VolumeMaker.createCone(imgData.regionSize.x, imgData.regionSize.y, imgData.regionSize.z, 24, 24),
+    VolumeMaker.createSphere(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24),
+    VolumeMaker.createTorus(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 8),
+    VolumeMaker.createCone(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 24),
   ];
   return {
     imgData: imgData,
@@ -1164,7 +1164,7 @@ async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader, cacheTimeSe
   myState.currentImageName = loadSpec.url;
 
   // Set default zSlice
-  goToZSlice(Math.floor(volume.imageInfo.regionSize.z / 2));
+  goToZSlice(Math.floor(volume.imageInfo.subregionSize.z / 2));
 }
 
 function loadTestData(testdata: TestDataSpec) {

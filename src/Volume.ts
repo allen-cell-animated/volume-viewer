@@ -19,9 +19,9 @@ export type ImageInfo = {
   /** Size of the volume, in pixels */
   volumeSize: Vector3;
   /** Size of the currently loaded subregion, in pixels */
-  regionSize: Vector3;
+  subregionSize: Vector3;
   /** Offset of the loaded subregion into the total volume, in pixels */
-  regionOffset: Vector3;
+  subregionOffset: Vector3;
   /** Size of a single *original* (not downsampled) pixel, in spatial units */
   physicalPixelSize: Vector3;
   /** Symbol of physical spatial unit used by `pixelSize` */
@@ -48,8 +48,8 @@ export const getDefaultImageInfo = (): ImageInfo => ({
   originalSize: new Vector2(1, 1),
   atlasTileDims: new Vector2(1, 1),
   volumeSize: new Vector3(1, 1, 1),
-  regionSize: new Vector3(1, 1, 1),
-  regionOffset: new Vector3(0, 0, 0),
+  subregionSize: new Vector3(1, 1, 1),
+  subregionOffset: new Vector3(0, 0, 0),
   physicalPixelSize: new Vector3(1, 1, 1),
   spatialUnit: "",
   numChannels: 0,
@@ -176,7 +176,7 @@ export default class Volume {
       const channel = new Channel(this.channelNames[i]);
       this.channels.push(channel);
       // TODO pass in channel constructor...
-      channel.dims = this.imageInfo.regionSize.toArray();
+      channel.dims = this.imageInfo.subregionSize.toArray();
     }
 
     this.physicalUnitSymbol = this.imageInfo.spatialUnit;
@@ -193,12 +193,12 @@ export default class Volume {
   }
 
   updateDimensions() {
-    const { physicalPixelSize, volumeSize, regionSize, regionOffset } = this.imageInfo;
+    const { physicalPixelSize, volumeSize, subregionSize, subregionOffset } = this.imageInfo;
 
     this.setVoxelSize(physicalPixelSize);
 
-    this.normRegionSize = regionSize.clone().divide(volumeSize);
-    this.normRegionOffset = regionOffset.clone().divide(volumeSize);
+    this.normRegionSize = subregionSize.clone().divide(volumeSize);
+    this.normRegionOffset = subregionOffset.clone().divide(volumeSize);
   }
 
   // we calculate the physical size of the volume (voxels*pixel_size)
@@ -261,7 +261,7 @@ export default class Volume {
    */
   setChannelDataFromAtlas(channelIndex: number, atlasdata: Uint8Array, atlaswidth: number, atlasheight: number): void {
     this.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight);
-    const { x, y, z } = this.imageInfo.regionSize;
+    const { x, y, z } = this.imageInfo.subregionSize;
     this.channels[channelIndex].unpackVolumeFromAtlas(x, y, z);
     this.onChannelLoaded([channelIndex]);
   }
@@ -273,14 +273,14 @@ export default class Volume {
    * @param {Uint8Array} volumeData
    */
   setChannelDataFromVolume(channelIndex: number, volumeData: Uint8Array): void {
-    const { regionSize, atlasTileDims } = this.imageInfo;
+    const { subregionSize, atlasTileDims } = this.imageInfo;
     this.channels[channelIndex].setFromVolumeData(
       volumeData,
-      regionSize.x,
-      regionSize.y,
-      regionSize.z,
-      atlasTileDims.x * regionSize.x,
-      atlasTileDims.y * regionSize.y
+      subregionSize.x,
+      subregionSize.y,
+      subregionSize.z,
+      atlasTileDims.x * subregionSize.x,
+      atlasTileDims.y * subregionSize.y
     );
     this.onChannelLoaded([channelIndex]);
   }

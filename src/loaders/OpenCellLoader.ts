@@ -29,8 +29,8 @@ class OpenCellLoader implements IVolumeLoader {
       originalSize: new Vector2(600, 600),
       atlasTileDims: new Vector2(27, 1),
       volumeSize: new Vector3(600, 600, 27),
-      regionSize: new Vector3(600, 600, 27),
-      regionOffset: new Vector3(0, 0, 0),
+      subregionSize: new Vector3(600, 600, 27),
+      subregionOffset: new Vector3(0, 0, 0),
       physicalPixelSize: new Vector3(1, 1, 2),
       spatialUnit: "µm",
 

@@ -408,7 +408,7 @@ export default class MeshVolume {
     const volumeData = this.volume.channels[channelIndex].volumeData;
 
     const marchingcubes = true;
-    const regionSizeArr = this.volume.imageInfo.regionSize.toArray();
+    const regionSizeArr = this.volume.imageInfo.subregionSize.toArray();
 
     if (marchingcubes) {
       const effect = new MarchingCubes(regionSizeArr, new Material(), false, false, true, volumeData);
