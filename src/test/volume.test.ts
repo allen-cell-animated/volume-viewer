@@ -9,7 +9,6 @@ import Channel from "../Channel";
 // PREPARE SOME TEST DATA TO TRY TO DISPLAY A VOLUME.
 const testimgdata: ImageInfo = {
   name: "AICS-10_5_5",
-  version: "0.0.0",
 
   originalSize: new Vector2(306, 494),
   atlasTileDims: new Vector2(7, 10),

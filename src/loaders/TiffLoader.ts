@@ -120,7 +120,6 @@ class TiffLoader implements IVolumeLoader {
 
     const imgdata: ImageInfo = {
       name: "TEST",
-      version: "1.0",
 
       originalSize: new Vector2(dims.sizex, dims.sizey),
       atlasTileDims: new Vector2(nrows, ncols),

@@ -62,7 +62,6 @@ type JsonImageInfo = {
 
 const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
   name: json.name,
-  version: json.version || "",
 
   originalSize: new Vector2(json.width, json.height),
   atlasTileDims: new Vector2(json.cols, json.rows),

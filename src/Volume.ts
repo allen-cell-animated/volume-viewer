@@ -7,7 +7,6 @@ import { LoadSpec } from "./loaders/IVolumeLoader";
 
 export type ImageInfo = {
   name: string;
-  version?: string;
 
   /** XY size of the *original* (not downsampled) volume, in pixels */
   // If we ever allow downsampling in z, replace with Vector3
@@ -46,7 +45,6 @@ export type ImageInfo = {
 
 export const getDefaultImageInfo = (): ImageInfo => ({
   name: "",
-  version: "",
   originalSize: new Vector2(1, 1),
   atlasTileDims: new Vector2(1, 1),
   volumeSize: new Vector3(1, 1, 1),

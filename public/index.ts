@@ -1105,7 +1105,6 @@ function goToZSlice(slice: number): boolean {
 function createTestVolume() {
   const imgData: ImageInfo = {
     name: "AICS-10_5_5",
-    version: "0.0.0",
 
     originalSize: new Vector2(64, 64),
     atlasTileDims: new Vector2(8, 8),

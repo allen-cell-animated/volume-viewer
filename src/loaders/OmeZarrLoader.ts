@@ -319,7 +319,6 @@ class OMEZarrLoader implements IVolumeLoader {
 
     const imgdata: ImageInfo = {
       name: displayMetadata.name,
-      version: displayMetadata.version,
 
       originalSize: new Vector2(spec0.maxx - spec0.minx, spec0.maxy - spec0.miny),
       atlasTileDims: new Vector2(nrows, ncols),
