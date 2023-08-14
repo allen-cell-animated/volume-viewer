@@ -16,7 +16,7 @@ const testimgdata: ImageInfo = {
   volumeSize: new Vector3(204, 292, 65),
   regionSize: new Vector3(204, 292, 65),
   regionOffset: new Vector3(0, 0, 0),
-  pixelSize: new Vector3(0.065, 0.065, 0.29),
+  physicalPixelSize: new Vector3(0.065, 0.065, 0.29),
   spatialUnit: "",
 
   numChannels: 9,
@@ -46,8 +46,8 @@ function checkVolumeConstruction(v: Volume, imgdata: ImageInfo) {
   expect(v).to.be.a("Object");
   expect(v.isLoaded()).to.not.be.ok;
 
-  const { originalSize, volumeSize, pixelSize } = imgdata;
-  const physicalSize = new Vector3(originalSize.x, originalSize.y, volumeSize.z).multiply(pixelSize);
+  const { originalSize, volumeSize, physicalPixelSize } = imgdata;
+  const physicalSize = new Vector3(originalSize.x, originalSize.y, volumeSize.z).multiply(physicalPixelSize);
   expect(v.physicalSize.x).to.equal(physicalSize.x);
   expect(v.physicalSize.y).to.equal(physicalSize.y);
   expect(v.physicalSize.z).to.equal(physicalSize.z);
@@ -106,14 +106,14 @@ describe("test volume", () => {
       // `Volume` formerly derived a `scale` property by a different means than `normPhysicalSize`, but depended
       // on `scale` and `normPhysicalSize` being equal. With `scale` gone, this test ensures the equality stays.
       const v = new Volume(testimgdata);
-      const { originalSize, volumeSize, pixelSize } = v.imageInfo;
+      const { originalSize, volumeSize, physicalPixelSize } = v.imageInfo;
       const sizemax = Math.max(originalSize.x, originalSize.y, volumeSize.z);
 
-      const pxmin = Math.min(pixelSize.x, pixelSize.y, pixelSize.z);
+      const pxmin = Math.min(physicalPixelSize.x, physicalPixelSize.y, physicalPixelSize.z);
 
-      const sx = ((pixelSize.x / pxmin) * originalSize.x) / sizemax;
-      const sy = ((pixelSize.y / pxmin) * originalSize.y) / sizemax;
-      const sz = ((pixelSize.z / pxmin) * volumeSize.z) / sizemax;
+      const sx = ((physicalPixelSize.x / pxmin) * originalSize.x) / sizemax;
+      const sy = ((physicalPixelSize.y / pxmin) * originalSize.y) / sizemax;
+      const sz = ((physicalPixelSize.z / pxmin) * volumeSize.z) / sizemax;
 
       const EPSILON = 0.000000001;
       expect(v.normPhysicalSize.x).to.be.closeTo(sx, EPSILON);

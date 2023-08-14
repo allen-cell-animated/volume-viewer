@@ -24,7 +24,7 @@ export type ImageInfo = {
   /** Offset of the loaded subregion into the total volume, in pixels */
   regionOffset: Vector3;
   /** Size of a single *original* (not downsampled) pixel, in spatial units */
-  pixelSize: Vector3;
+  physicalPixelSize: Vector3;
   /** Symbol of physical spatial unit used by `pixelSize` */
   spatialUnit: string;
 
@@ -52,7 +52,7 @@ export const getDefaultImageInfo = (): ImageInfo => ({
   volumeSize: new Vector3(1, 1, 1),
   regionSize: new Vector3(1, 1, 1),
   regionOffset: new Vector3(0, 0, 0),
-  pixelSize: new Vector3(1, 1, 1),
+  physicalPixelSize: new Vector3(1, 1, 1),
   spatialUnit: "",
   numChannels: 0,
   channelNames: [],
@@ -183,21 +183,21 @@ export default class Volume {
 
     this.physicalUnitSymbol = this.imageInfo.spatialUnit;
     this.tickMarkPhysicalLength = 1;
-    this.setVoxelSize(this.imageInfo.pixelSize);
+    this.setVoxelSize(this.imageInfo.physicalPixelSize);
 
     this.volumeDataObservers = [];
   }
 
   private validatePixelSize() {
-    this.imageInfo.pixelSize.x = this.imageInfo.pixelSize.x || 1.0;
-    this.imageInfo.pixelSize.y = this.imageInfo.pixelSize.y || 1.0;
-    this.imageInfo.pixelSize.z = this.imageInfo.pixelSize.z || 1.0;
+    this.imageInfo.physicalPixelSize.x = this.imageInfo.physicalPixelSize.x || 1.0;
+    this.imageInfo.physicalPixelSize.y = this.imageInfo.physicalPixelSize.y || 1.0;
+    this.imageInfo.physicalPixelSize.z = this.imageInfo.physicalPixelSize.z || 1.0;
   }
 
   updateDimensions() {
-    const { pixelSize, volumeSize, regionSize, regionOffset } = this.imageInfo;
+    const { physicalPixelSize, volumeSize, regionSize, regionOffset } = this.imageInfo;
 
-    this.setVoxelSize(pixelSize);
+    this.setVoxelSize(physicalPixelSize);
 
     this.normRegionSize = regionSize.clone().divide(volumeSize);
     this.normRegionOffset = regionOffset.clone().divide(volumeSize);
@@ -208,10 +208,10 @@ export default class Volume {
   setVoxelSize(size: Vector3): void {
     // only set the data if it is > 0.  zero is not an allowed value.
     // TODO this indicates that maybe pixel size should stick around?
-    this.imageInfo.pixelSize = size;
+    this.imageInfo.physicalPixelSize = size;
     this.validatePixelSize();
 
-    this.physicalSize = getOriginalSize3(this.imageInfo).multiply(this.imageInfo.pixelSize);
+    this.physicalSize = getOriginalSize3(this.imageInfo).multiply(this.imageInfo.physicalPixelSize);
     // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
     this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z);
     // Compute the volume's max extent - scaled to max dimension.
@@ -385,7 +385,7 @@ export default class Volume {
     // ASSUME: translation is in original image voxels.
     // account for pixel_size and normalized scaling in the threejs volume representation we're using
     const m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
-    return new Vector3().fromArray(xyz).multiply(this.imageInfo.pixelSize).multiplyScalar(m).toArray();
+    return new Vector3().fromArray(xyz).multiply(this.imageInfo.physicalPixelSize).multiplyScalar(m).toArray();
   }
 
   addVolumeDataObserver(o: VolumeDataObserver): void {

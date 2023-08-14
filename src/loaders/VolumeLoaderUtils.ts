@@ -116,7 +116,7 @@ function isEmpty(obj) {
 // currently everything needed can come from the imageInfo
 // but in the future each IVolumeLoader could have a completely separate implementation.
 export function buildDefaultMetadata(imageInfo: ImageInfo): Record<string, unknown> {
-  const physicalSize = imageInfo.volumeSize.clone().multiply(imageInfo.pixelSize);
+  const physicalSize = imageInfo.volumeSize.clone().multiply(imageInfo.physicalPixelSize);
   const metadata = {};
   metadata["Dimensions"] = { ...imageInfo.regionSize };
   metadata["Original dimensions"] = { ...imageInfo.originalSize, z: imageInfo.regionSize.z };
@@ -126,9 +126,9 @@ export function buildDefaultMetadata(imageInfo: ImageInfo): Record<string, unkno
     z: physicalSize.z + imageInfo.spatialUnit,
   };
   metadata["Physical size per pixel"] = {
-    x: imageInfo.pixelSize.x + imageInfo.spatialUnit,
-    y: imageInfo.pixelSize.y + imageInfo.spatialUnit,
-    z: imageInfo.pixelSize.z + imageInfo.spatialUnit,
+    x: imageInfo.physicalPixelSize.x + imageInfo.spatialUnit,
+    y: imageInfo.physicalPixelSize.y + imageInfo.spatialUnit,
+    z: imageInfo.physicalPixelSize.z + imageInfo.spatialUnit,
   };
   metadata["Channels"] = imageInfo.numChannels;
   metadata["Time series frames"] = imageInfo.times || 1;

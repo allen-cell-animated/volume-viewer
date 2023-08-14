@@ -326,7 +326,7 @@ class OMEZarrLoader implements IVolumeLoader {
       volumeSize: new Vector3(tw, th, tz),
       regionSize: new Vector3(tw, th, tz),
       regionOffset: new Vector3(0, 0, 0),
-      pixelSize: new Vector3(scale5d[x], scale5d[y], scale5d[z]),
+      physicalPixelSize: new Vector3(scale5d[x], scale5d[y], scale5d[z]),
       spatialUnit: spaceUnitSymbol,
 
       numChannels: channels,

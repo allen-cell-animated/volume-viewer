@@ -32,7 +32,7 @@ class OpenCellLoader implements IVolumeLoader {
       volumeSize: new Vector3(600, 600, 27),
       regionSize: new Vector3(600, 600, 27),
       regionOffset: new Vector3(0, 0, 0),
-      pixelSize: new Vector3(1, 1, 2),
+      physicalPixelSize: new Vector3(1, 1, 2),
       spatialUnit: "µm",
 
       numChannels: numChannels,

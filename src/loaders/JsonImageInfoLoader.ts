@@ -69,7 +69,7 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
   volumeSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
   regionSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
   regionOffset: new Vector3(0, 0, 0),
-  pixelSize: new Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
+  physicalPixelSize: new Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
   spatialUnit: json.pixel_size_unit || "μm",
 
   numChannels: json.channels,

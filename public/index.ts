@@ -1112,7 +1112,7 @@ function createTestVolume() {
     volumeSize: new Vector3(64, 64, 64),
     regionSize: new Vector3(64, 64, 64),
     regionOffset: new Vector3(0, 0, 0),
-    pixelSize: new Vector3(1, 1, 1),
+    physicalPixelSize: new Vector3(1, 1, 1),
     spatialUnit: "",
 
     numChannels: 3,
