@@ -45,7 +45,7 @@ function checkVolumeConstruction(v: Volume, imgdata: ImageInfo) {
   expect(v).to.be.a("Object");
   expect(v.isLoaded()).to.not.be.ok;
 
-  const { originalSize, volumeSize, physicalPixelSize } = imgdata;
+  const { originalSize, physicalPixelSize } = imgdata;
   const physicalSize = originalSize.clone().multiply(physicalPixelSize);
   expect(v.physicalSize.x).to.equal(physicalSize.x);
   expect(v.physicalSize.y).to.equal(physicalSize.y);
