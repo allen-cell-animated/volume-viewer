@@ -62,7 +62,7 @@ export default class MeshVolume {
   }
 
   cleanup(): void {
-    for (let i = 0; i < this.volume.num_channels; ++i) {
+    for (let i = 0; i < this.volume.imageInfo.numChannels; ++i) {
       this.destroyIsosurface(i);
     }
   }
@@ -133,7 +133,7 @@ export default class MeshVolume {
     this.channelColors = channelColors;
 
     // update existing meshes
-    for (let i = 0; i < this.volume.num_channels; ++i) {
+    for (let i = 0; i < this.volume.imageInfo.numChannels; ++i) {
       const meshrep = this.meshrep[i];
       if (meshrep) {
         const rgb = channelColors[i];
@@ -343,7 +343,7 @@ export default class MeshVolume {
     }
 
     if (type === "STL") {
-      this.exportSTL(meshrep, namePrefix + "_" + this.volume.channel_names[channelIndex]);
+      this.exportSTL(meshrep, namePrefix + "_" + this.volume.channelNames[channelIndex]);
     } else if (type === "GLTF") {
       // temporarily set other meshreps to invisible
       const prevviz: boolean[] = [];
@@ -354,7 +354,7 @@ export default class MeshVolume {
           meshrepi.visible = i === channelIndex;
         }
       }
-      this.exportGLTF(this.meshRoot, namePrefix + "_" + this.volume.channel_names[channelIndex]);
+      this.exportGLTF(this.meshRoot, namePrefix + "_" + this.volume.channelNames[channelIndex]);
       for (let i = 0; i < this.meshrep.length; ++i) {
         const meshrepi = this.meshrep[i];
         if (meshrepi) {
@@ -408,16 +408,10 @@ export default class MeshVolume {
     const volumeData = this.volume.channels[channelIndex].volumeData;
 
     const marchingcubes = true;
+    const regionSizeArr = this.volume.imageInfo.subregionSize.toArray();
 
     if (marchingcubes) {
-      const effect = new MarchingCubes(
-        [this.volume.x, this.volume.y, this.volume.z],
-        new Material(),
-        false,
-        false,
-        true,
-        volumeData
-      );
+      const effect = new MarchingCubes(regionSizeArr, new Material(), false, false, true, volumeData);
       effect.position.copy(this.meshRoot.position);
       effect.scale.set(0.5 * this.scale.x, 0.5 * this.scale.y, 0.5 * this.scale.z);
       effect.isovalue = isovalue;
@@ -431,7 +425,7 @@ export default class MeshVolume {
       // }
       return geometries || [];
     } else {
-      const result = NaiveSurfaceNets.surfaceNets(volumeData, [this.volume.x, this.volume.y, this.volume.z], isovalue);
+      const result = NaiveSurfaceNets.surfaceNets(volumeData, regionSizeArr, isovalue);
       return NaiveSurfaceNets.constructTHREEGeometry(result);
     }
   }

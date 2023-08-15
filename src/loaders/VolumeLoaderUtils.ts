@@ -116,20 +116,21 @@ function isEmpty(obj) {
 // currently everything needed can come from the imageInfo
 // but in the future each IVolumeLoader could have a completely separate implementation.
 export function buildDefaultMetadata(imageInfo: ImageInfo): Record<string, unknown> {
+  const physicalSize = imageInfo.volumeSize.clone().multiply(imageInfo.physicalPixelSize);
   const metadata = {};
-  metadata["Dimensions"] = { x: imageInfo.tile_width, y: imageInfo.tile_height, z: imageInfo.tiles };
-  metadata["Original dimensions"] = { x: imageInfo.width, y: imageInfo.height, z: imageInfo.tiles };
+  metadata["Dimensions"] = { ...imageInfo.subregionSize };
+  metadata["Original dimensions"] = { ...imageInfo.originalSize };
   metadata["Physical size"] = {
-    x: imageInfo.width * imageInfo.pixel_size_x + imageInfo.pixel_size_unit,
-    y: imageInfo.height * imageInfo.pixel_size_y + imageInfo.pixel_size_unit,
-    z: imageInfo.tiles * imageInfo.pixel_size_z + imageInfo.pixel_size_unit,
+    x: physicalSize.x + imageInfo.spatialUnit,
+    y: physicalSize.y + imageInfo.spatialUnit,
+    z: physicalSize.z + imageInfo.spatialUnit,
   };
   metadata["Physical size per pixel"] = {
-    x: imageInfo.pixel_size_x + imageInfo.pixel_size_unit,
-    y: imageInfo.pixel_size_y + imageInfo.pixel_size_unit,
-    z: imageInfo.pixel_size_z + imageInfo.pixel_size_unit,
+    x: imageInfo.physicalPixelSize.x + imageInfo.spatialUnit,
+    y: imageInfo.physicalPixelSize.y + imageInfo.spatialUnit,
+    z: imageInfo.physicalPixelSize.z + imageInfo.spatialUnit,
   };
-  metadata["Channels"] = imageInfo.channels;
+  metadata["Channels"] = imageInfo.numChannels;
   metadata["Time series frames"] = imageInfo.times || 1;
   // don't add User data if it's empty
   if (imageInfo.userData && !isEmpty(imageInfo.userData)) {

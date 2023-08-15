@@ -1,12 +1,8 @@
 import { expect } from "chai";
 import { Axis, VolumeRenderSettings } from "../VolumeRenderSettings";
 import { Vector3 } from "three";
-import { getDefaultImageInfo } from "../Volume";
 
 describe("VolumeRenderSettingUtils", () => {
-  const defaultImageInfo = getDefaultImageInfo();
-  defaultImageInfo.channels = 1;
-
   it("deeply-copies bounds", () => {
     const s1 = new VolumeRenderSettings();
     const s1BMax = new Vector3(9.0, 9.0, 9.0);

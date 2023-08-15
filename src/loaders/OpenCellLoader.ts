@@ -1,3 +1,5 @@
+import { Vector2, Vector3 } from "three";
+
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import { buildDefaultMetadata } from "./VolumeLoaderUtils";
 import { ImageInfo } from "../Volume";
@@ -21,34 +23,29 @@ class OpenCellLoader implements IVolumeLoader {
     // we know these are standardized to 600x600, two channels, one channel per jpg.
     const chnames: string[] = ["DNA", "Structure"];
 
-    /* eslint-disable @typescript-eslint/naming-convention */
     const imgdata: ImageInfo = {
-      width: 600,
-      height: 600,
-      channels: numChannels,
-      channel_names: chnames,
-      rows: 27,
-      cols: 1,
-      tiles: 27,
-      // for webgl reasons, it is best for total atlas width and height to be <= 2048 and ideally a power of 2.
-      //   This generally implies downsampling the original volume data for display in this viewer.
-      tile_width: 600,
-      tile_height: 600,
-      pixel_size_x: 1,
-      pixel_size_y: 1,
-      pixel_size_z: 2,
       name: "TEST",
-      version: "1.0",
-      pixel_size_unit: "µm",
-      transform: {
-        translation: [0, 0, 0],
-        rotation: [0, 0, 0],
-      },
+
+      originalSize: new Vector3(600, 600, 27),
+      atlasTileDims: new Vector2(27, 1),
+      volumeSize: new Vector3(600, 600, 27),
+      subregionSize: new Vector3(600, 600, 27),
+      subregionOffset: new Vector3(0, 0, 0),
+      physicalPixelSize: new Vector3(1, 1, 2),
+      spatialUnit: "µm",
+
+      numChannels: numChannels,
+      channelNames: chnames,
+
       times: 1,
-      time_scale: 1,
-      time_unit: "",
+      timeScale: 1,
+      timeUnit: "",
+
+      transform: {
+        translation: new Vector3(0, 0, 0),
+        rotation: new Vector3(0, 0, 0),
+      },
     };
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     // got some data, now let's construct the volume.
     const vol = new Volume(imgdata);

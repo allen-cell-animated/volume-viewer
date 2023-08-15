@@ -79,35 +79,29 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   }
 
   public updateVolumeDimensions(): void {
-    const { normalizedPhysicalSize, contentSize } = this.volume;
+    const { normPhysicalSize, normRegionSize } = this.volume;
     // Set offset
     this.geometryMesh.position.copy(this.volume.getContentCenter());
     // Set scale
-    this.geometryMesh.scale.copy(contentSize).multiply(normalizedPhysicalSize);
-    this.setUniform("volumeScale", normalizedPhysicalSize);
-    this.boxHelper.box.set(
-      normalizedPhysicalSize.clone().multiplyScalar(-0.5),
-      normalizedPhysicalSize.clone().multiplyScalar(0.5)
-    );
-    this.tickMarksMesh.scale.copy(normalizedPhysicalSize);
+    this.geometryMesh.scale.copy(normRegionSize).multiply(normPhysicalSize);
+    this.setUniform("volumeScale", normPhysicalSize);
+    this.boxHelper.box.set(normPhysicalSize.clone().multiplyScalar(-0.5), normPhysicalSize.clone().multiplyScalar(0.5));
+    this.tickMarksMesh.scale.copy(normPhysicalSize);
     this.settings && this.updateSettings(this.settings, SettingsFlags.ROI);
 
     // Set atlas dimension uniforms
-    /* eslint-disable-next-line @typescript-eslint/naming-convention */
-    const { cols, rows, tile_width, tile_height } = this.volume.imageInfo;
-    const atlasWidth = tile_width * cols;
-    const atlasHeight = tile_height * rows;
+    const { atlasTileDims, subregionSize } = this.volume.imageInfo;
+    const atlasSize = new Vector2(subregionSize.x, subregionSize.y).multiply(atlasTileDims);
 
-    this.setUniform("ATLAS_X", cols);
-    this.setUniform("ATLAS_Y", rows);
+    this.setUniform("ATLAS_DIMS", atlasTileDims);
 
-    this.setUniform("textureRes", new Vector2(atlasWidth, atlasHeight));
-    this.setUniform("SLICES", this.volume.z);
+    this.setUniform("textureRes", atlasSize);
+    this.setUniform("SLICES", this.volume.imageInfo.volumeSize.z);
 
     // (re)create channel data
-    if (!this.channelData || this.channelData.width !== atlasWidth || this.channelData.height !== atlasHeight) {
+    if (!this.channelData || this.channelData.width !== atlasSize.x || this.channelData.height !== atlasSize.y) {
       this.channelData?.cleanup();
-      this.channelData = new FusedChannelData(atlasWidth, atlasHeight);
+      this.channelData = new FusedChannelData(atlasSize.x, atlasSize.y);
     }
   }
 
@@ -178,10 +172,10 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     if (dirtyFlags & SettingsFlags.ROI) {
       // Normalize and set bounds
       const bounds = this.settings.bounds;
-      const { contentSize, contentOffset } = this.volume;
-      const offsetToCenter = contentSize.clone().divideScalar(2).add(contentOffset).subScalar(0.5);
-      const bmin = bounds.bmin.clone().sub(offsetToCenter).divide(contentSize).clampScalar(-0.5, 0.5);
-      const bmax = bounds.bmax.clone().sub(offsetToCenter).divide(contentSize).clampScalar(-0.5, 0.5);
+      const { normRegionSize, normRegionOffset } = this.volume;
+      const offsetToCenter = normRegionSize.clone().divideScalar(2).add(normRegionOffset).subScalar(0.5);
+      const bmin = bounds.bmin.clone().sub(offsetToCenter).divide(normRegionSize).clampScalar(-0.5, 0.5);
+      const bmax = bounds.bmax.clone().sub(offsetToCenter).divide(normRegionSize).clampScalar(-0.5, 0.5);
 
       this.setUniform("AABB_CLIP_MIN", bmin);
       this.setUniform("AABB_CLIP_MAX", bmax);
@@ -229,13 +223,13 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   private createTickMarks(): LineSegments {
     // Length of tick mark lines in world units
     const TICK_LENGTH = 0.025;
-    const { tickMarkPhysicalLength, physicalScale, normalizedPhysicalSize } = this.volume;
+    const { tickMarkPhysicalLength, physicalScale, normPhysicalSize } = this.volume;
     const numTickMarks = physicalScale / tickMarkPhysicalLength;
 
     const vertices: number[] = [];
 
-    const tickEndY = TICK_LENGTH / normalizedPhysicalSize.y + 0.5;
-    const tickSpacingX = 1 / (normalizedPhysicalSize.x * numTickMarks);
+    const tickEndY = TICK_LENGTH / normPhysicalSize.y + 0.5;
+    const tickSpacingX = 1 / (normPhysicalSize.x * numTickMarks);
     for (let x = -0.5; x <= 0.5; x += tickSpacingX) {
       // prettier-ignore
       vertices.push(
@@ -253,8 +247,8 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       );
     }
 
-    const tickEndX = TICK_LENGTH / normalizedPhysicalSize.x + 0.5;
-    const tickSpacingY = 1 / (normalizedPhysicalSize.y * numTickMarks);
+    const tickEndX = TICK_LENGTH / normPhysicalSize.x + 0.5;
+    const tickSpacingY = 1 / (normPhysicalSize.y * numTickMarks);
     for (let y = 0.5; y >= -0.5; y -= tickSpacingY) {
       // prettier-ignore
       vertices.push(
@@ -272,7 +266,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       );
     }
 
-    const tickSpacingZ = 1 / (normalizedPhysicalSize.z * numTickMarks);
+    const tickSpacingZ = 1 / (normPhysicalSize.z * numTickMarks);
     for (let z = 0.5; z >= -0.5; z -= tickSpacingZ) {
       // prettier-ignore
       vertices.push(

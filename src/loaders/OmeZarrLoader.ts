@@ -1,3 +1,4 @@
+import { Vector2, Vector3 } from "three";
 import { openArray, openGroup, HTTPStore } from "zarr";
 
 import {
@@ -316,37 +317,28 @@ class OMEZarrLoader implements IVolumeLoader {
       chnames.push(displayMetadata.channels[i].label);
     }
 
-    /* eslint-disable @typescript-eslint/naming-convention */
     const imgdata: ImageInfo = {
-      width: spec0.maxx - spec0.minx,
-      height: spec0.maxy - spec0.miny,
-      channels: channels,
-      channel_names: chnames,
-      rows: nrows,
-      cols: ncols,
-      // for webgl reasons, it is best for total atlas width and height to be <= 2048 and ideally a power of 2.
-      //   This generally implies downsampling the original volume data for display in this viewer.
-      tile_width: tw,
-      tile_height: th,
-      tiles: tz,
-      vol_size_x: tw,
-      vol_size_y: th,
-      vol_size_z: tz,
-      pixel_size_x: scale5d[x],
-      pixel_size_y: scale5d[y],
-      pixel_size_z: scale5d[z],
-      pixel_size_unit: spaceUnitSymbol,
       name: displayMetadata.name,
-      version: displayMetadata.version,
-      transform: {
-        translation: [0, 0, 0],
-        rotation: [0, 0, 0],
-      },
+
+      originalSize: new Vector3(spec0.maxx - spec0.minx, spec0.maxy - spec0.miny, spec0.maxz - spec0.minz),
+      atlasTileDims: new Vector2(nrows, ncols),
+      volumeSize: new Vector3(tw, th, tz),
+      subregionSize: new Vector3(tw, th, tz),
+      subregionOffset: new Vector3(0, 0, 0),
+      physicalPixelSize: new Vector3(scale5d[x], scale5d[y], scale5d[z]),
+      spatialUnit: spaceUnitSymbol,
+
+      numChannels: channels,
+      channelNames: chnames,
       times: sizeT,
-      time_scale: timeScale,
-      time_unit: timeUnitSymbol,
+      timeScale: timeScale,
+      timeUnit: timeUnitSymbol,
+
+      transform: {
+        translation: new Vector3(0, 0, 0),
+        rotation: new Vector3(0, 0, 0),
+      },
     };
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     // The `LoadSpec` passed in at this stage should represent the subset which this loader loads, not that
     // which the volume contains. The volume contains the full extent of the subset recognized by this loader.
@@ -371,7 +363,7 @@ class OMEZarrLoader implements IVolumeLoader {
 
     vol.loadSpec = explicitLoadSpec || vol.loadSpec;
     const normLoadSpec = fitLoadSpecRegionToExtent(vol.loadSpec, this.maxExtent);
-    const { channels, times } = vol.imageInfo;
+    const { numChannels, times } = vol.imageInfo;
 
     const imageIndex = imageIndexFromLoadSpec(normLoadSpec, this.metadata.multiscales);
     const multiscale = this.metadata.multiscales[imageIndex];
@@ -388,7 +380,7 @@ class OMEZarrLoader implements IVolumeLoader {
 
     const storepath = normLoadSpec.subpath + "/" + datasetPath;
     // do each channel on a worker
-    for (let i = 0; i < channels; ++i) {
+    for (let i = 0; i < numChannels; ++i) {
       const worker = new Worker(new URL("../workers/FetchZarrWorker", import.meta.url));
       worker.onmessage = (e) => {
         const u8 = e.data.data;
@@ -420,23 +412,13 @@ class OMEZarrLoader implements IVolumeLoader {
     const volsize = convertLoadSpecRegionToPixels(this.maxExtent, levelShape[xi], levelShape[yi], levelShape[zi]);
     const [vx, vy, vz] = getExtentSize(volsize);
     const offset = convertLoadSpecRegionToPixels(vol.loadSpec, vx, vy, vz);
-    /* eslint-disable @typescript-eslint/naming-convention */
     vol.imageInfo = {
       ...vol.imageInfo,
-      rows: nrows,
-      cols: ncols,
-      tile_width: tw,
-      tile_height: th,
-      tiles: tz,
-      offset_x: offset.minx,
-      offset_y: offset.miny,
-      offset_z: offset.minz,
-      // scale level may have changed
-      vol_size_x: vx,
-      vol_size_y: vy,
-      vol_size_z: vz,
+      atlasTileDims: new Vector2(nrows, ncols),
+      volumeSize: new Vector3(vx, vy, vz),
+      subregionSize: new Vector3(tw, th, tz),
+      subregionOffset: new Vector3(offset.minx, offset.miny, offset.minz),
     };
-    /* eslint-enable @typescript-eslint/naming-convention */
     vol.updateDimensions();
   }
 }

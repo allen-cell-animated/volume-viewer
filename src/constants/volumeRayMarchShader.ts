@@ -47,13 +47,9 @@ export const rayMarchingShaderUniforms = () => {
       type: "i",
       value: 128,
     },
-    ATLAS_X: {
-      type: "f",
-      value: 6,
-    },
-    ATLAS_Y: {
-      type: "f",
-      value: 6,
+    ATLAS_DIMS: {
+      type: "v2",
+      value: new Vector2(6, 6),
     },
     SLICES: {
       type: "f",

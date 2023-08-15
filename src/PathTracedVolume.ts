@@ -83,12 +83,10 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.viewChannels = [-1, -1, -1, -1];
 
     // create volume texture
-    const sx = volume.x,
-      sy = volume.y,
-      sz = volume.z;
+    const { x: sx, y: sy, z: sz } = volume.imageInfo.subregionSize;
     const data = new Uint8Array(sx * sy * sz * 4).fill(0);
     // defaults to rgba and unsignedbytetype so dont need to supply format this time.
-    this.volumeTexture = new Data3DTexture(data, volume.x, volume.y, volume.z);
+    this.volumeTexture = new Data3DTexture(data, sx, sy, sz);
     this.volumeTexture.minFilter = this.volumeTexture.magFilter = LinearFilter;
     this.volumeTexture.generateMipmaps = false;
 
@@ -308,13 +306,13 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.pathTracingUniforms.gGradientFactor.value = 50.0; // related to voxel counts also
 
     // bounds will go from 0 to physicalSize
-    const physicalSize = volume.normalizedPhysicalSize;
+    const physicalSize = volume.normPhysicalSize;
 
     this.pathTracingUniforms.gInvAaBbMax.value = new Vector3(
       1.0 / physicalSize.x,
       1.0 / physicalSize.y,
       1.0 / physicalSize.z
-    ).divide(volume.contentSize);
+    ).divide(volume.normRegionSize);
     this.updateLightsSecondary();
 
     // Update settings
@@ -376,16 +374,16 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
     // update bounds
     if (dirtyFlags & SettingsFlags.ROI) {
-      const { normalizedPhysicalSize: physicalSize, contentSize, contentOffset } = this.volume;
+      const { normPhysicalSize, normRegionSize, normRegionOffset } = this.volume;
       const { bmin, bmax } = this.settings.bounds;
 
-      const sizeMin = contentOffset.clone().subScalar(0.5).multiply(physicalSize);
-      const sizeMax = contentOffset.clone().add(contentSize).subScalar(0.5).multiply(physicalSize);
+      const sizeMin = normRegionOffset.clone().subScalar(0.5).multiply(normPhysicalSize);
+      const sizeMax = normRegionOffset.clone().add(normRegionSize).subScalar(0.5).multiply(normPhysicalSize);
 
-      const clipMin = bmin.clone().multiply(physicalSize);
+      const clipMin = bmin.clone().multiply(normPhysicalSize);
       this.pathTracingUniforms.gClippedAaBbMin.value = clipMin.clamp(sizeMin, sizeMax);
 
-      const clipMax = bmax.clone().multiply(physicalSize);
+      const clipMax = bmax.clone().multiply(normPhysicalSize);
       this.pathTracingUniforms.gClippedAaBbMax.value = clipMax.clamp(sizeMin, sizeMax);
 
       this.pathTracingUniforms.gVolCenter.value = this.volume.getContentCenter();
@@ -554,7 +552,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   updateActiveChannels(channelColors: FuseChannel[], channelData: Channel[]): void {
     const ch = [-1, -1, -1, -1];
     let activeChannel = 0;
-    const NC = this.volume.num_channels;
+    const NC = this.volume.imageInfo.numChannels;
     const maxch = 4;
     for (let i = 0; i < NC && activeChannel < maxch; ++i) {
       // check that channel is not disabled and is loaded
@@ -580,9 +578,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   }
 
   updateVolumeData4(): void {
-    const sx = this.volume.x,
-      sy = this.volume.y,
-      sz = this.volume.z;
+    const { x: sx, y: sy, z: sz } = this.volume.imageInfo.subregionSize;
 
     const data = new Uint8Array(sx * sy * sz * 4);
     data.fill(0);
@@ -717,7 +713,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   }
 
   updateLightsSecondary(cameraMatrix?: Matrix4): void {
-    const physicalSize = this.volume.normalizedPhysicalSize;
+    const physicalSize = this.volume.normPhysicalSize;
     const bbctr = new Vector3(physicalSize.x * 0.5, physicalSize.y * 0.5, physicalSize.z * 0.5);
 
     for (let i = 0; i < 2; ++i) {
@@ -732,7 +728,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       bmin: new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
       bmax: new Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5),
     };
-    const physicalSize = this.volume.normalizedPhysicalSize;
+    const physicalSize = this.volume.normPhysicalSize;
     this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
       xmin * physicalSize.x - 0.5 * physicalSize.x,
       ymin * physicalSize.y - 0.5 * physicalSize.y,
