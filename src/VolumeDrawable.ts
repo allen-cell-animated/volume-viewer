@@ -51,7 +51,7 @@ export default class VolumeDrawable {
 
     this.viewMode = Axis.NONE; // 3D mode
 
-    this.channelColors = this.volume.channel_colors_default.slice();
+    this.channelColors = this.volume.channelColorsDefault.slice();
 
     this.channelOptions = new Array<VolumeChannelDisplayOptions>(this.volume.imageInfo.numChannels).fill({});
 
@@ -458,7 +458,7 @@ export default class VolumeDrawable {
   }
 
   onChannelAdded(newChannelIndex: number): void {
-    this.channelColors[newChannelIndex] = this.volume.channel_colors_default[newChannelIndex];
+    this.channelColors[newChannelIndex] = this.volume.channelColorsDefault[newChannelIndex];
 
     this.fusion[newChannelIndex] = {
       chIndex: newChannelIndex,

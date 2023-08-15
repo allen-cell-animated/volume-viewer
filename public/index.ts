@@ -618,7 +618,7 @@ function showChannelUI(volume: Volume) {
   myState.channelFolderNames = [];
   for (let i = 0; i < myState.infoObj.numChannels; ++i) {
     myState.channelGui.push({
-      colorD: volume.channel_colors_default[i],
+      colorD: volume.channelColorsDefault[i],
       colorS: [0, 0, 0],
       colorE: [0, 0, 0],
       window: 1.0,

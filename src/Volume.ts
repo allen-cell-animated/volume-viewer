@@ -142,8 +142,7 @@ export default class Volume {
   public tickMarkPhysicalLength: number;
   private loaded: boolean;
   public channelNames: string[];
-  /* eslint-disable-next-line @typescript-eslint/naming-convention */
-  public channel_colors_default: [number, number, number][];
+  public channelColorsDefault: [number, number, number][];
 
   constructor(imageInfo: ImageInfo = getDefaultImageInfo(), loadSpec: LoadSpec = new LoadSpec()) {
     // imageMetadata to be filled in by Volume Loaders
@@ -164,13 +163,13 @@ export default class Volume {
 
     // TODO do we really want this copied value?
     this.channelNames = this.imageInfo.channelNames.slice();
-    this.channel_colors_default = this.imageInfo.channelColors
+    this.channelColorsDefault = this.imageInfo.channelColors
       ? this.imageInfo.channelColors.slice()
       : this.channelNames.map((name, index) => getColorByChannelIndex(index));
     // fill in gaps
-    if (this.channel_colors_default.length < this.imageInfo.numChannels) {
-      for (let i = this.channel_colors_default.length - 1; i < this.imageInfo.numChannels; ++i) {
-        this.channel_colors_default[i] = getColorByChannelIndex(i);
+    if (this.channelColorsDefault.length < this.imageInfo.numChannels) {
+      for (let i = this.channelColorsDefault.length - 1; i < this.imageInfo.numChannels; ++i) {
+        this.channelColorsDefault[i] = getColorByChannelIndex(i);
       }
     }
 
@@ -301,7 +300,7 @@ export default class Volume {
     const chcolor = color || getColorByChannelIndex(idx);
     this.imageInfo.numChannels += 1;
     this.channelNames.push(chname);
-    this.channel_colors_default.push(chcolor);
+    this.channelColorsDefault.push(chcolor);
 
     this.channels.push(new Channel(chname));
 
