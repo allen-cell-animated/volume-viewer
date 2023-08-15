@@ -164,9 +164,6 @@ export default class Volume {
     this.physicalScale = 1;
     this.normPhysicalSize = new Vector3(1, 1, 1);
 
-    // clean up some possibly bad data.
-    this.validatePixelSize();
-
     this.numChannels = this.imageInfo.numChannels;
     this.channelNames = this.imageInfo.channelNames.slice();
     this.channelColorsDefault = this.imageInfo.channelColors
@@ -194,12 +191,6 @@ export default class Volume {
     this.volumeDataObservers = [];
   }
 
-  private validatePixelSize() {
-    this.physicalPixelSize.x = this.physicalPixelSize.x || 1.0;
-    this.physicalPixelSize.y = this.physicalPixelSize.y || 1.0;
-    this.physicalPixelSize.z = this.physicalPixelSize.z || 1.0;
-  }
-
   updateDimensions() {
     const { volumeSize, subregionSize, subregionOffset } = this.imageInfo;
 
@@ -213,9 +204,11 @@ export default class Volume {
   // and then normalize to the max physical dimension
   setVoxelSize(size: Vector3): void {
     // only set the data if it is > 0.  zero is not an allowed value.
-    // TODO this indicates that maybe pixel size should stick around?
+    size.clampScalar(0, Infinity);
+    size.x = size.x || 1.0;
+    size.y = size.y || 1.0;
+    size.z = size.z || 1.0;
     this.physicalPixelSize = size;
-    this.validatePixelSize();
 
     this.physicalSize = this.imageInfo.originalSize.clone().multiply(this.physicalPixelSize);
     // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
