@@ -161,7 +161,6 @@ export default class Volume {
     // clean up some possibly bad data.
     this.validatePixelSize();
 
-    // TODO do we really want this copied value?
     this.channelNames = this.imageInfo.channelNames.slice();
     this.channelColorsDefault = this.imageInfo.channelColors
       ? this.imageInfo.channelColors.slice()
