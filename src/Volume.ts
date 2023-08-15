@@ -27,19 +27,28 @@ export type ImageInfo = {
   /** Symbol of physical spatial unit used by `pixelSize` */
   spatialUnit: string;
 
+  /** Number of channels in the image */
   numChannels: number;
+  /** The names of each channel */
   channelNames: string[];
+  /** Optional overrides to default channel colors, in 0-255 range */
   channelColors?: [number, number, number][];
 
+  /** Number of timesteps in the time series, or 1 if the image is not a time series */
   times: number;
+  /** Size of each timestep in temporal units */
   timeScale: number;
+  /** Symbol of temporal unit used by `timeScale`, e.g. "hr" */
   timeUnit: string;
 
   transform: {
+    /** Translation of the volume from the center of space, in volume voxels */
     translation: Vector3;
+    /** Rotation of the volume in Euler angles, applied in XYZ order */
     rotation: Vector3;
   };
 
+  /** Arbitrary additional metadata not captured by other `ImageInfo` properties */
   userData?: Record<string, unknown>;
 };
 
