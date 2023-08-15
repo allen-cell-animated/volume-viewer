@@ -160,6 +160,7 @@ export default class Volume {
     this.normRegionSize = new Vector3(1, 1, 1);
     this.normRegionOffset = new Vector3(0, 0, 0);
     this.physicalPixelSize = this.imageInfo.physicalPixelSize;
+    this.setVoxelSize(this.physicalPixelSize);
     this.physicalSize = new Vector3(1, 1, 1);
     this.physicalScale = 1;
     this.normPhysicalSize = new Vector3(1, 1, 1);
@@ -186,7 +187,6 @@ export default class Volume {
 
     this.physicalUnitSymbol = this.imageInfo.spatialUnit;
     this.tickMarkPhysicalLength = 1;
-    this.setVoxelSize(this.imageInfo.physicalPixelSize);
 
     this.volumeDataObservers = [];
   }
