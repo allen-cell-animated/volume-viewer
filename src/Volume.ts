@@ -5,7 +5,7 @@ import Histogram from "./Histogram";
 import { getColorByChannelIndex } from "./constants/colors";
 import { LoadSpec } from "./loaders/IVolumeLoader";
 
-export type ImageInfo = {
+export type ImageInfo = Readonly<{
   name: string;
 
   /** XY size of the *original* (not downsampled) volume, in pixels */
@@ -50,7 +50,7 @@ export type ImageInfo = {
 
   /** Arbitrary additional metadata not captured by other `ImageInfo` properties */
   userData?: Record<string, unknown>;
-};
+}>;
 
 export const getDefaultImageInfo = (): ImageInfo => ({
   name: "",
@@ -131,36 +131,43 @@ export default class Volume {
   public loadSpec: LoadSpec;
   public imageMetadata: Record<string, unknown>;
   public name: string;
+
   public channels: Channel[];
-  private volumeDataObservers: VolumeDataObserver[];
+  public numChannels: number;
+  public channelNames: string[];
+  public channelColorsDefault: [number, number, number][];
+
   public physicalScale: number;
+  public physicalPixelSize: Vector3;
   public physicalSize: Vector3;
   public normPhysicalSize: Vector3;
   public normRegionSize: Vector3;
   public normRegionOffset: Vector3;
   public physicalUnitSymbol: string;
   public tickMarkPhysicalLength: number;
+
+  private volumeDataObservers: VolumeDataObserver[];
   private loaded: boolean;
-  public channelNames: string[];
-  public channelColorsDefault: [number, number, number][];
 
   constructor(imageInfo: ImageInfo = getDefaultImageInfo(), loadSpec: LoadSpec = new LoadSpec()) {
-    // imageMetadata to be filled in by Volume Loaders
-    this.imageMetadata = {};
-    this.normRegionSize = new Vector3(1, 1, 1);
-    this.normRegionOffset = new Vector3(0, 0, 0);
-    this.physicalSize = new Vector3(1, 1, 1);
-    this.physicalScale = 1;
-    this.normPhysicalSize = new Vector3(1, 1, 1);
-
     this.loaded = false;
     this.imageInfo = imageInfo;
     this.name = this.imageInfo.name;
     this.loadSpec = loadSpec;
+    // imageMetadata to be filled in by Volume Loaders
+    this.imageMetadata = {};
+
+    this.normRegionSize = new Vector3(1, 1, 1);
+    this.normRegionOffset = new Vector3(0, 0, 0);
+    this.physicalPixelSize = this.imageInfo.physicalPixelSize;
+    this.physicalSize = new Vector3(1, 1, 1);
+    this.physicalScale = 1;
+    this.normPhysicalSize = new Vector3(1, 1, 1);
 
     // clean up some possibly bad data.
     this.validatePixelSize();
 
+    this.numChannels = this.imageInfo.numChannels;
     this.channelNames = this.imageInfo.channelNames.slice();
     this.channelColorsDefault = this.imageInfo.channelColors
       ? this.imageInfo.channelColors.slice()
@@ -188,15 +195,15 @@ export default class Volume {
   }
 
   private validatePixelSize() {
-    this.imageInfo.physicalPixelSize.x = this.imageInfo.physicalPixelSize.x || 1.0;
-    this.imageInfo.physicalPixelSize.y = this.imageInfo.physicalPixelSize.y || 1.0;
-    this.imageInfo.physicalPixelSize.z = this.imageInfo.physicalPixelSize.z || 1.0;
+    this.physicalPixelSize.x = this.physicalPixelSize.x || 1.0;
+    this.physicalPixelSize.y = this.physicalPixelSize.y || 1.0;
+    this.physicalPixelSize.z = this.physicalPixelSize.z || 1.0;
   }
 
   updateDimensions() {
-    const { physicalPixelSize, volumeSize, subregionSize, subregionOffset } = this.imageInfo;
+    const { volumeSize, subregionSize, subregionOffset } = this.imageInfo;
 
-    this.setVoxelSize(physicalPixelSize);
+    this.setVoxelSize(this.physicalPixelSize);
 
     this.normRegionSize = subregionSize.clone().divide(volumeSize);
     this.normRegionOffset = subregionOffset.clone().divide(volumeSize);
@@ -207,10 +214,10 @@ export default class Volume {
   setVoxelSize(size: Vector3): void {
     // only set the data if it is > 0.  zero is not an allowed value.
     // TODO this indicates that maybe pixel size should stick around?
-    this.imageInfo.physicalPixelSize = size;
+    this.physicalPixelSize = size;
     this.validatePixelSize();
 
-    this.physicalSize = this.imageInfo.originalSize.clone().multiply(this.imageInfo.physicalPixelSize);
+    this.physicalSize = this.imageInfo.originalSize.clone().multiply(this.physicalPixelSize);
     // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
     this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z);
     // Compute the volume's max extent - scaled to max dimension.
@@ -297,7 +304,7 @@ export default class Volume {
     const idx = this.imageInfo.numChannels;
     const chname = name || "channel_" + idx;
     const chcolor = color || getColorByChannelIndex(idx);
-    this.imageInfo.numChannels += 1;
+    this.numChannels += 1;
     this.channelNames.push(chname);
     this.channelColorsDefault.push(chcolor);
 
@@ -384,7 +391,7 @@ export default class Volume {
     // ASSUME: translation is in original image voxels.
     // account for pixel_size and normalized scaling in the threejs volume representation we're using
     const m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
-    return new Vector3().fromArray(xyz).multiply(this.imageInfo.physicalPixelSize).multiplyScalar(m).toArray();
+    return new Vector3().fromArray(xyz).multiply(this.physicalPixelSize).multiplyScalar(m).toArray();
   }
 
   addVolumeDataObserver(o: VolumeDataObserver): void {
