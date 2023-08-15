@@ -10,7 +10,7 @@ import Channel from "../Channel";
 const testimgdata: ImageInfo = {
   name: "AICS-10_5_5",
 
-  originalSize: new Vector2(306, 494),
+  originalSize: new Vector3(306, 494, 65),
   atlasTileDims: new Vector2(7, 10),
   volumeSize: new Vector3(204, 292, 65),
   subregionSize: new Vector3(204, 292, 65),
@@ -46,7 +46,7 @@ function checkVolumeConstruction(v: Volume, imgdata: ImageInfo) {
   expect(v.isLoaded()).to.not.be.ok;
 
   const { originalSize, volumeSize, physicalPixelSize } = imgdata;
-  const physicalSize = new Vector3(originalSize.x, originalSize.y, volumeSize.z).multiply(physicalPixelSize);
+  const physicalSize = originalSize.clone().multiply(physicalPixelSize);
   expect(v.physicalSize.x).to.equal(physicalSize.x);
   expect(v.physicalSize.y).to.equal(physicalSize.y);
   expect(v.physicalSize.z).to.equal(physicalSize.z);
@@ -105,14 +105,14 @@ describe("test volume", () => {
       // `Volume` formerly derived a `scale` property by a different means than `normPhysicalSize`, but depended
       // on `scale` and `normPhysicalSize` being equal. With `scale` gone, this test ensures the equality stays.
       const v = new Volume(testimgdata);
-      const { originalSize, volumeSize, physicalPixelSize } = v.imageInfo;
-      const sizemax = Math.max(originalSize.x, originalSize.y, volumeSize.z);
+      const { originalSize, physicalPixelSize } = v.imageInfo;
+      const sizemax = Math.max(originalSize.x, originalSize.y, originalSize.z);
 
       const pxmin = Math.min(physicalPixelSize.x, physicalPixelSize.y, physicalPixelSize.z);
 
       const sx = ((physicalPixelSize.x / pxmin) * originalSize.x) / sizemax;
       const sy = ((physicalPixelSize.y / pxmin) * originalSize.y) / sizemax;
-      const sz = ((physicalPixelSize.z / pxmin) * volumeSize.z) / sizemax;
+      const sz = ((physicalPixelSize.z / pxmin) * originalSize.z) / sizemax;
 
       const EPSILON = 0.000000001;
       expect(v.normPhysicalSize.x).to.be.closeTo(sx, EPSILON);

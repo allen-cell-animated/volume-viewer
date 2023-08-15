@@ -119,7 +119,7 @@ export function buildDefaultMetadata(imageInfo: ImageInfo): Record<string, unkno
   const physicalSize = imageInfo.volumeSize.clone().multiply(imageInfo.physicalPixelSize);
   const metadata = {};
   metadata["Dimensions"] = { ...imageInfo.subregionSize };
-  metadata["Original dimensions"] = { ...imageInfo.originalSize, z: imageInfo.subregionSize.z };
+  metadata["Original dimensions"] = { ...imageInfo.originalSize };
   metadata["Physical size"] = {
     x: physicalSize.x + imageInfo.spatialUnit,
     y: physicalSize.y + imageInfo.spatialUnit,

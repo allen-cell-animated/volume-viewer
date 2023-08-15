@@ -10,7 +10,7 @@ export type ImageInfo = {
 
   /** XY size of the *original* (not downsampled) volume, in pixels */
   // If we ever allow downsampling in z, replace with Vector3
-  originalSize: Vector2;
+  originalSize: Vector3;
   /**
    * XY dimensions of the texture atlas used by `RayMarchedAtlasVolume` and `Atlas2DSlice`, in number of z-slice
    * tiles (not pixels). Chosen by the loader to lay out the 3D volume in the squarest possible 2D texture atlas.
@@ -45,7 +45,7 @@ export type ImageInfo = {
 
 export const getDefaultImageInfo = (): ImageInfo => ({
   name: "",
-  originalSize: new Vector2(1, 1),
+  originalSize: new Vector3(1, 1, 1),
   atlasTileDims: new Vector2(1, 1),
   volumeSize: new Vector3(1, 1, 1),
   subregionSize: new Vector3(1, 1, 1),
@@ -63,12 +63,6 @@ export const getDefaultImageInfo = (): ImageInfo => ({
     rotation: new Vector3(0, 0, 0),
   },
 });
-
-/**
- * Volumes may be downsampled in X and Y but not Z.
- * Construct a `Vector3` of original volume size using `x` and `y` from `originalSize` and `z` from `volumeSize`.
- */
-const getOriginalSize3 = ({ originalSize: { x, y }, volumeSize: { z } }: ImageInfo) => new Vector3(x, y, z);
 
 interface VolumeDataObserver {
   onVolumeData: (vol: Volume, batch: number[]) => void;
@@ -209,7 +203,7 @@ export default class Volume {
     this.imageInfo.physicalPixelSize = size;
     this.validatePixelSize();
 
-    this.physicalSize = getOriginalSize3(this.imageInfo).multiply(this.imageInfo.physicalPixelSize);
+    this.physicalSize = this.imageInfo.originalSize.clone().multiply(this.imageInfo.physicalPixelSize);
     // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
     this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z);
     // Compute the volume's max extent - scaled to max dimension.

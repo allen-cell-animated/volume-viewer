@@ -1106,7 +1106,7 @@ function createTestVolume() {
   const imgData: ImageInfo = {
     name: "AICS-10_5_5",
 
-    originalSize: new Vector2(64, 64),
+    originalSize: new Vector3(64, 64, 64),
     atlasTileDims: new Vector2(8, 8),
     volumeSize: new Vector3(64, 64, 64),
     subregionSize: new Vector3(64, 64, 64),

@@ -26,7 +26,7 @@ class OpenCellLoader implements IVolumeLoader {
     const imgdata: ImageInfo = {
       name: "TEST",
 
-      originalSize: new Vector2(600, 600),
+      originalSize: new Vector3(600, 600, 27),
       atlasTileDims: new Vector2(27, 1),
       volumeSize: new Vector3(600, 600, 27),
       subregionSize: new Vector3(600, 600, 27),
