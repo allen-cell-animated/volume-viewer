@@ -53,7 +53,7 @@ var Atlas2DSlice = /*#__PURE__*/function () {
     this.geometryTransformNode = new three__WEBPACK_IMPORTED_MODULE_6__.Group();
     this.geometryTransformNode.name = "VolumeContainerNode";
     this.geometryTransformNode.add(this.boxHelper, this.geometryMesh);
-    this.setUniform("Z_SLICE", Math.floor((volume.imageInfo.vol_size_z || volume.z) / 2));
+    this.setUniform("Z_SLICE", Math.floor(volume.imageInfo.volumeSize.z / 2));
     this.updateVolumeDimensions();
     this.settings = settings;
     this.updateSettings(settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.ALL);
@@ -61,34 +61,29 @@ var Atlas2DSlice = /*#__PURE__*/function () {
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(Atlas2DSlice, [{
     key: "updateVolumeDimensions",
     value: function updateVolumeDimensions() {
-      var scale = this.volume.normalizedPhysicalSize;
+      var scale = this.volume.normPhysicalSize;
       // set scale
       this.geometryMesh.scale.copy(scale);
       this.setUniform("volumeScale", scale);
       this.boxHelper.box.set(scale.clone().multiplyScalar(-0.5), scale.clone().multiplyScalar(0.5));
-
-      /* eslint-disable-next-line @typescript-eslint/naming-convention */
       var _this$volume$imageInf = this.volume.imageInfo,
-        cols = _this$volume$imageInf.cols,
-        rows = _this$volume$imageInf.rows,
-        tile_width = _this$volume$imageInf.tile_width,
-        tile_height = _this$volume$imageInf.tile_height;
-      var atlasWidth = tile_width * cols;
-      var atlasHeight = tile_height * rows;
+        atlasTileDims = _this$volume$imageInf.atlasTileDims,
+        subregionSize = _this$volume$imageInf.subregionSize,
+        volumeSize = _this$volume$imageInf.volumeSize;
+      var atlasSize = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(subregionSize.x, subregionSize.y).multiply(atlasTileDims);
 
       // set lots of dimension uniforms
-      this.setUniform("ATLAS_X", cols);
-      this.setUniform("ATLAS_Y", rows);
-      this.setUniform("textureRes", new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(atlasWidth, atlasHeight));
-      this.setUniform("SLICES", this.volume.imageInfo.vol_size_z || this.volume.z);
-      this.setUniform("SUBSET_SCALE", this.volume.contentSize);
-      this.setUniform("SUBSET_OFFSET", this.volume.contentOffset);
+      this.setUniform("ATLAS_DIMS", atlasTileDims);
+      this.setUniform("textureRes", atlasSize);
+      this.setUniform("SLICES", volumeSize.z);
+      this.setUniform("SUBSET_SCALE", this.volume.normRegionSize);
+      this.setUniform("SUBSET_OFFSET", this.volume.normRegionOffset);
 
       // (re)create channel data
-      if (!this.channelData || this.channelData.width !== atlasWidth || this.channelData.height !== atlasHeight) {
+      if (!this.channelData || this.channelData.width !== atlasSize.x || this.channelData.height !== atlasSize.y) {
         var _this$channelData;
         (_this$channelData = this.channelData) === null || _this$channelData === void 0 ? void 0 : _this$channelData.cleanup();
-        this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_5__["default"](atlasWidth, atlasHeight);
+        this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_5__["default"](atlasSize.x, atlasSize.y);
       }
     }
   }, {
@@ -143,7 +138,7 @@ var Atlas2DSlice = /*#__PURE__*/function () {
         this.setUniform("AABB_CLIP_MIN", bounds.bmin);
         this.setUniform("AABB_CLIP_MAX", bounds.bmax);
         var slice = Math.floor(this.settings.zSlice);
-        var sizez = this.volume.imageInfo.vol_size_z || this.volume.z;
+        var sizez = this.volume.imageInfo.volumeSize.z;
         if (slice >= 0 && slice <= sizez - 1) {
           this.setUniform("Z_SLICE", slice);
         }
@@ -2149,7 +2144,7 @@ var MeshVolume = /*#__PURE__*/function () {
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(MeshVolume, [{
     key: "cleanup",
     value: function cleanup() {
-      for (var i = 0; i < this.volume.num_channels; ++i) {
+      for (var i = 0; i < this.volume.imageInfo.numChannels; ++i) {
         this.destroyIsosurface(i);
       }
     }
@@ -2243,7 +2238,7 @@ var MeshVolume = /*#__PURE__*/function () {
           });
         }
       };
-      for (var i = 0; i < this.volume.num_channels; ++i) {
+      for (var i = 0; i < this.volume.imageInfo.numChannels; ++i) {
         _loop();
       }
     }
@@ -2441,7 +2436,7 @@ var MeshVolume = /*#__PURE__*/function () {
         return;
       }
       if (type === "STL") {
-        this.exportSTL(meshrep, namePrefix + "_" + this.volume.channel_names[channelIndex]);
+        this.exportSTL(meshrep, namePrefix + "_" + this.volume.channelNames[channelIndex]);
       } else if (type === "GLTF") {
         // temporarily set other meshreps to invisible
         var prevviz = [];
@@ -2452,7 +2447,7 @@ var MeshVolume = /*#__PURE__*/function () {
             meshrepi.visible = i === channelIndex;
           }
         }
-        this.exportGLTF(this.meshRoot, namePrefix + "_" + this.volume.channel_names[channelIndex]);
+        this.exportGLTF(this.meshRoot, namePrefix + "_" + this.volume.channelNames[channelIndex]);
         for (var _i = 0; _i < this.meshrep.length; ++_i) {
           var _meshrepi = this.meshrep[_i];
           if (_meshrepi) {
@@ -2506,8 +2501,9 @@ var MeshVolume = /*#__PURE__*/function () {
       }
       var volumeData = this.volume.channels[channelIndex].volumeData;
       var marchingcubes = true;
+      var regionSizeArr = this.volume.imageInfo.subregionSize.toArray();
       if (marchingcubes) {
-        var effect = new _MarchingCubes__WEBPACK_IMPORTED_MODULE_5__["default"]([this.volume.x, this.volume.y, this.volume.z], new three__WEBPACK_IMPORTED_MODULE_6__.Material(), false, false, true, volumeData);
+        var effect = new _MarchingCubes__WEBPACK_IMPORTED_MODULE_5__["default"](regionSizeArr, new three__WEBPACK_IMPORTED_MODULE_6__.Material(), false, false, true, volumeData);
         effect.position.copy(this.meshRoot.position);
         effect.scale.set(0.5 * this.scale.x, 0.5 * this.scale.y, 0.5 * this.scale.z);
         effect.isovalue = isovalue;
@@ -2521,7 +2517,7 @@ var MeshVolume = /*#__PURE__*/function () {
         // }
         return geometries || [];
       } else {
-        var result = _NaiveSurfaceNets_js__WEBPACK_IMPORTED_MODULE_4__["default"].surfaceNets(volumeData, [this.volume.x, this.volume.y, this.volume.z], isovalue);
+        var result = _NaiveSurfaceNets_js__WEBPACK_IMPORTED_MODULE_4__["default"].surfaceNets(volumeData, regionSizeArr, isovalue);
         return _NaiveSurfaceNets_js__WEBPACK_IMPORTED_MODULE_4__["default"].constructTHREEGeometry(result);
       }
     }
@@ -2846,12 +2842,13 @@ var PathTracedVolume = /*#__PURE__*/function () {
     this.viewChannels = [-1, -1, -1, -1];
 
     // create volume texture
-    var sx = volume.x,
-      sy = volume.y,
-      sz = volume.z;
+    var _volume$imageInfo$sub = volume.imageInfo.subregionSize,
+      sx = _volume$imageInfo$sub.x,
+      sy = _volume$imageInfo$sub.y,
+      sz = _volume$imageInfo$sub.z;
     var data = new Uint8Array(sx * sy * sz * 4).fill(0);
     // defaults to rgba and unsignedbytetype so dont need to supply format this time.
-    this.volumeTexture = new three__WEBPACK_IMPORTED_MODULE_8__.Data3DTexture(data, volume.x, volume.y, volume.z);
+    this.volumeTexture = new three__WEBPACK_IMPORTED_MODULE_8__.Data3DTexture(data, sx, sy, sz);
     this.volumeTexture.minFilter = this.volumeTexture.magFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_9__.LinearFilter;
     this.volumeTexture.generateMipmaps = false;
     this.volumeTexture.needsUpdate = true;
@@ -2983,8 +2980,8 @@ var PathTracedVolume = /*#__PURE__*/function () {
     this.pathTracingUniforms.gGradientFactor.value = 50.0; // related to voxel counts also
 
     // bounds will go from 0 to physicalSize
-    var physicalSize = volume.normalizedPhysicalSize;
-    this.pathTracingUniforms.gInvAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1.0 / physicalSize.x, 1.0 / physicalSize.y, 1.0 / physicalSize.z).divide(volume.contentSize);
+    var physicalSize = volume.normPhysicalSize;
+    this.pathTracingUniforms.gInvAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1.0 / physicalSize.x, 1.0 / physicalSize.y, 1.0 / physicalSize.z).divide(volume.normRegionSize);
     this.updateLightsSecondary();
 
     // Update settings
@@ -3050,17 +3047,17 @@ var PathTracedVolume = /*#__PURE__*/function () {
       // update bounds
       if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.ROI) {
         var _this$volume = this.volume,
-          physicalSize = _this$volume.normalizedPhysicalSize,
-          contentSize = _this$volume.contentSize,
-          contentOffset = _this$volume.contentOffset;
+          normPhysicalSize = _this$volume.normPhysicalSize,
+          normRegionSize = _this$volume.normRegionSize,
+          normRegionOffset = _this$volume.normRegionOffset;
         var _this$settings$bounds = this.settings.bounds,
           bmin = _this$settings$bounds.bmin,
           bmax = _this$settings$bounds.bmax;
-        var sizeMin = contentOffset.clone().subScalar(0.5).multiply(physicalSize);
-        var sizeMax = contentOffset.clone().add(contentSize).subScalar(0.5).multiply(physicalSize);
-        var clipMin = bmin.clone().multiply(physicalSize);
+        var sizeMin = normRegionOffset.clone().subScalar(0.5).multiply(normPhysicalSize);
+        var sizeMax = normRegionOffset.clone().add(normRegionSize).subScalar(0.5).multiply(normPhysicalSize);
+        var clipMin = bmin.clone().multiply(normPhysicalSize);
         this.pathTracingUniforms.gClippedAaBbMin.value = clipMin.clamp(sizeMin, sizeMax);
-        var clipMax = bmax.clone().multiply(physicalSize);
+        var clipMax = bmax.clone().multiply(normPhysicalSize);
         this.pathTracingUniforms.gClippedAaBbMax.value = clipMax.clamp(sizeMin, sizeMax);
         this.pathTracingUniforms.gVolCenter.value = this.volume.getContentCenter();
       }
@@ -3215,7 +3212,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
       var _this = this;
       var ch = [-1, -1, -1, -1];
       var activeChannel = 0;
-      var NC = this.volume.num_channels;
+      var NC = this.volume.imageInfo.numChannels;
       var maxch = 4;
       for (var i = 0; i < NC && activeChannel < maxch; ++i) {
         // check that channel is not disabled and is loaded
@@ -3241,9 +3238,10 @@ var PathTracedVolume = /*#__PURE__*/function () {
   }, {
     key: "updateVolumeData4",
     value: function updateVolumeData4() {
-      var sx = this.volume.x,
-        sy = this.volume.y,
-        sz = this.volume.z;
+      var _this$volume$imageInf = this.volume.imageInfo.subregionSize,
+        sx = _this$volume$imageInf.x,
+        sy = _this$volume$imageInf.y,
+        sz = _this$volume$imageInf.z;
       var data = new Uint8Array(sx * sy * sz * 4);
       data.fill(0);
       for (var i = 0; i < 4; ++i) {
@@ -3366,7 +3364,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
   }, {
     key: "updateLightsSecondary",
     value: function updateLightsSecondary(cameraMatrix) {
-      var physicalSize = this.volume.normalizedPhysicalSize;
+      var physicalSize = this.volume.normPhysicalSize;
       var bbctr = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(physicalSize.x * 0.5, physicalSize.y * 0.5, physicalSize.z * 0.5);
       for (var i = 0; i < 2; ++i) {
         var lt = this.pathTracingUniforms.gLights.value[i];
@@ -3382,7 +3380,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
         bmin: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
         bmax: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5)
       };
-      var physicalSize = this.volume.normalizedPhysicalSize;
+      var physicalSize = this.volume.normPhysicalSize;
       this.pathTracingUniforms.gClippedAaBbMin.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmin * physicalSize.x - 0.5 * physicalSize.x, ymin * physicalSize.y - 0.5 * physicalSize.y, zmin * physicalSize.z - 0.5 * physicalSize.z);
       this.pathTracingUniforms.gClippedAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmax * physicalSize.x - 0.5 * physicalSize.x, ymax * physicalSize.y - 0.5 * physicalSize.y, zmax * physicalSize.z - 0.5 * physicalSize.z);
       this.resetProgress();
@@ -3458,36 +3456,31 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     key: "updateVolumeDimensions",
     value: function updateVolumeDimensions() {
       var _this$volume = this.volume,
-        normalizedPhysicalSize = _this$volume.normalizedPhysicalSize,
-        contentSize = _this$volume.contentSize;
+        normPhysicalSize = _this$volume.normPhysicalSize,
+        normRegionSize = _this$volume.normRegionSize;
       // Set offset
       this.geometryMesh.position.copy(this.volume.getContentCenter());
       // Set scale
-      this.geometryMesh.scale.copy(contentSize).multiply(normalizedPhysicalSize);
-      this.setUniform("volumeScale", normalizedPhysicalSize);
-      this.boxHelper.box.set(normalizedPhysicalSize.clone().multiplyScalar(-0.5), normalizedPhysicalSize.clone().multiplyScalar(0.5));
-      this.tickMarksMesh.scale.copy(normalizedPhysicalSize);
+      this.geometryMesh.scale.copy(normRegionSize).multiply(normPhysicalSize);
+      this.setUniform("volumeScale", normPhysicalSize);
+      this.boxHelper.box.set(normPhysicalSize.clone().multiplyScalar(-0.5), normPhysicalSize.clone().multiplyScalar(0.5));
+      this.tickMarksMesh.scale.copy(normPhysicalSize);
       this.settings && this.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ROI);
 
       // Set atlas dimension uniforms
-      /* eslint-disable-next-line @typescript-eslint/naming-convention */
       var _this$volume$imageInf = this.volume.imageInfo,
-        cols = _this$volume$imageInf.cols,
-        rows = _this$volume$imageInf.rows,
-        tile_width = _this$volume$imageInf.tile_width,
-        tile_height = _this$volume$imageInf.tile_height;
-      var atlasWidth = tile_width * cols;
-      var atlasHeight = tile_height * rows;
-      this.setUniform("ATLAS_X", cols);
-      this.setUniform("ATLAS_Y", rows);
-      this.setUniform("textureRes", new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(atlasWidth, atlasHeight));
-      this.setUniform("SLICES", this.volume.z);
+        atlasTileDims = _this$volume$imageInf.atlasTileDims,
+        subregionSize = _this$volume$imageInf.subregionSize;
+      var atlasSize = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(subregionSize.x, subregionSize.y).multiply(atlasTileDims);
+      this.setUniform("ATLAS_DIMS", atlasTileDims);
+      this.setUniform("textureRes", atlasSize);
+      this.setUniform("SLICES", this.volume.imageInfo.volumeSize.z);
 
       // (re)create channel data
-      if (!this.channelData || this.channelData.width !== atlasWidth || this.channelData.height !== atlasHeight) {
+      if (!this.channelData || this.channelData.width !== atlasSize.x || this.channelData.height !== atlasSize.y) {
         var _this$channelData;
         (_this$channelData = this.channelData) === null || _this$channelData === void 0 ? void 0 : _this$channelData.cleanup();
-        this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_3__["default"](atlasWidth, atlasHeight);
+        this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_3__["default"](atlasSize.x, atlasSize.y);
       }
     }
   }, {
@@ -3553,11 +3546,11 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
         // Normalize and set bounds
         var bounds = this.settings.bounds;
         var _this$volume2 = this.volume,
-          contentSize = _this$volume2.contentSize,
-          contentOffset = _this$volume2.contentOffset;
-        var offsetToCenter = contentSize.clone().divideScalar(2).add(contentOffset).subScalar(0.5);
-        var bmin = bounds.bmin.clone().sub(offsetToCenter).divide(contentSize).clampScalar(-0.5, 0.5);
-        var bmax = bounds.bmax.clone().sub(offsetToCenter).divide(contentSize).clampScalar(-0.5, 0.5);
+          normRegionSize = _this$volume2.normRegionSize,
+          normRegionOffset = _this$volume2.normRegionOffset;
+        var offsetToCenter = normRegionSize.clone().divideScalar(2).add(normRegionOffset).subScalar(0.5);
+        var bmin = bounds.bmin.clone().sub(offsetToCenter).divide(normRegionSize).clampScalar(-0.5, 0.5);
+        var bmax = bounds.bmax.clone().sub(offsetToCenter).divide(normRegionSize).clampScalar(-0.5, 0.5);
         this.setUniform("AABB_CLIP_MIN", bmin);
         this.setUniform("AABB_CLIP_MAX", bmax);
       }
@@ -3604,22 +3597,22 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
       var _this$volume3 = this.volume,
         tickMarkPhysicalLength = _this$volume3.tickMarkPhysicalLength,
         physicalScale = _this$volume3.physicalScale,
-        normalizedPhysicalSize = _this$volume3.normalizedPhysicalSize;
+        normPhysicalSize = _this$volume3.normPhysicalSize;
       var numTickMarks = physicalScale / tickMarkPhysicalLength;
       var vertices = [];
-      var tickEndY = TICK_LENGTH / normalizedPhysicalSize.y + 0.5;
-      var tickSpacingX = 1 / (normalizedPhysicalSize.x * numTickMarks);
+      var tickEndY = TICK_LENGTH / normPhysicalSize.y + 0.5;
+      var tickSpacingX = 1 / (normPhysicalSize.x * numTickMarks);
       for (var x = -0.5; x <= 0.5; x += tickSpacingX) {
         // prettier-ignore
         vertices.push(x, 0.5, 0.5, x, tickEndY, 0.5, x, -0.5, -0.5, x, -tickEndY, -0.5, x, 0.5, -0.5, x, tickEndY, -0.5, x, -0.5, 0.5, x, -tickEndY, 0.5);
       }
-      var tickEndX = TICK_LENGTH / normalizedPhysicalSize.x + 0.5;
-      var tickSpacingY = 1 / (normalizedPhysicalSize.y * numTickMarks);
+      var tickEndX = TICK_LENGTH / normPhysicalSize.x + 0.5;
+      var tickSpacingY = 1 / (normPhysicalSize.y * numTickMarks);
       for (var y = 0.5; y >= -0.5; y -= tickSpacingY) {
         // prettier-ignore
         vertices.push(-0.5, y, 0.5, -tickEndX, y, 0.5, -0.5, y, -0.5, -tickEndX, y, -0.5, 0.5, y, -0.5, tickEndX, y, -0.5, 0.5, y, 0.5, tickEndX, y, 0.5);
       }
-      var tickSpacingZ = 1 / (normalizedPhysicalSize.z * numTickMarks);
+      var tickSpacingZ = 1 / (normPhysicalSize.z * numTickMarks);
       for (var z = 0.5; z >= -0.5; z -= tickSpacingZ) {
         // prettier-ignore
         vertices.push(-0.5, 0.5, z, -tickEndX, 0.5, z, -0.5, -0.5, z, -tickEndX, -0.5, z, 0.5, -0.5, z, tickEndX, -0.5, z, 0.5, 0.5, z, tickEndX, 0.5, z);
@@ -5082,12 +5075,12 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateOrthoScaleBar",
     value: function updateOrthoScaleBar(volume) {
-      this.canvas3d.updateOrthoScaleBar(volume.physicalScale, volume.imageInfo.pixel_size_unit);
+      this.canvas3d.updateOrthoScaleBar(volume.physicalScale, volume.imageInfo.spatialUnit);
     }
   }, {
     key: "updatePerspectiveScaleBar",
     value: function updatePerspectiveScaleBar(volume) {
-      this.canvas3d.updatePerspectiveScaleBar(volume.tickMarkPhysicalLength, volume.imageInfo.pixel_size_unit);
+      this.canvas3d.updatePerspectiveScaleBar(volume.tickMarkPhysicalLength, volume.imageInfo.spatialUnit);
     }
   }, {
     key: "updateTimestepIndicator",
@@ -5095,8 +5088,8 @@ var View3d = /*#__PURE__*/function () {
       // convert names to camel case to keep eslint happy
       var _volume$imageInfo = volume.imageInfo,
         times = _volume$imageInfo.times,
-        timeScale = _volume$imageInfo.time_scale,
-        timeUnit = _volume$imageInfo.time_unit;
+        timeScale = _volume$imageInfo.timeScale,
+        timeUnit = _volume$imageInfo.timeUnit;
       var currentTime = volume.loadSpec.time;
       this.canvas3d.updateTimestepIndicator(currentTime * timeScale, times * timeScale, timeUnit);
     }
@@ -5265,7 +5258,7 @@ var View3d = /*#__PURE__*/function () {
     key: "setVoxelSize",
     value: function setVoxelSize(volume, values, unit) {
       if (this.image) {
-        this.image.setVoxelSize(values);
+        this.image.setVoxelSize(new three__WEBPACK_IMPORTED_MODULE_9__.Vector3().fromArray(values));
         if (unit) {
           this.image.volume.setUnitSymbol(unit);
         }
@@ -6058,85 +6051,68 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-
-/* eslint-disable @typescript-eslint/naming-convention */
-
 var getDefaultImageInfo = function getDefaultImageInfo() {
   return {
     name: "",
-    version: "",
-    width: 1,
-    height: 1,
-    channels: 0,
-    tiles: 1,
-    pixel_size_x: 1,
-    pixel_size_y: 1,
-    pixel_size_z: 1,
-    pixel_size_unit: "",
-    channel_names: [],
-    channel_colors: [],
-    rows: 1,
-    cols: 1,
-    tile_width: 1,
-    tile_height: 1,
-    transform: {
-      translation: [0, 0, 0],
-      rotation: [0, 0, 0]
-    },
+    originalSize: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1),
+    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_5__.Vector2(1, 1),
+    volumeSize: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1),
+    subregionSize: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1),
+    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0),
+    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1),
+    spatialUnit: "",
+    numChannels: 0,
+    channelNames: [],
+    channelColors: [],
     times: 1,
-    time_scale: 1,
-    time_unit: ""
+    timeScale: 1,
+    timeUnit: "",
+    transform: {
+      translation: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0),
+      rotation: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0)
+    }
   };
 };
-
-/* eslint-enable @typescript-eslint/naming-convention */
 /**
  * Provide dimensions of the volume data, including dimensions for texture atlas data in which the volume z slices
  * are tiled across a single large 2d image plane.
  * @typedef {Object} ImageInfo
  * @property {string} name Base name of image
- * @property {string} version schema version preferably in semver format.
- * @property {number} width Width of original volumetric data prior to downsampling
- * @property {number} height Height of original volumetric data prior to downsampling
- * @property {number} channels Number of channels
+ * @property {string} [version] Schema version preferably in semver format.
+ * @property {Vector2} originalSize XY size of the *original* (not downsampled) volume, in pixels
+ * @property {Vector2} atlasDims Number of rows and columns of z-slice tiles (not pixels) in the texture atlas
+ * @property {Vector3} volumeSize Size of the volume, in pixels
+ * @property {Vector3} regionSize Size of the currently loaded subregion, in pixels
+ * @property {Vector3} regionOffset Offset of the loaded subregion into the total volume, in pixels
+ * @property {Vector3} pixelSize Size of a single *original* (not downsampled) pixel, in spatial units
+ * @property {string} spatialUnit Symbol of physical spatial unit used by `pixelSize`
+ * @property {number} numChannels Number of channels
+ * @property {Array.<string>} channelNames Names of each of the channels to be rendered, in order. Unique identifier expected
+ * @property {Array.<Array.<number>>} [channelColors] Colors of each of the channels to be rendered, as an ordered list of [r, g, b] arrays
  * @property {number} times Number of times (default = 1)
- * @property {number} tiles Number of tiles, which must be equal to the number of z-slices in original volumetric data
- * @property {number} pixel_size_x Size of pixel in volumetric data to be rendered, in x-dimension, unitless
- * @property {number} pixel_size_y Size of pixel in volumetric data to be rendered, in y-dimension, unitless
- * @property {number} pixel_size_z Size of pixel in volumetric data to be rendered, in z-dimension, unitless
- * @property {Array.<string>} channel_names Names of each of the channels to be rendered, in order. Unique identifier expected
- * @property {number} rows Number of rows in tile array in each image.  Note tiles <= rows*cols
- * @property {number} cols Number of columns in tile array in each image.  Note tiles <= rows*cols
- * @property {number} tile_width Width of each tile in volumetric dataset to be rendered, in pixels
- * @property {number} tile_height Height of each tile in volumetric dataset to be rendered, in pixels
- * @property {number} atlas_width Total width of image containing all the tiles, in pixels.  Note atlas_width === cols*tile_width
- * @property {number} atlas_height Total height of image containing all the tiles, in pixels. Note atlas_height === rows*tile_height
+ * @property {number} timeScale Size of each time step in `timeUnit` units
+ * @property {number} timeUnit Unit symbol for `timeScale` (e.g. min)
  * @property {Object} transform translation and rotation as arrays of 3 numbers. Translation is in voxels (to be multiplied by pixel_size values). Rotation is Euler angles in radians, appled in XYZ order.
- * @example let imgdata = {
-  "width": 306,
-  "height": 494,
-  "channels": 9,
-  "channel_names": ["DRAQ5", "EGFP", "Hoechst 33258", "TL Brightfield", "SEG_STRUCT", "SEG_Memb", "SEG_DNA", "CON_Memb", "CON_DNA"],
-  "rows": 7,
-  "cols": 10,
-  "tiles": 65,
-  "tile_width": 204,
-  "tile_height": 292,
-  // for webgl reasons, it is best for atlas_width and atlas_height to be <= 2048
-  // and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.
-  "atlas_width": 2040,
-  "atlas_height": 2044,
-  "pixel_size_x": 0.065,
-  "pixel_size_y": 0.065,
-  "pixel_size_z": 0.29,
+ * @property {Object} userData Arbitrary metadata not covered by above properties
+ * @example const imgdata = {
   "name": "AICS-10_5_5",
-  "status": "OK",
   "version": "0.0.0",
-  "aicsImageVersion": "0.3.0",
+  originalSize: new Vector2(306, 494),
+  atlasDims: new Vector2(10, 7),
+  volumeSize: new Vector3(204, 292, 65),
+  regionSize: new Vector3(204, 292, 65),
+  regionOffset: new Vector3(0, 0, 0),
+  pixelSize: new Vector3(0.065, 0.065, 0.29),
+  spatialUnit: "μm",
+  "numChannels": 9,
+  "channelNames": ["DRAQ5", "EGFP", "Hoechst 33258", "TL Brightfield", "SEG_STRUCT", "SEG_Memb", "SEG_DNA", "CON_Memb", "CON_DNA"],
+  "times": 5,
+  "timeScale": 1,
+  "timeUnit": "hr",
   "transform": {
-    "translation": [5, 5, 1],
-    "rotation": [0, 3.14159, 1.57]
-  }
+    "translation": new Vector3(5, 5, 1),
+    "rotation": new Vector3(0, 3.14159, 1.57),
+  },
   };
  */
 /**
@@ -6145,130 +6121,73 @@ var getDefaultImageInfo = function getDefaultImageInfo() {
  * @param {ImageInfo} imageInfo
  */
 var Volume = /*#__PURE__*/function () {
-  /* eslint-disable @typescript-eslint/naming-convention */
-
-  /* eslint-enable @typescript-eslint/naming-convention */
-
   function Volume() {
     var imageInfo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : getDefaultImageInfo();
     var loadSpec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__.LoadSpec();
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Volume);
-    // imageMetadata to be filled in by Volume Loaders
-    this.imageMetadata = {};
-    this.contentSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
-    this.contentOffset = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0);
-    this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
-    this.physicalScale = 1;
-    this.normalizedPhysicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
     this.loaded = false;
     this.imageInfo = imageInfo;
     this.name = this.imageInfo.name;
     this.loadSpec = loadSpec;
-
-    // clean up some possibly bad data.
-    this.imageInfo.pixel_size_x = imageInfo.pixel_size_x || 1.0;
-    this.imageInfo.pixel_size_y = imageInfo.pixel_size_y || 1.0;
-    this.imageInfo.pixel_size_z = imageInfo.pixel_size_z || 1.0;
-    this.pixel_size = [this.imageInfo.pixel_size_x, this.imageInfo.pixel_size_y, this.imageInfo.pixel_size_z];
-    this.x = this.imageInfo.tile_width;
-    this.y = this.imageInfo.tile_height;
-    this.z = this.imageInfo.tiles;
-    this.num_channels = this.imageInfo.channels;
-    this.channel_names = this.imageInfo.channel_names.slice();
-    this.channel_colors_default = this.imageInfo.channel_colors ? this.imageInfo.channel_colors.slice() : this.channel_names.map(function (name, index) {
+    // imageMetadata to be filled in by Volume Loaders
+    this.imageMetadata = {};
+    this.normRegionSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
+    this.normRegionOffset = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0);
+    this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
+    this.physicalScale = 1;
+    this.normPhysicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
+    this.physicalPixelSize = this.imageInfo.physicalPixelSize;
+    this.setVoxelSize(this.physicalPixelSize);
+    this.numChannels = this.imageInfo.numChannels;
+    this.channelNames = this.imageInfo.channelNames.slice();
+    this.channelColorsDefault = this.imageInfo.channelColors ? this.imageInfo.channelColors.slice() : this.channelNames.map(function (name, index) {
       return (0,_constants_colors__WEBPACK_IMPORTED_MODULE_3__.getColorByChannelIndex)(index);
     });
     // fill in gaps
-    if (this.channel_colors_default.length < this.num_channels) {
-      for (var i = this.channel_colors_default.length - 1; i < this.num_channels; ++i) {
-        this.channel_colors_default[i] = (0,_constants_colors__WEBPACK_IMPORTED_MODULE_3__.getColorByChannelIndex)(i);
+    if (this.channelColorsDefault.length < this.imageInfo.numChannels) {
+      for (var i = this.channelColorsDefault.length - 1; i < this.imageInfo.numChannels; ++i) {
+        this.channelColorsDefault[i] = (0,_constants_colors__WEBPACK_IMPORTED_MODULE_3__.getColorByChannelIndex)(i);
       }
     }
     this.channels = [];
-    for (var _i = 0; _i < this.num_channels; ++_i) {
-      var channel = new _Channel__WEBPACK_IMPORTED_MODULE_2__["default"](this.channel_names[_i]);
+    for (var _i = 0; _i < this.imageInfo.numChannels; ++_i) {
+      var channel = new _Channel__WEBPACK_IMPORTED_MODULE_2__["default"](this.channelNames[_i]);
       this.channels.push(channel);
       // TODO pass in channel constructor...
-      channel.dims = [this.x, this.y, this.z];
+      channel.dims = this.imageInfo.subregionSize.toArray();
     }
-    this.physicalUnitSymbol = this.imageInfo.pixel_size_unit;
+    this.physicalUnitSymbol = this.imageInfo.spatialUnit;
     this.tickMarkPhysicalLength = 1;
-    this.setVoxelSize(this.pixel_size);
-
-    // make sure a transform is specified
-    if (!this.imageInfo.transform) {
-      this.imageInfo.transform = {
-        translation: [0, 0, 0],
-        rotation: [0, 0, 0]
-      };
-    }
-    if (!this.imageInfo.transform.translation) {
-      this.imageInfo.transform.translation = [0, 0, 0];
-    }
-    if (!this.imageInfo.transform.rotation) {
-      this.imageInfo.transform.rotation = [0, 0, 0];
-    }
     this.volumeDataObservers = [];
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Volume, [{
     key: "updateDimensions",
     value: function updateDimensions() {
-      this.x = this.imageInfo.tile_width;
-      this.y = this.imageInfo.tile_height;
-      this.z = this.imageInfo.tiles;
-      this.setVoxelSize(this.pixel_size);
-
-      /* eslint-disable @typescript-eslint/naming-convention */
       var _this$imageInfo = this.imageInfo,
-        tile_width = _this$imageInfo.tile_width,
-        tile_height = _this$imageInfo.tile_height,
-        tiles = _this$imageInfo.tiles,
-        _this$imageInfo$vol_s = _this$imageInfo.vol_size_x,
-        vol_size_x = _this$imageInfo$vol_s === void 0 ? tile_width : _this$imageInfo$vol_s,
-        _this$imageInfo$vol_s2 = _this$imageInfo.vol_size_y,
-        vol_size_y = _this$imageInfo$vol_s2 === void 0 ? tile_height : _this$imageInfo$vol_s2,
-        _this$imageInfo$vol_s3 = _this$imageInfo.vol_size_z,
-        vol_size_z = _this$imageInfo$vol_s3 === void 0 ? tiles : _this$imageInfo$vol_s3,
-        _this$imageInfo$offse = _this$imageInfo.offset_x,
-        offset_x = _this$imageInfo$offse === void 0 ? 0 : _this$imageInfo$offse,
-        _this$imageInfo$offse2 = _this$imageInfo.offset_y,
-        offset_y = _this$imageInfo$offse2 === void 0 ? 0 : _this$imageInfo$offse2,
-        _this$imageInfo$offse3 = _this$imageInfo.offset_z,
-        offset_z = _this$imageInfo$offse3 === void 0 ? 0 : _this$imageInfo$offse3;
-      /* eslint-enable @typescript-eslint/naming-convention */
-      this.contentSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(tile_width / vol_size_x, tile_height / vol_size_y, tiles / vol_size_z);
-      this.contentOffset = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(offset_x / vol_size_x, offset_y / vol_size_y, offset_z / vol_size_z);
+        volumeSize = _this$imageInfo.volumeSize,
+        subregionSize = _this$imageInfo.subregionSize,
+        subregionOffset = _this$imageInfo.subregionOffset;
+      this.setVoxelSize(this.physicalPixelSize);
+      this.normRegionSize = subregionSize.clone().divide(volumeSize);
+      this.normRegionOffset = subregionOffset.clone().divide(volumeSize);
     }
 
     // we calculate the physical size of the volume (voxels*pixel_size)
     // and then normalize to the max physical dimension
   }, {
     key: "setVoxelSize",
-    value: function setVoxelSize(values) {
-      // basic error check.  bail out if we get something bad.
-      if (!values.length || values.length < 3) {
-        return;
-      }
-
+    value: function setVoxelSize(size) {
       // only set the data if it is > 0.  zero is not an allowed value.
-      if (values[0] > 0) {
-        this.pixel_size[0] = values[0];
-      }
-      if (values[1] > 0) {
-        this.pixel_size[1] = values[1];
-      }
-      if (values[2] > 0) {
-        this.pixel_size[2] = values[2];
-      }
-
-      // this works because image was scaled down in x and y but not z.
-      // so use original x and y dimensions from imageInfo.
-      var sizez = this.imageInfo.vol_size_z || this.z;
-      this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(this.imageInfo.width * this.pixel_size[0], this.imageInfo.height * this.pixel_size[1], sizez * this.pixel_size[2]);
+      size.clampScalar(0, Infinity);
+      size.x = size.x || 1.0;
+      size.y = size.y || 1.0;
+      size.z = size.z || 1.0;
+      this.physicalPixelSize = size;
+      this.physicalSize = this.imageInfo.originalSize.clone().multiply(this.physicalPixelSize);
       // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
       this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z);
       // Compute the volume's max extent - scaled to max dimension.
-      this.normalizedPhysicalSize = this.physicalSize.clone().divideScalar(this.physicalScale);
+      this.normPhysicalSize = this.physicalSize.clone().divideScalar(this.physicalScale);
       // While we're here, pick a power of 10 that divides into our max dimension a reasonable number of times
       // and save it to be the length of tick marks in 3d.
       this.tickMarkPhysicalLength = Math.pow(10, Math.floor(Math.log10(this.physicalScale / 2)));
@@ -6283,22 +6202,13 @@ var Volume = /*#__PURE__*/function () {
   }, {
     key: "getContentCenter",
     value: function getContentCenter() {
-      // center point: (contentSize / 2 + contentOffset - 0.5) * normalizedPhysicalSize;
-      return this.contentSize.clone().divideScalar(2).add(this.contentOffset).subScalar(0.5).multiply(this.normalizedPhysicalSize);
+      // center point: (normRegionSize / 2 + normRegionOffset - 0.5) * normPhysicalSize;
+      return this.normRegionSize.clone().divideScalar(2).add(this.normRegionOffset).subScalar(0.5).multiply(this.normPhysicalSize);
     }
   }, {
     key: "cleanup",
     value: function cleanup() {
       // no op
-    }
-
-    /**
-     * @return a reference to the list of channel names
-     */
-  }, {
-    key: "channelNames",
-    value: function channelNames() {
-      return this.channel_names;
     }
   }, {
     key: "getChannel",
@@ -6330,7 +6240,11 @@ var Volume = /*#__PURE__*/function () {
     key: "setChannelDataFromAtlas",
     value: function setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight) {
       this.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight);
-      this.channels[channelIndex].unpackVolumeFromAtlas(this.x, this.y, this.z);
+      var _this$imageInfo$subre = this.imageInfo.subregionSize,
+        x = _this$imageInfo$subre.x,
+        y = _this$imageInfo$subre.y,
+        z = _this$imageInfo$subre.z;
+      this.channels[channelIndex].unpackVolumeFromAtlas(x, y, z);
       this.onChannelLoaded([channelIndex]);
     }
 
@@ -6343,7 +6257,10 @@ var Volume = /*#__PURE__*/function () {
   }, {
     key: "setChannelDataFromVolume",
     value: function setChannelDataFromVolume(channelIndex, volumeData) {
-      this.channels[channelIndex].setFromVolumeData(volumeData, this.x, this.y, this.z, this.imageInfo.cols * this.imageInfo.tile_width, this.imageInfo.rows * this.imageInfo.tile_height);
+      var _this$imageInfo2 = this.imageInfo,
+        subregionSize = _this$imageInfo2.subregionSize,
+        atlasTileDims = _this$imageInfo2.atlasTileDims;
+      this.channels[channelIndex].setFromVolumeData(volumeData, subregionSize.x, subregionSize.y, subregionSize.z, atlasTileDims.x * subregionSize.x, atlasTileDims.y * subregionSize.y);
       this.onChannelLoaded([channelIndex]);
     }
 
@@ -6357,12 +6274,12 @@ var Volume = /*#__PURE__*/function () {
   }, {
     key: "appendEmptyChannel",
     value: function appendEmptyChannel(name, color) {
-      var idx = this.num_channels;
+      var idx = this.imageInfo.numChannels;
       var chname = name || "channel_" + idx;
       var chcolor = color || (0,_constants_colors__WEBPACK_IMPORTED_MODULE_3__.getColorByChannelIndex)(idx);
-      this.num_channels += 1;
-      this.channel_names.push(chname);
-      this.channel_colors_default.push(chcolor);
+      this.numChannels += 1;
+      this.channelNames.push(chname);
+      this.channelColorsDefault.push(chcolor);
       this.channels.push(new _Channel__WEBPACK_IMPORTED_MODULE_2__["default"](chname));
       for (var i = 0; i < this.volumeDataObservers.length; ++i) {
         this.volumeDataObservers[i].onVolumeChannelAdded(this, idx);
@@ -6437,7 +6354,7 @@ var Volume = /*#__PURE__*/function () {
     key: "getRotation",
     value: function getRotation() {
       // default axis order is XYZ
-      return this.imageInfo.transform.rotation;
+      return this.imageInfo.transform.rotation.toArray();
     }
 
     /**
@@ -6447,7 +6364,7 @@ var Volume = /*#__PURE__*/function () {
   }, {
     key: "getTranslation",
     value: function getTranslation() {
-      return this.voxelsToWorldSpace(this.imageInfo.transform.translation);
+      return this.voxelsToWorldSpace(this.imageInfo.transform.translation.toArray());
     }
 
     /**
@@ -6460,8 +6377,7 @@ var Volume = /*#__PURE__*/function () {
       // ASSUME: translation is in original image voxels.
       // account for pixel_size and normalized scaling in the threejs volume representation we're using
       var m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
-      var pixelSizeVec = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3().fromArray(this.pixel_size);
-      return new three__WEBPACK_IMPORTED_MODULE_5__.Vector3().fromArray(xyz).multiply(pixelSizeVec).multiplyScalar(m).toArray();
+      return new three__WEBPACK_IMPORTED_MODULE_5__.Vector3().fromArray(xyz).multiply(this.physicalPixelSize).multiplyScalar(m).toArray();
     }
   }, {
     key: "addVolumeDataObserver",
@@ -6566,8 +6482,8 @@ var VolumeDrawable = /*#__PURE__*/function () {
     this.onChannelDataReadyCallback = undefined;
     this.viewMode = _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.NONE; // 3D mode
 
-    this.channelColors = this.volume.channel_colors_default.slice();
-    this.channelOptions = new Array(this.volume.num_channels).fill({});
+    this.channelColors = this.volume.channelColorsDefault.slice();
+    this.channelOptions = new Array(this.volume.imageInfo.numChannels).fill({});
     this.fusion = this.channelColors.map(function (col, index) {
       var rgbColor;
       // take copy of original channel color
@@ -6726,9 +6642,9 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "updateScale",
     value: function updateScale() {
       var _this$volume = this.volume,
-        normalizedPhysicalSize = _this$volume.normalizedPhysicalSize,
-        contentSize = _this$volume.contentSize;
-      this.meshVolume.setScale(normalizedPhysicalSize.clone().multiply(contentSize), this.volume.getContentCenter());
+        normPhysicalSize = _this$volume.normPhysicalSize,
+        normRegionSize = _this$volume.normRegionSize;
+      this.meshVolume.setScale(normPhysicalSize.clone().multiply(normRegionSize), this.volume.getContentCenter());
       this.volumeRendering.updateVolumeDimensions();
     }
   }, {
@@ -7000,7 +6916,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "onChannelAdded",
     value: function onChannelAdded(newChannelIndex) {
-      this.channelColors[newChannelIndex] = this.volume.channel_colors_default[newChannelIndex];
+      this.channelColors[newChannelIndex] = this.volume.channelColorsDefault[newChannelIndex];
       this.fusion[newChannelIndex] = {
         chIndex: newChannelIndex,
         lut: new Uint8Array[_Histogram__WEBPACK_IMPORTED_MODULE_6__.LUT_ARRAY_LENGTH](),
@@ -7295,7 +7211,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "setZSlice",
     value: function setZSlice(slice) {
-      var sizez = this.volume.imageInfo.vol_size_z || this.volume.z;
+      var sizez = this.volume.imageInfo.volumeSize.z;
       if (this.settings.zSlice !== slice && slice < sizez && slice > 0) {
         this.settings.zSlice = slice;
         this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.ROI);
@@ -7546,10 +7462,10 @@ var VolumeRenderSettings = /*#__PURE__*/function () {
     this.maxProjectMode = false;
     // volume-dependent properties
     if (volume) {
-      this.zSlice = Math.floor(volume.z / 2);
-      this.specular = new Array(volume.num_channels).fill([0, 0, 0]);
-      this.emissive = new Array(volume.num_channels).fill([0, 0, 0]);
-      this.glossiness = new Array(volume.num_channels).fill(0);
+      this.zSlice = Math.floor(volume.imageInfo.subregionSize.z / 2);
+      this.specular = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
+      this.emissive = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
+      this.glossiness = new Array(volume.imageInfo.numChannels).fill(0);
     } else {
       this.zSlice = 0;
       this.specular = [[0, 0, 0]];
@@ -7562,10 +7478,10 @@ var VolumeRenderSettings = /*#__PURE__*/function () {
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(VolumeRenderSettings, [{
     key: "resizeWithVolume",
     value: function resizeWithVolume(volume) {
-      this.zSlice = Math.floor(volume.z / 2);
-      this.specular = new Array(volume.num_channels).fill([0, 0, 0]);
-      this.emissive = new Array(volume.num_channels).fill([0, 0, 0]);
-      this.glossiness = new Array(volume.num_channels).fill(0);
+      this.zSlice = Math.floor(volume.imageInfo.subregionSize.z / 2);
+      this.specular = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
+      this.emissive = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
+      this.glossiness = new Array(volume.imageInfo.numChannels).fill(0);
     }
 
     /**
@@ -8170,7 +8086,7 @@ __webpack_require__.r(__webpack_exports__);
 /* babel-plugin-inline-import './shaders/raymarch.vert' */
 var rayMarchVertexShader = "// switch on high precision floats\n#ifdef GL_ES\nprecision highp float;\n#endif\nvarying vec3 pObj;\nvoid main() {\n  pObj = position;\n  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n}\n";
 /* babel-plugin-inline-import './shaders/raymarch.frag' */
-var rayMarchFragmentShader = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\n#define M_PI 3.14159265358979323846\n\nuniform vec2 iResolution;\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform float ATLAS_X;\nuniform float ATLAS_Y;\nuniform vec3 AABB_CLIP_MIN;\nuniform float CLIP_NEAR;\nuniform vec3 AABB_CLIP_MAX;\nuniform float CLIP_FAR;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform int BREAK_STEPS;\nuniform float SLICES;\nuniform float isOrtho;\nuniform float orthoThickness;\nuniform float orthoScale;\nuniform int maxProject;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\nuniform vec3 volumeScale;\n\n// view space to axis-aligned volume box\nuniform mat4 inverseModelViewMatrix;\n\nvarying vec3 pObj;\n\nfloat powf(float a, float b) {\n  return pow(a,b);\n}\n\nfloat rand(vec2 co) {\n  float threadId = gl_FragCoord.x/(gl_FragCoord.y + 1.0);\n  float bigVal = threadId*1299721.0/911.0;\n  vec2 smallVal = vec2(threadId*7927.0/577.0, threadId*104743.0/1039.0);\n  return fract(sin(dot(co, smallVal)) * bigVal);\n}\n\nvec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {\n  float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));\n  // float x = max(color[2], max(color[0],color[1]));\n  float xi = (x-vmin)/(vmax-vmin);\n  xi = clamp(xi,0.0,1.0);\n  float y = pow(xi,C);\n  y = clamp(y,0.0,1.0);\n  color[3] = y;\n  return color;\n}\n\nvec2 offsetFrontBack(float t, float nx, float ny) {\n  int a = int(t);\n  int ax = int(ATLAS_X);\n  vec2 os = vec2(float(a-(a/ax)*ax) / ATLAS_X, float(a/ax) / ATLAS_Y);\n  return clamp(os, vec2(0.0, 0.0), vec2(1.0-1.0/ATLAS_X, 1.0-1.0/ATLAS_Y));\n}\n\nvec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n  // get location within atlas tile\n  // TODO: get loc1 which follows ray to next slice along ray direction\n  // when flipvolume = 1:  pos\n  // when flipvolume = -1: 1-pos\n  vec2 loc0 = vec2(\n    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,\n    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);\n\n  // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y\n  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n  loc0 = vec2(0.5/textureRes.x, 0.5/textureRes.y) + loc0*vec2(1.0-(ATLAS_X)/textureRes.x, 1.0-(ATLAS_Y)/textureRes.y);\n  \n  // interpolate between two slices\n  float z = (pos.z)*(nSlices-1.0);\n  float z0 = floor(z);\n  float t = z-z0; //mod(z, 1.0);\n  float z1 = min(z0+1.0, nSlices-1.0);\n\n  // flipped:\n  if (flipVolume.z == -1.0) {\n    z0 = nSlices - z0 - 1.0;\n    z1 = nSlices - z1 - 1.0;\n    t = 1.0 - t;\n  }\n\n  // get slice offsets in texture atlas\n  vec2 o0 = offsetFrontBack(z0,ATLAS_X,ATLAS_Y) + loc0;\n  vec2 o1 = offsetFrontBack(z1,ATLAS_X,ATLAS_Y) + loc0;\n\n  vec4 slice0Color = texture2D(tex, o0);\n  vec4 slice1Color = texture2D(tex, o1);\n  // NOTE we could premultiply the mask in the fuse function,\n  // but that is slower to update the maskAlpha value than here in the shader.\n  // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?\n  float slice0Mask = texture2D(textureAtlasMask, o0).x;\n  float slice1Mask = texture2D(textureAtlasMask, o1).x;\n  // or use max for conservative 0 or 1 masking?\n  float maskVal = mix(slice0Mask, slice1Mask, t);\n  // take mask from 0..1 to alpha..1\n  maskVal = mix(maskVal, 1.0, maskAlpha);\n  vec4 retval = mix(slice0Color, slice1Color, t);\n  // only mask the rgb, not the alpha(?)\n  retval.rgb *= maskVal;\n  return bounds*retval;\n}\n\nvec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n  vec2 loc0 = vec2(\n    (flipVolume.x*(pos.x - 0.5) + 0.5)/ATLAS_X,\n    (flipVolume.y*(pos.y - 0.5) + 0.5)/ATLAS_Y);\n\n  // No interpolation - sample just one slice at a pixel center.\n  // Ideally this would be accomplished in part by switching this texture to linear\n  //   filtering, but three makes this difficult to do through a WebGLRenderTarget.\n  loc0 = floor(loc0 * textureRes) / textureRes;\n  loc0 += vec2(0.5/textureRes.x, 0.5/textureRes.y);\n\n  float z = min(floor(pos.z * nSlices), nSlices-1.0);\n  \n  if (flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z, ATLAS_X, ATLAS_Y) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds*voxelColor;\n}\n\nbool intersectBox(in vec3 r_o, in vec3 r_d, in vec3 boxMin, in vec3 boxMax,\n                  out float tnear, out float tfar) {\n  // compute intersection of ray with all six bbox planes\n  vec3 invR = vec3(1.0,1.0,1.0) / r_d;\n  vec3 tbot = invR * (boxMin - r_o);\n  vec3 ttop = invR * (boxMax - r_o);\n\n  // re-order intersections to find smallest and largest on each axis\n  vec3 tmin = min(ttop, tbot);\n  vec3 tmax = max(ttop, tbot);\n\n  // find the largest tmin and the smallest tmax\n  float largest_tmin  = max(max(tmin.x, tmin.y), max(tmin.x, tmin.z));\n  float smallest_tmax = min(min(tmax.x, tmax.y), min(tmax.x, tmax.z));\n\n  tnear = largest_tmin;\n  tfar = smallest_tmax;\n\n  // use >= here?\n  return(smallest_tmax > largest_tmin);\n}\n\nvec4 accumulate(vec4 col, float s, vec4 C) {\n  float stepScale = (1.0 - powf((1.0-col.w),s));\n  col.w = stepScale;\n  col.xyz *= col.w;\n  col = clamp(col,0.0,1.0);\n\n  C = (1.0-C.w)*col + C;\n  return C;\n}\n\nvec4 integrateVolume(vec4 eye_o,vec4 eye_d,\n                     float tnear,   float tfar,\n                     float clipNear, float clipFar,\n                     sampler2D textureAtlas\n                     ) {\n  vec4 C = vec4(0.0);\n  float tend   = tfar;\n  float tbegin = tnear;\n\n  // march along ray from front to back, accumulating color\n\n  // estimate step length\n  const int maxSteps = 512;\n  // modify the 3 components of eye_d by volume scale\n  float scaledSteps = float(BREAK_STEPS) * length((eye_d.xyz/volumeScale));\n  float csteps = clamp(float(scaledSteps), 1.0, float(maxSteps));\n  float invstep = (tfar-tnear)/csteps;\n  // special-casing the single slice to remove the random ray dither.\n  // this removes a Moire pattern visible in single slice images, which we want to view as 2D images as best we can.\n  float r = (SLICES==1.0) ? 0.0 : rand(eye_d.xy);\n  // if ortho and clipped, make step size smaller so we still get same number of steps\n  float tstep = invstep*orthoThickness;\n  float tfarsurf = r*tstep;\n  float overflow = mod((tfarsurf - tend),tstep); // random dithering offset\n  float t = tbegin + overflow;\n  t += r*tstep; // random dithering offset\n  float tdist = 0.0;\n  int numSteps = 0;\n  vec4 pos, col;\n  // We need to be able to scale the alpha contrib with number of ray steps,\n  // in order to make the final color invariant to the step size(?)\n  // use maxSteps (a constant) as the numerator... Not sure if this is sound.\n  float s = 0.5 * float(maxSteps) / csteps;\n  for (int i = 0; i < maxSteps; i++) {\n    pos = eye_o + eye_d*t;\n    // !!! assume box bounds are -0.5 .. 0.5.  pos = (pos-min)/(max-min)\n    // scaling is handled by model transform and already accounted for before we get here.\n    // AABB clip is independent of this and is only used to determine tnear and tfar.\n    pos.xyz = (pos.xyz-(-0.5))/((0.5)-(-0.5)); //0.5 * (pos + 1.0); // map position from [boxMin, boxMax] to [0, 1] coordinates\n\n    vec4 col = interpolationEnabled ? sampleAtlasLinear(textureAtlas, pos) : sampleAtlasNearest(textureAtlas, pos);\n\n    if (maxProject != 0) {\n      col.xyz *= BRIGHTNESS;\n      C = max(col, C);\n    } else {\n      col = luma2Alpha(col, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);\n      col.xyz *= BRIGHTNESS;\n      // for practical use the density only matters for regular volume integration\n      col.w *= DENSITY;\n      C = accumulate(col, s, C);\n    }\n    t += tstep;\n    numSteps = i;\n\n    if (t > tend || t > tbegin+clipFar ) break;\n    if (C.w > 1.0 ) break;\n  }\n\n  return C;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n  vec2 vUv = gl_FragCoord.xy/iResolution.xy;\n\n  vec3 eyeRay_o, eyeRay_d;\n\n  if (isOrtho == 0.0) {\n    // for perspective rays:\n    // world space camera coordinates\n    // transform to object space\n    eyeRay_o = (inverseModelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;\n    eyeRay_d = normalize(pObj - eyeRay_o);\n  } else {\n    // for ortho rays:\n    float zDist = 2.0;\n    eyeRay_d = (inverseModelViewMatrix*vec4(0.0, 0.0, -zDist, 0.0)).xyz;\n    vec4 ray_o = vec4(2.0*vUv - 1.0, 1.0, 1.0);\n    ray_o.xy *= orthoScale;\n    ray_o.x *= iResolution.x/iResolution.y;\n    eyeRay_o = (inverseModelViewMatrix*ray_o).xyz;\n  }\n\n  // -0.5..0.5 is full box. AABB_CLIP lets us clip to a box shaped ROI to look at\n  // I am applying it here at the earliest point so that the ray march does\n  // not waste steps.  For general shaped ROI, this has to be handled more\n  // generally (obviously)\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n\n  float tnear, tfar;\n  bool hit = intersectBox(eyeRay_o, eyeRay_d, boxMin, boxMax, tnear, tfar);\n\n  if (!hit) {\n    // return background color if ray misses the cube\n    // is this safe to do when there is other geometry / gObjects drawn?\n    gl_FragColor = vec4(0.0); //C1;//vec4(0.0);\n    return;\n  }\n\n  float clipNear = 0.0;//-(dot(eyeRay_o.xyz, eyeNorm) + dNear) / dot(eyeRay_d.xyz, eyeNorm);\n  float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);\n\n  vec4 C = integrateVolume(vec4(eyeRay_o,1.0), vec4(eyeRay_d,0.0),\n                           tnear,    tfar, //intersections of box\n                           clipNear, clipFar,\n                           textureAtlas);\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}\n";
+var rayMarchFragmentShader = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\n#define M_PI 3.14159265358979323846\n\nuniform vec2 iResolution;\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform vec2 ATLAS_DIMS;\nuniform vec3 AABB_CLIP_MIN;\nuniform float CLIP_NEAR;\nuniform vec3 AABB_CLIP_MAX;\nuniform float CLIP_FAR;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform int BREAK_STEPS;\nuniform float SLICES;\nuniform float isOrtho;\nuniform float orthoThickness;\nuniform float orthoScale;\nuniform int maxProject;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\nuniform vec3 volumeScale;\n\n// view space to axis-aligned volume box\nuniform mat4 inverseModelViewMatrix;\n\nvarying vec3 pObj;\n\nfloat powf(float a, float b) {\n  return pow(a,b);\n}\n\nfloat rand(vec2 co) {\n  float threadId = gl_FragCoord.x/(gl_FragCoord.y + 1.0);\n  float bigVal = threadId*1299721.0/911.0;\n  vec2 smallVal = vec2(threadId*7927.0/577.0, threadId*104743.0/1039.0);\n  return fract(sin(dot(co, smallVal)) * bigVal);\n}\n\nvec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {\n  float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));\n  // float x = max(color[2], max(color[0],color[1]));\n  float xi = (x-vmin)/(vmax-vmin);\n  xi = clamp(xi,0.0,1.0);\n  float y = pow(xi,C);\n  y = clamp(y,0.0,1.0);\n  color[3] = y;\n  return color;\n}\n\nvec2 offsetFrontBack(float t) {\n  int a = int(t);\n  int ax = int(ATLAS_DIMS.x);\n  vec2 os = vec2(float(a - (a / ax) * ax), float(a / ax)) / ATLAS_DIMS;\n  return clamp(os, vec2(0.0), vec2(1.0) - vec2(1.0) / ATLAS_DIMS);\n}\n\nvec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n  // get location within atlas tile\n  // TODO: get loc1 which follows ray to next slice along ray direction\n  // when flipvolume = 1:  pos\n  // when flipvolume = -1: 1-pos\n  vec2 loc0 = ((pos.xy - 0.5) * flipVolume.xy + 0.5) / ATLAS_DIMS;\n\n  // loc ranges from 0 to 1/ATLAS_DIMS\n  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n  loc0 = vec2(0.5) / textureRes + loc0 * (vec2(1.0) - ATLAS_DIMS / textureRes);\n  \n  // interpolate between two slices\n  float z = (pos.z)*(nSlices-1.0);\n  float z0 = floor(z);\n  float t = z-z0; //mod(z, 1.0);\n  float z1 = min(z0+1.0, nSlices-1.0);\n\n  // flipped:\n  if (flipVolume.z == -1.0) {\n    z0 = nSlices - z0 - 1.0;\n    z1 = nSlices - z1 - 1.0;\n    t = 1.0 - t;\n  }\n\n  // get slice offsets in texture atlas\n  vec2 o0 = offsetFrontBack(z0) + loc0;\n  vec2 o1 = offsetFrontBack(z1) + loc0;\n\n  vec4 slice0Color = texture2D(tex, o0);\n  vec4 slice1Color = texture2D(tex, o1);\n  // NOTE we could premultiply the mask in the fuse function,\n  // but that is slower to update the maskAlpha value than here in the shader.\n  // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?\n  float slice0Mask = texture2D(textureAtlasMask, o0).x;\n  float slice1Mask = texture2D(textureAtlasMask, o1).x;\n  // or use max for conservative 0 or 1 masking?\n  float maskVal = mix(slice0Mask, slice1Mask, t);\n  // take mask from 0..1 to alpha..1\n  maskVal = mix(maskVal, 1.0, maskAlpha);\n  vec4 retval = mix(slice0Color, slice1Color, t);\n  // only mask the rgb, not the alpha(?)\n  retval.rgb *= maskVal;\n  return bounds*retval;\n}\n\nvec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n\n  vec2 loc0 = ((pos.xy - 0.5) * flipVolume.xy + 0.5) / ATLAS_DIMS;\n\n  // No interpolation - sample just one slice at a pixel center.\n  // Ideally this would be accomplished in part by switching this texture to linear\n  //   filtering, but three makes this difficult to do through a WebGLRenderTarget.\n  loc0 = floor(loc0 * textureRes) / textureRes;\n  loc0 += vec2(0.5) / textureRes;\n\n  float z = min(floor(pos.z * nSlices), nSlices-1.0);\n  \n  if (flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds*voxelColor;\n}\n\nbool intersectBox(in vec3 r_o, in vec3 r_d, in vec3 boxMin, in vec3 boxMax,\n                  out float tnear, out float tfar) {\n  // compute intersection of ray with all six bbox planes\n  vec3 invR = vec3(1.0,1.0,1.0) / r_d;\n  vec3 tbot = invR * (boxMin - r_o);\n  vec3 ttop = invR * (boxMax - r_o);\n\n  // re-order intersections to find smallest and largest on each axis\n  vec3 tmin = min(ttop, tbot);\n  vec3 tmax = max(ttop, tbot);\n\n  // find the largest tmin and the smallest tmax\n  float largest_tmin  = max(max(tmin.x, tmin.y), max(tmin.x, tmin.z));\n  float smallest_tmax = min(min(tmax.x, tmax.y), min(tmax.x, tmax.z));\n\n  tnear = largest_tmin;\n  tfar = smallest_tmax;\n\n  // use >= here?\n  return(smallest_tmax > largest_tmin);\n}\n\nvec4 accumulate(vec4 col, float s, vec4 C) {\n  float stepScale = (1.0 - powf((1.0-col.w),s));\n  col.w = stepScale;\n  col.xyz *= col.w;\n  col = clamp(col,0.0,1.0);\n\n  C = (1.0-C.w)*col + C;\n  return C;\n}\n\nvec4 integrateVolume(vec4 eye_o,vec4 eye_d,\n                     float tnear,   float tfar,\n                     float clipNear, float clipFar,\n                     sampler2D textureAtlas\n                     ) {\n  vec4 C = vec4(0.0);\n  float tend   = tfar;\n  float tbegin = tnear;\n\n  // march along ray from front to back, accumulating color\n\n  // estimate step length\n  const int maxSteps = 512;\n  // modify the 3 components of eye_d by volume scale\n  float scaledSteps = float(BREAK_STEPS) * length((eye_d.xyz/volumeScale));\n  float csteps = clamp(float(scaledSteps), 1.0, float(maxSteps));\n  float invstep = (tfar-tnear)/csteps;\n  // special-casing the single slice to remove the random ray dither.\n  // this removes a Moire pattern visible in single slice images, which we want to view as 2D images as best we can.\n  float r = (SLICES==1.0) ? 0.0 : rand(eye_d.xy);\n  // if ortho and clipped, make step size smaller so we still get same number of steps\n  float tstep = invstep*orthoThickness;\n  float tfarsurf = r*tstep;\n  float overflow = mod((tfarsurf - tend),tstep); // random dithering offset\n  float t = tbegin + overflow;\n  t += r*tstep; // random dithering offset\n  float tdist = 0.0;\n  int numSteps = 0;\n  vec4 pos, col;\n  // We need to be able to scale the alpha contrib with number of ray steps,\n  // in order to make the final color invariant to the step size(?)\n  // use maxSteps (a constant) as the numerator... Not sure if this is sound.\n  float s = 0.5 * float(maxSteps) / csteps;\n  for (int i = 0; i < maxSteps; i++) {\n    pos = eye_o + eye_d*t;\n    // !!! assume box bounds are -0.5 .. 0.5.  pos = (pos-min)/(max-min)\n    // scaling is handled by model transform and already accounted for before we get here.\n    // AABB clip is independent of this and is only used to determine tnear and tfar.\n    pos.xyz = (pos.xyz-(-0.5))/((0.5)-(-0.5)); //0.5 * (pos + 1.0); // map position from [boxMin, boxMax] to [0, 1] coordinates\n\n    vec4 col = interpolationEnabled ? sampleAtlasLinear(textureAtlas, pos) : sampleAtlasNearest(textureAtlas, pos);\n\n    if (maxProject != 0) {\n      col.xyz *= BRIGHTNESS;\n      C = max(col, C);\n    } else {\n      col = luma2Alpha(col, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);\n      col.xyz *= BRIGHTNESS;\n      // for practical use the density only matters for regular volume integration\n      col.w *= DENSITY;\n      C = accumulate(col, s, C);\n    }\n    t += tstep;\n    numSteps = i;\n\n    if (t > tend || t > tbegin+clipFar ) break;\n    if (C.w > 1.0 ) break;\n  }\n\n  return C;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n  vec2 vUv = gl_FragCoord.xy/iResolution.xy;\n\n  vec3 eyeRay_o, eyeRay_d;\n\n  if (isOrtho == 0.0) {\n    // for perspective rays:\n    // world space camera coordinates\n    // transform to object space\n    eyeRay_o = (inverseModelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;\n    eyeRay_d = normalize(pObj - eyeRay_o);\n  } else {\n    // for ortho rays:\n    float zDist = 2.0;\n    eyeRay_d = (inverseModelViewMatrix*vec4(0.0, 0.0, -zDist, 0.0)).xyz;\n    vec4 ray_o = vec4(2.0*vUv - 1.0, 1.0, 1.0);\n    ray_o.xy *= orthoScale;\n    ray_o.x *= iResolution.x/iResolution.y;\n    eyeRay_o = (inverseModelViewMatrix*ray_o).xyz;\n  }\n\n  // -0.5..0.5 is full box. AABB_CLIP lets us clip to a box shaped ROI to look at\n  // I am applying it here at the earliest point so that the ray march does\n  // not waste steps.  For general shaped ROI, this has to be handled more\n  // generally (obviously)\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n\n  float tnear, tfar;\n  bool hit = intersectBox(eyeRay_o, eyeRay_d, boxMin, boxMax, tnear, tfar);\n\n  if (!hit) {\n    // return background color if ray misses the cube\n    // is this safe to do when there is other geometry / gObjects drawn?\n    gl_FragColor = vec4(0.0); //C1;//vec4(0.0);\n    return;\n  }\n\n  float clipNear = 0.0;//-(dot(eyeRay_o.xyz, eyeNorm) + dNear) / dot(eyeRay_d.xyz, eyeNorm);\n  float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);\n\n  vec4 C = integrateVolume(vec4(eyeRay_o,1.0), vec4(eyeRay_d,0.0),\n                           tnear,    tfar, //intersections of box\n                           clipNear, clipFar,\n                           textureAtlas);\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}\n";
 var rayMarchingVertexShaderSrc = rayMarchVertexShader;
 var rayMarchingFragmentShaderSrc = rayMarchFragmentShader;
 var rayMarchingShaderUniforms = function rayMarchingShaderUniforms() {
@@ -8215,13 +8131,9 @@ var rayMarchingShaderUniforms = function rayMarchingShaderUniforms() {
       type: "i",
       value: 128
     },
-    ATLAS_X: {
-      type: "f",
-      value: 6
-    },
-    ATLAS_Y: {
-      type: "f",
-      value: 6
+    ATLAS_DIMS: {
+      type: "v2",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector2(6, 6)
     },
     SLICES: {
       type: "f",
@@ -8302,7 +8214,7 @@ __webpack_require__.r(__webpack_exports__);
 /* babel-plugin-inline-import './shaders/slice.vert' */
 var sliceVertexShader = "precision highp float;\nprecision highp int;\n\nvarying vec2 vUv;\n\nvoid main() {\n  vUv = uv;\n  gl_Position = projectionMatrix *\n    modelViewMatrix *\n    vec4(position, 1.0);\n}\n";
 /* babel-plugin-inline-import './shaders/slice.frag' */
-var sliceFragShader = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform float ATLAS_X;\nuniform float ATLAS_Y;\nuniform vec3 AABB_CLIP_MIN;\nuniform vec3 AABB_CLIP_MAX;\nuniform vec3 SUBSET_SCALE;\nuniform vec3 SUBSET_OFFSET;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform int Z_SLICE;\nuniform float SLICES;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\n\nvarying vec2 vUv;\n\nvec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {\n  float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));\n  float xi = (x - vmin) / (vmax - vmin);\n  xi = clamp(xi, 0.0, 1.0);\n  float y = pow(xi, C);\n  y = clamp(y, 0.0, 1.0);\n  color[3] = y;\n  return color;\n}\n\nvec2 offsetFrontBack(float t, float nx, float ny) {\n  int a = int(t);\n  int ax = int(ATLAS_X);\n  vec2 os = vec2(float(a - (a / ax) * ax) / ATLAS_X, float(a / ax) / ATLAS_Y);\n  return clamp(os, vec2(0.0, 0.0), vec2(1.0 - 1.0 / ATLAS_X, 1.0 - 1.0 / ATLAS_Y));\n}\n\nvec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n    pos[1] >= 0.0 && pos[1] <= 1.0 &&\n    pos[2] >= 0.0 && pos[2] <= 1.0);\n  float nSlices = float(SLICES);\n  vec2 loc0 = vec2((flipVolume.x * (pos.x - 0.5) + 0.5) / ATLAS_X, (flipVolume.y * (pos.y - 0.5) + 0.5) / ATLAS_Y);\n\n  // loc ranges from 0 to 1/ATLAS_X, 1/ATLAS_Y\n  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n  loc0 = vec2(0.5 / textureRes.x, 0.5 / textureRes.y) + loc0 * vec2(1.0 - (ATLAS_X) / textureRes.x, 1.0 - (ATLAS_Y) / textureRes.y);\n\n  // interpolate between two slices\n  float z = (pos.z) * (nSlices - 1.0);\n  float z0 = floor(z);\n  float t = z - z0; //mod(z, 1.0);\n  float z1 = min(z0 + 1.0, nSlices - 1.0);\n\n  // flipped:\n  if(flipVolume.z == -1.0) {\n    z0 = nSlices - z0 - 1.0;\n    z1 = nSlices - z1 - 1.0;\n    t = 1.0 - t;\n  }\n\n  // get slice offsets in texture atlas\n  vec2 o0 = offsetFrontBack(z0, ATLAS_X, ATLAS_Y) + loc0;\n  vec2 o1 = offsetFrontBack(z1, ATLAS_X, ATLAS_Y) + loc0;\n\n  vec4 slice0Color = texture2D(tex, o0);\n  vec4 slice1Color = texture2D(tex, o1);\n  // NOTE we could premultiply the mask in the fuse function,\n  // but that is slower to update the maskAlpha value than here in the shader.\n  // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?\n  float slice0Mask = texture2D(textureAtlasMask, o0).x;\n  float slice1Mask = texture2D(textureAtlasMask, o1).x;\n  // or use max for conservative 0 or 1 masking?\n  float maskVal = mix(slice0Mask, slice1Mask, t);\n  // take mask from 0..1 to alpha..1\n  maskVal = mix(maskVal, 1.0, maskAlpha);\n  vec4 retval = mix(slice0Color, slice1Color, t);\n  // only mask the rgb, not the alpha(?)\n  retval.rgb *= maskVal;\n  return bounds * retval;\n}\n\nvec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n    pos[1] >= 0.0 && pos[1] <= 1.0 &&\n    pos[2] >= 0.0 && pos[2] <= 1.0);\n  float nSlices = float(SLICES);\n  vec2 loc0 = vec2((flipVolume.x * (pos.x - 0.5) + 0.5) / ATLAS_X, (flipVolume.y * (pos.y - 0.5) + 0.5) / ATLAS_Y);\n\n  // No interpolation - sample just one slice at a pixel center.\n  // Ideally this would be accomplished in part by switching this texture to linear\n  //   filtering, but three makes this difficult to do through a WebGLRenderTarget.\n  loc0 = floor(loc0 * textureRes) / textureRes;\n  loc0 += vec2(0.5 / textureRes.x, 0.5 / textureRes.y);\n\n  float z = min(floor(pos.z * nSlices), nSlices - 1.0);\n\n  if(flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z, ATLAS_X, ATLAS_Y) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds * voxelColor;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n  // Normalize UV for [-0.5, 0.5] range\n  vec2 normUv = vUv - vec2(0.5);\n\n  // Return background color if outside of clipping box\n  if(normUv.x < boxMin.x || normUv.x > boxMax.x || normUv.y < boxMin.y || normUv.y > boxMax.y) {\n    gl_FragColor = vec4(0.0);\n    return;\n  }\n\n  // Normalize z-slice by total slices\n  vec4 pos = vec4(vUv, float(Z_SLICE) / (SLICES - 1.0), 0.0);\n  pos.xyz = (pos.xyz - SUBSET_OFFSET) / SUBSET_SCALE;\n\n  vec4 C;\n  if(interpolationEnabled) {\n    C = sampleAtlasLinear(textureAtlas, pos);\n  } else {\n    C = sampleAtlasNearest(textureAtlas, pos);\n  }\n  C = luma2Alpha(C, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);\n  C.xyz *= BRIGHTNESS;\n  // C.w *= DENSITY;  // Density disabled because it causes XY mode to render very dark on default settings\n\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}";
+var sliceFragShader = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform vec2 ATLAS_DIMS;\nuniform vec3 AABB_CLIP_MIN;\nuniform vec3 AABB_CLIP_MAX;\nuniform vec3 SUBSET_SCALE;\nuniform vec3 SUBSET_OFFSET;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform int Z_SLICE;\nuniform float SLICES;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\n\nvarying vec2 vUv;\n\nvec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {\n  float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));\n  float xi = (x - vmin) / (vmax - vmin);\n  xi = clamp(xi, 0.0, 1.0);\n  float y = pow(xi, C);\n  y = clamp(y, 0.0, 1.0);\n  color[3] = y;\n  return color;\n}\n\nvec2 offsetFrontBack(float t) {\n  int a = int(t);\n  int ax = int(ATLAS_DIMS.x);\n  vec2 os = vec2(float(a - (a / ax) * ax), float(a / ax)) / ATLAS_DIMS;\n  return clamp(os, vec2(0.0), vec2(1.0) - vec2(1.0) / ATLAS_DIMS);\n}\n\nvec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n    pos[1] >= 0.0 && pos[1] <= 1.0 &&\n    pos[2] >= 0.0 && pos[2] <= 1.0);\n  float nSlices = float(SLICES);\n\n  vec2 loc0 = ((pos.xy - 0.5) * flipVolume.xy + 0.5) / ATLAS_DIMS;\n\n  // loc ranges from 0 to 1/ATLAS_DIMS\n  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n  loc0 = vec2(0.5) / textureRes + loc0 * (vec2(1.0) - ATLAS_DIMS / textureRes);\n\n  // interpolate between two slices\n  float z = (pos.z) * (nSlices - 1.0);\n  float z0 = floor(z);\n  float t = z - z0; //mod(z, 1.0);\n  float z1 = min(z0 + 1.0, nSlices - 1.0);\n\n  // flipped:\n  if(flipVolume.z == -1.0) {\n    z0 = nSlices - z0 - 1.0;\n    z1 = nSlices - z1 - 1.0;\n    t = 1.0 - t;\n  }\n\n  // get slice offsets in texture atlas\n  vec2 o0 = offsetFrontBack(z0) + loc0;\n  vec2 o1 = offsetFrontBack(z1) + loc0;\n\n  vec4 slice0Color = texture2D(tex, o0);\n  vec4 slice1Color = texture2D(tex, o1);\n  // NOTE we could premultiply the mask in the fuse function,\n  // but that is slower to update the maskAlpha value than here in the shader.\n  // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?\n  float slice0Mask = texture2D(textureAtlasMask, o0).x;\n  float slice1Mask = texture2D(textureAtlasMask, o1).x;\n  // or use max for conservative 0 or 1 masking?\n  float maskVal = mix(slice0Mask, slice1Mask, t);\n  // take mask from 0..1 to alpha..1\n  maskVal = mix(maskVal, 1.0, maskAlpha);\n  vec4 retval = mix(slice0Color, slice1Color, t);\n  // only mask the rgb, not the alpha(?)\n  retval.rgb *= maskVal;\n  return bounds * retval;\n}\n\nvec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n    pos[1] >= 0.0 && pos[1] <= 1.0 &&\n    pos[2] >= 0.0 && pos[2] <= 1.0);\n  float nSlices = float(SLICES);\n\n  vec2 loc0 = ((pos.xy - 0.5) * flipVolume.xy + 0.5) / ATLAS_DIMS;\n\n  // No interpolation - sample just one slice at a pixel center.\n  // Ideally this would be accomplished in part by switching this texture to linear\n  //   filtering, but three makes this difficult to do through a WebGLRenderTarget.\n  loc0 = floor(loc0 * textureRes) / textureRes;\n  loc0 += vec2(0.5) / textureRes;\n\n  float z = min(floor(pos.z * nSlices), nSlices - 1.0);\n\n  if(flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds * voxelColor;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n  // Normalize UV for [-0.5, 0.5] range\n  vec2 normUv = vUv - vec2(0.5);\n\n  // Return background color if outside of clipping box\n  if(normUv.x < boxMin.x || normUv.x > boxMax.x || normUv.y < boxMin.y || normUv.y > boxMax.y) {\n    gl_FragColor = vec4(0.0);\n    return;\n  }\n\n  // Normalize z-slice by total slices\n  vec4 pos = vec4(vUv, float(Z_SLICE) / (SLICES - 1.0), 0.0);\n  pos.xyz = (pos.xyz - SUBSET_OFFSET) / SUBSET_SCALE;\n\n  vec4 C;\n  if(interpolationEnabled) {\n    C = sampleAtlasLinear(textureAtlas, pos);\n  } else {\n    C = sampleAtlasNearest(textureAtlas, pos);\n  }\n  C = luma2Alpha(C, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);\n  C.xyz *= BRIGHTNESS;\n  // C.w *= DENSITY;  // Density disabled because it causes XY mode to render very dark on default settings\n\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}";
 
 var sliceVertexShaderSrc = sliceVertexShader;
 var sliceFragmentShaderSrc = sliceFragShader;
@@ -8348,13 +8260,9 @@ var sliceShaderUniforms = function sliceShaderUniforms() {
       type: "i",
       value: 128
     },
-    ATLAS_X: {
-      type: "f",
-      value: 6
-    },
-    ATLAS_Y: {
-      type: "f",
-      value: 6
+    ATLAS_DIMS: {
+      type: "v2",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector2(6, 6)
     },
     Z_SLICE: {
       type: "i",
@@ -8627,6 +8535,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
 /* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
@@ -8638,6 +8547,36 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
+/* eslint-disable @typescript-eslint/naming-convention */
+
+/* eslint-enable @typescript-eslint/naming-convention */
+
+var convertImageInfo = function convertImageInfo(json) {
+  var _json$transform, _json$transform2;
+  return {
+    name: json.name,
+    originalSize: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(json.width, json.height, json.tiles),
+    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_8__.Vector2(json.cols, json.rows),
+    volumeSize: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(json.tile_width, json.tile_height, json.tiles),
+    subregionSize: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(json.tile_width, json.tile_height, json.tiles),
+    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0),
+    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
+    spatialUnit: json.pixel_size_unit || "μm",
+    numChannels: json.channels,
+    channelNames: json.channel_names,
+    channelColors: json.channel_colors,
+    times: json.times || 1,
+    timeScale: json.time_scale || 1,
+    timeUnit: json.time_unit || "s",
+    transform: {
+      translation: (_json$transform = json.transform) !== null && _json$transform !== void 0 && _json$transform.translation ? new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().fromArray(json.transform.translation) : new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0),
+      rotation: (_json$transform2 = json.transform) !== null && _json$transform2 !== void 0 && _json$transform2.rotation ? new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().fromArray(json.transform.rotation) : new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0)
+    },
+    userData: json.userData
+  };
+};
 var JsonImageInfoLoader = /*#__PURE__*/function () {
   function JsonImageInfoLoader() {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, JsonImageInfoLoader);
@@ -8648,12 +8587,12 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
     key: "getImageInfo",
     value: function () {
       var _getImageInfo = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(loadSpec) {
-        var response, myJson, imageInfo;
+        var response, imageInfo;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee$(_context) {
           while (1) switch (_context.prev = _context.next) {
             case 0:
               if (this.imageInfo) {
-                _context.next = 11;
+                _context.next = 10;
                 break;
               }
               _context.next = 3;
@@ -8663,14 +8602,13 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
               _context.next = 6;
               return response.json();
             case 6:
-              myJson = _context.sent;
-              imageInfo = myJson;
+              imageInfo = _context.sent;
               imageInfo.pixel_size_unit = imageInfo.pixel_size_unit || "μm";
               this.imageInfo = imageInfo;
-              this.imageArray = myJson.images;
-            case 11:
+              this.imageArray = imageInfo.images;
+            case 10:
               return _context.abrupt("return", this.imageInfo);
-            case 12:
+            case 11:
             case "end":
               return _context.stop();
           }
@@ -8685,19 +8623,19 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
     key: "loadDims",
     value: function () {
       var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee2(loadSpec) {
-        var imageInfo, d;
+        var jsonInfo, d;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee2$(_context2) {
           while (1) switch (_context2.prev = _context2.next) {
             case 0:
               _context2.next = 2;
               return this.getImageInfo(loadSpec);
             case 2:
-              imageInfo = _context2.sent;
+              jsonInfo = _context2.sent;
               d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__.VolumeDims();
               d.subpath = "";
-              d.shape = [imageInfo.times, imageInfo.channels, imageInfo.tiles, imageInfo.tile_height, imageInfo.tile_width];
-              d.spacing = [1, 1, imageInfo.pixel_size_z, imageInfo.pixel_size_y, imageInfo.pixel_size_x];
-              d.spaceUnit = imageInfo.pixel_size_unit;
+              d.shape = [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tile_height, jsonInfo.tile_width];
+              d.spacing = [1, 1, jsonInfo.pixel_size_z, jsonInfo.pixel_size_y, jsonInfo.pixel_size_x];
+              d.spaceUnit = jsonInfo.pixel_size_unit || "μm";
               d.dataType = "uint8";
               return _context2.abrupt("return", [d]);
             case 10:
@@ -8715,18 +8653,19 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
     key: "createVolume",
     value: function () {
       var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(loadSpec) {
-        var imageInfo, vol;
+        var jsonInfo, imageInfo, vol;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee3$(_context3) {
           while (1) switch (_context3.prev = _context3.next) {
             case 0:
               _context3.next = 2;
               return this.getImageInfo(loadSpec);
             case 2:
-              imageInfo = _context3.sent;
+              jsonInfo = _context3.sent;
+              imageInfo = convertImageInfo(jsonInfo);
               vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imageInfo, loadSpec);
               vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imageInfo);
               return _context3.abrupt("return", vol);
-            case 6:
+            case 7:
             case "end":
               return _context3.stop();
           }
@@ -8876,6 +8815,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5__);
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var zarr__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! zarr */ "./node_modules/zarr/zarr.mjs");
 /* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
@@ -8887,6 +8827,7 @@ __webpack_require__.r(__webpack_exports__);
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+
 
 
 
@@ -9218,39 +9159,25 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               for (i = 0; i < displayMetadata.channels.length; ++i) {
                 chnames.push(displayMetadata.channels[i].label);
               }
-
-              /* eslint-disable @typescript-eslint/naming-convention */
               imgdata = {
-                width: spec0.maxx - spec0.minx,
-                height: spec0.maxy - spec0.miny,
-                channels: channels,
-                channel_names: chnames,
-                rows: nrows,
-                cols: ncols,
-                // for webgl reasons, it is best for total atlas width and height to be <= 2048 and ideally a power of 2.
-                //   This generally implies downsampling the original volume data for display in this viewer.
-                tile_width: tw,
-                tile_height: th,
-                tiles: tz,
-                vol_size_x: tw,
-                vol_size_y: th,
-                vol_size_z: tz,
-                pixel_size_x: scale5d[x],
-                pixel_size_y: scale5d[y],
-                pixel_size_z: scale5d[z],
-                pixel_size_unit: spaceUnitSymbol,
                 name: displayMetadata.name,
-                version: displayMetadata.version,
-                transform: {
-                  translation: [0, 0, 0],
-                  rotation: [0, 0, 0]
-                },
+                originalSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(spec0.maxx - spec0.minx, spec0.maxy - spec0.miny, spec0.maxz - spec0.minz),
+                atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_10__.Vector2(nrows, ncols),
+                volumeSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(tw, th, tz),
+                subregionSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(tw, th, tz),
+                subregionOffset: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0),
+                physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(scale5d[x], scale5d[y], scale5d[z]),
+                spatialUnit: spaceUnitSymbol,
+                numChannels: channels,
+                channelNames: chnames,
                 times: sizeT,
-                time_scale: timeScale,
-                time_unit: timeUnitSymbol
-              };
-              /* eslint-enable @typescript-eslint/naming-convention */
-              // The `LoadSpec` passed in at this stage should represent the subset which this loader loads, not that
+                timeScale: timeScale,
+                timeUnit: timeUnitSymbol,
+                transform: {
+                  translation: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0),
+                  rotation: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0)
+                }
+              }; // The `LoadSpec` passed in at this stage should represent the subset which this loader loads, not that
               // which the volume contains. The volume contains the full extent of the subset recognized by this loader.
               fullExtentLoadSpec = _objectSpread(_objectSpread({}, loadSpec), {}, {
                 minx: 0,
@@ -9285,7 +9212,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
       vol.loadSpec = explicitLoadSpec || vol.loadSpec;
       var normLoadSpec = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.fitLoadSpecRegionToExtent)(vol.loadSpec, this.maxExtent);
       var _vol$imageInfo = vol.imageInfo,
-        channels = _vol$imageInfo.channels,
+        numChannels = _vol$imageInfo.numChannels,
         times = _vol$imageInfo.times;
       var imageIndex = imageIndexFromLoadSpec(normLoadSpec, this.metadata.multiscales);
       var multiscale = this.metadata.multiscales[imageIndex];
@@ -9333,7 +9260,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
         };
         worker.postMessage(msg);
       };
-      for (var i = 0; i < channels; ++i) {
+      for (var i = 0; i < numChannels; ++i) {
         _loop();
       }
 
@@ -9345,22 +9272,12 @@ var OMEZarrLoader = /*#__PURE__*/function () {
         vy = _getExtentSize4[1],
         vz = _getExtentSize4[2];
       var offset = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.convertLoadSpecRegionToPixels)(vol.loadSpec, vx, vy, vz);
-      /* eslint-disable @typescript-eslint/naming-convention */
       vol.imageInfo = _objectSpread(_objectSpread({}, vol.imageInfo), {}, {
-        rows: nrows,
-        cols: ncols,
-        tile_width: tw,
-        tile_height: th,
-        tiles: tz,
-        offset_x: offset.minx,
-        offset_y: offset.miny,
-        offset_z: offset.minz,
-        // scale level may have changed
-        vol_size_x: vx,
-        vol_size_y: vy,
-        vol_size_z: vz
+        atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_10__.Vector2(nrows, ncols),
+        volumeSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(vx, vy, vz),
+        subregionSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(tw, th, tz),
+        subregionOffset: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(offset.minx, offset.miny, offset.minz)
       });
-      /* eslint-enable @typescript-eslint/naming-convention */
       vol.updateDimensions();
     }
   }]);
@@ -9386,10 +9303,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
 /* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
 /* harmony import */ var _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./JsonImageInfoLoader */ "./src/loaders/JsonImageInfoLoader.ts");
+
 
 
 
@@ -9438,35 +9357,25 @@ var OpenCellLoader = /*#__PURE__*/function () {
             case 0:
               numChannels = 2; // we know these are standardized to 600x600, two channels, one channel per jpg.
               chnames = ["DNA", "Structure"];
-              /* eslint-disable @typescript-eslint/naming-convention */
               imgdata = {
-                width: 600,
-                height: 600,
-                channels: numChannels,
-                channel_names: chnames,
-                rows: 27,
-                cols: 1,
-                tiles: 27,
-                // for webgl reasons, it is best for total atlas width and height to be <= 2048 and ideally a power of 2.
-                //   This generally implies downsampling the original volume data for display in this viewer.
-                tile_width: 600,
-                tile_height: 600,
-                pixel_size_x: 1,
-                pixel_size_y: 1,
-                pixel_size_z: 2,
                 name: "TEST",
-                version: "1.0",
-                pixel_size_unit: "µm",
-                transform: {
-                  translation: [0, 0, 0],
-                  rotation: [0, 0, 0]
-                },
+                originalSize: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(600, 600, 27),
+                atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_8__.Vector2(27, 1),
+                volumeSize: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(600, 600, 27),
+                subregionSize: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(600, 600, 27),
+                subregionOffset: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0),
+                physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1, 1, 2),
+                spatialUnit: "µm",
+                numChannels: numChannels,
+                channelNames: chnames,
                 times: 1,
-                time_scale: 1,
-                time_unit: ""
-              };
-              /* eslint-enable @typescript-eslint/naming-convention */
-              // got some data, now let's construct the volume.
+                timeScale: 1,
+                timeUnit: "",
+                transform: {
+                  translation: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0),
+                  rotation: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0)
+                }
+              }; // got some data, now let's construct the volume.
               vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata);
               vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.buildDefaultMetadata)(imgdata);
               return _context2.abrupt("return", vol);
@@ -9519,10 +9428,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__);
+/* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
 /* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
-/* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
+
 
 
 
@@ -9676,34 +9587,25 @@ var TiffLoader = /*#__PURE__*/function () {
               targetSize = 2048;
               tilesizex = Math.floor(targetSize / ncols);
               tilesizey = Math.floor(targetSize / nrows); // load tiff and check metadata
-              /* eslint-disable @typescript-eslint/naming-convention */
               imgdata = {
-                width: dims.sizex,
-                height: dims.sizey,
-                channels: dims.sizec,
-                channel_names: dims.channelnames,
-                // for webgl reasons, it is best for total atlas width and height to be <= 2048 and ideally a power of 2.
-                //   This generally implies downsampling the original volume data for display in this viewer.
-                rows: nrows,
-                cols: ncols,
-                tiles: dims.sizez,
-                tile_width: tilesizex,
-                tile_height: tilesizey,
-                pixel_size_x: dims.pixelsizex,
-                pixel_size_y: dims.pixelsizey,
-                pixel_size_z: dims.pixelsizez,
                 name: "TEST",
-                version: "1.0",
-                pixel_size_unit: dims.unit || "",
-                transform: {
-                  translation: [0, 0, 0],
-                  rotation: [0, 0, 0]
-                },
+                originalSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(dims.sizex, dims.sizey, dims.sizez),
+                atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_9__.Vector2(nrows, ncols),
+                volumeSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(tilesizex, tilesizey, dims.sizez),
+                subregionSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(tilesizex, tilesizey, dims.sizez),
+                subregionOffset: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
+                physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(dims.pixelsizex, dims.pixelsizey, dims.pixelsizez),
+                spatialUnit: dims.unit || "",
+                numChannels: dims.sizec,
+                channelNames: dims.channelnames,
                 times: dims.sizet,
-                time_scale: 1,
-                time_unit: ""
+                timeScale: 1,
+                timeUnit: "",
+                transform: {
+                  translation: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
+                  rotation: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0)
+                }
               };
-              /* eslint-enable @typescript-eslint/naming-convention */
               vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imgdata, loadSpec);
               vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imgdata);
               this.dimensionOrder = dims.dimensionorder;
@@ -9751,10 +9653,10 @@ var TiffLoader = /*#__PURE__*/function () {
                         channel: channel,
                         // these are target xy sizes for the in-memory volume data
                         // they may or may not be the same size as original xy sizes
-                        tilesizex: imageInfo.tile_width,
-                        tilesizey: imageInfo.tile_height,
-                        sizec: imageInfo.channels,
-                        sizez: imageInfo.tiles,
+                        tilesizex: imageInfo.volumeSize.x,
+                        tilesizey: imageInfo.volumeSize.y,
+                        sizec: imageInfo.numChannels,
+                        sizez: imageInfo.volumeSize.z,
                         dimensionOrder: _this.dimensionOrder,
                         bytesPerSample: _this.bytesPerSample,
                         url: url
@@ -9782,7 +9684,7 @@ var TiffLoader = /*#__PURE__*/function () {
               });
               channel = 0;
             case 10:
-              if (!(channel < imageInfo.channels)) {
+              if (!(channel < imageInfo.numChannels)) {
                 _context4.next = 15;
                 break;
               }
@@ -9826,8 +9728,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   estimateLevelForAtlas: () => (/* binding */ estimateLevelForAtlas),
 /* harmony export */   unitNameToSymbol: () => (/* binding */ unitNameToSymbol)
 /* harmony export */ });
-/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! regenerator-runtime/runtime */ "./node_modules/regenerator-runtime/runtime.js");
-/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
+/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! regenerator-runtime/runtime */ "./node_modules/regenerator-runtime/runtime.js");
+/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_1__);
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
 
 // Map from units to their symbols
 var UNIT_SYMBOLS = {
@@ -9932,28 +9838,21 @@ function isEmpty(obj) {
 // currently everything needed can come from the imageInfo
 // but in the future each IVolumeLoader could have a completely separate implementation.
 function buildDefaultMetadata(imageInfo) {
+  var physicalSize = imageInfo.volumeSize.clone().multiply(imageInfo.physicalPixelSize);
   var metadata = {};
-  metadata["Dimensions"] = {
-    x: imageInfo.tile_width,
-    y: imageInfo.tile_height,
-    z: imageInfo.tiles
-  };
-  metadata["Original dimensions"] = {
-    x: imageInfo.width,
-    y: imageInfo.height,
-    z: imageInfo.tiles
-  };
+  metadata["Dimensions"] = _objectSpread({}, imageInfo.subregionSize);
+  metadata["Original dimensions"] = _objectSpread({}, imageInfo.originalSize);
   metadata["Physical size"] = {
-    x: imageInfo.width * imageInfo.pixel_size_x + imageInfo.pixel_size_unit,
-    y: imageInfo.height * imageInfo.pixel_size_y + imageInfo.pixel_size_unit,
-    z: imageInfo.tiles * imageInfo.pixel_size_z + imageInfo.pixel_size_unit
+    x: physicalSize.x + imageInfo.spatialUnit,
+    y: physicalSize.y + imageInfo.spatialUnit,
+    z: physicalSize.z + imageInfo.spatialUnit
   };
   metadata["Physical size per pixel"] = {
-    x: imageInfo.pixel_size_x + imageInfo.pixel_size_unit,
-    y: imageInfo.pixel_size_y + imageInfo.pixel_size_unit,
-    z: imageInfo.pixel_size_z + imageInfo.pixel_size_unit
+    x: imageInfo.physicalPixelSize.x + imageInfo.spatialUnit,
+    y: imageInfo.physicalPixelSize.y + imageInfo.spatialUnit,
+    z: imageInfo.physicalPixelSize.z + imageInfo.spatialUnit
   };
-  metadata["Channels"] = imageInfo.channels;
+  metadata["Channels"] = imageInfo.numChannels;
   metadata["Time series frames"] = imageInfo.times || 1;
   // don't add User data if it's empty
   if (imageInfo.userData && !isEmpty(imageInfo.userData)) {
@@ -93427,7 +93326,7 @@ function updateTimeUI(volume) {
 function updateZSliceUI(volume) {
   var zSlider = document.getElementById("zSlider");
   var zInput = document.getElementById("zValue");
-  var totalZSlices = volume.imageInfo.vol_size_z || volume.z;
+  var totalZSlices = volume.imageInfo.volumeSize.z;
   zSlider.max = "".concat(totalZSlices);
   zInput.max = "".concat(totalZSlices);
 }
@@ -93440,9 +93339,9 @@ function showChannelUI(volume) {
   myState.infoObj = volume.imageInfo;
   myState.channelGui = [];
   myState.channelFolderNames = [];
-  for (var _i = 0; _i < myState.infoObj.channels; ++_i) {
+  for (var _i = 0; _i < myState.infoObj.numChannels; ++_i) {
     myState.channelGui.push({
-      colorD: volume.channel_colors_default[_i],
+      colorD: volume.channelColorsDefault[_i],
       colorS: [0, 0, 0],
       colorE: [0, 0, 0],
       window: 1.0,
@@ -93509,8 +93408,8 @@ function showChannelUI(volume) {
       }(_i),
       colorizeAlpha: 0.0
     });
-    var f = gui.addFolder("Channel " + myState.infoObj.channel_names[_i]);
-    myState.channelFolderNames.push("Channel " + myState.infoObj.channel_names[_i]);
+    var f = gui.addFolder("Channel " + myState.infoObj.channelNames[_i]);
+    myState.channelFolderNames.push("Channel " + myState.infoObj.channelNames[_i]);
     f.add(myState.channelGui[_i], "enabled").onChange(function (j) {
       return function (value) {
         view3D.setVolumeChannelEnabled(volume, j, value ? true : false);
@@ -93602,7 +93501,7 @@ function loadImageData(jsonData, volumeData) {
     view3D.addVolume(vol);
 
     // first 3 channels for starters
-    for (var ch = 0; ch < vol.num_channels; ++ch) {
+    for (var ch = 0; ch < vol.imageInfo.numChannels; ++ch) {
       view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
     }
     var maskChannelIndex = jsonData.channel_names.indexOf("SEG_Memb");
@@ -93666,18 +93565,18 @@ function onVolumeCreated(volume) {
     if (frameNumber === 0) {
       // create the main volume and add to view (this is the only place)
       myState.volume = new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(myJson);
-      var atlasWidth = myJson.tile_width * myJson.cols;
-      var atlasHeight = myJson.tile_height * myJson.rows;
+      var atlasWidth = myJson.subregionSize.x * myJson.atlasTileDims.x;
+      var atlasHeight = myJson.subregionSize.y * myJson.atlasTileDims.y;
 
       // TODO: this can go in the Volume and Channel constructors!
       // preallocate some memory to be filled in later
-      for (var i = 0; i < myState.volume.num_channels; ++i) {
+      for (var i = 0; i < volume.imageInfo.numChannels; ++i) {
         myState.volume.channels[i].imgData = {
           data: new Uint8ClampedArray(atlasWidth * atlasHeight),
           width: atlasWidth,
           height: atlasHeight
         };
-        myState.volume.channels[i].volumeData = new Uint8Array(myJson.tile_width * myJson.tile_height * myJson.tiles);
+        myState.volume.channels[i].volumeData = new Uint8Array(myJson.subregionSize.x * myJson.subregionSize.y * myJson.subregionSize.z);
         // TODO also preallocate the Fused data texture
       }
 
@@ -93685,10 +93584,10 @@ function onVolumeCreated(volume) {
       view3D.addVolume(myState.volume);
       setInitialRenderMode();
       // first 3 channels for starters
-      for (var ch = 0; ch < myState.volume.num_channels; ++ch) {
+      for (var ch = 0; ch < myState.volume.imageInfo.numChannels; ++ch) {
         view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
       }
-      view3D.setVolumeChannelAsMask(myState.volume, myJson.channel_names.indexOf("SEG_Memb"));
+      view3D.setVolumeChannelAsMask(myState.volume, myJson.channelNames.indexOf("SEG_Memb"));
       view3D.updateActiveChannels(myState.volume);
       view3D.updateLuts(myState.volume);
       view3D.updateLights(myState.lights);
@@ -93697,8 +93596,8 @@ function onVolumeCreated(volume) {
       // apply a volume transform from an external source:
       if (myJson.transform) {
         var alignTransform = myJson.transform;
-        view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(alignTransform.translation));
-        view3D.setVolumeRotation(myState.volume, alignTransform.rotation);
+        view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(alignTransform.translation.toArray()));
+        view3D.setVolumeRotation(myState.volume, alignTransform.rotation.toArray());
       }
     }
     updateTimeUI(myState.volume);
@@ -93719,8 +93618,8 @@ function onVolumeCreated(volume) {
   // apply a volume transform from an external source:
   if (myJson.transform) {
     var _alignTransform = myJson.transform;
-    view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(_alignTransform.translation));
-    view3D.setVolumeRotation(myState.volume, _alignTransform.rotation);
+    view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(_alignTransform.translation.toArray()));
+    view3D.setVolumeRotation(myState.volume, _alignTransform.rotation.toArray());
   }
   updateTimeUI(myState.volume);
   updateZSliceUI(myState.volume);
@@ -93757,7 +93656,7 @@ function updateViewForNewVolume() {
   } else {
     view3D.updateLuts(myState.volume);
   }
-  for (var i = 0; i < myState.volume.num_channels; ++i) {
+  for (var i = 0; i < myState.volume.imageInfo.numChannels; ++i) {
     view3D.updateIsosurface(myState.volume, i, myState.channelGui[i].isovalue);
   }
 }
@@ -93819,41 +93718,28 @@ function goToZSlice(slice) {
 }
 
 function createTestVolume() {
-  /* eslint-disable @typescript-eslint/naming-convention */
   var imgData = {
-    // width := original full size image width
-    width: 64,
-    // height := original full size image height
-    height: 64,
-    channels: 3,
-    channel_names: ["DRAQ5", "EGFP", "SEG_Memb"],
-    // These dimensions are used to prepare the raw volume arrays for rendering as tiled texture atlases
-    // for webgl reasons, it is best for atlas width (cols*tile_width) and height (rows*tile_height)
-    // to be <= 2048 and ideally a power of 2. (adjust other dimensions accordingly)
-    rows: 8,
-    cols: 8,
-    // tiles <= rows*cols, tiles is number of z slices
-    tiles: 64,
-    tile_width: 64,
-    tile_height: 64,
-    pixel_size_x: 1,
-    pixel_size_y: 1,
-    pixel_size_z: 1,
     name: "AICS-10_5_5",
-    version: "0.0.0",
-    pixel_size_unit: "",
-    transform: {
-      translation: [0, 0, 0],
-      rotation: [0, 0, 0]
-    },
+    originalSize: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(64, 64, 64),
+    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_7__.Vector2(8, 8),
+    volumeSize: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(64, 64, 64),
+    subregionSize: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(64, 64, 64),
+    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0),
+    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1, 1, 1),
+    spatialUnit: "",
+    numChannels: 3,
+    channelNames: ["DRAQ5", "EGFP", "SEG_Memb"],
     times: 1,
-    time_scale: 1,
-    time_unit: ""
+    timeScale: 1,
+    timeUnit: "",
+    transform: {
+      translation: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0),
+      rotation: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0)
+    }
   };
-  /* eslint-enable @typescript-eslint/naming-convention */
 
   // generate some raw volume data
-  var channelVolumes = [_src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createSphere(imgData.tile_width, imgData.tile_height, imgData.tiles, 24), _src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createTorus(imgData.tile_width, imgData.tile_height, imgData.tiles, 24, 8), _src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createCone(imgData.tile_width, imgData.tile_height, imgData.tiles, 24, 24)];
+  var channelVolumes = [_src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createSphere(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24), _src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createTorus(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 8), _src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createCone(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 24)];
   return {
     imgData: imgData,
     volumeData: channelVolumes
@@ -93896,7 +93782,7 @@ function _loadVolume() {
           myState.currentImageName = loadSpec.url;
 
           // Set default zSlice
-          goToZSlice(Math.floor(volume.z / 2));
+          goToZSlice(Math.floor(volume.imageInfo.subregionSize.z / 2));
         case 8:
         case "end":
           return _context.stop();
