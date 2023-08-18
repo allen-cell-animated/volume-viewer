@@ -1,18 +1,11 @@
-import { Vector2, Vector3 } from "three";
+import { Box3, Vector2, Vector3 } from "three";
 import { openArray, openGroup, HTTPStore } from "zarr";
 
-import {
-  IVolumeLoader,
-  LoadSpec,
-  LoadSpecExtent,
-  PerChannelCallback,
-  VolumeDims,
-  convertLoadSpecRegionToPixels,
-  fitLoadSpecRegionToExtent,
-  getExtentSize,
-} from "./IVolumeLoader";
+import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import {
   buildDefaultMetadata,
+  composeSubregion,
+  convertSubregionToPixels,
   computePackedAtlasDims,
   estimateLevelForAtlas,
   unitNameToSymbol,
@@ -181,16 +174,13 @@ function pickLevelToLoad(
     }
   }
 
-  const { minx = 0, maxx = 1, miny = 0, maxy = 1, minz = 0, maxz = 1 } = loadSpec;
-  const xSize = maxx - minx;
-  const ySize = maxy - miny;
-  const zSize = maxz - minz;
+  const size = loadSpec.subregion.getSize(new Vector3());
   const [zi, yi, xi] = dimIndexes.slice(-3);
 
   const spatialDims = multiscaleDims.map((shape) => [
-    Math.max(shape[zi] * zSize, 1),
-    Math.max(shape[yi] * ySize, 1),
-    Math.max(shape[xi] * xSize, 1),
+    Math.max(shape[zi] * size.z, 1),
+    Math.max(shape[yi] * size.y, 1),
+    Math.max(shape[xi] * size.x, 1),
   ]);
   const optimalLevel = estimateLevelForAtlas(spatialDims, MAX_ATLAS_DIMENSION);
   // assume all levels are decreasing in size.  If a larger level is optimal then use it:
@@ -205,7 +195,7 @@ class OMEZarrLoader implements IVolumeLoader {
   multiscaleDims?: number[][];
   metadata?: OMEZarrMetadata;
   axesTCZYX?: [number, number, number, number, number];
-  maxExtent?: LoadSpecExtent;
+  maxExtent?: Box3;
 
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const store = new HTTPStore(loadSpec.url);
@@ -263,25 +253,17 @@ class OMEZarrLoader implements IVolumeLoader {
     const multiscale = this.metadata.multiscales[imageIndex];
     this.multiscaleDims = await loadLevelShapes(store, multiscale);
     this.axesTCZYX = remapAxesToTCZYX(multiscale.axes);
+    this.maxExtent = loadSpec.subregion.clone();
 
-    const { minx, maxx, miny, maxy, minz, maxz } = loadSpec;
-    this.maxExtent = {
-      minx: minx || 0,
-      miny: miny || 0,
-      minz: minz || 0,
-      maxx: maxx === undefined ? 1 : maxx,
-      maxy: maxy === undefined ? 1 : maxy,
-      maxz: maxz === undefined ? 1 : maxz,
-    };
     // After this point we consider the loader "open" (bound to one remote source)
 
     const [t, c, z, y, x] = this.axesTCZYX;
-    const levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
-    const levelShape = this.multiscaleDims[levelToLoad];
-
-    const shape0 = this.multiscaleDims[0];
     const hasT = t > -1;
     const hasC = c > -1;
+
+    const levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
+    const shapeLv = this.multiscaleDims[levelToLoad];
+    const shape0 = this.multiscaleDims[0];
 
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
     const spaceUnitName = multiscale.axes[x].unit;
@@ -290,25 +272,23 @@ class OMEZarrLoader implements IVolumeLoader {
     const timeUnitName = hasT ? multiscale.axes[t].unit : undefined;
     const timeUnitSymbol = unitNameToSymbol(timeUnitName) || timeUnitName || "";
 
-    const channels = hasC ? levelShape[c] : 1;
-    const sizeT = hasT ? levelShape[t] : 1;
+    const channels = hasC ? shapeLv[c] : 1;
+    const sizeT = hasT ? shapeLv[t] : 1;
 
     // we want scale of level 0
     const scale5d = getScale(multiscale.datasets[0]);
 
     const timeScale = hasT ? scale5d[t] : 1;
 
-    const pxSpec = convertLoadSpecRegionToPixels(loadSpec, levelShape[x], levelShape[y], levelShape[z]);
-    const spec0 = convertLoadSpecRegionToPixels(loadSpec, shape0[x], shape0[y], shape0[z]);
-
-    const tw = pxSpec.maxx - pxSpec.minx;
-    const th = pxSpec.maxy - pxSpec.miny;
-    const tz = pxSpec.maxz - pxSpec.minz;
+    const pxDimsLv = convertSubregionToPixels(loadSpec.subregion, new Vector3(shapeLv[x], shapeLv[y], shapeLv[z]));
+    const pxSizeLv = pxDimsLv.getSize(new Vector3());
+    const pxDims0 = convertSubregionToPixels(loadSpec.subregion, new Vector3(shape0[x], shape0[y], shape0[z]));
+    const pxSize0 = pxDims0.getSize(new Vector3());
 
     // compute rows and cols and atlas width and ht, given tw and th
-    const { nrows, ncols } = computePackedAtlasDims(tz, tw, th);
-    const atlaswidth = ncols * tw;
-    const atlasheight = nrows * th;
+    const { nrows, ncols } = computePackedAtlasDims(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
+    const atlaswidth = ncols * pxSizeLv.x;
+    const atlasheight = nrows * pxSizeLv.y;
     console.log("atlas width and height: " + atlaswidth + " " + atlasheight);
 
     const displayMetadata = this.metadata.omero;
@@ -320,10 +300,10 @@ class OMEZarrLoader implements IVolumeLoader {
     const imgdata: ImageInfo = {
       name: displayMetadata.name,
 
-      originalSize: new Vector3(spec0.maxx - spec0.minx, spec0.maxy - spec0.miny, spec0.maxz - spec0.minz),
+      originalSize: pxSize0,
       atlasTileDims: new Vector2(nrows, ncols),
-      volumeSize: new Vector3(tw, th, tz),
-      subregionSize: new Vector3(tw, th, tz),
+      volumeSize: pxSizeLv,
+      subregionSize: pxSizeLv.clone(),
       subregionOffset: new Vector3(0, 0, 0),
       physicalPixelSize: new Vector3(scale5d[x], scale5d[y], scale5d[z]),
       spatialUnit: spaceUnitSymbol,
@@ -362,7 +342,7 @@ class OMEZarrLoader implements IVolumeLoader {
     }
 
     vol.loadSpec = explicitLoadSpec || vol.loadSpec;
-    const normLoadSpec = fitLoadSpecRegionToExtent(vol.loadSpec, this.maxExtent);
+    const normLoadSpec = composeSubregion(vol.loadSpec.subregion, this.maxExtent);
     const { numChannels, times } = vol.imageInfo;
 
     const imageIndex = imageIndexFromLoadSpec(normLoadSpec, this.metadata.multiscales);
@@ -373,7 +353,8 @@ class OMEZarrLoader implements IVolumeLoader {
     const levelShape = this.multiscaleDims[levelToLoad];
 
     const [zi, yi, xi] = this.axesTCZYX.slice(-3);
-    const pxSpec = convertLoadSpecRegionToPixels(normLoadSpec, levelShape[xi], levelShape[yi], levelShape[zi]);
+    const pxSpec = convertSubregionToPixels(normLoadSpec, new Vector3(levelShape[xi], levelShape[yi], levelShape[zi]));
+    // TODO convert to Box3 getSize
     const [tw, th, tz] = getExtentSize(pxSpec);
 
     const { nrows, ncols } = computePackedAtlasDims(tz, tw, th);
@@ -409,15 +390,19 @@ class OMEZarrLoader implements IVolumeLoader {
     }
 
     // Update volume `imageInfo` to reflect potentially new dimensions
-    const volsize = convertLoadSpecRegionToPixels(this.maxExtent, levelShape[xi], levelShape[yi], levelShape[zi]);
+    const volsize = convertSubregionToPixels(
+      this.maxExtent,
+      new Vector3(levelShape[xi], levelShape[yi], levelShape[zi])
+    );
+    // TODO convert to Box3 getSize
     const [vx, vy, vz] = getExtentSize(volsize);
-    const offset = convertLoadSpecRegionToPixels(vol.loadSpec, vx, vy, vz);
+    const offset = convertSubregionToPixels(vol.loadSpec.subregion, new Vector3(vx, vy, vz));
     vol.imageInfo = {
       ...vol.imageInfo,
       atlasTileDims: new Vector2(nrows, ncols),
       volumeSize: new Vector3(vx, vy, vz),
       subregionSize: new Vector3(tw, th, tz),
-      subregionOffset: new Vector3(offset.minx, offset.miny, offset.minz),
+      subregionOffset: new Vector3(offset.min.x, offset.min.y, offset.min.z),
     };
     vol.updateDimensions();
   }
