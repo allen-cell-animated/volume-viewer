@@ -322,7 +322,10 @@ class OMEZarrLoader implements IVolumeLoader {
 
     // The `LoadSpec` passed in at this stage should represent the subset which this loader loads, not that
     // which the volume contains. The volume contains the full extent of the subset recognized by this loader.
-    const fullExtentLoadSpec = { ...loadSpec, minx: 0, miny: 0, minz: 0, maxx: 1, maxy: 1, maxz: 1 };
+    const fullExtentLoadSpec: LoadSpec = {
+      ...loadSpec,
+      subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)),
+    };
 
     // got some data, now let's construct the volume.
     const vol = new Volume(imgdata, fullExtentLoadSpec);
@@ -342,24 +345,29 @@ class OMEZarrLoader implements IVolumeLoader {
     }
 
     vol.loadSpec = explicitLoadSpec || vol.loadSpec;
-    const normLoadSpec = composeSubregion(vol.loadSpec.subregion, this.maxExtent);
+    const subregion = composeSubregion(vol.loadSpec.subregion, this.maxExtent);
     const { numChannels, times } = vol.imageInfo;
 
-    const imageIndex = imageIndexFromLoadSpec(normLoadSpec, this.metadata.multiscales);
+    const imageIndex = imageIndexFromLoadSpec(vol.loadSpec, this.metadata.multiscales);
     const multiscale = this.metadata.multiscales[imageIndex];
 
-    const levelToLoad = pickLevelToLoad(normLoadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
+    const levelToLoad = pickLevelToLoad(
+      { ...vol.loadSpec, subregion },
+      this.multiscaleDims,
+      multiscale,
+      this.axesTCZYX
+    );
     const datasetPath = multiscale.datasets[levelToLoad].path;
     const levelShape = this.multiscaleDims[levelToLoad];
 
     const [zi, yi, xi] = this.axesTCZYX.slice(-3);
-    const pxSpec = convertSubregionToPixels(normLoadSpec, new Vector3(levelShape[xi], levelShape[yi], levelShape[zi]));
+    const pxRegion = convertSubregionToPixels(subregion, new Vector3(levelShape[xi], levelShape[yi], levelShape[zi]));
     // TODO convert to Box3 getSize
-    const [tw, th, tz] = getExtentSize(pxSpec);
+    const pxSize = pxRegion.getSize(new Vector3());
 
-    const { nrows, ncols } = computePackedAtlasDims(tz, tw, th);
+    const { nrows, ncols } = computePackedAtlasDims(pxSize.z, pxSize.x, pxSize.y);
 
-    const storepath = normLoadSpec.subpath + "/" + datasetPath;
+    const storepath = vol.loadSpec.subpath + "/" + datasetPath;
     // do each channel on a worker
     for (let i = 0; i < numChannels; ++i) {
       const worker = new Worker(new URL("../workers/FetchZarrWorker", import.meta.url));
@@ -369,7 +377,7 @@ class OMEZarrLoader implements IVolumeLoader {
         vol.setChannelDataFromVolume(channel, u8);
         if (onChannelLoaded) {
           // make up a unique name? or have caller pass this in?
-          onChannelLoaded(normLoadSpec.url + "/" + normLoadSpec.subpath, vol, channel);
+          onChannelLoaded(vol.loadSpec.url + "/" + vol.loadSpec.subpath, vol, channel);
         }
         worker.terminate();
       };
@@ -379,8 +387,9 @@ class OMEZarrLoader implements IVolumeLoader {
 
       const msg: FetchZarrMessage = {
         spec: {
-          ...pxSpec,
-          time: Math.min(normLoadSpec.time, times),
+          ...vol.loadSpec,
+          subregion: pxRegion,
+          time: Math.min(vol.loadSpec.time, times),
         },
         channel: i,
         path: storepath,
@@ -390,19 +399,19 @@ class OMEZarrLoader implements IVolumeLoader {
     }
 
     // Update volume `imageInfo` to reflect potentially new dimensions
-    const volsize = convertSubregionToPixels(
+    const volRegion = convertSubregionToPixels(
       this.maxExtent,
       new Vector3(levelShape[xi], levelShape[yi], levelShape[zi])
     );
     // TODO convert to Box3 getSize
-    const [vx, vy, vz] = getExtentSize(volsize);
-    const offset = convertSubregionToPixels(vol.loadSpec.subregion, new Vector3(vx, vy, vz));
+    const volSize = volRegion.getSize(new Vector3());
+    const offset = convertSubregionToPixels(vol.loadSpec.subregion, volSize);
     vol.imageInfo = {
       ...vol.imageInfo,
       atlasTileDims: new Vector2(nrows, ncols),
-      volumeSize: new Vector3(vx, vy, vz),
-      subregionSize: new Vector3(tw, th, tz),
-      subregionOffset: new Vector3(offset.min.x, offset.min.y, offset.min.z),
+      volumeSize: volSize,
+      subregionSize: pxSize,
+      subregionOffset: offset.min,
     };
     vol.updateDimensions();
   }

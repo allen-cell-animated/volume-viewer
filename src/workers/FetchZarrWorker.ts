@@ -44,8 +44,8 @@ self.onmessage = async (e: MessageEvent<FetchZarrMessage>) => {
   const level = await openArray({ store: store, path: e.data.path, mode: "r" });
 
   // build slice spec
-  const { minx, maxx, miny, maxy, minz, maxz } = e.data.spec;
-  const unorderedSpec = [time, channelIndex, slice(minz, maxz), slice(miny, maxy), slice(minx, maxx)];
+  const { min, max } = e.data.spec.subregion;
+  const unorderedSpec = [time, channelIndex, slice(min.z, max.z), slice(min.y, max.y), slice(min.x, max.x)];
 
   const specLen = 3 + Number(axesTCZYX[0] > -1) + Number(axesTCZYX[1] > -1);
   const sliceSpec: (number | Slice)[] = Array(specLen);
