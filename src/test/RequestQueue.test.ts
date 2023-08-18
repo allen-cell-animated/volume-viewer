@@ -1,8 +1,9 @@
 import { expect } from "chai";
+import { Vector3 } from "three";
+import { TypedArray } from "zarr";
 
 import RequestQueue, { Request } from "../utils/RequestQueue";
 import { LoadSpec } from "../loaders/IVolumeLoader";
-import { TypedArray } from "zarr";
 
 /**
  * Returns a promise that resolves once the timeout (give in ms) is completed.
@@ -335,9 +336,7 @@ describe("test RequestQueue", () => {
     });
 
     async function mockLoader(loadSpec: Required<LoadSpec>, maxDelayMs = 10.0): Promise<TypedArray> {
-      const x = loadSpec.maxx - loadSpec.minx;
-      const y = loadSpec.maxy - loadSpec.miny;
-      const z = loadSpec.maxz - loadSpec.minz;
+      const { x, y, z } = loadSpec.subregion.getSize(new Vector3());
       const data = new Uint8Array(x * y * z);
       const delayMs = Math.random() * maxDelayMs;
 
@@ -359,12 +358,8 @@ describe("test RequestQueue", () => {
       const requests: Request<T>[] = [];
       for (let i = startingFrame; i < startingFrame + frames; i++) {
         const loadSpec = new LoadSpec();
-        loadSpec.minx = 0;
-        loadSpec.maxx = xDim;
-        loadSpec.miny = 0;
-        loadSpec.maxy = yDim;
-        loadSpec.minz = i;
-        loadSpec.maxz = i + 1;
+        loadSpec.subregion.min.set(0, 0, i);
+        loadSpec.subregion.max.set(xDim, yDim, i + 1);
 
         requests.push({
           key: loadSpec.toString(),
