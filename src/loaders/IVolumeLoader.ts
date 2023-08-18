@@ -1,3 +1,5 @@
+import { Box3, Vector3 } from "three";
+
 import Volume from "../Volume";
 
 export class LoadSpec {
@@ -7,18 +9,15 @@ export class LoadSpec {
   time = 0;
   // sub-region; if not specified, the entire volume is loaded
   // specify as floats between 0 and 1
-  minx?: number;
-  miny?: number;
-  minz?: number;
-  maxx?: number;
-  maxy?: number;
-  maxz?: number;
+  subregion = new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
 
   toString(): string {
-    return `${this.url}:${this.subpath}${this.scene}:${this.time}:x(${this.minx},${this.maxx}):y(${this.miny},${this.maxy}):z(${this.minz},${this.maxz})`;
+    const { min, max } = this.subregion;
+    return `${this.url}:${this.subpath}${this.scene}:${this.time}:x(${min.x},${max.x}):y(${min.y},${max.y}):z(${min.z},${max.z})`;
   }
 }
 
+// TODO remove unused type, functions
 export type LoadSpecExtent = {
   minx: number;
   miny: number;
