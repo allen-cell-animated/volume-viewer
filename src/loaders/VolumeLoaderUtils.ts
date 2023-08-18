@@ -105,6 +105,7 @@ export function estimateLevelForAtlas(spatialDimsZYX: number[][], maxAtlasEdge =
   return levelToLoad;
 }
 
+/** Given the size of a volume in pixels, convert a `Box3` in the 0-1 range to pixels */
 export function convertSubregionToPixels(region: Box3, size: Vector3): Box3 {
   const min = region.min.clone().multiply(size).floor();
   const max = region.max.clone().multiply(size).ceil();
@@ -123,6 +124,7 @@ export function convertSubregionToPixels(region: Box3, size: Vector3): Box3 {
   return new Box3(min, max);
 }
 
+/** Transform a `Box3` in the 0-1 range into the space of a containing `Box3` */
 export function composeSubregion(region: Box3, container: Box3): Box3 {
   const size = container.getSize(new Vector3());
   const min = region.min.clone().multiply(size).add(container.min);
