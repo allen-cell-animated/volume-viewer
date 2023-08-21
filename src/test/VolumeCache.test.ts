@@ -28,7 +28,7 @@ describe("VolumeCache", () => {
         scale: 1,
         time: 1,
         channel: 1,
-        region: new Box3(new Vector3(0, 0, 1), new Vector3(1, 1, 1)),
+        region: new Box3(new Vector3(0, 0, 1), new Vector3(2, 2, 2)),
       };
       const insertionResult = cache.insert(vol, new Uint8Array(4), extent);
       expect(insertionResult).to.be.true;
@@ -64,7 +64,7 @@ describe("VolumeCache", () => {
 
     it("does not insert an entry if the extent is out of range", () => {
       const region = new Box3();
-      region.max.z = 2;
+      region.max.z = 3;
       testInsertFails(12, { region });
     });
 
@@ -86,8 +86,8 @@ describe("VolumeCache", () => {
 
     it("evicts the least recently used entry when above its size limit", () => {
       const [cache, id1] = setupEvictionTest(); // max: 12
-      const region1 = new Box3(new Vector3(0), new Vector3(1));
-      const region2 = new Box3(new Vector3(2), new Vector3(3));
+      const region1 = new Box3(new Vector3(0), new Vector3(2));
+      const region2 = new Box3(new Vector3(2), new Vector3(4));
       cache.insert(id1, new Uint8Array(8), { scale: 1, region: region1 }); // 8 < 12
       cache.insert(id1, new Uint8Array(2)); // 10 < 12
       cache.insert(id1, new Uint8Array(8), { scale: 1, region: region2 }); // 18 > 12! evict 1!
@@ -112,7 +112,7 @@ describe("VolumeCache", () => {
 
     it("evicts as many entries as it takes to get below max size", () => {
       const [cache, id1, id2] = setupEvictionTest();
-      const region = new Box3(new Vector3(0), new Vector3(1));
+      const region = new Box3(new Vector3(0), new Vector3(2));
       cache.insert(id2, new Uint8Array(6)); // 6
       cache.insert(id2, new Uint8Array(6), { time: 1 }); // 12
       cache.insert(id1, new Uint8Array(8), { scale: 1, region }); // 20!
@@ -125,11 +125,14 @@ describe("VolumeCache", () => {
 
     it("reuses any entries that match the provided extent rather than growing the cache with duplicates", () => {
       const [cache, id1] = setupEvictionTest();
-      const region1 = new Box3(new Vector3(0), new Vector3(0));
-      const region2 = new Box3(new Vector3(1), new Vector3(2));
+      const region1 = new Box3(new Vector3(0), new Vector3(1));
+      const region2 = new Box3(new Vector3(1), new Vector3(3));
       cache.insert(id1, new Uint8Array([1, 2, 3, 4]), { scale: 1, region: region1 }); // 4
+      // console.log(cache.size);
       cache.insert(id1, new Uint8Array(8), { scale: 1, region: region2 }); // 12
+      // console.log(cache.size);
       cache.insert(id1, new Uint8Array([5, 6, 7, 8]), { scale: 1, region: region1 }); // still 12
+      // console.log(cache.size);
       expect(cache.size).to.equal(12);
       expect(cache.numberOfEntries).to.equal(2);
       expect(cache.get(id1, 0, { scale: 1, region: region2 })).to.deep.equal(new Uint8Array(8));
@@ -137,8 +140,8 @@ describe("VolumeCache", () => {
     });
   });
 
-  const region1 = new Box3(new Vector3(+Infinity, +Infinity, 0), new Vector3(-Infinity, -Infinity, 0));
-  const region2 = new Box3(new Vector3(+Infinity, +Infinity, 1), new Vector3(-Infinity, -Infinity, 1));
+  const region1 = new Box3(new Vector3(+Infinity, +Infinity, 0), new Vector3(-Infinity, -Infinity, 1));
+  const region2 = new Box3(new Vector3(+Infinity, +Infinity, 1), new Vector3(-Infinity, -Infinity, 2));
 
   const SLICE_1_1 = [1, 2, 3, 4];
   const SLICE_1_2 = [5, 6, 7, 8];
@@ -162,7 +165,7 @@ describe("VolumeCache", () => {
   describe("get", () => {
     it("gets a single channel when provided a channel index", () => {
       const [cache, id] = setupGetTest([false, false, false, true]);
-      const region = new Box3(new Vector3(0, 0, 1), new Vector3(1, 1, 1));
+      const region = new Box3(new Vector3(0, 0, 1), new Vector3(2, 2, 2));
       const result = cache.get(id, 1, { scale: 0, time: 0, region });
       expect(result).to.deep.equal(new Uint8Array(SLICE_2_2));
     });
@@ -207,7 +210,7 @@ describe("VolumeCache", () => {
     time: 1,
     channel: 1,
     scale: 1,
-    region: new Box3(new Vector3(1, 1), new Vector3(1, 1)),
+    region: new Box3(new Vector3(1, 1), new Vector3(2, 2)),
   };
 
   function setupClearTest(): [VolumeCache, CachedVolume, CachedVolume] {
