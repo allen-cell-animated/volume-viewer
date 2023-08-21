@@ -45,7 +45,7 @@ export type CachedVolume = {
 /** Fill in partially-specified, invalid, or missing `Box3` with reasonable defaults */
 function applyDefaultsToRegion(region: Box3 | undefined, size: Vector3): Box3 {
   if (!region) {
-    return new Box3(new Vector3(), size.clone().subScalar(1));
+    return new Box3(new Vector3(), size.clone());
   }
 
   const min = new Vector3(
@@ -62,7 +62,7 @@ function applyDefaultsToRegion(region: Box3 | undefined, size: Vector3): Box3 {
   return new Box3(min, max);
 }
 
-const anyComponentGreaterOrEqual = (a: Vector3, b: Vector3) => a.x >= b.x || a.y >= b.y || a.z >= b.z;
+const anyComponentGreater = (a: Vector3, b: Vector3) => a.x > b.x || a.y > b.y || a.z > b.z;
 
 /** Default: 250MB. Should be large enough to be useful but safe for most any computer that can run the app */
 const CACHE_MAX_SIZE_DEFAULT = 250_000_000;
@@ -201,12 +201,13 @@ export default class VolumeCache {
     const region = applyDefaultsToRegion(optDims.region, scaleCache.size);
 
     // Validate input
-    const extentSize = region.getSize(new Vector3()).addScalar(1);
+    const extentSize = region.getSize(new Vector3());
     if (extentSize.x * extentSize.y * extentSize.z !== data.length) {
       console.error("VolumeCache: attempt to insert data which does not match the provided dimensions");
       return false;
     }
-    if (region.isEmpty() || anyComponentGreaterOrEqual(region.max, scaleCache.size)) {
+    // `isEmpty` also captures the case where `min` > `max` (component-wise)
+    if (region.isEmpty() || anyComponentGreater(region.max, scaleCache.size)) {
       console.error("VolumeCache: attempt to insert data with bad extent");
       return false;
     }
