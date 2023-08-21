@@ -1,16 +1,16 @@
-type XYZ<T> = { x: T; y: T; z: T };
-type CacheEntryExtent = XYZ<[number, number]>;
-export type VolumeScaleDims = XYZ<number>;
+import { Box3, Vector3 } from "three";
 
 // The following two very similar types are kept separate because we may later want to allow more
 // complex queries with respect to scale, e.g. "get the largest available scale within this range"
-export type DataArrayExtent = CacheEntryExtent & {
+export type DataArrayExtent = {
+  region: Box3;
   scale: number;
   time: number;
   channel: number;
 };
 
-export type QueryExtent = CacheEntryExtent & {
+export type QueryExtent = {
+  region: Box3;
   scale: number;
   time: number;
 };
@@ -21,7 +21,7 @@ type CacheEntry = {
   // TODO allow more types of `TypedArray` to be stored together in the cache?
   data: Uint8Array;
   /** The subset of the volume covered by this entry */
-  extent: CacheEntryExtent;
+  region: Box3;
   /** The previous entry in the LRU list (more recently used) */
   prev: MaybeCacheEntry;
   /** The next entry in the LRU list (less recently used) */
@@ -33,7 +33,7 @@ type CacheEntry = {
 type CachedVolumeScale = {
   // Entries are indexed by T and C, then stored in lists of ZYX subsets
   data: CacheEntry[][][];
-  size: VolumeScaleDims;
+  size: Vector3;
 };
 
 export type CachedVolume = {
@@ -42,24 +42,27 @@ export type CachedVolume = {
   numChannels: number;
 };
 
-const extentIsEqual = (a: CacheEntryExtent, b: CacheEntryExtent): boolean => {
-  return (
-    a.x[0] === b.x[0] &&
-    a.x[1] === b.x[1] &&
-    a.y[0] === b.y[0] &&
-    a.y[1] === b.y[1] &&
-    a.z[0] === b.z[0] &&
-    a.z[1] === b.z[1]
-  );
-};
+/** Fill in partially-specified, invalid, or missing `Box3` with reasonable defaults */
+function applyDefaultsToRegion(region: Box3 | undefined, size: Vector3): Box3 {
+  if (!region) {
+    return new Box3(new Vector3(), size.clone().subScalar(1));
+  }
 
-// Extent ranges are inclusive on both ends
-const dimSize = ([min, max]: [number, number]): number => max + 1 - min;
-const extentVolume = ({ x, y, z }: CacheEntryExtent): number => dimSize(x) * dimSize(y) * dimSize(z);
-const dimInvalid = ([min, max]: [number, number]): boolean => min > max;
-const extentIsInvalid = ({ x, y, z }: CacheEntryExtent): boolean => dimInvalid(x) || dimInvalid(y) || dimInvalid(z);
-const validExtentIsOutsideDims = (ext: CacheEntryExtent, dims: VolumeScaleDims): boolean =>
-  ext.x[1] >= dims.x || ext.y[1] >= dims.y || ext.z[1] >= dims.z;
+  const min = new Vector3(
+    isFinite(region.min.x) ? region.min.x : 0,
+    isFinite(region.min.y) ? region.min.y : 0,
+    isFinite(region.min.z) ? region.min.z : 0
+  );
+  const max = new Vector3(
+    region.max.x > 0 ? region.max.x : size.x,
+    region.max.y > 0 ? region.max.y : size.y,
+    region.max.z > 0 ? region.max.z : size.z
+  );
+
+  return new Box3(min, max);
+}
+
+const anyComponentGreaterOrEqual = (a: Vector3, b: Vector3) => a.x >= b.x || a.y >= b.y || a.z >= b.z;
 
 /** Default: 250MB. Should be large enough to be useful but safe for most any computer that can run the app */
 const CACHE_MAX_SIZE_DEFAULT = 250_000_000;
@@ -171,7 +174,7 @@ export default class VolumeCache {
    * @returns {CachedVolume} A container for cache entries for this volume.
    * A `CachedVolume` may only be accessed or modified by passing it to this class's methods.
    */
-  public addVolume(numChannels: number, numTimes: number, scaleDims: VolumeScaleDims[]): CachedVolume {
+  public addVolume(numChannels: number, numTimes: number, scaleDims: Vector3[]): CachedVolume {
     const makeTCArray = (): CacheEntry[][][] => {
       const tArr: CacheEntry[][][] = [];
       for (let i = 0; i < numTimes; i++) {
@@ -192,26 +195,18 @@ export default class VolumeCache {
    * Add a new array to the cache (representing a subset of a channel's extent at a given time and scale)
    * @returns {boolean} a boolean indicating whether the insertion succeeded
    */
-  public insert(volume: CachedVolume, data: Uint8Array, optDims?: Partial<DataArrayExtent>): boolean {
-    const scale = optDims?.scale || 0;
-    const scaleCache = volume.scales[scale];
-    // Apply defaults to `optDims`
-    const {
-      time = 0,
-      channel = 0,
-      z = [0, scaleCache.size.z - 1],
-      y = [0, scaleCache.size.y - 1],
-      x = [0, scaleCache.size.x - 1],
-    } = optDims || {};
-    const entryList = scaleCache.data[time][channel];
-    const extent: CacheEntryExtent = { z, y, x };
+  public insert(volume: CachedVolume, data: Uint8Array, optDims: Partial<DataArrayExtent> = {}): boolean {
+    const scaleCache = volume.scales[optDims.scale || 0];
+    const entryList = scaleCache.data[optDims.time || 0][optDims.channel || 0];
+    const region = applyDefaultsToRegion(optDims.region, scaleCache.size);
 
     // Validate input
-    if (extentVolume(extent) !== data.length) {
+    const extentSize = region.getSize(new Vector3()).addScalar(1);
+    if (extentSize.x * extentSize.y * extentSize.z !== data.length) {
       console.error("VolumeCache: attempt to insert data which does not match the provided dimensions");
       return false;
     }
-    if (extentIsInvalid(extent) || validExtentIsOutsideDims(extent, scaleCache.size)) {
+    if (region.isEmpty() || anyComponentGreaterOrEqual(region.max, scaleCache.size)) {
       console.error("VolumeCache: attempt to insert data with bad extent");
       return false;
     }
@@ -222,7 +217,7 @@ export default class VolumeCache {
 
     // Check if entry is already in cache
     for (const existingEntry of entryList) {
-      if (extentIsEqual(existingEntry.extent, extent)) {
+      if (existingEntry.region.equals(region)) {
         existingEntry.data = data;
         this.moveEntryToFirst(existingEntry);
         return true;
@@ -230,7 +225,7 @@ export default class VolumeCache {
     }
 
     // Add new entry to cache
-    const newEntry: CacheEntry = { data, extent, prev: null, next: null, parentArr: entryList };
+    const newEntry: CacheEntry = { data, region, prev: null, next: null, parentArr: entryList };
     this.addEntryAsFirst(newEntry);
     entryList.push(newEntry);
     this.currentSize += data.length;
@@ -247,22 +242,18 @@ export default class VolumeCache {
    * Attempts to get data from a single channel. Internal implementation of `get`,
    * which is overloaded to call this in different patterns.
    */
-  private getOneChannel(volume: CachedVolume, channel: number, optDims?: Partial<QueryExtent>): Uint8Array | undefined {
+  private getOneChannel(
+    volume: CachedVolume,
+    channel: number,
+    optDims: Partial<QueryExtent> = {}
+  ): Uint8Array | undefined {
     // TODO allow searching through a range of scales and picking the highest available one
-    const scale = optDims?.scale || 0;
-    const scaleCache = volume.scales[scale];
-    // Apply defaults to `optDims`
-    const {
-      time = 0,
-      z = [0, scaleCache.size.z - 1],
-      y = [0, scaleCache.size.y - 1],
-      x = [0, scaleCache.size.x - 1],
-    } = optDims || {};
-    const entryList = scaleCache.data[time][channel];
-    const size: CacheEntryExtent = { z, y, x };
+    const scaleCache = volume.scales[optDims.scale || 0];
+    const entryList = scaleCache.data[optDims.time || 0][channel];
+    const region = applyDefaultsToRegion(optDims.region, scaleCache.size);
 
     for (const entry of entryList) {
-      if (extentIsEqual(entry.extent, size)) {
+      if (entry.region.equals(region)) {
         this.moveEntryToFirst(entry);
         return entry.data;
       }
