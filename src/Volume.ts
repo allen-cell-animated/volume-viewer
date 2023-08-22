@@ -163,6 +163,7 @@ export default class Volume {
     this.physicalScale = 1;
     this.normPhysicalSize = new Vector3(1, 1, 1);
     this.physicalPixelSize = this.imageInfo.physicalPixelSize;
+    this.tickMarkPhysicalLength = 1;
     this.setVoxelSize(this.physicalPixelSize);
 
     this.numChannels = this.imageInfo.numChannels;
@@ -186,7 +187,6 @@ export default class Volume {
     }
 
     this.physicalUnitSymbol = this.imageInfo.spatialUnit;
-    this.tickMarkPhysicalLength = 1;
 
     this.volumeDataObservers = [];
   }
