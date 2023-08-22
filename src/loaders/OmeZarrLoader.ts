@@ -362,7 +362,6 @@ class OMEZarrLoader implements IVolumeLoader {
 
     const [zi, yi, xi] = this.axesTCZYX.slice(-3);
     const pxRegion = convertSubregionToPixels(subregion, new Vector3(levelShape[xi], levelShape[yi], levelShape[zi]));
-    // TODO convert to Box3 getSize
     const pxSize = pxRegion.getSize(new Vector3());
 
     const { nrows, ncols } = computePackedAtlasDims(pxSize.z, pxSize.x, pxSize.y);
@@ -403,7 +402,6 @@ class OMEZarrLoader implements IVolumeLoader {
       this.maxExtent,
       new Vector3(levelShape[xi], levelShape[yi], levelShape[zi])
     );
-    // TODO convert to Box3 getSize
     const volSize = volRegion.getSize(new Vector3());
     const offset = convertSubregionToPixels(vol.loadSpec.subregion, volSize);
     vol.imageInfo = {
