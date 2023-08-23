@@ -21,7 +21,7 @@ type CacheEntry = {
   // TODO allow more types of `TypedArray` to be stored together in the cache?
   data: Uint8Array;
   /** The subset of the volume covered by this entry */
-  region: Box3;
+  subregion: Box3;
   /** The previous entry in the LRU list (more recently used) */
   prev: MaybeCacheEntry;
   /** The next entry in the LRU list (less recently used) */
@@ -198,16 +198,16 @@ export default class VolumeCache {
   public insert(volume: CachedVolume, data: Uint8Array, optDims: Partial<DataArrayExtent> = {}): boolean {
     const scaleCache = volume.scales[optDims.scale || 0];
     const entryList = scaleCache.data[optDims.time || 0][optDims.channel || 0];
-    const region = applyDefaultsToRegion(optDims.region, scaleCache.size);
+    const subregion = applyDefaultsToRegion(optDims.region, scaleCache.size);
 
     // Validate input
-    const extentSize = region.getSize(new Vector3());
+    const extentSize = subregion.getSize(new Vector3());
     if (extentSize.x * extentSize.y * extentSize.z !== data.length) {
       console.error("VolumeCache: attempt to insert data which does not match the provided dimensions");
       return false;
     }
     // `isEmpty` also captures the case where `min` > `max` (component-wise)
-    if (region.isEmpty() || anyComponentGreater(region.max, scaleCache.size)) {
+    if (subregion.isEmpty() || anyComponentGreater(subregion.max, scaleCache.size)) {
       console.error("VolumeCache: attempt to insert data with bad extent");
       return false;
     }
@@ -218,7 +218,7 @@ export default class VolumeCache {
 
     // Check if entry is already in cache
     for (const existingEntry of entryList) {
-      if (existingEntry.region.equals(region)) {
+      if (existingEntry.subregion.equals(subregion)) {
         existingEntry.data = data;
         this.moveEntryToFirst(existingEntry);
         return true;
@@ -226,7 +226,7 @@ export default class VolumeCache {
     }
 
     // Add new entry to cache
-    const newEntry: CacheEntry = { data, region, prev: null, next: null, parentArr: entryList };
+    const newEntry: CacheEntry = { data, subregion, prev: null, next: null, parentArr: entryList };
     this.addEntryAsFirst(newEntry);
     entryList.push(newEntry);
     this.currentSize += data.length;
@@ -251,10 +251,10 @@ export default class VolumeCache {
     // TODO allow searching through a range of scales and picking the highest available one
     const scaleCache = volume.scales[optDims.scale || 0];
     const entryList = scaleCache.data[optDims.time || 0][channel];
-    const region = applyDefaultsToRegion(optDims.region, scaleCache.size);
+    const subregion = applyDefaultsToRegion(optDims.region, scaleCache.size);
 
     for (const entry of entryList) {
-      if (entry.region.equals(region)) {
+      if (entry.subregion.equals(subregion)) {
         this.moveEntryToFirst(entry);
         return entry.data;
       }
