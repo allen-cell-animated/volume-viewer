@@ -124,7 +124,10 @@ export function convertSubregionToPixels(region: Box3, size: Vector3): Box3 {
   return new Box3(min, max);
 }
 
-/** Transform a `Box3` in the 0-1 range into the space of a containing `Box3` */
+/**
+ * Return the subset of `container` specified by `region`, assuming that `region` contains fractional values (between 0
+ * and 1). i.e. if `container`'s range on the X axis is 0-4 and `region`'s is 0.25-0.5, the result will have range 1-2.
+ */
 export function composeSubregion(region: Box3, container: Box3): Box3 {
   const size = container.getSize(new Vector3());
   const min = region.min.clone().multiply(size).add(container.min);
