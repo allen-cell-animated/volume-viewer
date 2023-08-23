@@ -48,18 +48,20 @@ function applyDefaultsToRegion(region: Box3 | undefined, size: Vector3): Box3 {
     return new Box3(new Vector3(), size.clone());
   }
 
-  const min = new Vector3(
-    isFinite(region.min.x) ? region.min.x : 0,
-    isFinite(region.min.y) ? region.min.y : 0,
-    isFinite(region.min.z) ? region.min.z : 0
+  const { min, max } = region;
+
+  const newMin = new Vector3(
+    isFinite(min.x) && min.x >= 0 ? min.x : 0,
+    isFinite(min.y) && min.y >= 0 ? min.y : 0,
+    isFinite(min.z) && min.z >= 0 ? min.z : 0
   );
-  const max = new Vector3(
-    region.max.x > 0 ? region.max.x : size.x,
-    region.max.y > 0 ? region.max.y : size.y,
-    region.max.z > 0 ? region.max.z : size.z
+  const newMax = new Vector3(
+    isFinite(max.x) && max.x > 0 ? max.x : size.x,
+    isFinite(max.y) && max.y > 0 ? max.y : size.y,
+    isFinite(max.z) && max.z > 0 ? max.z : size.z
   );
 
-  return new Box3(min, max);
+  return new Box3(newMin, newMax);
 }
 
 const anyComponentGreater = (a: Vector3, b: Vector3) => a.x > b.x || a.y > b.y || a.z > b.z;
