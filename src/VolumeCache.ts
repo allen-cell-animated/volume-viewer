@@ -20,7 +20,7 @@ type CacheEntry = {
   /** The data contained in this entry */
   // TODO allow more types of `TypedArray` to be stored together in the cache?
   data: Uint8Array;
-  /** The subset of the volume covered by this entry */
+  /** The subset of the volume covered by this entry, in pixels */
   subregion: Box3;
   /** The previous entry in the LRU list (more recently used) */
   prev: MaybeCacheEntry;
