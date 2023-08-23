@@ -361,10 +361,10 @@ class OMEZarrLoader implements IVolumeLoader {
     const levelShape = this.multiscaleDims[levelToLoad];
 
     const [zi, yi, xi] = this.axesTCZYX.slice(-3);
-    const pxRegion = convertSubregionToPixels(subregion, new Vector3(levelShape[xi], levelShape[yi], levelShape[zi]));
-    const pxSize = pxRegion.getSize(new Vector3());
+    const regionPx = convertSubregionToPixels(subregion, new Vector3(levelShape[xi], levelShape[yi], levelShape[zi]));
+    const regionSizePx = regionPx.getSize(new Vector3());
 
-    const { nrows, ncols } = computePackedAtlasDims(pxSize.z, pxSize.x, pxSize.y);
+    const { nrows, ncols } = computePackedAtlasDims(regionSizePx.z, regionSizePx.x, regionSizePx.y);
 
     const storepath = vol.loadSpec.subpath + "/" + datasetPath;
     // do each channel on a worker
@@ -387,7 +387,7 @@ class OMEZarrLoader implements IVolumeLoader {
       const msg: FetchZarrMessage = {
         spec: {
           ...vol.loadSpec,
-          subregion: pxRegion,
+          subregion: regionPx,
           time: Math.min(vol.loadSpec.time, times),
         },
         channel: i,
@@ -398,18 +398,18 @@ class OMEZarrLoader implements IVolumeLoader {
     }
 
     // Update volume `imageInfo` to reflect potentially new dimensions
-    const volRegion = convertSubregionToPixels(
+    const volExtentPx = convertSubregionToPixels(
       this.maxExtent,
       new Vector3(levelShape[xi], levelShape[yi], levelShape[zi])
     );
-    const volSize = volRegion.getSize(new Vector3());
-    const offset = convertSubregionToPixels(vol.loadSpec.subregion, volSize);
+    const volSizePx = volExtentPx.getSize(new Vector3());
+    const regionExtentPx = convertSubregionToPixels(vol.loadSpec.subregion, volSizePx);
     vol.imageInfo = {
       ...vol.imageInfo,
       atlasTileDims: new Vector2(nrows, ncols),
-      volumeSize: volSize,
-      subregionSize: pxSize,
-      subregionOffset: offset.min,
+      volumeSize: volSizePx,
+      subregionSize: regionSizePx,
+      subregionOffset: regionExtentPx.min,
     };
     vol.updateDimensions();
   }
