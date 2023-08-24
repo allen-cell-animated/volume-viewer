@@ -6137,6 +6137,7 @@ var Volume = /*#__PURE__*/function () {
     this.physicalScale = 1;
     this.normPhysicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
     this.physicalPixelSize = this.imageInfo.physicalPixelSize;
+    this.tickMarkPhysicalLength = 1;
     this.setVoxelSize(this.physicalPixelSize);
     this.numChannels = this.imageInfo.numChannels;
     this.channelNames = this.imageInfo.channelNames.slice();
@@ -6157,7 +6158,6 @@ var Volume = /*#__PURE__*/function () {
       channel.dims = this.imageInfo.subregionSize.toArray();
     }
     this.physicalUnitSymbol = this.imageInfo.spatialUnit;
-    this.tickMarkPhysicalLength = 1;
     this.volumeDataObservers = [];
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Volume, [{
@@ -8399,19 +8399,16 @@ __webpack_require__.r(__webpack_exports__);
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   LoadSpec: () => (/* binding */ LoadSpec),
-/* harmony export */   VolumeDims: () => (/* binding */ VolumeDims),
-/* harmony export */   convertLoadSpecRegionToPixels: () => (/* binding */ convertLoadSpecRegionToPixels),
-/* harmony export */   fitLoadSpecRegionToExtent: () => (/* binding */ fitLoadSpecRegionToExtent),
-/* harmony export */   getExtentSize: () => (/* binding */ getExtentSize)
+/* harmony export */   VolumeDims: () => (/* binding */ VolumeDims)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
 
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+
 var LoadSpec = /*#__PURE__*/function () {
   function LoadSpec() {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, LoadSpec);
@@ -8419,76 +8416,21 @@ var LoadSpec = /*#__PURE__*/function () {
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "subpath", "");
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "scene", 0);
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "time", 0);
+    // sub-region; if not specified, the entire volume is loaded
+    // specify as floats between 0 and 1
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "subregion", new three__WEBPACK_IMPORTED_MODULE_3__.Box3(new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(1, 1, 1)));
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(LoadSpec, [{
     key: "toString",
-    value:
-    // sub-region; if not specified, the entire volume is loaded
-    // specify as floats between 0 and 1
-    function toString() {
-      return "".concat(this.url, ":").concat(this.subpath).concat(this.scene, ":").concat(this.time, ":x(").concat(this.minx, ",").concat(this.maxx, "):y(").concat(this.miny, ",").concat(this.maxy, "):z(").concat(this.minz, ",").concat(this.maxz, ")");
+    value: function toString() {
+      var _this$subregion = this.subregion,
+        min = _this$subregion.min,
+        max = _this$subregion.max;
+      return "".concat(this.url, ":").concat(this.subpath).concat(this.scene, ":").concat(this.time, ":x(").concat(min.x, ",").concat(max.x, "):y(").concat(min.y, ",").concat(max.y, "):z(").concat(min.z, ",").concat(max.z, ")");
     }
   }]);
   return LoadSpec;
 }();
-/** Converts `LoadSpec` sub-region fields (`minx`, `maxy`, etc.) from [0, 1) range to pixels */
-function convertLoadSpecRegionToPixels(loadSpec, sizex, sizey, sizez) {
-  var minx = loadSpec.minx !== undefined ? Math.floor(sizex * loadSpec.minx) : 0;
-  var maxx = loadSpec.maxx !== undefined ? Math.ceil(sizex * loadSpec.maxx) : sizex;
-  var miny = loadSpec.miny !== undefined ? Math.floor(sizey * loadSpec.miny) : 0;
-  var maxy = loadSpec.maxy !== undefined ? Math.ceil(sizey * loadSpec.maxy) : sizey;
-  var minz = loadSpec.minz !== undefined ? Math.floor(sizez * loadSpec.minz) : 0;
-  var maxz = loadSpec.maxz !== undefined ? Math.ceil(sizez * loadSpec.maxz) : sizez;
-
-  // ensure it's always valid to specify the same number at both ends and get a single slice
-  if (minx === maxx && minx < sizex) {
-    maxx += 1;
-  }
-  if (miny === maxy && miny < sizey) {
-    maxy += 1;
-  }
-  if (minz === maxz && minz < sizez) {
-    maxz += 1;
-  }
-  return _objectSpread(_objectSpread({}, loadSpec), {}, {
-    minx: minx,
-    maxx: maxx,
-    miny: miny,
-    maxy: maxy,
-    minz: minz,
-    maxz: maxz
-  });
-}
-
-/** Shrinks a `LoadSpec` to fit within a provided extent */
-function fitLoadSpecRegionToExtent(loadSpec, extent) {
-  var sizex = extent.maxx - extent.minx;
-  var sizey = extent.maxy - extent.miny;
-  var sizez = extent.maxz - extent.minz;
-  var _loadSpec$minx = loadSpec.minx,
-    minx = _loadSpec$minx === void 0 ? 0 : _loadSpec$minx,
-    _loadSpec$maxx = loadSpec.maxx,
-    maxx = _loadSpec$maxx === void 0 ? 1 : _loadSpec$maxx,
-    _loadSpec$miny = loadSpec.miny,
-    miny = _loadSpec$miny === void 0 ? 0 : _loadSpec$miny,
-    _loadSpec$maxy = loadSpec.maxy,
-    maxy = _loadSpec$maxy === void 0 ? 1 : _loadSpec$maxy,
-    _loadSpec$minz = loadSpec.minz,
-    minz = _loadSpec$minz === void 0 ? 0 : _loadSpec$minz,
-    _loadSpec$maxz = loadSpec.maxz,
-    maxz = _loadSpec$maxz === void 0 ? 1 : _loadSpec$maxz;
-  return _objectSpread(_objectSpread({}, loadSpec), {}, {
-    minx: minx * sizex + extent.minx,
-    maxx: maxx * sizex + extent.minx,
-    miny: miny * sizey + extent.miny,
-    maxy: maxy * sizey + extent.miny,
-    minz: minz * sizez + extent.minz,
-    maxz: maxz * sizez + extent.minz
-  });
-}
-var getExtentSize = function getExtentSize(extent) {
-  return [extent.maxx - extent.minx, extent.maxy - extent.miny, extent.maxz - extent.minz];
-};
 var VolumeDims = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(function VolumeDims() {
   (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, VolumeDims);
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "subpath", "");
@@ -8985,28 +8927,14 @@ function pickLevelToLoad(loadSpec, multiscaleDims, _ref2, dimIndexes) {
       break;
     }
   }
-  var _loadSpec$minx = loadSpec.minx,
-    minx = _loadSpec$minx === void 0 ? 0 : _loadSpec$minx,
-    _loadSpec$maxx = loadSpec.maxx,
-    maxx = _loadSpec$maxx === void 0 ? 1 : _loadSpec$maxx,
-    _loadSpec$miny = loadSpec.miny,
-    miny = _loadSpec$miny === void 0 ? 0 : _loadSpec$miny,
-    _loadSpec$maxy = loadSpec.maxy,
-    maxy = _loadSpec$maxy === void 0 ? 1 : _loadSpec$maxy,
-    _loadSpec$minz = loadSpec.minz,
-    minz = _loadSpec$minz === void 0 ? 0 : _loadSpec$minz,
-    _loadSpec$maxz = loadSpec.maxz,
-    maxz = _loadSpec$maxz === void 0 ? 1 : _loadSpec$maxz;
-  var xSize = maxx - minx;
-  var ySize = maxy - miny;
-  var zSize = maxz - minz;
+  var size = loadSpec.subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
   var _dimIndexes$slice = dimIndexes.slice(-3),
     _dimIndexes$slice2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_3__["default"])(_dimIndexes$slice, 3),
     zi = _dimIndexes$slice2[0],
     yi = _dimIndexes$slice2[1],
     xi = _dimIndexes$slice2[2];
   var spatialDims = multiscaleDims.map(function (shape) {
-    return [Math.max(shape[zi] * zSize, 1), Math.max(shape[yi] * ySize, 1), Math.max(shape[xi] * xSize, 1)];
+    return [Math.max(shape[zi] * size.z, 1), Math.max(shape[yi] * size.y, 1), Math.max(shape[xi] * size.x, 1)];
   });
   var optimalLevel = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.estimateLevelForAtlas)(spatialDims, MAX_ATLAS_DIMENSION);
   // assume all levels are decreasing in size.  If a larger level is optimal then use it:
@@ -9104,7 +9032,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
     key: "createVolume",
     value: function () {
       var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee3(loadSpec) {
-        var store, imageIndex, multiscale, minx, maxx, miny, maxy, minz, maxz, _this$axesTCZYX, t, c, z, y, x, levelToLoad, levelShape, shape0, hasT, hasC, spaceUnitName, spaceUnitSymbol, timeUnitName, timeUnitSymbol, channels, sizeT, scale5d, timeScale, pxSpec, spec0, tw, th, tz, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, i, imgdata, fullExtentLoadSpec, vol;
+        var store, imageIndex, multiscale, _this$axesTCZYX, t, c, z, y, x, hasT, hasC, levelToLoad, shapeLv, shape0, spaceUnitName, spaceUnitSymbol, timeUnitName, timeUnitSymbol, channels, sizeT, scale5d, timeScale, pxDimsLv, pxSizeLv, pxDims0, pxSize0, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, i, imgdata, fullExtentLoadSpec, vol;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee3$(_context3) {
           while (1) switch (_context3.prev = _context3.next) {
             case 0:
@@ -9121,38 +9049,30 @@ var OMEZarrLoader = /*#__PURE__*/function () {
             case 8:
               this.multiscaleDims = _context3.sent;
               this.axesTCZYX = remapAxesToTCZYX(multiscale.axes);
-              minx = loadSpec.minx, maxx = loadSpec.maxx, miny = loadSpec.miny, maxy = loadSpec.maxy, minz = loadSpec.minz, maxz = loadSpec.maxz;
-              this.maxExtent = {
-                minx: minx || 0,
-                miny: miny || 0,
-                minz: minz || 0,
-                maxx: maxx === undefined ? 1 : maxx,
-                maxy: maxy === undefined ? 1 : maxy,
-                maxz: maxz === undefined ? 1 : maxz
-              };
+              this.maxExtent = loadSpec.subregion.clone();
+
               // After this point we consider the loader "open" (bound to one remote source)
               _this$axesTCZYX = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_3__["default"])(this.axesTCZYX, 5), t = _this$axesTCZYX[0], c = _this$axesTCZYX[1], z = _this$axesTCZYX[2], y = _this$axesTCZYX[3], x = _this$axesTCZYX[4];
-              levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
-              levelShape = this.multiscaleDims[levelToLoad];
-              shape0 = this.multiscaleDims[0];
               hasT = t > -1;
-              hasC = c > -1; // Assume all axes have the same units - we have no means of storing per-axis unit symbols
+              hasC = c > -1;
+              levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
+              shapeLv = this.multiscaleDims[levelToLoad];
+              shape0 = this.multiscaleDims[0]; // Assume all axes have the same units - we have no means of storing per-axis unit symbols
               spaceUnitName = multiscale.axes[x].unit;
               spaceUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
               timeUnitName = hasT ? multiscale.axes[t].unit : undefined;
               timeUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
-              channels = hasC ? levelShape[c] : 1;
-              sizeT = hasT ? levelShape[t] : 1; // we want scale of level 0
+              channels = hasC ? shapeLv[c] : 1;
+              sizeT = hasT ? shapeLv[t] : 1; // we want scale of level 0
               scale5d = getScale(multiscale.datasets[0]);
               timeScale = hasT ? scale5d[t] : 1;
-              pxSpec = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.convertLoadSpecRegionToPixels)(loadSpec, levelShape[x], levelShape[y], levelShape[z]);
-              spec0 = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.convertLoadSpecRegionToPixels)(loadSpec, shape0[x], shape0[y], shape0[z]);
-              tw = pxSpec.maxx - pxSpec.minx;
-              th = pxSpec.maxy - pxSpec.miny;
-              tz = pxSpec.maxz - pxSpec.minz; // compute rows and cols and atlas width and ht, given tw and th
-              _computePackedAtlasDi = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.computePackedAtlasDims)(tz, tw, th), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols;
-              atlaswidth = ncols * tw;
-              atlasheight = nrows * th;
+              pxDimsLv = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(shapeLv[x], shapeLv[y], shapeLv[z]));
+              pxSizeLv = pxDimsLv.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
+              pxDims0 = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(shape0[x], shape0[y], shape0[z]));
+              pxSize0 = pxDims0.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3()); // compute rows and cols and atlas width and ht, given tw and th
+              _computePackedAtlasDi = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.computePackedAtlasDims)(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y), nrows = _computePackedAtlasDi.nrows, ncols = _computePackedAtlasDi.ncols;
+              atlaswidth = ncols * pxSizeLv.x;
+              atlasheight = nrows * pxSizeLv.y;
               console.log("atlas width and height: " + atlaswidth + " " + atlasheight);
               displayMetadata = this.metadata.omero;
               chnames = [];
@@ -9161,10 +9081,10 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               }
               imgdata = {
                 name: displayMetadata.name,
-                originalSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(spec0.maxx - spec0.minx, spec0.maxy - spec0.miny, spec0.maxz - spec0.minz),
+                originalSize: pxSize0,
                 atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_10__.Vector2(nrows, ncols),
-                volumeSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(tw, th, tz),
-                subregionSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(tw, th, tz),
+                volumeSize: pxSizeLv,
+                subregionSize: pxSizeLv.clone(),
                 subregionOffset: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0),
                 physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(scale5d[x], scale5d[y], scale5d[z]),
                 spatialUnit: spaceUnitSymbol,
@@ -9180,17 +9100,12 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               }; // The `LoadSpec` passed in at this stage should represent the subset which this loader loads, not that
               // which the volume contains. The volume contains the full extent of the subset recognized by this loader.
               fullExtentLoadSpec = _objectSpread(_objectSpread({}, loadSpec), {}, {
-                minx: 0,
-                miny: 0,
-                minz: 0,
-                maxx: 1,
-                maxy: 1,
-                maxz: 1
+                subregion: new three__WEBPACK_IMPORTED_MODULE_10__.Box3(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(1, 1, 1))
               }); // got some data, now let's construct the volume.
               vol = new _Volume__WEBPACK_IMPORTED_MODULE_9__["default"](imgdata, fullExtentLoadSpec);
               vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.buildDefaultMetadata)(imgdata);
               return _context3.abrupt("return", vol);
-            case 43:
+            case 41:
             case "end":
               return _context3.stop();
           }
@@ -9210,13 +9125,15 @@ var OMEZarrLoader = /*#__PURE__*/function () {
         return;
       }
       vol.loadSpec = explicitLoadSpec || vol.loadSpec;
-      var normLoadSpec = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.fitLoadSpecRegionToExtent)(vol.loadSpec, this.maxExtent);
+      var subregion = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.composeSubregion)(vol.loadSpec.subregion, this.maxExtent);
       var _vol$imageInfo = vol.imageInfo,
         numChannels = _vol$imageInfo.numChannels,
         times = _vol$imageInfo.times;
-      var imageIndex = imageIndexFromLoadSpec(normLoadSpec, this.metadata.multiscales);
+      var imageIndex = imageIndexFromLoadSpec(vol.loadSpec, this.metadata.multiscales);
       var multiscale = this.metadata.multiscales[imageIndex];
-      var levelToLoad = pickLevelToLoad(normLoadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
+      var levelToLoad = pickLevelToLoad(_objectSpread(_objectSpread({}, vol.loadSpec), {}, {
+        subregion: subregion
+      }), this.multiscaleDims, multiscale, this.axesTCZYX);
       var datasetPath = multiscale.datasets[levelToLoad].path;
       var levelShape = this.multiscaleDims[levelToLoad];
       var _this$axesTCZYX$slice = this.axesTCZYX.slice(-3),
@@ -9224,16 +9141,12 @@ var OMEZarrLoader = /*#__PURE__*/function () {
         zi = _this$axesTCZYX$slice2[0],
         yi = _this$axesTCZYX$slice2[1],
         xi = _this$axesTCZYX$slice2[2];
-      var pxSpec = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.convertLoadSpecRegionToPixels)(normLoadSpec, levelShape[xi], levelShape[yi], levelShape[zi]);
-      var _getExtentSize = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.getExtentSize)(pxSpec),
-        _getExtentSize2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_3__["default"])(_getExtentSize, 3),
-        tw = _getExtentSize2[0],
-        th = _getExtentSize2[1],
-        tz = _getExtentSize2[2];
-      var _computePackedAtlasDi2 = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.computePackedAtlasDims)(tz, tw, th),
+      var regionPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.convertSubregionToPixels)(subregion, new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(levelShape[xi], levelShape[yi], levelShape[zi]));
+      var regionSizePx = regionPx.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
+      var _computePackedAtlasDi2 = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.computePackedAtlasDims)(regionSizePx.z, regionSizePx.x, regionSizePx.y),
         nrows = _computePackedAtlasDi2.nrows,
         ncols = _computePackedAtlasDi2.ncols;
-      var storepath = normLoadSpec.subpath + "/" + datasetPath;
+      var storepath = vol.loadSpec.subpath + "/" + datasetPath;
       // do each channel on a worker
       var _loop = function _loop() {
         var worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchZarrWorker_ts"), __webpack_require__.b));
@@ -9243,7 +9156,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
           vol.setChannelDataFromVolume(channel, u8);
           if (onChannelLoaded) {
             // make up a unique name? or have caller pass this in?
-            onChannelLoaded(normLoadSpec.url + "/" + normLoadSpec.subpath, vol, channel);
+            onChannelLoaded(vol.loadSpec.url + "/" + vol.loadSpec.subpath, vol, channel);
           }
           worker.terminate();
         };
@@ -9251,8 +9164,9 @@ var OMEZarrLoader = /*#__PURE__*/function () {
           alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
         };
         var msg = {
-          spec: _objectSpread(_objectSpread({}, pxSpec), {}, {
-            time: Math.min(normLoadSpec.time, times)
+          spec: _objectSpread(_objectSpread({}, vol.loadSpec), {}, {
+            subregion: regionPx,
+            time: Math.min(vol.loadSpec.time, times)
           }),
           channel: i,
           path: storepath,
@@ -9265,18 +9179,14 @@ var OMEZarrLoader = /*#__PURE__*/function () {
       }
 
       // Update volume `imageInfo` to reflect potentially new dimensions
-      var volsize = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.convertLoadSpecRegionToPixels)(this.maxExtent, levelShape[xi], levelShape[yi], levelShape[zi]);
-      var _getExtentSize3 = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.getExtentSize)(volsize),
-        _getExtentSize4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_3__["default"])(_getExtentSize3, 3),
-        vx = _getExtentSize4[0],
-        vy = _getExtentSize4[1],
-        vz = _getExtentSize4[2];
-      var offset = (0,_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.convertLoadSpecRegionToPixels)(vol.loadSpec, vx, vy, vz);
+      var volExtentPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.convertSubregionToPixels)(this.maxExtent, new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(levelShape[xi], levelShape[yi], levelShape[zi]));
+      var volSizePx = volExtentPx.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
+      var regionExtentPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.convertSubregionToPixels)(vol.loadSpec.subregion, volSizePx);
       vol.imageInfo = _objectSpread(_objectSpread({}, vol.imageInfo), {}, {
         atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_10__.Vector2(nrows, ncols),
-        volumeSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(vx, vy, vz),
-        subregionSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(tw, th, tz),
-        subregionOffset: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(offset.minx, offset.miny, offset.minz)
+        volumeSize: volSizePx,
+        subregionSize: regionSizePx,
+        subregionOffset: regionExtentPx.min
       });
       vol.updateDimensions();
     }
@@ -9724,16 +9634,20 @@ var TiffLoader = /*#__PURE__*/function () {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   buildDefaultMetadata: () => (/* binding */ buildDefaultMetadata),
+/* harmony export */   composeSubregion: () => (/* binding */ composeSubregion),
 /* harmony export */   computePackedAtlasDims: () => (/* binding */ computePackedAtlasDims),
+/* harmony export */   convertSubregionToPixels: () => (/* binding */ convertSubregionToPixels),
 /* harmony export */   estimateLevelForAtlas: () => (/* binding */ estimateLevelForAtlas),
 /* harmony export */   unitNameToSymbol: () => (/* binding */ unitNameToSymbol)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
 /* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! regenerator-runtime/runtime */ "./node_modules/regenerator-runtime/runtime.js");
 /* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+
 
 // Map from units to their symbols
 var UNIT_SYMBOLS = {
@@ -9825,6 +9739,35 @@ function estimateLevelForAtlas(spatialDimsZYX) {
     }
   }
   return levelToLoad;
+}
+
+/** Given the size of a volume in pixels, convert a `Box3` in the 0-1 range to pixels */
+function convertSubregionToPixels(region, size) {
+  var min = region.min.clone().multiply(size).floor();
+  var max = region.max.clone().multiply(size).ceil();
+
+  // ensure it's always valid to specify the same number at both ends and get a single slice
+  if (min.x === max.x && min.x < size.x) {
+    max.x += 1;
+  }
+  if (min.y === max.y && min.y < size.y) {
+    max.y += 1;
+  }
+  if (min.z === max.z && min.z < size.z) {
+    max.z += 1;
+  }
+  return new three__WEBPACK_IMPORTED_MODULE_2__.Box3(min, max);
+}
+
+/**
+ * Return the subset of `container` specified by `region`, assuming that `region` contains fractional values (between 0
+ * and 1). i.e. if `container`'s range on the X axis is 0-4 and `region`'s is 0.25-0.5, the result will have range 1-2.
+ */
+function composeSubregion(region, container) {
+  var size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3());
+  var min = region.min.clone().multiply(size).add(container.min);
+  var max = region.max.clone().multiply(size).add(container.min);
+  return new three__WEBPACK_IMPORTED_MODULE_2__.Box3(min, max);
 }
 function isEmpty(obj) {
   for (var key in obj) {
