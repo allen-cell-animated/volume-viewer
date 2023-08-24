@@ -1,4 +1,5 @@
 import "regenerator-runtime/runtime";
+import { Box3, Vector3 } from "three";
 
 import { ImageInfo } from "../Volume";
 
@@ -102,6 +103,36 @@ export function estimateLevelForAtlas(spatialDimsZYX: number[][], maxAtlasEdge =
     }
   }
   return levelToLoad;
+}
+
+/** Given the size of a volume in pixels, convert a `Box3` in the 0-1 range to pixels */
+export function convertSubregionToPixels(region: Box3, size: Vector3): Box3 {
+  const min = region.min.clone().multiply(size).floor();
+  const max = region.max.clone().multiply(size).ceil();
+
+  // ensure it's always valid to specify the same number at both ends and get a single slice
+  if (min.x === max.x && min.x < size.x) {
+    max.x += 1;
+  }
+  if (min.y === max.y && min.y < size.y) {
+    max.y += 1;
+  }
+  if (min.z === max.z && min.z < size.z) {
+    max.z += 1;
+  }
+
+  return new Box3(min, max);
+}
+
+/**
+ * Return the subset of `container` specified by `region`, assuming that `region` contains fractional values (between 0
+ * and 1). i.e. if `container`'s range on the X axis is 0-4 and `region`'s is 0.25-0.5, the result will have range 1-2.
+ */
+export function composeSubregion(region: Box3, container: Box3): Box3 {
+  const size = container.getSize(new Vector3());
+  const min = region.min.clone().multiply(size).add(container.min);
+  const max = region.max.clone().multiply(size).add(container.min);
+  return new Box3(min, max);
 }
 
 function isEmpty(obj) {
