@@ -3,7 +3,7 @@ import { Vector3 } from "three";
 import { TypedArray } from "zarr";
 
 import RequestQueue, { Request } from "../utils/RequestQueue";
-import { LoadSpec } from "../loaders/IVolumeLoader";
+import { LoadSpec, loadSpecToString } from "../loaders/IVolumeLoader";
 
 /**
  * Returns a promise that resolves once the timeout (give in ms) is completed.
@@ -18,16 +18,16 @@ describe("test RequestQueue", () => {
       const rq = new RequestQueue();
       const loadSpec = new LoadSpec();
       let actionIsRun = false;
-      rq.addRequest(loadSpec.toString(), async () => {
+      rq.addRequest(loadSpecToString(loadSpec), async () => {
         // do something
         await sleep(10);
         actionIsRun = true;
         return null;
       });
-      expect(rq.hasRequest(loadSpec.toString())).to.be.true;
+      expect(rq.hasRequest(loadSpecToString(loadSpec))).to.be.true;
       await sleep(15);
       expect(actionIsRun).to.be.true;
-      expect(rq.hasRequest(loadSpec.toString())).to.be.false;
+      expect(rq.hasRequest(loadSpecToString(loadSpec))).to.be.false;
     });
 
     it("only runs request once", async () => {
@@ -39,8 +39,8 @@ describe("test RequestQueue", () => {
         await sleep(100);
         count++;
       };
-      promises.push(rq.addRequest(loadSpec.toString(), work));
-      promises.push(rq.addRequest(loadSpec.toString(), work));
+      promises.push(rq.addRequest(loadSpecToString(loadSpec), work));
+      promises.push(rq.addRequest(loadSpecToString(loadSpec), work));
       await Promise.all(promises);
       expect(count).to.equal(1);
     });
@@ -80,8 +80,8 @@ describe("test RequestQueue", () => {
         await sleep(100);
         count++;
       };
-      const promise1 = rq.addRequest(loadSpec1.toString(), work);
-      const promise2 = rq.addRequest(loadSpec2.toString(), work);
+      const promise1 = rq.addRequest(loadSpecToString(loadSpec1), work);
+      const promise2 = rq.addRequest(loadSpecToString(loadSpec2), work);
       // Check that the promises are the same instance
       expect(promise1).to.deep.equal(promise2);
       promises.push(promise1);
@@ -362,7 +362,7 @@ describe("test RequestQueue", () => {
         loadSpec.subregion.max.set(xDim, yDim, i + 1);
 
         requests.push({
-          key: loadSpec.toString(),
+          key: loadSpecToString(loadSpec),
           requestAction: () => {
             return action(loadSpec as Required<LoadSpec>);
           },
@@ -381,7 +381,7 @@ describe("test RequestQueue", () => {
 
       const action = async (loadSpec: Required<LoadSpec>) => {
         // Check if the work we were going to do has been cancelled.
-        if (rq.hasRequest(loadSpec.toString())) {
+        if (rq.hasRequest(loadSpecToString(loadSpec))) {
           const ret = await mockLoader(loadSpec, maxDelayMs);
           workCount++;
           return ret;

@@ -10,11 +10,11 @@ export class LoadSpec {
   // sub-region; if not specified, the entire volume is loaded
   // specify as floats between 0 and 1
   subregion = new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
+}
 
-  toString(): string {
-    const { min, max } = this.subregion;
-    return `${this.url}:${this.subpath}${this.scene}:${this.time}:x(${min.x},${max.x}):y(${min.y},${max.y}):z(${min.z},${max.z})`;
-  }
+export function loadSpecToString(spec: LoadSpec): string {
+  const { min, max } = spec.subregion;
+  return `${spec.url}:${spec.subpath}${spec.scene}:${spec.time}:x(${min.x},${max.x}):y(${min.y},${max.y}):z(${min.z},${max.z})`;
 }
 
 export class VolumeDims {
