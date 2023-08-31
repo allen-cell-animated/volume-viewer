@@ -328,7 +328,7 @@ class OMEZarrLoader implements IVolumeLoader {
     };
 
     // got some data, now let's construct the volume.
-    const vol = new Volume(imgdata, fullExtentLoadSpec);
+    const vol = new Volume(imgdata, fullExtentLoadSpec, this);
     vol.imageMetadata = buildDefaultMetadata(imgdata);
     return vol;
   }

@@ -142,7 +142,7 @@ class TiffLoader implements IVolumeLoader {
       },
     };
 
-    const vol = new Volume(imgdata, loadSpec);
+    const vol = new Volume(imgdata, loadSpec, this);
     vol.imageMetadata = buildDefaultMetadata(imgdata);
 
     this.dimensionOrder = dims.dimensionorder;

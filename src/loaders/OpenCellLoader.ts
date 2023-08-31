@@ -17,7 +17,7 @@ class OpenCellLoader implements IVolumeLoader {
     return [d];
   }
 
-  async createVolume(_: LoadSpec): Promise<Volume> {
+  async createVolume(loadSpec: LoadSpec): Promise<Volume> {
     const numChannels = 2;
 
     // we know these are standardized to 600x600, two channels, one channel per jpg.
@@ -48,7 +48,7 @@ class OpenCellLoader implements IVolumeLoader {
     };
 
     // got some data, now let's construct the volume.
-    const vol = new Volume(imgdata);
+    const vol = new Volume(imgdata, loadSpec, this);
     vol.imageMetadata = buildDefaultMetadata(imgdata);
     return vol;
   }
