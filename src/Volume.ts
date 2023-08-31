@@ -3,7 +3,7 @@ import { Vector2, Vector3 } from "three";
 import Channel from "./Channel";
 import Histogram from "./Histogram";
 import { getColorByChannelIndex } from "./constants/colors";
-import { LoadSpec } from "./loaders/IVolumeLoader";
+import { IVolumeLoader, LoadSpec } from "./loaders/IVolumeLoader";
 
 export type ImageInfo = Readonly<{
   name: string;
@@ -129,6 +129,8 @@ interface VolumeDataObserver {
 export default class Volume {
   public imageInfo: ImageInfo;
   public loadSpec: LoadSpec;
+  public loader?: IVolumeLoader;
+  private loadSpecRequired: LoadSpec;
   public imageMetadata: Record<string, unknown>;
   public name: string;
 
@@ -149,11 +151,17 @@ export default class Volume {
   private volumeDataObservers: VolumeDataObserver[];
   private loaded: boolean;
 
-  constructor(imageInfo: ImageInfo = getDefaultImageInfo(), loadSpec: LoadSpec = new LoadSpec()) {
+  constructor(
+    imageInfo: ImageInfo = getDefaultImageInfo(),
+    loadSpec: LoadSpec = new LoadSpec(),
+    loader?: IVolumeLoader
+  ) {
     this.loaded = false;
     this.imageInfo = imageInfo;
     this.name = this.imageInfo.name;
     this.loadSpec = loadSpec;
+    this.loadSpecRequired = { ...loadSpec, subregion: loadSpec.subregion.clone() };
+    this.loader = loader;
     // imageMetadata to be filled in by Volume Loaders
     this.imageMetadata = {};
 
@@ -200,14 +208,27 @@ export default class Volume {
     this.normRegionOffset = subregionOffset.clone().divide(volumeSize);
   }
 
+  updateRequiredData(required: Partial<LoadSpec>) {
+    this.loadSpecRequired = { ...this.loadSpecRequired, ...required };
+    // if newly required data is not currently contained in this volume...
+    if (
+      this.loadSpecRequired.time !== this.loadSpec.time ||
+      this.loadSpecRequired.scene !== this.loadSpec.scene ||
+      !this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion)
+    ) {
+      // ...clone `loadSpecRequired` into `loadSpec` and load
+      this.loadSpec = { ...this.loadSpecRequired, subregion: this.loadSpecRequired.subregion.clone() };
+      this.loader?.loadVolumeData(this);
+    }
+  }
+
   // we calculate the physical size of the volume (voxels*pixel_size)
   // and then normalize to the max physical dimension
   setVoxelSize(size: Vector3): void {
     // only set the data if it is > 0.  zero is not an allowed value.
-    size.clampScalar(0, Infinity);
-    size.x = size.x || 1.0;
-    size.y = size.y || 1.0;
-    size.z = size.z || 1.0;
+    size.x = size.x > 0 ? size.x : 1.0;
+    size.y = size.y > 0 ? size.y : 1.0;
+    size.z = size.z > 0 ? size.z : 1.0;
     this.physicalPixelSize = size;
 
     this.physicalSize = this.imageInfo.originalSize.clone().multiply(this.physicalPixelSize);
