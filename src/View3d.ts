@@ -15,7 +15,6 @@ import { ThreeJsPanel } from "./ThreeJsPanel";
 import lightSettings from "./constants/lights";
 import VolumeDrawable from "./VolumeDrawable";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
-import { IVolumeLoader, PerChannelCallback } from "./loaders/IVolumeLoader";
 import Volume from "./Volume";
 import {
   VolumeChannelDisplayOptions,
