@@ -1,4 +1,5 @@
 import {
+  Box3,
   DataTexture,
   Data3DTexture,
   FloatType,
@@ -80,6 +81,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   constructor(volume: Volume, settings: VolumeRenderSettings = new VolumeRenderSettings(volume)) {
     this.pathTracingUniforms = pathTracingUniforms();
     this.volume = volume;
+    this.volume.updateRequiredData({ subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)) });
     this.viewChannels = [-1, -1, -1, -1];
 
     // create volume texture
