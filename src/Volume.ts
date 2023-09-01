@@ -3,7 +3,7 @@ import { Vector2, Vector3 } from "three";
 import Channel from "./Channel";
 import Histogram from "./Histogram";
 import { getColorByChannelIndex } from "./constants/colors";
-import { IVolumeLoader, LoadSpec } from "./loaders/IVolumeLoader";
+import { IVolumeLoader, LoadSpec, PerChannelCallback } from "./loaders/IVolumeLoader";
 
 export type ImageInfo = Readonly<{
   name: string;
@@ -131,6 +131,7 @@ export default class Volume {
   public loadSpec: LoadSpec;
   public loader?: IVolumeLoader;
   private loadSpecRequired: LoadSpec;
+  public channelLoadCallback?: PerChannelCallback;
   public imageMetadata: Record<string, unknown>;
   public name: string;
 
@@ -269,9 +270,8 @@ export default class Volume {
     if (this.channels.every((element) => element.loaded)) {
       this.loaded = true;
     }
-    for (let i = 0; i < this.volumeDataObservers.length; ++i) {
-      this.volumeDataObservers[i].onVolumeData(this, batch);
-    }
+    batch.forEach((channelIndex) => this.channelLoadCallback?.(this.loadSpec.url, this, channelIndex));
+    this.volumeDataObservers.forEach((observer) => observer.onVolumeData(this, batch));
   }
 
   /**

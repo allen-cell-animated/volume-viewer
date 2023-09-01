@@ -102,7 +102,7 @@ class TiffLoader implements IVolumeLoader {
     return [d];
   }
 
-  async createVolume(loadSpec: LoadSpec): Promise<Volume> {
+  async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
     const dims = await getDimsFromUrl(loadSpec.url);
     // compare with sizex, sizey
     //const width = image.getWidth();
@@ -143,6 +143,7 @@ class TiffLoader implements IVolumeLoader {
     };
 
     const vol = new Volume(imgdata, loadSpec, this);
+    vol.channelLoadCallback = onChannelLoaded;
     vol.imageMetadata = buildDefaultMetadata(imgdata);
 
     this.dimensionOrder = dims.dimensionorder;
@@ -151,8 +152,9 @@ class TiffLoader implements IVolumeLoader {
     return vol;
   }
 
-  async loadVolumeData(vol: Volume, onChannelLoaded: PerChannelCallback, explicitLoadSpec?: LoadSpec): Promise<void> {
+  async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
     const url = explicitLoadSpec?.url || vol.loadSpec.url;
+    vol.channelLoadCallback = onChannelLoaded;
     //
     if (this.bytesPerSample === undefined || this.dimensionOrder === undefined) {
       const dims = await getDimsFromUrl(url);
@@ -182,10 +184,8 @@ class TiffLoader implements IVolumeLoader {
         const u8 = e.data.data;
         const channel = e.data.channel;
         vol.setChannelDataFromVolume(channel, u8);
-        if (onChannelLoaded) {
-          // make up a unique name? or have caller pass this in?
-          onChannelLoaded(url, vol, channel);
-        }
+        // make up a unique name? or have caller pass this in?
+        onChannelLoaded?.(url, vol, channel);
         worker.terminate();
       };
       worker.onerror = function (e) {

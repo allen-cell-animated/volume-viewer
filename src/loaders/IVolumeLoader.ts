@@ -53,7 +53,7 @@ export interface IVolumeLoader {
    * May cache some values for use on only the next call to `loadVolumeData`; callers should guarantee that the next
    * call to this loader's `loadVolumeData` is made on the returned `Volume` before the volume's state is changed.
    */
-  createVolume(loadSpec: LoadSpec): Promise<Volume>;
+  createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume>;
 
   /**
    * Begin loading a volume's data, as specified in its `LoadSpec`.
@@ -62,5 +62,5 @@ export interface IVolumeLoader {
   // TODO make this return a promise that resolves when loading is done?
   // TODO this is not cancellable in the sense that any async requests initiated here are not stored
   // in a way that they can be interrupted.
-  loadVolumeData(volume: Volume, onChannelLoaded?: PerChannelCallback, loadSpec?: LoadSpec): void;
+  loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): void;
 }
