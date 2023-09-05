@@ -49,15 +49,18 @@ export interface IVolumeLoader {
 
   /**
    * Create an empty `Volume` from a `LoadSpec`, which must be passed to `loadVolumeData` to begin loading.
+   * Optionally pass a callback to respond whenever new channel data is loaded into the volume.
    *
-   * May cache some values for use on only the next call to `loadVolumeData`; callers should guarantee that the next
-   * call to this loader's `loadVolumeData` is made on the returned `Volume` before the volume's state is changed.
+   * Loaders are allowed to assume that they will only be called on a single data source, in order to cache
+   * information about that source. Once this method has been called, every subsequent call to it or
+   * `loadVolumeData` should reference the same source.
    */
   createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume>;
 
   /**
    * Begin loading a volume's data, as specified in its `LoadSpec`.
-   * Pass a callback to respond whenever a new channel is loaded.
+   * Pass a callback to respond when this request loads a new channel. This callback will execute after the
+   * one assigned in `createVolume`, if any.
    */
   // TODO make this return a promise that resolves when loading is done?
   // TODO this is not cancellable in the sense that any async requests initiated here are not stored
