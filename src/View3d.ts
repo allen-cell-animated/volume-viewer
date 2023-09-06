@@ -15,7 +15,6 @@ import { ThreeJsPanel } from "./ThreeJsPanel";
 import lightSettings from "./constants/lights";
 import VolumeDrawable from "./VolumeDrawable";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
-import { IVolumeLoader, PerChannelCallback } from "./loaders/IVolumeLoader";
 import Volume from "./Volume";
 import {
   VolumeChannelDisplayOptions,
@@ -230,10 +229,9 @@ export class View3d {
     this.image?.onChannelAdded(newChannelIndex);
   }
 
-  setTime(volume: Volume, time: number, loader: IVolumeLoader, onChannelLoaded?: PerChannelCallback): void {
-    volume.loadSpec.time = Math.max(0, Math.min(volume.imageInfo.times, time));
+  setTime(volume: Volume, time: number): void {
+    volume.updateRequiredData({ time: Math.max(0, Math.min(time, volume.imageInfo.times)) });
     this.updateTimestepIndicator(volume);
-    loader.loadVolumeData(volume, onChannelLoaded);
   }
 
   /**

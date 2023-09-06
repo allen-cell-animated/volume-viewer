@@ -1154,11 +1154,11 @@ function createLoader(type: string): IVolumeLoader {
 }
 
 async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader, cacheTimeSeries: boolean): Promise<void> {
-  const volume = await loader.createVolume(loadSpec);
-  onVolumeCreated(volume, cacheTimeSeries, loadSpec.time);
-  loader.loadVolumeData(volume, (url, v, channelIndex) => {
+  const volume = await loader.createVolume(loadSpec, (url, v, channelIndex) => {
     onChannelDataArrived(url, v, channelIndex, cacheTimeSeries, loadSpec.time);
   });
+  onVolumeCreated(volume, cacheTimeSeries, loadSpec.time);
+  loader.loadVolumeData(volume);
 
   myState.currentImageStore = loadSpec.url;
   myState.currentImageName = loadSpec.url;

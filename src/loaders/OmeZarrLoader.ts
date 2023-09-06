@@ -245,7 +245,7 @@ class OMEZarrLoader implements IVolumeLoader {
     return Promise.all(dimsPromises);
   }
 
-  async createVolume(loadSpec: LoadSpec): Promise<Volume> {
+  async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
     // Load metadata and dimensions.
     const store = new HTTPStore(loadSpec.url);
     this.metadata = await loadMetadata(store, loadSpec);
@@ -328,12 +328,13 @@ class OMEZarrLoader implements IVolumeLoader {
     };
 
     // got some data, now let's construct the volume.
-    const vol = new Volume(imgdata, fullExtentLoadSpec);
+    const vol = new Volume(imgdata, fullExtentLoadSpec, this);
+    vol.channelLoadCallback = onChannelLoaded;
     vol.imageMetadata = buildDefaultMetadata(imgdata);
     return vol;
   }
 
-  loadVolumeData(vol: Volume, onChannelLoaded: PerChannelCallback, explicitLoadSpec?: LoadSpec): void {
+  loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): void {
     if (
       this.axesTCZYX === undefined ||
       this.metadata === undefined ||
@@ -374,10 +375,7 @@ class OMEZarrLoader implements IVolumeLoader {
         const u8 = e.data.data;
         const channel = e.data.channel;
         vol.setChannelDataFromVolume(channel, u8);
-        if (onChannelLoaded) {
-          // make up a unique name? or have caller pass this in?
-          onChannelLoaded(vol.loadSpec.url + "/" + vol.loadSpec.subpath, vol, channel);
-        }
+        onChannelLoaded?.(vol.loadSpec.url + "/" + vol.loadSpec.subpath, vol, channel);
         worker.terminate();
       };
       worker.onerror = (e) => {

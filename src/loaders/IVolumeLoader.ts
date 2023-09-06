@@ -10,11 +10,11 @@ export class LoadSpec {
   // sub-region; if not specified, the entire volume is loaded
   // specify as floats between 0 and 1
   subregion = new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
+}
 
-  toString(): string {
-    const { min, max } = this.subregion;
-    return `${this.url}:${this.subpath}${this.scene}:${this.time}:x(${min.x},${max.x}):y(${min.y},${max.y}):z(${min.z},${max.z})`;
-  }
+export function loadSpecToString(spec: LoadSpec): string {
+  const { min, max } = spec.subregion;
+  return `${spec.url}:${spec.subpath}${spec.scene}:${spec.time}:x(${min.x},${max.x}):y(${min.y},${max.y}):z(${min.z},${max.z})`;
 }
 
 export class VolumeDims {
@@ -49,18 +49,21 @@ export interface IVolumeLoader {
 
   /**
    * Create an empty `Volume` from a `LoadSpec`, which must be passed to `loadVolumeData` to begin loading.
+   * Optionally pass a callback to respond whenever new channel data is loaded into the volume.
    *
-   * May cache some values for use on only the next call to `loadVolumeData`; callers should guarantee that the next
-   * call to this loader's `loadVolumeData` is made on the returned `Volume` before the volume's state is changed.
+   * Loaders are allowed to assume that they will only be called on a single data source, in order to cache
+   * information about that source. Once this method has been called, every subsequent call to it or
+   * `loadVolumeData` should reference the same source.
    */
-  createVolume(loadSpec: LoadSpec): Promise<Volume>;
+  createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume>;
 
   /**
    * Begin loading a volume's data, as specified in its `LoadSpec`.
-   * Pass a callback to respond whenever a new channel is loaded.
+   * Pass a callback to respond when this request loads a new channel. This callback will execute after the
+   * one assigned in `createVolume`, if any.
    */
   // TODO make this return a promise that resolves when loading is done?
   // TODO this is not cancellable in the sense that any async requests initiated here are not stored
   // in a way that they can be interrupted.
-  loadVolumeData(volume: Volume, onChannelLoaded?: PerChannelCallback, loadSpec?: LoadSpec): void;
+  loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): void;
 }

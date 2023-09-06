@@ -118,16 +118,17 @@ class JsonImageInfoLoader implements IVolumeLoader {
     return [d];
   }
 
-  async createVolume(loadSpec: LoadSpec): Promise<Volume> {
+  async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
     const jsonInfo = await this.getImageInfo(loadSpec);
     const imageInfo = convertImageInfo(jsonInfo);
 
-    const vol = new Volume(imageInfo, loadSpec);
+    const vol = new Volume(imageInfo, loadSpec, this);
+    vol.channelLoadCallback = onChannelLoaded;
     vol.imageMetadata = buildDefaultMetadata(imageInfo);
     return vol;
   }
 
-  async loadVolumeData(vol: Volume, onChannelLoaded: PerChannelCallback, explicitLoadSpec?: LoadSpec): Promise<void> {
+  async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
     const loadSpec = explicitLoadSpec || vol.loadSpec;
     // if you need to adjust image paths prior to download,
     // now is the time to do it.
@@ -163,7 +164,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
   static loadVolumeAtlasData(
     volume: Volume,
     imageArray: PackedChannelsImage[],
-    onChannelLoaded: PerChannelCallback
+    onChannelLoaded?: PerChannelCallback
   ): PackedChannelsImageRequests {
     const numImages = imageArray.length;
 
@@ -217,7 +218,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
 
           for (let ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
             volume.setChannelDataFromAtlas(thisbatch[ch], channelsBits[ch], w, h);
-            onChannelLoaded(url, volume, thisbatch[ch]);
+            onChannelLoaded?.(url, volume, thisbatch[ch]);
           }
         };
       })(batch);
