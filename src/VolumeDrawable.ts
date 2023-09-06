@@ -1,4 +1,4 @@
-import { Vector3, Object3D, Euler, Vector2 } from "three";
+import { Vector3, Object3D, Euler, Vector2, Box3 } from "three";
 
 import MeshVolume from "./MeshVolume";
 import RayMarchedAtlasVolume from "./RayMarchedAtlasVolume";
@@ -660,14 +660,17 @@ export default class VolumeDrawable {
     switch (newRenderMode) {
       case RenderMode.PATHTRACE:
         this.volumeRendering = new PathTracedVolume(this.volume, this.settings);
+        this.volume.updateRequiredData({ subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)) });
         this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
         break;
       case RenderMode.SLICE:
         this.volumeRendering = new Atlas2DSlice(this.volume, this.settings);
+        this.volume.updateRequiredData({ subregion: new Box3(new Vector3(0, 0, 0.5), new Vector3(1, 1, 0.5)) });
         break;
       case RenderMode.RAYMARCH:
       default:
         this.volumeRendering = new RayMarchedAtlasVolume(this.volume, this.settings);
+        this.volume.updateRequiredData({ subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)) });
         break;
     }
 
