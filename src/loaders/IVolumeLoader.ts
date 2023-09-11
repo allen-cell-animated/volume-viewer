@@ -64,5 +64,6 @@ export interface IVolumeLoader {
   // TODO make this return a promise that resolves when loading is done?
   // TODO this is not cancellable in the sense that any async requests initiated here are not stored
   // in a way that they can be interrupted.
+  // TODO explicitly passing a `LoadSpec` is now rarely useful. Remove?
   loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): void;
 }

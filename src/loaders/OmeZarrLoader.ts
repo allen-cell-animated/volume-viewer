@@ -12,6 +12,7 @@ import {
 } from "./VolumeLoaderUtils";
 import Volume, { ImageInfo } from "../Volume";
 import { FetchZarrMessage } from "../workers/FetchZarrWorker";
+import VolumeCache, { CacheStore } from "../VolumeCache";
 
 const MAX_ATLAS_DIMENSION = 2048;
 
@@ -192,13 +193,22 @@ function pickLevelToLoad(
 }
 
 class OMEZarrLoader implements IVolumeLoader {
+  url: string;
   multiscaleDims?: number[][];
   metadata?: OMEZarrMetadata;
   axesTCZYX?: [number, number, number, number, number];
   maxExtent?: Box3;
 
+  cache?: VolumeCache;
+  cacheStore?: CacheStore;
+
+  constructor(url: string, cache?: VolumeCache) {
+    this.url = url;
+    this.cache = cache;
+  }
+
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
-    const store = new HTTPStore(loadSpec.url);
+    const store = new HTTPStore(this.url);
 
     const data = await openGroup(store, loadSpec.subpath, "r");
 
@@ -247,7 +257,7 @@ class OMEZarrLoader implements IVolumeLoader {
 
   async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
     // Load metadata and dimensions.
-    const store = new HTTPStore(loadSpec.url);
+    const store = new HTTPStore(this.url);
     this.metadata = await loadMetadata(store, loadSpec);
     const imageIndex = imageIndexFromLoadSpec(loadSpec, this.metadata.multiscales);
     const multiscale = this.metadata.multiscales[imageIndex];
@@ -261,9 +271,12 @@ class OMEZarrLoader implements IVolumeLoader {
     const hasT = t > -1;
     const hasC = c > -1;
 
+    const shape0 = this.multiscaleDims[0];
     const levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
     const shapeLv = this.multiscaleDims[levelToLoad];
-    const shape0 = this.multiscaleDims[0];
+
+    const scaleSizes = this.multiscaleDims.map(([sx, sy, sz]) => new Vector3(sx, sy, sz));
+    this.cacheStore = this.cache?.addVolume(shape0[c], shape0[t], scaleSizes);
 
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
     const spaceUnitName = multiscale.axes[x].unit;
@@ -375,7 +388,7 @@ class OMEZarrLoader implements IVolumeLoader {
         const u8 = e.data.data;
         const channel = e.data.channel;
         vol.setChannelDataFromVolume(channel, u8);
-        onChannelLoaded?.(vol.loadSpec.url + "/" + vol.loadSpec.subpath, vol, channel);
+        onChannelLoaded?.(this.url + "/" + vol.loadSpec.subpath, vol, channel);
         worker.terminate();
       };
       worker.onerror = (e) => {
