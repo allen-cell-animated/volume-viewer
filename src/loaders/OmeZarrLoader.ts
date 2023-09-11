@@ -275,7 +275,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
     const shapeLv = this.multiscaleDims[levelToLoad];
 
-    const scaleSizes = this.multiscaleDims.map(([sx, sy, sz]) => new Vector3(sx, sy, sz));
+    const scaleSizes = this.multiscaleDims.map((shape) => new Vector3(shape[x], shape[y], shape[z]));
     this.cacheStore = this.cache?.addVolume(shape0[c], shape0[t], scaleSizes);
 
     // Assume all axes have the same units - we have no means of storing per-axis unit symbols
@@ -383,29 +383,46 @@ class OMEZarrLoader implements IVolumeLoader {
     const storepath = vol.loadSpec.subpath + "/" + datasetPath;
     // do each channel on a worker
     for (let i = 0; i < numChannels; ++i) {
-      const worker = new Worker(new URL("../workers/FetchZarrWorker", import.meta.url));
-      worker.onmessage = (e) => {
-        const u8 = e.data.data;
-        const channel = e.data.channel;
-        vol.setChannelDataFromVolume(channel, u8);
-        onChannelLoaded?.(this.url + "/" + vol.loadSpec.subpath, vol, channel);
-        worker.terminate();
-      };
-      worker.onerror = (e) => {
-        alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
-      };
+      const cacheResult = this.cache?.get(this.cacheStore!, i, {
+        region: regionPx,
+        time: vol.loadSpec.time,
+        scale: levelToLoad,
+      });
+      if (cacheResult) {
+        vol.setChannelDataFromVolume(i, cacheResult);
+        onChannelLoaded?.(this.url + "/" + vol.loadSpec.subpath, vol, i);
+      } else {
+        const worker = new Worker(new URL("../workers/FetchZarrWorker", import.meta.url));
+        worker.onmessage = (e) => {
+          const u8 = e.data.data;
+          const channel = e.data.channel;
+          this.cache?.insert(this.cacheStore!, u8, {
+            region: regionPx,
+            scale: levelToLoad,
+            time: vol.loadSpec.time,
+            channel,
+          });
+          vol.setChannelDataFromVolume(channel, u8);
+          onChannelLoaded?.(this.url + "/" + vol.loadSpec.subpath, vol, channel);
+          worker.terminate();
+        };
+        worker.onerror = (e) => {
+          alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
+        };
 
-      const msg: FetchZarrMessage = {
-        spec: {
-          ...vol.loadSpec,
-          subregion: regionPx,
-          time: Math.min(vol.loadSpec.time, times),
-        },
-        channel: i,
-        path: storepath,
-        axesTCZYX: this.axesTCZYX,
-      };
-      worker.postMessage(msg);
+        const msg: FetchZarrMessage = {
+          url: this.url,
+          spec: {
+            ...vol.loadSpec,
+            subregion: regionPx,
+            time: Math.min(vol.loadSpec.time, times),
+          },
+          channel: i,
+          path: storepath,
+          axesTCZYX: this.axesTCZYX,
+        };
+        worker.postMessage(msg);
+      }
     }
 
     // Update volume `imageInfo` to reflect potentially new dimensions
