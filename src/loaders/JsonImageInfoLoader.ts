@@ -90,17 +90,21 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
 });
 
 class JsonImageInfoLoader implements IVolumeLoader {
-  url: string;
+  urls: string[];
   imageInfo: JsonImageInfo | null = null;
   imageArray: PackedChannelsImage[] = [];
 
-  constructor(url: string) {
-    this.url = url;
+  constructor(urls: string | string[]) {
+    if (Array.isArray(urls)) {
+      this.urls = urls;
+    } else {
+      this.urls = [urls];
+    }
   }
 
-  async getImageInfo(_loadSpec: LoadSpec): Promise<JsonImageInfo> {
+  async getImageInfo(loadSpec: LoadSpec): Promise<JsonImageInfo> {
     if (!this.imageInfo) {
-      const response = await fetch(this.url);
+      const response = await fetch(this.urls[loadSpec.time]);
       const imageInfo = (await response.json()) as JsonImageInfo;
 
       imageInfo.pixel_size_unit = imageInfo.pixel_size_unit || "μm";
@@ -133,13 +137,14 @@ class JsonImageInfoLoader implements IVolumeLoader {
     return vol;
   }
 
-  async loadVolumeData(vol: Volume, _explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
+  async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
     // if you need to adjust image paths prior to download,
     // now is the time to do it.
     // Try to figure out the urlPrefix from the LoadSpec.
     // For this format we assume the image data is in the same directory as the json file.
+    const time = explicitLoadSpec?.time || vol.loadSpec.time;
     // This regex removes everything after the last slash, so the url had better be simple.
-    const urlPrefix = this.url.replace(/[^/]*$/, "");
+    const urlPrefix = this.urls[time].replace(/[^/]*$/, "");
     this.imageArray.forEach((element) => {
       element.name = urlPrefix + element.name;
     });
