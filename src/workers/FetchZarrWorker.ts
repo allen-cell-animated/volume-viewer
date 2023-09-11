@@ -5,6 +5,7 @@ import { Slice } from "zarr/types/core/types";
 import { LoadSpec } from "../loaders/IVolumeLoader";
 
 export type FetchZarrMessage = {
+  url: string;
   spec: Required<LoadSpec>;
   channel: number;
   path: string;
@@ -40,7 +41,7 @@ self.onmessage = async (e: MessageEvent<FetchZarrMessage>) => {
   const channelIndex = e.data.channel;
   const axesTCZYX = e.data.axesTCZYX;
 
-  const store = new HTTPStore(e.data.spec.url);
+  const store = new HTTPStore(e.data.url);
   const level = await openArray({ store: store, path: e.data.path, mode: "r" });
 
   // build slice spec
