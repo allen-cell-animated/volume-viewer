@@ -34,7 +34,7 @@ export class VolumeDims {
  * @param {Volume} volume
  * @param {number} channelindex
  */
-export type PerChannelCallback = (imageurl: string, volume: Volume, channelIndex: number) => void;
+export type PerChannelCallback = (volume: Volume, channelIndex: number) => void;
 
 /**
  * Loads volume data from a source specified by a `LoadSpec`.

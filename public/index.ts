@@ -22,6 +22,7 @@ import {
 import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
 import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
+import VolumeCache from "../src/VolumeCache";
 
 const TEST_DATA: Record<string, TestDataSpec> = {
   timeSeries: {
@@ -878,7 +879,7 @@ function cacheTimeSeriesImageData(jsonData, frameNumber) {
   return vol;
 }
 
-function onChannelDataArrived(url, v, channelIndex, cacheForTimeSeries = false, frameNumber = 0) {
+function onChannelDataArrived(v: Volume, channelIndex: number, cacheForTimeSeries = false, frameNumber = 0) {
   if (cacheForTimeSeries) {
     if (v.isLoaded()) {
       const currentVol = cacheTimeSeriesImageData(v.imageInfo, frameNumber);
@@ -1136,12 +1137,12 @@ function createTestVolume() {
   };
 }
 
-function createLoader(type: string): IVolumeLoader {
+function createLoader(type: string, url: string): IVolumeLoader {
   switch (type) {
     case "opencell":
       return new OpenCellLoader();
     case "omezarr":
-      return new OMEZarrLoader();
+      return new OMEZarrLoader(url, new VolumeCache());
     case "ometiff":
       return new TiffLoader();
     // case "procedural":
@@ -1154,8 +1155,8 @@ function createLoader(type: string): IVolumeLoader {
 }
 
 async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader, cacheTimeSeries: boolean): Promise<void> {
-  const volume = await loader.createVolume(loadSpec, (url, v, channelIndex) => {
-    onChannelDataArrived(url, v, channelIndex, cacheTimeSeries, loadSpec.time);
+  const volume = await loader.createVolume(loadSpec, (v, channelIndex) => {
+    onChannelDataArrived(v, channelIndex, cacheTimeSeries, loadSpec.time);
   });
   onVolumeCreated(volume, cacheTimeSeries, loadSpec.time);
   loader.loadVolumeData(volume);
@@ -1174,7 +1175,7 @@ function loadTestData(testdata: TestDataSpec) {
     return;
   }
 
-  const loader: IVolumeLoader = createLoader(testdata.type);
+  const loader: IVolumeLoader = createLoader(testdata.type, testdata.url);
   myState.loader = loader;
 
   const isTimeSeries = testdata.tend > testdata.tstart;

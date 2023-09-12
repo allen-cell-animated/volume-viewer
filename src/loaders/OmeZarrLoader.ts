@@ -390,7 +390,7 @@ class OMEZarrLoader implements IVolumeLoader {
       });
       if (cacheResult) {
         vol.setChannelDataFromVolume(i, cacheResult);
-        onChannelLoaded?.(this.url + "/" + vol.loadSpec.subpath, vol, i);
+        onChannelLoaded?.(vol, i);
       } else {
         const worker = new Worker(new URL("../workers/FetchZarrWorker", import.meta.url));
         worker.onmessage = (e) => {
@@ -403,7 +403,7 @@ class OMEZarrLoader implements IVolumeLoader {
             channel,
           });
           vol.setChannelDataFromVolume(channel, u8);
-          onChannelLoaded?.(this.url + "/" + vol.loadSpec.subpath, vol, channel);
+          onChannelLoaded?.(vol, channel);
           worker.terminate();
         };
         worker.onerror = (e) => {

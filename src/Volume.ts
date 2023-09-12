@@ -270,7 +270,7 @@ export default class Volume {
     if (this.channels.every((element) => element.loaded)) {
       this.loaded = true;
     }
-    batch.forEach((channelIndex) => this.channelLoadCallback?.(this.loadSpec.url, this, channelIndex));
+    batch.forEach((channelIndex) => this.channelLoadCallback?.(this, channelIndex));
     this.volumeDataObservers.forEach((observer) => observer.onVolumeData(this, batch));
   }
 

@@ -227,7 +227,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
 
           for (let ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
             volume.setChannelDataFromAtlas(thisbatch[ch], channelsBits[ch], w, h);
-            onChannelLoaded?.(url, volume, thisbatch[ch]);
+            onChannelLoaded?.(volume, thisbatch[ch]);
           }
         };
       })(batch);
