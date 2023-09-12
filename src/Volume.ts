@@ -200,6 +200,18 @@ export default class Volume {
     this.volumeDataObservers = [];
   }
 
+  private setUnloaded() {
+    this.loaded = false;
+    // TODO this will cause problems once it is possible to skip loading some channels. Come back to this then.
+    this.channels.forEach((channel) => {
+      channel.loaded = false;
+    });
+  }
+
+  isLoaded(): boolean {
+    return this.loaded;
+  }
+
   updateDimensions() {
     const { volumeSize, subregionSize, subregionOffset } = this.imageInfo;
 
@@ -218,6 +230,7 @@ export default class Volume {
       !this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion)
     ) {
       // ...clone `loadSpecRequired` into `loadSpec` and load
+      this.setUnloaded();
       this.loadSpec = { ...this.loadSpecRequired, subregion: this.loadSpecRequired.subregion.clone() };
       this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
     }
@@ -423,13 +436,5 @@ export default class Volume {
 
   removeAllVolumeDataObservers(): void {
     this.volumeDataObservers = [];
-  }
-
-  isLoaded(): boolean {
-    return this.loaded;
-  }
-
-  setIsLoaded(loaded: boolean): void {
-    this.loaded = loaded;
   }
 }

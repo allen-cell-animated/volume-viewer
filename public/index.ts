@@ -11,6 +11,7 @@ import {
   TiffLoader,
   View3d,
   Volume,
+  VolumeCache,
   VolumeMaker,
   Light,
   AREA_LIGHT,
@@ -22,7 +23,9 @@ import {
 import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
 import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
-import VolumeCache from "../src/VolumeCache";
+
+const CACHE_MAX_SIZE = 500_000_000;
+const PLAYBACK_INTERVAL = 80;
 
 const TEST_DATA: Record<string, TestDataSpec> = {
   timeSeries: {
@@ -91,16 +94,18 @@ const TEST_DATA: Record<string, TestDataSpec> = {
 
 let view3D: View3d;
 
+const volumeCache = new VolumeCache(CACHE_MAX_SIZE);
+
 const myState: State = {
   file: "",
   volume: new Volume(),
-  timeSeriesVolumes: [],
-  numberOfVolumesCached: 0,
   totalFrames: 0,
   currentFrame: 0,
+  lastFrameTime: 0,
+  isPlaying: false,
   timerId: 0,
 
-  loader: new JsonImageInfoLoader(),
+  loader: new OMEZarrLoader(TEST_DATA["zarrVariance"].url, volumeCache),
 
   density: 12.5,
   maskAlpha: 1.0,
@@ -873,38 +878,38 @@ function loadImageData(jsonData, volumeData) {
   return vol;
 }
 
-function cacheTimeSeriesImageData(jsonData, frameNumber) {
-  const vol = new Volume(jsonData);
-  myState.timeSeriesVolumes[frameNumber] = vol;
-  return vol;
-}
+// function cacheTimeSeriesImageData(jsonData, frameNumber) {
+//   const vol = new Volume(jsonData);
+//   myState.timeSeriesVolumes[frameNumber] = vol;
+//   return vol;
+// }
 
-function onChannelDataArrived(v: Volume, channelIndex: number, cacheForTimeSeries = false, frameNumber = 0) {
-  if (cacheForTimeSeries) {
-    if (v.isLoaded()) {
-      const currentVol = cacheTimeSeriesImageData(v.imageInfo, frameNumber);
+function onChannelDataArrived(v: Volume, channelIndex: number, frameNumber = 0) {
+  // if (cacheForTimeSeries) {
+  //   if (v.isLoaded()) {
+  //     const currentVol = cacheTimeSeriesImageData(v.imageInfo, frameNumber);
 
-      console.log("currentVol with name " + v.name + " is loaded");
-      myState.numberOfVolumesCached++;
-      if (myState.numberOfVolumesCached >= myState.totalFrames) {
-        console.log("ALL FRAMES RECEIVED");
-      }
+  //     console.log("currentVol with name " + v.name + " is loaded");
+  //     myState.numberOfVolumesCached++;
+  //     if (myState.numberOfVolumesCached >= myState.totalFrames) {
+  //       console.log("ALL FRAMES RECEIVED");
+  //     }
 
-      copyVolumeToVolume(v, currentVol);
-      if (frameNumber === 0) {
-        copyVolumeToVolume(v, myState.volume);
-        // has assumption that only 3 channels
-        view3D.onVolumeData(myState.volume, [0, 1, 2]);
-        view3D.updateActiveChannels(myState.volume);
-        view3D.updateLuts(myState.volume);
+  //     copyVolumeToVolume(v, currentVol);
+  //     if (frameNumber === 0) {
+  //       copyVolumeToVolume(v, myState.volume);
+  //       // has assumption that only 3 channels
+  //       view3D.onVolumeData(myState.volume, [0, 1, 2]);
+  //       view3D.updateActiveChannels(myState.volume);
+  //       view3D.updateLuts(myState.volume);
 
-        myState.volume.setIsLoaded(true);
-      } else {
-        //copyVolumeToVolume(v, currentVol);
-      }
-      return;
-    }
-  }
+  //       myState.volume.setIsLoaded(true);
+  //     } else {
+  //       //copyVolumeToVolume(v, currentVol);
+  //     }
+  //     return;
+  //   }
+  // }
 
   const currentVol = v; // myState.volume;
 
@@ -921,59 +926,59 @@ function onChannelDataArrived(v: Volume, channelIndex: number, cacheForTimeSerie
   view3D.redraw();
 }
 
-function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) {
+function onVolumeCreated(volume: Volume) {
   const myJson = volume.imageInfo;
-  if (isTimeSeries) {
-    if (frameNumber === 0) {
-      // create the main volume and add to view (this is the only place)
-      myState.volume = new Volume(myJson);
+  // if (isTimeSeries) {
+  //   if (frameNumber === 0) {
+  //     // create the main volume and add to view (this is the only place)
+  //     myState.volume = new Volume(myJson);
 
-      const atlasWidth = myJson.subregionSize.x * myJson.atlasTileDims.x;
-      const atlasHeight = myJson.subregionSize.y * myJson.atlasTileDims.y;
+  //     const atlasWidth = myJson.subregionSize.x * myJson.atlasTileDims.x;
+  //     const atlasHeight = myJson.subregionSize.y * myJson.atlasTileDims.y;
 
-      // TODO: this can go in the Volume and Channel constructors!
-      // preallocate some memory to be filled in later
-      for (let i = 0; i < volume.imageInfo.numChannels; ++i) {
-        myState.volume.channels[i].imgData = {
-          data: new Uint8ClampedArray(atlasWidth * atlasHeight),
-          width: atlasWidth,
-          height: atlasHeight,
-        };
-        myState.volume.channels[i].volumeData = new Uint8Array(
-          myJson.subregionSize.x * myJson.subregionSize.y * myJson.subregionSize.z
-        );
-        // TODO also preallocate the Fused data texture
-      }
+  //     // TODO: this can go in the Volume and Channel constructors!
+  //     // preallocate some memory to be filled in later
+  //     for (let i = 0; i < volume.imageInfo.numChannels; ++i) {
+  //       myState.volume.channels[i].imgData = {
+  //         data: new Uint8ClampedArray(atlasWidth * atlasHeight),
+  //         width: atlasWidth,
+  //         height: atlasHeight,
+  //       };
+  //       myState.volume.channels[i].volumeData = new Uint8Array(
+  //         myJson.subregionSize.x * myJson.subregionSize.y * myJson.subregionSize.z
+  //       );
+  //       // TODO also preallocate the Fused data texture
+  //     }
 
-      view3D.removeAllVolumes();
-      view3D.addVolume(myState.volume);
-      setInitialRenderMode();
-      // first 3 channels for starters
-      for (let ch = 0; ch < myState.volume.imageInfo.numChannels; ++ch) {
-        view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
-      }
-      view3D.setVolumeChannelAsMask(myState.volume, myJson.channelNames.indexOf("SEG_Memb"));
-      view3D.updateActiveChannels(myState.volume);
-      view3D.updateLuts(myState.volume);
-      view3D.updateLights(myState.lights);
-      view3D.updateDensity(myState.volume, densitySliderToView3D(myState.density));
-      view3D.updateExposure(myState.exposure);
-      // apply a volume transform from an external source:
-      if (myJson.transform) {
-        const alignTransform = myJson.transform;
-        view3D.setVolumeTranslation(
-          myState.volume,
-          myState.volume.voxelsToWorldSpace(alignTransform.translation.toArray())
-        );
-        view3D.setVolumeRotation(myState.volume, alignTransform.rotation.toArray());
-      }
-    }
+  //     view3D.removeAllVolumes();
+  //     view3D.addVolume(myState.volume);
+  //     setInitialRenderMode();
+  //     // first 3 channels for starters
+  //     for (let ch = 0; ch < myState.volume.imageInfo.numChannels; ++ch) {
+  //       view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
+  //     }
+  //     view3D.setVolumeChannelAsMask(myState.volume, myJson.channelNames.indexOf("SEG_Memb"));
+  //     view3D.updateActiveChannels(myState.volume);
+  //     view3D.updateLuts(myState.volume);
+  //     view3D.updateLights(myState.lights);
+  //     view3D.updateDensity(myState.volume, densitySliderToView3D(myState.density));
+  //     view3D.updateExposure(myState.exposure);
+  //     // apply a volume transform from an external source:
+  //     if (myJson.transform) {
+  //       const alignTransform = myJson.transform;
+  //       view3D.setVolumeTranslation(
+  //         myState.volume,
+  //         myState.volume.voxelsToWorldSpace(alignTransform.translation.toArray())
+  //       );
+  //       view3D.setVolumeRotation(myState.volume, alignTransform.rotation.toArray());
+  //     }
+  //   }
 
-    updateTimeUI(myState.volume);
-    updateZSliceUI(myState.volume);
-    showChannelUI(myState.volume);
-    return;
-  }
+  //   updateTimeUI(myState.volume);
+  //   updateZSliceUI(myState.volume);
+  //   showChannelUI(myState.volume);
+  //   return;
+  // }
 
   myState.volume = volume;
 
@@ -1002,68 +1007,76 @@ function onVolumeCreated(volume: Volume, isTimeSeries = false, frameNumber = 0) 
   showChannelUI(myState.volume);
 }
 
-function copyVolumeToVolume(src, dest) {
-  // assumes volumes already have identical dimensions!!!
+// function copyVolumeToVolume(src, dest) {
+//   // assumes volumes already have identical dimensions!!!
 
-  // grab references to data from each channel and put it in myState.volume
-  for (let i = 0; i < src.num_channels; ++i) {
-    // dest.channels[i].imgData.data.set(src.channels[i].imgData.data);
-    // dest.channels[i].volumeData.set(src.channels[i].volumeData);
-    // dest.channels[i].lut.set(src.channels[i].lut);
-    dest.channels[i].imgData = {
-      data: src.channels[i].imgData.data,
-      width: src.channels[i].imgData.width,
-      height: src.channels[i].imgData.height,
-    };
-    dest.channels[i].volumeData = src.channels[i].volumeData;
-    dest.channels[i].lut = src.channels[i].lut;
+//   // grab references to data from each channel and put it in myState.volume
+//   for (let i = 0; i < src.num_channels; ++i) {
+//     // dest.channels[i].imgData.data.set(src.channels[i].imgData.data);
+//     // dest.channels[i].volumeData.set(src.channels[i].volumeData);
+//     // dest.channels[i].lut.set(src.channels[i].lut);
+//     dest.channels[i].imgData = {
+//       data: src.channels[i].imgData.data,
+//       width: src.channels[i].imgData.width,
+//       height: src.channels[i].imgData.height,
+//     };
+//     dest.channels[i].volumeData = src.channels[i].volumeData;
+//     dest.channels[i].lut = src.channels[i].lut;
 
-    // danger: not a copy!
-    dest.channels[i].histogram = src.channels[i].histogram;
-    dest.channels[i].dataTexture = src.channels[i].dataTexture;
-    dest.channels[i].lutTexture = src.channels[i].lutTexture;
-    dest.channels[i].loaded = true;
-  }
-}
+//     // danger: not a copy!
+//     dest.channels[i].histogram = src.channels[i].histogram;
+//     dest.channels[i].dataTexture = src.channels[i].dataTexture;
+//     dest.channels[i].lutTexture = src.channels[i].lutTexture;
+//     dest.channels[i].loaded = true;
+//   }
+// }
 
-function updateViewForNewVolume() {
-  view3D.onVolumeData(myState.volume, [0, 1, 2]);
-  myState.volume.setIsLoaded(true);
+// function updateViewForNewVolume() {
+//   view3D.onVolumeData(myState.volume, [0, 1, 2]);
+//   myState.volume.setIsLoaded(true);
 
-  if (myState.isPT) {
-    view3D.updateActiveChannels(myState.volume);
-  } else {
-    view3D.updateLuts(myState.volume);
-  }
+//   if (myState.isPT) {
+//     view3D.updateActiveChannels(myState.volume);
+//   } else {
+//     view3D.updateLuts(myState.volume);
+//   }
 
-  for (let i = 0; i < myState.volume.imageInfo.numChannels; ++i) {
-    view3D.updateIsosurface(myState.volume, i, myState.channelGui[i].isovalue);
-  }
-}
+//   for (let i = 0; i < myState.volume.imageInfo.numChannels; ++i) {
+//     view3D.updateIsosurface(myState.volume, i, myState.channelGui[i].isovalue);
+//   }
+// }
 
 function playTimeSeries(onNewFrameCallback: () => void) {
-  clearInterval(myState.timerId);
+  window.clearTimeout(myState.timerId);
+  myState.isPlaying = true;
 
   const loadNextFrame = () => {
-    let nextFrame = myState.currentFrame + 1;
-    if (nextFrame >= myState.totalFrames) {
-      nextFrame = 0;
-    }
-    const nextFrameVolume = myState.timeSeriesVolumes[nextFrame];
+    myState.lastFrameTime = Date.now();
+    let nextFrame = (myState.currentFrame + 1) % myState.totalFrames;
 
-    copyVolumeToVolume(nextFrameVolume, myState.volume);
-    updateViewForNewVolume();
-    myState.currentFrame = nextFrame;
-    onNewFrameCallback();
+    // TODO would be real nice if this were an `await`-able promise instead...
+    view3D.setTime(myState.volume, nextFrame, (vol) => {
+      if (vol.isLoaded()) {
+        myState.currentFrame = nextFrame;
+        onNewFrameCallback();
+
+        if (myState.isPlaying) {
+          const timeLoading = Date.now() - myState.lastFrameTime;
+          console.log(`Last update took ${timeLoading} ms`);
+          myState.timerId = window.setTimeout(loadNextFrame, PLAYBACK_INTERVAL - timeLoading);
+        }
+      }
+    });
   };
-  myState.timerId = window.setInterval(loadNextFrame, 80);
+
+  loadNextFrame();
 }
 
 function getCurrentFrame() {
   return myState.currentFrame;
 }
 
-function goToFrame(targetFrame) {
+function goToFrame(targetFrame: number): boolean {
   console.log("going to Frame " + targetFrame);
   const outOfBounds = targetFrame > myState.totalFrames - 1 || targetFrame < 0;
   if (outOfBounds) {
@@ -1071,20 +1084,9 @@ function goToFrame(targetFrame) {
     return false;
   }
 
-  // check to see if we have pre-cached the volume
-  const targetFrameVolume = myState.timeSeriesVolumes[targetFrame];
-  if (targetFrameVolume) {
-    copyVolumeToVolume(targetFrameVolume, myState.volume);
-    updateViewForNewVolume();
-  } else {
-    console.log(`frame ${targetFrame} not yet loaded`);
-    // try our loader
-    const loadSpec = new LoadSpec();
-    loadSpec.time = targetFrame;
-    loadSpec.url = myState.currentImageStore;
-    // TODO loadspec needs to know proper multiresolution level here
-    loadVolume(loadSpec, myState.loader, false);
-  }
+  console.log(`frame ${targetFrame} not yet loaded`);
+  view3D.setTime(myState.volume, targetFrame);
+
   myState.currentFrame = targetFrame;
   return true;
 }
@@ -1137,32 +1139,33 @@ function createTestVolume() {
   };
 }
 
-function createLoader(type: string, url: string): IVolumeLoader {
-  switch (type) {
+function createLoader(data: TestDataSpec): IVolumeLoader {
+  switch (data.type) {
     case "opencell":
       return new OpenCellLoader();
     case "omezarr":
-      return new OMEZarrLoader(url, new VolumeCache());
+      return new OMEZarrLoader(data.url, volumeCache);
     case "ometiff":
-      return new TiffLoader();
+      return new TiffLoader(data.url);
     // case "procedural":
     //   return new RawVolumeLoader();
     case "jsonatlas":
-      return new JsonImageInfoLoader();
+      const frameUrls: string[] = [];
+      for (let t = data.tstart; t <= data.tend; t++) {
+        frameUrls.push(data.url.replace("%%", t.toString()));
+      }
+      return new JsonImageInfoLoader(frameUrls);
     default:
-      throw new Error("Unknown loader type: " + type);
+      throw new Error("Unknown loader type: " + data.type);
   }
 }
 
-async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader, cacheTimeSeries: boolean): Promise<void> {
+async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<void> {
   const volume = await loader.createVolume(loadSpec, (v, channelIndex) => {
-    onChannelDataArrived(v, channelIndex, cacheTimeSeries, loadSpec.time);
+    onChannelDataArrived(v, channelIndex, loadSpec.time);
   });
-  onVolumeCreated(volume, cacheTimeSeries, loadSpec.time);
+  onVolumeCreated(volume);
   loader.loadVolumeData(volume);
-
-  myState.currentImageStore = loadSpec.url;
-  myState.currentImageName = loadSpec.url;
 
   // Set default zSlice
   goToZSlice(Math.floor(volume.imageInfo.subregionSize.z / 2));
@@ -1175,19 +1178,11 @@ function loadTestData(testdata: TestDataSpec) {
     return;
   }
 
-  const loader: IVolumeLoader = createLoader(testdata.type, testdata.url);
-  myState.loader = loader;
+  myState.loader = createLoader(testdata);
 
-  const isTimeSeries = testdata.tend > testdata.tstart;
-  for (let t = testdata.tstart; t <= testdata.tend; t++) {
-    // replace %% with frame number
-    const url = testdata.url.replace("%%", t.toString());
+  const loadSpec = new LoadSpec();
+  loadVolume(loadSpec, myState.loader);
 
-    const loadSpec = new LoadSpec();
-    loadSpec.url = url;
-    loadSpec.time = t;
-    loadVolume(loadSpec, loader, isTimeSeries);
-  }
   myState.totalFrames = testdata.tend - testdata.tstart + 1;
 }
 
@@ -1293,7 +1288,8 @@ function main() {
   });
   const pauseBtn = document.getElementById("pauseBtn");
   pauseBtn?.addEventListener("click", () => {
-    clearInterval(myState.timerId);
+    window.clearTimeout(myState.timerId);
+    myState.isPlaying = false;
   });
 
   const forwardBtn = document.getElementById("forwardBtn");
@@ -1405,7 +1401,6 @@ function main() {
   setupGui();
 
   loadTestData(TEST_DATA[(testDataSelect as HTMLSelectElement)?.value]);
-  console.log(myState.timeSeriesVolumes);
 }
 
 document.body.onload = () => {

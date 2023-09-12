@@ -12,10 +12,10 @@ export interface TestDataSpec {
 export interface State {
   file: string;
   volume: Volume;
-  timeSeriesVolumes: Volume[];
-  numberOfVolumesCached: number;
   totalFrames: number;
   currentFrame: number;
+  lastFrameTime: number;
+  isPlaying: boolean;
   timerId: number;
 
   loader: IVolumeLoader;
