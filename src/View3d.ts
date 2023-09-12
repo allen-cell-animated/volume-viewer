@@ -24,6 +24,7 @@ import {
   RenderMode,
 } from "./types";
 import { Axis } from "./VolumeRenderSettings";
+import { PerChannelCallback } from "./loaders/IVolumeLoader";
 
 // Constants are kept for compatibility reasons.
 export const RENDERMODE_RAYMARCH = RenderMode.RAYMARCH;
@@ -229,8 +230,9 @@ export class View3d {
     this.image?.onChannelAdded(newChannelIndex);
   }
 
-  setTime(volume: Volume, time: number): void {
-    volume.updateRequiredData({ time: Math.max(0, Math.min(time, volume.imageInfo.times)) });
+  setTime(volume: Volume, time: number, onChannelLoaded?: PerChannelCallback): void {
+    const timeClamped = Math.max(0, Math.min(time, volume.imageInfo.times));
+    volume.updateRequiredData({ time: timeClamped }, onChannelLoaded);
     this.updateTimestepIndicator(volume);
   }
 

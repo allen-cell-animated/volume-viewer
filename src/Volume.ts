@@ -209,7 +209,7 @@ export default class Volume {
     this.normRegionOffset = subregionOffset.clone().divide(volumeSize);
   }
 
-  updateRequiredData(required: Partial<LoadSpec>) {
+  updateRequiredData(required: Partial<LoadSpec>, onChannelLoaded?: PerChannelCallback) {
     this.loadSpecRequired = { ...this.loadSpecRequired, ...required };
     // if newly required data is not currently contained in this volume...
     if (
@@ -219,7 +219,7 @@ export default class Volume {
     ) {
       // ...clone `loadSpecRequired` into `loadSpec` and load
       this.loadSpec = { ...this.loadSpecRequired, subregion: this.loadSpecRequired.subregion.clone() };
-      this.loader?.loadVolumeData(this);
+      this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
     }
   }
 
