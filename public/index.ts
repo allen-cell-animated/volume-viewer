@@ -815,7 +815,7 @@ function showChannelUI(volume: Volume) {
   }
 }
 
-function loadImageData(jsonData, volumeData) {
+function loadImageData(jsonData: ImageInfo, volumeData: Uint8Array[]) {
   const vol = new Volume(jsonData);
   myState.volume = vol;
 
@@ -841,7 +841,7 @@ function loadImageData(jsonData, volumeData) {
       view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
     }
 
-    const maskChannelIndex = jsonData.channel_names.indexOf("SEG_Memb");
+    const maskChannelIndex = jsonData.channelNames.indexOf("SEG_Memb");
     view3D.setVolumeChannelAsMask(vol, maskChannelIndex);
     view3D.updateActiveChannels(vol);
     view3D.updateLuts(vol);
