@@ -383,11 +383,13 @@ class OMEZarrLoader implements IVolumeLoader {
     const storepath = vol.loadSpec.subpath + "/" + datasetPath;
     // do each channel on a worker
     for (let i = 0; i < numChannels; ++i) {
-      const cacheResult = this.cache?.get(this.cacheStore!, i, {
+      const cacheQueryDims = {
         region: regionPx,
         time: vol.loadSpec.time,
         scale: levelToLoad,
-      });
+      };
+      const cacheResult = this.cacheStore && this.cache?.get(this.cacheStore, i, cacheQueryDims);
+
       if (cacheResult) {
         vol.setChannelDataFromVolume(i, cacheResult);
         onChannelLoaded?.(vol, i);
@@ -396,12 +398,15 @@ class OMEZarrLoader implements IVolumeLoader {
         worker.onmessage = (e) => {
           const u8 = e.data.data;
           const channel = e.data.channel;
-          this.cache?.insert(this.cacheStore!, u8, {
+
+          const cacheInsertDims = {
             region: regionPx,
             scale: levelToLoad,
             time: vol.loadSpec.time,
             channel,
-          });
+          };
+          this.cacheStore && this.cache?.insert(this.cacheStore, u8, cacheInsertDims);
+
           vol.setChannelDataFromVolume(channel, u8);
           onChannelLoaded?.(vol, channel);
           worker.terminate();
