@@ -189,7 +189,7 @@ class TiffLoader implements IVolumeLoader {
         const channel = e.data.channel;
         vol.setChannelDataFromVolume(channel, u8);
         // make up a unique name? or have caller pass this in?
-        onChannelLoaded?.(this.url, vol, channel);
+        onChannelLoaded?.(vol, channel);
         worker.terminate();
       };
       worker.onerror = function (e) {
