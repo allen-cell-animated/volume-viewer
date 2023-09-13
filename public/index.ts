@@ -905,7 +905,7 @@ function playTimeSeries(onNewFrameCallback: () => void) {
 
   const loadNextFrame = () => {
     myState.lastFrameTime = Date.now();
-    let nextFrame = (myState.currentFrame + 1) % getNumberOfTimesteps();
+    const nextFrame = (myState.currentFrame + 1) % getNumberOfTimesteps();
 
     // TODO would be real nice if this were an `await`-able promise instead...
     view3D.setTime(myState.volume, nextFrame, (vol) => {
