@@ -5,14 +5,14 @@ import { ImageInfo } from "../src/Volume";
 export interface TestDataSpec {
   type: "ometiff" | "omezarr" | "jsonatlas" | "opencell" | "procedural";
   url: string;
-  tstart: number;
-  tend: number;
+  /** Optional fallback for JSON volumes which don't specify a value for `times` */
+  times?: number;
 }
 
 export interface State {
   file: string;
   volume: Volume;
-  totalFrames: number;
+  totalFrames?: number;
   currentFrame: number;
   lastFrameTime: number;
   isPlaying: boolean;

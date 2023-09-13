@@ -31,65 +31,46 @@ const TEST_DATA: Record<string, TestDataSpec> = {
   timeSeries: {
     type: "jsonatlas",
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json",
-    tstart: 0,
-    tend: 46,
+    times: 46,
   },
   omeTiff: {
     type: "ometiff",
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif",
-    tstart: 0,
-    tend: 0,
   },
   zarrVariance: {
     type: "omezarr",
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr",
-    tstart: 0,
-    tend: 0,
   },
   zarrNucmorph0: {
     type: "omezarr",
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P13-C4.zarr/",
-    tstart: 0,
-    tend: 0,
   },
   zarrNucmorph1: {
     type: "omezarr",
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P15-C3.zarr/",
-    tstart: 0,
-    tend: 0,
   },
   zarrNucmorph2: {
     type: "omezarr",
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P7-B4.zarr/",
-    tstart: 0,
-    tend: 0,
   },
   zarrNucmorph3: {
     type: "omezarr",
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P8-B4.zarr/",
-    tstart: 0,
-    tend: 0,
   },
   zarrUK: {
     type: "omezarr",
     url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr",
-    tstart: 0,
-    tend: 0,
   },
-  opencell: { type: "opencell", url: "", tstart: 0, tend: 0 },
+  opencell: { type: "opencell", url: "" },
   cfeJson: {
     type: "jsonatlas",
     url: "AICS-12_881_atlas.json",
-    tstart: 0,
-    tend: 0,
   },
   abm: {
     type: "ometiff",
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/HAMILTONIAN_TERM_FOV_VSAHJUP_0000_000192.ome.tif",
-    tstart: 0,
-    tend: 0,
   },
-  procedural: { type: "procedural", url: "", tstart: 0, tend: 0 },
+  procedural: { type: "procedural", url: "" },
 };
 
 let view3D: View3d;
@@ -99,7 +80,6 @@ const volumeCache = new VolumeCache(CACHE_MAX_SIZE);
 const myState: State = {
   file: "",
   volume: new Volume(),
-  totalFrames: 0,
   currentFrame: 0,
   lastFrameTime: 0,
   isPlaying: false,
@@ -163,6 +143,8 @@ const myState: State = {
   currentImageStore: "",
   currentImageName: "",
 };
+
+const getNumberOfTimesteps = (): number => myState.totalFrames || myState.volume.imageInfo.times;
 
 function densitySliderToView3D(density: number) {
   return density / 50.0;
@@ -569,32 +551,26 @@ function removeFolderByName(name: string) {
   gui.onResize();
 }
 
-function updateTimeUI(volume: Volume) {
-  // TODO: we have stashed sizeT in volume.imageInfo.times
-  // but the Volume doesn't store any other info that would help
-  if (volume.imageInfo.times) {
-    myState.totalFrames = volume.imageInfo.times;
-  } else {
-    //myState.totalFrames = 1;
-  }
+function updateTimeUI() {
+  const totalFrames = getNumberOfTimesteps();
 
   const timeSlider = document.getElementById("timeSlider") as HTMLInputElement;
   if (timeSlider) {
-    timeSlider.max = `${myState.totalFrames - 1}`;
+    timeSlider.max = `${totalFrames - 1}`;
   }
   const timeInput = document.getElementById("timeValue") as HTMLInputElement;
   if (timeInput) {
-    timeInput.max = `${myState.totalFrames - 1}`;
+    timeInput.max = `${totalFrames - 1}`;
   }
 
   const playBtn = document.getElementById("playBtn");
-  if (myState.totalFrames < 2) {
+  if (totalFrames < 2) {
     (playBtn as HTMLButtonElement).disabled = true;
   } else {
     (playBtn as HTMLButtonElement).disabled = false;
   }
   const pauseBtn = document.getElementById("pauseBtn");
-  if (myState.totalFrames < 2) {
+  if (totalFrames < 2) {
     (pauseBtn as HTMLButtonElement).disabled = true;
   } else {
     (pauseBtn as HTMLButtonElement).disabled = false;
@@ -1002,7 +978,7 @@ function onVolumeCreated(volume: Volume) {
     view3D.setVolumeRotation(myState.volume, alignTransform.rotation.toArray());
   }
 
-  updateTimeUI(myState.volume);
+  updateTimeUI();
   updateZSliceUI(myState.volume);
   showChannelUI(myState.volume);
 }
@@ -1052,7 +1028,7 @@ function playTimeSeries(onNewFrameCallback: () => void) {
 
   const loadNextFrame = () => {
     myState.lastFrameTime = Date.now();
-    let nextFrame = (myState.currentFrame + 1) % myState.totalFrames;
+    let nextFrame = (myState.currentFrame + 1) % getNumberOfTimesteps();
 
     // TODO would be real nice if this were an `await`-able promise instead...
     view3D.setTime(myState.volume, nextFrame, (vol) => {
@@ -1062,7 +1038,6 @@ function playTimeSeries(onNewFrameCallback: () => void) {
 
         if (myState.isPlaying) {
           const timeLoading = Date.now() - myState.lastFrameTime;
-          console.log(`Last update took ${timeLoading} ms`);
           myState.timerId = window.setTimeout(loadNextFrame, PLAYBACK_INTERVAL - timeLoading);
         }
       }
@@ -1078,15 +1053,13 @@ function getCurrentFrame() {
 
 function goToFrame(targetFrame: number): boolean {
   console.log("going to Frame " + targetFrame);
-  const outOfBounds = targetFrame > myState.totalFrames - 1 || targetFrame < 0;
+  const outOfBounds = targetFrame > getNumberOfTimesteps() - 1 || targetFrame < 0;
   if (outOfBounds) {
     console.log(`frame ${targetFrame} out of bounds`);
     return false;
   }
 
-  console.log(`frame ${targetFrame} not yet loaded`);
   view3D.setTime(myState.volume, targetFrame);
-
   myState.currentFrame = targetFrame;
   return true;
 }
@@ -1151,7 +1124,8 @@ function createLoader(data: TestDataSpec): IVolumeLoader {
     //   return new RawVolumeLoader();
     case "jsonatlas":
       const frameUrls: string[] = [];
-      for (let t = data.tstart; t <= data.tend; t++) {
+      const times = data.times || 0;
+      for (let t = 0; t <= times; t++) {
         frameUrls.push(data.url.replace("%%", t.toString()));
       }
       return new JsonImageInfoLoader(frameUrls);
@@ -1181,9 +1155,8 @@ function loadTestData(testdata: TestDataSpec) {
   myState.loader = createLoader(testdata);
 
   const loadSpec = new LoadSpec();
+  myState.totalFrames = testdata.times;
   loadVolume(loadSpec, myState.loader);
-
-  myState.totalFrames = testdata.tend - testdata.tstart + 1;
 }
 
 function main() {
@@ -1274,7 +1247,7 @@ function main() {
   });
   const playBtn = document.getElementById("playBtn");
   playBtn?.addEventListener("click", () => {
-    if (myState.currentFrame >= myState.totalFrames - 1) {
+    if (myState.currentFrame >= getNumberOfTimesteps() - 1) {
       myState.currentFrame = -1;
     }
     playTimeSeries(() => {

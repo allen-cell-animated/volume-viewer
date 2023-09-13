@@ -91,8 +91,8 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
 
 class JsonImageInfoLoader implements IVolumeLoader {
   urls: string[];
-  imageInfo: JsonImageInfo | null = null;
-  imageArray: PackedChannelsImage[] = [];
+  time: number;
+  jsonInfo: JsonImageInfo | null = null;
 
   constructor(urls: string | string[]) {
     if (Array.isArray(urls)) {
@@ -100,23 +100,21 @@ class JsonImageInfoLoader implements IVolumeLoader {
     } else {
       this.urls = [urls];
     }
+
+    this.time = 0;
   }
 
-  async getImageInfo(loadSpec: LoadSpec): Promise<JsonImageInfo> {
-    if (!this.imageInfo) {
-      const response = await fetch(this.urls[loadSpec.time]);
-      const imageInfo = (await response.json()) as JsonImageInfo;
+  async getJsonImageInfo(loadSpec: LoadSpec): Promise<JsonImageInfo> {
+    const response = await fetch(this.urls[loadSpec.time]);
+    const imageInfo = (await response.json()) as JsonImageInfo;
 
-      imageInfo.pixel_size_unit = imageInfo.pixel_size_unit || "μm";
-      this.imageInfo = imageInfo;
-
-      this.imageArray = imageInfo.images;
-    }
-    return this.imageInfo;
+    imageInfo.pixel_size_unit = imageInfo.pixel_size_unit || "μm";
+    imageInfo.times = imageInfo.times || this.urls.length;
+    return imageInfo;
   }
 
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
-    const jsonInfo = await this.getImageInfo(loadSpec);
+    const jsonInfo = await this.getJsonImageInfo(loadSpec);
 
     const d = new VolumeDims();
     d.subpath = "";
@@ -128,8 +126,9 @@ class JsonImageInfoLoader implements IVolumeLoader {
   }
 
   async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
-    const jsonInfo = await this.getImageInfo(loadSpec);
-    const imageInfo = convertImageInfo(jsonInfo);
+    this.time = loadSpec.time;
+    this.jsonInfo = await this.getJsonImageInfo(loadSpec);
+    const imageInfo = convertImageInfo(this.jsonInfo);
 
     const vol = new Volume(imageInfo, loadSpec, this);
     vol.channelLoadCallback = onChannelLoaded;
@@ -142,13 +141,18 @@ class JsonImageInfoLoader implements IVolumeLoader {
     // now is the time to do it.
     // Try to figure out the urlPrefix from the LoadSpec.
     // For this format we assume the image data is in the same directory as the json file.
-    const time = explicitLoadSpec?.time || vol.loadSpec.time;
+    const loadSpec = explicitLoadSpec || vol.loadSpec;
+    if (this.time !== loadSpec.time) {
+      this.time = loadSpec.time;
+      this.jsonInfo = await this.getJsonImageInfo(loadSpec);
+    }
     // This regex removes everything after the last slash, so the url had better be simple.
-    const urlPrefix = this.urls[time].replace(/[^/]*$/, "");
-    this.imageArray.forEach((element) => {
-      element.name = urlPrefix + element.name;
-    });
-    JsonImageInfoLoader.loadVolumeAtlasData(vol, this.imageArray, onChannelLoaded);
+    const urlPrefix = this.urls[this.time].replace(/[^/]*$/, "");
+    const images = this.jsonInfo?.images.map((element) => ({ ...element, name: urlPrefix + element.name }));
+
+    if (images) {
+      JsonImageInfoLoader.loadVolumeAtlasData(vol, images, onChannelLoaded);
+    }
   }
 
   /**
