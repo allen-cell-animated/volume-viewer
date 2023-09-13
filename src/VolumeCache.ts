@@ -156,6 +156,7 @@ export default class VolumeCache {
       return;
     }
 
+    console.log(`Cache: evict entry with size ${this.last.data.length}`);
     this.removeEntryFromStore(this.last);
 
     if (this.last.prev) {
@@ -177,6 +178,9 @@ export default class VolumeCache {
    * A `CacheStore` may only be accessed or modified by passing it to this class's methods.
    */
   public addVolume(numChannels: number, numTimes: number, scaleDims: Vector3[]): CacheStore {
+    console.log(
+      `Cache: create store with ${numChannels} channels, ${numTimes} times, ${scaleDims.length} scale levels`
+    );
     const makeTCArray = (): CacheEntry[][][] => {
       const tArr: CacheEntry[][][] = [];
       for (let i = 0; i < numTimes; i++) {
@@ -227,6 +231,12 @@ export default class VolumeCache {
       }
     }
 
+    console.log(
+      `Cache: insert entry for channel ${optDims.channel || 0}, timestep ${optDims.time || 0}, scale level ${
+        optDims.scale || 0
+      }, with size ${data.length}`
+    );
+
     // Add new entry to cache
     const newEntry: CacheEntry = { data, subregion, prev: null, next: null, parentArr: entryList };
     this.addEntryAsFirst(newEntry);
@@ -255,8 +265,17 @@ export default class VolumeCache {
     const entryList = scaleCache.data[optDims.time || 0][channel];
     const subregion = applyDefaultsToRegion(optDims.region, scaleCache.size);
 
+    const size = subregion.getSize(new Vector3());
+    const len = size.x * size.y * size.z;
+    console.log(
+      `Cache: get entry for channel ${channel}, timestep ${optDims.time || 0}, scale level ${
+        optDims.scale || 0
+      }, with size ${len}`
+    );
+
     for (const entry of entryList) {
       if (entry.subregion.equals(subregion)) {
+        console.log("HIT!");
         this.moveEntryToFirst(entry);
         return entry.data;
       }
