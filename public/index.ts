@@ -854,39 +854,7 @@ function loadImageData(jsonData, volumeData) {
   return vol;
 }
 
-// function cacheTimeSeriesImageData(jsonData, frameNumber) {
-//   const vol = new Volume(jsonData);
-//   myState.timeSeriesVolumes[frameNumber] = vol;
-//   return vol;
-// }
-
-function onChannelDataArrived(v: Volume, channelIndex: number, frameNumber = 0) {
-  // if (cacheForTimeSeries) {
-  //   if (v.isLoaded()) {
-  //     const currentVol = cacheTimeSeriesImageData(v.imageInfo, frameNumber);
-
-  //     console.log("currentVol with name " + v.name + " is loaded");
-  //     myState.numberOfVolumesCached++;
-  //     if (myState.numberOfVolumesCached >= myState.totalFrames) {
-  //       console.log("ALL FRAMES RECEIVED");
-  //     }
-
-  //     copyVolumeToVolume(v, currentVol);
-  //     if (frameNumber === 0) {
-  //       copyVolumeToVolume(v, myState.volume);
-  //       // has assumption that only 3 channels
-  //       view3D.onVolumeData(myState.volume, [0, 1, 2]);
-  //       view3D.updateActiveChannels(myState.volume);
-  //       view3D.updateLuts(myState.volume);
-
-  //       myState.volume.setIsLoaded(true);
-  //     } else {
-  //       //copyVolumeToVolume(v, currentVol);
-  //     }
-  //     return;
-  //   }
-  // }
-
+function onChannelDataArrived(v: Volume, channelIndex: number) {
   const currentVol = v; // myState.volume;
 
   currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
@@ -904,58 +872,6 @@ function onChannelDataArrived(v: Volume, channelIndex: number, frameNumber = 0) 
 
 function onVolumeCreated(volume: Volume) {
   const myJson = volume.imageInfo;
-  // if (isTimeSeries) {
-  //   if (frameNumber === 0) {
-  //     // create the main volume and add to view (this is the only place)
-  //     myState.volume = new Volume(myJson);
-
-  //     const atlasWidth = myJson.subregionSize.x * myJson.atlasTileDims.x;
-  //     const atlasHeight = myJson.subregionSize.y * myJson.atlasTileDims.y;
-
-  //     // TODO: this can go in the Volume and Channel constructors!
-  //     // preallocate some memory to be filled in later
-  //     for (let i = 0; i < volume.imageInfo.numChannels; ++i) {
-  //       myState.volume.channels[i].imgData = {
-  //         data: new Uint8ClampedArray(atlasWidth * atlasHeight),
-  //         width: atlasWidth,
-  //         height: atlasHeight,
-  //       };
-  //       myState.volume.channels[i].volumeData = new Uint8Array(
-  //         myJson.subregionSize.x * myJson.subregionSize.y * myJson.subregionSize.z
-  //       );
-  //       // TODO also preallocate the Fused data texture
-  //     }
-
-  //     view3D.removeAllVolumes();
-  //     view3D.addVolume(myState.volume);
-  //     setInitialRenderMode();
-  //     // first 3 channels for starters
-  //     for (let ch = 0; ch < myState.volume.imageInfo.numChannels; ++ch) {
-  //       view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
-  //     }
-  //     view3D.setVolumeChannelAsMask(myState.volume, myJson.channelNames.indexOf("SEG_Memb"));
-  //     view3D.updateActiveChannels(myState.volume);
-  //     view3D.updateLuts(myState.volume);
-  //     view3D.updateLights(myState.lights);
-  //     view3D.updateDensity(myState.volume, densitySliderToView3D(myState.density));
-  //     view3D.updateExposure(myState.exposure);
-  //     // apply a volume transform from an external source:
-  //     if (myJson.transform) {
-  //       const alignTransform = myJson.transform;
-  //       view3D.setVolumeTranslation(
-  //         myState.volume,
-  //         myState.volume.voxelsToWorldSpace(alignTransform.translation.toArray())
-  //       );
-  //       view3D.setVolumeRotation(myState.volume, alignTransform.rotation.toArray());
-  //     }
-  //   }
-
-  //   updateTimeUI(myState.volume);
-  //   updateZSliceUI(myState.volume);
-  //   showChannelUI(myState.volume);
-  //   return;
-  // }
-
   myState.volume = volume;
 
   view3D.removeAllVolumes();
@@ -982,45 +898,6 @@ function onVolumeCreated(volume: Volume) {
   updateZSliceUI(myState.volume);
   showChannelUI(myState.volume);
 }
-
-// function copyVolumeToVolume(src, dest) {
-//   // assumes volumes already have identical dimensions!!!
-
-//   // grab references to data from each channel and put it in myState.volume
-//   for (let i = 0; i < src.num_channels; ++i) {
-//     // dest.channels[i].imgData.data.set(src.channels[i].imgData.data);
-//     // dest.channels[i].volumeData.set(src.channels[i].volumeData);
-//     // dest.channels[i].lut.set(src.channels[i].lut);
-//     dest.channels[i].imgData = {
-//       data: src.channels[i].imgData.data,
-//       width: src.channels[i].imgData.width,
-//       height: src.channels[i].imgData.height,
-//     };
-//     dest.channels[i].volumeData = src.channels[i].volumeData;
-//     dest.channels[i].lut = src.channels[i].lut;
-
-//     // danger: not a copy!
-//     dest.channels[i].histogram = src.channels[i].histogram;
-//     dest.channels[i].dataTexture = src.channels[i].dataTexture;
-//     dest.channels[i].lutTexture = src.channels[i].lutTexture;
-//     dest.channels[i].loaded = true;
-//   }
-// }
-
-// function updateViewForNewVolume() {
-//   view3D.onVolumeData(myState.volume, [0, 1, 2]);
-//   myState.volume.setIsLoaded(true);
-
-//   if (myState.isPT) {
-//     view3D.updateActiveChannels(myState.volume);
-//   } else {
-//     view3D.updateLuts(myState.volume);
-//   }
-
-//   for (let i = 0; i < myState.volume.imageInfo.numChannels; ++i) {
-//     view3D.updateIsosurface(myState.volume, i, myState.channelGui[i].isovalue);
-//   }
-// }
 
 function playTimeSeries(onNewFrameCallback: () => void) {
   window.clearTimeout(myState.timerId);
@@ -1135,9 +1012,7 @@ function createLoader(data: TestDataSpec): IVolumeLoader {
 }
 
 async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<void> {
-  const volume = await loader.createVolume(loadSpec, (v, channelIndex) => {
-    onChannelDataArrived(v, channelIndex, loadSpec.time);
-  });
+  const volume = await loader.createVolume(loadSpec, onChannelDataArrived);
   onVolumeCreated(volume);
   loader.loadVolumeData(volume);
 
