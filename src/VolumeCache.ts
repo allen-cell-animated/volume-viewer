@@ -30,14 +30,14 @@ type CacheEntry = {
   parentArr: CacheEntry[];
 };
 
-type CacheStoreScale = {
+type CacheStoreMultiscaleLevel = {
   // Entries are indexed by T and C, then stored in lists of ZYX subsets
   data: CacheEntry[][][];
   size: Vector3;
 };
 
 export type CacheStore = {
-  scales: CacheStoreScale[];
+  scales: CacheStoreMultiscaleLevel[];
   numTimes: number;
   numChannels: number;
 };
@@ -189,7 +189,7 @@ export default class VolumeCache {
       return tArr;
     };
 
-    const scales = scaleDims.map((size): CacheStoreScale => ({ size, data: makeTCArray() }));
+    const scales = scaleDims.map((size): CacheStoreMultiscaleLevel => ({ size, data: makeTCArray() }));
     return { scales, numTimes, numChannels };
   }
 
