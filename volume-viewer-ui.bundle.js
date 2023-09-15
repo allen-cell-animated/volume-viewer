@@ -5233,10 +5233,11 @@ var View3d = /*#__PURE__*/function () {
     }
   }, {
     key: "setTime",
-    value: function setTime(volume, time) {
+    value: function setTime(volume, time, onChannelLoaded) {
+      var timeClamped = Math.max(0, Math.min(time, volume.imageInfo.times - 1));
       volume.updateRequiredData({
-        time: Math.max(0, Math.min(time, volume.imageInfo.times))
-      });
+        time: timeClamped
+      }, onChannelLoaded);
       this.updateTimestepIndicator(volume);
     }
 
@@ -6175,6 +6176,20 @@ var Volume = /*#__PURE__*/function () {
     this.volumeDataObservers = [];
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(Volume, [{
+    key: "setUnloaded",
+    value: function setUnloaded() {
+      this.loaded = false;
+      // TODO this will cause problems once it is possible to skip loading some channels. Come back to this then.
+      this.channels.forEach(function (channel) {
+        channel.loaded = false;
+      });
+    }
+  }, {
+    key: "isLoaded",
+    value: function isLoaded() {
+      return this.loaded;
+    }
+  }, {
     key: "updateDimensions",
     value: function updateDimensions() {
       var _this$imageInfo = this.imageInfo,
@@ -6187,16 +6202,17 @@ var Volume = /*#__PURE__*/function () {
     }
   }, {
     key: "updateRequiredData",
-    value: function updateRequiredData(required) {
+    value: function updateRequiredData(required, onChannelLoaded) {
       this.loadSpecRequired = _objectSpread(_objectSpread({}, this.loadSpecRequired), required);
       // if newly required data is not currently contained in this volume...
       if (this.loadSpecRequired.time !== this.loadSpec.time || this.loadSpecRequired.scene !== this.loadSpec.scene || !this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion)) {
         var _this$loader;
         // ...clone `loadSpecRequired` into `loadSpec` and load
+        this.setUnloaded();
         this.loadSpec = _objectSpread(_objectSpread({}, this.loadSpecRequired), {}, {
           subregion: this.loadSpecRequired.subregion.clone()
         });
-        (_this$loader = this.loader) === null || _this$loader === void 0 ? void 0 : _this$loader.loadVolumeData(this);
+        (_this$loader = this.loader) === null || _this$loader === void 0 ? void 0 : _this$loader.loadVolumeData(this, undefined, onChannelLoaded);
       }
     }
 
@@ -6254,7 +6270,7 @@ var Volume = /*#__PURE__*/function () {
       }
       batch.forEach(function (channelIndex) {
         var _this$channelLoadCall;
-        return (_this$channelLoadCall = _this.channelLoadCallback) === null || _this$channelLoadCall === void 0 ? void 0 : _this$channelLoadCall.call(_this, _this.loadSpec.url, _this, channelIndex);
+        return (_this$channelLoadCall = _this.channelLoadCallback) === null || _this$channelLoadCall === void 0 ? void 0 : _this$channelLoadCall.call(_this, _this, channelIndex);
       });
       this.volumeDataObservers.forEach(function (observer) {
         return observer.onVolumeData(_this, batch);
@@ -6431,18 +6447,341 @@ var Volume = /*#__PURE__*/function () {
     value: function removeAllVolumeDataObservers() {
       this.volumeDataObservers = [];
     }
-  }, {
-    key: "isLoaded",
-    value: function isLoaded() {
-      return this.loaded;
-    }
-  }, {
-    key: "setIsLoaded",
-    value: function setIsLoaded(loaded) {
-      this.loaded = loaded;
-    }
   }]);
   return Volume;
+}();
+
+
+/***/ }),
+
+/***/ "./src/VolumeCache.ts":
+/*!****************************!*\
+  !*** ./src/VolumeCache.ts ***!
+  \****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ VolumeCache)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/toConsumableArray */ "./node_modules/@babel/runtime/helpers/esm/toConsumableArray.js");
+/* harmony import */ var _babel_runtime_helpers_typeof__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_modules/@babel/runtime/helpers/esm/typeof.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+
+
+
+
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
+
+
+// The following two very similar types are kept separate because we may later want to allow more
+// complex queries with respect to scale, e.g. "get the largest available scale within this range"
+/** Fill in partially-specified, invalid, or missing `Box3` with reasonable defaults */
+function applyDefaultsToRegion(region, size) {
+  if (!region) {
+    return new three__WEBPACK_IMPORTED_MODULE_4__.Box3(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(), size.clone());
+  }
+  var min = region.min,
+    max = region.max;
+  var newMin = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(isFinite(min.x) && min.x >= 0 ? min.x : 0, isFinite(min.y) && min.y >= 0 ? min.y : 0, isFinite(min.z) && min.z >= 0 ? min.z : 0);
+  var newMax = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(isFinite(max.x) && max.x > 0 ? max.x : size.x, isFinite(max.y) && max.y > 0 ? max.y : size.y, isFinite(max.z) && max.z > 0 ? max.z : size.z);
+  return new three__WEBPACK_IMPORTED_MODULE_4__.Box3(newMin, newMax);
+}
+var anyComponentGreater = function anyComponentGreater(a, b) {
+  return a.x > b.x || a.y > b.y || a.z > b.z;
+};
+
+/** Default: 250MB. Should be large enough to be useful but safe for most any computer that can run the app */
+var CACHE_MAX_SIZE_DEFAULT = 250000000;
+var VolumeCache = /*#__PURE__*/function () {
+  // Ends of a linked list of entries, to track LRU and evict efficiently
+
+  // TODO implement some way to manage used vs unused (prefetched) entries so
+  // that prefetched entries which are never used don't get highest priority!
+
+  function VolumeCache() {
+    var maxSize = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : CACHE_MAX_SIZE_DEFAULT;
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, VolumeCache);
+    this.maxSize = maxSize;
+    this.currentSize = 0;
+    this.currentEntries = 0;
+    this.first = null;
+    this.last = null;
+  }
+
+  // Hide these behind getters so they're definitely never set from the outside
+  /** The size of all data arrays currently stored in this cache, in bytes */
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(VolumeCache, [{
+    key: "size",
+    get: function get() {
+      return this.currentSize;
+    }
+
+    /** The number of entries currently stored in this cache */
+  }, {
+    key: "numberOfEntries",
+    get: function get() {
+      return this.currentEntries;
+    }
+
+    /**
+     * Removes an entry from a volume but NOT the LRU list.
+     * Only call from a method with the word "evict" in it!
+     */
+  }, {
+    key: "removeEntryFromStore",
+    value: function removeEntryFromStore(entry) {
+      entry.parentArr.splice(entry.parentArr.indexOf(entry), 1);
+      this.currentSize -= entry.data.length;
+      this.currentEntries--;
+    }
+
+    /**
+     * Removes an entry from the LRU list but NOT its volume.
+     * Entry must be replaced in list or removed from volume, or it will never be evicted!
+     */
+  }, {
+    key: "removeEntryFromList",
+    value: function removeEntryFromList(entry) {
+      var prev = entry.prev,
+        next = entry.next;
+      if (prev) {
+        prev.next = next;
+      } else {
+        this.first = next;
+      }
+      if (next) {
+        next.prev = prev;
+      } else {
+        this.last = prev;
+      }
+    }
+
+    /** Adds an entry which is *not currently in the list* to the front of the list */
+  }, {
+    key: "addEntryAsFirst",
+    value: function addEntryAsFirst(entry) {
+      if (this.first) {
+        this.first.prev = entry;
+      } else {
+        this.last = entry;
+      }
+      entry.next = this.first;
+      entry.prev = null;
+      this.first = entry;
+    }
+
+    /** Moves an entry which is *currently in the list* to the front of the list */
+  }, {
+    key: "moveEntryToFirst",
+    value: function moveEntryToFirst(entry) {
+      if (entry === this.first) return;
+      this.removeEntryFromList(entry);
+      this.addEntryAsFirst(entry);
+    }
+
+    /** Evicts the least recently used entry from the cache */
+  }, {
+    key: "evictLast",
+    value: function evictLast() {
+      if (!this.last) {
+        console.error("VolumeCache: attempt to evict last entry from cache when no last entry is set");
+        return;
+      }
+      this.removeEntryFromStore(this.last);
+      if (this.last.prev) {
+        this.last.prev.next = null;
+      }
+      this.last = this.last.prev;
+    }
+
+    /** Evicts a specific entry from the cache */
+    // TODO use this to intelligently evict redundant data
+  }, {
+    key: "evict",
+    value: function evict(entry) {
+      this.removeEntryFromStore(entry);
+      this.removeEntryFromList(entry);
+    }
+
+    /**
+     * Prepares a new cached volume with the specified channels, times, and scales.
+     * @returns {CacheStore} A container for cache entries for this volume.
+     * A `CacheStore` may only be accessed or modified by passing it to this class's methods.
+     */
+  }, {
+    key: "addVolume",
+    value: function addVolume(numChannels, numTimes, scaleDims) {
+      var makeTCArray = function makeTCArray() {
+        var tArr = [];
+        for (var i = 0; i < numTimes; i++) {
+          var cArr = [];
+          for (var j = 0; j < numChannels; j++) {
+            cArr.push([]);
+          }
+          tArr.push(cArr);
+        }
+        return tArr;
+      };
+      var scales = scaleDims.map(function (size) {
+        return {
+          size: size,
+          data: makeTCArray()
+        };
+      });
+      return {
+        scales: scales,
+        numTimes: numTimes,
+        numChannels: numChannels
+      };
+    }
+
+    /**
+     * Add a new array to the cache (representing a subset of a channel's extent at a given time and scale)
+     * @returns {boolean} a boolean indicating whether the insertion succeeded
+     */
+  }, {
+    key: "insert",
+    value: function insert(volume, data) {
+      var optDims = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+      var scaleCache = volume.scales[optDims.scale || 0];
+      var entryList = scaleCache.data[optDims.time || 0][optDims.channel || 0];
+      var subregion = applyDefaultsToRegion(optDims.region, scaleCache.size);
+
+      // Validate input
+      var extentSize = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3());
+      if (extentSize.x * extentSize.y * extentSize.z !== data.length) {
+        console.error("VolumeCache: attempt to insert data which does not match the provided dimensions");
+        return false;
+      }
+      // `isEmpty` also captures the case where `min` > `max` (component-wise)
+      if (subregion.isEmpty() || anyComponentGreater(subregion.max, scaleCache.size)) {
+        console.error("VolumeCache: attempt to insert data with bad extent");
+        return false;
+      }
+      if (data.length > this.maxSize) {
+        console.error("VolumeCache: attempt to insert a single entry larger than the cache");
+        return false;
+      }
+
+      // Check if entry is already in cache
+      var _iterator = _createForOfIteratorHelper(entryList),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var existingEntry = _step.value;
+          if (existingEntry.subregion.equals(subregion)) {
+            existingEntry.data = data;
+            this.moveEntryToFirst(existingEntry);
+            return true;
+          }
+        }
+
+        // Add new entry to cache
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+      var newEntry = {
+        data: data,
+        subregion: subregion,
+        prev: null,
+        next: null,
+        parentArr: entryList
+      };
+      this.addEntryAsFirst(newEntry);
+      entryList.push(newEntry);
+      this.currentSize += data.length;
+      this.currentEntries++;
+
+      // Evict until size is within limit
+      while (this.currentSize > this.maxSize) {
+        this.evictLast();
+      }
+      return true;
+    }
+
+    /**
+     * Attempts to get data from a single channel. Internal implementation of `get`,
+     * which is overloaded to call this in different patterns.
+     */
+  }, {
+    key: "getOneChannel",
+    value: function getOneChannel(volume, channel) {
+      var optDims = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+      // TODO allow searching through a range of scales and picking the highest available one
+      var scaleCache = volume.scales[optDims.scale || 0];
+      var entryList = scaleCache.data[optDims.time || 0][channel];
+      var subregion = applyDefaultsToRegion(optDims.region, scaleCache.size);
+      var _iterator2 = _createForOfIteratorHelper(entryList),
+        _step2;
+      try {
+        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+          var entry = _step2.value;
+          if (entry.subregion.equals(subregion)) {
+            this.moveEntryToFirst(entry);
+            return entry.data;
+          }
+        }
+      } catch (err) {
+        _iterator2.e(err);
+      } finally {
+        _iterator2.f();
+      }
+      return undefined;
+    }
+
+    /** Attempts to get data from a single channel of a cached volume. Returns `undefined` if not present in the cache. */
+  }, {
+    key: "get",
+    value: function get(volume, channel, optDims) {
+      var _this = this;
+      if (Array.isArray(channel)) {
+        return channel.map(function (c) {
+          return _this.getOneChannel(volume, c, optDims);
+        });
+      }
+      if ((0,_babel_runtime_helpers_typeof__WEBPACK_IMPORTED_MODULE_1__["default"])(channel) === "object" || channel === undefined) {
+        var channelKeys = (0,_babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__["default"])(Array(volume.numChannels).keys());
+        return channelKeys.map(function (c) {
+          return _this.getOneChannel(volume, c, channel);
+        });
+      }
+      return this.getOneChannel(volume, channel, optDims);
+    }
+
+    /** Clears data associated with one volume from the cache */
+  }, {
+    key: "clearVolume",
+    value: function clearVolume(volume) {
+      var _this2 = this;
+      volume.scales.forEach(function (scale) {
+        scale.data.forEach(function (time) {
+          time.forEach(function (channel) {
+            channel.forEach(function (entry) {
+              _this2.evict(entry);
+            });
+          });
+        });
+      });
+    }
+
+    /** Clears all data from the cache */
+  }, {
+    key: "clear",
+    value: function clear() {
+      while (this.last) {
+        this.evictLast();
+      }
+    }
+  }]);
+  return VolumeCache;
 }();
 
 
@@ -8388,33 +8727,36 @@ var sliceShaderUniforms = function sliceShaderUniforms() {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   AREA_LIGHT: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_10__.AREA_LIGHT),
+/* harmony export */   AREA_LIGHT: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_11__.AREA_LIGHT),
 /* harmony export */   Channel: () => (/* reexport safe */ _Channel__WEBPACK_IMPORTED_MODULE_2__["default"]),
-/* harmony export */   Histogram: () => (/* reexport safe */ _Histogram__WEBPACK_IMPORTED_MODULE_4__["default"]),
-/* harmony export */   JsonImageInfoLoader: () => (/* reexport safe */ _loaders_JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_6__.JsonImageInfoLoader),
-/* harmony export */   Light: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_10__.Light),
-/* harmony export */   LoadSpec: () => (/* reexport safe */ _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.LoadSpec),
-/* harmony export */   OMEZarrLoader: () => (/* reexport safe */ _loaders_OmeZarrLoader__WEBPACK_IMPORTED_MODULE_8__.OMEZarrLoader),
+/* harmony export */   Histogram: () => (/* reexport safe */ _Histogram__WEBPACK_IMPORTED_MODULE_5__["default"]),
+/* harmony export */   JsonImageInfoLoader: () => (/* reexport safe */ _loaders_JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_7__.JsonImageInfoLoader),
+/* harmony export */   Light: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_11__.Light),
+/* harmony export */   LoadSpec: () => (/* reexport safe */ _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__.LoadSpec),
+/* harmony export */   OMEZarrLoader: () => (/* reexport safe */ _loaders_OmeZarrLoader__WEBPACK_IMPORTED_MODULE_9__.OMEZarrLoader),
 /* harmony export */   RENDERMODE_PATHTRACE: () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_PATHTRACE),
 /* harmony export */   RENDERMODE_RAYMARCH: () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_RAYMARCH),
-/* harmony export */   SKY_LIGHT: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_10__.SKY_LIGHT),
-/* harmony export */   TiffLoader: () => (/* reexport safe */ _loaders_TiffLoader__WEBPACK_IMPORTED_MODULE_9__.TiffLoader),
+/* harmony export */   SKY_LIGHT: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_11__.SKY_LIGHT),
+/* harmony export */   TiffLoader: () => (/* reexport safe */ _loaders_TiffLoader__WEBPACK_IMPORTED_MODULE_10__.TiffLoader),
 /* harmony export */   View3d: () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.View3d),
-/* harmony export */   ViewportCorner: () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_5__.ViewportCorner),
+/* harmony export */   ViewportCorner: () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_6__.ViewportCorner),
 /* harmony export */   Volume: () => (/* reexport safe */ _Volume__WEBPACK_IMPORTED_MODULE_1__["default"]),
+/* harmony export */   VolumeCache: () => (/* reexport safe */ _VolumeCache__WEBPACK_IMPORTED_MODULE_4__["default"]),
 /* harmony export */   VolumeMaker: () => (/* reexport safe */ _VolumeMaker__WEBPACK_IMPORTED_MODULE_3__["default"])
 /* harmony export */ });
 /* harmony import */ var _View3d__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./View3d */ "./src/View3d.ts");
 /* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Volume */ "./src/Volume.ts");
 /* harmony import */ var _Channel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Channel */ "./src/Channel.ts");
 /* harmony import */ var _VolumeMaker__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./VolumeMaker */ "./src/VolumeMaker.ts");
-/* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
-/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./types */ "./src/types.ts");
-/* harmony import */ var _loaders_JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./loaders/JsonImageInfoLoader */ "./src/loaders/JsonImageInfoLoader.ts");
-/* harmony import */ var _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./loaders/IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _loaders_OmeZarrLoader__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./loaders/OmeZarrLoader */ "./src/loaders/OmeZarrLoader.ts");
-/* harmony import */ var _loaders_TiffLoader__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./loaders/TiffLoader */ "./src/loaders/TiffLoader.ts");
-/* harmony import */ var _Light__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./Light */ "./src/Light.ts");
+/* harmony import */ var _VolumeCache__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./VolumeCache */ "./src/VolumeCache.ts");
+/* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
+/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./types */ "./src/types.ts");
+/* harmony import */ var _loaders_JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./loaders/JsonImageInfoLoader */ "./src/loaders/JsonImageInfoLoader.ts");
+/* harmony import */ var _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./loaders/IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _loaders_OmeZarrLoader__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./loaders/OmeZarrLoader */ "./src/loaders/OmeZarrLoader.ts");
+/* harmony import */ var _loaders_TiffLoader__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./loaders/TiffLoader */ "./src/loaders/TiffLoader.ts");
+/* harmony import */ var _Light__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./Light */ "./src/Light.ts");
+
 
 
 
@@ -8453,7 +8795,6 @@ __webpack_require__.r(__webpack_exports__);
 
 var LoadSpec = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__["default"])(function LoadSpec() {
   (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, LoadSpec);
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "url", "");
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "subpath", "");
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "scene", 0);
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "time", 0);
@@ -8465,7 +8806,7 @@ function loadSpecToString(spec) {
   var _spec$subregion = spec.subregion,
     min = _spec$subregion.min,
     max = _spec$subregion.max;
-  return "".concat(spec.url, ":").concat(spec.subpath).concat(spec.scene, ":").concat(spec.time, ":x(").concat(min.x, ",").concat(max.x, "):y(").concat(min.y, ",").concat(max.y, "):z(").concat(min.z, ",").concat(max.z, ")");
+  return "".concat(spec.subpath, ":").concat(spec.scene, ":").concat(spec.time, ":x(").concat(min.x, ",").concat(max.x, "):y(").concat(min.y, ",").concat(max.y, "):z(").concat(min.z, ",").concat(max.z, ")");
 }
 var VolumeDims = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__["default"])(function VolumeDims() {
   (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, VolumeDims);
@@ -8521,6 +8862,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
 
 
 
@@ -8556,46 +8899,45 @@ var convertImageInfo = function convertImageInfo(json) {
   };
 };
 var JsonImageInfoLoader = /*#__PURE__*/function () {
-  function JsonImageInfoLoader() {
+  function JsonImageInfoLoader(urls) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, JsonImageInfoLoader);
-    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "imageInfo", null);
-    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "imageArray", []);
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "jsonInfo", null);
+    if (Array.isArray(urls)) {
+      this.urls = urls;
+    } else {
+      this.urls = [urls];
+    }
+    this.time = 0;
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(JsonImageInfoLoader, [{
-    key: "getImageInfo",
+    key: "getJsonImageInfo",
     value: function () {
-      var _getImageInfo = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(loadSpec) {
+      var _getJsonImageInfo = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(loadSpec) {
         var response, imageInfo;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee$(_context) {
           while (1) switch (_context.prev = _context.next) {
             case 0:
-              if (this.imageInfo) {
-                _context.next = 10;
-                break;
-              }
-              _context.next = 3;
-              return fetch(loadSpec.url);
-            case 3:
+              _context.next = 2;
+              return fetch(this.urls[loadSpec.time]);
+            case 2:
               response = _context.sent;
-              _context.next = 6;
+              _context.next = 5;
               return response.json();
-            case 6:
+            case 5:
               imageInfo = _context.sent;
               imageInfo.pixel_size_unit = imageInfo.pixel_size_unit || "μm";
-              this.imageInfo = imageInfo;
-              this.imageArray = imageInfo.images;
-            case 10:
-              return _context.abrupt("return", this.imageInfo);
-            case 11:
+              imageInfo.times = imageInfo.times || this.urls.length;
+              return _context.abrupt("return", imageInfo);
+            case 9:
             case "end":
               return _context.stop();
           }
         }, _callee, this);
       }));
-      function getImageInfo(_x) {
-        return _getImageInfo.apply(this, arguments);
+      function getJsonImageInfo(_x) {
+        return _getJsonImageInfo.apply(this, arguments);
       }
-      return getImageInfo;
+      return getJsonImageInfo;
     }()
   }, {
     key: "loadDims",
@@ -8606,7 +8948,7 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
           while (1) switch (_context2.prev = _context2.next) {
             case 0:
               _context2.next = 2;
-              return this.getImageInfo(loadSpec);
+              return this.getJsonImageInfo(loadSpec);
             case 2:
               jsonInfo = _context2.sent;
               d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__.VolumeDims();
@@ -8631,20 +8973,21 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
     key: "createVolume",
     value: function () {
       var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(loadSpec, onChannelLoaded) {
-        var jsonInfo, imageInfo, vol;
+        var imageInfo, vol;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee3$(_context3) {
           while (1) switch (_context3.prev = _context3.next) {
             case 0:
-              _context3.next = 2;
-              return this.getImageInfo(loadSpec);
-            case 2:
-              jsonInfo = _context3.sent;
-              imageInfo = convertImageInfo(jsonInfo);
+              this.time = loadSpec.time;
+              _context3.next = 3;
+              return this.getJsonImageInfo(loadSpec);
+            case 3:
+              this.jsonInfo = _context3.sent;
+              imageInfo = convertImageInfo(this.jsonInfo);
               vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imageInfo, loadSpec, this);
               vol.channelLoadCallback = onChannelLoaded;
               vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imageInfo);
               return _context3.abrupt("return", vol);
-            case 8:
+            case 9:
             case "end":
               return _context3.stop();
           }
@@ -8659,21 +9002,37 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
     key: "loadVolumeData",
     value: function () {
       var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee4(vol, explicitLoadSpec, onChannelLoaded) {
-        var loadSpec, urlPrefix;
+        var _this$jsonInfo;
+        var loadSpec, urlPrefix, images;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee4$(_context4) {
           while (1) switch (_context4.prev = _context4.next) {
             case 0:
-              loadSpec = explicitLoadSpec || vol.loadSpec; // if you need to adjust image paths prior to download,
+              // if you need to adjust image paths prior to download,
               // now is the time to do it.
               // Try to figure out the urlPrefix from the LoadSpec.
               // For this format we assume the image data is in the same directory as the json file.
+              loadSpec = explicitLoadSpec || vol.loadSpec;
+              if (!(this.time !== loadSpec.time)) {
+                _context4.next = 6;
+                break;
+              }
+              this.time = loadSpec.time;
+              _context4.next = 5;
+              return this.getJsonImageInfo(loadSpec);
+            case 5:
+              this.jsonInfo = _context4.sent;
+            case 6:
               // This regex removes everything after the last slash, so the url had better be simple.
-              urlPrefix = loadSpec.url.replace(/[^/]*$/, "");
-              this.imageArray.forEach(function (element) {
-                element.name = urlPrefix + element.name;
+              urlPrefix = this.urls[this.time].replace(/[^/]*$/, "");
+              images = (_this$jsonInfo = this.jsonInfo) === null || _this$jsonInfo === void 0 ? void 0 : _this$jsonInfo.images.map(function (element) {
+                return _objectSpread(_objectSpread({}, element), {}, {
+                  name: urlPrefix + element.name
+                });
               });
-              JsonImageInfoLoader.loadVolumeAtlasData(vol, this.imageArray, onChannelLoaded);
-            case 4:
+              if (images) {
+                JsonImageInfoLoader.loadVolumeAtlasData(vol, images, onChannelLoaded);
+              }
+            case 9:
             case "end":
               return _context4.stop();
           }
@@ -8756,7 +9115,7 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
 
             for (var _ch = 0; _ch < Math.min(thisbatch.length, 4); ++_ch) {
               volume.setChannelDataFromAtlas(thisbatch[_ch], channelsBits[_ch], w, h);
-              onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(url, volume, thisbatch[_ch]);
+              onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(volume, thisbatch[_ch]);
             }
           };
         }(batch);
@@ -8982,8 +9341,10 @@ function pickLevelToLoad(loadSpec, multiscaleDims, _ref2, dimIndexes) {
   }
 }
 var OMEZarrLoader = /*#__PURE__*/function () {
-  function OMEZarrLoader() {
+  function OMEZarrLoader(url, cache) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, OMEZarrLoader);
+    this.url = url;
+    this.cache = cache;
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(OMEZarrLoader, [{
     key: "loadDims",
@@ -8993,7 +9354,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee2$(_context2) {
           while (1) switch (_context2.prev = _context2.next) {
             case 0:
-              store = new zarr__WEBPACK_IMPORTED_MODULE_6__.HTTPStore(loadSpec.url);
+              store = new zarr__WEBPACK_IMPORTED_MODULE_6__.HTTPStore(this.url);
               _context2.next = 3;
               return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openGroup)(store, loadSpec.subpath, "r");
             case 3:
@@ -9058,7 +9419,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
             case "end":
               return _context2.stop();
           }
-        }, _callee2);
+        }, _callee2, this);
       }));
       function loadDims(_x5) {
         return _loadDims.apply(this, arguments);
@@ -9069,12 +9430,13 @@ var OMEZarrLoader = /*#__PURE__*/function () {
     key: "createVolume",
     value: function () {
       var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee3(loadSpec, onChannelLoaded) {
-        var store, imageIndex, multiscale, _this$axesTCZYX, t, c, z, y, x, hasT, hasC, levelToLoad, shapeLv, shape0, spaceUnitName, spaceUnitSymbol, timeUnitName, timeUnitSymbol, channels, sizeT, scale5d, timeScale, pxDimsLv, pxSizeLv, pxDims0, pxSize0, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, i, imgdata, fullExtentLoadSpec, vol;
+        var _this$cache;
+        var store, imageIndex, multiscale, _this$axesTCZYX, t, c, z, y, x, hasT, hasC, shape0, levelToLoad, shapeLv, scaleSizes, spaceUnitName, spaceUnitSymbol, timeUnitName, timeUnitSymbol, channels, sizeT, scale5d, timeScale, pxDimsLv, pxSizeLv, pxDims0, pxSize0, _computePackedAtlasDi, nrows, ncols, atlaswidth, atlasheight, displayMetadata, chnames, i, imgdata, fullExtentLoadSpec, vol;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee3$(_context3) {
           while (1) switch (_context3.prev = _context3.next) {
             case 0:
               // Load metadata and dimensions.
-              store = new zarr__WEBPACK_IMPORTED_MODULE_6__.HTTPStore(loadSpec.url);
+              store = new zarr__WEBPACK_IMPORTED_MODULE_6__.HTTPStore(this.url);
               _context3.next = 3;
               return loadMetadata(store, loadSpec);
             case 3:
@@ -9092,9 +9454,15 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               _this$axesTCZYX = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_3__["default"])(this.axesTCZYX, 5), t = _this$axesTCZYX[0], c = _this$axesTCZYX[1], z = _this$axesTCZYX[2], y = _this$axesTCZYX[3], x = _this$axesTCZYX[4];
               hasT = t > -1;
               hasC = c > -1;
+              shape0 = this.multiscaleDims[0];
               levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
               shapeLv = this.multiscaleDims[levelToLoad];
-              shape0 = this.multiscaleDims[0]; // Assume all axes have the same units - we have no means of storing per-axis unit symbols
+              scaleSizes = this.multiscaleDims.map(function (shape) {
+                return new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(shape[x], shape[y], shape[z]);
+              });
+              this.cacheStore = (_this$cache = this.cache) === null || _this$cache === void 0 ? void 0 : _this$cache.addVolume(shape0[c], shape0[t], scaleSizes);
+
+              // Assume all axes have the same units - we have no means of storing per-axis unit symbols
               spaceUnitName = multiscale.axes[x].unit;
               spaceUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
               timeUnitName = hasT ? multiscale.axes[t].unit : undefined;
@@ -9143,7 +9511,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               vol.channelLoadCallback = onChannelLoaded;
               vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.buildDefaultMetadata)(imgdata);
               return _context3.abrupt("return", vol);
-            case 42:
+            case 44:
             case "end":
               return _context3.stop();
           }
@@ -9187,27 +9555,48 @@ var OMEZarrLoader = /*#__PURE__*/function () {
       var storepath = vol.loadSpec.subpath + "/" + datasetPath;
       // do each channel on a worker
       var _loop = function _loop() {
-        var worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchZarrWorker_ts"), __webpack_require__.b));
-        worker.onmessage = function (e) {
-          var u8 = e.data.data;
-          var channel = e.data.channel;
-          vol.setChannelDataFromVolume(channel, u8);
-          onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(vol.loadSpec.url + "/" + vol.loadSpec.subpath, vol, channel);
-          worker.terminate();
+        var _this$cache2;
+        var cacheQueryDims = {
+          region: regionPx,
+          time: vol.loadSpec.time,
+          scale: levelToLoad
         };
-        worker.onerror = function (e) {
-          alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
-        };
-        var msg = {
-          spec: _objectSpread(_objectSpread({}, vol.loadSpec), {}, {
-            subregion: regionPx,
-            time: Math.min(vol.loadSpec.time, times)
-          }),
-          channel: i,
-          path: storepath,
-          axesTCZYX: _this.axesTCZYX
-        };
-        worker.postMessage(msg);
+        var cacheResult = _this.cacheStore && ((_this$cache2 = _this.cache) === null || _this$cache2 === void 0 ? void 0 : _this$cache2.get(_this.cacheStore, i, cacheQueryDims));
+        if (cacheResult) {
+          vol.setChannelDataFromVolume(i, cacheResult);
+          onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(vol, i);
+        } else {
+          var worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchZarrWorker_ts"), __webpack_require__.b));
+          worker.onmessage = function (e) {
+            var _this$cache3;
+            var u8 = e.data.data;
+            var channel = e.data.channel;
+            var cacheInsertDims = {
+              region: regionPx,
+              scale: levelToLoad,
+              time: vol.loadSpec.time,
+              channel: channel
+            };
+            _this.cacheStore && ((_this$cache3 = _this.cache) === null || _this$cache3 === void 0 ? void 0 : _this$cache3.insert(_this.cacheStore, u8, cacheInsertDims));
+            vol.setChannelDataFromVolume(channel, u8);
+            onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(vol, channel);
+            worker.terminate();
+          };
+          worker.onerror = function (e) {
+            alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
+          };
+          var msg = {
+            url: _this.url,
+            spec: _objectSpread(_objectSpread({}, vol.loadSpec), {}, {
+              subregion: regionPx,
+              time: Math.min(vol.loadSpec.time, times)
+            }),
+            channel: i,
+            path: storepath,
+            axesTCZYX: _this.axesTCZYX
+          };
+          worker.postMessage(msg);
+        }
       };
       for (var i = 0; i < numChannels; ++i) {
         _loop();
@@ -9471,19 +9860,20 @@ var getBytesPerSample = function getBytesPerSample(type) {
   return type === "uint8" ? 1 : type === "uint16" ? 2 : 4;
 };
 var TiffLoader = /*#__PURE__*/function () {
-  function TiffLoader() {
+  function TiffLoader(url) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, TiffLoader);
+    this.url = url;
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(TiffLoader, [{
     key: "loadDims",
     value: function () {
-      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(loadSpec) {
+      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(_loadSpec) {
         var tiff, image, tiffimgdesc, omeEl, image0El, dims, d;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee$(_context) {
           while (1) switch (_context.prev = _context.next) {
             case 0:
               _context.next = 2;
-              return (0,geotiff__WEBPACK_IMPORTED_MODULE_8__.fromUrl)(loadSpec.url);
+              return (0,geotiff__WEBPACK_IMPORTED_MODULE_8__.fromUrl)(this.url);
             case 2:
               tiff = _context.sent;
               _context.next = 5;
@@ -9505,7 +9895,7 @@ var TiffLoader = /*#__PURE__*/function () {
             case "end":
               return _context.stop();
           }
-        }, _callee);
+        }, _callee, this);
       }));
       function loadDims(_x2) {
         return _loadDims.apply(this, arguments);
@@ -9521,7 +9911,7 @@ var TiffLoader = /*#__PURE__*/function () {
           while (1) switch (_context2.prev = _context2.next) {
             case 0:
               _context2.next = 2;
-              return getDimsFromUrl(loadSpec.url);
+              return getDimsFromUrl(this.url);
             case 2:
               dims = _context2.sent;
               // compare with sizex, sizey
@@ -9572,26 +9962,25 @@ var TiffLoader = /*#__PURE__*/function () {
   }, {
     key: "loadVolumeData",
     value: function () {
-      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(vol, explicitLoadSpec, onChannelLoaded) {
+      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(vol, _explicitLoadSpec, onChannelLoaded) {
         var _this = this;
-        var url, dims, imageInfo, _loop, channel;
+        var dims, imageInfo, _loop, channel;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee3$(_context4) {
           while (1) switch (_context4.prev = _context4.next) {
             case 0:
-              url = (explicitLoadSpec === null || explicitLoadSpec === void 0 ? void 0 : explicitLoadSpec.url) || vol.loadSpec.url;
               vol.channelLoadCallback = onChannelLoaded;
               //
               if (!(this.bytesPerSample === undefined || this.dimensionOrder === undefined)) {
-                _context4.next = 8;
+                _context4.next = 7;
                 break;
               }
-              _context4.next = 5;
-              return getDimsFromUrl(url);
-            case 5:
+              _context4.next = 4;
+              return getDimsFromUrl(this.url);
+            case 4:
               dims = _context4.sent;
               this.dimensionOrder = dims.dimensionorder;
               this.bytesPerSample = getBytesPerSample(dims.pixeltype);
-            case 8:
+            case 7:
               imageInfo = vol.imageInfo; // do each channel on a worker?
               _loop = /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _loop() {
                 var params, worker;
@@ -9608,7 +9997,7 @@ var TiffLoader = /*#__PURE__*/function () {
                         sizez: imageInfo.volumeSize.z,
                         dimensionOrder: _this.dimensionOrder,
                         bytesPerSample: _this.bytesPerSample,
-                        url: url
+                        url: _this.url
                       };
                       worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchTiffWorker_ts"), __webpack_require__.b));
                       worker.onmessage = function (e) {
@@ -9616,7 +10005,7 @@ var TiffLoader = /*#__PURE__*/function () {
                         var channel = e.data.channel;
                         vol.setChannelDataFromVolume(channel, u8);
                         // make up a unique name? or have caller pass this in?
-                        onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(url, vol, channel);
+                        onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(vol, channel);
                         worker.terminate();
                       };
                       worker.onerror = function (e) {
@@ -9630,20 +10019,20 @@ var TiffLoader = /*#__PURE__*/function () {
                 }, _loop);
               });
               channel = 0;
-            case 11:
+            case 10:
               if (!(channel < imageInfo.numChannels)) {
-                _context4.next = 16;
+                _context4.next = 15;
                 break;
               }
-              return _context4.delegateYield(_loop(), "t0", 13);
-            case 13:
+              return _context4.delegateYield(_loop(), "t0", 12);
+            case 12:
               ++channel;
-              _context4.next = 11;
+              _context4.next = 10;
               break;
-            case 16:
+            case 15:
               this.dimensionOrder = undefined;
               this.bytesPerSample = undefined;
-            case 18:
+            case 17:
             case "end":
               return _context4.stop();
           }
@@ -21508,6 +21897,25 @@ function _arrayWithHoles(arr) {
 
 /***/ }),
 
+/***/ "./node_modules/@babel/runtime/helpers/esm/arrayWithoutHoles.js":
+/*!**********************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/esm/arrayWithoutHoles.js ***!
+  \**********************************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ _arrayWithoutHoles)
+/* harmony export */ });
+/* harmony import */ var _arrayLikeToArray_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./arrayLikeToArray.js */ "./node_modules/@babel/runtime/helpers/esm/arrayLikeToArray.js");
+
+function _arrayWithoutHoles(arr) {
+  if (Array.isArray(arr)) return (0,_arrayLikeToArray_js__WEBPACK_IMPORTED_MODULE_0__["default"])(arr);
+}
+
+/***/ }),
+
 /***/ "./node_modules/@babel/runtime/helpers/esm/assertThisInitialized.js":
 /*!**************************************************************************!*\
   !*** ./node_modules/@babel/runtime/helpers/esm/assertThisInitialized.js ***!
@@ -21706,6 +22114,23 @@ function _inherits(subClass, superClass) {
 
 /***/ }),
 
+/***/ "./node_modules/@babel/runtime/helpers/esm/iterableToArray.js":
+/*!********************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/esm/iterableToArray.js ***!
+  \********************************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ _iterableToArray)
+/* harmony export */ });
+function _iterableToArray(iter) {
+  if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
+}
+
+/***/ }),
+
 /***/ "./node_modules/@babel/runtime/helpers/esm/iterableToArrayLimit.js":
 /*!*************************************************************************!*\
   !*** ./node_modules/@babel/runtime/helpers/esm/iterableToArrayLimit.js ***!
@@ -21760,6 +22185,23 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 function _nonIterableRest() {
   throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+}
+
+/***/ }),
+
+/***/ "./node_modules/@babel/runtime/helpers/esm/nonIterableSpread.js":
+/*!**********************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/esm/nonIterableSpread.js ***!
+  \**********************************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ _nonIterableSpread)
+/* harmony export */ });
+function _nonIterableSpread() {
+  throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
 }
 
 /***/ }),
@@ -21832,6 +22274,31 @@ __webpack_require__.r(__webpack_exports__);
 
 function _slicedToArray(arr, i) {
   return (0,_arrayWithHoles_js__WEBPACK_IMPORTED_MODULE_0__["default"])(arr) || (0,_iterableToArrayLimit_js__WEBPACK_IMPORTED_MODULE_1__["default"])(arr, i) || (0,_unsupportedIterableToArray_js__WEBPACK_IMPORTED_MODULE_2__["default"])(arr, i) || (0,_nonIterableRest_js__WEBPACK_IMPORTED_MODULE_3__["default"])();
+}
+
+/***/ }),
+
+/***/ "./node_modules/@babel/runtime/helpers/esm/toConsumableArray.js":
+/*!**********************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/esm/toConsumableArray.js ***!
+  \**********************************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ _toConsumableArray)
+/* harmony export */ });
+/* harmony import */ var _arrayWithoutHoles_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./arrayWithoutHoles.js */ "./node_modules/@babel/runtime/helpers/esm/arrayWithoutHoles.js");
+/* harmony import */ var _iterableToArray_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./iterableToArray.js */ "./node_modules/@babel/runtime/helpers/esm/iterableToArray.js");
+/* harmony import */ var _unsupportedIterableToArray_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./unsupportedIterableToArray.js */ "./node_modules/@babel/runtime/helpers/esm/unsupportedIterableToArray.js");
+/* harmony import */ var _nonIterableSpread_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./nonIterableSpread.js */ "./node_modules/@babel/runtime/helpers/esm/nonIterableSpread.js");
+
+
+
+
+function _toConsumableArray(arr) {
+  return (0,_arrayWithoutHoles_js__WEBPACK_IMPORTED_MODULE_0__["default"])(arr) || (0,_iterableToArray_js__WEBPACK_IMPORTED_MODULE_1__["default"])(arr) || (0,_unsupportedIterableToArray_js__WEBPACK_IMPORTED_MODULE_2__["default"])(arr) || (0,_nonIterableSpread_js__WEBPACK_IMPORTED_MODULE_3__["default"])();
 }
 
 /***/ }),
@@ -92969,90 +93436,69 @@ __webpack_require__.r(__webpack_exports__);
 // special loader really just for this demo app but lives with the other loaders
 
 
+var CACHE_MAX_SIZE = 500000000;
+var PLAYBACK_INTERVAL = 80;
 var TEST_DATA = {
   timeSeries: {
     type: "jsonatlas",
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json",
-    tstart: 0,
-    tend: 46
+    times: 46
   },
   omeTiff: {
     type: "ometiff",
-    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif",
-    tstart: 0,
-    tend: 0
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif"
   },
   zarrVariance: {
     type: "omezarr",
-    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr",
-    tstart: 0,
-    tend: 0
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr"
   },
   zarrNucmorph0: {
     type: "omezarr",
-    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P13-C4.zarr/",
-    tstart: 0,
-    tend: 0
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P13-C4.zarr/"
   },
   zarrNucmorph1: {
     type: "omezarr",
-    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P15-C3.zarr/",
-    tstart: 0,
-    tend: 0
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P15-C3.zarr/"
   },
   zarrNucmorph2: {
     type: "omezarr",
-    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P7-B4.zarr/",
-    tstart: 0,
-    tend: 0
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P7-B4.zarr/"
   },
   zarrNucmorph3: {
     type: "omezarr",
-    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P8-B4.zarr/",
-    tstart: 0,
-    tend: 0
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P8-B4.zarr/"
   },
   zarrUK: {
     type: "omezarr",
-    url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr",
-    tstart: 0,
-    tend: 0
+    url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr"
   },
   opencell: {
     type: "opencell",
-    url: "",
-    tstart: 0,
-    tend: 0
+    url: ""
   },
   cfeJson: {
     type: "jsonatlas",
-    url: "AICS-12_881_atlas.json",
-    tstart: 0,
-    tend: 0
+    url: "AICS-12_881_atlas.json"
   },
   abm: {
     type: "ometiff",
-    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/HAMILTONIAN_TERM_FOV_VSAHJUP_0000_000192.ome.tif",
-    tstart: 0,
-    tend: 0
+    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/HAMILTONIAN_TERM_FOV_VSAHJUP_0000_000192.ome.tif"
   },
   procedural: {
     type: "procedural",
-    url: "",
-    tstart: 0,
-    tend: 0
+    url: ""
   }
 };
 var view3D;
+var volumeCache = new _src__WEBPACK_IMPORTED_MODULE_4__.VolumeCache(CACHE_MAX_SIZE);
 var myState = {
   file: "",
   volume: new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(),
-  timeSeriesVolumes: [],
-  numberOfVolumesCached: 0,
-  totalFrames: 0,
   currentFrame: 0,
+  lastFrameTime: 0,
+  isPlaying: false,
   timerId: 0,
-  loader: new _src__WEBPACK_IMPORTED_MODULE_4__.JsonImageInfoLoader(),
+  loader: new _src__WEBPACK_IMPORTED_MODULE_4__.OMEZarrLoader(TEST_DATA["zarrVariance"].url, volumeCache),
   density: 12.5,
   maskAlpha: 1.0,
   exposure: 0.75,
@@ -93100,6 +93546,9 @@ var myState = {
   channelGui: [],
   currentImageStore: "",
   currentImageName: ""
+};
+var getNumberOfTimesteps = function getNumberOfTimesteps() {
+  return myState.totalFrames || myState.volume.imageInfo.times;
 };
 function densitySliderToView3D(density) {
   return density / 50.0;
@@ -93274,30 +93723,24 @@ function removeFolderByName(name) {
   // @ts-expect-error onResize doesn't exist in the type declaration
   gui.onResize();
 }
-function updateTimeUI(volume) {
-  // TODO: we have stashed sizeT in volume.imageInfo.times
-  // but the Volume doesn't store any other info that would help
-  if (volume.imageInfo.times) {
-    myState.totalFrames = volume.imageInfo.times;
-  } else {
-    //myState.totalFrames = 1;
-  }
+function updateTimeUI() {
+  var totalFrames = getNumberOfTimesteps();
   var timeSlider = document.getElementById("timeSlider");
   if (timeSlider) {
-    timeSlider.max = "".concat(myState.totalFrames - 1);
+    timeSlider.max = "".concat(totalFrames - 1);
   }
   var timeInput = document.getElementById("timeValue");
   if (timeInput) {
-    timeInput.max = "".concat(myState.totalFrames - 1);
+    timeInput.max = "".concat(totalFrames - 1);
   }
   var playBtn = document.getElementById("playBtn");
-  if (myState.totalFrames < 2) {
+  if (totalFrames < 2) {
     playBtn.disabled = true;
   } else {
     playBtn.disabled = false;
   }
   var pauseBtn = document.getElementById("pauseBtn");
-  if (myState.totalFrames < 2) {
+  if (totalFrames < 2) {
     pauseBtn.disabled = true;
   } else {
     pauseBtn.disabled = false;
@@ -93484,7 +93927,7 @@ function loadImageData(jsonData, volumeData) {
     for (var ch = 0; ch < vol.imageInfo.numChannels; ++ch) {
       view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
     }
-    var maskChannelIndex = jsonData.channel_names.indexOf("SEG_Memb");
+    var maskChannelIndex = jsonData.channelNames.indexOf("SEG_Memb");
     view3D.setVolumeChannelAsMask(vol, maskChannelIndex);
     view3D.updateActiveChannels(vol);
     view3D.updateLuts(vol);
@@ -93495,36 +93938,7 @@ function loadImageData(jsonData, volumeData) {
   showChannelUI(vol);
   return vol;
 }
-function cacheTimeSeriesImageData(jsonData, frameNumber) {
-  var vol = new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(jsonData);
-  myState.timeSeriesVolumes[frameNumber] = vol;
-  return vol;
-}
-function onChannelDataArrived(url, v, channelIndex) {
-  var cacheForTimeSeries = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
-  var frameNumber = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
-  if (cacheForTimeSeries) {
-    if (v.isLoaded()) {
-      var _currentVol = cacheTimeSeriesImageData(v.imageInfo, frameNumber);
-      console.log("currentVol with name " + v.name + " is loaded");
-      myState.numberOfVolumesCached++;
-      if (myState.numberOfVolumesCached >= myState.totalFrames) {
-        console.log("ALL FRAMES RECEIVED");
-      }
-      copyVolumeToVolume(v, _currentVol);
-      if (frameNumber === 0) {
-        copyVolumeToVolume(v, myState.volume);
-        // has assumption that only 3 channels
-        view3D.onVolumeData(myState.volume, [0, 1, 2]);
-        view3D.updateActiveChannels(myState.volume);
-        view3D.updateLuts(myState.volume);
-        myState.volume.setIsLoaded(true);
-      } else {
-        //copyVolumeToVolume(v, currentVol);
-      }
-      return;
-    }
-  }
+function onChannelDataArrived(v, channelIndex) {
   var currentVol = v; // myState.volume;
 
   currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
@@ -93538,53 +93952,7 @@ function onChannelDataArrived(url, v, channelIndex) {
   view3D.redraw();
 }
 function onVolumeCreated(volume) {
-  var isTimeSeries = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-  var frameNumber = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
   var myJson = volume.imageInfo;
-  if (isTimeSeries) {
-    if (frameNumber === 0) {
-      // create the main volume and add to view (this is the only place)
-      myState.volume = new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(myJson);
-      var atlasWidth = myJson.subregionSize.x * myJson.atlasTileDims.x;
-      var atlasHeight = myJson.subregionSize.y * myJson.atlasTileDims.y;
-
-      // TODO: this can go in the Volume and Channel constructors!
-      // preallocate some memory to be filled in later
-      for (var i = 0; i < volume.imageInfo.numChannels; ++i) {
-        myState.volume.channels[i].imgData = {
-          data: new Uint8ClampedArray(atlasWidth * atlasHeight),
-          width: atlasWidth,
-          height: atlasHeight
-        };
-        myState.volume.channels[i].volumeData = new Uint8Array(myJson.subregionSize.x * myJson.subregionSize.y * myJson.subregionSize.z);
-        // TODO also preallocate the Fused data texture
-      }
-
-      view3D.removeAllVolumes();
-      view3D.addVolume(myState.volume);
-      setInitialRenderMode();
-      // first 3 channels for starters
-      for (var ch = 0; ch < myState.volume.imageInfo.numChannels; ++ch) {
-        view3D.setVolumeChannelEnabled(myState.volume, ch, ch < 3);
-      }
-      view3D.setVolumeChannelAsMask(myState.volume, myJson.channelNames.indexOf("SEG_Memb"));
-      view3D.updateActiveChannels(myState.volume);
-      view3D.updateLuts(myState.volume);
-      view3D.updateLights(myState.lights);
-      view3D.updateDensity(myState.volume, densitySliderToView3D(myState.density));
-      view3D.updateExposure(myState.exposure);
-      // apply a volume transform from an external source:
-      if (myJson.transform) {
-        var alignTransform = myJson.transform;
-        view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(alignTransform.translation.toArray()));
-        view3D.setVolumeRotation(myState.volume, alignTransform.rotation.toArray());
-      }
-    }
-    updateTimeUI(myState.volume);
-    updateZSliceUI(myState.volume);
-    showChannelUI(myState.volume);
-    return;
-  }
   myState.volume = volume;
   view3D.removeAllVolumes();
   view3D.addVolume(myState.volume);
@@ -93597,89 +93965,46 @@ function onVolumeCreated(volume) {
 
   // apply a volume transform from an external source:
   if (myJson.transform) {
-    var _alignTransform = myJson.transform;
-    view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(_alignTransform.translation.toArray()));
-    view3D.setVolumeRotation(myState.volume, _alignTransform.rotation.toArray());
+    var alignTransform = myJson.transform;
+    view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(alignTransform.translation.toArray()));
+    view3D.setVolumeRotation(myState.volume, alignTransform.rotation.toArray());
   }
-  updateTimeUI(myState.volume);
+  updateTimeUI();
   updateZSliceUI(myState.volume);
   showChannelUI(myState.volume);
 }
-function copyVolumeToVolume(src, dest) {
-  // assumes volumes already have identical dimensions!!!
-
-  // grab references to data from each channel and put it in myState.volume
-  for (var i = 0; i < src.num_channels; ++i) {
-    // dest.channels[i].imgData.data.set(src.channels[i].imgData.data);
-    // dest.channels[i].volumeData.set(src.channels[i].volumeData);
-    // dest.channels[i].lut.set(src.channels[i].lut);
-    dest.channels[i].imgData = {
-      data: src.channels[i].imgData.data,
-      width: src.channels[i].imgData.width,
-      height: src.channels[i].imgData.height
-    };
-    dest.channels[i].volumeData = src.channels[i].volumeData;
-    dest.channels[i].lut = src.channels[i].lut;
-
-    // danger: not a copy!
-    dest.channels[i].histogram = src.channels[i].histogram;
-    dest.channels[i].dataTexture = src.channels[i].dataTexture;
-    dest.channels[i].lutTexture = src.channels[i].lutTexture;
-    dest.channels[i].loaded = true;
-  }
-}
-function updateViewForNewVolume() {
-  view3D.onVolumeData(myState.volume, [0, 1, 2]);
-  myState.volume.setIsLoaded(true);
-  if (myState.isPT) {
-    view3D.updateActiveChannels(myState.volume);
-  } else {
-    view3D.updateLuts(myState.volume);
-  }
-  for (var i = 0; i < myState.volume.imageInfo.numChannels; ++i) {
-    view3D.updateIsosurface(myState.volume, i, myState.channelGui[i].isovalue);
-  }
-}
 function playTimeSeries(onNewFrameCallback) {
-  clearInterval(myState.timerId);
+  window.clearTimeout(myState.timerId);
+  myState.isPlaying = true;
   var loadNextFrame = function loadNextFrame() {
-    var nextFrame = myState.currentFrame + 1;
-    if (nextFrame >= myState.totalFrames) {
-      nextFrame = 0;
-    }
-    var nextFrameVolume = myState.timeSeriesVolumes[nextFrame];
-    copyVolumeToVolume(nextFrameVolume, myState.volume);
-    updateViewForNewVolume();
-    myState.currentFrame = nextFrame;
-    onNewFrameCallback();
+    myState.lastFrameTime = Date.now();
+    var nextFrame = (myState.currentFrame + 1) % getNumberOfTimesteps();
+
+    // TODO would be real nice if this were an `await`-able promise instead...
+    view3D.setTime(myState.volume, nextFrame, function (vol) {
+      if (vol.isLoaded()) {
+        myState.currentFrame = nextFrame;
+        onNewFrameCallback();
+        if (myState.isPlaying) {
+          var timeLoading = Date.now() - myState.lastFrameTime;
+          myState.timerId = window.setTimeout(loadNextFrame, PLAYBACK_INTERVAL - timeLoading);
+        }
+      }
+    });
   };
-  myState.timerId = window.setInterval(loadNextFrame, 80);
+  loadNextFrame();
 }
 function getCurrentFrame() {
   return myState.currentFrame;
 }
 function goToFrame(targetFrame) {
   console.log("going to Frame " + targetFrame);
-  var outOfBounds = targetFrame > myState.totalFrames - 1 || targetFrame < 0;
+  var outOfBounds = targetFrame > getNumberOfTimesteps() - 1 || targetFrame < 0;
   if (outOfBounds) {
     console.log("frame ".concat(targetFrame, " out of bounds"));
     return false;
   }
-
-  // check to see if we have pre-cached the volume
-  var targetFrameVolume = myState.timeSeriesVolumes[targetFrame];
-  if (targetFrameVolume) {
-    copyVolumeToVolume(targetFrameVolume, myState.volume);
-    updateViewForNewVolume();
-  } else {
-    console.log("frame ".concat(targetFrame, " not yet loaded"));
-    // try our loader
-    var loadSpec = new _src__WEBPACK_IMPORTED_MODULE_4__.LoadSpec();
-    loadSpec.time = targetFrame;
-    loadSpec.url = myState.currentImageStore;
-    // TODO loadspec needs to know proper multiresolution level here
-    loadVolume(loadSpec, myState.loader, false);
-  }
+  view3D.setTime(myState.volume, targetFrame);
   myState.currentFrame = targetFrame;
   return true;
 }
@@ -93725,45 +94050,46 @@ function createTestVolume() {
     volumeData: channelVolumes
   };
 }
-function createLoader(type) {
-  switch (type) {
+function createLoader(data) {
+  switch (data.type) {
     case "opencell":
       return new _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_5__.OpenCellLoader();
     case "omezarr":
-      return new _src__WEBPACK_IMPORTED_MODULE_4__.OMEZarrLoader();
+      return new _src__WEBPACK_IMPORTED_MODULE_4__.OMEZarrLoader(data.url, volumeCache);
     case "ometiff":
-      return new _src__WEBPACK_IMPORTED_MODULE_4__.TiffLoader();
+      return new _src__WEBPACK_IMPORTED_MODULE_4__.TiffLoader(data.url);
     // case "procedural":
     //   return new RawVolumeLoader();
     case "jsonatlas":
-      return new _src__WEBPACK_IMPORTED_MODULE_4__.JsonImageInfoLoader();
+      var frameUrls = [];
+      var times = data.times || 0;
+      for (var t = 0; t <= times; t++) {
+        frameUrls.push(data.url.replace("%%", t.toString()));
+      }
+      return new _src__WEBPACK_IMPORTED_MODULE_4__.JsonImageInfoLoader(frameUrls);
     default:
-      throw new Error("Unknown loader type: " + type);
+      throw new Error("Unknown loader type: " + data.type);
   }
 }
-function loadVolume(_x, _x2, _x3) {
+function loadVolume(_x, _x2) {
   return _loadVolume.apply(this, arguments);
 }
 function _loadVolume() {
-  _loadVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().mark(function _callee(loadSpec, loader, cacheTimeSeries) {
+  _loadVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().mark(function _callee(loadSpec, loader) {
     var volume;
     return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
           _context.next = 2;
-          return loader.createVolume(loadSpec, function (url, v, channelIndex) {
-            onChannelDataArrived(url, v, channelIndex, cacheTimeSeries, loadSpec.time);
-          });
+          return loader.createVolume(loadSpec, onChannelDataArrived);
         case 2:
           volume = _context.sent;
-          onVolumeCreated(volume, cacheTimeSeries, loadSpec.time);
+          onVolumeCreated(volume);
           loader.loadVolumeData(volume);
-          myState.currentImageStore = loadSpec.url;
-          myState.currentImageName = loadSpec.url;
 
           // Set default zSlice
           goToZSlice(Math.floor(volume.imageInfo.subregionSize.z / 2));
-        case 8:
+        case 6:
         case "end":
           return _context.stop();
       }
@@ -93777,18 +94103,10 @@ function loadTestData(testdata) {
     loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
     return;
   }
-  var loader = createLoader(testdata.type);
-  myState.loader = loader;
-  var isTimeSeries = testdata.tend > testdata.tstart;
-  for (var t = testdata.tstart; t <= testdata.tend; t++) {
-    // replace %% with frame number
-    var url = testdata.url.replace("%%", t.toString());
-    var loadSpec = new _src__WEBPACK_IMPORTED_MODULE_4__.LoadSpec();
-    loadSpec.url = url;
-    loadSpec.time = t;
-    loadVolume(loadSpec, loader, isTimeSeries);
-  }
-  myState.totalFrames = testdata.tend - testdata.tstart + 1;
+  myState.loader = createLoader(testdata);
+  var loadSpec = new _src__WEBPACK_IMPORTED_MODULE_4__.LoadSpec();
+  myState.totalFrames = testdata.times;
+  loadVolume(loadSpec, myState.loader);
 }
 function main() {
   var el = document.getElementById("volume-viewer");
@@ -93878,7 +94196,7 @@ function main() {
   });
   var playBtn = document.getElementById("playBtn");
   playBtn === null || playBtn === void 0 ? void 0 : playBtn.addEventListener("click", function () {
-    if (myState.currentFrame >= myState.totalFrames - 1) {
+    if (myState.currentFrame >= getNumberOfTimesteps() - 1) {
       myState.currentFrame = -1;
     }
     playTimeSeries(function () {
@@ -93892,7 +94210,8 @@ function main() {
   });
   var pauseBtn = document.getElementById("pauseBtn");
   pauseBtn === null || pauseBtn === void 0 ? void 0 : pauseBtn.addEventListener("click", function () {
-    clearInterval(myState.timerId);
+    window.clearTimeout(myState.timerId);
+    myState.isPlaying = false;
   });
   var forwardBtn = document.getElementById("forwardBtn");
   var backBtn = document.getElementById("backBtn");
@@ -93998,7 +94317,6 @@ function main() {
   });
   setupGui();
   loadTestData(TEST_DATA[testDataSelect === null || testDataSelect === void 0 ? void 0 : testDataSelect.value]);
-  console.log(myState.timeSeriesVolumes);
 }
 document.body.onload = function () {
   main();

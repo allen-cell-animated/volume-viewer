@@ -46,7 +46,7 @@ self.onmessage = /*#__PURE__*/function () {
           time = e.data.spec.time;
           channelIndex = e.data.channel;
           axesTCZYX = e.data.axesTCZYX;
-          store = new zarr__WEBPACK_IMPORTED_MODULE_2__.HTTPStore(e.data.spec.url);
+          store = new zarr__WEBPACK_IMPORTED_MODULE_2__.HTTPStore(e.data.url);
           _context.next = 6;
           return (0,zarr__WEBPACK_IMPORTED_MODULE_2__.openArray)({
             store: store,
