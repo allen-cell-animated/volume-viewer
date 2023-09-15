@@ -200,6 +200,18 @@ export default class Volume {
     this.volumeDataObservers = [];
   }
 
+  private setUnloaded() {
+    this.loaded = false;
+    // TODO this will cause problems once it is possible to skip loading some channels. Come back to this then.
+    this.channels.forEach((channel) => {
+      channel.loaded = false;
+    });
+  }
+
+  isLoaded(): boolean {
+    return this.loaded;
+  }
+
   updateDimensions() {
     const { volumeSize, subregionSize, subregionOffset } = this.imageInfo;
 
@@ -209,7 +221,7 @@ export default class Volume {
     this.normRegionOffset = subregionOffset.clone().divide(volumeSize);
   }
 
-  updateRequiredData(required: Partial<LoadSpec>) {
+  updateRequiredData(required: Partial<LoadSpec>, onChannelLoaded?: PerChannelCallback) {
     this.loadSpecRequired = { ...this.loadSpecRequired, ...required };
     // if newly required data is not currently contained in this volume...
     if (
@@ -218,8 +230,9 @@ export default class Volume {
       !this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion)
     ) {
       // ...clone `loadSpecRequired` into `loadSpec` and load
+      this.setUnloaded();
       this.loadSpec = { ...this.loadSpecRequired, subregion: this.loadSpecRequired.subregion.clone() };
-      this.loader?.loadVolumeData(this);
+      this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
     }
   }
 
@@ -270,7 +283,7 @@ export default class Volume {
     if (this.channels.every((element) => element.loaded)) {
       this.loaded = true;
     }
-    batch.forEach((channelIndex) => this.channelLoadCallback?.(this.loadSpec.url, this, channelIndex));
+    batch.forEach((channelIndex) => this.channelLoadCallback?.(this, channelIndex));
     this.volumeDataObservers.forEach((observer) => observer.onVolumeData(this, batch));
   }
 
@@ -423,13 +436,5 @@ export default class Volume {
 
   removeAllVolumeDataObservers(): void {
     this.volumeDataObservers = [];
-  }
-
-  isLoaded(): boolean {
-    return this.loaded;
-  }
-
-  setIsLoaded(loaded: boolean): void {
-    this.loaded = loaded;
   }
 }

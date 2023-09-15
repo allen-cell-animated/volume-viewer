@@ -3,7 +3,6 @@ import { Box3, Vector3 } from "three";
 import Volume from "../Volume";
 
 export class LoadSpec {
-  url = "";
   subpath = "";
   scene = 0;
   time = 0;
@@ -14,7 +13,7 @@ export class LoadSpec {
 
 export function loadSpecToString(spec: LoadSpec): string {
   const { min, max } = spec.subregion;
-  return `${spec.url}:${spec.subpath}${spec.scene}:${spec.time}:x(${min.x},${max.x}):y(${min.y},${max.y}):z(${min.z},${max.z})`;
+  return `${spec.subpath}:${spec.scene}:${spec.time}:x(${min.x},${max.x}):y(${min.y},${max.y}):z(${min.z},${max.z})`;
 }
 
 export class VolumeDims {
@@ -35,7 +34,7 @@ export class VolumeDims {
  * @param {Volume} volume
  * @param {number} channelindex
  */
-export type PerChannelCallback = (imageurl: string, volume: Volume, channelIndex: number) => void;
+export type PerChannelCallback = (volume: Volume, channelIndex: number) => void;
 
 /**
  * Loads volume data from a source specified by a `LoadSpec`.
@@ -65,5 +64,6 @@ export interface IVolumeLoader {
   // TODO make this return a promise that resolves when loading is done?
   // TODO this is not cancellable in the sense that any async requests initiated here are not stored
   // in a way that they can be interrupted.
+  // TODO explicitly passing a `LoadSpec` is now rarely useful. Remove?
   loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): void;
 }

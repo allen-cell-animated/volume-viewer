@@ -77,11 +77,16 @@ async function getDimsFromUrl(url: string): Promise<OMEDims> {
 const getBytesPerSample = (type: string): number => (type === "uint8" ? 1 : type === "uint16" ? 2 : 4);
 
 class TiffLoader implements IVolumeLoader {
+  url: string;
   dimensionOrder?: string;
   bytesPerSample?: number;
 
-  async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
-    const tiff = await fromUrl(loadSpec.url);
+  constructor(url: string) {
+    this.url = url;
+  }
+
+  async loadDims(_loadSpec: LoadSpec): Promise<VolumeDims[]> {
+    const tiff = await fromUrl(this.url);
     // DO NOT DO THIS, ITS SLOW
     // const imagecount = await tiff.getImageCount();
     // read the FIRST image
@@ -103,7 +108,7 @@ class TiffLoader implements IVolumeLoader {
   }
 
   async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
-    const dims = await getDimsFromUrl(loadSpec.url);
+    const dims = await getDimsFromUrl(this.url);
     // compare with sizex, sizey
     //const width = image.getWidth();
     //const height = image.getHeight();
@@ -152,12 +157,11 @@ class TiffLoader implements IVolumeLoader {
     return vol;
   }
 
-  async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
-    const url = explicitLoadSpec?.url || vol.loadSpec.url;
+  async loadVolumeData(vol: Volume, _explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
     vol.channelLoadCallback = onChannelLoaded;
     //
     if (this.bytesPerSample === undefined || this.dimensionOrder === undefined) {
-      const dims = await getDimsFromUrl(url);
+      const dims = await getDimsFromUrl(this.url);
 
       this.dimensionOrder = dims.dimensionorder;
       this.bytesPerSample = getBytesPerSample(dims.pixeltype);
@@ -177,15 +181,15 @@ class TiffLoader implements IVolumeLoader {
         sizez: imageInfo.volumeSize.z,
         dimensionOrder: this.dimensionOrder,
         bytesPerSample: this.bytesPerSample,
-        url: url,
+        url: this.url,
       };
       const worker = new Worker(new URL("../workers/FetchTiffWorker", import.meta.url));
-      worker.onmessage = function (e) {
+      worker.onmessage = (e) => {
         const u8 = e.data.data;
         const channel = e.data.channel;
         vol.setChannelDataFromVolume(channel, u8);
         // make up a unique name? or have caller pass this in?
-        onChannelLoaded?.(url, vol, channel);
+        onChannelLoaded?.(vol, channel);
         worker.terminate();
       };
       worker.onerror = function (e) {

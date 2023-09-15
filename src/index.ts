@@ -2,6 +2,7 @@ import { RENDERMODE_PATHTRACE, RENDERMODE_RAYMARCH, View3d } from "./View3d";
 import Volume from "./Volume";
 import Channel from "./Channel";
 import VolumeMaker from "./VolumeMaker";
+import VolumeCache from "./VolumeCache";
 import Histogram from "./Histogram";
 import { ViewportCorner } from "./types";
 import { JsonImageInfoLoader } from "./loaders/JsonImageInfoLoader";
@@ -23,6 +24,7 @@ export {
   View3d,
   Volume,
   VolumeMaker,
+  VolumeCache,
   Channel,
   Light,
   ViewportCorner,

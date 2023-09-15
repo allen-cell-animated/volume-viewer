@@ -30,14 +30,14 @@ type CacheEntry = {
   parentArr: CacheEntry[];
 };
 
-type CachedVolumeScale = {
+type CacheStoreMultiscaleLevel = {
   // Entries are indexed by T and C, then stored in lists of ZYX subsets
   data: CacheEntry[][][];
   size: Vector3;
 };
 
-export type CachedVolume = {
-  scales: CachedVolumeScale[];
+export type CacheStore = {
+  scales: CacheStoreMultiscaleLevel[];
   numTimes: number;
   numChannels: number;
 };
@@ -173,10 +173,10 @@ export default class VolumeCache {
 
   /**
    * Prepares a new cached volume with the specified channels, times, and scales.
-   * @returns {CachedVolume} A container for cache entries for this volume.
-   * A `CachedVolume` may only be accessed or modified by passing it to this class's methods.
+   * @returns {CacheStore} A container for cache entries for this volume.
+   * A `CacheStore` may only be accessed or modified by passing it to this class's methods.
    */
-  public addVolume(numChannels: number, numTimes: number, scaleDims: Vector3[]): CachedVolume {
+  public addVolume(numChannels: number, numTimes: number, scaleDims: Vector3[]): CacheStore {
     const makeTCArray = (): CacheEntry[][][] => {
       const tArr: CacheEntry[][][] = [];
       for (let i = 0; i < numTimes; i++) {
@@ -189,7 +189,7 @@ export default class VolumeCache {
       return tArr;
     };
 
-    const scales = scaleDims.map((size): CachedVolumeScale => ({ size, data: makeTCArray() }));
+    const scales = scaleDims.map((size): CacheStoreMultiscaleLevel => ({ size, data: makeTCArray() }));
     return { scales, numTimes, numChannels };
   }
 
@@ -197,7 +197,7 @@ export default class VolumeCache {
    * Add a new array to the cache (representing a subset of a channel's extent at a given time and scale)
    * @returns {boolean} a boolean indicating whether the insertion succeeded
    */
-  public insert(volume: CachedVolume, data: Uint8Array, optDims: Partial<DataArrayExtent> = {}): boolean {
+  public insert(volume: CacheStore, data: Uint8Array, optDims: Partial<DataArrayExtent> = {}): boolean {
     const scaleCache = volume.scales[optDims.scale || 0];
     const entryList = scaleCache.data[optDims.time || 0][optDims.channel || 0];
     const subregion = applyDefaultsToRegion(optDims.region, scaleCache.size);
@@ -246,7 +246,7 @@ export default class VolumeCache {
    * which is overloaded to call this in different patterns.
    */
   private getOneChannel(
-    volume: CachedVolume,
+    volume: CacheStore,
     channel: number,
     optDims: Partial<QueryExtent> = {}
   ): Uint8Array | undefined {
@@ -266,13 +266,13 @@ export default class VolumeCache {
   }
 
   /** Attempts to get data from a single channel of a cached volume. Returns `undefined` if not present in the cache. */
-  public get(volume: CachedVolume, channel: number, optDims?: Partial<QueryExtent>): Uint8Array | undefined;
+  public get(volume: CacheStore, channel: number, optDims?: Partial<QueryExtent>): Uint8Array | undefined;
   /** Attempts to get data from multiple channels of a volume. Channels not present in the cache are `undefined`. */
-  public get(volume: CachedVolume, channel: number[], optDims?: Partial<QueryExtent>): (Uint8Array | undefined)[];
+  public get(volume: CacheStore, channel: number[], optDims?: Partial<QueryExtent>): (Uint8Array | undefined)[];
   /** Attempts to get all channels of a volume from the cache. Channels not present in the cache are `undefined`. */
-  public get(volume: CachedVolume, optDims?: Partial<QueryExtent>): (Uint8Array | undefined)[];
+  public get(volume: CacheStore, optDims?: Partial<QueryExtent>): (Uint8Array | undefined)[];
   public get(
-    volume: CachedVolume,
+    volume: CacheStore,
     channel?: number | number[] | Partial<QueryExtent>,
     optDims?: Partial<QueryExtent>
   ): Uint8Array | undefined | (Uint8Array | undefined)[] {
@@ -289,7 +289,7 @@ export default class VolumeCache {
   }
 
   /** Clears data associated with one volume from the cache */
-  public clearVolume(volume: CachedVolume): void {
+  public clearVolume(volume: CacheStore): void {
     volume.scales.forEach((scale) => {
       scale.data.forEach((time) => {
         time.forEach((channel) => {
