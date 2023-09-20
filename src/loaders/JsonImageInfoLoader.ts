@@ -1,8 +1,9 @@
 import { Vector2, Vector3 } from "three";
 
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
-import { buildDefaultMetadata } from "./VolumeLoaderUtils";
+import { buildDefaultMetadata, convertSubregionToPixels } from "./VolumeLoaderUtils";
 import Volume, { ImageInfo } from "../Volume";
+import VolumeCache, { CacheStore } from "../VolumeCache";
 
 interface PackedChannelsImage {
   name: string;
@@ -94,7 +95,10 @@ class JsonImageInfoLoader implements IVolumeLoader {
   time: number;
   jsonInfo: JsonImageInfo | null = null;
 
-  constructor(urls: string | string[]) {
+  cache?: VolumeCache;
+  cacheStore?: CacheStore;
+
+  constructor(urls: string | string[], cache?: VolumeCache) {
     if (Array.isArray(urls)) {
       this.urls = urls;
     } else {
@@ -102,6 +106,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
     }
 
     this.time = 0;
+    this.cache = cache;
   }
 
   async getJsonImageInfo(loadSpec: LoadSpec): Promise<JsonImageInfo> {
@@ -130,6 +135,10 @@ class JsonImageInfoLoader implements IVolumeLoader {
     this.jsonInfo = await this.getJsonImageInfo(loadSpec);
     const imageInfo = convertImageInfo(this.jsonInfo);
 
+    this.cacheStore = this.cache?.addVolume(imageInfo.numChannels, Math.max(imageInfo.times, this.urls.length), [
+      new Vector3(imageInfo.subregionSize.x, imageInfo.subregionSize.y, imageInfo.subregionSize.z),
+    ]);
+
     const vol = new Volume(imageInfo, loadSpec, this);
     vol.channelLoadCallback = onChannelLoaded;
     vol.imageMetadata = buildDefaultMetadata(imageInfo);
@@ -151,7 +160,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
     const images = this.jsonInfo?.images.map((element) => ({ ...element, name: urlPrefix + element.name }));
 
     if (images) {
-      JsonImageInfoLoader.loadVolumeAtlasData(vol, images, onChannelLoaded);
+      JsonImageInfoLoader.loadVolumeAtlasData(vol, images, onChannelLoaded, this.cacheStore, this.cache);
     }
   }
 
@@ -177,7 +186,9 @@ class JsonImageInfoLoader implements IVolumeLoader {
   static loadVolumeAtlasData(
     volume: Volume,
     imageArray: PackedChannelsImage[],
-    onChannelLoaded?: PerChannelCallback
+    onChannelLoaded?: PerChannelCallback,
+    cacheStore?: CacheStore,
+    cache?: VolumeCache
   ): PackedChannelsImageRequests {
     const numImages = imageArray.length;
 
@@ -187,57 +198,90 @@ class JsonImageInfoLoader implements IVolumeLoader {
       const url = imageArray[i].name;
       const batch = imageArray[i].channels;
 
-      // using Image is just a trick to download the bits as a png.
-      // the Image will never be used again.
-      const img: HTMLImageElement = new Image();
-      img.onerror = function () {
-        console.log("ERROR LOADING " + url);
+      const regionPx = convertSubregionToPixels(volume.loadSpec.subregion, volume.imageInfo.subregionSize);
+      const cacheQueryDims = {
+        region: regionPx,
+        time: volume.loadSpec.time,
+        scale: 0,
       };
-      img.onload = (function (thisbatch) {
-        return function (event: Event) {
-          //console.log("GOT ch " + me.src);
-          // extract pixels by drawing to canvas
-          const canvas = document.createElement("canvas");
-          // nice thing about this is i could downsample here
-          const w = Math.floor((event?.target as HTMLImageElement).naturalWidth);
-          const h = Math.floor((event?.target as HTMLImageElement).naturalHeight);
-          canvas.setAttribute("width", "" + w);
-          canvas.setAttribute("height", "" + h);
-          const ctx = canvas.getContext("2d");
-          if (!ctx) {
-            console.log("Error creating canvas 2d context for " + url);
-            return;
-          }
-          ctx.globalCompositeOperation = "copy";
-          ctx.globalAlpha = 1.0;
-          ctx.drawImage(event?.target as CanvasImageSource, 0, 0, w, h);
-          // getImageData returns rgba.
-          // optimize: collapse rgba to single channel arrays
-          const iData = ctx.getImageData(0, 0, w, h);
-
-          const channelsBits: Uint8Array[] = [];
-          // allocate channels in batch
-          for (let ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
-            channelsBits.push(new Uint8Array(w * h));
-          }
-          // extract the data
-          for (let j = 0; j < Math.min(thisbatch.length, 4); ++j) {
-            for (let px = 0; px < w * h; px++) {
-              channelsBits[j][px] = iData.data[px * 4 + j];
-            }
-          }
-
-          // done with img, iData, and canvas now.
-
-          for (let ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
-            volume.setChannelDataFromAtlas(thisbatch[ch], channelsBits[ch], w, h);
-            onChannelLoaded?.(volume, thisbatch[ch]);
-          }
+      // if any in batch is cached then they all are...?
+      let cacheHit = false;
+      for (let j = 0; j < Math.min(batch.length, 4); ++j) {
+        const chindex = batch[j];
+        const cacheResult = cacheStore && cache?.get(cacheStore, chindex, cacheQueryDims);
+        if (cacheResult) {
+          volume.setChannelDataFromVolume(chindex, cacheResult);
+          onChannelLoaded?.(volume, chindex);
+          cacheHit = true;
+          console.log("cache hit " + volume.loadSpec.time + " ch " + chindex);
+        } else {
+          console.log("cache miss " + volume.loadSpec.time + " ch " + chindex);
+          break;
+        }
+      }
+      if (!cacheHit) {
+        console.log("requesting " + batch);
+        // using Image is just a trick to download the bits as a png.
+        // the Image will never be used again.
+        const img: HTMLImageElement = new Image();
+        img.onerror = function () {
+          console.log("ERROR LOADING " + url);
         };
-      })(batch);
-      img.crossOrigin = "Anonymous";
-      img.src = url;
-      requests[url] = img;
+        img.onload = (function (thisbatch) {
+          return function (event: Event) {
+            //console.log("GOT ch " + me.src);
+            // extract pixels by drawing to canvas
+            const canvas = document.createElement("canvas");
+            // nice thing about this is i could downsample here
+            const w = Math.floor((event?.target as HTMLImageElement).naturalWidth);
+            const h = Math.floor((event?.target as HTMLImageElement).naturalHeight);
+            canvas.setAttribute("width", "" + w);
+            canvas.setAttribute("height", "" + h);
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              console.log("Error creating canvas 2d context for " + url);
+              return;
+            }
+            ctx.globalCompositeOperation = "copy";
+            ctx.globalAlpha = 1.0;
+            ctx.drawImage(event?.target as CanvasImageSource, 0, 0, w, h);
+            // getImageData returns rgba.
+            // optimize: collapse rgba to single channel arrays
+            const iData = ctx.getImageData(0, 0, w, h);
+
+            const channelsBits: Uint8Array[] = [];
+            // allocate channels in batch
+            for (let ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
+              channelsBits.push(new Uint8Array(w * h));
+            }
+            // extract the data
+            for (let j = 0; j < Math.min(thisbatch.length, 4); ++j) {
+              for (let px = 0; px < w * h; px++) {
+                channelsBits[j][px] = iData.data[px * 4 + j];
+              }
+            }
+
+            // done with img, iData, and canvas now.
+
+            for (let ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
+              volume.setChannelDataFromAtlas(thisbatch[ch], channelsBits[ch], w, h);
+
+              const cacheInsertDims = {
+                region: regionPx,
+                scale: 0,
+                time: volume.loadSpec.time,
+                channel: thisbatch[ch],
+              };
+              cacheStore && cache?.insert(cacheStore, volume.channels[thisbatch[ch]].volumeData, cacheInsertDims);
+
+              onChannelLoaded?.(volume, thisbatch[ch]);
+            }
+          };
+        })(batch);
+        img.crossOrigin = "Anonymous";
+        img.src = url;
+        requests[url] = img;
+      }
     }
 
     return requests;

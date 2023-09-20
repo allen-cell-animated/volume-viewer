@@ -24,7 +24,7 @@ import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
 import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
 
-const CACHE_MAX_SIZE = 500_000_000;
+const CACHE_MAX_SIZE = 1_000_000_000;
 const PLAYBACK_INTERVAL = 80;
 
 const TEST_DATA: Record<string, TestDataSpec> = {
@@ -859,7 +859,7 @@ function onChannelDataArrived(v: Volume, channelIndex: number) {
 
   currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
   view3D.onVolumeData(currentVol, [channelIndex]);
-  view3D.setVolumeChannelEnabled(currentVol, channelIndex, channelIndex < 3);
+  //view3D.setVolumeChannelEnabled(currentVol, channelIndex, channelIndex < 3);
 
   view3D.updateActiveChannels(currentVol);
   view3D.updateLuts(currentVol);
@@ -1005,7 +1005,7 @@ function createLoader(data: TestDataSpec): IVolumeLoader {
       for (let t = 0; t <= times; t++) {
         frameUrls.push(data.url.replace("%%", t.toString()));
       }
-      return new JsonImageInfoLoader(frameUrls);
+      return new JsonImageInfoLoader(frameUrls, volumeCache);
     default:
       throw new Error("Unknown loader type: " + data.type);
   }
