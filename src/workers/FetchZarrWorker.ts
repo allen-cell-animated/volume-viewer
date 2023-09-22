@@ -1,12 +1,12 @@
 import { HTTPStore, openArray, slice, TypedArray } from "zarr";
 import { RawArray } from "zarr/types/rawArray";
 import { Slice } from "zarr/types/core/types";
-
-import { LoadSpec } from "../loaders/IVolumeLoader";
+import { Box3 } from "three";
 
 export type FetchZarrMessage = {
   url: string;
-  spec: Required<LoadSpec>;
+  time: number;
+  subregion: Box3;
   channel: number;
   path: string;
   axesTCZYX: number[];
@@ -37,7 +37,7 @@ function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
 }
 
 self.onmessage = async (e: MessageEvent<FetchZarrMessage>) => {
-  const time = e.data.spec.time;
+  const time = e.data.time;
   const channelIndex = e.data.channel;
   const axesTCZYX = e.data.axesTCZYX;
 
@@ -45,7 +45,7 @@ self.onmessage = async (e: MessageEvent<FetchZarrMessage>) => {
   const level = await openArray({ store: store, path: e.data.path, mode: "r" });
 
   // build slice spec
-  const { min, max } = e.data.spec.subregion;
+  const { min, max } = e.data.subregion;
   const unorderedSpec = [time, channelIndex, slice(min.z, max.z), slice(min.y, max.y), slice(min.x, max.x)];
 
   const specLen = 3 + Number(axesTCZYX[0] > -1) + Number(axesTCZYX[1] > -1);

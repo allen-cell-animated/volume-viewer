@@ -14,8 +14,6 @@ import Volume, { ImageInfo } from "../Volume";
 import { FetchZarrMessage } from "../workers/FetchZarrWorker";
 import VolumeCache, { CacheStore } from "../VolumeCache";
 
-const MAX_ATLAS_DIMENSION = 2048;
-
 type CoordinateTransformation =
   | {
       type: "identity";
@@ -154,17 +152,16 @@ async function loadLevelShapes(store: HTTPStore, multiscale: OMEMultiscale): Pro
   return await Promise.all(shapePromises);
 }
 
-async function loadMetadata(store: HTTPStore, loadSpec: LoadSpec): Promise<OMEZarrMetadata> {
+async function loadMetadata(store: HTTPStore): Promise<OMEZarrMetadata> {
   const data = await openGroup(store, null, "r");
   return (await data.attrs.asObject()) as OMEZarrMetadata;
 }
 
-function pickLevelToLoad(
-  loadSpec: LoadSpec,
-  multiscaleDims: number[][],
-  { datasets }: OMEMultiscale,
-  dimIndexes: number[]
-): number {
+function pickLevelToLoad(loadSpec: LoadSpec, multiscaleDims: number[][], dimIndexes: number[]): number {
+  if (loadSpec.multiscaleLevel) {
+    return loadSpec.multiscaleLevel;
+  }
+
   const size = loadSpec.subregion.getSize(new Vector3());
   const [zi, yi, xi] = dimIndexes.slice(-3);
 
@@ -173,7 +170,8 @@ function pickLevelToLoad(
     Math.max(shape[yi] * size.y, 1),
     Math.max(shape[xi] * size.x, 1),
   ]);
-  return estimateLevelForAtlas(spatialDims, MAX_ATLAS_DIMENSION);
+
+  return estimateLevelForAtlas(spatialDims, loadSpec.maxAtlasDimension);
 }
 
 class OMEZarrLoader implements IVolumeLoader {
@@ -241,7 +239,7 @@ class OMEZarrLoader implements IVolumeLoader {
   async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
     // Load metadata and dimensions.
     const store = new HTTPStore(this.url);
-    this.metadata = await loadMetadata(store, loadSpec);
+    this.metadata = await loadMetadata(store);
     const imageIndex = imageIndexFromLoadSpec(loadSpec, this.metadata.multiscales);
     const multiscale = this.metadata.multiscales[imageIndex];
     this.multiscaleDims = await loadLevelShapes(store, multiscale);
@@ -255,7 +253,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const hasC = c > -1;
 
     const shape0 = this.multiscaleDims[0];
-    const levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
+    const levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, this.axesTCZYX);
     const shapeLv = this.multiscaleDims[levelToLoad];
 
     const scaleSizes = this.multiscaleDims.map((shape) => new Vector3(shape[x], shape[y], shape[z]));
@@ -348,12 +346,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const imageIndex = imageIndexFromLoadSpec(vol.loadSpec, this.metadata.multiscales);
     const multiscale = this.metadata.multiscales[imageIndex];
 
-    const levelToLoad = pickLevelToLoad(
-      { ...vol.loadSpec, subregion },
-      this.multiscaleDims,
-      multiscale,
-      this.axesTCZYX
-    );
+    const levelToLoad = pickLevelToLoad({ ...vol.loadSpec, subregion }, this.multiscaleDims, this.axesTCZYX);
     const datasetPath = multiscale.datasets[levelToLoad].path;
     const levelShape = this.multiscaleDims[levelToLoad];
 
@@ -399,11 +392,8 @@ class OMEZarrLoader implements IVolumeLoader {
 
         const msg: FetchZarrMessage = {
           url: this.url,
-          spec: {
-            ...vol.loadSpec,
-            subregion: regionPx,
-            time: Math.min(vol.loadSpec.time, times),
-          },
+          subregion: regionPx,
+          time: Math.min(vol.loadSpec.time, times),
           channel: i,
           path: datasetPath,
           axesTCZYX: this.axesTCZYX,
