@@ -356,8 +356,9 @@ class OMEZarrLoader implements IVolumeLoader {
 
     const { nrows, ncols } = computePackedAtlasDims(regionSizePx.z, regionSizePx.x, regionSizePx.y);
 
+    const channelIndexes = vol.loadSpec.channels || Array.from({ length: numChannels }, (_val, idx) => idx);
     // do each channel on a worker
-    for (let i = 0; i < numChannels; ++i) {
+    for (const i of channelIndexes) {
       const cacheQueryDims = {
         region: regionPx,
         time: vol.loadSpec.time,

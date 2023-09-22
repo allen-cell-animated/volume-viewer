@@ -99,7 +99,6 @@ class TiffLoader implements IVolumeLoader {
     const dims = getOMEDims(image0El);
 
     const d = new VolumeDims();
-    d.subpath = "";
     d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
     d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
     d.spaceUnit = dims.unit ? dims.unit : "micron";
@@ -158,8 +157,6 @@ class TiffLoader implements IVolumeLoader {
   }
 
   async loadVolumeData(vol: Volume, _explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
-    vol.channelLoadCallback = onChannelLoaded;
-    //
     if (this.bytesPerSample === undefined || this.dimensionOrder === undefined) {
       const dims = await getDimsFromUrl(this.url);
 
@@ -192,7 +189,7 @@ class TiffLoader implements IVolumeLoader {
         onChannelLoaded?.(vol, channel);
         worker.terminate();
       };
-      worker.onerror = function (e) {
+      worker.onerror = (e) => {
         alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
       };
       worker.postMessage(params);
