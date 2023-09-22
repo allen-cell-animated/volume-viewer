@@ -155,7 +155,7 @@ async function loadLevelShapes(store: HTTPStore, multiscale: OMEMultiscale): Pro
 }
 
 async function loadMetadata(store: HTTPStore, loadSpec: LoadSpec): Promise<OMEZarrMetadata> {
-  const data = await openGroup(store, loadSpec.subpath, "r");
+  const data = await openGroup(store, null, "r");
   return (await data.attrs.asObject()) as OMEZarrMetadata;
 }
 
@@ -165,16 +165,6 @@ function pickLevelToLoad(
   { datasets }: OMEMultiscale,
   dimIndexes: number[]
 ): number {
-  const numlevels = multiscaleDims.length;
-  // default to lowest level until we find the match
-  let levelToLoad = numlevels - 1;
-  for (let i = 0; i < numlevels; ++i) {
-    if (datasets[i].path == loadSpec.subpath) {
-      levelToLoad = i;
-      break;
-    }
-  }
-
   const size = loadSpec.subregion.getSize(new Vector3());
   const [zi, yi, xi] = dimIndexes.slice(-3);
 
@@ -183,13 +173,7 @@ function pickLevelToLoad(
     Math.max(shape[yi] * size.y, 1),
     Math.max(shape[xi] * size.x, 1),
   ]);
-  const optimalLevel = estimateLevelForAtlas(spatialDims, MAX_ATLAS_DIMENSION);
-  // assume all levels are decreasing in size.  If a larger level is optimal then use it:
-  if (optimalLevel < levelToLoad) {
-    return optimalLevel;
-  } else {
-    return levelToLoad;
-  }
+  return estimateLevelForAtlas(spatialDims, MAX_ATLAS_DIMENSION);
 }
 
 class OMEZarrLoader implements IVolumeLoader {
@@ -210,7 +194,7 @@ class OMEZarrLoader implements IVolumeLoader {
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const store = new HTTPStore(this.url);
 
-    const data = await openGroup(store, loadSpec.subpath, "r");
+    const data = await openGroup(store, null, "r");
 
     // get top-level metadata for this zarr image
     const allmetadata = await data.attrs.asObject();
@@ -238,7 +222,6 @@ class OMEZarrLoader implements IVolumeLoader {
       const scale5d = getScale(dataset);
 
       const d = new VolumeDims();
-      d.subpath = loadSpec.subpath;
       d.shape = [-1, -1, -1, -1, -1];
       for (let i = 0; i < d.shape.length; ++i) {
         if (axisTCZYX[i] > -1) {
@@ -380,7 +363,6 @@ class OMEZarrLoader implements IVolumeLoader {
 
     const { nrows, ncols } = computePackedAtlasDims(regionSizePx.z, regionSizePx.x, regionSizePx.y);
 
-    const storepath = vol.loadSpec.subpath + "/" + datasetPath;
     // do each channel on a worker
     for (let i = 0; i < numChannels; ++i) {
       const cacheQueryDims = {
@@ -423,7 +405,7 @@ class OMEZarrLoader implements IVolumeLoader {
             time: Math.min(vol.loadSpec.time, times),
           },
           channel: i,
-          path: storepath,
+          path: datasetPath,
           axesTCZYX: this.axesTCZYX,
         };
         worker.postMessage(msg);

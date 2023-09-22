@@ -3,7 +3,6 @@ import { Box3, Vector3 } from "three";
 import Volume from "../Volume";
 
 export class LoadSpec {
-  subpath = "";
   scene = 0;
   time = 0;
   // sub-region; if not specified, the entire volume is loaded
@@ -13,7 +12,7 @@ export class LoadSpec {
 
 export function loadSpecToString(spec: LoadSpec): string {
   const { min, max } = spec.subregion;
-  return `${spec.subpath}:${spec.scene}:${spec.time}:x(${min.x},${max.x}):y(${min.y},${max.y}):z(${min.z},${max.z})`;
+  return `${spec.scene}:${spec.time}:x(${min.x},${max.x}):y(${min.y},${max.y}):z(${min.z},${max.z})`;
 }
 
 export class VolumeDims {
