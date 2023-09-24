@@ -9,6 +9,7 @@ import {
   WebGLRenderTarget,
   RGBAFormat,
   ShaderMaterial,
+  ShaderMaterialParameters,
   Mesh,
   PlaneGeometry,
   WebGLRenderer,
@@ -37,6 +38,7 @@ export default class FusedChannelData {
 
   private fuseGeometry: PlaneGeometry;
   private fuseMaterial: ShaderMaterial;
+  private fuseMaterialProps: Partial<ShaderMaterialParameters>;
   private fuseScene: Scene;
   private quadCamera: OrthographicCamera;
   private fuseRenderTarget: WebGLRenderTarget;
@@ -78,19 +80,7 @@ export default class FusedChannelData {
       wrapT: ClampToEdgeWrapping,
     });
 
-    this.fuseMaterial = new ShaderMaterial({
-      uniforms: UniformsUtils.merge([
-        {
-          lutSampler: {
-            type: "t",
-            value: null,
-          },
-          srcTexture: {
-            type: "t",
-            value: null,
-          },
-        },
-      ]),
+    this.fuseMaterialProps = {
       vertexShader: fuseVertexShaderSrc,
       fragmentShader: fuseShaderSrc,
       depthTest: false,
@@ -99,6 +89,20 @@ export default class FusedChannelData {
       blendSrc: OneFactor,
       blendDst: OneFactor,
       blendEquation: MaxEquation,
+    };
+    // this exists to keep one reference alive
+    // to make sure we do not fully delete and re-create
+    // a shader every time.
+    this.fuseMaterial = new ShaderMaterial({
+      uniforms: {
+        lutSampler: {
+          value: null,
+        },
+        srcTexture: {
+          value: null,
+        },
+      },
+      ...this.fuseMaterialProps,
     });
     this.fuseGeometry = new PlaneGeometry(2, 2);
   }
@@ -128,6 +132,8 @@ export default class FusedChannelData {
       }
     }
     if (!canFuse) {
+      this.channelsDataToFuse = [];
+      this.fuseRequested = [];
       return;
     }
 
@@ -143,15 +149,32 @@ export default class FusedChannelData {
     }
 
     // webgl draw one mesh per channel to fuse.  clear texture to 0,0,0,0
+
+    this.fuseScene.traverse(function (node) {
+      if (node instanceof Mesh) {
+        // materials were holding references to the channel data textures
+        // causing mem leak so we must dispose before clearing the scene
+        node.material.dispose();
+      }
+    });
     this.fuseScene.clear();
     for (let i = 0; i < combination.length; ++i) {
       if (combination[i].rgbColor) {
         const chIndex = combination[i].chIndex;
         // add a draw call per channel here.
         // TODO create these at channel creation time!
-        const mat = this.fuseMaterial.clone();
-        mat.uniforms.lutSampler.value = channels[chIndex].lutTexture;
-        mat.uniforms.srcTexture.value = channels[chIndex].dataTexture;
+        const mat = new ShaderMaterial({
+          uniforms: {
+            lutSampler: {
+              value: channels[chIndex].lutTexture,
+            },
+            srcTexture: {
+              value: channels[chIndex].dataTexture,
+            },
+          },
+          ...this.fuseMaterialProps,
+        });
+
         this.fuseScene.add(new Mesh(this.fuseGeometry, mat));
       }
     }

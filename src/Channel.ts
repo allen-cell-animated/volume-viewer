@@ -109,6 +109,9 @@ export default class Channel {
   // data is formatted as a texture atlas where each tile is a z slice of the volume
   public setBits(bitsArray: Uint8Array, w: number, h: number): void {
     this.imgData = { data: new Uint8ClampedArray(bitsArray.buffer), width: w, height: h };
+    if (this.dataTexture) {
+      this.dataTexture.dispose();
+    }
     this.dataTexture = new DataTexture(this.imgData.data, w, h);
     this.dataTexture.format = RedFormat;
     this.dataTexture.type = UnsignedByteType;
@@ -209,6 +212,9 @@ export default class Channel {
       }
     }
 
+    if (this.dataTexture) {
+      this.dataTexture.dispose();
+    }
     this.dataTexture = new DataTexture(this.imgData.data, ax, ay);
     this.dataTexture.format = RedFormat;
     this.dataTexture.type = UnsignedByteType;
