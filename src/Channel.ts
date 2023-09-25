@@ -165,6 +165,7 @@ export default class Channel {
   public setFromVolumeData(bitsArray: Uint8Array, vx: number, vy: number, vz: number, ax: number, ay: number): void {
     this.dims = [vx, vy, vz];
     this.volumeData = bitsArray;
+    // TODO FIXME performance hit for shuffling the data and storing 2 versions of it (could do this in worker at least?)
     this.packToAtlas(vx, vy, vz, ax, ay);
     this.loaded = true;
     this.histogram = new Histogram(this.volumeData);
