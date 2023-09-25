@@ -16,7 +16,6 @@ import {
   OneFactor,
   CustomBlending,
   MaxEquation,
-  UniformsUtils,
   Texture,
 } from "three";
 import { LinearFilter } from "three/src/constants";
@@ -150,7 +149,7 @@ export default class FusedChannelData {
 
     // webgl draw one mesh per channel to fuse.  clear texture to 0,0,0,0
 
-    this.fuseScene.traverse(function (node) {
+    this.fuseScene.traverse((node) => {
       if (node instanceof Mesh) {
         // materials were holding references to the channel data textures
         // causing mem leak so we must dispose before clearing the scene
