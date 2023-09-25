@@ -16,7 +16,6 @@ import {
   OneFactor,
   CustomBlending,
   MaxEquation,
-  UniformsUtils,
   Texture,
 } from "three";
 import { LinearFilter } from "three/src/constants";
