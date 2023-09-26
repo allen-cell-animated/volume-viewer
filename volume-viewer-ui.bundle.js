@@ -342,6 +342,20 @@ var Channel = /*#__PURE__*/function () {
       var offset = tilex * this.dims[0] + x + (tiley * this.dims[1] + y) * this.imgData.width;
       return this.imgData.data[offset];
     }
+  }, {
+    key: "rebuildDataTexture",
+    value: function rebuildDataTexture(data, w, h) {
+      if (this.dataTexture) {
+        this.dataTexture.dispose();
+      }
+      this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(data, w, h);
+      this.dataTexture.format = three__WEBPACK_IMPORTED_MODULE_3__.RedFormat;
+      this.dataTexture.type = three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType;
+      this.dataTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
+      this.dataTexture.minFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
+      this.dataTexture.generateMipmaps = false;
+      this.dataTexture.needsUpdate = true;
+    }
 
     // give the channel fresh data and initialize from that data
     // data is formatted as a texture atlas where each tile is a z slice of the volume
@@ -353,13 +367,7 @@ var Channel = /*#__PURE__*/function () {
         width: w,
         height: h
       };
-      this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(this.imgData.data, w, h);
-      this.dataTexture.format = three__WEBPACK_IMPORTED_MODULE_3__.RedFormat;
-      this.dataTexture.type = three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType;
-      this.dataTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
-      this.dataTexture.minFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
-      this.dataTexture.generateMipmaps = false;
-      this.dataTexture.needsUpdate = true;
+      this.rebuildDataTexture(this.imgData.data, w, h);
       this.loaded = true;
       this.histogram = new _Histogram__WEBPACK_IMPORTED_MODULE_2__["default"](bitsArray);
       this.lutGenerator_auto2();
@@ -451,13 +459,7 @@ var Channel = /*#__PURE__*/function () {
           }
         }
       }
-      this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(this.imgData.data, ax, ay);
-      this.dataTexture.format = three__WEBPACK_IMPORTED_MODULE_3__.RedFormat;
-      this.dataTexture.type = three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType;
-      this.dataTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
-      this.dataTexture.minFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
-      this.dataTexture.generateMipmaps = false;
-      this.dataTexture.needsUpdate = true;
+      this.rebuildDataTexture(this.imgData.data, ax, ay);
     }
 
     // lut should be an uint8array of 256*4 elements (256 rgba8 values)
@@ -636,13 +638,17 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ FusedChannelData)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_src_constants__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three/src/constants */ "./node_modules/three/src/constants.js");
-/* harmony import */ var _constants_fuseShader__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants/fuseShader */ "./src/constants/fuseShader.ts");
+/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three_src_constants__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three/src/constants */ "./node_modules/three/src/constants.js");
+/* harmony import */ var _constants_fuseShader__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./constants/fuseShader */ "./src/constants/fuseShader.ts");
 
 
+
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
 
 
 
@@ -650,57 +656,60 @@ __webpack_require__.r(__webpack_exports__);
 // This module is responsible for updating the fused texture, given the read-only volume channel data.
 var FusedChannelData = /*#__PURE__*/function () {
   function FusedChannelData(atlasX, atlasY) {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, FusedChannelData);
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, FusedChannelData);
     // allow for resizing
     this.width = atlasX;
     this.height = atlasY;
-    this.maskTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(new Uint8ClampedArray(this.width * this.height), this.width, this.height, three__WEBPACK_IMPORTED_MODULE_3__.RedFormat, three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType);
+    this.maskTexture = new three__WEBPACK_IMPORTED_MODULE_4__.DataTexture(new Uint8ClampedArray(this.width * this.height), this.width, this.height, three__WEBPACK_IMPORTED_MODULE_4__.RedFormat, three__WEBPACK_IMPORTED_MODULE_4__.UnsignedByteType);
     this.maskTexture.generateMipmaps = false;
-    this.maskTexture.magFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_4__.LinearFilter;
-    this.maskTexture.minFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_4__.LinearFilter;
-    this.maskTexture.wrapS = three__WEBPACK_IMPORTED_MODULE_3__.ClampToEdgeWrapping;
-    this.maskTexture.wrapT = three__WEBPACK_IMPORTED_MODULE_3__.ClampToEdgeWrapping;
+    this.maskTexture.magFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_5__.LinearFilter;
+    this.maskTexture.minFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_5__.LinearFilter;
+    this.maskTexture.wrapS = three__WEBPACK_IMPORTED_MODULE_4__.ClampToEdgeWrapping;
+    this.maskTexture.wrapT = three__WEBPACK_IMPORTED_MODULE_4__.ClampToEdgeWrapping;
     // for single-channel tightly packed array data:
     this.maskTexture.unpackAlignment = 1;
     this.fuseRequested = null;
     this.channelsDataToFuse = [];
-    this.fuseScene = new three__WEBPACK_IMPORTED_MODULE_3__.Scene();
-    this.quadCamera = new three__WEBPACK_IMPORTED_MODULE_3__.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    this.fuseRenderTarget = new three__WEBPACK_IMPORTED_MODULE_3__.WebGLRenderTarget(this.width, this.height, {
-      minFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_4__.LinearFilter,
-      magFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_4__.LinearFilter,
-      format: three__WEBPACK_IMPORTED_MODULE_3__.RGBAFormat,
-      type: three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType,
+    this.fuseScene = new three__WEBPACK_IMPORTED_MODULE_4__.Scene();
+    this.quadCamera = new three__WEBPACK_IMPORTED_MODULE_4__.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    this.fuseRenderTarget = new three__WEBPACK_IMPORTED_MODULE_4__.WebGLRenderTarget(this.width, this.height, {
+      minFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_5__.LinearFilter,
+      magFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_5__.LinearFilter,
+      format: three__WEBPACK_IMPORTED_MODULE_4__.RGBAFormat,
+      type: three__WEBPACK_IMPORTED_MODULE_4__.UnsignedByteType,
       // FloatType ?
       depthBuffer: false,
       stencilBuffer: false,
       generateMipmaps: false,
-      wrapS: three__WEBPACK_IMPORTED_MODULE_3__.ClampToEdgeWrapping,
-      wrapT: three__WEBPACK_IMPORTED_MODULE_3__.ClampToEdgeWrapping
+      wrapS: three__WEBPACK_IMPORTED_MODULE_4__.ClampToEdgeWrapping,
+      wrapT: three__WEBPACK_IMPORTED_MODULE_4__.ClampToEdgeWrapping
     });
-    this.fuseMaterial = new three__WEBPACK_IMPORTED_MODULE_3__.ShaderMaterial({
-      uniforms: three__WEBPACK_IMPORTED_MODULE_3__.UniformsUtils.merge([{
+    this.fuseMaterialProps = {
+      vertexShader: _constants_fuseShader__WEBPACK_IMPORTED_MODULE_3__.fuseVertexShaderSrc,
+      fragmentShader: _constants_fuseShader__WEBPACK_IMPORTED_MODULE_3__.fuseShaderSrc,
+      depthTest: false,
+      depthWrite: false,
+      blending: three__WEBPACK_IMPORTED_MODULE_4__.CustomBlending,
+      blendSrc: three__WEBPACK_IMPORTED_MODULE_4__.OneFactor,
+      blendDst: three__WEBPACK_IMPORTED_MODULE_4__.OneFactor,
+      blendEquation: three__WEBPACK_IMPORTED_MODULE_4__.MaxEquation
+    };
+    // this exists to keep one reference alive
+    // to make sure we do not fully delete and re-create
+    // a shader every time.
+    this.fuseMaterial = new three__WEBPACK_IMPORTED_MODULE_4__.ShaderMaterial(_objectSpread({
+      uniforms: {
         lutSampler: {
-          type: "t",
           value: null
         },
         srcTexture: {
-          type: "t",
           value: null
         }
-      }]),
-      vertexShader: _constants_fuseShader__WEBPACK_IMPORTED_MODULE_2__.fuseVertexShaderSrc,
-      fragmentShader: _constants_fuseShader__WEBPACK_IMPORTED_MODULE_2__.fuseShaderSrc,
-      depthTest: false,
-      depthWrite: false,
-      blending: three__WEBPACK_IMPORTED_MODULE_3__.CustomBlending,
-      blendSrc: three__WEBPACK_IMPORTED_MODULE_3__.OneFactor,
-      blendDst: three__WEBPACK_IMPORTED_MODULE_3__.OneFactor,
-      blendEquation: three__WEBPACK_IMPORTED_MODULE_3__.MaxEquation
-    });
-    this.fuseGeometry = new three__WEBPACK_IMPORTED_MODULE_3__.PlaneGeometry(2, 2);
+      }
+    }, this.fuseMaterialProps));
+    this.fuseGeometry = new three__WEBPACK_IMPORTED_MODULE_4__.PlaneGeometry(2, 2);
   }
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(FusedChannelData, [{
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(FusedChannelData, [{
     key: "getFusedTexture",
     value: function getFusedTexture() {
       return this.fuseRenderTarget.texture;
@@ -730,6 +739,8 @@ var FusedChannelData = /*#__PURE__*/function () {
       }
 
       if (!canFuse) {
+        this.channelsDataToFuse = [];
+        this.fuseRequested = [];
         return;
       }
       this.fuseRequested = combination;
@@ -745,21 +756,36 @@ var FusedChannelData = /*#__PURE__*/function () {
       }
 
       // webgl draw one mesh per channel to fuse.  clear texture to 0,0,0,0
+
+      this.fuseScene.traverse(function (node) {
+        if (node instanceof three__WEBPACK_IMPORTED_MODULE_4__.Mesh) {
+          // materials were holding references to the channel data textures
+          // causing mem leak so we must dispose before clearing the scene
+          node.material.dispose();
+        }
+      });
       this.fuseScene.clear();
       for (var i = 0; i < combination.length; ++i) {
         if (combination[i].rgbColor) {
           var chIndex = combination[i].chIndex;
           // add a draw call per channel here.
           // TODO create these at channel creation time!
-          var mat = this.fuseMaterial.clone();
-          mat.uniforms.lutSampler.value = channels[chIndex].lutTexture;
-          mat.uniforms.srcTexture.value = channels[chIndex].dataTexture;
-          this.fuseScene.add(new three__WEBPACK_IMPORTED_MODULE_3__.Mesh(this.fuseGeometry, mat));
+          var mat = new three__WEBPACK_IMPORTED_MODULE_4__.ShaderMaterial(_objectSpread({
+            uniforms: {
+              lutSampler: {
+                value: channels[chIndex].lutTexture
+              },
+              srcTexture: {
+                value: channels[chIndex].dataTexture
+              }
+            }
+          }, this.fuseMaterialProps));
+          this.fuseScene.add(new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(this.fuseGeometry, mat));
         }
       }
       renderer.setRenderTarget(this.fuseRenderTarget);
       renderer.autoClearColor = true;
-      var prevClearColor = new three__WEBPACK_IMPORTED_MODULE_3__.Color();
+      var prevClearColor = new three__WEBPACK_IMPORTED_MODULE_4__.Color();
       renderer.getClearColor(prevClearColor);
       var prevClearAlpha = renderer.getClearAlpha();
       renderer.setClearColor(0x000000, 0);
