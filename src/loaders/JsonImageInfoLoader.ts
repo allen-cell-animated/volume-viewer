@@ -198,90 +198,95 @@ class JsonImageInfoLoader implements IVolumeLoader {
       const url = imageArray[i].name;
       const batch = imageArray[i].channels;
 
+      // construct cache query
       const regionPx = convertSubregionToPixels(volume.loadSpec.subregion, volume.imageInfo.subregionSize);
       const cacheQueryDims = {
         region: regionPx,
         time: volume.loadSpec.time,
         scale: 0,
       };
-      // if any in batch is cached then they all are...?
-      let cacheHit = false;
+      // Because the data is fetched such that one fetch returns a whole batch,
+      // if any in batch is cached then they all should be. So if any in batch is NOT cached,
+      // then we will have to do a batch request. This logic works both ways because it's all or nothing.
+      let cacheHit = true;
       for (let j = 0; j < Math.min(batch.length, 4); ++j) {
         const chindex = batch[j];
         const cacheResult = cacheStore && cache?.get(cacheStore, chindex, cacheQueryDims);
         if (cacheResult) {
           volume.setChannelDataFromVolume(chindex, cacheResult);
           onChannelLoaded?.(volume, chindex);
-          cacheHit = true;
-          console.log("cache hit " + volume.loadSpec.time + " ch " + chindex);
         } else {
-          console.log("cache miss " + volume.loadSpec.time + " ch " + chindex);
+          cacheHit = false;
+          // we can stop checking because we know we are going to have to fetch the whole batch
           break;
         }
       }
-      if (!cacheHit) {
-        console.log("requesting " + batch);
-        // using Image is just a trick to download the bits as a png.
-        // the Image will never be used again.
-        const img: HTMLImageElement = new Image();
-        img.onerror = function () {
-          console.log("ERROR LOADING " + url);
-        };
-        img.onload = (function (thisbatch) {
-          return function (event: Event) {
-            //console.log("GOT ch " + me.src);
-            // extract pixels by drawing to canvas
-            const canvas = document.createElement("canvas");
-            // nice thing about this is i could downsample here
-            const w = Math.floor((event?.target as HTMLImageElement).naturalWidth);
-            const h = Math.floor((event?.target as HTMLImageElement).naturalHeight);
-            canvas.setAttribute("width", "" + w);
-            canvas.setAttribute("height", "" + h);
-            const ctx = canvas.getContext("2d");
-            if (!ctx) {
-              console.log("Error creating canvas 2d context for " + url);
-              return;
-            }
-            ctx.globalCompositeOperation = "copy";
-            ctx.globalAlpha = 1.0;
-            ctx.drawImage(event?.target as CanvasImageSource, 0, 0, w, h);
-            // getImageData returns rgba.
-            // optimize: collapse rgba to single channel arrays
-            const iData = ctx.getImageData(0, 0, w, h);
 
-            const channelsBits: Uint8Array[] = [];
-            // allocate channels in batch
-            for (let ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
-              channelsBits.push(new Uint8Array(w * h));
-            }
-            // extract the data
-            for (let j = 0; j < Math.min(thisbatch.length, 4); ++j) {
-              for (let px = 0; px < w * h; px++) {
-                channelsBits[j][px] = iData.data[px * 4 + j];
-              }
-            }
-
-            // done with img, iData, and canvas now.
-
-            for (let ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
-              volume.setChannelDataFromAtlas(thisbatch[ch], channelsBits[ch], w, h);
-
-              const cacheInsertDims = {
-                region: regionPx,
-                scale: 0,
-                time: volume.loadSpec.time,
-                channel: thisbatch[ch],
-              };
-              cacheStore && cache?.insert(cacheStore, volume.channels[thisbatch[ch]].volumeData, cacheInsertDims);
-
-              onChannelLoaded?.(volume, thisbatch[ch]);
-            }
-          };
-        })(batch);
-        img.crossOrigin = "Anonymous";
-        img.src = url;
-        requests[url] = img;
+      // if there were ANY cache misses then we need to request the batch
+      if (cacheHit) {
+        continue;
       }
+
+      // using Image is just a trick to download the bits as a png.
+      // the Image will never be used again.
+      const img: HTMLImageElement = new Image();
+      img.onerror = function () {
+        console.log("ERROR LOADING " + url);
+      };
+      img.onload = (function (thisbatch) {
+        return function (event: Event) {
+          //console.log("GOT ch " + me.src);
+          // extract pixels by drawing to canvas
+          const canvas = document.createElement("canvas");
+          // nice thing about this is i could downsample here
+          const w = Math.floor((event?.target as HTMLImageElement).naturalWidth);
+          const h = Math.floor((event?.target as HTMLImageElement).naturalHeight);
+          canvas.setAttribute("width", "" + w);
+          canvas.setAttribute("height", "" + h);
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            console.log("Error creating canvas 2d context for " + url);
+            return;
+          }
+          ctx.globalCompositeOperation = "copy";
+          ctx.globalAlpha = 1.0;
+          ctx.drawImage(event?.target as CanvasImageSource, 0, 0, w, h);
+          // getImageData returns rgba.
+          // optimize: collapse rgba to single channel arrays
+          const iData = ctx.getImageData(0, 0, w, h);
+
+          const channelsBits: Uint8Array[] = [];
+          // allocate channels in batch
+          for (let ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
+            channelsBits.push(new Uint8Array(w * h));
+          }
+          // extract the data
+          for (let j = 0; j < Math.min(thisbatch.length, 4); ++j) {
+            for (let px = 0; px < w * h; px++) {
+              channelsBits[j][px] = iData.data[px * 4 + j];
+            }
+          }
+
+          // done with img, iData, and canvas now.
+
+          for (let ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
+            volume.setChannelDataFromAtlas(thisbatch[ch], channelsBits[ch], w, h);
+
+            const cacheInsertDims = {
+              region: regionPx,
+              scale: 0,
+              time: volume.loadSpec.time,
+              channel: thisbatch[ch],
+            };
+            cacheStore && cache?.insert(cacheStore, volume.channels[thisbatch[ch]].volumeData, cacheInsertDims);
+
+            onChannelLoaded?.(volume, thisbatch[ch]);
+          }
+        };
+      })(batch);
+      img.crossOrigin = "Anonymous";
+      img.src = url;
+      requests[url] = img;
     }
 
     return requests;
