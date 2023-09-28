@@ -105,17 +105,25 @@ export default class Channel {
     return this.imgData.data[offset];
   }
 
-  // give the channel fresh data and initialize from that data
-  // data is formatted as a texture atlas where each tile is a z slice of the volume
-  public setBits(bitsArray: Uint8Array, w: number, h: number): void {
-    this.imgData = { data: new Uint8ClampedArray(bitsArray.buffer), width: w, height: h };
-    this.dataTexture = new DataTexture(this.imgData.data, w, h);
+  private rebuildDataTexture(data: Uint8ClampedArray, w: number, h: number): void {
+    if (this.dataTexture) {
+      this.dataTexture.dispose();
+    }
+    this.dataTexture = new DataTexture(data, w, h);
     this.dataTexture.format = RedFormat;
     this.dataTexture.type = UnsignedByteType;
     this.dataTexture.magFilter = NearestFilter;
     this.dataTexture.minFilter = NearestFilter;
     this.dataTexture.generateMipmaps = false;
     this.dataTexture.needsUpdate = true;
+  }
+
+  // give the channel fresh data and initialize from that data
+  // data is formatted as a texture atlas where each tile is a z slice of the volume
+  public setBits(bitsArray: Uint8Array, w: number, h: number): void {
+    this.imgData = { data: new Uint8ClampedArray(bitsArray.buffer), width: w, height: h };
+
+    this.rebuildDataTexture(this.imgData.data, w, h);
 
     this.loaded = true;
     this.histogram = new Histogram(bitsArray);
@@ -157,6 +165,7 @@ export default class Channel {
   public setFromVolumeData(bitsArray: Uint8Array, vx: number, vy: number, vz: number, ax: number, ay: number): void {
     this.dims = [vx, vy, vz];
     this.volumeData = bitsArray;
+    // TODO FIXME performance hit for shuffling the data and storing 2 versions of it (could do this in worker at least?)
     this.packToAtlas(vx, vy, vz, ax, ay);
     this.loaded = true;
     this.histogram = new Histogram(this.volumeData);
@@ -209,13 +218,7 @@ export default class Channel {
       }
     }
 
-    this.dataTexture = new DataTexture(this.imgData.data, ax, ay);
-    this.dataTexture.format = RedFormat;
-    this.dataTexture.type = UnsignedByteType;
-    this.dataTexture.magFilter = NearestFilter;
-    this.dataTexture.minFilter = NearestFilter;
-    this.dataTexture.generateMipmaps = false;
-    this.dataTexture.needsUpdate = true;
+    this.rebuildDataTexture(this.imgData.data, ax, ay);
   }
 
   // lut should be an uint8array of 256*4 elements (256 rgba8 values)

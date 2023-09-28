@@ -61,7 +61,7 @@ function getOMEDims(imageEl: Element): OMEDims {
 }
 
 async function getDimsFromUrl(url: string): Promise<OMEDims> {
-  const tiff = await fromUrl(url);
+  const tiff = await fromUrl(url, { allowFullFile: true });
   // DO NOT DO THIS, ITS SLOW
   // const imagecount = await tiff.getImageCount();
   // read the FIRST image
@@ -86,7 +86,7 @@ class TiffLoader implements IVolumeLoader {
   }
 
   async loadDims(_loadSpec: LoadSpec): Promise<VolumeDims[]> {
-    const tiff = await fromUrl(this.url);
+    const tiff = await fromUrl(this.url, { allowFullFile: true });
     // DO NOT DO THIS, ITS SLOW
     // const imagecount = await tiff.getImageCount();
     // read the FIRST image

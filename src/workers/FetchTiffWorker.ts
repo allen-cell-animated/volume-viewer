@@ -53,7 +53,7 @@ self.onmessage = async function (e) {
   const dimensionOrder = e.data.dimensionOrder;
   const bytesPerSample = e.data.bytesPerSample;
 
-  const tiff = await fromUrl(e.data.url);
+  const tiff = await fromUrl(e.data.url, { allowFullFile: true });
 
   // load the images of this channel from the tiff
   // today assume TCZYX so the slices are already in order.
