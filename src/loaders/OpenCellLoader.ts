@@ -48,7 +48,7 @@ class OpenCellLoader implements IVolumeLoader {
     };
 
     // got some data, now let's construct the volume.
-    // This loader uses no fields from `LoadSpec`. Iinitialize volume with defaults.
+    // This loader uses no fields from `LoadSpec`. Initialize volume with defaults.
     const vol = new Volume(imgdata, new LoadSpec(), this);
     vol.channelLoadCallback = onChannelLoaded;
     vol.imageMetadata = buildDefaultMetadata(imgdata);
