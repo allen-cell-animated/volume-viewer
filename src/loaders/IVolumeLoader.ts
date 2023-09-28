@@ -6,7 +6,6 @@ export class LoadSpec {
   scene = 0;
   time = 0;
   multiscaleLevel?: number;
-  maxAtlasDimension = 4096;
   /** Subregion of volume to load. If not specified, the entire volume is loaded. Specify as floats between 0-1. */
   subregion = new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
   channels?: number[];
@@ -19,7 +18,7 @@ export function loadSpecToString(spec: LoadSpec): string {
 
 export class VolumeDims {
   subpath = "";
-  // shape: [t, c, z, y, x]
+  // shape: [t, c, z, y, x]n
   shape: number[] = [0, 0, 0, 0, 0];
   // spacing: [t, c, z, y, x]; generally expect 1 for non-spatial dimensions
   spacing: number[] = [1, 1, 1, 1, 1];
