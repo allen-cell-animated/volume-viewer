@@ -169,12 +169,12 @@ function pickLevelToLoad(loadSpec: LoadSpec, multiscaleDims: number[][], dimInde
     Math.max(shape[xi] * size.x, 1),
   ]);
 
-  const autoLevel = estimateLevelForAtlas(spatialDims, MAX_ATLAS_DIMENSION);
+  const optimalLevel = estimateLevelForAtlas(spatialDims, MAX_ATLAS_DIMENSION);
 
   if (loadSpec.multiscaleLevel) {
-    return Math.max(autoLevel, loadSpec.multiscaleLevel);
+    return Math.max(optimalLevel, loadSpec.multiscaleLevel);
   } else {
-    return autoLevel;
+    return optimalLevel;
   }
 }
 
