@@ -130,6 +130,8 @@ export default class Volume {
   public imageInfo: ImageInfo;
   public loadSpec: LoadSpec;
   public loader?: IVolumeLoader;
+  // `LoadSpec` representing the minimum data required to display what's in the viewer (subregion, channels, etc.).
+  // Used to intelligently issue load requests whenever required by a state change. Modify with `updateRequiredData`.
   private loadSpecRequired: Required<LoadSpec>;
   public channelLoadCallback?: PerChannelCallback;
   public imageMetadata: Record<string, unknown>;
