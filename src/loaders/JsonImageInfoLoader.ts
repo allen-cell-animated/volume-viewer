@@ -1,4 +1,4 @@
-import { Vector2, Vector3 } from "three";
+import { Box3, Vector2, Vector3 } from "three";
 
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import { buildDefaultMetadata } from "./VolumeLoaderUtils";
@@ -162,6 +162,14 @@ class JsonImageInfoLoader implements IVolumeLoader {
     const urlPrefix = this.urls[this.time].replace(/[^/]*$/, "");
     images = images.map((element) => ({ ...element, name: urlPrefix + element.name }));
 
+    vol.loadSpec = {
+      ...loadSpec,
+      // `subregion` and `multiscaleLevel` are unused by this loader
+      subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)),
+      multiscaleLevel: 0,
+      // include all channels in any loaded images
+      channels: images.flatMap(({ channels }) => channels),
+    };
     JsonImageInfoLoader.loadVolumeAtlasData(vol, images, onChannelLoaded);
   }
 
