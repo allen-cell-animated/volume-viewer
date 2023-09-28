@@ -376,9 +376,24 @@ class OMEZarrLoader implements IVolumeLoader {
 
     const [zi, yi, xi] = this.axesTCZYX.slice(-3);
     const regionPx = convertSubregionToPixels(subregion, new Vector3(levelShape[xi], levelShape[yi], levelShape[zi]));
-    const regionSizePx = regionPx.getSize(new Vector3());
 
+    // Update volume `imageInfo` to reflect potentially new dimensions
+    const regionSizePx = regionPx.getSize(new Vector3());
     const { nrows, ncols } = computePackedAtlasDims(regionSizePx.z, regionSizePx.x, regionSizePx.y);
+    const volExtentPx = convertSubregionToPixels(
+      this.maxExtent,
+      new Vector3(levelShape[xi], levelShape[yi], levelShape[zi])
+    );
+    const volSizePx = volExtentPx.getSize(new Vector3());
+    const regionExtentPx = convertSubregionToPixels(vol.loadSpec.subregion, volSizePx);
+    vol.imageInfo = {
+      ...vol.imageInfo,
+      atlasTileDims: new Vector2(nrows, ncols),
+      volumeSize: volSizePx,
+      subregionSize: regionSizePx,
+      subregionOffset: regionExtentPx.min,
+    };
+    vol.updateDimensions();
 
     const storepath = vol.loadSpec.subpath + "/" + datasetPath;
     // do each channel on a worker
@@ -429,22 +444,6 @@ class OMEZarrLoader implements IVolumeLoader {
         worker.postMessage(msg);
       }
     }
-
-    // Update volume `imageInfo` to reflect potentially new dimensions
-    const volExtentPx = convertSubregionToPixels(
-      this.maxExtent,
-      new Vector3(levelShape[xi], levelShape[yi], levelShape[zi])
-    );
-    const volSizePx = volExtentPx.getSize(new Vector3());
-    const regionExtentPx = convertSubregionToPixels(vol.loadSpec.subregion, volSizePx);
-    vol.imageInfo = {
-      ...vol.imageInfo,
-      atlasTileDims: new Vector2(nrows, ncols),
-      volumeSize: volSizePx,
-      subregionSize: regionSizePx,
-      subregionOffset: regionExtentPx.min,
-    };
-    vol.updateDimensions();
   }
 }
 
