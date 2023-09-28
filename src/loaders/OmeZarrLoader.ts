@@ -14,6 +14,8 @@ import Volume, { ImageInfo } from "../Volume";
 import { FetchZarrMessage } from "../workers/FetchZarrWorker";
 import VolumeCache, { CacheStore } from "../VolumeCache";
 
+const MAX_ATLAS_DIMENSION = 2048;
+
 type CoordinateTransformation =
   | {
       type: "identity";
@@ -158,10 +160,6 @@ async function loadMetadata(store: HTTPStore): Promise<OMEZarrMetadata> {
 }
 
 function pickLevelToLoad(loadSpec: LoadSpec, multiscaleDims: number[][], dimIndexes: number[]): number {
-  if (loadSpec.multiscaleLevel) {
-    return loadSpec.multiscaleLevel;
-  }
-
   const size = loadSpec.subregion.getSize(new Vector3());
   const [zi, yi, xi] = dimIndexes.slice(-3);
 
@@ -171,7 +169,13 @@ function pickLevelToLoad(loadSpec: LoadSpec, multiscaleDims: number[][], dimInde
     Math.max(shape[xi] * size.x, 1),
   ]);
 
-  return estimateLevelForAtlas(spatialDims, loadSpec.maxAtlasDimension);
+  const autoLevel = estimateLevelForAtlas(spatialDims, MAX_ATLAS_DIMENSION);
+
+  if (loadSpec.multiscaleLevel) {
+    return Math.max(autoLevel, loadSpec.multiscaleLevel);
+  } else {
+    return autoLevel;
+  }
 }
 
 class OMEZarrLoader implements IVolumeLoader {
