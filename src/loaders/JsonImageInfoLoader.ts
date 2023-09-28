@@ -222,7 +222,8 @@ class JsonImageInfoLoader implements IVolumeLoader {
         }
       }
 
-      // if there were ANY cache misses then we need to request the batch
+      // if all channels were in cache then we can move on to the next
+      // image (batch) without requesting
       if (cacheHit) {
         continue;
       }
