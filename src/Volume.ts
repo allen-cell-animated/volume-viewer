@@ -130,7 +130,9 @@ export default class Volume {
   public imageInfo: ImageInfo;
   public loadSpec: LoadSpec;
   public loader?: IVolumeLoader;
-  private loadSpecRequired: LoadSpec;
+  // `LoadSpec` representing the minimum data required to display what's in the viewer (subregion, channels, etc.).
+  // Used to intelligently issue load requests whenever required by a state change. Modify with `updateRequiredData`.
+  private loadSpecRequired: Required<LoadSpec>;
   public channelLoadCallback?: PerChannelCallback;
   public imageMetadata: Record<string, unknown>;
   public name: string;
@@ -161,7 +163,13 @@ export default class Volume {
     this.imageInfo = imageInfo;
     this.name = this.imageInfo.name;
     this.loadSpec = loadSpec;
-    this.loadSpecRequired = { ...loadSpec, subregion: loadSpec.subregion.clone() };
+    this.loadSpecRequired = {
+      // Fill in defaults for optional properties
+      multiscaleLevel: 0,
+      channels: Array.from({ length: this.imageInfo.numChannels }, (_val, idx) => idx),
+      ...loadSpec,
+      subregion: loadSpec.subregion.clone(),
+    };
     this.loader = loader;
     // imageMetadata to be filled in by Volume Loaders
     this.imageMetadata = {};
@@ -231,7 +239,12 @@ export default class Volume {
     ) {
       // ...clone `loadSpecRequired` into `loadSpec` and load
       this.setUnloaded();
-      this.loadSpec = { ...this.loadSpecRequired, subregion: this.loadSpecRequired.subregion.clone() };
+      this.loadSpec = {
+        ...this.loadSpecRequired,
+        subregion: this.loadSpecRequired.subregion.clone(),
+        // preserve multiscale option from original `LoadSpec`, if any
+        multiscaleLevel: this.loadSpec.multiscaleLevel,
+      };
       this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
     }
   }

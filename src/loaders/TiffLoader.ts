@@ -99,7 +99,6 @@ class TiffLoader implements IVolumeLoader {
     const dims = getOMEDims(image0El);
 
     const d = new VolumeDims();
-    d.subpath = "";
     d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
     d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
     d.spaceUnit = dims.unit ? dims.unit : "micron";
@@ -107,7 +106,7 @@ class TiffLoader implements IVolumeLoader {
     return [d];
   }
 
-  async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
+  async createVolume(_loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
     const dims = await getDimsFromUrl(this.url);
     // compare with sizex, sizey
     //const width = image.getWidth();
@@ -147,7 +146,8 @@ class TiffLoader implements IVolumeLoader {
       },
     };
 
-    const vol = new Volume(imgdata, loadSpec, this);
+    // This loader uses no fields from `LoadSpec`. Initialize volume with defaults.
+    const vol = new Volume(imgdata, new LoadSpec(), this);
     vol.channelLoadCallback = onChannelLoaded;
     vol.imageMetadata = buildDefaultMetadata(imgdata);
 
@@ -157,9 +157,7 @@ class TiffLoader implements IVolumeLoader {
     return vol;
   }
 
-  async loadVolumeData(vol: Volume, _explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
-    vol.channelLoadCallback = onChannelLoaded;
-    //
+  async loadVolumeData(vol: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
     if (this.bytesPerSample === undefined || this.dimensionOrder === undefined) {
       const dims = await getDimsFromUrl(this.url);
 
@@ -192,7 +190,7 @@ class TiffLoader implements IVolumeLoader {
         onChannelLoaded?.(vol, channel);
         worker.terminate();
       };
-      worker.onerror = function (e) {
+      worker.onerror = (e) => {
         alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
       };
       worker.postMessage(params);

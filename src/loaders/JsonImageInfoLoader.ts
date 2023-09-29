@@ -1,4 +1,4 @@
-import { Vector2, Vector3 } from "three";
+import { Box3, Vector2, Vector3 } from "three";
 
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import { buildDefaultMetadata, convertSubregionToPixels } from "./VolumeLoaderUtils";
@@ -155,13 +155,31 @@ class JsonImageInfoLoader implements IVolumeLoader {
       this.time = loadSpec.time;
       this.jsonInfo = await this.getJsonImageInfo(loadSpec);
     }
+
+    let images = this.jsonInfo?.images;
+    if (!images) {
+      return;
+    }
+
+    const requestedChannels = loadSpec.channels;
+    if (requestedChannels) {
+      // If only some channels are requested, load only images which contain at least one requested channel
+      images = images.filter(({ channels }) => channels.some((ch) => ch in requestedChannels));
+    }
+
     // This regex removes everything after the last slash, so the url had better be simple.
     const urlPrefix = this.urls[this.time].replace(/[^/]*$/, "");
-    const images = this.jsonInfo?.images.map((element) => ({ ...element, name: urlPrefix + element.name }));
+    images = images.map((element) => ({ ...element, name: urlPrefix + element.name }));
 
-    if (images) {
-      JsonImageInfoLoader.loadVolumeAtlasData(vol, images, onChannelLoaded, this.cacheStore, this.cache);
-    }
+    vol.loadSpec = {
+      ...loadSpec,
+      // `subregion` and `multiscaleLevel` are unused by this loader
+      subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)),
+      multiscaleLevel: 0,
+      // include all channels in any loaded images
+      channels: images.flatMap(({ channels }) => channels),
+    };
+    JsonImageInfoLoader.loadVolumeAtlasData(vol, images, onChannelLoaded, this.cacheStore, this.cache);
   }
 
   /**
@@ -231,60 +249,62 @@ class JsonImageInfoLoader implements IVolumeLoader {
       // using Image is just a trick to download the bits as a png.
       // the Image will never be used again.
       const img: HTMLImageElement = new Image();
-      img.onerror = function () {
+
+      img.onerror = () => {
         console.log("ERROR LOADING " + url);
       };
-      img.onload = (function (thisbatch) {
-        return function (event: Event) {
-          //console.log("GOT ch " + me.src);
-          // extract pixels by drawing to canvas
-          const canvas = document.createElement("canvas");
-          // nice thing about this is i could downsample here
-          const w = Math.floor((event?.target as HTMLImageElement).naturalWidth);
-          const h = Math.floor((event?.target as HTMLImageElement).naturalHeight);
-          canvas.setAttribute("width", "" + w);
-          canvas.setAttribute("height", "" + h);
-          const ctx = canvas.getContext("2d");
-          if (!ctx) {
-            console.log("Error creating canvas 2d context for " + url);
-            return;
+
+      img.onload = (event) => {
+        //console.log("GOT ch " + me.src);
+        // extract pixels by drawing to canvas
+        const canvas = document.createElement("canvas");
+        // nice thing about this is i could downsample here
+        const w = Math.floor((event?.target as HTMLImageElement).naturalWidth);
+        const h = Math.floor((event?.target as HTMLImageElement).naturalHeight);
+        canvas.setAttribute("width", "" + w);
+        canvas.setAttribute("height", "" + h);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          console.log("Error creating canvas 2d context for " + url);
+          return;
+        }
+        ctx.globalCompositeOperation = "copy";
+        ctx.globalAlpha = 1.0;
+        ctx.drawImage(event?.target as CanvasImageSource, 0, 0, w, h);
+        // getImageData returns rgba.
+        // optimize: collapse rgba to single channel arrays
+        const iData = ctx.getImageData(0, 0, w, h);
+
+        const channelsBits: Uint8Array[] = [];
+
+        // allocate channels in batch
+        for (let ch = 0; ch < Math.min(batch.length, 4); ++ch) {
+          channelsBits.push(new Uint8Array(w * h));
+        }
+
+        // extract the data
+        for (let j = 0; j < Math.min(batch.length, 4); ++j) {
+          for (let px = 0; px < w * h; px++) {
+            channelsBits[j][px] = iData.data[px * 4 + j];
           }
-          ctx.globalCompositeOperation = "copy";
-          ctx.globalAlpha = 1.0;
-          ctx.drawImage(event?.target as CanvasImageSource, 0, 0, w, h);
-          // getImageData returns rgba.
-          // optimize: collapse rgba to single channel arrays
-          const iData = ctx.getImageData(0, 0, w, h);
+        }
 
-          const channelsBits: Uint8Array[] = [];
-          // allocate channels in batch
-          for (let ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
-            channelsBits.push(new Uint8Array(w * h));
-          }
-          // extract the data
-          for (let j = 0; j < Math.min(thisbatch.length, 4); ++j) {
-            for (let px = 0; px < w * h; px++) {
-              channelsBits[j][px] = iData.data[px * 4 + j];
-            }
-          }
+        // done with img, iData, and canvas now.
 
-          // done with img, iData, and canvas now.
+        for (let ch = 0; ch < Math.min(batch.length, 4); ++ch) {
+          volume.setChannelDataFromAtlas(batch[ch], channelsBits[ch], w, h);
 
-          for (let ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
-            volume.setChannelDataFromAtlas(thisbatch[ch], channelsBits[ch], w, h);
+          const cacheInsertDims = {
+            region: regionPx,
+            scale: 0,
+            time: volume.loadSpec.time,
+            channel: batch[ch],
+          };
+          cacheStore && cache?.insert(cacheStore, volume.channels[batch[ch]].volumeData, cacheInsertDims);
 
-            const cacheInsertDims = {
-              region: regionPx,
-              scale: 0,
-              time: volume.loadSpec.time,
-              channel: thisbatch[ch],
-            };
-            cacheStore && cache?.insert(cacheStore, volume.channels[thisbatch[ch]].volumeData, cacheInsertDims);
-
-            onChannelLoaded?.(volume, thisbatch[ch]);
-          }
-        };
-      })(batch);
+          onChannelLoaded?.(volume, batch[ch]);
+        }
+      };
       img.crossOrigin = "Anonymous";
       img.src = url;
       requests[url] = img;
