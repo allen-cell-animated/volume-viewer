@@ -61,7 +61,9 @@ self.onmessage = /*#__PURE__*/function () {
           dimensionOrder = e.data.dimensionOrder;
           bytesPerSample = e.data.bytesPerSample;
           _context.next = 9;
-          return (0,geotiff__WEBPACK_IMPORTED_MODULE_2__.fromUrl)(e.data.url);
+          return (0,geotiff__WEBPACK_IMPORTED_MODULE_2__.fromUrl)(e.data.url, {
+            allowFullFile: true
+          });
         case 9:
           tiff = _context.sent;
           // load the images of this channel from the tiff

@@ -409,6 +409,7 @@ var Channel = /*#__PURE__*/function () {
     value: function setFromVolumeData(bitsArray, vx, vy, vz, ax, ay) {
       this.dims = [vx, vy, vz];
       this.volumeData = bitsArray;
+      // TODO FIXME performance hit for shuffling the data and storing 2 versions of it (could do this in worker at least?)
       this.packToAtlas(vx, vy, vz, ax, ay);
       this.loaded = true;
       this.histogram = new _Histogram__WEBPACK_IMPORTED_MODULE_2__["default"](this.volumeData);
@@ -8925,7 +8926,7 @@ var convertImageInfo = function convertImageInfo(json) {
   };
 };
 var JsonImageInfoLoader = /*#__PURE__*/function () {
-  function JsonImageInfoLoader(urls) {
+  function JsonImageInfoLoader(urls, cache) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, JsonImageInfoLoader);
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "jsonInfo", null);
     if (Array.isArray(urls)) {
@@ -8934,6 +8935,7 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
       this.urls = [urls];
     }
     this.time = 0;
+    this.cache = cache;
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(JsonImageInfoLoader, [{
     key: "getJsonImageInfo",
@@ -8999,6 +9001,7 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
     key: "createVolume",
     value: function () {
       var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(loadSpec, onChannelLoaded) {
+        var _this$cache;
         var imageInfo, vol;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee3$(_context3) {
           while (1) switch (_context3.prev = _context3.next) {
@@ -9009,11 +9012,12 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
             case 3:
               this.jsonInfo = _context3.sent;
               imageInfo = convertImageInfo(this.jsonInfo);
+              this.cacheStore = (_this$cache = this.cache) === null || _this$cache === void 0 ? void 0 : _this$cache.addVolume(imageInfo.numChannels, Math.max(imageInfo.times, this.urls.length), [new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(imageInfo.subregionSize.x, imageInfo.subregionSize.y, imageInfo.subregionSize.z)]);
               vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imageInfo, loadSpec, this);
               vol.channelLoadCallback = onChannelLoaded;
               vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imageInfo);
               return _context3.abrupt("return", vol);
-            case 9:
+            case 10:
             case "end":
               return _context3.stop();
           }
@@ -9056,7 +9060,7 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
                 });
               });
               if (images) {
-                JsonImageInfoLoader.loadVolumeAtlasData(vol, images, onChannelLoaded);
+                JsonImageInfoLoader.loadVolumeAtlasData(vol, images, onChannelLoaded, this.cacheStore, this.cache);
               }
             case 9:
             case "end":
@@ -9090,13 +9094,43 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
      */
   }], [{
     key: "loadVolumeAtlasData",
-    value: function loadVolumeAtlasData(volume, imageArray, onChannelLoaded) {
+    value: function loadVolumeAtlasData(volume, imageArray, onChannelLoaded, cacheStore, cache) {
       var numImages = imageArray.length;
       var requests = {};
       //console.log("BEGIN DOWNLOAD DATA");
       var _loop = function _loop() {
         var url = imageArray[i].name;
         var batch = imageArray[i].channels;
+
+        // construct cache query
+        var regionPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.convertSubregionToPixels)(volume.loadSpec.subregion, volume.imageInfo.subregionSize);
+        var cacheQueryDims = {
+          region: regionPx,
+          time: volume.loadSpec.time,
+          scale: 0
+        };
+        // Because the data is fetched such that one fetch returns a whole batch,
+        // if any in batch is cached then they all should be. So if any in batch is NOT cached,
+        // then we will have to do a batch request. This logic works both ways because it's all or nothing.
+        var cacheHit = true;
+        for (var j = 0; j < Math.min(batch.length, 4); ++j) {
+          var chindex = batch[j];
+          var cacheResult = cacheStore && (cache === null || cache === void 0 ? void 0 : cache.get(cacheStore, chindex, cacheQueryDims));
+          if (cacheResult) {
+            volume.setChannelDataFromVolume(chindex, cacheResult);
+            onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(volume, chindex);
+          } else {
+            cacheHit = false;
+            // we can stop checking because we know we are going to have to fetch the whole batch
+            break;
+          }
+        }
+
+        // if all channels were in cache then we can move on to the next
+        // image (batch) without requesting
+        if (cacheHit) {
+          return "continue";
+        }
 
         // using Image is just a trick to download the bits as a png.
         // the Image will never be used again.
@@ -9131,9 +9165,9 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
               channelsBits.push(new Uint8Array(w * h));
             }
             // extract the data
-            for (var j = 0; j < Math.min(thisbatch.length, 4); ++j) {
+            for (var _j = 0; _j < Math.min(thisbatch.length, 4); ++_j) {
               for (var px = 0; px < w * h; px++) {
-                channelsBits[j][px] = iData.data[px * 4 + j];
+                channelsBits[_j][px] = iData.data[px * 4 + _j];
               }
             }
 
@@ -9141,6 +9175,13 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
 
             for (var _ch = 0; _ch < Math.min(thisbatch.length, 4); ++_ch) {
               volume.setChannelDataFromAtlas(thisbatch[_ch], channelsBits[_ch], w, h);
+              var cacheInsertDims = {
+                region: regionPx,
+                scale: 0,
+                time: volume.loadSpec.time,
+                channel: thisbatch[_ch]
+              };
+              cacheStore && (cache === null || cache === void 0 ? void 0 : cache.insert(cacheStore, volume.channels[thisbatch[_ch]].volumeData, cacheInsertDims));
               onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(volume, thisbatch[_ch]);
             }
           };
@@ -9150,7 +9191,8 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
         requests[url] = img;
       };
       for (var i = 0; i < numImages; ++i) {
-        _loop();
+        var _ret = _loop();
+        if (_ret === "continue") continue;
       }
       return requests;
     }
@@ -9574,10 +9616,22 @@ var OMEZarrLoader = /*#__PURE__*/function () {
         yi = _this$axesTCZYX$slice2[1],
         xi = _this$axesTCZYX$slice2[2];
       var regionPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.convertSubregionToPixels)(subregion, new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(levelShape[xi], levelShape[yi], levelShape[zi]));
+
+      // Update volume `imageInfo` to reflect potentially new dimensions
       var regionSizePx = regionPx.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
       var _computePackedAtlasDi2 = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.computePackedAtlasDims)(regionSizePx.z, regionSizePx.x, regionSizePx.y),
         nrows = _computePackedAtlasDi2.nrows,
         ncols = _computePackedAtlasDi2.ncols;
+      var volExtentPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.convertSubregionToPixels)(this.maxExtent, new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(levelShape[xi], levelShape[yi], levelShape[zi]));
+      var volSizePx = volExtentPx.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
+      var regionExtentPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.convertSubregionToPixels)(vol.loadSpec.subregion, volSizePx);
+      vol.imageInfo = _objectSpread(_objectSpread({}, vol.imageInfo), {}, {
+        atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_10__.Vector2(nrows, ncols),
+        volumeSize: volSizePx,
+        subregionSize: regionSizePx,
+        subregionOffset: regionExtentPx.min
+      });
+      vol.updateDimensions();
       var storepath = vol.loadSpec.subpath + "/" + datasetPath;
       // do each channel on a worker
       var _loop = function _loop() {
@@ -9627,18 +9681,6 @@ var OMEZarrLoader = /*#__PURE__*/function () {
       for (var i = 0; i < numChannels; ++i) {
         _loop();
       }
-
-      // Update volume `imageInfo` to reflect potentially new dimensions
-      var volExtentPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.convertSubregionToPixels)(this.maxExtent, new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(levelShape[xi], levelShape[yi], levelShape[zi]));
-      var volSizePx = volExtentPx.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
-      var regionExtentPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.convertSubregionToPixels)(vol.loadSpec.subregion, volSizePx);
-      vol.imageInfo = _objectSpread(_objectSpread({}, vol.imageInfo), {}, {
-        atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_10__.Vector2(nrows, ncols),
-        volumeSize: volSizePx,
-        subregionSize: regionSizePx,
-        subregionOffset: regionExtentPx.min
-      });
-      vol.updateDimensions();
     }
   }]);
   return OMEZarrLoader;
@@ -9863,7 +9905,9 @@ function _getDimsFromUrl() {
       while (1) switch (_context5.prev = _context5.next) {
         case 0:
           _context5.next = 2;
-          return (0,geotiff__WEBPACK_IMPORTED_MODULE_8__.fromUrl)(url);
+          return (0,geotiff__WEBPACK_IMPORTED_MODULE_8__.fromUrl)(url, {
+            allowFullFile: true
+          });
         case 2:
           tiff = _context5.sent;
           _context5.next = 5;
@@ -9899,7 +9943,9 @@ var TiffLoader = /*#__PURE__*/function () {
           while (1) switch (_context.prev = _context.next) {
             case 0:
               _context.next = 2;
-              return (0,geotiff__WEBPACK_IMPORTED_MODULE_8__.fromUrl)(this.url);
+              return (0,geotiff__WEBPACK_IMPORTED_MODULE_8__.fromUrl)(this.url, {
+                allowFullFile: true
+              });
             case 2:
               tiff = _context.sent;
               _context.next = 5;
@@ -93462,7 +93508,7 @@ __webpack_require__.r(__webpack_exports__);
 // special loader really just for this demo app but lives with the other loaders
 
 
-var CACHE_MAX_SIZE = 500000000;
+var CACHE_MAX_SIZE = 1000000000;
 var PLAYBACK_INTERVAL = 80;
 var TEST_DATA = {
   timeSeries: {
@@ -93969,7 +94015,10 @@ function onChannelDataArrived(v, channelIndex) {
 
   currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
   view3D.onVolumeData(currentVol, [channelIndex]);
-  view3D.setVolumeChannelEnabled(currentVol, channelIndex, channelIndex < 3);
+  // removing this line let me turn channels on and off during playback when new data was still arriving.
+  // it may be reinstated later as we refine the caching/prefetching strategy
+  //view3D.setVolumeChannelEnabled(currentVol, channelIndex, channelIndex < 3);
+
   view3D.updateActiveChannels(currentVol);
   view3D.updateLuts(currentVol);
   if (currentVol.isLoaded()) {
@@ -94092,7 +94141,7 @@ function createLoader(data) {
       for (var t = 0; t <= times; t++) {
         frameUrls.push(data.url.replace("%%", t.toString()));
       }
-      return new _src__WEBPACK_IMPORTED_MODULE_4__.JsonImageInfoLoader(frameUrls);
+      return new _src__WEBPACK_IMPORTED_MODULE_4__.JsonImageInfoLoader(frameUrls, volumeCache);
     default:
       throw new Error("Unknown loader type: " + data.type);
   }
