@@ -6158,6 +6158,9 @@ var getDefaultImageInfo = function getDefaultImageInfo() {
  * @param {ImageInfo} imageInfo
  */
 var Volume = /*#__PURE__*/function () {
+  // `LoadSpec` representing the minimum data required to display what's in the viewer (subregion, channels, etc.).
+  // Used to intelligently issue load requests whenever required by a state change. Modify with `updateRequiredData`.
+
   function Volume() {
     var imageInfo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : getDefaultImageInfo();
     var loadSpec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__.LoadSpec();
@@ -6167,7 +6170,15 @@ var Volume = /*#__PURE__*/function () {
     this.imageInfo = imageInfo;
     this.name = this.imageInfo.name;
     this.loadSpec = loadSpec;
-    this.loadSpecRequired = _objectSpread(_objectSpread({}, loadSpec), {}, {
+    this.loadSpecRequired = _objectSpread(_objectSpread({
+      // Fill in defaults for optional properties
+      multiscaleLevel: 0,
+      channels: Array.from({
+        length: this.imageInfo.numChannels
+      }, function (_val, idx) {
+        return idx;
+      })
+    }, loadSpec), {}, {
       subregion: loadSpec.subregion.clone()
     });
     this.loader = loader;
@@ -6237,7 +6248,9 @@ var Volume = /*#__PURE__*/function () {
         // ...clone `loadSpecRequired` into `loadSpec` and load
         this.setUnloaded();
         this.loadSpec = _objectSpread(_objectSpread({}, this.loadSpecRequired), {}, {
-          subregion: this.loadSpecRequired.subregion.clone()
+          subregion: this.loadSpecRequired.subregion.clone(),
+          // preserve multiscale option from original `LoadSpec`, if any
+          multiscaleLevel: this.loadSpec.multiscaleLevel
         });
         (_this$loader = this.loader) === null || _this$loader === void 0 ? void 0 : _this$loader.loadVolumeData(this, undefined, onChannelLoaded);
       }
@@ -8822,18 +8835,16 @@ __webpack_require__.r(__webpack_exports__);
 
 var LoadSpec = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__["default"])(function LoadSpec() {
   (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, LoadSpec);
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "subpath", "");
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "scene", 0);
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "time", 0);
-  // sub-region; if not specified, the entire volume is loaded
-  // specify as floats between 0 and 1
+  /** Subregion of volume to load. If not specified, the entire volume is loaded. Specify as floats between 0-1. */
   (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "subregion", new three__WEBPACK_IMPORTED_MODULE_3__.Box3(new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(1, 1, 1)));
 });
 function loadSpecToString(spec) {
   var _spec$subregion = spec.subregion,
     min = _spec$subregion.min,
     max = _spec$subregion.max;
-  return "".concat(spec.subpath, ":").concat(spec.scene, ":").concat(spec.time, ":x(").concat(min.x, ",").concat(max.x, "):y(").concat(min.y, ",").concat(max.y, "):z(").concat(min.z, ",").concat(max.z, ")");
+  return "".concat(spec.scene, ":").concat(spec.multiscaleLevel, ":").concat(spec.time, ":x(").concat(min.x, ",").concat(max.x, "):y(").concat(min.y, ",").concat(max.y, "):z(").concat(min.z, ",").concat(max.z, ")");
 }
 var VolumeDims = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__["default"])(function VolumeDims() {
   (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, VolumeDims);
@@ -9033,7 +9044,7 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
     value: function () {
       var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee4(vol, explicitLoadSpec, onChannelLoaded) {
         var _this$jsonInfo;
-        var loadSpec, urlPrefix, images;
+        var loadSpec, images, requestedChannels, urlPrefix;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee4$(_context4) {
           while (1) switch (_context4.prev = _context4.next) {
             case 0:
@@ -9052,17 +9063,43 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
             case 5:
               this.jsonInfo = _context4.sent;
             case 6:
+              images = (_this$jsonInfo = this.jsonInfo) === null || _this$jsonInfo === void 0 ? void 0 : _this$jsonInfo.images;
+              if (images) {
+                _context4.next = 9;
+                break;
+              }
+              return _context4.abrupt("return");
+            case 9:
+              requestedChannels = loadSpec.channels;
+              if (requestedChannels) {
+                // If only some channels are requested, load only images which contain at least one requested channel
+                images = images.filter(function (_ref) {
+                  var channels = _ref.channels;
+                  return channels.some(function (ch) {
+                    return ch in requestedChannels;
+                  });
+                });
+              }
+
               // This regex removes everything after the last slash, so the url had better be simple.
               urlPrefix = this.urls[this.time].replace(/[^/]*$/, "");
-              images = (_this$jsonInfo = this.jsonInfo) === null || _this$jsonInfo === void 0 ? void 0 : _this$jsonInfo.images.map(function (element) {
+              images = images.map(function (element) {
                 return _objectSpread(_objectSpread({}, element), {}, {
                   name: urlPrefix + element.name
                 });
               });
-              if (images) {
-                JsonImageInfoLoader.loadVolumeAtlasData(vol, images, onChannelLoaded, this.cacheStore, this.cache);
-              }
-            case 9:
+              vol.loadSpec = _objectSpread(_objectSpread({}, loadSpec), {}, {
+                // `subregion` and `multiscaleLevel` are unused by this loader
+                subregion: new three__WEBPACK_IMPORTED_MODULE_8__.Box3(new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1, 1, 1)),
+                multiscaleLevel: 0,
+                // include all channels in any loaded images
+                channels: images.flatMap(function (_ref2) {
+                  var channels = _ref2.channels;
+                  return channels;
+                })
+              });
+              JsonImageInfoLoader.loadVolumeAtlasData(vol, images, onChannelLoaded, this.cacheStore, this.cache);
+            case 15:
             case "end":
               return _context4.stop();
           }
@@ -9138,54 +9175,54 @@ var JsonImageInfoLoader = /*#__PURE__*/function () {
         img.onerror = function () {
           console.log("ERROR LOADING " + url);
         };
-        img.onload = function (thisbatch) {
-          return function (event) {
-            //console.log("GOT ch " + me.src);
-            // extract pixels by drawing to canvas
-            var canvas = document.createElement("canvas");
-            // nice thing about this is i could downsample here
-            var w = Math.floor((event === null || event === void 0 ? void 0 : event.target).naturalWidth);
-            var h = Math.floor((event === null || event === void 0 ? void 0 : event.target).naturalHeight);
-            canvas.setAttribute("width", "" + w);
-            canvas.setAttribute("height", "" + h);
-            var ctx = canvas.getContext("2d");
-            if (!ctx) {
-              console.log("Error creating canvas 2d context for " + url);
-              return;
-            }
-            ctx.globalCompositeOperation = "copy";
-            ctx.globalAlpha = 1.0;
-            ctx.drawImage(event === null || event === void 0 ? void 0 : event.target, 0, 0, w, h);
-            // getImageData returns rgba.
-            // optimize: collapse rgba to single channel arrays
-            var iData = ctx.getImageData(0, 0, w, h);
-            var channelsBits = [];
-            // allocate channels in batch
-            for (var ch = 0; ch < Math.min(thisbatch.length, 4); ++ch) {
-              channelsBits.push(new Uint8Array(w * h));
-            }
-            // extract the data
-            for (var _j = 0; _j < Math.min(thisbatch.length, 4); ++_j) {
-              for (var px = 0; px < w * h; px++) {
-                channelsBits[_j][px] = iData.data[px * 4 + _j];
-              }
-            }
+        img.onload = function (event) {
+          //console.log("GOT ch " + me.src);
+          // extract pixels by drawing to canvas
+          var canvas = document.createElement("canvas");
+          // nice thing about this is i could downsample here
+          var w = Math.floor((event === null || event === void 0 ? void 0 : event.target).naturalWidth);
+          var h = Math.floor((event === null || event === void 0 ? void 0 : event.target).naturalHeight);
+          canvas.setAttribute("width", "" + w);
+          canvas.setAttribute("height", "" + h);
+          var ctx = canvas.getContext("2d");
+          if (!ctx) {
+            console.log("Error creating canvas 2d context for " + url);
+            return;
+          }
+          ctx.globalCompositeOperation = "copy";
+          ctx.globalAlpha = 1.0;
+          ctx.drawImage(event === null || event === void 0 ? void 0 : event.target, 0, 0, w, h);
+          // getImageData returns rgba.
+          // optimize: collapse rgba to single channel arrays
+          var iData = ctx.getImageData(0, 0, w, h);
+          var channelsBits = [];
 
-            // done with img, iData, and canvas now.
+          // allocate channels in batch
+          for (var ch = 0; ch < Math.min(batch.length, 4); ++ch) {
+            channelsBits.push(new Uint8Array(w * h));
+          }
 
-            for (var _ch = 0; _ch < Math.min(thisbatch.length, 4); ++_ch) {
-              volume.setChannelDataFromAtlas(thisbatch[_ch], channelsBits[_ch], w, h);
-              var cacheInsertDims = {
-                region: regionPx,
-                scale: 0,
-                time: volume.loadSpec.time,
-                channel: thisbatch[_ch]
-              };
-              cacheStore && (cache === null || cache === void 0 ? void 0 : cache.insert(cacheStore, volume.channels[thisbatch[_ch]].volumeData, cacheInsertDims));
-              onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(volume, thisbatch[_ch]);
+          // extract the data
+          for (var _j = 0; _j < Math.min(batch.length, 4); ++_j) {
+            for (var px = 0; px < w * h; px++) {
+              channelsBits[_j][px] = iData.data[px * 4 + _j];
             }
-          };
-        }(batch);
+          }
+
+          // done with img, iData, and canvas now.
+
+          for (var _ch = 0; _ch < Math.min(batch.length, 4); ++_ch) {
+            volume.setChannelDataFromAtlas(batch[_ch], channelsBits[_ch], w, h);
+            var cacheInsertDims = {
+              region: regionPx,
+              scale: 0,
+              time: volume.loadSpec.time,
+              channel: batch[_ch]
+            };
+            cacheStore && (cache === null || cache === void 0 ? void 0 : cache.insert(cacheStore, volume.channels[batch[_ch]].volumeData, cacheInsertDims));
+            onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(volume, batch[_ch]);
+          }
+        };
         img.crossOrigin = "Anonymous";
         img.src = url;
         requests[url] = img;
@@ -9231,6 +9268,9 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
 
@@ -9314,12 +9354,12 @@ function _loadLevelShapes() {
         case 0:
           datasets = multiscale.datasets, axes = multiscale.axes;
           shapePromises = datasets.map( /*#__PURE__*/function () {
-            var _ref5 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee4(_ref4) {
+            var _ref4 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee4(_ref3) {
               var path, level, shape;
               return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee4$(_context4) {
                 while (1) switch (_context4.prev = _context4.next) {
                   case 0:
-                    path = _ref4.path;
+                    path = _ref3.path;
                     _context4.next = 3;
                     return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openArray)({
                       store: store,
@@ -9339,8 +9379,8 @@ function _loadLevelShapes() {
                 }
               }, _callee4);
             }));
-            return function (_x9) {
-              return _ref5.apply(this, arguments);
+            return function (_x8) {
+              return _ref4.apply(this, arguments);
             };
           }());
           _context5.next = 4;
@@ -9355,17 +9395,17 @@ function _loadLevelShapes() {
   }));
   return _loadLevelShapes.apply(this, arguments);
 }
-function loadMetadata(_x3, _x4) {
+function loadMetadata(_x3) {
   return _loadMetadata.apply(this, arguments);
 }
 function _loadMetadata() {
-  _loadMetadata = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee6(store, loadSpec) {
+  _loadMetadata = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee6(store) {
     var data;
     return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee6$(_context6) {
       while (1) switch (_context6.prev = _context6.next) {
         case 0:
           _context6.next = 2;
-          return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openGroup)(store, loadSpec.subpath, "r");
+          return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openGroup)(store, null, "r");
         case 2:
           data = _context6.sent;
           _context6.next = 5;
@@ -9380,17 +9420,7 @@ function _loadMetadata() {
   }));
   return _loadMetadata.apply(this, arguments);
 }
-function pickLevelToLoad(loadSpec, multiscaleDims, _ref2, dimIndexes) {
-  var datasets = _ref2.datasets;
-  var numlevels = multiscaleDims.length;
-  // default to lowest level until we find the match
-  var levelToLoad = numlevels - 1;
-  for (var i = 0; i < numlevels; ++i) {
-    if (datasets[i].path == loadSpec.subpath) {
-      levelToLoad = i;
-      break;
-    }
-  }
+function pickLevelToLoad(loadSpec, multiscaleDims, dimIndexes) {
   var size = loadSpec.subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
   var _dimIndexes$slice = dimIndexes.slice(-3),
     _dimIndexes$slice2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_3__["default"])(_dimIndexes$slice, 3),
@@ -9401,11 +9431,10 @@ function pickLevelToLoad(loadSpec, multiscaleDims, _ref2, dimIndexes) {
     return [Math.max(shape[zi] * size.z, 1), Math.max(shape[yi] * size.y, 1), Math.max(shape[xi] * size.x, 1)];
   });
   var optimalLevel = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.estimateLevelForAtlas)(spatialDims, MAX_ATLAS_DIMENSION);
-  // assume all levels are decreasing in size.  If a larger level is optimal then use it:
-  if (optimalLevel < levelToLoad) {
-    return optimalLevel;
+  if (loadSpec.multiscaleLevel) {
+    return Math.max(optimalLevel, loadSpec.multiscaleLevel);
   } else {
-    return levelToLoad;
+    return optimalLevel;
   }
 }
 var OMEZarrLoader = /*#__PURE__*/function () {
@@ -9424,7 +9453,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
             case 0:
               store = new zarr__WEBPACK_IMPORTED_MODULE_6__.HTTPStore(this.url);
               _context2.next = 3;
-              return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openGroup)(store, loadSpec.subpath, "r");
+              return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openGroup)(store, null, "r");
             case 3:
               data = _context2.sent;
               _context2.next = 6;
@@ -9441,7 +9470,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               timeUnitName = axisTCZYX[0] > -1 ? axes[axisTCZYX[0]].unit : undefined;
               timeUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
               dimsPromises = datasets.map( /*#__PURE__*/function () {
-                var _ref3 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee(dataset) {
+                var _ref2 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee(dataset) {
                   var level, shape, scale5d, d, i;
                   return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee$(_context) {
                     while (1) switch (_context.prev = _context.next) {
@@ -9460,7 +9489,6 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                         }
                         scale5d = getScale(dataset);
                         d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.VolumeDims();
-                        d.subpath = loadSpec.subpath;
                         d.shape = [-1, -1, -1, -1, -1];
                         for (i = 0; i < d.shape.length; ++i) {
                           if (axisTCZYX[i] > -1) {
@@ -9472,14 +9500,14 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                         d.timeUnit = timeUnitSymbol;
                         d.dataType = "uint8";
                         return _context.abrupt("return", d);
-                      case 15:
+                      case 14:
                       case "end":
                         return _context.stop();
                     }
                   }, _callee);
                 }));
-                return function (_x6) {
-                  return _ref3.apply(this, arguments);
+                return function (_x5) {
+                  return _ref2.apply(this, arguments);
                 };
               }());
               return _context2.abrupt("return", Promise.all(dimsPromises));
@@ -9489,7 +9517,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
           }
         }, _callee2, this);
       }));
-      function loadDims(_x5) {
+      function loadDims(_x4) {
         return _loadDims.apply(this, arguments);
       }
       return loadDims;
@@ -9506,7 +9534,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               // Load metadata and dimensions.
               store = new zarr__WEBPACK_IMPORTED_MODULE_6__.HTTPStore(this.url);
               _context3.next = 3;
-              return loadMetadata(store, loadSpec);
+              return loadMetadata(store);
             case 3:
               this.metadata = _context3.sent;
               imageIndex = imageIndexFromLoadSpec(loadSpec, this.metadata.multiscales);
@@ -9523,7 +9551,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               hasT = t > -1;
               hasC = c > -1;
               shape0 = this.multiscaleDims[0];
-              levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, multiscale, this.axesTCZYX);
+              levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, this.axesTCZYX);
               shapeLv = this.multiscaleDims[levelToLoad];
               scaleSizes = this.multiscaleDims.map(function (shape) {
                 return new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(shape[x], shape[y], shape[z]);
@@ -9585,7 +9613,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
           }
         }, _callee3, this);
       }));
-      function createVolume(_x7, _x8) {
+      function createVolume(_x6, _x7) {
         return _createVolume.apply(this, arguments);
       }
       return createVolume;
@@ -9607,7 +9635,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
       var multiscale = this.metadata.multiscales[imageIndex];
       var levelToLoad = pickLevelToLoad(_objectSpread(_objectSpread({}, vol.loadSpec), {}, {
         subregion: subregion
-      }), this.multiscaleDims, multiscale, this.axesTCZYX);
+      }), this.multiscaleDims, this.axesTCZYX);
       var datasetPath = multiscale.datasets[levelToLoad].path;
       var levelShape = this.multiscaleDims[levelToLoad];
       var _this$axesTCZYX$slice = this.axesTCZYX.slice(-3),
@@ -9632,54 +9660,65 @@ var OMEZarrLoader = /*#__PURE__*/function () {
         subregionOffset: regionExtentPx.min
       });
       vol.updateDimensions();
-      var storepath = vol.loadSpec.subpath + "/" + datasetPath;
+      var channelIndexes = vol.loadSpec.channels || Array.from({
+        length: numChannels
+      }, function (_val, idx) {
+        return idx;
+      });
       // do each channel on a worker
-      var _loop = function _loop() {
-        var _this$cache2;
-        var cacheQueryDims = {
-          region: regionPx,
-          time: vol.loadSpec.time,
-          scale: levelToLoad
-        };
-        var cacheResult = _this.cacheStore && ((_this$cache2 = _this.cache) === null || _this$cache2 === void 0 ? void 0 : _this$cache2.get(_this.cacheStore, i, cacheQueryDims));
-        if (cacheResult) {
-          vol.setChannelDataFromVolume(i, cacheResult);
-          onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(vol, i);
-        } else {
-          var worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchZarrWorker_ts"), __webpack_require__.b));
-          worker.onmessage = function (e) {
-            var _this$cache3;
-            var u8 = e.data.data;
-            var channel = e.data.channel;
-            var cacheInsertDims = {
-              region: regionPx,
-              scale: levelToLoad,
-              time: vol.loadSpec.time,
-              channel: channel
+      var _iterator = _createForOfIteratorHelper(channelIndexes),
+        _step;
+      try {
+        var _loop = function _loop() {
+          var _this$cache2;
+          var i = _step.value;
+          var cacheQueryDims = {
+            region: regionPx,
+            time: vol.loadSpec.time,
+            scale: levelToLoad
+          };
+          var cacheResult = _this.cacheStore && ((_this$cache2 = _this.cache) === null || _this$cache2 === void 0 ? void 0 : _this$cache2.get(_this.cacheStore, i, cacheQueryDims));
+          if (cacheResult) {
+            vol.setChannelDataFromVolume(i, cacheResult);
+            onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(vol, i);
+          } else {
+            var worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchZarrWorker_ts"), __webpack_require__.b));
+            worker.onmessage = function (e) {
+              var _this$cache3;
+              var u8 = e.data.data;
+              var channel = e.data.channel;
+              var cacheInsertDims = {
+                region: regionPx,
+                scale: levelToLoad,
+                time: vol.loadSpec.time,
+                channel: channel
+              };
+              _this.cacheStore && ((_this$cache3 = _this.cache) === null || _this$cache3 === void 0 ? void 0 : _this$cache3.insert(_this.cacheStore, u8, cacheInsertDims));
+              vol.setChannelDataFromVolume(channel, u8);
+              onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(vol, channel);
+              worker.terminate();
             };
-            _this.cacheStore && ((_this$cache3 = _this.cache) === null || _this$cache3 === void 0 ? void 0 : _this$cache3.insert(_this.cacheStore, u8, cacheInsertDims));
-            vol.setChannelDataFromVolume(channel, u8);
-            onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(vol, channel);
-            worker.terminate();
-          };
-          worker.onerror = function (e) {
-            alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
-          };
-          var msg = {
-            url: _this.url,
-            spec: _objectSpread(_objectSpread({}, vol.loadSpec), {}, {
+            worker.onerror = function (e) {
+              alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
+            };
+            var msg = {
+              url: _this.url,
               subregion: regionPx,
-              time: Math.min(vol.loadSpec.time, times)
-            }),
-            channel: i,
-            path: storepath,
-            axesTCZYX: _this.axesTCZYX
-          };
-          worker.postMessage(msg);
+              time: Math.min(vol.loadSpec.time, times),
+              channel: i,
+              path: datasetPath,
+              axesTCZYX: _this.axesTCZYX
+            };
+            worker.postMessage(msg);
+          }
+        };
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          _loop();
         }
-      };
-      for (var i = 0; i < numChannels; ++i) {
-        _loop();
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
       }
     }
   }]);
@@ -9752,7 +9791,7 @@ var OpenCellLoader = /*#__PURE__*/function () {
   }, {
     key: "createVolume",
     value: function () {
-      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(loadSpec, onChannelLoaded) {
+      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(_loadSpec, onChannelLoaded) {
         var numChannels, chnames, imgdata, vol;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee2$(_context2) {
           while (1) switch (_context2.prev = _context2.next) {
@@ -9778,7 +9817,8 @@ var OpenCellLoader = /*#__PURE__*/function () {
                   rotation: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0)
                 }
               }; // got some data, now let's construct the volume.
-              vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata, loadSpec, this);
+              // This loader uses no fields from `LoadSpec`. Initialize volume with defaults.
+              vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata, new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_4__.LoadSpec(), this);
               vol.channelLoadCallback = onChannelLoaded;
               vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_5__.buildDefaultMetadata)(imgdata);
               return _context2.abrupt("return", vol);
@@ -9795,7 +9835,7 @@ var OpenCellLoader = /*#__PURE__*/function () {
     }()
   }, {
     key: "loadVolumeData",
-    value: function loadVolumeData(vol, _explicitLoadSpec, onChannelLoaded) {
+    value: function loadVolumeData(vol, _loadSpec, onChannelLoaded) {
       // HQTILE or LQTILE
       // make a json metadata dict for the two channels:
       var urls = [{
@@ -9957,13 +9997,12 @@ var TiffLoader = /*#__PURE__*/function () {
               image0El = omeEl.getElementsByTagName("Image")[0];
               dims = getOMEDims(image0El);
               d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__.VolumeDims();
-              d.subpath = "";
               d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
               d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
               d.spaceUnit = dims.unit ? dims.unit : "micron";
               d.dataType = dims.pixeltype ? dims.pixeltype : "uint8";
               return _context.abrupt("return", [d]);
-            case 17:
+            case 16:
             case "end":
               return _context.stop();
           }
@@ -9977,7 +10016,7 @@ var TiffLoader = /*#__PURE__*/function () {
   }, {
     key: "createVolume",
     value: function () {
-      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee2(loadSpec, onChannelLoaded) {
+      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee2(_loadSpec, onChannelLoaded) {
         var dims, _computePackedAtlasDi, nrows, ncols, targetSize, tilesizex, tilesizey, imgdata, vol;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee2$(_context2) {
           while (1) switch (_context2.prev = _context2.next) {
@@ -10013,8 +10052,8 @@ var TiffLoader = /*#__PURE__*/function () {
                   translation: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
                   rotation: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0)
                 }
-              };
-              vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imgdata, loadSpec, this);
+              }; // This loader uses no fields from `LoadSpec`. Initialize volume with defaults.
+              vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imgdata, new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_5__.LoadSpec(), this);
               vol.channelLoadCallback = onChannelLoaded;
               vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imgdata);
               this.dimensionOrder = dims.dimensionorder;
@@ -10034,25 +10073,23 @@ var TiffLoader = /*#__PURE__*/function () {
   }, {
     key: "loadVolumeData",
     value: function () {
-      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(vol, _explicitLoadSpec, onChannelLoaded) {
+      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee3(vol, loadSpec, onChannelLoaded) {
         var _this = this;
         var dims, imageInfo, _loop, channel;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee3$(_context4) {
           while (1) switch (_context4.prev = _context4.next) {
             case 0:
-              vol.channelLoadCallback = onChannelLoaded;
-              //
               if (!(this.bytesPerSample === undefined || this.dimensionOrder === undefined)) {
-                _context4.next = 7;
+                _context4.next = 6;
                 break;
               }
-              _context4.next = 4;
+              _context4.next = 3;
               return getDimsFromUrl(this.url);
-            case 4:
+            case 3:
               dims = _context4.sent;
               this.dimensionOrder = dims.dimensionorder;
               this.bytesPerSample = getBytesPerSample(dims.pixeltype);
-            case 7:
+            case 6:
               imageInfo = vol.imageInfo; // do each channel on a worker?
               _loop = /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _loop() {
                 var params, worker;
@@ -10091,20 +10128,20 @@ var TiffLoader = /*#__PURE__*/function () {
                 }, _loop);
               });
               channel = 0;
-            case 10:
+            case 9:
               if (!(channel < imageInfo.numChannels)) {
-                _context4.next = 15;
+                _context4.next = 14;
                 break;
               }
-              return _context4.delegateYield(_loop(), "t0", 12);
-            case 12:
+              return _context4.delegateYield(_loop(), "t0", 11);
+            case 11:
               ++channel;
-              _context4.next = 10;
+              _context4.next = 9;
               break;
-            case 15:
+            case 14:
               this.dimensionOrder = undefined;
               this.bytesPerSample = undefined;
-            case 17:
+            case 16:
             case "end":
               return _context4.stop();
           }

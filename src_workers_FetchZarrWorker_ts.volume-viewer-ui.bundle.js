@@ -39,11 +39,11 @@ function convertChannel(channelData, dtype) {
 }
 self.onmessage = /*#__PURE__*/function () {
   var _ref = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().mark(function _callee(e) {
-    var time, channelIndex, axesTCZYX, store, level, _e$data$spec$subregio, min, max, unorderedSpec, specLen, sliceSpec, channel, u8, results;
+    var time, channelIndex, axesTCZYX, store, level, _e$data$subregion, min, max, unorderedSpec, specLen, sliceSpec, channel, u8, results;
     return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
-          time = e.data.spec.time;
+          time = e.data.time;
           channelIndex = e.data.channel;
           axesTCZYX = e.data.axesTCZYX;
           store = new zarr__WEBPACK_IMPORTED_MODULE_2__.HTTPStore(e.data.url);
@@ -56,7 +56,7 @@ self.onmessage = /*#__PURE__*/function () {
         case 6:
           level = _context.sent;
           // build slice spec
-          _e$data$spec$subregio = e.data.spec.subregion, min = _e$data$spec$subregio.min, max = _e$data$spec$subregio.max;
+          _e$data$subregion = e.data.subregion, min = _e$data$subregion.min, max = _e$data$subregion.max;
           unorderedSpec = [time, channelIndex, (0,zarr__WEBPACK_IMPORTED_MODULE_2__.slice)(min.z, max.z), (0,zarr__WEBPACK_IMPORTED_MODULE_2__.slice)(min.y, max.y), (0,zarr__WEBPACK_IMPORTED_MODULE_2__.slice)(min.x, max.x)];
           specLen = 3 + Number(axesTCZYX[0] > -1) + Number(axesTCZYX[1] > -1);
           sliceSpec = Array(specLen);
