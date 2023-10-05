@@ -1,5 +1,5 @@
-import { HTTPStore, ZarrArray, full, openArray, openGroup } from "zarr";
-import { Box3, ConeGeometry, Vector2, Vector3 } from "three";
+import { HTTPStore, ZarrArray, openArray, openGroup } from "zarr";
+import { Box3, Vector2, Vector3 } from "three";
 
 import Volume, { ImageInfo } from "../Volume";
 import VolumeCache, { CacheStore } from "../VolumeCache";
