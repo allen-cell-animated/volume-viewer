@@ -284,10 +284,9 @@ class OMEZarrLoader implements IVolumeLoader {
     const pxSize0 = pxDims0.getSize(new Vector3());
 
     // compute rows and cols and atlas width and ht, given tw and th
-    const { nrows, ncols } = computePackedAtlasDims(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
-    const atlaswidth = ncols * pxSizeLv.x;
-    const atlasheight = nrows * pxSizeLv.y;
-    console.log("atlas width and height: " + atlaswidth + " " + atlasheight);
+    const atlasDims = computePackedAtlasDims(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
+    const atlasSize = atlasDims.clone().multiply(new Vector2(pxSizeLv.x, pxSizeLv.y));
+    console.log("atlas width and height: " + atlasSize.x + " " + atlasSize.y);
 
     const displayMetadata = this.metadata.omero;
     const chnames: string[] = [];
@@ -299,7 +298,7 @@ class OMEZarrLoader implements IVolumeLoader {
       name: displayMetadata.name,
 
       originalSize: pxSize0,
-      atlasTileDims: new Vector2(nrows, ncols),
+      atlasTileDims: atlasDims,
       volumeSize: pxSizeLv,
       subregionSize: pxSizeLv.clone(),
       subregionOffset: new Vector3(0, 0, 0),
@@ -359,7 +358,7 @@ class OMEZarrLoader implements IVolumeLoader {
 
     // Update volume `imageInfo` to reflect potentially new dimensions
     const regionSizePx = regionPx.getSize(new Vector3());
-    const { nrows, ncols } = computePackedAtlasDims(regionSizePx.z, regionSizePx.x, regionSizePx.y);
+    const atlasDims = computePackedAtlasDims(regionSizePx.z, regionSizePx.x, regionSizePx.y);
     const volExtentPx = convertSubregionToPixels(
       this.maxExtent,
       new Vector3(levelShape[xi], levelShape[yi], levelShape[zi])
@@ -368,7 +367,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const regionExtentPx = convertSubregionToPixels(vol.loadSpec.subregion, volSizePx);
     vol.imageInfo = {
       ...vol.imageInfo,
-      atlasTileDims: new Vector2(nrows, ncols),
+      atlasTileDims: atlasDims,
       volumeSize: volSizePx,
       subregionSize: regionSizePx,
       subregionOffset: regionExtentPx.min,
