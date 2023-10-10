@@ -1,6 +1,8 @@
 import { Box3, Vector3 } from "three";
 import { HTTPStore, TypedArray, ZarrArray, openArray, openGroup, slice } from "zarr";
+import { RawArray } from "zarr/types/rawArray";
 import { AsyncStore } from "zarr/types/storage/types";
+import { Slice } from "zarr/types/core/types";
 
 import Volume, { ImageInfo } from "../Volume";
 import VolumeCache, { CacheStore } from "../VolumeCache";
@@ -13,8 +15,6 @@ import {
   estimateLevelForAtlas,
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
-import { Slice } from "zarr/types/core/types";
-import { RawArray } from "zarr/types/rawArray";
 
 const MAX_ATLAS_DIMENSION = 2048;
 
@@ -418,6 +418,8 @@ class OMEZarrLoader implements IVolumeLoader {
       },
     };
 
+    // The `LoadSpec` passed in at this stage should represent the subset which this loader loads, not that
+    // which the volume contains. The volume contains the full extent of the subset recognized by this loader.
     const fullExtentLoadSpec: LoadSpec = {
       ...loadSpec,
       subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)),
