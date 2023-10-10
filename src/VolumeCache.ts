@@ -42,30 +42,6 @@ export type CacheStore = {
   numChannels: number;
 };
 
-/** Fill in partially-specified, invalid, or missing `Box3` with reasonable defaults */
-function applyDefaultsToRegion(region: Box3 | undefined, size: Vector3): Box3 {
-  if (!region) {
-    return new Box3(new Vector3(), size.clone());
-  }
-
-  const { min, max } = region;
-
-  const newMin = new Vector3(
-    isFinite(min.x) && min.x >= 0 ? min.x : 0,
-    isFinite(min.y) && min.y >= 0 ? min.y : 0,
-    isFinite(min.z) && min.z >= 0 ? min.z : 0
-  );
-  const newMax = new Vector3(
-    isFinite(max.x) && max.x > 0 ? max.x : size.x,
-    isFinite(max.y) && max.y > 0 ? max.y : size.y,
-    isFinite(max.z) && max.z > 0 ? max.z : size.z
-  );
-
-  return new Box3(newMin, newMax);
-}
-
-const anyComponentGeq = (a: Vector3, b: Vector3) => a.x >= b.x || a.y >= b.y || a.z >= b.z;
-
 /** Default: 250MB. Should be large enough to be useful but safe for most any computer that can run the app */
 const CACHE_MAX_SIZE_DEFAULT = 250_000_000;
 
