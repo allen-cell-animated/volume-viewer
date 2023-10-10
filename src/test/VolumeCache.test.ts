@@ -28,14 +28,14 @@ describe("VolumeCache", () => {
         scale: 1,
         time: 1,
         channel: 1,
-        region: new Box3(new Vector3(0, 0, 1), new Vector3(2, 2, 2)),
+        chunk: new Vector3(0, 0, 1),
       };
       const insertionResult = cache.insert(vol, new Uint8Array(4), extent);
       expect(insertionResult).to.be.true;
       expect(cache.get(vol, 1, extent)).to.deep.equal(new Uint8Array(4));
     });
 
-    it("defaults to the first channel, first timestep, and maximum extent when unspecified", () => {
+    it("defaults to the first channel, first timestep, and first chunk when unspecified", () => {
       const cache = new VolumeCache();
       const vol = cache.addVolume(2, 2, [new Vector3(2, 2, 2), new Vector3(4, 4, 4)]);
       const insertionResult = cache.insert(vol, new Uint8Array(8));
@@ -51,21 +51,8 @@ describe("VolumeCache", () => {
       expect(cache.get(vol, 0)).to.be.undefined;
     }
 
-    it("does not insert an entry if the extent does not match the data", () => {
-      testInsertFails(7);
-    });
-
-    it("does not insert an entry if one or more dimensions of the extent is invalid", () => {
-      const region = new Box3();
-      region.min.y = 2;
-      region.min.z = 2;
-      testInsertFails(2, { region });
-    });
-
-    it("does not insert an entry if the extent is out of range", () => {
-      const region = new Box3();
-      region.max.z = 3;
-      testInsertFails(12, { region });
+    it("does not insert an entry if one or more dimensions of the chunk is invalid", () => {
+      testInsertFails(2, { chunk: new Vector3(-1, 1, 2) });
     });
 
     it("does not insert an entry if it is too big for the cache", () => {
@@ -86,16 +73,16 @@ describe("VolumeCache", () => {
 
     it("evicts the least recently used entry when above its size limit", () => {
       const [cache, id1] = setupEvictionTest(); // max: 12
-      const region1 = new Box3(new Vector3(0), new Vector3(2));
-      const region2 = new Box3(new Vector3(2), new Vector3(4));
-      cache.insert(id1, new Uint8Array(8), { scale: 1, region: region1 }); // 8 < 12
+      const chunk1 = new Vector3(0);
+      const chunk2 = new Vector3(2);
+      cache.insert(id1, new Uint8Array(8), { scale: 1, chunk: chunk1 }); // 8 < 12
       cache.insert(id1, new Uint8Array(2)); // 10 < 12
-      cache.insert(id1, new Uint8Array(8), { scale: 1, region: region2 }); // 18 > 12! evict 1!
+      cache.insert(id1, new Uint8Array(8), { scale: 1, chunk: chunk2 }); // 18 > 12! evict 1!
       expect(cache.size).to.equal(10);
       expect(cache.numberOfEntries).to.equal(2);
-      expect(cache.get(id1, 0, { scale: 1, region: region1 })).to.be.undefined;
+      expect(cache.get(id1, 0, { scale: 1, chunk: chunk1 })).to.be.undefined;
       expect(cache.get(id1, 0)).to.deep.equal(new Uint8Array(2));
-      expect(cache.get(id1, 0, { scale: 1, region: region2 })).to.deep.equal(new Uint8Array(8));
+      expect(cache.get(id1, 0, { scale: 1, chunk: chunk2 })).to.deep.equal(new Uint8Array(8));
     });
 
     it("evicts the least recently used entry regardless of which volume it's in", () => {
@@ -112,36 +99,33 @@ describe("VolumeCache", () => {
 
     it("evicts as many entries as it takes to get below max size", () => {
       const [cache, id1, id2] = setupEvictionTest();
-      const region = new Box3(new Vector3(0), new Vector3(2));
+      const chunk = new Vector3(1, 0, 0);
       cache.insert(id2, new Uint8Array(6)); // 6
       cache.insert(id2, new Uint8Array(6), { time: 1 }); // 12
-      cache.insert(id1, new Uint8Array(8), { scale: 1, region }); // 20!
+      cache.insert(id1, new Uint8Array(8), { scale: 1, chunk }); // 20!
       expect(cache.size).to.equal(8);
       expect(cache.numberOfEntries).to.equal(1);
       expect(cache.get(id2, 0)).to.be.undefined;
       expect(cache.get(id2, 0, { time: 1 })).to.be.undefined;
-      expect(cache.get(id1, 0, { scale: 1, region })).to.deep.equal(new Uint8Array(8));
+      expect(cache.get(id1, 0, { scale: 1, chunk })).to.deep.equal(new Uint8Array(8));
     });
 
     it("reuses any entries that match the provided extent rather than growing the cache with duplicates", () => {
       const [cache, id1] = setupEvictionTest();
-      const region1 = new Box3(new Vector3(0), new Vector3(1));
-      const region2 = new Box3(new Vector3(1), new Vector3(3));
-      cache.insert(id1, new Uint8Array([1, 2, 3, 4]), { scale: 1, region: region1 }); // 4
-      // console.log(cache.size);
-      cache.insert(id1, new Uint8Array(8), { scale: 1, region: region2 }); // 12
-      // console.log(cache.size);
-      cache.insert(id1, new Uint8Array([5, 6, 7, 8]), { scale: 1, region: region1 }); // still 12
-      // console.log(cache.size);
+      const chunk1 = new Vector3(0, 0, 0);
+      const chunk2 = new Vector3(1, 1, 1);
+      cache.insert(id1, new Uint8Array([1, 2, 3, 4]), { scale: 1, chunk: chunk1 }); // 4
+      cache.insert(id1, new Uint8Array(8), { scale: 1, chunk: chunk2 }); // 12
+      cache.insert(id1, new Uint8Array([5, 6, 7, 8]), { scale: 1, chunk: chunk1 }); // still 12
       expect(cache.size).to.equal(12);
       expect(cache.numberOfEntries).to.equal(2);
-      expect(cache.get(id1, 0, { scale: 1, region: region2 })).to.deep.equal(new Uint8Array(8));
-      expect(cache.get(id1, 0, { scale: 1, region: region1 })).to.deep.equal(new Uint8Array([5, 6, 7, 8]));
+      expect(cache.get(id1, 0, { scale: 1, chunk: chunk2 })).to.deep.equal(new Uint8Array(8));
+      expect(cache.get(id1, 0, { scale: 1, chunk: chunk1 })).to.deep.equal(new Uint8Array([5, 6, 7, 8]));
     });
   });
 
-  const region1 = new Box3(new Vector3(+Infinity, +Infinity, 0), new Vector3(-Infinity, -Infinity, 1));
-  const region2 = new Box3(new Vector3(+Infinity, +Infinity, 1), new Vector3(-Infinity, -Infinity, 2));
+  const chunk1 = new Vector3(0, 0, 0);
+  const chunk2 = new Vector3(0, 0, 1);
 
   const SLICE_1_1 = [1, 2, 3, 4];
   const SLICE_1_2 = [5, 6, 7, 8];
@@ -151,10 +135,10 @@ describe("VolumeCache", () => {
     const cache = new VolumeCache(12);
     const vol = cache.addVolume(2, 1, [new Vector3(2, 2, 2)]);
     const insertFuncs = [
-      () => cache.insert(vol, new Uint8Array(SLICE_1_1), { region: region1 }),
-      () => cache.insert(vol, new Uint8Array(SLICE_1_2), { region: region2 }),
-      () => cache.insert(vol, new Uint8Array(SLICE_2_1), { region: region1, channel: 1 }),
-      () => cache.insert(vol, new Uint8Array(SLICE_2_2), { region: region2, channel: 1 }),
+      () => cache.insert(vol, new Uint8Array(SLICE_1_1), { chunk: chunk1 }),
+      () => cache.insert(vol, new Uint8Array(SLICE_1_2), { chunk: chunk2 }),
+      () => cache.insert(vol, new Uint8Array(SLICE_2_1), { chunk: chunk1, channel: 1 }),
+      () => cache.insert(vol, new Uint8Array(SLICE_2_2), { chunk: chunk2, channel: 1 }),
     ];
     insertFuncs.forEach((fn, idx) => {
       if (addSlices[idx]) fn();
@@ -165,8 +149,8 @@ describe("VolumeCache", () => {
   describe("get", () => {
     it("gets a single channel when provided a channel index", () => {
       const [cache, id] = setupGetTest([false, false, false, true]);
-      const region = new Box3(new Vector3(0, 0, 1), new Vector3(2, 2, 2));
-      const result = cache.get(id, 1, { scale: 0, time: 0, region });
+      const region = new Vector3(0, 0, 1);
+      const result = cache.get(id, 1, { scale: 0, time: 0, chunk: region });
       expect(result).to.deep.equal(new Uint8Array(SLICE_2_2));
     });
 
@@ -179,30 +163,30 @@ describe("VolumeCache", () => {
 
     it("gets multiple channels when provided an array of indexes", () => {
       const [cache, id] = setupGetTest([false, true, false, true]);
-      const result = cache.get(id, [1, 0], { region: region2 });
+      const result = cache.get(id, [1, 0], { chunk: chunk2 });
       expect(result).to.deep.equal([new Uint8Array(SLICE_2_2), new Uint8Array(SLICE_1_2)]);
     });
 
     it("gets all channels when provided no index", () => {
       const [cache, id] = setupGetTest([false, true, false, true]);
-      const result = cache.get(id, { region: region2 });
+      const result = cache.get(id, { chunk: chunk2 });
       expect(result).to.deep.equal([new Uint8Array(SLICE_1_2), new Uint8Array(SLICE_2_2)]);
     });
 
     it("inserts `undefined` for missing entries when returning an array of channels", () => {
       const [cache, id] = setupGetTest([true, false, false, false]);
-      const resultArr = cache.get(id, [0, 1], { region: region1 });
-      const resultNone = cache.get(id, { region: region1 });
+      const resultArr = cache.get(id, [0, 1], { chunk: chunk1 });
+      const resultNone = cache.get(id, { chunk: chunk1 });
       expect(resultArr).to.deep.equal([new Uint8Array(SLICE_1_1), undefined], "array syntax");
       expect(resultNone).to.deep.equal([new Uint8Array(SLICE_1_1), undefined], "implicit syntax");
     });
 
     it("moves returned entries to the front of the LRU queue", () => {
       const [cache, id] = setupGetTest([true, true, true, false]); // size: 12; max: 12
-      cache.get(id, 0, { region: region1 }); // SLICE_1_1 moves from last to first; SLICE_1_2 is now last
-      cache.insert(id, new Uint8Array(SLICE_2_2), { channel: 1, region: region2 }); // 16! evict SLICE_1_2
-      expect(cache.get(id, 0, { region: region2 })).to.be.undefined;
-      expect(cache.get(id, 0, { region: region1 })).to.deep.equal(new Uint8Array(SLICE_1_1));
+      cache.get(id, 0, { chunk: chunk1 }); // SLICE_1_1 moves from last to first; SLICE_1_2 is now last
+      cache.insert(id, new Uint8Array(SLICE_2_2), { channel: 1, chunk: chunk2 }); // 16! evict SLICE_1_2
+      expect(cache.get(id, 0, { chunk: chunk2 })).to.be.undefined;
+      expect(cache.get(id, 0, { chunk: chunk1 })).to.deep.equal(new Uint8Array(SLICE_1_1));
     });
   });
 
@@ -210,7 +194,7 @@ describe("VolumeCache", () => {
     time: 1,
     channel: 1,
     scale: 1,
-    region: new Box3(new Vector3(1, 1), new Vector3(2, 2)),
+    chunk: new Vector3(1, 1),
   };
 
   function setupClearTest(): [VolumeCache, CacheStore, CacheStore] {

@@ -3,14 +3,14 @@ import { Box3, Vector3 } from "three";
 // The following two very similar types are kept separate because we may later want to allow more
 // complex queries with respect to scale, e.g. "get the largest available scale within this range"
 export type DataArrayExtent = {
-  region: Box3;
+  chunk: Vector3;
   scale: number;
   time: number;
   channel: number;
 };
 
 export type QueryExtent = {
-  region: Box3;
+  chunk: Vector3;
   scale: number;
   time: number;
 };
@@ -19,9 +19,9 @@ type MaybeCacheEntry = CacheEntry | null;
 type CacheEntry = {
   /** The data contained in this entry */
   // TODO allow more types of `TypedArray` to be stored together in the cache?
-  data: Uint8Array;
-  /** The subset of the volume covered by this entry, in pixels */
-  subregion: Box3;
+  data: ArrayBuffer;
+  /** The chunk of the volume covered by this entry, in pixels */
+  chunk: Vector3;
   /** The previous entry in the LRU list (more recently used) */
   prev: MaybeCacheEntry;
   /** The next entry in the LRU list (less recently used) */
@@ -64,7 +64,7 @@ function applyDefaultsToRegion(region: Box3 | undefined, size: Vector3): Box3 {
   return new Box3(newMin, newMax);
 }
 
-const anyComponentGreater = (a: Vector3, b: Vector3) => a.x > b.x || a.y > b.y || a.z > b.z;
+const anyComponentGeq = (a: Vector3, b: Vector3) => a.x >= b.x || a.y >= b.y || a.z >= b.z;
 
 /** Default: 250MB. Should be large enough to be useful but safe for most any computer that can run the app */
 const CACHE_MAX_SIZE_DEFAULT = 250_000_000;
@@ -106,7 +106,7 @@ export default class VolumeCache {
    */
   private removeEntryFromStore(entry: CacheEntry): void {
     entry.parentArr.splice(entry.parentArr.indexOf(entry), 1);
-    this.currentSize -= entry.data.length;
+    this.currentSize -= entry.data.byteLength;
     this.currentEntries--;
   }
 
@@ -197,30 +197,24 @@ export default class VolumeCache {
    * Add a new array to the cache (representing a subset of a channel's extent at a given time and scale)
    * @returns {boolean} a boolean indicating whether the insertion succeeded
    */
-  public insert(volume: CacheStore, data: Uint8Array, optDims: Partial<DataArrayExtent> = {}): boolean {
+  public insert(volume: CacheStore, data: ArrayBuffer, optDims: Partial<DataArrayExtent> = {}): boolean {
     const scaleCache = volume.scales[optDims.scale || 0];
     const entryList = scaleCache.data[optDims.time || 0][optDims.channel || 0];
-    const subregion = applyDefaultsToRegion(optDims.region, scaleCache.size);
+    const chunk = optDims.chunk ?? new Vector3(0, 0, 0);
+    const { size } = scaleCache;
 
-    // Validate input
-    const extentSize = subregion.getSize(new Vector3());
-    if (extentSize.x * extentSize.y * extentSize.z !== data.length) {
-      console.error("VolumeCache: attempt to insert data which does not match the provided dimensions");
+    if (chunk.x < 0 || chunk.y < 0 || chunk.z < 0 || chunk.x >= size.x || chunk.y >= size.y || chunk.z >= size.z) {
+      console.error("VolumeCache: attempt to insert into nonexistent chunk");
       return false;
     }
-    // `isEmpty` also captures the case where `min` > `max` (component-wise)
-    if (subregion.isEmpty() || anyComponentGreater(subregion.max, scaleCache.size)) {
-      console.error("VolumeCache: attempt to insert data with bad extent");
-      return false;
-    }
-    if (data.length > this.maxSize) {
+    if (data.byteLength > this.maxSize) {
       console.error("VolumeCache: attempt to insert a single entry larger than the cache");
       return false;
     }
 
     // Check if entry is already in cache
     for (const existingEntry of entryList) {
-      if (existingEntry.subregion.equals(subregion)) {
+      if (existingEntry.chunk.equals(chunk)) {
         existingEntry.data = data;
         this.moveEntryToFirst(existingEntry);
         return true;
@@ -228,10 +222,10 @@ export default class VolumeCache {
     }
 
     // Add new entry to cache
-    const newEntry: CacheEntry = { data, subregion, prev: null, next: null, parentArr: entryList };
+    const newEntry: CacheEntry = { data, chunk, prev: null, next: null, parentArr: entryList };
     this.addEntryAsFirst(newEntry);
     entryList.push(newEntry);
-    this.currentSize += data.length;
+    this.currentSize += data.byteLength;
     this.currentEntries++;
 
     // Evict until size is within limit
@@ -249,14 +243,14 @@ export default class VolumeCache {
     volume: CacheStore,
     channel: number,
     optDims: Partial<QueryExtent> = {}
-  ): Uint8Array | undefined {
+  ): ArrayBuffer | undefined {
     // TODO allow searching through a range of scales and picking the highest available one
     const scaleCache = volume.scales[optDims.scale || 0];
     const entryList = scaleCache.data[optDims.time || 0][channel];
-    const subregion = applyDefaultsToRegion(optDims.region, scaleCache.size);
+    const chunk = optDims.chunk ?? new Vector3(0, 0, 0);
 
     for (const entry of entryList) {
-      if (entry.subregion.equals(subregion)) {
+      if (entry.chunk.equals(chunk)) {
         this.moveEntryToFirst(entry);
         return entry.data;
       }
@@ -266,16 +260,16 @@ export default class VolumeCache {
   }
 
   /** Attempts to get data from a single channel of a cached volume. Returns `undefined` if not present in the cache. */
-  public get(volume: CacheStore, channel: number, optDims?: Partial<QueryExtent>): Uint8Array | undefined;
+  public get(volume: CacheStore, channel: number, optDims?: Partial<QueryExtent>): ArrayBuffer | undefined;
   /** Attempts to get data from multiple channels of a volume. Channels not present in the cache are `undefined`. */
-  public get(volume: CacheStore, channel: number[], optDims?: Partial<QueryExtent>): (Uint8Array | undefined)[];
+  public get(volume: CacheStore, channel: number[], optDims?: Partial<QueryExtent>): (ArrayBuffer | undefined)[];
   /** Attempts to get all channels of a volume from the cache. Channels not present in the cache are `undefined`. */
-  public get(volume: CacheStore, optDims?: Partial<QueryExtent>): (Uint8Array | undefined)[];
+  public get(volume: CacheStore, optDims?: Partial<QueryExtent>): (ArrayBuffer | undefined)[];
   public get(
     volume: CacheStore,
     channel?: number | number[] | Partial<QueryExtent>,
     optDims?: Partial<QueryExtent>
-  ): Uint8Array | undefined | (Uint8Array | undefined)[] {
+  ): ArrayBuffer | undefined | (ArrayBuffer | undefined)[] {
     if (Array.isArray(channel)) {
       return channel.map((c) => this.getOneChannel(volume, c, optDims));
     }

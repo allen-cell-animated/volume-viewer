@@ -136,7 +136,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
     const imageInfo = convertImageInfo(this.jsonInfo);
 
     this.cacheStore = this.cache?.addVolume(imageInfo.numChannels, Math.max(imageInfo.times, this.urls.length), [
-      new Vector3(imageInfo.subregionSize.x, imageInfo.subregionSize.y, imageInfo.subregionSize.z),
+      new Vector3(1, 1, 1),
     ]);
 
     const vol = new Volume(imageInfo, loadSpec, this);
@@ -217,12 +217,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
       const batch = imageArray[i].channels;
 
       // construct cache query
-      const regionPx = convertSubregionToPixels(volume.loadSpec.subregion, volume.imageInfo.subregionSize);
-      const cacheQueryDims = {
-        region: regionPx,
-        time: volume.loadSpec.time,
-        scale: 0,
-      };
+      const cacheQueryDims = { time: volume.loadSpec.time, scale: 0 };
       // Because the data is fetched such that one fetch returns a whole batch,
       // if any in batch is cached then they all should be. So if any in batch is NOT cached,
       // then we will have to do a batch request. This logic works both ways because it's all or nothing.
@@ -231,7 +226,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
         const chindex = batch[j];
         const cacheResult = cacheStore && cache?.get(cacheStore, chindex, cacheQueryDims);
         if (cacheResult) {
-          volume.setChannelDataFromVolume(chindex, cacheResult);
+          volume.setChannelDataFromVolume(chindex, new Uint8Array(cacheResult));
           onChannelLoaded?.(volume, chindex);
         } else {
           cacheHit = false;
@@ -295,12 +290,11 @@ class JsonImageInfoLoader implements IVolumeLoader {
           volume.setChannelDataFromAtlas(batch[ch], channelsBits[ch], w, h);
 
           const cacheInsertDims = {
-            region: regionPx,
             scale: 0,
             time: volume.loadSpec.time,
             channel: batch[ch],
           };
-          cacheStore && cache?.insert(cacheStore, volume.channels[batch[ch]].volumeData, cacheInsertDims);
+          cacheStore && cache?.insert(cacheStore, volume.channels[batch[ch]].volumeData.buffer, cacheInsertDims);
 
           onChannelLoaded?.(volume, batch[ch]);
         }
