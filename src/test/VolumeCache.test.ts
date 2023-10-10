@@ -1,4 +1,4 @@
-import { Box3, Vector3 } from "three";
+import { Vector3 } from "three";
 import { expect } from "chai";
 import VolumeCache, { CacheStore, DataArrayExtent } from "../VolumeCache";
 

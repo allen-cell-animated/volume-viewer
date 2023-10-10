@@ -1,5 +1,5 @@
 import { fromUrl } from "geotiff";
-import { Vector2, Vector3 } from "three";
+import { Vector3 } from "three";
 
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import { buildDefaultMetadata, computePackedAtlasDims } from "./VolumeLoaderUtils";
