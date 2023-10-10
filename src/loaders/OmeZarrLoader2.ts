@@ -308,9 +308,9 @@ class OMEZarrLoader implements IVolumeLoader {
     return [spaceUnitSymbol, timeUnitSymbol];
   }
 
-  private getScale(level?: number): number[] {
-    const levelMeta = level !== undefined ? this.multiscaleMetadata.datasets[level] : this.multiscaleMetadata;
-    const transforms = levelMeta.coordinateTransformations;
+  private getScale(level = 0): number[] {
+    const meta = this.multiscaleMetadata;
+    const transforms = meta.datasets[level].coordinateTransformations ?? meta.coordinateTransformations;
 
     if (transforms === undefined) {
       console.error("ERROR: no coordinate transformations for scale level");
@@ -329,12 +329,22 @@ class OMEZarrLoader implements IVolumeLoader {
       return [1, 1, 1, 1, 1];
     }
 
-    return scaleTransform.scale;
+    const scale = scaleTransform.scale.slice();
+    while (scale.length < 5) {
+      scale.unshift(1);
+    }
+    return scale;
   }
 
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const [spaceUnit, timeUnit] = this.getUnitSymbols();
-    return this.scaleLevels.map((level, i) => {
+    // Compute subregion size so we can factor that in
+    const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
+    const subregion = composeSubregion(loadSpec.subregion, maxExtent);
+    const regionSize = subregion.getSize(new Vector3());
+    const regionArr = [1, 1, regionSize.z, regionSize.y, regionSize.x];
+
+    const result = this.scaleLevels.map((level, i) => {
       const scale = this.getScale(i);
       const dims = new VolumeDims();
 
@@ -346,13 +356,15 @@ class OMEZarrLoader implements IVolumeLoader {
 
       this.axesTCZYX.forEach((val, idx) => {
         if (val > -1) {
-          dims.shape[idx] = level.shape[val];
+          dims.shape[idx] = Math.ceil(level.shape[val] * regionArr[idx]);
           dims.spacing[idx] = scale[val];
         }
       });
 
       return dims;
     });
+
+    return result;
   }
 
   async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
