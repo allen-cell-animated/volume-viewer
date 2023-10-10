@@ -1,6 +1,6 @@
 import { Box3, Vector3 } from "three";
-import { HTTPStore, ZarrArray, openArray, openGroup } from "zarr";
-import { AsyncStore } from "zarr/types/storage/types";
+import { HTTPStore, TypedArray, ZarrArray, openArray, openGroup, slice } from "zarr";
+import { AsyncStore, Store } from "zarr/types/storage/types";
 
 import Volume, { ImageInfo } from "../Volume";
 import VolumeCache, { CacheStore } from "../VolumeCache";
@@ -13,6 +13,8 @@ import {
   estimateLevelForAtlas,
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
+import { Slice } from "zarr/types/core/types";
+import { RawArray } from "zarr/types/rawArray";
 
 const MAX_ATLAS_DIMENSION = 2048;
 
@@ -81,17 +83,15 @@ type OMEZarrMetadata = {
   omero: OmeroTransitionalMetadata;
 };
 
-// TODO resolve similar name with `CacheStore`
+/** Turns `axisTCZYX` into the number of dimensions in the array */
+const getDimensionCount = ([t, c]: [number, number, number, number, number]) => 3 + Number(t > -1) + Number(c > -1);
+
 class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
-  // Methods on `AsyncStore` that we don't need to touch (all but `getItem`)
+  // Required by `AsyncStore`
   listDir?: (path?: string) => Promise<string[]>;
   rmDir?: (path?: string) => Promise<boolean>;
   getSize?: (path?: string) => Promise<number>;
   rename?: (path?: string) => Promise<void>;
-  keys: () => Promise<string[]>;
-  setItem: (item: string, value: ArrayBuffer) => Promise<boolean>;
-  deleteItem: (item: string) => Promise<boolean>;
-  containsItem: (item: string) => Promise<boolean>;
 
   baseStore: AsyncStore<ArrayBuffer, RequestInit>;
   cache?: VolumeCache;
@@ -99,19 +99,15 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
 
   axesTCZYX?: [number, number, number, number, number];
 
-  constructor(baseStore: AsyncStore<ArrayBuffer, RequestInit>, cache?: VolumeCache, cacheStore?: CacheStore) {
+  constructor(baseStore: AsyncStore<ArrayBuffer, RequestInit>) {
     this.baseStore = baseStore;
     this.listDir = baseStore.listDir;
     this.rmDir = baseStore.rmDir;
     this.getSize = baseStore.getSize;
     this.rename = baseStore.rename;
-    this.keys = baseStore.keys;
-    this.setItem = baseStore.setItem;
-    this.deleteItem = baseStore.deleteItem;
-    this.containsItem = baseStore.containsItem;
   }
 
-  openCache(axesTCZYX: [number, number, number, number, number], cache: VolumeCache, cacheStore: CacheStore) {
+  openCache(axesTCZYX: [number, number, number, number, number], cache?: VolumeCache, cacheStore?: CacheStore) {
     this.axesTCZYX = axesTCZYX;
     this.cache = cache;
     this.cacheStore = cacheStore;
@@ -119,12 +115,13 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
 
   async getItem(item: string, opts?: RequestInit | undefined): Promise<ArrayBuffer> {
     // If we don't have a cache or aren't getting a chunk, call straight to the base store
-    if (!this.cache || !this.cacheStore || !this.axesTCZYX || [".zarray", ".zgroup", ".zattrs"].some(item.endsWith)) {
+    const zarrExts = [".zarray", ".zgroup", ".zattrs"];
+    if (!this.cache || !this.cacheStore || !this.axesTCZYX || zarrExts.some((s) => item.endsWith(s))) {
       return this.baseStore.getItem(item, opts);
     }
 
     // Extract chunk coordinates from item path
-    const coordsLength = 3 + Number(this.axesTCZYX[0] > -1) + Number(this.axesTCZYX[1] > -1);
+    const coordsLength = getDimensionCount(this.axesTCZYX);
     const pathCoords = item.split("/").map(Number);
     // Assumes the scale level is a number. TODO fix this
     if (pathCoords.length < coordsLength + 1 || pathCoords.some(isNaN)) {
@@ -149,10 +146,23 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
     this.cache.insert(this.cacheStore, result, { scale, time, chunk, channel });
     return result;
   }
-}
 
-const floorVec3 = (v: Vector3): Vector3 => v.set(Math.floor(v.x), Math.floor(v.y), Math.floor(v.z));
-const ceilVec3 = (v: Vector3): Vector3 => v.set(Math.ceil(v.x), Math.ceil(v.y), Math.ceil(v.z));
+  keys(): Promise<string[]> {
+    return this.baseStore.keys();
+  }
+
+  setItem(item: string, value: ArrayBuffer): Promise<boolean> {
+    return this.baseStore.setItem(item, value);
+  }
+
+  deleteItem(item: string): Promise<boolean> {
+    return this.baseStore.deleteItem(item);
+  }
+
+  containsItem(item: string): Promise<boolean> {
+    return this.baseStore.containsItem(item);
+  }
+}
 
 function remapAxesToTCZYX(axes: Axis[]): [number, number, number, number, number] {
   const axisTCZYX: [number, number, number, number, number] = [-1, -1, -1, -1, -1];
@@ -171,13 +181,7 @@ function remapAxesToTCZYX(axes: Axis[]): [number, number, number, number, number
     console.error("ERROR: zarr loader expects a z, y, and x axis.");
   }
 
-  console.log("bar");
   return axisTCZYX;
-}
-
-async function loadMetadata(store: HTTPStore): Promise<OMEZarrMetadata> {
-  const data = await openGroup(store, null, "r");
-  return (await data.attrs.asObject()) as OMEZarrMetadata;
 }
 
 function pickLevelToLoad(loadSpec: LoadSpec, zarrMultiscales: ZarrArray[], zi: number, yi: number, xi: number): number {
@@ -198,6 +202,30 @@ function pickLevelToLoad(loadSpec: LoadSpec, zarrMultiscales: ZarrArray[], zi: n
   }
 }
 
+function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
+  if (dtype === "|u1") {
+    return channelData as Uint8Array;
+  }
+
+  const u8 = new Uint8Array(channelData.length);
+
+  // get min and max
+  let min = channelData[0];
+  let max = channelData[0];
+  channelData.forEach((val: number) => {
+    min = Math.min(min, val);
+    max = Math.max(max, val);
+  });
+
+  // normalize and convert to u8
+  const range = max - min;
+  channelData.forEach((val: number, idx: number) => {
+    u8[idx] = ((val - min) / range) * 255;
+  });
+
+  return u8;
+}
+
 class OMEZarrLoader implements IVolumeLoader {
   zarrMultiscales: ZarrArray[];
   multiscaleMetadata: OMEMultiscale;
@@ -208,27 +236,22 @@ class OMEZarrLoader implements IVolumeLoader {
   //   This may cause errors or incorrect results otherwise!
   maxExtent?: Box3;
 
-  cache?: VolumeCache;
-  // TODO: in a multi-volume world, `cacheStore` may want to be owned by `Volume`
-  cacheStore?: CacheStore;
-
   private constructor(
     zarrMultiscales: ZarrArray[],
     multiscaleMetadata: OMEMultiscale,
     omeroMetadata: OmeroTransitionalMetadata,
-    axisTCZYX: [number, number, number, number, number],
-    cache?: VolumeCache
+    axisTCZYX: [number, number, number, number, number]
   ) {
     this.zarrMultiscales = zarrMultiscales;
     this.multiscaleMetadata = multiscaleMetadata;
     this.omeroMetadata = omeroMetadata;
     this.axesTCZYX = axisTCZYX;
-    this.cache = cache;
   }
 
   static async createLoader(url: string, scene = 0, cache?: VolumeCache): Promise<OMEZarrLoader> {
-    const store = new HTTPStore(url);
-    const metadata = await loadMetadata(store);
+    const store = new ChunkCachingStore(new HTTPStore(url));
+    const group = await openGroup(store, null, "r");
+    const metadata = (await group.attrs.asObject()) as OMEZarrMetadata;
 
     if (scene > metadata.multiscales.length) {
       console.warn(`WARNING: OMEZarrLoader: scene ${scene} is invalid. Using scene 0.`);
@@ -239,13 +262,22 @@ class OMEZarrLoader implements IVolumeLoader {
     const arrPromises = multiscale.datasets.map(({ path }) => openArray({ store, path, mode: "r" }));
     const arrs = await Promise.all(arrPromises);
 
+    // Grab axis indexes, use them to open cache
     const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
+    const [t, c, z, y, x] = axisTCZYX;
+    const numChannels = Math.max(arrs[0].shape[c], 1);
+    const numTimes = Math.max(arrs[0].shape[t], 1);
+    const scaleChunkDims = arrs.map(
+      ({ chunkDataShape }) => new Vector3(chunkDataShape[x], chunkDataShape[y], chunkDataShape[z])
+    );
+    const cacheStore = cache?.addVolume(numChannels, numTimes, scaleChunkDims);
+    store.openCache(axisTCZYX, cache, cacheStore);
 
-    return new OMEZarrLoader(arrs, multiscale, metadata.omero, axisTCZYX, cache);
+    return new OMEZarrLoader(arrs, multiscale, metadata.omero, axisTCZYX);
   }
 
   private getUnitSymbols(): [string, string] {
-    // Assume all axes have the same units - we have no means of storing per-axis unit symbols
+    // Assume all spatial axes have the same units - we have no means of storing per-axis unit symbols
     const xi = this.axesTCZYX[4];
     const spaceUnitName = this.multiscaleMetadata.axes[xi].unit;
     const spaceUnitSymbol = unitNameToSymbol(spaceUnitName) || spaceUnitName || "";
@@ -294,9 +326,6 @@ class OMEZarrLoader implements IVolumeLoader {
     const shape0 = this.zarrMultiscales[0].shape;
     const levelToLoad = pickLevelToLoad(loadSpec, this.zarrMultiscales, z, y, x);
     const shapeLv = this.zarrMultiscales[levelToLoad].shape;
-
-    const scaleSizes = this.zarrMultiscales.map(({ shape }) => new Vector3(shape[x], shape[y], shape[z]));
-    this.cacheStore = this.cache?.addVolume(Math.max(shape0[c], 1), Math.max(shape0[t], 1), scaleSizes);
 
     const [spatialUnit, timeUnit] = this.getUnitSymbols();
     const numChannels = hasC ? shapeLv[c] : 1;
@@ -351,37 +380,8 @@ class OMEZarrLoader implements IVolumeLoader {
     return vol;
   }
 
-  private async loadChunk(scale: number, time: number, c: number, xyz: Vector3): Promise<Uint8Array> {
-    const levelArr = this.zarrMultiscales[scale];
-    const [z, y, x] = this.axesTCZYX.slice(2);
-    const levelSize = new Vector3(levelArr.chunks[x], levelArr.chunks[y], levelArr.chunks[z]);
-
-    // Check the cache
-    const region = new Box3(xyz.clone().multiply(levelSize), xyz.clone().addScalar(1).multiply(levelSize));
-    const cacheQueryDims = { region, time, scale };
-    const cacheResult = this.cacheStore && this.cache?.get(this.cacheStore, c, cacheQueryDims);
-    if (cacheResult) {
-      return new Uint8Array(cacheResult);
-    }
-
-    // Not in cache; load the chunk
-    const coordLength = this.axesTCZYX.reduce((acc, idx) => (idx > -1 ? acc + 1 : acc), 0);
-    const chunkCoord = new Array(coordLength);
-    const tczyx = [time, c, xyz.z, xyz.y, xyz.x];
-    this.axesTCZYX.forEach((dimIdx, i) => {
-      if (dimIdx > -1) {
-        chunkCoord[dimIdx] = tczyx[i];
-      }
-    });
-    const chunk = await levelArr.getRawChunk(chunkCoord);
-    const data = chunk.data as Uint8Array;
-
-    // Cache the chunk
-    this.cacheStore && this.cache?.insert(this.cacheStore, data, { ...cacheQueryDims, channel: c });
-    return data;
-  }
-
-  loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): void {
+  async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
+    console.time("load2");
     vol.loadSpec = explicitLoadSpec ?? vol.loadSpec;
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     const [z, y, x] = this.axesTCZYX.slice(2);
@@ -406,60 +406,33 @@ class OMEZarrLoader implements IVolumeLoader {
     };
     vol.updateDimensions();
 
-    // Work out which chunks we need to load
-    const chunkSizes = new Vector3(level.chunks[x], level.chunks[y], level.chunks[z]);
-    const chunkExtent = new Box3(
-      floorVec3(regionPx.min.clone().divide(chunkSizes)),
-      ceilVec3(regionPx.max.clone().divide(chunkSizes))
-    );
-
-    const chunkMinPx = chunkExtent.min.clone().multiply(chunkSizes);
-    const normRegionPx = new Box3(regionPx.min.clone().sub(chunkMinPx), regionPx.max.clone().sub(chunkMinPx));
     const { numChannels } = vol.imageInfo;
     const channelIndexes = vol.loadSpec.channels ?? Array.from({ length: numChannels }, (_, i) => i);
 
-    for (const ch of channelIndexes) {
-      // Grab all the chunks
-      const chunkPromises: Promise<Uint8Array>[] = [];
-      for (let z = chunkExtent.min.z; z < chunkExtent.max.z; z++) {
-        for (let y = chunkExtent.min.y; y < chunkExtent.max.y; y++) {
-          for (let x = chunkExtent.min.x; x < chunkExtent.max.x; x++) {
-            chunkPromises.push(this.loadChunk(levelIdx, vol.loadSpec.time, ch, new Vector3(x, y, z)));
-          }
-        }
-      }
+    const channelPromises = channelIndexes.map(async (ch) => {
+      // Build slice spec
+      const { min, max } = regionPx;
+      const unorderedSpec = [vol.loadSpec.time, ch, slice(min.z, max.z), slice(min.y, max.y), slice(min.x, max.x)];
+      const specLen = getDimensionCount(this.axesTCZYX);
+      const sliceSpec: (number | Slice)[] = Array(specLen);
 
-      // Pass the chunks off to a worker to be combined rather than block the main thread
-      Promise.all(chunkPromises).then((chunks) => {
-        // Rearrange flat array of chunks into 3D array
-        const chunkSize = chunkExtent.getSize(new Vector3());
-        const chunksZ: Uint8Array[][][] = [];
-        for (let z = 0; z < chunkSize.z; z++) {
-          const chunksY: Uint8Array[][] = [];
-          for (let y = 0; y < chunkSize.y; y++) {
-            const chunkIdx = z * chunkSize.y * chunkSize.x + y * chunkSize.x;
-            chunksY.push(chunks.slice(chunkIdx, chunkIdx + chunkSize.x));
+      this.axesTCZYX.forEach((val, idx) => {
+        if (val > -1) {
+          if (val > specLen) {
+            throw new Error("Unexpected axis index");
           }
-          chunksZ.push(chunksY);
+          sliceSpec[val] = unorderedSpec[idx];
         }
-
-        // Get the worker going
-        const worker = new Worker(new URL("../workers/FetchZarrWorker2.ts", import.meta.url));
-        worker.onmessage = (e: MessageEvent<Uint8Array>) => {
-          vol.setChannelDataFromVolume(ch, e.data);
-          onChannelLoaded?.(vol, ch);
-          worker.terminate();
-        };
-        worker.postMessage(
-          {
-            chunks: chunksZ,
-            chunkSize: level.chunks.slice(2),
-            normResultSize: normRegionPx,
-          },
-          chunksZ.flatMap((chunksY) => chunksY.flatMap((chunksX) => chunksX.map((chunk) => chunk.buffer)))
-        );
       });
-    }
+
+      const result = (await level.getRaw(sliceSpec)) as RawArray;
+      const u8 = convertChannel(result.data, result.dtype);
+      vol.setChannelDataFromVolume(ch, u8);
+      onChannelLoaded?.(vol, ch);
+    });
+
+    await Promise.all(channelPromises);
+    console.timeEnd("load2");
   }
 }
 
