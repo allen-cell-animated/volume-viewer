@@ -94,10 +94,15 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
   rename?: (path?: string) => Promise<void>;
 
   baseStore: AsyncStore<ArrayBuffer, RequestInit>;
+
   cache?: VolumeCache;
   cacheStore?: CacheStore;
-
-  axesTCZYX?: [number, number, number, number, number];
+  // Our other miscellaneous info is packed into an object to be null-checked all at once
+  arrayInfo?: {
+    axesTCZYX: [number, number, number, number, number];
+    scaleNames: string[];
+    dimensionSeparator: string;
+  };
 
   constructor(baseStore: AsyncStore<ArrayBuffer, RequestInit>) {
     this.baseStore = baseStore;
@@ -107,8 +112,14 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
     this.rename = baseStore.rename;
   }
 
-  openCache(axesTCZYX: [number, number, number, number, number], cache?: VolumeCache, cacheStore?: CacheStore) {
-    this.axesTCZYX = axesTCZYX;
+  setCacheInfo(
+    axesTCZYX: [number, number, number, number, number],
+    scaleNames: string[],
+    dimensionSeparator = "/",
+    cache?: VolumeCache,
+    cacheStore?: CacheStore
+  ) {
+    this.arrayInfo = { axesTCZYX, scaleNames, dimensionSeparator };
     this.cache = cache;
     this.cacheStore = cacheStore;
   }
@@ -116,23 +127,26 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
   async getItem(item: string, opts?: RequestInit | undefined): Promise<ArrayBuffer> {
     // If we don't have a cache or aren't getting a chunk, call straight to the base store
     const zarrExts = [".zarray", ".zgroup", ".zattrs"];
-    if (!this.cache || !this.cacheStore || !this.axesTCZYX || zarrExts.some((s) => item.endsWith(s))) {
+    if (!this.cache || !this.cacheStore || !this.arrayInfo || zarrExts.some((s) => item.endsWith(s))) {
       return this.baseStore.getItem(item, opts);
     }
 
+    const { scaleNames, axesTCZYX, dimensionSeparator } = this.arrayInfo;
+
     // Extract chunk coordinates from item path
-    const coordsLength = getDimensionCount(this.axesTCZYX);
-    const pathCoords = item.split("/").map(Number);
-    // Assumes the scale level is a number. TODO fix this
-    if (pathCoords.length < coordsLength + 1 || pathCoords.some(isNaN)) {
+    const pathElems = item.split(dimensionSeparator);
+    // The first element should be the scale name - convert it to scale level index
+    const scale = scaleNames.indexOf(pathElems.shift() as string);
+    // The remaining elements should be chunk coordinates, and should be numbers
+    const coordsLength = getDimensionCount(axesTCZYX);
+    const chunkCoords = pathElems.slice(-coordsLength).map((s) => parseInt(s, 10));
+    if (chunkCoords.length < coordsLength || chunkCoords.some(isNaN) || scale < 0) {
       console.log("CachingStore: unexpected item path: " + item);
       return this.baseStore.getItem(item, opts);
     }
 
     // Check the cache
-    const scale = pathCoords[0];
-    const chunkCoords = pathCoords.slice(-coordsLength);
-    const [t, c, z, y, x] = this.axesTCZYX;
+    const [t, c, z, y, x] = axesTCZYX;
     const time = t < 0 ? 0 : chunkCoords[t];
     const channel = c < 0 ? 0 : chunkCoords[c];
     const chunk = new Vector3(chunkCoords[x], chunkCoords[y], chunkCoords[z]);
@@ -227,7 +241,7 @@ function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
 }
 
 class OMEZarrLoader implements IVolumeLoader {
-  zarrMultiscales: ZarrArray[];
+  scaleLevels: ZarrArray[];
   multiscaleMetadata: OMEMultiscale;
   omeroMetadata: OmeroTransitionalMetadata;
   axesTCZYX: [number, number, number, number, number];
@@ -237,43 +251,48 @@ class OMEZarrLoader implements IVolumeLoader {
   maxExtent?: Box3;
 
   private constructor(
-    zarrMultiscales: ZarrArray[],
+    scaleLevels: ZarrArray[],
     multiscaleMetadata: OMEMultiscale,
     omeroMetadata: OmeroTransitionalMetadata,
     axisTCZYX: [number, number, number, number, number]
   ) {
-    this.zarrMultiscales = zarrMultiscales;
+    this.scaleLevels = scaleLevels;
     this.multiscaleMetadata = multiscaleMetadata;
     this.omeroMetadata = omeroMetadata;
     this.axesTCZYX = axisTCZYX;
   }
 
   static async createLoader(url: string, scene = 0, cache?: VolumeCache): Promise<OMEZarrLoader> {
+    // Setup: create store, get basic metadata
     const store = new ChunkCachingStore(new HTTPStore(url));
     const group = await openGroup(store, null, "r");
     const metadata = (await group.attrs.asObject()) as OMEZarrMetadata;
 
+    // Pick scene (multiscale)
     if (scene > metadata.multiscales.length) {
       console.warn(`WARNING: OMEZarrLoader: scene ${scene} is invalid. Using scene 0.`);
       scene = 0;
     }
     const multiscale = metadata.multiscales[scene];
 
-    const arrPromises = multiscale.datasets.map(({ path }) => openArray({ store, path, mode: "r" }));
-    const arrs = await Promise.all(arrPromises);
+    // Open all scale levels of multiscale
+    const scaleLevelPaths = multiscale.datasets.map(({ path }) => path);
+    const scaleLevelPromises = scaleLevelPaths.map((path) => openArray({ store, path, mode: "r" }));
+    const scaleLevels = await Promise.all(scaleLevelPromises);
+    const dimensionSeparator = scaleLevels[0].meta.dimension_separator;
 
-    // Grab axis indexes, use them to open cache
+    // Grab axis indexes, use them to set up cache store
     const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
     const [t, c, z, y, x] = axisTCZYX;
-    const numChannels = Math.max(arrs[0].shape[c], 1);
-    const numTimes = Math.max(arrs[0].shape[t], 1);
-    const scaleChunkDims = arrs.map(
+    const numChannels = Math.max(scaleLevels[0].shape[c], 1);
+    const numTimes = Math.max(scaleLevels[0].shape[t], 1);
+    const scaleChunkDims = scaleLevels.map(
       ({ chunkDataShape }) => new Vector3(chunkDataShape[x], chunkDataShape[y], chunkDataShape[z])
     );
     const cacheStore = cache?.addVolume(numChannels, numTimes, scaleChunkDims);
-    store.openCache(axisTCZYX, cache, cacheStore);
+    store.setCacheInfo(axisTCZYX, scaleLevelPaths, dimensionSeparator, cache, cacheStore);
 
-    return new OMEZarrLoader(arrs, multiscale, metadata.omero, axisTCZYX);
+    return new OMEZarrLoader(scaleLevels, multiscale, metadata.omero, axisTCZYX);
   }
 
   private getUnitSymbols(): [string, string] {
@@ -323,9 +342,9 @@ class OMEZarrLoader implements IVolumeLoader {
     const hasT = t > -1;
     const hasC = c > -1;
 
-    const shape0 = this.zarrMultiscales[0].shape;
-    const levelToLoad = pickLevelToLoad(loadSpec, this.zarrMultiscales, z, y, x);
-    const shapeLv = this.zarrMultiscales[levelToLoad].shape;
+    const shape0 = this.scaleLevels[0].shape;
+    const levelToLoad = pickLevelToLoad(loadSpec, this.scaleLevels, z, y, x);
+    const shapeLv = this.scaleLevels[levelToLoad].shape;
 
     const [spatialUnit, timeUnit] = this.getUnitSymbols();
     const numChannels = hasC ? shapeLv[c] : 1;
@@ -381,14 +400,13 @@ class OMEZarrLoader implements IVolumeLoader {
   }
 
   async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
-    console.time("load2");
     vol.loadSpec = explicitLoadSpec ?? vol.loadSpec;
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     const [z, y, x] = this.axesTCZYX.slice(2);
     const subregion = composeSubregion(vol.loadSpec.subregion, maxExtent);
 
-    const levelIdx = pickLevelToLoad({ ...vol.loadSpec, subregion }, this.zarrMultiscales, z, y, x);
-    const level = this.zarrMultiscales[levelIdx];
+    const levelIdx = pickLevelToLoad({ ...vol.loadSpec, subregion }, this.scaleLevels, z, y, x);
+    const level = this.scaleLevels[levelIdx];
     const levelShape = level.shape;
 
     const regionPx = convertSubregionToPixels(subregion, new Vector3(levelShape[x], levelShape[y], levelShape[z]));
@@ -432,7 +450,6 @@ class OMEZarrLoader implements IVolumeLoader {
     });
 
     await Promise.all(channelPromises);
-    console.timeEnd("load2");
   }
 }
 
