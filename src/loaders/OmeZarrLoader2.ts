@@ -308,10 +308,9 @@ class OMEZarrLoader implements IVolumeLoader {
     return [spaceUnitSymbol, timeUnitSymbol];
   }
 
-  private getScale(): number[] {
-    const transforms =
-      this.multiscaleMetadata.datasets[0].coordinateTransformations ??
-      this.multiscaleMetadata.coordinateTransformations;
+  private getScale(level?: number): number[] {
+    const levelMeta = level !== undefined ? this.multiscaleMetadata.datasets[level] : this.multiscaleMetadata;
+    const transforms = levelMeta.coordinateTransformations;
 
     if (transforms === undefined) {
       console.error("ERROR: no coordinate transformations for scale level");
@@ -334,7 +333,26 @@ class OMEZarrLoader implements IVolumeLoader {
   }
 
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
-    throw new Error("Method not implemented.");
+    const [spaceUnit, timeUnit] = this.getUnitSymbols();
+    return this.scaleLevels.map((level, i) => {
+      const scale = this.getScale(i);
+      const dims = new VolumeDims();
+
+      dims.spaceUnit = spaceUnit;
+      dims.timeUnit = timeUnit;
+      dims.subpath = level.path ?? "";
+      dims.shape = [-1, -1, -1, -1, -1];
+      dims.spacing = [1, 1, 1, 1, 1];
+
+      this.axesTCZYX.forEach((val, idx) => {
+        if (val > -1) {
+          dims.shape[idx] = level.shape[val];
+          dims.spacing[idx] = scale[val];
+        }
+      });
+
+      return dims;
+    });
   }
 
   async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
