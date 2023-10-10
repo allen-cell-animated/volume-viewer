@@ -1,5 +1,6 @@
+import { Box3, Vector3 } from "three";
 import { HTTPStore, ZarrArray, openArray, openGroup } from "zarr";
-import { Box3, Vector2, Vector3 } from "three";
+import { AsyncStore } from "zarr/types/storage/types";
 
 import Volume, { ImageInfo } from "../Volume";
 import VolumeCache, { CacheStore } from "../VolumeCache";
@@ -79,6 +80,76 @@ type OMEZarrMetadata = {
   multiscales: OMEMultiscale[];
   omero: OmeroTransitionalMetadata;
 };
+
+// TODO resolve similar name with `CacheStore`
+class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
+  // Methods on `AsyncStore` that we don't need to touch (all but `getItem`)
+  listDir?: (path?: string) => Promise<string[]>;
+  rmDir?: (path?: string) => Promise<boolean>;
+  getSize?: (path?: string) => Promise<number>;
+  rename?: (path?: string) => Promise<void>;
+  keys: () => Promise<string[]>;
+  setItem: (item: string, value: ArrayBuffer) => Promise<boolean>;
+  deleteItem: (item: string) => Promise<boolean>;
+  containsItem: (item: string) => Promise<boolean>;
+
+  baseStore: AsyncStore<ArrayBuffer, RequestInit>;
+  cache?: VolumeCache;
+  cacheStore?: CacheStore;
+
+  axesTCZYX?: [number, number, number, number, number];
+
+  constructor(baseStore: AsyncStore<ArrayBuffer, RequestInit>, cache?: VolumeCache, cacheStore?: CacheStore) {
+    this.baseStore = baseStore;
+    this.listDir = baseStore.listDir;
+    this.rmDir = baseStore.rmDir;
+    this.getSize = baseStore.getSize;
+    this.rename = baseStore.rename;
+    this.keys = baseStore.keys;
+    this.setItem = baseStore.setItem;
+    this.deleteItem = baseStore.deleteItem;
+    this.containsItem = baseStore.containsItem;
+  }
+
+  openCache(axesTCZYX: [number, number, number, number, number], cache: VolumeCache, cacheStore: CacheStore) {
+    this.axesTCZYX = axesTCZYX;
+    this.cache = cache;
+    this.cacheStore = cacheStore;
+  }
+
+  async getItem(item: string, opts?: RequestInit | undefined): Promise<ArrayBuffer> {
+    // If we don't have a cache or aren't getting a chunk, call straight to the base store
+    if (!this.cache || !this.cacheStore || !this.axesTCZYX || [".zarray", ".zgroup", ".zattrs"].some(item.endsWith)) {
+      return this.baseStore.getItem(item, opts);
+    }
+
+    // Extract chunk coordinates from item path
+    const coordsLength = 3 + Number(this.axesTCZYX[0] > -1) + Number(this.axesTCZYX[1] > -1);
+    const pathCoords = item.split("/").map(Number);
+    // Assumes the scale level is a number. TODO fix this
+    if (pathCoords.length < coordsLength + 1 || pathCoords.some(isNaN)) {
+      console.log("CachingStore: unexpected item path: " + item);
+      return this.baseStore.getItem(item, opts);
+    }
+
+    // Check the cache
+    const scale = pathCoords[0];
+    const chunkCoords = pathCoords.slice(-coordsLength);
+    const [t, c, z, y, x] = this.axesTCZYX;
+    const time = t < 0 ? 0 : chunkCoords[t];
+    const channel = c < 0 ? 0 : chunkCoords[c];
+    const chunk = new Vector3(chunkCoords[x], chunkCoords[y], chunkCoords[z]);
+    const cacheResult = this.cache.get(this.cacheStore, channel, { scale, time, chunk });
+    if (cacheResult) {
+      return cacheResult;
+    }
+
+    // Not in cache; load the chunk and cache it
+    const result = await this.baseStore.getItem(item, opts);
+    this.cache.insert(this.cacheStore, result, { scale, time, chunk, channel });
+    return result;
+  }
+}
 
 const floorVec3 = (v: Vector3): Vector3 => v.set(Math.floor(v.x), Math.floor(v.y), Math.floor(v.z));
 const ceilVec3 = (v: Vector3): Vector3 => v.set(Math.ceil(v.x), Math.ceil(v.y), Math.ceil(v.z));
@@ -290,7 +361,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const cacheQueryDims = { region, time, scale };
     const cacheResult = this.cacheStore && this.cache?.get(this.cacheStore, c, cacheQueryDims);
     if (cacheResult) {
-      return cacheResult;
+      return new Uint8Array(cacheResult);
     }
 
     // Not in cache; load the chunk
