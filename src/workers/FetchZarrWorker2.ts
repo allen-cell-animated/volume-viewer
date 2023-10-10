@@ -1,3 +1,4 @@
+import { TypedArray } from "zarr";
 import { Box3 } from "three";
 
 export type CombineZarrMessage = {
@@ -6,10 +7,33 @@ export type CombineZarrMessage = {
   normResultSize: Box3;
 };
 
+function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
+  if (dtype === "|u1") {
+    return channelData as Uint8Array;
+  }
+
+  const u8 = new Uint8Array(channelData.length);
+
+  // get min and max
+  let min = channelData[0];
+  let max = channelData[0];
+  channelData.forEach((val: number) => {
+    min = Math.min(min, val);
+    max = Math.max(max, val);
+  });
+
+  // normalize and convert to u8
+  const range = max - min;
+  channelData.forEach((val: number, idx: number) => {
+    u8[idx] = ((val - min) / range) * 255;
+  });
+
+  return u8;
+}
+
 self.onmessage = (e: MessageEvent<CombineZarrMessage>) => {
   const { chunks, chunkSize, normResultSize } = e.data;
   const { min, max } = normResultSize;
-  console.log(min);
   const resultSize = (max.x - min.x) * (max.y - min.y) * (max.z - min.z);
   const result = new Uint8Array(resultSize);
 
@@ -36,5 +60,7 @@ self.onmessage = (e: MessageEvent<CombineZarrMessage>) => {
     }
   }
 
-  self.postMessage(result, [result.buffer]);
+  const u8 = convertChannel(result, "float32");
+
+  self.postMessage(u8, [u8.buffer]);
 };
