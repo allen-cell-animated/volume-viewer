@@ -1,5 +1,5 @@
 import { Box3, Vector2, Vector3 } from "three";
-import { openArray, openGroup, HTTPStore } from "zarr";
+import { openArray, openGroup, HTTPStore, slice, TypedArray } from "zarr";
 
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import {
@@ -11,8 +11,10 @@ import {
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
 import Volume, { ImageInfo } from "../Volume";
-import { FetchZarrMessage } from "../workers/FetchZarrWorker";
+// import { FetchZarrMessage } from "../workers/FetchZarrWorker";
 import VolumeCache, { CacheStore } from "../VolumeCache";
+import { RawArray } from "zarr/types/rawArray";
+import { Slice } from "zarr/types/core/types";
 
 const MAX_ATLAS_DIMENSION = 2048;
 
@@ -331,7 +333,8 @@ class OMEZarrLoader implements IVolumeLoader {
     return vol;
   }
 
-  loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): void {
+  async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
+    console.time("load1");
     if (
       this.axesTCZYX === undefined ||
       this.metadata === undefined ||
@@ -385,30 +388,9 @@ class OMEZarrLoader implements IVolumeLoader {
       const cacheResult = this.cacheStore && this.cache?.get(this.cacheStore, i, cacheQueryDims);
 
       if (cacheResult) {
-        vol.setChannelDataFromVolume(i, cacheResult);
+        vol.setChannelDataFromVolume(i, new Uint8Array(cacheResult));
         onChannelLoaded?.(vol, i);
       } else {
-        const worker = new Worker(new URL("../workers/FetchZarrWorker", import.meta.url));
-        worker.onmessage = (e) => {
-          const u8 = e.data.data;
-          const channel = e.data.channel;
-
-          const cacheInsertDims = {
-            region: regionPx,
-            scale: levelToLoad,
-            time: vol.loadSpec.time,
-            channel,
-          };
-          this.cacheStore && this.cache?.insert(this.cacheStore, u8, cacheInsertDims);
-
-          vol.setChannelDataFromVolume(channel, u8);
-          onChannelLoaded?.(vol, channel);
-          worker.terminate();
-        };
-        worker.onerror = (e) => {
-          alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
-        };
-
         const msg: FetchZarrMessage = {
           url: this.url,
           subregion: regionPx,
@@ -417,10 +399,89 @@ class OMEZarrLoader implements IVolumeLoader {
           path: datasetPath,
           axesTCZYX: this.axesTCZYX,
         };
-        worker.postMessage(msg);
+
+        const result = await work(msg);
+        const u8 = result.data;
+        const channel = result.channel;
+
+        const cacheInsertDims = {
+          region: regionPx,
+          scale: levelToLoad,
+          time: vol.loadSpec.time,
+          channel,
+        };
+        this.cacheStore && this.cache?.insert(this.cacheStore, u8, cacheInsertDims);
+
+        vol.setChannelDataFromVolume(channel, u8);
+        onChannelLoaded?.(vol, channel);
+        if (vol.isLoaded()) {
+          console.timeEnd("load1");
+        }
+        // worker.postMessage(msg);
       }
     }
   }
 }
+
+export type FetchZarrMessage = {
+  url: string;
+  time: number;
+  subregion: Box3;
+  channel: number;
+  path: string;
+  axesTCZYX: number[];
+};
+
+function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
+  if (dtype === "|u1") {
+    return channelData as Uint8Array;
+  }
+
+  const u8 = new Uint8Array(channelData.length);
+
+  // get min and max
+  let min = channelData[0];
+  let max = channelData[0];
+  channelData.forEach((val: number) => {
+    min = Math.min(min, val);
+    max = Math.max(max, val);
+  });
+
+  // normalize and convert to u8
+  const range = max - min;
+  channelData.forEach((val: number, idx: number) => {
+    u8[idx] = ((val - min) / range) * 255;
+  });
+
+  return u8;
+}
+
+const work = async (data: FetchZarrMessage) => {
+  const time = data.time;
+  const channelIndex = data.channel;
+  const axesTCZYX = data.axesTCZYX;
+
+  const store = new HTTPStore(data.url);
+  const level = await openArray({ store: store, path: data.path, mode: "r" });
+
+  // build slice spec
+  const { min, max } = data.subregion;
+  const unorderedSpec = [time, channelIndex, slice(min.z, max.z), slice(min.y, max.y), slice(min.x, max.x)];
+
+  const specLen = 3 + Number(axesTCZYX[0] > -1) + Number(axesTCZYX[1] > -1);
+  const sliceSpec: (number | Slice)[] = Array(specLen);
+
+  axesTCZYX.forEach((val, idx) => {
+    if (val > -1) {
+      sliceSpec[val] = unorderedSpec[idx];
+    }
+  });
+
+  const channel = (await level.getRaw(sliceSpec)) as RawArray;
+
+  const u8 = convertChannel(channel.data, channel.dtype);
+  const results = { data: u8, channel: channelIndex === -1 ? 0 : channelIndex };
+  return results;
+};
 
 export { OMEZarrLoader };
