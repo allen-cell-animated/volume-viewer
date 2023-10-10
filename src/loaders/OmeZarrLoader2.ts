@@ -1,6 +1,6 @@
 import { Box3, Vector3 } from "three";
 import { HTTPStore, TypedArray, ZarrArray, openArray, openGroup, slice } from "zarr";
-import { AsyncStore, Store } from "zarr/types/storage/types";
+import { AsyncStore } from "zarr/types/storage/types";
 
 import Volume, { ImageInfo } from "../Volume";
 import VolumeCache, { CacheStore } from "../VolumeCache";
