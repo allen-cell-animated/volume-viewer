@@ -1,20 +1,20 @@
-import { Box3, Vector2, Vector3 } from "three";
-import { openArray, openGroup, HTTPStore, slice, TypedArray } from "zarr";
+import { Box3, Vector3 } from "three";
+import { HTTPStore, TypedArray, ZarrArray, openArray, openGroup, slice } from "zarr";
+import { AsyncStore } from "zarr/types/storage/types";
 
+import Volume, { ImageInfo } from "../Volume";
+import VolumeCache, { CacheStore } from "../VolumeCache";
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import {
   buildDefaultMetadata,
   composeSubregion,
-  convertSubregionToPixels,
   computePackedAtlasDims,
+  convertSubregionToPixels,
   estimateLevelForAtlas,
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
-import Volume, { ImageInfo } from "../Volume";
-// import { FetchZarrMessage } from "../workers/FetchZarrWorker";
-import VolumeCache, { CacheStore } from "../VolumeCache";
-import { RawArray } from "zarr/types/rawArray";
 import { Slice } from "zarr/types/core/types";
+import { RawArray } from "zarr/types/rawArray";
 
 const MAX_ATLAS_DIMENSION = 2048;
 
@@ -83,89 +83,125 @@ type OMEZarrMetadata = {
   omero: OmeroTransitionalMetadata;
 };
 
-function getScale({ coordinateTransformations }: OMEDataset | OMEMultiscale): number[] {
-  if (coordinateTransformations === undefined) {
-    console.log("ERROR: no coordinate transformations for scale level");
-    return [1, 1, 1, 1, 1];
+/** Turns `axisTCZYX` into the number of dimensions in the array */
+const getDimensionCount = ([t, c]: [number, number, number, number, number]) => 3 + Number(t > -1) + Number(c > -1);
+
+class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
+  // Required by `AsyncStore`
+  listDir?: (path?: string) => Promise<string[]>;
+  rmDir?: (path?: string) => Promise<boolean>;
+  getSize?: (path?: string) => Promise<number>;
+  rename?: (path?: string) => Promise<void>;
+
+  baseStore: AsyncStore<ArrayBuffer, RequestInit>;
+
+  cache?: VolumeCache;
+  cacheStore?: CacheStore;
+  // Our other miscellaneous info is packed into an object to be null-checked all at once
+  arrayInfo?: {
+    axesTCZYX: [number, number, number, number, number];
+    scaleNames: string[];
+    dimensionSeparator: string;
+  };
+
+  constructor(baseStore: AsyncStore<ArrayBuffer, RequestInit>) {
+    this.baseStore = baseStore;
+    this.listDir = baseStore.listDir;
+    this.rmDir = baseStore.rmDir;
+    this.getSize = baseStore.getSize;
+    this.rename = baseStore.rename;
   }
 
-  // this assumes we'll never encounter the "path" variant
-  const isScaleTransform = (t: CoordinateTransformation): t is { type: "scale"; scale: number[] } => t.type === "scale";
-
-  // there can be any number of coordinateTransformations
-  // but there must be only one of type "scale".
-  const scaleTransform = coordinateTransformations.find(isScaleTransform);
-  if (!scaleTransform) {
-    console.log(`ERROR: no coordinate transformation of type "scale" for scale level`);
-    return [1, 1, 1, 1, 1];
+  setCacheInfo(
+    axesTCZYX: [number, number, number, number, number],
+    scaleNames: string[],
+    dimensionSeparator = "/",
+    cache?: VolumeCache,
+    cacheStore?: CacheStore
+  ) {
+    this.arrayInfo = { axesTCZYX, scaleNames, dimensionSeparator };
+    this.cache = cache;
+    this.cacheStore = cacheStore;
   }
 
-  return scaleTransform.scale;
-}
+  async getItem(item: string, opts?: RequestInit | undefined): Promise<ArrayBuffer> {
+    // If we don't have a cache or aren't getting a chunk, call straight to the base store
+    const zarrExts = [".zarray", ".zgroup", ".zattrs"];
+    if (!this.cache || !this.cacheStore || !this.arrayInfo || zarrExts.some((s) => item.endsWith(s))) {
+      return this.baseStore.getItem(item, opts);
+    }
 
-function imageIndexFromLoadSpec(loadSpec: LoadSpec, multiscales: OMEMultiscale[]): number {
-  // each entry of multiscales is a multiscale image.
-  let imageIndex = loadSpec.scene;
-  if (imageIndex !== 0) {
-    console.warn("WARNING: OMEZarrLoader does not support multiple scenes. Results may be invalid.");
+    const { scaleNames, axesTCZYX, dimensionSeparator } = this.arrayInfo;
+
+    // Extract chunk coordinates from item path
+    const pathElems = item.split(dimensionSeparator);
+    // The first element should be the scale name - convert it to scale level index
+    const scale = scaleNames.indexOf(pathElems.shift() as string);
+    // The remaining elements should be chunk coordinates, and should be numbers
+    const coordsLength = getDimensionCount(axesTCZYX);
+    const chunkCoords = pathElems.slice(-coordsLength).map((s) => parseInt(s, 10));
+    if (chunkCoords.length < coordsLength || chunkCoords.some(isNaN) || scale < 0) {
+      console.log("CachingStore: unexpected item path: " + item);
+      return this.baseStore.getItem(item, opts);
+    }
+
+    // Check the cache
+    const [t, c, z, y, x] = axesTCZYX;
+    const time = t < 0 ? 0 : chunkCoords[t];
+    const channel = c < 0 ? 0 : chunkCoords[c];
+    const chunk = new Vector3(chunkCoords[x], chunkCoords[y], chunkCoords[z]);
+    const cacheResult = this.cache.get(this.cacheStore, channel, { scale, time, chunk });
+    if (cacheResult) {
+      return cacheResult;
+    }
+
+    // Not in cache; load the chunk and cache it
+    const result = await this.baseStore.getItem(item, opts);
+    this.cache.insert(this.cacheStore, result, { scale, time, chunk, channel });
+    return result;
   }
-  if (imageIndex >= multiscales.length) {
-    console.warn(`WARNING: OMEZarrLoader: scene ${imageIndex} is invalid. Using scene 0.`);
-    imageIndex = 0;
+
+  keys(): Promise<string[]> {
+    return this.baseStore.keys();
   }
-  return imageIndex;
+
+  setItem(item: string, value: ArrayBuffer): Promise<boolean> {
+    return this.baseStore.setItem(item, value);
+  }
+
+  deleteItem(item: string): Promise<boolean> {
+    return this.baseStore.deleteItem(item);
+  }
+
+  containsItem(item: string): Promise<boolean> {
+    return this.baseStore.containsItem(item);
+  }
 }
 
 function remapAxesToTCZYX(axes: Axis[]): [number, number, number, number, number] {
   const axisTCZYX: [number, number, number, number, number] = [-1, -1, -1, -1, -1];
-  for (let i = 0; i < axes.length; ++i) {
-    const axis = axes[i];
-    if (axis.name === "t") {
-      axisTCZYX[0] = i;
-    } else if (axis.name === "c") {
-      axisTCZYX[1] = i;
-    } else if (axis.name === "z") {
-      axisTCZYX[2] = i;
-    } else if (axis.name === "y") {
-      axisTCZYX[3] = i;
-    } else if (axis.name === "x") {
-      axisTCZYX[4] = i;
+  const axisNames = ["t", "c", "z", "y", "x"];
+
+  axes.forEach((axis, idx) => {
+    const axisIdx = axisNames.indexOf(axis.name);
+    if (axisIdx > -1) {
+      axisTCZYX[axisIdx] = idx;
     } else {
-      console.log("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
+      console.error("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
     }
-  }
+  });
+
   if (axisTCZYX[2] === -1 || axisTCZYX[3] === -1 || axisTCZYX[4] === -1) {
-    console.log("ERROR: zarr loader expects a z, y, and x axis.");
+    console.error("ERROR: zarr loader expects a z, y, and x axis.");
   }
+
   return axisTCZYX;
 }
 
-// TODO use in `loadDims`
-async function loadLevelShapes(store: HTTPStore, multiscale: OMEMultiscale): Promise<number[][]> {
-  const { datasets, axes } = multiscale;
-
-  const shapePromises = datasets.map(async ({ path }): Promise<number[]> => {
-    const level = await openArray({ store, path, mode: "r" });
-    const shape = level.meta.shape;
-    if (shape.length !== axes.length) {
-      console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
-    }
-    return shape;
-  });
-
-  return await Promise.all(shapePromises);
-}
-
-async function loadMetadata(store: HTTPStore): Promise<OMEZarrMetadata> {
-  const data = await openGroup(store, null, "r");
-  return (await data.attrs.asObject()) as OMEZarrMetadata;
-}
-
-function pickLevelToLoad(loadSpec: LoadSpec, multiscaleDims: number[][], dimIndexes: number[]): number {
+function pickLevelToLoad(loadSpec: LoadSpec, zarrMultiscales: ZarrArray[], zi: number, yi: number, xi: number): number {
   const size = loadSpec.subregion.getSize(new Vector3());
-  const [zi, yi, xi] = dimIndexes.slice(-3);
 
-  const spatialDims = multiscaleDims.map((shape) => [
+  const spatialDims = zarrMultiscales.map(({ shape }) => [
     Math.max(shape[zi] * size.z, 1),
     Math.max(shape[yi] * size.y, 1),
     Math.max(shape[xi] * size.x, 1),
@@ -179,258 +215,6 @@ function pickLevelToLoad(loadSpec: LoadSpec, multiscaleDims: number[][], dimInde
     return optimalLevel;
   }
 }
-
-class OMEZarrLoader implements IVolumeLoader {
-  url: string;
-  multiscaleDims?: number[][];
-  metadata?: OMEZarrMetadata;
-  axesTCZYX?: [number, number, number, number, number];
-  maxExtent?: Box3;
-
-  cache?: VolumeCache;
-  cacheStore?: CacheStore;
-
-  constructor(url: string, cache?: VolumeCache) {
-    this.url = url;
-    this.cache = cache;
-  }
-
-  async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
-    const store = new HTTPStore(this.url);
-
-    const data = await openGroup(store, null, "r");
-
-    // get top-level metadata for this zarr image
-    const allmetadata = await data.attrs.asObject();
-    // each entry of multiscales is a multiscale image.
-    const imageIndex = imageIndexFromLoadSpec(loadSpec, allmetadata.multiscales);
-    const datasets: OMEDataset[] = allmetadata.multiscales[imageIndex].datasets;
-    const axes: Axis[] = allmetadata.multiscales[imageIndex].axes;
-
-    const axisTCZYX = remapAxesToTCZYX(axes);
-
-    // Assume all axes have the same units - we have no means of storing per-axis unit symbols
-    const spaceUnitName = axes[axisTCZYX[4]].unit;
-    const spaceUnitSymbol = unitNameToSymbol(spaceUnitName) || spaceUnitName || "";
-
-    const timeUnitName = axisTCZYX[0] > -1 ? axes[axisTCZYX[0]].unit : undefined;
-    const timeUnitSymbol = unitNameToSymbol(timeUnitName) || timeUnitName || "";
-
-    const dimsPromises = datasets.map(async (dataset): Promise<VolumeDims> => {
-      const level = await openArray({ store, path: dataset.path, mode: "r" });
-      const shape = level.meta.shape;
-      if (shape.length != axes.length) {
-        console.log("ERROR: shape length " + shape.length + " does not match axes length " + axes.length);
-      }
-
-      const scale5d = getScale(dataset);
-
-      const d = new VolumeDims();
-      d.shape = [-1, -1, -1, -1, -1];
-      for (let i = 0; i < d.shape.length; ++i) {
-        if (axisTCZYX[i] > -1) {
-          d.shape[i] = shape[axisTCZYX[i]];
-        }
-      }
-      d.spacing = [1, 1, scale5d[axisTCZYX[2]], scale5d[axisTCZYX[3]], scale5d[axisTCZYX[4]]];
-      d.spaceUnit = spaceUnitSymbol;
-      d.timeUnit = timeUnitSymbol;
-      d.dataType = "uint8";
-      return d;
-    });
-
-    return Promise.all(dimsPromises);
-  }
-
-  async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
-    // Load metadata and dimensions.
-    const store = new HTTPStore(this.url);
-    this.metadata = await loadMetadata(store);
-    const imageIndex = imageIndexFromLoadSpec(loadSpec, this.metadata.multiscales);
-    const multiscale = this.metadata.multiscales[imageIndex];
-    this.multiscaleDims = await loadLevelShapes(store, multiscale);
-    this.axesTCZYX = remapAxesToTCZYX(multiscale.axes);
-    this.maxExtent = loadSpec.subregion.clone();
-
-    // After this point we consider the loader "open" (bound to one remote source)
-
-    const [t, c, z, y, x] = this.axesTCZYX;
-    const hasT = t > -1;
-    const hasC = c > -1;
-
-    const shape0 = this.multiscaleDims[0];
-    const levelToLoad = pickLevelToLoad(loadSpec, this.multiscaleDims, this.axesTCZYX);
-    const shapeLv = this.multiscaleDims[levelToLoad];
-
-    const scaleSizes = this.multiscaleDims.map((shape) => new Vector3(shape[x], shape[y], shape[z]));
-    this.cacheStore = this.cache?.addVolume(shape0[c], shape0[t], scaleSizes);
-
-    // Assume all axes have the same units - we have no means of storing per-axis unit symbols
-    const spaceUnitName = multiscale.axes[x].unit;
-    const spaceUnitSymbol = unitNameToSymbol(spaceUnitName) || spaceUnitName || "";
-
-    const timeUnitName = hasT ? multiscale.axes[t].unit : undefined;
-    const timeUnitSymbol = unitNameToSymbol(timeUnitName) || timeUnitName || "";
-
-    const channels = hasC ? shapeLv[c] : 1;
-    const sizeT = hasT ? shapeLv[t] : 1;
-
-    // we want scale of level 0
-    const scale5d = getScale(multiscale.datasets[0]);
-
-    const timeScale = hasT ? scale5d[t] : 1;
-
-    const pxDimsLv = convertSubregionToPixels(loadSpec.subregion, new Vector3(shapeLv[x], shapeLv[y], shapeLv[z]));
-    const pxSizeLv = pxDimsLv.getSize(new Vector3());
-    const pxDims0 = convertSubregionToPixels(loadSpec.subregion, new Vector3(shape0[x], shape0[y], shape0[z]));
-    const pxSize0 = pxDims0.getSize(new Vector3());
-
-    // compute rows and cols and atlas width and ht, given tw and th
-    const atlasDims = computePackedAtlasDims(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
-    const atlasSize = atlasDims.clone().multiply(new Vector2(pxSizeLv.x, pxSizeLv.y));
-    console.log("atlas width and height: " + atlasSize.x + " " + atlasSize.y);
-
-    const displayMetadata = this.metadata.omero;
-    const chnames: string[] = [];
-    for (let i = 0; i < displayMetadata.channels.length; ++i) {
-      chnames.push(displayMetadata.channels[i].label);
-    }
-
-    const imgdata: ImageInfo = {
-      name: displayMetadata.name,
-
-      originalSize: pxSize0,
-      atlasTileDims: atlasDims,
-      volumeSize: pxSizeLv,
-      subregionSize: pxSizeLv.clone(),
-      subregionOffset: new Vector3(0, 0, 0),
-      physicalPixelSize: new Vector3(scale5d[x], scale5d[y], scale5d[z]),
-      spatialUnit: spaceUnitSymbol,
-
-      numChannels: channels,
-      channelNames: chnames,
-      times: sizeT,
-      timeScale: timeScale,
-      timeUnit: timeUnitSymbol,
-
-      transform: {
-        translation: new Vector3(0, 0, 0),
-        rotation: new Vector3(0, 0, 0),
-      },
-    };
-
-    // The `LoadSpec` passed in at this stage should represent the subset which this loader loads, not that
-    // which the volume contains. The volume contains the full extent of the subset recognized by this loader.
-    const fullExtentLoadSpec: LoadSpec = {
-      ...loadSpec,
-      subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)),
-    };
-
-    // got some data, now let's construct the volume.
-    const vol = new Volume(imgdata, fullExtentLoadSpec, this);
-    vol.channelLoadCallback = onChannelLoaded;
-    vol.imageMetadata = buildDefaultMetadata(imgdata);
-    return vol;
-  }
-
-  async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
-    console.time("load1");
-    if (
-      this.axesTCZYX === undefined ||
-      this.metadata === undefined ||
-      this.multiscaleDims === undefined ||
-      this.maxExtent === undefined
-    ) {
-      console.error("ERROR: called `loadVolumeData` on zarr loader without first opening with `createVolume`!");
-      return;
-    }
-
-    vol.loadSpec = explicitLoadSpec || vol.loadSpec;
-    const subregion = composeSubregion(vol.loadSpec.subregion, this.maxExtent);
-    const { numChannels, times } = vol.imageInfo;
-
-    const imageIndex = imageIndexFromLoadSpec(vol.loadSpec, this.metadata.multiscales);
-    const multiscale = this.metadata.multiscales[imageIndex];
-
-    const levelToLoad = pickLevelToLoad({ ...vol.loadSpec, subregion }, this.multiscaleDims, this.axesTCZYX);
-    const datasetPath = multiscale.datasets[levelToLoad].path;
-    const levelShape = this.multiscaleDims[levelToLoad];
-
-    const [zi, yi, xi] = this.axesTCZYX.slice(-3);
-    const regionPx = convertSubregionToPixels(subregion, new Vector3(levelShape[xi], levelShape[yi], levelShape[zi]));
-
-    // Update volume `imageInfo` to reflect potentially new dimensions
-    const regionSizePx = regionPx.getSize(new Vector3());
-    const atlasDims = computePackedAtlasDims(regionSizePx.z, regionSizePx.x, regionSizePx.y);
-    const volExtentPx = convertSubregionToPixels(
-      this.maxExtent,
-      new Vector3(levelShape[xi], levelShape[yi], levelShape[zi])
-    );
-    const volSizePx = volExtentPx.getSize(new Vector3());
-    const regionExtentPx = convertSubregionToPixels(vol.loadSpec.subregion, volSizePx);
-    vol.imageInfo = {
-      ...vol.imageInfo,
-      atlasTileDims: atlasDims,
-      volumeSize: volSizePx,
-      subregionSize: regionSizePx,
-      subregionOffset: regionExtentPx.min,
-    };
-    vol.updateDimensions();
-
-    const channelIndexes = vol.loadSpec.channels || Array.from({ length: numChannels }, (_val, idx) => idx);
-    // do each channel on a worker
-    for (const i of channelIndexes) {
-      const cacheQueryDims = {
-        region: regionPx,
-        time: vol.loadSpec.time,
-        scale: levelToLoad,
-      };
-      const cacheResult = this.cacheStore && this.cache?.get(this.cacheStore, i, cacheQueryDims);
-
-      if (cacheResult) {
-        vol.setChannelDataFromVolume(i, new Uint8Array(cacheResult));
-        onChannelLoaded?.(vol, i);
-      } else {
-        const msg: FetchZarrMessage = {
-          url: this.url,
-          subregion: regionPx,
-          time: Math.min(vol.loadSpec.time, times),
-          channel: i,
-          path: datasetPath,
-          axesTCZYX: this.axesTCZYX,
-        };
-
-        const result = await work(msg);
-        const u8 = result.data;
-        const channel = result.channel;
-
-        const cacheInsertDims = {
-          region: regionPx,
-          scale: levelToLoad,
-          time: vol.loadSpec.time,
-          channel,
-        };
-        this.cacheStore && this.cache?.insert(this.cacheStore, u8, cacheInsertDims);
-
-        vol.setChannelDataFromVolume(channel, u8);
-        onChannelLoaded?.(vol, channel);
-        if (vol.isLoaded()) {
-          console.timeEnd("load1");
-        }
-        // worker.postMessage(msg);
-      }
-    }
-  }
-}
-
-export type FetchZarrMessage = {
-  url: string;
-  time: number;
-  subregion: Box3;
-  channel: number;
-  path: string;
-  axesTCZYX: number[];
-};
 
 function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
   if (dtype === "|u1") {
@@ -456,32 +240,247 @@ function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
   return u8;
 }
 
-const work = async (data: FetchZarrMessage) => {
-  const time = data.time;
-  const channelIndex = data.channel;
-  const axesTCZYX = data.axesTCZYX;
+class OMEZarrLoader implements IVolumeLoader {
+  scaleLevels: ZarrArray[];
+  multiscaleMetadata: OMEMultiscale;
+  omeroMetadata: OmeroTransitionalMetadata;
+  axesTCZYX: [number, number, number, number, number];
 
-  const store = new HTTPStore(data.url);
-  const level = await openArray({ store: store, path: data.path, mode: "r" });
+  // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
+  //   This may cause errors or incorrect results otherwise!
+  maxExtent?: Box3;
 
-  // build slice spec
-  const { min, max } = data.subregion;
-  const unorderedSpec = [time, channelIndex, slice(min.z, max.z), slice(min.y, max.y), slice(min.x, max.x)];
+  private constructor(
+    scaleLevels: ZarrArray[],
+    multiscaleMetadata: OMEMultiscale,
+    omeroMetadata: OmeroTransitionalMetadata,
+    axisTCZYX: [number, number, number, number, number]
+  ) {
+    this.scaleLevels = scaleLevels;
+    this.multiscaleMetadata = multiscaleMetadata;
+    this.omeroMetadata = omeroMetadata;
+    this.axesTCZYX = axisTCZYX;
+  }
 
-  const specLen = 3 + Number(axesTCZYX[0] > -1) + Number(axesTCZYX[1] > -1);
-  const sliceSpec: (number | Slice)[] = Array(specLen);
+  static async createLoader(url: string, scene = 0, cache?: VolumeCache): Promise<OMEZarrLoader> {
+    // Setup: create store, get basic metadata
+    const store = new ChunkCachingStore(new HTTPStore(url));
+    const group = await openGroup(store, null, "r");
+    const metadata = (await group.attrs.asObject()) as OMEZarrMetadata;
 
-  axesTCZYX.forEach((val, idx) => {
-    if (val > -1) {
-      sliceSpec[val] = unorderedSpec[idx];
+    // Pick scene (multiscale)
+    if (scene > metadata.multiscales.length) {
+      console.warn(`WARNING: OMEZarrLoader: scene ${scene} is invalid. Using scene 0.`);
+      scene = 0;
     }
-  });
+    const multiscale = metadata.multiscales[scene];
 
-  const channel = (await level.getRaw(sliceSpec)) as RawArray;
+    // Open all scale levels of multiscale
+    const scaleLevelPaths = multiscale.datasets.map(({ path }) => path);
+    const scaleLevelPromises = scaleLevelPaths.map((path) => openArray({ store, path, mode: "r" }));
+    const scaleLevels = await Promise.all(scaleLevelPromises);
+    const dimensionSeparator = scaleLevels[0].meta.dimension_separator;
 
-  const u8 = convertChannel(channel.data, channel.dtype);
-  const results = { data: u8, channel: channelIndex === -1 ? 0 : channelIndex };
-  return results;
-};
+    // Grab axis indexes, use them to set up cache store
+    const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
+    const [t, c, z, y, x] = axisTCZYX;
+    const numChannels = Math.max(scaleLevels[0].shape[c], 1);
+    const numTimes = Math.max(scaleLevels[0].shape[t], 1);
+    const scaleChunkDims = scaleLevels.map(
+      ({ chunkDataShape }) => new Vector3(chunkDataShape[x], chunkDataShape[y], chunkDataShape[z])
+    );
+    const cacheStore = cache?.addVolume(numChannels, numTimes, scaleChunkDims);
+    store.setCacheInfo(axisTCZYX, scaleLevelPaths, dimensionSeparator, cache, cacheStore);
+
+    return new OMEZarrLoader(scaleLevels, multiscale, metadata.omero, axisTCZYX);
+  }
+
+  private getUnitSymbols(): [string, string] {
+    // Assume all spatial axes have the same units - we have no means of storing per-axis unit symbols
+    const xi = this.axesTCZYX[4];
+    const spaceUnitName = this.multiscaleMetadata.axes[xi].unit;
+    const spaceUnitSymbol = unitNameToSymbol(spaceUnitName) || spaceUnitName || "";
+
+    const ti = this.axesTCZYX[0];
+    const timeUnitName = ti > -1 ? this.multiscaleMetadata.axes[ti].unit : undefined;
+    const timeUnitSymbol = unitNameToSymbol(timeUnitName) || timeUnitName || "";
+
+    return [spaceUnitSymbol, timeUnitSymbol];
+  }
+
+  private getScale(level = 0): number[] {
+    const meta = this.multiscaleMetadata;
+    const transforms = meta.datasets[level].coordinateTransformations ?? meta.coordinateTransformations;
+
+    if (transforms === undefined) {
+      console.error("ERROR: no coordinate transformations for scale level");
+      return [1, 1, 1, 1, 1];
+    }
+
+    // this assumes we'll never encounter the "path" variant
+    const isScaleTransform = (t: CoordinateTransformation): t is { type: "scale"; scale: number[] } =>
+      t.type === "scale";
+
+    // there can be any number of coordinateTransformations
+    // but there must be only one of type "scale".
+    const scaleTransform = transforms.find(isScaleTransform);
+    if (!scaleTransform) {
+      console.error(`ERROR: no coordinate transformation of type "scale" for scale level`);
+      return [1, 1, 1, 1, 1];
+    }
+
+    const scale = scaleTransform.scale.slice();
+    while (scale.length < 5) {
+      scale.unshift(1);
+    }
+    return scale;
+  }
+
+  async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
+    const [spaceUnit, timeUnit] = this.getUnitSymbols();
+    // Compute subregion size so we can factor that in
+    const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
+    const subregion = composeSubregion(loadSpec.subregion, maxExtent);
+    const regionSize = subregion.getSize(new Vector3());
+    const regionArr = [1, 1, regionSize.z, regionSize.y, regionSize.x];
+
+    const result = this.scaleLevels.map((level, i) => {
+      const scale = this.getScale(i);
+      const dims = new VolumeDims();
+
+      dims.spaceUnit = spaceUnit;
+      dims.timeUnit = timeUnit;
+      dims.subpath = level.path ?? "";
+      dims.shape = [-1, -1, -1, -1, -1];
+      dims.spacing = [1, 1, 1, 1, 1];
+
+      this.axesTCZYX.forEach((val, idx) => {
+        if (val > -1) {
+          dims.shape[idx] = Math.ceil(level.shape[val] * regionArr[idx]);
+          dims.spacing[idx] = scale[val];
+        }
+      });
+
+      return dims;
+    });
+
+    return result;
+  }
+
+  async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
+    const [t, c, z, y, x] = this.axesTCZYX;
+    const hasT = t > -1;
+    const hasC = c > -1;
+
+    const shape0 = this.scaleLevels[0].shape;
+    const levelToLoad = pickLevelToLoad(loadSpec, this.scaleLevels, z, y, x);
+    const shapeLv = this.scaleLevels[levelToLoad].shape;
+
+    const [spatialUnit, timeUnit] = this.getUnitSymbols();
+    const numChannels = hasC ? shapeLv[c] : 1;
+    const times = hasT ? shapeLv[t] : 1;
+
+    if (!this.maxExtent) {
+      this.maxExtent = loadSpec.subregion.clone();
+    }
+    const pxDims0 = convertSubregionToPixels(loadSpec.subregion, new Vector3(shape0[x], shape0[y], shape0[z]));
+    const pxSize0 = pxDims0.getSize(new Vector3());
+    const pxDimsLv = convertSubregionToPixels(loadSpec.subregion, new Vector3(shapeLv[x], shapeLv[y], shapeLv[z]));
+    const pxSizeLv = pxDimsLv.getSize(new Vector3());
+
+    const atlasTileDims = computePackedAtlasDims(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
+
+    const channelNames = this.omeroMetadata.channels.map((ch) => ch.label);
+
+    const scale5d = this.getScale();
+    const timeScale = hasT ? scale5d[t] : 1;
+
+    const imgdata: ImageInfo = {
+      name: this.omeroMetadata.name,
+
+      originalSize: pxSize0,
+      atlasTileDims,
+      volumeSize: pxSizeLv,
+      subregionSize: pxSizeLv.clone(),
+      subregionOffset: new Vector3(0, 0, 0),
+      physicalPixelSize: new Vector3(scale5d[x], scale5d[y], scale5d[z]),
+      spatialUnit,
+
+      numChannels,
+      channelNames,
+      times,
+      timeScale,
+      timeUnit,
+
+      transform: {
+        translation: new Vector3(0, 0, 0),
+        rotation: new Vector3(0, 0, 0),
+      },
+    };
+
+    const fullExtentLoadSpec: LoadSpec = {
+      ...loadSpec,
+      subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)),
+    };
+
+    const vol = new Volume(imgdata, fullExtentLoadSpec, this);
+    vol.channelLoadCallback = onChannelLoaded;
+    vol.imageMetadata = buildDefaultMetadata(imgdata);
+    return vol;
+  }
+
+  async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
+    vol.loadSpec = explicitLoadSpec ?? vol.loadSpec;
+    const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
+    const [z, y, x] = this.axesTCZYX.slice(2);
+    const subregion = composeSubregion(vol.loadSpec.subregion, maxExtent);
+
+    const levelIdx = pickLevelToLoad({ ...vol.loadSpec, subregion }, this.scaleLevels, z, y, x);
+    const level = this.scaleLevels[levelIdx];
+    const levelShape = level.shape;
+
+    const regionPx = convertSubregionToPixels(subregion, new Vector3(levelShape[x], levelShape[y], levelShape[z]));
+    // Update volume `imageInfo` to reflect potentially new dimensions
+    const regionSizePx = regionPx.getSize(new Vector3());
+    const atlasTileDims = computePackedAtlasDims(regionSizePx.z, regionSizePx.x, regionSizePx.y);
+    const volExtentPx = convertSubregionToPixels(maxExtent, new Vector3(levelShape[x], levelShape[y], levelShape[z]));
+    const volSizePx = volExtentPx.getSize(new Vector3());
+    vol.imageInfo = {
+      ...vol.imageInfo,
+      atlasTileDims,
+      volumeSize: volSizePx,
+      subregionSize: regionSizePx,
+      subregionOffset: regionPx.min,
+    };
+    vol.updateDimensions();
+
+    const { numChannels } = vol.imageInfo;
+    const channelIndexes = vol.loadSpec.channels ?? Array.from({ length: numChannels }, (_, i) => i);
+
+    const channelPromises = channelIndexes.map(async (ch) => {
+      // Build slice spec
+      const { min, max } = regionPx;
+      const unorderedSpec = [vol.loadSpec.time, ch, slice(min.z, max.z), slice(min.y, max.y), slice(min.x, max.x)];
+      const specLen = getDimensionCount(this.axesTCZYX);
+      const sliceSpec: (number | Slice)[] = Array(specLen);
+
+      this.axesTCZYX.forEach((val, idx) => {
+        if (val > -1) {
+          if (val > specLen) {
+            throw new Error("Unexpected axis index");
+          }
+          sliceSpec[val] = unorderedSpec[idx];
+        }
+      });
+
+      const result = (await level.getRaw(sliceSpec)) as RawArray;
+      const u8 = convertChannel(result.data, result.dtype);
+      vol.setChannelDataFromVolume(ch, u8);
+      onChannelLoaded?.(vol, ch);
+    });
+
+    await Promise.all(channelPromises);
+  }
+}
 
 export { OMEZarrLoader };

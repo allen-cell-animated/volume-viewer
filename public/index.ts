@@ -85,7 +85,9 @@ const myState: State = {
   isPlaying: false,
   timerId: 0,
 
-  loader: new OMEZarrLoader(TEST_DATA["zarrVariance"].url, volumeCache),
+  loader: new JsonImageInfoLoader(
+    "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json"
+  ),
 
   density: 12.5,
   maskAlpha: 1.0,
@@ -991,12 +993,12 @@ function createTestVolume() {
   };
 }
 
-function createLoader(data: TestDataSpec): IVolumeLoader {
+async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
   switch (data.type) {
     case "opencell":
       return new OpenCellLoader();
     case "omezarr":
-      return new OMEZarrLoader(data.url, volumeCache);
+      return await OMEZarrLoader.createLoader(data.url, 0, volumeCache);
     case "ometiff":
       return new TiffLoader(data.url);
     // case "procedural":
@@ -1022,14 +1024,14 @@ async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<vo
   goToZSlice(Math.floor(volume.imageInfo.subregionSize.z / 2));
 }
 
-function loadTestData(testdata: TestDataSpec) {
+async function loadTestData(testdata: TestDataSpec) {
   if (testdata.type === "procedural") {
     const volumeInfo = createTestVolume();
     loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
     return;
   }
 
-  myState.loader = createLoader(testdata);
+  myState.loader = await createLoader(testdata);
 
   const loadSpec = new LoadSpec();
   myState.totalFrames = testdata.times;
