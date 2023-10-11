@@ -18,9 +18,8 @@ export type QueryExtent = {
 type MaybeCacheEntry = CacheEntry | null;
 type CacheEntry = {
   /** The data contained in this entry */
-  // TODO allow more types of `TypedArray` to be stored together in the cache?
   data: ArrayBuffer;
-  /** The chunk of the volume covered by this entry, in pixels */
+  /** The coordinates of the volume chunk covered by this entry */
   chunk: Vector3;
   /** The previous entry in the LRU list (more recently used) */
   prev: MaybeCacheEntry;
@@ -31,7 +30,7 @@ type CacheEntry = {
 };
 
 type CacheStoreMultiscaleLevel = {
-  // Entries are indexed by T and C, then stored in lists of ZYX subsets
+  // Entries are indexed by T and C, then stored in lists of ZYX chunks
   data: CacheEntry[][][];
   size: Vector3;
 };
