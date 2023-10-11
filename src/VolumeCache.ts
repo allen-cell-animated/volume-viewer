@@ -1,4 +1,4 @@
-import { Box3, Vector3 } from "three";
+import { Vector3 } from "three";
 
 // The following two very similar types are kept separate because we may later want to allow more
 // complex queries with respect to scale, e.g. "get the largest available scale within this range"
