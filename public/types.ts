@@ -1,5 +1,5 @@
 import { Volume, Light } from "../src";
-import { IVolumeLoader } from "../src/loaders/IVolumeLoader";
+import { IVolumeLoader } from "../src/loaders";
 import { ImageInfo } from "../src/Volume";
 
 export interface TestDataSpec {

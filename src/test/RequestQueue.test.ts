@@ -3,7 +3,7 @@ import { Vector3 } from "three";
 import { TypedArray } from "zarr";
 
 import RequestQueue, { Request } from "../utils/RequestQueue";
-import { LoadSpec, loadSpecToString } from "../loaders/IVolumeLoader";
+import { LoadSpec, loadSpecToString } from "../loaders";
 
 /**
  * Returns a promise that resolves once the timeout (give in ms) is completed.

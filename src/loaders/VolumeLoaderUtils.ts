@@ -3,16 +3,6 @@ import { Box3, Vector2, Vector3 } from "three";
 
 import { ImageInfo } from "../Volume";
 
-export type TypedArray =
-  | Uint8Array
-  | Int8Array
-  | Uint16Array
-  | Int16Array
-  | Uint32Array
-  | Int32Array
-  | Float32Array
-  | Float64Array;
-
 // Map from units to their symbols
 const UNIT_SYMBOLS = {
   angstrom: "Å",

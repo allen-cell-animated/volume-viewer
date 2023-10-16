@@ -20,7 +20,7 @@ import {
   SKY_LIGHT,
 } from "../src";
 // special loader really just for this demo app but lives with the other loaders
-import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
+import { OpenCellLoader } from "../src/loaders";
 import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
 
