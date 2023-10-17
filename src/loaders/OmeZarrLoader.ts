@@ -86,6 +86,10 @@ type OMEZarrMetadata = {
 /** Turns `axisTCZYX` into the number of dimensions in the array */
 const getDimensionCount = ([t, c]: [number, number, number, number, number]) => 3 + Number(t > -1) + Number(c > -1);
 
+/**
+ * `Store` is zarr.js's minimal abstraction for anything that acts like a filesystem. (Local machine, HTTP server, etc.)
+ * `ChunkCachingStore` wraps another `Store` and adds a connection to our `VolumeCache`.
+ */
 class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
   // Required by `AsyncStore`
   listDir?: (path?: string) => Promise<string[]>;
@@ -141,7 +145,7 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
     const coordsLength = getDimensionCount(axesTCZYX);
     const chunkCoords = pathElems.slice(-coordsLength).map((s) => parseInt(s, 10));
     if (chunkCoords.length < coordsLength || chunkCoords.some(isNaN) || scale < 0) {
-      console.log("CachingStore: unexpected item path: " + item);
+      console.log("ChunkCachingStore: unexpected item path: " + item);
       return this.baseStore.getItem(item, opts);
     }
 
