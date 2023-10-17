@@ -165,12 +165,16 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
     return this.baseStore.keys();
   }
 
-  setItem(item: string, value: ArrayBuffer): Promise<boolean> {
-    return this.baseStore.setItem(item, value);
+  async setItem(item: string, value: ArrayBuffer): Promise<boolean> {
+    console.warn("ChunkCachingStore: attempt to set data!");
+    // return this.baseStore.setItem(item, value);
+    return false;
   }
 
-  deleteItem(item: string): Promise<boolean> {
-    return this.baseStore.deleteItem(item);
+  async deleteItem(item: string): Promise<boolean> {
+    console.warn("ChunkCachingStore: attempt to delete data!");
+    // return this.baseStore.deleteItem(item);
+    return false;
   }
 
   containsItem(item: string): Promise<boolean> {
