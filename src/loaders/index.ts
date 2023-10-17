@@ -11,33 +11,22 @@ const enum VolumeFileFormat {
   TIFF = "tiff",
 }
 
-type CreateZarrLoaderOptions = { path: string; cache?: VolumeCache; scene?: number };
-type CreateJsonLoaderOptions = { path: string | string[]; cache?: VolumeCache };
-type CreateTiffLoaderOptions = { path: string };
-
-type CreateLoaderOptionsMap = {
-  [T in VolumeFileFormat]: {
-    [VolumeFileFormat.ZARR]: CreateZarrLoaderOptions;
-    [VolumeFileFormat.JSON]: CreateJsonLoaderOptions;
-    [VolumeFileFormat.TIFF]: CreateTiffLoaderOptions;
-  }[T];
+type CreateLoaderOptions = {
+  path: string | string[];
+  cache?: VolumeCache;
+  scene?: number;
 };
 
-type CreateLoaderOptions = CreateZarrLoaderOptions | CreateJsonLoaderOptions | CreateTiffLoaderOptions;
+const forceString = (value: string | string[]): string => (typeof value === "object" ? value[0] : value);
 
-async function createVolumeLoader<T extends VolumeFileFormat>(
-  fileType: T,
-  options?: CreateLoaderOptionsMap[T]
-): Promise<IVolumeLoader> {
+async function createVolumeLoader(fileType: VolumeFileFormat, options: CreateLoaderOptions): Promise<IVolumeLoader> {
   switch (fileType) {
     case VolumeFileFormat.ZARR:
-      const zOptions = options as CreateZarrLoaderOptions;
-      return await OMEZarrLoader.createLoader(zOptions.path, zOptions.scene, zOptions.cache);
+      return await OMEZarrLoader.createLoader(forceString(options.path), options.scene, options.cache);
     case VolumeFileFormat.JSON:
-      const jOptions = options as CreateJsonLoaderOptions;
-      return new JsonImageInfoLoader(jOptions.path, jOptions.cache);
+      return new JsonImageInfoLoader(options.path, options.cache);
     case VolumeFileFormat.TIFF:
-      return new TiffLoader((options as CreateTiffLoaderOptions).path);
+      return new TiffLoader(forceString(options.path));
     default:
       throw new Error(`Unknown file type: ${fileType}`);
   }
