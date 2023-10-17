@@ -18,9 +18,12 @@ import {
   RENDERMODE_PATHTRACE,
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
+  VolumeFileFormat,
+  CreateLoaderOptions,
+  createVolumeLoader,
 } from "../src";
 // special loader really just for this demo app but lives with the other loaders
-import { OpenCellLoader } from "../src/loaders";
+import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
 import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
 
@@ -29,45 +32,45 @@ const PLAYBACK_INTERVAL = 80;
 
 const TEST_DATA: Record<string, TestDataSpec> = {
   timeSeries: {
-    type: "jsonatlas",
+    type: VolumeFileFormat.JSON,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json",
     times: 46,
   },
   omeTiff: {
-    type: "ometiff",
+    type: VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif",
   },
   zarrVariance: {
-    type: "omezarr",
+    type: VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr",
   },
   zarrNucmorph0: {
-    type: "omezarr",
+    type: VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P13-C4.zarr/",
   },
   zarrNucmorph1: {
-    type: "omezarr",
+    type: VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P15-C3.zarr/",
   },
   zarrNucmorph2: {
-    type: "omezarr",
+    type: VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P7-B4.zarr/",
   },
   zarrNucmorph3: {
-    type: "omezarr",
+    type: VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P8-B4.zarr/",
   },
   zarrUK: {
-    type: "omezarr",
+    type: VolumeFileFormat.ZARR,
     url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr",
   },
   opencell: { type: "opencell", url: "" },
   cfeJson: {
-    type: "jsonatlas",
+    type: VolumeFileFormat.JSON,
     url: "AICS-12_881_atlas.json",
   },
   abm: {
-    type: "ometiff",
+    type: VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/HAMILTONIAN_TERM_FOV_VSAHJUP_0000_000192.ome.tif",
   },
   procedural: { type: "procedural", url: "" },
@@ -994,25 +997,23 @@ function createTestVolume() {
 }
 
 async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
-  switch (data.type) {
-    case "opencell":
-      return new OpenCellLoader();
-    case "omezarr":
-      return await OMEZarrLoader.createLoader(data.url, 0, volumeCache);
-    case "ometiff":
-      return new TiffLoader(data.url);
-    // case "procedural":
-    //   return new RawVolumeLoader();
-    case "jsonatlas":
-      const frameUrls: string[] = [];
-      const times = data.times || 0;
-      for (let t = 0; t <= times; t++) {
-        frameUrls.push(data.url.replace("%%", t.toString()));
-      }
-      return new JsonImageInfoLoader(frameUrls, volumeCache);
-    default:
-      throw new Error("Unknown loader type: " + data.type);
+  if (data.type === "opencell") {
+    return new OpenCellLoader();
   }
+
+  const loaderOptions: CreateLoaderOptions = {
+    path: data.url,
+    cache: volumeCache,
+  };
+  if (data.type === VolumeFileFormat.JSON) {
+    loaderOptions.path = [];
+    const times = data.times || 0;
+    for (let t = 0; t <= times; t++) {
+      loaderOptions.path.push(data.url.replace("%%", t.toString()));
+    }
+  }
+
+  return await createVolumeLoader(data.type as VolumeFileFormat, loaderOptions);
 }
 
 async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<void> {
