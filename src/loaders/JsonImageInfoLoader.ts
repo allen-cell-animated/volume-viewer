@@ -1,7 +1,7 @@
 import { Box3, Vector2, Vector3 } from "three";
 
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
-import { buildDefaultMetadata, convertSubregionToPixels } from "./VolumeLoaderUtils";
+import { buildDefaultMetadata } from "./VolumeLoaderUtils";
 import Volume, { ImageInfo } from "../Volume";
 import VolumeCache, { CacheStore } from "../VolumeCache";
 
