@@ -3,7 +3,7 @@ import { Vector2, Vector3 } from "three";
 import Channel from "./Channel";
 import Histogram from "./Histogram";
 import { getColorByChannelIndex } from "./constants/colors";
-import { IVolumeLoader, LoadSpec, PerChannelCallback } from "./loaders";
+import { IVolumeLoader, LoadSpec, PerChannelCallback } from "./loaders/IVolumeLoader";
 
 export type ImageInfo = Readonly<{
   name: string;

@@ -24,7 +24,7 @@ import {
   RenderMode,
 } from "./types";
 import { Axis } from "./VolumeRenderSettings";
-import { PerChannelCallback } from "./loaders";
+import { PerChannelCallback } from "./loaders/IVolumeLoader";
 
 // Constants are kept for compatibility reasons.
 export const RENDERMODE_RAYMARCH = RenderMode.RAYMARCH;

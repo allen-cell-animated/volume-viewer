@@ -1,4 +1,4 @@
-import { LoadSpec, loadSpecToString, IVolumeLoader, VolumeDims } from "./IVolumeLoader";
+import { IVolumeLoader } from "./IVolumeLoader";
 
 import { OMEZarrLoader } from "./OmeZarrLoader";
 import { JsonImageInfoLoader } from "./JsonImageInfoLoader";
@@ -32,5 +32,4 @@ async function createVolumeLoader(fileType: VolumeFileFormat, options: CreateLoa
   }
 }
 
-export type { IVolumeLoader, PerChannelCallback } from "./IVolumeLoader";
-export { LoadSpec, loadSpecToString, VolumeDims, VolumeFileFormat, CreateLoaderOptions, createVolumeLoader };
+export { VolumeFileFormat, CreateLoaderOptions, createVolumeLoader };
