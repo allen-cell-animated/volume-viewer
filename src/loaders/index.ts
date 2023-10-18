@@ -12,23 +12,34 @@ const enum VolumeFileFormat {
 }
 
 type CreateLoaderOptions = {
-  path: string | string[];
+  fileType?: VolumeFileFormat;
   cache?: VolumeCache;
   scene?: number;
 };
 
 const forceString = (value: string | string[]): string => (typeof value === "object" ? value[0] : value);
 
-async function createVolumeLoader(fileType: VolumeFileFormat, options: CreateLoaderOptions): Promise<IVolumeLoader> {
-  switch (fileType) {
-    case VolumeFileFormat.ZARR:
-      return await OMEZarrLoader.createLoader(forceString(options.path), options.scene, options.cache);
-    case VolumeFileFormat.JSON:
-      return new JsonImageInfoLoader(options.path, options.cache);
-    case VolumeFileFormat.TIFF:
-      return new TiffLoader(forceString(options.path));
-    default:
-      throw new Error(`Unknown file type: ${fileType}`);
+async function createVolumeLoader(path: string | string[], options: CreateLoaderOptions): Promise<IVolumeLoader> {
+  if (options.fileType) {
+    switch (options.fileType) {
+      case VolumeFileFormat.ZARR:
+        return await OMEZarrLoader.createLoader(forceString(path), options.scene, options.cache);
+      case VolumeFileFormat.JSON:
+        return new JsonImageInfoLoader(path, options.cache);
+      case VolumeFileFormat.TIFF:
+        return new TiffLoader(forceString(path));
+      default:
+        throw new Error(`Unknown file type: ${options.fileType}`);
+    }
+  } else {
+    const pathString = forceString(path);
+    if (pathString.endsWith(".json")) {
+      return new JsonImageInfoLoader(path, options.cache);
+    } else if (pathString.endsWith(".tif") || pathString.endsWith(".tiff")) {
+      return new TiffLoader(pathString);
+    } else {
+      return await OMEZarrLoader.createLoader(pathString, options.scene, options.cache);
+    }
   }
 }
 

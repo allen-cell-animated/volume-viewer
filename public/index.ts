@@ -17,7 +17,6 @@ import {
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
   VolumeFileFormat,
-  CreateLoaderOptions,
   createVolumeLoader,
 } from "../src";
 // special loader really just for this demo app but lives with the other loaders
@@ -999,19 +998,16 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
     return new OpenCellLoader();
   }
 
-  const loaderOptions: CreateLoaderOptions = {
-    path: data.url,
-    cache: volumeCache,
-  };
+  let path: string | string[] = data.url;
   if (data.type === VolumeFileFormat.JSON) {
-    loaderOptions.path = [];
+    path = [];
     const times = data.times || 0;
     for (let t = 0; t <= times; t++) {
-      loaderOptions.path.push(data.url.replace("%%", t.toString()));
+      path.push(data.url.replace("%%", t.toString()));
     }
   }
 
-  return await createVolumeLoader(data.type as VolumeFileFormat, loaderOptions);
+  return await createVolumeLoader(path, { cache: volumeCache });
 }
 
 async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<void> {
