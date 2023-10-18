@@ -5,13 +5,13 @@ import { JsonImageInfoLoader } from "./JsonImageInfoLoader";
 import { TiffLoader } from "./TiffLoader";
 import VolumeCache from "../VolumeCache";
 
-const enum VolumeFileFormat {
+export const enum VolumeFileFormat {
   ZARR = "zarr",
   JSON = "json",
   TIFF = "tiff",
 }
 
-type CreateLoaderOptions = {
+export type CreateLoaderOptions = {
   fileType?: VolumeFileFormat;
   cache?: VolumeCache;
   scene?: number;
@@ -19,7 +19,10 @@ type CreateLoaderOptions = {
 
 const forceString = (value: string | string[]): string => (typeof value === "object" ? value[0] : value);
 
-async function createVolumeLoader(path: string | string[], options: CreateLoaderOptions): Promise<IVolumeLoader> {
+export async function createVolumeLoader(
+  path: string | string[],
+  options: CreateLoaderOptions
+): Promise<IVolumeLoader> {
   if (options.fileType) {
     switch (options.fileType) {
       case VolumeFileFormat.ZARR:
@@ -42,5 +45,3 @@ async function createVolumeLoader(path: string | string[], options: CreateLoader
     }
   }
 }
-
-export { VolumeFileFormat, CreateLoaderOptions, createVolumeLoader };
