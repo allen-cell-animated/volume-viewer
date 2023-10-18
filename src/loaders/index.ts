@@ -33,14 +33,4 @@ async function createVolumeLoader(fileType: VolumeFileFormat, options: CreateLoa
 }
 
 export type { IVolumeLoader, PerChannelCallback } from "./IVolumeLoader";
-export {
-  LoadSpec,
-  loadSpecToString,
-  OMEZarrLoader,
-  JsonImageInfoLoader,
-  TiffLoader,
-  VolumeDims,
-  VolumeFileFormat,
-  CreateLoaderOptions,
-  createVolumeLoader,
-};
+export { LoadSpec, loadSpecToString, VolumeDims, VolumeFileFormat, CreateLoaderOptions, createVolumeLoader };

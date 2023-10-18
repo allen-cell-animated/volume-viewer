@@ -7,8 +7,6 @@ import {
   IVolumeLoader,
   LoadSpec,
   JsonImageInfoLoader,
-  OMEZarrLoader,
-  TiffLoader,
   View3d,
   Volume,
   VolumeCache,
