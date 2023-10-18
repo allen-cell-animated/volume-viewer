@@ -1,5 +1,5 @@
 import { fromUrl } from "geotiff";
-import { Vector2, Vector3 } from "three";
+import { Vector3 } from "three";
 
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import { buildDefaultMetadata, computePackedAtlasDims } from "./VolumeLoaderUtils";
@@ -114,11 +114,11 @@ class TiffLoader implements IVolumeLoader {
 
     // TODO allow user setting of this downsampling info?
     // TODO allow ROI selection: range of x,y,z,c for a given t
-    const { nrows, ncols } = computePackedAtlasDims(dims.sizez, dims.sizex, dims.sizey);
+    const atlasDims = computePackedAtlasDims(dims.sizez, dims.sizex, dims.sizey);
     // fit tiles to max of 2048x2048?
     const targetSize = 2048;
-    const tilesizex = Math.floor(targetSize / ncols);
-    const tilesizey = Math.floor(targetSize / nrows);
+    const tilesizex = Math.floor(targetSize / atlasDims.x);
+    const tilesizey = Math.floor(targetSize / atlasDims.y);
 
     // load tiff and check metadata
 
@@ -126,7 +126,7 @@ class TiffLoader implements IVolumeLoader {
       name: "TEST",
 
       originalSize: new Vector3(dims.sizex, dims.sizey, dims.sizez),
-      atlasTileDims: new Vector2(nrows, ncols),
+      atlasTileDims: atlasDims,
       volumeSize: new Vector3(tilesizex, tilesizey, dims.sizez),
       subregionSize: new Vector3(tilesizex, tilesizey, dims.sizez),
       subregionOffset: new Vector3(0, 0, 0),

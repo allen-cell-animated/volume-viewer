@@ -1,9 +1,10 @@
 import { Volume, Light } from "../src";
+import { VolumeFileFormat } from "../src/loaders";
 import { IVolumeLoader } from "../src/loaders/IVolumeLoader";
 import { ImageInfo } from "../src/Volume";
 
 export interface TestDataSpec {
-  type: "ometiff" | "omezarr" | "jsonatlas" | "opencell" | "procedural";
+  type: VolumeFileFormat | "opencell" | "procedural";
   url: string;
   /** Optional fallback for JSON volumes which don't specify a value for `times` */
   times?: number;

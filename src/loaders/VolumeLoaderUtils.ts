@@ -1,17 +1,7 @@
 import "regenerator-runtime/runtime";
-import { Box3, Vector3 } from "three";
+import { Box3, Vector2, Vector3 } from "three";
 
 import { ImageInfo } from "../Volume";
-
-export type TypedArray =
-  | Uint8Array
-  | Int8Array
-  | Uint16Array
-  | Int16Array
-  | Uint32Array
-  | Int32Array
-  | Float32Array
-  | Float64Array;
 
 // Map from units to their symbols
 const UNIT_SYMBOLS = {
@@ -68,7 +58,7 @@ export function unitNameToSymbol(unitName?: string): string | null {
 
 // We want to find the most "square" packing of z tw by th tiles.
 // Compute number of rows and columns.
-export function computePackedAtlasDims(z: number, tw: number, th: number): { nrows: number; ncols: number } {
+export function computePackedAtlasDims(z: number, tw: number, th: number): Vector2 {
   let nextrows = 1;
   let nextcols = z;
   let ratio = (nextcols * tw) / (nextrows * th);
@@ -81,7 +71,7 @@ export function computePackedAtlasDims(z: number, tw: number, th: number): { nro
     nextrows = Math.ceil(z / nextcols);
     ratio = (nextcols * tw) / (nextrows * th);
   }
-  return { nrows, ncols };
+  return new Vector2(nrows, ncols);
 }
 
 export function estimateLevelForAtlas(spatialDimsZYX: number[][], maxAtlasEdge = 4096) {

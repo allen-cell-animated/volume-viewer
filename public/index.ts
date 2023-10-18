@@ -7,8 +7,6 @@ import {
   IVolumeLoader,
   LoadSpec,
   JsonImageInfoLoader,
-  OMEZarrLoader,
-  TiffLoader,
   View3d,
   Volume,
   VolumeCache,
@@ -18,6 +16,8 @@ import {
   RENDERMODE_PATHTRACE,
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
+  VolumeFileFormat,
+  createVolumeLoader,
 } from "../src";
 // special loader really just for this demo app but lives with the other loaders
 import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
@@ -29,45 +29,45 @@ const PLAYBACK_INTERVAL = 80;
 
 const TEST_DATA: Record<string, TestDataSpec> = {
   timeSeries: {
-    type: "jsonatlas",
+    type: VolumeFileFormat.JSON,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json",
     times: 46,
   },
   omeTiff: {
-    type: "ometiff",
+    type: VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif",
   },
   zarrVariance: {
-    type: "omezarr",
+    type: VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr",
   },
   zarrNucmorph0: {
-    type: "omezarr",
+    type: VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P13-C4.zarr/",
   },
   zarrNucmorph1: {
-    type: "omezarr",
+    type: VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P15-C3.zarr/",
   },
   zarrNucmorph2: {
-    type: "omezarr",
+    type: VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P7-B4.zarr/",
   },
   zarrNucmorph3: {
-    type: "omezarr",
+    type: VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P8-B4.zarr/",
   },
   zarrUK: {
-    type: "omezarr",
+    type: VolumeFileFormat.ZARR,
     url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr",
   },
   opencell: { type: "opencell", url: "" },
   cfeJson: {
-    type: "jsonatlas",
+    type: VolumeFileFormat.JSON,
     url: "AICS-12_881_atlas.json",
   },
   abm: {
-    type: "ometiff",
+    type: VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/HAMILTONIAN_TERM_FOV_VSAHJUP_0000_000192.ome.tif",
   },
   procedural: { type: "procedural", url: "" },
@@ -85,7 +85,9 @@ const myState: State = {
   isPlaying: false,
   timerId: 0,
 
-  loader: new OMEZarrLoader(TEST_DATA["zarrVariance"].url, volumeCache),
+  loader: new JsonImageInfoLoader(
+    "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json"
+  ),
 
   density: 12.5,
   maskAlpha: 1.0,
@@ -991,26 +993,21 @@ function createTestVolume() {
   };
 }
 
-function createLoader(data: TestDataSpec): IVolumeLoader {
-  switch (data.type) {
-    case "opencell":
-      return new OpenCellLoader();
-    case "omezarr":
-      return new OMEZarrLoader(data.url, volumeCache);
-    case "ometiff":
-      return new TiffLoader(data.url);
-    // case "procedural":
-    //   return new RawVolumeLoader();
-    case "jsonatlas":
-      const frameUrls: string[] = [];
-      const times = data.times || 0;
-      for (let t = 0; t <= times; t++) {
-        frameUrls.push(data.url.replace("%%", t.toString()));
-      }
-      return new JsonImageInfoLoader(frameUrls, volumeCache);
-    default:
-      throw new Error("Unknown loader type: " + data.type);
+async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
+  if (data.type === "opencell") {
+    return new OpenCellLoader();
   }
+
+  let path: string | string[] = data.url;
+  if (data.type === VolumeFileFormat.JSON) {
+    path = [];
+    const times = data.times || 0;
+    for (let t = 0; t <= times; t++) {
+      path.push(data.url.replace("%%", t.toString()));
+    }
+  }
+
+  return await createVolumeLoader(path, { cache: volumeCache });
 }
 
 async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<void> {
@@ -1022,14 +1019,14 @@ async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<vo
   goToZSlice(Math.floor(volume.imageInfo.subregionSize.z / 2));
 }
 
-function loadTestData(testdata: TestDataSpec) {
+async function loadTestData(testdata: TestDataSpec) {
   if (testdata.type === "procedural") {
     const volumeInfo = createTestVolume();
     loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
     return;
   }
 
-  myState.loader = createLoader(testdata);
+  myState.loader = await createLoader(testdata);
 
   const loadSpec = new LoadSpec();
   myState.totalFrames = testdata.times;
