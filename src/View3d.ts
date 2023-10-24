@@ -793,7 +793,8 @@ export class View3d {
    * @param {boolean} enabled
    */
   setVolumeChannelEnabled(volume: Volume, channel: number, enabled: boolean): void {
-    this.image?.setVolumeChannelEnabled(channel, enabled);
+    // TODO: should this become the primary way channel settings are
+    this.image?.setChannelOptions(channel, { enabled });
     this.redraw();
   }
 
