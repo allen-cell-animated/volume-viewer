@@ -87,7 +87,6 @@ export function estimateLevelForAtlas(spatialDimsZYX: number[][], maxAtlasEdge =
     const ytiles = Math.floor(maxAtlasEdge / y);
 
     if (xtiles * ytiles >= z) {
-      console.log("Will load level " + i);
       levelToLoad = i;
       break;
     }
