@@ -393,7 +393,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       this.updateExposure(this.settings.brightness);
     }
 
-    if (dirtyFlags & SettingsFlags.MASK) {
+    if (dirtyFlags & SettingsFlags.MASK_ALPHA) {
       // Update channel and alpha mask if they have changed
       this.updateVolumeData4();
     }

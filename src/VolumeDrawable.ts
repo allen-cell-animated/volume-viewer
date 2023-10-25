@@ -572,12 +572,12 @@ export default class VolumeDrawable {
       return;
     }
     this.settings.maskChannelIndex = channelIndex;
-    this.volumeRendering.updateSettings(this.settings, SettingsFlags.MASK);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.MASK_DATA);
   }
 
   setMaskAlpha(maskAlpha: number): void {
     this.settings.maskAlpha = maskAlpha;
-    this.volumeRendering.updateSettings(this.settings, SettingsFlags.MASK);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.MASK_ALPHA);
   }
 
   setShowBoundingBox(showBoundingBox: boolean): void {

@@ -186,8 +186,14 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       this.setUniform("iResolution", this.settings.resolution);
     }
 
-    if (dirtyFlags & SettingsFlags.MASK) {
+    if (dirtyFlags & SettingsFlags.MASK_ALPHA) {
       this.setUniform("maskAlpha", this.settings.maskAlpha);
+    }
+    if (dirtyFlags & SettingsFlags.MASK_DATA) {
+      this.channelData.setChannelAsMask(
+        this.settings.maskChannelIndex,
+        this.volume.getChannel(this.settings.maskChannelIndex)
+      );
     }
   }
 
