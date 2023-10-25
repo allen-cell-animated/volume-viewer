@@ -76,7 +76,7 @@ export default class RequestQueue {
       resolve: promiseResolve,
       reject: promiseReject,
       promise,
-    }
+    };
     this.allRequests.set(key, requestItem);
     return requestItem;
   }
@@ -86,7 +86,8 @@ export default class RequestQueue {
    * @param key string identifier of the request.
    */
   private addRequestToQueue(key: string): void {
-    if (this.allRequests.has(key)) {  // Check that this request is not cancelled.
+    // Check that this request is not cancelled.
+    if (this.allRequests.has(key)) {
       // Clear the request timeout, if it has one, since it is being added to the queue.
       const requestItem = this.allRequests.get(key);
       if (requestItem && requestItem.timeoutId) {
@@ -126,7 +127,7 @@ export default class RequestQueue {
       if (delayMs > 0) {
         const timeoutId = setTimeout(() => this.addRequestToQueue(key), delayMs);
         // Save timeout information to request metadata
-        requestItem.timeoutId = timeoutId;      
+        requestItem.timeoutId = timeoutId;
       } else {
         // No delay, add immediately
         this.addRequestToQueue(key);
@@ -190,7 +191,7 @@ export default class RequestQueue {
     const key = requestItem.key;
     // Mark that this request is active
     this.activeRequests.add(key);
-    
+
     await requestItem.action().then(requestItem.resolve, requestItem.reject);
     this.activeRequests.delete(key);
     this.allRequests.delete(key);
@@ -201,7 +202,7 @@ export default class RequestQueue {
    * Finds and deletes all requests with the matching key from internal state,
    * and rejects the request for the provided cancellation reason.
    */
-  private cancelRequestByKey(key: string, cancelReason: unknown): void {
+  private cancelRequestByKey(key: string, cancelReason: unknown = DEFAULT_REQUEST_CANCEL_REASON): void {
     if (!this.allRequests.has(key)) {
       return;
     }
@@ -214,7 +215,7 @@ export default class RequestQueue {
       // Reject the request, then clear from the queue and known requests.
       requestItem.reject(cancelReason);
     }
-    this.queue = this.queue.filter((key) => key !== key);
+    this.queue = this.queue.filter((k) => key !== k);
     this.allRequests.delete(key);
     this.activeRequests.delete(key);
   }
