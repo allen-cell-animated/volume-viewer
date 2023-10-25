@@ -164,7 +164,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     }
 
     if (dirtyFlags & SettingsFlags.MASK_ALPHA) {
-      this.setUniform("maskAlpha", this.settings.maskAlpha);
+      this.setUniform("maskAlpha", this.settings.maskChannelIndex < 0 ? 1.0 : this.settings.maskAlpha);
     }
     if (dirtyFlags & SettingsFlags.MASK_DATA) {
       this.channelData.setChannelAsMask(

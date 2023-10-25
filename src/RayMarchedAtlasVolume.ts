@@ -114,6 +114,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       dirtyFlags = SettingsFlags.ALL;
     }
 
+    const oldMaskChannel = this.settings.maskChannelIndex;
     this.settings = newSettings;
 
     if (dirtyFlags & SettingsFlags.VIEW) {
@@ -187,7 +188,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     }
 
     if (dirtyFlags & SettingsFlags.MASK_ALPHA) {
-      this.setUniform("maskAlpha", this.settings.maskAlpha);
+      this.setUniform("maskAlpha", this.settings.maskChannelIndex < 0 ? 1.0 : this.settings.maskAlpha);
     }
     if (dirtyFlags & SettingsFlags.MASK_DATA) {
       this.channelData.setChannelAsMask(
