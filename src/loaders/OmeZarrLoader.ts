@@ -234,16 +234,21 @@ function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
   // get min and max
   let min = channelData[0];
   let max = channelData[0];
-  channelData.forEach((val: number) => {
-    min = Math.min(min, val);
-    max = Math.max(max, val);
-  });
+  for (let i = 0; i < channelData.length; i++) {
+    const val = channelData[i];
+    if (val < min) {
+      min = val;
+    }
+    if (val > max) {
+      max = val;
+    }
+  }
 
   // normalize and convert to u8
   const range = max - min;
-  channelData.forEach((val: number, idx: number) => {
-    u8[idx] = ((val - min) / range) * 255;
-  });
+  for (let i = 0; i < channelData.length; i++) {
+    u8[i] = ((channelData[i] - min) / range) * 255;
+  }
 
   return u8;
 }
