@@ -114,7 +114,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       dirtyFlags = SettingsFlags.ALL;
     }
 
-    const oldMaskChannel = this.settings.maskChannelIndex;
     this.settings = newSettings;
 
     if (dirtyFlags & SettingsFlags.VIEW) {
