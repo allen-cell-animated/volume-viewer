@@ -5,7 +5,8 @@ import { AsyncStore } from "zarr/types/storage/types";
 import { Slice } from "zarr/types/core/types";
 
 import Volume, { ImageInfo } from "../Volume";
-import VolumeCache, { CacheStore } from "../VolumeCache";
+import VolumeCache, { CacheStore, DataArrayExtent } from "../VolumeCache";
+import RequestQueue from "../utils/RequestQueue";
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import {
   buildDefaultMetadata,
@@ -88,9 +89,12 @@ const getDimensionCount = ([t, c]: [number, number, number, number, number]) => 
 
 /**
  * `Store` is zarr.js's minimal abstraction for anything that acts like a filesystem. (Local machine, HTTP server, etc.)
- * `ChunkCachingStore` wraps another `Store` and adds a connection to our `VolumeCache`.
+ * `SmartStoreWrapper` wraps another `Store` and adds (optional) connections to `VolumeCache` and `RequestQueue`.
+ *
+ * NOTE: if using `RequestQueue`, *ensure that calls made on arrays using this store do not also do promise queueing*
+ * by setting the option `concurrencyLimit: Infinity`.
  */
-class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
+class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
   // Required by `AsyncStore`
   listDir?: (path?: string) => Promise<string[]>;
   rmDir?: (path?: string) => Promise<boolean>;
@@ -101,6 +105,8 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
 
   cache?: VolumeCache;
   cacheStore?: CacheStore;
+  requestQueue?: RequestQueue;
+  requestKeys: string[] = [];
   // Our other miscellaneous info is packed into an object to be null-checked all at once
   arrayInfo?: {
     axesTCZYX: [number, number, number, number, number];
@@ -108,8 +114,9 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
     dimensionSeparator: string;
   };
 
-  constructor(baseStore: AsyncStore<ArrayBuffer, RequestInit>) {
+  constructor(baseStore: AsyncStore<ArrayBuffer, RequestInit>, requestQueue?: RequestQueue) {
     this.baseStore = baseStore;
+    this.requestQueue = requestQueue;
     this.listDir = baseStore.listDir;
     this.rmDir = baseStore.rmDir;
     this.getSize = baseStore.getSize;
@@ -126,6 +133,14 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
     this.arrayInfo = { axesTCZYX, scaleNames, dimensionSeparator };
     this.cache = cache;
     this.cacheStore = cacheStore;
+  }
+
+  private async cacheWhenReceived(prom: Promise<ArrayBuffer>, dims: Partial<DataArrayExtent>): Promise<ArrayBuffer> {
+    const result = await prom;
+    if (this.cache && this.cacheStore) {
+      this.cache.insert(this.cacheStore, result, dims);
+    }
+    return result;
   }
 
   async getItem(item: string, opts?: RequestInit | undefined): Promise<ArrayBuffer> {
@@ -145,7 +160,7 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
     const coordsLength = getDimensionCount(axesTCZYX);
     const chunkCoords = pathElems.slice(-coordsLength).map((s) => parseInt(s, 10));
     if (chunkCoords.length < coordsLength || chunkCoords.some(isNaN) || scale < 0) {
-      console.log("ChunkCachingStore: unexpected item path: " + item);
+      console.log("zarr store wrapper: unexpected item path: " + item);
       return this.baseStore.getItem(item, opts);
     }
 
@@ -160,9 +175,16 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
     }
 
     // Not in cache; load the chunk and cache it
-    const result = await this.baseStore.getItem(item, opts);
-    this.cache.insert(this.cacheStore, result, { scale, time, chunk, channel });
-    return result;
+    if (this.requestQueue) {
+      const keyPrefix = (this.baseStore as HTTPStore).url || "";
+      const key = keyPrefix + item;
+      this.requestKeys.push(key);
+      return this.requestQueue.addRequest(key, () =>
+        this.cacheWhenReceived(this.baseStore.getItem(item, opts), { scale, time, chunk, channel })
+      );
+    } else {
+      return this.cacheWhenReceived(this.baseStore.getItem(item, opts), { scale, time, chunk, channel });
+    }
   }
 
   keys(): Promise<string[]> {
@@ -170,18 +192,19 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
   }
 
   async setItem(_item: string, _value: ArrayBuffer): Promise<boolean> {
-    console.warn("ChunkCachingStore: attempt to set data!");
+    console.warn("zarr store wrapper: attempt to set data!");
     // return this.baseStore.setItem(item, value);
     return false;
   }
 
   async deleteItem(_item: string): Promise<boolean> {
-    console.warn("ChunkCachingStore: attempt to delete data!");
+    console.warn("zarr store wrapper: attempt to delete data!");
     // return this.baseStore.deleteItem(item);
     return false;
   }
 
   containsItem(item: string): Promise<boolean> {
+    // zarr.js appears to never call `containsItem` on a chunk path, so we don't bother checking cache here
     return this.baseStore.containsItem(item);
   }
 }
@@ -272,7 +295,7 @@ class OMEZarrLoader implements IVolumeLoader {
 
   static async createLoader(url: string, scene = 0, cache?: VolumeCache): Promise<OMEZarrLoader> {
     // Setup: create store, get basic metadata
-    const store = new ChunkCachingStore(new HTTPStore(url));
+    const store = new SmartStoreWrapper(new HTTPStore(url));
     const group = await openGroup(store, null, "r");
     const metadata = (await group.attrs.asObject()) as OMEZarrMetadata;
 
@@ -483,7 +506,7 @@ class OMEZarrLoader implements IVolumeLoader {
         }
       });
 
-      const result = (await level.getRaw(sliceSpec)) as RawArray;
+      const result = (await level.getRaw(sliceSpec, { concurrencyLimit: Infinity })) as RawArray;
       const u8 = convertChannel(result.data, result.dtype);
       vol.setChannelDataFromVolume(ch, u8);
       onChannelLoaded?.(vol, ch);

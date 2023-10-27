@@ -119,7 +119,7 @@ export default class RequestQueue {
    *  until the request is resolved or cancelled.
    *  Note that the return type of the promise will match that of the first request's instance.
    */
-  public addRequest<T>(key: string, requestAction: () => Promise<T>, delayMs = 0): Promise<unknown> {
+  public addRequest<T>(key: string, requestAction: () => Promise<T>, delayMs = 0): Promise<T> {
     if (!this.allRequests.has(key)) {
       // New request!
       const requestItem = this.registerRequest(key, requestAction);
@@ -142,7 +142,7 @@ export default class RequestQueue {
     if (!promise) {
       throw new Error("Found no promise to return when getting stored request data.");
     }
-    return promise;
+    return promise as Promise<T>;
   }
 
   /**
