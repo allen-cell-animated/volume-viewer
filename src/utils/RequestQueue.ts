@@ -236,9 +236,18 @@ export default class RequestQueue {
   /**
    * Returns whether a request with the given key exists in the RequestQueue and is not cancelled.
    * @param key the key to search for.
-   * @returns true if the request is in the RequestQueue, or false
+   * @returns true if the request is in the RequestQueue.
    */
   public hasRequest(key: string): boolean {
     return this.allRequests.has(key);
+  }
+
+  /**
+   * Returns whether the request with the given key is currently running (not waiting in the queue).
+   * @param key the key to search for.
+   * @returns true if the request is actively running.
+   */
+  public requestRunning(key: string): boolean {
+    return this.activeRequests.has(key);
   }
 }
