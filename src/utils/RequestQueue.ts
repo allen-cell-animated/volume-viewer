@@ -179,7 +179,8 @@ export default class RequestQueue {
       return;
     }
     if (this.activeRequests.has(requestKey)) {
-      // This request is already active, so skip.
+      // This request is already active, try the next one instead.
+      this.dequeue();
       return;
     }
 
