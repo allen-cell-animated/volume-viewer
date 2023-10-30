@@ -76,7 +76,7 @@ export default class RequestQueue {
       resolve: promiseResolve,
       reject: promiseReject,
       promise,
-    }
+    };
     this.allRequests.set(key, requestItem);
     return requestItem;
   }
@@ -86,7 +86,8 @@ export default class RequestQueue {
    * @param key string identifier of the request.
    */
   private addRequestToQueue(key: string): void {
-    if (this.allRequests.has(key)) {  // Check that this request is not cancelled.
+    // Check that this request is not cancelled.
+    if (this.allRequests.has(key)) {
       // Clear the request timeout, if it has one, since it is being added to the queue.
       const requestItem = this.allRequests.get(key);
       if (requestItem && requestItem.timeoutId) {
@@ -118,7 +119,7 @@ export default class RequestQueue {
    *  until the request is resolved or cancelled.
    *  Note that the return type of the promise will match that of the first request's instance.
    */
-  public addRequest<T>(key: string, requestAction: () => Promise<T>, delayMs = 0): Promise<unknown> {
+  public addRequest<T>(key: string, requestAction: () => Promise<T>, delayMs = 0): Promise<T> {
     if (!this.allRequests.has(key)) {
       // New request!
       const requestItem = this.registerRequest(key, requestAction);
@@ -126,7 +127,7 @@ export default class RequestQueue {
       if (delayMs > 0) {
         const timeoutId = setTimeout(() => this.addRequestToQueue(key), delayMs);
         // Save timeout information to request metadata
-        requestItem.timeoutId = timeoutId;      
+        requestItem.timeoutId = timeoutId;
       } else {
         // No delay, add immediately
         this.addRequestToQueue(key);
@@ -141,7 +142,7 @@ export default class RequestQueue {
     if (!promise) {
       throw new Error("Found no promise to return when getting stored request data.");
     }
-    return promise;
+    return promise as Promise<T>;
   }
 
   /**
@@ -178,7 +179,8 @@ export default class RequestQueue {
       return;
     }
     if (this.activeRequests.has(requestKey)) {
-      // This request is already active, so skip.
+      // This request is already active, try the next one instead. (this shouldn't happen)
+      this.dequeue();
       return;
     }
 
@@ -190,7 +192,7 @@ export default class RequestQueue {
     const key = requestItem.key;
     // Mark that this request is active
     this.activeRequests.add(key);
-    
+
     await requestItem.action().then(requestItem.resolve, requestItem.reject);
     this.activeRequests.delete(key);
     this.allRequests.delete(key);
@@ -198,10 +200,11 @@ export default class RequestQueue {
   }
 
   /**
-   * Finds and deletes all requests with the matching key from internal state,
-   * and rejects the request for the provided cancellation reason.
+   * Removes any request matching the provided key from the queue and rejects its promise.
+   * @param key The key that should be matched against.
+   * @param cancelReason A message or object that will be used as the promise rejection.
    */
-  private cancelRequestByKey(key: string, cancelReason: unknown): void {
+  public cancelRequest(key: string, cancelReason: unknown = DEFAULT_REQUEST_CANCEL_REASON): void {
     if (!this.allRequests.has(key)) {
       return;
     }
@@ -214,18 +217,9 @@ export default class RequestQueue {
       // Reject the request, then clear from the queue and known requests.
       requestItem.reject(cancelReason);
     }
-    this.queue = this.queue.filter((key) => key !== key);
+    this.queue = this.queue.filter((k) => key !== k);
     this.allRequests.delete(key);
     this.activeRequests.delete(key);
-  }
-
-  /**
-   * Removes any request matching the provided key from the queue and rejects its promise.
-   * @param key The key that should be matched against.
-   * @param cancelReason A message or object that will be used as the promise rejection.
-   */
-  public cancelRequest(key: string, cancelReason: unknown = DEFAULT_REQUEST_CANCEL_REASON): void {
-    this.cancelRequestByKey(key, cancelReason);
   }
 
   /**
@@ -235,16 +229,25 @@ export default class RequestQueue {
   public cancelAllRequests(cancelReason: unknown = DEFAULT_REQUEST_CANCEL_REASON): void {
     this.queue = []; // Clear the queue so we don't do extra work while filtering it
     for (const key of this.allRequests.keys()) {
-      this.cancelRequestByKey(key, cancelReason);
+      this.cancelRequest(key, cancelReason);
     }
   }
 
   /**
    * Returns whether a request with the given key exists in the RequestQueue and is not cancelled.
    * @param key the key to search for.
-   * @returns true if the request is in the RequestQueue, or false
+   * @returns true if the request is in the RequestQueue.
    */
   public hasRequest(key: string): boolean {
     return this.allRequests.has(key);
+  }
+
+  /**
+   * Returns whether the request with the given key is currently running (not waiting in the queue).
+   * @param key the key to search for.
+   * @returns true if the request is actively running.
+   */
+  public requestRunning(key: string): boolean {
+    return this.activeRequests.has(key);
   }
 }

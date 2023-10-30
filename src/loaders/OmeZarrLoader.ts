@@ -5,7 +5,8 @@ import { AsyncStore } from "zarr/types/storage/types";
 import { Slice } from "zarr/types/core/types";
 
 import Volume, { ImageInfo } from "../Volume";
-import VolumeCache, { CacheStore } from "../VolumeCache";
+import VolumeCache, { CacheStore, DataArrayExtent } from "../VolumeCache";
+import RequestQueue from "../utils/RequestQueue";
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import {
   buildDefaultMetadata,
@@ -17,6 +18,7 @@ import {
 } from "./VolumeLoaderUtils";
 
 const MAX_ATLAS_DIMENSION = 2048;
+const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
 type CoordinateTransformation =
   | {
@@ -88,9 +90,12 @@ const getDimensionCount = ([t, c]: [number, number, number, number, number]) => 
 
 /**
  * `Store` is zarr.js's minimal abstraction for anything that acts like a filesystem. (Local machine, HTTP server, etc.)
- * `ChunkCachingStore` wraps another `Store` and adds a connection to our `VolumeCache`.
+ * `SmartStoreWrapper` wraps another `Store` and adds (optional) connections to `VolumeCache` and `RequestQueue`.
+ *
+ * NOTE: if using `RequestQueue`, *ensure that calls made on arrays using this store do not also do promise queueing*
+ * by setting the option `concurrencyLimit: Infinity`.
  */
-class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
+class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
   // Required by `AsyncStore`
   listDir?: (path?: string) => Promise<string[]>;
   rmDir?: (path?: string) => Promise<boolean>;
@@ -101,6 +106,7 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
 
   cache?: VolumeCache;
   cacheStore?: CacheStore;
+  requestQueue?: RequestQueue;
   // Our other miscellaneous info is packed into an object to be null-checked all at once
   arrayInfo?: {
     axesTCZYX: [number, number, number, number, number];
@@ -108,8 +114,9 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
     dimensionSeparator: string;
   };
 
-  constructor(baseStore: AsyncStore<ArrayBuffer, RequestInit>) {
+  constructor(baseStore: AsyncStore<ArrayBuffer, RequestInit>, requestQueue?: RequestQueue) {
     this.baseStore = baseStore;
+    this.requestQueue = requestQueue;
     this.listDir = baseStore.listDir;
     this.rmDir = baseStore.rmDir;
     this.getSize = baseStore.getSize;
@@ -126,6 +133,14 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
     this.arrayInfo = { axesTCZYX, scaleNames, dimensionSeparator };
     this.cache = cache;
     this.cacheStore = cacheStore;
+  }
+
+  private async cacheWhenReceived(prom: Promise<ArrayBuffer>, dims: Partial<DataArrayExtent>): Promise<ArrayBuffer> {
+    const result = await prom;
+    if (this.cache && this.cacheStore) {
+      this.cache.insert(this.cacheStore, result, dims);
+    }
+    return result;
   }
 
   async getItem(item: string, opts?: RequestInit | undefined): Promise<ArrayBuffer> {
@@ -145,7 +160,7 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
     const coordsLength = getDimensionCount(axesTCZYX);
     const chunkCoords = pathElems.slice(-coordsLength).map((s) => parseInt(s, 10));
     if (chunkCoords.length < coordsLength || chunkCoords.some(isNaN) || scale < 0) {
-      console.log("ChunkCachingStore: unexpected item path: " + item);
+      console.log("zarr store wrapper: unexpected item path: " + item);
       return this.baseStore.getItem(item, opts);
     }
 
@@ -160,9 +175,15 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
     }
 
     // Not in cache; load the chunk and cache it
-    const result = await this.baseStore.getItem(item, opts);
-    this.cache.insert(this.cacheStore, result, { scale, time, chunk, channel });
-    return result;
+    if (this.requestQueue) {
+      const keyPrefix = (this.baseStore as HTTPStore).url || "";
+      const key = keyPrefix + item;
+      return await this.requestQueue.addRequest(key, () =>
+        this.cacheWhenReceived(this.baseStore.getItem(item, opts), { scale, time, chunk, channel })
+      );
+    } else {
+      return await this.cacheWhenReceived(this.baseStore.getItem(item, opts), { scale, time, chunk, channel });
+    }
   }
 
   keys(): Promise<string[]> {
@@ -170,18 +191,19 @@ class ChunkCachingStore implements AsyncStore<ArrayBuffer, RequestInit> {
   }
 
   async setItem(_item: string, _value: ArrayBuffer): Promise<boolean> {
-    console.warn("ChunkCachingStore: attempt to set data!");
+    console.warn("zarr store wrapper: attempt to set data!");
     // return this.baseStore.setItem(item, value);
     return false;
   }
 
   async deleteItem(_item: string): Promise<boolean> {
-    console.warn("ChunkCachingStore: attempt to delete data!");
+    console.warn("zarr store wrapper: attempt to delete data!");
     // return this.baseStore.deleteItem(item);
     return false;
   }
 
   containsItem(item: string): Promise<boolean> {
+    // zarr seems to never call this method on chunk paths (just .zarray, .zstore, etc.), so we don't check cache here
     return this.baseStore.containsItem(item);
   }
 }
@@ -259,6 +281,10 @@ class OMEZarrLoader implements IVolumeLoader {
   omeroMetadata: OmeroTransitionalMetadata;
   axesTCZYX: [number, number, number, number, number];
 
+  // TODO: should we be able to share `RequestQueue`s between loaders?
+  // TODO: store sets of requests per volume via some unique key
+  requestQueue: RequestQueue;
+
   // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
   //   This may cause errors or incorrect results otherwise!
   maxExtent?: Box3;
@@ -267,17 +293,25 @@ class OMEZarrLoader implements IVolumeLoader {
     scaleLevels: ZarrArray[],
     multiscaleMetadata: OMEMultiscale,
     omeroMetadata: OmeroTransitionalMetadata,
-    axisTCZYX: [number, number, number, number, number]
+    axisTCZYX: [number, number, number, number, number],
+    requestQueue: RequestQueue
   ) {
     this.scaleLevels = scaleLevels;
     this.multiscaleMetadata = multiscaleMetadata;
     this.omeroMetadata = omeroMetadata;
     this.axesTCZYX = axisTCZYX;
+    this.requestQueue = requestQueue;
   }
 
-  static async createLoader(url: string, scene = 0, cache?: VolumeCache): Promise<OMEZarrLoader> {
-    // Setup: create store, get basic metadata
-    const store = new ChunkCachingStore(new HTTPStore(url));
+  static async createLoader(
+    url: string,
+    scene = 0,
+    cache?: VolumeCache,
+    concurrencyLimit = 10
+  ): Promise<OMEZarrLoader> {
+    // Setup: create queue and store, get basic metadata
+    const queue = new RequestQueue(concurrencyLimit);
+    const store = new SmartStoreWrapper(new HTTPStore(url), queue);
     const group = await openGroup(store, null, "r");
     const metadata = (await group.attrs.asObject()) as OMEZarrMetadata;
 
@@ -305,7 +339,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const cacheStore = cache?.addVolume(numChannels, numTimes, scaleChunkDims);
     store.setCacheInfo(axisTCZYX, scaleLevelPaths, dimensionSeparator, cache, cacheStore);
 
-    return new OMEZarrLoader(scaleLevels, multiscale, metadata.omero, axisTCZYX);
+    return new OMEZarrLoader(scaleLevels, multiscale, metadata.omero, axisTCZYX, queue);
   }
 
   private getUnitSymbols(): [string, string] {
@@ -445,6 +479,9 @@ class OMEZarrLoader implements IVolumeLoader {
   }
 
   async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
+    // First, cancel any pending requests for this volume
+    this.requestQueue.cancelAllRequests(CHUNK_REQUEST_CANCEL_REASON);
+
     vol.loadSpec = explicitLoadSpec ?? vol.loadSpec;
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     const [z, y, x] = this.axesTCZYX.slice(2);
@@ -488,10 +525,17 @@ class OMEZarrLoader implements IVolumeLoader {
         }
       });
 
-      const result = (await level.getRaw(sliceSpec)) as RawArray;
-      const u8 = convertChannel(result.data, result.dtype);
-      vol.setChannelDataFromVolume(ch, u8);
-      onChannelLoaded?.(vol, ch);
+      try {
+        const result = (await level.getRaw(sliceSpec, { concurrencyLimit: Infinity })) as RawArray;
+        const u8 = convertChannel(result.data, result.dtype);
+        vol.setChannelDataFromVolume(ch, u8);
+        onChannelLoaded?.(vol, ch);
+      } catch (e) {
+        // TODO: verify that cancelling requests in progress doesn't leak memory
+        if (e !== CHUNK_REQUEST_CANCEL_REASON) {
+          throw e;
+        }
+      }
     });
 
     await Promise.all(channelPromises);
