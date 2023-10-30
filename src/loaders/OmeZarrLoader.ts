@@ -18,6 +18,7 @@ import {
 } from "./VolumeLoaderUtils";
 
 const MAX_ATLAS_DIMENSION = 2048;
+const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
 type CoordinateTransformation =
   | {
@@ -474,7 +475,7 @@ class OMEZarrLoader implements IVolumeLoader {
 
   async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
     // First, cancel any pending requests for this volume
-    this.requestQueue.cancelAllRequests();
+    this.requestQueue.cancelAllRequests(CHUNK_REQUEST_CANCEL_REASON);
 
     vol.loadSpec = explicitLoadSpec ?? vol.loadSpec;
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
@@ -519,10 +520,17 @@ class OMEZarrLoader implements IVolumeLoader {
         }
       });
 
-      const result = (await level.getRaw(sliceSpec, { concurrencyLimit: Infinity })) as RawArray;
-      const u8 = convertChannel(result.data, result.dtype);
-      vol.setChannelDataFromVolume(ch, u8);
-      onChannelLoaded?.(vol, ch);
+      try {
+        const result = (await level.getRaw(sliceSpec, { concurrencyLimit: Infinity })) as RawArray;
+        const u8 = convertChannel(result.data, result.dtype);
+        vol.setChannelDataFromVolume(ch, u8);
+        onChannelLoaded?.(vol, ch);
+      } catch (e) {
+        // TODO: verify that cancelling requests in progress doesn't leak memory
+        if (e !== CHUNK_REQUEST_CANCEL_REASON) {
+          throw e;
+        }
+      }
     });
 
     await Promise.all(channelPromises);
