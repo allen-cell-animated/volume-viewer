@@ -793,10 +793,6 @@ export class View3d {
    * @param {boolean} enabled
    */
   setVolumeChannelEnabled(volume: Volume, channel: number, enabled: boolean): void {
-    // NOTE: explicitly calling `image?.setVolumeChannelEnabled` allowed the enabled/disabled state of the channel to
-    //   be inconsistent across loads (incl. on time or z-slice changes) because channel state is restored on reload
-    //   from the object managed by `setChannelOptions`.
-    // TODO: should this become the primary way channel settings are changed?
     this.image?.setChannelOptions(channel, { enabled });
     this.redraw();
   }
