@@ -48,7 +48,7 @@ export default class FusedChannelData {
     this.height = atlasY;
 
     this.maskTexture = new DataTexture(
-      new Uint8ClampedArray(this.width * this.height),
+      new Uint8ClampedArray(this.width * this.height).fill(255),
       this.width,
       this.height,
       RedFormat,
