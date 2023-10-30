@@ -106,7 +106,6 @@ class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
   cache?: VolumeCache;
   cacheStore?: CacheStore;
   requestQueue?: RequestQueue;
-  requestKeys: string[] = [];
   // Our other miscellaneous info is packed into an object to be null-checked all at once
   arrayInfo?: {
     axesTCZYX: [number, number, number, number, number];
@@ -178,12 +177,11 @@ class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
     if (this.requestQueue) {
       const keyPrefix = (this.baseStore as HTTPStore).url || "";
       const key = keyPrefix + item;
-      this.requestKeys.push(key);
-      return this.requestQueue.addRequest(key, () =>
+      return await this.requestQueue.addRequest(key, () =>
         this.cacheWhenReceived(this.baseStore.getItem(item, opts), { scale, time, chunk, channel })
       );
     } else {
-      return this.cacheWhenReceived(this.baseStore.getItem(item, opts), { scale, time, chunk, channel });
+      return await this.cacheWhenReceived(this.baseStore.getItem(item, opts), { scale, time, chunk, channel });
     }
   }
 
@@ -204,7 +202,7 @@ class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
   }
 
   containsItem(item: string): Promise<boolean> {
-    // zarr.js appears to never call `containsItem` on a chunk path, so we don't bother checking cache here
+    // zarr seems to never call this method on chunk paths (just .zarray, .zstore, etc.), so we don't check cache here
     return this.baseStore.containsItem(item);
   }
 }
@@ -277,6 +275,10 @@ class OMEZarrLoader implements IVolumeLoader {
   omeroMetadata: OmeroTransitionalMetadata;
   axesTCZYX: [number, number, number, number, number];
 
+  // TODO: should we be able to share `RequestQueue`s between loaders?
+  // TODO: store sets of requests per volume via some unique key
+  requestQueue: RequestQueue;
+
   // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
   //   This may cause errors or incorrect results otherwise!
   maxExtent?: Box3;
@@ -285,17 +287,25 @@ class OMEZarrLoader implements IVolumeLoader {
     scaleLevels: ZarrArray[],
     multiscaleMetadata: OMEMultiscale,
     omeroMetadata: OmeroTransitionalMetadata,
-    axisTCZYX: [number, number, number, number, number]
+    axisTCZYX: [number, number, number, number, number],
+    requestQueue: RequestQueue
   ) {
     this.scaleLevels = scaleLevels;
     this.multiscaleMetadata = multiscaleMetadata;
     this.omeroMetadata = omeroMetadata;
     this.axesTCZYX = axisTCZYX;
+    this.requestQueue = requestQueue;
   }
 
-  static async createLoader(url: string, scene = 0, cache?: VolumeCache): Promise<OMEZarrLoader> {
-    // Setup: create store, get basic metadata
-    const store = new SmartStoreWrapper(new HTTPStore(url));
+  static async createLoader(
+    url: string,
+    scene = 0,
+    cache?: VolumeCache,
+    concurrencyLimit = 10
+  ): Promise<OMEZarrLoader> {
+    // Setup: create queue and store, get basic metadata
+    const queue = new RequestQueue(concurrencyLimit);
+    const store = new SmartStoreWrapper(new HTTPStore(url), queue);
     const group = await openGroup(store, null, "r");
     const metadata = (await group.attrs.asObject()) as OMEZarrMetadata;
 
@@ -323,7 +333,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const cacheStore = cache?.addVolume(numChannels, numTimes, scaleChunkDims);
     store.setCacheInfo(axisTCZYX, scaleLevelPaths, dimensionSeparator, cache, cacheStore);
 
-    return new OMEZarrLoader(scaleLevels, multiscale, metadata.omero, axisTCZYX);
+    return new OMEZarrLoader(scaleLevels, multiscale, metadata.omero, axisTCZYX, queue);
   }
 
   private getUnitSymbols(): [string, string] {
@@ -463,6 +473,9 @@ class OMEZarrLoader implements IVolumeLoader {
   }
 
   async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
+    // First, cancel any pending requests for this volume
+    this.requestQueue.cancelAllRequests();
+
     vol.loadSpec = explicitLoadSpec ?? vol.loadSpec;
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     const [z, y, x] = this.axesTCZYX.slice(2);
