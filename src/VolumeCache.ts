@@ -35,11 +35,7 @@ type CacheStoreMultiscaleLevel = {
   size: Vector3;
 };
 
-export type CacheStore = {
-  scales: CacheStoreMultiscaleLevel[];
-  numTimes: number;
-  numChannels: number;
-};
+export type CacheStore = CacheStoreMultiscaleLevel[];
 
 /** Default: 250MB. Should be large enough to be useful but safe for most any computer that can run the app */
 const CACHE_MAX_SIZE_DEFAULT = 250_000_000;
@@ -164,7 +160,7 @@ export default class VolumeCache {
     };
 
     const scales = scaleDims.map((size): CacheStoreMultiscaleLevel => ({ size, data: makeTCArray() }));
-    return { scales, numTimes, numChannels };
+    return scales;
   }
 
   /**
@@ -172,15 +168,10 @@ export default class VolumeCache {
    * @returns {boolean} a boolean indicating whether the insertion succeeded
    */
   public insert(volume: CacheStore, data: ArrayBuffer, optDims: Partial<DataArrayExtent> = {}): boolean {
-    const scaleCache = volume.scales[optDims.scale || 0];
+    const scaleCache = volume[optDims.scale || 0];
     const entryList = scaleCache.data[optDims.time || 0][optDims.channel || 0];
     const chunk = optDims.chunk ?? new Vector3(0, 0, 0);
-    const { size } = scaleCache;
 
-    if (chunk.x < 0 || chunk.y < 0 || chunk.z < 0 || chunk.x >= size.x || chunk.y >= size.y || chunk.z >= size.z) {
-      console.error("VolumeCache: attempt to insert into nonexistent chunk");
-      return false;
-    }
     if (data.byteLength > this.maxSize) {
       console.error("VolumeCache: attempt to insert a single entry larger than the cache");
       return false;
@@ -212,7 +203,7 @@ export default class VolumeCache {
   /** Attempt to get a single entry from the cache. */
   private get(volume: CacheStore, channel: number, optDims: Partial<QueryExtent> = {}): ArrayBuffer | undefined {
     // TODO allow searching through a range of scales and picking the highest available one
-    const scaleCache = volume.scales[optDims.scale || 0];
+    const scaleCache = volume[optDims.scale || 0];
     const entryList = scaleCache.data[optDims.time || 0][channel];
     const chunk = optDims.chunk ?? new Vector3(0, 0, 0);
 
@@ -228,7 +219,7 @@ export default class VolumeCache {
 
   /** Clears data associated with one volume from the cache */
   public clearVolume(volume: CacheStore): void {
-    volume.scales.forEach((scale) => {
+    volume.forEach((scale) => {
       scale.data.forEach((time) => {
         time.forEach((channel) => {
           channel.forEach((entry) => {
