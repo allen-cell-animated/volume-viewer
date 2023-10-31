@@ -140,7 +140,6 @@ export default class VolumeCache {
   }
 
   /** Evicts a specific entry from the cache */
-  // TODO use this to intelligently evict redundant data
   private evict(entry: CacheEntry): void {
     this.removeEntryFromStore(entry);
     this.removeEntryFromList(entry);
@@ -210,15 +209,8 @@ export default class VolumeCache {
     return true;
   }
 
-  /**
-   * Attempts to get data from a single channel. Internal implementation of `get`,
-   * which is overloaded to call this in different patterns.
-   */
-  private getOneChannel(
-    volume: CacheStore,
-    channel: number,
-    optDims: Partial<QueryExtent> = {}
-  ): ArrayBuffer | undefined {
+  /** Attempt to get a single entry from the cache. */
+  private get(volume: CacheStore, channel: number, optDims: Partial<QueryExtent> = {}): ArrayBuffer | undefined {
     // TODO allow searching through a range of scales and picking the highest available one
     const scaleCache = volume.scales[optDims.scale || 0];
     const entryList = scaleCache.data[optDims.time || 0][channel];
@@ -232,29 +224,6 @@ export default class VolumeCache {
     }
 
     return undefined;
-  }
-
-  /** Attempts to get data from a single channel of a cached volume. Returns `undefined` if not present in the cache. */
-  public get(volume: CacheStore, channel: number, optDims?: Partial<QueryExtent>): ArrayBuffer | undefined;
-  /** Attempts to get data from multiple channels of a volume. Channels not present in the cache are `undefined`. */
-  public get(volume: CacheStore, channel: number[], optDims?: Partial<QueryExtent>): (ArrayBuffer | undefined)[];
-  /** Attempts to get all channels of a volume from the cache. Channels not present in the cache are `undefined`. */
-  public get(volume: CacheStore, optDims?: Partial<QueryExtent>): (ArrayBuffer | undefined)[];
-  public get(
-    volume: CacheStore,
-    channel?: number | number[] | Partial<QueryExtent>,
-    optDims?: Partial<QueryExtent>
-  ): ArrayBuffer | undefined | (ArrayBuffer | undefined)[] {
-    if (Array.isArray(channel)) {
-      return channel.map((c) => this.getOneChannel(volume, c, optDims));
-    }
-
-    if (typeof channel === "object" || channel === undefined) {
-      const channelKeys = [...Array(volume.numChannels).keys()];
-      return channelKeys.map((c) => this.getOneChannel(volume, c, channel));
-    }
-
-    return this.getOneChannel(volume, channel, optDims);
   }
 
   /** Clears data associated with one volume from the cache */
