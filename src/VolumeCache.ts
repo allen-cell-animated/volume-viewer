@@ -132,7 +132,9 @@ export default class VolumeCache {
 
     // Check if entry is already in cache
     // This will move the entry to the front of the LRU list, if present
-    if (this.get(parentStore, key) !== undefined) {
+    const getResult = this.getEntry(parentStore, key);
+    if (getResult !== undefined) {
+      getResult.data = data;
       return true;
     }
 
@@ -150,14 +152,18 @@ export default class VolumeCache {
     return true;
   }
 
-  /** Attempt to get a single entry from the cache. */
-  public get(store: CacheStore, key: string): ArrayBuffer | undefined {
+  /** Internal implementation of `get`. Returns all entry metadata, not just the raw data. */
+  private getEntry(store: CacheStore, key: string): CacheEntry | undefined {
     const result = store.get(key);
     if (result) {
       this.moveEntryToFirst(result);
-      return result.data;
     }
-    return undefined;
+    return result;
+  }
+
+  /** Attempt to get a single entry from the cache. */
+  public get(store: CacheStore, key: string): ArrayBuffer | undefined {
+    return this.getEntry(store, key)?.data;
   }
 
   /** Clears data associated with one store from the cache */

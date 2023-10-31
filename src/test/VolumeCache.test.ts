@@ -35,7 +35,7 @@ describe("VolumeCache", () => {
 
       cache.insert(store0, "0", new Uint8Array(8)); // 8 < 12
       cache.insert(store0, "1", new Uint8Array(2)); // 10 < 12
-      cache.insert(store0, "1", new Uint8Array(8)); // 18 > 12! evict 1!
+      cache.insert(store0, "2", new Uint8Array(8)); // 18 > 12! evict 1!
 
       expect(cache.size).to.equal(10);
       expect(cache.numberOfEntries).to.equal(2);
