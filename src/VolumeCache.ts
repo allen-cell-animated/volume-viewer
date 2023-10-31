@@ -29,11 +29,8 @@ type CacheEntry = {
   parentArr: CacheEntry[];
 };
 
-type CacheStoreMultiscaleLevel = {
-  // Entries are indexed by T and C, then stored in lists of ZYX chunks
-  data: CacheEntry[][][];
-  size: Vector3;
-};
+// Entries are indexed by T and C, then stored in lists of ZYX chunks
+type CacheStoreMultiscaleLevel = CacheEntry[][][];
 
 export type CacheStore = CacheStoreMultiscaleLevel[];
 
@@ -159,7 +156,7 @@ export default class VolumeCache {
       return tArr;
     };
 
-    const scales = scaleDims.map((size): CacheStoreMultiscaleLevel => ({ size, data: makeTCArray() }));
+    const scales = scaleDims.map((size): CacheStoreMultiscaleLevel => makeTCArray());
     return scales;
   }
 
@@ -169,7 +166,7 @@ export default class VolumeCache {
    */
   public insert(volume: CacheStore, data: ArrayBuffer, optDims: Partial<DataArrayExtent> = {}): boolean {
     const scaleCache = volume[optDims.scale || 0];
-    const entryList = scaleCache.data[optDims.time || 0][optDims.channel || 0];
+    const entryList = scaleCache[optDims.time || 0][optDims.channel || 0];
     const chunk = optDims.chunk ?? new Vector3(0, 0, 0);
 
     if (data.byteLength > this.maxSize) {
@@ -204,7 +201,7 @@ export default class VolumeCache {
   private get(volume: CacheStore, channel: number, optDims: Partial<QueryExtent> = {}): ArrayBuffer | undefined {
     // TODO allow searching through a range of scales and picking the highest available one
     const scaleCache = volume[optDims.scale || 0];
-    const entryList = scaleCache.data[optDims.time || 0][channel];
+    const entryList = scaleCache[optDims.time || 0][channel];
     const chunk = optDims.chunk ?? new Vector3(0, 0, 0);
 
     for (const entry of entryList) {
@@ -220,7 +217,7 @@ export default class VolumeCache {
   /** Clears data associated with one volume from the cache */
   public clearVolume(volume: CacheStore): void {
     volume.forEach((scale) => {
-      scale.data.forEach((time) => {
+      scale.forEach((time) => {
         time.forEach((channel) => {
           channel.forEach((entry) => {
             this.evict(entry);
