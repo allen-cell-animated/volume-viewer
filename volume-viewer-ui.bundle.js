@@ -151,9 +151,11 @@ var Atlas2DSlice = /*#__PURE__*/function () {
         this.setUniform("interpolationEnabled", this.settings.useInterpolation);
         this.setUniform("iResolution", this.settings.resolution);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.MASK) {
-        this.setUniform("maskAlpha", this.settings.maskAlpha);
-        this.setUniform("maskAlpha", this.settings.maskAlpha);
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.MASK_ALPHA) {
+        this.setUniform("maskAlpha", this.settings.maskChannelIndex < 0 ? 1.0 : this.settings.maskAlpha);
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.MASK_DATA) {
+        this.channelData.setChannelAsMask(this.settings.maskChannelIndex, this.volume.getChannel(this.settings.maskChannelIndex));
       }
     }
   }, {
@@ -197,6 +199,7 @@ var Atlas2DSlice = /*#__PURE__*/function () {
       }
       this.channelData.gpuFuse(canvas.renderer);
       this.setUniform("textureAtlas", this.channelData.getFusedTexture());
+      this.setUniform("textureAtlasMask", this.channelData.maskTexture);
       this.geometryTransformNode.updateMatrixWorld(true);
       var mvm = new three__WEBPACK_IMPORTED_MODULE_6__.Matrix4();
       mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
@@ -661,7 +664,7 @@ var FusedChannelData = /*#__PURE__*/function () {
     // allow for resizing
     this.width = atlasX;
     this.height = atlasY;
-    this.maskTexture = new three__WEBPACK_IMPORTED_MODULE_4__.DataTexture(new Uint8ClampedArray(this.width * this.height), this.width, this.height, three__WEBPACK_IMPORTED_MODULE_4__.RedFormat, three__WEBPACK_IMPORTED_MODULE_4__.UnsignedByteType);
+    this.maskTexture = new three__WEBPACK_IMPORTED_MODULE_4__.DataTexture(new Uint8ClampedArray(this.width * this.height).fill(255), this.width, this.height, three__WEBPACK_IMPORTED_MODULE_4__.RedFormat, three__WEBPACK_IMPORTED_MODULE_4__.UnsignedByteType);
     this.maskTexture.generateMipmaps = false;
     this.maskTexture.magFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_5__.LinearFilter;
     this.maskTexture.minFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_5__.LinearFilter;
@@ -3095,7 +3098,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
       if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.CAMERA) {
         this.updateExposure(this.settings.brightness);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.MASK) {
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.MASK_ALPHA) {
         // Update channel and alpha mask if they have changed
         this.updateVolumeData4();
       }
@@ -3589,8 +3592,11 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
         this.setUniform("interpolationEnabled", this.settings.useInterpolation);
         this.setUniform("iResolution", this.settings.resolution);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MASK) {
-        this.setUniform("maskAlpha", this.settings.maskAlpha);
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MASK_ALPHA) {
+        this.setUniform("maskAlpha", this.settings.maskChannelIndex < 0 ? 1.0 : this.settings.maskAlpha);
+      }
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MASK_DATA) {
+        this.channelData.setChannelAsMask(this.settings.maskChannelIndex, this.volume.getChannel(this.settings.maskChannelIndex));
       }
     }
 
@@ -5894,7 +5900,9 @@ var View3d = /*#__PURE__*/function () {
     key: "setVolumeChannelEnabled",
     value: function setVolumeChannelEnabled(volume, channel, enabled) {
       var _this$image40;
-      (_this$image40 = this.image) === null || _this$image40 === void 0 ? void 0 : _this$image40.setVolumeChannelEnabled(channel, enabled);
+      (_this$image40 = this.image) === null || _this$image40 === void 0 ? void 0 : _this$image40.setChannelOptions(channel, {
+        enabled: enabled
+      });
       this.redraw();
     }
 
@@ -7430,13 +7438,13 @@ var VolumeDrawable = /*#__PURE__*/function () {
         return;
       }
       this.settings.maskChannelIndex = channelIndex;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.MASK);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.MASK_DATA);
     }
   }, {
     key: "setMaskAlpha",
     value: function setMaskAlpha(maskAlpha) {
       this.settings.maskAlpha = maskAlpha;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.MASK);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.MASK_ALPHA);
     }
   }, {
     key: "setShowBoundingBox",
@@ -7794,11 +7802,12 @@ var SettingsFlags = /*#__PURE__*/function (SettingsFlags) {
   SettingsFlags[SettingsFlags["CAMERA"] = 2] = "CAMERA";
   SettingsFlags[SettingsFlags["BOUNDING_BOX"] = 4] = "BOUNDING_BOX";
   SettingsFlags[SettingsFlags["ROI"] = 8] = "ROI";
-  SettingsFlags[SettingsFlags["MASK"] = 16] = "MASK";
+  SettingsFlags[SettingsFlags["MASK_ALPHA"] = 16] = "MASK_ALPHA";
   SettingsFlags[SettingsFlags["MATERIAL"] = 32] = "MATERIAL";
   SettingsFlags[SettingsFlags["SAMPLING"] = 64] = "SAMPLING";
   SettingsFlags[SettingsFlags["VIEW"] = 128] = "VIEW";
-  SettingsFlags[SettingsFlags["ALL"] = 511] = "ALL";
+  SettingsFlags[SettingsFlags["MASK_DATA"] = 256] = "MASK_DATA";
+  SettingsFlags[SettingsFlags["ALL"] = 1023] = "ALL";
   return SettingsFlags;
 }({});
 var Axis = /*#__PURE__*/function (Axis) {
@@ -9239,11 +9248,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var zarr__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! zarr */ "./node_modules/zarr/zarr.mjs");
 /* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
-/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _utils_RequestQueue__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../utils/RequestQueue */ "./src/utils/RequestQueue.ts");
+/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
 
 
 
@@ -9257,7 +9267,9 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 
 
+
 var MAX_ATLAS_DIMENSION = 2048;
+var CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
 // https://ngff.openmicroscopy.org/latest/#multiscale-md
 
@@ -9273,22 +9285,26 @@ var getDimensionCount = function getDimensionCount(_ref) {
 
 /**
  * `Store` is zarr.js's minimal abstraction for anything that acts like a filesystem. (Local machine, HTTP server, etc.)
- * `ChunkCachingStore` wraps another `Store` and adds a connection to our `VolumeCache`.
+ * `SmartStoreWrapper` wraps another `Store` and adds (optional) connections to `VolumeCache` and `RequestQueue`.
+ *
+ * NOTE: if using `RequestQueue`, *ensure that calls made on arrays using this store do not also do promise queueing*
+ * by setting the option `concurrencyLimit: Infinity`.
  */
-var ChunkCachingStore = /*#__PURE__*/function () {
+var SmartStoreWrapper = /*#__PURE__*/function () {
   // Required by `AsyncStore`
 
   // Our other miscellaneous info is packed into an object to be null-checked all at once
 
-  function ChunkCachingStore(baseStore) {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, ChunkCachingStore);
+  function SmartStoreWrapper(baseStore, requestQueue) {
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, SmartStoreWrapper);
     this.baseStore = baseStore;
+    this.requestQueue = requestQueue;
     this.listDir = baseStore.listDir;
     this.rmDir = baseStore.rmDir;
     this.getSize = baseStore.getSize;
     this.rename = baseStore.rename;
   }
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(ChunkCachingStore, [{
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(SmartStoreWrapper, [{
     key: "setCacheInfo",
     value: function setCacheInfo(axesTCZYX, scaleNames) {
       var dimensionSeparator = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "/";
@@ -9303,22 +9319,50 @@ var ChunkCachingStore = /*#__PURE__*/function () {
       this.cacheStore = cacheStore;
     }
   }, {
-    key: "getItem",
+    key: "cacheWhenReceived",
     value: function () {
-      var _getItem = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee(item, opts) {
-        var zarrExts, _this$arrayInfo, scaleNames, axesTCZYX, dimensionSeparator, pathElems, scale, coordsLength, chunkCoords, _axesTCZYX, t, c, z, y, x, time, channel, chunk, cacheResult, result;
+      var _cacheWhenReceived = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee(prom, dims) {
+        var result;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee$(_context) {
           while (1) switch (_context.prev = _context.next) {
+            case 0:
+              _context.next = 2;
+              return prom;
+            case 2:
+              result = _context.sent;
+              if (this.cache && this.cacheStore) {
+                this.cache.insert(this.cacheStore, result, dims);
+              }
+              return _context.abrupt("return", result);
+            case 5:
+            case "end":
+              return _context.stop();
+          }
+        }, _callee, this);
+      }));
+      function cacheWhenReceived(_x, _x2) {
+        return _cacheWhenReceived.apply(this, arguments);
+      }
+      return cacheWhenReceived;
+    }()
+  }, {
+    key: "getItem",
+    value: function () {
+      var _getItem = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee2(item, opts) {
+        var _this = this;
+        var zarrExts, _this$arrayInfo, scaleNames, axesTCZYX, dimensionSeparator, pathElems, scale, coordsLength, chunkCoords, _axesTCZYX, t, c, z, y, x, time, channel, chunk, cacheResult, keyPrefix, key;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee2$(_context2) {
+          while (1) switch (_context2.prev = _context2.next) {
             case 0:
               // If we don't have a cache or aren't getting a chunk, call straight to the base store
               zarrExts = [".zarray", ".zgroup", ".zattrs"];
               if (!(!this.cache || !this.cacheStore || !this.arrayInfo || zarrExts.some(function (s) {
                 return item.endsWith(s);
               }))) {
-                _context.next = 3;
+                _context2.next = 3;
                 break;
               }
-              return _context.abrupt("return", this.baseStore.getItem(item, opts));
+              return _context2.abrupt("return", this.baseStore.getItem(item, opts));
             case 3:
               _this$arrayInfo = this.arrayInfo, scaleNames = _this$arrayInfo.scaleNames, axesTCZYX = _this$arrayInfo.axesTCZYX, dimensionSeparator = _this$arrayInfo.dimensionSeparator; // Extract chunk coordinates from item path
               pathElems = item.split(dimensionSeparator); // The first element should be the scale name - convert it to scale level index
@@ -9328,46 +9372,62 @@ var ChunkCachingStore = /*#__PURE__*/function () {
                 return parseInt(s, 10);
               });
               if (!(chunkCoords.length < coordsLength || chunkCoords.some(isNaN) || scale < 0)) {
-                _context.next = 11;
+                _context2.next = 11;
                 break;
               }
-              console.log("ChunkCachingStore: unexpected item path: " + item);
-              return _context.abrupt("return", this.baseStore.getItem(item, opts));
+              console.log("zarr store wrapper: unexpected item path: " + item);
+              return _context2.abrupt("return", this.baseStore.getItem(item, opts));
             case 11:
               // Check the cache
               _axesTCZYX = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_4__["default"])(axesTCZYX, 5), t = _axesTCZYX[0], c = _axesTCZYX[1], z = _axesTCZYX[2], y = _axesTCZYX[3], x = _axesTCZYX[4];
               time = t < 0 ? 0 : chunkCoords[t];
               channel = c < 0 ? 0 : chunkCoords[c];
-              chunk = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(chunkCoords[x], chunkCoords[y], chunkCoords[z]);
+              chunk = new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(chunkCoords[x], chunkCoords[y], chunkCoords[z]);
               cacheResult = this.cache.get(this.cacheStore, channel, {
                 scale: scale,
                 time: time,
                 chunk: chunk
               });
               if (!cacheResult) {
-                _context.next = 18;
+                _context2.next = 18;
                 break;
               }
-              return _context.abrupt("return", cacheResult);
+              return _context2.abrupt("return", cacheResult);
             case 18:
-              _context.next = 20;
-              return this.baseStore.getItem(item, opts);
-            case 20:
-              result = _context.sent;
-              this.cache.insert(this.cacheStore, result, {
+              if (!this.requestQueue) {
+                _context2.next = 26;
+                break;
+              }
+              keyPrefix = this.baseStore.url || "";
+              key = keyPrefix + item;
+              _context2.next = 23;
+              return this.requestQueue.addRequest(key, function () {
+                return _this.cacheWhenReceived(_this.baseStore.getItem(item, opts), {
+                  scale: scale,
+                  time: time,
+                  chunk: chunk,
+                  channel: channel
+                });
+              });
+            case 23:
+              return _context2.abrupt("return", _context2.sent);
+            case 26:
+              _context2.next = 28;
+              return this.cacheWhenReceived(this.baseStore.getItem(item, opts), {
                 scale: scale,
                 time: time,
                 chunk: chunk,
                 channel: channel
               });
-              return _context.abrupt("return", result);
-            case 23:
+            case 28:
+              return _context2.abrupt("return", _context2.sent);
+            case 29:
             case "end":
-              return _context.stop();
+              return _context2.stop();
           }
-        }, _callee, this);
+        }, _callee2, this);
       }));
-      function getItem(_x, _x2) {
+      function getItem(_x3, _x4) {
         return _getItem.apply(this, arguments);
       }
       return getItem;
@@ -9380,33 +9440,12 @@ var ChunkCachingStore = /*#__PURE__*/function () {
   }, {
     key: "setItem",
     value: function () {
-      var _setItem = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee2(_item, _value) {
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee2$(_context2) {
-          while (1) switch (_context2.prev = _context2.next) {
-            case 0:
-              console.warn("ChunkCachingStore: attempt to set data!");
-              // return this.baseStore.setItem(item, value);
-              return _context2.abrupt("return", false);
-            case 2:
-            case "end":
-              return _context2.stop();
-          }
-        }, _callee2);
-      }));
-      function setItem(_x3, _x4) {
-        return _setItem.apply(this, arguments);
-      }
-      return setItem;
-    }()
-  }, {
-    key: "deleteItem",
-    value: function () {
-      var _deleteItem = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee3(_item) {
+      var _setItem = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee3(_item, _value) {
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee3$(_context3) {
           while (1) switch (_context3.prev = _context3.next) {
             case 0:
-              console.warn("ChunkCachingStore: attempt to delete data!");
-              // return this.baseStore.deleteItem(item);
+              console.warn("zarr store wrapper: attempt to set data!");
+              // return this.baseStore.setItem(item, value);
               return _context3.abrupt("return", false);
             case 2:
             case "end":
@@ -9414,7 +9453,28 @@ var ChunkCachingStore = /*#__PURE__*/function () {
           }
         }, _callee3);
       }));
-      function deleteItem(_x5) {
+      function setItem(_x5, _x6) {
+        return _setItem.apply(this, arguments);
+      }
+      return setItem;
+    }()
+  }, {
+    key: "deleteItem",
+    value: function () {
+      var _deleteItem = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee4(_item) {
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee4$(_context4) {
+          while (1) switch (_context4.prev = _context4.next) {
+            case 0:
+              console.warn("zarr store wrapper: attempt to delete data!");
+              // return this.baseStore.deleteItem(item);
+              return _context4.abrupt("return", false);
+            case 2:
+            case "end":
+              return _context4.stop();
+          }
+        }, _callee4);
+      }));
+      function deleteItem(_x7) {
         return _deleteItem.apply(this, arguments);
       }
       return deleteItem;
@@ -9422,10 +9482,11 @@ var ChunkCachingStore = /*#__PURE__*/function () {
   }, {
     key: "containsItem",
     value: function containsItem(item) {
+      // zarr seems to never call this method on chunk paths (just .zarray, .zstore, etc.), so we don't check cache here
       return this.baseStore.containsItem(item);
     }
   }]);
-  return ChunkCachingStore;
+  return SmartStoreWrapper;
 }();
 function remapAxesToTCZYX(axes) {
   var axisTCZYX = [-1, -1, -1, -1, -1];
@@ -9444,12 +9505,12 @@ function remapAxesToTCZYX(axes) {
   return axisTCZYX;
 }
 function pickLevelToLoad(loadSpec, zarrMultiscales, zi, yi, xi) {
-  var size = loadSpec.subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
+  var size = loadSpec.subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3());
   var spatialDims = zarrMultiscales.map(function (_ref3) {
     var shape = _ref3.shape;
     return [Math.max(shape[zi] * size.z, 1), Math.max(shape[yi] * size.y, 1), Math.max(shape[xi] * size.x, 1)];
   });
-  var optimalLevel = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.estimateLevelForAtlas)(spatialDims, MAX_ATLAS_DIMENSION);
+  var optimalLevel = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_10__.estimateLevelForAtlas)(spatialDims, MAX_ATLAS_DIMENSION);
   if (loadSpec.multiscaleLevel) {
     return Math.max(optimalLevel, loadSpec.multiscaleLevel);
   } else {
@@ -9465,28 +9526,37 @@ function convertChannel(channelData, dtype) {
   // get min and max
   var min = channelData[0];
   var max = channelData[0];
-  channelData.forEach(function (val) {
-    min = Math.min(min, val);
-    max = Math.max(max, val);
-  });
+  for (var i = 0; i < channelData.length; i++) {
+    var val = channelData[i];
+    if (val < min) {
+      min = val;
+    }
+    if (val > max) {
+      max = val;
+    }
+  }
 
   // normalize and convert to u8
   var range = max - min;
-  channelData.forEach(function (val, idx) {
-    u8[idx] = (val - min) / range * 255;
-  });
+  for (var _i = 0; _i < channelData.length; _i++) {
+    u8[_i] = (channelData[_i] - min) / range * 255;
+  }
   return u8;
 }
 var OMEZarrLoader = /*#__PURE__*/function () {
+  // TODO: should we be able to share `RequestQueue`s between loaders?
+  // TODO: store sets of requests per volume via some unique key
+
   // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
   //   This may cause errors or incorrect results otherwise!
 
-  function OMEZarrLoader(scaleLevels, multiscaleMetadata, omeroMetadata, axisTCZYX) {
+  function OMEZarrLoader(scaleLevels, multiscaleMetadata, omeroMetadata, axisTCZYX, requestQueue) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, OMEZarrLoader);
     this.scaleLevels = scaleLevels;
     this.multiscaleMetadata = multiscaleMetadata;
     this.omeroMetadata = omeroMetadata;
     this.axesTCZYX = axisTCZYX;
+    this.requestQueue = requestQueue;
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(OMEZarrLoader, [{
     key: "getUnitSymbols",
@@ -9494,10 +9564,10 @@ var OMEZarrLoader = /*#__PURE__*/function () {
       // Assume all spatial axes have the same units - we have no means of storing per-axis unit symbols
       var xi = this.axesTCZYX[4];
       var spaceUnitName = this.multiscaleMetadata.axes[xi].unit;
-      var spaceUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
+      var spaceUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_10__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
       var ti = this.axesTCZYX[0];
       var timeUnitName = ti > -1 ? this.multiscaleMetadata.axes[ti].unit : undefined;
-      var timeUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
+      var timeUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_10__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
       return [spaceUnitSymbol, timeUnitSymbol];
     }
   }, {
@@ -9533,28 +9603,28 @@ var OMEZarrLoader = /*#__PURE__*/function () {
   }, {
     key: "loadDims",
     value: function () {
-      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee4(loadSpec) {
+      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee5(loadSpec) {
         var _this$maxExtent,
-          _this = this;
+          _this2 = this;
         var _this$getUnitSymbols, _this$getUnitSymbols2, spaceUnit, timeUnit, maxExtent, subregion, regionSize, regionArr, result;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee4$(_context4) {
-          while (1) switch (_context4.prev = _context4.next) {
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee5$(_context5) {
+          while (1) switch (_context5.prev = _context5.next) {
             case 0:
               _this$getUnitSymbols = this.getUnitSymbols(), _this$getUnitSymbols2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_4__["default"])(_this$getUnitSymbols, 2), spaceUnit = _this$getUnitSymbols2[0], timeUnit = _this$getUnitSymbols2[1]; // Compute subregion size so we can factor that in
-              maxExtent = (_this$maxExtent = this.maxExtent) !== null && _this$maxExtent !== void 0 ? _this$maxExtent : new three__WEBPACK_IMPORTED_MODULE_10__.Box3(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(1, 1, 1));
-              subregion = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.composeSubregion)(loadSpec.subregion, maxExtent);
-              regionSize = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
+              maxExtent = (_this$maxExtent = this.maxExtent) !== null && _this$maxExtent !== void 0 ? _this$maxExtent : new three__WEBPACK_IMPORTED_MODULE_11__.Box3(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(1, 1, 1));
+              subregion = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_10__.composeSubregion)(loadSpec.subregion, maxExtent);
+              regionSize = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3());
               regionArr = [1, 1, regionSize.z, regionSize.y, regionSize.x];
               result = this.scaleLevels.map(function (level, i) {
                 var _level$path;
-                var scale = _this.getScale(i);
-                var dims = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__.VolumeDims();
+                var scale = _this2.getScale(i);
+                var dims = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_9__.VolumeDims();
                 dims.spaceUnit = spaceUnit;
                 dims.timeUnit = timeUnit;
                 dims.subpath = (_level$path = level.path) !== null && _level$path !== void 0 ? _level$path : "";
                 dims.shape = [-1, -1, -1, -1, -1];
                 dims.spacing = [1, 1, 1, 1, 1];
-                _this.axesTCZYX.forEach(function (val, idx) {
+                _this2.axesTCZYX.forEach(function (val, idx) {
                   if (val > -1) {
                     dims.shape[idx] = Math.ceil(level.shape[val] * regionArr[idx]);
                     dims.spacing[idx] = scale[val];
@@ -9562,14 +9632,14 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 });
                 return dims;
               });
-              return _context4.abrupt("return", result);
+              return _context5.abrupt("return", result);
             case 7:
             case "end":
-              return _context4.stop();
+              return _context5.stop();
           }
-        }, _callee4, this);
+        }, _callee5, this);
       }));
-      function loadDims(_x6) {
+      function loadDims(_x8) {
         return _loadDims.apply(this, arguments);
       }
       return loadDims;
@@ -9577,10 +9647,10 @@ var OMEZarrLoader = /*#__PURE__*/function () {
   }, {
     key: "createVolume",
     value: function () {
-      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee5(loadSpec, onChannelLoaded) {
+      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee6(loadSpec, onChannelLoaded) {
         var _this$axesTCZYX, t, c, z, y, x, hasT, hasC, shape0, levelToLoad, shapeLv, _this$getUnitSymbols3, _this$getUnitSymbols4, spatialUnit, timeUnit, numChannels, times, pxDims0, pxSize0, pxDimsLv, pxSizeLv, atlasTileDims, channelNames, scale5d, timeScale, imgdata, fullExtentLoadSpec, vol;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee5$(_context5) {
-          while (1) switch (_context5.prev = _context5.next) {
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee6$(_context6) {
+          while (1) switch (_context6.prev = _context6.next) {
             case 0:
               _this$axesTCZYX = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_4__["default"])(this.axesTCZYX, 5), t = _this$axesTCZYX[0], c = _this$axesTCZYX[1], z = _this$axesTCZYX[2], y = _this$axesTCZYX[3], x = _this$axesTCZYX[4];
               hasT = t > -1;
@@ -9594,11 +9664,11 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               if (!this.maxExtent) {
                 this.maxExtent = loadSpec.subregion.clone();
               }
-              pxDims0 = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(shape0[x], shape0[y], shape0[z]));
-              pxSize0 = pxDims0.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
-              pxDimsLv = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(shapeLv[x], shapeLv[y], shapeLv[z]));
-              pxSizeLv = pxDimsLv.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
-              atlasTileDims = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.computePackedAtlasDims)(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
+              pxDims0 = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_10__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(shape0[x], shape0[y], shape0[z]));
+              pxSize0 = pxDims0.getSize(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3());
+              pxDimsLv = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_10__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(shapeLv[x], shapeLv[y], shapeLv[z]));
+              pxSizeLv = pxDimsLv.getSize(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3());
+              atlasTileDims = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_10__.computePackedAtlasDims)(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
               channelNames = this.omeroMetadata.channels.map(function (ch) {
                 return ch.label;
               });
@@ -9610,8 +9680,8 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 atlasTileDims: atlasTileDims,
                 volumeSize: pxSizeLv,
                 subregionSize: pxSizeLv.clone(),
-                subregionOffset: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0),
-                physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(scale5d[x], scale5d[y], scale5d[z]),
+                subregionOffset: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0),
+                physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(scale5d[x], scale5d[y], scale5d[z]),
                 spatialUnit: spatialUnit,
                 numChannels: numChannels,
                 channelNames: channelNames,
@@ -9619,25 +9689,25 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 timeScale: timeScale,
                 timeUnit: timeUnit,
                 transform: {
-                  translation: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0),
-                  rotation: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0)
+                  translation: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0),
+                  rotation: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0)
                 }
               }; // The `LoadSpec` passed in at this stage should represent the subset which this loader loads, not that
               // which the volume contains. The volume contains the full extent of the subset recognized by this loader.
               fullExtentLoadSpec = _objectSpread(_objectSpread({}, loadSpec), {}, {
-                subregion: new three__WEBPACK_IMPORTED_MODULE_10__.Box3(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(1, 1, 1))
+                subregion: new three__WEBPACK_IMPORTED_MODULE_11__.Box3(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(1, 1, 1))
               });
               vol = new _Volume__WEBPACK_IMPORTED_MODULE_7__["default"](imgdata, fullExtentLoadSpec, this);
               vol.channelLoadCallback = onChannelLoaded;
-              vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.buildDefaultMetadata)(imgdata);
-              return _context5.abrupt("return", vol);
+              vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_10__.buildDefaultMetadata)(imgdata);
+              return _context6.abrupt("return", vol);
             case 24:
             case "end":
-              return _context5.stop();
+              return _context6.stop();
           }
-        }, _callee5, this);
+        }, _callee6, this);
       }));
-      function createVolume(_x7, _x8) {
+      function createVolume(_x9, _x10) {
         return _createVolume.apply(this, arguments);
       }
       return createVolume;
@@ -9645,28 +9715,30 @@ var OMEZarrLoader = /*#__PURE__*/function () {
   }, {
     key: "loadVolumeData",
     value: function () {
-      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee7(vol, explicitLoadSpec, onChannelLoaded) {
+      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee8(vol, explicitLoadSpec, onChannelLoaded) {
         var _this$maxExtent2,
           _vol$loadSpec$channel,
-          _this2 = this;
+          _this3 = this;
         var maxExtent, _this$axesTCZYX$slice, _this$axesTCZYX$slice2, z, y, x, subregion, levelIdx, level, levelShape, regionPx, regionSizePx, atlasTileDims, volExtentPx, volSizePx, numChannels, channelIndexes, channelPromises;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee7$(_context7) {
-          while (1) switch (_context7.prev = _context7.next) {
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee8$(_context8) {
+          while (1) switch (_context8.prev = _context8.next) {
             case 0:
+              // First, cancel any pending requests for this volume
+              this.requestQueue.cancelAllRequests(CHUNK_REQUEST_CANCEL_REASON);
               vol.loadSpec = explicitLoadSpec !== null && explicitLoadSpec !== void 0 ? explicitLoadSpec : vol.loadSpec;
-              maxExtent = (_this$maxExtent2 = this.maxExtent) !== null && _this$maxExtent2 !== void 0 ? _this$maxExtent2 : new three__WEBPACK_IMPORTED_MODULE_10__.Box3(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(1, 1, 1));
+              maxExtent = (_this$maxExtent2 = this.maxExtent) !== null && _this$maxExtent2 !== void 0 ? _this$maxExtent2 : new three__WEBPACK_IMPORTED_MODULE_11__.Box3(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(1, 1, 1));
               _this$axesTCZYX$slice = this.axesTCZYX.slice(2), _this$axesTCZYX$slice2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_4__["default"])(_this$axesTCZYX$slice, 3), z = _this$axesTCZYX$slice2[0], y = _this$axesTCZYX$slice2[1], x = _this$axesTCZYX$slice2[2];
-              subregion = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.composeSubregion)(vol.loadSpec.subregion, maxExtent);
+              subregion = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_10__.composeSubregion)(vol.loadSpec.subregion, maxExtent);
               levelIdx = pickLevelToLoad(_objectSpread(_objectSpread({}, vol.loadSpec), {}, {
                 subregion: subregion
               }), this.scaleLevels, z, y, x);
               level = this.scaleLevels[levelIdx];
               levelShape = level.shape;
-              regionPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.convertSubregionToPixels)(subregion, new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(levelShape[x], levelShape[y], levelShape[z])); // Update volume `imageInfo` to reflect potentially new dimensions
-              regionSizePx = regionPx.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
-              atlasTileDims = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.computePackedAtlasDims)(regionSizePx.z, regionSizePx.x, regionSizePx.y);
-              volExtentPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.convertSubregionToPixels)(maxExtent, new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(levelShape[x], levelShape[y], levelShape[z]));
-              volSizePx = volExtentPx.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
+              regionPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_10__.convertSubregionToPixels)(subregion, new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(levelShape[x], levelShape[y], levelShape[z])); // Update volume `imageInfo` to reflect potentially new dimensions
+              regionSizePx = regionPx.getSize(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3());
+              atlasTileDims = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_10__.computePackedAtlasDims)(regionSizePx.z, regionSizePx.x, regionSizePx.y);
+              volExtentPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_10__.convertSubregionToPixels)(maxExtent, new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(levelShape[x], levelShape[y], levelShape[z]));
+              volSizePx = volExtentPx.getSize(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3());
               vol.imageInfo = _objectSpread(_objectSpread({}, vol.imageInfo), {}, {
                 atlasTileDims: atlasTileDims,
                 volumeSize: volSizePx,
@@ -9681,17 +9753,17 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 return i;
               });
               channelPromises = channelIndexes.map( /*#__PURE__*/function () {
-                var _ref4 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee6(ch) {
+                var _ref4 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee7(ch) {
                   var min, max, unorderedSpec, specLen, sliceSpec, result, u8;
-                  return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee6$(_context6) {
-                    while (1) switch (_context6.prev = _context6.next) {
+                  return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee7$(_context7) {
+                    while (1) switch (_context7.prev = _context7.next) {
                       case 0:
                         // Build slice spec
                         min = regionPx.min, max = regionPx.max;
                         unorderedSpec = [vol.loadSpec.time, ch, (0,zarr__WEBPACK_IMPORTED_MODULE_6__.slice)(min.z, max.z), (0,zarr__WEBPACK_IMPORTED_MODULE_6__.slice)(min.y, max.y), (0,zarr__WEBPACK_IMPORTED_MODULE_6__.slice)(min.x, max.x)];
-                        specLen = getDimensionCount(_this2.axesTCZYX);
+                        specLen = getDimensionCount(_this3.axesTCZYX);
                         sliceSpec = Array(specLen);
-                        _this2.axesTCZYX.forEach(function (val, idx) {
+                        _this3.axesTCZYX.forEach(function (val, idx) {
                           if (val > -1) {
                             if (val > specLen) {
                               throw new Error("Unexpected axis index");
@@ -9699,32 +9771,45 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                             sliceSpec[val] = unorderedSpec[idx];
                           }
                         });
-                        _context6.next = 7;
-                        return level.getRaw(sliceSpec);
-                      case 7:
-                        result = _context6.sent;
+                        _context7.prev = 5;
+                        _context7.next = 8;
+                        return level.getRaw(sliceSpec, {
+                          concurrencyLimit: Infinity
+                        });
+                      case 8:
+                        result = _context7.sent;
                         u8 = convertChannel(result.data, result.dtype);
                         vol.setChannelDataFromVolume(ch, u8);
                         onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(vol, ch);
-                      case 11:
+                        _context7.next = 18;
+                        break;
+                      case 14:
+                        _context7.prev = 14;
+                        _context7.t0 = _context7["catch"](5);
+                        if (!(_context7.t0 !== CHUNK_REQUEST_CANCEL_REASON)) {
+                          _context7.next = 18;
+                          break;
+                        }
+                        throw _context7.t0;
+                      case 18:
                       case "end":
-                        return _context6.stop();
+                        return _context7.stop();
                     }
-                  }, _callee6);
+                  }, _callee7, null, [[5, 14]]);
                 }));
-                return function (_x12) {
+                return function (_x14) {
                   return _ref4.apply(this, arguments);
                 };
               }());
-              _context7.next = 19;
+              _context8.next = 20;
               return Promise.all(channelPromises);
-            case 19:
+            case 20:
             case "end":
-              return _context7.stop();
+              return _context8.stop();
           }
-        }, _callee7, this);
+        }, _callee8, this);
       }));
-      function loadVolumeData(_x9, _x10, _x11) {
+      function loadVolumeData(_x11, _x12, _x13) {
         return _loadVolumeData.apply(this, arguments);
       }
       return loadVolumeData;
@@ -9732,9 +9817,11 @@ var OMEZarrLoader = /*#__PURE__*/function () {
   }], [{
     key: "createLoader",
     value: function () {
-      var _createLoader = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee8(url) {
+      var _createLoader = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee9(url) {
         var scene,
           cache,
+          concurrencyLimit,
+          queue,
           store,
           group,
           metadata,
@@ -9754,22 +9841,24 @@ var OMEZarrLoader = /*#__PURE__*/function () {
           numTimes,
           scaleChunkDims,
           cacheStore,
-          _args8 = arguments;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee8$(_context8) {
-          while (1) switch (_context8.prev = _context8.next) {
+          _args9 = arguments;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee9$(_context9) {
+          while (1) switch (_context9.prev = _context9.next) {
             case 0:
-              scene = _args8.length > 1 && _args8[1] !== undefined ? _args8[1] : 0;
-              cache = _args8.length > 2 ? _args8[2] : undefined;
-              // Setup: create store, get basic metadata
-              store = new ChunkCachingStore(new zarr__WEBPACK_IMPORTED_MODULE_6__.HTTPStore(url));
-              _context8.next = 5;
+              scene = _args9.length > 1 && _args9[1] !== undefined ? _args9[1] : 0;
+              cache = _args9.length > 2 ? _args9[2] : undefined;
+              concurrencyLimit = _args9.length > 3 && _args9[3] !== undefined ? _args9[3] : 10;
+              // Setup: create queue and store, get basic metadata
+              queue = new _utils_RequestQueue__WEBPACK_IMPORTED_MODULE_8__["default"](concurrencyLimit);
+              store = new SmartStoreWrapper(new zarr__WEBPACK_IMPORTED_MODULE_6__.HTTPStore(url), queue);
+              _context9.next = 7;
               return (0,zarr__WEBPACK_IMPORTED_MODULE_6__.openGroup)(store, null, "r");
-            case 5:
-              group = _context8.sent;
-              _context8.next = 8;
+            case 7:
+              group = _context9.sent;
+              _context9.next = 10;
               return group.attrs.asObject();
-            case 8:
-              metadata = _context8.sent;
+            case 10:
+              metadata = _context9.sent;
               // Pick scene (multiscale)
               if (scene > metadata.multiscales.length) {
                 console.warn("WARNING: OMEZarrLoader: scene ".concat(scene, " is invalid. Using scene 0."));
@@ -9787,10 +9876,10 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                   mode: "r"
                 });
               });
-              _context8.next = 15;
+              _context9.next = 17;
               return Promise.all(scaleLevelPromises);
-            case 15:
-              scaleLevels = _context8.sent;
+            case 17:
+              scaleLevels = _context9.sent;
               dimensionSeparator = scaleLevels[0].meta.dimension_separator; // Grab axis indexes, use them to set up cache store
               axisTCZYX = remapAxesToTCZYX(multiscale.axes);
               _axisTCZYX = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_4__["default"])(axisTCZYX, 5), t = _axisTCZYX[0], c = _axisTCZYX[1], z = _axisTCZYX[2], y = _axisTCZYX[3], x = _axisTCZYX[4];
@@ -9798,18 +9887,18 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               numTimes = Math.max(scaleLevels[0].shape[t], 1);
               scaleChunkDims = scaleLevels.map(function (_ref6) {
                 var chunkDataShape = _ref6.chunkDataShape;
-                return new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(chunkDataShape[x], chunkDataShape[y], chunkDataShape[z]);
+                return new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(chunkDataShape[x], chunkDataShape[y], chunkDataShape[z]);
               });
               cacheStore = cache === null || cache === void 0 ? void 0 : cache.addVolume(numChannels, numTimes, scaleChunkDims);
               store.setCacheInfo(axisTCZYX, scaleLevelPaths, dimensionSeparator, cache, cacheStore);
-              return _context8.abrupt("return", new OMEZarrLoader(scaleLevels, multiscale, metadata.omero, axisTCZYX));
-            case 25:
+              return _context9.abrupt("return", new OMEZarrLoader(scaleLevels, multiscale, metadata.omero, axisTCZYX, queue));
+            case 27:
             case "end":
-              return _context8.stop();
+              return _context9.stop();
           }
-        }, _callee8);
+        }, _callee9);
       }));
-      function createLoader(_x13) {
+      function createLoader(_x15) {
         return _createLoader.apply(this, arguments);
       }
       return createLoader;
@@ -10358,7 +10447,6 @@ function estimateLevelForAtlas(spatialDimsZYX) {
     var xtiles = Math.floor(maxAtlasEdge / x);
     var ytiles = Math.floor(maxAtlasEdge / y);
     if (xtiles * ytiles >= z) {
-      console.log("Will load level " + i);
       levelToLoad = i;
       break;
     }
@@ -10443,8 +10531,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   VolumeFileFormat: () => (/* binding */ VolumeFileFormat),
 /* harmony export */   createVolumeLoader: () => (/* binding */ createVolumeLoader)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_helpers_typeof__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_modules/@babel/runtime/helpers/esm/typeof.js");
+/* harmony import */ var _babel_runtime_helpers_typeof__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/typeof */ "./node_modules/@babel/runtime/helpers/esm/typeof.js");
+/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2__);
 /* harmony import */ var _OmeZarrLoader__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./OmeZarrLoader */ "./src/loaders/OmeZarrLoader.ts");
@@ -10462,58 +10550,46 @@ var VolumeFileFormat = /*#__PURE__*/function (VolumeFileFormat) {
   VolumeFileFormat["TIFF"] = "tiff";
   return VolumeFileFormat;
 }({});
-var forceString = function forceString(value) {
-  return (0,_babel_runtime_helpers_typeof__WEBPACK_IMPORTED_MODULE_1__["default"])(value) === "object" ? value[0] : value;
-};
 function createVolumeLoader(_x, _x2) {
   return _createVolumeLoader.apply(this, arguments);
 }
 function _createVolumeLoader() {
-  _createVolumeLoader = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee(path, options) {
+  _createVolumeLoader = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee(path, options) {
     var pathString;
     return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
-          if (!options.fileType) {
-            _context.next = 12;
-            break;
-          }
-          _context.t0 = options.fileType;
+          pathString = (0,_babel_runtime_helpers_typeof__WEBPACK_IMPORTED_MODULE_0__["default"])(path) === "object" ? path[0] : path;
+          _context.t0 = options === null || options === void 0 ? void 0 : options.fileType;
           _context.next = _context.t0 === VolumeFileFormat.ZARR ? 4 : _context.t0 === VolumeFileFormat.JSON ? 7 : _context.t0 === VolumeFileFormat.TIFF ? 8 : 9;
           break;
         case 4:
           _context.next = 6;
-          return _OmeZarrLoader__WEBPACK_IMPORTED_MODULE_3__.OMEZarrLoader.createLoader(forceString(path), options.scene, options.cache);
+          return _OmeZarrLoader__WEBPACK_IMPORTED_MODULE_3__.OMEZarrLoader.createLoader(pathString, options.scene, options.cache, options.concurrencyLimit);
         case 6:
           return _context.abrupt("return", _context.sent);
         case 7:
           return _context.abrupt("return", new _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_4__.JsonImageInfoLoader(path, options.cache));
         case 8:
-          return _context.abrupt("return", new _TiffLoader__WEBPACK_IMPORTED_MODULE_5__.TiffLoader(forceString(path)));
+          return _context.abrupt("return", new _TiffLoader__WEBPACK_IMPORTED_MODULE_5__.TiffLoader(pathString));
         case 9:
-          throw new Error("Unknown file type: ".concat(options.fileType));
-        case 10:
-          _context.next = 24;
-          break;
-        case 12:
-          pathString = forceString(path);
           if (!pathString.endsWith(".json")) {
+            _context.next = 13;
+            break;
+          }
+          return _context.abrupt("return", new _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_4__.JsonImageInfoLoader(path, options === null || options === void 0 ? void 0 : options.cache));
+        case 13:
+          if (!(pathString.endsWith(".tif") || pathString.endsWith(".tiff"))) {
             _context.next = 17;
             break;
           }
-          return _context.abrupt("return", new _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_4__.JsonImageInfoLoader(path, options.cache));
-        case 17:
-          if (!(pathString.endsWith(".tif") || pathString.endsWith(".tiff"))) {
-            _context.next = 21;
-            break;
-          }
           return _context.abrupt("return", new _TiffLoader__WEBPACK_IMPORTED_MODULE_5__.TiffLoader(pathString));
-        case 21:
-          _context.next = 23;
-          return _OmeZarrLoader__WEBPACK_IMPORTED_MODULE_3__.OMEZarrLoader.createLoader(pathString, options.scene, options.cache);
-        case 23:
+        case 17:
+          _context.next = 19;
+          return _OmeZarrLoader__WEBPACK_IMPORTED_MODULE_3__.OMEZarrLoader.createLoader(pathString, options === null || options === void 0 ? void 0 : options.scene, options === null || options === void 0 ? void 0 : options.cache, options === null || options === void 0 ? void 0 : options.concurrencyLimit);
+        case 19:
           return _context.abrupt("return", _context.sent);
-        case 24:
+        case 20:
         case "end":
           return _context.stop();
       }
@@ -10604,6 +10680,328 @@ var isTop = function isTop(corner) {
 var isRight = function isRight(corner) {
   return corner === ViewportCorner.TOP_RIGHT || corner === ViewportCorner.BOTTOM_RIGHT;
 };
+
+/***/ }),
+
+/***/ "./src/utils/RequestQueue.ts":
+/*!***********************************!*\
+  !*** ./src/utils/RequestQueue.ts ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   DEFAULT_REQUEST_CANCEL_REASON: () => (/* binding */ DEFAULT_REQUEST_CANCEL_REASON),
+/* harmony export */   "default": () => (/* binding */ RequestQueue)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__);
+
+
+
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
+
+/** Object format used when passing multiple requests to RequestQueue at once. */
+
+var DEFAULT_REQUEST_CANCEL_REASON = "request cancelled";
+
+/**
+ * Internal object interface used by RequestQueue to store request metadata and callbacks.
+ */
+/**
+ * Manages a queue of asynchronous requests with unique string keys, which can be added to or cancelled.
+ * If redundant requests with the same key are issued, the request action will only be run once per key
+ * while the original request is still in the queue.
+ */
+var RequestQueue = /*#__PURE__*/function () {
+  /** The maximum number of requests that can be handled concurently.
+    Once reached, additional requests will be queued up to run once a running request completes.*/
+
+  /** A queue of requests that are ready to be executed, in order of request time. */
+
+  /** Stores all requests, even those that are currently active. */
+
+  /** Stores requests whose actions are currently being run. */
+
+  /**
+   * Creates a new RequestQueue.
+   * @param maxActiveRequests The maximum number of requests that will be handled concurrently. This is 10 by default.
+   */
+  function RequestQueue() {
+    var maxActiveRequests = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, RequestQueue);
+    this.allRequests = new Map();
+    this.activeRequests = new Set();
+    this.queue = [];
+    this.maxActiveRequests = maxActiveRequests;
+  }
+
+  /**
+   * Stores request metadata to the internal map of all pending requests.
+   * @param key string identifier of the request.
+   * @param requestAction callable function action of the request.
+   * @returns a reference to the new, registered RequestItem.
+   */
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(RequestQueue, [{
+    key: "registerRequest",
+    value: function registerRequest(key, requestAction) {
+      // Create a new promise and store the resolve and reject callbacks for later.
+      // This lets us perform the actual action at a later point, when the request is at the
+      // front of the processing queue.
+      var promiseResolve, promiseReject;
+      var promise = new Promise(function (resolve, reject) {
+        promiseResolve = resolve;
+        promiseReject = reject;
+      });
+      // Store the request data.
+      var requestItem = {
+        key: key,
+        action: requestAction,
+        resolve: promiseResolve,
+        reject: promiseReject,
+        promise: promise
+      };
+      this.allRequests.set(key, requestItem);
+      return requestItem;
+    }
+
+    /**
+     * Moves a registered request into the processing queue, clearing any timeouts on the request.
+     * @param key string identifier of the request.
+     */
+  }, {
+    key: "addRequestToQueue",
+    value: function addRequestToQueue(key) {
+      // Check that this request is not cancelled.
+      if (this.allRequests.has(key)) {
+        // Clear the request timeout, if it has one, since it is being added to the queue.
+        var requestItem = this.allRequests.get(key);
+        if (requestItem && requestItem.timeoutId) {
+          clearTimeout(requestItem.timeoutId);
+          requestItem.timeoutId = undefined;
+        }
+        if (!this.queue.includes(key)) {
+          // Add to queue and check if the request can be processed right away.
+          this.queue.push(key);
+          this.dequeue();
+        }
+      }
+    }
+
+    /**
+     * Adds a request with a unique key to the queue, if it doesn't already exist.
+     * @param key The key used to track the request.
+     * @param requestAction Function that will be called to complete the request. The function
+     *  will be run only once per unique key while the request exists, and may be deferred by the
+     *  queue at any time.
+     * @param delayMs Minimum delay, in milliseconds, before this request should be executed.
+     *
+     * NOTE: Cancelling a request while the action is running WILL NOT stop the action. If this behavior is desired,
+     * actions must be responsible for checking the RequestQueue, determining if the request is still valid (e.g.
+     * using `.hasRequest()`), and stopping or returning early.
+     *
+     * @returns A promise that will resolve on completion of the request, or reject if the request is cancelled.
+     *  If multiple requests are issued with the same key, a promise for the first request will be returned
+     *  until the request is resolved or cancelled.
+     *  Note that the return type of the promise will match that of the first request's instance.
+     */
+  }, {
+    key: "addRequest",
+    value: function addRequest(key, requestAction) {
+      var _this = this,
+        _this$allRequests$get;
+      var delayMs = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+      if (!this.allRequests.has(key)) {
+        // New request!
+        var requestItem = this.registerRequest(key, requestAction);
+        // If a delay is set, wait to add this to the queue.
+        if (delayMs > 0) {
+          var timeoutId = setTimeout(function () {
+            return _this.addRequestToQueue(key);
+          }, delayMs);
+          // Save timeout information to request metadata
+          requestItem.timeoutId = timeoutId;
+        } else {
+          // No delay, add immediately
+          this.addRequestToQueue(key);
+        }
+      } else if (delayMs <= 0) {
+        // This request is registered, but is now being requested without a delay.
+        // Move into queue immediately if it's not already added, and clear any timeouts it may have.
+        this.addRequestToQueue(key);
+      }
+      var promise = (_this$allRequests$get = this.allRequests.get(key)) === null || _this$allRequests$get === void 0 ? void 0 : _this$allRequests$get.promise;
+      if (!promise) {
+        throw new Error("Found no promise to return when getting stored request data.");
+      }
+      return promise;
+    }
+
+    /**
+     * Adds multiple requests to the queue, with an optional delay between each.
+     * @param requests An array of RequestItems, which include a key and a request action.
+     * @param delayMs An optional minimum delay in milliseconds to be added between each request.
+     *  For example, a delay of 10 ms will cause the second request to be added to the processing queue
+     *  after 10 ms, the third to added after 20 ms, and so on. Set to 10 ms by default.
+     * @returns An array of promises corresponding to the provided requests. (i.e., the `i`th value
+     * of the returned array will be a Promise for the resolution of `requests[i]`). If a request
+     *  with a matching key is already pending, returns the promise for the initial request.
+     */
+  }, {
+    key: "addRequests",
+    value: function addRequests(requests) {
+      var delayMs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 10;
+      var promises = [];
+      for (var i = 0; i < requests.length; i++) {
+        var item = requests[i];
+        var promise = this.addRequest(item.key, item.requestAction, delayMs * i);
+        promises.push(promise);
+      }
+      return promises;
+    }
+
+    /**
+     * Attempts to remove and run the next queued request item, if resources are available.
+     * @returns true if a request was started, or false if there are too many
+     * requests already active.
+     */
+  }, {
+    key: "dequeue",
+    value: function () {
+      var _dequeue = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee() {
+        var requestKey, requestItem, key;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
+          while (1) switch (_context.prev = _context.next) {
+            case 0:
+              if (!(this.activeRequests.size >= this.maxActiveRequests || this.queue.length === 0)) {
+                _context.next = 2;
+                break;
+              }
+              return _context.abrupt("return");
+            case 2:
+              requestKey = this.queue.shift();
+              if (requestKey) {
+                _context.next = 5;
+                break;
+              }
+              return _context.abrupt("return");
+            case 5:
+              if (!this.activeRequests.has(requestKey)) {
+                _context.next = 8;
+                break;
+              }
+              // This request is already active, try the next one instead. (this shouldn't happen)
+              this.dequeue();
+              return _context.abrupt("return");
+            case 8:
+              requestItem = this.allRequests.get(requestKey);
+              if (requestItem) {
+                _context.next = 11;
+                break;
+              }
+              return _context.abrupt("return");
+            case 11:
+              key = requestItem.key; // Mark that this request is active
+              this.activeRequests.add(key);
+              _context.next = 15;
+              return requestItem.action().then(requestItem.resolve, requestItem.reject);
+            case 15:
+              this.activeRequests["delete"](key);
+              this.allRequests["delete"](key);
+              this.dequeue();
+            case 18:
+            case "end":
+              return _context.stop();
+          }
+        }, _callee, this);
+      }));
+      function dequeue() {
+        return _dequeue.apply(this, arguments);
+      }
+      return dequeue;
+    }()
+    /**
+     * Removes any request matching the provided key from the queue and rejects its promise.
+     * @param key The key that should be matched against.
+     * @param cancelReason A message or object that will be used as the promise rejection.
+     */
+  }, {
+    key: "cancelRequest",
+    value: function cancelRequest(key) {
+      var cancelReason = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : DEFAULT_REQUEST_CANCEL_REASON;
+      if (!this.allRequests.has(key)) {
+        return;
+      }
+      var requestItem = this.allRequests.get(key);
+      if (requestItem) {
+        if (requestItem.timeoutId) {
+          // Cancel requests that have not been queued yet.
+          clearTimeout(requestItem.timeoutId);
+        }
+        // Reject the request, then clear from the queue and known requests.
+        requestItem.reject(cancelReason);
+      }
+      this.queue = this.queue.filter(function (k) {
+        return key !== k;
+      });
+      this.allRequests["delete"](key);
+      this.activeRequests["delete"](key);
+    }
+
+    /**
+     * Rejects all request promises and clears the queue.
+     * @param cancelReason A message or object that will be used as the promise rejection.
+     */
+  }, {
+    key: "cancelAllRequests",
+    value: function cancelAllRequests() {
+      var cancelReason = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : DEFAULT_REQUEST_CANCEL_REASON;
+      this.queue = []; // Clear the queue so we don't do extra work while filtering it
+      var _iterator = _createForOfIteratorHelper(this.allRequests.keys()),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var key = _step.value;
+          this.cancelRequest(key, cancelReason);
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+    }
+
+    /**
+     * Returns whether a request with the given key exists in the RequestQueue and is not cancelled.
+     * @param key the key to search for.
+     * @returns true if the request is in the RequestQueue.
+     */
+  }, {
+    key: "hasRequest",
+    value: function hasRequest(key) {
+      return this.allRequests.has(key);
+    }
+
+    /**
+     * Returns whether the request with the given key is currently running (not waiting in the queue).
+     * @param key the key to search for.
+     * @returns true if the request is actively running.
+     */
+  }, {
+    key: "requestRunning",
+    value: function requestRunning(key) {
+      return this.activeRequests.has(key);
+    }
+  }]);
+  return RequestQueue;
+}();
+
 
 /***/ }),
 
