@@ -5,7 +5,7 @@ import { AsyncStore } from "zarr/types/storage/types";
 import { Slice } from "zarr/types/core/types";
 
 import Volume, { ImageInfo } from "../Volume";
-import VolumeCache, { CacheStore } from "../VolumeCache";
+import VolumeCache from "../VolumeCache";
 import RequestQueue from "../utils/RequestQueue";
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import {
@@ -105,18 +105,11 @@ class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
   baseStore: AsyncStore<ArrayBuffer, RequestInit>;
 
   cache?: VolumeCache;
-  cacheStore?: CacheStore;
   requestQueue?: RequestQueue;
 
-  constructor(
-    baseStore: AsyncStore<ArrayBuffer, RequestInit>,
-    cache?: VolumeCache,
-    cacheStore?: CacheStore,
-    requestQueue?: RequestQueue
-  ) {
+  constructor(baseStore: AsyncStore<ArrayBuffer, RequestInit>, cache?: VolumeCache, requestQueue?: RequestQueue) {
     this.baseStore = baseStore;
     this.cache = cache;
-    this.cacheStore = cacheStore;
     this.requestQueue = requestQueue;
     this.listDir = baseStore.listDir;
     this.rmDir = baseStore.rmDir;
@@ -126,16 +119,16 @@ class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
 
   private async cacheWhenReceived(prom: Promise<ArrayBuffer>, key: string): Promise<ArrayBuffer> {
     const result = await prom;
-    if (this.cache && this.cacheStore) {
-      this.cache.insert(this.cacheStore, key, result);
+    if (this.cache) {
+      this.cache.insert(key, result);
     }
     return result;
   }
 
-  async getItem(item: string, opts?: RequestInit | undefined): Promise<ArrayBuffer> {
+  getItem(item: string, opts?: RequestInit | undefined): Promise<ArrayBuffer> {
     // If we don't have a cache or aren't getting a chunk, call straight to the base store
     const zarrExts = [".zarray", ".zgroup", ".zattrs"];
-    if (!this.cache || !this.cacheStore || zarrExts.some((s) => item.endsWith(s))) {
+    if (!this.cache || zarrExts.some((s) => item.endsWith(s))) {
       return this.baseStore.getItem(item, opts);
     }
 
@@ -143,18 +136,16 @@ class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
     const key = keyPrefix + item;
 
     // Check the cache
-    const cacheResult = this.cache.get(this.cacheStore, key);
+    const cacheResult = this.cache.get(key);
     if (cacheResult) {
-      return cacheResult;
+      return Promise.resolve(cacheResult);
     }
 
     // Not in cache; load the chunk and cache it
     if (this.requestQueue) {
-      return await this.requestQueue.addRequest(key, () =>
-        this.cacheWhenReceived(this.baseStore.getItem(item, opts), key)
-      );
+      return this.requestQueue.addRequest(key, () => this.cacheWhenReceived(this.baseStore.getItem(item, opts), key));
     } else {
-      return await this.cacheWhenReceived(this.baseStore.getItem(item, opts), key);
+      return this.cacheWhenReceived(this.baseStore.getItem(item, opts), key);
     }
   }
 
@@ -283,8 +274,7 @@ class OMEZarrLoader implements IVolumeLoader {
   ): Promise<OMEZarrLoader> {
     // Setup: create queue and store, get basic metadata
     const queue = new RequestQueue(concurrencyLimit);
-    const cacheStore: CacheStore = new Map();
-    const store = new SmartStoreWrapper(new HTTPStore(url), cache, cacheStore, queue);
+    const store = new SmartStoreWrapper(new HTTPStore(url), cache, queue);
     const group = await openGroup(store, null, "r");
     const metadata = (await group.attrs.asObject()) as OMEZarrMetadata;
 
