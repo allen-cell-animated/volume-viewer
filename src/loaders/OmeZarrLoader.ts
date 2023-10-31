@@ -117,15 +117,15 @@ class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
     this.rename = baseStore.rename;
   }
 
-  private async cacheWhenReceived(prom: Promise<ArrayBuffer>, key: string): Promise<ArrayBuffer> {
-    const result = await prom;
+  private async getAndCacheItem(item: string, cacheKey: string, opts?: RequestInit): Promise<ArrayBuffer> {
+    const result = await this.baseStore.getItem(item, opts);
     if (this.cache) {
-      this.cache.insert(key, result);
+      this.cache.insert(cacheKey, result);
     }
     return result;
   }
 
-  getItem(item: string, opts?: RequestInit | undefined): Promise<ArrayBuffer> {
+  getItem(item: string, opts?: RequestInit): Promise<ArrayBuffer> {
     // If we don't have a cache or aren't getting a chunk, call straight to the base store
     const zarrExts = [".zarray", ".zgroup", ".zattrs"];
     if (!this.cache || zarrExts.some((s) => item.endsWith(s))) {
@@ -143,9 +143,9 @@ class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
 
     // Not in cache; load the chunk and cache it
     if (this.requestQueue) {
-      return this.requestQueue.addRequest(key, () => this.cacheWhenReceived(this.baseStore.getItem(item, opts), key));
+      return this.requestQueue.addRequest(key, () => this.getAndCacheItem(item, key, opts));
     } else {
-      return this.cacheWhenReceived(this.baseStore.getItem(item, opts), key);
+      return this.getAndCacheItem(item, key, opts);
     }
   }
 
