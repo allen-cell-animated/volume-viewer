@@ -30,9 +30,7 @@ type CacheEntry = {
 };
 
 // Entries are indexed by T and C, then stored in lists of ZYX chunks
-type CacheStoreMultiscaleLevel = CacheEntry[][][];
-
-export type CacheStore = CacheStoreMultiscaleLevel[];
+type CacheStore = CacheEntry[][][][];
 
 /** Default: 250MB. Should be large enough to be useful but safe for most any computer that can run the app */
 const CACHE_MAX_SIZE_DEFAULT = 250_000_000;
@@ -156,7 +154,7 @@ export default class VolumeCache {
       return tArr;
     };
 
-    const scales = scaleDims.map((size): CacheStoreMultiscaleLevel => makeTCArray());
+    const scales = scaleDims.map((size): CacheEntry[][][] => makeTCArray());
     return scales;
   }
 
