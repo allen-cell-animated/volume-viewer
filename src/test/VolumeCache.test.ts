@@ -112,19 +112,19 @@ describe("VolumeCache", () => {
     return cache;
   }
 
-  // describe("clearVolume", () => {
-  //   it("clears all entries associated with one volume from the cache", () => {
-  //     const cache = setupClearTest();
-  //     cache.clearStore(store0);
+  describe("clearWithPrefix", () => {
+    it("clears all entries from the cache whose keys have the specified prefix", () => {
+      const cache = setupClearTest();
+      cache.clearWithPrefix("0/");
 
-  //     expect(cache.size).to.equal(1);
-  //     expect(cache.numberOfEntries).to.equal(1);
+      expect(cache.size).to.equal(1);
+      expect(cache.numberOfEntries).to.equal(1);
 
-  //     expect(cache.get(store0, "0")).to.be.undefined;
-  //     expect(cache.get(store0, "1")).to.be.undefined;
-  //     expect(cache.get(store1, "0")).to.deep.equal(new Uint8Array(1));
-  //   });
-  // });
+      expect(cache.get("0/0")).to.be.undefined;
+      expect(cache.get("0/1")).to.be.undefined;
+      expect(cache.get("1/0")).to.deep.equal(new Uint8Array(1));
+    });
+  });
 
   describe("clear", () => {
     it("clears all entries from the cache", () => {

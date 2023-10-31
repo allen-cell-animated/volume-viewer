@@ -159,6 +159,14 @@ export default class VolumeCache {
     return this.getEntry(key)?.data;
   }
 
+  public clearWithPrefix(prefix: string): void {
+    for (const [key, entry] of this.entries.entries()) {
+      if (key.startsWith(prefix)) {
+        this.evict(entry);
+      }
+    }
+  }
+
   /** Clears all data from the cache. */
   public clear(): void {
     while (this.last) {
