@@ -1,6 +1,8 @@
 import { Vector3 } from "three";
 import { expect } from "chai";
-import VolumeCache, { CacheStore, DataArrayExtent } from "../VolumeCache";
+import VolumeCache, { CacheStore } from "../VolumeCache";
+
+const setupEvictionTest = (): [VolumeCache, CacheStore, CacheStore] => [new VolumeCache(12), new Map(), new Map()];
 
 describe("VolumeCache", () => {
   it("creates an empty cache with the specified max size", () => {
@@ -9,225 +11,154 @@ describe("VolumeCache", () => {
     expect(cache.maxSize).to.equal(10);
   });
 
-  describe("addVolume", () => {
-    it("assigns unique IDs to multiple new volumes", () => {
-      const cache = new VolumeCache();
-      const id1 = cache.addVolume(1, 1, [new Vector3(1, 1, 1)]);
-      const id2 = cache.addVolume(1, 1, [new Vector3(1, 1, 1)]);
-      expect(id1).to.not.equal(id2);
-    });
-  });
-
   describe("insert", () => {
     it("adds a new entry to the cache", () => {
       const cache = new VolumeCache();
-      const vol = cache.addVolume(2, 2, [new Vector3(2, 2, 2), new Vector3(4, 4, 4)]);
-      expect(cache.get(vol, 1)).to.be.undefined;
+      const store: CacheStore = new Map();
+      expect(cache.get(store, "1")).to.be.undefined;
 
-      const extent: DataArrayExtent = {
-        scale: 1,
-        time: 1,
-        channel: 1,
-        chunk: new Vector3(0, 0, 1),
-      };
-      const insertionResult = cache.insert(vol, new Uint8Array(4), extent);
+      const insertionResult = cache.insert(store, "1", new Uint8Array(4));
       expect(insertionResult).to.be.true;
-      expect(cache.get(vol, 1, extent)).to.deep.equal(new Uint8Array(4));
-    });
-
-    it("defaults to the first channel, first timestep, and first chunk when unspecified", () => {
-      const cache = new VolumeCache();
-      const vol = cache.addVolume(2, 2, [new Vector3(2, 2, 2), new Vector3(4, 4, 4)]);
-      const insertionResult = cache.insert(vol, new Uint8Array(8));
-      expect(insertionResult).to.be.true;
-      expect(cache.get(vol, 0)).to.deep.equal(new Uint8Array(8));
-    });
-
-    function testInsertFails(dataLength: number, extent?: Partial<DataArrayExtent>, maxSize?: number): void {
-      const cache = new VolumeCache(maxSize);
-      const vol = cache.addVolume(1, 1, [new Vector3(2, 2, 2)]);
-      const insertionResult = cache.insert(vol, new Uint8Array(dataLength), extent);
-      expect(insertionResult).to.be.false;
-      expect(cache.get(vol, 0)).to.be.undefined;
-    }
-
-    it("does not insert an entry if one or more dimensions of the chunk is invalid", () => {
-      testInsertFails(2, { chunk: new Vector3(-1, 1, 2) });
+      expect(cache.get(store, "1")).to.deep.equal(new Uint8Array(4));
     });
 
     it("does not insert an entry if it is too big for the cache", () => {
-      testInsertFails(8, {}, 6);
+      const cache = new VolumeCache(6);
+      const store: CacheStore = new Map();
+      const insertionResult = cache.insert(store, "1", new Uint8Array(8));
+      expect(insertionResult).to.be.false;
+      expect(cache.get(store, "1")).to.be.undefined;
     });
 
-    /**
-     * - Cache has a memory limit of 12
-     * - Volume 1 has 2 channels, 1 time, 2 scale levels: 2x1x1 and 4x2x2
-     * - Volume 2 has 1 channel, 2 times, 1 scale level: 3x2x1
-     */
-    function setupEvictionTest(): [VolumeCache, CacheStore, CacheStore] {
-      const cache = new VolumeCache(12);
-      const id1 = cache.addVolume(2, 1, [new Vector3(2, 1, 1), new Vector3(4, 2, 2)]);
-      const id2 = cache.addVolume(1, 2, [new Vector3(3, 2, 1)]);
-      return [cache, id1, id2];
-    }
-
     it("evicts the least recently used entry when above its size limit", () => {
-      const [cache, id1] = setupEvictionTest(); // max: 12
-      const chunk1 = new Vector3(0);
-      const chunk2 = new Vector3(2);
-      cache.insert(id1, new Uint8Array(8), { scale: 1, chunk: chunk1 }); // 8 < 12
-      cache.insert(id1, new Uint8Array(2)); // 10 < 12
-      cache.insert(id1, new Uint8Array(8), { scale: 1, chunk: chunk2 }); // 18 > 12! evict 1!
+      const [cache, store0] = setupEvictionTest(); // max: 12
+
+      cache.insert(store0, "0", new Uint8Array(8)); // 8 < 12
+      cache.insert(store0, "1", new Uint8Array(2)); // 10 < 12
+      cache.insert(store0, "1", new Uint8Array(8)); // 18 > 12! evict 1!
+
       expect(cache.size).to.equal(10);
       expect(cache.numberOfEntries).to.equal(2);
-      expect(cache.get(id1, 0, { scale: 1, chunk: chunk1 })).to.be.undefined;
-      expect(cache.get(id1, 0)).to.deep.equal(new Uint8Array(2));
-      expect(cache.get(id1, 0, { scale: 1, chunk: chunk2 })).to.deep.equal(new Uint8Array(8));
+
+      expect(cache.get(store0, "0")).to.be.undefined;
+      expect(cache.get(store0, "1")).to.deep.equal(new Uint8Array(2));
+      expect(cache.get(store0, "2")).to.deep.equal(new Uint8Array(8));
     });
 
     it("evicts the least recently used entry regardless of which volume it's in", () => {
-      const [cache, id1, id2] = setupEvictionTest();
-      cache.insert(id1, new Uint8Array(2)); // 2
-      cache.insert(id2, new Uint8Array(6)); // 8
-      cache.insert(id2, new Uint8Array(6), { time: 1 }); // 14!
+      const [cache, store0, store1] = setupEvictionTest();
+
+      cache.insert(store0, "0", new Uint8Array(2)); // 2
+      cache.insert(store1, "0", new Uint8Array(6)); // 8
+      cache.insert(store1, "1", new Uint8Array(6)); // 14!
+
       expect(cache.size).to.equal(12);
       expect(cache.numberOfEntries).to.equal(2);
-      expect(cache.get(id1, 0)).to.be.undefined;
-      expect(cache.get(id2, 0)).to.deep.equal(new Uint8Array(6));
-      expect(cache.get(id2, 0, { time: 1 })).to.deep.equal(new Uint8Array(6));
+
+      expect(cache.get(store0, "0")).to.be.undefined;
+      expect(cache.get(store1, "0")).to.deep.equal(new Uint8Array(6));
+      expect(cache.get(store1, "1")).to.deep.equal(new Uint8Array(6));
     });
 
     it("evicts as many entries as it takes to get below max size", () => {
-      const [cache, id1, id2] = setupEvictionTest();
-      const chunk = new Vector3(1, 0, 0);
-      cache.insert(id2, new Uint8Array(6)); // 6
-      cache.insert(id2, new Uint8Array(6), { time: 1 }); // 12
-      cache.insert(id1, new Uint8Array(8), { scale: 1, chunk }); // 20!
+      const [cache, store0, store1] = setupEvictionTest();
+
+      cache.insert(store1, "0", new Uint8Array(6)); // 6
+      cache.insert(store1, "1", new Uint8Array(6)); // 12
+      cache.insert(store0, "0", new Uint8Array(8)); // 20!
+
       expect(cache.size).to.equal(8);
       expect(cache.numberOfEntries).to.equal(1);
-      expect(cache.get(id2, 0)).to.be.undefined;
-      expect(cache.get(id2, 0, { time: 1 })).to.be.undefined;
-      expect(cache.get(id1, 0, { scale: 1, chunk })).to.deep.equal(new Uint8Array(8));
+
+      expect(cache.get(store1, "0")).to.be.undefined;
+      expect(cache.get(store1, "1")).to.be.undefined;
+      expect(cache.get(store0, "0")).to.deep.equal(new Uint8Array(8));
     });
 
-    it("reuses any entries that match the provided extent rather than growing the cache with duplicates", () => {
-      const [cache, id1] = setupEvictionTest();
-      const chunk1 = new Vector3(0, 0, 0);
-      const chunk2 = new Vector3(1, 1, 1);
-      cache.insert(id1, new Uint8Array([1, 2, 3, 4]), { scale: 1, chunk: chunk1 }); // 4
-      cache.insert(id1, new Uint8Array(8), { scale: 1, chunk: chunk2 }); // 12
-      cache.insert(id1, new Uint8Array([5, 6, 7, 8]), { scale: 1, chunk: chunk1 }); // still 12
+    it("reuses any entries that match the provided key", () => {
+      const [cache, store0] = setupEvictionTest();
+
+      cache.insert(store0, "0", new Uint8Array([1, 2, 3, 4])); // 4
+      cache.insert(store0, "1", new Uint8Array(8)); // 12
+      cache.insert(store0, "0", new Uint8Array([5, 6, 7, 8])); // still 12
+
       expect(cache.size).to.equal(12);
       expect(cache.numberOfEntries).to.equal(2);
-      expect(cache.get(id1, 0, { scale: 1, chunk: chunk2 })).to.deep.equal(new Uint8Array(8));
-      expect(cache.get(id1, 0, { scale: 1, chunk: chunk1 })).to.deep.equal(new Uint8Array([5, 6, 7, 8]));
+
+      expect(cache.get(store0, "1")).to.deep.equal(new Uint8Array(8));
+      expect(cache.get(store0, "0")).to.deep.equal(new Uint8Array([5, 6, 7, 8]));
     });
   });
 
-  const chunk1 = new Vector3(0, 0, 0);
-  const chunk2 = new Vector3(0, 0, 1);
-
-  const SLICE_1_1 = [1, 2, 3, 4];
-  const SLICE_1_2 = [5, 6, 7, 8];
-  const SLICE_2_1 = [2, 4, 6, 8];
-  const SLICE_2_2 = [1, 3, 5, 7];
-  function setupGetTest(addSlices: [boolean, boolean, boolean, boolean]): [VolumeCache, CacheStore] {
+  const SLICE_0 = [1, 2, 3, 4];
+  const SLICE_1 = [5, 6, 7, 8];
+  const SLICE_2 = [2, 4, 6, 8];
+  const SLICE_3 = [1, 3, 5, 7];
+  function setupGetTest(): [VolumeCache, CacheStore] {
     const cache = new VolumeCache(12);
-    const vol = cache.addVolume(2, 1, [new Vector3(2, 2, 2)]);
-    const insertFuncs = [
-      () => cache.insert(vol, new Uint8Array(SLICE_1_1), { chunk: chunk1 }),
-      () => cache.insert(vol, new Uint8Array(SLICE_1_2), { chunk: chunk2 }),
-      () => cache.insert(vol, new Uint8Array(SLICE_2_1), { chunk: chunk1, channel: 1 }),
-      () => cache.insert(vol, new Uint8Array(SLICE_2_2), { chunk: chunk2, channel: 1 }),
-    ];
-    insertFuncs.forEach((fn, idx) => {
-      if (addSlices[idx]) fn();
-    });
-    return [cache, vol];
+    const store: CacheStore = new Map();
+    cache.insert(store, "0", new Uint8Array(SLICE_0));
+    cache.insert(store, "1", new Uint8Array(SLICE_1));
+    cache.insert(store, "2", new Uint8Array(SLICE_2));
+    return [cache, store];
   }
 
   describe("get", () => {
-    it("gets a single channel when provided a channel index", () => {
-      const [cache, id] = setupGetTest([false, false, false, true]);
-      const region = new Vector3(0, 0, 1);
-      const result = cache.get(id, 1, { scale: 0, time: 0, chunk: region });
-      expect(result).to.deep.equal(new Uint8Array(SLICE_2_2));
-    });
-
-    it("defaults to the first timestep and maximum extent when unspecified", () => {
-      const cache = new VolumeCache();
-      const id = cache.addVolume(2, 2, [new Vector3(2, 2, 2)]);
-      cache.insert(id, new Uint8Array(8), { channel: 1 });
-      expect(cache.get(id, 1)).to.deep.equal(new Uint8Array(8));
-    });
-
-    it("gets multiple channels when provided an array of indexes", () => {
-      const [cache, id] = setupGetTest([false, true, false, true]);
-      const result = cache.get(id, [1, 0], { chunk: chunk2 });
-      expect(result).to.deep.equal([new Uint8Array(SLICE_2_2), new Uint8Array(SLICE_1_2)]);
-    });
-
-    it("gets all channels when provided no index", () => {
-      const [cache, id] = setupGetTest([false, true, false, true]);
-      const result = cache.get(id, { chunk: chunk2 });
-      expect(result).to.deep.equal([new Uint8Array(SLICE_1_2), new Uint8Array(SLICE_2_2)]);
-    });
-
-    it("inserts `undefined` for missing entries when returning an array of channels", () => {
-      const [cache, id] = setupGetTest([true, false, false, false]);
-      const resultArr = cache.get(id, [0, 1], { chunk: chunk1 });
-      const resultNone = cache.get(id, { chunk: chunk1 });
-      expect(resultArr).to.deep.equal([new Uint8Array(SLICE_1_1), undefined], "array syntax");
-      expect(resultNone).to.deep.equal([new Uint8Array(SLICE_1_1), undefined], "implicit syntax");
+    it("gets an entry when provided a key", () => {
+      const [cache, store] = setupGetTest();
+      const result = cache.get(store, "1");
+      expect(result).to.deep.equal(new Uint8Array(SLICE_1));
     });
 
     it("moves returned entries to the front of the LRU queue", () => {
-      const [cache, id] = setupGetTest([true, true, true, false]); // size: 12; max: 12
-      cache.get(id, 0, { chunk: chunk1 }); // SLICE_1_1 moves from last to first; SLICE_1_2 is now last
-      cache.insert(id, new Uint8Array(SLICE_2_2), { channel: 1, chunk: chunk2 }); // 16! evict SLICE_1_2
-      expect(cache.get(id, 0, { chunk: chunk2 })).to.be.undefined;
-      expect(cache.get(id, 0, { chunk: chunk1 })).to.deep.equal(new Uint8Array(SLICE_1_1));
+      const [cache, id] = setupGetTest(); // size: 12; max: 12
+
+      cache.get(id, "0"); // SLICE_0 moves from last to first; SLICE_1 is now last
+      cache.insert(id, "3", new Uint8Array(SLICE_3)); // 16! evict SLICE_1
+
+      expect(cache.get(id, "0")).to.deep.equal(new Uint8Array(SLICE_0));
+      expect(cache.get(id, "1")).to.be.undefined;
+      expect(cache.get(id, "2")).to.deep.equal(new Uint8Array(SLICE_2));
+      expect(cache.get(id, "3")).to.deep.equal(new Uint8Array(SLICE_3));
     });
   });
 
-  const SPECIFIC_EXTENT: Partial<DataArrayExtent> = {
-    time: 1,
-    channel: 1,
-    scale: 1,
-    chunk: new Vector3(1, 1),
-  };
-
   function setupClearTest(): [VolumeCache, CacheStore, CacheStore] {
-    const cache = new VolumeCache();
-    const id1 = cache.addVolume(2, 2, [new Vector3(1, 1, 1), new Vector3(2, 2, 2)]);
-    const id2 = cache.addVolume(1, 1, [new Vector3(1, 1, 1)]);
-    cache.insert(id1, new Uint8Array(1));
-    cache.insert(id1, new Uint8Array(2), SPECIFIC_EXTENT);
-    cache.insert(id2, new Uint8Array(1));
-    return [cache, id1, id2];
+    const [cache, store0, store1] = setupEvictionTest();
+
+    cache.insert(store0, "0", new Uint8Array(1));
+    cache.insert(store0, "1", new Uint8Array(2));
+    cache.insert(store1, "0", new Uint8Array(1));
+
+    return [cache, store0, store1];
   }
 
   describe("clearVolume", () => {
     it("clears all entries associated with one volume from the cache", () => {
-      const [cache, id1, id2] = setupClearTest();
-      cache.clearVolume(id1);
+      const [cache, store0, store1] = setupClearTest();
+      cache.clearStore(store0);
+
       expect(cache.size).to.equal(1);
       expect(cache.numberOfEntries).to.equal(1);
-      expect(cache.get(id1, 0)).to.be.undefined;
-      expect(cache.get(id1, 1, SPECIFIC_EXTENT)).to.be.undefined;
-      expect(cache.get(id2, 0)).to.deep.equal(new Uint8Array(1));
+
+      expect(cache.get(store0, "0")).to.be.undefined;
+      expect(cache.get(store0, "1")).to.be.undefined;
+      expect(cache.get(store1, "0")).to.deep.equal(new Uint8Array(1));
     });
   });
 
   describe("clear", () => {
     it("clears all entries from the cache", () => {
-      const [cache, id1, id2] = setupClearTest();
+      const [cache, store0, store1] = setupClearTest();
+
       cache.clear();
+
       expect(cache.size).to.equal(0);
       expect(cache.numberOfEntries).to.equal(0);
-      expect(cache.get(id1, 0)).to.be.undefined;
-      expect(cache.get(id1, 1, SPECIFIC_EXTENT)).to.be.undefined;
-      expect(cache.get(id2, 0)).to.be.undefined;
+
+      expect(cache.get(store0, "0")).to.be.undefined;
+      expect(cache.get(store0, "1")).to.be.undefined;
+      expect(cache.get(store1, "0")).to.be.undefined;
     });
   });
 });
