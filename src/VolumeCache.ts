@@ -12,8 +12,6 @@ type CacheEntry = {
   key: string;
 };
 
-// Entries are indexed by T and C, then stored in lists of ZYX chunks
-// type CacheStore = CacheEntry[][][][];
 export type CacheStore = Map<string, CacheEntry>;
 
 /** Default: 250MB. Should be large enough to be useful but safe for most any computer that can run the app */
@@ -40,12 +38,12 @@ export default class VolumeCache {
   }
 
   // Hide these behind getters so they're definitely never set from the outside
-  /** The size of all data arrays currently stored in this cache, in bytes */
+  /** The size of all data arrays currently stored in this cache, in bytes. */
   public get size() {
     return this.currentSize;
   }
 
-  /** The number of entries currently stored in this cache */
+  /** The number of entries currently stored in this cache. */
   public get numberOfEntries() {
     return this.currentEntries;
   }
@@ -80,7 +78,7 @@ export default class VolumeCache {
     }
   }
 
-  /** Adds an entry which is *not currently in the list* to the front of the list */
+  /** Adds an entry which is *not currently in the list* to the front of the list. */
   private addEntryAsFirst(entry: CacheEntry): void {
     if (this.first) {
       this.first.prev = entry;
@@ -92,14 +90,14 @@ export default class VolumeCache {
     this.first = entry;
   }
 
-  /** Moves an entry which is *currently in the list* to the front of the list */
+  /** Moves an entry which is *currently in the list* to the front of the list. */
   private moveEntryToFirst(entry: CacheEntry): void {
     if (entry === this.first) return;
     this.removeEntryFromList(entry);
     this.addEntryAsFirst(entry);
   }
 
-  /** Evicts the least recently used entry from the cache */
+  /** Evicts the least recently used entry from the cache. */
   private evictLast(): void {
     if (!this.last) {
       console.error("VolumeCache: attempt to evict last entry from cache when no last entry is set");
@@ -114,15 +112,15 @@ export default class VolumeCache {
     this.last = this.last.prev;
   }
 
-  /** Evicts a specific entry from the cache */
+  /** Evicts a specific entry from the cache. */
   private evict(entry: CacheEntry): void {
     this.removeEntryFromStore(entry);
     this.removeEntryFromList(entry);
   }
 
   /**
-   * Add a new array to the cache (representing a subset of a channel's extent at a given time and scale)
-   * @returns {boolean} a boolean indicating whether the insertion succeeded
+   * Add a new entry to the cache.
+   * @returns {boolean} a boolean indicating whether the insertion succeeded.
    */
   public insert(parentStore: CacheStore, key: string, data: ArrayBuffer): boolean {
     if (data.byteLength > this.maxSize) {
@@ -166,14 +164,14 @@ export default class VolumeCache {
     return this.getEntry(store, key)?.data;
   }
 
-  /** Clears data associated with one store from the cache */
+  /** Clears data associated with one store from the cache. */
   public clearStore(store: CacheStore): void {
     for (const entry of store.values()) {
       this.evict(entry);
     }
   }
 
-  /** Clears all data from the cache */
+  /** Clears all data from the cache. */
   public clear(): void {
     while (this.last) {
       this.evictLast();
