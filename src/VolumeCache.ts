@@ -115,7 +115,7 @@ export default class VolumeCache {
   }
 
   /**
-   * Add a new entry to the cache.
+   * Adds a new entry to the cache.
    * @returns {boolean} a boolean indicating whether the insertion succeeded.
    */
   public insert(key: string, data: ArrayBuffer): boolean {
@@ -154,11 +154,12 @@ export default class VolumeCache {
     return result;
   }
 
-  /** Attempt to get a single entry from the cache. */
+  /** Attempts to get a single entry from the cache. */
   public get(key: string): ArrayBuffer | undefined {
     return this.getEntry(key)?.data;
   }
 
+  /** Clears all cache entries whose keys begin with the specified prefix. */
   public clearWithPrefix(prefix: string): void {
     for (const [key, entry] of this.entries.entries()) {
       if (key.startsWith(prefix)) {
