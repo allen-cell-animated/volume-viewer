@@ -3,7 +3,7 @@ import { Box3, Vector2, Vector3 } from "three";
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import { buildDefaultMetadata } from "./VolumeLoaderUtils";
 import Volume, { ImageInfo } from "../Volume";
-import VolumeCache, { CacheStore } from "../VolumeCache";
+import VolumeCache from "../VolumeCache";
 
 interface PackedChannelsImage {
   name: string;
@@ -96,7 +96,6 @@ class JsonImageInfoLoader implements IVolumeLoader {
   jsonInfo: JsonImageInfo | null = null;
 
   cache?: VolumeCache;
-  cacheStore?: CacheStore;
 
   constructor(urls: string | string[], cache?: VolumeCache) {
     if (Array.isArray(urls)) {
@@ -134,8 +133,6 @@ class JsonImageInfoLoader implements IVolumeLoader {
     this.time = loadSpec.time;
     this.jsonInfo = await this.getJsonImageInfo(loadSpec);
     const imageInfo = convertImageInfo(this.jsonInfo);
-
-    this.cacheStore = new Map();
 
     const vol = new Volume(imageInfo, loadSpec, this);
     vol.channelLoadCallback = onChannelLoaded;
@@ -177,7 +174,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
       // include all channels in any loaded images
       channels: images.flatMap(({ channels }) => channels),
     };
-    JsonImageInfoLoader.loadVolumeAtlasData(vol, images, onChannelLoaded, this.cacheStore, this.cache);
+    JsonImageInfoLoader.loadVolumeAtlasData(vol, images, onChannelLoaded, this.cache);
   }
 
   /**
@@ -203,7 +200,6 @@ class JsonImageInfoLoader implements IVolumeLoader {
     volume: Volume,
     imageArray: PackedChannelsImage[],
     onChannelLoaded?: PerChannelCallback,
-    cacheStore?: CacheStore,
     cache?: VolumeCache
   ): PackedChannelsImageRequests {
     const numImages = imageArray.length;
@@ -220,7 +216,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
       let cacheHit = true;
       for (let j = 0; j < Math.min(batch.length, 4); ++j) {
         const chindex = batch[j];
-        const cacheResult = cacheStore && cache?.get(cacheStore, `${url}/${chindex}`);
+        const cacheResult = cache?.get(`${url}/${chindex}`);
         if (cacheResult) {
           volume.setChannelDataFromVolume(chindex, new Uint8Array(cacheResult));
           onChannelLoaded?.(volume, chindex);
@@ -285,7 +281,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
         for (let ch = 0; ch < Math.min(batch.length, 4); ++ch) {
           const chindex = batch[ch];
           volume.setChannelDataFromAtlas(chindex, channelsBits[ch], w, h);
-          cacheStore && cache?.insert(cacheStore, `${url}/${chindex}`, volume.channels[chindex].volumeData.buffer);
+          cache?.insert(`${url}/${chindex}`, volume.channels[chindex].volumeData.buffer);
           onChannelLoaded?.(volume, chindex);
         }
       };
