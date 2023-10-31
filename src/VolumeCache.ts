@@ -1,20 +1,3 @@
-import { Vector3 } from "three";
-
-// The following two very similar types are kept separate because we may later want to allow more
-// complex queries with respect to scale, e.g. "get the largest available scale within this range"
-export type DataArrayExtent = {
-  chunk: Vector3;
-  scale: number;
-  time: number;
-  channel: number;
-};
-
-export type QueryExtent = {
-  chunk: Vector3;
-  scale: number;
-  time: number;
-};
-
 type MaybeCacheEntry = CacheEntry | null;
 type CacheEntry = {
   /** The data contained in this entry */
@@ -187,7 +170,7 @@ export default class VolumeCache {
   }
 
   /** Clears data associated with one store from the cache */
-  public clearVolume(store: CacheStore): void {
+  public clearStore(store: CacheStore): void {
     for (const entry of store.values()) {
       this.evict(entry);
     }
