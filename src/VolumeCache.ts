@@ -121,15 +121,6 @@ export default class VolumeCache {
   }
 
   /**
-   * Prepares a new cached volume with the specified channels, times, and scales.
-   * @returns {CacheStore} A container for cache entries for this volume.
-   * A `CacheStore` may only be accessed or modified by passing it to this class's methods.
-   */
-  public addVolume(): CacheStore {
-    return new Map();
-  }
-
-  /**
    * Add a new array to the cache (representing a subset of a channel's extent at a given time and scale)
    * @returns {boolean} a boolean indicating whether the insertion succeeded
    */
