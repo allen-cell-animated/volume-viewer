@@ -6,21 +6,18 @@ type CacheEntry = {
   prev: MaybeCacheEntry;
   /** The next entry in the LRU list (less recently used) */
   next: MaybeCacheEntry;
-  /** The array which contains this entry */
-  parentStore: CacheStore;
   /** The key which indexes this entry within `parentStore */
   key: string;
 };
-
-export type CacheStore = Map<string, CacheEntry>;
 
 /** Default: 250MB. Should be large enough to be useful but safe for most any computer that can run the app */
 const CACHE_MAX_SIZE_DEFAULT = 250_000_000;
 
 export default class VolumeCache {
+  private entries: Map<string, CacheEntry>;
+
   public readonly maxSize: number;
   private currentSize: number;
-  private currentEntries: number;
 
   // Ends of a linked list of entries, to track LRU and evict efficiently
   private first: MaybeCacheEntry;
@@ -29,9 +26,9 @@ export default class VolumeCache {
   // that prefetched entries which are never used don't get highest priority!
 
   constructor(maxSize = CACHE_MAX_SIZE_DEFAULT) {
+    this.entries = new Map();
     this.maxSize = maxSize;
     this.currentSize = 0;
-    this.currentEntries = 0;
 
     this.first = null;
     this.last = null;
@@ -45,7 +42,7 @@ export default class VolumeCache {
 
   /** The number of entries currently stored in this cache. */
   public get numberOfEntries() {
-    return this.currentEntries;
+    return this.entries.size;
   }
 
   /**
@@ -53,9 +50,8 @@ export default class VolumeCache {
    * Only call from a method with the word "evict" in it!
    */
   private removeEntryFromStore(entry: CacheEntry): void {
-    entry.parentStore.delete(entry.key);
+    this.entries.delete(entry.key);
     this.currentSize -= entry.data.byteLength;
-    this.currentEntries--;
   }
 
   /**
@@ -122,7 +118,7 @@ export default class VolumeCache {
    * Add a new entry to the cache.
    * @returns {boolean} a boolean indicating whether the insertion succeeded.
    */
-  public insert(parentStore: CacheStore, key: string, data: ArrayBuffer): boolean {
+  public insert(key: string, data: ArrayBuffer): boolean {
     if (data.byteLength > this.maxSize) {
       console.error("VolumeCache: attempt to insert a single entry larger than the cache");
       return false;
@@ -130,18 +126,17 @@ export default class VolumeCache {
 
     // Check if entry is already in cache
     // This will move the entry to the front of the LRU list, if present
-    const getResult = this.getEntry(parentStore, key);
+    const getResult = this.getEntry(key);
     if (getResult !== undefined) {
       getResult.data = data;
       return true;
     }
 
     // Add new entry to cache
-    const newEntry: CacheEntry = { data, prev: null, next: null, parentStore, key };
+    const newEntry: CacheEntry = { data, prev: null, next: null, key };
     this.addEntryAsFirst(newEntry);
-    parentStore.set(key, newEntry);
+    this.entries.set(key, newEntry);
     this.currentSize += data.byteLength;
-    this.currentEntries++;
 
     // Evict until size is within limit
     while (this.currentSize > this.maxSize) {
@@ -151,8 +146,8 @@ export default class VolumeCache {
   }
 
   /** Internal implementation of `get`. Returns all entry metadata, not just the raw data. */
-  private getEntry(store: CacheStore, key: string): CacheEntry | undefined {
-    const result = store.get(key);
+  private getEntry(key: string): CacheEntry | undefined {
+    const result = this.entries.get(key);
     if (result) {
       this.moveEntryToFirst(result);
     }
@@ -160,15 +155,8 @@ export default class VolumeCache {
   }
 
   /** Attempt to get a single entry from the cache. */
-  public get(store: CacheStore, key: string): ArrayBuffer | undefined {
-    return this.getEntry(store, key)?.data;
-  }
-
-  /** Clears data associated with one store from the cache. */
-  public clearStore(store: CacheStore): void {
-    for (const entry of store.values()) {
-      this.evict(entry);
-    }
+  public get(key: string): ArrayBuffer | undefined {
+    return this.getEntry(key)?.data;
   }
 
   /** Clears all data from the cache. */
