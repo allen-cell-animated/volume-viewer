@@ -5,7 +5,7 @@ import { AsyncStore } from "zarr/types/storage/types";
 import { Slice } from "zarr/types/core/types";
 
 import Volume, { ImageInfo } from "../Volume";
-import VolumeCache, { CacheStore, DataArrayExtent } from "../VolumeCache";
+import VolumeCache, { CacheStore } from "../VolumeCache";
 import RequestQueue from "../utils/RequestQueue";
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import {
@@ -107,15 +107,16 @@ class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
   cache?: VolumeCache;
   cacheStore?: CacheStore;
   requestQueue?: RequestQueue;
-  // Our other miscellaneous info is packed into an object to be null-checked all at once
-  arrayInfo?: {
-    axesTCZYX: [number, number, number, number, number];
-    scaleNames: string[];
-    dimensionSeparator: string;
-  };
 
-  constructor(baseStore: AsyncStore<ArrayBuffer, RequestInit>, requestQueue?: RequestQueue) {
+  constructor(
+    baseStore: AsyncStore<ArrayBuffer, RequestInit>,
+    cache?: VolumeCache,
+    cacheStore?: CacheStore,
+    requestQueue?: RequestQueue
+  ) {
     this.baseStore = baseStore;
+    this.cache = cache;
+    this.cacheStore = cacheStore;
     this.requestQueue = requestQueue;
     this.listDir = baseStore.listDir;
     this.rmDir = baseStore.rmDir;
@@ -123,22 +124,10 @@ class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
     this.rename = baseStore.rename;
   }
 
-  setCacheInfo(
-    axesTCZYX: [number, number, number, number, number],
-    scaleNames: string[],
-    dimensionSeparator = "/",
-    cache?: VolumeCache,
-    cacheStore?: CacheStore
-  ) {
-    this.arrayInfo = { axesTCZYX, scaleNames, dimensionSeparator };
-    this.cache = cache;
-    this.cacheStore = cacheStore;
-  }
-
-  private async cacheWhenReceived(prom: Promise<ArrayBuffer>, dims: Partial<DataArrayExtent>): Promise<ArrayBuffer> {
+  private async cacheWhenReceived(prom: Promise<ArrayBuffer>, key: string): Promise<ArrayBuffer> {
     const result = await prom;
     if (this.cache && this.cacheStore) {
-      this.cache.insert(this.cacheStore, result, dims);
+      this.cache.insert(this.cacheStore, key, result);
     }
     return result;
   }
@@ -146,43 +135,26 @@ class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
   async getItem(item: string, opts?: RequestInit | undefined): Promise<ArrayBuffer> {
     // If we don't have a cache or aren't getting a chunk, call straight to the base store
     const zarrExts = [".zarray", ".zgroup", ".zattrs"];
-    if (!this.cache || !this.cacheStore || !this.arrayInfo || zarrExts.some((s) => item.endsWith(s))) {
+    if (!this.cache || !this.cacheStore || zarrExts.some((s) => item.endsWith(s))) {
       return this.baseStore.getItem(item, opts);
     }
 
-    const { scaleNames, axesTCZYX, dimensionSeparator } = this.arrayInfo;
-
-    // Extract chunk coordinates from item path
-    const pathElems = item.split(dimensionSeparator);
-    // The first element should be the scale name - convert it to scale level index
-    const scale = scaleNames.indexOf(pathElems.shift() as string);
-    // The remaining elements should be chunk coordinates, and should be numbers
-    const coordsLength = getDimensionCount(axesTCZYX);
-    const chunkCoords = pathElems.slice(-coordsLength).map((s) => parseInt(s, 10));
-    if (chunkCoords.length < coordsLength || chunkCoords.some(isNaN) || scale < 0) {
-      console.log("zarr store wrapper: unexpected item path: " + item);
-      return this.baseStore.getItem(item, opts);
-    }
+    const keyPrefix = (this.baseStore as HTTPStore).url || "";
+    const key = keyPrefix + item;
 
     // Check the cache
-    const [t, c, z, y, x] = axesTCZYX;
-    const time = t < 0 ? 0 : chunkCoords[t];
-    const channel = c < 0 ? 0 : chunkCoords[c];
-    const chunk = new Vector3(chunkCoords[x], chunkCoords[y], chunkCoords[z]);
-    const cacheResult = this.cache.get(this.cacheStore, channel, { scale, time, chunk });
+    const cacheResult = this.cache.get(this.cacheStore, key);
     if (cacheResult) {
       return cacheResult;
     }
 
     // Not in cache; load the chunk and cache it
     if (this.requestQueue) {
-      const keyPrefix = (this.baseStore as HTTPStore).url || "";
-      const key = keyPrefix + item;
       return await this.requestQueue.addRequest(key, () =>
-        this.cacheWhenReceived(this.baseStore.getItem(item, opts), { scale, time, chunk, channel })
+        this.cacheWhenReceived(this.baseStore.getItem(item, opts), key)
       );
     } else {
-      return await this.cacheWhenReceived(this.baseStore.getItem(item, opts), { scale, time, chunk, channel });
+      return await this.cacheWhenReceived(this.baseStore.getItem(item, opts), key);
     }
   }
 
@@ -311,7 +283,8 @@ class OMEZarrLoader implements IVolumeLoader {
   ): Promise<OMEZarrLoader> {
     // Setup: create queue and store, get basic metadata
     const queue = new RequestQueue(concurrencyLimit);
-    const store = new SmartStoreWrapper(new HTTPStore(url), queue);
+    const cacheStore: CacheStore = new Map();
+    const store = new SmartStoreWrapper(new HTTPStore(url), cache, cacheStore, queue);
     const group = await openGroup(store, null, "r");
     const metadata = (await group.attrs.asObject()) as OMEZarrMetadata;
 
@@ -326,18 +299,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const scaleLevelPaths = multiscale.datasets.map(({ path }) => path);
     const scaleLevelPromises = scaleLevelPaths.map((path) => openArray({ store, path, mode: "r" }));
     const scaleLevels = await Promise.all(scaleLevelPromises);
-    const dimensionSeparator = scaleLevels[0].meta.dimension_separator;
-
-    // Grab axis indexes, use them to set up cache store
     const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
-    const [t, c, z, y, x] = axisTCZYX;
-    const numChannels = Math.max(scaleLevels[0].shape[c], 1);
-    const numTimes = Math.max(scaleLevels[0].shape[t], 1);
-    const scaleChunkDims = scaleLevels.map(
-      ({ chunkDataShape }) => new Vector3(chunkDataShape[x], chunkDataShape[y], chunkDataShape[z])
-    );
-    const cacheStore = cache?.addVolume(numChannels, numTimes, scaleChunkDims);
-    store.setCacheInfo(axisTCZYX, scaleLevelPaths, dimensionSeparator, cache, cacheStore);
 
     return new OMEZarrLoader(scaleLevels, multiscale, metadata.omero, axisTCZYX, queue);
   }
