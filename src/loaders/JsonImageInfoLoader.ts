@@ -135,9 +135,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
     this.jsonInfo = await this.getJsonImageInfo(loadSpec);
     const imageInfo = convertImageInfo(this.jsonInfo);
 
-    this.cacheStore = this.cache?.addVolume(imageInfo.numChannels, Math.max(imageInfo.times, this.urls.length), [
-      new Vector3(1, 1, 1),
-    ]);
+    this.cacheStore = new Map();
 
     const vol = new Volume(imageInfo, loadSpec, this);
     vol.channelLoadCallback = onChannelLoaded;
@@ -216,15 +214,13 @@ class JsonImageInfoLoader implements IVolumeLoader {
       const url = imageArray[i].name;
       const batch = imageArray[i].channels;
 
-      // construct cache query
-      const cacheQueryDims = { time: volume.loadSpec.time, scale: 0 };
       // Because the data is fetched such that one fetch returns a whole batch,
       // if any in batch is cached then they all should be. So if any in batch is NOT cached,
       // then we will have to do a batch request. This logic works both ways because it's all or nothing.
       let cacheHit = true;
       for (let j = 0; j < Math.min(batch.length, 4); ++j) {
         const chindex = batch[j];
-        const cacheResult = cacheStore && cache?.get(cacheStore, chindex, cacheQueryDims);
+        const cacheResult = cacheStore && cache?.get(cacheStore, `${url}/${chindex}`);
         if (cacheResult) {
           volume.setChannelDataFromVolume(chindex, new Uint8Array(cacheResult));
           onChannelLoaded?.(volume, chindex);
@@ -287,16 +283,10 @@ class JsonImageInfoLoader implements IVolumeLoader {
         // done with img, iData, and canvas now.
 
         for (let ch = 0; ch < Math.min(batch.length, 4); ++ch) {
-          volume.setChannelDataFromAtlas(batch[ch], channelsBits[ch], w, h);
-
-          const cacheInsertDims = {
-            scale: 0,
-            time: volume.loadSpec.time,
-            channel: batch[ch],
-          };
-          cacheStore && cache?.insert(cacheStore, volume.channels[batch[ch]].volumeData.buffer, cacheInsertDims);
-
-          onChannelLoaded?.(volume, batch[ch]);
+          const chindex = batch[ch];
+          volume.setChannelDataFromAtlas(chindex, channelsBits[ch], w, h);
+          cacheStore && cache?.insert(cacheStore, `${url}/${chindex}`, volume.channels[chindex].volumeData.buffer);
+          onChannelLoaded?.(volume, chindex);
         }
       };
       img.crossOrigin = "Anonymous";
