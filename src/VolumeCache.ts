@@ -6,7 +6,7 @@ type CacheEntry = {
   prev: MaybeCacheEntry;
   /** The next entry in the LRU list (less recently used) */
   next: MaybeCacheEntry;
-  /** The key which indexes this entry within `parentStore */
+  /** The key which indexes this entry */
   key: string;
 };
 
