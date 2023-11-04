@@ -17,13 +17,13 @@ export function loadSpecToString(spec: LoadSpec): string {
 }
 
 export class VolumeDims {
-  subpath = "";
   // shape: [t, c, z, y, x]
   shape: number[] = [0, 0, 0, 0, 0];
   // spacing: [t, c, z, y, x]; generally expect 1 for non-spatial dimensions
   spacing: number[] = [1, 1, 1, 1, 1];
   spaceUnit = "μm";
   timeUnit = "s";
+  canLoad = true;
   // TODO make this an enum?
   dataType = "uint8";
 }

@@ -121,7 +121,6 @@ class JsonImageInfoLoader implements IVolumeLoader {
     const jsonInfo = await this.getJsonImageInfo(loadSpec);
 
     const d = new VolumeDims();
-    d.subpath = "";
     d.shape = [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tile_height, jsonInfo.tile_width];
     d.spacing = [1, 1, jsonInfo.pixel_size_z, jsonInfo.pixel_size_y, jsonInfo.pixel_size_x];
     d.spaceUnit = jsonInfo.pixel_size_unit || "μm";

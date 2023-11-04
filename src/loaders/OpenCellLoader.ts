@@ -9,7 +9,6 @@ import { JsonImageInfoLoader } from "./JsonImageInfoLoader";
 class OpenCellLoader implements IVolumeLoader {
   async loadDims(_: LoadSpec): Promise<VolumeDims[]> {
     const d = new VolumeDims();
-    d.subpath = "";
     d.shape = [1, 2, 27, 600, 600];
     d.spacing = [1, 1, 2, 1, 1];
     d.spaceUnit = ""; // unknown unit.
