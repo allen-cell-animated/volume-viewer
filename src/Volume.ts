@@ -229,13 +229,22 @@ export default class Volume {
     this.normRegionOffset = subregionOffset.clone().divide(volumeSize);
   }
 
-  updateRequiredData(required: Partial<LoadSpec>, onChannelLoaded?: PerChannelCallback) {
+  async updateRequiredData(required: Partial<LoadSpec>, onChannelLoaded?: PerChannelCallback): Promise<void> {
     this.loadSpecRequired = { ...this.loadSpecRequired, ...required };
+    const containsSubregion = this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion);
+    let subregionRequiresReload = !containsSubregion;
+    if (containsSubregion) {
+      const dims = await this.loader?.loadDims(this.loadSpecRequired);
+      const currentScale = this.loadSpecRequired.multiscaleLevel;
+      if (dims && currentScale > 0 && dims[currentScale - 1].canLoad) {
+        subregionRequiresReload = true;
+      }
+    }
     // if newly required data is not currently contained in this volume...
     if (
       this.loadSpecRequired.time !== this.loadSpec.time ||
       this.loadSpecRequired.scene !== this.loadSpec.scene ||
-      !this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion)
+      subregionRequiresReload
     ) {
       // ...clone `loadSpecRequired` into `loadSpec` and load
       this.setUnloaded();
