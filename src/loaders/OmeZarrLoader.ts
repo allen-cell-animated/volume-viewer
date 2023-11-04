@@ -132,7 +132,10 @@ class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
       return this.baseStore.getItem(item, opts);
     }
 
-    const keyPrefix = (this.baseStore as HTTPStore).url || "";
+    let keyPrefix = (this.baseStore as HTTPStore).url ?? "";
+    if (keyPrefix !== "" && !keyPrefix.endsWith("/")) {
+      keyPrefix += "/";
+    }
     const key = keyPrefix + item;
 
     // Check the cache
