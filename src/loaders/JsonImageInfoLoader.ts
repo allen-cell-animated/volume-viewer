@@ -3,7 +3,7 @@ import { Box3, Vector2, Vector3 } from "three";
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import { buildDefaultMetadata } from "./VolumeLoaderUtils";
 import Volume, { ImageInfo } from "../Volume";
-import VolumeCache, { CacheStore } from "../VolumeCache";
+import VolumeCache from "../VolumeCache";
 
 interface PackedChannelsImage {
   name: string;
@@ -96,7 +96,6 @@ class JsonImageInfoLoader implements IVolumeLoader {
   jsonInfo: JsonImageInfo | null = null;
 
   cache?: VolumeCache;
-  cacheStore?: CacheStore;
 
   constructor(urls: string | string[], cache?: VolumeCache) {
     if (Array.isArray(urls)) {
@@ -134,10 +133,6 @@ class JsonImageInfoLoader implements IVolumeLoader {
     this.time = loadSpec.time;
     this.jsonInfo = await this.getJsonImageInfo(loadSpec);
     const imageInfo = convertImageInfo(this.jsonInfo);
-
-    this.cacheStore = this.cache?.addVolume(imageInfo.numChannels, Math.max(imageInfo.times, this.urls.length), [
-      new Vector3(1, 1, 1),
-    ]);
 
     const vol = new Volume(imageInfo, loadSpec, this);
     vol.channelLoadCallback = onChannelLoaded;
@@ -179,7 +174,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
       // include all channels in any loaded images
       channels: images.flatMap(({ channels }) => channels),
     };
-    JsonImageInfoLoader.loadVolumeAtlasData(vol, images, onChannelLoaded, this.cacheStore, this.cache);
+    JsonImageInfoLoader.loadVolumeAtlasData(vol, images, onChannelLoaded, this.cache);
   }
 
   /**
@@ -205,7 +200,6 @@ class JsonImageInfoLoader implements IVolumeLoader {
     volume: Volume,
     imageArray: PackedChannelsImage[],
     onChannelLoaded?: PerChannelCallback,
-    cacheStore?: CacheStore,
     cache?: VolumeCache
   ): PackedChannelsImageRequests {
     const numImages = imageArray.length;
@@ -216,15 +210,13 @@ class JsonImageInfoLoader implements IVolumeLoader {
       const url = imageArray[i].name;
       const batch = imageArray[i].channels;
 
-      // construct cache query
-      const cacheQueryDims = { time: volume.loadSpec.time, scale: 0 };
       // Because the data is fetched such that one fetch returns a whole batch,
       // if any in batch is cached then they all should be. So if any in batch is NOT cached,
       // then we will have to do a batch request. This logic works both ways because it's all or nothing.
       let cacheHit = true;
       for (let j = 0; j < Math.min(batch.length, 4); ++j) {
         const chindex = batch[j];
-        const cacheResult = cacheStore && cache?.get(cacheStore, chindex, cacheQueryDims);
+        const cacheResult = cache?.get(`${url}/${chindex}`);
         if (cacheResult) {
           volume.setChannelDataFromVolume(chindex, new Uint8Array(cacheResult));
           onChannelLoaded?.(volume, chindex);
@@ -287,16 +279,10 @@ class JsonImageInfoLoader implements IVolumeLoader {
         // done with img, iData, and canvas now.
 
         for (let ch = 0; ch < Math.min(batch.length, 4); ++ch) {
-          volume.setChannelDataFromAtlas(batch[ch], channelsBits[ch], w, h);
-
-          const cacheInsertDims = {
-            scale: 0,
-            time: volume.loadSpec.time,
-            channel: batch[ch],
-          };
-          cacheStore && cache?.insert(cacheStore, volume.channels[batch[ch]].volumeData.buffer, cacheInsertDims);
-
-          onChannelLoaded?.(volume, batch[ch]);
+          const chindex = batch[ch];
+          volume.setChannelDataFromAtlas(chindex, channelsBits[ch], w, h);
+          cache?.insert(`${url}/${chindex}`, volume.channels[chindex].volumeData.buffer);
+          onChannelLoaded?.(volume, chindex);
         }
       };
       img.crossOrigin = "Anonymous";

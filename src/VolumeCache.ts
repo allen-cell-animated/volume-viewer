@@ -1,53 +1,23 @@
-import { Vector3 } from "three";
-
-// The following two very similar types are kept separate because we may later want to allow more
-// complex queries with respect to scale, e.g. "get the largest available scale within this range"
-export type DataArrayExtent = {
-  chunk: Vector3;
-  scale: number;
-  time: number;
-  channel: number;
-};
-
-export type QueryExtent = {
-  chunk: Vector3;
-  scale: number;
-  time: number;
-};
-
 type MaybeCacheEntry = CacheEntry | null;
 type CacheEntry = {
   /** The data contained in this entry */
   data: ArrayBuffer;
-  /** The coordinates of the volume chunk covered by this entry */
-  chunk: Vector3;
   /** The previous entry in the LRU list (more recently used) */
   prev: MaybeCacheEntry;
   /** The next entry in the LRU list (less recently used) */
   next: MaybeCacheEntry;
-  /** The array which contains this entry */
-  parentArr: CacheEntry[];
-};
-
-type CacheStoreMultiscaleLevel = {
-  // Entries are indexed by T and C, then stored in lists of ZYX chunks
-  data: CacheEntry[][][];
-  size: Vector3;
-};
-
-export type CacheStore = {
-  scales: CacheStoreMultiscaleLevel[];
-  numTimes: number;
-  numChannels: number;
+  /** The key which indexes this entry */
+  key: string;
 };
 
 /** Default: 250MB. Should be large enough to be useful but safe for most any computer that can run the app */
 const CACHE_MAX_SIZE_DEFAULT = 250_000_000;
 
 export default class VolumeCache {
+  private entries: Map<string, CacheEntry>;
+
   public readonly maxSize: number;
   private currentSize: number;
-  private currentEntries: number;
 
   // Ends of a linked list of entries, to track LRU and evict efficiently
   private first: MaybeCacheEntry;
@@ -56,38 +26,37 @@ export default class VolumeCache {
   // that prefetched entries which are never used don't get highest priority!
 
   constructor(maxSize = CACHE_MAX_SIZE_DEFAULT) {
+    this.entries = new Map();
     this.maxSize = maxSize;
     this.currentSize = 0;
-    this.currentEntries = 0;
 
     this.first = null;
     this.last = null;
   }
 
   // Hide these behind getters so they're definitely never set from the outside
-  /** The size of all data arrays currently stored in this cache, in bytes */
+  /** The size of all data arrays currently stored in this cache, in bytes. */
   public get size() {
     return this.currentSize;
   }
 
-  /** The number of entries currently stored in this cache */
+  /** The number of entries currently stored in this cache. */
   public get numberOfEntries() {
-    return this.currentEntries;
+    return this.entries.size;
   }
 
   /**
-   * Removes an entry from a volume but NOT the LRU list.
+   * Removes an entry from a store but NOT the LRU list.
    * Only call from a method with the word "evict" in it!
    */
   private removeEntryFromStore(entry: CacheEntry): void {
-    entry.parentArr.splice(entry.parentArr.indexOf(entry), 1);
+    this.entries.delete(entry.key);
     this.currentSize -= entry.data.byteLength;
-    this.currentEntries--;
   }
 
   /**
-   * Removes an entry from the LRU list but NOT its volume.
-   * Entry must be replaced in list or removed from volume, or it will never be evicted!
+   * Removes an entry from the LRU list but NOT its store.
+   * Entry must be replaced in list or removed from store, or it will never be evicted!
    */
   private removeEntryFromList(entry: CacheEntry): void {
     const { prev, next } = entry;
@@ -105,7 +74,7 @@ export default class VolumeCache {
     }
   }
 
-  /** Adds an entry which is *not currently in the list* to the front of the list */
+  /** Adds an entry which is *not currently in the list* to the front of the list. */
   private addEntryAsFirst(entry: CacheEntry): void {
     if (this.first) {
       this.first.prev = entry;
@@ -117,14 +86,14 @@ export default class VolumeCache {
     this.first = entry;
   }
 
-  /** Moves an entry which is *currently in the list* to the front of the list */
+  /** Moves an entry which is *currently in the list* to the front of the list. */
   private moveEntryToFirst(entry: CacheEntry): void {
     if (entry === this.first) return;
     this.removeEntryFromList(entry);
     this.addEntryAsFirst(entry);
   }
 
-  /** Evicts the least recently used entry from the cache */
+  /** Evicts the least recently used entry from the cache. */
   private evictLast(): void {
     if (!this.last) {
       console.error("VolumeCache: attempt to evict last entry from cache when no last entry is set");
@@ -139,69 +108,35 @@ export default class VolumeCache {
     this.last = this.last.prev;
   }
 
-  /** Evicts a specific entry from the cache */
-  // TODO use this to intelligently evict redundant data
+  /** Evicts a specific entry from the cache. */
   private evict(entry: CacheEntry): void {
     this.removeEntryFromStore(entry);
     this.removeEntryFromList(entry);
   }
 
   /**
-   * Prepares a new cached volume with the specified channels, times, and scales.
-   * @returns {CacheStore} A container for cache entries for this volume.
-   * A `CacheStore` may only be accessed or modified by passing it to this class's methods.
+   * Adds a new entry to the cache.
+   * @returns {boolean} a boolean indicating whether the insertion succeeded.
    */
-  public addVolume(numChannels: number, numTimes: number, scaleDims: Vector3[]): CacheStore {
-    const makeTCArray = (): CacheEntry[][][] => {
-      const tArr: CacheEntry[][][] = [];
-      for (let i = 0; i < numTimes; i++) {
-        const cArr: CacheEntry[][] = [];
-        for (let j = 0; j < numChannels; j++) {
-          cArr.push([]);
-        }
-        tArr.push(cArr);
-      }
-      return tArr;
-    };
-
-    const scales = scaleDims.map((size): CacheStoreMultiscaleLevel => ({ size, data: makeTCArray() }));
-    return { scales, numTimes, numChannels };
-  }
-
-  /**
-   * Add a new array to the cache (representing a subset of a channel's extent at a given time and scale)
-   * @returns {boolean} a boolean indicating whether the insertion succeeded
-   */
-  public insert(volume: CacheStore, data: ArrayBuffer, optDims: Partial<DataArrayExtent> = {}): boolean {
-    const scaleCache = volume.scales[optDims.scale || 0];
-    const entryList = scaleCache.data[optDims.time || 0][optDims.channel || 0];
-    const chunk = optDims.chunk ?? new Vector3(0, 0, 0);
-    const { size } = scaleCache;
-
-    if (chunk.x < 0 || chunk.y < 0 || chunk.z < 0 || chunk.x >= size.x || chunk.y >= size.y || chunk.z >= size.z) {
-      console.error("VolumeCache: attempt to insert into nonexistent chunk");
-      return false;
-    }
+  public insert(key: string, data: ArrayBuffer): boolean {
     if (data.byteLength > this.maxSize) {
       console.error("VolumeCache: attempt to insert a single entry larger than the cache");
       return false;
     }
 
     // Check if entry is already in cache
-    for (const existingEntry of entryList) {
-      if (existingEntry.chunk.equals(chunk)) {
-        existingEntry.data = data;
-        this.moveEntryToFirst(existingEntry);
-        return true;
-      }
+    // This will move the entry to the front of the LRU list, if present
+    const getResult = this.getEntry(key);
+    if (getResult !== undefined) {
+      getResult.data = data;
+      return true;
     }
 
     // Add new entry to cache
-    const newEntry: CacheEntry = { data, chunk, prev: null, next: null, parentArr: entryList };
+    const newEntry: CacheEntry = { data, prev: null, next: null, key };
     this.addEntryAsFirst(newEntry);
-    entryList.push(newEntry);
+    this.entries.set(key, newEntry);
     this.currentSize += data.byteLength;
-    this.currentEntries++;
 
     // Evict until size is within limit
     while (this.currentSize > this.maxSize) {
@@ -210,67 +145,30 @@ export default class VolumeCache {
     return true;
   }
 
-  /**
-   * Attempts to get data from a single channel. Internal implementation of `get`,
-   * which is overloaded to call this in different patterns.
-   */
-  private getOneChannel(
-    volume: CacheStore,
-    channel: number,
-    optDims: Partial<QueryExtent> = {}
-  ): ArrayBuffer | undefined {
-    // TODO allow searching through a range of scales and picking the highest available one
-    const scaleCache = volume.scales[optDims.scale || 0];
-    const entryList = scaleCache.data[optDims.time || 0][channel];
-    const chunk = optDims.chunk ?? new Vector3(0, 0, 0);
+  /** Internal implementation of `get`. Returns all entry metadata, not just the raw data. */
+  private getEntry(key: string): CacheEntry | undefined {
+    const result = this.entries.get(key);
+    if (result) {
+      this.moveEntryToFirst(result);
+    }
+    return result;
+  }
 
-    for (const entry of entryList) {
-      if (entry.chunk.equals(chunk)) {
-        this.moveEntryToFirst(entry);
-        return entry.data;
+  /** Attempts to get a single entry from the cache. */
+  public get(key: string): ArrayBuffer | undefined {
+    return this.getEntry(key)?.data;
+  }
+
+  /** Clears all cache entries whose keys begin with the specified prefix. */
+  public clearWithPrefix(prefix: string): void {
+    for (const [key, entry] of this.entries.entries()) {
+      if (key.startsWith(prefix)) {
+        this.evict(entry);
       }
     }
-
-    return undefined;
   }
 
-  /** Attempts to get data from a single channel of a cached volume. Returns `undefined` if not present in the cache. */
-  public get(volume: CacheStore, channel: number, optDims?: Partial<QueryExtent>): ArrayBuffer | undefined;
-  /** Attempts to get data from multiple channels of a volume. Channels not present in the cache are `undefined`. */
-  public get(volume: CacheStore, channel: number[], optDims?: Partial<QueryExtent>): (ArrayBuffer | undefined)[];
-  /** Attempts to get all channels of a volume from the cache. Channels not present in the cache are `undefined`. */
-  public get(volume: CacheStore, optDims?: Partial<QueryExtent>): (ArrayBuffer | undefined)[];
-  public get(
-    volume: CacheStore,
-    channel?: number | number[] | Partial<QueryExtent>,
-    optDims?: Partial<QueryExtent>
-  ): ArrayBuffer | undefined | (ArrayBuffer | undefined)[] {
-    if (Array.isArray(channel)) {
-      return channel.map((c) => this.getOneChannel(volume, c, optDims));
-    }
-
-    if (typeof channel === "object" || channel === undefined) {
-      const channelKeys = [...Array(volume.numChannels).keys()];
-      return channelKeys.map((c) => this.getOneChannel(volume, c, channel));
-    }
-
-    return this.getOneChannel(volume, channel, optDims);
-  }
-
-  /** Clears data associated with one volume from the cache */
-  public clearVolume(volume: CacheStore): void {
-    volume.scales.forEach((scale) => {
-      scale.data.forEach((time) => {
-        time.forEach((channel) => {
-          channel.forEach((entry) => {
-            this.evict(entry);
-          });
-        });
-      });
-    });
-  }
-
-  /** Clears all data from the cache */
+  /** Clears all data from the cache. */
   public clear(): void {
     while (this.last) {
       this.evictLast();
