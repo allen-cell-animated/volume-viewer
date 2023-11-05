@@ -9234,7 +9234,8 @@ var SmartStoreWrapper = /*#__PURE__*/function () {
   }, {
     key: "getItem",
     value: function getItem(item, opts) {
-      var _this = this;
+      var _url,
+        _this = this;
       // If we don't have a cache or aren't getting a chunk, call straight to the base store
       var zarrExts = [".zarray", ".zgroup", ".zattrs"];
       if (!this.cache || zarrExts.some(function (s) {
@@ -9242,7 +9243,10 @@ var SmartStoreWrapper = /*#__PURE__*/function () {
       })) {
         return this.baseStore.getItem(item, opts);
       }
-      var keyPrefix = this.baseStore.url || "";
+      var keyPrefix = (_url = this.baseStore.url) !== null && _url !== void 0 ? _url : "";
+      if (keyPrefix !== "" && !keyPrefix.endsWith("/")) {
+        keyPrefix += "/";
+      }
       var key = keyPrefix + item;
 
       // Check the cache
