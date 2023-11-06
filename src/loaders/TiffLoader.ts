@@ -60,20 +60,6 @@ function getOMEDims(imageEl: Element): OMEDims {
   return dims;
 }
 
-async function getDimsFromUrl(url: string): Promise<OMEDims> {
-  const tiff = await fromUrl(url, { allowFullFile: true });
-  // DO NOT DO THIS, ITS SLOW
-  // const imagecount = await tiff.getImageCount();
-  // read the FIRST image
-  const image = await tiff.getImage();
-
-  const tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
-  const omeEl = getOME(tiffimgdesc);
-
-  const image0El = omeEl.getElementsByTagName("Image")[0];
-  return getOMEDims(image0El);
-}
-
 const getBytesPerSample = (type: string): number => (type === "uint8" ? 1 : type === "uint16" ? 2 : 4);
 
 class TiffLoader implements IVolumeLoader {
@@ -86,7 +72,17 @@ class TiffLoader implements IVolumeLoader {
 
   private async loadOmeDims(): Promise<OMEDims> {
     if (!this.dims) {
-      this.dims = await getDimsFromUrl(this.url);
+      const tiff = await fromUrl(this.url, { allowFullFile: true });
+      // DO NOT DO THIS, ITS SLOW
+      // const imagecount = await tiff.getImageCount();
+      // read the FIRST image
+      const image = await tiff.getImage();
+
+      const tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
+      const omeEl = getOME(tiffimgdesc);
+
+      const image0El = omeEl.getElementsByTagName("Image")[0];
+      this.dims = getOMEDims(image0El);
     }
     return this.dims;
   }
