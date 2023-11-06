@@ -237,16 +237,20 @@ export default class Volume {
 
   async updateRequiredData(required: Partial<LoadSpec>, onChannelLoaded?: PerChannelCallback): Promise<void> {
     this.loadSpecRequired = { ...this.loadSpecRequired, ...required };
-    const containsSubregion = this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion);
-    let subregionRequiresReload = !containsSubregion;
-    if (containsSubregion) {
+    // An update to `subregion` should trigger a reload when the new subregion is not contained in the old one
+    // OR when the new subregion is smaller than the old one by enough that we can load a higher scale level.
+    let subregionRequiresReload = !this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion);
+    if (!subregionRequiresReload) {
+      const currentScale = this.imageInfo.multiscaleLevel;
+      // `LoadSpec.multiscaleLevel`, if specified, forces a cap on the scale level we can load.
+      const minScale = this.loadSpec.multiscaleLevel ?? 0;
       // Loaders should cache loaded dimensions such that this call blocks no more than once per valid `LoadSpec`.
       const dims = await this.loader?.loadDims(this.loadSpecRequired);
-      const currentScale = this.loadSpecRequired.multiscaleLevel;
-      if (dims && currentScale > 0 && dims[currentScale - 1].canLoad) {
+      if (dims && currentScale > minScale && dims[currentScale - 1].canLoad) {
         subregionRequiresReload = true;
       }
     }
+
     // if newly required data is not currently contained in this volume...
     if (
       this.loadSpecRequired.time !== this.loadSpec.time ||
