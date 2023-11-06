@@ -79,8 +79,6 @@ const getBytesPerSample = (type: string): number => (type === "uint8" ? 1 : type
 class TiffLoader implements IVolumeLoader {
   url: string;
   dims?: OMEDims;
-  dimensionOrder?: string;
-  bytesPerSample?: number;
 
   constructor(url: string) {
     this.url = url;
@@ -149,20 +147,11 @@ class TiffLoader implements IVolumeLoader {
     vol.channelLoadCallback = onChannelLoaded;
     vol.imageMetadata = buildDefaultMetadata(imgdata);
 
-    this.dimensionOrder = dims.dimensionorder;
-    this.bytesPerSample = getBytesPerSample(dims.pixeltype);
-
     return vol;
   }
 
   async loadVolumeData(vol: Volume, _loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
-    if (this.bytesPerSample === undefined || this.dimensionOrder === undefined) {
-      const dims = await this.loadOmeDims();
-
-      this.dimensionOrder = dims.dimensionorder;
-      this.bytesPerSample = getBytesPerSample(dims.pixeltype);
-    }
-
+    const dims = await this.loadOmeDims();
     const imageInfo = vol.imageInfo;
 
     // do each channel on a worker?
@@ -175,8 +164,8 @@ class TiffLoader implements IVolumeLoader {
         tilesizey: imageInfo.volumeSize.y,
         sizec: imageInfo.numChannels,
         sizez: imageInfo.volumeSize.z,
-        dimensionOrder: this.dimensionOrder,
-        bytesPerSample: this.bytesPerSample,
+        dimensionOrder: dims.dimensionorder,
+        bytesPerSample: getBytesPerSample(dims.pixeltype),
         url: this.url,
       };
       const worker = new Worker(new URL("../workers/FetchTiffWorker", import.meta.url));
@@ -193,9 +182,6 @@ class TiffLoader implements IVolumeLoader {
       };
       worker.postMessage(params);
     }
-
-    this.dimensionOrder = undefined;
-    this.bytesPerSample = undefined;
   }
 }
 
