@@ -78,6 +78,7 @@ const getBytesPerSample = (type: string): number => (type === "uint8" ? 1 : type
 
 class TiffLoader implements IVolumeLoader {
   url: string;
+  dims?: OMEDims;
   dimensionOrder?: string;
   bytesPerSample?: number;
 
@@ -85,18 +86,15 @@ class TiffLoader implements IVolumeLoader {
     this.url = url;
   }
 
+  private async loadOmeDims(): Promise<OMEDims> {
+    if (!this.dims) {
+      this.dims = await getDimsFromUrl(this.url);
+    }
+    return this.dims;
+  }
+
   async loadDims(_loadSpec: LoadSpec): Promise<VolumeDims[]> {
-    const tiff = await fromUrl(this.url, { allowFullFile: true });
-    // DO NOT DO THIS, ITS SLOW
-    // const imagecount = await tiff.getImageCount();
-    // read the FIRST image
-    const image = await tiff.getImage();
-
-    const tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
-    const omeEl = getOME(tiffimgdesc);
-
-    const image0El = omeEl.getElementsByTagName("Image")[0];
-    const dims = getOMEDims(image0El);
+    const dims = await this.loadOmeDims();
 
     const d = new VolumeDims();
     d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
@@ -107,7 +105,7 @@ class TiffLoader implements IVolumeLoader {
   }
 
   async createVolume(_loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
-    const dims = await getDimsFromUrl(this.url);
+    const dims = await this.loadOmeDims();
     // compare with sizex, sizey
     //const width = image.getWidth();
     //const height = image.getHeight();
@@ -157,9 +155,9 @@ class TiffLoader implements IVolumeLoader {
     return vol;
   }
 
-  async loadVolumeData(vol: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
+  async loadVolumeData(vol: Volume, _loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
     if (this.bytesPerSample === undefined || this.dimensionOrder === undefined) {
-      const dims = await getDimsFromUrl(this.url);
+      const dims = await this.loadOmeDims();
 
       this.dimensionOrder = dims.dimensionorder;
       this.bytesPerSample = getBytesPerSample(dims.pixeltype);
