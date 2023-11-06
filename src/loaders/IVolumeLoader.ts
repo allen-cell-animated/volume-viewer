@@ -3,7 +3,6 @@ import { Box3, Vector3 } from "three";
 import Volume from "../Volume";
 
 export class LoadSpec {
-  scene = 0;
   time = 0;
   multiscaleLevel?: number;
   /** Subregion of volume to load. If not specified, the entire volume is loaded. Specify as floats between 0-1. */
@@ -13,7 +12,7 @@ export class LoadSpec {
 
 export function loadSpecToString(spec: LoadSpec): string {
   const { min, max } = spec.subregion;
-  return `${spec.scene}:${spec.multiscaleLevel}:${spec.time}:x(${min.x},${max.x}):y(${min.y},${max.y}):z(${min.z},${max.z})`;
+  return `${spec.multiscaleLevel}:${spec.time}:x(${min.x},${max.x}):y(${min.y},${max.y}):z(${min.z},${max.z})`;
 }
 
 export class VolumeDims {

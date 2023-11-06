@@ -240,7 +240,6 @@ export default class Volume {
     this.loadSpecRequired = { ...this.loadSpecRequired, ...required };
     let noReload =
       this.loadSpec.time === this.loadSpecRequired.time &&
-      this.loadSpec.scene === this.loadSpecRequired.scene &&
       this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion);
 
     // An update to `subregion` should trigger a reload when the new subregion is not contained in the old one
