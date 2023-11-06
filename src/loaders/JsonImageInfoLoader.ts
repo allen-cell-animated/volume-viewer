@@ -80,6 +80,9 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
   timeScale: json.time_scale || 1,
   timeUnit: json.time_unit || "s",
 
+  numMultiscaleLevels: 1,
+  multiscaleLevel: 0,
+
   transform: {
     translation: json.transform?.translation
       ? new Vector3().fromArray(json.transform.translation)

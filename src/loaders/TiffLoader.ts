@@ -132,6 +132,9 @@ class TiffLoader implements IVolumeLoader {
       timeScale: 1,
       timeUnit: "",
 
+      numMultiscaleLevels: 1,
+      multiscaleLevel: 0,
+
       transform: {
         translation: new Vector3(0, 0, 0),
         rotation: new Vector3(0, 0, 0),

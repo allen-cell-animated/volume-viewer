@@ -420,6 +420,8 @@ class OMEZarrLoader implements IVolumeLoader {
       times,
       timeScale,
       timeUnit,
+      numMultiscaleLevels: this.scaleLevels.length,
+      multiscaleLevel: levelToLoad,
 
       transform: {
         translation: new Vector3(0, 0, 0),
@@ -465,6 +467,7 @@ class OMEZarrLoader implements IVolumeLoader {
       volumeSize: volSizePx,
       subregionSize: regionSizePx,
       subregionOffset: regionPx.min,
+      multiscaleLevel: levelIdx,
     };
     vol.updateDimensions();
 

@@ -9,7 +9,6 @@ export type ImageInfo = Readonly<{
   name: string;
 
   /** XY size of the *original* (not downsampled) volume, in pixels */
-  // If we ever allow downsampling in z, replace with Vector3
   originalSize: Vector3;
   /**
    * XY dimensions of the texture atlas used by `RayMarchedAtlasVolume` and `Atlas2DSlice`, in number of z-slice
@@ -41,6 +40,11 @@ export type ImageInfo = Readonly<{
   /** Symbol of temporal unit used by `timeScale`, e.g. "hr" */
   timeUnit: string;
 
+  /** Number of scale levels available for this volume */
+  numMultiscaleLevels: number;
+  /** The scale level from which this image was loaded, between `0` and `numMultiscaleLevels` */
+  multiscaleLevel: number;
+
   transform: {
     /** Translation of the volume from the center of space, in volume voxels */
     translation: Vector3;
@@ -67,6 +71,8 @@ export const getDefaultImageInfo = (): ImageInfo => ({
   times: 1,
   timeScale: 1,
   timeUnit: "",
+  numMultiscaleLevels: 1,
+  multiscaleLevel: 0,
   transform: {
     translation: new Vector3(0, 0, 0),
     rotation: new Vector3(0, 0, 0),
@@ -234,6 +240,7 @@ export default class Volume {
     const containsSubregion = this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion);
     let subregionRequiresReload = !containsSubregion;
     if (containsSubregion) {
+      // Loaders should cache loaded dimensions such that this call blocks no more than once per valid `LoadSpec`.
       const dims = await this.loader?.loadDims(this.loadSpecRequired);
       const currentScale = this.loadSpecRequired.multiscaleLevel;
       if (dims && currentScale > 0 && dims[currentScale - 1].canLoad) {
