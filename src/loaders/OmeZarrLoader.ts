@@ -338,7 +338,7 @@ class OMEZarrLoader implements IVolumeLoader {
     return scale;
   }
 
-  async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
+  loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const [spaceUnit, timeUnit] = this.getUnitSymbols();
     // Compute subregion size so we can factor that in
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
@@ -373,7 +373,7 @@ class OMEZarrLoader implements IVolumeLoader {
       return dims;
     });
 
-    return result;
+    return Promise.resolve(result);
   }
 
   async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
