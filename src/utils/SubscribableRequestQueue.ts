@@ -9,13 +9,18 @@ type RequestSubscription = {
   reject: Rejecter;
 };
 
+/**
+ * An extension of `RequestQueue` that adds a concept of "subscribers," which may share references to a single request
+ * or cancel their subscription without disrupting the request for other subscribers.
+ */
 export default class SubscribableRequestQueue {
   private queue: RequestQueue;
 
+  /** Number of subscribers, used for generating unique subscriber IDs. */
   private subscriberIds: number;
-  /** "Reject" functions, keyed by subscriber ID *and* request key */
+  /** Map keyed by subscriber ID. Subscribers are only useful for cancelling early, so we only store rejecters here. */
   private subscribers: Map<number, Map<string, Rejecter>>;
-  /** "Resolve" functions, keyed by request key only */
+  /** Map from "inner" request (managed by `queue`) to "outer" promises generated per-subscriber. */
   private requests: Map<string, RequestSubscription[]>;
 
   constructor(maxActiveRequests?: number) {
@@ -25,6 +30,7 @@ export default class SubscribableRequestQueue {
     this.requests = new Map();
   }
 
+  /** Resolves all subscriptions to request `key` with `value */
   private resolveAll(key: string, value: any) {
     const requests = this.requests.get(key);
     if (requests) {
@@ -36,6 +42,7 @@ export default class SubscribableRequestQueue {
     }
   }
 
+  /** Rejects all subscriptions to request `key` with `reason` */
   private rejectAll(key: string, reason: unknown) {
     const requests = this.requests.get(key);
     if (requests) {
@@ -47,6 +54,7 @@ export default class SubscribableRequestQueue {
     }
   }
 
+  /** Adds a new request subscriber. Returns a unique ID to identify this subscriber. */
   addSubscriber(): number {
     const subscriberId = this.subscriberIds;
     this.subscriberIds++;
@@ -54,6 +62,7 @@ export default class SubscribableRequestQueue {
     return subscriberId;
   }
 
+  /** Queues a new request, or adds a subscription if the request is already queued/running. */
   addRequestToQueue<T>(
     key: string,
     subscriberId: number,
@@ -86,28 +95,34 @@ export default class SubscribableRequestQueue {
     });
   }
 
+  /**
+   * Rejects a subscription and removes it from the list of subscriptions for a request, then cancels the underlying
+   * request if it is no longer subscribed and is not running already.
+   */
   private rejectSubscription(key: string, reject: Rejecter, cancelReason?: unknown) {
     // Reject the outer "subscription" promise
     reject(cancelReason);
 
-    // Remove this request subscription by ref equality to `reject` (though we don't need to after rejecting it above)
+    // Get the list of subscriptions for this request
     const subscriptions = this.requests.get(key);
     if (!subscriptions) {
       // This should never happen
       return;
     }
+    // Remove this request subscription by ref equality to `reject`
     const idx = subscriptions.findIndex((sub) => sub.reject === reject);
     if (idx >= 0) {
       subscriptions.splice(idx, 1);
     }
 
-    // Remove the underlying request if there are no more subscribers and the request is not running
+    // Remove the underlying request if there are no more subscribers and the request is not already running
     if (subscriptions.length < 1 && !this.queue.requestRunning(key)) {
       this.queue.cancelRequest(key, cancelReason);
       this.requests.delete(key);
     }
   }
 
+  /** Cancels a request subscription, and cancels the underlying request if it is no longer subscribed or running. */
   cancelRequest(key: string, subscriberId: number, cancelReason?: unknown) {
     const reject = this.subscribers.get(subscriberId)?.get(key);
     if (reject) {
@@ -115,6 +130,7 @@ export default class SubscribableRequestQueue {
     }
   }
 
+  /** Removes a subscriber and cancels its remaining subscriptions. */
   removeSubscriber(subscriberId: number, cancelReason?: unknown) {
     const subscriptions = this.subscribers.get(subscriberId);
     if (subscriptions) {
