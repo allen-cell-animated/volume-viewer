@@ -79,8 +79,11 @@ export function computePackedAtlasDims(z: number, tw: number, th: number): Vecto
 
 /** Picks the largest scale level that can fit into a texture atlas */
 export function estimateLevelForAtlas(spatialDimsZYX: [number, number, number][], maxAtlasEdge = MAX_ATLAS_EDGE) {
-  // update levelToLoad after we get size info about multiscales.
-  // decide to max out at a 4k x 4k texture.
+  if (spatialDimsZYX.length <= 1) {
+    return 0;
+  }
+
+  // update levelToLoad after we get size info about multiscales
   let levelToLoad = spatialDimsZYX.length - 1;
   for (let i = 0; i < spatialDimsZYX.length; ++i) {
     // estimate atlas size:
@@ -96,31 +99,6 @@ export function estimateLevelForAtlas(spatialDimsZYX: [number, number, number][]
     }
   }
   return levelToLoad;
-}
-
-/**
- * Picks the best scale level to load based on scale level dimensions, a max atlas size, and a `LoadSpec`.
- * This works like `estimateLevelForAtlas` but factors in `LoadSpec`'s `subregion` property (shrinks the size of the
- * data, maybe enough to allow loading a higher level) and its `multiscaleLevel` property (sets a max scale level).
- */
-export function pickLevelToLoad(
-  loadSpec: LoadSpec,
-  spatialDimsZYX: [number, number, number][],
-  maxAtlasEdge?: number
-): number {
-  if (spatialDimsZYX.length <= 1) {
-    return 0;
-  }
-
-  const size = loadSpec.subregion.getSize(new Vector3());
-  const dims = spatialDimsZYX.map(([z, y, x]): [number, number, number] => [
-    Math.max(z * size.z, 1),
-    Math.max(y * size.y, 1),
-    Math.max(x * size.x, 1),
-  ]);
-
-  const optimalLevel = estimateLevelForAtlas(dims, maxAtlasEdge);
-  return Math.max(optimalLevel, loadSpec.multiscaleLevel ?? 0);
 }
 
 /** Given the size of a volume in pixels, convert a `Box3` in the 0-1 range to pixels */

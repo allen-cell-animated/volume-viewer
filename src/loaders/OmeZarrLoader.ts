@@ -13,7 +13,7 @@ import {
   composeSubregion,
   computePackedAtlasDims,
   convertSubregionToPixels,
-  pickLevelToLoad,
+  estimateLevelForAtlas,
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
 
@@ -191,6 +191,23 @@ function remapAxesToTCZYX(axes: Axis[]): [number, number, number, number, number
   }
 
   return axisTCZYX;
+}
+
+/**
+ * Picks the best scale level to load based on scale level dimensions, a max atlas size, and a `LoadSpec`.
+ * This works like `estimateLevelForAtlas` but factors in `LoadSpec`'s `subregion` property (shrinks the size of the
+ * data, maybe enough to allow loading a higher level) and its `multiscaleLevel` property (sets a max scale level).
+ */
+function pickLevelToLoad(loadSpec: LoadSpec, spatialDimsZYX: [number, number, number][]): number {
+  const size = loadSpec.subregion.getSize(new Vector3());
+  const dims = spatialDimsZYX.map(([z, y, x]): [number, number, number] => [
+    Math.max(z * size.z, 1),
+    Math.max(y * size.y, 1),
+    Math.max(x * size.x, 1),
+  ]);
+
+  const optimalLevel = estimateLevelForAtlas(dims);
+  return Math.max(optimalLevel, loadSpec.multiscaleLevel ?? 0);
 }
 
 function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
