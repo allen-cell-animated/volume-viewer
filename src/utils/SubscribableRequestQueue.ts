@@ -31,7 +31,7 @@ export default class SubscribableRequestQueue {
     this.requests = new Map();
   }
 
-  /** Resolves all subscriptions to request `key` with `value */
+  /** Resolves all subscriptions to request `key` with `value` */
   private resolveAll<T>(key: string, value: T) {
     const requests = this.requests.get(key);
     if (requests) {
