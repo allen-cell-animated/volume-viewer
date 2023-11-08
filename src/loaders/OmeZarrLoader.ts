@@ -13,7 +13,7 @@ import {
   composeSubregion,
   computePackedAtlasDims,
   convertSubregionToPixels,
-  estimateLevelForAtlas,
+  pickLevelToLoad,
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
 
@@ -194,24 +194,6 @@ function remapAxesToTCZYX(axes: Axis[]): [number, number, number, number, number
   return axisTCZYX;
 }
 
-function pickLevelToLoad(loadSpec: LoadSpec, zarrMultiscales: ZarrArray[], zi: number, yi: number, xi: number): number {
-  const size = loadSpec.subregion.getSize(new Vector3());
-
-  const spatialDims = zarrMultiscales.map(({ shape }) => [
-    Math.max(shape[zi] * size.z, 1),
-    Math.max(shape[yi] * size.y, 1),
-    Math.max(shape[xi] * size.x, 1),
-  ]);
-
-  const optimalLevel = estimateLevelForAtlas(spatialDims, MAX_ATLAS_DIMENSION);
-
-  if (loadSpec.multiscaleLevel) {
-    return Math.max(optimalLevel, loadSpec.multiscaleLevel);
-  } else {
-    return optimalLevel;
-  }
-}
-
 function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
   if (dtype === "|u1") {
     return channelData as Uint8Array;
@@ -338,6 +320,11 @@ class OMEZarrLoader implements IVolumeLoader {
     return scale;
   }
 
+  private getLevelShapesZYX(): [number, number, number][] {
+    const [_t, _c, z, y, x] = this.axesTCZYX;
+    return this.scaleLevels.map(({ shape }) => [shape[z], shape[y], shape[x]]);
+  }
+
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const [spaceUnit, timeUnit] = this.getUnitSymbols();
     // Compute subregion size so we can factor that in
@@ -345,13 +332,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const subregion = composeSubregion(loadSpec.subregion, maxExtent);
     const regionSize = subregion.getSize(new Vector3());
     const regionArr = [1, 1, regionSize.z, regionSize.y, regionSize.x];
-    const maxLevel = pickLevelToLoad(
-      { ...loadSpec, subregion, multiscaleLevel: undefined },
-      this.scaleLevels,
-      this.axesTCZYX[2],
-      this.axesTCZYX[3],
-      this.axesTCZYX[4]
-    );
+    const maxLevel = pickLevelToLoad({ ...loadSpec, subregion, multiscaleLevel: undefined }, this.getLevelShapesZYX());
 
     const result = this.scaleLevels.map((level, i) => {
       const scale = this.getScale(i);
@@ -382,7 +363,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const hasC = c > -1;
 
     const shape0 = this.scaleLevels[0].shape;
-    const levelToLoad = pickLevelToLoad(loadSpec, this.scaleLevels, z, y, x);
+    const levelToLoad = pickLevelToLoad(loadSpec, this.getLevelShapesZYX());
     const shapeLv = this.scaleLevels[levelToLoad].shape;
 
     const [spatialUnit, timeUnit] = this.getUnitSymbols();
@@ -451,7 +432,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const [z, y, x] = this.axesTCZYX.slice(2);
     const subregion = composeSubregion(vol.loadSpec.subregion, maxExtent);
 
-    const levelIdx = pickLevelToLoad({ ...vol.loadSpec, subregion }, this.scaleLevels, z, y, x);
+    const levelIdx = pickLevelToLoad({ ...vol.loadSpec, subregion }, this.getLevelShapesZYX());
     const level = this.scaleLevels[levelIdx];
     const levelShape = level.shape;
 

@@ -2,6 +2,9 @@ import "regenerator-runtime/runtime";
 import { Box3, Vector2, Vector3 } from "three";
 
 import { ImageInfo } from "../Volume";
+import { LoadSpec } from "./IVolumeLoader";
+
+const MAX_ATLAS_DIMENSION = 2048;
 
 // Map from units to their symbols
 const UNIT_SYMBOLS = {
@@ -74,7 +77,7 @@ export function computePackedAtlasDims(z: number, tw: number, th: number): Vecto
   return new Vector2(nrows, ncols);
 }
 
-export function estimateLevelForAtlas(spatialDimsZYX: number[][], maxAtlasEdge = 4096) {
+export function estimateLevelForAtlas(spatialDimsZYX: [number, number, number][], maxAtlasEdge = 4096) {
   // update levelToLoad after we get size info about multiscales.
   // decide to max out at a 4k x 4k texture.
   let levelToLoad = spatialDimsZYX.length - 1;
@@ -92,6 +95,26 @@ export function estimateLevelForAtlas(spatialDimsZYX: number[][], maxAtlasEdge =
     }
   }
   return levelToLoad;
+}
+
+export function pickLevelToLoad(
+  loadSpec: LoadSpec,
+  spatialDimsZYX: [number, number, number][],
+  maxDim = MAX_ATLAS_DIMENSION
+): number {
+  if (spatialDimsZYX.length <= 1) {
+    return 0;
+  }
+
+  const size = loadSpec.subregion.getSize(new Vector3());
+  const dims = spatialDimsZYX.map(([z, y, x]): [number, number, number] => [
+    Math.max(z * size.z, 1),
+    Math.max(y * size.y, 1),
+    Math.max(x * size.x, 1),
+  ]);
+
+  const optimalLevel = estimateLevelForAtlas(dims, maxDim);
+  return Math.max(optimalLevel, loadSpec.multiscaleLevel ?? 0);
 }
 
 /** Given the size of a volume in pixels, convert a `Box3` in the 0-1 range to pixels */
