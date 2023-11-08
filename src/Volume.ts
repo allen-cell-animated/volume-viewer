@@ -250,9 +250,7 @@ export default class Volume {
       const minScale = this.loadSpec.multiscaleLevel ?? 0;
       // Loaders should cache loaded dimensions so that this call blocks no more than once per valid `LoadSpec`.
       const dims = await this.loader?.loadDims(this.loadSpecRequired);
-      if (dims && currentScale > minScale && dims[currentScale - 1].canLoad) {
-        noReload = false;
-      }
+      noReload = !dims || currentScale <= minScale || !dims[currentScale - 1].canLoad;
     }
 
     // if newly required data is not currently contained in this volume...
