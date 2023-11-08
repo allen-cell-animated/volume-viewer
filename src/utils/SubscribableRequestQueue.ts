@@ -84,8 +84,13 @@ export default class SubscribableRequestQueue {
     if (subscriberId >= this.subscriberIds || subscriberId < 0) {
       throw new Error(`SubscribableRequestQueue: subscriber id ${subscriberId} has not been registered`);
     }
-    if (!this.subscribers.has(subscriberId)) {
+    const subscriber = this.subscribers.get(subscriberId);
+    if (!subscriber) {
       throw new Error(`SubscribableRequestQueue: subscriber id ${subscriberId} has been removed`);
+    }
+    const existingRequest = subscriber.get(key);
+    if (existingRequest) {
+      this.rejectSubscription(key, existingRequest, "SubscribableRequestQueue: request re-queued while running");
     }
 
     // Create promise and add to list of requests
@@ -124,10 +129,12 @@ export default class SubscribableRequestQueue {
 
   /** Cancels a request subscription, and cancels the underlying request if it is no longer subscribed or running. */
   cancelRequest(key: string, subscriberId: number, cancelReason?: unknown) {
-    const reject = this.subscribers.get(subscriberId)?.get(key);
+    const subscriber = this.subscribers.get(subscriberId);
+    const reject = subscriber?.get(key);
     if (reject) {
       this.rejectSubscription(key, reject, cancelReason);
     }
+    subscriber?.delete(key);
   }
 
   /** Removes a subscriber and cancels its remaining subscriptions. */
@@ -139,5 +146,25 @@ export default class SubscribableRequestQueue {
       }
     }
     this.subscribers.delete(subscriberId);
+  }
+
+  /** Returns whether a request with the given `key` is running or waiting in the queue */
+  hasRequest(key: string): boolean {
+    return this.queue.hasRequest(key);
+  }
+
+  /** Returns whether a request with the given `key` is running */
+  requestRunning(key: string): boolean {
+    return this.queue.requestRunning(key);
+  }
+
+  /** Returns whether a subscriber with the given `subscriberId` exists */
+  hasSubscriber(subscriberId: number): boolean {
+    return this.subscribers.has(subscriberId);
+  }
+
+  /** Returns whether a subscriber with the given `subscriberId` is subscribed to the request with the given `key` */
+  isSubscribed(subscriberId: number, key: string): boolean {
+    return this.subscribers.get(subscriberId)?.has(key) ?? false;
   }
 }
