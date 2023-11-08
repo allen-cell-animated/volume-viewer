@@ -17,7 +17,6 @@ import {
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
 
-const MAX_ATLAS_DIMENSION = 2048;
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
 type CoordinateTransformation =
