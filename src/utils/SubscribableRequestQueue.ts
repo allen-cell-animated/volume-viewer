@@ -1,5 +1,6 @@
 import RequestQueue from "./RequestQueue";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Resolver = (value?: any) => void;
 type Rejecter = (reason?: unknown) => void;
 
@@ -31,7 +32,7 @@ export default class SubscribableRequestQueue {
   }
 
   /** Resolves all subscriptions to request `key` with `value */
-  private resolveAll(key: string, value: any) {
+  private resolveAll<T>(key: string, value: T) {
     const requests = this.requests.get(key);
     if (requests) {
       for (const { resolve, subscriberId } of requests) {
