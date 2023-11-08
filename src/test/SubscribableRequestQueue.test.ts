@@ -53,6 +53,19 @@ describe("SubscribableRequestQueue", () => {
       expect(result).to.equal("foo");
     });
 
+    it("does not queue a request if the subscriber id is invalid", () => {
+      const queue = new SubscribableRequestQueue();
+      expect(() => queue.addRequestToQueue("test", -1, () => delay(TIMEOUT, "foo"))).to.throw();
+      expect(() => queue.addRequestToQueue("test", 0, () => delay(TIMEOUT, "foo"))).to.throw();
+    });
+
+    it("does not queue a request if the subscriber has been deleted", () => {
+      const queue = new SubscribableRequestQueue();
+      const id = queue.addSubscriber();
+      queue.removeSubscriber(id);
+      expect(() => queue.addRequestToQueue("test", id, () => delay(TIMEOUT, "foo"))).to.throw();
+    });
+
     it("creates unique promises without duplicating work when two subscribers queue the same key", async () => {
       const queue = new SubscribableRequestQueue();
       const id1 = queue.addSubscriber();
