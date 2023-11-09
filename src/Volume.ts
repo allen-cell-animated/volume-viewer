@@ -4,6 +4,7 @@ import Channel from "./Channel";
 import Histogram from "./Histogram";
 import { getColorByChannelIndex } from "./constants/colors";
 import { IVolumeLoader, LoadSpec, PerChannelCallback } from "./loaders/IVolumeLoader";
+import { estimateLevelForAtlas } from "./loaders/VolumeLoaderUtils";
 
 export type ImageInfo = Readonly<{
   name: string;
@@ -247,10 +248,13 @@ export default class Volume {
     if (noReload && !this.loadSpec.subregion.equals(this.loadSpecRequired.subregion)) {
       const currentScale = this.imageInfo.multiscaleLevel;
       // `LoadSpec.multiscaleLevel`, if specified, forces a cap on the scale level we can load.
-      const minScale = this.loadSpec.multiscaleLevel ?? 0;
+      const minLevel = this.loadSpec.multiscaleLevel ?? 0;
       // Loaders should cache loaded dimensions so that this call blocks no more than once per valid `LoadSpec`.
       const dims = await this.loader?.loadDims(this.loadSpecRequired);
-      noReload = !dims || currentScale <= minScale || !dims[currentScale - 1].canLoad;
+      if (dims) {
+        const loadableLevel = estimateLevelForAtlas(dims.map(({ shape }) => [shape[2], shape[3], shape[4]]));
+        noReload = !dims || currentScale <= Math.max(loadableLevel, minLevel);
+      }
     }
 
     // if newly required data is not currently contained in this volume...
