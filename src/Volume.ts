@@ -43,7 +43,7 @@ export type ImageInfo = Readonly<{
 
   /** Number of scale levels available for this volume */
   numMultiscaleLevels: number;
-  /** The scale level from which this image was loaded, between `0` and `numMultiscaleLevels` */
+  /** The scale level from which this image was loaded, between `0` and `numMultiscaleLevels-1` */
   multiscaleLevel: number;
 
   transform: {
