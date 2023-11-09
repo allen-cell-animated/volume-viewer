@@ -337,7 +337,7 @@ class OMEZarrLoader implements IVolumeLoader {
   }
 
   private getLevelShapesZYX(): [number, number, number][] {
-    const [_t, _c, z, y, x] = this.axesTCZYX;
+    const [z, y, x] = this.axesTCZYX.slice(-3);
     return this.scaleLevels.map(({ shape }) => [shape[z], shape[y], shape[x]]);
   }
 
