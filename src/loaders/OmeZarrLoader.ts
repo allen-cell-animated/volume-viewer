@@ -348,7 +348,6 @@ class OMEZarrLoader implements IVolumeLoader {
     const subregion = composeSubregion(loadSpec.subregion, maxExtent);
     const regionSize = subregion.getSize(new Vector3());
     const regionArr = [1, 1, regionSize.z, regionSize.y, regionSize.x];
-    const maxLevel = pickLevelToLoad({ ...loadSpec, subregion, multiscaleLevel: undefined }, this.getLevelShapesZYX());
 
     const result = this.scaleLevels.map((level, i) => {
       const scale = this.getScale(i);
@@ -358,7 +357,6 @@ class OMEZarrLoader implements IVolumeLoader {
       dims.timeUnit = timeUnit;
       dims.shape = [-1, -1, -1, -1, -1];
       dims.spacing = [1, 1, 1, 1, 1];
-      dims.canLoad = i >= maxLevel;
 
       this.axesTCZYX.forEach((val, idx) => {
         if (val > -1) {

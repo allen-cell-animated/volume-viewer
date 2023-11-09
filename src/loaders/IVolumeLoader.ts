@@ -22,7 +22,6 @@ export class VolumeDims {
   spacing: number[] = [1, 1, 1, 1, 1];
   spaceUnit = "μm";
   timeUnit = "s";
-  canLoad = true;
   // TODO make this an enum?
   dataType = "uint8";
 }
