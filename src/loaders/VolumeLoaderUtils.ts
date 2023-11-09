@@ -2,7 +2,6 @@ import "regenerator-runtime/runtime";
 import { Box3, Vector2, Vector3 } from "three";
 
 import { ImageInfo } from "../Volume";
-import { LoadSpec } from "./IVolumeLoader";
 
 const MAX_ATLAS_EDGE = 2048;
 
