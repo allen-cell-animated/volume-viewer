@@ -586,6 +586,9 @@ function updateZSliceUI(volume: Volume) {
   const totalZSlices = volume.imageInfo.volumeSize.z;
   zSlider.max = `${totalZSlices}`;
   zInput.max = `${totalZSlices}`;
+
+  zInput.value = `${Math.floor(totalZSlices / 2)}`;
+  zSlider.value = `${Math.floor(totalZSlices / 2)}`;
 }
 
 function showChannelUI(volume: Volume) {
@@ -1186,8 +1189,20 @@ function main() {
   });
 
   // Set up Z-slice UI
+  const zforwardBtn = document.getElementById("zforwardBtn");
+  const zbackBtn = document.getElementById("zbackBtn");
   const zSlider = document.getElementById("zSlider") as HTMLInputElement;
   const zInput = document.getElementById("zValue") as HTMLInputElement;
+  zforwardBtn?.addEventListener("click", () => {
+    if (goToZSlice(zSlider?.valueAsNumber + 1)) {
+      //
+    }
+  });
+  zbackBtn?.addEventListener("click", () => {
+    if (goToZSlice(zSlider?.valueAsNumber - 1)) {
+      //
+    }
+  });
   zSlider?.addEventListener("change", () => {
     goToZSlice(zSlider?.valueAsNumber);
   });

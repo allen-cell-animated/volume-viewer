@@ -147,6 +147,7 @@ class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
     if (this.requestQueue) {
       return this.requestQueue.addRequest(key, () => this.getAndCacheItem(item, key, opts));
     } else {
+      // Should we ever hit this code?  We should always have a request queue.
       return this.getAndCacheItem(item, key, opts);
     }
   }
