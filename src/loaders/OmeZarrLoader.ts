@@ -85,7 +85,8 @@ type OMEZarrMetadata = {
 };
 
 /** Turns `axisTCZYX` into the number of dimensions in the array */
-const getDimensionCount = ([t, c]: [number, number, number, number, number]) => 3 + Number(t > -1) + Number(c > -1);
+const getDimensionCount = ([t, c, z]: [number, number, number, number, number]) =>
+  2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
 
 /**
  * `Store` is zarr.js's minimal abstraction for anything that acts like a filesystem. (Local machine, HTTP server, etc.)
@@ -187,7 +188,8 @@ function remapAxesToTCZYX(axes: Axis[]): [number, number, number, number, number
     }
   });
 
-  if (axisTCZYX[2] === -1 || axisTCZYX[3] === -1 || axisTCZYX[4] === -1) {
+  // it is possible that Z might not exist but we require X and Y at least.
+  if (/*axisTCZYX[2] === -1 ||*/ axisTCZYX[3] === -1 || axisTCZYX[4] === -1) {
     console.error("ERROR: zarr loader expects a z, y, and x axis.");
   }
 
@@ -451,11 +453,17 @@ class OMEZarrLoader implements IVolumeLoader {
     const level = this.scaleLevels[levelIdx];
     const levelShape = level.shape;
 
-    const regionPx = convertSubregionToPixels(subregion, new Vector3(levelShape[x], levelShape[y], levelShape[z]));
+    const regionPx = convertSubregionToPixels(
+      subregion,
+      new Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z])
+    );
     // Update volume `imageInfo` to reflect potentially new dimensions
     const regionSizePx = regionPx.getSize(new Vector3());
     const atlasTileDims = computePackedAtlasDims(regionSizePx.z, regionSizePx.x, regionSizePx.y);
-    const volExtentPx = convertSubregionToPixels(maxExtent, new Vector3(levelShape[x], levelShape[y], levelShape[z]));
+    const volExtentPx = convertSubregionToPixels(
+      maxExtent,
+      new Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z])
+    );
     const volSizePx = volExtentPx.getSize(new Vector3());
     vol.imageInfo = {
       ...vol.imageInfo,
