@@ -52,7 +52,6 @@ vec4 sampleAtlas(sampler2D tex, vec4 pos) {
   }
   loc0 += vec2(0.5) / textureRes;
 
-
   float z = min(floor(pos.z * nSlices), nSlices - 1.0);
 
   if(flipVolume.z == -1.0) {
@@ -85,7 +84,9 @@ void main() {
   }
 
   // Normalize z-slice by total slices
-  vec4 pos = vec4(vUv, float(Z_SLICE) / (SLICES - 1.0), 0.0);
+  vec4 pos = vec4(vUv, 
+    (SLICES==1.0 && Z_SLICE==0) ? 0.0 : float(Z_SLICE) / (SLICES - 1.0), 
+    0.0);
   pos.xyz = (pos.xyz - SUBSET_OFFSET) / SUBSET_SCALE;
 
   vec4 C;

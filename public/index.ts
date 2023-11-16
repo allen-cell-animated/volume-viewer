@@ -37,6 +37,14 @@ const TEST_DATA: Record<string, TestDataSpec> = {
     type: VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif",
   },
+  zarrIDR1: {
+    type: VolumeFileFormat.ZARR,
+    url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0076A/10501752.zarr",
+  },
+  zarrIDR2: {
+    type: VolumeFileFormat.ZARR,
+    url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0054A/5025553.zarr",
+  },
   zarrVariance: {
     type: VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr",
@@ -843,7 +851,7 @@ function loadImageData(jsonData: ImageInfo, volumeData: Uint8Array[]) {
 
     // first 3 channels for starters
     for (let ch = 0; ch < vol.imageInfo.numChannels; ++ch) {
-      view3D.setVolumeChannelEnabled(vol, ch, ch < 3);
+      view3D.setVolumeChannelEnabled(vol, ch, myState.channelGui[ch].enabled);
     }
 
     const maskChannelIndex = jsonData.channelNames.indexOf("SEG_Memb");
@@ -864,9 +872,7 @@ function onChannelDataArrived(v: Volume, channelIndex: number) {
 
   currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
   view3D.onVolumeData(currentVol, [channelIndex]);
-  // removing this line let me turn channels on and off during playback when new data was still arriving.
-  // it may be reinstated later as we refine the caching/prefetching strategy
-  //view3D.setVolumeChannelEnabled(currentVol, channelIndex, channelIndex < 3);
+  view3D.setVolumeChannelEnabled(currentVol, channelIndex, myState.channelGui[channelIndex].enabled);
 
   view3D.updateActiveChannels(currentVol);
   view3D.updateLuts(currentVol);

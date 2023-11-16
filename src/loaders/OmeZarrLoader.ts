@@ -341,7 +341,7 @@ class OMEZarrLoader implements IVolumeLoader {
 
   private getLevelShapesZYX(): [number, number, number][] {
     const [z, y, x] = this.axesTCZYX.slice(-3);
-    return this.scaleLevels.map(({ shape }) => [shape[z], shape[y], shape[x]]);
+    return this.scaleLevels.map(({ shape }) => [z === -1 ? 1 : shape[z], shape[y], shape[x]]);
   }
 
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
@@ -365,6 +365,8 @@ class OMEZarrLoader implements IVolumeLoader {
         if (val > -1) {
           dims.shape[idx] = Math.ceil(level.shape[val] * regionArr[idx]);
           dims.spacing[idx] = scale[val];
+        } else {
+          dims.shape[idx] = 1;
         }
       });
 
@@ -378,6 +380,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const [t, c, z, y, x] = this.axesTCZYX;
     const hasT = t > -1;
     const hasC = c > -1;
+    const hasZ = z > -1;
 
     const shape0 = this.scaleLevels[0].shape;
     const levelToLoad = pickLevelToLoad(loadSpec, this.getLevelShapesZYX());
@@ -390,9 +393,15 @@ class OMEZarrLoader implements IVolumeLoader {
     if (!this.maxExtent) {
       this.maxExtent = loadSpec.subregion.clone();
     }
-    const pxDims0 = convertSubregionToPixels(loadSpec.subregion, new Vector3(shape0[x], shape0[y], shape0[z]));
+    const pxDims0 = convertSubregionToPixels(
+      loadSpec.subregion,
+      new Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1)
+    );
     const pxSize0 = pxDims0.getSize(new Vector3());
-    const pxDimsLv = convertSubregionToPixels(loadSpec.subregion, new Vector3(shapeLv[x], shapeLv[y], shapeLv[z]));
+    const pxDimsLv = convertSubregionToPixels(
+      loadSpec.subregion,
+      new Vector3(shapeLv[x], shapeLv[y], hasZ ? shapeLv[z] : 1)
+    );
     const pxSizeLv = pxDimsLv.getSize(new Vector3());
 
     const atlasTileDims = computePackedAtlasDims(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
@@ -410,7 +419,7 @@ class OMEZarrLoader implements IVolumeLoader {
       volumeSize: pxSizeLv,
       subregionSize: pxSizeLv.clone(),
       subregionOffset: new Vector3(0, 0, 0),
-      physicalPixelSize: new Vector3(scale5d[x], scale5d[y], scale5d[z]),
+      physicalPixelSize: new Vector3(scale5d[x], scale5d[y], hasZ ? scale5d[z] : Math.min(scale5d[x], scale5d[y])),
       spatialUnit,
 
       numChannels,
