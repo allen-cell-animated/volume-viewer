@@ -6,7 +6,7 @@ See https://github.com/gzuidhof/zarr.js/issues/140 and https://github.com/gzuidh
 
 Here is how this file was created:
 
-1. clone https://github.com/az0uz/zarr.js/tree/az0uz/fix_async_error_passthrough
+1. clone https://github.com/az0uz/zarr.js/tree/az0uz/fix_async_error_passthrough (make sure you are on this commit hash: https://github.com/az0uz/zarr.js/commit/3fdc465b5bedecbd2741750ef7260c58b1fc97e8)
 2. in the zarr js project, do this:
 3. npm install
 4. npm run prepublishOnly
