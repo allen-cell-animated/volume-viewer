@@ -189,8 +189,8 @@ function remapAxesToTCZYX(axes: Axis[]): [number, number, number, number, number
   });
 
   // it is possible that Z might not exist but we require X and Y at least.
-  if (/*axisTCZYX[2] === -1 ||*/ axisTCZYX[3] === -1 || axisTCZYX[4] === -1) {
-    console.error("ERROR: zarr loader expects a z, y, and x axis.");
+  if (axisTCZYX[3] === -1 || axisTCZYX[4] === -1) {
+    console.error("ERROR: zarr loader expects a y and an x axis.");
   }
 
   return axisTCZYX;

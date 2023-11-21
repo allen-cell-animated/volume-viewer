@@ -849,7 +849,6 @@ function loadImageData(jsonData: ImageInfo, volumeData: Uint8Array[]) {
     view3D.removeAllVolumes();
     view3D.addVolume(vol);
 
-    // first 3 channels for starters
     for (let ch = 0; ch < vol.imageInfo.numChannels; ++ch) {
       view3D.setVolumeChannelEnabled(vol, ch, myState.channelGui[ch].enabled);
     }
@@ -1200,14 +1199,10 @@ function main() {
   const zSlider = document.getElementById("zSlider") as HTMLInputElement;
   const zInput = document.getElementById("zValue") as HTMLInputElement;
   zforwardBtn?.addEventListener("click", () => {
-    if (goToZSlice(zSlider?.valueAsNumber + 1)) {
-      //
-    }
+    goToZSlice(zSlider?.valueAsNumber + 1);
   });
   zbackBtn?.addEventListener("click", () => {
-    if (goToZSlice(zSlider?.valueAsNumber - 1)) {
-      //
-    }
+    goToZSlice(zSlider?.valueAsNumber - 1);
   });
   zSlider?.addEventListener("change", () => {
     goToZSlice(zSlider?.valueAsNumber);
