@@ -829,7 +829,7 @@ export class View3d {
 
   /**
    * Switch between single pass ray-marched volume rendering and progressive path traced rendering.
-   * @param {number} mode 0 for single pass ray march, 1 for progressive path trace
+   * @param {RenderMode} mode RAYMARCH for single pass ray march, PATHTRACE for progressive path trace
    */
   setVolumeRenderMode(mode: RenderMode.PATHTRACE | RenderMode.RAYMARCH): void {
     if (mode === this.volumeRenderMode) {
