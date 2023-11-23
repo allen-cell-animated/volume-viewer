@@ -186,7 +186,7 @@ function pickLevelToLoad(loadSpec: LoadSpec, spatialDimsZYX: [number, number, nu
   return Math.max(optimalLevel, loadSpec.multiscaleLevel ?? 0);
 }
 
-function convertChannel(channelData: zarr.TypedArray<"uint8" | "uint16">): Uint8Array {
+function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint8Array {
   if (channelData instanceof Uint8Array) {
     return channelData as Uint8Array;
   }
@@ -215,8 +215,10 @@ function convertChannel(channelData: zarr.TypedArray<"uint8" | "uint16">): Uint8
   return u8;
 }
 
+type NumericZarrArray = zarr.Array<zarr.NumberDataType>;
+
 class OMEZarrLoader implements IVolumeLoader {
-  scaleLevels: zarr.Array<"uint8" | "uint16">[];
+  scaleLevels: NumericZarrArray[];
   multiscaleMetadata: OMEMultiscale;
   omeroMetadata: OmeroTransitionalMetadata;
   axesTCZYX: [number, number, number, number, number];
@@ -230,7 +232,7 @@ class OMEZarrLoader implements IVolumeLoader {
   maxExtent?: Box3;
 
   private constructor(
-    scaleLevels: zarr.Array<"uint8" | "uint16">[],
+    scaleLevels: NumericZarrArray[],
     multiscaleMetadata: OMEMultiscale,
     omeroMetadata: OmeroTransitionalMetadata,
     axisTCZYX: [number, number, number, number, number],
@@ -268,13 +270,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const scaleLevels = await Promise.all(scaleLevelPromises);
     const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
 
-    return new OMEZarrLoader(
-      scaleLevels as zarr.Array<"uint8" | "uint16", WrappedStore<RequestInit>>[],
-      multiscale,
-      metadata.omero,
-      axisTCZYX,
-      queue
-    );
+    return new OMEZarrLoader(scaleLevels as NumericZarrArray[], multiscale, metadata.omero, axisTCZYX, queue);
   }
 
   private getUnitSymbols(): [string, string] {
