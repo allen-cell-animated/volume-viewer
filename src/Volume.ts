@@ -253,7 +253,7 @@ export default class Volume {
       const dims = await this.loader?.loadDims(this.loadSpecRequired);
       if (dims) {
         const loadableLevel = estimateLevelForAtlas(dims.map(({ shape }) => [shape[2], shape[3], shape[4]]));
-        noReload = !dims || currentScale <= Math.max(loadableLevel, minLevel);
+        noReload = currentScale <= Math.max(loadableLevel, minLevel);
       }
     }
 
