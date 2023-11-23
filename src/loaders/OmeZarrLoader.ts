@@ -1,9 +1,11 @@
 import { Box3, Vector3 } from "three";
 
-// TODO: fix "could not find a declaration file for module 'zarrita'." It has a .d.ts, so why isn't it being found?
-//   For now, I pinkie swear I'm using its types right
-import * as zarr from "zarrita";
-import { AbsolutePath, AsyncReadable, Readable } from "@zarrita/storage/dist/src/types";
+import * as zarr from "@zarrita/core";
+import { get as zarrGet, slice, Slice } from "@zarrita/indexing";
+import { AbsolutePath, AsyncReadable, Readable } from "@zarrita/storage";
+// Importing `FetchStore` from its home subpackage (@zarrita/storage) causes errors.
+// Getting it from the top-level package means we don't get its type. This is also a bug, but it's more acceptable.
+import { FetchStore } from "zarrita";
 
 import Volume, { ImageInfo } from "../Volume";
 import VolumeCache from "../VolumeCache";
@@ -98,12 +100,12 @@ type WrappedStoreOpts<Opts> = {
  * `Readable` is zarrita's minimal abstraction for any source of data.
  * `WrappedStore` wraps another `Readable` and adds (optional) connections to `VolumeCache` and `RequestQueue`.
  */
-class WrappedStore<Store extends Readable<Opts>, Opts> implements AsyncReadable<WrappedStoreOpts<Opts>> {
-  baseStore: Store;
+class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements AsyncReadable<WrappedStoreOpts<Opts>> {
+  baseStore: S;
   cache?: VolumeCache;
   queue?: RequestQueue;
 
-  constructor(baseStore: Store, cache?: VolumeCache, queue?: RequestQueue) {
+  constructor(baseStore: S, cache?: VolumeCache, queue?: RequestQueue) {
     this.baseStore = baseStore;
     this.cache = cache;
     this.queue = queue;
@@ -118,12 +120,12 @@ class WrappedStore<Store extends Readable<Opts>, Opts> implements AsyncReadable<
   }
 
   async get(key: AbsolutePath, opts?: WrappedStoreOpts<Opts> | undefined): Promise<Uint8Array | undefined> {
-    const ZARR_EXTS = [".zarray", ".zgroup", ".zattrs"];
+    const ZARR_EXTS = [".zarray", ".zgroup", ".zattrs", "zarr.json"];
     if (!this.cache || ZARR_EXTS.some((s) => key.endsWith(s))) {
       return this.baseStore.get(key, opts?.options);
     }
 
-    let keyPrefix = (this.baseStore as zarr.FetchStore).url ?? "";
+    let keyPrefix = (this.baseStore as FetchStore).url ?? "";
     if (keyPrefix !== "" && !(keyPrefix instanceof URL) && !keyPrefix.endsWith("/")) {
       keyPrefix += "/";
     }
@@ -214,7 +216,7 @@ function convertChannel(channelData: zarr.TypedArray<"uint8" | "uint16">): Uint8
 }
 
 class OMEZarrLoader implements IVolumeLoader {
-  scaleLevels: zarr.Array<zarr.DataType>[];
+  scaleLevels: zarr.Array<"uint8" | "uint16">[];
   multiscaleMetadata: OMEMultiscale;
   omeroMetadata: OmeroTransitionalMetadata;
   axesTCZYX: [number, number, number, number, number];
@@ -249,7 +251,7 @@ class OMEZarrLoader implements IVolumeLoader {
   ): Promise<OMEZarrLoader> {
     // Setup: create queue and store, get basic metadata
     const queue = new RequestQueue(concurrencyLimit);
-    const store = new WrappedStore<zarr.FetchStore, RequestInit>(new zarr.FetchStore(url), cache, queue);
+    const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
     const root = zarr.root(store);
     const group = await zarr.open(root, { kind: "group" });
     const metadata = group.attrs as OMEZarrMetadata;
@@ -267,7 +269,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
 
     return new OMEZarrLoader(
-      scaleLevels as zarr.Array<"uint8" | "uint16", WrappedStore<zarr.FetchStore, RequestInit>>[],
+      scaleLevels as zarr.Array<"uint8" | "uint16", WrappedStore<RequestInit>>[],
       multiscale,
       metadata.omero,
       axisTCZYX,
@@ -467,15 +469,9 @@ class OMEZarrLoader implements IVolumeLoader {
     const channelPromises = channelIndexes.map(async (ch) => {
       // Build slice spec
       const { min, max } = regionPx;
-      const unorderedSpec = [
-        vol.loadSpec.time,
-        ch,
-        zarr.slice(min.z, max.z),
-        zarr.slice(min.y, max.y),
-        zarr.slice(min.x, max.x),
-      ];
+      const unorderedSpec = [vol.loadSpec.time, ch, slice(min.z, max.z), slice(min.y, max.y), slice(min.x, max.x)];
       const specLen = getDimensionCount(this.axesTCZYX);
-      const sliceSpec: (number | zarr.Slice)[] = Array(specLen);
+      const sliceSpec: (number | Slice)[] = Array(specLen);
 
       this.axesTCZYX.forEach((val, idx) => {
         if (val > -1) {
@@ -487,7 +483,7 @@ class OMEZarrLoader implements IVolumeLoader {
       });
 
       try {
-        const result = await zarr.get(level, sliceSpec);
+        const result = await zarrGet(level, sliceSpec);
         const u8 = convertChannel(result.data);
         vol.setChannelDataFromVolume(ch, u8);
         onChannelLoaded?.(vol, ch);
