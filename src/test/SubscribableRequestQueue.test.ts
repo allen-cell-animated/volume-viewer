@@ -244,8 +244,8 @@ describe("SubscribableRequestQueue", () => {
       const id2 = queue.addSubscriber();
 
       const promise1 = queue.addRequestToQueue("test", id1, () => delay(TIMEOUT, "foo"));
-      const promise2 = queue.addRequestToQueue("test", id1, () => delay(TIMEOUT, "bar"));
-      const promise3 = queue.addRequestToQueue("test", id2, () => delay(TIMEOUT, "baz"));
+      const promise2 = queue.addRequestToQueue("test2", id1, () => delay(TIMEOUT, "bar"));
+      const promise3 = queue.addRequestToQueue("test", id2, () => delay(TIMEOUT, "foo"));
       expect(queue.hasRequest("test")).to.be.true;
       expect(queue.isSubscribed(id1, "test")).to.be.true;
       expect(queue.isSubscribed(id2, "test")).to.be.true;
@@ -253,6 +253,7 @@ describe("SubscribableRequestQueue", () => {
       queue.removeSubscriber(id1);
       expect(queue.hasRequest("test")).to.be.true;
       expect(queue.isSubscribed(id1, "test")).to.be.false;
+      expect(queue.isSubscribed(id1, "test2")).to.be.false;
       expect(await isRejected(promise1)).to.be.true;
       expect(await isRejected(promise2)).to.be.true;
       expect(await isRejected(promise3)).to.be.false;
