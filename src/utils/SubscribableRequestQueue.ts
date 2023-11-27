@@ -32,7 +32,7 @@ export default class SubscribableRequestQueue {
   }
 
   /** Resolves all subscriptions to request `key` with `value` */
-  private resolveAll<T>(key: string, value: T) {
+  private resolveAll<T>(key: string, value: T): void {
     const requests = this.requests.get(key);
     if (requests) {
       for (const { resolve, subscriberId } of requests) {
@@ -44,7 +44,7 @@ export default class SubscribableRequestQueue {
   }
 
   /** Rejects all subscriptions to request `key` with `reason` */
-  private rejectAll(key: string, reason: unknown) {
+  private rejectAll(key: string, reason: unknown): void {
     const requests = this.requests.get(key);
     if (requests) {
       for (const { reject, subscriberId } of requests) {
@@ -105,7 +105,7 @@ export default class SubscribableRequestQueue {
    * Rejects a subscription and removes it from the list of subscriptions for a request, then cancels the underlying
    * request if it is no longer subscribed and is not running already.
    */
-  private rejectSubscription(key: string, reject: Rejecter, cancelReason?: unknown) {
+  private rejectSubscription(key: string, reject: Rejecter, cancelReason?: unknown): void {
     // Reject the outer "subscription" promise
     reject(cancelReason);
 
@@ -129,7 +129,7 @@ export default class SubscribableRequestQueue {
   }
 
   /** Cancels a request subscription, and cancels the underlying request if it is no longer subscribed or running. */
-  cancelRequest(key: string, subscriberId: number, cancelReason?: unknown) {
+  cancelRequest(key: string, subscriberId: number, cancelReason?: unknown): void {
     const subscriber = this.subscribers.get(subscriberId);
     const reject = subscriber?.get(key);
     if (reject) {
@@ -139,7 +139,7 @@ export default class SubscribableRequestQueue {
   }
 
   /** Removes a subscriber and cancels its remaining subscriptions. */
-  removeSubscriber(subscriberId: number, cancelReason?: unknown) {
+  removeSubscriber(subscriberId: number, cancelReason?: unknown): void {
     const subscriptions = this.subscribers.get(subscriberId);
     if (subscriptions) {
       for (const [key, reject] of subscriptions.entries()) {
