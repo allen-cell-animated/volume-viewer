@@ -44,7 +44,7 @@ export class View3d {
   private backgroundColor: Color;
   private pixelSamplingRate: number;
   private exposure: number;
-  private volumeRenderMode: RenderMode;
+  private volumeRenderMode: RenderMode.PATHTRACE | RenderMode.RAYMARCH;
   private renderUpdateListener?: (iteration: number) => void;
   private image?: VolumeDrawable;
 
@@ -480,7 +480,7 @@ export class View3d {
    */
   setCameraMode(mode: string): void {
     this.canvas3d.switchViewMode(mode);
-    this.image?.setViewMode(mode);
+    this.image?.setViewMode(mode, this.volumeRenderMode);
     this.image?.setIsOrtho(mode !== "3D");
     this.canvas3d.redraw();
   }
@@ -829,21 +829,26 @@ export class View3d {
 
   /**
    * Switch between single pass ray-marched volume rendering and progressive path traced rendering.
-   * @param {number} mode 0 for single pass ray march, 1 for progressive path trace
+   * @param {RenderMode} mode RAYMARCH for single pass ray march, PATHTRACE for progressive path trace
    */
-  setVolumeRenderMode(mode: number): void {
+  setVolumeRenderMode(mode: RenderMode.PATHTRACE | RenderMode.RAYMARCH): void {
     if (mode === this.volumeRenderMode) {
       return;
     }
 
     this.volumeRenderMode = mode;
     if (this.image) {
-      if (mode === RenderMode.PATHTRACE && this.canvas3d.hasWebGL2) {
+      const viewMode = this.image.getViewMode();
+      if (viewMode === Axis.Z) {
+        // if the camera view is in single-slice view, then we don't want to change
+        // anything but still remember the mode for when we switch back to a volumetric view
+        return;
+      } else if (mode === RenderMode.PATHTRACE && this.canvas3d.hasWebGL2) {
         this.image.setVolumeRendering(RenderMode.PATHTRACE);
         this.image.updateLights(this.lights);
         // pathtrace is a continuous rendering mode
         this.canvas3d.startRenderLoop();
-      } else {
+      } else if (mode === RenderMode.RAYMARCH) {
         this.image.setVolumeRendering(RenderMode.RAYMARCH);
         this.canvas3d.redraw();
       }

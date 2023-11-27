@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { Vector3 } from "three";
-import { TypedArray } from "zarr";
+import { TypedArray } from "@zarrita/core";
 
 import RequestQueue, { Request } from "../utils/RequestQueue";
 import { LoadSpec, loadSpecToString } from "../loaders/IVolumeLoader";
@@ -335,7 +335,7 @@ describe("test RequestQueue", () => {
       expect(count).to.equal(0);
     });
 
-    async function mockLoader(loadSpec: Required<LoadSpec>, maxDelayMs = 10.0): Promise<TypedArray> {
+    async function mockLoader(loadSpec: Required<LoadSpec>, maxDelayMs = 10.0): Promise<TypedArray<"uint8">> {
       const { x, y, z } = loadSpec.subregion.getSize(new Vector3());
       const data = new Uint8Array(x * y * z);
       const delayMs = Math.random() * maxDelayMs;

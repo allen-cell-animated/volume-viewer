@@ -60,43 +60,35 @@ function getOMEDims(imageEl: Element): OMEDims {
   return dims;
 }
 
-async function getDimsFromUrl(url: string): Promise<OMEDims> {
-  const tiff = await fromUrl(url, { allowFullFile: true });
-  // DO NOT DO THIS, ITS SLOW
-  // const imagecount = await tiff.getImageCount();
-  // read the FIRST image
-  const image = await tiff.getImage();
-
-  const tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
-  const omeEl = getOME(tiffimgdesc);
-
-  const image0El = omeEl.getElementsByTagName("Image")[0];
-  return getOMEDims(image0El);
-}
-
 const getBytesPerSample = (type: string): number => (type === "uint8" ? 1 : type === "uint16" ? 2 : 4);
 
 class TiffLoader implements IVolumeLoader {
   url: string;
-  dimensionOrder?: string;
-  bytesPerSample?: number;
+  dims?: OMEDims;
 
   constructor(url: string) {
     this.url = url;
   }
 
+  private async loadOmeDims(): Promise<OMEDims> {
+    if (!this.dims) {
+      const tiff = await fromUrl(this.url, { allowFullFile: true });
+      // DO NOT DO THIS, ITS SLOW
+      // const imagecount = await tiff.getImageCount();
+      // read the FIRST image
+      const image = await tiff.getImage();
+
+      const tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
+      const omeEl = getOME(tiffimgdesc);
+
+      const image0El = omeEl.getElementsByTagName("Image")[0];
+      this.dims = getOMEDims(image0El);
+    }
+    return this.dims;
+  }
+
   async loadDims(_loadSpec: LoadSpec): Promise<VolumeDims[]> {
-    const tiff = await fromUrl(this.url, { allowFullFile: true });
-    // DO NOT DO THIS, ITS SLOW
-    // const imagecount = await tiff.getImageCount();
-    // read the FIRST image
-    const image = await tiff.getImage();
-
-    const tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
-    const omeEl = getOME(tiffimgdesc);
-
-    const image0El = omeEl.getElementsByTagName("Image")[0];
-    const dims = getOMEDims(image0El);
+    const dims = await this.loadOmeDims();
 
     const d = new VolumeDims();
     d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
@@ -107,7 +99,7 @@ class TiffLoader implements IVolumeLoader {
   }
 
   async createVolume(_loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
-    const dims = await getDimsFromUrl(this.url);
+    const dims = await this.loadOmeDims();
     // compare with sizex, sizey
     //const width = image.getWidth();
     //const height = image.getHeight();
@@ -140,6 +132,9 @@ class TiffLoader implements IVolumeLoader {
       timeScale: 1,
       timeUnit: "",
 
+      numMultiscaleLevels: 1,
+      multiscaleLevel: 0,
+
       transform: {
         translation: new Vector3(0, 0, 0),
         rotation: new Vector3(0, 0, 0),
@@ -151,20 +146,11 @@ class TiffLoader implements IVolumeLoader {
     vol.channelLoadCallback = onChannelLoaded;
     vol.imageMetadata = buildDefaultMetadata(imgdata);
 
-    this.dimensionOrder = dims.dimensionorder;
-    this.bytesPerSample = getBytesPerSample(dims.pixeltype);
-
     return vol;
   }
 
-  async loadVolumeData(vol: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
-    if (this.bytesPerSample === undefined || this.dimensionOrder === undefined) {
-      const dims = await getDimsFromUrl(this.url);
-
-      this.dimensionOrder = dims.dimensionorder;
-      this.bytesPerSample = getBytesPerSample(dims.pixeltype);
-    }
-
+  async loadVolumeData(vol: Volume, _loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
+    const dims = await this.loadOmeDims();
     const imageInfo = vol.imageInfo;
 
     // do each channel on a worker?
@@ -177,8 +163,8 @@ class TiffLoader implements IVolumeLoader {
         tilesizey: imageInfo.volumeSize.y,
         sizec: imageInfo.numChannels,
         sizez: imageInfo.volumeSize.z,
-        dimensionOrder: this.dimensionOrder,
-        bytesPerSample: this.bytesPerSample,
+        dimensionOrder: dims.dimensionorder,
+        bytesPerSample: getBytesPerSample(dims.pixeltype),
         url: this.url,
       };
       const worker = new Worker(new URL("../workers/FetchTiffWorker", import.meta.url));
@@ -195,9 +181,6 @@ class TiffLoader implements IVolumeLoader {
       };
       worker.postMessage(params);
     }
-
-    this.dimensionOrder = undefined;
-    this.bytesPerSample = undefined;
   }
 }
 

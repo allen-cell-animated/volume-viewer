@@ -4,12 +4,12 @@ import Channel from "./Channel";
 import Histogram from "./Histogram";
 import { getColorByChannelIndex } from "./constants/colors";
 import { IVolumeLoader, LoadSpec, PerChannelCallback } from "./loaders/IVolumeLoader";
+import { estimateLevelForAtlas } from "./loaders/VolumeLoaderUtils";
 
 export type ImageInfo = Readonly<{
   name: string;
 
   /** XY size of the *original* (not downsampled) volume, in pixels */
-  // If we ever allow downsampling in z, replace with Vector3
   originalSize: Vector3;
   /**
    * XY dimensions of the texture atlas used by `RayMarchedAtlasVolume` and `Atlas2DSlice`, in number of z-slice
@@ -41,6 +41,11 @@ export type ImageInfo = Readonly<{
   /** Symbol of temporal unit used by `timeScale`, e.g. "hr" */
   timeUnit: string;
 
+  /** Number of scale levels available for this volume */
+  numMultiscaleLevels: number;
+  /** The scale level from which this image was loaded, between `0` and `numMultiscaleLevels-1` */
+  multiscaleLevel: number;
+
   transform: {
     /** Translation of the volume from the center of space, in volume voxels */
     translation: Vector3;
@@ -67,6 +72,8 @@ export const getDefaultImageInfo = (): ImageInfo => ({
   times: 1,
   timeScale: 1,
   timeUnit: "",
+  numMultiscaleLevels: 1,
+  multiscaleLevel: 0,
   transform: {
     translation: new Vector3(0, 0, 0),
     rotation: new Vector3(0, 0, 0),
@@ -229,14 +236,29 @@ export default class Volume {
     this.normRegionOffset = subregionOffset.clone().divide(volumeSize);
   }
 
-  updateRequiredData(required: Partial<LoadSpec>, onChannelLoaded?: PerChannelCallback) {
+  /** Call on any state update that may require new data to be loaded (subregion, enabled channels, time, etc.) */
+  async updateRequiredData(required: Partial<LoadSpec>, onChannelLoaded?: PerChannelCallback): Promise<void> {
     this.loadSpecRequired = { ...this.loadSpecRequired, ...required };
+    let noReload =
+      this.loadSpec.time === this.loadSpecRequired.time &&
+      this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion);
+
+    // An update to `subregion` should trigger a reload when the new subregion is not contained in the old one
+    // OR when the new subregion is smaller than the old one by enough that we can load a higher scale level.
+    if (noReload && !this.loadSpec.subregion.equals(this.loadSpecRequired.subregion)) {
+      const currentScale = this.imageInfo.multiscaleLevel;
+      // `LoadSpec.multiscaleLevel`, if specified, forces a cap on the scale level we can load.
+      const minLevel = this.loadSpec.multiscaleLevel ?? 0;
+      // Loaders should cache loaded dimensions so that this call blocks no more than once per valid `LoadSpec`.
+      const dims = await this.loader?.loadDims(this.loadSpecRequired);
+      if (dims) {
+        const loadableLevel = estimateLevelForAtlas(dims.map(({ shape }) => [shape[2], shape[3], shape[4]]));
+        noReload = currentScale <= Math.max(loadableLevel, minLevel);
+      }
+    }
+
     // if newly required data is not currently contained in this volume...
-    if (
-      this.loadSpecRequired.time !== this.loadSpec.time ||
-      this.loadSpecRequired.scene !== this.loadSpec.scene ||
-      !this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion)
-    ) {
+    if (!noReload) {
       // ...clone `loadSpecRequired` into `loadSpec` and load
       this.setUnloaded();
       this.loadSpec = {

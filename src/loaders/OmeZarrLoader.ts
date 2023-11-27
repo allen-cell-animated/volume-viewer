@@ -1,11 +1,14 @@
 import { Box3, Vector3 } from "three";
-import { HTTPStore, TypedArray, ZarrArray, openArray, openGroup, slice } from "zarr";
-import { RawArray } from "zarr/types/rawArray";
-import { AsyncStore } from "zarr/types/storage/types";
-import { Slice } from "zarr/types/core/types";
+
+import * as zarr from "@zarrita/core";
+import { get as zarrGet, slice, Slice } from "@zarrita/indexing";
+import { AbsolutePath, AsyncReadable, Readable } from "@zarrita/storage";
+// Importing `FetchStore` from its home subpackage (@zarrita/storage) causes errors.
+// Getting it from the top-level package means we don't get its type. This is also a bug, but it's more acceptable.
+import { FetchStore } from "zarrita";
 
 import Volume, { ImageInfo } from "../Volume";
-import VolumeCache, { CacheStore, DataArrayExtent } from "../VolumeCache";
+import VolumeCache from "../VolumeCache";
 import RequestQueue from "../utils/RequestQueue";
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import {
@@ -17,7 +20,6 @@ import {
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
 
-const MAX_ATLAS_DIMENSION = 2048;
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
 type CoordinateTransformation =
@@ -86,125 +88,63 @@ type OMEZarrMetadata = {
 };
 
 /** Turns `axisTCZYX` into the number of dimensions in the array */
-const getDimensionCount = ([t, c]: [number, number, number, number, number]) => 3 + Number(t > -1) + Number(c > -1);
+const getDimensionCount = ([t, c, z]: [number, number, number, number, number]) =>
+  2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
+
+type WrappedStoreOpts<Opts> = {
+  options?: Opts;
+  // TODO: store options common to a single chunk load here
+};
 
 /**
- * `Store` is zarr.js's minimal abstraction for anything that acts like a filesystem. (Local machine, HTTP server, etc.)
- * `SmartStoreWrapper` wraps another `Store` and adds (optional) connections to `VolumeCache` and `RequestQueue`.
- *
- * NOTE: if using `RequestQueue`, *ensure that calls made on arrays using this store do not also do promise queueing*
- * by setting the option `concurrencyLimit: Infinity`.
+ * `Readable` is zarrita's minimal abstraction for any source of data.
+ * `WrappedStore` wraps another `Readable` and adds (optional) connections to `VolumeCache` and `RequestQueue`.
  */
-class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
-  // Required by `AsyncStore`
-  listDir?: (path?: string) => Promise<string[]>;
-  rmDir?: (path?: string) => Promise<boolean>;
-  getSize?: (path?: string) => Promise<number>;
-  rename?: (path?: string) => Promise<void>;
-
-  baseStore: AsyncStore<ArrayBuffer, RequestInit>;
-
+class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements AsyncReadable<WrappedStoreOpts<Opts>> {
+  baseStore: S;
   cache?: VolumeCache;
-  cacheStore?: CacheStore;
-  requestQueue?: RequestQueue;
-  // Our other miscellaneous info is packed into an object to be null-checked all at once
-  arrayInfo?: {
-    axesTCZYX: [number, number, number, number, number];
-    scaleNames: string[];
-    dimensionSeparator: string;
-  };
+  queue?: RequestQueue;
 
-  constructor(baseStore: AsyncStore<ArrayBuffer, RequestInit>, requestQueue?: RequestQueue) {
+  constructor(baseStore: S, cache?: VolumeCache, queue?: RequestQueue) {
     this.baseStore = baseStore;
-    this.requestQueue = requestQueue;
-    this.listDir = baseStore.listDir;
-    this.rmDir = baseStore.rmDir;
-    this.getSize = baseStore.getSize;
-    this.rename = baseStore.rename;
-  }
-
-  setCacheInfo(
-    axesTCZYX: [number, number, number, number, number],
-    scaleNames: string[],
-    dimensionSeparator = "/",
-    cache?: VolumeCache,
-    cacheStore?: CacheStore
-  ) {
-    this.arrayInfo = { axesTCZYX, scaleNames, dimensionSeparator };
     this.cache = cache;
-    this.cacheStore = cacheStore;
+    this.queue = queue;
   }
 
-  private async cacheWhenReceived(prom: Promise<ArrayBuffer>, dims: Partial<DataArrayExtent>): Promise<ArrayBuffer> {
-    const result = await prom;
-    if (this.cache && this.cacheStore) {
-      this.cache.insert(this.cacheStore, result, dims);
+  private async getAndCache(key: AbsolutePath, cacheKey: string, opts?: Opts): Promise<Uint8Array | undefined> {
+    const result = await this.baseStore.get(key, opts);
+    if (this.cache && result) {
+      this.cache.insert(cacheKey, result);
     }
     return result;
   }
 
-  async getItem(item: string, opts?: RequestInit | undefined): Promise<ArrayBuffer> {
-    // If we don't have a cache or aren't getting a chunk, call straight to the base store
-    const zarrExts = [".zarray", ".zgroup", ".zattrs"];
-    if (!this.cache || !this.cacheStore || !this.arrayInfo || zarrExts.some((s) => item.endsWith(s))) {
-      return this.baseStore.getItem(item, opts);
+  async get(key: AbsolutePath, opts?: WrappedStoreOpts<Opts> | undefined): Promise<Uint8Array | undefined> {
+    const ZARR_EXTS = [".zarray", ".zgroup", ".zattrs", "zarr.json"];
+    if (!this.cache || ZARR_EXTS.some((s) => key.endsWith(s))) {
+      return this.baseStore.get(key, opts?.options);
     }
 
-    const { scaleNames, axesTCZYX, dimensionSeparator } = this.arrayInfo;
-
-    // Extract chunk coordinates from item path
-    const pathElems = item.split(dimensionSeparator);
-    // The first element should be the scale name - convert it to scale level index
-    const scale = scaleNames.indexOf(pathElems.shift() as string);
-    // The remaining elements should be chunk coordinates, and should be numbers
-    const coordsLength = getDimensionCount(axesTCZYX);
-    const chunkCoords = pathElems.slice(-coordsLength).map((s) => parseInt(s, 10));
-    if (chunkCoords.length < coordsLength || chunkCoords.some(isNaN) || scale < 0) {
-      console.log("zarr store wrapper: unexpected item path: " + item);
-      return this.baseStore.getItem(item, opts);
+    let keyPrefix = (this.baseStore as FetchStore).url ?? "";
+    if (keyPrefix !== "" && !(keyPrefix instanceof URL) && !keyPrefix.endsWith("/")) {
+      keyPrefix += "/";
     }
+
+    const fullKey = keyPrefix + key.slice(1);
 
     // Check the cache
-    const [t, c, z, y, x] = axesTCZYX;
-    const time = t < 0 ? 0 : chunkCoords[t];
-    const channel = c < 0 ? 0 : chunkCoords[c];
-    const chunk = new Vector3(chunkCoords[x], chunkCoords[y], chunkCoords[z]);
-    const cacheResult = this.cache.get(this.cacheStore, channel, { scale, time, chunk });
+    const cacheResult = this.cache.get(fullKey);
     if (cacheResult) {
-      return cacheResult;
+      return new Uint8Array(cacheResult);
     }
 
     // Not in cache; load the chunk and cache it
-    if (this.requestQueue) {
-      const keyPrefix = (this.baseStore as HTTPStore).url || "";
-      const key = keyPrefix + item;
-      return await this.requestQueue.addRequest(key, () =>
-        this.cacheWhenReceived(this.baseStore.getItem(item, opts), { scale, time, chunk, channel })
-      );
+    if (this.queue) {
+      return this.queue.addRequest(fullKey, () => this.getAndCache(key, fullKey, opts?.options));
     } else {
-      return await this.cacheWhenReceived(this.baseStore.getItem(item, opts), { scale, time, chunk, channel });
+      // Should we ever hit this code?  We should always have a request queue.
+      return this.getAndCache(key, fullKey, opts?.options);
     }
-  }
-
-  keys(): Promise<string[]> {
-    return this.baseStore.keys();
-  }
-
-  async setItem(_item: string, _value: ArrayBuffer): Promise<boolean> {
-    console.warn("zarr store wrapper: attempt to set data!");
-    // return this.baseStore.setItem(item, value);
-    return false;
-  }
-
-  async deleteItem(_item: string): Promise<boolean> {
-    console.warn("zarr store wrapper: attempt to delete data!");
-    // return this.baseStore.deleteItem(item);
-    return false;
-  }
-
-  containsItem(item: string): Promise<boolean> {
-    // zarr seems to never call this method on chunk paths (just .zarray, .zstore, etc.), so we don't check cache here
-    return this.baseStore.containsItem(item);
   }
 }
 
@@ -221,33 +161,33 @@ function remapAxesToTCZYX(axes: Axis[]): [number, number, number, number, number
     }
   });
 
-  if (axisTCZYX[2] === -1 || axisTCZYX[3] === -1 || axisTCZYX[4] === -1) {
-    console.error("ERROR: zarr loader expects a z, y, and x axis.");
+  // it is possible that Z might not exist but we require X and Y at least.
+  if (axisTCZYX[3] === -1 || axisTCZYX[4] === -1) {
+    console.error("ERROR: zarr loader expects a y and an x axis.");
   }
 
   return axisTCZYX;
 }
 
-function pickLevelToLoad(loadSpec: LoadSpec, zarrMultiscales: ZarrArray[], zi: number, yi: number, xi: number): number {
+/**
+ * Picks the best scale level to load based on scale level dimensions, a max atlas size, and a `LoadSpec`.
+ * This works like `estimateLevelForAtlas` but factors in `LoadSpec`'s `subregion` property (shrinks the size of the
+ * data, maybe enough to allow loading a higher level) and its `multiscaleLevel` property (sets a max scale level).
+ */
+function pickLevelToLoad(loadSpec: LoadSpec, spatialDimsZYX: [number, number, number][]): number {
   const size = loadSpec.subregion.getSize(new Vector3());
-
-  const spatialDims = zarrMultiscales.map(({ shape }) => [
-    Math.max(shape[zi] * size.z, 1),
-    Math.max(shape[yi] * size.y, 1),
-    Math.max(shape[xi] * size.x, 1),
+  const dims = spatialDimsZYX.map(([z, y, x]): [number, number, number] => [
+    Math.max(z * size.z, 1),
+    Math.max(y * size.y, 1),
+    Math.max(x * size.x, 1),
   ]);
 
-  const optimalLevel = estimateLevelForAtlas(spatialDims, MAX_ATLAS_DIMENSION);
-
-  if (loadSpec.multiscaleLevel) {
-    return Math.max(optimalLevel, loadSpec.multiscaleLevel);
-  } else {
-    return optimalLevel;
-  }
+  const optimalLevel = estimateLevelForAtlas(dims);
+  return Math.max(optimalLevel, loadSpec.multiscaleLevel ?? 0);
 }
 
-function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
-  if (dtype === "|u1") {
+function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint8Array {
+  if (channelData instanceof Uint8Array) {
     return channelData as Uint8Array;
   }
 
@@ -275,8 +215,10 @@ function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
   return u8;
 }
 
+type NumericZarrArray = zarr.Array<zarr.NumberDataType>;
+
 class OMEZarrLoader implements IVolumeLoader {
-  scaleLevels: ZarrArray[];
+  scaleLevels: NumericZarrArray[];
   multiscaleMetadata: OMEMultiscale;
   omeroMetadata: OmeroTransitionalMetadata;
   axesTCZYX: [number, number, number, number, number];
@@ -290,7 +232,7 @@ class OMEZarrLoader implements IVolumeLoader {
   maxExtent?: Box3;
 
   private constructor(
-    scaleLevels: ZarrArray[],
+    scaleLevels: NumericZarrArray[],
     multiscaleMetadata: OMEMultiscale,
     omeroMetadata: OmeroTransitionalMetadata,
     axisTCZYX: [number, number, number, number, number],
@@ -311,9 +253,10 @@ class OMEZarrLoader implements IVolumeLoader {
   ): Promise<OMEZarrLoader> {
     // Setup: create queue and store, get basic metadata
     const queue = new RequestQueue(concurrencyLimit);
-    const store = new SmartStoreWrapper(new HTTPStore(url), queue);
-    const group = await openGroup(store, null, "r");
-    const metadata = (await group.attrs.asObject()) as OMEZarrMetadata;
+    const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
+    const root = zarr.root(store);
+    const group = await zarr.open(root, { kind: "group" });
+    const metadata = group.attrs as OMEZarrMetadata;
 
     // Pick scene (multiscale)
     if (scene > metadata.multiscales.length) {
@@ -323,23 +266,11 @@ class OMEZarrLoader implements IVolumeLoader {
     const multiscale = metadata.multiscales[scene];
 
     // Open all scale levels of multiscale
-    const scaleLevelPaths = multiscale.datasets.map(({ path }) => path);
-    const scaleLevelPromises = scaleLevelPaths.map((path) => openArray({ store, path, mode: "r" }));
+    const scaleLevelPromises = multiscale.datasets.map(({ path }) => zarr.open(root.resolve(path), { kind: "array" }));
     const scaleLevels = await Promise.all(scaleLevelPromises);
-    const dimensionSeparator = scaleLevels[0].meta.dimension_separator;
-
-    // Grab axis indexes, use them to set up cache store
     const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
-    const [t, c, z, y, x] = axisTCZYX;
-    const numChannels = Math.max(scaleLevels[0].shape[c], 1);
-    const numTimes = Math.max(scaleLevels[0].shape[t], 1);
-    const scaleChunkDims = scaleLevels.map(
-      ({ chunkDataShape }) => new Vector3(chunkDataShape[x], chunkDataShape[y], chunkDataShape[z])
-    );
-    const cacheStore = cache?.addVolume(numChannels, numTimes, scaleChunkDims);
-    store.setCacheInfo(axisTCZYX, scaleLevelPaths, dimensionSeparator, cache, cacheStore);
 
-    return new OMEZarrLoader(scaleLevels, multiscale, metadata.omero, axisTCZYX, queue);
+    return new OMEZarrLoader(scaleLevels as NumericZarrArray[], multiscale, metadata.omero, axisTCZYX, queue);
   }
 
   private getUnitSymbols(): [string, string] {
@@ -383,7 +314,12 @@ class OMEZarrLoader implements IVolumeLoader {
     return scale;
   }
 
-  async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
+  private getLevelShapesZYX(): [number, number, number][] {
+    const [z, y, x] = this.axesTCZYX.slice(-3);
+    return this.scaleLevels.map(({ shape }) => [z === -1 ? 1 : shape[z], shape[y], shape[x]]);
+  }
+
+  loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const [spaceUnit, timeUnit] = this.getUnitSymbols();
     // Compute subregion size so we can factor that in
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
@@ -397,7 +333,6 @@ class OMEZarrLoader implements IVolumeLoader {
 
       dims.spaceUnit = spaceUnit;
       dims.timeUnit = timeUnit;
-      dims.subpath = level.path ?? "";
       dims.shape = [-1, -1, -1, -1, -1];
       dims.spacing = [1, 1, 1, 1, 1];
 
@@ -405,22 +340,25 @@ class OMEZarrLoader implements IVolumeLoader {
         if (val > -1) {
           dims.shape[idx] = Math.ceil(level.shape[val] * regionArr[idx]);
           dims.spacing[idx] = scale[val];
+        } else {
+          dims.shape[idx] = 1;
         }
       });
 
       return dims;
     });
 
-    return result;
+    return Promise.resolve(result);
   }
 
   async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
     const [t, c, z, y, x] = this.axesTCZYX;
     const hasT = t > -1;
     const hasC = c > -1;
+    const hasZ = z > -1;
 
     const shape0 = this.scaleLevels[0].shape;
-    const levelToLoad = pickLevelToLoad(loadSpec, this.scaleLevels, z, y, x);
+    const levelToLoad = pickLevelToLoad(loadSpec, this.getLevelShapesZYX());
     const shapeLv = this.scaleLevels[levelToLoad].shape;
 
     const [spatialUnit, timeUnit] = this.getUnitSymbols();
@@ -430,9 +368,15 @@ class OMEZarrLoader implements IVolumeLoader {
     if (!this.maxExtent) {
       this.maxExtent = loadSpec.subregion.clone();
     }
-    const pxDims0 = convertSubregionToPixels(loadSpec.subregion, new Vector3(shape0[x], shape0[y], shape0[z]));
+    const pxDims0 = convertSubregionToPixels(
+      loadSpec.subregion,
+      new Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1)
+    );
     const pxSize0 = pxDims0.getSize(new Vector3());
-    const pxDimsLv = convertSubregionToPixels(loadSpec.subregion, new Vector3(shapeLv[x], shapeLv[y], shapeLv[z]));
+    const pxDimsLv = convertSubregionToPixels(
+      loadSpec.subregion,
+      new Vector3(shapeLv[x], shapeLv[y], hasZ ? shapeLv[z] : 1)
+    );
     const pxSizeLv = pxDimsLv.getSize(new Vector3());
 
     const atlasTileDims = computePackedAtlasDims(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
@@ -450,7 +394,7 @@ class OMEZarrLoader implements IVolumeLoader {
       volumeSize: pxSizeLv,
       subregionSize: pxSizeLv.clone(),
       subregionOffset: new Vector3(0, 0, 0),
-      physicalPixelSize: new Vector3(scale5d[x], scale5d[y], scale5d[z]),
+      physicalPixelSize: new Vector3(scale5d[x], scale5d[y], hasZ ? scale5d[z] : Math.min(scale5d[x], scale5d[y])),
       spatialUnit,
 
       numChannels,
@@ -458,6 +402,8 @@ class OMEZarrLoader implements IVolumeLoader {
       times,
       timeScale,
       timeUnit,
+      numMultiscaleLevels: this.scaleLevels.length,
+      multiscaleLevel: levelToLoad,
 
       transform: {
         translation: new Vector3(0, 0, 0),
@@ -487,15 +433,21 @@ class OMEZarrLoader implements IVolumeLoader {
     const [z, y, x] = this.axesTCZYX.slice(2);
     const subregion = composeSubregion(vol.loadSpec.subregion, maxExtent);
 
-    const levelIdx = pickLevelToLoad({ ...vol.loadSpec, subregion }, this.scaleLevels, z, y, x);
+    const levelIdx = pickLevelToLoad({ ...vol.loadSpec, subregion }, this.getLevelShapesZYX());
     const level = this.scaleLevels[levelIdx];
     const levelShape = level.shape;
 
-    const regionPx = convertSubregionToPixels(subregion, new Vector3(levelShape[x], levelShape[y], levelShape[z]));
+    const regionPx = convertSubregionToPixels(
+      subregion,
+      new Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z])
+    );
     // Update volume `imageInfo` to reflect potentially new dimensions
     const regionSizePx = regionPx.getSize(new Vector3());
     const atlasTileDims = computePackedAtlasDims(regionSizePx.z, regionSizePx.x, regionSizePx.y);
-    const volExtentPx = convertSubregionToPixels(maxExtent, new Vector3(levelShape[x], levelShape[y], levelShape[z]));
+    const volExtentPx = convertSubregionToPixels(
+      maxExtent,
+      new Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z])
+    );
     const volSizePx = volExtentPx.getSize(new Vector3());
     vol.imageInfo = {
       ...vol.imageInfo,
@@ -503,6 +455,7 @@ class OMEZarrLoader implements IVolumeLoader {
       volumeSize: volSizePx,
       subregionSize: regionSizePx,
       subregionOffset: regionPx.min,
+      multiscaleLevel: levelIdx,
     };
     vol.updateDimensions();
 
@@ -526,8 +479,8 @@ class OMEZarrLoader implements IVolumeLoader {
       });
 
       try {
-        const result = (await level.getRaw(sliceSpec, { concurrencyLimit: Infinity })) as RawArray;
-        const u8 = convertChannel(result.data, result.dtype);
+        const result = await zarrGet(level, sliceSpec);
+        const u8 = convertChannel(result.data);
         vol.setChannelDataFromVolume(ch, u8);
         onChannelLoaded?.(vol, ch);
       } catch (e) {

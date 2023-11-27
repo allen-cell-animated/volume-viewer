@@ -281,19 +281,19 @@ export default class VolumeDrawable {
    * Sets the camera mode of the VolumeDrawable.
    * @param mode Mode can be "3D", or "XY" or "Z", or "YZ" or "X", or "XZ" or "Y".
    */
-  setViewMode(mode: string): void {
+  setViewMode(mode: string, volumeRenderModeHint: RenderMode.PATHTRACE | RenderMode.RAYMARCH): void {
     const axis = this.modeStringToAxis(mode);
     this.viewMode = axis;
     // Force a volume render reset if we have switched to or from Z mode while raymarching is enabled.
     if (axis === Axis.Z) {
       // If currently in 3D raymarch mode, hotswap the 2D slice
-      if (this.renderMode === RenderMode.RAYMARCH) {
+      if (this.renderMode === RenderMode.RAYMARCH || this.renderMode === RenderMode.PATHTRACE) {
         this.setVolumeRendering(RenderMode.SLICE);
       }
     } else {
       // If in 2D slice mode, switch back to 3D raymarch mode
       if (this.renderMode === RenderMode.SLICE) {
-        this.setVolumeRendering(RenderMode.RAYMARCH);
+        this.setVolumeRendering(volumeRenderModeHint);
       }
     }
     if (this.settings.viewAxis !== axis) {
@@ -371,6 +371,10 @@ export default class VolumeDrawable {
     if (this.renderMode !== RenderMode.PATHTRACE) {
       this.meshVolume.doRender(canvas);
     }
+  }
+
+  getViewMode(): Axis {
+    return this.viewMode;
   }
 
   // If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
