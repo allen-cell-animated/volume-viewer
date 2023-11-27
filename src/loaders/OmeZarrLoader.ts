@@ -17,7 +17,6 @@ import {
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
 
-const MAX_ATLAS_DIMENSION = 2048;
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
 type CoordinateTransformation =
@@ -194,22 +193,21 @@ function remapAxesToTCZYX(axes: Axis[]): [number, number, number, number, number
   return axisTCZYX;
 }
 
-function pickLevelToLoad(loadSpec: LoadSpec, zarrMultiscales: ZarrArray[], zi: number, yi: number, xi: number): number {
+/**
+ * Picks the best scale level to load based on scale level dimensions, a max atlas size, and a `LoadSpec`.
+ * This works like `estimateLevelForAtlas` but factors in `LoadSpec`'s `subregion` property (shrinks the size of the
+ * data, maybe enough to allow loading a higher level) and its `multiscaleLevel` property (sets a max scale level).
+ */
+function pickLevelToLoad(loadSpec: LoadSpec, spatialDimsZYX: [number, number, number][]): number {
   const size = loadSpec.subregion.getSize(new Vector3());
-
-  const spatialDims = zarrMultiscales.map(({ shape }) => [
-    Math.max(shape[zi] * size.z, 1),
-    Math.max(shape[yi] * size.y, 1),
-    Math.max(shape[xi] * size.x, 1),
+  const dims = spatialDimsZYX.map(([z, y, x]): [number, number, number] => [
+    Math.max(z * size.z, 1),
+    Math.max(y * size.y, 1),
+    Math.max(x * size.x, 1),
   ]);
 
-  const optimalLevel = estimateLevelForAtlas(spatialDims, MAX_ATLAS_DIMENSION);
-
-  if (loadSpec.multiscaleLevel) {
-    return Math.max(optimalLevel, loadSpec.multiscaleLevel);
-  } else {
-    return optimalLevel;
-  }
+  const optimalLevel = estimateLevelForAtlas(dims);
+  return Math.max(optimalLevel, loadSpec.multiscaleLevel ?? 0);
 }
 
 function convertChannel(channelData: TypedArray, dtype: string): Uint8Array {
@@ -338,7 +336,12 @@ class OMEZarrLoader implements IVolumeLoader {
     return scale;
   }
 
-  async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
+  private getLevelShapesZYX(): [number, number, number][] {
+    const [z, y, x] = this.axesTCZYX.slice(-3);
+    return this.scaleLevels.map(({ shape }) => [shape[z], shape[y], shape[x]]);
+  }
+
+  loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const [spaceUnit, timeUnit] = this.getUnitSymbols();
     // Compute subregion size so we can factor that in
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
@@ -352,7 +355,6 @@ class OMEZarrLoader implements IVolumeLoader {
 
       dims.spaceUnit = spaceUnit;
       dims.timeUnit = timeUnit;
-      dims.subpath = level.path ?? "";
       dims.shape = [-1, -1, -1, -1, -1];
       dims.spacing = [1, 1, 1, 1, 1];
 
@@ -366,7 +368,7 @@ class OMEZarrLoader implements IVolumeLoader {
       return dims;
     });
 
-    return result;
+    return Promise.resolve(result);
   }
 
   async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
@@ -375,7 +377,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const hasC = c > -1;
 
     const shape0 = this.scaleLevels[0].shape;
-    const levelToLoad = pickLevelToLoad(loadSpec, this.scaleLevels, z, y, x);
+    const levelToLoad = pickLevelToLoad(loadSpec, this.getLevelShapesZYX());
     const shapeLv = this.scaleLevels[levelToLoad].shape;
 
     const [spatialUnit, timeUnit] = this.getUnitSymbols();
@@ -413,6 +415,8 @@ class OMEZarrLoader implements IVolumeLoader {
       times,
       timeScale,
       timeUnit,
+      numMultiscaleLevels: this.scaleLevels.length,
+      multiscaleLevel: levelToLoad,
 
       transform: {
         translation: new Vector3(0, 0, 0),
@@ -442,7 +446,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const [z, y, x] = this.axesTCZYX.slice(2);
     const subregion = composeSubregion(vol.loadSpec.subregion, maxExtent);
 
-    const levelIdx = pickLevelToLoad({ ...vol.loadSpec, subregion }, this.scaleLevels, z, y, x);
+    const levelIdx = pickLevelToLoad({ ...vol.loadSpec, subregion }, this.getLevelShapesZYX());
     const level = this.scaleLevels[levelIdx];
     const levelShape = level.shape;
 
@@ -458,6 +462,7 @@ class OMEZarrLoader implements IVolumeLoader {
       volumeSize: volSizePx,
       subregionSize: regionSizePx,
       subregionOffset: regionPx.min,
+      multiscaleLevel: levelIdx,
     };
     vol.updateDimensions();
 

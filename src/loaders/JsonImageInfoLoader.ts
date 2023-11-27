@@ -80,6 +80,9 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
   timeScale: json.time_scale || 1,
   timeUnit: json.time_unit || "s",
 
+  numMultiscaleLevels: 1,
+  multiscaleLevel: 0,
+
   transform: {
     translation: json.transform?.translation
       ? new Vector3().fromArray(json.transform.translation)
@@ -92,8 +95,7 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
 
 class JsonImageInfoLoader implements IVolumeLoader {
   urls: string[];
-  time: number;
-  jsonInfo: JsonImageInfo | null = null;
+  jsonInfo: (JsonImageInfo | undefined)[];
 
   cache?: VolumeCache;
 
@@ -104,24 +106,29 @@ class JsonImageInfoLoader implements IVolumeLoader {
       this.urls = [urls];
     }
 
-    this.time = 0;
+    this.jsonInfo = new Array(this.urls.length);
     this.cache = cache;
   }
 
-  async getJsonImageInfo(loadSpec: LoadSpec): Promise<JsonImageInfo> {
-    const response = await fetch(this.urls[loadSpec.time]);
+  private async getJsonImageInfo(time: number): Promise<JsonImageInfo> {
+    const cachedInfo = this.jsonInfo[time];
+    if (cachedInfo) {
+      return cachedInfo;
+    }
+
+    const response = await fetch(this.urls[time]);
     const imageInfo = (await response.json()) as JsonImageInfo;
 
     imageInfo.pixel_size_unit = imageInfo.pixel_size_unit || "μm";
     imageInfo.times = imageInfo.times || this.urls.length;
+    this.jsonInfo[time] = imageInfo;
     return imageInfo;
   }
 
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
-    const jsonInfo = await this.getJsonImageInfo(loadSpec);
+    const jsonInfo = await this.getJsonImageInfo(loadSpec.time);
 
     const d = new VolumeDims();
-    d.subpath = "";
     d.shape = [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tile_height, jsonInfo.tile_width];
     d.spacing = [1, 1, jsonInfo.pixel_size_z, jsonInfo.pixel_size_y, jsonInfo.pixel_size_x];
     d.spaceUnit = jsonInfo.pixel_size_unit || "μm";
@@ -130,9 +137,8 @@ class JsonImageInfoLoader implements IVolumeLoader {
   }
 
   async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
-    this.time = loadSpec.time;
-    this.jsonInfo = await this.getJsonImageInfo(loadSpec);
-    const imageInfo = convertImageInfo(this.jsonInfo);
+    const jsonInfo = await this.getJsonImageInfo(loadSpec.time);
+    const imageInfo = convertImageInfo(jsonInfo);
 
     const vol = new Volume(imageInfo, loadSpec, this);
     vol.channelLoadCallback = onChannelLoaded;
@@ -146,12 +152,9 @@ class JsonImageInfoLoader implements IVolumeLoader {
     // Try to figure out the urlPrefix from the LoadSpec.
     // For this format we assume the image data is in the same directory as the json file.
     const loadSpec = explicitLoadSpec || vol.loadSpec;
-    if (this.time !== loadSpec.time) {
-      this.time = loadSpec.time;
-      this.jsonInfo = await this.getJsonImageInfo(loadSpec);
-    }
+    const jsonInfo = await this.getJsonImageInfo(loadSpec.time);
 
-    let images = this.jsonInfo?.images;
+    let images = jsonInfo?.images;
     if (!images) {
       return;
     }
@@ -163,7 +166,7 @@ class JsonImageInfoLoader implements IVolumeLoader {
     }
 
     // This regex removes everything after the last slash, so the url had better be simple.
-    const urlPrefix = this.urls[this.time].replace(/[^/]*$/, "");
+    const urlPrefix = this.urls[loadSpec.time].replace(/[^/]*$/, "");
     images = images.map((element) => ({ ...element, name: urlPrefix + element.name }));
 
     vol.loadSpec = {

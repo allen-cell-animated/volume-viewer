@@ -3,6 +3,8 @@ import { Box3, Vector2, Vector3 } from "three";
 
 import { ImageInfo } from "../Volume";
 
+const MAX_ATLAS_EDGE = 2048;
+
 // Map from units to their symbols
 const UNIT_SYMBOLS = {
   angstrom: "Å",
@@ -74,9 +76,13 @@ export function computePackedAtlasDims(z: number, tw: number, th: number): Vecto
   return new Vector2(nrows, ncols);
 }
 
-export function estimateLevelForAtlas(spatialDimsZYX: number[][], maxAtlasEdge = 4096) {
-  // update levelToLoad after we get size info about multiscales.
-  // decide to max out at a 4k x 4k texture.
+/** Picks the largest scale level that can fit into a texture atlas */
+export function estimateLevelForAtlas(spatialDimsZYX: [number, number, number][], maxAtlasEdge = MAX_ATLAS_EDGE) {
+  if (spatialDimsZYX.length <= 1) {
+    return 0;
+  }
+
+  // update levelToLoad after we get size info about multiscales
   let levelToLoad = spatialDimsZYX.length - 1;
   for (let i = 0; i < spatialDimsZYX.length; ++i) {
     // estimate atlas size:
