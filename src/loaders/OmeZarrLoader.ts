@@ -85,7 +85,8 @@ type OMEZarrMetadata = {
 };
 
 /** Turns `axisTCZYX` into the number of dimensions in the array */
-const getDimensionCount = ([t, c]: [number, number, number, number, number]) => 3 + Number(t > -1) + Number(c > -1);
+const getDimensionCount = ([t, c, z]: [number, number, number, number, number]) =>
+  2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
 
 /**
  * `Store` is zarr.js's minimal abstraction for anything that acts like a filesystem. (Local machine, HTTP server, etc.)
@@ -147,6 +148,7 @@ class SmartStoreWrapper implements AsyncStore<ArrayBuffer, RequestInit> {
     if (this.requestQueue) {
       return this.requestQueue.addRequest(key, () => this.getAndCacheItem(item, key, opts));
     } else {
+      // Should we ever hit this code?  We should always have a request queue.
       return this.getAndCacheItem(item, key, opts);
     }
   }
@@ -186,8 +188,9 @@ function remapAxesToTCZYX(axes: Axis[]): [number, number, number, number, number
     }
   });
 
-  if (axisTCZYX[2] === -1 || axisTCZYX[3] === -1 || axisTCZYX[4] === -1) {
-    console.error("ERROR: zarr loader expects a z, y, and x axis.");
+  // it is possible that Z might not exist but we require X and Y at least.
+  if (axisTCZYX[3] === -1 || axisTCZYX[4] === -1) {
+    console.error("ERROR: zarr loader expects a y and an x axis.");
   }
 
   return axisTCZYX;
@@ -338,7 +341,7 @@ class OMEZarrLoader implements IVolumeLoader {
 
   private getLevelShapesZYX(): [number, number, number][] {
     const [z, y, x] = this.axesTCZYX.slice(-3);
-    return this.scaleLevels.map(({ shape }) => [shape[z], shape[y], shape[x]]);
+    return this.scaleLevels.map(({ shape }) => [z === -1 ? 1 : shape[z], shape[y], shape[x]]);
   }
 
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
@@ -362,6 +365,8 @@ class OMEZarrLoader implements IVolumeLoader {
         if (val > -1) {
           dims.shape[idx] = Math.ceil(level.shape[val] * regionArr[idx]);
           dims.spacing[idx] = scale[val];
+        } else {
+          dims.shape[idx] = 1;
         }
       });
 
@@ -375,6 +380,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const [t, c, z, y, x] = this.axesTCZYX;
     const hasT = t > -1;
     const hasC = c > -1;
+    const hasZ = z > -1;
 
     const shape0 = this.scaleLevels[0].shape;
     const levelToLoad = pickLevelToLoad(loadSpec, this.getLevelShapesZYX());
@@ -387,9 +393,15 @@ class OMEZarrLoader implements IVolumeLoader {
     if (!this.maxExtent) {
       this.maxExtent = loadSpec.subregion.clone();
     }
-    const pxDims0 = convertSubregionToPixels(loadSpec.subregion, new Vector3(shape0[x], shape0[y], shape0[z]));
+    const pxDims0 = convertSubregionToPixels(
+      loadSpec.subregion,
+      new Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1)
+    );
     const pxSize0 = pxDims0.getSize(new Vector3());
-    const pxDimsLv = convertSubregionToPixels(loadSpec.subregion, new Vector3(shapeLv[x], shapeLv[y], shapeLv[z]));
+    const pxDimsLv = convertSubregionToPixels(
+      loadSpec.subregion,
+      new Vector3(shapeLv[x], shapeLv[y], hasZ ? shapeLv[z] : 1)
+    );
     const pxSizeLv = pxDimsLv.getSize(new Vector3());
 
     const atlasTileDims = computePackedAtlasDims(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
@@ -407,7 +419,7 @@ class OMEZarrLoader implements IVolumeLoader {
       volumeSize: pxSizeLv,
       subregionSize: pxSizeLv.clone(),
       subregionOffset: new Vector3(0, 0, 0),
-      physicalPixelSize: new Vector3(scale5d[x], scale5d[y], scale5d[z]),
+      physicalPixelSize: new Vector3(scale5d[x], scale5d[y], hasZ ? scale5d[z] : Math.min(scale5d[x], scale5d[y])),
       spatialUnit,
 
       numChannels,
@@ -450,11 +462,17 @@ class OMEZarrLoader implements IVolumeLoader {
     const level = this.scaleLevels[levelIdx];
     const levelShape = level.shape;
 
-    const regionPx = convertSubregionToPixels(subregion, new Vector3(levelShape[x], levelShape[y], levelShape[z]));
+    const regionPx = convertSubregionToPixels(
+      subregion,
+      new Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z])
+    );
     // Update volume `imageInfo` to reflect potentially new dimensions
     const regionSizePx = regionPx.getSize(new Vector3());
     const atlasTileDims = computePackedAtlasDims(regionSizePx.z, regionSizePx.x, regionSizePx.y);
-    const volExtentPx = convertSubregionToPixels(maxExtent, new Vector3(levelShape[x], levelShape[y], levelShape[z]));
+    const volExtentPx = convertSubregionToPixels(
+      maxExtent,
+      new Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z])
+    );
     const volSizePx = volExtentPx.getSize(new Vector3());
     vol.imageInfo = {
       ...vol.imageInfo,
