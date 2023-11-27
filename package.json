@@ -36,7 +36,7 @@
     "geotiff": "^2.0.5",
     "three": "^0.144.0",
     "tweakpane": "^3.1.9",
-    "zarr": "^0.5.2"
+    "zarrita": "^0.3.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.14.8",
