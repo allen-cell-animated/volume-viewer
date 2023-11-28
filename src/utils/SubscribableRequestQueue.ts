@@ -18,7 +18,7 @@ export default class SubscribableRequestQueue {
   private queue: RequestQueue;
 
   /** Number of subscribers, used for generating unique subscriber IDs. */
-  private subscriberIds: number;
+  private numSubscribers: number;
   /** Map keyed by subscriber ID. Subscribers are only useful for cancelling early, so we only store rejecters here. */
   private subscribers: Map<number, Map<string, Rejecter>>;
   /** Map from "inner" request (managed by `queue`) to "outer" promises generated per-subscriber. */
@@ -26,7 +26,7 @@ export default class SubscribableRequestQueue {
 
   constructor(maxActiveRequests?: number) {
     this.queue = new RequestQueue(maxActiveRequests);
-    this.subscriberIds = 0;
+    this.numSubscribers = 0;
     this.subscribers = new Map();
     this.requests = new Map();
   }
@@ -57,8 +57,8 @@ export default class SubscribableRequestQueue {
 
   /** Adds a new request subscriber. Returns a unique ID to identify this subscriber. */
   addSubscriber(): number {
-    const subscriberId = this.subscriberIds;
-    this.subscriberIds++;
+    const subscriberId = this.numSubscribers;
+    this.numSubscribers++;
     this.subscribers.set(subscriberId, new Map());
     return subscriberId;
   }
@@ -82,7 +82,7 @@ export default class SubscribableRequestQueue {
     }
 
     // Validate subscriber
-    if (subscriberId >= this.subscriberIds || subscriberId < 0) {
+    if (subscriberId >= this.numSubscribers || subscriberId < 0) {
       throw new Error(`SubscribableRequestQueue: subscriber id ${subscriberId} has not been registered`);
     }
     const subscriber = this.subscribers.get(subscriberId);
