@@ -11,6 +11,8 @@
     <select name="Test data" id="testData">
         <option value="timeSeries">Time Series Json</option>
         <option value="omeTiff">OME TIFF</option>
+        <option value="zarrIDR1">OME Zarr (IDR 1)</option>
+        <option value="zarrIDR2">OME Zarr (IDR 2)</option>
         <option value="zarrVariance">OME Zarr (Variance)</option>
         <option value="zarrNucmorph0">OME Zarr (NucMorph)</option>
         <option value="opencell">OpenCell</option>
@@ -44,6 +46,8 @@
         <button id="flipYBtn">FlipY</button>
         <button id="flipZBtn">FlipZ</button>
         <label for="zSlider">Z-Slice</label>
+        <button id="zbackBtn">Z Back</button>
+        <button id="zforwardBtn">Z Forward</button>
         <input id="zSlider" type="range" min="0" max="0" step="1" value="0"/><input type="number" id="zValue" min="0" max="0" value="0"/>
     </p>
     <p style="margin:2px;">
