@@ -333,7 +333,7 @@ export default class VolumeDrawable {
   // @param {number} glevel 0..1
   // @param {number} gmax 0..1, should be > gmin
   setGamma(gmin: number, glevel: number, gmax: number): void {
-    if (this.settings.gammaMin === gmin || this.settings.gammaLevel === glevel || this.settings.gammaMax === gmax) {
+    if (this.settings.gammaMin === gmin && this.settings.gammaLevel === glevel && this.settings.gammaMax === gmax) {
       return;
     }
     this.settings.gammaMin = gmin;
