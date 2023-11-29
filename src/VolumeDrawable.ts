@@ -427,10 +427,12 @@ export default class VolumeDrawable {
 
   updateMaterial(): void {
     this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.MATERIAL);
   }
 
   updateLuts(): void {
     this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.MATERIAL);
   }
 
   setVoxelSize(values: Vector3): void {
@@ -545,6 +547,7 @@ export default class VolumeDrawable {
       return;
     }
     this.updateChannelColor(channelIndex, colorrgb);
+    this.settings.diffuse[channelIndex] = colorrgb;
     this.settings.specular[channelIndex] = specularrgb;
     this.settings.emissive[channelIndex] = emissivergb;
     this.settings.glossiness[channelIndex] = glossiness;

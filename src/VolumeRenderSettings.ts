@@ -16,7 +16,7 @@ export enum SettingsFlags {
   ROI = 0b000001000,
   /** parameters: maskAlpha */
   MASK_ALPHA = 0b000010000,
-  /** parameters: density, specular, emissive, glossiness */
+  /** parameters: density, diffuse, specular, emissive, glossiness */
   MATERIAL = 0b000100000,
   /** parameters: resolution, useInterpolation, pixelSamplingRate, primaryRayStepSize, secondaryRayStepSize*/
   SAMPLING = 0b001000000,
@@ -64,6 +64,7 @@ export class VolumeRenderSettings {
 
   // MATERIAL
   public density: number;
+  public diffuse: [number, number, number][];
   public specular: [number, number, number][];
   public emissive: [number, number, number][];
   public glossiness: number[];
@@ -115,11 +116,13 @@ export class VolumeRenderSettings {
     // volume-dependent properties
     if (volume) {
       this.zSlice = Math.floor(volume.imageInfo.subregionSize.z / 2);
+      this.diffuse = new Array(volume.imageInfo.numChannels).fill([255, 255, 255]);
       this.specular = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
       this.emissive = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
       this.glossiness = new Array(volume.imageInfo.numChannels).fill(0);
     } else {
       this.zSlice = 0;
+      this.diffuse = [[255, 255, 255]];
       this.specular = [[0, 0, 0]];
       this.emissive = [[0, 0, 0]];
       this.glossiness = [0];
@@ -130,6 +133,7 @@ export class VolumeRenderSettings {
 
   public resizeWithVolume(volume: Volume): void {
     this.zSlice = Math.floor(volume.imageInfo.subregionSize.z / 2);
+    this.diffuse = new Array(volume.imageInfo.numChannels).fill([255, 255, 255]);
     this.specular = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
     this.emissive = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
     this.glossiness = new Array(volume.imageInfo.numChannels).fill(0);
