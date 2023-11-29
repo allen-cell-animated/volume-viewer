@@ -63,7 +63,11 @@ export default class SubscribableRequestQueue {
     return subscriberId;
   }
 
-  /** Queues a new request, or adds a subscription if the request is already queued/running. */
+  /**
+   * Queues a new request, or adds a subscription if the request is already queued/running.
+   *
+   * If `subscriberId` is already subscribed to the request, this rejects the existing promise and returns a new one.
+   */
   addRequestToQueue<T>(
     key: string,
     subscriberId: number,
