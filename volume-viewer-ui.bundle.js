@@ -3076,6 +3076,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
       }
       if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.MATERIAL) {
         this.pathTracingUniforms.gDensityScale.value = this.settings.density * 150.0;
+        this.updateMaterial();
       }
 
       // update bounds
@@ -3267,7 +3268,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
       this.updateVolumeData4();
       this.resetProgress();
       this.updateLuts(channelColors, channelData);
-      this.updateMaterial(channelColors, channelData);
+      this.updateMaterial();
     }
   }, {
     key: "updateVolumeData4",
@@ -3331,12 +3332,13 @@ var PathTracedVolume = /*#__PURE__*/function () {
     // emissive, glossiness
   }, {
     key: "updateMaterial",
-    value: function updateMaterial(channelColors, channelData) {
+    value: function updateMaterial() {
       for (var c = 0; c < this.viewChannels.length; ++c) {
         var i = this.viewChannels[c];
         if (i > -1) {
           // diffuse color is actually blended into the LUT now.
-          var combinedLut = channelData[i].combineLuts(channelColors[i].rgbColor);
+          var channelData = this.volume.getChannel(i);
+          var combinedLut = channelData.combineLuts(this.settings.diffuse[i]);
           this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, c * _Histogram__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH);
           this.pathTracingUniforms.gLutTexture.value.needsUpdate = true;
           this.pathTracingUniforms.gDiffuse.value[c] = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1.0, 1.0, 1.0);
@@ -7131,7 +7133,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "setGamma",
     value: function setGamma(gmin, glevel, gmax) {
-      if (this.settings.gammaMin === gmin || this.settings.gammaLevel === glevel || this.settings.gammaMax === gmax) {
+      if (this.settings.gammaMin === gmin && this.settings.gammaLevel === glevel && this.settings.gammaMax === gmax) {
         return;
       }
       this.settings.gammaMin = gmin;
@@ -7242,11 +7244,13 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "updateMaterial",
     value: function updateMaterial() {
       this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.MATERIAL);
     }
   }, {
     key: "updateLuts",
     value: function updateLuts() {
       this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.MATERIAL);
     }
   }, {
     key: "setVoxelSize",
@@ -7368,6 +7372,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
         return;
       }
       this.updateChannelColor(channelIndex, colorrgb);
+      this.settings.diffuse[channelIndex] = colorrgb;
       this.settings.specular[channelIndex] = specularrgb;
       this.settings.emissive[channelIndex] = emissivergb;
       this.settings.glossiness[channelIndex] = glossiness;
@@ -7839,11 +7844,13 @@ var VolumeRenderSettings = /*#__PURE__*/function () {
     // volume-dependent properties
     if (volume) {
       this.zSlice = Math.floor(volume.imageInfo.subregionSize.z / 2);
+      this.diffuse = new Array(volume.imageInfo.numChannels).fill([255, 255, 255]);
       this.specular = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
       this.emissive = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
       this.glossiness = new Array(volume.imageInfo.numChannels).fill(0);
     } else {
       this.zSlice = 0;
+      this.diffuse = [[255, 255, 255]];
       this.specular = [[0, 0, 0]];
       this.emissive = [[0, 0, 0]];
       this.glossiness = [0];
@@ -7855,6 +7862,7 @@ var VolumeRenderSettings = /*#__PURE__*/function () {
     key: "resizeWithVolume",
     value: function resizeWithVolume(volume) {
       this.zSlice = Math.floor(volume.imageInfo.subregionSize.z / 2);
+      this.diffuse = new Array(volume.imageInfo.numChannels).fill([255, 255, 255]);
       this.specular = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
       this.emissive = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
       this.glossiness = new Array(volume.imageInfo.numChannels).fill(0);
@@ -85244,6 +85252,25 @@ function _loadTestData() {
   }));
   return _loadTestData.apply(this, arguments);
 }
+function gammaSliderToImageValues(sliderValues) {
+  var min = Number(sliderValues[0]);
+  var mid = Number(sliderValues[1]);
+  var max = Number(sliderValues[2]);
+  if (mid > max || mid < min) {
+    mid = 0.5 * (min + max);
+  }
+  var div = 255;
+  min /= div;
+  max /= div;
+  mid /= div;
+  var diff = max - min;
+  var x = (mid - min) / diff;
+  var scale = 4 * x * x;
+  if ((mid - 0.5) * (mid - 0.5) < 0.0005) {
+    scale = 1.0;
+  }
+  return [min, max, scale];
+}
 function main() {
   var el = document.getElementById("volume-viewer");
   if (!el) {
@@ -85458,6 +85485,39 @@ function main() {
       anchor.download = "screenshot.png";
       anchor.click();
     });
+  });
+  var gammaMin = document.getElementById("gammaMin");
+  var gammaMax = document.getElementById("gammaMax");
+  var gammaScale = document.getElementById("gammaScale");
+  gammaMin === null || gammaMin === void 0 ? void 0 : gammaMin.addEventListener("change", function (_ref3) {
+    var currentTarget = _ref3.currentTarget;
+    var g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
+    view3D.setGamma(myState.volume, g[0], g[1], g[2]);
+  });
+  gammaMin === null || gammaMin === void 0 ? void 0 : gammaMin.addEventListener("input", function (_ref4) {
+    var currentTarget = _ref4.currentTarget;
+    var g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
+    view3D.setGamma(myState.volume, g[0], g[1], g[2]);
+  });
+  gammaMax === null || gammaMax === void 0 ? void 0 : gammaMax.addEventListener("change", function (_ref5) {
+    var currentTarget = _ref5.currentTarget;
+    var g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
+    view3D.setGamma(myState.volume, g[0], g[1], g[2]);
+  });
+  gammaMax === null || gammaMax === void 0 ? void 0 : gammaMax.addEventListener("input", function (_ref6) {
+    var currentTarget = _ref6.currentTarget;
+    var g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
+    view3D.setGamma(myState.volume, g[0], g[1], g[2]);
+  });
+  gammaScale === null || gammaScale === void 0 ? void 0 : gammaScale.addEventListener("change", function (_ref7) {
+    var currentTarget = _ref7.currentTarget;
+    var g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
+    view3D.setGamma(myState.volume, g[0], g[1], g[2]);
+  });
+  gammaScale === null || gammaScale === void 0 ? void 0 : gammaScale.addEventListener("input", function (_ref8) {
+    var currentTarget = _ref8.currentTarget;
+    var g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
+    view3D.setGamma(myState.volume, g[0], g[1], g[2]);
   });
   setupGui();
   loadTestData(TEST_DATA[testDataSelect === null || testDataSelect === void 0 ? void 0 : testDataSelect.value]);
