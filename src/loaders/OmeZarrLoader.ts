@@ -10,6 +10,7 @@ import { FetchStore } from "zarrita";
 import Volume, { ImageInfo } from "../Volume";
 import VolumeCache from "../VolumeCache";
 import RequestQueue from "../utils/RequestQueue";
+import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import {
   buildDefaultMetadata,
@@ -21,6 +22,8 @@ import {
 } from "./VolumeLoaderUtils";
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
+
+type SubscriberId = ReturnType<SubscribableRequestQueue["addSubscriber"]>;
 
 type CoordinateTransformation =
   | {
@@ -93,7 +96,7 @@ const getDimensionCount = ([t, c, z]: [number, number, number, number, number]) 
 
 type WrappedStoreOpts<Opts> = {
   options?: Opts;
-  // TODO: store options common to a single chunk load here
+  subscriber: SubscriberId;
 };
 
 /**
@@ -103,9 +106,9 @@ type WrappedStoreOpts<Opts> = {
 class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements AsyncReadable<WrappedStoreOpts<Opts>> {
   baseStore: S;
   cache?: VolumeCache;
-  queue?: RequestQueue;
+  queue?: SubscribableRequestQueue;
 
-  constructor(baseStore: S, cache?: VolumeCache, queue?: RequestQueue) {
+  constructor(baseStore: S, cache?: VolumeCache, queue?: SubscribableRequestQueue) {
     this.baseStore = baseStore;
     this.cache = cache;
     this.queue = queue;
@@ -139,8 +142,8 @@ class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements A
     }
 
     // Not in cache; load the chunk and cache it
-    if (this.queue) {
-      return this.queue.addRequest(fullKey, () => this.getAndCache(key, fullKey, opts?.options));
+    if (this.queue && opts) {
+      return this.queue.addRequest(fullKey, opts.subscriber, () => this.getAndCache(key, fullKey, opts?.options));
     } else {
       // Should we ever hit this code?  We should always have a request queue.
       return this.getAndCache(key, fullKey, opts?.options);
@@ -215,12 +218,15 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint
   return u8;
 }
 
-type NumericZarrArray = zarr.Array<zarr.NumberDataType>;
+type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;
 
 class OMEZarrLoader implements IVolumeLoader {
   // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
   //   This may cause errors or incorrect results otherwise!
   private maxExtent?: Box3;
+
+  private prefetchSubscribers: (SubscriberId | undefined)[];
+  private loadSubscriber: SubscriberId | undefined;
 
   private constructor(
     private store: WrappedStore<RequestInit>,
@@ -229,8 +235,12 @@ class OMEZarrLoader implements IVolumeLoader {
     private omeroMetadata: OmeroTransitionalMetadata,
     private axesTCZYX: [number, number, number, number, number],
     // TODO: should we be able to share `RequestQueue`s between loaders?
-    private requestQueue: RequestQueue
-  ) {}
+    private requestQueue: SubscribableRequestQueue
+  ) {
+    const ti = this.axesTCZYX[0];
+    const times = ti < 0 ? 1 : this.scaleLevels[0].shape[this.axesTCZYX[0]];
+    this.prefetchSubscribers = new Array(times).fill(undefined);
+  }
 
   static async createLoader(
     url: string,
@@ -239,7 +249,7 @@ class OMEZarrLoader implements IVolumeLoader {
     concurrencyLimit = 10
   ): Promise<OMEZarrLoader> {
     // Setup: create queue and store, get basic metadata
-    const queue = new RequestQueue(concurrencyLimit);
+    const queue = new SubscribableRequestQueue(concurrencyLimit);
     const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
     const root = zarr.root(store);
     const group = await zarr.open(root, { kind: "group" });
@@ -323,6 +333,22 @@ class OMEZarrLoader implements IVolumeLoader {
     return result;
   }
 
+  /** Reorder an array of values in dimension order to [T, C, Z, Y, X] */
+  private orderByTCZYX<T>(valsDimension: T[], defaultValue: T): [T, T, T, T, T] {
+    const result: [T, T, T, T, T] = [defaultValue, defaultValue, defaultValue, defaultValue, defaultValue];
+
+    this.axesTCZYX.forEach((val, idx) => {
+      if (val > -1) {
+        if (val > valsDimension.length) {
+          throw new Error("Unexpected axis index");
+        }
+        result[idx] = valsDimension[val];
+      }
+    });
+
+    return result;
+  }
+
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const [spaceUnit, timeUnit] = this.getUnitSymbols();
     // Compute subregion size so we can factor that in
@@ -337,17 +363,8 @@ class OMEZarrLoader implements IVolumeLoader {
 
       dims.spaceUnit = spaceUnit;
       dims.timeUnit = timeUnit;
-      dims.shape = [-1, -1, -1, -1, -1];
-      dims.spacing = [1, 1, 1, 1, 1];
-
-      this.axesTCZYX.forEach((val, idx) => {
-        if (val > -1) {
-          dims.shape[idx] = Math.ceil(level.shape[val] * regionArr[idx]);
-          dims.spacing[idx] = scale[val];
-        } else {
-          dims.shape[idx] = 1;
-        }
-      });
+      dims.shape = this.orderByTCZYX(level.shape, 1).map((val, idx) => Math.ceil(val * regionArr[idx]));
+      dims.spacing = this.orderByTCZYX(scale, 1);
 
       return dims;
     });
@@ -430,7 +447,11 @@ class OMEZarrLoader implements IVolumeLoader {
 
   async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
     // First, cancel any pending requests for this volume
-    this.requestQueue.cancelAllRequests(CHUNK_REQUEST_CANCEL_REASON);
+    if (this.loadSubscriber !== undefined) {
+      this.requestQueue.removeSubscriber(this.loadSubscriber, CHUNK_REQUEST_CANCEL_REASON);
+    }
+    const subscriber = this.requestQueue.addSubscriber();
+    this.loadSubscriber = subscriber;
 
     vol.loadSpec = explicitLoadSpec ?? vol.loadSpec;
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
@@ -473,7 +494,7 @@ class OMEZarrLoader implements IVolumeLoader {
       const sliceSpec = this.orderByDimension(unorderedSpec);
 
       try {
-        const result = await zarrGet(level, sliceSpec);
+        const result = await zarrGet(level, sliceSpec, { opts: { subscriber } });
         const u8 = convertChannel(result.data);
         vol.setChannelDataFromVolume(ch, u8);
         onChannelLoaded?.(vol, ch);
@@ -486,6 +507,7 @@ class OMEZarrLoader implements IVolumeLoader {
     });
 
     await Promise.all(channelPromises);
+    this.requestQueue.removeSubscriber(subscriber);
   }
 }
 
