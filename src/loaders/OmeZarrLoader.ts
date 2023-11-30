@@ -1,7 +1,7 @@
 import { Box3, Vector3 } from "three";
 
 import * as zarr from "@zarrita/core";
-import { get as zarrGet, slice, Slice } from "@zarrita/indexing";
+import { get as zarrGet, slice } from "@zarrita/indexing";
 import { AbsolutePath, AsyncReadable, Readable } from "@zarrita/storage";
 // Importing `FetchStore` from its home subpackage (@zarrita/storage) causes errors.
 // Getting it from the top-level package means we don't get its type. This is also a bug, but it's more acceptable.
@@ -9,7 +9,6 @@ import { FetchStore } from "zarrita";
 
 import Volume, { ImageInfo } from "../Volume";
 import VolumeCache from "../VolumeCache";
-import RequestQueue from "../utils/RequestQueue";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import {
