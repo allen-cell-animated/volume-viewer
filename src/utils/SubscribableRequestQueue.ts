@@ -144,8 +144,8 @@ export default class SubscribableRequestQueue {
       for (const [key, reject] of subscriptions.entries()) {
         this.rejectSubscription(key, reject, cancelReason);
       }
+      this.subscribers.delete(subscriberId);
     }
-    this.subscribers.delete(subscriberId);
   }
 
   /** Returns whether a request with the given `key` is running or waiting in the queue */
