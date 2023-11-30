@@ -47,7 +47,7 @@ describe("SubscribableRequestQueue", () => {
     it("queues a request", async () => {
       const queue = new SubscribableRequestQueue();
       const id = queue.addSubscriber();
-      const promise = queue.addRequestToQueue("test", id, () => delay(TIMEOUT, "foo"));
+      const promise = queue.addRequest("test", id, () => delay(TIMEOUT, "foo"));
       expect(queue.hasRequest("test")).to.be.true;
       const result = await promise;
       expect(result).to.equal("foo");
@@ -55,15 +55,15 @@ describe("SubscribableRequestQueue", () => {
 
     it("does not queue a request if the subscriber id is invalid", () => {
       const queue = new SubscribableRequestQueue();
-      expect(() => queue.addRequestToQueue("test", -1, () => delay(TIMEOUT, "foo"))).to.throw();
-      expect(() => queue.addRequestToQueue("test", 0, () => delay(TIMEOUT, "foo"))).to.throw();
+      expect(() => queue.addRequest("test", -1, () => delay(TIMEOUT, "foo"))).to.throw();
+      expect(() => queue.addRequest("test", 0, () => delay(TIMEOUT, "foo"))).to.throw();
     });
 
     it("does not queue a request if the subscriber has been deleted", () => {
       const queue = new SubscribableRequestQueue();
       const id = queue.addSubscriber();
       queue.removeSubscriber(id);
-      expect(() => queue.addRequestToQueue("test", id, () => delay(TIMEOUT, "foo"))).to.throw();
+      expect(() => queue.addRequest("test", id, () => delay(TIMEOUT, "foo"))).to.throw();
     });
 
     it("creates unique promises without duplicating work when two subscribers queue the same key", async () => {
@@ -71,8 +71,8 @@ describe("SubscribableRequestQueue", () => {
       const id1 = queue.addSubscriber();
       const id2 = queue.addSubscriber();
 
-      const promise1 = queue.addRequestToQueue("test", id1, () => delay(TIMEOUT, "foo"));
-      const promise2 = queue.addRequestToQueue("test", id2, () => delay(TIMEOUT, "bar"));
+      const promise1 = queue.addRequest("test", id1, () => delay(TIMEOUT, "foo"));
+      const promise2 = queue.addRequest("test", id2, () => delay(TIMEOUT, "bar"));
       expect(queue.hasRequest("test")).to.be.true;
       expect(promise1).to.not.equal(promise2);
 
@@ -85,8 +85,8 @@ describe("SubscribableRequestQueue", () => {
       const queue = new SubscribableRequestQueue();
       const id = queue.addSubscriber();
 
-      const promise1 = queue.addRequestToQueue("test1", id, () => delay(TIMEOUT, "foo"));
-      const promise2 = queue.addRequestToQueue("test2", id, () => delay(TIMEOUT, "bar"));
+      const promise1 = queue.addRequest("test1", id, () => delay(TIMEOUT, "foo"));
+      const promise2 = queue.addRequest("test2", id, () => delay(TIMEOUT, "bar"));
       expect(queue.hasRequest("test1")).to.be.true;
       expect(queue.hasRequest("test2")).to.be.true;
       expect(promise1).to.not.equal(promise2);
@@ -100,8 +100,8 @@ describe("SubscribableRequestQueue", () => {
       const queue = new SubscribableRequestQueue();
       const id = queue.addSubscriber();
 
-      const promise1 = queue.addRequestToQueue("test", id, () => delay(TIMEOUT, "foo"));
-      const promise2 = queue.addRequestToQueue("test", id, () => delay(TIMEOUT, "bar"));
+      const promise1 = queue.addRequest("test", id, () => delay(TIMEOUT, "foo"));
+      const promise2 = queue.addRequest("test", id, () => delay(TIMEOUT, "bar"));
       expect(queue.hasRequest("test")).to.be.true;
       expect(await isRejected(promise1)).to.be.true;
 
@@ -114,8 +114,8 @@ describe("SubscribableRequestQueue", () => {
       const id1 = queue.addSubscriber();
       const id2 = queue.addSubscriber();
 
-      const promise1 = queue.addRequestToQueue("test", id1, () => delayReject(TIMEOUT, "foo"));
-      const promise2 = queue.addRequestToQueue("test", id2, () => delay(TIMEOUT, "bar"));
+      const promise1 = queue.addRequest("test", id1, () => delayReject(TIMEOUT, "foo"));
+      const promise2 = queue.addRequest("test", id2, () => delay(TIMEOUT, "bar"));
       expect(queue.hasRequest("test")).to.be.true;
       let promise1RejectReason = "",
         promise2RejectReason = "";
@@ -131,8 +131,8 @@ describe("SubscribableRequestQueue", () => {
       const queue = new SubscribableRequestQueue(1);
       const id = queue.addSubscriber();
 
-      const promise1 = queue.addRequestToQueue("test1", id, () => delay(TIMEOUT, "foo"));
-      const promise2 = queue.addRequestToQueue("test2", id, () => delay(LONG_TIMEOUT, "bar"));
+      const promise1 = queue.addRequest("test1", id, () => delay(TIMEOUT, "foo"));
+      const promise2 = queue.addRequest("test2", id, () => delay(LONG_TIMEOUT, "bar"));
       expect(queue.hasRequest("test1")).to.be.true;
       expect(queue.hasRequest("test2")).to.be.true;
       expect(queue.requestRunning("test1")).to.be.true;
@@ -154,7 +154,7 @@ describe("SubscribableRequestQueue", () => {
     it("cancels a request subscription", async () => {
       const queue = new SubscribableRequestQueue();
       const id = queue.addSubscriber();
-      const promise = queue.addRequestToQueue("test", id, () => delay(TIMEOUT, "foo"));
+      const promise = queue.addRequest("test", id, () => delay(TIMEOUT, "foo"));
       expect(queue.hasRequest("test")).to.be.true;
       expect(queue.isSubscribed(id, "test")).to.be.true;
 
@@ -168,7 +168,7 @@ describe("SubscribableRequestQueue", () => {
       const id1 = queue.addSubscriber();
       const id2 = queue.addSubscriber();
 
-      const promise1 = queue.addRequestToQueue("test", id1, () => delay(TIMEOUT, "foo"));
+      const promise1 = queue.addRequest("test", id1, () => delay(TIMEOUT, "foo"));
       expect(queue.hasRequest("test")).to.be.true;
       expect(queue.requestRunning("test")).to.be.true;
       expect(queue.isSubscribed(id1, "test")).to.be.true;
@@ -179,7 +179,7 @@ describe("SubscribableRequestQueue", () => {
       expect(queue.isSubscribed(id1, "test")).to.be.false;
       expect(await isRejected(promise1)).to.be.true;
 
-      const promise2 = queue.addRequestToQueue("test", id2, () => delay(TIMEOUT, "bar"));
+      const promise2 = queue.addRequest("test", id2, () => delay(TIMEOUT, "bar"));
       expect(queue.isSubscribed(id2, "test")).to.be.true;
       const result = await promise2;
       expect(result).to.equal("foo");
@@ -190,10 +190,10 @@ describe("SubscribableRequestQueue", () => {
       const id1 = queue.addSubscriber();
       const id2 = queue.addSubscriber();
       // `block` keeps the queue full, to keep `test` from running
-      const block = queue.addRequestToQueue("block", id1, () => delay(TIMEOUT, undefined));
+      const block = queue.addRequest("block", id1, () => delay(TIMEOUT, undefined));
 
-      const promise1 = queue.addRequestToQueue("test", id1, () => delay(LONG_TIMEOUT, "foo"));
-      const promise2 = queue.addRequestToQueue("test", id2, () => delay(LONG_TIMEOUT, "bar"));
+      const promise1 = queue.addRequest("test", id1, () => delay(LONG_TIMEOUT, "foo"));
+      const promise2 = queue.addRequest("test", id2, () => delay(LONG_TIMEOUT, "bar"));
       expect(queue.hasRequest("test")).to.be.true;
       expect(queue.requestRunning("test")).to.be.false;
       expect(queue.isSubscribed(id1, "test")).to.be.true;
@@ -215,9 +215,9 @@ describe("SubscribableRequestQueue", () => {
       const queue = new SubscribableRequestQueue(1);
       const id = queue.addSubscriber();
       // `block` keeps the queue full, to keep `test` from running
-      queue.addRequestToQueue("block", id, () => delay(TIMEOUT, undefined));
+      queue.addRequest("block", id, () => delay(TIMEOUT, undefined));
 
-      const promise = queue.addRequestToQueue("test", id, () => delay(LONG_TIMEOUT, "foo"));
+      const promise = queue.addRequest("test", id, () => delay(LONG_TIMEOUT, "foo"));
       expect(queue.hasRequest("test")).to.be.true;
       expect(queue.requestRunning("test")).to.be.false;
       expect(queue.isSubscribed(id, "test")).to.be.true;
@@ -243,9 +243,9 @@ describe("SubscribableRequestQueue", () => {
       const id1 = queue.addSubscriber();
       const id2 = queue.addSubscriber();
 
-      const promise1 = queue.addRequestToQueue("test", id1, () => delay(TIMEOUT, "foo"));
-      const promise2 = queue.addRequestToQueue("test2", id1, () => delay(TIMEOUT, "bar"));
-      const promise3 = queue.addRequestToQueue("test", id2, () => delay(TIMEOUT, "foo"));
+      const promise1 = queue.addRequest("test", id1, () => delay(TIMEOUT, "foo"));
+      const promise2 = queue.addRequest("test2", id1, () => delay(TIMEOUT, "bar"));
+      const promise3 = queue.addRequest("test", id2, () => delay(TIMEOUT, "foo"));
       expect(queue.hasRequest("test")).to.be.true;
       expect(queue.isSubscribed(id1, "test")).to.be.true;
       expect(queue.isSubscribed(id2, "test")).to.be.true;

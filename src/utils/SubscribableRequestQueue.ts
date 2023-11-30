@@ -68,12 +68,7 @@ export default class SubscribableRequestQueue {
    *
    * If `subscriberId` is already subscribed to the request, this rejects the existing promise and returns a new one.
    */
-  addRequestToQueue<T>(
-    key: string,
-    subscriberId: number,
-    requestAction: () => Promise<T>,
-    delayMs?: number
-  ): Promise<T> {
+  addRequest<T>(key: string, subscriberId: number, requestAction: () => Promise<T>, delayMs?: number): Promise<T> {
     // Create single underlying request if it does not yet exist
     if (!this.queue.hasRequest(key)) {
       this.queue
