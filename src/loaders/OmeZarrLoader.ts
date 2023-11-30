@@ -218,32 +218,19 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint
 type NumericZarrArray = zarr.Array<zarr.NumberDataType>;
 
 class OMEZarrLoader implements IVolumeLoader {
-  scaleLevels: NumericZarrArray[];
-  multiscaleMetadata: OMEMultiscale;
-  omeroMetadata: OmeroTransitionalMetadata;
-  axesTCZYX: [number, number, number, number, number];
-
-  // TODO: should we be able to share `RequestQueue`s between loaders?
-  // TODO: store sets of requests per volume via some unique key
-  requestQueue: RequestQueue;
-
   // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
   //   This may cause errors or incorrect results otherwise!
-  maxExtent?: Box3;
+  private maxExtent?: Box3;
 
   private constructor(
-    scaleLevels: NumericZarrArray[],
-    multiscaleMetadata: OMEMultiscale,
-    omeroMetadata: OmeroTransitionalMetadata,
-    axisTCZYX: [number, number, number, number, number],
-    requestQueue: RequestQueue
-  ) {
-    this.scaleLevels = scaleLevels;
-    this.multiscaleMetadata = multiscaleMetadata;
-    this.omeroMetadata = omeroMetadata;
-    this.axesTCZYX = axisTCZYX;
-    this.requestQueue = requestQueue;
-  }
+    private store: WrappedStore<RequestInit>,
+    private scaleLevels: NumericZarrArray[],
+    private multiscaleMetadata: OMEMultiscale,
+    private omeroMetadata: OmeroTransitionalMetadata,
+    private axesTCZYX: [number, number, number, number, number],
+    // TODO: should we be able to share `RequestQueue`s between loaders?
+    private requestQueue: RequestQueue
+  ) {}
 
   static async createLoader(
     url: string,
@@ -270,7 +257,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const scaleLevels = await Promise.all(scaleLevelPromises);
     const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
 
-    return new OMEZarrLoader(scaleLevels as NumericZarrArray[], multiscale, metadata.omero, axisTCZYX, queue);
+    return new OMEZarrLoader(store, scaleLevels as NumericZarrArray[], multiscale, metadata.omero, axisTCZYX, queue);
   }
 
   private getUnitSymbols(): [string, string] {
@@ -317,6 +304,23 @@ class OMEZarrLoader implements IVolumeLoader {
   private getLevelShapesZYX(): [number, number, number][] {
     const [z, y, x] = this.axesTCZYX.slice(-3);
     return this.scaleLevels.map(({ shape }) => [z === -1 ? 1 : shape[z], shape[y], shape[x]]);
+  }
+
+  /** Reorder an array of values [T, C, Z, Y, X] to the actual order of those dimensions in the zarr */
+  private orderByDimension<T>(valsTCZYX: T[]): T[] {
+    const specLen = getDimensionCount(this.axesTCZYX);
+    const result: T[] = Array(specLen);
+
+    this.axesTCZYX.forEach((val, idx) => {
+      if (val > -1) {
+        if (val > specLen) {
+          throw new Error("Unexpected axis index");
+        }
+        result[val] = valsTCZYX[idx];
+      }
+    });
+
+    return result;
   }
 
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
@@ -466,17 +470,7 @@ class OMEZarrLoader implements IVolumeLoader {
       // Build slice spec
       const { min, max } = regionPx;
       const unorderedSpec = [vol.loadSpec.time, ch, slice(min.z, max.z), slice(min.y, max.y), slice(min.x, max.x)];
-      const specLen = getDimensionCount(this.axesTCZYX);
-      const sliceSpec: (number | Slice)[] = Array(specLen);
-
-      this.axesTCZYX.forEach((val, idx) => {
-        if (val > -1) {
-          if (val > specLen) {
-            throw new Error("Unexpected axis index");
-          }
-          sliceSpec[val] = unorderedSpec[idx];
-        }
-      });
+      const sliceSpec = this.orderByDimension(unorderedSpec);
 
       try {
         const result = await zarrGet(level, sliceSpec);
