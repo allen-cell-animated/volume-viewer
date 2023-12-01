@@ -41,6 +41,16 @@ describe("SubscribableRequestQueue", () => {
       const id2 = queue.addSubscriber();
       expect(id1).to.not.equal(id2);
     });
+
+    it("never reuses ids of removed subscribers", () => {
+      const queue = new SubscribableRequestQueue();
+      const id1 = queue.addSubscriber();
+      const id2 = queue.addSubscriber();
+      queue.removeSubscriber(id1);
+      const id3 = queue.addSubscriber();
+      expect(id1).to.not.equal(id2);
+      expect(id3).to.not.equal(id2);
+    });
   });
 
   describe("addRequestToQueue", () => {
