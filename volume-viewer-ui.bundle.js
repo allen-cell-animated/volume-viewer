@@ -7292,6 +7292,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
         lut: new Uint8Array[_Histogram__WEBPACK_IMPORTED_MODULE_6__.LUT_ARRAY_LENGTH](),
         rgbColor: [this.channelColors[newChannelIndex][0], this.channelColors[newChannelIndex][1], this.channelColors[newChannelIndex][2]]
       };
+      this.settings.diffuse[newChannelIndex] = [this.channelColors[newChannelIndex][0], this.channelColors[newChannelIndex][1], this.channelColors[newChannelIndex][2]];
       this.settings.specular[newChannelIndex] = [0, 0, 0];
       this.settings.emissive[newChannelIndex] = [0, 0, 0];
       this.settings.glossiness[newChannelIndex] = 0;
@@ -7337,6 +7338,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
         return;
       }
       this.channelColors[channelIndex] = colorrgb;
+      this.settings.diffuse[channelIndex] = colorrgb;
       // if volume channel is zero'ed out, then don't update it until it is switched on again.
       if (this.fusion[channelIndex].rgbColor !== 0) {
         this.fusion[channelIndex].rgbColor = colorrgb;
