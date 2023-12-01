@@ -17,16 +17,19 @@ type RequestSubscription = {
 export default class SubscribableRequestQueue {
   private queue: RequestQueue;
 
-  /** Number of subscribers, used for generating unique subscriber IDs. */
-  private numSubscribers: number;
-  /** Map keyed by subscriber ID. Subscribers are only useful for cancelling early, so we only store rejecters here. */
+  /** The next unused subscriber ID. Increments whenever a subscriber is added. */
+  private nextSubscriberId: number;
+  /**
+   * Map of subscribers keyed by ID. Subscribers store a map to all their subscriptions by request key.
+   * Subscribers are only useful as handles to cancel subscriptions early, so we only need to store rejecters here.
+   */
   private subscribers: Map<number, Map<string, Rejecter>>;
   /** Map from "inner" request (managed by `queue`) to "outer" promises generated per-subscriber. */
   private requests: Map<string, RequestSubscription[]>;
 
   constructor(maxActiveRequests?: number) {
     this.queue = new RequestQueue(maxActiveRequests);
-    this.numSubscribers = 0;
+    this.nextSubscriberId = 0;
     this.subscribers = new Map();
     this.requests = new Map();
   }
@@ -57,8 +60,8 @@ export default class SubscribableRequestQueue {
 
   /** Adds a new request subscriber. Returns a unique ID to identify this subscriber. */
   addSubscriber(): number {
-    const subscriberId = this.numSubscribers;
-    this.numSubscribers++;
+    const subscriberId = this.nextSubscriberId;
+    this.nextSubscriberId++;
     this.subscribers.set(subscriberId, new Map());
     return subscriberId;
   }
@@ -86,7 +89,7 @@ export default class SubscribableRequestQueue {
     }
 
     // Validate subscriber
-    if (subscriberId >= this.numSubscribers || subscriberId < 0) {
+    if (subscriberId >= this.nextSubscriberId || subscriberId < 0) {
       throw new Error(`SubscribableRequestQueue: subscriber id ${subscriberId} has not been registered`);
     }
     const subscriber = this.subscribers.get(subscriberId);
