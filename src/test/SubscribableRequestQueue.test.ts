@@ -168,9 +168,11 @@ describe("SubscribableRequestQueue", () => {
       expect(queue.hasRequest("test")).to.be.true;
       expect(queue.isSubscribed(id, "test")).to.be.true;
 
-      queue.cancelRequest("test", id);
+      const cancelResult = queue.cancelRequest("test", id);
+      expect(cancelResult).to.be.true;
       expect(queue.isSubscribed(id, "test")).to.be.false;
       expect(await isRejected(promise)).to.be.true;
+      expect(queue.cancelRequest("test", id)).to.be.false;
     });
 
     it("does not cancel an underlying request if it is running", async () => {

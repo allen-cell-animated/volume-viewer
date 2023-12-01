@@ -136,13 +136,20 @@ export default class SubscribableRequestQueue {
   }
 
   /** Cancels a request subscription, and cancels the underlying request if it is no longer subscribed or running. */
-  cancelRequest(key: string, subscriberId: number, cancelReason?: unknown): void {
+  cancelRequest(key: string, subscriberId: number, cancelReason?: unknown): boolean {
     const subscriber = this.subscribers.get(subscriberId);
-    const reject = subscriber?.get(key);
-    if (reject) {
-      this.rejectSubscription(key, reject, cancelReason);
+    if (!subscriber) {
+      return false;
     }
-    subscriber?.delete(key);
+
+    const reject = subscriber.get(key);
+    if (!reject) {
+      return false;
+    }
+
+    this.rejectSubscription(key, reject, cancelReason);
+    subscriber.delete(key);
+    return true;
   }
 
   /** Removes a subscriber and cancels its remaining subscriptions. */
