@@ -1,7 +1,7 @@
 import { Box3, Vector3 } from "three";
 
 import * as zarr from "@zarrita/core";
-import { get as zarrGet, slice } from "@zarrita/indexing";
+import { get as zarrGet, slice, Slice } from "@zarrita/indexing";
 import { AbsolutePath, AsyncReadable, Readable } from "@zarrita/storage";
 // Importing `FetchStore` from its home subpackage (@zarrita/storage) causes errors.
 // Getting it from the top-level package means we don't get its type. This is also a bug, but it's more acceptable.
@@ -22,9 +22,10 @@ import {
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
+type TCZYX<T> = [T, T, T, T, T];
 type SubscriberId = ReturnType<SubscribableRequestQueue["addSubscriber"]>;
 
-type CoordinateTransformation =
+type OMECoordinateTransformation =
   | {
       type: "identity";
     }
@@ -41,7 +42,7 @@ type CoordinateTransformation =
       path: string;
     };
 
-type Axis = {
+type OMEAxis = {
   name: string;
   type?: string;
   unit?: string;
@@ -49,16 +50,16 @@ type Axis = {
 
 type OMEDataset = {
   path: string;
-  coordinateTransformations?: CoordinateTransformation[];
+  coordinateTransformations?: OMECoordinateTransformation[];
 };
 
 // https://ngff.openmicroscopy.org/latest/#multiscale-md
 type OMEMultiscale = {
   version?: string;
   name?: string;
-  axes: Axis[];
+  axes: OMEAxis[];
   datasets: OMEDataset[];
-  coordinateTransformations?: CoordinateTransformation[];
+  coordinateTransformations?: OMECoordinateTransformation[];
   type?: string;
   metadata?: Record<string, unknown>;
 };
@@ -90,8 +91,7 @@ type OMEZarrMetadata = {
 };
 
 /** Turns `axisTCZYX` into the number of dimensions in the array */
-const getDimensionCount = ([t, c, z]: [number, number, number, number, number]) =>
-  2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
+const getDimensionCount = ([t, c, z]: TCZYX<number>) => 2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
 
 type WrappedStoreOpts<Opts> = {
   options?: Opts;
@@ -150,8 +150,8 @@ class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements A
   }
 }
 
-function remapAxesToTCZYX(axes: Axis[]): [number, number, number, number, number] {
-  const axisTCZYX: [number, number, number, number, number] = [-1, -1, -1, -1, -1];
+function remapAxesToTCZYX(axes: OMEAxis[]): TCZYX<number> {
+  const axisTCZYX: TCZYX<number> = [-1, -1, -1, -1, -1];
   const axisNames = ["t", "c", "z", "y", "x"];
 
   axes.forEach((axis, idx) => {
@@ -232,7 +232,7 @@ class OMEZarrLoader implements IVolumeLoader {
     private scaleLevels: NumericZarrArray[],
     private multiscaleMetadata: OMEMultiscale,
     private omeroMetadata: OmeroTransitionalMetadata,
-    private axesTCZYX: [number, number, number, number, number],
+    private axesTCZYX: TCZYX<number>,
     // TODO: should we be able to share `RequestQueue`s between loaders?
     private requestQueue: SubscribableRequestQueue
   ) {
@@ -282,7 +282,7 @@ class OMEZarrLoader implements IVolumeLoader {
     return [spaceUnitSymbol, timeUnitSymbol];
   }
 
-  private getScale(level = 0): number[] {
+  private getScale(level = 0): TCZYX<number> {
     const meta = this.multiscaleMetadata;
     const transforms = meta.datasets[level].coordinateTransformations ?? meta.coordinateTransformations;
 
@@ -292,7 +292,7 @@ class OMEZarrLoader implements IVolumeLoader {
     }
 
     // this assumes we'll never encounter the "path" variant
-    const isScaleTransform = (t: CoordinateTransformation): t is { type: "scale"; scale: number[] } =>
+    const isScaleTransform = (t: OMECoordinateTransformation): t is { type: "scale"; scale: number[] } =>
       t.type === "scale";
 
     // there can be any number of coordinateTransformations
@@ -307,7 +307,7 @@ class OMEZarrLoader implements IVolumeLoader {
     while (scale.length < 5) {
       scale.unshift(1);
     }
-    return scale;
+    return scale as TCZYX<number>;
   }
 
   private getLevelShapesZYX(): [number, number, number][] {
@@ -316,7 +316,7 @@ class OMEZarrLoader implements IVolumeLoader {
   }
 
   /** Reorder an array of values [T, C, Z, Y, X] to the actual order of those dimensions in the zarr */
-  private orderByDimension<T>(valsTCZYX: T[]): T[] {
+  private orderByDimension<T>(valsTCZYX: TCZYX<T>): T[] {
     const specLen = getDimensionCount(this.axesTCZYX);
     const result: T[] = Array(specLen);
 
@@ -332,9 +332,9 @@ class OMEZarrLoader implements IVolumeLoader {
     return result;
   }
 
-  /** Reorder an array of values in dimension order to [T, C, Z, Y, X] */
-  private orderByTCZYX<T>(valsDimension: T[], defaultValue: T): [T, T, T, T, T] {
-    const result: [T, T, T, T, T] = [defaultValue, defaultValue, defaultValue, defaultValue, defaultValue];
+  /** Reorder an array of values in this zarr's dimension order to [T, C, Z, Y, X] */
+  private orderByTCZYX<T>(valsDimension: T[], defaultValue: T): TCZYX<T> {
+    const result: TCZYX<T> = [defaultValue, defaultValue, defaultValue, defaultValue, defaultValue];
 
     this.axesTCZYX.forEach((val, idx) => {
       if (val > -1) {
@@ -490,7 +490,7 @@ class OMEZarrLoader implements IVolumeLoader {
       // Build slice spec
       const { min, max } = regionPx;
       const unorderedSpec = [vol.loadSpec.time, ch, slice(min.z, max.z), slice(min.y, max.y), slice(min.x, max.x)];
-      const sliceSpec = this.orderByDimension(unorderedSpec);
+      const sliceSpec = this.orderByDimension(unorderedSpec as TCZYX<number | Slice>);
 
       try {
         const result = await zarrGet(level, sliceSpec, { opts: { subscriber } });
