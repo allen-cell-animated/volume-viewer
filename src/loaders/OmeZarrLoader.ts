@@ -98,6 +98,7 @@ const getDimensionCount = ([t, c, z]: TCZYX<number>) => 2 + Number(t > -1) + Num
 type WrappedStoreOpts<Opts> = {
   options?: Opts;
   subscriber: SubscriberId;
+  reportKey?: (key: string, subscriber: SubscriberId) => void;
   isPrefetch?: boolean;
 };
 
@@ -131,6 +132,9 @@ class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements A
     }
     if (opts?.isPrefetch) {
       console.log("prefetch: ", key);
+    }
+    if (opts?.reportKey) {
+      opts.reportKey(key, opts.subscriber);
     }
 
     let keyPrefix = (this.baseStore as FetchStore).url ?? "";
@@ -271,7 +275,6 @@ class OMEZarrLoader implements IVolumeLoader {
     // Open all scale levels of multiscale
     const scaleLevelPromises = multiscale.datasets.map(({ path }) => zarr.open(root.resolve(path), { kind: "array" }));
     const scaleLevels = await Promise.all(scaleLevelPromises);
-    scaleLevels.forEach((level, i) => console.log(i, level.shape, level.chunks));
     const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
 
     return new OMEZarrLoader(scaleLevels as NumericZarrArray[], multiscale, metadata.omero, axisTCZYX, queue);
@@ -559,6 +562,13 @@ class OMEZarrLoader implements IVolumeLoader {
     const { numChannels } = vol.imageInfo;
     const channelIndexes = vol.loadSpec.channels ?? Array.from({ length: numChannels }, (_, i) => i);
 
+    const keys: string[] = [];
+    const reportKey = (key: string, sub: SubscriberId) => {
+      if (sub === subscriber) {
+        keys.push(key);
+      }
+    };
+
     const channelPromises = channelIndexes.map(async (ch) => {
       // Build slice spec
       const { min, max } = regionPx;
@@ -566,7 +576,7 @@ class OMEZarrLoader implements IVolumeLoader {
       const sliceSpec = this.orderByDimension(unorderedSpec as TCZYX<number | Slice>);
 
       try {
-        const result = await zarrGet(level, sliceSpec, { opts: { subscriber } });
+        const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } });
         const u8 = convertChannel(result.data);
         vol.setChannelDataFromVolume(ch, u8);
         onChannelLoaded?.(vol, ch);
@@ -577,6 +587,9 @@ class OMEZarrLoader implements IVolumeLoader {
         }
       }
     });
+
+    console.log(keys);
+    this.beginPrefetch(keys, level);
 
     await Promise.all(channelPromises);
     this.requestQueue.removeSubscriber(subscriber);
