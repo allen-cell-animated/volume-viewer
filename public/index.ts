@@ -80,7 +80,7 @@ const TEST_DATA: Record<string, TestDataSpec> = {
     type: VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/HAMILTONIAN_TERM_FOV_VSAHJUP_0000_000192.ome.tif",
   },
-  procedural: { type: "procedural", url: "" },
+  procedural: { type: VolumeFileFormat.DATA, url: "" },
 };
 
 let view3D: View3d;
@@ -1029,7 +1029,7 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
     for (let t = 0; t <= times; t++) {
       path.push(data.url.replace("%%", t.toString()));
     }
-  } else if (data.type === "procedural") {
+  } else if (data.type === VolumeFileFormat.DATA) {
     const volumeInfo = createTestVolume();
     options.fileType = VolumeFileFormat.DATA;
     options.imageData = volumeInfo.volumeData;
