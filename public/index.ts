@@ -3,6 +3,7 @@ import { Vector2, Vector3 } from "three";
 import * as dat from "dat.gui";
 
 import {
+  CreateLoaderOptions,
   ImageInfo,
   IVolumeLoader,
   LoadSpec,
@@ -23,6 +24,7 @@ import {
 import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
 import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
+import { RawArrayData } from "../src/loaders/RawArrayLoader";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const PLAYBACK_INTERVAL = 80;
@@ -967,29 +969,46 @@ function goToZSlice(slice: number): boolean {
   // update UI if successful
 }
 
+function concatenateArrays(arrays: Uint8Array[]): Uint8Array {
+  const totalLength = arrays.reduce((acc, arr) => acc + arr.length, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const arr of arrays) {
+    result.set(arr, offset);
+    offset += arr.length;
+  }
+  return result;
+}
+
 function createTestVolume() {
+  const sizeX = 64;
+  const sizeY = 64;
+  const sizeZ = 64;
   const imgData: ImageInfo = {
     name: "AICS-10_5_5",
-
-    originalSize: new Vector3(64, 64, 64),
-    atlasTileDims: new Vector2(8, 8),
-    volumeSize: new Vector3(64, 64, 64),
-    subregionSize: new Vector3(64, 64, 64),
-    subregionOffset: new Vector3(0, 0, 0),
+    sizeX: 64,
+    sizeY: 64,
+    sizeZ: 64,
+    sizeC: 3,
+    // originalSize: new Vector3(sizeX, sizeY, sizeZ),
+    // atlasTileDims: new Vector2(8, 8),
+    // volumeSize: new Vector3(sizeX, sizeY, sizeZ),
+    // subregionSize: new Vector3(sizeX, sizeY, sizeZ),
+    // subregionOffset: new Vector3(0, 0, 0),
     physicalPixelSize: new Vector3(1, 1, 1),
     spatialUnit: "",
 
-    numChannels: 3,
+    //numChannels: 3,
     channelNames: ["DRAQ5", "EGFP", "SEG_Memb"],
 
-    times: 1,
-    timeScale: 1,
-    timeUnit: "",
+    // times: 1,
+    // timeScale: 1,
+    // timeUnit: "",
 
-    numMultiscaleLevels: 1,
-    multiscaleLevel: 0,
+    // numMultiscaleLevels: 1,
+    // multiscaleLevel: 0,
 
-    transform: { translation: new Vector3(0, 0, 0), rotation: new Vector3(0, 0, 0) },
+    // transform: { translation: new Vector3(0, 0, 0), rotation: new Vector3(0, 0, 0) },
   };
 
   // generate some raw volume data
@@ -998,9 +1017,17 @@ function createTestVolume() {
     VolumeMaker.createTorus(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 8),
     VolumeMaker.createCone(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 24),
   ];
+  const alldata = concatenateArrays(channelVolumes);
   return {
     imgData: imgData,
-    volumeData: channelVolumes,
+    volumeData: {
+      // expected to be "uint8" always
+      dtype: "uint8",
+      // [c,z,y,x]
+      shape: [channelVolumes.length, imgData.subregionSize.z, imgData.subregionSize.y, imgData.subregionSize.x],
+      // the bits (assumed uint8!!)
+      buffer: new DataView(alldata.buffer),
+    } as RawArrayData,
   };
 }
 
@@ -1009,6 +1036,8 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
     return new OpenCellLoader();
   }
 
+  const options: CreateLoaderOptions = { cache: volumeCache };
+
   let path: string | string[] = data.url;
   if (data.type === VolumeFileFormat.JSON) {
     path = [];
@@ -1016,9 +1045,14 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
     for (let t = 0; t <= times; t++) {
       path.push(data.url.replace("%%", t.toString()));
     }
+  } else if (data.type === "procedural") {
+    const volumeInfo = createTestVolume();
+    options.fileType = VolumeFileFormat.DATA;
+    options.imageData = volumeInfo.volumeData;
+    options.imageDataInfo = volumeInfo.imgData;
   }
 
-  return await createVolumeLoader(path, { cache: volumeCache });
+  return await createVolumeLoader(path, options);
 }
 
 async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<void> {
@@ -1031,11 +1065,11 @@ async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<vo
 }
 
 async function loadTestData(testdata: TestDataSpec) {
-  if (testdata.type === "procedural") {
-    const volumeInfo = createTestVolume();
-    loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
-    return;
-  }
+  // if (testdata.type === "procedural") {
+  //   const volumeInfo = createTestVolume();
+  //   loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
+  //   return;
+  // }
 
   myState.loader = await createLoader(testdata);
 
