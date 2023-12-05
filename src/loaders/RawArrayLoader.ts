@@ -5,6 +5,9 @@ import { buildDefaultMetadata, computePackedAtlasDims } from "./VolumeLoaderUtil
 import Volume, { ImageInfo } from "../Volume";
 import VolumeCache from "../VolumeCache";
 
+// this is the form in which a 4D numpy array arrives as converted
+// by jupyterlab into a js object.
+// This loader does not yet support multiple time samples.
 export type RawArrayData = {
   // expected to be "uint8" always
   dtype: "uint8";
@@ -14,6 +17,7 @@ export type RawArrayData = {
   buffer: DataView;
 };
 
+// minimal metadata for visualization
 export type RawArrayInfo = {
   name: string;
   sizeX: number;
@@ -29,6 +33,8 @@ export type RawArrayInfo = {
 const convertImageInfo = (json: RawArrayInfo): ImageInfo => ({
   name: json.name,
 
+  // assumption: the data is already sized to fit in our viewer's preferred
+  // memory footprint (a tiled atlas texture as of this writing)
   originalSize: new Vector3(json.sizeX, json.sizeY, json.sizeZ),
   atlasTileDims: computePackedAtlasDims(json.sizeZ, json.sizeX, json.sizeY),
   volumeSize: new Vector3(json.sizeX, json.sizeY, json.sizeZ),
