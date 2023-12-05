@@ -1,7 +1,7 @@
 import { Box3, Vector2, Vector3 } from "three";
 
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
-import { buildDefaultMetadata } from "./VolumeLoaderUtils";
+import { buildDefaultMetadata, computePackedAtlasDims } from "./VolumeLoaderUtils";
 import Volume, { ImageInfo } from "../Volume";
 import VolumeCache from "../VolumeCache";
 
@@ -16,78 +16,57 @@ export type RawArrayData = {
 
 export type RawArrayInfo = {
   name: string;
-  version?: string;
+  sizeX: number;
+  sizeY: number;
+  sizeZ: number;
+  sizeC: number;
+  // originalSize: new Vector3(sizeX, sizeY, sizeZ),
+  // atlasTileDims: new Vector2(8, 8),
+  // volumeSize: new Vector3(sizeX, sizeY, sizeZ),
+  // subregionSize: new Vector3(sizeX, sizeY, sizeZ),
+  // subregionOffset: new Vector3(0, 0, 0),
+  physicalPixelSize: [number, number, number];
+  spatialUnit: string;
 
-  /** X size of the *original* (not downsampled) volume, in pixels */
-  width: number;
-  /** Y size of the *original* (not downsampled) volume, in pixels */
-  height: number;
-  /** Number of rows of z-slice tiles (not pixels) in the texture atlas */
-  rows: number;
-  /** Number of columns of z-slice tiles (not pixels) in the texture atlas */
-  cols: number;
-  /** Width of a single atlas tile in pixels */
-  tileWidth: number;
-  /** Height of a single atlas tile in pixels */
-  tileHeight: number;
-  /** Width of the texture atlas in pixels; equivalent to `tile_width * cols` */
-  atlasWidth: number;
-  /** Height of the texture atlas in pixels; equivalent to `tile_height * rows` */
-  atlasHeight: number;
-  /** Number of tiles in the texture atlas (or number of z-slices in the volume segment) */
-  tiles: number;
-  /** Physical x size of a single *original* (not downsampled) pixel */
-  pixelSizeX: number;
-  /** Physical y size of a single *original* (not downsampled) pixel */
-  pixelSizeY: number;
-  /** Physical z size of a single pixel */
-  pixelSizeZ: number;
-  /** Symbol of physical unit used by `pixel_size_(x|y|z)` fields */
-  pixelSizeUnit?: string;
-
-  channels: number;
+  //numChannels: 3,
   channelNames: string[];
-  channelColors?: [number, number, number][];
 
-  times?: number;
-  timeScale?: number;
-  timeUnit?: string;
+  // times: 1,
+  // timeScale: 1,
+  // timeUnit: "",
 
-  // TODO should be optional?
-  transform: {
-    translation: [number, number, number];
-    rotation: [number, number, number];
-  };
+  // numMultiscaleLevels: 1,
+  // multiscaleLevel: 0,
+
+  // transform: { translation: new Vector3(0, 0, 0), rotation: new Vector3(0, 0, 0) },
   userData?: Record<string, unknown>;
 };
 
 const convertImageInfo = (json: RawArrayInfo): ImageInfo => ({
   name: json.name,
 
-  originalSize: new Vector3(json.width, json.height, json.tiles),
-  atlasTileDims: new Vector2(json.cols, json.rows),
-  volumeSize: new Vector3(json.tileWidth, json.tileHeight, json.tiles),
-  subregionSize: new Vector3(json.tileWidth, json.tileHeight, json.tiles),
+  originalSize: new Vector3(json.sizeX, json.sizeY, json.sizeZ),
+  atlasTileDims: computePackedAtlasDims(json.sizeZ, json.sizeX, json.sizeY),
+  volumeSize: new Vector3(json.sizeX, json.sizeY, json.sizeZ),
+  subregionSize: new Vector3(json.sizeX, json.sizeY, json.sizeZ),
   subregionOffset: new Vector3(0, 0, 0),
-  physicalPixelSize: new Vector3(json.pixelSizeX, json.pixelSizeY, json.pixelSizeZ),
-  spatialUnit: json.pixelSizeUnit || "μm",
+  physicalPixelSize: new Vector3(json.physicalPixelSize[0], json.physicalPixelSize[1], json.physicalPixelSize[2]),
+  spatialUnit: json.spatialUnit || "μm",
 
-  numChannels: json.channels,
+  numChannels: json.sizeC,
   channelNames: json.channelNames,
-  channelColors: json.channelColors,
+  channelColors: undefined,//json.channelColors,
 
-  times: json.times || 1,
-  timeScale: json.timeScale || 1,
-  timeUnit: json.timeUnit || "s",
+  times: 1,
+  timeScale: 1,
+  timeUnit: "s",
 
   numMultiscaleLevels: 1,
   multiscaleLevel: 0,
 
   transform: {
-    translation: json.transform?.translation
-      ? new Vector3().fromArray(json.transform.translation)
-      : new Vector3(0, 0, 0),
-    rotation: json.transform?.rotation ? new Vector3().fromArray(json.transform.rotation) : new Vector3(0, 0, 0),
+    translation: new Vector3(0, 0, 0),
+    rotation: new Vector3(0, 0, 0),
   },
 
   userData: json.userData,
@@ -100,25 +79,8 @@ class RawArrayLoader implements IVolumeLoader {
 
   cache?: VolumeCache;
 
-  constructor(rawData?: RawArrayData, rawDataInfo?: RawArrayInfo, cache?: VolumeCache) {
-    this.jsonInfo = rawDataInfo || {
-      name: "rawarray",
-      width: 0,
-      height: 0,
-      rows: 0,
-      cols: 0,
-      tileWidth: 0,
-      tileHeight: 0,
-      atlasWidth: 0,
-      atlasHeight: 0,
-      tiles: 0,
-      pixelSizeX: 0,
-      pixelSizeY: 0,
-      pixelSizeZ: 0,
-      channels: 0,
-      channelNames: [],
-      transform: { translation: [0, 0, 0], rotation: [0, 0, 0] },
-    };
+  constructor(rawData: RawArrayData, rawDataInfo: RawArrayInfo, cache?: VolumeCache) {
+    this.jsonInfo = rawDataInfo;
     this.data = rawData || { dtype: "uint8", shape: [0, 0, 0, 0], buffer: new DataView(new ArrayBuffer(0)) };
     this.cache = cache;
   }
@@ -127,9 +89,9 @@ class RawArrayLoader implements IVolumeLoader {
     const jsonInfo = this.jsonInfo;
 
     const d = new VolumeDims();
-    d.shape = [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tileHeight, jsonInfo.tileWidth];
-    d.spacing = [1, 1, jsonInfo.pixelSizeZ, jsonInfo.pixelSizeY, jsonInfo.pixelSizeX];
-    d.spaceUnit = jsonInfo.pixelSizeUnit || "μm";
+    d.shape = [1, jsonInfo.sizeC, jsonInfo.sizeZ, jsonInfo.sizeY, jsonInfo.sizeX];
+    d.spacing = [1, 1, jsonInfo.physicalPixelSize[2], jsonInfo.physicalPixelSize[1], jsonInfo.physicalPixelSize[0]];
+    d.spaceUnit = jsonInfo.spatialUnit || "μm";
     d.dataType = "uint8";
     return [d];
   }

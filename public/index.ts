@@ -24,7 +24,7 @@ import {
 import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
 import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
-import { RawArrayData } from "../src/loaders/RawArrayLoader";
+import { RawArrayData, RawArrayInfo } from "../src/loaders/RawArrayLoader";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const PLAYBACK_INTERVAL = 80;
@@ -984,18 +984,18 @@ function createTestVolume() {
   const sizeX = 64;
   const sizeY = 64;
   const sizeZ = 64;
-  const imgData: ImageInfo = {
+  const imgData: RawArrayInfo = {
     name: "AICS-10_5_5",
-    sizeX: 64,
-    sizeY: 64,
-    sizeZ: 64,
+    sizeX,
+    sizeY,
+    sizeZ,
     sizeC: 3,
     // originalSize: new Vector3(sizeX, sizeY, sizeZ),
     // atlasTileDims: new Vector2(8, 8),
     // volumeSize: new Vector3(sizeX, sizeY, sizeZ),
     // subregionSize: new Vector3(sizeX, sizeY, sizeZ),
     // subregionOffset: new Vector3(0, 0, 0),
-    physicalPixelSize: new Vector3(1, 1, 1),
+    physicalPixelSize: [1,1,1],
     spatialUnit: "",
 
     //numChannels: 3,
@@ -1013,9 +1013,9 @@ function createTestVolume() {
 
   // generate some raw volume data
   const channelVolumes = [
-    VolumeMaker.createSphere(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24),
-    VolumeMaker.createTorus(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 8),
-    VolumeMaker.createCone(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 24),
+    VolumeMaker.createSphere(sizeX, sizeY, sizeZ, 24),
+    VolumeMaker.createTorus(sizeX, sizeY, sizeZ, 24, 8),
+    VolumeMaker.createCone(sizeX, sizeY, sizeZ, 24, 24),
   ];
   const alldata = concatenateArrays(channelVolumes);
   return {
@@ -1024,7 +1024,7 @@ function createTestVolume() {
       // expected to be "uint8" always
       dtype: "uint8",
       // [c,z,y,x]
-      shape: [channelVolumes.length, imgData.subregionSize.z, imgData.subregionSize.y, imgData.subregionSize.x],
+      shape: [channelVolumes.length, sizeZ, sizeY, sizeX],
       // the bits (assumed uint8!!)
       buffer: new DataView(alldata.buffer),
     } as RawArrayData,

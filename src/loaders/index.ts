@@ -38,6 +38,9 @@ export async function createVolumeLoader(
     case VolumeFileFormat.TIFF:
       return new TiffLoader(pathString);
     case VolumeFileFormat.DATA:
+      if (!options?.imageData || !options?.imageDataInfo) {
+        throw new Error("Must provide imageData and imageDataInfo for RawArrayLoader");
+      }
       return new RawArrayLoader(options.imageData, options.imageDataInfo, options.cache);
     default:
       if (pathString.endsWith(".json")) {
