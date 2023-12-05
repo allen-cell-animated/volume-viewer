@@ -1,4 +1,4 @@
-import { Box3, Vector2, Vector3 } from "three";
+import { Box3, Vector3 } from "three";
 
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import { buildDefaultMetadata, computePackedAtlasDims } from "./VolumeLoaderUtils";
@@ -20,25 +20,9 @@ export type RawArrayInfo = {
   sizeY: number;
   sizeZ: number;
   sizeC: number;
-  // originalSize: new Vector3(sizeX, sizeY, sizeZ),
-  // atlasTileDims: new Vector2(8, 8),
-  // volumeSize: new Vector3(sizeX, sizeY, sizeZ),
-  // subregionSize: new Vector3(sizeX, sizeY, sizeZ),
-  // subregionOffset: new Vector3(0, 0, 0),
   physicalPixelSize: [number, number, number];
   spatialUnit: string;
-
-  //numChannels: 3,
   channelNames: string[];
-
-  // times: 1,
-  // timeScale: 1,
-  // timeUnit: "",
-
-  // numMultiscaleLevels: 1,
-  // multiscaleLevel: 0,
-
-  // transform: { translation: new Vector3(0, 0, 0), rotation: new Vector3(0, 0, 0) },
   userData?: Record<string, unknown>;
 };
 
@@ -55,7 +39,7 @@ const convertImageInfo = (json: RawArrayInfo): ImageInfo => ({
 
   numChannels: json.sizeC,
   channelNames: json.channelNames,
-  channelColors: undefined,//json.channelColors,
+  channelColors: undefined, //json.channelColors,
 
   times: 1,
   timeScale: 1,

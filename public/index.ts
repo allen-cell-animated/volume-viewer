@@ -990,25 +990,9 @@ function createTestVolume() {
     sizeY,
     sizeZ,
     sizeC: 3,
-    // originalSize: new Vector3(sizeX, sizeY, sizeZ),
-    // atlasTileDims: new Vector2(8, 8),
-    // volumeSize: new Vector3(sizeX, sizeY, sizeZ),
-    // subregionSize: new Vector3(sizeX, sizeY, sizeZ),
-    // subregionOffset: new Vector3(0, 0, 0),
-    physicalPixelSize: [1,1,1],
+    physicalPixelSize: [1, 1, 1],
     spatialUnit: "",
-
-    //numChannels: 3,
     channelNames: ["DRAQ5", "EGFP", "SEG_Memb"],
-
-    // times: 1,
-    // timeScale: 1,
-    // timeUnit: "",
-
-    // numMultiscaleLevels: 1,
-    // multiscaleLevel: 0,
-
-    // transform: { translation: new Vector3(0, 0, 0), rotation: new Vector3(0, 0, 0) },
   };
 
   // generate some raw volume data
@@ -1065,12 +1049,6 @@ async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<vo
 }
 
 async function loadTestData(testdata: TestDataSpec) {
-  // if (testdata.type === "procedural") {
-  //   const volumeInfo = createTestVolume();
-  //   loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
-  //   return;
-  // }
-
   myState.loader = await createLoader(testdata);
 
   const loadSpec = new LoadSpec();
