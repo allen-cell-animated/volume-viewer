@@ -22,6 +22,8 @@ import {
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
+const PREFETCH_TIME_MARGIN = 8;
+
 type TCZYX<T> = [T, T, T, T, T];
 type SubscriberId = ReturnType<SubscribableRequestQueue["addSubscriber"]>;
 
@@ -96,6 +98,7 @@ const getDimensionCount = ([t, c, z]: TCZYX<number>) => 2 + Number(t > -1) + Num
 type WrappedStoreOpts<Opts> = {
   options?: Opts;
   subscriber: SubscriberId;
+  isPrefetch?: boolean;
 };
 
 /**
@@ -125,6 +128,9 @@ class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements A
     const ZARR_EXTS = [".zarray", ".zgroup", ".zattrs", "zarr.json"];
     if (!this.cache || ZARR_EXTS.some((s) => key.endsWith(s))) {
       return this.baseStore.get(key, opts?.options);
+    }
+    if (opts?.isPrefetch) {
+      console.log("prefetch: ", key);
     }
 
     let keyPrefix = (this.baseStore as FetchStore).url ?? "";
@@ -220,15 +226,16 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint
 type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;
 
 class OMEZarrLoader implements IVolumeLoader {
+  /** Hold one optional subscriber ID per timestep, each defined iff a batch of prefetches is waiting for that frame */
+  private prefetchSubscribers: (SubscriberId | undefined)[];
+  /** The ID of the subscriber responsible for "actual loads" (non-prefetch requests) */
+  private loadSubscriber: SubscriberId | undefined;
+
   // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
   //   This may cause errors or incorrect results otherwise!
   private maxExtent?: Box3;
 
-  private prefetchSubscribers: (SubscriberId | undefined)[];
-  private loadSubscriber: SubscriberId | undefined;
-
   private constructor(
-    private store: WrappedStore<RequestInit>,
     private scaleLevels: NumericZarrArray[],
     private multiscaleMetadata: OMEMultiscale,
     private omeroMetadata: OmeroTransitionalMetadata,
@@ -264,9 +271,10 @@ class OMEZarrLoader implements IVolumeLoader {
     // Open all scale levels of multiscale
     const scaleLevelPromises = multiscale.datasets.map(({ path }) => zarr.open(root.resolve(path), { kind: "array" }));
     const scaleLevels = await Promise.all(scaleLevelPromises);
+    scaleLevels.forEach((level, i) => console.log(i, level.shape, level.chunks));
     const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
 
-    return new OMEZarrLoader(store, scaleLevels as NumericZarrArray[], multiscale, metadata.omero, axisTCZYX, queue);
+    return new OMEZarrLoader(scaleLevels as NumericZarrArray[], multiscale, metadata.omero, axisTCZYX, queue);
   }
 
   private getUnitSymbols(): [string, string] {
@@ -442,6 +450,71 @@ class OMEZarrLoader implements IVolumeLoader {
     vol.channelLoadCallback = onChannelLoaded;
     vol.imageMetadata = buildDefaultMetadata(imgdata);
     return vol;
+  }
+
+  /** Reads a list of chunk keys requested by a `loadVolumeData` call and sets up appropriate prefetch requests. */
+  private beginPrefetch(keys: string[], scaleLevel: NumericZarrArray): void {
+    const numDims = getDimensionCount(this.axesTCZYX);
+
+    // Convert keys to arrays of coords
+    const chunkCoords = keys.map((key) => {
+      const coordsInDimensionOrder = key
+        .trim()
+        .split("/")
+        .slice(-numDims)
+        .filter((s) => s !== "")
+        .map((s) => parseInt(s, 10));
+      return this.orderByTCZYX(coordsInDimensionOrder, 0);
+    });
+
+    // Get number of chunks per dimension in `scaleLevel`
+    const chunkDimsUnordered = scaleLevel.shape.map((dim, idx) => Math.ceil(dim / scaleLevel.chunks[idx]));
+    const chunkDims = this.orderByTCZYX(chunkDimsUnordered, 1);
+
+    // Get all channels involved in this request
+    const channels = new Set<number>();
+    for (const coord of chunkCoords) {
+      channels.add(coord[1]);
+    }
+
+    // Clear out any existing prefetches (requests already in flight will be picked up by new prefetches if useful)
+    for (const subscriber of this.prefetchSubscribers) {
+      if (subscriber !== undefined) {
+        this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
+      }
+    }
+
+    // Now let's get to prefetching!
+    // TODO: consider cache size and something like average chunk size when deciding how much to prefetch
+    const activeTimestep = chunkCoords[0][0];
+    const tmin = Math.max(0, activeTimestep - PREFETCH_TIME_MARGIN);
+    const tmax = Math.min(chunkDims[0], activeTimestep + PREFETCH_TIME_MARGIN);
+    for (let t = tmin; t < tmax; t++) {
+      const subscriber = this.requestQueue.addSubscriber();
+      this.prefetchSubscribers[t] = subscriber;
+
+      if (t === activeTimestep) {
+        // For the current timestep: get all chunks in ZYX for all channels involved in this request
+        // TODO: it is dangerous to assume that we can reasonably prefetch the entire volume at the current timestep.
+        //   This behavior shouldn't be allowed into production if we expect anyone to deal with large enough datasets.
+        for (const c of channels) {
+          for (let z = 0; z < chunkDims[2]; z++) {
+            for (let y = 0; y < chunkDims[3]; y++) {
+              for (let x = 0; x < chunkDims[4]; x++) {
+                // This will call the store, which will handle caching and queueing
+                scaleLevel.getChunk(this.orderByDimension([t, c, z, y, x]), { subscriber, isPrefetch: true });
+              }
+            }
+          }
+        }
+      } else {
+        // For nearby timesteps: duplicate only the load requests made on the current timestep on this one too
+        for (const coord of chunkCoords) {
+          const [c, z, y, x] = coord.slice(1);
+          scaleLevel.getChunk(this.orderByDimension([t, c, z, y, x]), { subscriber, isPrefetch: true });
+        }
+      }
+    }
   }
 
   async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
