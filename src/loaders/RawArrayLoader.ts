@@ -106,10 +106,6 @@ class RawArrayLoader implements IVolumeLoader {
   }
 
   async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
-    // if you need to adjust image paths prior to download,
-    // now is the time to do it.
-    // Try to figure out the urlPrefix from the LoadSpec.
-    // For this format we assume the image data is in the same directory as the json file.
     const loadSpec = explicitLoadSpec || vol.loadSpec;
 
     const requestedChannels = loadSpec.channels;
