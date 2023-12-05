@@ -71,7 +71,16 @@ class RawArrayLoader implements IVolumeLoader {
 
   constructor(rawData: RawArrayData, rawDataInfo: RawArrayInfo, cache?: VolumeCache) {
     this.jsonInfo = rawDataInfo;
-    this.data = rawData || { dtype: "uint8", shape: [0, 0, 0, 0], buffer: new DataView(new ArrayBuffer(0)) };
+    this.data = rawData;
+    // check consistent dims
+    if (
+      this.data.shape[0] !== this.jsonInfo.sizeC ||
+      this.data.shape[1] !== this.jsonInfo.sizeZ ||
+      this.data.shape[2] !== this.jsonInfo.sizeY ||
+      this.data.shape[3] !== this.jsonInfo.sizeX
+    ) {
+      throw new Error("RawArrayLoader: data shape does not match metadata");
+    }
     this.cache = cache;
   }
 
@@ -120,6 +129,7 @@ class RawArrayLoader implements IVolumeLoader {
       if (requestedChannels && requestedChannels.length > 0 && !requestedChannels.includes(chindex)) {
         continue;
       }
+      // TODO this loader is its own cache and need not even use the cache?
       const cacheResult = cache?.get(`${imageInfo.name}/${chindex}`);
       if (cacheResult) {
         vol.setChannelDataFromVolume(chindex, new Uint8Array(cacheResult));
