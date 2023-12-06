@@ -107,15 +107,7 @@ type WrappedStoreOpts<Opts> = {
  * `WrappedStore` wraps another `Readable` and adds (optional) connections to `VolumeCache` and `RequestQueue`.
  */
 class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements AsyncReadable<WrappedStoreOpts<Opts>> {
-  baseStore: S;
-  cache?: VolumeCache;
-  queue?: SubscribableRequestQueue;
-
-  constructor(baseStore: S, cache?: VolumeCache, queue?: SubscribableRequestQueue) {
-    this.baseStore = baseStore;
-    this.cache = cache;
-    this.queue = queue;
-  }
+  constructor(private baseStore: S, private cache?: VolumeCache, private queue?: SubscribableRequestQueue) {}
 
   private async getAndCache(key: AbsolutePath, cacheKey: string, opts?: Opts): Promise<Uint8Array | undefined> {
     const result = await this.baseStore.get(key, opts);
@@ -240,6 +232,7 @@ class OMEZarrLoader implements IVolumeLoader {
   private maxExtent?: Box3;
 
   private constructor(
+    private store: WrappedStore<RequestInit>,
     private scaleLevels: NumericZarrArray[],
     private multiscaleMetadata: OMEMultiscale,
     private omeroMetadata: OmeroTransitionalMetadata,
@@ -277,7 +270,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const scaleLevels = await Promise.all(scaleLevelPromises);
     const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
 
-    return new OMEZarrLoader(scaleLevels as NumericZarrArray[], multiscale, metadata.omero, axisTCZYX, queue);
+    return new OMEZarrLoader(store, scaleLevels as NumericZarrArray[], multiscale, metadata.omero, axisTCZYX, queue);
   }
 
   private getUnitSymbols(): [string, string] {
@@ -455,6 +448,19 @@ class OMEZarrLoader implements IVolumeLoader {
     return vol;
   }
 
+  private async prefetchChunk(basePath: string, coords: TCZYX<number>, subscriber: SubscriberId): Promise<void> {
+    const separator = basePath.endsWith("/") ? "" : "/";
+    const key = basePath + separator + this.orderByDimension(coords).join("/");
+    try {
+      // Calling `get` and doing nothing with the result still triggers a cache check, fetch, and insertion
+      await this.store.get(key as AbsolutePath, { subscriber, isPrefetch: true });
+    } catch (e) {
+      if (e !== CHUNK_REQUEST_CANCEL_REASON) {
+        throw e;
+      }
+    }
+  }
+
   /** Reads a list of chunk keys requested by a `loadVolumeData` call and sets up appropriate prefetch requests. */
   private beginPrefetch(keys: string[], scaleLevel: NumericZarrArray): void {
     const numDims = getDimensionCount(this.axesTCZYX);
@@ -504,8 +510,7 @@ class OMEZarrLoader implements IVolumeLoader {
           for (let z = 0; z < chunkDims[2]; z++) {
             for (let y = 0; y < chunkDims[3]; y++) {
               for (let x = 0; x < chunkDims[4]; x++) {
-                // This will call the store, which will handle caching and queueing
-                scaleLevel.getChunk(this.orderByDimension([t, c, z, y, x]), { subscriber, isPrefetch: true });
+                this.prefetchChunk(scaleLevel.path, [t, c, z, y, x], subscriber);
               }
             }
           }
@@ -514,7 +519,7 @@ class OMEZarrLoader implements IVolumeLoader {
         // For nearby timesteps: duplicate only the load requests made on the current timestep on this one too
         for (const coord of chunkCoords) {
           const [c, z, y, x] = coord.slice(1);
-          scaleLevel.getChunk(this.orderByDimension([t, c, z, y, x]), { subscriber, isPrefetch: true });
+          this.prefetchChunk(scaleLevel.path, [t, c, z, y, x], subscriber);
         }
       }
     }
@@ -562,6 +567,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const { numChannels } = vol.imageInfo;
     const channelIndexes = vol.loadSpec.channels ?? Array.from({ length: numChannels }, (_, i) => i);
 
+    // Prefetch housekeeping: we want to save keys involved in this load to prefetch later
     const keys: string[] = [];
     const reportKey = (key: string, sub: SubscriberId) => {
       if (sub === subscriber) {
@@ -589,7 +595,7 @@ class OMEZarrLoader implements IVolumeLoader {
     });
 
     console.log(keys);
-    this.beginPrefetch(keys, level);
+    setTimeout(() => this.beginPrefetch(keys, level), 0);
 
     await Promise.all(channelPromises);
     this.requestQueue.removeSubscriber(subscriber);
