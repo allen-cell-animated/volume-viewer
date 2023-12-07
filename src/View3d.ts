@@ -926,7 +926,7 @@ export class View3d {
     Object.assign(pane.element.style, paneStyle);
 
     const cacheSettings = {
-      concurrency: 2,
+      concurrency: 4,
       size: 1000000,
     };
     const caching = pane.addFolder({ title: "Cache" });

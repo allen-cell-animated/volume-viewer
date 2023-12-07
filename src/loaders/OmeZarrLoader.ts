@@ -256,7 +256,7 @@ class OMEZarrLoader implements IVolumeLoader {
     this.prefetchSubscribers = new Array(times).fill(undefined);
   }
 
-  static async createLoader(url: string, scene = 0, cache?: VolumeCache, concurrencyLimit = 2): Promise<OMEZarrLoader> {
+  static async createLoader(url: string, scene = 0, cache?: VolumeCache, concurrencyLimit = 4): Promise<OMEZarrLoader> {
     // Setup: create queue and store, get basic metadata
     const queue = new SubscribableRequestQueue(concurrencyLimit);
     const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
