@@ -19,7 +19,7 @@ export type CreateLoaderOptions = {
   cache?: VolumeCache;
   scene?: number;
   concurrencyLimit?: number;
-  // one array per channel
+  // optional raw image data for VolumeFileFormat.DATA
   imageData?: RawArrayData;
   imageDataInfo?: RawArrayInfo;
 };
