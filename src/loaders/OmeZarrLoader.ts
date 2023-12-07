@@ -100,6 +100,8 @@ type WrappedStoreOpts<Opts> = {
   subscriber: SubscriberId;
   reportKey?: (key: string, subscriber: SubscriberId) => void;
   isPrefetch?: boolean;
+  // how long to wait before issuing a request
+  delayMs: number;
 };
 
 /**
@@ -112,6 +114,7 @@ class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements A
   private async getAndCache(key: AbsolutePath, cacheKey: string, opts?: Opts): Promise<Uint8Array | undefined> {
     const result = await this.baseStore.get(key, opts);
     if (this.cache && result) {
+      console.log("cache inserting " + cacheKey);
       this.cache.insert(cacheKey, result);
     }
     return result;
@@ -140,14 +143,20 @@ class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements A
     }
 
     if (opts?.isPrefetch) {
-      console.log("prefetch: ", key);
+      console.log("prefetch (cache miss): ", key);
     }
 
     // Not in cache; load the chunk and cache it
     if (this.queue && opts) {
-      return this.queue.addRequest(fullKey, opts.subscriber, () => this.getAndCache(key, fullKey, opts?.options));
+      return this.queue.addRequest(
+        fullKey,
+        opts.subscriber,
+        () => this.getAndCache(key, fullKey, opts?.options),
+        opts.delayMs
+      );
     } else {
       // Should we ever hit this code?  We should always have a request queue.
+      console.warn("fetching chunk without a request queue");
       return this.getAndCache(key, fullKey, opts?.options);
     }
   }
@@ -467,12 +476,17 @@ class OMEZarrLoader implements IVolumeLoader {
     return vol;
   }
 
-  private async prefetchChunk(basePath: string, coords: TCZYX<number>, subscriber: SubscriberId): Promise<void> {
+  private async prefetchChunk(
+    basePath: string,
+    coords: TCZYX<number>,
+    subscriber: SubscriberId,
+    delayMs: number
+  ): Promise<void> {
     const separator = basePath.endsWith("/") ? "" : "/";
     const key = basePath + separator + this.orderByDimension(coords).join("/");
     try {
       // Calling `get` and doing nothing with the result still triggers a cache check, fetch, and insertion
-      await this.store.get(key as AbsolutePath, { subscriber, isPrefetch: true });
+      await this.store.get(key as AbsolutePath, { subscriber, isPrefetch: true, delayMs });
     } catch (e) {
       if (e !== CHUNK_REQUEST_CANCEL_REASON) {
         throw e;
@@ -517,8 +531,8 @@ class OMEZarrLoader implements IVolumeLoader {
     const activeTimestep = chunkCoords[0][0];
     const tmin = Math.max(0, activeTimestep - PREFETCH_TIME_MARGIN);
     const tmax = Math.min(chunkDims[0], activeTimestep + PREFETCH_TIME_MARGIN);
-    const zmin = Math.max(0, chunkCoords[0][2] - 1);
-    const zmax = Math.min(chunkDims[2], chunkCoords[0][2] + 2);
+    const zmin = chunkCoords[0][2]; //Math.max(0, chunkCoords[0][2] - 1);
+    const zmax = chunkCoords[0][2]; //Math.min(chunkDims[2], chunkCoords[0][2] + 2);
     for (let t = tmin; t < tmax; t++) {
       const subscriber = this.requestQueue.addSubscriber();
       this.prefetchSubscribers[t] = subscriber;
@@ -531,7 +545,7 @@ class OMEZarrLoader implements IVolumeLoader {
           for (let z = zmin; z < zmax; z++) {
             for (let y = 0; y < chunkDims[3]; y++) {
               for (let x = 0; x < chunkDims[4]; x++) {
-                this.prefetchChunk(scaleLevel.path, [t, c, z, y, x], subscriber);
+                this.prefetchChunk(scaleLevel.path, [t, c, z, y, x], subscriber, 0);
               }
             }
           }
@@ -540,7 +554,7 @@ class OMEZarrLoader implements IVolumeLoader {
         // For nearby timesteps: duplicate only the load requests made on the current timestep on this one too
         for (const coord of chunkCoords) {
           const [c, z, y, x] = coord.slice(1);
-          this.prefetchChunk(scaleLevel.path, [t, c, z, y, x], subscriber);
+          this.prefetchChunk(scaleLevel.path, [t, c, z, y, x], subscriber, Math.abs(t - activeTimestep) * 2000);
         }
       }
     }
@@ -603,7 +617,7 @@ class OMEZarrLoader implements IVolumeLoader {
       const sliceSpec = this.orderByDimension(unorderedSpec as TCZYX<number | Slice>);
 
       try {
-        const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } });
+        const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey, delayMs: 0 } });
         const u8 = convertChannel(result.data);
         vol.setChannelDataFromVolume(ch, u8);
         onChannelLoaded?.(vol, ch);
