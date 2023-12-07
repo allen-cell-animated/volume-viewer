@@ -16,7 +16,7 @@ const CACHE_MAX_SIZE_DEFAULT = 250_000_000;
 export default class VolumeCache {
   private entries: Map<string, CacheEntry>;
 
-  public readonly maxSize: number;
+  private maxSize: number;
   private currentSize: number;
 
   // Ends of a linked list of entries, to track LRU and evict efficiently
@@ -100,6 +100,7 @@ export default class VolumeCache {
       return;
     }
 
+    console.log("cache eviction " + this.last.key);
     this.removeEntryFromStore(this.last);
 
     if (this.last.prev) {
@@ -171,6 +172,14 @@ export default class VolumeCache {
   /** Clears all data from the cache. */
   public clear(): void {
     while (this.last) {
+      this.evictLast();
+    }
+  }
+
+  /** Update the cache size.  Reducing this size will force evictions. */
+  public setMaxSize(maxSize: number): void {
+    this.maxSize = maxSize;
+    while (this.currentSize > this.maxSize) {
       this.evictLast();
     }
   }

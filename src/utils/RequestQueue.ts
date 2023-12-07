@@ -250,4 +250,12 @@ export default class RequestQueue {
   public requestRunning(key: string): boolean {
     return this.activeRequests.has(key);
   }
+
+  /**
+   * Updates the maximum number of concurrent active requests.
+   * @param maxActiveRequests The new concurrency limit.
+   */
+  public setConcurrencyLimit(maxActiveRequests: number): void {
+    this.maxActiveRequests = maxActiveRequests;
+  }
 }

@@ -5,7 +5,7 @@ describe("VolumeCache", () => {
   it("creates an empty cache with the specified max size", () => {
     const cache = new VolumeCache(10);
     expect(cache.size).to.equal(0);
-    expect(cache.maxSize).to.equal(10);
+    expect(cache["maxSize"]).to.equal(10);
   });
 
   describe("insert", () => {

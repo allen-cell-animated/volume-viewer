@@ -122,9 +122,6 @@ class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements A
     if (!this.cache || ZARR_EXTS.some((s) => key.endsWith(s))) {
       return this.baseStore.get(key, opts?.options);
     }
-    if (opts?.isPrefetch) {
-      console.log("prefetch: ", key);
-    }
     if (opts?.reportKey) {
       opts.reportKey(key, opts.subscriber);
     }
@@ -140,6 +137,10 @@ class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements A
     const cacheResult = this.cache.get(fullKey);
     if (cacheResult) {
       return new Uint8Array(cacheResult);
+    }
+
+    if (opts?.isPrefetch) {
+      console.log("prefetch: ", key);
     }
 
     // Not in cache; load the chunk and cache it
@@ -238,19 +239,15 @@ class OMEZarrLoader implements IVolumeLoader {
     private omeroMetadata: OmeroTransitionalMetadata,
     private axesTCZYX: TCZYX<number>,
     // TODO: should we be able to share `RequestQueue`s between loaders?
-    private requestQueue: SubscribableRequestQueue
+    private requestQueue: SubscribableRequestQueue,
+    private cache?: VolumeCache
   ) {
     const ti = this.axesTCZYX[0];
     const times = ti < 0 ? 1 : this.scaleLevels[0].shape[this.axesTCZYX[0]];
     this.prefetchSubscribers = new Array(times).fill(undefined);
   }
 
-  static async createLoader(
-    url: string,
-    scene = 0,
-    cache?: VolumeCache,
-    concurrencyLimit = 10
-  ): Promise<OMEZarrLoader> {
+  static async createLoader(url: string, scene = 0, cache?: VolumeCache, concurrencyLimit = 2): Promise<OMEZarrLoader> {
     // Setup: create queue and store, get basic metadata
     const queue = new SubscribableRequestQueue(concurrencyLimit);
     const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
@@ -270,7 +267,29 @@ class OMEZarrLoader implements IVolumeLoader {
     const scaleLevels = await Promise.all(scaleLevelPromises);
     const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
 
-    return new OMEZarrLoader(store, scaleLevels as NumericZarrArray[], multiscale, metadata.omero, axisTCZYX, queue);
+    return new OMEZarrLoader(
+      store,
+      scaleLevels as NumericZarrArray[],
+      multiscale,
+      metadata.omero,
+      axisTCZYX,
+      queue,
+      cache
+    );
+  }
+
+  /**
+   * Update the cache size limit for this loader.
+   */
+  setCacheSize(maxSize: number): void {
+    this.cache?.setMaxSize(maxSize);
+  }
+
+  /**
+   * Set the maximum number of concurrent requests for this loader.
+   */
+  setConcurrencyLimit(limit: number): void {
+    this.requestQueue.setConcurrencyLimit(limit);
   }
 
   private getUnitSymbols(): [string, string] {
@@ -498,6 +517,8 @@ class OMEZarrLoader implements IVolumeLoader {
     const activeTimestep = chunkCoords[0][0];
     const tmin = Math.max(0, activeTimestep - PREFETCH_TIME_MARGIN);
     const tmax = Math.min(chunkDims[0], activeTimestep + PREFETCH_TIME_MARGIN);
+    const zmin = Math.max(0, chunkCoords[0][2] - 1);
+    const zmax = Math.min(chunkDims[2], chunkCoords[0][2] + 2);
     for (let t = tmin; t < tmax; t++) {
       const subscriber = this.requestQueue.addSubscriber();
       this.prefetchSubscribers[t] = subscriber;
@@ -507,7 +528,7 @@ class OMEZarrLoader implements IVolumeLoader {
         // TODO: it is dangerous to assume that we can reasonably prefetch the entire volume at the current timestep.
         //   This behavior shouldn't be allowed into production if we expect anyone to deal with large enough datasets.
         for (const c of channels) {
-          for (let z = 0; z < chunkDims[2]; z++) {
+          for (let z = zmin; z < zmax; z++) {
             for (let y = 0; y < chunkDims[3]; y++) {
               for (let x = 0; x < chunkDims[4]; x++) {
                 this.prefetchChunk(scaleLevel.path, [t, c, z, y, x], subscriber);
@@ -595,9 +616,9 @@ class OMEZarrLoader implements IVolumeLoader {
     });
 
     console.log(keys);
-    setTimeout(() => this.beginPrefetch(keys, level), 0);
 
     await Promise.all(channelPromises);
+    setTimeout(() => this.beginPrefetch(keys, level), 0);
     this.requestQueue.removeSubscriber(subscriber);
   }
 }

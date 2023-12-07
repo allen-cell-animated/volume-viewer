@@ -73,6 +73,20 @@ class OpenCellLoader implements IVolumeLoader {
 
     JsonImageInfoLoader.loadVolumeAtlasData(vol, urls, onChannelLoaded);
   }
+
+  /**
+   * Update the cache size limit for this loader.
+   */
+  setCacheSize(_maxSize: number): void {
+    // no op
+  }
+
+  /**
+   * Set the maximum number of concurrent requests for this loader.
+   */
+  setConcurrencyLimit(_limit: number): void {
+    // no op
+  }
 }
 
 export { OpenCellLoader };

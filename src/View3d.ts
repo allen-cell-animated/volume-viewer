@@ -925,6 +925,20 @@ export class View3d {
     };
     Object.assign(pane.element.style, paneStyle);
 
+    const cacheSettings = {
+      concurrency: 2,
+      size: 1000000,
+    };
+    const caching = pane.addFolder({ title: "Cache" });
+    caching.addInput(cacheSettings, "concurrency").on("change", ({ value }) => {
+      // TODO could/should we treat the queue as more of a global object?
+      this.image?.volume.loader?.setConcurrencyLimit(value);
+    });
+    caching.addInput(cacheSettings, "size").on("change", ({ value }) => {
+      // TODO could/should we treat the cache as more of a global object?
+      this.image?.volume.loader?.setCacheSize(value);
+    });
+
     // LIGHTS
     const lights = pane.addFolder({ title: "Lights (isosurface)" });
 

@@ -64,4 +64,14 @@ export interface IVolumeLoader {
   // in a way that they can be interrupted.
   // TODO explicitly passing a `LoadSpec` is now rarely useful. Remove?
   loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): void;
+
+  /**
+   * Update the cache size limit for this loader.
+   */
+  setCacheSize(maxSize: number): void;
+
+  /**
+   * Set the maximum number of concurrent requests for this loader.
+   */
+  setConcurrencyLimit(limit: number): void;
 }
