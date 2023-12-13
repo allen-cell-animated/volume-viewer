@@ -1,12 +1,10 @@
 import { Vector2, Vector3 } from "three";
 
-import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
-import { buildDefaultMetadata } from "./VolumeLoaderUtils";
+import { IVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "./IVolumeLoader";
 import { ImageInfo } from "../Volume";
-import Volume from "../Volume";
 import { JsonImageInfoLoader } from "./JsonImageInfoLoader";
 
-class OpenCellLoader implements IVolumeLoader {
+class OpenCellLoader extends IVolumeLoader {
   async loadDims(_: LoadSpec): Promise<VolumeDims[]> {
     const d = new VolumeDims();
     d.shape = [1, 2, 27, 600, 600];
@@ -16,7 +14,7 @@ class OpenCellLoader implements IVolumeLoader {
     return [d];
   }
 
-  async createVolume(_loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
+  async createImageInfo(_loadSpec: LoadSpec): Promise<[ImageInfo, LoadSpec]> {
     const numChannels = 2;
 
     // we know these are standardized to 600x600, two channels, one channel per jpg.
@@ -49,15 +47,15 @@ class OpenCellLoader implements IVolumeLoader {
       },
     };
 
-    // got some data, now let's construct the volume.
     // This loader uses no fields from `LoadSpec`. Initialize volume with defaults.
-    const vol = new Volume(imgdata, new LoadSpec(), this);
-    vol.channelLoadCallback = onChannelLoaded;
-    vol.imageMetadata = buildDefaultMetadata(imgdata);
-    return vol;
+    return [imgdata, new LoadSpec()];
   }
 
-  loadVolumeData(vol: Volume, _loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): void {
+  loadRawChannelData(
+    imageInfo: ImageInfo,
+    _loadSpec: LoadSpec,
+    onData: RawChannelDataCallback
+  ): Promise<[undefined, undefined]> {
     // HQTILE or LQTILE
     // make a json metadata dict for the two channels:
     const urls = [
@@ -71,7 +69,10 @@ class OpenCellLoader implements IVolumeLoader {
       },
     ];
 
-    JsonImageInfoLoader.loadVolumeAtlasData(vol, urls, onChannelLoaded);
+    const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
+    const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
+    JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, data) => onData(ch, data, [w, h]));
+    return Promise.resolve([undefined, undefined]);
   }
 }
 

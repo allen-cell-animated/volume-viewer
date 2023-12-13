@@ -35,7 +35,7 @@ export class VolumeDims {
  */
 export type PerChannelCallback = (volume: Volume, channelIndex: number) => void;
 
-export type RawChannelDataCallback = (ch: number, data: Uint8Array, atlased: boolean, w?: number, h?: number) => void;
+export type RawChannelDataCallback = (ch: number, data: Uint8Array, atlasDims?: [number, number]) => void;
 
 /**
  * Loads volume data from a source specified by a `LoadSpec`.
@@ -53,7 +53,7 @@ export abstract class IVolumeLoader {
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
     onData: RawChannelDataCallback
-  ): Promise<ImageInfo | void>;
+  ): Promise<[ImageInfo | undefined, LoadSpec | undefined]>;
 
   /**
    * Create an empty `Volume` from a `LoadSpec`, which must be passed to `loadVolumeData` to begin loading.
@@ -81,9 +81,9 @@ export abstract class IVolumeLoader {
   // in a way that they can be interrupted.
   // TODO explicitly passing a `LoadSpec` is now rarely useful. Remove?
   async loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
-    const onChannelData: RawChannelDataCallback = (channelIndex, data, atlased, w, h) => {
-      if (atlased) {
-        volume.setChannelDataFromAtlas(channelIndex, data, w!, h!);
+    const onChannelData: RawChannelDataCallback = (channelIndex, data, atlasDims) => {
+      if (atlasDims) {
+        volume.setChannelDataFromAtlas(channelIndex, data, atlasDims[0], atlasDims[1]);
       } else {
         volume.setChannelDataFromVolume(channelIndex, data);
       }
@@ -91,11 +91,12 @@ export abstract class IVolumeLoader {
     };
 
     const spec = loadSpec || volume.loadSpec;
-    const adjustedImageInfo = await this.loadRawChannelData(volume.imageInfo, spec, onChannelData);
+    const [adjustedImageInfo, adjustedLoadSpec] = await this.loadRawChannelData(volume.imageInfo, spec, onChannelData);
 
     if (adjustedImageInfo) {
       volume.imageInfo = adjustedImageInfo;
       volume.updateDimensions();
     }
+    volume.loadSpec = adjustedLoadSpec || spec;
   }
 }
