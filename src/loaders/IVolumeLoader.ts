@@ -1,6 +1,7 @@
 import { Box3, Vector3 } from "three";
 
-import Volume from "../Volume";
+import Volume, { ImageInfo } from "../Volume";
+import { buildDefaultMetadata } from "./VolumeLoaderUtils";
 
 export class LoadSpec {
   time = 0;
@@ -34,15 +35,25 @@ export class VolumeDims {
  */
 export type PerChannelCallback = (volume: Volume, channelIndex: number) => void;
 
+export type RawChannelDataCallback = (ch: number, data: Uint8Array, atlased: boolean, w?: number, h?: number) => void;
+
 /**
  * Loads volume data from a source specified by a `LoadSpec`.
  *
  * Loaders may keep state for reuse between volume creation and volume loading, and should be kept alive until volume
  * loading is complete. (See `createVolume`)
  */
-export interface IVolumeLoader {
+export abstract class IVolumeLoader {
   /** Use VolumeDims to further refine a `LoadSpec` for use in `createVolume` */
-  loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]>;
+  abstract loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]>;
+
+  abstract createImageInfo(loadSpec: LoadSpec): Promise<[ImageInfo, LoadSpec]>;
+
+  abstract loadRawChannelData(
+    imageInfo: ImageInfo,
+    loadSpec: LoadSpec,
+    onData: RawChannelDataCallback
+  ): Promise<ImageInfo | void>;
 
   /**
    * Create an empty `Volume` from a `LoadSpec`, which must be passed to `loadVolumeData` to begin loading.
@@ -52,7 +63,13 @@ export interface IVolumeLoader {
    * information about that source. Once this method has been called, every subsequent call to it or
    * `loadVolumeData` should reference the same source.
    */
-  createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume>;
+  async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
+    const [imageInfo, adjustedSpec] = await this.createImageInfo(loadSpec);
+    const vol = new Volume(imageInfo, adjustedSpec, this);
+    vol.channelLoadCallback = onChannelLoaded;
+    vol.imageMetadata = buildDefaultMetadata(imageInfo);
+    return vol;
+  }
 
   /**
    * Begin loading a volume's data, as specified in its `LoadSpec`.
@@ -63,5 +80,22 @@ export interface IVolumeLoader {
   // TODO this is not cancellable in the sense that any async requests initiated here are not stored
   // in a way that they can be interrupted.
   // TODO explicitly passing a `LoadSpec` is now rarely useful. Remove?
-  loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): void;
+  async loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
+    const onChannelData: RawChannelDataCallback = (channelIndex, data, atlased, w, h) => {
+      if (atlased) {
+        volume.setChannelDataFromAtlas(channelIndex, data, w!, h!);
+      } else {
+        volume.setChannelDataFromVolume(channelIndex, data);
+      }
+      onChannelLoaded?.(volume, channelIndex);
+    };
+
+    const spec = loadSpec || volume.loadSpec;
+    const adjustedImageInfo = await this.loadRawChannelData(volume.imageInfo, spec, onChannelData);
+
+    if (adjustedImageInfo) {
+      volume.imageInfo = adjustedImageInfo;
+      volume.updateDimensions();
+    }
+  }
 }
