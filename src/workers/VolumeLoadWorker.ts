@@ -1,5 +1,5 @@
 import VolumeCache from "../VolumeCache";
-import { createVolumeLoader } from "../loaders";
+import { VolumeFileFormat, createVolumeLoader, pathToFileType } from "../loaders";
 import { IVolumeLoader } from "../loaders/IVolumeLoader";
 import {
   WorkerMsgType,
@@ -14,6 +14,7 @@ import { rebuildImageInfo, rebuildLoadSpec } from "./util";
 let cache: VolumeCache | undefined = undefined;
 let loader: IVolumeLoader | undefined = undefined;
 let initialized = false;
+let copyOnLoad = false;
 
 type MessageHandler<T extends WorkerMsgType> = (payload: WorkerRequestPayload<T>) => Promise<WorkerResponsePayload<T>>;
 
@@ -27,6 +28,9 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
   },
 
   [WorkerMsgType.CREATE_LOADER]: async ({ path, options }) => {
+    const pathString = Array.isArray(path) ? path[0] : path;
+    const fileType = options?.fileType || pathToFileType(pathString);
+    copyOnLoad = fileType === VolumeFileFormat.JSON;
     loader = await createVolumeLoader(path, { ...options, cache });
     return loader !== undefined;
   },
@@ -63,7 +67,7 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
           data,
           atlasDims,
         };
-        self.postMessage(message, [data.buffer]);
+        self.postMessage(message, copyOnLoad ? [] : [data.buffer]);
       }
     );
   },
