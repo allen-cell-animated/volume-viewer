@@ -32,7 +32,7 @@ export async function createVolumeLoader(
   path: string | string[],
   options?: CreateLoaderOptions
 ): Promise<IVolumeLoader> {
-  const pathString = typeof path === "object" ? path[0] : path;
+  const pathString = Array.isArray(path) ? path[0] : path;
   const fileType = options?.fileType || pathToFileType(pathString);
 
   switch (fileType) {
