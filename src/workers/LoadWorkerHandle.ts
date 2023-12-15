@@ -27,6 +27,7 @@ type StoredPromise<T extends WorkerMsgType> = {
 class SharedLoadWorkerHandle {
   private worker: Worker;
   private pendingRequests: (StoredPromise<WorkerMsgType> | undefined)[] = [];
+  private workerOpen = true;
 
   public onChannelData: ((e: ChannelLoadEvent) => void) | undefined = undefined;
 
@@ -45,6 +46,15 @@ class SharedLoadWorkerHandle {
     }
 
     return this.pendingRequests.push(prom) - 1;
+  }
+
+  get isOpen(): boolean {
+    return this.workerOpen;
+  }
+
+  close(): void {
+    this.worker.terminate();
+    this.workerOpen = false;
   }
 
   sendMessage<T extends WorkerMsgType>(type: T, payload: WorkerRequestPayload<T>): Promise<WorkerResponsePayload<T>> {
@@ -95,7 +105,15 @@ class LoadWorker {
   }
 
   onOpen(): Promise<void> {
+    if (!this.workerHandle.isOpen) {
+      return Promise.reject("Worker is closed");
+    }
     return this.openPromise;
+  }
+
+  close(): void {
+    this.workerHandle.close();
+    this.activeLoader?.close();
   }
 
   async createLoader(path: string | string[], options?: CreateLoaderOptions): Promise<WorkerLoader | TiffLoader> {
