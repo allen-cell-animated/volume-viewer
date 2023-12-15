@@ -118,7 +118,7 @@ class LoadWorker {
 
   async createLoader(path: string | string[], options?: CreateLoaderOptions): Promise<WorkerLoader | TiffLoader> {
     // Special case: TIFF loader doesn't work on a worker, has its own workers anyways, and doesn't use cache or queue.
-    const pathString = typeof path === "object" ? path[0] : path;
+    const pathString = Array.isArray(path) ? path[0] : path;
     const fileType = options?.fileType || pathToFileType(pathString);
     if (fileType === VolumeFileFormat.TIFF) {
       return new TiffLoader(pathString);

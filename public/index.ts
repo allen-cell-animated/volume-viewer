@@ -23,6 +23,7 @@ import {
 import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
 import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
+import LoadWorker from "../src/workers/LoadWorkerHandle";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const PLAYBACK_INTERVAL = 80;
@@ -83,7 +84,8 @@ const TEST_DATA: Record<string, TestDataSpec> = {
 
 let view3D: View3d;
 
-const volumeCache = new VolumeCache(CACHE_MAX_SIZE);
+// const volumeCache = new VolumeCache(CACHE_MAX_SIZE);
+const loadWorker = new LoadWorker(CACHE_MAX_SIZE);
 
 const myState: State = {
   file: "",
@@ -1005,6 +1007,8 @@ function createTestVolume() {
 }
 
 async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
+  await loadWorker.onOpen();
+  console.log(new Vector2(0, 1));
   if (data.type === "opencell") {
     return new OpenCellLoader();
   }
@@ -1018,7 +1022,7 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
     }
   }
 
-  return await createVolumeLoader(path, { cache: volumeCache });
+  return await loadWorker.createLoader(path);
 }
 
 async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<void> {
