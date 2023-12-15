@@ -2,7 +2,7 @@ import { ImageInfo } from "../Volume";
 import { CreateLoaderOptions } from "../loaders";
 import { LoadSpec, VolumeDims } from "../loaders/IVolumeLoader";
 
-export enum WorkerMsgType {
+export const enum WorkerMsgType {
   INIT,
   CREATE_LOADER,
   CREATE_VOLUME,
@@ -10,8 +10,13 @@ export enum WorkerMsgType {
   LOAD_VOLUME_DATA,
 }
 
+export const enum WorkerResponseKind {
+  SUCCESS,
+  ERROR,
+  EVENT,
+}
+
 type WorkerMsgBase<T extends WorkerMsgType, P> = {
-  isEvent: false;
   msgId: number;
   type: T;
   payload: P;
@@ -43,14 +48,16 @@ export type WorkerResponsePayload<T extends WorkerMsgType> = {
   [WorkerMsgType.LOAD_VOLUME_DATA]: [ImageInfo | undefined, LoadSpec | undefined];
 }[T];
 
-export type WorkerRequest<T extends WorkerMsgType> = WorkerMsgBase<T, WorkerRequestPayload<T>>;
-export type WorkerResponse<T extends WorkerMsgType> = WorkerMsgBase<T, WorkerResponsePayload<T>>;
-
 export type ChannelLoadEvent = {
-  isEvent: true;
   loaderId: number;
   loadId: number;
   channelIndex: number;
   data: Uint8Array;
   atlasDims?: [number, number];
 };
+
+export type WorkerRequest<T extends WorkerMsgType> = WorkerMsgBase<T, WorkerRequestPayload<T>>;
+export type WorkerResponse<T extends WorkerMsgType> =
+  | ({ responseKind: WorkerResponseKind.SUCCESS } & WorkerMsgBase<T, WorkerResponsePayload<T>>)
+  | ({ responseKind: WorkerResponseKind.ERROR } & WorkerMsgBase<T, string>)
+  | ({ responseKind: WorkerResponseKind.EVENT } & ChannelLoadEvent);

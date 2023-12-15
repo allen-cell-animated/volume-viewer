@@ -1,6 +1,7 @@
 import { ImageInfo } from "../Volume";
-import { CreateLoaderOptions } from "../loaders";
+import { CreateLoaderOptions, VolumeFileFormat, pathToFileType } from "../loaders";
 import { IVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "../loaders/IVolumeLoader";
+import { TiffLoader } from "../loaders/TiffLoader";
 import {
   WorkerMsgType,
   WorkerRequest,
@@ -8,6 +9,7 @@ import {
   WorkerResponse,
   WorkerResponsePayload,
   ChannelLoadEvent,
+  WorkerResponseKind,
 } from "./types";
 import { rebuildImageInfo, rebuildLoadSpec } from "./util";
 
@@ -31,7 +33,6 @@ class SharedLoadWorkerHandle {
   constructor() {
     this.worker = new Worker(new URL("./VolumeLoadWorker", import.meta.url));
     this.worker.onmessage = this.receiveMessage.bind(this);
-    this.worker.onerror = this.receiveError.bind(this);
   }
 
   /** Given a handle for settling a promise when a response is received from the worker, store it and return its ID */
@@ -52,14 +53,14 @@ class SharedLoadWorkerHandle {
       msgId = this.registerMessagePromise({ type, resolve, reject } as StoredPromise<WorkerMsgType>);
     });
 
-    const msg: WorkerRequest<T> = { msgId, type, payload, isEvent: false };
+    const msg: WorkerRequest<T> = { msgId, type, payload };
     this.worker.postMessage(msg);
 
     return promise;
   }
 
-  private receiveMessage<T extends WorkerMsgType>({ data }: MessageEvent<WorkerResponse<T> | ChannelLoadEvent>): void {
-    if (data.isEvent) {
+  private receiveMessage<T extends WorkerMsgType>({ data }: MessageEvent<WorkerResponse<T>>): void {
+    if (data.responseKind === WorkerResponseKind.EVENT) {
       this.onChannelData?.(data);
     } else {
       const prom = this.pendingRequests[data.msgId];
@@ -71,15 +72,13 @@ class SharedLoadWorkerHandle {
         throw new Error(`Received response of type ${data.type} for message of type ${prom.type}`);
       }
 
-      prom.resolve(data.payload);
+      if (data.responseKind === WorkerResponseKind.ERROR) {
+        prom.reject(data.payload);
+      } else {
+        prom.resolve(data.payload);
+      }
       this.pendingRequests[data.msgId] = undefined;
     }
-  }
-
-  private receiveError(e: ErrorEvent): void {
-    // TODO propagate errors through promises
-    // if (!e.error)
-    console.log(e);
   }
 }
 
@@ -99,7 +98,14 @@ class LoadWorker {
     return this.openPromise;
   }
 
-  async createLoader(path: string | string[], options?: CreateLoaderOptions): Promise<WorkerLoader> {
+  async createLoader(path: string | string[], options?: CreateLoaderOptions): Promise<WorkerLoader | TiffLoader> {
+    // Special case: TIFF loader doesn't work on a worker, has its own workers anyways, and doesn't use cache or queue.
+    const pathString = typeof path === "object" ? path[0] : path;
+    const fileType = options?.fileType || pathToFileType(pathString);
+    if (fileType === VolumeFileFormat.TIFF) {
+      return new TiffLoader(pathString);
+    }
+
     const success = await this.workerHandle.sendMessage(WorkerMsgType.CREATE_LOADER, { path, options });
     if (!success) {
       throw new Error("Failed to create loader");
