@@ -1,7 +1,14 @@
 import VolumeCache from "../VolumeCache";
 import { createVolumeLoader } from "../loaders";
 import { IVolumeLoader } from "../loaders/IVolumeLoader";
-import { WorkerMsgType, WorkerRequest, WorkerRequestPayload, WorkerResponseKind, WorkerResponsePayload } from "./types";
+import {
+  WorkerMsgType,
+  WorkerRequest,
+  WorkerRequestPayload,
+  WorkerResponse,
+  WorkerResponseKind,
+  WorkerResponsePayload,
+} from "./types";
 import { rebuildImageInfo, rebuildLoadSpec } from "./util";
 
 let cache: VolumeCache | undefined = undefined;
@@ -48,17 +55,15 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
       rebuildImageInfo(imageInfo),
       rebuildLoadSpec(loadSpec),
       (channelIndex, data, atlasDims) => {
-        self.postMessage(
-          {
-            responseKind: WorkerResponseKind.EVENT,
-            loaderId,
-            loadId,
-            channelIndex,
-            data,
-            atlasDims,
-          },
-          [data.buffer]
-        );
+        const message: WorkerResponse<WorkerMsgType> = {
+          responseKind: WorkerResponseKind.EVENT,
+          loaderId,
+          loadId,
+          channelIndex,
+          data,
+          atlasDims,
+        };
+        self.postMessage(message, [data.buffer]);
       }
     );
   },
@@ -66,11 +71,13 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
 
 self.onmessage = async <T extends WorkerMsgType>({ data }: MessageEvent<WorkerRequest<T>>) => {
   const { msgId, type, payload } = data;
+  let message: WorkerResponse<T>;
 
   try {
     const response = await messageHandlers[type](payload);
-    self.postMessage({ responseKind: WorkerResponseKind.SUCCESS, msgId, type, payload: response });
+    message = { responseKind: WorkerResponseKind.SUCCESS, msgId, type, payload: response };
   } catch (e) {
-    self.postMessage({ responseKind: WorkerResponseKind.ERROR, msgId, type, payload: (e as Error).message });
+    message = { responseKind: WorkerResponseKind.ERROR, msgId, type, payload: (e as Error).message };
   }
+  self.postMessage(message);
 };

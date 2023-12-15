@@ -1,7 +1,7 @@
 import { Box3, Vector2, Vector3 } from "three";
 
 import { IVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "./IVolumeLoader";
-import Volume, { ImageInfo } from "../Volume";
+import { ImageInfo } from "../Volume";
 import VolumeCache from "../VolumeCache";
 
 interface PackedChannelsImage {

@@ -37,8 +37,7 @@ export async function createVolumeLoader(
 
   switch (fileType) {
     case VolumeFileFormat.ZARR:
-      const { scene, cache, concurrencyLimit } = options || {};
-      return await OMEZarrLoader.createLoader(pathString, scene, cache, concurrencyLimit);
+      return await OMEZarrLoader.createLoader(pathString, options?.scene, options?.cache, options?.concurrencyLimit);
     case VolumeFileFormat.JSON:
       return new JsonImageInfoLoader(path, options?.cache);
     case VolumeFileFormat.TIFF:
