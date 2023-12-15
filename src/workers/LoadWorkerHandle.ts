@@ -9,9 +9,11 @@ import {
   WorkerResponsePayload,
   ChannelLoadEvent,
 } from "./types";
+import { rebuildImageInfo, rebuildLoadSpec } from "./util";
 
-type StoredPromise = {
-  resolve: (value: WorkerResponsePayload<WorkerMsgType>) => void;
+type StoredPromise<T extends WorkerMsgType> = {
+  type: T;
+  resolve: (value: WorkerResponsePayload<T>) => void;
   reject: (reason?: unknown) => void;
 };
 
@@ -20,9 +22,9 @@ type StoredPromise = {
  * This is separate from `LoadWorker` so that `sendMessage` and `onChannelData` can be shared with `WorkerLoader`s
  * without leaking the API outside this file.
  */
-class InternalLoadWorkerHandle {
+class SharedLoadWorkerHandle {
   private worker: Worker;
-  private pendingRequests: (StoredPromise | undefined)[] = [];
+  private pendingRequests: (StoredPromise<WorkerMsgType> | undefined)[] = [];
 
   public onChannelData: ((e: ChannelLoadEvent) => void) | undefined = undefined;
 
@@ -33,7 +35,7 @@ class InternalLoadWorkerHandle {
   }
 
   /** Given a handle for settling a promise when a response is received from the worker, store it and return its ID */
-  private registerMessagePromise(prom: StoredPromise): number {
+  private registerMessagePromise(prom: StoredPromise<WorkerMsgType>): number {
     for (const [i, pendingPromise] of this.pendingRequests.entries()) {
       if (pendingPromise === undefined) {
         this.pendingRequests[i] = prom;
@@ -47,7 +49,7 @@ class InternalLoadWorkerHandle {
   sendMessage<T extends WorkerMsgType>(type: T, payload: WorkerRequestPayload<T>): Promise<WorkerResponsePayload<T>> {
     let msgId = -1;
     const promise = new Promise<WorkerResponsePayload<T>>((resolve, reject) => {
-      msgId = this.registerMessagePromise({ resolve, reject } as StoredPromise);
+      msgId = this.registerMessagePromise({ type, resolve, reject } as StoredPromise<WorkerMsgType>);
     });
 
     const msg: WorkerRequest<T> = { msgId, type, payload, isEvent: false };
@@ -56,14 +58,19 @@ class InternalLoadWorkerHandle {
     return promise;
   }
 
-  private receiveMessage({ data }: MessageEvent<WorkerResponse<WorkerMsgType> | ChannelLoadEvent>): void {
+  private receiveMessage<T extends WorkerMsgType>({ data }: MessageEvent<WorkerResponse<T> | ChannelLoadEvent>): void {
     if (data.isEvent) {
       this.onChannelData?.(data);
     } else {
       const prom = this.pendingRequests[data.msgId];
+
       if (prom === undefined) {
         throw new Error(`Received response for unknown message ID ${data.msgId}`);
       }
+      if (prom.type !== data.type) {
+        throw new Error(`Received response of type ${data.type} for message of type ${prom.type}`);
+      }
+
       prom.resolve(data.payload);
       this.pendingRequests[data.msgId] = undefined;
     }
@@ -77,14 +84,14 @@ class InternalLoadWorkerHandle {
 }
 
 class LoadWorker {
-  private workerHandle: InternalLoadWorkerHandle;
+  private workerHandle: SharedLoadWorkerHandle;
   private openPromise: Promise<void>;
 
   private activeLoader: WorkerLoader | undefined = undefined;
   private activeLoaderId = -1;
 
   constructor(maxCacheSize?: number) {
-    this.workerHandle = new InternalLoadWorkerHandle();
+    this.workerHandle = new SharedLoadWorkerHandle();
     this.openPromise = this.workerHandle.sendMessage(WorkerMsgType.INIT, { maxCacheSize });
   }
 
@@ -111,7 +118,7 @@ class WorkerLoader extends IVolumeLoader {
   private currentLoadId = -1;
   private currentLoadCallback: RawChannelDataCallback | undefined = undefined;
 
-  constructor(private loaderId: number, private workerHandle: InternalLoadWorkerHandle) {
+  constructor(private loaderId: number, private workerHandle: SharedLoadWorkerHandle) {
     super();
     workerHandle.onChannelData = this.onChannelData.bind(this);
   }
@@ -131,12 +138,13 @@ class WorkerLoader extends IVolumeLoader {
     return this.workerHandle.sendMessage(WorkerMsgType.LOAD_DIMS, loadSpec);
   }
 
-  createImageInfo(loadSpec: LoadSpec): Promise<[ImageInfo, LoadSpec]> {
+  async createImageInfo(loadSpec: LoadSpec): Promise<[ImageInfo, LoadSpec]> {
     this.checkIsActive();
-    return this.workerHandle.sendMessage(WorkerMsgType.CREATE_VOLUME, loadSpec);
+    const [imageInfo, adjustedLoadSpec] = await this.workerHandle.sendMessage(WorkerMsgType.CREATE_VOLUME, loadSpec);
+    return [rebuildImageInfo(imageInfo), rebuildLoadSpec(adjustedLoadSpec)];
   }
 
-  loadRawChannelData(
+  async loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
     onData: RawChannelDataCallback
@@ -145,12 +153,15 @@ class WorkerLoader extends IVolumeLoader {
 
     this.currentLoadCallback = onData;
     this.currentLoadId += 1;
-    return this.workerHandle.sendMessage(WorkerMsgType.LOAD_VOLUME_DATA, {
+
+    const [newImageInfo, newLoadSpec] = await this.workerHandle.sendMessage(WorkerMsgType.LOAD_VOLUME_DATA, {
       imageInfo,
       loadSpec,
       loaderId: this.loaderId,
       loadId: this.currentLoadId,
     });
+
+    return [newImageInfo && rebuildImageInfo(newImageInfo), newLoadSpec && rebuildLoadSpec(newLoadSpec)];
   }
 
   onChannelData(e: ChannelLoadEvent): void {

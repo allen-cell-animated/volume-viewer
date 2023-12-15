@@ -2,17 +2,20 @@ import VolumeCache from "../VolumeCache";
 import { createVolumeLoader } from "../loaders";
 import { IVolumeLoader } from "../loaders/IVolumeLoader";
 import { WorkerMsgType, WorkerRequest, WorkerRequestPayload, WorkerResponsePayload } from "./types";
+import { rebuildImageInfo, rebuildLoadSpec } from "./util";
 
 let cache: VolumeCache | undefined = undefined;
 let loader: IVolumeLoader | undefined = undefined;
+let initialized = false;
 
-type MessageHandlersType = {
-  [T in WorkerMsgType]: (payload: WorkerRequestPayload<T>) => Promise<WorkerResponsePayload<T>>;
-};
+type MessageHandler<T extends WorkerMsgType> = (payload: WorkerRequestPayload<T>) => Promise<WorkerResponsePayload<T>>;
 
-const messageHandlers: MessageHandlersType = {
+const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
   [WorkerMsgType.INIT]: ({ maxCacheSize }) => {
-    cache = new VolumeCache(maxCacheSize);
+    if (!initialized) {
+      cache = new VolumeCache(maxCacheSize);
+      initialized = true;
+    }
     return Promise.resolve();
   },
 
@@ -25,40 +28,47 @@ const messageHandlers: MessageHandlersType = {
     if (loader === undefined) {
       throw new Error("No loader created");
     }
-    const volume = await loader.createVolume(loadSpec);
-    return [volume.imageInfo, volume.loadSpec];
+
+    return await loader.createImageInfo(rebuildLoadSpec(loadSpec));
   },
 
   [WorkerMsgType.LOAD_DIMS]: async (loadSpec) => {
     if (loader === undefined) {
       throw new Error("No loader created");
     }
-    return await loader.loadDims(loadSpec);
+    return await loader.loadDims(rebuildLoadSpec(loadSpec));
   },
 
   [WorkerMsgType.LOAD_VOLUME_DATA]: async ({ imageInfo, loadSpec, loaderId, loadId }) => {
     if (loader === undefined) {
       throw new Error("No loader created");
     }
-    if (loaderId !== 0) {
-      throw new Error("Only one loader is supported");
-    }
-    const [updatedImageInfo, updatedLoadSpec] = await loader.loadRawChannelData(
-      imageInfo,
-      loadSpec,
-      (data, channelIndex, atlasDims) => {
-        self.postMessage({
-          isEvent: true,
-          loaderId,
-          loadId,
-          channelIndex,
-          data,
-          atlasDims,
-        });
+
+    return await loader.loadRawChannelData(
+      rebuildImageInfo(imageInfo),
+      rebuildLoadSpec(loadSpec),
+      (channelIndex, data, atlasDims) => {
+        self.postMessage({ isEvent: true, loaderId, loadId, channelIndex, data, atlasDims }, [data.buffer]);
       }
     );
-    return [updatedImageInfo, updatedLoadSpec];
   },
 };
 
-self.onmessage = ({ data }: MessageEvent<WorkerRequest<WorkerMsgType>>) => {};
+self.onmessage = async <T extends WorkerMsgType>({ data }: MessageEvent<WorkerRequest<T>>) => {
+  const { msgId, type, payload } = data;
+  const handler = messageHandlers[type];
+  console.log("Worker received message of type " + type);
+
+  // try {
+  const response = await handler(payload);
+  self.postMessage({ isEvent: false, msgId, type, payload: response });
+  // } catch (e) {
+  //   // self.postMessage({
+  //   //   isEvent: false,
+  //   //   msgId,
+  //   //   type,
+  //   //   payload: e.message,
+  //   // });
+  //   console.log(e);
+  // }
+};
