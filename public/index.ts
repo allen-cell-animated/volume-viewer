@@ -9,7 +9,6 @@ import {
   JsonImageInfoLoader,
   View3d,
   Volume,
-  VolumeCache,
   VolumeMaker,
   Light,
   AREA_LIGHT,
@@ -17,7 +16,6 @@ import {
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
   VolumeFileFormat,
-  createVolumeLoader,
 } from "../src";
 // special loader really just for this demo app but lives with the other loaders
 import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
