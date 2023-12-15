@@ -137,8 +137,7 @@ class LoadWorker {
 }
 
 class WorkerLoader extends IVolumeLoader {
-  private isActive = true;
-
+  private isOpen = true;
   private currentLoadId = -1;
   private currentLoadCallback: RawChannelDataCallback | undefined = undefined;
 
@@ -147,23 +146,23 @@ class WorkerLoader extends IVolumeLoader {
     workerHandle.onChannelData = this.onChannelData.bind(this);
   }
 
-  private checkIsActive(): void {
-    if (!this.isActive) {
+  private checkIsOpen(): void {
+    if (!this.isOpen || !this.workerHandle.isOpen) {
       throw new Error("Tried to use a closed loader");
     }
   }
 
   close(): void {
-    this.isActive = false;
+    this.isOpen = false;
   }
 
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
-    this.checkIsActive();
+    this.checkIsOpen();
     return this.workerHandle.sendMessage(WorkerMsgType.LOAD_DIMS, loadSpec);
   }
 
   async createImageInfo(loadSpec: LoadSpec): Promise<[ImageInfo, LoadSpec]> {
-    this.checkIsActive();
+    this.checkIsOpen();
     const [imageInfo, adjustedLoadSpec] = await this.workerHandle.sendMessage(WorkerMsgType.CREATE_VOLUME, loadSpec);
     return [rebuildImageInfo(imageInfo), rebuildLoadSpec(adjustedLoadSpec)];
   }
@@ -173,7 +172,7 @@ class WorkerLoader extends IVolumeLoader {
     loadSpec: LoadSpec,
     onData: RawChannelDataCallback
   ): Promise<[ImageInfo | undefined, LoadSpec | undefined]> {
-    this.checkIsActive();
+    this.checkIsOpen();
 
     this.currentLoadCallback = onData;
     this.currentLoadId += 1;
