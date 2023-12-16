@@ -7,12 +7,11 @@ import { AbsolutePath, AsyncReadable, Readable } from "@zarrita/storage";
 // Getting it from the top-level package means we don't get its type. This is also a bug, but it's more acceptable.
 import { FetchStore } from "zarrita";
 
-import Volume, { ImageInfo } from "../Volume";
+import { ImageInfo } from "../Volume";
 import VolumeCache from "../VolumeCache";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
-import { IVolumeLoader, LoadSpec, PerChannelCallback, RawChannelDataCallback, VolumeDims } from "./IVolumeLoader";
+import { IVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "./IVolumeLoader";
 import {
-  buildDefaultMetadata,
   composeSubregion,
   computePackedAtlasDims,
   convertSubregionToPixels,
@@ -496,6 +495,9 @@ class OMEZarrLoader extends IVolumeLoader {
     const activeTimestep = chunkCoords[0][0];
     const tmin = Math.max(0, activeTimestep - PREFETCH_TIME_MARGIN);
     const tmax = Math.min(chunkDims[0], activeTimestep + PREFETCH_TIME_MARGIN);
+    const matchesTCZYX = ([t1, c1, z1, y1, x1]: TCZYX<number>, [t2, c2, z2, y2, x2]: TCZYX<number>) => {
+      return t1 === t2 && c1 === c2 && z1 === z2 && y1 === y2 && x1 === x2;
+    };
     for (let t = tmin; t < tmax; t++) {
       const subscriber = this.requestQueue.addSubscriber();
       this.prefetchSubscribers[t] = subscriber;
@@ -508,7 +510,9 @@ class OMEZarrLoader extends IVolumeLoader {
           for (let z = 0; z < chunkDims[2]; z++) {
             for (let y = 0; y < chunkDims[3]; y++) {
               for (let x = 0; x < chunkDims[4]; x++) {
-                this.prefetchChunk(scaleLevel.path, [t, c, z, y, x], subscriber);
+                if (!chunkCoords.some((coord) => matchesTCZYX(coord, [t, c, z, y, x]))) {
+                  this.prefetchChunk(scaleLevel.path, [t, c, z, y, x], subscriber);
+                }
               }
             }
           }
@@ -582,7 +586,6 @@ class OMEZarrLoader extends IVolumeLoader {
       const sliceSpec = this.orderByDimension(unorderedSpec as TCZYX<number | Slice>);
 
       try {
-        console.log(level, sliceSpec, subscriber);
         const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } });
         const u8 = convertChannel(result.data);
         onData(ch, u8);
@@ -595,12 +598,10 @@ class OMEZarrLoader extends IVolumeLoader {
       }
     });
 
-    console.log(keys);
-    setTimeout(() => this.beginPrefetch(keys, level), 0);
-
-    Promise.all(channelPromises).then(() =>
-      this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON)
-    );
+    Promise.all(channelPromises).then(() => {
+      this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
+      setTimeout(() => this.beginPrefetch(keys, level), 1000);
+    });
     return Promise.resolve([updatedImageInfo, loadSpec]);
   }
 }
