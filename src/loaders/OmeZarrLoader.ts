@@ -121,9 +121,6 @@ class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements A
     if (!this.cache || ZARR_EXTS.some((s) => key.endsWith(s))) {
       return this.baseStore.get(key, opts?.options);
     }
-    if (opts?.isPrefetch) {
-      console.log("prefetch: ", key);
-    }
     if (opts?.reportKey) {
       opts.reportKey(key, opts.subscriber);
     }
