@@ -232,7 +232,7 @@ class JsonImageInfoLoader extends IVolumeLoader {
       const bitmap = await createImageBitmap(blob);
 
       const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-      const ctx = canvas.getContext("2d");
+      const ctx = canvas.getContext("2d") as OffscreenCanvasRenderingContext2D | null;
       if (!ctx) {
         console.log("Error creating canvas 2d context for " + image.name);
         return;
