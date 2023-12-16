@@ -23,9 +23,8 @@ export function pathToFileType(path: string): VolumeFileFormat {
     return VolumeFileFormat.JSON;
   } else if (path.endsWith(".tif") || path.endsWith(".tiff")) {
     return VolumeFileFormat.TIFF;
-  } else {
-    return VolumeFileFormat.ZARR;
   }
+  return VolumeFileFormat.ZARR;
 }
 
 export async function createVolumeLoader(
