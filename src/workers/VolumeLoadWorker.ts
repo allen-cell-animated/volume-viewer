@@ -1,6 +1,6 @@
 import VolumeCache from "../VolumeCache";
 import { VolumeFileFormat, createVolumeLoader, pathToFileType } from "../loaders";
-import { IVolumeLoader } from "../loaders/IVolumeLoader";
+import { ThreadableVolumeLoader } from "../loaders/IVolumeLoader";
 import {
   WorkerMsgType,
   WorkerRequest,
@@ -12,7 +12,7 @@ import {
 import { rebuildImageInfo, rebuildLoadSpec } from "./util";
 
 let cache: VolumeCache | undefined = undefined;
-let loader: IVolumeLoader | undefined = undefined;
+let loader: ThreadableVolumeLoader | undefined = undefined;
 let initialized = false;
 let copyOnLoad = false;
 

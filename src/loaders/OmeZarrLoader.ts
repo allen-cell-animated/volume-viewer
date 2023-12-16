@@ -10,7 +10,7 @@ import { FetchStore } from "zarrita";
 import { ImageInfo } from "../Volume";
 import VolumeCache from "../VolumeCache";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
-import { IVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "./IVolumeLoader";
+import { ThreadableVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "./IVolumeLoader";
 import {
   composeSubregion,
   computePackedAtlasDims,
@@ -217,7 +217,7 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint
 
 type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;
 
-class OMEZarrLoader extends IVolumeLoader {
+class OMEZarrLoader extends ThreadableVolumeLoader {
   /** Hold one optional subscriber ID per timestep, each defined iff a batch of prefetches is waiting for that frame */
   private prefetchSubscribers: (SubscriberId | undefined)[];
   /** The ID of the subscriber responsible for "actual loads" (non-prefetch requests) */

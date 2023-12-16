@@ -1,7 +1,7 @@
 import { fromUrl } from "geotiff";
 import { Vector3 } from "three";
 
-import { IVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "./IVolumeLoader";
+import { ThreadableVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "./IVolumeLoader";
 import { computePackedAtlasDims } from "./VolumeLoaderUtils";
 import { ImageInfo } from "../Volume";
 
@@ -61,7 +61,7 @@ function getOMEDims(imageEl: Element): OMEDims {
 
 const getBytesPerSample = (type: string): number => (type === "uint8" ? 1 : type === "uint16" ? 2 : 4);
 
-class TiffLoader extends IVolumeLoader {
+class TiffLoader extends ThreadableVolumeLoader {
   url: string;
   dims?: OMEDims;
 

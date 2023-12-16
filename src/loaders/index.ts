@@ -1,4 +1,4 @@
-import { IVolumeLoader } from "./IVolumeLoader";
+import { ThreadableVolumeLoader } from "./IVolumeLoader";
 
 import { OMEZarrLoader } from "./OmeZarrLoader";
 import { JsonImageInfoLoader } from "./JsonImageInfoLoader";
@@ -31,7 +31,7 @@ export function pathToFileType(path: string): VolumeFileFormat {
 export async function createVolumeLoader(
   path: string | string[],
   options?: CreateLoaderOptions
-): Promise<IVolumeLoader> {
+): Promise<ThreadableVolumeLoader> {
   const pathString = Array.isArray(path) ? path[0] : path;
   const fileType = options?.fileType || pathToFileType(pathString);
 

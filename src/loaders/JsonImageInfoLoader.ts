@@ -1,6 +1,6 @@
 import { Box3, Vector2, Vector3 } from "three";
 
-import { IVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "./IVolumeLoader";
+import { ThreadableVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "./IVolumeLoader";
 import { ImageInfo } from "../Volume";
 import VolumeCache from "../VolumeCache";
 
@@ -91,7 +91,7 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
   userData: json.userData,
 });
 
-class JsonImageInfoLoader extends IVolumeLoader {
+class JsonImageInfoLoader extends ThreadableVolumeLoader {
   urls: string[];
   jsonInfo: (JsonImageInfo | undefined)[];
 

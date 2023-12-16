@@ -43,17 +43,9 @@ export type RawChannelDataCallback = (ch: number, data: Uint8Array, atlasDims?: 
  * Loaders may keep state for reuse between volume creation and volume loading, and should be kept alive until volume
  * loading is complete. (See `createVolume`)
  */
-export abstract class IVolumeLoader {
+export interface IVolumeLoader {
   /** Use VolumeDims to further refine a `LoadSpec` for use in `createVolume` */
-  abstract loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]>;
-
-  abstract createImageInfo(loadSpec: LoadSpec): Promise<[ImageInfo, LoadSpec]>;
-
-  abstract loadRawChannelData(
-    imageInfo: ImageInfo,
-    loadSpec: LoadSpec,
-    onData: RawChannelDataCallback
-  ): Promise<[ImageInfo | undefined, LoadSpec | undefined]>;
+  loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]>;
 
   /**
    * Create an empty `Volume` from a `LoadSpec`, which must be passed to `loadVolumeData` to begin loading.
@@ -63,13 +55,7 @@ export abstract class IVolumeLoader {
    * information about that source. Once this method has been called, every subsequent call to it or
    * `loadVolumeData` should reference the same source.
    */
-  async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
-    const [imageInfo, adjustedSpec] = await this.createImageInfo(loadSpec);
-    const vol = new Volume(imageInfo, adjustedSpec, this);
-    vol.channelLoadCallback = onChannelLoaded;
-    vol.imageMetadata = buildDefaultMetadata(imageInfo);
-    return vol;
-  }
+  createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume>;
 
   /**
    * Begin loading a volume's data, as specified in its `LoadSpec`.
@@ -80,6 +66,29 @@ export abstract class IVolumeLoader {
   // TODO this is not cancellable in the sense that any async requests initiated here are not stored
   // in a way that they can be interrupted.
   // TODO explicitly passing a `LoadSpec` is now rarely useful. Remove?
+  loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): void;
+}
+
+/** Abstract class which allows loaders to accept and return types that are easier to transfer to/from a worker. */
+export abstract class ThreadableVolumeLoader implements IVolumeLoader {
+  abstract loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]>;
+
+  abstract createImageInfo(loadSpec: LoadSpec): Promise<[ImageInfo, LoadSpec]>;
+
+  abstract loadRawChannelData(
+    imageInfo: ImageInfo,
+    loadSpec: LoadSpec,
+    onData: RawChannelDataCallback
+  ): Promise<[ImageInfo | undefined, LoadSpec | undefined]>;
+
+  async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
+    const [imageInfo, adjustedSpec] = await this.createImageInfo(loadSpec);
+    const vol = new Volume(imageInfo, adjustedSpec, this);
+    vol.channelLoadCallback = onChannelLoaded;
+    vol.imageMetadata = buildDefaultMetadata(imageInfo);
+    return vol;
+  }
+
   async loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
     const onChannelData: RawChannelDataCallback = (channelIndex, data, atlasDims) => {
       if (atlasDims) {

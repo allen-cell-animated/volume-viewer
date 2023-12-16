@@ -1,10 +1,10 @@
 import { Vector2, Vector3 } from "three";
 
-import { IVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "./IVolumeLoader";
+import { ThreadableVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "./IVolumeLoader";
 import { ImageInfo } from "../Volume";
 import { JsonImageInfoLoader } from "./JsonImageInfoLoader";
 
-class OpenCellLoader extends IVolumeLoader {
+class OpenCellLoader extends ThreadableVolumeLoader {
   async loadDims(_: LoadSpec): Promise<VolumeDims[]> {
     const d = new VolumeDims();
     d.shape = [1, 2, 27, 600, 600];

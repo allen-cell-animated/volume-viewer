@@ -1,6 +1,6 @@
 import { ImageInfo } from "../Volume";
 import { CreateLoaderOptions, VolumeFileFormat, pathToFileType } from "../loaders";
-import { IVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "../loaders/IVolumeLoader";
+import { ThreadableVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "../loaders/IVolumeLoader";
 import { TiffLoader } from "../loaders/TiffLoader";
 import {
   WorkerMsgType,
@@ -136,7 +136,7 @@ class LoadWorker {
   }
 }
 
-class WorkerLoader extends IVolumeLoader {
+class WorkerLoader extends ThreadableVolumeLoader {
   private isOpen = true;
   private currentLoadId = -1;
   private currentLoadCallback: RawChannelDataCallback | undefined = undefined;
