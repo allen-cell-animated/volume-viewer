@@ -428,7 +428,7 @@ class OMEZarrLoader implements IVolumeLoader {
     // First, cancel any pending requests for this volume
     this.requestQueue.cancelAllRequests(CHUNK_REQUEST_CANCEL_REASON);
 
-    vol.loadSpec = explicitLoadSpec ?? vol.loadSpec;
+    vol.loadSpec = { ...explicitLoadSpec, ...vol.loadSpec };
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     const [z, y, x] = this.axesTCZYX.slice(2);
     const subregion = composeSubregion(vol.loadSpec.subregion, maxExtent);
