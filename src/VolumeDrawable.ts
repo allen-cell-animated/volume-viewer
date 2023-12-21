@@ -503,6 +503,15 @@ export default class VolumeDrawable {
       this.settings.visible = true;
     }
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
+
+    // add or remove this channel from the list of required channels to load
+    const { channels } = this.volume.loadSpec;
+    const channelRequired = channels.includes(channelIndex);
+    if (enabled && !channelRequired) {
+      this.volume.updateRequiredData({ channels: [...channels, channelIndex] });
+    } else if (!enabled && channelRequired) {
+      this.volume.updateRequiredData({ channels: channels.filter((i) => i !== channelIndex) });
+    }
   }
 
   isVolumeChannelEnabled(channelIndex: number): boolean {
