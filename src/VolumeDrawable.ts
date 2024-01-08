@@ -518,7 +518,6 @@ export default class VolumeDrawable {
   // Set the color for a channel
   // @param {Array.<number>} colorrgb [r,g,b]
   updateChannelColor(channelIndex: number, colorrgb: [number, number, number]): void {
-    console.log("update color", channelIndex, colorrgb);
     if (!this.channelColors[channelIndex]) {
       return;
     }
