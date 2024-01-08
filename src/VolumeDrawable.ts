@@ -497,12 +497,17 @@ export default class VolumeDrawable {
     // flip the color to the "null" value
     this.fusion[channelIndex].rgbColor = enabled ? this.channelColors[channelIndex] : 0;
     // if all are nulled out, then hide the volume element from the scene.
-    if (this.fusion.every((elem) => elem.rgbColor === 0)) {
-      this.settings.visible = false;
-    } else {
-      this.settings.visible = true;
-    }
+    this.settings.visible = !this.fusion.every((elem) => elem.rgbColor === 0);
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
+
+    // add or remove this channel from the list of required channels to load
+    const { channels } = this.volume.loadSpecRequired;
+    const channelRequired = channels.includes(channelIndex);
+    if (enabled && !channelRequired) {
+      this.volume.updateRequiredData({ channels: [...channels, channelIndex] });
+    } else if (!enabled && channelRequired) {
+      this.volume.updateRequiredData({ channels: channels.filter((i) => i !== channelIndex) });
+    }
   }
 
   isVolumeChannelEnabled(channelIndex: number): boolean {
