@@ -6195,8 +6195,7 @@ var Volume = /*#__PURE__*/function () {
     this.loaded = false;
     this.imageInfo = imageInfo;
     this.name = this.imageInfo.name;
-    this.loadSpec = loadSpec;
-    this.loadSpecRequired = _objectSpread(_objectSpread({
+    this.loadSpec = _objectSpread({
       // Fill in defaults for optional properties
       multiscaleLevel: 0,
       channels: Array.from({
@@ -6204,8 +6203,10 @@ var Volume = /*#__PURE__*/function () {
       }, function (_val, idx) {
         return idx;
       })
-    }, loadSpec), {}, {
-      subregion: loadSpec.subregion.clone()
+    }, loadSpec);
+    this.loadSpecRequired = _objectSpread(_objectSpread({}, this.loadSpec), {}, {
+      channels: this.loadSpec.channels.slice(),
+      subregion: this.loadSpec.subregion.clone()
     });
     this.loader = loader;
     // imageMetadata to be filled in by Volume Loaders
@@ -6270,12 +6271,15 @@ var Volume = /*#__PURE__*/function () {
     key: "updateRequiredData",
     value: function () {
       var _updateRequiredData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(required, onChannelLoaded) {
+        var _this = this;
         var noReload, _this$loadSpec$multis, _this$loader, currentScale, minLevel, dims, loadableLevel, _this$loader2;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee$(_context) {
           while (1) switch (_context.prev = _context.next) {
             case 0:
               this.loadSpecRequired = _objectSpread(_objectSpread({}, this.loadSpecRequired), required);
-              noReload = this.loadSpec.time === this.loadSpecRequired.time && this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion); // An update to `subregion` should trigger a reload when the new subregion is not contained in the old one
+              noReload = this.loadSpec.time === this.loadSpecRequired.time && this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion) && this.loadSpecRequired.channels.every(function (channel) {
+                return _this.loadSpec.channels.includes(channel);
+              }); // An update to `subregion` should trigger a reload when the new subregion is not contained in the old one
               // OR when the new subregion is smaller than the old one by enough that we can load a higher scale level.
               if (!(noReload && !this.loadSpec.subregion.equals(this.loadSpecRequired.subregion))) {
                 _context.next = 9;
@@ -6361,7 +6365,7 @@ var Volume = /*#__PURE__*/function () {
   }, {
     key: "onChannelLoaded",
     value: function onChannelLoaded(batch) {
-      var _this = this;
+      var _this2 = this;
       // check to see if all channels are now loaded, and fire an event(?)
       if (this.channels.every(function (element) {
         return element.loaded;
@@ -6369,11 +6373,11 @@ var Volume = /*#__PURE__*/function () {
         this.loaded = true;
       }
       batch.forEach(function (channelIndex) {
-        var _this$channelLoadCall;
-        return (_this$channelLoadCall = _this.channelLoadCallback) === null || _this$channelLoadCall === void 0 ? void 0 : _this$channelLoadCall.call(_this, _this, channelIndex);
+        var _this2$channelLoadCal;
+        return (_this2$channelLoadCal = _this2.channelLoadCallback) === null || _this2$channelLoadCal === void 0 ? void 0 : _this2$channelLoadCal.call(_this2, _this2, channelIndex);
       });
       this.volumeDataObservers.forEach(function (observer) {
-        return observer.onVolumeData(_this, batch);
+        return observer.onVolumeData(_this2, batch);
       });
     }
 
@@ -6792,17 +6796,19 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   colorObjectToArray: () => (/* binding */ colorObjectToArray),
 /* harmony export */   "default": () => (/* binding */ VolumeDrawable)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _MeshVolume__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./MeshVolume */ "./src/MeshVolume.ts");
-/* harmony import */ var _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./RayMarchedAtlasVolume */ "./src/RayMarchedAtlasVolume.ts");
-/* harmony import */ var _PathTracedVolume__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./PathTracedVolume */ "./src/PathTracedVolume.ts");
-/* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
-/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./types */ "./src/types.ts");
-/* harmony import */ var _Atlas2DSlice__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./Atlas2DSlice */ "./src/Atlas2DSlice.ts");
-/* harmony import */ var _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./VolumeRenderSettings */ "./src/VolumeRenderSettings.ts");
+/* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/toConsumableArray */ "./node_modules/@babel/runtime/helpers/esm/toConsumableArray.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _MeshVolume__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./MeshVolume */ "./src/MeshVolume.ts");
+/* harmony import */ var _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./RayMarchedAtlasVolume */ "./src/RayMarchedAtlasVolume.ts");
+/* harmony import */ var _PathTracedVolume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./PathTracedVolume */ "./src/PathTracedVolume.ts");
+/* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
+/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./types */ "./src/types.ts");
+/* harmony import */ var _Atlas2DSlice__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./Atlas2DSlice */ "./src/Atlas2DSlice.ts");
+/* harmony import */ var _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./VolumeRenderSettings */ "./src/VolumeRenderSettings.ts");
+
 
 
 
@@ -6818,7 +6824,7 @@ __webpack_require__.r(__webpack_exports__);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
 var colorArrayToObject = function colorArrayToObject(_ref) {
-  var _ref2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2__["default"])(_ref, 3),
+  var _ref2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_3__["default"])(_ref, 3),
     r = _ref2[0],
     g = _ref2[1],
     b = _ref2[2];
@@ -6838,12 +6844,12 @@ var colorObjectToArray = function colorObjectToArray(_ref3) {
 // A renderable multichannel volume image with 8-bits per channel intensity values.
 var VolumeDrawable = /*#__PURE__*/function () {
   function VolumeDrawable(volume, options) {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, VolumeDrawable);
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, VolumeDrawable);
     // THE VOLUME DATA
     this.volume = volume;
-    this.settings = new _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.VolumeRenderSettings(volume);
+    this.settings = new _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.VolumeRenderSettings(volume);
     this.onChannelDataReadyCallback = undefined;
-    this.viewMode = _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.NONE; // 3D mode
+    this.viewMode = _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.NONE; // 3D mode
 
     this.channelColors = this.volume.channelColorsDefault.slice();
     this.channelOptions = new Array(this.volume.imageInfo.numChannels).fill({});
@@ -6857,28 +6863,28 @@ var VolumeDrawable = /*#__PURE__*/function () {
       }
       return {
         chIndex: index,
-        lut: new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_6__.LUT_ARRAY_LENGTH),
+        lut: new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_7__.LUT_ARRAY_LENGTH),
         rgbColor: rgbColor
       };
     });
-    this.sceneRoot = new three__WEBPACK_IMPORTED_MODULE_10__.Object3D(); //create an empty container
+    this.sceneRoot = new three__WEBPACK_IMPORTED_MODULE_11__.Object3D(); //create an empty container
 
-    this.meshVolume = new _MeshVolume__WEBPACK_IMPORTED_MODULE_3__["default"](this.volume);
-    options.renderMode = options.renderMode || _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH;
+    this.meshVolume = new _MeshVolume__WEBPACK_IMPORTED_MODULE_4__["default"](this.volume);
+    options.renderMode = options.renderMode || _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH;
     switch (options.renderMode) {
-      case _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE:
-        this.renderMode = _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE;
-        this.volumeRendering = new _PathTracedVolume__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume, this.settings);
+      case _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE:
+        this.renderMode = _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE;
+        this.volumeRendering = new _PathTracedVolume__WEBPACK_IMPORTED_MODULE_6__["default"](this.volume, this.settings);
         break;
-      case _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.SLICE: // default to raymarch even when slice is selected
-      case _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH:
+      case _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE: // default to raymarch even when slice is selected
+      case _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH:
       default:
-        this.renderMode = _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH;
-        this.volumeRendering = new _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__["default"](this.volume, this.settings);
+        this.renderMode = _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH;
+        this.volumeRendering = new _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume, this.settings);
     }
 
     // draw meshes first, and volume last, for blending and depth test reasons with raymarch
-    if (options.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH || options.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.SLICE) {
+    if (options.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH || options.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE) {
       this.sceneRoot.add(this.meshVolume.get3dObject());
     }
     this.sceneRoot.add(this.volumeRendering.get3dObject());
@@ -6889,12 +6895,12 @@ var VolumeDrawable = /*#__PURE__*/function () {
     this.updateScale();
 
     // apply the volume's default transformation
-    this.settings.translation = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(this.volume.getTranslation());
-    this.settings.rotation = new three__WEBPACK_IMPORTED_MODULE_10__.Euler().fromArray(this.volume.getRotation());
+    this.settings.translation = new three__WEBPACK_IMPORTED_MODULE_11__.Vector3().fromArray(this.volume.getTranslation());
+    this.settings.rotation = new three__WEBPACK_IMPORTED_MODULE_11__.Euler().fromArray(this.volume.getRotation());
     this.setOptions(options);
     // this.volumeRendering.setZSlice(this.zSlice);
   }
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(VolumeDrawable, [{
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(VolumeDrawable, [{
     key: "setOptions",
     value: function setOptions(options) {
       var _this = this;
@@ -6907,19 +6913,19 @@ var VolumeDrawable = /*#__PURE__*/function () {
       }
       if (options.clipBounds !== undefined) {
         this.settings.bounds = {
-          bmin: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(options.clipBounds[0], options.clipBounds[2], options.clipBounds[4]),
-          bmax: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5])
+          bmin: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(options.clipBounds[0], options.clipBounds[2], options.clipBounds[4]),
+          bmax: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5])
         };
         // note: dropping isOrthoAxis argument
-        this.setAxisClip(_VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.X, options.clipBounds[0], options.clipBounds[1]);
-        this.setAxisClip(_VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Y, options.clipBounds[2], options.clipBounds[3]);
-        this.setAxisClip(_VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Z, options.clipBounds[4], options.clipBounds[5]);
+        this.setAxisClip(_VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.X, options.clipBounds[0], options.clipBounds[1]);
+        this.setAxisClip(_VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.Y, options.clipBounds[2], options.clipBounds[3]);
+        this.setAxisClip(_VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.Z, options.clipBounds[4], options.clipBounds[5]);
       }
       if (options.translation !== undefined) {
-        this.setTranslation(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(options.translation));
+        this.setTranslation(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3().fromArray(options.translation));
       }
       if (options.rotation !== undefined) {
-        this.setRotation(new three__WEBPACK_IMPORTED_MODULE_10__.Euler().fromArray(options.rotation));
+        this.setRotation(new three__WEBPACK_IMPORTED_MODULE_11__.Euler().fromArray(options.rotation));
       }
       if (options.renderMode !== undefined) {
         this.setVolumeRendering(options.renderMode);
@@ -6999,7 +7005,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
       if (secondary !== undefined) {
         this.settings.secondaryRayStepSize = secondary;
       }
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.SAMPLING);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.SAMPLING);
     }
   }, {
     key: "updateScale",
@@ -7017,18 +7023,18 @@ var VolumeDrawable = /*#__PURE__*/function () {
         return;
       }
       this.settings.orthoScale = value;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.VIEW);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
     }
   }, {
     key: "setResolution",
     value: function setResolution(viewObj) {
       var x = viewObj.getWidth();
       var y = viewObj.getHeight();
-      var resolution = new three__WEBPACK_IMPORTED_MODULE_10__.Vector2(x, y);
+      var resolution = new three__WEBPACK_IMPORTED_MODULE_11__.Vector2(x, y);
       if (!this.settings.resolution.equals(resolution)) {
         this.meshVolume.setResolution(x, y);
         this.settings.resolution = resolution;
-        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.SAMPLING);
+        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.SAMPLING);
       }
     }
 
@@ -7051,23 +7057,23 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.settings.isOrtho = isOrthoAxis || false;
 
       // Configure mesh volume when in an orthographic axis alignment
-      if (axis !== _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.NONE && this.renderMode !== _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+      if (axis !== _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.NONE && this.renderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
       }
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.ROI | _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.VIEW);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.ROI | _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
     }
   }, {
     key: "modeStringToAxis",
     value: function modeStringToAxis(mode) {
       var modeToAxis = {
-        X: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.X,
-        YZ: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.X,
-        Y: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Y,
-        XZ: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Y,
-        Z: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Z,
-        XY: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Z
+        X: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.X,
+        YZ: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.X,
+        Y: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.Y,
+        XZ: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.Y,
+        Z: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.Z,
+        XY: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.Z
       };
-      return modeToAxis[mode] || _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.NONE;
+      return modeToAxis[mode] || _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.NONE;
     }
     /**
      * Sets the camera mode of the VolumeDrawable.
@@ -7079,20 +7085,20 @@ var VolumeDrawable = /*#__PURE__*/function () {
       var axis = this.modeStringToAxis(mode);
       this.viewMode = axis;
       // Force a volume render reset if we have switched to or from Z mode while raymarching is enabled.
-      if (axis === _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Z) {
+      if (axis === _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.Z) {
         // If currently in 3D raymarch mode, hotswap the 2D slice
-        if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH || this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
-          this.setVolumeRendering(_types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.SLICE);
+        if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH || this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
+          this.setVolumeRendering(_types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE);
         }
       } else {
         // If in 2D slice mode, switch back to 3D raymarch mode
-        if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.SLICE) {
+        if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE) {
           this.setVolumeRendering(volumeRenderModeHint);
         }
       }
       if (this.settings.viewAxis !== axis) {
         this.settings.viewAxis = axis;
-        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.VIEW);
+        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
       }
     }
 
@@ -7105,7 +7111,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
         return;
       }
       this.settings.isOrtho = isOrtho;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.VIEW);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
     }
   }, {
     key: "setInterpolationEnabled",
@@ -7114,12 +7120,12 @@ var VolumeDrawable = /*#__PURE__*/function () {
         return;
       }
       this.settings.useInterpolation = active;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.SAMPLING);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.SAMPLING);
     }
   }, {
     key: "setOrthoThickness",
     value: function setOrthoThickness(value) {
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         return;
       }
       this.meshVolume.setOrthoThickness(value);
@@ -7139,16 +7145,16 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.settings.gammaMin = gmin;
       this.settings.gammaLevel = glevel;
       this.settings.gammaMax = gmax;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.CAMERA);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.CAMERA);
     }
   }, {
     key: "setFlipAxes",
     value: function setFlipAxes(flipX, flipY, flipZ) {
-      var flipAxes = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(flipX, flipY, flipZ);
+      var flipAxes = new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(flipX, flipY, flipZ);
       if (!this.settings.flipAxes.equals(flipAxes)) {
         this.settings.flipAxes = flipAxes;
         this.meshVolume.setFlipAxes(flipX, flipY, flipZ);
-        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.TRANSFORM);
+        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.TRANSFORM);
       }
     }
   }, {
@@ -7158,7 +7164,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
         return;
       }
       this.settings.maxProjectMode = isMaxProject;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.VIEW);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
     }
   }, {
     key: "onAnimate",
@@ -7170,7 +7176,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
 
       // TODO confirm sequence
       this.volumeRendering.doRender(canvas);
-      if (this.renderMode !== _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+      if (this.renderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.meshVolume.doRender(canvas);
       }
     }
@@ -7229,14 +7235,14 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "setRenderUpdateListener",
     value: function setRenderUpdateListener(callback) {
       this.renderUpdateListener = callback;
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.volumeRendering.setRenderUpdateListener(callback);
       }
     }
   }, {
     key: "updateShadingMethod",
     value: function updateShadingMethod(isbrdf) {
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.volumeRendering.updateShadingMethod(isbrdf ? 1 : 0);
       }
     }
@@ -7244,13 +7250,13 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "updateMaterial",
     value: function updateMaterial() {
       this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.MATERIAL);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.MATERIAL);
     }
   }, {
     key: "updateLuts",
     value: function updateLuts() {
       this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.MATERIAL);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.MATERIAL);
     }
   }, {
     key: "setVoxelSize",
@@ -7289,7 +7295,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.channelColors[newChannelIndex] = this.volume.channelColorsDefault[newChannelIndex];
       this.fusion[newChannelIndex] = {
         chIndex: newChannelIndex,
-        lut: new Uint8Array[_Histogram__WEBPACK_IMPORTED_MODULE_6__.LUT_ARRAY_LENGTH](),
+        lut: new Uint8Array[_Histogram__WEBPACK_IMPORTED_MODULE_7__.LUT_ARRAY_LENGTH](),
         rgbColor: [this.channelColors[newChannelIndex][0], this.channelColors[newChannelIndex][1], this.channelColors[newChannelIndex][2]]
       };
       this.settings.diffuse[newChannelIndex] = [this.channelColors[newChannelIndex][0], this.channelColors[newChannelIndex][1], this.channelColors[newChannelIndex][2]];
@@ -7313,14 +7319,25 @@ var VolumeDrawable = /*#__PURE__*/function () {
       // flip the color to the "null" value
       this.fusion[channelIndex].rgbColor = enabled ? this.channelColors[channelIndex] : 0;
       // if all are nulled out, then hide the volume element from the scene.
-      if (this.fusion.every(function (elem) {
+      this.settings.visible = !this.fusion.every(function (elem) {
         return elem.rgbColor === 0;
-      })) {
-        this.settings.visible = false;
-      } else {
-        this.settings.visible = true;
+      });
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
+
+      // add or remove this channel from the list of required channels to load
+      var channels = this.volume.loadSpecRequired.channels;
+      var channelRequired = channels.includes(channelIndex);
+      if (enabled && !channelRequired) {
+        this.volume.updateRequiredData({
+          channels: [].concat((0,_babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__["default"])(channels), [channelIndex])
+        });
+      } else if (!enabled && channelRequired) {
+        this.volume.updateRequiredData({
+          channels: channels.filter(function (i) {
+            return i !== channelIndex;
+          })
+        });
       }
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.VIEW);
     }
   }, {
     key: "isVolumeChannelEnabled",
@@ -7383,7 +7400,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "setDensity",
     value: function setDensity(density) {
       this.settings.density = density;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.MATERIAL);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.MATERIAL);
     }
 
     /**
@@ -7398,7 +7415,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "setBrightness",
     value: function setBrightness(brightness) {
       this.settings.brightness = brightness;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.CAMERA);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.CAMERA);
     }
   }, {
     key: "getBrightness",
@@ -7412,25 +7429,25 @@ var VolumeDrawable = /*#__PURE__*/function () {
         return;
       }
       this.settings.maskChannelIndex = channelIndex;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.MASK_DATA);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.MASK_DATA);
     }
   }, {
     key: "setMaskAlpha",
     value: function setMaskAlpha(maskAlpha) {
       this.settings.maskAlpha = maskAlpha;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.MASK_ALPHA);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.MASK_ALPHA);
     }
   }, {
     key: "setShowBoundingBox",
     value: function setShowBoundingBox(showBoundingBox) {
       this.settings.showBoundingBox = showBoundingBox;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.BOUNDING_BOX);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.BOUNDING_BOX);
     }
   }, {
     key: "setBoundingBoxColor",
     value: function setBoundingBoxColor(color) {
       this.settings.boundingBoxColor = color;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.BOUNDING_BOX);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.BOUNDING_BOX);
     }
   }, {
     key: "getIntensity",
@@ -7440,21 +7457,21 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "onStartControls",
     value: function onStartControls() {
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.volumeRendering.onStartControls();
       }
     }
   }, {
     key: "onChangeControls",
     value: function onChangeControls() {
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.volumeRendering.onChangeControls();
       }
     }
   }, {
     key: "onEndControls",
     value: function onEndControls() {
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.volumeRendering.onEndControls();
       }
     }
@@ -7466,7 +7483,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "onCameraChanged",
     value: function onCameraChanged(fov, focalDistance, apertureSize) {
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.volumeRendering.updateCamera(fov, focalDistance, apertureSize);
       }
     }
@@ -7475,15 +7492,15 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "updateClipRegion",
     value: function updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
-      this.settings.bounds.bmin = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5);
-      this.settings.bounds.bmax = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5);
+      this.settings.bounds.bmin = new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5);
+      this.settings.bounds.bmax = new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5);
       this.meshVolume.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.ROI);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.ROI);
     }
   }, {
     key: "updateLights",
     value: function updateLights(state) {
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.volumeRendering.updateLights(state);
       }
     }
@@ -7491,18 +7508,18 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "setPixelSamplingRate",
     value: function setPixelSamplingRate(value) {
       this.settings.pixelSamplingRate = value;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.SAMPLING);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.SAMPLING);
     }
   }, {
     key: "setVolumeRendering",
     value: function setVolumeRendering(newRenderMode) {
       // Skip reassignment of Pathtrace renderer if already using
-      if (newRenderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE && this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE) {
+      if (newRenderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE && this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         return;
       }
 
       // remove old 3d object from scene
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.SLICE || this.renderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH) {
+      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE || this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH) {
         this.sceneRoot.remove(this.meshVolume.get3dObject());
       }
       this.sceneRoot.remove(this.volumeRendering.get3dObject());
@@ -7512,28 +7529,28 @@ var VolumeDrawable = /*#__PURE__*/function () {
 
       // create new
       switch (newRenderMode) {
-        case _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.PATHTRACE:
-          this.volumeRendering = new _PathTracedVolume__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume, this.settings);
+        case _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE:
+          this.volumeRendering = new _PathTracedVolume__WEBPACK_IMPORTED_MODULE_6__["default"](this.volume, this.settings);
           this.volume.updateRequiredData({
-            subregion: new three__WEBPACK_IMPORTED_MODULE_10__.Box3(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(1, 1, 1))
+            subregion: new three__WEBPACK_IMPORTED_MODULE_11__.Box3(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(1, 1, 1))
           });
           this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
           break;
-        case _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.SLICE:
-          this.volumeRendering = new _Atlas2DSlice__WEBPACK_IMPORTED_MODULE_8__["default"](this.volume, this.settings);
+        case _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE:
+          this.volumeRendering = new _Atlas2DSlice__WEBPACK_IMPORTED_MODULE_9__["default"](this.volume, this.settings);
           this.volume.updateRequiredData({
-            subregion: new three__WEBPACK_IMPORTED_MODULE_10__.Box3(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0.5), new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(1, 1, 0.5))
+            subregion: new three__WEBPACK_IMPORTED_MODULE_11__.Box3(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0.5), new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(1, 1, 0.5))
           });
           break;
-        case _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH:
+        case _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH:
         default:
-          this.volumeRendering = new _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_4__["default"](this.volume, this.settings);
+          this.volumeRendering = new _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume, this.settings);
           this.volume.updateRequiredData({
-            subregion: new three__WEBPACK_IMPORTED_MODULE_10__.Box3(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(1, 1, 1))
+            subregion: new three__WEBPACK_IMPORTED_MODULE_11__.Box3(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(1, 1, 1))
           });
           break;
       }
-      if (newRenderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.RAYMARCH || newRenderMode === _types__WEBPACK_IMPORTED_MODULE_7__.RenderMode.SLICE) {
+      if (newRenderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH || newRenderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE) {
         if (this.renderUpdateListener) {
           this.renderUpdateListener(0);
         }
@@ -7550,14 +7567,14 @@ var VolumeDrawable = /*#__PURE__*/function () {
     value: function setTranslation(xyz) {
       this.settings.translation.copy(xyz);
       this.meshVolume.setTranslation(this.settings.translation);
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.TRANSFORM);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.TRANSFORM);
     }
   }, {
     key: "setRotation",
     value: function setRotation(eulerXYZ) {
       this.settings.rotation.copy(eulerXYZ);
       this.meshVolume.setRotation(this.settings.rotation);
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.TRANSFORM);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.TRANSFORM);
     }
   }, {
     key: "setupGui",
@@ -7596,7 +7613,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
       var sizez = this.volume.imageInfo.volumeSize.z;
       if (this.settings.zSlice !== slice && slice < sizez && slice > 0) {
         this.settings.zSlice = slice;
-        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.SettingsFlags.ROI);
+        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.ROI);
         return true;
       }
       return false;
@@ -9596,7 +9613,7 @@ var OMEZarrLoader = /*#__PURE__*/function () {
             case 0:
               // First, cancel any pending requests for this volume
               this.requestQueue.cancelAllRequests(CHUNK_REQUEST_CANCEL_REASON);
-              vol.loadSpec = explicitLoadSpec !== null && explicitLoadSpec !== void 0 ? explicitLoadSpec : vol.loadSpec;
+              vol.loadSpec = _objectSpread(_objectSpread({}, explicitLoadSpec), vol.loadSpec);
               maxExtent = (_this$maxExtent2 = this.maxExtent) !== null && _this$maxExtent2 !== void 0 ? _this$maxExtent2 : new three__WEBPACK_IMPORTED_MODULE_10__.Box3(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(1, 1, 1));
               _this$axesTCZYX$slice3 = this.axesTCZYX.slice(2), _this$axesTCZYX$slice4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_4__["default"])(_this$axesTCZYX$slice3, 3), z = _this$axesTCZYX$slice4[0], y = _this$axesTCZYX$slice4[1], x = _this$axesTCZYX$slice4[2];
               subregion = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.composeSubregion)(vol.loadSpec.subregion, maxExtent);
@@ -22426,6 +22443,25 @@ function _arrayWithHoles(arr) {
 
 /***/ }),
 
+/***/ "./node_modules/@babel/runtime/helpers/esm/arrayWithoutHoles.js":
+/*!**********************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/esm/arrayWithoutHoles.js ***!
+  \**********************************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ _arrayWithoutHoles)
+/* harmony export */ });
+/* harmony import */ var _arrayLikeToArray_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./arrayLikeToArray.js */ "./node_modules/@babel/runtime/helpers/esm/arrayLikeToArray.js");
+
+function _arrayWithoutHoles(arr) {
+  if (Array.isArray(arr)) return (0,_arrayLikeToArray_js__WEBPACK_IMPORTED_MODULE_0__["default"])(arr);
+}
+
+/***/ }),
+
 /***/ "./node_modules/@babel/runtime/helpers/esm/assertThisInitialized.js":
 /*!**************************************************************************!*\
   !*** ./node_modules/@babel/runtime/helpers/esm/assertThisInitialized.js ***!
@@ -22624,6 +22660,23 @@ function _inherits(subClass, superClass) {
 
 /***/ }),
 
+/***/ "./node_modules/@babel/runtime/helpers/esm/iterableToArray.js":
+/*!********************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/esm/iterableToArray.js ***!
+  \********************************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ _iterableToArray)
+/* harmony export */ });
+function _iterableToArray(iter) {
+  if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter);
+}
+
+/***/ }),
+
 /***/ "./node_modules/@babel/runtime/helpers/esm/iterableToArrayLimit.js":
 /*!*************************************************************************!*\
   !*** ./node_modules/@babel/runtime/helpers/esm/iterableToArrayLimit.js ***!
@@ -22678,6 +22731,23 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 function _nonIterableRest() {
   throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+}
+
+/***/ }),
+
+/***/ "./node_modules/@babel/runtime/helpers/esm/nonIterableSpread.js":
+/*!**********************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/esm/nonIterableSpread.js ***!
+  \**********************************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ _nonIterableSpread)
+/* harmony export */ });
+function _nonIterableSpread() {
+  throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
 }
 
 /***/ }),
@@ -22750,6 +22820,31 @@ __webpack_require__.r(__webpack_exports__);
 
 function _slicedToArray(arr, i) {
   return (0,_arrayWithHoles_js__WEBPACK_IMPORTED_MODULE_0__["default"])(arr) || (0,_iterableToArrayLimit_js__WEBPACK_IMPORTED_MODULE_1__["default"])(arr, i) || (0,_unsupportedIterableToArray_js__WEBPACK_IMPORTED_MODULE_2__["default"])(arr, i) || (0,_nonIterableRest_js__WEBPACK_IMPORTED_MODULE_3__["default"])();
+}
+
+/***/ }),
+
+/***/ "./node_modules/@babel/runtime/helpers/esm/toConsumableArray.js":
+/*!**********************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/esm/toConsumableArray.js ***!
+  \**********************************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ _toConsumableArray)
+/* harmony export */ });
+/* harmony import */ var _arrayWithoutHoles_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./arrayWithoutHoles.js */ "./node_modules/@babel/runtime/helpers/esm/arrayWithoutHoles.js");
+/* harmony import */ var _iterableToArray_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./iterableToArray.js */ "./node_modules/@babel/runtime/helpers/esm/iterableToArray.js");
+/* harmony import */ var _unsupportedIterableToArray_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./unsupportedIterableToArray.js */ "./node_modules/@babel/runtime/helpers/esm/unsupportedIterableToArray.js");
+/* harmony import */ var _nonIterableSpread_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./nonIterableSpread.js */ "./node_modules/@babel/runtime/helpers/esm/nonIterableSpread.js");
+
+
+
+
+function _toConsumableArray(arr) {
+  return (0,_arrayWithoutHoles_js__WEBPACK_IMPORTED_MODULE_0__["default"])(arr) || (0,_iterableToArray_js__WEBPACK_IMPORTED_MODULE_1__["default"])(arr) || (0,_unsupportedIterableToArray_js__WEBPACK_IMPORTED_MODULE_2__["default"])(arr) || (0,_nonIterableSpread_js__WEBPACK_IMPORTED_MODULE_3__["default"])();
 }
 
 /***/ }),
