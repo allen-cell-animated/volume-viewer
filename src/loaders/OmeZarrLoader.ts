@@ -533,7 +533,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const subscriber = this.requestQueue.addSubscriber();
     this.loadSubscriber = subscriber;
 
-    vol.loadSpec = explicitLoadSpec ?? vol.loadSpec;
+    vol.loadSpec = { ...explicitLoadSpec, ...vol.loadSpec };
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     const [z, y, x] = this.axesTCZYX.slice(2);
     const subregion = composeSubregion(vol.loadSpec.subregion, maxExtent);

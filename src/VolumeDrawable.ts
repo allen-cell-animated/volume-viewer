@@ -333,7 +333,7 @@ export default class VolumeDrawable {
   // @param {number} glevel 0..1
   // @param {number} gmax 0..1, should be > gmin
   setGamma(gmin: number, glevel: number, gmax: number): void {
-    if (this.settings.gammaMin === gmin || this.settings.gammaLevel === glevel || this.settings.gammaMax === gmax) {
+    if (this.settings.gammaMin === gmin && this.settings.gammaLevel === glevel && this.settings.gammaMax === gmax) {
       return;
     }
     this.settings.gammaMin = gmin;
@@ -427,10 +427,12 @@ export default class VolumeDrawable {
 
   updateMaterial(): void {
     this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.MATERIAL);
   }
 
   updateLuts(): void {
     this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.MATERIAL);
   }
 
   setVoxelSize(values: Vector3): void {
@@ -474,6 +476,11 @@ export default class VolumeDrawable {
       ],
     };
 
+    this.settings.diffuse[newChannelIndex] = [
+      this.channelColors[newChannelIndex][0],
+      this.channelColors[newChannelIndex][1],
+      this.channelColors[newChannelIndex][2],
+    ];
     this.settings.specular[newChannelIndex] = [0, 0, 0];
     this.settings.emissive[newChannelIndex] = [0, 0, 0];
     this.settings.glossiness[newChannelIndex] = 0;
@@ -490,12 +497,17 @@ export default class VolumeDrawable {
     // flip the color to the "null" value
     this.fusion[channelIndex].rgbColor = enabled ? this.channelColors[channelIndex] : 0;
     // if all are nulled out, then hide the volume element from the scene.
-    if (this.fusion.every((elem) => elem.rgbColor === 0)) {
-      this.settings.visible = false;
-    } else {
-      this.settings.visible = true;
-    }
+    this.settings.visible = !this.fusion.every((elem) => elem.rgbColor === 0);
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
+
+    // add or remove this channel from the list of required channels to load
+    const { channels } = this.volume.loadSpecRequired;
+    const channelRequired = channels.includes(channelIndex);
+    if (enabled && !channelRequired) {
+      this.volume.updateRequiredData({ channels: [...channels, channelIndex] });
+    } else if (!enabled && channelRequired) {
+      this.volume.updateRequiredData({ channels: channels.filter((i) => i !== channelIndex) });
+    }
   }
 
   isVolumeChannelEnabled(channelIndex: number): boolean {
@@ -510,6 +522,7 @@ export default class VolumeDrawable {
       return;
     }
     this.channelColors[channelIndex] = colorrgb;
+    this.settings.diffuse[channelIndex] = colorrgb;
     // if volume channel is zero'ed out, then don't update it until it is switched on again.
     if (this.fusion[channelIndex].rgbColor !== 0) {
       this.fusion[channelIndex].rgbColor = colorrgb;
@@ -545,6 +558,7 @@ export default class VolumeDrawable {
       return;
     }
     this.updateChannelColor(channelIndex, colorrgb);
+    this.settings.diffuse[channelIndex] = colorrgb;
     this.settings.specular[channelIndex] = specularrgb;
     this.settings.emissive[channelIndex] = emissivergb;
     this.settings.glossiness[channelIndex] = glossiness;

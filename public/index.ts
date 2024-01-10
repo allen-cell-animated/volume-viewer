@@ -1044,6 +1044,27 @@ async function loadTestData(testdata: TestDataSpec) {
   loadVolume(loadSpec, myState.loader);
 }
 
+function gammaSliderToImageValues(sliderValues: [number, number, number]): [number, number, number] {
+  let min = Number(sliderValues[0]);
+  let mid = Number(sliderValues[1]);
+  let max = Number(sliderValues[2]);
+
+  if (mid > max || mid < min) {
+    mid = 0.5 * (min + max);
+  }
+  const div = 255;
+  min /= div;
+  max /= div;
+  mid /= div;
+  const diff = max - min;
+  const x = (mid - min) / diff;
+  let scale = 4 * x * x;
+  if ((mid - 0.5) * (mid - 0.5) < 0.0005) {
+    scale = 1.0;
+  }
+  return [min, max, scale];
+}
+
 function main() {
   const el = document.getElementById("volume-viewer");
   if (!el) {
@@ -1264,6 +1285,33 @@ function main() {
     });
   });
 
+  const gammaMin = document.getElementById("gammaMin") as HTMLInputElement;
+  const gammaMax = document.getElementById("gammaMax") as HTMLInputElement;
+  const gammaScale = document.getElementById("gammaScale") as HTMLInputElement;
+  gammaMin?.addEventListener("change", ({ currentTarget }) => {
+    const g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
+    view3D.setGamma(myState.volume, g[0], g[1], g[2]);
+  });
+  gammaMin?.addEventListener("input", ({ currentTarget }) => {
+    const g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
+    view3D.setGamma(myState.volume, g[0], g[1], g[2]);
+  });
+  gammaMax?.addEventListener("change", ({ currentTarget }) => {
+    const g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
+    view3D.setGamma(myState.volume, g[0], g[1], g[2]);
+  });
+  gammaMax?.addEventListener("input", ({ currentTarget }) => {
+    const g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
+    view3D.setGamma(myState.volume, g[0], g[1], g[2]);
+  });
+  gammaScale?.addEventListener("change", ({ currentTarget }) => {
+    const g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
+    view3D.setGamma(myState.volume, g[0], g[1], g[2]);
+  });
+  gammaScale?.addEventListener("input", ({ currentTarget }) => {
+    const g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
+    view3D.setGamma(myState.volume, g[0], g[1], g[2]);
+  });
   setupGui();
 
   loadTestData(TEST_DATA[(testDataSelect as HTMLSelectElement)?.value]);

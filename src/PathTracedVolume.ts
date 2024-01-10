@@ -370,6 +370,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
     if (dirtyFlags & SettingsFlags.MATERIAL) {
       this.pathTracingUniforms.gDensityScale.value = this.settings.density * 150.0;
+      this.updateMaterial();
     }
 
     // update bounds
@@ -574,7 +575,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.updateVolumeData4();
     this.resetProgress();
     this.updateLuts(channelColors, channelData);
-    this.updateMaterial(channelColors, channelData);
+    this.updateMaterial();
   }
 
   updateVolumeData4(): void {
@@ -644,12 +645,13 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
   // image is a material interface that supports per-channel color, spec,
   // emissive, glossiness
-  updateMaterial(channelColors: FuseChannel[], channelData: Channel[]): void {
+  updateMaterial(): void {
     for (let c = 0; c < this.viewChannels.length; ++c) {
       const i = this.viewChannels[c];
       if (i > -1) {
         // diffuse color is actually blended into the LUT now.
-        const combinedLut = channelData[i].combineLuts(channelColors[i].rgbColor);
+        const channelData = this.volume.getChannel(i);
+        const combinedLut = channelData.combineLuts(this.settings.diffuse[i]);
         this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, c * LUT_ARRAY_LENGTH);
         this.pathTracingUniforms.gLutTexture.value.needsUpdate = true;
         this.pathTracingUniforms.gDiffuse.value[c] = new Vector3(1.0, 1.0, 1.0);
