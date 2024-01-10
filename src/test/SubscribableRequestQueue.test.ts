@@ -41,6 +41,16 @@ describe("SubscribableRequestQueue", () => {
       const id2 = queue.addSubscriber();
       expect(id1).to.not.equal(id2);
     });
+
+    it("never reuses ids of removed subscribers", () => {
+      const queue = new SubscribableRequestQueue();
+      const id1 = queue.addSubscriber();
+      const id2 = queue.addSubscriber();
+      queue.removeSubscriber(id1);
+      const id3 = queue.addSubscriber();
+      expect(id1).to.not.equal(id2);
+      expect(id3).to.not.equal(id2);
+    });
   });
 
   describe("addRequestToQueue", () => {
@@ -158,9 +168,11 @@ describe("SubscribableRequestQueue", () => {
       expect(queue.hasRequest("test")).to.be.true;
       expect(queue.isSubscribed(id, "test")).to.be.true;
 
-      queue.cancelRequest("test", id);
+      const cancelResult = queue.cancelRequest("test", id);
+      expect(cancelResult).to.be.true;
       expect(queue.isSubscribed(id, "test")).to.be.false;
       expect(await isRejected(promise)).to.be.true;
+      expect(queue.cancelRequest("test", id)).to.be.false;
     });
 
     it("does not cancel an underlying request if it is running", async () => {

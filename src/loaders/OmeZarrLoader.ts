@@ -528,7 +528,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
     onData: RawChannelDataCallback
-  ): Promise<[ImageInfo, LoadSpec]> {
+  ): Promise<[ImageInfo, undefined]> {
     // First, cancel any pending requests for this volume
     if (this.loadSubscriber !== undefined) {
       this.requestQueue.removeSubscriber(this.loadSubscriber, CHUNK_REQUEST_CANCEL_REASON);
@@ -599,7 +599,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
       setTimeout(() => this.beginPrefetch(keys, level), 1000);
     });
-    return Promise.resolve([updatedImageInfo, loadSpec]);
+    return Promise.resolve([updatedImageInfo, undefined]);
   }
 }
 

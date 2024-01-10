@@ -135,11 +135,11 @@ interface VolumeDataObserver {
  */
 export default class Volume {
   public imageInfo: ImageInfo;
-  public loadSpec: LoadSpec;
+  public loadSpec: Required<LoadSpec>;
   public loader?: IVolumeLoader;
   // `LoadSpec` representing the minimum data required to display what's in the viewer (subregion, channels, etc.).
   // Used to intelligently issue load requests whenever required by a state change. Modify with `updateRequiredData`.
-  private loadSpecRequired: Required<LoadSpec>;
+  public loadSpecRequired: Required<LoadSpec>;
   public channelLoadCallback?: PerChannelCallback;
   public imageMetadata: Record<string, unknown>;
   public name: string;
@@ -169,13 +169,16 @@ export default class Volume {
     this.loaded = false;
     this.imageInfo = imageInfo;
     this.name = this.imageInfo.name;
-    this.loadSpec = loadSpec;
-    this.loadSpecRequired = {
+    this.loadSpec = {
       // Fill in defaults for optional properties
       multiscaleLevel: 0,
       channels: Array.from({ length: this.imageInfo.numChannels }, (_val, idx) => idx),
       ...loadSpec,
-      subregion: loadSpec.subregion.clone(),
+    };
+    this.loadSpecRequired = {
+      ...this.loadSpec,
+      channels: this.loadSpec.channels.slice(),
+      subregion: this.loadSpec.subregion.clone(),
     };
     this.loader = loader;
     // imageMetadata to be filled in by Volume Loaders
@@ -241,7 +244,8 @@ export default class Volume {
     this.loadSpecRequired = { ...this.loadSpecRequired, ...required };
     let noReload =
       this.loadSpec.time === this.loadSpecRequired.time &&
-      this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion);
+      this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion) &&
+      this.loadSpecRequired.channels.every((channel) => this.loadSpec.channels.includes(channel));
 
     // An update to `subregion` should trigger a reload when the new subregion is not contained in the old one
     // OR when the new subregion is smaller than the old one by enough that we can load a higher scale level.

@@ -99,13 +99,13 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
       onChannelLoaded?.(volume, channelIndex);
     };
 
-    const spec = loadSpec || volume.loadSpec;
+    const spec = { ...loadSpec, ...volume.loadSpec };
     const [adjustedImageInfo, adjustedLoadSpec] = await this.loadRawChannelData(volume.imageInfo, spec, onChannelData);
 
     if (adjustedImageInfo) {
       volume.imageInfo = adjustedImageInfo;
       volume.updateDimensions();
     }
-    volume.loadSpec = adjustedLoadSpec || spec;
+    volume.loadSpec = { ...adjustedLoadSpec, ...spec };
   }
 }
