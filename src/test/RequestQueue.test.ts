@@ -50,7 +50,7 @@ describe("test RequestQueue", () => {
       const startTime = Date.now();
       const delayMs = 15;
       const immediatePromise = rq.addRequest("a", () => Promise.resolve());
-      const delayedPromise = rq.addRequest("b", () => Promise.resolve(), delayMs);
+      const delayedPromise = rq.addRequest("b", () => Promise.resolve(), false, delayMs);
 
       const promises: Promise<unknown>[] = [];
       promises.push(
@@ -218,7 +218,7 @@ describe("test RequestQueue", () => {
         { key: "b", requestAction: work },
       ];
       const start = Date.now();
-      const promises = rq.addRequests(requests, delayMs);
+      const promises = rq.addRequests(requests, false, delayMs);
       rq.addRequest("b", work); // requesting this again should remove the delay
       await Promise.allSettled(promises);
       expect(Date.now() - start).to.be.lessThan(delayMs);
@@ -284,7 +284,7 @@ describe("test RequestQueue", () => {
         workCount++;
         return;
       };
-      const promise = rq.addRequest("a", work, delayMs);
+      const promise = rq.addRequest("a", work, false, delayMs);
       rq.cancelRequest("a");
       await Promise.allSettled([promise]);
       await sleep(delayMs);
@@ -299,7 +299,7 @@ describe("test RequestQueue", () => {
       };
       const promises: Promise<unknown>[] = [];
       for (let i = 0; i < 10; i++) {
-        promises.push(rq.addRequest(`${i}`, work, 0));
+        promises.push(rq.addRequest(`${i}`, work, false, 0));
         rq.cancelRequest(`${i}`);
       }
       await Promise.allSettled(promises);
