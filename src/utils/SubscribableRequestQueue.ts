@@ -27,8 +27,8 @@ export default class SubscribableRequestQueue {
   /** Map from "inner" request (managed by `queue`) to "outer" promises generated per-subscriber. */
   private requests: Map<string, RequestSubscription[]>;
 
-  constructor(maxActiveRequests?: number) {
-    this.queue = new RequestQueue(maxActiveRequests);
+  constructor(maxActiveRequests?: number, maxLowPriorityRequests?: number) {
+    this.queue = new RequestQueue(maxActiveRequests, maxLowPriorityRequests);
     this.nextSubscriberId = 0;
     this.subscribers = new Map();
     this.requests = new Map();
@@ -71,14 +71,19 @@ export default class SubscribableRequestQueue {
    *
    * If `subscriberId` is already subscribed to the request, this rejects the existing promise and returns a new one.
    */
-  addRequest<T>(key: string, subscriberId: number, requestAction: () => Promise<T>, delayMs?: number): Promise<T> {
+  addRequest<T>(
+    key: string,
+    subscriberId: number,
+    requestAction: () => Promise<T>,
+    lowPriority?: boolean,
+    delayMs?: number
+  ): Promise<T> {
     // Create single underlying request if it does not yet exist
-    if (!this.queue.hasRequest(key)) {
-      this.queue
-        .addRequest(key, requestAction, delayMs)
-        .then((value) => this.resolveAll(key, value))
-        .catch((reason) => this.rejectAll(key, reason));
-    }
+    this.queue
+      .addRequest(key, requestAction, lowPriority, delayMs)
+      .then((value) => this.resolveAll(key, value))
+      .catch((reason) => this.rejectAll(key, reason));
+
     if (!this.requests.has(key)) {
       this.requests.set(key, []);
     }
