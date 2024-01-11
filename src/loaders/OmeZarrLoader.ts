@@ -140,7 +140,12 @@ class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements A
 
     // Not in cache; load the chunk and cache it
     if (this.queue && opts) {
-      return this.queue.addRequest(fullKey, opts.subscriber, () => this.getAndCache(key, fullKey, opts?.options));
+      return this.queue.addRequest(
+        fullKey,
+        opts.subscriber,
+        () => this.getAndCache(key, fullKey, opts?.options),
+        opts.isPrefetch
+      );
     } else {
       // Should we ever hit this code?  We should always have a request queue.
       return this.getAndCache(key, fullKey, opts?.options);
@@ -249,7 +254,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     concurrencyLimit = 10
   ): Promise<OMEZarrLoader> {
     // Setup: create queue and store, get basic metadata
-    const queue = new SubscribableRequestQueue(concurrencyLimit);
+    const queue = new SubscribableRequestQueue(concurrencyLimit, 5);
     const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
     const root = zarr.root(store);
     const group = await zarr.open(root, { kind: "group" });
@@ -529,13 +534,6 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     loadSpec: LoadSpec,
     onData: RawChannelDataCallback
   ): Promise<[ImageInfo, undefined]> {
-    // First, cancel any pending requests for this volume
-    if (this.loadSubscriber !== undefined) {
-      this.requestQueue.removeSubscriber(this.loadSubscriber, CHUNK_REQUEST_CANCEL_REASON);
-    }
-    const subscriber = this.requestQueue.addSubscriber();
-    this.loadSubscriber = subscriber;
-
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     const [z, y, x] = this.axesTCZYX.slice(2);
     const subregion = composeSubregion(loadSpec.subregion, maxExtent);
@@ -568,6 +566,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const { numChannels } = updatedImageInfo;
     const channelIndexes = loadSpec.channels ?? Array.from({ length: numChannels }, (_, i) => i);
 
+    const subscriber = this.requestQueue.addSubscriber();
+
     // Prefetch housekeeping: we want to save keys involved in this load to prefetch later
     const keys: string[] = [];
     const reportKey = (key: string, sub: SubscriberId) => {
@@ -594,6 +594,14 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
         }
       }
     });
+
+    // Cancel any in-flight requests from previous loads that aren't useful to this one
+    if (this.loadSubscriber !== undefined) {
+      this.requestQueue.removeSubscriber(this.loadSubscriber, CHUNK_REQUEST_CANCEL_REASON);
+    }
+    this.loadSubscriber = subscriber;
+
+    this.beginPrefetch(keys, level);
 
     Promise.all(channelPromises).then(() => {
       this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
