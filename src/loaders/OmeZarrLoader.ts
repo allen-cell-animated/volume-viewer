@@ -223,6 +223,74 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint
 
 type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;
 
+const enum PrefetchIterDirection {
+  T_MINUS = 0,
+  T_PLUS = 1,
+
+  Z_MINUS = 2,
+  Z_PLUS = 3,
+
+  Y_MINUS = 4,
+  Y_PLUS = 5,
+
+  X_MINUS = 6,
+  X_PLUS = 7,
+}
+
+const skipC = (idx: number): number => idx + Number(idx !== 0);
+const directionToIndex = (dir: PrefetchIterDirection): number => skipC(dir >> 1);
+
+type PrefetchDirectionState = {
+  direction: PrefetchIterDirection;
+  chunks: TCZYX<number>[];
+  current: number;
+  limit: number;
+};
+
+// Given a list of chunks and some bounds, iterates evenly outwards in t, z, y, and x
+// Assumes `chunks` form a rectangular prism! Will create gaps otherwise! (in practice they always should)
+class ZarrPrefetchIterator {
+  directions: PrefetchDirectionState[];
+
+  constructor(chunks: TCZYX<number>[], tzyxBounds: [number, number, number, number, number, number, number, number]) {
+    // Get maxes and mins in TZYX
+    const extrema = [-Infinity, Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity, Infinity];
+
+    for (const chunk of chunks) {
+      for (let j = 0; j < 4; j++) {
+        const val = chunk[skipC(j)];
+        const extremaIdx = j << 1;
+        if (val > extrema[extremaIdx]) {
+          extrema[extremaIdx] = val;
+        }
+        if (val < extrema[extremaIdx + 1]) {
+          extrema[extremaIdx] = val;
+        }
+      }
+    }
+
+    // Create `PrefetchDirectionState`s for each direction and fill them with chunks at the borders of the fetched set
+    const directions: PrefetchDirectionState[] = extrema.map((current, direction) => ({
+      direction,
+      current,
+      limit: tzyxBounds[direction],
+      chunks: [],
+    }));
+
+    for (const chunk of chunks) {
+      for (const dir of directions) {
+        if (chunk[directionToIndex(dir.direction)] === dir.limit) {
+          dir.chunks.push(chunk);
+        }
+      }
+    }
+
+    this.directions = directions;
+  }
+
+  *[Symbol.iterator](): Iterator<TCZYX<number>> {}
+}
+
 class OMEZarrLoader implements IVolumeLoader {
   /** Hold one optional subscriber ID per timestep, each defined iff a batch of prefetches is waiting for that frame */
   private prefetchSubscribers: (SubscriberId | undefined)[];
