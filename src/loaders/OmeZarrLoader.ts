@@ -33,8 +33,6 @@ import {
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
-const PREFETCH_TIME_MARGIN = 8;
-
 /** Turns `axisTCZYX` into the number of dimensions in the array */
 const getDimensionCount = ([t, c, z]: TCZYX<number>) => 2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
 
@@ -108,10 +106,10 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint
 type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;
 
 class OMEZarrLoader implements IVolumeLoader {
-  /** Hold one optional subscriber ID per timestep, each defined iff a batch of prefetches is waiting for that frame */
-  private prefetchSubscribers: (SubscriberId | undefined)[];
   /** The ID of the subscriber responsible for "actual loads" (non-prefetch requests) */
   private loadSubscriber: SubscriberId | undefined;
+  /** The ID of the subscriber responsible for prefetches, so that requests can be cancelled and reissued */
+  private prefetchSubscriber: SubscriberId | undefined;
 
   // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
   //   This may cause errors or incorrect results otherwise!
@@ -125,11 +123,7 @@ class OMEZarrLoader implements IVolumeLoader {
     private axesTCZYX: TCZYX<number>,
     // TODO: should we be able to share `RequestQueue`s between loaders?
     private requestQueue: SubscribableRequestQueue
-  ) {
-    const ti = this.axesTCZYX[0];
-    const times = ti < 0 ? 1 : this.scaleLevels[0].shape[this.axesTCZYX[0]];
-    this.prefetchSubscribers = new Array(times).fill(undefined);
-  }
+  ) {}
 
   static async createLoader(
     url: string,
@@ -366,58 +360,23 @@ class OMEZarrLoader implements IVolumeLoader {
     const chunkDimsUnordered = scaleLevel.shape.map((dim, idx) => Math.ceil(dim / scaleLevel.chunks[idx]));
     const chunkDims = this.orderByTCZYX(chunkDimsUnordered, 1);
 
-    const experimentalIndexer = new ChunkPrefetchIterator(
+    const subscriber = this.requestQueue.addSubscriber();
+    // `ChunkPrefetchIterator` yields chunk coordinates in order of roughly how likely they are to be loaded next
+    const prefetchIterator = new ChunkPrefetchIterator(
       chunkCoords,
       new Vector4(2, 2, 2, 2),
       new Vector4(chunkDims[4], chunkDims[3], chunkDims[2], chunkDims[0])
     );
-    for (const chunk of experimentalIndexer) {
-      console.log(chunk);
+
+    for (const chunk of prefetchIterator) {
+      this.prefetchChunk(scaleLevel.path, chunk, subscriber);
     }
 
-    // Get all channels involved in this request
-    const channels = new Set<number>();
-    for (const coord of chunkCoords) {
-      channels.add(coord[1]);
+    // Clear out old prefetch requests (requests which also cover this new prefetch will be preserved)
+    if (this.prefetchSubscriber !== undefined) {
+      this.requestQueue.removeSubscriber(this.prefetchSubscriber, CHUNK_REQUEST_CANCEL_REASON);
     }
-
-    // Clear out any existing prefetches (requests already in flight will be picked up by new prefetches if useful)
-    for (const subscriber of this.prefetchSubscribers) {
-      if (subscriber !== undefined) {
-        this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
-      }
-    }
-
-    // Now let's get to prefetching!
-    // TODO: consider cache size and something like average chunk size when deciding how much to prefetch
-    const activeTimestep = chunkCoords[0][0];
-    const tmin = Math.max(0, activeTimestep - PREFETCH_TIME_MARGIN);
-    const tmax = Math.min(chunkDims[0], activeTimestep + PREFETCH_TIME_MARGIN);
-    for (let t = tmin; t < tmax; t++) {
-      const subscriber = this.requestQueue.addSubscriber();
-      this.prefetchSubscribers[t] = subscriber;
-
-      if (t === activeTimestep) {
-        // For the current timestep: get all chunks in ZYX for all channels involved in this request
-        // TODO: it is dangerous to assume that we can reasonably prefetch the entire volume at the current timestep.
-        //   This behavior shouldn't be allowed into production if we expect anyone to deal with large enough datasets.
-        for (const c of channels) {
-          for (let z = 0; z < chunkDims[2]; z++) {
-            for (let y = 0; y < chunkDims[3]; y++) {
-              for (let x = 0; x < chunkDims[4]; x++) {
-                this.prefetchChunk(scaleLevel.path, [t, c, z, y, x], subscriber);
-              }
-            }
-          }
-        }
-      } else {
-        // For nearby timesteps: duplicate only the load requests made on the current timestep on this one too
-        for (const coord of chunkCoords) {
-          const [c, z, y, x] = coord.slice(1);
-          this.prefetchChunk(scaleLevel.path, [t, c, z, y, x], subscriber);
-        }
-      }
-    }
+    this.prefetchSubscriber = subscriber;
   }
 
   async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
