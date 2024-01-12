@@ -1,8 +1,8 @@
-import { Box3, Vector3 } from "three";
+import { Box3, Vector3, Vector4 } from "three";
 
 import * as zarr from "@zarrita/core";
 import { get as zarrGet, slice, Slice } from "@zarrita/indexing";
-import { AbsolutePath, AsyncReadable, Readable } from "@zarrita/storage";
+import { AbsolutePath } from "@zarrita/storage";
 // Importing `FetchStore` from its home subpackage (@zarrita/storage) causes errors.
 // Getting it from the top-level package means we don't get its type. This is also a bug, but it's more acceptable.
 import { FetchStore } from "zarrita";
@@ -18,140 +18,22 @@ import {
   estimateLevelForAtlas,
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
+import ChunkPrefetchIterator from "./zarr_utils/ChunkPrefetchIterator";
+import WrappedStore from "./zarr_utils/WrappedStore";
+import {
+  OMEAxis,
+  OMECoordinateTransformation,
+  OMEMultiscale,
+  OmeroTransitionalMetadata,
+  OMEZarrMetadata,
+  SubscriberId,
+  TCZYX,
+} from "./zarr_utils/types";
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
-const PREFETCH_TIME_MARGIN = 8;
-
-type TCZYX<T> = [T, T, T, T, T];
-type SubscriberId = ReturnType<SubscribableRequestQueue["addSubscriber"]>;
-
-type OMECoordinateTransformation =
-  | {
-      type: "identity";
-    }
-  | {
-      type: "translation";
-      translation: number[];
-    }
-  | {
-      type: "scale";
-      scale: number[];
-    }
-  | {
-      type: "translation" | "scale";
-      path: string;
-    };
-
-type OMEAxis = {
-  name: string;
-  type?: string;
-  unit?: string;
-};
-
-type OMEDataset = {
-  path: string;
-  coordinateTransformations?: OMECoordinateTransformation[];
-};
-
-// https://ngff.openmicroscopy.org/latest/#multiscale-md
-type OMEMultiscale = {
-  version?: string;
-  name?: string;
-  axes: OMEAxis[];
-  datasets: OMEDataset[];
-  coordinateTransformations?: OMECoordinateTransformation[];
-  type?: string;
-  metadata?: Record<string, unknown>;
-};
-
-// https://ngff.openmicroscopy.org/latest/#omero-md
-type OmeroTransitionalMetadata = {
-  id: number;
-  name: string;
-  version: string;
-  channels: {
-    active: boolean;
-    coefficient: number;
-    color: string;
-    family: string;
-    inverted: boolean;
-    label: string;
-    window: {
-      end: number;
-      max: number;
-      min: number;
-      start: number;
-    };
-  }[];
-};
-
-type OMEZarrMetadata = {
-  multiscales: OMEMultiscale[];
-  omero: OmeroTransitionalMetadata;
-};
-
 /** Turns `axisTCZYX` into the number of dimensions in the array */
 const getDimensionCount = ([t, c, z]: TCZYX<number>) => 2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
-
-type WrappedStoreOpts<Opts> = {
-  options?: Opts;
-  subscriber: SubscriberId;
-  reportKey?: (key: string, subscriber: SubscriberId) => void;
-  isPrefetch?: boolean;
-};
-
-/**
- * `Readable` is zarrita's minimal abstraction for any source of data.
- * `WrappedStore` wraps another `Readable` and adds (optional) connections to `VolumeCache` and `RequestQueue`.
- */
-class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements AsyncReadable<WrappedStoreOpts<Opts>> {
-  constructor(private baseStore: S, private cache?: VolumeCache, private queue?: SubscribableRequestQueue) {}
-
-  private async getAndCache(key: AbsolutePath, cacheKey: string, opts?: Opts): Promise<Uint8Array | undefined> {
-    const result = await this.baseStore.get(key, opts);
-    if (this.cache && result) {
-      this.cache.insert(cacheKey, result);
-    }
-    return result;
-  }
-
-  async get(key: AbsolutePath, opts?: WrappedStoreOpts<Opts> | undefined): Promise<Uint8Array | undefined> {
-    const ZARR_EXTS = [".zarray", ".zgroup", ".zattrs", "zarr.json"];
-    if (!this.cache || ZARR_EXTS.some((s) => key.endsWith(s))) {
-      return this.baseStore.get(key, opts?.options);
-    }
-    if (opts?.reportKey) {
-      opts.reportKey(key, opts.subscriber);
-    }
-
-    let keyPrefix = (this.baseStore as FetchStore).url ?? "";
-    if (keyPrefix !== "" && !(keyPrefix instanceof URL) && !keyPrefix.endsWith("/")) {
-      keyPrefix += "/";
-    }
-
-    const fullKey = keyPrefix + key.slice(1);
-
-    // Check the cache
-    const cacheResult = this.cache.get(fullKey);
-    if (cacheResult) {
-      return new Uint8Array(cacheResult);
-    }
-
-    // Not in cache; load the chunk and cache it
-    if (this.queue && opts) {
-      return this.queue.addRequest(
-        fullKey,
-        opts.subscriber,
-        () => this.getAndCache(key, fullKey, opts?.options),
-        opts.isPrefetch
-      );
-    } else {
-      // Should we ever hit this code?  We should always have a request queue.
-      return this.getAndCache(key, fullKey, opts?.options);
-    }
-  }
-}
 
 function remapAxesToTCZYX(axes: OMEAxis[]): TCZYX<number> {
   const axisTCZYX: TCZYX<number> = [-1, -1, -1, -1, -1];
@@ -222,11 +104,34 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint
 
 type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;
 
+export type ZarrLoaderFetchOptions = {
+  /** The max. number of requests the loader can issue at a time. Ignored if the constructor also receives a queue. */
+  concurrencyLimit?: number;
+  /**
+   * The max. number of *prefetch* requests the loader can issue at a time. Set lower than `concurrencyLimit` to ensure
+   * that prefetching leaves room in the queue for actual loads. Ignored if the constructor also receives a queue.
+   */
+  prefetchConcurrencyLimit?: number;
+  /**
+   * The max. number of chunks to prefetch outward in either direction. E.g. if a load requests chunks with z coords 3
+   * and 4 and `maxPrefetchDistance.z` is 2, the loader will prefetch similar chunks with z coords 1, 2, 5, and 6 (or
+   * until it hits `maxPrefetchChunks`). The `w` component is time.
+   */
+  maxPrefetchDistance: Vector4;
+  /** The max. number of total chunks that can be prefetched after any load. */
+  maxPrefetchChunks: number;
+};
+
+const DEFAULT_FETCH_OPTIONS = {
+  maxPrefetchDistance: new Vector4(5, 5, 5, 5),
+  maxPrefetchChunks: 30,
+};
+
 class OMEZarrLoader extends ThreadableVolumeLoader {
-  /** Hold one optional subscriber ID per timestep, each defined iff a batch of prefetches is waiting for that frame */
-  private prefetchSubscribers: (SubscriberId | undefined)[];
   /** The ID of the subscriber responsible for "actual loads" (non-prefetch requests) */
   private loadSubscriber: SubscriberId | undefined;
+  /** The ID of the subscriber responsible for prefetches, so that requests can be cancelled and reissued */
+  private prefetchSubscriber: SubscriberId | undefined;
 
   // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
   //   This may cause errors or incorrect results otherwise!
@@ -238,23 +143,23 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     private multiscaleMetadata: OMEMultiscale,
     private omeroMetadata: OmeroTransitionalMetadata,
     private axesTCZYX: TCZYX<number>,
-    // TODO: should we be able to share `RequestQueue`s between loaders?
-    private requestQueue: SubscribableRequestQueue
+    private requestQueue: SubscribableRequestQueue,
+    private fetchOptions: ZarrLoaderFetchOptions = DEFAULT_FETCH_OPTIONS
   ) {
     super();
-    const ti = this.axesTCZYX[0];
-    const times = ti < 0 ? 1 : this.scaleLevels[0].shape[this.axesTCZYX[0]];
-    this.prefetchSubscribers = new Array(times).fill(undefined);
   }
 
   static async createLoader(
     url: string,
     scene = 0,
     cache?: VolumeCache,
-    concurrencyLimit = 10
+    queue?: SubscribableRequestQueue,
+    fetchOptions?: ZarrLoaderFetchOptions
   ): Promise<OMEZarrLoader> {
-    // Setup: create queue and store, get basic metadata
-    const queue = new SubscribableRequestQueue(concurrencyLimit, 5);
+    // Setup queue and store, get basic metadata
+    if (!queue) {
+      queue = new SubscribableRequestQueue(fetchOptions?.concurrencyLimit, fetchOptions?.prefetchConcurrencyLimit);
+    }
     const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
     const root = zarr.root(store);
     const group = await zarr.open(root, { kind: "group" });
@@ -269,10 +174,10 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     // Open all scale levels of multiscale
     const scaleLevelPromises = multiscale.datasets.map(({ path }) => zarr.open(root.resolve(path), { kind: "array" }));
-    const scaleLevels = await Promise.all(scaleLevelPromises);
+    const scaleLevels = (await Promise.all(scaleLevelPromises)) as NumericZarrArray[];
     const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
 
-    return new OMEZarrLoader(store, scaleLevels as NumericZarrArray[], multiscale, metadata.omero, axisTCZYX, queue);
+    return new OMEZarrLoader(store, scaleLevels, multiscale, metadata.omero, axisTCZYX, queue, fetchOptions);
   }
 
   private getUnitSymbols(): [string, string] {
@@ -479,54 +384,28 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const chunkDimsUnordered = scaleLevel.shape.map((dim, idx) => Math.ceil(dim / scaleLevel.chunks[idx]));
     const chunkDims = this.orderByTCZYX(chunkDimsUnordered, 1);
 
-    // Get all channels involved in this request
-    const channels = new Set<number>();
-    for (const coord of chunkCoords) {
-      channels.add(coord[1]);
-    }
+    const subscriber = this.requestQueue.addSubscriber();
+    // `ChunkPrefetchIterator` yields chunk coordinates in order of roughly how likely they are to be loaded next
+    const prefetchIterator = new ChunkPrefetchIterator(
+      chunkCoords,
+      this.fetchOptions.maxPrefetchDistance,
+      new Vector4(chunkDims[4], chunkDims[3], chunkDims[2], chunkDims[0])
+    );
 
-    // Clear out any existing prefetches (requests already in flight will be picked up by new prefetches if useful)
-    for (const subscriber of this.prefetchSubscribers) {
-      if (subscriber !== undefined) {
-        this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
+    let prefetchCount = 0;
+    for (const chunk of prefetchIterator) {
+      if (prefetchCount >= this.fetchOptions.maxPrefetchChunks) {
+        break;
       }
+      this.prefetchChunk(scaleLevel.path, chunk, subscriber);
+      prefetchCount++;
     }
 
-    // Now let's get to prefetching!
-    // TODO: consider cache size and something like average chunk size when deciding how much to prefetch
-    const activeTimestep = chunkCoords[0][0];
-    const tmin = Math.max(0, activeTimestep - PREFETCH_TIME_MARGIN);
-    const tmax = Math.min(chunkDims[0], activeTimestep + PREFETCH_TIME_MARGIN);
-    const matchesTCZYX = ([t1, c1, z1, y1, x1]: TCZYX<number>, [t2, c2, z2, y2, x2]: TCZYX<number>) => {
-      return t1 === t2 && c1 === c2 && z1 === z2 && y1 === y2 && x1 === x2;
-    };
-    for (let t = tmin; t < tmax; t++) {
-      const subscriber = this.requestQueue.addSubscriber();
-      this.prefetchSubscribers[t] = subscriber;
-
-      if (t === activeTimestep) {
-        // For the current timestep: get all chunks in ZYX for all channels involved in this request
-        // TODO: it is dangerous to assume that we can reasonably prefetch the entire volume at the current timestep.
-        //   This behavior shouldn't be allowed into production if we expect anyone to deal with large enough datasets.
-        for (const c of channels) {
-          for (let z = 0; z < chunkDims[2]; z++) {
-            for (let y = 0; y < chunkDims[3]; y++) {
-              for (let x = 0; x < chunkDims[4]; x++) {
-                if (!chunkCoords.some((coord) => matchesTCZYX(coord, [t, c, z, y, x]))) {
-                  this.prefetchChunk(scaleLevel.path, [t, c, z, y, x], subscriber);
-                }
-              }
-            }
-          }
-        }
-      } else {
-        // For nearby timesteps: duplicate only the load requests made on the current timestep on this one too
-        for (const coord of chunkCoords) {
-          const [c, z, y, x] = coord.slice(1);
-          this.prefetchChunk(scaleLevel.path, [t, c, z, y, x], subscriber);
-        }
-      }
+    // Clear out old prefetch requests (requests which also cover this new prefetch will be preserved)
+    if (this.prefetchSubscriber !== undefined) {
+      this.requestQueue.removeSubscriber(this.prefetchSubscriber, CHUNK_REQUEST_CANCEL_REASON);
     }
+    this.prefetchSubscriber = subscriber;
   }
 
   loadRawChannelData(

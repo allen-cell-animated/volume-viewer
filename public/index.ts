@@ -1,5 +1,5 @@
 import "regenerator-runtime/runtime";
-import { Vector2, Vector3 } from "three";
+import { Vector2, Vector3, Vector4 } from "three";
 import * as dat from "dat.gui";
 
 import {
@@ -24,6 +24,10 @@ import { getDefaultImageInfo } from "../src/Volume";
 import LoadWorker from "../src/workers/LoadWorkerHandle";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
+const CONCURRENCY_LIMIT = 8;
+const PREFETCH_CONCURRENCY_LIMIT = 3;
+const PREFETCH_DISTANCE = new Vector4(5, 5, 5, 5);
+const MAX_PREFETCH_CHUNKS = 25;
 const PLAYBACK_INTERVAL = 80;
 
 const TEST_DATA: Record<string, TestDataSpec> = {

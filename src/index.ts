@@ -3,6 +3,8 @@ import Volume from "./Volume";
 import Channel from "./Channel";
 import VolumeMaker from "./VolumeMaker";
 import VolumeCache from "./VolumeCache";
+import RequestQueue from "./utils/RequestQueue";
+import SubscribableRequestQueue from "./utils/SubscribableRequestQueue";
 import Histogram from "./Histogram";
 import { ViewportCorner } from "./types";
 import { VolumeFileFormat, createVolumeLoader } from "./loaders";
@@ -17,6 +19,7 @@ export type { ImageInfo } from "./Volume";
 export type { ControlPoint, Lut } from "./Histogram";
 export type { CreateLoaderOptions } from "./loaders";
 export type { IVolumeLoader, PerChannelCallback } from "./loaders/IVolumeLoader";
+export type { ZarrLoaderFetchOptions } from "./loaders/OmeZarrLoader";
 export {
   Histogram,
   View3d,
@@ -24,6 +27,8 @@ export {
   LoadSpec,
   VolumeMaker,
   VolumeCache,
+  RequestQueue,
+  SubscribableRequestQueue,
   OMEZarrLoader,
   JsonImageInfoLoader,
   TiffLoader,
