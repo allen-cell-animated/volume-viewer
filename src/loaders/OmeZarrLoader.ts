@@ -105,6 +105,29 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint
 
 type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;
 
+export type ZarrLoaderFetchOptions = {
+  /** The max. number of requests the loader can issue at a time. Ignored if the constructor also receives a queue. */
+  concurrencyLimit?: number;
+  /**
+   * The max. number of *prefetch* requests the loader can issue at a time. Set lower than `concurrencyLimit` to ensure
+   * that prefetching leaves room in the queue for actual loads. Ignored if the constructor also receives a queue.
+   */
+  prefetchConcurrencyLimit?: number;
+  /**
+   * The max. number of chunks to prefetch outward in either direction. E.g. if a load requests chunks with z coords 3
+   * and 4 and `maxPrefetchDistance.z` is 2, the loader will prefetch similar chunks with z coords 1, 2, 5, and 6 (or
+   * until it hits `maxPrefetchChunks`). The `w` component is time.
+   */
+  maxPrefetchDistance: Vector4;
+  /** The max. number of total chunks that can be prefetched after any load. */
+  maxPrefetchChunks: number;
+};
+
+const DEFAULT_FETCH_OPTIONS = {
+  maxPrefetchDistance: new Vector4(5, 5, 5, 5),
+  maxPrefetchChunks: 30,
+};
+
 class OMEZarrLoader implements IVolumeLoader {
   /** The ID of the subscriber responsible for "actual loads" (non-prefetch requests) */
   private loadSubscriber: SubscriberId | undefined;
@@ -121,33 +144,20 @@ class OMEZarrLoader implements IVolumeLoader {
     private multiscaleMetadata: OMEMultiscale,
     private omeroMetadata: OmeroTransitionalMetadata,
     private axesTCZYX: TCZYX<number>,
-    // TODO: should we be able to share `RequestQueue`s between loaders?
-    private requestQueue: SubscribableRequestQueue
+    private requestQueue: SubscribableRequestQueue,
+    private fetchOptions: ZarrLoaderFetchOptions = DEFAULT_FETCH_OPTIONS
   ) {}
 
   static async createLoader(
     url: string,
-    scene?: number,
-    cache?: VolumeCache,
-    queue?: SubscribableRequestQueue
-  ): Promise<OMEZarrLoader>;
-  static async createLoader(
-    url: string,
-    scene?: number,
-    cache?: VolumeCache,
-    concurrencyLimit?: number,
-    prefetchConcurrencyLimit?: number
-  ): Promise<OMEZarrLoader>;
-  static async createLoader(
-    url: string,
     scene = 0,
     cache?: VolumeCache,
-    queue?: SubscribableRequestQueue | number,
-    prefetchConcurrencyLimit?: number
+    queue?: SubscribableRequestQueue,
+    fetchOptions?: ZarrLoaderFetchOptions
   ): Promise<OMEZarrLoader> {
     // Setup queue and store, get basic metadata
-    if (typeof queue === "number" || queue === undefined) {
-      queue = new SubscribableRequestQueue(queue, prefetchConcurrencyLimit);
+    if (!queue) {
+      queue = new SubscribableRequestQueue(fetchOptions?.concurrencyLimit, fetchOptions?.prefetchConcurrencyLimit);
     }
     const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
     const root = zarr.root(store);
@@ -163,10 +173,10 @@ class OMEZarrLoader implements IVolumeLoader {
 
     // Open all scale levels of multiscale
     const scaleLevelPromises = multiscale.datasets.map(({ path }) => zarr.open(root.resolve(path), { kind: "array" }));
-    const scaleLevels = await Promise.all(scaleLevelPromises);
+    const scaleLevels = (await Promise.all(scaleLevelPromises)) as NumericZarrArray[];
     const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
 
-    return new OMEZarrLoader(store, scaleLevels as NumericZarrArray[], multiscale, metadata.omero, axisTCZYX, queue);
+    return new OMEZarrLoader(store, scaleLevels, multiscale, metadata.omero, axisTCZYX, queue, fetchOptions);
   }
 
   private getUnitSymbols(): [string, string] {
@@ -380,12 +390,17 @@ class OMEZarrLoader implements IVolumeLoader {
     // `ChunkPrefetchIterator` yields chunk coordinates in order of roughly how likely they are to be loaded next
     const prefetchIterator = new ChunkPrefetchIterator(
       chunkCoords,
-      new Vector4(2, 2, 2, 2),
+      this.fetchOptions.maxPrefetchDistance,
       new Vector4(chunkDims[4], chunkDims[3], chunkDims[2], chunkDims[0])
     );
 
+    let prefetchCount = 0;
     for (const chunk of prefetchIterator) {
+      if (prefetchCount >= this.fetchOptions.maxPrefetchChunks) {
+        break;
+      }
       this.prefetchChunk(scaleLevel.path, chunk, subscriber);
+      prefetchCount++;
     }
 
     // Clear out old prefetch requests (requests which also cover this new prefetch will be preserved)
