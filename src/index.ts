@@ -13,6 +13,7 @@ import { TiffLoader } from "./loaders/TiffLoader";
 
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
 
+export type { RawArrayData, RawArrayInfo } from "./loaders/RawArrayLoader";
 export type { ImageInfo } from "./Volume";
 export type { ControlPoint, Lut } from "./Histogram";
 export type { CreateLoaderOptions } from "./loaders";
