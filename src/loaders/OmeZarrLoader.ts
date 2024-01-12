@@ -1,4 +1,4 @@
-import { Box3, Vector3 } from "three";
+import { Box3, Vector3, Vector4 } from "three";
 
 import * as zarr from "@zarrita/core";
 import { get as zarrGet, slice, Slice } from "@zarrita/indexing";
@@ -243,8 +243,8 @@ const directionToIndex = (dir: PrefetchIterDirection): number => skipC(dir >> 1)
 type PrefetchDirectionState = {
   direction: PrefetchIterDirection;
   chunks: TCZYX<number>[];
-  current: number;
-  limit: number;
+  start: number;
+  end: number;
 };
 
 // Given a list of chunks and some bounds, iterates evenly outwards in t, z, y, and x
@@ -252,34 +252,39 @@ type PrefetchDirectionState = {
 class ZarrPrefetchIterator {
   directions: PrefetchDirectionState[];
 
-  constructor(chunks: TCZYX<number>[], tzyxBounds: [number, number, number, number, number, number, number, number]) {
+  constructor(chunks: TCZYX<number>[], xyztMaxOffset: Vector4, zyxtMaxChunk: Vector4) {
+    const maxOffsetArr = [xyztMaxOffset.w, xyztMaxOffset.z, xyztMaxOffset.y, xyztMaxOffset.x];
+    const maxChunkArr = [zyxtMaxChunk.w, zyxtMaxChunk.z, zyxtMaxChunk.y, zyxtMaxChunk.x];
     // Get maxes and mins in TZYX
-    const extrema = [-Infinity, Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity, Infinity];
+    const extrema = [Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity];
 
     for (const chunk of chunks) {
       for (let j = 0; j < 4; j++) {
         const val = chunk[skipC(j)];
         const extremaIdx = j << 1;
-        if (val > extrema[extremaIdx]) {
+
+        if (val < extrema[extremaIdx]) {
           extrema[extremaIdx] = val;
         }
-        if (val < extrema[extremaIdx + 1]) {
-          extrema[extremaIdx] = val;
+
+        if (val > extrema[extremaIdx + 1]) {
+          extrema[extremaIdx + 1] = val;
         }
       }
     }
 
     // Create `PrefetchDirectionState`s for each direction and fill them with chunks at the borders of the fetched set
-    const directions: PrefetchDirectionState[] = extrema.map((current, direction) => ({
-      direction,
-      current,
-      limit: tzyxBounds[direction],
-      chunks: [],
-    }));
+    const directions: PrefetchDirectionState[] = extrema.map((start, direction) => {
+      const end =
+        direction & 1
+          ? Math.min(start + maxOffsetArr[direction >> 1], maxChunkArr[direction >> 1] - 1)
+          : Math.max(start - maxOffsetArr[direction >> 1], 0);
+      return { direction, start, end, chunks: [] };
+    });
 
     for (const chunk of chunks) {
       for (const dir of directions) {
-        if (chunk[directionToIndex(dir.direction)] === dir.limit) {
+        if (chunk[directionToIndex(dir.direction)] === dir.start) {
           dir.chunks.push(chunk);
         }
       }
@@ -288,7 +293,29 @@ class ZarrPrefetchIterator {
     this.directions = directions;
   }
 
-  *[Symbol.iterator](): Iterator<TCZYX<number>> {}
+  *[Symbol.iterator](): Iterator<TCZYX<number>> {
+    let offset = 1;
+    while (this.directions.length > 0) {
+      this.directions = this.directions.filter((dir) => {
+        // WATCH FOR OFF-BY-ONE HERE
+        if (dir.direction & 1) {
+          return dir.start + offset <= dir.end;
+        } else {
+          return dir.start - offset >= dir.end;
+        }
+      });
+
+      for (const dir of this.directions) {
+        for (const chunk of dir.chunks) {
+          const newChunk = chunk.slice() as TCZYX<number>;
+          newChunk[directionToIndex(dir.direction)] += offset * (dir.direction & 1 ? 1 : -1);
+          yield newChunk;
+        }
+      }
+
+      offset += 1;
+    }
+  }
 }
 
 class OMEZarrLoader implements IVolumeLoader {
@@ -549,6 +576,15 @@ class OMEZarrLoader implements IVolumeLoader {
     // Get number of chunks per dimension in `scaleLevel`
     const chunkDimsUnordered = scaleLevel.shape.map((dim, idx) => Math.ceil(dim / scaleLevel.chunks[idx]));
     const chunkDims = this.orderByTCZYX(chunkDimsUnordered, 1);
+
+    const experimentalIndexer = new ZarrPrefetchIterator(
+      chunkCoords,
+      new Vector4(2, 2, 2, 2),
+      new Vector4(chunkDims[4], chunkDims[3], chunkDims[2], chunkDims[0])
+    );
+    for (const chunk of experimentalIndexer) {
+      console.log(chunk);
+    }
 
     // Get all channels involved in this request
     const channels = new Set<number>();
