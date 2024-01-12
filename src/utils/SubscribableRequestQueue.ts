@@ -27,8 +27,14 @@ export default class SubscribableRequestQueue {
   /** Map from "inner" request (managed by `queue`) to "outer" promises generated per-subscriber. */
   private requests: Map<string, RequestSubscription[]>;
 
-  constructor(maxActiveRequests?: number, maxLowPriorityRequests?: number) {
-    this.queue = new RequestQueue(maxActiveRequests, maxLowPriorityRequests);
+  constructor(maxActiveRequests?: number, maxLowPriorityRequests?: number);
+  constructor(inner: RequestQueue);
+  constructor(maxActiveRequests?: number | RequestQueue, maxLowPriorityRequests?: number) {
+    if (typeof maxActiveRequests === "object" && maxActiveRequests !== undefined) {
+      this.queue = maxActiveRequests;
+    } else {
+      this.queue = new RequestQueue(maxActiveRequests, maxLowPriorityRequests);
+    }
     this.nextSubscriberId = 0;
     this.subscribers = new Map();
     this.requests = new Map();
