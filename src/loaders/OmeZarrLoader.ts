@@ -127,12 +127,28 @@ class OMEZarrLoader implements IVolumeLoader {
 
   static async createLoader(
     url: string,
+    scene?: number,
+    cache?: VolumeCache,
+    queue?: SubscribableRequestQueue
+  ): Promise<OMEZarrLoader>;
+  static async createLoader(
+    url: string,
+    scene?: number,
+    cache?: VolumeCache,
+    concurrencyLimit?: number,
+    prefetchConcurrencyLimit?: number
+  ): Promise<OMEZarrLoader>;
+  static async createLoader(
+    url: string,
     scene = 0,
     cache?: VolumeCache,
-    concurrencyLimit = 10
+    queue?: SubscribableRequestQueue | number,
+    prefetchConcurrencyLimit?: number
   ): Promise<OMEZarrLoader> {
-    // Setup: create queue and store, get basic metadata
-    const queue = new SubscribableRequestQueue(concurrencyLimit, 5);
+    // Setup queue and store, get basic metadata
+    if (typeof queue === "number" || queue === undefined) {
+      queue = new SubscribableRequestQueue(queue, prefetchConcurrencyLimit);
+    }
     const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
     const root = zarr.root(store);
     const group = await zarr.open(root, { kind: "group" });

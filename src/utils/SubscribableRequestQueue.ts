@@ -30,10 +30,10 @@ export default class SubscribableRequestQueue {
   constructor(maxActiveRequests?: number, maxLowPriorityRequests?: number);
   constructor(inner: RequestQueue);
   constructor(maxActiveRequests?: number | RequestQueue, maxLowPriorityRequests?: number) {
-    if (typeof maxActiveRequests === "object" && maxActiveRequests !== undefined) {
-      this.queue = maxActiveRequests;
-    } else {
+    if (typeof maxActiveRequests === "number" || maxActiveRequests === undefined) {
       this.queue = new RequestQueue(maxActiveRequests, maxLowPriorityRequests);
+    } else {
+      this.queue = maxActiveRequests;
     }
     this.nextSubscriberId = 0;
     this.subscribers = new Map();
