@@ -2,7 +2,7 @@ import { Box3, Vector3, Vector4 } from "three";
 
 import * as zarr from "@zarrita/core";
 import { get as zarrGet, slice, Slice } from "@zarrita/indexing";
-import { AbsolutePath, AsyncReadable, Readable } from "@zarrita/storage";
+import { AbsolutePath } from "@zarrita/storage";
 // Importing `FetchStore` from its home subpackage (@zarrita/storage) causes errors.
 // Getting it from the top-level package means we don't get its type. This is also a bug, but it's more acceptable.
 import { FetchStore } from "zarrita";
@@ -19,140 +19,24 @@ import {
   estimateLevelForAtlas,
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
+import ChunkPrefetchIterator from "./zarr_utils/ChunkPrefetchIterator";
+import WrappedStore from "./zarr_utils/WrappedStore";
+import {
+  OMEAxis,
+  OMECoordinateTransformation,
+  OMEMultiscale,
+  OmeroTransitionalMetadata,
+  OMEZarrMetadata,
+  SubscriberId,
+  TCZYX,
+} from "./zarr_utils/types";
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
 const PREFETCH_TIME_MARGIN = 8;
 
-type TCZYX<T> = [T, T, T, T, T];
-type SubscriberId = ReturnType<SubscribableRequestQueue["addSubscriber"]>;
-
-type OMECoordinateTransformation =
-  | {
-      type: "identity";
-    }
-  | {
-      type: "translation";
-      translation: number[];
-    }
-  | {
-      type: "scale";
-      scale: number[];
-    }
-  | {
-      type: "translation" | "scale";
-      path: string;
-    };
-
-type OMEAxis = {
-  name: string;
-  type?: string;
-  unit?: string;
-};
-
-type OMEDataset = {
-  path: string;
-  coordinateTransformations?: OMECoordinateTransformation[];
-};
-
-// https://ngff.openmicroscopy.org/latest/#multiscale-md
-type OMEMultiscale = {
-  version?: string;
-  name?: string;
-  axes: OMEAxis[];
-  datasets: OMEDataset[];
-  coordinateTransformations?: OMECoordinateTransformation[];
-  type?: string;
-  metadata?: Record<string, unknown>;
-};
-
-// https://ngff.openmicroscopy.org/latest/#omero-md
-type OmeroTransitionalMetadata = {
-  id: number;
-  name: string;
-  version: string;
-  channels: {
-    active: boolean;
-    coefficient: number;
-    color: string;
-    family: string;
-    inverted: boolean;
-    label: string;
-    window: {
-      end: number;
-      max: number;
-      min: number;
-      start: number;
-    };
-  }[];
-};
-
-type OMEZarrMetadata = {
-  multiscales: OMEMultiscale[];
-  omero: OmeroTransitionalMetadata;
-};
-
 /** Turns `axisTCZYX` into the number of dimensions in the array */
 const getDimensionCount = ([t, c, z]: TCZYX<number>) => 2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
-
-type WrappedStoreOpts<Opts> = {
-  options?: Opts;
-  subscriber: SubscriberId;
-  reportKey?: (key: string, subscriber: SubscriberId) => void;
-  isPrefetch?: boolean;
-};
-
-/**
- * `Readable` is zarrita's minimal abstraction for any source of data.
- * `WrappedStore` wraps another `Readable` and adds (optional) connections to `VolumeCache` and `RequestQueue`.
- */
-class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements AsyncReadable<WrappedStoreOpts<Opts>> {
-  constructor(private baseStore: S, private cache?: VolumeCache, private queue?: SubscribableRequestQueue) {}
-
-  private async getAndCache(key: AbsolutePath, cacheKey: string, opts?: Opts): Promise<Uint8Array | undefined> {
-    const result = await this.baseStore.get(key, opts);
-    if (this.cache && result) {
-      this.cache.insert(cacheKey, result);
-    }
-    return result;
-  }
-
-  async get(key: AbsolutePath, opts?: WrappedStoreOpts<Opts> | undefined): Promise<Uint8Array | undefined> {
-    const ZARR_EXTS = [".zarray", ".zgroup", ".zattrs", "zarr.json"];
-    if (!this.cache || ZARR_EXTS.some((s) => key.endsWith(s))) {
-      return this.baseStore.get(key, opts?.options);
-    }
-    if (opts?.reportKey) {
-      opts.reportKey(key, opts.subscriber);
-    }
-
-    let keyPrefix = (this.baseStore as FetchStore).url ?? "";
-    if (keyPrefix !== "" && !(keyPrefix instanceof URL) && !keyPrefix.endsWith("/")) {
-      keyPrefix += "/";
-    }
-
-    const fullKey = keyPrefix + key.slice(1);
-
-    // Check the cache
-    const cacheResult = this.cache.get(fullKey);
-    if (cacheResult) {
-      return new Uint8Array(cacheResult);
-    }
-
-    // Not in cache; load the chunk and cache it
-    if (this.queue && opts) {
-      return this.queue.addRequest(
-        fullKey,
-        opts.subscriber,
-        () => this.getAndCache(key, fullKey, opts?.options),
-        opts.isPrefetch
-      );
-    } else {
-      // Should we ever hit this code?  We should always have a request queue.
-      return this.getAndCache(key, fullKey, opts?.options);
-    }
-  }
-}
 
 function remapAxesToTCZYX(axes: OMEAxis[]): TCZYX<number> {
   const axisTCZYX: TCZYX<number> = [-1, -1, -1, -1, -1];
@@ -222,101 +106,6 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint
 }
 
 type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;
-
-const enum PrefetchIterDirection {
-  T_MINUS = 0,
-  T_PLUS = 1,
-
-  Z_MINUS = 2,
-  Z_PLUS = 3,
-
-  Y_MINUS = 4,
-  Y_PLUS = 5,
-
-  X_MINUS = 6,
-  X_PLUS = 7,
-}
-
-const skipC = (idx: number): number => idx + Number(idx !== 0);
-const directionToIndex = (dir: PrefetchIterDirection): number => skipC(dir >> 1);
-
-type PrefetchDirectionState = {
-  direction: PrefetchIterDirection;
-  chunks: TCZYX<number>[];
-  start: number;
-  end: number;
-};
-
-// Given a list of chunks and some bounds, iterates evenly outwards in t, z, y, and x
-// Assumes `chunks` form a rectangular prism! Will create gaps otherwise! (in practice they always should)
-class ZarrPrefetchIterator {
-  directions: PrefetchDirectionState[];
-
-  constructor(chunks: TCZYX<number>[], xyztMaxOffset: Vector4, zyxtMaxChunk: Vector4) {
-    const maxOffsetArr = [xyztMaxOffset.w, xyztMaxOffset.z, xyztMaxOffset.y, xyztMaxOffset.x];
-    const maxChunkArr = [zyxtMaxChunk.w, zyxtMaxChunk.z, zyxtMaxChunk.y, zyxtMaxChunk.x];
-    // Get maxes and mins in TZYX
-    const extrema = [Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity];
-
-    for (const chunk of chunks) {
-      for (let j = 0; j < 4; j++) {
-        const val = chunk[skipC(j)];
-        const extremaIdx = j << 1;
-
-        if (val < extrema[extremaIdx]) {
-          extrema[extremaIdx] = val;
-        }
-
-        if (val > extrema[extremaIdx + 1]) {
-          extrema[extremaIdx + 1] = val;
-        }
-      }
-    }
-
-    // Create `PrefetchDirectionState`s for each direction and fill them with chunks at the borders of the fetched set
-    const directions: PrefetchDirectionState[] = extrema.map((start, direction) => {
-      const end =
-        direction & 1
-          ? Math.min(start + maxOffsetArr[direction >> 1], maxChunkArr[direction >> 1] - 1)
-          : Math.max(start - maxOffsetArr[direction >> 1], 0);
-      return { direction, start, end, chunks: [] };
-    });
-
-    for (const chunk of chunks) {
-      for (const dir of directions) {
-        if (chunk[directionToIndex(dir.direction)] === dir.start) {
-          dir.chunks.push(chunk);
-        }
-      }
-    }
-
-    this.directions = directions;
-  }
-
-  *[Symbol.iterator](): Iterator<TCZYX<number>> {
-    let offset = 1;
-    while (this.directions.length > 0) {
-      this.directions = this.directions.filter((dir) => {
-        // WATCH FOR OFF-BY-ONE HERE
-        if (dir.direction & 1) {
-          return dir.start + offset <= dir.end;
-        } else {
-          return dir.start - offset >= dir.end;
-        }
-      });
-
-      for (const dir of this.directions) {
-        for (const chunk of dir.chunks) {
-          const newChunk = chunk.slice() as TCZYX<number>;
-          newChunk[directionToIndex(dir.direction)] += offset * (dir.direction & 1 ? 1 : -1);
-          yield newChunk;
-        }
-      }
-
-      offset += 1;
-    }
-  }
-}
 
 class OMEZarrLoader implements IVolumeLoader {
   /** Hold one optional subscriber ID per timestep, each defined iff a batch of prefetches is waiting for that frame */
@@ -577,7 +366,7 @@ class OMEZarrLoader implements IVolumeLoader {
     const chunkDimsUnordered = scaleLevel.shape.map((dim, idx) => Math.ceil(dim / scaleLevel.chunks[idx]));
     const chunkDims = this.orderByTCZYX(chunkDimsUnordered, 1);
 
-    const experimentalIndexer = new ZarrPrefetchIterator(
+    const experimentalIndexer = new ChunkPrefetchIterator(
       chunkCoords,
       new Vector4(2, 2, 2, 2),
       new Vector4(chunkDims[4], chunkDims[3], chunkDims[2], chunkDims[0])
