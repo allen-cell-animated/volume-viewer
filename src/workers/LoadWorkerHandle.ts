@@ -99,9 +99,13 @@ class LoadWorker {
   private activeLoader: WorkerLoader | undefined = undefined;
   private activeLoaderId = -1;
 
-  constructor(maxCacheSize?: number) {
+  constructor(maxCacheSize?: number, maxActiveRequests?: number, maxLowPriorityRequests?: number) {
     this.workerHandle = new SharedLoadWorkerHandle();
-    this.openPromise = this.workerHandle.sendMessage(WorkerMsgType.INIT, { maxCacheSize });
+    this.openPromise = this.workerHandle.sendMessage(WorkerMsgType.INIT, {
+      maxCacheSize,
+      maxActiveRequests,
+      maxLowPriorityRequests,
+    });
   }
 
   onOpen(): Promise<void> {
@@ -116,7 +120,10 @@ class LoadWorker {
     this.activeLoader?.close();
   }
 
-  async createLoader(path: string | string[], options?: CreateLoaderOptions): Promise<WorkerLoader | TiffLoader> {
+  async createLoader(
+    path: string | string[],
+    options?: Omit<CreateLoaderOptions, "cache" | "queue">
+  ): Promise<WorkerLoader | TiffLoader> {
     // Special case: TIFF loader doesn't work on a worker, has its own workers anyways, and doesn't use cache or queue.
     const pathString = Array.isArray(path) ? path[0] : path;
     const fileType = options?.fileType || pathToFileType(pathString);

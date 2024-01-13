@@ -86,8 +86,7 @@ const TEST_DATA: Record<string, TestDataSpec> = {
 
 let view3D: View3d;
 
-// const volumeCache = new VolumeCache(CACHE_MAX_SIZE);
-const loadWorker = new LoadWorker(CACHE_MAX_SIZE);
+const loadWorker = new LoadWorker(CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 
 const myState: State = {
   file: "",
@@ -1010,7 +1009,6 @@ function createTestVolume() {
 
 async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
   await loadWorker.onOpen();
-  console.log(new Vector2(0, 1));
   if (data.type === "opencell") {
     return new OpenCellLoader();
   }
@@ -1024,7 +1022,9 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
     }
   }
 
-  return await loadWorker.createLoader(path);
+  return await loadWorker.createLoader(path, {
+    fetchOptions: { maxPrefetchDistance: PREFETCH_DISTANCE, maxPrefetchChunks: MAX_PREFETCH_CHUNKS },
+  });
 }
 
 async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<void> {

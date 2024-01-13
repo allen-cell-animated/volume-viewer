@@ -1,6 +1,8 @@
 import VolumeCache from "../VolumeCache";
 import { VolumeFileFormat, createVolumeLoader, pathToFileType } from "../loaders";
 import { ThreadableVolumeLoader } from "../loaders/IVolumeLoader";
+import RequestQueue from "../utils/RequestQueue";
+import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
 import {
   WorkerMsgType,
   WorkerRequest,
@@ -12,6 +14,8 @@ import {
 import { rebuildImageInfo, rebuildLoadSpec } from "./util";
 
 let cache: VolumeCache | undefined = undefined;
+let queue: RequestQueue | undefined = undefined;
+let subscribableQueue: SubscribableRequestQueue | undefined = undefined;
 let loader: ThreadableVolumeLoader | undefined = undefined;
 let initialized = false;
 let copyOnLoad = false;
@@ -19,9 +23,11 @@ let copyOnLoad = false;
 type MessageHandler<T extends WorkerMsgType> = (payload: WorkerRequestPayload<T>) => Promise<WorkerResponsePayload<T>>;
 
 const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
-  [WorkerMsgType.INIT]: ({ maxCacheSize }) => {
+  [WorkerMsgType.INIT]: ({ maxCacheSize, maxActiveRequests, maxLowPriorityRequests }) => {
     if (!initialized) {
       cache = new VolumeCache(maxCacheSize);
+      queue = new RequestQueue(maxActiveRequests, maxLowPriorityRequests);
+      subscribableQueue = new SubscribableRequestQueue(queue);
       initialized = true;
     }
     return Promise.resolve();
@@ -31,7 +37,7 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
     const pathString = Array.isArray(path) ? path[0] : path;
     const fileType = options?.fileType || pathToFileType(pathString);
     copyOnLoad = fileType === VolumeFileFormat.JSON;
-    loader = await createVolumeLoader(path, { ...options, cache });
+    loader = await createVolumeLoader(path, { ...options, cache, queue: subscribableQueue });
     return loader !== undefined;
   },
 

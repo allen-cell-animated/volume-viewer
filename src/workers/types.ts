@@ -25,6 +25,8 @@ type WorkerMsgBase<T extends WorkerMsgType, P> = {
 export type WorkerRequestPayload<T extends WorkerMsgType> = {
   [WorkerMsgType.INIT]: {
     maxCacheSize?: number;
+    maxActiveRequests?: number;
+    maxLowPriorityRequests?: number;
   };
   [WorkerMsgType.CREATE_LOADER]: {
     path: string | string[];
