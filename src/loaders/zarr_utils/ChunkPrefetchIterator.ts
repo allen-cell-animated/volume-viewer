@@ -2,6 +2,15 @@ import { Vector4 } from "three";
 
 import { TCZYX } from "./types";
 
+/**
+ * Directions in which to move outward from the loaded set of chunks while prefetching.
+ *
+ * Ordered in pairs of opposite directions both because that's a sensible order in which to prefetch for our purposes,
+ * and because it lets us treat the least significant bit as the sign. So `direction >> 1` gives the index of the
+ * direction in TZYX-ordered arrays, and `direction & 1` gives the sign of the direction (e.g. positive vs negative Z).
+ *
+ * Note that this enum is mostly for documentation, and its variants are never explicitly used.
+ */
 const enum PrefetchDirection {
   T_MINUS = 0,
   T_PLUS = 1,
@@ -56,15 +65,23 @@ export default class ChunkPrefetchIterator {
       }
     }
 
-    // Create `PrefetchDirectionState`s for each direction and fill them with chunks at the borders of the fetched set
+    // Create `PrefetchDirectionState`s for each direction
     const directions: PrefetchDirectionState[] = extrema.map((start, direction) => {
-      const end =
-        direction & 1
-          ? Math.min(start + maxOffsetArr[direction >> 1], chunkSizeArr[direction >> 1] - 1)
-          : Math.max(start - maxOffsetArr[direction >> 1], 0);
-      return { direction, start, end, chunks: [] };
+      const dimension = direction >> 1;
+      if (direction & 1) {
+        // Positive direction - end is either the max coordinate in the fetched set plus the max offset in this
+        // dimension, or the max chunk coordinate in this dimension, whichever comes first
+        const end = Math.min(start + maxOffsetArr[dimension], chunkSizeArr[dimension] - 1);
+        return { direction, start, end, chunks: [] };
+      } else {
+        // Negative direction - end is either the min coordinate in the fetched set minus the max offset in this
+        // dimension, or 0, whichever comes first
+        const end = Math.max(start - maxOffsetArr[dimension], 0);
+        return { direction, start, end, chunks: [] };
+      }
     });
 
+    // Fill each `PrefetchDirectionState` with chunks at the border of the fetched set
     for (const chunk of chunks) {
       for (const dir of directions) {
         if (chunk[directionToIndex(dir.direction)] === dir.start) {
