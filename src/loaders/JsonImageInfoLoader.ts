@@ -185,9 +185,9 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
 
   /**
    * load per-channel volume data from a batch of image files containing the volume slices tiled across the images
-   * @param {Volume} volume
    * @param {Array.<{name:string, channels:Array.<number>}>} imageArray
-   * @param {PerChannelCallback} onChannelLoaded Per-channel callback.  Called when each channel's atlased volume data is loaded
+   * @param {RawChannelDataCallback} onData Per-channel callback. Called when each channel's atlased volume data is loaded
+   * @param {VolumeCache} cache
    * @example loadVolumeAtlasData([{
    *     "name": "AICS-10_5_5.ome.tif_atlas_0.png",
    *     "channels": [0, 1, 2]
@@ -257,7 +257,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
         }
       }
 
-      // done with img, iData, and canvas now.
+      // done with `iData` and `canvas` now.
 
       for (let ch = 0; ch < Math.min(image.channels.length, 4); ++ch) {
         const chindex = image.channels[ch];

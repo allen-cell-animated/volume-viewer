@@ -61,6 +61,8 @@ function getOMEDims(imageEl: Element): OMEDims {
 
 const getBytesPerSample = (type: string): number => (type === "uint8" ? 1 : type === "uint16" ? 2 : 4);
 
+// Despite the class `TiffLoader` extends, this loader is not threadable, since geotiff internally uses features that
+// aren't available on workers. It uses its own specialized workers anyways.
 class TiffLoader extends ThreadableVolumeLoader {
   url: string;
   dims?: OMEDims;
@@ -171,7 +173,6 @@ class TiffLoader extends ThreadableVolumeLoader {
         const u8 = e.data.data;
         const channel = e.data.channel;
         onData(channel, u8);
-        // make up a unique name? or have caller pass this in?
         worker.terminate();
       };
       worker.onerror = (e) => {
