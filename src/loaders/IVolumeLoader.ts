@@ -85,7 +85,7 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
    * Returns a promise that resolves to reflect any modifications to `imageInfo` and/or `loadSpec` that need to be made
    * based on this load. Actual loaded channel data is passed to `onData` as it is loaded. Depending on the format,
    * the returned array may be in simple 3d dimension order or reflect a 2d atlas. If the latter, the dimensions of the
-   * atlas (in tiles) are passed as the third argument to `onData`.
+   * atlas are passed as the third argument to `onData`.
    */
   abstract loadRawChannelData(
     imageInfo: ImageInfo,
