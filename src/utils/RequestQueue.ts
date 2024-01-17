@@ -31,7 +31,7 @@ interface RequestItem<V> {
  */
 export default class RequestQueue {
   /**
-   * The maximum number of requests that can be handled concurently.
+   * The maximum number of requests that can be handled concurrently.
    * Once reached, additional requests will be queued up to run once a running request completes.
    */
   private maxActiveRequests: number;
