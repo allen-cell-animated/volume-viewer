@@ -2,6 +2,7 @@ import { Box3, Vector2, Vector3 } from "three";
 import { LoadSpec } from "../loaders/IVolumeLoader";
 import { ImageInfo } from "../Volume";
 
+/** Recreates a `LoadSpec` that has just been sent to/from a worker to restore three.js object prototypes */
 export function rebuildLoadSpec(spec: LoadSpec): LoadSpec {
   return {
     ...spec,
@@ -9,6 +10,7 @@ export function rebuildLoadSpec(spec: LoadSpec): LoadSpec {
   };
 }
 
+/** Recreates an `ImageInfo` that has just been sent to/from a worker to restore three.js object prototypes */
 export function rebuildImageInfo(imageInfo: ImageInfo): ImageInfo {
   return {
     ...imageInfo,
