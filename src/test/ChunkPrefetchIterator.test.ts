@@ -86,7 +86,7 @@ describe("ChunkPrefetchIterator", () => {
   it("stops at the max offset in each dimension", () => {
     // 5x5x5, with one chunk in the center
     const iterator = new ChunkPrefetchIterator([[2, 0, 2, 2, 2]], [1, 1, 1, 1], [5, 5, 5, 5]);
-    validate(iterator, EXPECTED_5X5X5X5);
+    validate(iterator, EXPECTED_5X5X5X5); // never reaches offset = 2, as it does above
   });
 
   it("stops at the borders of the zarr", () => {
