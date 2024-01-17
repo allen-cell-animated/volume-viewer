@@ -1,4 +1,4 @@
-import { Box3, Vector3, Vector4 } from "three";
+import { Box3, Vector3 } from "three";
 
 import * as zarr from "@zarrita/core";
 import { get as zarrGet, slice, Slice } from "@zarrita/indexing";
@@ -115,16 +115,16 @@ export type ZarrLoaderFetchOptions = {
   prefetchConcurrencyLimit?: number;
   /**
    * The max. number of chunks to prefetch outward in either direction. E.g. if a load requests chunks with z coords 3
-   * and 4 and `maxPrefetchDistance.z` is 2, the loader will prefetch similar chunks with z coords 1, 2, 5, and 6 (or
-   * until it hits `maxPrefetchChunks`). The `w` component is time.
+   * and 4 and `maxPrefetchDistance` in z is 2, the loader will prefetch similar chunks with z coords 1, 2, 5, and 6
+   * (or until it hits `maxPrefetchChunks`). Ordered TZYX.
    */
-  maxPrefetchDistance: Vector4;
+  maxPrefetchDistance: [number, number, number, number];
   /** The max. number of total chunks that can be prefetched after any load. */
   maxPrefetchChunks: number;
 };
 
 const DEFAULT_FETCH_OPTIONS = {
-  maxPrefetchDistance: new Vector4(5, 5, 5, 5),
+  maxPrefetchDistance: [5, 5, 5, 5] as [number, number, number, number],
   maxPrefetchChunks: 30,
 };
 
@@ -388,10 +388,11 @@ class OMEZarrLoader implements IVolumeLoader {
 
     const subscriber = this.requestQueue.addSubscriber();
     // `ChunkPrefetchIterator` yields chunk coordinates in order of roughly how likely they are to be loaded next
+    const chunkDimsTZYX: [number, number, number, number] = [chunkDims[0], chunkDims[2], chunkDims[3], chunkDims[4]];
     const prefetchIterator = new ChunkPrefetchIterator(
       chunkCoords,
       this.fetchOptions.maxPrefetchDistance,
-      new Vector4(chunkDims[4], chunkDims[3], chunkDims[2], chunkDims[0])
+      chunkDimsTZYX
     );
 
     let prefetchCount = 0;

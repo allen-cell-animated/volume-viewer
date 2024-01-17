@@ -1,6 +1,6 @@
-import { Vector4 } from "three";
-
 import { TCZYX } from "./types";
+
+type TZYX = [number, number, number, number];
 
 /**
  * Directions in which to move outward from the loaded set of chunks while prefetching.
@@ -44,9 +44,7 @@ const directionToIndex = (dir: PrefetchDirection): number => skipC(dir >> 1);
 export default class ChunkPrefetchIterator {
   directions: PrefetchDirectionState[];
 
-  constructor(chunks: TCZYX<number>[], xyztMaxOffset: Vector4, xyztChunkSize: Vector4) {
-    const maxOffsetArr = [xyztMaxOffset.w, xyztMaxOffset.z, xyztMaxOffset.y, xyztMaxOffset.x];
-    const chunkSizeArr = [xyztChunkSize.w, xyztChunkSize.z, xyztChunkSize.y, xyztChunkSize.x];
+  constructor(chunks: TCZYX<number>[], tzyxMaxOffset: TZYX, tzyxChunkSize: TZYX) {
     // Get max and min chunk coordinates for T/Z/Y/X
     const extrema = [Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity];
 
@@ -71,12 +69,12 @@ export default class ChunkPrefetchIterator {
       if (direction & 1) {
         // Positive direction - end is either the max coordinate in the fetched set plus the max offset in this
         // dimension, or the max chunk coordinate in this dimension, whichever comes first
-        const end = Math.min(start + maxOffsetArr[dimension], chunkSizeArr[dimension] - 1);
+        const end = Math.min(start + tzyxMaxOffset[dimension], tzyxChunkSize[dimension] - 1);
         return { direction, start, end, chunks: [] };
       } else {
         // Negative direction - end is either the min coordinate in the fetched set minus the max offset in this
         // dimension, or 0, whichever comes first
-        const end = Math.max(start - maxOffsetArr[dimension], 0);
+        const end = Math.max(start - tzyxMaxOffset[dimension], 0);
         return { direction, start, end, chunks: [] };
       }
     });
