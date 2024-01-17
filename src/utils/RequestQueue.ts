@@ -31,14 +31,15 @@ interface RequestItem<V> {
  */
 export default class RequestQueue {
   /**
-   * The maximum number of requests that can be handled concurently.
+   * The maximum number of requests that can be handled concurrently.
    * Once reached, additional requests will be queued up to run once a running request completes.
    */
   private maxActiveRequests: number;
 
   /**
-   * The maximum number of requests that can be handled concurrently for low-priority requests to be queued. Equal to
-   * `maxActiveRequests` by default, but may be set lower to ensure the queue leaves space for high-priority requests.
+   * The maximum number of requests that can be handled concurrently if only low-priority requests are waiting. Set
+   * lower than `concurrencyLimit` to always leave space for high-priority requests. Cannot be set higher than
+   * `concurrencyLimit`.
    */
   private maxLowPriorityRequests: number;
 
@@ -60,7 +61,7 @@ export default class RequestQueue {
    * @param maxLowPriorityRequests The maximum number of low-priority requests that will be handled concurrently. Equal
    *    to `maxActiveRequests` by default, but may be set lower to always leave space for new high-priority requests.
    */
-  constructor(maxActiveRequests = 10, maxLowPriorityRequests = maxActiveRequests) {
+  constructor(maxActiveRequests = 10, maxLowPriorityRequests = 5) {
     this.allRequests = new Map();
     this.activeRequests = new Set();
     this.queue = [];
