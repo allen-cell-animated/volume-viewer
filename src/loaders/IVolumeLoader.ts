@@ -35,7 +35,7 @@ export class VolumeDims {
  */
 export type PerChannelCallback = (volume: Volume, channelIndex: number) => void;
 
-export type RawChannelDataCallback = (ch: number, data: Uint8Array, atlasDims?: [number, number]) => void;
+export type RawChannelDataCallback = (channelIndex: number, data: Uint8Array, atlasDims?: [number, number]) => void;
 
 /**
  * Loads volume data from a source specified by a `LoadSpec`.
@@ -50,10 +50,6 @@ export interface IVolumeLoader {
   /**
    * Create an empty `Volume` from a `LoadSpec`, which must be passed to `loadVolumeData` to begin loading.
    * Optionally pass a callback to respond whenever new channel data is loaded into the volume.
-   *
-   * Loaders are allowed to assume that they will only be called on a single data source, in order to cache
-   * information about that source. Once this method has been called, every subsequent call to it or
-   * `loadVolumeData` should reference the same source.
    */
   createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume>;
 
@@ -71,10 +67,26 @@ export interface IVolumeLoader {
 
 /** Abstract class which allows loaders to accept and return types that are easier to transfer to/from a worker. */
 export abstract class ThreadableVolumeLoader implements IVolumeLoader {
+  /** Unchanged from `IVolumeLoader`. See that interface for details. */
   abstract loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]>;
 
+  /**
+   * Creates an `ImageInfo` object from a `LoadSpec`, which may be passed to the `Volume` constructor to create an
+   * empty volume that can accept data loaded with the given `LoadSpec`.
+   *
+   * Also returns a new `LoadSpec` that may have been modified from the input `LoadSpec` to reflect the constraints or
+   * abilities of the loader. This new `LoadSpec` should be used when constructing the `Volume`, _not_ the original.
+   */
   abstract createImageInfo(loadSpec: LoadSpec): Promise<[ImageInfo, LoadSpec]>;
 
+  /**
+   * Begins loading per-channel data for the volume specified by `imageInfo` and `loadSpec`.
+   *
+   * Returns a promise that resolves to reflect any modifications to `imageInfo` and/or `loadSpec` that need to be made
+   * based on this load. Actual loaded channel data is passed to `onData` as it is loaded. Depending on the format,
+   * the returned array may be in simple 3d dimension order or reflect a 2d atlas. If the latter, the dimensions of the
+   * atlas are passed as the third argument to `onData`.
+   */
   abstract loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
