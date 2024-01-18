@@ -27,6 +27,10 @@ export default class SubscribableRequestQueue {
   /** Map from "inner" request (managed by `queue`) to "outer" promises generated per-subscriber. */
   private requests: Map<string, RequestSubscription[]>;
 
+  /**
+   * Since `SubscribableRequestQueue` wraps `RequestQueue`, its constructor may either take the same arguments as the
+   * `RequestQueue` constructor and create a new `RequestQueue`, or it may take an existing `RequestQueue` to wrap.
+   */
   constructor(maxActiveRequests?: number, maxLowPriorityRequests?: number);
   constructor(inner: RequestQueue);
   constructor(maxActiveRequests?: number | RequestQueue, maxLowPriorityRequests?: number) {
