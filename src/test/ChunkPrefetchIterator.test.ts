@@ -14,16 +14,8 @@ const EXPECTED_3X3X3X3 = [
   [1, 0, 1, 1, 2], // X+
 ];
 
-const EXPECTED_5X5X5X5 = [
-  [1, 0, 2, 2, 2], // T-
-  [3, 0, 2, 2, 2], // T+
-  [2, 0, 1, 2, 2], // Z-
-  [2, 0, 3, 2, 2], // Z+
-  [2, 0, 2, 1, 2], // Y-
-  [2, 0, 2, 3, 2], // Y+
-  [2, 0, 2, 2, 1], // X-
-  [2, 0, 2, 2, 3], // X+
-];
+// move from the middle of a 3x3x3x3 cube to the middle of a 5x5x5x5 cube
+const EXPECTED_5X5X5X5 = EXPECTED_3X3X3X3.map(([t, c, z, y, x]) => [t + 1, c, z + 1, y + 1, x + 1]);
 
 function validate(iter: ChunkPrefetchIterator, expected: number[][]) {
   expect([...iter]).to.deep.equal(expected);
