@@ -35,6 +35,16 @@ type PrefetchDirectionState = {
 const skipC = (idx: number): number => idx + Number(idx !== 0);
 const directionToIndex = (dir: PrefetchDirection): number => skipC(dir >> 1);
 
+function updateMinMax(val: number, minmax: number[], offset: number): void {
+  if (val < minmax[offset]) {
+    minmax[offset] = val;
+  }
+
+  if (val > minmax[offset + 1]) {
+    minmax[offset + 1] = val;
+  }
+}
+
 /**
  * Since the user is most likely to want nearby data (in space or time) first, we should prefetch those chunks first.
  *
@@ -49,18 +59,10 @@ export default class ChunkPrefetchIterator {
     const extrema = [Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity];
 
     for (const chunk of chunks) {
-      for (let j = 0; j < 4; j++) {
-        const val = chunk[skipC(j)];
-        const extremaIdx = j << 1;
-
-        if (val < extrema[extremaIdx]) {
-          extrema[extremaIdx] = val;
-        }
-
-        if (val > extrema[extremaIdx + 1]) {
-          extrema[extremaIdx + 1] = val;
-        }
-      }
+      updateMinMax(chunk[0], extrema, 0);
+      updateMinMax(chunk[2], extrema, 2);
+      updateMinMax(chunk[3], extrema, 4);
+      updateMinMax(chunk[4], extrema, 6);
     }
 
     // Create `PrefetchDirectionState`s for each direction
