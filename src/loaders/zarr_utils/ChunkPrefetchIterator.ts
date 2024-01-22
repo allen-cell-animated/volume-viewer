@@ -37,13 +37,13 @@ const directionToIndex = (dir: PrefetchDirection): number => {
   return absDir + Number(absDir !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
 };
 
-function updateMinMax(val: number, minmax: number[], offset: number): void {
-  if (val < minmax[offset]) {
-    minmax[offset] = val;
+function updateMinMax(val: number, minmax: [number, number]): void {
+  if (val < minmax[0]) {
+    minmax[0] = val;
   }
 
-  if (val > minmax[offset + 1]) {
-    minmax[offset + 1] = val;
+  if (val > minmax[1]) {
+    minmax[1] = val;
   }
 }
 
@@ -57,18 +57,23 @@ export default class ChunkPrefetchIterator {
   directions: PrefetchDirectionState[];
 
   constructor(chunks: TCZYX<number>[], tzyxMaxPrefetchOffset: TZYX, tzyxNumChunks: TZYX) {
-    // Get max and min chunk coordinates for T/Z/Y/X
-    const extrema = [Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity];
+    // Get min and max chunk coordinates for T/Z/Y/X
+    const extrema: [number, number][] = [
+      [Infinity, -Infinity],
+      [Infinity, -Infinity],
+      [Infinity, -Infinity],
+      [Infinity, -Infinity],
+    ];
 
     for (const chunk of chunks) {
-      updateMinMax(chunk[0], extrema, 0);
-      updateMinMax(chunk[2], extrema, 2);
-      updateMinMax(chunk[3], extrema, 4);
-      updateMinMax(chunk[4], extrema, 6);
+      updateMinMax(chunk[0], extrema[0]);
+      updateMinMax(chunk[2], extrema[1]);
+      updateMinMax(chunk[3], extrema[2]);
+      updateMinMax(chunk[4], extrema[3]);
     }
 
     // Create `PrefetchDirectionState`s for each direction
-    const directions: PrefetchDirectionState[] = extrema.map((start, direction) => {
+    const directions: PrefetchDirectionState[] = extrema.flat().map((start, direction) => {
       const dimension = direction >> 1;
       if (direction & 1) {
         // Positive direction - end is either the max coordinate in the fetched set plus the max offset in this
