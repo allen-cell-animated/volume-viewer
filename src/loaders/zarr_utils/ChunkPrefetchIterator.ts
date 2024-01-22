@@ -32,8 +32,10 @@ type PrefetchDirectionState = {
   end: number;
 };
 
-const skipC = (idx: number): number => idx + Number(idx !== 0);
-const directionToIndex = (dir: PrefetchDirection): number => skipC(dir >> 1);
+const directionToIndex = (dir: PrefetchDirection): number => {
+  const absDir = dir >> 1; // shave off sign bit to get index in TZYX
+  return absDir + Number(absDir !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
+};
 
 function updateMinMax(val: number, minmax: number[], offset: number): void {
   if (val < minmax[offset]) {
