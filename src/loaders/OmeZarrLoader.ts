@@ -2,14 +2,14 @@ import { Box3, Vector3 } from "three";
 
 import * as zarr from "@zarrita/core";
 import { get as zarrGet, slice, Slice } from "@zarrita/indexing";
-import { AbsolutePath, AsyncReadable, Readable } from "@zarrita/storage";
+import { AbsolutePath } from "@zarrita/storage";
 // Importing `FetchStore` from its home subpackage (@zarrita/storage) causes errors.
 // Getting it from the top-level package means we don't get its type. This is also a bug, but it's more acceptable.
 import { FetchStore } from "zarrita";
 
 import Volume, { ImageInfo } from "../Volume";
 import VolumeCache from "../VolumeCache";
-import RequestQueue from "../utils/RequestQueue";
+import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
 import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import {
   buildDefaultMetadata,
@@ -19,137 +19,25 @@ import {
   estimateLevelForAtlas,
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
+import ChunkPrefetchIterator from "./zarr_utils/ChunkPrefetchIterator";
+import WrappedStore from "./zarr_utils/WrappedStore";
+import {
+  OMEAxis,
+  OMECoordinateTransformation,
+  OMEMultiscale,
+  OmeroTransitionalMetadata,
+  OMEZarrMetadata,
+  SubscriberId,
+  TCZYX,
+} from "./zarr_utils/types";
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
-type CoordinateTransformation =
-  | {
-      type: "identity";
-    }
-  | {
-      type: "translation";
-      translation: number[];
-    }
-  | {
-      type: "scale";
-      scale: number[];
-    }
-  | {
-      type: "translation" | "scale";
-      path: string;
-    };
-
-type Axis = {
-  name: string;
-  type?: string;
-  unit?: string;
-};
-
-type OMEDataset = {
-  path: string;
-  coordinateTransformations?: CoordinateTransformation[];
-};
-
-// https://ngff.openmicroscopy.org/latest/#multiscale-md
-type OMEMultiscale = {
-  version?: string;
-  name?: string;
-  axes: Axis[];
-  datasets: OMEDataset[];
-  coordinateTransformations?: CoordinateTransformation[];
-  type?: string;
-  metadata?: Record<string, unknown>;
-};
-
-// https://ngff.openmicroscopy.org/latest/#omero-md
-type OmeroTransitionalMetadata = {
-  id: number;
-  name: string;
-  version: string;
-  channels: {
-    active: boolean;
-    coefficient: number;
-    color: string;
-    family: string;
-    inverted: boolean;
-    label: string;
-    window: {
-      end: number;
-      max: number;
-      min: number;
-      start: number;
-    };
-  }[];
-};
-
-type OMEZarrMetadata = {
-  multiscales: OMEMultiscale[];
-  omero: OmeroTransitionalMetadata;
-};
-
 /** Turns `axisTCZYX` into the number of dimensions in the array */
-const getDimensionCount = ([t, c, z]: [number, number, number, number, number]) =>
-  2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
+const getDimensionCount = ([t, c, z]: TCZYX<number>) => 2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
 
-type WrappedStoreOpts<Opts> = {
-  options?: Opts;
-  // TODO: store options common to a single chunk load here
-};
-
-/**
- * `Readable` is zarrita's minimal abstraction for any source of data.
- * `WrappedStore` wraps another `Readable` and adds (optional) connections to `VolumeCache` and `RequestQueue`.
- */
-class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements AsyncReadable<WrappedStoreOpts<Opts>> {
-  baseStore: S;
-  cache?: VolumeCache;
-  queue?: RequestQueue;
-
-  constructor(baseStore: S, cache?: VolumeCache, queue?: RequestQueue) {
-    this.baseStore = baseStore;
-    this.cache = cache;
-    this.queue = queue;
-  }
-
-  private async getAndCache(key: AbsolutePath, cacheKey: string, opts?: Opts): Promise<Uint8Array | undefined> {
-    const result = await this.baseStore.get(key, opts);
-    if (this.cache && result) {
-      this.cache.insert(cacheKey, result);
-    }
-    return result;
-  }
-
-  async get(key: AbsolutePath, opts?: WrappedStoreOpts<Opts> | undefined): Promise<Uint8Array | undefined> {
-    const ZARR_EXTS = [".zarray", ".zgroup", ".zattrs", "zarr.json"];
-    if (!this.cache || ZARR_EXTS.some((s) => key.endsWith(s))) {
-      return this.baseStore.get(key, opts?.options);
-    }
-
-    let keyPrefix = (this.baseStore as FetchStore).url ?? "";
-    if (keyPrefix !== "" && !(keyPrefix instanceof URL) && !keyPrefix.endsWith("/")) {
-      keyPrefix += "/";
-    }
-
-    const fullKey = keyPrefix + key.slice(1);
-
-    // Check the cache
-    const cacheResult = this.cache.get(fullKey);
-    if (cacheResult) {
-      return new Uint8Array(cacheResult);
-    }
-
-    // Not in cache; load the chunk and cache it
-    if (this.queue) {
-      return this.queue.addRequest(fullKey, () => this.getAndCache(key, fullKey, opts?.options));
-    } else {
-      // Should we ever hit this code?  We should always have a request queue.
-      return this.getAndCache(key, fullKey, opts?.options);
-    }
-  }
-}
-
-function remapAxesToTCZYX(axes: Axis[]): [number, number, number, number, number] {
-  const axisTCZYX: [number, number, number, number, number] = [-1, -1, -1, -1, -1];
+function remapAxesToTCZYX(axes: OMEAxis[]): TCZYX<number> {
+  const axisTCZYX: TCZYX<number> = [-1, -1, -1, -1, -1];
   const axisNames = ["t", "c", "z", "y", "x"];
 
   axes.forEach((axis, idx) => {
@@ -215,44 +103,62 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint
   return u8;
 }
 
-type NumericZarrArray = zarr.Array<zarr.NumberDataType>;
+type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;
+
+export type ZarrLoaderFetchOptions = {
+  /** The max. number of requests the loader can issue at a time. Ignored if the constructor also receives a queue. */
+  concurrencyLimit?: number;
+  /**
+   * The max. number of *prefetch* requests the loader can issue at a time. Set lower than `concurrencyLimit` to ensure
+   * that prefetching leaves room in the queue for actual loads. Ignored if the constructor also receives a queue.
+   */
+  prefetchConcurrencyLimit?: number;
+  /**
+   * The max. number of chunks to prefetch outward in either direction. E.g. if a load requests chunks with z coords 3
+   * and 4 and `maxPrefetchDistance` in z is 2, the loader will prefetch similar chunks with z coords 1, 2, 5, and 6
+   * (or until it hits `maxPrefetchChunks`). Ordered TZYX.
+   */
+  maxPrefetchDistance: [number, number, number, number];
+  /** The max. number of total chunks that can be prefetched after any load. */
+  maxPrefetchChunks: number;
+};
+
+const DEFAULT_FETCH_OPTIONS = {
+  maxPrefetchDistance: [5, 5, 5, 5] as [number, number, number, number],
+  maxPrefetchChunks: 30,
+};
 
 class OMEZarrLoader implements IVolumeLoader {
-  scaleLevels: NumericZarrArray[];
-  multiscaleMetadata: OMEMultiscale;
-  omeroMetadata: OmeroTransitionalMetadata;
-  axesTCZYX: [number, number, number, number, number];
-
-  // TODO: should we be able to share `RequestQueue`s between loaders?
-  // TODO: store sets of requests per volume via some unique key
-  requestQueue: RequestQueue;
+  /** The ID of the subscriber responsible for "actual loads" (non-prefetch requests) */
+  private loadSubscriber: SubscriberId | undefined;
+  /** The ID of the subscriber responsible for prefetches, so that requests can be cancelled and reissued */
+  private prefetchSubscriber: SubscriberId | undefined;
 
   // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
   //   This may cause errors or incorrect results otherwise!
-  maxExtent?: Box3;
+  private maxExtent?: Box3;
 
   private constructor(
-    scaleLevels: NumericZarrArray[],
-    multiscaleMetadata: OMEMultiscale,
-    omeroMetadata: OmeroTransitionalMetadata,
-    axisTCZYX: [number, number, number, number, number],
-    requestQueue: RequestQueue
-  ) {
-    this.scaleLevels = scaleLevels;
-    this.multiscaleMetadata = multiscaleMetadata;
-    this.omeroMetadata = omeroMetadata;
-    this.axesTCZYX = axisTCZYX;
-    this.requestQueue = requestQueue;
-  }
+    private store: WrappedStore<RequestInit>,
+    private scaleLevels: NumericZarrArray[],
+    private multiscaleMetadata: OMEMultiscale,
+    private omeroMetadata: OmeroTransitionalMetadata,
+    private axesTCZYX: TCZYX<number>,
+    private requestQueue: SubscribableRequestQueue,
+    private fetchOptions: ZarrLoaderFetchOptions = DEFAULT_FETCH_OPTIONS
+  ) {}
 
   static async createLoader(
     url: string,
     scene = 0,
     cache?: VolumeCache,
-    concurrencyLimit = 10
+    queue?: SubscribableRequestQueue,
+    fetchOptions?: ZarrLoaderFetchOptions
   ): Promise<OMEZarrLoader> {
-    // Setup: create queue and store, get basic metadata
-    const queue = new RequestQueue(concurrencyLimit);
+    // Setup queue and store, get basic metadata
+    if (!queue) {
+      queue = new SubscribableRequestQueue(fetchOptions?.concurrencyLimit, fetchOptions?.prefetchConcurrencyLimit);
+    }
     const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
     const root = zarr.root(store);
     const group = await zarr.open(root, { kind: "group" });
@@ -267,10 +173,10 @@ class OMEZarrLoader implements IVolumeLoader {
 
     // Open all scale levels of multiscale
     const scaleLevelPromises = multiscale.datasets.map(({ path }) => zarr.open(root.resolve(path), { kind: "array" }));
-    const scaleLevels = await Promise.all(scaleLevelPromises);
+    const scaleLevels = (await Promise.all(scaleLevelPromises)) as NumericZarrArray[];
     const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
 
-    return new OMEZarrLoader(scaleLevels as NumericZarrArray[], multiscale, metadata.omero, axisTCZYX, queue);
+    return new OMEZarrLoader(store, scaleLevels, multiscale, metadata.omero, axisTCZYX, queue, fetchOptions);
   }
 
   private getUnitSymbols(): [string, string] {
@@ -286,7 +192,7 @@ class OMEZarrLoader implements IVolumeLoader {
     return [spaceUnitSymbol, timeUnitSymbol];
   }
 
-  private getScale(level = 0): number[] {
+  private getScale(level = 0): TCZYX<number> {
     const meta = this.multiscaleMetadata;
     const transforms = meta.datasets[level].coordinateTransformations ?? meta.coordinateTransformations;
 
@@ -296,7 +202,7 @@ class OMEZarrLoader implements IVolumeLoader {
     }
 
     // this assumes we'll never encounter the "path" variant
-    const isScaleTransform = (t: CoordinateTransformation): t is { type: "scale"; scale: number[] } =>
+    const isScaleTransform = (t: OMECoordinateTransformation): t is { type: "scale"; scale: number[] } =>
       t.type === "scale";
 
     // there can be any number of coordinateTransformations
@@ -311,12 +217,45 @@ class OMEZarrLoader implements IVolumeLoader {
     while (scale.length < 5) {
       scale.unshift(1);
     }
-    return scale;
+    return scale as TCZYX<number>;
   }
 
   private getLevelShapesZYX(): [number, number, number][] {
     const [z, y, x] = this.axesTCZYX.slice(-3);
     return this.scaleLevels.map(({ shape }) => [z === -1 ? 1 : shape[z], shape[y], shape[x]]);
+  }
+
+  /** Reorder an array of values [T, C, Z, Y, X] to the actual order of those dimensions in the zarr */
+  private orderByDimension<T>(valsTCZYX: TCZYX<T>): T[] {
+    const specLen = getDimensionCount(this.axesTCZYX);
+    const result: T[] = Array(specLen);
+
+    this.axesTCZYX.forEach((val, idx) => {
+      if (val > -1) {
+        if (val > specLen) {
+          throw new Error("Unexpected axis index");
+        }
+        result[val] = valsTCZYX[idx];
+      }
+    });
+
+    return result;
+  }
+
+  /** Reorder an array of values in this zarr's dimension order to [T, C, Z, Y, X] */
+  private orderByTCZYX<T>(valsDimension: T[], defaultValue: T): TCZYX<T> {
+    const result: TCZYX<T> = [defaultValue, defaultValue, defaultValue, defaultValue, defaultValue];
+
+    this.axesTCZYX.forEach((val, idx) => {
+      if (val > -1) {
+        if (val > valsDimension.length) {
+          throw new Error("Unexpected axis index");
+        }
+        result[idx] = valsDimension[val];
+      }
+    });
+
+    return result;
   }
 
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
@@ -333,17 +272,8 @@ class OMEZarrLoader implements IVolumeLoader {
 
       dims.spaceUnit = spaceUnit;
       dims.timeUnit = timeUnit;
-      dims.shape = [-1, -1, -1, -1, -1];
-      dims.spacing = [1, 1, 1, 1, 1];
-
-      this.axesTCZYX.forEach((val, idx) => {
-        if (val > -1) {
-          dims.shape[idx] = Math.ceil(level.shape[val] * regionArr[idx]);
-          dims.spacing[idx] = scale[val];
-        } else {
-          dims.shape[idx] = 1;
-        }
-      });
+      dims.shape = this.orderByTCZYX(level.shape, 1).map((val, idx) => Math.ceil(val * regionArr[idx]));
+      dims.spacing = this.orderByTCZYX(scale, 1);
 
       return dims;
     });
@@ -424,10 +354,64 @@ class OMEZarrLoader implements IVolumeLoader {
     return vol;
   }
 
-  async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
-    // First, cancel any pending requests for this volume
-    this.requestQueue.cancelAllRequests(CHUNK_REQUEST_CANCEL_REASON);
+  private async prefetchChunk(basePath: string, coords: TCZYX<number>, subscriber: SubscriberId): Promise<void> {
+    const separator = basePath.endsWith("/") ? "" : "/";
+    const key = basePath + separator + this.orderByDimension(coords).join("/");
+    try {
+      // Calling `get` and doing nothing with the result still triggers a cache check, fetch, and insertion
+      await this.store.get(key as AbsolutePath, { subscriber, isPrefetch: true });
+    } catch (e) {
+      if (e !== CHUNK_REQUEST_CANCEL_REASON) {
+        throw e;
+      }
+    }
+  }
 
+  /** Reads a list of chunk keys requested by a `loadVolumeData` call and sets up appropriate prefetch requests. */
+  private beginPrefetch(keys: string[], scaleLevel: NumericZarrArray): void {
+    const numDims = getDimensionCount(this.axesTCZYX);
+
+    // Convert keys to arrays of coords
+    const chunkCoords = keys.map((key) => {
+      const coordsInDimensionOrder = key
+        .trim()
+        .split("/")
+        .slice(-numDims)
+        .filter((s) => s !== "")
+        .map((s) => parseInt(s, 10));
+      return this.orderByTCZYX(coordsInDimensionOrder, 0);
+    });
+
+    // Get number of chunks per dimension in `scaleLevel`
+    const chunkDimsUnordered = scaleLevel.shape.map((dim, idx) => Math.ceil(dim / scaleLevel.chunks[idx]));
+    const chunkDims = this.orderByTCZYX(chunkDimsUnordered, 1);
+
+    const subscriber = this.requestQueue.addSubscriber();
+    // `ChunkPrefetchIterator` yields chunk coordinates in order of roughly how likely they are to be loaded next
+    const chunkDimsTZYX: [number, number, number, number] = [chunkDims[0], chunkDims[2], chunkDims[3], chunkDims[4]];
+    const prefetchIterator = new ChunkPrefetchIterator(
+      chunkCoords,
+      this.fetchOptions.maxPrefetchDistance,
+      chunkDimsTZYX
+    );
+
+    let prefetchCount = 0;
+    for (const chunk of prefetchIterator) {
+      if (prefetchCount >= this.fetchOptions.maxPrefetchChunks) {
+        break;
+      }
+      this.prefetchChunk(scaleLevel.path, chunk, subscriber);
+      prefetchCount++;
+    }
+
+    // Clear out old prefetch requests (requests which also cover this new prefetch will be preserved)
+    if (this.prefetchSubscriber !== undefined) {
+      this.requestQueue.removeSubscriber(this.prefetchSubscriber, CHUNK_REQUEST_CANCEL_REASON);
+    }
+    this.prefetchSubscriber = subscriber;
+  }
+
+  async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
     vol.loadSpec = { ...explicitLoadSpec, ...vol.loadSpec };
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     const [z, y, x] = this.axesTCZYX.slice(2);
@@ -462,24 +446,24 @@ class OMEZarrLoader implements IVolumeLoader {
     const { numChannels } = vol.imageInfo;
     const channelIndexes = vol.loadSpec.channels ?? Array.from({ length: numChannels }, (_, i) => i);
 
+    const subscriber = this.requestQueue.addSubscriber();
+
+    // Prefetch housekeeping: we want to save keys involved in this load to prefetch later
+    const keys: string[] = [];
+    const reportKey = (key: string, sub: SubscriberId) => {
+      if (sub === subscriber) {
+        keys.push(key);
+      }
+    };
+
     const channelPromises = channelIndexes.map(async (ch) => {
       // Build slice spec
       const { min, max } = regionPx;
       const unorderedSpec = [vol.loadSpec.time, ch, slice(min.z, max.z), slice(min.y, max.y), slice(min.x, max.x)];
-      const specLen = getDimensionCount(this.axesTCZYX);
-      const sliceSpec: (number | Slice)[] = Array(specLen);
-
-      this.axesTCZYX.forEach((val, idx) => {
-        if (val > -1) {
-          if (val > specLen) {
-            throw new Error("Unexpected axis index");
-          }
-          sliceSpec[val] = unorderedSpec[idx];
-        }
-      });
+      const sliceSpec = this.orderByDimension(unorderedSpec as TCZYX<number | Slice>);
 
       try {
-        const result = await zarrGet(level, sliceSpec);
+        const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } });
         const u8 = convertChannel(result.data);
         vol.setChannelDataFromVolume(ch, u8);
         onChannelLoaded?.(vol, ch);
@@ -491,7 +475,16 @@ class OMEZarrLoader implements IVolumeLoader {
       }
     });
 
+    // Cancel any in-flight requests from previous loads that aren't useful to this one
+    if (this.loadSubscriber !== undefined) {
+      this.requestQueue.removeSubscriber(this.loadSubscriber, CHUNK_REQUEST_CANCEL_REASON);
+    }
+    this.loadSubscriber = subscriber;
+
+    this.beginPrefetch(keys, level);
+
     await Promise.all(channelPromises);
+    this.requestQueue.removeSubscriber(subscriber);
   }
 }
 

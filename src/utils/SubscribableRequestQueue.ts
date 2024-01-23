@@ -27,8 +27,18 @@ export default class SubscribableRequestQueue {
   /** Map from "inner" request (managed by `queue`) to "outer" promises generated per-subscriber. */
   private requests: Map<string, RequestSubscription[]>;
 
-  constructor(maxActiveRequests?: number) {
-    this.queue = new RequestQueue(maxActiveRequests);
+  /**
+   * Since `SubscribableRequestQueue` wraps `RequestQueue`, its constructor may either take the same arguments as the
+   * `RequestQueue` constructor and create a new `RequestQueue`, or it may take an existing `RequestQueue` to wrap.
+   */
+  constructor(maxActiveRequests?: number, maxLowPriorityRequests?: number);
+  constructor(inner: RequestQueue);
+  constructor(maxActiveRequests?: number | RequestQueue, maxLowPriorityRequests?: number) {
+    if (typeof maxActiveRequests === "number" || maxActiveRequests === undefined) {
+      this.queue = new RequestQueue(maxActiveRequests, maxLowPriorityRequests);
+    } else {
+      this.queue = maxActiveRequests;
+    }
     this.nextSubscriberId = 0;
     this.subscribers = new Map();
     this.requests = new Map();
@@ -71,19 +81,19 @@ export default class SubscribableRequestQueue {
    *
    * If `subscriberId` is already subscribed to the request, this rejects the existing promise and returns a new one.
    */
-  addRequestToQueue<T>(
+  addRequest<T>(
     key: string,
     subscriberId: number,
     requestAction: () => Promise<T>,
+    lowPriority?: boolean,
     delayMs?: number
   ): Promise<T> {
     // Create single underlying request if it does not yet exist
-    if (!this.queue.hasRequest(key)) {
-      this.queue
-        .addRequest(key, requestAction, delayMs)
-        .then((value) => this.resolveAll(key, value))
-        .catch((reason) => this.rejectAll(key, reason));
-    }
+    this.queue
+      .addRequest(key, requestAction, lowPriority, delayMs)
+      .then((value) => this.resolveAll(key, value))
+      .catch((reason) => this.rejectAll(key, reason));
+
     if (!this.requests.has(key)) {
       this.requests.set(key, []);
     }
@@ -159,8 +169,8 @@ export default class SubscribableRequestQueue {
       for (const [key, reject] of subscriptions.entries()) {
         this.rejectSubscription(key, reject, cancelReason);
       }
+      this.subscribers.delete(subscriberId);
     }
-    this.subscribers.delete(subscriberId);
   }
 
   /** Returns whether a request with the given `key` is running or waiting in the queue */

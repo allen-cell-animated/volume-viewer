@@ -50,7 +50,7 @@ describe("test RequestQueue", () => {
       const startTime = Date.now();
       const delayMs = 15;
       const immediatePromise = rq.addRequest("a", () => Promise.resolve());
-      const delayedPromise = rq.addRequest("b", () => Promise.resolve(), delayMs);
+      const delayedPromise = rq.addRequest("b", () => Promise.resolve(), false, delayMs);
 
       const promises: Promise<unknown>[] = [];
       promises.push(
@@ -218,10 +218,77 @@ describe("test RequestQueue", () => {
         { key: "b", requestAction: work },
       ];
       const start = Date.now();
-      const promises = rq.addRequests(requests, delayMs);
+      const promises = rq.addRequests(requests, false, delayMs);
       rq.addRequest("b", work); // requesting this again should remove the delay
       await Promise.allSettled(promises);
       expect(Date.now() - start).to.be.lessThan(delayMs);
+      expect(count).to.equal(2);
+    });
+
+    it("queues all regular requests before any low-priority requests", async () => {
+      let regular = 0;
+      let lowPriority = 0;
+      const regularWork = async () => {
+        await sleep(5);
+        regular++;
+      };
+      const lowPriorityWork = async () => {
+        await sleep(5);
+        lowPriority++;
+      };
+
+      const rq = new RequestQueue(1);
+      const prom1 = rq.addRequest("a", regularWork);
+      const prom2 = rq.addRequest("b", lowPriorityWork, true);
+      const prom3 = rq.addRequest("c", regularWork);
+
+      await prom1;
+      expect(regular).to.equal(1);
+      expect(lowPriority).to.equal(0);
+
+      await prom3;
+      expect(regular).to.equal(2);
+      expect(lowPriority).to.equal(0);
+
+      await prom2;
+      expect(lowPriority).to.equal(1);
+    });
+
+    it("maintains a separate and lower concurrent task limit for low-priority requests", async () => {
+      let count = 0;
+      const work = async () => {
+        await sleep(5);
+        count++;
+      };
+
+      const rq = new RequestQueue(2, 1);
+      const prom1 = rq.addRequest("a", work, true);
+      const prom2 = rq.addRequest("b", work, true);
+      expect(rq.requestRunning("a")).to.be.true;
+      expect(rq.requestRunning("b")).to.be.false;
+      rq.addRequest("c", work);
+      expect(rq.requestRunning("c")).to.be.true;
+      await prom1;
+      await prom2;
+      expect(count).to.equal(3);
+    });
+
+    it("can promote a low-priority task to high priority", async () => {
+      let count = 0;
+      const work = async () => {
+        await sleep(5);
+        count++;
+      };
+
+      const rq = new RequestQueue(2, 1);
+      const prom1 = rq.addRequest("a", work);
+      const prom2 = rq.addRequest("b", work, true);
+      expect(rq.requestRunning("a")).to.be.true;
+      expect(rq.requestRunning("b")).to.be.false;
+      rq.addRequest("b", work);
+      expect(rq.requestRunning("b")).to.be.true;
+      await prom1;
+      await prom2;
       expect(count).to.equal(2);
     });
   });
@@ -284,7 +351,7 @@ describe("test RequestQueue", () => {
         workCount++;
         return;
       };
-      const promise = rq.addRequest("a", work, delayMs);
+      const promise = rq.addRequest("a", work, false, delayMs);
       rq.cancelRequest("a");
       await Promise.allSettled([promise]);
       await sleep(delayMs);
@@ -299,7 +366,7 @@ describe("test RequestQueue", () => {
       };
       const promises: Promise<unknown>[] = [];
       for (let i = 0; i < 10; i++) {
-        promises.push(rq.addRequest(`${i}`, work, 0));
+        promises.push(rq.addRequest(`${i}`, work, false, 0));
         rq.cancelRequest(`${i}`);
       }
       await Promise.allSettled(promises);
