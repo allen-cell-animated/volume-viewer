@@ -32,8 +32,20 @@ type PrefetchDirectionState = {
   end: number;
 };
 
-const skipC = (idx: number): number => idx + Number(idx !== 0);
-const directionToIndex = (dir: PrefetchDirection): number => skipC(dir >> 1);
+const directionToIndex = (dir: PrefetchDirection): number => {
+  const absDir = dir >> 1; // shave off sign bit to get index in TZYX
+  return absDir + Number(absDir !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
+};
+
+function updateMinMax(val: number, minmax: [number, number]): void {
+  if (val < minmax[0]) {
+    minmax[0] = val;
+  }
+
+  if (val > minmax[1]) {
+    minmax[1] = val;
+  }
+}
 
 /**
  * Since the user is most likely to want nearby data (in space or time) first, we should prefetch those chunks first.
@@ -44,37 +56,34 @@ const directionToIndex = (dir: PrefetchDirection): number => skipC(dir >> 1);
 export default class ChunkPrefetchIterator {
   directions: PrefetchDirectionState[];
 
-  constructor(chunks: TCZYX<number>[], tzyxMaxOffset: TZYX, tzyxChunkSize: TZYX) {
-    // Get max and min chunk coordinates for T/Z/Y/X
-    const extrema = [Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity, Infinity, -Infinity];
+  constructor(chunks: TCZYX<number>[], tzyxMaxPrefetchOffset: TZYX, tzyxNumChunks: TZYX) {
+    // Get min and max chunk coordinates for T/Z/Y/X
+    const extrema: [number, number][] = [
+      [Infinity, -Infinity],
+      [Infinity, -Infinity],
+      [Infinity, -Infinity],
+      [Infinity, -Infinity],
+    ];
 
     for (const chunk of chunks) {
-      for (let j = 0; j < 4; j++) {
-        const val = chunk[skipC(j)];
-        const extremaIdx = j << 1;
-
-        if (val < extrema[extremaIdx]) {
-          extrema[extremaIdx] = val;
-        }
-
-        if (val > extrema[extremaIdx + 1]) {
-          extrema[extremaIdx + 1] = val;
-        }
-      }
+      updateMinMax(chunk[0], extrema[0]);
+      updateMinMax(chunk[2], extrema[1]);
+      updateMinMax(chunk[3], extrema[2]);
+      updateMinMax(chunk[4], extrema[3]);
     }
 
     // Create `PrefetchDirectionState`s for each direction
-    const directions: PrefetchDirectionState[] = extrema.map((start, direction) => {
+    const directions: PrefetchDirectionState[] = extrema.flat().map((start, direction) => {
       const dimension = direction >> 1;
       if (direction & 1) {
         // Positive direction - end is either the max coordinate in the fetched set plus the max offset in this
         // dimension, or the max chunk coordinate in this dimension, whichever comes first
-        const end = Math.min(start + tzyxMaxOffset[dimension], tzyxChunkSize[dimension] - 1);
+        const end = Math.min(start + tzyxMaxPrefetchOffset[dimension], tzyxNumChunks[dimension] - 1);
         return { direction, start, end, chunks: [] };
       } else {
         // Negative direction - end is either the min coordinate in the fetched set minus the max offset in this
         // dimension, or 0, whichever comes first
-        const end = Math.max(start - tzyxMaxOffset[dimension], 0);
+        const end = Math.max(start - tzyxMaxPrefetchOffset[dimension], 0);
         return { direction, start, end, chunks: [] };
       }
     });
