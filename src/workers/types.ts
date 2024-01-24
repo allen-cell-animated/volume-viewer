@@ -2,6 +2,7 @@ import { ImageInfo } from "../Volume";
 import { CreateLoaderOptions } from "../loaders";
 import { LoadSpec, VolumeDims } from "../loaders/IVolumeLoader";
 
+/** The types of requests that can be made to the worker. Mostly corresponds to methods on `IVolumeLoader`. */
 export const enum WorkerMsgType {
   INIT,
   CREATE_LOADER,
@@ -10,18 +11,21 @@ export const enum WorkerMsgType {
   LOAD_VOLUME_DATA,
 }
 
+/** The kind of response a worker can return - `SUCCESS`, `ERROR`, or `EVENT`. */
 export const enum WorkerResponseResult {
   SUCCESS,
   ERROR,
   EVENT,
 }
 
+/** All messages to/from a worker carry a `msgId`, a `type`, and a `payload` (whose type is determined by `type`). */
 type WorkerMsgBase<T extends WorkerMsgType, P> = {
   msgId: number;
   type: T;
   payload: P;
 };
 
+/** Maps each `WorkerMsgType` to the type of the payload of requests of that type. */
 export type WorkerRequestPayload<T extends WorkerMsgType> = {
   [WorkerMsgType.INIT]: {
     maxCacheSize?: number;
@@ -42,6 +46,7 @@ export type WorkerRequestPayload<T extends WorkerMsgType> = {
   };
 }[T];
 
+/** Maps each `WorkerMsgType` to the type of the payload of responses of that type. */
 export type WorkerResponsePayload<T extends WorkerMsgType> = {
   [WorkerMsgType.INIT]: void;
   [WorkerMsgType.CREATE_LOADER]: boolean;
@@ -50,6 +55,7 @@ export type WorkerResponsePayload<T extends WorkerMsgType> = {
   [WorkerMsgType.LOAD_VOLUME_DATA]: [ImageInfo | undefined, LoadSpec | undefined];
 }[T];
 
+/** Currently the only event a loader can produce is a `ChannelLoadEvent` when a single channel loads. */
 export type ChannelLoadEvent = {
   loaderId: number;
   loadId: number;
@@ -58,7 +64,9 @@ export type ChannelLoadEvent = {
   atlasDims?: [number, number];
 };
 
+/** All valid types of worker requests, with some `WorkerMsgType` and a matching payload type. */
 export type WorkerRequest<T extends WorkerMsgType> = WorkerMsgBase<T, WorkerRequestPayload<T>>;
+/** All valid types of worker responses: `SUCCESS` with a matching payload, `ERROR` with a message, or an `EVENT`. */
 export type WorkerResponse<T extends WorkerMsgType> =
   | ({ responseKind: WorkerResponseResult.SUCCESS } & WorkerMsgBase<T, WorkerResponsePayload<T>>)
   | ({ responseKind: WorkerResponseResult.ERROR } & WorkerMsgBase<T, string>)
