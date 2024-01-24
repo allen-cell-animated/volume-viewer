@@ -8750,38 +8750,44 @@ var sliceShaderUniforms = function sliceShaderUniforms() {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   AREA_LIGHT: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_12__.AREA_LIGHT),
+/* harmony export */   AREA_LIGHT: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_14__.AREA_LIGHT),
 /* harmony export */   Channel: () => (/* reexport safe */ _Channel__WEBPACK_IMPORTED_MODULE_2__["default"]),
-/* harmony export */   Histogram: () => (/* reexport safe */ _Histogram__WEBPACK_IMPORTED_MODULE_5__["default"]),
-/* harmony export */   JsonImageInfoLoader: () => (/* reexport safe */ _loaders_JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_10__.JsonImageInfoLoader),
-/* harmony export */   Light: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_12__.Light),
-/* harmony export */   LoadSpec: () => (/* reexport safe */ _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__.LoadSpec),
-/* harmony export */   OMEZarrLoader: () => (/* reexport safe */ _loaders_OmeZarrLoader__WEBPACK_IMPORTED_MODULE_9__.OMEZarrLoader),
+/* harmony export */   Histogram: () => (/* reexport safe */ _Histogram__WEBPACK_IMPORTED_MODULE_7__["default"]),
+/* harmony export */   JsonImageInfoLoader: () => (/* reexport safe */ _loaders_JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_12__.JsonImageInfoLoader),
+/* harmony export */   Light: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_14__.Light),
+/* harmony export */   LoadSpec: () => (/* reexport safe */ _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_10__.LoadSpec),
+/* harmony export */   OMEZarrLoader: () => (/* reexport safe */ _loaders_OmeZarrLoader__WEBPACK_IMPORTED_MODULE_11__.OMEZarrLoader),
 /* harmony export */   RENDERMODE_PATHTRACE: () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_PATHTRACE),
 /* harmony export */   RENDERMODE_RAYMARCH: () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_RAYMARCH),
-/* harmony export */   SKY_LIGHT: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_12__.SKY_LIGHT),
-/* harmony export */   TiffLoader: () => (/* reexport safe */ _loaders_TiffLoader__WEBPACK_IMPORTED_MODULE_11__.TiffLoader),
+/* harmony export */   RequestQueue: () => (/* reexport safe */ _utils_RequestQueue__WEBPACK_IMPORTED_MODULE_5__["default"]),
+/* harmony export */   SKY_LIGHT: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_14__.SKY_LIGHT),
+/* harmony export */   SubscribableRequestQueue: () => (/* reexport safe */ _utils_SubscribableRequestQueue__WEBPACK_IMPORTED_MODULE_6__["default"]),
+/* harmony export */   TiffLoader: () => (/* reexport safe */ _loaders_TiffLoader__WEBPACK_IMPORTED_MODULE_13__.TiffLoader),
 /* harmony export */   View3d: () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.View3d),
-/* harmony export */   ViewportCorner: () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_6__.ViewportCorner),
+/* harmony export */   ViewportCorner: () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_8__.ViewportCorner),
 /* harmony export */   Volume: () => (/* reexport safe */ _Volume__WEBPACK_IMPORTED_MODULE_1__["default"]),
 /* harmony export */   VolumeCache: () => (/* reexport safe */ _VolumeCache__WEBPACK_IMPORTED_MODULE_4__["default"]),
-/* harmony export */   VolumeFileFormat: () => (/* reexport safe */ _loaders__WEBPACK_IMPORTED_MODULE_7__.VolumeFileFormat),
+/* harmony export */   VolumeFileFormat: () => (/* reexport safe */ _loaders__WEBPACK_IMPORTED_MODULE_9__.VolumeFileFormat),
 /* harmony export */   VolumeMaker: () => (/* reexport safe */ _VolumeMaker__WEBPACK_IMPORTED_MODULE_3__["default"]),
-/* harmony export */   createVolumeLoader: () => (/* reexport safe */ _loaders__WEBPACK_IMPORTED_MODULE_7__.createVolumeLoader)
+/* harmony export */   createVolumeLoader: () => (/* reexport safe */ _loaders__WEBPACK_IMPORTED_MODULE_9__.createVolumeLoader)
 /* harmony export */ });
 /* harmony import */ var _View3d__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./View3d */ "./src/View3d.ts");
 /* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Volume */ "./src/Volume.ts");
 /* harmony import */ var _Channel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Channel */ "./src/Channel.ts");
 /* harmony import */ var _VolumeMaker__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./VolumeMaker */ "./src/VolumeMaker.ts");
 /* harmony import */ var _VolumeCache__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./VolumeCache */ "./src/VolumeCache.ts");
-/* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
-/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./types */ "./src/types.ts");
-/* harmony import */ var _loaders__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./loaders */ "./src/loaders/index.ts");
-/* harmony import */ var _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./loaders/IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _loaders_OmeZarrLoader__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./loaders/OmeZarrLoader */ "./src/loaders/OmeZarrLoader.ts");
-/* harmony import */ var _loaders_JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./loaders/JsonImageInfoLoader */ "./src/loaders/JsonImageInfoLoader.ts");
-/* harmony import */ var _loaders_TiffLoader__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./loaders/TiffLoader */ "./src/loaders/TiffLoader.ts");
-/* harmony import */ var _Light__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./Light */ "./src/Light.ts");
+/* harmony import */ var _utils_RequestQueue__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./utils/RequestQueue */ "./src/utils/RequestQueue.ts");
+/* harmony import */ var _utils_SubscribableRequestQueue__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./utils/SubscribableRequestQueue */ "./src/utils/SubscribableRequestQueue.ts");
+/* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
+/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./types */ "./src/types.ts");
+/* harmony import */ var _loaders__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./loaders */ "./src/loaders/index.ts");
+/* harmony import */ var _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./loaders/IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _loaders_OmeZarrLoader__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./loaders/OmeZarrLoader */ "./src/loaders/OmeZarrLoader.ts");
+/* harmony import */ var _loaders_JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./loaders/JsonImageInfoLoader */ "./src/loaders/JsonImageInfoLoader.ts");
+/* harmony import */ var _loaders_TiffLoader__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./loaders/TiffLoader */ "./src/loaders/TiffLoader.ts");
+/* harmony import */ var _Light__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./Light */ "./src/Light.ts");
+
+
 
 
 
@@ -9229,24 +9235,29 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _zarrita_core__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! @zarrita/core */ "./node_modules/@zarrita/core/dist/src/hierarchy.js");
-/* harmony import */ var _zarrita_core__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! @zarrita/core */ "./node_modules/@zarrita/core/dist/src/open.js");
-/* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/util.js");
-/* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/ops.js");
-/* harmony import */ var zarrita__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! zarrita */ "./node_modules/@zarrita/storage/dist/src/fetch.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _zarrita_core__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! @zarrita/core */ "./node_modules/@zarrita/core/dist/src/hierarchy.js");
+/* harmony import */ var _zarrita_core__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! @zarrita/core */ "./node_modules/@zarrita/core/dist/src/open.js");
+/* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/util.js");
+/* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/ops.js");
+/* harmony import */ var zarrita__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! zarrita */ "./node_modules/@zarrita/storage/dist/src/fetch.js");
 /* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
-/* harmony import */ var _utils_RequestQueue__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../utils/RequestQueue */ "./src/utils/RequestQueue.ts");
+/* harmony import */ var _utils_SubscribableRequestQueue__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../utils/SubscribableRequestQueue */ "./src/utils/SubscribableRequestQueue.ts");
 /* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _zarr_utils_ChunkPrefetchIterator__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./zarr_utils/ChunkPrefetchIterator */ "./src/loaders/zarr_utils/ChunkPrefetchIterator.ts");
+/* harmony import */ var _zarr_utils_WrappedStore__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./zarr_utils/WrappedStore */ "./src/loaders/zarr_utils/WrappedStore.ts");
 
 
 
 
+
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
-
 
 
 
@@ -9257,11 +9268,9 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 
 
+
+
 var CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
-
-// https://ngff.openmicroscopy.org/latest/#multiscale-md
-
-// https://ngff.openmicroscopy.org/latest/#omero-md
 
 /** Turns `axisTCZYX` into the number of dimensions in the array */
 var getDimensionCount = function getDimensionCount(_ref) {
@@ -9271,98 +9280,6 @@ var getDimensionCount = function getDimensionCount(_ref) {
     z = _ref2[2];
   return 2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
 };
-/**
- * `Readable` is zarrita's minimal abstraction for any source of data.
- * `WrappedStore` wraps another `Readable` and adds (optional) connections to `VolumeCache` and `RequestQueue`.
- */
-var WrappedStore = /*#__PURE__*/function () {
-  function WrappedStore(baseStore, cache, queue) {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, WrappedStore);
-    this.baseStore = baseStore;
-    this.cache = cache;
-    this.queue = queue;
-  }
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(WrappedStore, [{
-    key: "getAndCache",
-    value: function () {
-      var _getAndCache = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee(key, cacheKey, opts) {
-        var result;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee$(_context) {
-          while (1) switch (_context.prev = _context.next) {
-            case 0:
-              _context.next = 2;
-              return this.baseStore.get(key, opts);
-            case 2:
-              result = _context.sent;
-              if (this.cache && result) {
-                this.cache.insert(cacheKey, result);
-              }
-              return _context.abrupt("return", result);
-            case 5:
-            case "end":
-              return _context.stop();
-          }
-        }, _callee, this);
-      }));
-      function getAndCache(_x, _x2, _x3) {
-        return _getAndCache.apply(this, arguments);
-      }
-      return getAndCache;
-    }()
-  }, {
-    key: "get",
-    value: function () {
-      var _get = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee2(key, opts) {
-        var _url,
-          _this = this;
-        var ZARR_EXTS, keyPrefix, fullKey, cacheResult;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee2$(_context2) {
-          while (1) switch (_context2.prev = _context2.next) {
-            case 0:
-              ZARR_EXTS = [".zarray", ".zgroup", ".zattrs", "zarr.json"];
-              if (!(!this.cache || ZARR_EXTS.some(function (s) {
-                return key.endsWith(s);
-              }))) {
-                _context2.next = 3;
-                break;
-              }
-              return _context2.abrupt("return", this.baseStore.get(key, opts === null || opts === void 0 ? void 0 : opts.options));
-            case 3:
-              keyPrefix = (_url = this.baseStore.url) !== null && _url !== void 0 ? _url : "";
-              if (keyPrefix !== "" && !(keyPrefix instanceof URL) && !keyPrefix.endsWith("/")) {
-                keyPrefix += "/";
-              }
-              fullKey = keyPrefix + key.slice(1); // Check the cache
-              cacheResult = this.cache.get(fullKey);
-              if (!cacheResult) {
-                _context2.next = 9;
-                break;
-              }
-              return _context2.abrupt("return", new Uint8Array(cacheResult));
-            case 9:
-              if (!this.queue) {
-                _context2.next = 13;
-                break;
-              }
-              return _context2.abrupt("return", this.queue.addRequest(fullKey, function () {
-                return _this.getAndCache(key, fullKey, opts === null || opts === void 0 ? void 0 : opts.options);
-              }));
-            case 13:
-              return _context2.abrupt("return", this.getAndCache(key, fullKey, opts === null || opts === void 0 ? void 0 : opts.options));
-            case 14:
-            case "end":
-              return _context2.stop();
-          }
-        }, _callee2, this);
-      }));
-      function get(_x4, _x5) {
-        return _get.apply(this, arguments);
-      }
-      return get;
-    }()
-  }]);
-  return WrappedStore;
-}();
 function remapAxesToTCZYX(axes) {
   var axisTCZYX = [-1, -1, -1, -1, -1];
   var axisNames = ["t", "c", "z", "y", "x"];
@@ -9389,7 +9306,7 @@ function remapAxesToTCZYX(axes) {
  */
 function pickLevelToLoad(loadSpec, spatialDimsZYX) {
   var _loadSpec$multiscaleL;
-  var size = loadSpec.subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
+  var size = loadSpec.subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_12__.Vector3());
   var dims = spatialDimsZYX.map(function (_ref3) {
     var _ref4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_4__["default"])(_ref3, 3),
       z = _ref4[0],
@@ -9426,20 +9343,28 @@ function convertChannel(channelData) {
   }
   return u8;
 }
+var DEFAULT_FETCH_OPTIONS = {
+  maxPrefetchDistance: [5, 5, 5, 5],
+  maxPrefetchChunks: 30
+};
 var OMEZarrLoader = /*#__PURE__*/function () {
-  // TODO: should we be able to share `RequestQueue`s between loaders?
-  // TODO: store sets of requests per volume via some unique key
+  /** The ID of the subscriber responsible for "actual loads" (non-prefetch requests) */
+
+  /** The ID of the subscriber responsible for prefetches, so that requests can be cancelled and reissued */
 
   // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
   //   This may cause errors or incorrect results otherwise!
 
-  function OMEZarrLoader(scaleLevels, multiscaleMetadata, omeroMetadata, axisTCZYX, requestQueue) {
+  function OMEZarrLoader(store, scaleLevels, multiscaleMetadata, omeroMetadata, axesTCZYX, requestQueue) {
+    var fetchOptions = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : DEFAULT_FETCH_OPTIONS;
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, OMEZarrLoader);
+    this.store = store;
     this.scaleLevels = scaleLevels;
     this.multiscaleMetadata = multiscaleMetadata;
     this.omeroMetadata = omeroMetadata;
-    this.axesTCZYX = axisTCZYX;
+    this.axesTCZYX = axesTCZYX;
     this.requestQueue = requestQueue;
+    this.fetchOptions = fetchOptions;
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(OMEZarrLoader, [{
     key: "getUnitSymbols",
@@ -9496,35 +9421,62 @@ var OMEZarrLoader = /*#__PURE__*/function () {
         return [z === -1 ? 1 : shape[z], shape[y], shape[x]];
       });
     }
+
+    /** Reorder an array of values [T, C, Z, Y, X] to the actual order of those dimensions in the zarr */
+  }, {
+    key: "orderByDimension",
+    value: function orderByDimension(valsTCZYX) {
+      var specLen = getDimensionCount(this.axesTCZYX);
+      var result = Array(specLen);
+      this.axesTCZYX.forEach(function (val, idx) {
+        if (val > -1) {
+          if (val > specLen) {
+            throw new Error("Unexpected axis index");
+          }
+          result[val] = valsTCZYX[idx];
+        }
+      });
+      return result;
+    }
+
+    /** Reorder an array of values in this zarr's dimension order to [T, C, Z, Y, X] */
+  }, {
+    key: "orderByTCZYX",
+    value: function orderByTCZYX(valsDimension, defaultValue) {
+      var result = [defaultValue, defaultValue, defaultValue, defaultValue, defaultValue];
+      this.axesTCZYX.forEach(function (val, idx) {
+        if (val > -1) {
+          if (val > valsDimension.length) {
+            throw new Error("Unexpected axis index");
+          }
+          result[idx] = valsDimension[val];
+        }
+      });
+      return result;
+    }
   }, {
     key: "loadDims",
     value: function loadDims(loadSpec) {
       var _this$maxExtent,
-        _this2 = this;
+        _this = this;
       var _this$getUnitSymbols = this.getUnitSymbols(),
         _this$getUnitSymbols2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_4__["default"])(_this$getUnitSymbols, 2),
         spaceUnit = _this$getUnitSymbols2[0],
         timeUnit = _this$getUnitSymbols2[1];
       // Compute subregion size so we can factor that in
-      var maxExtent = (_this$maxExtent = this.maxExtent) !== null && _this$maxExtent !== void 0 ? _this$maxExtent : new three__WEBPACK_IMPORTED_MODULE_10__.Box3(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(1, 1, 1));
+      var maxExtent = (_this$maxExtent = this.maxExtent) !== null && _this$maxExtent !== void 0 ? _this$maxExtent : new three__WEBPACK_IMPORTED_MODULE_12__.Box3(new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(1, 1, 1));
       var subregion = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.composeSubregion)(loadSpec.subregion, maxExtent);
-      var regionSize = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
+      var regionSize = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_12__.Vector3());
       var regionArr = [1, 1, regionSize.z, regionSize.y, regionSize.x];
       var result = this.scaleLevels.map(function (level, i) {
-        var scale = _this2.getScale(i);
+        var scale = _this.getScale(i);
         var dims = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__.VolumeDims();
         dims.spaceUnit = spaceUnit;
         dims.timeUnit = timeUnit;
-        dims.shape = [-1, -1, -1, -1, -1];
-        dims.spacing = [1, 1, 1, 1, 1];
-        _this2.axesTCZYX.forEach(function (val, idx) {
-          if (val > -1) {
-            dims.shape[idx] = Math.ceil(level.shape[val] * regionArr[idx]);
-            dims.spacing[idx] = scale[val];
-          } else {
-            dims.shape[idx] = 1;
-          }
+        dims.shape = _this.orderByTCZYX(level.shape, 1).map(function (val, idx) {
+          return Math.ceil(val * regionArr[idx]);
         });
+        dims.spacing = _this.orderByTCZYX(scale, 1);
         return dims;
       });
       return Promise.resolve(result);
@@ -9532,10 +9484,10 @@ var OMEZarrLoader = /*#__PURE__*/function () {
   }, {
     key: "createVolume",
     value: function () {
-      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee3(loadSpec, onChannelLoaded) {
+      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee(loadSpec, onChannelLoaded) {
         var _this$axesTCZYX, t, c, z, y, x, hasT, hasC, hasZ, shape0, levelToLoad, shapeLv, _this$getUnitSymbols3, _this$getUnitSymbols4, spatialUnit, timeUnit, numChannels, times, pxDims0, pxSize0, pxDimsLv, pxSizeLv, atlasTileDims, channelNames, scale5d, timeScale, imgdata, fullExtentLoadSpec, vol;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee3$(_context3) {
-          while (1) switch (_context3.prev = _context3.next) {
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee$(_context) {
+          while (1) switch (_context.prev = _context.next) {
             case 0:
               _this$axesTCZYX = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_4__["default"])(this.axesTCZYX, 5), t = _this$axesTCZYX[0], c = _this$axesTCZYX[1], z = _this$axesTCZYX[2], y = _this$axesTCZYX[3], x = _this$axesTCZYX[4];
               hasT = t > -1;
@@ -9550,10 +9502,10 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               if (!this.maxExtent) {
                 this.maxExtent = loadSpec.subregion.clone();
               }
-              pxDims0 = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1));
-              pxSize0 = pxDims0.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
-              pxDimsLv = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(shapeLv[x], shapeLv[y], hasZ ? shapeLv[z] : 1));
-              pxSizeLv = pxDimsLv.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
+              pxDims0 = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1));
+              pxSize0 = pxDims0.getSize(new three__WEBPACK_IMPORTED_MODULE_12__.Vector3());
+              pxDimsLv = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(shapeLv[x], shapeLv[y], hasZ ? shapeLv[z] : 1));
+              pxSizeLv = pxDimsLv.getSize(new three__WEBPACK_IMPORTED_MODULE_12__.Vector3());
               atlasTileDims = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.computePackedAtlasDims)(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
               channelNames = this.omeroMetadata.channels.map(function (ch) {
                 return ch.label;
@@ -9566,8 +9518,8 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 atlasTileDims: atlasTileDims,
                 volumeSize: pxSizeLv,
                 subregionSize: pxSizeLv.clone(),
-                subregionOffset: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0),
-                physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(scale5d[x], scale5d[y], hasZ ? scale5d[z] : Math.min(scale5d[x], scale5d[y])),
+                subregionOffset: new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(0, 0, 0),
+                physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(scale5d[x], scale5d[y], hasZ ? scale5d[z] : Math.min(scale5d[x], scale5d[y])),
                 spatialUnit: spatialUnit,
                 numChannels: numChannels,
                 channelNames: channelNames,
@@ -9577,44 +9529,129 @@ var OMEZarrLoader = /*#__PURE__*/function () {
                 numMultiscaleLevels: this.scaleLevels.length,
                 multiscaleLevel: levelToLoad,
                 transform: {
-                  translation: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0),
-                  rotation: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0)
+                  translation: new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(0, 0, 0),
+                  rotation: new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(0, 0, 0)
                 }
               }; // The `LoadSpec` passed in at this stage should represent the subset which this loader loads, not that
               // which the volume contains. The volume contains the full extent of the subset recognized by this loader.
               fullExtentLoadSpec = _objectSpread(_objectSpread({}, loadSpec), {}, {
-                subregion: new three__WEBPACK_IMPORTED_MODULE_10__.Box3(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(1, 1, 1))
+                subregion: new three__WEBPACK_IMPORTED_MODULE_12__.Box3(new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(1, 1, 1))
               });
               vol = new _Volume__WEBPACK_IMPORTED_MODULE_6__["default"](imgdata, fullExtentLoadSpec, this);
               vol.channelLoadCallback = onChannelLoaded;
               vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.buildDefaultMetadata)(imgdata);
-              return _context3.abrupt("return", vol);
+              return _context.abrupt("return", vol);
             case 25:
             case "end":
-              return _context3.stop();
+              return _context.stop();
           }
-        }, _callee3, this);
+        }, _callee, this);
       }));
-      function createVolume(_x6, _x7) {
+      function createVolume(_x, _x2) {
         return _createVolume.apply(this, arguments);
       }
       return createVolume;
     }()
   }, {
+    key: "prefetchChunk",
+    value: function () {
+      var _prefetchChunk = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee2(basePath, coords, subscriber) {
+        var separator, key;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee2$(_context2) {
+          while (1) switch (_context2.prev = _context2.next) {
+            case 0:
+              separator = basePath.endsWith("/") ? "" : "/";
+              key = basePath + separator + this.orderByDimension(coords).join("/");
+              _context2.prev = 2;
+              _context2.next = 5;
+              return this.store.get(key, {
+                subscriber: subscriber,
+                isPrefetch: true
+              });
+            case 5:
+              _context2.next = 11;
+              break;
+            case 7:
+              _context2.prev = 7;
+              _context2.t0 = _context2["catch"](2);
+              if (!(_context2.t0 !== CHUNK_REQUEST_CANCEL_REASON)) {
+                _context2.next = 11;
+                break;
+              }
+              throw _context2.t0;
+            case 11:
+            case "end":
+              return _context2.stop();
+          }
+        }, _callee2, this, [[2, 7]]);
+      }));
+      function prefetchChunk(_x3, _x4, _x5) {
+        return _prefetchChunk.apply(this, arguments);
+      }
+      return prefetchChunk;
+    }() /** Reads a list of chunk keys requested by a `loadVolumeData` call and sets up appropriate prefetch requests. */
+  }, {
+    key: "beginPrefetch",
+    value: function beginPrefetch(keys, scaleLevel) {
+      var _this2 = this;
+      var numDims = getDimensionCount(this.axesTCZYX);
+
+      // Convert keys to arrays of coords
+      var chunkCoords = keys.map(function (key) {
+        var coordsInDimensionOrder = key.trim().split("/").slice(-numDims).filter(function (s) {
+          return s !== "";
+        }).map(function (s) {
+          return parseInt(s, 10);
+        });
+        return _this2.orderByTCZYX(coordsInDimensionOrder, 0);
+      });
+
+      // Get number of chunks per dimension in `scaleLevel`
+      var chunkDimsUnordered = scaleLevel.shape.map(function (dim, idx) {
+        return Math.ceil(dim / scaleLevel.chunks[idx]);
+      });
+      var chunkDims = this.orderByTCZYX(chunkDimsUnordered, 1);
+      var subscriber = this.requestQueue.addSubscriber();
+      // `ChunkPrefetchIterator` yields chunk coordinates in order of roughly how likely they are to be loaded next
+      var chunkDimsTZYX = [chunkDims[0], chunkDims[2], chunkDims[3], chunkDims[4]];
+      var prefetchIterator = new _zarr_utils_ChunkPrefetchIterator__WEBPACK_IMPORTED_MODULE_10__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTZYX);
+      var prefetchCount = 0;
+      var _iterator = _createForOfIteratorHelper(prefetchIterator),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var chunk = _step.value;
+          if (prefetchCount >= this.fetchOptions.maxPrefetchChunks) {
+            break;
+          }
+          this.prefetchChunk(scaleLevel.path, chunk, subscriber);
+          prefetchCount++;
+        }
+
+        // Clear out old prefetch requests (requests which also cover this new prefetch will be preserved)
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+      if (this.prefetchSubscriber !== undefined) {
+        this.requestQueue.removeSubscriber(this.prefetchSubscriber, CHUNK_REQUEST_CANCEL_REASON);
+      }
+      this.prefetchSubscriber = subscriber;
+    }
+  }, {
     key: "loadVolumeData",
     value: function () {
-      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee5(vol, explicitLoadSpec, onChannelLoaded) {
+      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee4(vol, explicitLoadSpec, onChannelLoaded) {
         var _this$maxExtent2,
           _vol$loadSpec$channel,
           _this3 = this;
-        var maxExtent, _this$axesTCZYX$slice3, _this$axesTCZYX$slice4, z, y, x, subregion, levelIdx, level, levelShape, regionPx, regionSizePx, atlasTileDims, volExtentPx, volSizePx, numChannels, channelIndexes, channelPromises;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee5$(_context5) {
-          while (1) switch (_context5.prev = _context5.next) {
+        var maxExtent, _this$axesTCZYX$slice3, _this$axesTCZYX$slice4, z, y, x, subregion, levelIdx, level, levelShape, regionPx, regionSizePx, atlasTileDims, volExtentPx, volSizePx, numChannels, channelIndexes, subscriber, keys, reportKey, channelPromises;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee4$(_context4) {
+          while (1) switch (_context4.prev = _context4.next) {
             case 0:
-              // First, cancel any pending requests for this volume
-              this.requestQueue.cancelAllRequests(CHUNK_REQUEST_CANCEL_REASON);
               vol.loadSpec = _objectSpread(_objectSpread({}, explicitLoadSpec), vol.loadSpec);
-              maxExtent = (_this$maxExtent2 = this.maxExtent) !== null && _this$maxExtent2 !== void 0 ? _this$maxExtent2 : new three__WEBPACK_IMPORTED_MODULE_10__.Box3(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(1, 1, 1));
+              maxExtent = (_this$maxExtent2 = this.maxExtent) !== null && _this$maxExtent2 !== void 0 ? _this$maxExtent2 : new three__WEBPACK_IMPORTED_MODULE_12__.Box3(new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(1, 1, 1));
               _this$axesTCZYX$slice3 = this.axesTCZYX.slice(2), _this$axesTCZYX$slice4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_4__["default"])(_this$axesTCZYX$slice3, 3), z = _this$axesTCZYX$slice4[0], y = _this$axesTCZYX$slice4[1], x = _this$axesTCZYX$slice4[2];
               subregion = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.composeSubregion)(vol.loadSpec.subregion, maxExtent);
               levelIdx = pickLevelToLoad(_objectSpread(_objectSpread({}, vol.loadSpec), {}, {
@@ -9622,11 +9659,11 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               }), this.getLevelShapesZYX());
               level = this.scaleLevels[levelIdx];
               levelShape = level.shape;
-              regionPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.convertSubregionToPixels)(subregion, new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z])); // Update volume `imageInfo` to reflect potentially new dimensions
-              regionSizePx = regionPx.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
+              regionPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.convertSubregionToPixels)(subregion, new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z])); // Update volume `imageInfo` to reflect potentially new dimensions
+              regionSizePx = regionPx.getSize(new three__WEBPACK_IMPORTED_MODULE_12__.Vector3());
               atlasTileDims = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.computePackedAtlasDims)(regionSizePx.z, regionSizePx.x, regionSizePx.y);
-              volExtentPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.convertSubregionToPixels)(maxExtent, new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z]));
-              volSizePx = volExtentPx.getSize(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3());
+              volExtentPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.convertSubregionToPixels)(maxExtent, new three__WEBPACK_IMPORTED_MODULE_12__.Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z]));
+              volSizePx = volExtentPx.getSize(new three__WEBPACK_IMPORTED_MODULE_12__.Vector3());
               vol.imageInfo = _objectSpread(_objectSpread({}, vol.imageInfo), {}, {
                 atlasTileDims: atlasTileDims,
                 volumeSize: volSizePx,
@@ -9641,62 +9678,72 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               }, function (_, i) {
                 return i;
               });
+              subscriber = this.requestQueue.addSubscriber(); // Prefetch housekeeping: we want to save keys involved in this load to prefetch later
+              keys = [];
+              reportKey = function reportKey(key, sub) {
+                if (sub === subscriber) {
+                  keys.push(key);
+                }
+              };
               channelPromises = channelIndexes.map( /*#__PURE__*/function () {
-                var _ref6 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee4(ch) {
-                  var min, max, unorderedSpec, specLen, sliceSpec, result, u8;
-                  return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee4$(_context4) {
-                    while (1) switch (_context4.prev = _context4.next) {
+                var _ref6 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee3(ch) {
+                  var min, max, unorderedSpec, sliceSpec, result, u8;
+                  return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee3$(_context3) {
+                    while (1) switch (_context3.prev = _context3.next) {
                       case 0:
                         // Build slice spec
                         min = regionPx.min, max = regionPx.max;
-                        unorderedSpec = [vol.loadSpec.time, ch, (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_11__.slice)(min.z, max.z), (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_11__.slice)(min.y, max.y), (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_11__.slice)(min.x, max.x)];
-                        specLen = getDimensionCount(_this3.axesTCZYX);
-                        sliceSpec = Array(specLen);
-                        _this3.axesTCZYX.forEach(function (val, idx) {
-                          if (val > -1) {
-                            if (val > specLen) {
-                              throw new Error("Unexpected axis index");
-                            }
-                            sliceSpec[val] = unorderedSpec[idx];
+                        unorderedSpec = [vol.loadSpec.time, ch, (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_13__.slice)(min.z, max.z), (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_13__.slice)(min.y, max.y), (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_13__.slice)(min.x, max.x)];
+                        sliceSpec = _this3.orderByDimension(unorderedSpec);
+                        _context3.prev = 3;
+                        _context3.next = 6;
+                        return (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_14__.get)(level, sliceSpec, {
+                          opts: {
+                            subscriber: subscriber,
+                            reportKey: reportKey
                           }
                         });
-                        _context4.prev = 5;
-                        _context4.next = 8;
-                        return (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_12__.get)(level, sliceSpec);
-                      case 8:
-                        result = _context4.sent;
+                      case 6:
+                        result = _context3.sent;
                         u8 = convertChannel(result.data);
                         vol.setChannelDataFromVolume(ch, u8);
                         onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(vol, ch);
-                        _context4.next = 18;
+                        _context3.next = 16;
                         break;
-                      case 14:
-                        _context4.prev = 14;
-                        _context4.t0 = _context4["catch"](5);
-                        if (!(_context4.t0 !== CHUNK_REQUEST_CANCEL_REASON)) {
-                          _context4.next = 18;
+                      case 12:
+                        _context3.prev = 12;
+                        _context3.t0 = _context3["catch"](3);
+                        if (!(_context3.t0 !== CHUNK_REQUEST_CANCEL_REASON)) {
+                          _context3.next = 16;
                           break;
                         }
-                        throw _context4.t0;
-                      case 18:
+                        throw _context3.t0;
+                      case 16:
                       case "end":
-                        return _context4.stop();
+                        return _context3.stop();
                     }
-                  }, _callee4, null, [[5, 14]]);
+                  }, _callee3, null, [[3, 12]]);
                 }));
-                return function (_x11) {
+                return function (_x9) {
                   return _ref6.apply(this, arguments);
                 };
-              }());
-              _context5.next = 20;
+              }()); // Cancel any in-flight requests from previous loads that aren't useful to this one
+              if (this.loadSubscriber !== undefined) {
+                this.requestQueue.removeSubscriber(this.loadSubscriber, CHUNK_REQUEST_CANCEL_REASON);
+              }
+              this.loadSubscriber = subscriber;
+              this.beginPrefetch(keys, level);
+              _context4.next = 25;
               return Promise.all(channelPromises);
-            case 20:
+            case 25:
+              this.requestQueue.removeSubscriber(subscriber);
+            case 26:
             case "end":
-              return _context5.stop();
+              return _context4.stop();
           }
-        }, _callee5, this);
+        }, _callee4, this);
       }));
-      function loadVolumeData(_x8, _x9, _x10) {
+      function loadVolumeData(_x6, _x7, _x8) {
         return _loadVolumeData.apply(this, arguments);
       }
       return loadVolumeData;
@@ -9704,11 +9751,11 @@ var OMEZarrLoader = /*#__PURE__*/function () {
   }], [{
     key: "createLoader",
     value: function () {
-      var _createLoader = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee6(url) {
+      var _createLoader = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().mark(function _callee5(url) {
         var scene,
           cache,
-          concurrencyLimit,
           queue,
+          fetchOptions,
           store,
           root,
           group,
@@ -9717,23 +9764,26 @@ var OMEZarrLoader = /*#__PURE__*/function () {
           scaleLevelPromises,
           scaleLevels,
           axisTCZYX,
-          _args6 = arguments;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee6$(_context6) {
-          while (1) switch (_context6.prev = _context6.next) {
+          _args5 = arguments;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_5___default().wrap(function _callee5$(_context5) {
+          while (1) switch (_context5.prev = _context5.next) {
             case 0:
-              scene = _args6.length > 1 && _args6[1] !== undefined ? _args6[1] : 0;
-              cache = _args6.length > 2 ? _args6[2] : undefined;
-              concurrencyLimit = _args6.length > 3 && _args6[3] !== undefined ? _args6[3] : 10;
-              // Setup: create queue and store, get basic metadata
-              queue = new _utils_RequestQueue__WEBPACK_IMPORTED_MODULE_7__["default"](concurrencyLimit);
-              store = new WrappedStore(new zarrita__WEBPACK_IMPORTED_MODULE_13__["default"](url), cache, queue);
-              root = _zarrita_core__WEBPACK_IMPORTED_MODULE_14__.root(store);
-              _context6.next = 8;
-              return _zarrita_core__WEBPACK_IMPORTED_MODULE_15__.open(root, {
+              scene = _args5.length > 1 && _args5[1] !== undefined ? _args5[1] : 0;
+              cache = _args5.length > 2 ? _args5[2] : undefined;
+              queue = _args5.length > 3 ? _args5[3] : undefined;
+              fetchOptions = _args5.length > 4 ? _args5[4] : undefined;
+              // Setup queue and store, get basic metadata
+              if (!queue) {
+                queue = new _utils_SubscribableRequestQueue__WEBPACK_IMPORTED_MODULE_7__["default"](fetchOptions === null || fetchOptions === void 0 ? void 0 : fetchOptions.concurrencyLimit, fetchOptions === null || fetchOptions === void 0 ? void 0 : fetchOptions.prefetchConcurrencyLimit);
+              }
+              store = new _zarr_utils_WrappedStore__WEBPACK_IMPORTED_MODULE_11__["default"](new zarrita__WEBPACK_IMPORTED_MODULE_15__["default"](url), cache, queue);
+              root = _zarrita_core__WEBPACK_IMPORTED_MODULE_16__.root(store);
+              _context5.next = 9;
+              return _zarrita_core__WEBPACK_IMPORTED_MODULE_17__.open(root, {
                 kind: "group"
               });
-            case 8:
-              group = _context6.sent;
+            case 9:
+              group = _context5.sent;
               metadata = group.attrs; // Pick scene (multiscale)
               if (scene > metadata.multiscales.length) {
                 console.warn("WARNING: OMEZarrLoader: scene ".concat(scene, " is invalid. Using scene 0."));
@@ -9742,23 +9792,23 @@ var OMEZarrLoader = /*#__PURE__*/function () {
               multiscale = metadata.multiscales[scene]; // Open all scale levels of multiscale
               scaleLevelPromises = multiscale.datasets.map(function (_ref7) {
                 var path = _ref7.path;
-                return _zarrita_core__WEBPACK_IMPORTED_MODULE_15__.open(root.resolve(path), {
+                return _zarrita_core__WEBPACK_IMPORTED_MODULE_17__.open(root.resolve(path), {
                   kind: "array"
                 });
               });
-              _context6.next = 15;
+              _context5.next = 16;
               return Promise.all(scaleLevelPromises);
-            case 15:
-              scaleLevels = _context6.sent;
+            case 16:
+              scaleLevels = _context5.sent;
               axisTCZYX = remapAxesToTCZYX(multiscale.axes);
-              return _context6.abrupt("return", new OMEZarrLoader(scaleLevels, multiscale, metadata.omero, axisTCZYX, queue));
-            case 18:
+              return _context5.abrupt("return", new OMEZarrLoader(store, scaleLevels, multiscale, metadata.omero, axisTCZYX, queue, fetchOptions));
+            case 19:
             case "end":
-              return _context6.stop();
+              return _context5.stop();
           }
-        }, _callee6);
+        }, _callee5);
       }));
-      function createLoader(_x12) {
+      function createLoader(_x10) {
         return _createLoader.apply(this, arguments);
       }
       return createLoader;
@@ -10421,7 +10471,7 @@ function _createVolumeLoader() {
           break;
         case 4:
           _context.next = 6;
-          return _OmeZarrLoader__WEBPACK_IMPORTED_MODULE_3__.OMEZarrLoader.createLoader(pathString, options.scene, options.cache, options.concurrencyLimit);
+          return _OmeZarrLoader__WEBPACK_IMPORTED_MODULE_3__.OMEZarrLoader.createLoader(pathString, options.scene, options.cache, options.queue, options.fetchOptions);
         case 6:
           return _context.abrupt("return", _context.sent);
         case 7:
@@ -10442,7 +10492,7 @@ function _createVolumeLoader() {
           return _context.abrupt("return", new _TiffLoader__WEBPACK_IMPORTED_MODULE_5__.TiffLoader(pathString));
         case 17:
           _context.next = 19;
-          return _OmeZarrLoader__WEBPACK_IMPORTED_MODULE_3__.OMEZarrLoader.createLoader(pathString, options === null || options === void 0 ? void 0 : options.scene, options === null || options === void 0 ? void 0 : options.cache, options === null || options === void 0 ? void 0 : options.concurrencyLimit);
+          return _OmeZarrLoader__WEBPACK_IMPORTED_MODULE_3__.OMEZarrLoader.createLoader(pathString, options === null || options === void 0 ? void 0 : options.scene, options === null || options === void 0 ? void 0 : options.cache, options === null || options === void 0 ? void 0 : options.queue, options === null || options === void 0 ? void 0 : options.fetchOptions);
         case 19:
           return _context.abrupt("return", _context.sent);
         case 20:
@@ -10453,6 +10503,351 @@ function _createVolumeLoader() {
   }));
   return _createVolumeLoader.apply(this, arguments);
 }
+
+/***/ }),
+
+/***/ "./src/loaders/zarr_utils/ChunkPrefetchIterator.ts":
+/*!*********************************************************!*\
+  !*** ./src/loaders/zarr_utils/ChunkPrefetchIterator.ts ***!
+  \*********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ ChunkPrefetchIterator)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2__);
+
+
+
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
+/**
+ * Directions in which to move outward from the loaded set of chunks while prefetching.
+ *
+ * Ordered in pairs of opposite directions both because that's a sensible order in which to prefetch for our purposes,
+ * and because it lets us treat the least significant bit as the sign. So `direction >> 1` gives the index of the
+ * direction in TZYX-ordered arrays, and `direction & 1` gives the sign of the direction (e.g. positive vs negative Z).
+ *
+ * Note that this enum is mostly for documentation, and its variants are never explicitly used.
+ */
+var PrefetchDirection = /*#__PURE__*/function (PrefetchDirection) {
+  PrefetchDirection[PrefetchDirection["T_MINUS"] = 0] = "T_MINUS";
+  PrefetchDirection[PrefetchDirection["T_PLUS"] = 1] = "T_PLUS";
+  PrefetchDirection[PrefetchDirection["Z_MINUS"] = 2] = "Z_MINUS";
+  PrefetchDirection[PrefetchDirection["Z_PLUS"] = 3] = "Z_PLUS";
+  PrefetchDirection[PrefetchDirection["Y_MINUS"] = 4] = "Y_MINUS";
+  PrefetchDirection[PrefetchDirection["Y_PLUS"] = 5] = "Y_PLUS";
+  PrefetchDirection[PrefetchDirection["X_MINUS"] = 6] = "X_MINUS";
+  PrefetchDirection[PrefetchDirection["X_PLUS"] = 7] = "X_PLUS";
+  return PrefetchDirection;
+}(PrefetchDirection || {});
+var directionToIndex = function directionToIndex(dir) {
+  var absDir = dir >> 1; // shave off sign bit to get index in TZYX
+  return absDir + Number(absDir !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
+};
+
+function updateMinMax(val, minmax) {
+  if (val < minmax[0]) {
+    minmax[0] = val;
+  }
+  if (val > minmax[1]) {
+    minmax[1] = val;
+  }
+}
+
+/**
+ * Since the user is most likely to want nearby data (in space or time) first, we should prefetch those chunks first.
+ *
+ * Given a list of just-loaded chunks and some bounds, `ChunkPrefetchIterator` iterates evenly outwards in T/Z/Y/X.
+ */
+// NOTE: Assumes `chunks` form a rectangular prism! Will create gaps otherwise! (in practice they always should)
+var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
+  function ChunkPrefetchIterator(chunks, tzyxMaxPrefetchOffset, tzyxNumChunks) {
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, ChunkPrefetchIterator);
+    // Get min and max chunk coordinates for T/Z/Y/X
+    var extrema = [[Infinity, -Infinity], [Infinity, -Infinity], [Infinity, -Infinity], [Infinity, -Infinity]];
+    var _iterator = _createForOfIteratorHelper(chunks),
+      _step;
+    try {
+      for (_iterator.s(); !(_step = _iterator.n()).done;) {
+        var chunk = _step.value;
+        updateMinMax(chunk[0], extrema[0]);
+        updateMinMax(chunk[2], extrema[1]);
+        updateMinMax(chunk[3], extrema[2]);
+        updateMinMax(chunk[4], extrema[3]);
+      }
+
+      // Create `PrefetchDirectionState`s for each direction
+    } catch (err) {
+      _iterator.e(err);
+    } finally {
+      _iterator.f();
+    }
+    var directions = extrema.flat().map(function (start, direction) {
+      var dimension = direction >> 1;
+      if (direction & 1) {
+        // Positive direction - end is either the max coordinate in the fetched set plus the max offset in this
+        // dimension, or the max chunk coordinate in this dimension, whichever comes first
+        var end = Math.min(start + tzyxMaxPrefetchOffset[dimension], tzyxNumChunks[dimension] - 1);
+        return {
+          direction: direction,
+          start: start,
+          end: end,
+          chunks: []
+        };
+      } else {
+        // Negative direction - end is either the min coordinate in the fetched set minus the max offset in this
+        // dimension, or 0, whichever comes first
+        var _end = Math.max(start - tzyxMaxPrefetchOffset[dimension], 0);
+        return {
+          direction: direction,
+          start: start,
+          end: _end,
+          chunks: []
+        };
+      }
+    });
+
+    // Fill each `PrefetchDirectionState` with chunks at the border of the fetched set
+    var _iterator2 = _createForOfIteratorHelper(chunks),
+      _step2;
+    try {
+      for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+        var _chunk = _step2.value;
+        var _iterator3 = _createForOfIteratorHelper(directions),
+          _step3;
+        try {
+          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+            var dir = _step3.value;
+            if (_chunk[directionToIndex(dir.direction)] === dir.start) {
+              dir.chunks.push(_chunk);
+            }
+          }
+        } catch (err) {
+          _iterator3.e(err);
+        } finally {
+          _iterator3.f();
+        }
+      }
+    } catch (err) {
+      _iterator2.e(err);
+    } finally {
+      _iterator2.f();
+    }
+    this.directions = directions;
+  }
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(ChunkPrefetchIterator, [{
+    key: _Symbol$iterator,
+    value: /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function value() {
+      var offset, _iterator4, _step4, dir, _iterator5, _step5, chunk, newChunk;
+      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function value$(_context) {
+        while (1) switch (_context.prev = _context.next) {
+          case 0:
+            offset = 1;
+          case 1:
+            if (!(this.directions.length > 0)) {
+              _context.next = 40;
+              break;
+            }
+            // Remove directions in which we have hit a boundary
+            this.directions = this.directions.filter(function (dir) {
+              if (dir.direction & 1) {
+                return dir.start + offset <= dir.end;
+              } else {
+                return dir.start - offset >= dir.end;
+              }
+            });
+
+            // Yield chunks one chunk farther out in every remaining direction
+            _iterator4 = _createForOfIteratorHelper(this.directions);
+            _context.prev = 4;
+            _iterator4.s();
+          case 6:
+            if ((_step4 = _iterator4.n()).done) {
+              _context.next = 29;
+              break;
+            }
+            dir = _step4.value;
+            _iterator5 = _createForOfIteratorHelper(dir.chunks);
+            _context.prev = 9;
+            _iterator5.s();
+          case 11:
+            if ((_step5 = _iterator5.n()).done) {
+              _context.next = 19;
+              break;
+            }
+            chunk = _step5.value;
+            newChunk = chunk.slice();
+            newChunk[directionToIndex(dir.direction)] += offset * (dir.direction & 1 ? 1 : -1);
+            _context.next = 17;
+            return newChunk;
+          case 17:
+            _context.next = 11;
+            break;
+          case 19:
+            _context.next = 24;
+            break;
+          case 21:
+            _context.prev = 21;
+            _context.t0 = _context["catch"](9);
+            _iterator5.e(_context.t0);
+          case 24:
+            _context.prev = 24;
+            _iterator5.f();
+            return _context.finish(24);
+          case 27:
+            _context.next = 6;
+            break;
+          case 29:
+            _context.next = 34;
+            break;
+          case 31:
+            _context.prev = 31;
+            _context.t1 = _context["catch"](4);
+            _iterator4.e(_context.t1);
+          case 34:
+            _context.prev = 34;
+            _iterator4.f();
+            return _context.finish(34);
+          case 37:
+            offset += 1;
+            _context.next = 1;
+            break;
+          case 40:
+          case "end":
+            return _context.stop();
+        }
+      }, value, this, [[4, 31, 34, 37], [9, 21, 24, 27]]);
+    })
+  }]);
+  return ChunkPrefetchIterator;
+}(Symbol.iterator);
+
+
+/***/ }),
+
+/***/ "./src/loaders/zarr_utils/WrappedStore.ts":
+/*!************************************************!*\
+  !*** ./src/loaders/zarr_utils/WrappedStore.ts ***!
+  \************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__);
+
+
+
+
+/**
+ * `Readable` is zarrita's minimal abstraction for any source of data.
+ * `WrappedStore` wraps another `Readable` and adds (optional) connections to `VolumeCache` and `RequestQueue`.
+ */
+var WrappedStore = /*#__PURE__*/function () {
+  function WrappedStore(baseStore, cache, queue) {
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, WrappedStore);
+    this.baseStore = baseStore;
+    this.cache = cache;
+    this.queue = queue;
+  }
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(WrappedStore, [{
+    key: "getAndCache",
+    value: function () {
+      var _getAndCache = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(key, cacheKey, opts) {
+        var result;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
+          while (1) switch (_context.prev = _context.next) {
+            case 0:
+              _context.next = 2;
+              return this.baseStore.get(key, opts);
+            case 2:
+              result = _context.sent;
+              if (this.cache && result) {
+                this.cache.insert(cacheKey, result);
+              }
+              return _context.abrupt("return", result);
+            case 5:
+            case "end":
+              return _context.stop();
+          }
+        }, _callee, this);
+      }));
+      function getAndCache(_x, _x2, _x3) {
+        return _getAndCache.apply(this, arguments);
+      }
+      return getAndCache;
+    }()
+  }, {
+    key: "get",
+    value: function () {
+      var _get = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(key, opts) {
+        var _url,
+          _this = this;
+        var ZARR_EXTS, keyPrefix, fullKey, cacheResult;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee2$(_context2) {
+          while (1) switch (_context2.prev = _context2.next) {
+            case 0:
+              ZARR_EXTS = [".zarray", ".zgroup", ".zattrs", "zarr.json"];
+              if (!(!this.cache || ZARR_EXTS.some(function (s) {
+                return key.endsWith(s);
+              }))) {
+                _context2.next = 3;
+                break;
+              }
+              return _context2.abrupt("return", this.baseStore.get(key, opts === null || opts === void 0 ? void 0 : opts.options));
+            case 3:
+              if (opts !== null && opts !== void 0 && opts.reportKey) {
+                opts.reportKey(key, opts.subscriber);
+              }
+              keyPrefix = (_url = this.baseStore.url) !== null && _url !== void 0 ? _url : "";
+              if (keyPrefix !== "" && !(keyPrefix instanceof URL) && !keyPrefix.endsWith("/")) {
+                keyPrefix += "/";
+              }
+              fullKey = keyPrefix + key.slice(1); // Check the cache
+              cacheResult = this.cache.get(fullKey);
+              if (!cacheResult) {
+                _context2.next = 10;
+                break;
+              }
+              return _context2.abrupt("return", new Uint8Array(cacheResult));
+            case 10:
+              if (!(this.queue && opts)) {
+                _context2.next = 14;
+                break;
+              }
+              return _context2.abrupt("return", this.queue.addRequest(fullKey, opts.subscriber, function () {
+                return _this.getAndCache(key, fullKey, opts === null || opts === void 0 ? void 0 : opts.options);
+              }, opts.isPrefetch));
+            case 14:
+              return _context2.abrupt("return", this.getAndCache(key, fullKey, opts === null || opts === void 0 ? void 0 : opts.options));
+            case 15:
+            case "end":
+              return _context2.stop();
+          }
+        }, _callee2, this);
+      }));
+      function get(_x4, _x5) {
+        return _get.apply(this, arguments);
+      }
+      return get;
+    }()
+  }]);
+  return WrappedStore;
+}();
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (WrappedStore);
 
 /***/ }),
 
@@ -10576,10 +10971,20 @@ var DEFAULT_REQUEST_CANCEL_REASON = "request cancelled";
  * while the original request is still in the queue.
  */
 var RequestQueue = /*#__PURE__*/function () {
-  /** The maximum number of requests that can be handled concurently.
-    Once reached, additional requests will be queued up to run once a running request completes.*/
+  /**
+   * The maximum number of requests that can be handled concurrently.
+   * Once reached, additional requests will be queued up to run once a running request completes.
+   */
+
+  /**
+   * The maximum number of requests that can be handled concurrently if only low-priority requests are waiting. Set
+   * lower than `concurrencyLimit` to always leave space for high-priority requests. Cannot be set higher than
+   * `concurrencyLimit`.
+   */
 
   /** A queue of requests that are ready to be executed, in order of request time. */
+
+  /** A queue of low-priority tasks that are ready to be executed. `queue` must be empty before any of these tasks run. */
 
   /** Stores all requests, even those that are currently active. */
 
@@ -10588,14 +10993,19 @@ var RequestQueue = /*#__PURE__*/function () {
   /**
    * Creates a new RequestQueue.
    * @param maxActiveRequests The maximum number of requests that will be handled concurrently. This is 10 by default.
+   * @param maxLowPriorityRequests The maximum number of low-priority requests that will be handled concurrently. Equal
+   *    to `maxActiveRequests` by default, but may be set lower to always leave space for new high-priority requests.
    */
   function RequestQueue() {
     var maxActiveRequests = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
+    var maxLowPriorityRequests = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 5;
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, RequestQueue);
     this.allRequests = new Map();
     this.activeRequests = new Set();
     this.queue = [];
+    this.queueLowPriority = [];
     this.maxActiveRequests = maxActiveRequests;
+    this.maxLowPriorityRequests = Math.min(maxActiveRequests, maxLowPriorityRequests);
   }
 
   /**
@@ -10630,10 +11040,11 @@ var RequestQueue = /*#__PURE__*/function () {
     /**
      * Moves a registered request into the processing queue, clearing any timeouts on the request.
      * @param key string identifier of the request.
+     * @param lowPriority Whether this request should be added with low priority. False by default.
      */
   }, {
     key: "addRequestToQueue",
-    value: function addRequestToQueue(key) {
+    value: function addRequestToQueue(key, lowPriority) {
       // Check that this request is not cancelled.
       if (this.allRequests.has(key)) {
         // Clear the request timeout, if it has one, since it is being added to the queue.
@@ -10642,9 +11053,13 @@ var RequestQueue = /*#__PURE__*/function () {
           clearTimeout(requestItem.timeoutId);
           requestItem.timeoutId = undefined;
         }
-        if (!this.queue.includes(key)) {
+        if (!this.queue.includes(key) && !this.queueLowPriority.includes(key)) {
           // Add to queue and check if the request can be processed right away.
-          this.queue.push(key);
+          if (lowPriority) {
+            this.queueLowPriority.push(key);
+          } else {
+            this.queue.push(key);
+          }
           this.dequeue();
         }
       }
@@ -10656,6 +11071,7 @@ var RequestQueue = /*#__PURE__*/function () {
      * @param requestAction Function that will be called to complete the request. The function
      *  will be run only once per unique key while the request exists, and may be deferred by the
      *  queue at any time.
+     * @param lowPriority Whether this request should be added with low priority. False by default.
      * @param delayMs Minimum delay, in milliseconds, before this request should be executed.
      *
      * NOTE: Cancelling a request while the action is running WILL NOT stop the action. If this behavior is desired,
@@ -10672,25 +11088,34 @@ var RequestQueue = /*#__PURE__*/function () {
     value: function addRequest(key, requestAction) {
       var _this = this,
         _this$allRequests$get;
-      var delayMs = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+      var lowPriority = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      var delayMs = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
       if (!this.allRequests.has(key)) {
         // New request!
         var requestItem = this.registerRequest(key, requestAction);
         // If a delay is set, wait to add this to the queue.
         if (delayMs > 0) {
           var timeoutId = setTimeout(function () {
-            return _this.addRequestToQueue(key);
+            return _this.addRequestToQueue(key, lowPriority);
           }, delayMs);
           // Save timeout information to request metadata
           requestItem.timeoutId = timeoutId;
         } else {
           // No delay, add immediately
-          this.addRequestToQueue(key);
+          this.addRequestToQueue(key, lowPriority);
         }
-      } else if (delayMs <= 0) {
-        // This request is registered, but is now being requested without a delay.
-        // Move into queue immediately if it's not already added, and clear any timeouts it may have.
-        this.addRequestToQueue(key);
+      } else {
+        var lowPriorityIndex = this.queueLowPriority.indexOf(key);
+        if (lowPriorityIndex > -1 && !lowPriority) {
+          // This request is registered and queued, but is now being requested with high priority.
+          // Promote it to high priority.
+          this.queueLowPriority.splice(lowPriorityIndex, 1);
+          this.addRequestToQueue(key);
+        } else if (delayMs <= 0) {
+          // This request is registered, but is now being requested without a delay.
+          // Move into queue immediately if it's not already added, and clear any timeouts it may have.
+          this.addRequestToQueue(key, lowPriority);
+        }
       }
       var promise = (_this$allRequests$get = this.allRequests.get(key)) === null || _this$allRequests$get === void 0 ? void 0 : _this$allRequests$get.promise;
       if (!promise) {
@@ -10702,6 +11127,7 @@ var RequestQueue = /*#__PURE__*/function () {
     /**
      * Adds multiple requests to the queue, with an optional delay between each.
      * @param requests An array of RequestItems, which include a key and a request action.
+     * @param lowPriority Whether these requests should be added with low priority. False by default.
      * @param delayMs An optional minimum delay in milliseconds to be added between each request.
      *  For example, a delay of 10 ms will cause the second request to be added to the processing queue
      *  after 10 ms, the third to added after 20 ms, and so on. Set to 10 ms by default.
@@ -10712,11 +11138,12 @@ var RequestQueue = /*#__PURE__*/function () {
   }, {
     key: "addRequests",
     value: function addRequests(requests) {
-      var delayMs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 10;
+      var lowPriority = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      var delayMs = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 10;
       var promises = [];
       for (var i = 0; i < requests.length; i++) {
         var item = requests[i];
-        var promise = this.addRequest(item.key, item.requestAction, delayMs * i);
+        var promise = this.addRequest(item.key, item.requestAction, lowPriority, delayMs * i);
         promises.push(promise);
       }
       return promises;
@@ -10731,47 +11158,49 @@ var RequestQueue = /*#__PURE__*/function () {
     key: "dequeue",
     value: function () {
       var _dequeue = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee() {
-        var requestKey, requestItem, key;
+        var _this$queue$shift;
+        var numRequests, requestKey, requestItem, key;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
           while (1) switch (_context.prev = _context.next) {
             case 0:
-              if (!(this.activeRequests.size >= this.maxActiveRequests || this.queue.length === 0)) {
-                _context.next = 2;
+              numRequests = this.activeRequests.size;
+              if (!(numRequests >= this.maxActiveRequests || this.queue.length === 0 && (numRequests >= this.maxLowPriorityRequests || this.queueLowPriority.length === 0))) {
+                _context.next = 3;
                 break;
               }
               return _context.abrupt("return");
-            case 2:
-              requestKey = this.queue.shift();
+            case 3:
+              requestKey = (_this$queue$shift = this.queue.shift()) !== null && _this$queue$shift !== void 0 ? _this$queue$shift : this.queueLowPriority.shift();
               if (requestKey) {
-                _context.next = 5;
+                _context.next = 6;
                 break;
               }
               return _context.abrupt("return");
-            case 5:
+            case 6:
               if (!this.activeRequests.has(requestKey)) {
-                _context.next = 8;
+                _context.next = 9;
                 break;
               }
               // This request is already active, try the next one instead. (this shouldn't happen)
               this.dequeue();
               return _context.abrupt("return");
-            case 8:
+            case 9:
               requestItem = this.allRequests.get(requestKey);
               if (requestItem) {
-                _context.next = 11;
+                _context.next = 12;
                 break;
               }
               return _context.abrupt("return");
-            case 11:
+            case 12:
               key = requestItem.key; // Mark that this request is active
               this.activeRequests.add(key);
-              _context.next = 15;
+              _context.next = 16;
               return requestItem.action().then(requestItem.resolve, requestItem.reject);
-            case 15:
+            case 16:
               this.activeRequests["delete"](key);
               this.allRequests["delete"](key);
               this.dequeue();
-            case 18:
+            case 19:
             case "end":
               return _context.stop();
           }
@@ -10803,9 +11232,15 @@ var RequestQueue = /*#__PURE__*/function () {
         // Reject the request, then clear from the queue and known requests.
         requestItem.reject(cancelReason);
       }
-      this.queue = this.queue.filter(function (k) {
-        return key !== k;
-      });
+      var queueIndex = this.queue.indexOf(key);
+      if (queueIndex > -1) {
+        this.queue.splice(queueIndex, 1);
+      } else {
+        var lowPriorityIndex = this.queueLowPriority.indexOf(key);
+        if (lowPriorityIndex > -1) {
+          this.queueLowPriority.splice(lowPriorityIndex, 1);
+        }
+      }
       this.allRequests["delete"](key);
       this.activeRequests["delete"](key);
     }
@@ -10818,7 +11253,9 @@ var RequestQueue = /*#__PURE__*/function () {
     key: "cancelAllRequests",
     value: function cancelAllRequests() {
       var cancelReason = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : DEFAULT_REQUEST_CANCEL_REASON;
-      this.queue = []; // Clear the queue so we don't do extra work while filtering it
+      // Clear the queue so we don't do extra work while filtering it
+      this.queue = [];
+      this.queueLowPriority = [];
       var _iterator = _createForOfIteratorHelper(this.allRequests.keys()),
         _step;
       try {
@@ -10856,6 +11293,260 @@ var RequestQueue = /*#__PURE__*/function () {
     }
   }]);
   return RequestQueue;
+}();
+
+
+/***/ }),
+
+/***/ "./src/utils/SubscribableRequestQueue.ts":
+/*!***********************************************!*\
+  !*** ./src/utils/SubscribableRequestQueue.ts ***!
+  \***********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ SubscribableRequestQueue)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _RequestQueue__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./RequestQueue */ "./src/utils/RequestQueue.ts");
+
+
+
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
+
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/**
+ * An extension of `RequestQueue` that adds a concept of "subscribers," which may share references to a single request
+ * or cancel their subscription without disrupting the request for other subscribers.
+ */
+var SubscribableRequestQueue = /*#__PURE__*/function () {
+  function SubscribableRequestQueue(maxActiveRequests, maxLowPriorityRequests) {
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, SubscribableRequestQueue);
+    if (typeof maxActiveRequests === "number" || maxActiveRequests === undefined) {
+      this.queue = new _RequestQueue__WEBPACK_IMPORTED_MODULE_3__["default"](maxActiveRequests, maxLowPriorityRequests);
+    } else {
+      this.queue = maxActiveRequests;
+    }
+    this.nextSubscriberId = 0;
+    this.subscribers = new Map();
+    this.requests = new Map();
+  }
+
+  /** Resolves all subscriptions to request `key` with `value` */
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(SubscribableRequestQueue, [{
+    key: "resolveAll",
+    value: function resolveAll(key, value) {
+      var requests = this.requests.get(key);
+      if (requests) {
+        var _iterator = _createForOfIteratorHelper(requests),
+          _step;
+        try {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var _this$subscribers$get;
+            var _step$value = _step.value,
+              resolve = _step$value.resolve,
+              subscriberId = _step$value.subscriberId;
+            resolve(value);
+            (_this$subscribers$get = this.subscribers.get(subscriberId)) === null || _this$subscribers$get === void 0 ? void 0 : _this$subscribers$get["delete"](key);
+          }
+        } catch (err) {
+          _iterator.e(err);
+        } finally {
+          _iterator.f();
+        }
+        this.requests["delete"](key);
+      }
+    }
+
+    /** Rejects all subscriptions to request `key` with `reason` */
+  }, {
+    key: "rejectAll",
+    value: function rejectAll(key, reason) {
+      var requests = this.requests.get(key);
+      if (requests) {
+        var _iterator2 = _createForOfIteratorHelper(requests),
+          _step2;
+        try {
+          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+            var _this$subscribers$get2;
+            var _step2$value = _step2.value,
+              reject = _step2$value.reject,
+              subscriberId = _step2$value.subscriberId;
+            reject(reason);
+            (_this$subscribers$get2 = this.subscribers.get(subscriberId)) === null || _this$subscribers$get2 === void 0 ? void 0 : _this$subscribers$get2["delete"](key);
+          }
+        } catch (err) {
+          _iterator2.e(err);
+        } finally {
+          _iterator2.f();
+        }
+        this.requests["delete"](key);
+      }
+    }
+
+    /** Adds a new request subscriber. Returns a unique ID to identify this subscriber. */
+  }, {
+    key: "addSubscriber",
+    value: function addSubscriber() {
+      var subscriberId = this.nextSubscriberId;
+      this.nextSubscriberId++;
+      this.subscribers.set(subscriberId, new Map());
+      return subscriberId;
+    }
+
+    /**
+     * Queues a new request, or adds a subscription if the request is already queued/running.
+     *
+     * If `subscriberId` is already subscribed to the request, this rejects the existing promise and returns a new one.
+     */
+  }, {
+    key: "addRequest",
+    value: function addRequest(key, subscriberId, requestAction, lowPriority, delayMs) {
+      var _this = this;
+      // Create single underlying request if it does not yet exist
+      this.queue.addRequest(key, requestAction, lowPriority, delayMs).then(function (value) {
+        return _this.resolveAll(key, value);
+      })["catch"](function (reason) {
+        return _this.rejectAll(key, reason);
+      });
+      if (!this.requests.has(key)) {
+        this.requests.set(key, []);
+      }
+
+      // Validate subscriber
+      if (subscriberId >= this.nextSubscriberId || subscriberId < 0) {
+        throw new Error("SubscribableRequestQueue: subscriber id ".concat(subscriberId, " has not been registered"));
+      }
+      var subscriber = this.subscribers.get(subscriberId);
+      if (!subscriber) {
+        throw new Error("SubscribableRequestQueue: subscriber id ".concat(subscriberId, " has been removed"));
+      }
+      var existingRequest = subscriber.get(key);
+      if (existingRequest) {
+        this.rejectSubscription(key, existingRequest, "SubscribableRequestQueue: request re-queued while running");
+      }
+
+      // Create promise and add to list of requests
+      return new Promise(function (resolve, reject) {
+        var _this$requests$get, _this$subscribers$get3;
+        (_this$requests$get = _this.requests.get(key)) === null || _this$requests$get === void 0 ? void 0 : _this$requests$get.push({
+          resolve: resolve,
+          reject: reject,
+          subscriberId: subscriberId
+        });
+        (_this$subscribers$get3 = _this.subscribers.get(subscriberId)) === null || _this$subscribers$get3 === void 0 ? void 0 : _this$subscribers$get3.set(key, reject);
+      });
+    }
+
+    /**
+     * Rejects a subscription and removes it from the list of subscriptions for a request, then cancels the underlying
+     * request if it is no longer subscribed and is not running already.
+     */
+  }, {
+    key: "rejectSubscription",
+    value: function rejectSubscription(key, reject, cancelReason) {
+      // Reject the outer "subscription" promise
+      reject(cancelReason);
+
+      // Get the list of subscriptions for this request
+      var subscriptions = this.requests.get(key);
+      if (!subscriptions) {
+        // This should never happen
+        return;
+      }
+      // Remove this request subscription by ref equality to `reject`
+      var idx = subscriptions.findIndex(function (sub) {
+        return sub.reject === reject;
+      });
+      if (idx >= 0) {
+        subscriptions.splice(idx, 1);
+      }
+
+      // Remove the underlying request if there are no more subscribers and the request is not already running
+      if (subscriptions.length < 1 && !this.queue.requestRunning(key)) {
+        this.queue.cancelRequest(key, cancelReason);
+        this.requests["delete"](key);
+      }
+    }
+
+    /** Cancels a request subscription, and cancels the underlying request if it is no longer subscribed or running. */
+  }, {
+    key: "cancelRequest",
+    value: function cancelRequest(key, subscriberId, cancelReason) {
+      var subscriber = this.subscribers.get(subscriberId);
+      if (!subscriber) {
+        return false;
+      }
+      var reject = subscriber.get(key);
+      if (!reject) {
+        return false;
+      }
+      this.rejectSubscription(key, reject, cancelReason);
+      subscriber["delete"](key);
+      return true;
+    }
+
+    /** Removes a subscriber and cancels its remaining subscriptions. */
+  }, {
+    key: "removeSubscriber",
+    value: function removeSubscriber(subscriberId, cancelReason) {
+      var subscriptions = this.subscribers.get(subscriberId);
+      if (subscriptions) {
+        var _iterator3 = _createForOfIteratorHelper(subscriptions.entries()),
+          _step3;
+        try {
+          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+            var _step3$value = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_step3.value, 2),
+              key = _step3$value[0],
+              reject = _step3$value[1];
+            this.rejectSubscription(key, reject, cancelReason);
+          }
+        } catch (err) {
+          _iterator3.e(err);
+        } finally {
+          _iterator3.f();
+        }
+        this.subscribers["delete"](subscriberId);
+      }
+    }
+
+    /** Returns whether a request with the given `key` is running or waiting in the queue */
+  }, {
+    key: "hasRequest",
+    value: function hasRequest(key) {
+      return this.queue.hasRequest(key);
+    }
+
+    /** Returns whether a request with the given `key` is running */
+  }, {
+    key: "requestRunning",
+    value: function requestRunning(key) {
+      return this.queue.requestRunning(key);
+    }
+
+    /** Returns whether a subscriber with the given `subscriberId` exists */
+  }, {
+    key: "hasSubscriber",
+    value: function hasSubscriber(subscriberId) {
+      return this.subscribers.has(subscriberId);
+    }
+
+    /** Returns whether a subscriber with the given `subscriberId` is subscribed to the request with the given `key` */
+  }, {
+    key: "isSubscribed",
+    value: function isSubscribed(subscriberId, key) {
+      var _this$subscribers$get4, _this$subscribers$get5;
+      return (_this$subscribers$get4 = (_this$subscribers$get5 = this.subscribers.get(subscriberId)) === null || _this$subscribers$get5 === void 0 ? void 0 : _this$subscribers$get5.has(key)) !== null && _this$subscribers$get4 !== void 0 ? _this$subscribers$get4 : false;
+    }
+  }]);
+  return SubscribableRequestQueue;
 }();
 
 
@@ -84631,6 +85322,10 @@ __webpack_require__.r(__webpack_exports__);
 
 
 var CACHE_MAX_SIZE = 1000000000;
+var CONCURRENCY_LIMIT = 8;
+var PREFETCH_CONCURRENCY_LIMIT = 3;
+var PREFETCH_DISTANCE = [5, 5, 5, 5];
+var MAX_PREFETCH_CHUNKS = 25;
 var PLAYBACK_INTERVAL = 80;
 var TEST_DATA = {
   timeSeries: {
@@ -84693,6 +85388,7 @@ var TEST_DATA = {
 };
 var view3D;
 var volumeCache = new _src__WEBPACK_IMPORTED_MODULE_4__.VolumeCache(CACHE_MAX_SIZE);
+var requestQueue = new _src__WEBPACK_IMPORTED_MODULE_4__.SubscribableRequestQueue(CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 var myState = {
   file: "",
   volume: new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(),
@@ -85279,7 +85975,12 @@ function _createLoader() {
           }
           _context.next = 6;
           return (0,_src__WEBPACK_IMPORTED_MODULE_4__.createVolumeLoader)(path, {
-            cache: volumeCache
+            cache: volumeCache,
+            queue: requestQueue,
+            fetchOptions: {
+              maxPrefetchChunks: MAX_PREFETCH_CHUNKS,
+              maxPrefetchDistance: PREFETCH_DISTANCE
+            }
           });
         case 6:
           return _context.abrupt("return", _context.sent);
