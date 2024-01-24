@@ -9,7 +9,7 @@ import {
   WorkerResponse,
   WorkerResponsePayload,
   ChannelLoadEvent,
-  WorkerResponseKind,
+  WorkerResponseResult,
 } from "./types";
 import { rebuildImageInfo, rebuildLoadSpec } from "./util";
 
@@ -70,7 +70,7 @@ class SharedLoadWorkerHandle {
   }
 
   private receiveMessage<T extends WorkerMsgType>({ data }: MessageEvent<WorkerResponse<T>>): void {
-    if (data.responseKind === WorkerResponseKind.EVENT) {
+    if (data.responseKind === WorkerResponseResult.EVENT) {
       this.onChannelData?.(data);
     } else {
       const prom = this.pendingRequests[data.msgId];
@@ -82,7 +82,7 @@ class SharedLoadWorkerHandle {
         throw new Error(`Received response of type ${data.type} for message of type ${prom.type}`);
       }
 
-      if (data.responseKind === WorkerResponseKind.ERROR) {
+      if (data.responseKind === WorkerResponseResult.ERROR) {
         prom.reject(data.payload);
       } else {
         prom.resolve(data.payload);

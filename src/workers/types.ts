@@ -10,7 +10,7 @@ export const enum WorkerMsgType {
   LOAD_VOLUME_DATA,
 }
 
-export const enum WorkerResponseKind {
+export const enum WorkerResponseResult {
   SUCCESS,
   ERROR,
   EVENT,
@@ -60,6 +60,6 @@ export type ChannelLoadEvent = {
 
 export type WorkerRequest<T extends WorkerMsgType> = WorkerMsgBase<T, WorkerRequestPayload<T>>;
 export type WorkerResponse<T extends WorkerMsgType> =
-  | ({ responseKind: WorkerResponseKind.SUCCESS } & WorkerMsgBase<T, WorkerResponsePayload<T>>)
-  | ({ responseKind: WorkerResponseKind.ERROR } & WorkerMsgBase<T, string>)
-  | ({ responseKind: WorkerResponseKind.EVENT } & ChannelLoadEvent);
+  | ({ responseKind: WorkerResponseResult.SUCCESS } & WorkerMsgBase<T, WorkerResponsePayload<T>>)
+  | ({ responseKind: WorkerResponseResult.ERROR } & WorkerMsgBase<T, string>)
+  | ({ responseKind: WorkerResponseResult.EVENT } & ChannelLoadEvent);
