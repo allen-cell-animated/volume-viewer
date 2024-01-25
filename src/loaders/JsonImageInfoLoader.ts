@@ -199,12 +199,12 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
    *     "channels": [6, 7, 8]
    * }], mycallback);
    */
-  static async loadVolumeAtlasData(
+  static loadVolumeAtlasData(
     imageArray: PackedChannelsImage[],
     onData: RawChannelDataCallback,
     cache?: VolumeCache
-  ): Promise<void> {
-    const loadPromises = imageArray.map(async (image) => {
+  ): void {
+    imageArray.forEach(async (image) => {
       // Because the data is fetched such that one fetch returns a whole batch,
       // if any in batch is cached then they all should be. So if any in batch is NOT cached,
       // then we will have to do a batch request. This logic works both ways because it's all or nothing.
@@ -266,8 +266,6 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
         onData(chindex, channelsBits[ch], [bitmap.width, bitmap.height]);
       }
     });
-
-    await Promise.all(loadPromises);
   }
 }
 
