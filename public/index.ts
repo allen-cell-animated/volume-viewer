@@ -1008,10 +1008,11 @@ function createTestVolume() {
 }
 
 async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
-  await loadWorker.onOpen();
   if (data.type === "opencell") {
     return new OpenCellLoader();
   }
+
+  await loadWorker.onOpen();
 
   let path: string | string[] = data.url;
   if (data.type === VolumeFileFormat.JSON) {
