@@ -12,7 +12,7 @@ import { LoadSpec } from "./loaders/IVolumeLoader";
 import { OMEZarrLoader } from "./loaders/OmeZarrLoader";
 import { JsonImageInfoLoader } from "./loaders/JsonImageInfoLoader";
 import { TiffLoader } from "./loaders/TiffLoader";
-import LoadWorker from "./workers/LoadWorkerHandle";
+import VolumeLoaderContext from "./workers/LoadWorkerHandle";
 
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
 
@@ -34,7 +34,7 @@ export {
   OMEZarrLoader,
   JsonImageInfoLoader,
   TiffLoader,
-  LoadWorker,
+  VolumeLoaderContext,
   VolumeFileFormat,
   createVolumeLoader,
   Channel,

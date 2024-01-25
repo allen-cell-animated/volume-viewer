@@ -92,7 +92,7 @@ class SharedLoadWorkerHandle {
   }
 }
 
-class LoadWorker {
+class VolumeLoaderContext {
   private workerHandle: SharedLoadWorkerHandle;
   private openPromise: Promise<void>;
 
@@ -203,5 +203,5 @@ class WorkerLoader extends ThreadableVolumeLoader {
   }
 }
 
-export default LoadWorker;
+export default VolumeLoaderContext;
 export type { WorkerLoader };
