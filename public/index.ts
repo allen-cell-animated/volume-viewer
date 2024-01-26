@@ -1,5 +1,5 @@
 import "regenerator-runtime/runtime";
-import { Vector2, Vector3, Vector4 } from "three";
+import { Vector2, Vector3 } from "three";
 import * as dat from "dat.gui";
 
 import {
