@@ -10,7 +10,13 @@ import { FetchStore } from "zarrita";
 import { ImageInfo } from "../Volume";
 import VolumeCache from "../VolumeCache";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
-import { ThreadableVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "./IVolumeLoader";
+import {
+  ThreadableVolumeLoader,
+  LoadSpec,
+  RawChannelDataCallback,
+  VolumeDims,
+  LoadedVolumeInfo,
+} from "./IVolumeLoader";
 import {
   composeSubregion,
   computePackedAtlasDims,
@@ -282,7 +288,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     return Promise.resolve(result);
   }
 
-  createImageInfo(loadSpec: LoadSpec): Promise<[ImageInfo, LoadSpec]> {
+  createImageInfo(loadSpec: LoadSpec): Promise<LoadedVolumeInfo> {
     const [t, c, z, y, x] = this.axesTCZYX;
     const hasT = t > -1;
     const hasC = c > -1;
@@ -349,7 +355,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)),
     };
 
-    return Promise.resolve([imgdata, fullExtentLoadSpec]);
+    return Promise.resolve({ imageInfo: imgdata, loadSpec: fullExtentLoadSpec });
   }
 
   private async prefetchChunk(basePath: string, coords: TCZYX<number>, subscriber: SubscriberId): Promise<void> {
@@ -413,7 +419,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
     onData: RawChannelDataCallback
-  ): Promise<[ImageInfo, undefined]> {
+  ): Promise<{ imageInfo: ImageInfo }> {
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     const [z, y, x] = this.axesTCZYX.slice(2);
     const subregion = composeSubregion(loadSpec.subregion, maxExtent);
@@ -487,7 +493,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
       setTimeout(() => this.beginPrefetch(keys, level), 1000);
     });
-    return Promise.resolve([updatedImageInfo, undefined]);
+    return Promise.resolve({ imageInfo: updatedImageInfo });
   }
 }
 

@@ -1,6 +1,6 @@
 import { ImageInfo } from "../Volume";
 import { CreateLoaderOptions } from "../loaders";
-import { LoadSpec, VolumeDims } from "../loaders/IVolumeLoader";
+import { LoadSpec, LoadedVolumeInfo, VolumeDims } from "../loaders/IVolumeLoader";
 
 /** The types of requests that can be made to the worker. Mostly corresponds to methods on `IVolumeLoader`. */
 export const enum WorkerMsgType {
@@ -50,9 +50,9 @@ export type WorkerRequestPayload<T extends WorkerMsgType> = {
 export type WorkerResponsePayload<T extends WorkerMsgType> = {
   [WorkerMsgType.INIT]: void;
   [WorkerMsgType.CREATE_LOADER]: boolean;
-  [WorkerMsgType.CREATE_VOLUME]: [ImageInfo, LoadSpec];
+  [WorkerMsgType.CREATE_VOLUME]: LoadedVolumeInfo;
   [WorkerMsgType.LOAD_DIMS]: VolumeDims[];
-  [WorkerMsgType.LOAD_VOLUME_DATA]: [ImageInfo | undefined, LoadSpec | undefined];
+  [WorkerMsgType.LOAD_VOLUME_DATA]: Partial<LoadedVolumeInfo>;
 }[T];
 
 /** Currently the only event a loader can produce is a `ChannelLoadEvent` when a single channel loads. */

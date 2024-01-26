@@ -1,6 +1,12 @@
 import { ImageInfo } from "../Volume";
 import { CreateLoaderOptions, VolumeFileFormat, pathToFileType } from "../loaders";
-import { ThreadableVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "../loaders/IVolumeLoader";
+import {
+  ThreadableVolumeLoader,
+  LoadSpec,
+  RawChannelDataCallback,
+  VolumeDims,
+  LoadedVolumeInfo,
+} from "../loaders/IVolumeLoader";
 import { TiffLoader } from "../loaders/TiffLoader";
 import {
   WorkerMsgType,
@@ -207,30 +213,39 @@ class WorkerLoader extends ThreadableVolumeLoader {
     return this.workerHandle.sendMessage(WorkerMsgType.LOAD_DIMS, loadSpec);
   }
 
-  async createImageInfo(loadSpec: LoadSpec): Promise<[ImageInfo, LoadSpec]> {
+  async createImageInfo(loadSpec: LoadSpec): Promise<LoadedVolumeInfo> {
     this.checkIsOpen();
-    const [imageInfo, adjustedLoadSpec] = await this.workerHandle.sendMessage(WorkerMsgType.CREATE_VOLUME, loadSpec);
-    return [rebuildImageInfo(imageInfo), rebuildLoadSpec(adjustedLoadSpec)];
+    const { imageInfo, loadSpec: adjustedLoadSpec } = await this.workerHandle.sendMessage(
+      WorkerMsgType.CREATE_VOLUME,
+      loadSpec
+    );
+    return { imageInfo: rebuildImageInfo(imageInfo), loadSpec: rebuildLoadSpec(adjustedLoadSpec) };
   }
 
   async loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
     onData: RawChannelDataCallback
-  ): Promise<[ImageInfo | undefined, LoadSpec | undefined]> {
+  ): Promise<Partial<LoadedVolumeInfo>> {
     this.checkIsOpen();
 
     this.currentLoadCallback = onData;
     this.currentLoadId += 1;
 
-    const [newImageInfo, newLoadSpec] = await this.workerHandle.sendMessage(WorkerMsgType.LOAD_VOLUME_DATA, {
-      imageInfo,
-      loadSpec,
-      loaderId: this.loaderId,
-      loadId: this.currentLoadId,
-    });
+    const { imageInfo: newImageInfo, loadSpec: newLoadSpec } = await this.workerHandle.sendMessage(
+      WorkerMsgType.LOAD_VOLUME_DATA,
+      {
+        imageInfo,
+        loadSpec,
+        loaderId: this.loaderId,
+        loadId: this.currentLoadId,
+      }
+    );
 
-    return [newImageInfo && rebuildImageInfo(newImageInfo), newLoadSpec && rebuildLoadSpec(newLoadSpec)];
+    return {
+      imageInfo: newImageInfo && rebuildImageInfo(newImageInfo),
+      loadSpec: newLoadSpec && rebuildLoadSpec(newLoadSpec),
+    };
   }
 
   onChannelData(e: ChannelLoadEvent): void {

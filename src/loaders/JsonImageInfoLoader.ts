@@ -1,6 +1,12 @@
 import { Box3, Vector2, Vector3 } from "three";
 
-import { ThreadableVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "./IVolumeLoader";
+import {
+  ThreadableVolumeLoader,
+  LoadSpec,
+  RawChannelDataCallback,
+  VolumeDims,
+  LoadedVolumeInfo,
+} from "./IVolumeLoader";
 import { ImageInfo } from "../Volume";
 import VolumeCache from "../VolumeCache";
 
@@ -136,16 +142,16 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
     return [d];
   }
 
-  async createImageInfo(loadSpec: LoadSpec): Promise<[ImageInfo, LoadSpec]> {
+  async createImageInfo(loadSpec: LoadSpec): Promise<LoadedVolumeInfo> {
     const jsonInfo = await this.getJsonImageInfo(loadSpec.time);
-    return [convertImageInfo(jsonInfo), loadSpec];
+    return { imageInfo: convertImageInfo(jsonInfo), loadSpec };
   }
 
   async loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
     onData: RawChannelDataCallback
-  ): Promise<[undefined, LoadSpec | undefined]> {
+  ): Promise<{ loadSpec?: LoadSpec }> {
     // if you need to adjust image paths prior to download,
     // now is the time to do it.
     // Try to figure out the urlPrefix from the LoadSpec.
@@ -154,7 +160,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
 
     let images = jsonInfo?.images;
     if (!images) {
-      return [undefined, undefined];
+      return {};
     }
 
     const requestedChannels = loadSpec.channels;
@@ -180,7 +186,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
       // include all channels in any loaded images
       channels: images.flatMap(({ channels }) => channels),
     };
-    return [undefined, adjustedLoadSpec];
+    return { loadSpec: adjustedLoadSpec };
   }
 
   /**

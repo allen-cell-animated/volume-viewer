@@ -1,7 +1,13 @@
 import { fromUrl } from "geotiff";
 import { Vector3 } from "three";
 
-import { ThreadableVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "./IVolumeLoader";
+import {
+  ThreadableVolumeLoader,
+  LoadSpec,
+  RawChannelDataCallback,
+  VolumeDims,
+  LoadedVolumeInfo,
+} from "./IVolumeLoader";
 import { computePackedAtlasDims } from "./VolumeLoaderUtils";
 import { ImageInfo } from "../Volume";
 
@@ -100,7 +106,7 @@ class TiffLoader extends ThreadableVolumeLoader {
     return [d];
   }
 
-  async createImageInfo(_loadSpec: LoadSpec): Promise<[ImageInfo, LoadSpec]> {
+  async createImageInfo(_loadSpec: LoadSpec): Promise<LoadedVolumeInfo> {
     const dims = await this.loadOmeDims();
     // compare with sizex, sizey
     //const width = image.getWidth();
@@ -144,14 +150,14 @@ class TiffLoader extends ThreadableVolumeLoader {
     };
 
     // This loader uses no fields from `LoadSpec`. Initialize volume with defaults.
-    return [imgdata, new LoadSpec()];
+    return { imageInfo: imgdata, loadSpec: new LoadSpec() };
   }
 
   async loadRawChannelData(
     imageInfo: ImageInfo,
     _loadSpec: LoadSpec,
     onData: RawChannelDataCallback
-  ): Promise<[undefined, undefined]> {
+  ): Promise<Record<string, never>> {
     const dims = await this.loadOmeDims();
 
     // do each channel on a worker?
@@ -181,7 +187,7 @@ class TiffLoader extends ThreadableVolumeLoader {
       worker.postMessage(params);
     }
 
-    return [undefined, undefined];
+    return {};
   }
 }
 

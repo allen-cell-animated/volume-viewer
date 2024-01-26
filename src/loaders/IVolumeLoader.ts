@@ -27,6 +27,11 @@ export class VolumeDims {
   dataType = "uint8";
 }
 
+export type LoadedVolumeInfo = {
+  imageInfo: ImageInfo;
+  loadSpec: LoadSpec;
+};
+
 /**
  * @callback PerChannelCallback
  * @param {string} imageurl
@@ -77,7 +82,7 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
    * Also returns a new `LoadSpec` that may have been modified from the input `LoadSpec` to reflect the constraints or
    * abilities of the loader. This new `LoadSpec` should be used when constructing the `Volume`, _not_ the original.
    */
-  abstract createImageInfo(loadSpec: LoadSpec): Promise<[ImageInfo, LoadSpec]>;
+  abstract createImageInfo(loadSpec: LoadSpec): Promise<LoadedVolumeInfo>;
 
   /**
    * Begins loading per-channel data for the volume specified by `imageInfo` and `loadSpec`.
@@ -91,17 +96,21 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
     onData: RawChannelDataCallback
-  ): Promise<[ImageInfo | undefined, LoadSpec | undefined]>;
+  ): Promise<Partial<LoadedVolumeInfo>>;
 
   async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
-    const [imageInfo, adjustedSpec] = await this.createImageInfo(loadSpec);
-    const vol = new Volume(imageInfo, adjustedSpec, this);
+    const { imageInfo, loadSpec: adjustedLoadSpec } = await this.createImageInfo(loadSpec);
+    const vol = new Volume(imageInfo, adjustedLoadSpec, this);
     vol.channelLoadCallback = onChannelLoaded;
     vol.imageMetadata = buildDefaultMetadata(imageInfo);
     return vol;
   }
 
-  async loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
+  async loadVolumeData(
+    volume: Volume,
+    loadSpecOverride?: LoadSpec,
+    onChannelLoaded?: PerChannelCallback
+  ): Promise<void> {
     const onChannelData: RawChannelDataCallback = (channelIndex, data, atlasDims) => {
       if (atlasDims) {
         volume.setChannelDataFromAtlas(channelIndex, data, atlasDims[0], atlasDims[1]);
@@ -111,13 +120,13 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
       onChannelLoaded?.(volume, channelIndex);
     };
 
-    const spec = { ...loadSpec, ...volume.loadSpec };
-    const [adjustedImageInfo, adjustedLoadSpec] = await this.loadRawChannelData(volume.imageInfo, spec, onChannelData);
+    const spec = { ...loadSpecOverride, ...volume.loadSpec };
+    const { imageInfo, loadSpec } = await this.loadRawChannelData(volume.imageInfo, spec, onChannelData);
 
-    if (adjustedImageInfo) {
-      volume.imageInfo = adjustedImageInfo;
+    if (imageInfo) {
+      volume.imageInfo = imageInfo;
       volume.updateDimensions();
     }
-    volume.loadSpec = { ...adjustedLoadSpec, ...spec };
+    volume.loadSpec = { ...loadSpec, ...spec };
   }
 }

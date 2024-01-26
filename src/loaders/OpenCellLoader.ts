@@ -1,6 +1,12 @@
 import { Vector2, Vector3 } from "three";
 
-import { ThreadableVolumeLoader, LoadSpec, RawChannelDataCallback, VolumeDims } from "./IVolumeLoader";
+import {
+  ThreadableVolumeLoader,
+  LoadSpec,
+  RawChannelDataCallback,
+  VolumeDims,
+  LoadedVolumeInfo,
+} from "./IVolumeLoader";
 import { ImageInfo } from "../Volume";
 import { JsonImageInfoLoader } from "./JsonImageInfoLoader";
 
@@ -14,7 +20,7 @@ class OpenCellLoader extends ThreadableVolumeLoader {
     return [d];
   }
 
-  async createImageInfo(_loadSpec: LoadSpec): Promise<[ImageInfo, LoadSpec]> {
+  async createImageInfo(_loadSpec: LoadSpec): Promise<LoadedVolumeInfo> {
     const numChannels = 2;
 
     // we know these are standardized to 600x600, two channels, one channel per jpg.
@@ -48,14 +54,14 @@ class OpenCellLoader extends ThreadableVolumeLoader {
     };
 
     // This loader uses no fields from `LoadSpec`. Initialize volume with defaults.
-    return [imgdata, new LoadSpec()];
+    return { imageInfo: imgdata, loadSpec: new LoadSpec() };
   }
 
   loadRawChannelData(
     imageInfo: ImageInfo,
     _loadSpec: LoadSpec,
     onData: RawChannelDataCallback
-  ): Promise<[undefined, undefined]> {
+  ): Promise<Record<string, never>> {
     // HQTILE or LQTILE
     // make a json metadata dict for the two channels:
     const urls = [
@@ -72,7 +78,7 @@ class OpenCellLoader extends ThreadableVolumeLoader {
     const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
     const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
     JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, data) => onData(ch, data, [w, h]));
-    return Promise.resolve([undefined, undefined]);
+    return Promise.resolve({});
   }
 }
 
