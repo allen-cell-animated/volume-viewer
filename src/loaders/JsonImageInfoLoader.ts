@@ -1,15 +1,19 @@
 import { Box3, Vector2, Vector3 } from "three";
 
-import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
-import { buildDefaultMetadata } from "./VolumeLoaderUtils";
-import Volume, { ImageInfo } from "../Volume";
+import {
+  ThreadableVolumeLoader,
+  LoadSpec,
+  RawChannelDataCallback,
+  VolumeDims,
+  LoadedVolumeInfo,
+} from "./IVolumeLoader";
+import { ImageInfo } from "../Volume";
 import VolumeCache from "../VolumeCache";
 
 interface PackedChannelsImage {
   name: string;
   channels: number[];
 }
-type PackedChannelsImageRequests = Record<string, HTMLImageElement>;
 
 /* eslint-disable @typescript-eslint/naming-convention */
 type JsonImageInfo = {
@@ -93,13 +97,15 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
   userData: json.userData,
 });
 
-class JsonImageInfoLoader implements IVolumeLoader {
+class JsonImageInfoLoader extends ThreadableVolumeLoader {
   urls: string[];
   jsonInfo: (JsonImageInfo | undefined)[];
 
   cache?: VolumeCache;
 
   constructor(urls: string | string[], cache?: VolumeCache) {
+    super();
+
     if (Array.isArray(urls)) {
       this.urls = urls;
     } else {
@@ -136,27 +142,25 @@ class JsonImageInfoLoader implements IVolumeLoader {
     return [d];
   }
 
-  async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
+  async createImageInfo(loadSpec: LoadSpec): Promise<LoadedVolumeInfo> {
     const jsonInfo = await this.getJsonImageInfo(loadSpec.time);
-    const imageInfo = convertImageInfo(jsonInfo);
-
-    const vol = new Volume(imageInfo, loadSpec, this);
-    vol.channelLoadCallback = onChannelLoaded;
-    vol.imageMetadata = buildDefaultMetadata(imageInfo);
-    return vol;
+    return { imageInfo: convertImageInfo(jsonInfo), loadSpec };
   }
 
-  async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
+  async loadRawChannelData(
+    imageInfo: ImageInfo,
+    loadSpec: LoadSpec,
+    onData: RawChannelDataCallback
+  ): Promise<{ loadSpec?: LoadSpec }> {
     // if you need to adjust image paths prior to download,
     // now is the time to do it.
     // Try to figure out the urlPrefix from the LoadSpec.
     // For this format we assume the image data is in the same directory as the json file.
-    const loadSpec = explicitLoadSpec || vol.loadSpec;
     const jsonInfo = await this.getJsonImageInfo(loadSpec.time);
 
     let images = jsonInfo?.images;
     if (!images) {
-      return;
+      return {};
     }
 
     const requestedChannels = loadSpec.channels;
@@ -169,7 +173,12 @@ class JsonImageInfoLoader implements IVolumeLoader {
     const urlPrefix = this.urls[loadSpec.time].replace(/[^/]*$/, "");
     images = images.map((element) => ({ ...element, name: urlPrefix + element.name }));
 
-    vol.loadSpec = {
+    const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
+    const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
+    const wrappedOnData = (ch: number, data: Uint8Array) => onData(ch, data, [w, h]);
+    JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
+
+    const adjustedLoadSpec = {
       ...loadSpec,
       // `subregion` and `multiscaleLevel` are unused by this loader
       subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)),
@@ -177,17 +186,14 @@ class JsonImageInfoLoader implements IVolumeLoader {
       // include all channels in any loaded images
       channels: images.flatMap(({ channels }) => channels),
     };
-    JsonImageInfoLoader.loadVolumeAtlasData(vol, images, onChannelLoaded, this.cache);
+    return { loadSpec: adjustedLoadSpec };
   }
 
   /**
    * load per-channel volume data from a batch of image files containing the volume slices tiled across the images
-   * @param {Volume} volume
    * @param {Array.<{name:string, channels:Array.<number>}>} imageArray
-   * @param {PerChannelCallback} onChannelLoaded Per-channel callback.  Called when each channel's atlased volume data is loaded
-   * @returns {Object.<string, Image>} a map(imageurl : Image object) that should be used to cancel the download requests,
-   * for example if you need to destroy the image before all data has arrived.
-   * as requests arrive, the callback will be called per image, not per channel
+   * @param {RawChannelDataCallback} onData Per-channel callback. Called when each channel's atlased volume data is loaded
+   * @param {VolumeCache} cache
    * @example loadVolumeAtlasData([{
    *     "name": "AICS-10_5_5.ome.tif_atlas_0.png",
    *     "channels": [0, 1, 2]
@@ -200,29 +206,20 @@ class JsonImageInfoLoader implements IVolumeLoader {
    * }], mycallback);
    */
   static loadVolumeAtlasData(
-    volume: Volume,
     imageArray: PackedChannelsImage[],
-    onChannelLoaded?: PerChannelCallback,
+    onData: RawChannelDataCallback,
     cache?: VolumeCache
-  ): PackedChannelsImageRequests {
-    const numImages = imageArray.length;
-
-    const requests = {};
-    //console.log("BEGIN DOWNLOAD DATA");
-    for (let i = 0; i < numImages; ++i) {
-      const url = imageArray[i].name;
-      const batch = imageArray[i].channels;
-
+  ): void {
+    imageArray.forEach(async (image) => {
       // Because the data is fetched such that one fetch returns a whole batch,
       // if any in batch is cached then they all should be. So if any in batch is NOT cached,
       // then we will have to do a batch request. This logic works both ways because it's all or nothing.
       let cacheHit = true;
-      for (let j = 0; j < Math.min(batch.length, 4); ++j) {
-        const chindex = batch[j];
-        const cacheResult = cache?.get(`${url}/${chindex}`);
+      for (let j = 0; j < Math.min(image.channels.length, 4); ++j) {
+        const chindex = image.channels[j];
+        const cacheResult = cache?.get(`${image.name}/${chindex}`);
         if (cacheResult) {
-          volume.setChannelDataFromVolume(chindex, new Uint8Array(cacheResult));
-          onChannelLoaded?.(volume, chindex);
+          onData(chindex, new Uint8Array(cacheResult));
         } else {
           cacheHit = false;
           // we can stop checking because we know we are going to have to fetch the whole batch
@@ -233,67 +230,48 @@ class JsonImageInfoLoader implements IVolumeLoader {
       // if all channels were in cache then we can move on to the next
       // image (batch) without requesting
       if (cacheHit) {
-        continue;
+        return;
       }
 
-      // using Image is just a trick to download the bits as a png.
-      // the Image will never be used again.
-      const img: HTMLImageElement = new Image();
+      const response = await fetch(image.name, { mode: "cors" });
+      const blob = await response.blob();
+      const bitmap = await createImageBitmap(blob);
 
-      img.onerror = () => {
-        console.log("ERROR LOADING " + url);
-      };
+      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const ctx = canvas.getContext("2d") as OffscreenCanvasRenderingContext2D | null;
+      if (!ctx) {
+        console.log("Error creating canvas 2d context for " + image.name);
+        return;
+      }
+      ctx.globalCompositeOperation = "copy";
+      ctx.globalAlpha = 1.0;
+      ctx.drawImage(bitmap, 0, 0);
+      const iData = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
 
-      img.onload = (event) => {
-        //console.log("GOT ch " + me.src);
-        // extract pixels by drawing to canvas
-        const canvas = document.createElement("canvas");
-        // nice thing about this is i could downsample here
-        const w = Math.floor((event?.target as HTMLImageElement).naturalWidth);
-        const h = Math.floor((event?.target as HTMLImageElement).naturalHeight);
-        canvas.setAttribute("width", "" + w);
-        canvas.setAttribute("height", "" + h);
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          console.log("Error creating canvas 2d context for " + url);
-          return;
+      const channelsBits: Uint8Array[] = [];
+      const length = bitmap.width * bitmap.height;
+
+      // allocate channels in batch
+      for (let ch = 0; ch < Math.min(image.channels.length, 4); ++ch) {
+        channelsBits.push(new Uint8Array(length));
+      }
+
+      // extract the data
+      for (let j = 0; j < Math.min(image.channels.length, 4); ++j) {
+        for (let px = 0; px < length; px++) {
+          channelsBits[j][px] = iData.data[px * 4 + j];
         }
-        ctx.globalCompositeOperation = "copy";
-        ctx.globalAlpha = 1.0;
-        ctx.drawImage(event?.target as CanvasImageSource, 0, 0, w, h);
-        // getImageData returns rgba.
-        // optimize: collapse rgba to single channel arrays
-        const iData = ctx.getImageData(0, 0, w, h);
+      }
 
-        const channelsBits: Uint8Array[] = [];
+      // done with `iData` and `canvas` now.
 
-        // allocate channels in batch
-        for (let ch = 0; ch < Math.min(batch.length, 4); ++ch) {
-          channelsBits.push(new Uint8Array(w * h));
-        }
-
-        // extract the data
-        for (let j = 0; j < Math.min(batch.length, 4); ++j) {
-          for (let px = 0; px < w * h; px++) {
-            channelsBits[j][px] = iData.data[px * 4 + j];
-          }
-        }
-
-        // done with img, iData, and canvas now.
-
-        for (let ch = 0; ch < Math.min(batch.length, 4); ++ch) {
-          const chindex = batch[ch];
-          volume.setChannelDataFromAtlas(chindex, channelsBits[ch], w, h);
-          cache?.insert(`${url}/${chindex}`, volume.channels[chindex].volumeData.buffer);
-          onChannelLoaded?.(volume, chindex);
-        }
-      };
-      img.crossOrigin = "Anonymous";
-      img.src = url;
-      requests[url] = img;
-    }
-
-    return requests;
+      for (let ch = 0; ch < Math.min(image.channels.length, 4); ++ch) {
+        const chindex = image.channels[ch];
+        cache?.insert(`${image.name}/${chindex}`, channelsBits[ch]);
+        // NOTE: the atlas dimensions passed in here are currently unused by `JSONImageInfoLoader`
+        onData(chindex, channelsBits[ch], [bitmap.width, bitmap.height]);
+      }
+    });
   }
 }
 

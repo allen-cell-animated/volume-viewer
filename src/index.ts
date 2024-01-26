@@ -12,6 +12,7 @@ import { LoadSpec } from "./loaders/IVolumeLoader";
 import { OMEZarrLoader } from "./loaders/OmeZarrLoader";
 import { JsonImageInfoLoader } from "./loaders/JsonImageInfoLoader";
 import { TiffLoader } from "./loaders/TiffLoader";
+import VolumeLoaderContext from "./workers/LoadWorkerHandle";
 
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
 
@@ -20,6 +21,7 @@ export type { ControlPoint, Lut } from "./Histogram";
 export type { CreateLoaderOptions } from "./loaders";
 export type { IVolumeLoader, PerChannelCallback } from "./loaders/IVolumeLoader";
 export type { ZarrLoaderFetchOptions } from "./loaders/OmeZarrLoader";
+export type { WorkerLoader } from "./workers/LoadWorkerHandle";
 export {
   Histogram,
   View3d,
@@ -32,6 +34,7 @@ export {
   OMEZarrLoader,
   JsonImageInfoLoader,
   TiffLoader,
+  VolumeLoaderContext,
   VolumeFileFormat,
   createVolumeLoader,
   Channel,

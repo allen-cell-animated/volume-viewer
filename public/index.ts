@@ -1,5 +1,5 @@
 import "regenerator-runtime/runtime";
-import { Vector2, Vector3, Vector4 } from "three";
+import { Vector2, Vector3 } from "three";
 import * as dat from "dat.gui";
 
 import {
@@ -9,7 +9,6 @@ import {
   JsonImageInfoLoader,
   View3d,
   Volume,
-  VolumeCache,
   VolumeMaker,
   Light,
   AREA_LIGHT,
@@ -17,13 +16,12 @@ import {
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
   VolumeFileFormat,
-  createVolumeLoader,
-  SubscribableRequestQueue,
 } from "../src";
 // special loader really just for this demo app but lives with the other loaders
 import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
 import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
+import VolumeLoaderContext from "../src/workers/LoadWorkerHandle";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
@@ -88,8 +86,7 @@ const TEST_DATA: Record<string, TestDataSpec> = {
 
 let view3D: View3d;
 
-const volumeCache = new VolumeCache(CACHE_MAX_SIZE);
-const requestQueue = new SubscribableRequestQueue(CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
+const loaderContext = new VolumeLoaderContext(CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 
 const myState: State = {
   file: "",
@@ -1015,6 +1012,8 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
     return new OpenCellLoader();
   }
 
+  await loaderContext.onOpen();
+
   let path: string | string[] = data.url;
   if (data.type === VolumeFileFormat.JSON) {
     path = [];
@@ -1024,10 +1023,8 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
     }
   }
 
-  return await createVolumeLoader(path, {
-    cache: volumeCache,
-    queue: requestQueue,
-    fetchOptions: { maxPrefetchChunks: MAX_PREFETCH_CHUNKS, maxPrefetchDistance: PREFETCH_DISTANCE },
+  return await loaderContext.createLoader(path, {
+    fetchOptions: { maxPrefetchDistance: PREFETCH_DISTANCE, maxPrefetchChunks: MAX_PREFETCH_CHUNKS },
   });
 }
 

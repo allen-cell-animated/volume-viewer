@@ -7,12 +7,17 @@ import { AbsolutePath } from "@zarrita/storage";
 // Getting it from the top-level package means we don't get its type. This is also a bug, but it's more acceptable.
 import { FetchStore } from "zarrita";
 
-import Volume, { ImageInfo } from "../Volume";
+import { ImageInfo } from "../Volume";
 import VolumeCache from "../VolumeCache";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
-import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import {
-  buildDefaultMetadata,
+  ThreadableVolumeLoader,
+  LoadSpec,
+  RawChannelDataCallback,
+  VolumeDims,
+  LoadedVolumeInfo,
+} from "./IVolumeLoader";
+import {
   composeSubregion,
   computePackedAtlasDims,
   convertSubregionToPixels,
@@ -128,7 +133,7 @@ const DEFAULT_FETCH_OPTIONS = {
   maxPrefetchChunks: 30,
 };
 
-class OMEZarrLoader implements IVolumeLoader {
+class OMEZarrLoader extends ThreadableVolumeLoader {
   /** The ID of the subscriber responsible for "actual loads" (non-prefetch requests) */
   private loadSubscriber: SubscriberId | undefined;
   /** The ID of the subscriber responsible for prefetches, so that requests can be cancelled and reissued */
@@ -146,7 +151,9 @@ class OMEZarrLoader implements IVolumeLoader {
     private axesTCZYX: TCZYX<number>,
     private requestQueue: SubscribableRequestQueue,
     private fetchOptions: ZarrLoaderFetchOptions = DEFAULT_FETCH_OPTIONS
-  ) {}
+  ) {
+    super();
+  }
 
   static async createLoader(
     url: string,
@@ -281,7 +288,7 @@ class OMEZarrLoader implements IVolumeLoader {
     return Promise.resolve(result);
   }
 
-  async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
+  createImageInfo(loadSpec: LoadSpec): Promise<LoadedVolumeInfo> {
     const [t, c, z, y, x] = this.axesTCZYX;
     const hasT = t > -1;
     const hasC = c > -1;
@@ -348,10 +355,7 @@ class OMEZarrLoader implements IVolumeLoader {
       subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)),
     };
 
-    const vol = new Volume(imgdata, fullExtentLoadSpec, this);
-    vol.channelLoadCallback = onChannelLoaded;
-    vol.imageMetadata = buildDefaultMetadata(imgdata);
-    return vol;
+    return Promise.resolve({ imageInfo: imgdata, loadSpec: fullExtentLoadSpec });
   }
 
   private async prefetchChunk(basePath: string, coords: TCZYX<number>, subscriber: SubscriberId): Promise<void> {
@@ -411,13 +415,16 @@ class OMEZarrLoader implements IVolumeLoader {
     this.prefetchSubscriber = subscriber;
   }
 
-  async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
-    vol.loadSpec = { ...explicitLoadSpec, ...vol.loadSpec };
+  loadRawChannelData(
+    imageInfo: ImageInfo,
+    loadSpec: LoadSpec,
+    onData: RawChannelDataCallback
+  ): Promise<{ imageInfo: ImageInfo }> {
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     const [z, y, x] = this.axesTCZYX.slice(2);
-    const subregion = composeSubregion(vol.loadSpec.subregion, maxExtent);
+    const subregion = composeSubregion(loadSpec.subregion, maxExtent);
 
-    const levelIdx = pickLevelToLoad({ ...vol.loadSpec, subregion }, this.getLevelShapesZYX());
+    const levelIdx = pickLevelToLoad({ ...loadSpec, subregion }, this.getLevelShapesZYX());
     const level = this.scaleLevels[levelIdx];
     const levelShape = level.shape;
 
@@ -433,18 +440,17 @@ class OMEZarrLoader implements IVolumeLoader {
       new Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z])
     );
     const volSizePx = volExtentPx.getSize(new Vector3());
-    vol.imageInfo = {
-      ...vol.imageInfo,
+    const updatedImageInfo: ImageInfo = {
+      ...imageInfo,
       atlasTileDims,
       volumeSize: volSizePx,
       subregionSize: regionSizePx,
       subregionOffset: regionPx.min,
       multiscaleLevel: levelIdx,
     };
-    vol.updateDimensions();
 
-    const { numChannels } = vol.imageInfo;
-    const channelIndexes = vol.loadSpec.channels ?? Array.from({ length: numChannels }, (_, i) => i);
+    const { numChannels } = updatedImageInfo;
+    const channelIndexes = loadSpec.channels ?? Array.from({ length: numChannels }, (_, i) => i);
 
     const subscriber = this.requestQueue.addSubscriber();
 
@@ -459,17 +465,17 @@ class OMEZarrLoader implements IVolumeLoader {
     const channelPromises = channelIndexes.map(async (ch) => {
       // Build slice spec
       const { min, max } = regionPx;
-      const unorderedSpec = [vol.loadSpec.time, ch, slice(min.z, max.z), slice(min.y, max.y), slice(min.x, max.x)];
+      const unorderedSpec = [loadSpec.time, ch, slice(min.z, max.z), slice(min.y, max.y), slice(min.x, max.x)];
       const sliceSpec = this.orderByDimension(unorderedSpec as TCZYX<number | Slice>);
 
       try {
         const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } });
         const u8 = convertChannel(result.data);
-        vol.setChannelDataFromVolume(ch, u8);
-        onChannelLoaded?.(vol, ch);
+        onData(ch, u8);
       } catch (e) {
         // TODO: verify that cancelling requests in progress doesn't leak memory
         if (e !== CHUNK_REQUEST_CANCEL_REASON) {
+          console.log(e);
           throw e;
         }
       }
@@ -483,8 +489,11 @@ class OMEZarrLoader implements IVolumeLoader {
 
     this.beginPrefetch(keys, level);
 
-    await Promise.all(channelPromises);
-    this.requestQueue.removeSubscriber(subscriber);
+    Promise.all(channelPromises).then(() => {
+      this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
+      setTimeout(() => this.beginPrefetch(keys, level), 1000);
+    });
+    return Promise.resolve({ imageInfo: updatedImageInfo });
   }
 }
 

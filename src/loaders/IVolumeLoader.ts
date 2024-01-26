@@ -1,6 +1,7 @@
 import { Box3, Vector3 } from "three";
 
-import Volume from "../Volume";
+import Volume, { ImageInfo } from "../Volume";
+import { buildDefaultMetadata } from "./VolumeLoaderUtils";
 
 export class LoadSpec {
   time = 0;
@@ -26,6 +27,11 @@ export class VolumeDims {
   dataType = "uint8";
 }
 
+export type LoadedVolumeInfo = {
+  imageInfo: ImageInfo;
+  loadSpec: LoadSpec;
+};
+
 /**
  * @callback PerChannelCallback
  * @param {string} imageurl
@@ -33,6 +39,8 @@ export class VolumeDims {
  * @param {number} channelindex
  */
 export type PerChannelCallback = (volume: Volume, channelIndex: number) => void;
+
+export type RawChannelDataCallback = (channelIndex: number, data: Uint8Array, atlasDims?: [number, number]) => void;
 
 /**
  * Loads volume data from a source specified by a `LoadSpec`.
@@ -47,10 +55,6 @@ export interface IVolumeLoader {
   /**
    * Create an empty `Volume` from a `LoadSpec`, which must be passed to `loadVolumeData` to begin loading.
    * Optionally pass a callback to respond whenever new channel data is loaded into the volume.
-   *
-   * Loaders are allowed to assume that they will only be called on a single data source, in order to cache
-   * information about that source. Once this method has been called, every subsequent call to it or
-   * `loadVolumeData` should reference the same source.
    */
   createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume>;
 
@@ -64,4 +68,65 @@ export interface IVolumeLoader {
   // in a way that they can be interrupted.
   // TODO explicitly passing a `LoadSpec` is now rarely useful. Remove?
   loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): void;
+}
+
+/** Abstract class which allows loaders to accept and return types that are easier to transfer to/from a worker. */
+export abstract class ThreadableVolumeLoader implements IVolumeLoader {
+  /** Unchanged from `IVolumeLoader`. See that interface for details. */
+  abstract loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]>;
+
+  /**
+   * Creates an `ImageInfo` object from a `LoadSpec`, which may be passed to the `Volume` constructor to create an
+   * empty volume that can accept data loaded with the given `LoadSpec`.
+   *
+   * Also returns a new `LoadSpec` that may have been modified from the input `LoadSpec` to reflect the constraints or
+   * abilities of the loader. This new `LoadSpec` should be used when constructing the `Volume`, _not_ the original.
+   */
+  abstract createImageInfo(loadSpec: LoadSpec): Promise<LoadedVolumeInfo>;
+
+  /**
+   * Begins loading per-channel data for the volume specified by `imageInfo` and `loadSpec`.
+   *
+   * Returns a promise that resolves to reflect any modifications to `imageInfo` and/or `loadSpec` that need to be made
+   * based on this load. Actual loaded channel data is passed to `onData` as it is loaded. Depending on the format,
+   * the returned array may be in simple 3d dimension order or reflect a 2d atlas. If the latter, the dimensions of the
+   * atlas are passed as the third argument to `onData`.
+   */
+  abstract loadRawChannelData(
+    imageInfo: ImageInfo,
+    loadSpec: LoadSpec,
+    onData: RawChannelDataCallback
+  ): Promise<Partial<LoadedVolumeInfo>>;
+
+  async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
+    const { imageInfo, loadSpec: adjustedLoadSpec } = await this.createImageInfo(loadSpec);
+    const vol = new Volume(imageInfo, adjustedLoadSpec, this);
+    vol.channelLoadCallback = onChannelLoaded;
+    vol.imageMetadata = buildDefaultMetadata(imageInfo);
+    return vol;
+  }
+
+  async loadVolumeData(
+    volume: Volume,
+    loadSpecOverride?: LoadSpec,
+    onChannelLoaded?: PerChannelCallback
+  ): Promise<void> {
+    const onChannelData: RawChannelDataCallback = (channelIndex, data, atlasDims) => {
+      if (atlasDims) {
+        volume.setChannelDataFromAtlas(channelIndex, data, atlasDims[0], atlasDims[1]);
+      } else {
+        volume.setChannelDataFromVolume(channelIndex, data);
+      }
+      onChannelLoaded?.(volume, channelIndex);
+    };
+
+    const spec = { ...loadSpecOverride, ...volume.loadSpec };
+    const { imageInfo, loadSpec } = await this.loadRawChannelData(volume.imageInfo, spec, onChannelData);
+
+    if (imageInfo) {
+      volume.imageInfo = imageInfo;
+      volume.updateDimensions();
+    }
+    volume.loadSpec = { ...loadSpec, ...spec };
+  }
 }
