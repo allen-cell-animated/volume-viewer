@@ -86,7 +86,7 @@ const TEST_DATA: Record<string, TestDataSpec> = {
 
 let view3D: View3d;
 
-const loadWorker = new VolumeLoaderContext(CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
+const loaderContext = new VolumeLoaderContext(CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 
 const myState: State = {
   file: "",
@@ -1012,7 +1012,7 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
     return new OpenCellLoader();
   }
 
-  await loadWorker.onOpen();
+  await loaderContext.onOpen();
 
   let path: string | string[] = data.url;
   if (data.type === VolumeFileFormat.JSON) {
@@ -1023,7 +1023,7 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
     }
   }
 
-  return await loadWorker.createLoader(path, {
+  return await loaderContext.createLoader(path, {
     fetchOptions: { maxPrefetchDistance: PREFETCH_DISTANCE, maxPrefetchChunks: MAX_PREFETCH_CHUNKS },
   });
 }
