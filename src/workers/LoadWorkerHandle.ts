@@ -20,9 +20,15 @@ type StoredPromise<T extends WorkerMsgType> = {
 };
 
 /**
- * A handle that holds the worker and lets us interact with it through async calls and events rather than messages.
- * This is separate from `LoadWorker` so that `sendMessage` and `onChannelData` can be shared with `WorkerLoader`s
- * without leaking the API outside this file.
+ * A handle that holds the worker and manages requests and messages to/from it.
+ *
+ * `VolumeLoaderContext` and every `LoaderWorker` it creates all hold references to one `SharedLoadWorkerHandle`.
+ * They use it to interact with the worker via `sendMessage`, which speaks the protocol defined in ./types.ts and
+ * converts messages received from the worker into resolved `Promise`s and called callbacks.
+ *
+ * This class exists to represent that access to the worker is shared between `VolumeLoaderContext` and any
+ * `LoaderWorker`s. This is as opposed to implementing `sendMessage` directly on `VolumeLoaderContext`, where making
+ * the method public to `LoaderWorker`s would require also allowing access to users of the class.
  */
 class SharedLoadWorkerHandle {
   private worker: Worker;
@@ -52,11 +58,16 @@ class SharedLoadWorkerHandle {
     return this.workerOpen;
   }
 
+  /** Close the worker. */
   close(): void {
     this.worker.terminate();
     this.workerOpen = false;
   }
 
+  /**
+   * Send a message of type `T` to the worker.
+   * Returns a `Promise` that resolves with the worker's response, or rejects with an error message.
+   */
   sendMessage<T extends WorkerMsgType>(type: T, payload: WorkerRequestPayload<T>): Promise<WorkerResponsePayload<T>> {
     let msgId = -1;
     const promise = new Promise<WorkerResponsePayload<T>>((resolve, reject) => {
@@ -69,8 +80,9 @@ class SharedLoadWorkerHandle {
     return promise;
   }
 
+  /**  */
   private receiveMessage<T extends WorkerMsgType>({ data }: MessageEvent<WorkerResponse<T>>): void {
-    if (data.responseKind === WorkerResponseResult.EVENT) {
+    if (data.responseResult === WorkerResponseResult.EVENT) {
       this.onChannelData?.(data);
     } else {
       const prom = this.pendingRequests[data.msgId];
@@ -82,7 +94,7 @@ class SharedLoadWorkerHandle {
         throw new Error(`Received response of type ${data.type} for message of type ${prom.type}`);
       }
 
-      if (data.responseKind === WorkerResponseResult.ERROR) {
+      if (data.responseResult === WorkerResponseResult.ERROR) {
         prom.reject(data.payload);
       } else {
         prom.resolve(data.payload);
@@ -92,6 +104,20 @@ class SharedLoadWorkerHandle {
   }
 }
 
+/**
+ * A context in which volume loaders can be run, which allows loading to run on a WebWorker (where it won't block
+ * rendering or UI updates) and loaders to share a single `VolumeCache` and `RequestQueue`.
+ *
+ * ### To use:
+ * 1. Create a `VolumeLoaderContext` with the desired cache and queue configuration.
+ * 2. Before creating a loader, await `onOpen` to ensure the worker is ready.
+ * 3. Create a loader with `createLoader`. This accepts nearly the same arguments as `createVolumeLoader`, but without
+ *    options to directly link to a cache or queue (the loader will always be linked to the context's shared instances
+ *    of these if possible).
+ *
+ * The returned `WorkerLoader` can be used like any other `IVolumeLoader` and acts as a handle to the actual loader
+ * running on the worker.
+ */
 class VolumeLoaderContext {
   private workerHandle: SharedLoadWorkerHandle;
   private openPromise: Promise<void>;
@@ -108,6 +134,7 @@ class VolumeLoaderContext {
     });
   }
 
+  /** Returns a `Promise` that resolves when the worker is ready. `await` it before trying to create a loader. */
   onOpen(): Promise<void> {
     if (!this.workerHandle.isOpen) {
       return Promise.reject("Worker is closed");
@@ -115,11 +142,17 @@ class VolumeLoaderContext {
     return this.openPromise;
   }
 
+  /** Close this context, its worker, and any active loaders. */
   close(): void {
     this.workerHandle.close();
     this.activeLoader?.close();
   }
 
+  /**
+   * Create a new loader within this context. This loader will share the context's `VolumeCache` and `RequestQueue`.
+   *
+   * This works just like `createVolumeLoader`. A file format may be provided, or it may be inferred from the URL.
+   */
   async createLoader(
     path: string | string[],
     options?: Omit<CreateLoaderOptions, "cache" | "queue">
@@ -143,6 +176,11 @@ class VolumeLoaderContext {
   }
 }
 
+/**
+ * A handle to an instance of `IVolumeLoader` (technically, a `ThreadableVolumeLoader`) running on a WebWorker.
+ *
+ * Created with `VolumeLoaderContext.createLoader`. See its documentation for more.
+ */
 class WorkerLoader extends ThreadableVolumeLoader {
   private isOpen = true;
   private currentLoadId = -1;
@@ -159,6 +197,7 @@ class WorkerLoader extends ThreadableVolumeLoader {
     }
   }
 
+  /** Close and permanently invalidate this loader. */
   close(): void {
     this.isOpen = false;
   }

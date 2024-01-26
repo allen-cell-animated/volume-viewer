@@ -66,7 +66,7 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
       rebuildLoadSpec(loadSpec),
       (channelIndex, data, atlasDims) => {
         const message: WorkerResponse<WorkerMsgType> = {
-          responseKind: WorkerResponseResult.EVENT,
+          responseResult: WorkerResponseResult.EVENT,
           loaderId,
           loadId,
           channelIndex,
@@ -85,9 +85,9 @@ self.onmessage = async <T extends WorkerMsgType>({ data }: MessageEvent<WorkerRe
 
   try {
     const response = await messageHandlers[type](payload);
-    message = { responseKind: WorkerResponseResult.SUCCESS, msgId, type, payload: response };
+    message = { responseResult: WorkerResponseResult.SUCCESS, msgId, type, payload: response };
   } catch (e) {
-    message = { responseKind: WorkerResponseResult.ERROR, msgId, type, payload: (e as Error).message };
+    message = { responseResult: WorkerResponseResult.ERROR, msgId, type, payload: (e as Error).message };
   }
   self.postMessage(message);
 };
