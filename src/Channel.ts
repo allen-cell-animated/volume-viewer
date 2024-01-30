@@ -1,10 +1,18 @@
-import { DataTexture, RedFormat, UnsignedByteType, RGBAFormat, LinearFilter, NearestFilter } from "three";
+import {
+  DataTexture,
+  RedFormat,
+  UnsignedByteType,
+  RGBAFormat,
+  LinearFilter,
+  NearestFilter,
+  UnsignedShortType,
+} from "three";
 import Histogram from "./Histogram";
 import { LUT_ARRAY_LENGTH } from "./Histogram";
 
 interface ChannelImageData {
   /** Returns the one-dimensional array containing the data in RGBA order, as integers in the range 0 to 255. */
-  readonly data: Uint8ClampedArray;
+  readonly data: Uint8Array | Uint16Array;
   /** Returns the actual dimensions of the data in the ImageData object, in pixels. */
   readonly height: number;
   /** Returns the actual dimensions of the data in the ImageData object, in pixels. */
@@ -15,7 +23,7 @@ interface ChannelImageData {
 export default class Channel {
   public loaded: boolean;
   public imgData: ChannelImageData;
-  public volumeData: Uint8Array;
+  public volumeData: Uint8Array | Uint16Array;
   public name: string;
   public histogram: Histogram;
   public lut: Uint8Array;
@@ -27,7 +35,7 @@ export default class Channel {
 
   constructor(name: string) {
     this.loaded = false;
-    this.imgData = { data: new Uint8ClampedArray(), width: 0, height: 0 };
+    this.imgData = { data: new Uint8Array(), width: 0, height: 0 };
 
     // on gpu
     this.dataTexture = new DataTexture(new Uint8Array(), 0, 0);
@@ -105,13 +113,13 @@ export default class Channel {
     return this.imgData.data[offset];
   }
 
-  private rebuildDataTexture(data: Uint8ClampedArray, w: number, h: number): void {
+  private rebuildDataTexture(data: Uint8Array | Uint16Array, w: number, h: number): void {
     if (this.dataTexture) {
       this.dataTexture.dispose();
     }
     this.dataTexture = new DataTexture(data, w, h);
     this.dataTexture.format = RedFormat;
-    this.dataTexture.type = UnsignedByteType;
+    this.dataTexture.type = data instanceof Uint16Array ? UnsignedShortType : UnsignedByteType;
     this.dataTexture.magFilter = NearestFilter;
     this.dataTexture.minFilter = NearestFilter;
     this.dataTexture.generateMipmaps = false;
@@ -120,8 +128,8 @@ export default class Channel {
 
   // give the channel fresh data and initialize from that data
   // data is formatted as a texture atlas where each tile is a z slice of the volume
-  public setBits(bitsArray: Uint8Array, w: number, h: number): void {
-    this.imgData = { data: new Uint8ClampedArray(bitsArray.buffer), width: w, height: h };
+  public setBits(bitsArray: Uint8Array | Uint16Array, w: number, h: number): void {
+    this.imgData = { data: bitsArray, width: w, height: h };
 
     this.rebuildDataTexture(this.imgData.data, w, h);
 
@@ -162,7 +170,14 @@ export default class Channel {
   }
 
   // give the channel fresh volume data and initialize from that data
-  public setFromVolumeData(bitsArray: Uint8Array, vx: number, vy: number, vz: number, ax: number, ay: number): void {
+  public setFromVolumeData(
+    bitsArray: Uint8Array | Uint16Array,
+    vx: number,
+    vy: number,
+    vz: number,
+    ax: number,
+    ay: number
+  ): void {
     this.dims = [vx, vy, vz];
     this.volumeData = bitsArray;
     // TODO FIXME performance hit for shuffling the data and storing 2 versions of it (could do this in worker at least?)
@@ -185,10 +200,12 @@ export default class Channel {
       console.log(ax, ay, vx, vy, vz);
     }
 
+    const isUint16 = this.volumeData instanceof Uint16Array;
+
     this.imgData = {
       width: ax,
       height: ay,
-      data: new Uint8ClampedArray(ax * ay),
+      data: isUint16 ? new Uint16Array(ax * ay) : new Uint8Array(ax * ay),
     };
     this.imgData.data.fill(0);
 

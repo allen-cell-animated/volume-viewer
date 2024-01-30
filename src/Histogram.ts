@@ -51,7 +51,7 @@ export default class Histogram {
   private nonzeroPixelCount: number;
   public maxBin: number;
 
-  constructor(data: Uint8Array) {
+  constructor(data: Uint8Array | Uint16Array) {
     // no more than 2^32 pixels of any one intensity in the data!?!?!
     this.bins = new Uint32Array(256);
     this.bins.fill(0);
@@ -59,9 +59,11 @@ export default class Histogram {
     this.dataMax = 0;
     this.maxBin = 0;
 
+    const convert = data instanceof Uint16Array ? (val: number) => val >> 8 : (val: number) => val;
+
     // build up the histogram
     for (let i = 0; i < data.length; ++i) {
-      this.bins[data[i]]++;
+      this.bins[convert(data[i])]++;
     }
     // track the first and last nonzero bins with at least 1 sample
     for (let i = 1; i < this.bins.length; i++) {

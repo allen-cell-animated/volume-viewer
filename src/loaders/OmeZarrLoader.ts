@@ -79,9 +79,9 @@ function pickLevelToLoad(loadSpec: LoadSpec, spatialDimsZYX: [number, number, nu
   return Math.max(optimalLevel, loadSpec.multiscaleLevel ?? 0);
 }
 
-function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint8Array {
-  if (channelData instanceof Uint8Array) {
-    return channelData as Uint8Array;
+function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint8Array | Uint16Array {
+  if (channelData instanceof Uint8Array || channelData instanceof Uint16Array) {
+    return channelData;
   }
 
   const u8 = new Uint8Array(channelData.length);

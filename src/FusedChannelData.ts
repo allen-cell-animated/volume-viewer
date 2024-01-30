@@ -18,7 +18,7 @@ import {
   MaxEquation,
   Texture,
 } from "three";
-import { LinearFilter } from "three/src/constants";
+import { FloatType, LinearFilter } from "three/src/constants";
 
 import Channel from "./Channel";
 import { fuseShaderSrc, fuseVertexShaderSrc } from "./constants/fuseShader";
@@ -71,7 +71,7 @@ export default class FusedChannelData {
       minFilter: LinearFilter,
       magFilter: LinearFilter,
       format: RGBAFormat,
-      type: UnsignedByteType, // FloatType ?
+      type: FloatType, // FloatType ?
       depthBuffer: false,
       stencilBuffer: false,
       generateMipmaps: false,

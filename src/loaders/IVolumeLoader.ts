@@ -40,7 +40,11 @@ export type LoadedVolumeInfo = {
  */
 export type PerChannelCallback = (volume: Volume, channelIndex: number) => void;
 
-export type RawChannelDataCallback = (channelIndex: number, data: Uint8Array, atlasDims?: [number, number]) => void;
+export type RawChannelDataCallback = (
+  channelIndex: number,
+  data: Uint8Array | Uint16Array,
+  atlasDims?: [number, number]
+) => void;
 
 /**
  * Loads volume data from a source specified by a `LoadSpec`.
