@@ -220,7 +220,6 @@ export default class Volume {
 
   private setUnloaded() {
     this.loaded = false;
-    // TODO this will cause problems once it is possible to skip loading some channels. Come back to this then.
     this.channels.forEach((channel) => {
       channel.loaded = false;
     });
@@ -319,7 +318,7 @@ export default class Volume {
 
   onChannelLoaded(batch: number[]): void {
     // check to see if all channels are now loaded, and fire an event(?)
-    if (this.channels.every((element) => element.loaded)) {
+    if (this.loadSpec.channels.every((channelIndex) => this.channels[channelIndex].loaded)) {
       this.loaded = true;
     }
     batch.forEach((channelIndex) => this.channelLoadCallback?.(this, channelIndex));
