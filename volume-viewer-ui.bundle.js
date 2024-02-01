@@ -6244,7 +6244,6 @@ var Volume = /*#__PURE__*/function () {
     key: "setUnloaded",
     value: function setUnloaded() {
       this.loaded = false;
-      // TODO this will cause problems once it is possible to skip loading some channels. Come back to this then.
       this.channels.forEach(function (channel) {
         channel.loaded = false;
       });
@@ -6367,8 +6366,8 @@ var Volume = /*#__PURE__*/function () {
     value: function onChannelLoaded(batch) {
       var _this2 = this;
       // check to see if all channels are now loaded, and fire an event(?)
-      if (this.channels.every(function (element) {
-        return element.loaded;
+      if (this.loadSpec.channels.every(function (channelIndex) {
+        return _this2.channels[channelIndex].loaded;
       })) {
         this.loaded = true;
       }
