@@ -491,7 +491,6 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     Promise.all(channelPromises).then(() => {
       this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
-      setTimeout(() => this.beginPrefetch(keys, level), 1000);
     });
     return Promise.resolve({ imageInfo: updatedImageInfo });
   }
