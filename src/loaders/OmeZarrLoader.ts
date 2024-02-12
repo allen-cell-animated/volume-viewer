@@ -24,7 +24,7 @@ import {
   estimateLevelForAtlas,
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
-import ChunkPrefetchIterator from "./zarr_utils/ChunkPrefetchIterator";
+import ChunkPrefetchIterator, { PrefetchDirection } from "./zarr_utils/ChunkPrefetchIterator";
 import WrappedStore from "./zarr_utils/WrappedStore";
 import {
   OMEAxis,
@@ -126,6 +126,8 @@ export type ZarrLoaderFetchOptions = {
   maxPrefetchDistance: [number, number, number, number];
   /** The max. number of total chunks that can be prefetched after any load. */
   maxPrefetchChunks: number;
+  /** The initial directions to prioritize when prefetching */
+  priorityDirections?: PrefetchDirection[];
 };
 
 const DEFAULT_FETCH_OPTIONS = {
@@ -138,6 +140,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
   private loadSubscriber: SubscriberId | undefined;
   /** The ID of the subscriber responsible for prefetches, so that requests can be cancelled and reissued */
   private prefetchSubscriber: SubscriberId | undefined;
+  /** Direction(s) to prioritize when prefetching. Stored separate from `fetchOptions` since it may be mutated. */
+  private priorityDirections: PrefetchDirection[] = [];
 
   // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
   //   This may cause errors or incorrect results otherwise!
@@ -153,6 +157,9 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     private fetchOptions: ZarrLoaderFetchOptions = DEFAULT_FETCH_OPTIONS
   ) {
     super();
+    if (fetchOptions.priorityDirections) {
+      this.priorityDirections = fetchOptions.priorityDirections.slice();
+    }
   }
 
   static async createLoader(
@@ -396,7 +403,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const prefetchIterator = new ChunkPrefetchIterator(
       chunkCoords,
       this.fetchOptions.maxPrefetchDistance,
-      chunkDimsTZYX
+      chunkDimsTZYX,
+      this.priorityDirections
     );
 
     let prefetchCount = 0;
