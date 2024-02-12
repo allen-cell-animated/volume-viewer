@@ -161,7 +161,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     private axesTCZYX: TCZYX<number>,
     /** Handle to a `SubscribableRequestQueue` for smart concurrency management and request cancelling/reissuing. */
     private requestQueue: SubscribableRequestQueue,
-    /** Options to configure (pre)fetching behavior */
+    /** Options to configure (pre)fetching behavior. */
     private fetchOptions: ZarrLoaderFetchOptions = DEFAULT_FETCH_OPTIONS,
     /** Direction(s) to prioritize when prefetching. Stored separate from `fetchOptions` since it may be mutated. */
     private priorityDirections: PrefetchDirection[] = []
@@ -278,6 +278,10 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     });
 
     return result;
+  }
+
+  setPriorityDirections(directions: PrefetchDirection[]): void {
+    this.priorityDirections = directions;
   }
 
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
