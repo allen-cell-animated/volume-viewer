@@ -140,26 +140,33 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
   private loadSubscriber: SubscriberId | undefined;
   /** The ID of the subscriber responsible for prefetches, so that requests can be cancelled and reissued */
   private prefetchSubscriber: SubscriberId | undefined;
-  /** Direction(s) to prioritize when prefetching. Stored separate from `fetchOptions` since it may be mutated. */
-  private priorityDirections: PrefetchDirection[] = [];
 
   // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
   //   This may cause errors or incorrect results otherwise!
   private maxExtent?: Box3;
 
   private constructor(
+    /** An abstraction representing a remote data source, used by zarrita to get chunks and by us to prefetch them. */
     private store: WrappedStore<RequestInit>,
+    /** Representations of each scale level in this zarr. We pick one and pass it to `zarrGet` to load data. */
     private scaleLevels: NumericZarrArray[],
+    /** OME-specified metadata record with most useful info on the current image, e.g. sizes, axis order, etc. */
     private multiscaleMetadata: OMEMultiscale,
+    /** OME-specified "transitional" metadata record which we mostly ignore, but which gives channel & volume names. */
     private omeroMetadata: OmeroTransitionalMetadata,
+    /**
+     * Zarr dimensions may be ordered in many ways or missing altogether (e.g. TCXYZ, TYX). `axesTCZYX` represents
+     * dimension order as a mapping from dimensions to their indices in dimension-ordered arrays for this zarr.
+     */
     private axesTCZYX: TCZYX<number>,
+    /** Handle to a `SubscribableRequestQueue` for smart concurrency management and request cancelling/reissuing. */
     private requestQueue: SubscribableRequestQueue,
-    private fetchOptions: ZarrLoaderFetchOptions = DEFAULT_FETCH_OPTIONS
+    /** Options to configure (pre)fetching behavior */
+    private fetchOptions: ZarrLoaderFetchOptions = DEFAULT_FETCH_OPTIONS,
+    /** Direction(s) to prioritize when prefetching. Stored separate from `fetchOptions` since it may be mutated. */
+    private priorityDirections: PrefetchDirection[] = []
   ) {
     super();
-    if (fetchOptions.priorityDirections) {
-      this.priorityDirections = fetchOptions.priorityDirections.slice();
-    }
   }
 
   static async createLoader(
@@ -176,21 +183,22 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
     const root = zarr.root(store);
     const group = await zarr.open(root, { kind: "group" });
-    const metadata = group.attrs as OMEZarrMetadata;
+    const { multiscales, omero } = group.attrs as OMEZarrMetadata;
 
     // Pick scene (multiscale)
-    if (scene > metadata.multiscales.length) {
+    if (scene > multiscales.length) {
       console.warn(`WARNING: OMEZarrLoader: scene ${scene} is invalid. Using scene 0.`);
       scene = 0;
     }
-    const multiscale = metadata.multiscales[scene];
+    const multiscale = multiscales[scene];
 
     // Open all scale levels of multiscale
     const scaleLevelPromises = multiscale.datasets.map(({ path }) => zarr.open(root.resolve(path), { kind: "array" }));
     const scaleLevels = (await Promise.all(scaleLevelPromises)) as NumericZarrArray[];
     const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
 
-    return new OMEZarrLoader(store, scaleLevels, multiscale, metadata.omero, axisTCZYX, queue, fetchOptions);
+    const priorityDirs = fetchOptions?.priorityDirections ? fetchOptions.priorityDirections.slice() : undefined;
+    return new OMEZarrLoader(store, scaleLevels, multiscale, omero, axisTCZYX, queue, fetchOptions, priorityDirs);
   }
 
   private getUnitSymbols(): [string, string] {
