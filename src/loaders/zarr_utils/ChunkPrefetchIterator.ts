@@ -110,13 +110,9 @@ export default class ChunkPrefetchIterator {
           dir.chunks.push(chunk);
         }
       }
-    }
-
-    // Filter out prioritized direction(s), if any
-    if (priorityDirections && priorityDirections.length > 0) {
-      for (const [idx, dir] of this.directionStates.entries()) {
-        if (priorityDirections.includes(dir.direction)) {
-          this.directionStates.splice(idx, 1);
+      for (const dir of this.priorityDirectionStates) {
+        if (chunk[directionToIndex(dir.direction)] === dir.start) {
+          dir.chunks.push(chunk);
         }
       }
     }

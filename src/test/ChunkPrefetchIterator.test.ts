@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
 import { TCZYX } from "../loaders/zarr_utils/types";
-import ChunkPrefetchIterator from "../loaders/zarr_utils/ChunkPrefetchIterator";
+import ChunkPrefetchIterator, { PrefetchDirection } from "../loaders/zarr_utils/ChunkPrefetchIterator";
 
 const EXPECTED_3X3X3X3 = [
   [0, 0, 1, 1, 1], // T-
@@ -15,7 +15,18 @@ const EXPECTED_3X3X3X3 = [
 ];
 
 // move from the middle of a 3x3x3x3 cube to the middle of a 5x5x5x5 cube
-const EXPECTED_5X5X5X5 = EXPECTED_3X3X3X3.map(([t, c, z, y, x]) => [t + 1, c, z + 1, y + 1, x + 1]);
+const EXPECTED_5X5X5X5_1 = EXPECTED_3X3X3X3.map(([t, c, z, y, x]) => [t + 1, c, z + 1, y + 1, x + 1]);
+// offset = 2!
+const EXPECTED_5X5X5X5_2 = [
+  [0, 0, 2, 2, 2], // T--
+  [4, 0, 2, 2, 2], // T++
+  [2, 0, 0, 2, 2], // Z--
+  [2, 0, 4, 2, 2], // Z++
+  [2, 0, 2, 0, 2], // Y--
+  [2, 0, 2, 4, 2], // Y++
+  [2, 0, 2, 2, 0], // X--
+  [2, 0, 2, 2, 4], // X++
+];
 
 function validate(iter: ChunkPrefetchIterator, expected: number[][]) {
   expect([...iter]).to.deep.equal(expected);
@@ -61,16 +72,9 @@ describe("ChunkPrefetchIterator", () => {
 
     const expected = [
       // offset = 1
-      ...EXPECTED_5X5X5X5,
+      ...EXPECTED_5X5X5X5_1,
       // offset = 2!
-      [0, 0, 2, 2, 2], // T--
-      [4, 0, 2, 2, 2], // T++
-      [2, 0, 0, 2, 2], // Z--
-      [2, 0, 4, 2, 2], // Z++
-      [2, 0, 2, 0, 2], // Y--
-      [2, 0, 2, 4, 2], // Y++
-      [2, 0, 2, 2, 0], // X--
-      [2, 0, 2, 2, 4], // X++
+      ...EXPECTED_5X5X5X5_2,
     ];
     validate(iterator, expected);
   });
@@ -78,7 +82,7 @@ describe("ChunkPrefetchIterator", () => {
   it("stops at the max offset in each dimension", () => {
     // 5x5x5, with one chunk in the center
     const iterator = new ChunkPrefetchIterator([[2, 0, 2, 2, 2]], [1, 1, 1, 1], [5, 5, 5, 5]);
-    validate(iterator, EXPECTED_5X5X5X5); // never reaches offset = 2, as it does above
+    validate(iterator, EXPECTED_5X5X5X5_1); // never reaches offset = 2, as it does above
   });
 
   it("stops at the borders of the zarr", () => {
@@ -123,6 +127,26 @@ describe("ChunkPrefetchIterator", () => {
       [1, 0, 1, 0, 1], // Y-
       [1, 0, 1, 2, 1], // Y+
       // skips x
+    ];
+    validate(iterator, expected);
+  });
+
+  it("yields chunks in all prioritized directions first", () => {
+    // 5x5x5, with one chunk in the center
+    const iterator = new ChunkPrefetchIterator(
+      [[2, 0, 2, 2, 2]],
+      [2, 2, 2, 2],
+      [5, 5, 5, 5],
+      [PrefetchDirection.T_PLUS, PrefetchDirection.Y_MINUS]
+    );
+
+    const expected = [
+      [3, 0, 2, 2, 2], // T+
+      [2, 0, 2, 1, 2], // Y-
+      [4, 0, 2, 2, 2], // T++
+      [2, 0, 2, 0, 2], // Y--
+      ...EXPECTED_5X5X5X5_1.filter(([t, _c, _z, y, _x]) => t <= 2 && y >= 2),
+      ...EXPECTED_5X5X5X5_2.filter(([t, _c, _z, y, _x]) => t <= 2 && y >= 2),
     ];
     validate(iterator, expected);
   });
