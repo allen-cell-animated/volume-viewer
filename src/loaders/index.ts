@@ -6,6 +6,8 @@ import { TiffLoader } from "./TiffLoader";
 import VolumeCache from "../VolumeCache";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
 
+export { PrefetchDirection } from "./zarr_utils/ChunkPrefetchIterator";
+
 export const enum VolumeFileFormat {
   ZARR = "zarr",
   JSON = "json",
