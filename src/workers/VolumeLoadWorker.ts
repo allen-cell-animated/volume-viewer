@@ -1,6 +1,7 @@
 import VolumeCache from "../VolumeCache";
 import { VolumeFileFormat, createVolumeLoader, pathToFileType } from "../loaders";
 import { ThreadableVolumeLoader } from "../loaders/IVolumeLoader";
+import { OMEZarrLoader } from "../loaders/OmeZarrLoader";
 import RequestQueue from "../utils/RequestQueue";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
 import {
@@ -76,6 +77,12 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
         (self as unknown as Worker).postMessage(message, copyOnLoad ? [] : [data.buffer]);
       }
     );
+  },
+
+  [WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS]: (directions) => {
+    // Silently does nothing if the loader isn't an `OMEZarrLoader`
+    (loader as OMEZarrLoader | undefined)?.setPrefetchPriorityDirections?.(directions);
+    return Promise.resolve();
   },
 };
 
