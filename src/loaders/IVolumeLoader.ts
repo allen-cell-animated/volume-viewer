@@ -2,6 +2,7 @@ import { Box3, Vector3 } from "three";
 
 import Volume, { ImageInfo } from "../Volume";
 import { buildDefaultMetadata } from "./VolumeLoaderUtils";
+import { PrefetchDirection } from "./zarr_utils/ChunkPrefetchIterator";
 
 export class LoadSpec {
   time = 0;
@@ -68,6 +69,9 @@ export interface IVolumeLoader {
   // in a way that they can be interrupted.
   // TODO explicitly passing a `LoadSpec` is now rarely useful. Remove?
   loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): void;
+
+  /** Change which directions to prioritize when prefetching. Currently only implemented on `OMEZarrLoader`. */
+  setPrefetchPriority(directions: PrefetchDirection[]): void;
 }
 
 /** Abstract class which allows loaders to accept and return types that are easier to transfer to/from a worker. */
@@ -97,6 +101,10 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
     loadSpec: LoadSpec,
     onData: RawChannelDataCallback
   ): Promise<Partial<LoadedVolumeInfo>>;
+
+  setPrefetchPriority(_directions: PrefetchDirection[]): void {
+    // no-op by default
+  }
 
   async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
     const { imageInfo, loadSpec: adjustedLoadSpec } = await this.createImageInfo(loadSpec);

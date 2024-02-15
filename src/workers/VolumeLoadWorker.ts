@@ -81,7 +81,7 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
 
   [WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS]: (directions) => {
     // Silently does nothing if the loader isn't an `OMEZarrLoader`
-    (loader as OMEZarrLoader | undefined)?.setPrefetchPriorityDirections?.(directions);
+    loader?.setPrefetchPriority(directions);
     return Promise.resolve();
   },
 };

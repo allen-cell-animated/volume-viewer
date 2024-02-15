@@ -284,7 +284,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
    * Change which directions to prioritize when prefetching. All chunks will be prefetched in these directions before
    * any chunks are prefetched in any other directions.
    */
-  setPrefetchPriorityDirections(directions: PrefetchDirection[]): void {
+  setPrefetchPriority(directions: PrefetchDirection[]): void {
     this.priorityDirections = directions;
   }
 
