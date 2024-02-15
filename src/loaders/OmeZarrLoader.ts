@@ -24,7 +24,8 @@ import {
   estimateLevelForAtlas,
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
-import ChunkPrefetchIterator, { PrefetchDirection } from "./zarr_utils/ChunkPrefetchIterator";
+import ChunkPrefetchIterator from "./zarr_utils/ChunkPrefetchIterator";
+import { PrefetchDirection } from "./zarr_utils/types";
 import WrappedStore from "./zarr_utils/WrappedStore";
 import {
   OMEAxis,

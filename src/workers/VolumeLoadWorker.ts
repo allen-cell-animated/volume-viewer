@@ -1,7 +1,6 @@
 import VolumeCache from "../VolumeCache";
 import { VolumeFileFormat, createVolumeLoader, pathToFileType } from "../loaders";
 import { ThreadableVolumeLoader } from "../loaders/IVolumeLoader";
-import { OMEZarrLoader } from "../loaders/OmeZarrLoader";
 import RequestQueue from "../utils/RequestQueue";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
 import {

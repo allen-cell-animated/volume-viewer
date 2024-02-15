@@ -2,7 +2,7 @@ import { Box3, Vector3 } from "three";
 
 import Volume, { ImageInfo } from "../Volume";
 import { buildDefaultMetadata } from "./VolumeLoaderUtils";
-import { PrefetchDirection } from "./zarr_utils/ChunkPrefetchIterator";
+import { PrefetchDirection } from "./zarr_utils/types";
 
 export class LoadSpec {
   time = 0;

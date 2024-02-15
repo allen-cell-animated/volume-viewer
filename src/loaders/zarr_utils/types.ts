@@ -3,6 +3,27 @@ import SubscribableRequestQueue from "../../utils/SubscribableRequestQueue";
 export type TCZYX<T> = [T, T, T, T, T];
 export type SubscriberId = ReturnType<SubscribableRequestQueue["addSubscriber"]>;
 
+/**
+ * Directions in which to move outward from the loaded set of chunks while prefetching.
+ *
+ * Ordered in pairs of opposite directions both because that's a sensible order in which to prefetch for our purposes,
+ * and because it lets us treat the least significant bit as the sign. So `direction >> 1` gives the index of the
+ * direction in TZYX-ordered arrays, and `direction & 1` gives the sign of the direction (e.g. positive vs negative Z).
+ */
+export const enum PrefetchDirection {
+  T_MINUS = 0,
+  T_PLUS = 1,
+
+  Z_MINUS = 2,
+  Z_PLUS = 3,
+
+  Y_MINUS = 4,
+  Y_PLUS = 5,
+
+  X_MINUS = 6,
+  X_PLUS = 7,
+}
+
 export type OMECoordinateTransformation =
   | {
       type: "identity";
