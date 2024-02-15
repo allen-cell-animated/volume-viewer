@@ -67,11 +67,15 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.updateSettings(settings, SettingsFlags.ALL);
   }
 
-  private updateSlice(): void {
+  /**
+   * Syncs `this.settings.zSlice` with the corresponding shader uniform, or defers syncing until the slice is loaded.
+   * @returns a boolean indicating whether the slice is out of bounds of the volume entirely.
+   */
+  private updateSlice(): boolean {
     const slice = Math.floor(this.settings.zSlice);
     const sizez = this.volume.imageInfo.volumeSize.z;
     if (slice < 0 || slice >= sizez) {
-      return;
+      return false;
     }
 
     const regionMinZ = this.volume.imageInfo.subregionOffset.z;
@@ -83,6 +87,8 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
       this.setUniform("Z_SLICE", slice);
       this.sliceUpdateWaiting = false;
     }
+
+    return true;
   }
 
   public updateVolumeDimensions(): void {
@@ -169,11 +175,14 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
 
       this.setUniform("AABB_CLIP_MIN", bounds.bmin);
       this.setUniform("AABB_CLIP_MAX", bounds.bmax);
-      this.updateSlice();
-      const sliceRatio = Math.floor(this.settings.zSlice) / this.volume.imageInfo.volumeSize.z;
-      this.volume.updateRequiredData({
-        subregion: new Box3(new Vector3(0, 0, sliceRatio), new Vector3(1, 1, sliceRatio)),
-      });
+
+      const sliceInBounds = this.updateSlice();
+      if (sliceInBounds) {
+        const sliceRatio = Math.floor(this.settings.zSlice) / this.volume.imageInfo.volumeSize.z;
+        this.volume.updateRequiredData({
+          subregion: new Box3(new Vector3(0, 0, sliceRatio), new Vector3(1, 1, sliceRatio)),
+        });
+      }
     }
 
     if (dirtyFlags & SettingsFlags.SAMPLING) {
