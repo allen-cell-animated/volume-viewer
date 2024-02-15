@@ -1,5 +1,5 @@
 import { ImageInfo } from "../Volume";
-import { CreateLoaderOptions, VolumeFileFormat, pathToFileType } from "../loaders";
+import { CreateLoaderOptions, PrefetchDirection, VolumeFileFormat, pathToFileType } from "../loaders";
 import {
   ThreadableVolumeLoader,
   LoadSpec,
@@ -86,7 +86,7 @@ class SharedLoadWorkerHandle {
     return promise;
   }
 
-  /**  */
+  /** Receive a message from the worker. If it's an event, call a callback; otherwise, resolve/reject a promise. */
   private receiveMessage<T extends WorkerMsgType>({ data }: MessageEvent<WorkerResponse<T>>): void {
     if (data.responseResult === WorkerResponseResult.EVENT) {
       this.onChannelData?.(data);
@@ -206,6 +206,14 @@ class WorkerLoader extends ThreadableVolumeLoader {
   /** Close and permanently invalidate this loader. */
   close(): void {
     this.isOpen = false;
+  }
+
+  /**
+   * Change which directions to prioritize when prefetching. All chunks will be prefetched in these directions before
+   * any chunks are prefetched in any other directions. Has no effect if this loader doesn't support prefetching.
+   */
+  setPrefetchPriorityDirections(directions: PrefetchDirection[]): Promise<void> {
+    return this.workerHandle.sendMessage(WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, directions);
   }
 
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {

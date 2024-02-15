@@ -7,7 +7,7 @@ import RequestQueue from "./utils/RequestQueue";
 import SubscribableRequestQueue from "./utils/SubscribableRequestQueue";
 import Histogram from "./Histogram";
 import { ViewportCorner } from "./types";
-import { VolumeFileFormat, createVolumeLoader } from "./loaders";
+import { VolumeFileFormat, createVolumeLoader, PrefetchDirection } from "./loaders";
 import { LoadSpec } from "./loaders/IVolumeLoader";
 import { OMEZarrLoader } from "./loaders/OmeZarrLoader";
 import { JsonImageInfoLoader } from "./loaders/JsonImageInfoLoader";
@@ -31,6 +31,7 @@ export {
   VolumeCache,
   RequestQueue,
   SubscribableRequestQueue,
+  PrefetchDirection,
   OMEZarrLoader,
   JsonImageInfoLoader,
   TiffLoader,
