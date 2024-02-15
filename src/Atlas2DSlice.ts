@@ -36,6 +36,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
   private boxHelper: Box3Helper;
   private uniforms: ReturnType<typeof sliceShaderUniforms>;
   private channelData!: FusedChannelData;
+  private sliceUpdateWaiting = false;
 
   /**
    * Creates a new Atlas2DSlice.
@@ -66,6 +67,24 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.updateSettings(settings, SettingsFlags.ALL);
   }
 
+  private updateSlice(): void {
+    const slice = Math.floor(this.settings.zSlice);
+    const sizez = this.volume.imageInfo.volumeSize.z;
+    if (slice < 0 || slice >= sizez) {
+      return;
+    }
+
+    const regionMinZ = this.volume.imageInfo.subregionOffset.z;
+    const regionMaxZ = regionMinZ + this.volume.imageInfo.subregionSize.z;
+    if (slice < regionMinZ || slice >= regionMaxZ) {
+      // If the slice is outside the current loaded subregion, defer until the subregion is updated
+      this.sliceUpdateWaiting = true;
+    } else {
+      this.setUniform("Z_SLICE", slice);
+      this.sliceUpdateWaiting = false;
+    }
+  }
+
   public updateVolumeDimensions(): void {
     const scale = this.volume.normPhysicalSize;
     // set scale
@@ -82,6 +101,9 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.setUniform("SLICES", volumeSize.z);
     this.setUniform("SUBSET_SCALE", this.volume.normRegionSize);
     this.setUniform("SUBSET_OFFSET", this.volume.normRegionOffset);
+    if (this.sliceUpdateWaiting) {
+      this.updateSlice();
+    }
 
     // (re)create channel data
     if (!this.channelData || this.channelData.width !== atlasSize.x || this.channelData.height !== atlasSize.y) {
@@ -147,15 +169,11 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
 
       this.setUniform("AABB_CLIP_MIN", bounds.bmin);
       this.setUniform("AABB_CLIP_MAX", bounds.bmax);
-      const slice = Math.floor(this.settings.zSlice);
-      const sizez = this.volume.imageInfo.volumeSize.z;
-      if (slice >= 0 && slice <= sizez - 1) {
-        this.setUniform("Z_SLICE", slice);
-        const sliceRatio = slice / sizez;
-        this.volume.updateRequiredData({
-          subregion: new Box3(new Vector3(0, 0, sliceRatio), new Vector3(1, 1, sliceRatio)),
-        });
-      }
+      this.updateSlice();
+      const sliceRatio = Math.floor(this.settings.zSlice) / this.volume.imageInfo.volumeSize.z;
+      this.volume.updateRequiredData({
+        subregion: new Box3(new Vector3(0, 0, sliceRatio), new Vector3(1, 1, sliceRatio)),
+      });
     }
 
     if (dirtyFlags & SettingsFlags.SAMPLING) {
