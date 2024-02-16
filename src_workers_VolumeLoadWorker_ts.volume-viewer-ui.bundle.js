@@ -1837,6 +1837,11 @@ var ThreadableVolumeLoader = /*#__PURE__*/function () {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, ThreadableVolumeLoader);
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(ThreadableVolumeLoader, [{
+    key: "setPrefetchPriority",
+    value: function setPrefetchPriority(_directions) {
+      // no-op by default
+    }
+  }, {
     key: "createVolume",
     value: function () {
       var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(loadSpec, onChannelLoaded) {
@@ -2425,9 +2430,20 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
   // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
   //   This may cause errors or incorrect results otherwise!
 
-  function OMEZarrLoader(store, scaleLevels, multiscaleMetadata, omeroMetadata, axesTCZYX, requestQueue) {
+  function OMEZarrLoader( /** An abstraction representing a remote data source, used by zarrita to get chunks and by us to prefetch them. */
+  store, /** Representations of each scale level in this zarr. We pick one and pass it to `zarrGet` to load data. */
+  scaleLevels, /** OME-specified metadata record with most useful info on the current image, e.g. sizes, axis order, etc. */
+  multiscaleMetadata, /** OME-specified "transitional" metadata record which we mostly ignore, but which gives channel & volume names. */
+  omeroMetadata,
+  /**
+   * Zarr dimensions may be ordered in many ways or missing altogether (e.g. TCXYZ, TYX). `axesTCZYX` represents
+   * dimension order as a mapping from dimensions to their indices in dimension-ordered arrays for this zarr.
+   */
+  axesTCZYX, /** Handle to a `SubscribableRequestQueue` for smart concurrency management and request cancelling/reissuing. */
+  requestQueue) {
     var _this;
     var fetchOptions = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : DEFAULT_FETCH_OPTIONS;
+    var priorityDirections = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : [];
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, OMEZarrLoader);
     _this = _super.call(this);
     _this.store = store;
@@ -2437,6 +2453,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
     _this.axesTCZYX = axesTCZYX;
     _this.requestQueue = requestQueue;
     _this.fetchOptions = fetchOptions;
+    _this.priorityDirections = priorityDirections;
     return _this;
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(OMEZarrLoader, [{
@@ -2526,6 +2543,16 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
         }
       });
       return result;
+    }
+
+    /**
+     * Change which directions to prioritize when prefetching. All chunks will be prefetched in these directions before
+     * any chunks are prefetched in any other directions.
+     */
+  }, {
+    key: "setPrefetchPriority",
+    value: function setPrefetchPriority(directions) {
+      this.priorityDirections = directions;
     }
   }, {
     key: "loadDims",
@@ -2682,7 +2709,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       var subscriber = this.requestQueue.addSubscriber();
       // `ChunkPrefetchIterator` yields chunk coordinates in order of roughly how likely they are to be loaded next
       var chunkDimsTZYX = [chunkDims[0], chunkDims[2], chunkDims[3], chunkDims[4]];
-      var prefetchIterator = new _zarr_utils_ChunkPrefetchIterator__WEBPACK_IMPORTED_MODULE_12__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTZYX);
+      var prefetchIterator = new _zarr_utils_ChunkPrefetchIterator__WEBPACK_IMPORTED_MODULE_12__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTZYX, this.priorityDirections);
       var prefetchCount = 0;
       var _iterator = _createForOfIteratorHelper(prefetchIterator),
         _step;
@@ -2805,9 +2832,6 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       this.beginPrefetch(keys, level);
       Promise.all(channelPromises).then(function () {
         _this4.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
-        setTimeout(function () {
-          return _this4.beginPrefetch(keys, level);
-        }, 1000);
       });
       return Promise.resolve({
         imageInfo: updatedImageInfo
@@ -2824,11 +2848,14 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
           store,
           root,
           group,
-          metadata,
+          _ref7,
+          multiscales,
+          omero,
           multiscale,
           scaleLevelPromises,
           scaleLevels,
           axisTCZYX,
+          priorityDirs,
           _args3 = arguments;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_8___default().wrap(function _callee3$(_context3) {
           while (1) switch (_context3.prev = _context3.next) {
@@ -2849,14 +2876,14 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               });
             case 9:
               group = _context3.sent;
-              metadata = group.attrs; // Pick scene (multiscale)
-              if (scene > metadata.multiscales.length) {
+              _ref7 = group.attrs, multiscales = _ref7.multiscales, omero = _ref7.omero; // Pick scene (multiscale)
+              if (scene > multiscales.length) {
                 console.warn("WARNING: OMEZarrLoader: scene ".concat(scene, " is invalid. Using scene 0."));
                 scene = 0;
               }
-              multiscale = metadata.multiscales[scene]; // Open all scale levels of multiscale
-              scaleLevelPromises = multiscale.datasets.map(function (_ref7) {
-                var path = _ref7.path;
+              multiscale = multiscales[scene]; // Open all scale levels of multiscale
+              scaleLevelPromises = multiscale.datasets.map(function (_ref8) {
+                var path = _ref8.path;
                 return _zarrita_core__WEBPACK_IMPORTED_MODULE_19__.open(root.resolve(path), {
                   kind: "array"
                 });
@@ -2866,8 +2893,9 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
             case 16:
               scaleLevels = _context3.sent;
               axisTCZYX = remapAxesToTCZYX(multiscale.axes);
-              return _context3.abrupt("return", new OMEZarrLoader(store, scaleLevels, multiscale, metadata.omero, axisTCZYX, queue, fetchOptions));
-            case 19:
+              priorityDirs = fetchOptions !== null && fetchOptions !== void 0 && fetchOptions.priorityDirections ? fetchOptions.priorityDirections.slice() : undefined;
+              return _context3.abrupt("return", new OMEZarrLoader(store, scaleLevels, multiscale, omero, axisTCZYX, queue, fetchOptions, priorityDirs));
+            case 20:
             case "end":
               return _context3.stop();
           }
@@ -3216,7 +3244,7 @@ function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (O
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
 
 
-var MAX_ATLAS_EDGE = 2048;
+var MAX_ATLAS_EDGE = 4096;
 
 // Map from units to their symbols
 var UNIT_SYMBOLS = {
@@ -3385,6 +3413,7 @@ function buildDefaultMetadata(imageInfo) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _zarr_utils_types__WEBPACK_IMPORTED_MODULE_5__.PrefetchDirection),
 /* harmony export */   VolumeFileFormat: () => (/* binding */ VolumeFileFormat),
 /* harmony export */   createVolumeLoader: () => (/* binding */ createVolumeLoader),
 /* harmony export */   pathToFileType: () => (/* binding */ pathToFileType)
@@ -3395,6 +3424,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _OmeZarrLoader__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./OmeZarrLoader */ "./src/loaders/OmeZarrLoader.ts");
 /* harmony import */ var _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./JsonImageInfoLoader */ "./src/loaders/JsonImageInfoLoader.ts");
 /* harmony import */ var _TiffLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./TiffLoader */ "./src/loaders/TiffLoader.ts");
+/* harmony import */ var _zarr_utils_types__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./zarr_utils/types */ "./src/loaders/zarr_utils/types.ts");
+
 
 
 
@@ -3459,36 +3490,18 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ ChunkPrefetchIterator)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__);
+
 
 
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
-/**
- * Directions in which to move outward from the loaded set of chunks while prefetching.
- *
- * Ordered in pairs of opposite directions both because that's a sensible order in which to prefetch for our purposes,
- * and because it lets us treat the least significant bit as the sign. So `direction >> 1` gives the index of the
- * direction in TZYX-ordered arrays, and `direction & 1` gives the sign of the direction (e.g. positive vs negative Z).
- *
- * Note that this enum is mostly for documentation, and its variants are never explicitly used.
- */
-var PrefetchDirection = /*#__PURE__*/function (PrefetchDirection) {
-  PrefetchDirection[PrefetchDirection["T_MINUS"] = 0] = "T_MINUS";
-  PrefetchDirection[PrefetchDirection["T_PLUS"] = 1] = "T_PLUS";
-  PrefetchDirection[PrefetchDirection["Z_MINUS"] = 2] = "Z_MINUS";
-  PrefetchDirection[PrefetchDirection["Z_PLUS"] = 3] = "Z_PLUS";
-  PrefetchDirection[PrefetchDirection["Y_MINUS"] = 4] = "Y_MINUS";
-  PrefetchDirection[PrefetchDirection["Y_PLUS"] = 5] = "Y_PLUS";
-  PrefetchDirection[PrefetchDirection["X_MINUS"] = 6] = "X_MINUS";
-  PrefetchDirection[PrefetchDirection["X_PLUS"] = 7] = "X_PLUS";
-  return PrefetchDirection;
-}(PrefetchDirection || {});
 var directionToIndex = function directionToIndex(dir) {
   var absDir = dir >> 1; // shave off sign bit to get index in TZYX
   return absDir + Number(absDir !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
@@ -3510,8 +3523,8 @@ function updateMinMax(val, minmax) {
  */
 // NOTE: Assumes `chunks` form a rectangular prism! Will create gaps otherwise! (in practice they always should)
 var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
-  function ChunkPrefetchIterator(chunks, tzyxMaxPrefetchOffset, tzyxNumChunks) {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, ChunkPrefetchIterator);
+  function ChunkPrefetchIterator(chunks, tzyxMaxPrefetchOffset, tzyxNumChunks, priorityDirections) {
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, ChunkPrefetchIterator);
     // Get min and max chunk coordinates for T/Z/Y/X
     var extrema = [[Infinity, -Infinity], [Infinity, -Infinity], [Infinity, -Infinity], [Infinity, -Infinity]];
     var _iterator = _createForOfIteratorHelper(chunks),
@@ -3531,74 +3544,169 @@ var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
     } finally {
       _iterator.f();
     }
-    var directions = extrema.flat().map(function (start, direction) {
-      var dimension = direction >> 1;
-      if (direction & 1) {
-        // Positive direction - end is either the max coordinate in the fetched set plus the max offset in this
-        // dimension, or the max chunk coordinate in this dimension, whichever comes first
-        var end = Math.min(start + tzyxMaxPrefetchOffset[dimension], tzyxNumChunks[dimension] - 1);
-        return {
+    this.directionStates = [];
+    this.priorityDirectionStates = [];
+    var _iterator2 = _createForOfIteratorHelper(extrema.flat().entries()),
+      _step2;
+    try {
+      for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+        var _step2$value = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_step2.value, 2),
+          direction = _step2$value[0],
+          start = _step2$value[1];
+        var dimension = direction >> 1;
+        var end = void 0;
+        if (direction & 1) {
+          // Positive direction - end is either the max coordinate in the fetched set plus the max offset in this
+          // dimension, or the max chunk coordinate in this dimension, whichever comes first
+          end = Math.min(start + tzyxMaxPrefetchOffset[dimension], tzyxNumChunks[dimension] - 1);
+        } else {
+          // Negative direction - end is either the min coordinate in the fetched set minus the max offset in this
+          // dimension, or 0, whichever comes first
+          end = Math.max(start - tzyxMaxPrefetchOffset[dimension], 0);
+        }
+        var directionState = {
           direction: direction,
           start: start,
           end: end,
           chunks: []
         };
-      } else {
-        // Negative direction - end is either the min coordinate in the fetched set minus the max offset in this
-        // dimension, or 0, whichever comes first
-        var _end = Math.max(start - tzyxMaxPrefetchOffset[dimension], 0);
-        return {
-          direction: direction,
-          start: start,
-          end: _end,
-          chunks: []
-        };
-      }
-    });
-
-    // Fill each `PrefetchDirectionState` with chunks at the border of the fetched set
-    var _iterator2 = _createForOfIteratorHelper(chunks),
-      _step2;
-    try {
-      for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-        var _chunk = _step2.value;
-        var _iterator3 = _createForOfIteratorHelper(directions),
-          _step3;
-        try {
-          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-            var dir = _step3.value;
-            if (_chunk[directionToIndex(dir.direction)] === dir.start) {
-              dir.chunks.push(_chunk);
-            }
-          }
-        } catch (err) {
-          _iterator3.e(err);
-        } finally {
-          _iterator3.f();
+        if (priorityDirections && priorityDirections.includes(direction)) {
+          this.priorityDirectionStates.push(directionState);
+        } else {
+          this.directionStates.push(directionState);
         }
       }
+
+      // Fill each `PrefetchDirectionState` with chunks at the border of the fetched set
     } catch (err) {
       _iterator2.e(err);
     } finally {
       _iterator2.f();
     }
-    this.directions = directions;
+    var _iterator3 = _createForOfIteratorHelper(chunks),
+      _step3;
+    try {
+      for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
+        var _chunk = _step3.value;
+        var _iterator4 = _createForOfIteratorHelper(this.directionStates),
+          _step4;
+        try {
+          for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+            var dir = _step4.value;
+            if (_chunk[directionToIndex(dir.direction)] === dir.start) {
+              dir.chunks.push(_chunk);
+            }
+          }
+        } catch (err) {
+          _iterator4.e(err);
+        } finally {
+          _iterator4.f();
+        }
+        var _iterator5 = _createForOfIteratorHelper(this.priorityDirectionStates),
+          _step5;
+        try {
+          for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+            var _dir = _step5.value;
+            if (_chunk[directionToIndex(_dir.direction)] === _dir.start) {
+              _dir.chunks.push(_chunk);
+            }
+          }
+        } catch (err) {
+          _iterator5.e(err);
+        } finally {
+          _iterator5.f();
+        }
+      }
+    } catch (err) {
+      _iterator3.e(err);
+    } finally {
+      _iterator3.f();
+    }
   }
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(ChunkPrefetchIterator, [{
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(ChunkPrefetchIterator, [{
     key: _Symbol$iterator,
-    value: /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function value() {
-      var offset, _iterator4, _step4, dir, _iterator5, _step5, chunk, newChunk;
-      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function value$(_context) {
+    value: /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function value() {
+      var _iterator6, _step6, chunk, _iterator7, _step7, _chunk2;
+      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function value$(_context) {
         while (1) switch (_context.prev = _context.next) {
+          case 0:
+            if (!(this.priorityDirectionStates.length > 0)) {
+              _context.next = 18;
+              break;
+            }
+            _iterator6 = _createForOfIteratorHelper(ChunkPrefetchIterator.iterateDirections(this.priorityDirectionStates));
+            _context.prev = 2;
+            _iterator6.s();
+          case 4:
+            if ((_step6 = _iterator6.n()).done) {
+              _context.next = 10;
+              break;
+            }
+            chunk = _step6.value;
+            _context.next = 8;
+            return chunk;
+          case 8:
+            _context.next = 4;
+            break;
+          case 10:
+            _context.next = 15;
+            break;
+          case 12:
+            _context.prev = 12;
+            _context.t0 = _context["catch"](2);
+            _iterator6.e(_context.t0);
+          case 15:
+            _context.prev = 15;
+            _iterator6.f();
+            return _context.finish(15);
+          case 18:
+            // Then yield all chunks in other directions
+            _iterator7 = _createForOfIteratorHelper(ChunkPrefetchIterator.iterateDirections(this.directionStates));
+            _context.prev = 19;
+            _iterator7.s();
+          case 21:
+            if ((_step7 = _iterator7.n()).done) {
+              _context.next = 27;
+              break;
+            }
+            _chunk2 = _step7.value;
+            _context.next = 25;
+            return _chunk2;
+          case 25:
+            _context.next = 21;
+            break;
+          case 27:
+            _context.next = 32;
+            break;
+          case 29:
+            _context.prev = 29;
+            _context.t1 = _context["catch"](19);
+            _iterator7.e(_context.t1);
+          case 32:
+            _context.prev = 32;
+            _iterator7.f();
+            return _context.finish(32);
+          case 35:
+          case "end":
+            return _context.stop();
+        }
+      }, value, this, [[2, 12, 15, 18], [19, 29, 32, 35]]);
+    })
+  }], [{
+    key: "iterateDirections",
+    value: /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function iterateDirections(directions) {
+      var offset, _iterator8, _step8, dir, _iterator9, _step9, chunk, newChunk;
+      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function iterateDirections$(_context2) {
+        while (1) switch (_context2.prev = _context2.next) {
           case 0:
             offset = 1;
           case 1:
-            if (!(this.directions.length > 0)) {
-              _context.next = 40;
+            if (!(directions.length > 0)) {
+              _context2.next = 40;
               break;
             }
             // Remove directions in which we have hit a boundary
-            this.directions = this.directions.filter(function (dir) {
+            directions = directions.filter(function (dir) {
               if (dir.direction & 1) {
                 return dir.start + offset <= dir.end;
               } else {
@@ -3607,65 +3715,65 @@ var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
             });
 
             // Yield chunks one chunk farther out in every remaining direction
-            _iterator4 = _createForOfIteratorHelper(this.directions);
-            _context.prev = 4;
-            _iterator4.s();
+            _iterator8 = _createForOfIteratorHelper(directions);
+            _context2.prev = 4;
+            _iterator8.s();
           case 6:
-            if ((_step4 = _iterator4.n()).done) {
-              _context.next = 29;
+            if ((_step8 = _iterator8.n()).done) {
+              _context2.next = 29;
               break;
             }
-            dir = _step4.value;
-            _iterator5 = _createForOfIteratorHelper(dir.chunks);
-            _context.prev = 9;
-            _iterator5.s();
+            dir = _step8.value;
+            _iterator9 = _createForOfIteratorHelper(dir.chunks);
+            _context2.prev = 9;
+            _iterator9.s();
           case 11:
-            if ((_step5 = _iterator5.n()).done) {
-              _context.next = 19;
+            if ((_step9 = _iterator9.n()).done) {
+              _context2.next = 19;
               break;
             }
-            chunk = _step5.value;
+            chunk = _step9.value;
             newChunk = chunk.slice();
             newChunk[directionToIndex(dir.direction)] += offset * (dir.direction & 1 ? 1 : -1);
-            _context.next = 17;
+            _context2.next = 17;
             return newChunk;
           case 17:
-            _context.next = 11;
+            _context2.next = 11;
             break;
           case 19:
-            _context.next = 24;
+            _context2.next = 24;
             break;
           case 21:
-            _context.prev = 21;
-            _context.t0 = _context["catch"](9);
-            _iterator5.e(_context.t0);
+            _context2.prev = 21;
+            _context2.t0 = _context2["catch"](9);
+            _iterator9.e(_context2.t0);
           case 24:
-            _context.prev = 24;
-            _iterator5.f();
-            return _context.finish(24);
+            _context2.prev = 24;
+            _iterator9.f();
+            return _context2.finish(24);
           case 27:
-            _context.next = 6;
+            _context2.next = 6;
             break;
           case 29:
-            _context.next = 34;
+            _context2.next = 34;
             break;
           case 31:
-            _context.prev = 31;
-            _context.t1 = _context["catch"](4);
-            _iterator4.e(_context.t1);
+            _context2.prev = 31;
+            _context2.t1 = _context2["catch"](4);
+            _iterator8.e(_context2.t1);
           case 34:
-            _context.prev = 34;
-            _iterator4.f();
-            return _context.finish(34);
+            _context2.prev = 34;
+            _iterator8.f();
+            return _context2.finish(34);
           case 37:
             offset += 1;
-            _context.next = 1;
+            _context2.next = 1;
             break;
           case 40:
           case "end":
-            return _context.stop();
+            return _context2.stop();
         }
-      }, value, this, [[4, 31, 34, 37], [9, 21, 24, 27]]);
+      }, iterateDirections, null, [[4, 31, 34, 37], [9, 21, 24, 27]]);
     })
   }]);
   return ChunkPrefetchIterator;
@@ -3790,6 +3898,42 @@ var WrappedStore = /*#__PURE__*/function () {
   return WrappedStore;
 }();
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (WrappedStore);
+
+/***/ }),
+
+/***/ "./src/loaders/zarr_utils/types.ts":
+/*!*****************************************!*\
+  !*** ./src/loaders/zarr_utils/types.ts ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   PrefetchDirection: () => (/* binding */ PrefetchDirection)
+/* harmony export */ });
+/**
+ * Directions in which to move outward from the loaded set of chunks while prefetching.
+ *
+ * Ordered in pairs of opposite directions both because that's a sensible order in which to prefetch for our purposes,
+ * and because it lets us treat the least significant bit as the sign. So `direction >> 1` gives the index of the
+ * direction in TZYX-ordered arrays, and `direction & 1` gives the sign of the direction (e.g. positive vs negative Z).
+ */
+var PrefetchDirection = /*#__PURE__*/function (PrefetchDirection) {
+  PrefetchDirection[PrefetchDirection["T_MINUS"] = 0] = "T_MINUS";
+  PrefetchDirection[PrefetchDirection["T_PLUS"] = 1] = "T_PLUS";
+  PrefetchDirection[PrefetchDirection["Z_MINUS"] = 2] = "Z_MINUS";
+  PrefetchDirection[PrefetchDirection["Z_PLUS"] = 3] = "Z_PLUS";
+  PrefetchDirection[PrefetchDirection["Y_MINUS"] = 4] = "Y_MINUS";
+  PrefetchDirection[PrefetchDirection["Y_PLUS"] = 5] = "Y_PLUS";
+  PrefetchDirection[PrefetchDirection["X_MINUS"] = 6] = "X_MINUS";
+  PrefetchDirection[PrefetchDirection["X_PLUS"] = 7] = "X_PLUS";
+  return PrefetchDirection;
+}({});
+
+// https://ngff.openmicroscopy.org/latest/#multiscale-md
+
+// https://ngff.openmicroscopy.org/latest/#omero-md
 
 /***/ }),
 
@@ -4569,7 +4713,12 @@ var messageHandlers = (_messageHandlers = {}, (0,_babel_runtime_helpers_definePr
   return function (_x4) {
     return _ref7.apply(this, arguments);
   };
-}()), _messageHandlers);
+}()), (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(_messageHandlers, _types__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, function (directions) {
+  var _loader;
+  // Silently does nothing if the loader isn't an `OMEZarrLoader`
+  (_loader = loader) === null || _loader === void 0 ? void 0 : _loader.setPrefetchPriority(directions);
+  return Promise.resolve();
+}), _messageHandlers);
 self.onmessage = /*#__PURE__*/function () {
   var _ref9 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee5(_ref8) {
     var data, msgId, type, payload, message, response;
@@ -4634,6 +4783,7 @@ var WorkerMsgType = /*#__PURE__*/function (WorkerMsgType) {
   WorkerMsgType[WorkerMsgType["CREATE_VOLUME"] = 2] = "CREATE_VOLUME";
   WorkerMsgType[WorkerMsgType["LOAD_DIMS"] = 3] = "LOAD_DIMS";
   WorkerMsgType[WorkerMsgType["LOAD_VOLUME_DATA"] = 4] = "LOAD_VOLUME_DATA";
+  WorkerMsgType[WorkerMsgType["SET_PREFETCH_PRIORITY_DIRECTIONS"] = 5] = "SET_PREFETCH_PRIORITY_DIRECTIONS";
   return WorkerMsgType;
 }({});
 
