@@ -15,10 +15,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./constants/volumeSliceShader */ "./src/constants/volumeSliceShader.ts");
-/* harmony import */ var _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./VolumeRenderSettings */ "./src/VolumeRenderSettings.ts");
-/* harmony import */ var _FusedChannelData__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./FusedChannelData */ "./src/FusedChannelData.ts");
+/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./constants/volumeSliceShader */ "./src/constants/volumeSliceShader.ts");
+/* harmony import */ var _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VolumeRenderSettings */ "./src/VolumeRenderSettings.ts");
+/* harmony import */ var _FusedChannelData__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./FusedChannelData */ "./src/FusedChannelData.ts");
 
 
 
@@ -26,7 +27,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-var BOUNDING_BOX_DEFAULT_COLOR = new three__WEBPACK_IMPORTED_MODULE_6__.Color(0xffff00);
+
+var BOUNDING_BOX_DEFAULT_COLOR = new three__WEBPACK_IMPORTED_MODULE_7__.Color(0xffff00);
 
 /**
  * Creates a plane that renders a 2D XY slice of volume atlas data.
@@ -39,26 +41,51 @@ var Atlas2DSlice = /*#__PURE__*/function () {
    * the given settings. Otherwise, uses the default VolumeRenderSettings.
    */
   function Atlas2DSlice(volume) {
-    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.VolumeRenderSettings(volume);
+    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.VolumeRenderSettings(volume);
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, Atlas2DSlice);
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "sliceUpdateWaiting", false);
     this.volume = volume;
-    this.uniforms = (0,_constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_3__.sliceShaderUniforms)();
+    this.uniforms = (0,_constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_4__.sliceShaderUniforms)();
     var _this$createGeometry = this.createGeometry(this.uniforms);
     var _this$createGeometry2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_this$createGeometry, 2);
     this.geometry = _this$createGeometry2[0];
     this.geometryMesh = _this$createGeometry2[1];
-    this.boxHelper = new three__WEBPACK_IMPORTED_MODULE_6__.Box3Helper(new three__WEBPACK_IMPORTED_MODULE_6__.Box3(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(-0.5, -0.5, -0.5), new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0.5, 0.5, 0.5)), BOUNDING_BOX_DEFAULT_COLOR);
+    this.boxHelper = new three__WEBPACK_IMPORTED_MODULE_7__.Box3Helper(new three__WEBPACK_IMPORTED_MODULE_7__.Box3(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(-0.5, -0.5, -0.5), new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0.5, 0.5, 0.5)), BOUNDING_BOX_DEFAULT_COLOR);
     this.boxHelper.updateMatrixWorld();
     this.boxHelper.visible = false;
-    this.geometryTransformNode = new three__WEBPACK_IMPORTED_MODULE_6__.Group();
+    this.geometryTransformNode = new three__WEBPACK_IMPORTED_MODULE_7__.Group();
     this.geometryTransformNode.name = "VolumeContainerNode";
     this.geometryTransformNode.add(this.boxHelper, this.geometryMesh);
     this.setUniform("Z_SLICE", Math.floor(volume.imageInfo.volumeSize.z / 2));
     this.updateVolumeDimensions();
     this.settings = settings;
-    this.updateSettings(settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.ALL);
+    this.updateSettings(settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ALL);
   }
+
+  /**
+   * Syncs `this.settings.zSlice` with the corresponding shader uniform, or defers syncing until the slice is loaded.
+   * @returns a boolean indicating whether the slice is out of bounds of the volume entirely.
+   */
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(Atlas2DSlice, [{
+    key: "updateSlice",
+    value: function updateSlice() {
+      var slice = Math.floor(this.settings.zSlice);
+      var sizez = this.volume.imageInfo.volumeSize.z;
+      if (slice < 0 || slice >= sizez) {
+        return false;
+      }
+      var regionMinZ = this.volume.imageInfo.subregionOffset.z;
+      var regionMaxZ = regionMinZ + this.volume.imageInfo.subregionSize.z;
+      if (slice < regionMinZ || slice >= regionMaxZ) {
+        // If the slice is outside the current loaded subregion, defer until the subregion is updated
+        this.sliceUpdateWaiting = true;
+      } else {
+        this.setUniform("Z_SLICE", slice);
+        this.sliceUpdateWaiting = false;
+      }
+      return true;
+    }
+  }, {
     key: "updateVolumeDimensions",
     value: function updateVolumeDimensions() {
       var scale = this.volume.normPhysicalSize;
@@ -70,7 +97,7 @@ var Atlas2DSlice = /*#__PURE__*/function () {
         atlasTileDims = _this$volume$imageInf.atlasTileDims,
         subregionSize = _this$volume$imageInf.subregionSize,
         volumeSize = _this$volume$imageInf.volumeSize;
-      var atlasSize = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(subregionSize.x, subregionSize.y).multiply(atlasTileDims);
+      var atlasSize = new three__WEBPACK_IMPORTED_MODULE_7__.Vector2(subregionSize.x, subregionSize.y).multiply(atlasTileDims);
 
       // set lots of dimension uniforms
       this.setUniform("ATLAS_DIMS", atlasTileDims);
@@ -78,22 +105,25 @@ var Atlas2DSlice = /*#__PURE__*/function () {
       this.setUniform("SLICES", volumeSize.z);
       this.setUniform("SUBSET_SCALE", this.volume.normRegionSize);
       this.setUniform("SUBSET_OFFSET", this.volume.normRegionOffset);
+      if (this.sliceUpdateWaiting) {
+        this.updateSlice();
+      }
 
       // (re)create channel data
       if (!this.channelData || this.channelData.width !== atlasSize.x || this.channelData.height !== atlasSize.y) {
         var _this$channelData;
         (_this$channelData = this.channelData) === null || _this$channelData === void 0 ? void 0 : _this$channelData.cleanup();
-        this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_5__["default"](atlasSize.x, atlasSize.y);
+        this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_6__["default"](atlasSize.x, atlasSize.y);
       }
     }
   }, {
     key: "updateSettings",
     value: function updateSettings(newSettings, dirtyFlags) {
       if (dirtyFlags === undefined) {
-        dirtyFlags = _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.ALL;
+        dirtyFlags = _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ALL;
       }
       this.settings = newSettings;
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.VIEW) {
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.VIEW) {
         this.geometryMesh.visible = this.settings.visible;
         // Configure ortho
         this.setUniform("orthoScale", this.settings.orthoScale);
@@ -109,66 +139,64 @@ var Atlas2DSlice = /*#__PURE__*/function () {
           this.setUniform("orthoThickness", 1.0);
         }
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.BOUNDING_BOX) {
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.BOUNDING_BOX) {
         // Configure bounding box
         this.boxHelper.visible = this.settings.showBoundingBox;
         var colorVector = this.settings.boundingBoxColor;
-        var newBoxColor = new three__WEBPACK_IMPORTED_MODULE_6__.Color(colorVector[0], colorVector[1], colorVector[2]);
+        var newBoxColor = new three__WEBPACK_IMPORTED_MODULE_7__.Color(colorVector[0], colorVector[1], colorVector[2]);
         this.boxHelper.material.color = newBoxColor;
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.TRANSFORM) {
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.TRANSFORM) {
         // Set rotation and translation
         this.geometryTransformNode.position.copy(this.settings.translation);
         this.geometryTransformNode.rotation.copy(this.settings.rotation);
         this.setUniform("flipVolume", this.settings.flipAxes);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.MATERIAL) {
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MATERIAL) {
         this.setUniform("DENSITY", this.settings.density);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.CAMERA) {
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.CAMERA) {
         this.setUniform("BRIGHTNESS", this.settings.brightness * 2.0);
         // Gamma
         this.setUniform("GAMMA_MIN", this.settings.gammaMin);
         this.setUniform("GAMMA_MAX", this.settings.gammaMax);
         this.setUniform("GAMMA_SCALE", this.settings.gammaLevel);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.ROI) {
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ROI) {
         // Normalize and set bounds
         var bounds = this.settings.bounds;
         this.setUniform("AABB_CLIP_MIN", bounds.bmin);
         this.setUniform("AABB_CLIP_MAX", bounds.bmax);
-        var slice = Math.floor(this.settings.zSlice);
-        var sizez = this.volume.imageInfo.volumeSize.z;
-        if (slice >= 0 && slice <= sizez - 1) {
-          this.setUniform("Z_SLICE", slice);
-          var sliceRatio = slice / sizez;
+        var sliceInBounds = this.updateSlice();
+        if (sliceInBounds) {
+          var sliceRatio = Math.floor(this.settings.zSlice) / this.volume.imageInfo.volumeSize.z;
           this.volume.updateRequiredData({
-            subregion: new three__WEBPACK_IMPORTED_MODULE_6__.Box3(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, sliceRatio), new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(1, 1, sliceRatio))
+            subregion: new three__WEBPACK_IMPORTED_MODULE_7__.Box3(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, sliceRatio), new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1, 1, sliceRatio))
           });
         }
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.SAMPLING) {
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.SAMPLING) {
         this.setUniform("interpolationEnabled", this.settings.useInterpolation);
         this.setUniform("iResolution", this.settings.resolution);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.MASK_ALPHA) {
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MASK_ALPHA) {
         this.setUniform("maskAlpha", this.settings.maskChannelIndex < 0 ? 1.0 : this.settings.maskAlpha);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.MASK_DATA) {
+      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MASK_DATA) {
         this.channelData.setChannelAsMask(this.settings.maskChannelIndex, this.volume.getChannel(this.settings.maskChannelIndex));
       }
     }
   }, {
     key: "createGeometry",
     value: function createGeometry(uniforms) {
-      var geom = new three__WEBPACK_IMPORTED_MODULE_6__.PlaneGeometry(1.0, 1.0);
-      var mesh = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(geom);
+      var geom = new three__WEBPACK_IMPORTED_MODULE_7__.PlaneGeometry(1.0, 1.0);
+      var mesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(geom);
       mesh.name = "Plane";
 
       // shader,vtx and frag.
-      var vtxsrc = _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_3__.sliceVertexShaderSrc;
-      var fgmtsrc = _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_3__.sliceFragmentShaderSrc;
-      var threeMaterial = new three__WEBPACK_IMPORTED_MODULE_6__.ShaderMaterial({
+      var vtxsrc = _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_4__.sliceVertexShaderSrc;
+      var fgmtsrc = _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_4__.sliceFragmentShaderSrc;
+      var threeMaterial = new three__WEBPACK_IMPORTED_MODULE_7__.ShaderMaterial({
         uniforms: uniforms,
         vertexShader: vtxsrc,
         fragmentShader: fgmtsrc,
@@ -201,9 +229,9 @@ var Atlas2DSlice = /*#__PURE__*/function () {
       this.setUniform("textureAtlas", this.channelData.getFusedTexture());
       this.setUniform("textureAtlasMask", this.channelData.maskTexture);
       this.geometryTransformNode.updateMatrixWorld(true);
-      var mvm = new three__WEBPACK_IMPORTED_MODULE_6__.Matrix4();
+      var mvm = new three__WEBPACK_IMPORTED_MODULE_7__.Matrix4();
       mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
-      var mi = new three__WEBPACK_IMPORTED_MODULE_6__.Matrix4();
+      var mi = new three__WEBPACK_IMPORTED_MODULE_7__.Matrix4();
       mi.copy(mvm).invert();
       this.setUniform("inverseModelViewMatrix", mi);
     }
