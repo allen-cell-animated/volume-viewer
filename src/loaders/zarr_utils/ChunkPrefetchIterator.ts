@@ -95,7 +95,7 @@ export default class ChunkPrefetchIterator {
     }
   }
 
-  static *iterateDirections(directions: PrefetchDirectionState[]): Generator<TCZYX<number>> {
+  private static *iterateDirections(directions: PrefetchDirectionState[]): Generator<TCZYX<number>> {
     let offset = 1;
 
     while (directions.length > 0) {
