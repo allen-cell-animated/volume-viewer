@@ -111,6 +111,22 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint
 
 type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;
 
+type ZarrSource = {
+  /** Representations of each scale level in this zarr. We pick one and pass it to `zarrGet` to load data. */
+  scaleLevels: NumericZarrArray[];
+  /** OME-specified metadata record with most useful info on the current image, e.g. sizes, axis order, etc. */
+  multiscaleMetadata: OMEMultiscale;
+  /** OME-specified "transitional" metadata record which we mostly ignore, but which gives channel & volume names. */
+  omero: OmeroTransitionalMetadata;
+  /**
+   * Zarr dimensions may be ordered in many ways or missing altogether (e.g. TCXYZ, TYX). `axesTCZYX` represents
+   * dimension order as a mapping from dimensions to their indices in dimension-ordered arrays for this zarr.
+   */
+  axisTCZYX: TCZYX<number>;
+  /** bleh */
+  channelOffset: number;
+};
+
 export type ZarrLoaderFetchOptions = {
   /** The max. number of requests the loader can issue at a time. Ignored if the constructor also receives a queue. */
   concurrencyLimit?: number;
@@ -148,18 +164,19 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
   private constructor(
     /** An abstraction representing a remote data source, used by zarrita to get chunks and by us to prefetch them. */
-    private store: WrappedStore<RequestInit>,
+    // private store: WrappedStore<RequestInit>,
     /** Representations of each scale level in this zarr. We pick one and pass it to `zarrGet` to load data. */
-    private scaleLevels: NumericZarrArray[],
+    // private scaleLevels: NumericZarrArray[],
     /** OME-specified metadata record with most useful info on the current image, e.g. sizes, axis order, etc. */
-    private multiscaleMetadata: OMEMultiscale,
+    // private multiscaleMetadata: OMEMultiscale,
     /** OME-specified "transitional" metadata record which we mostly ignore, but which gives channel & volume names. */
-    private omeroMetadata: OmeroTransitionalMetadata,
+    // private omeroMetadata: OmeroTransitionalMetadata,
     /**
      * Zarr dimensions may be ordered in many ways or missing altogether (e.g. TCXYZ, TYX). `axesTCZYX` represents
      * dimension order as a mapping from dimensions to their indices in dimension-ordered arrays for this zarr.
      */
-    private axesTCZYX: TCZYX<number>,
+    // private axesTCZYX: TCZYX<number>,
+    private sources: ZarrSource[],
     /** Handle to a `SubscribableRequestQueue` for smart concurrency management and request cancelling/reissuing. */
     private requestQueue: SubscribableRequestQueue,
     /** Options to configure (pre)fetching behavior. */
@@ -171,8 +188,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
   }
 
   static async createLoader(
-    url: string,
-    scene = 0,
+    urls: string | string[],
+    scenes: number | number[] = 0,
     cache?: VolumeCache,
     queue?: SubscribableRequestQueue,
     fetchOptions?: ZarrLoaderFetchOptions
@@ -181,25 +198,42 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     if (!queue) {
       queue = new SubscribableRequestQueue(fetchOptions?.concurrencyLimit, fetchOptions?.prefetchConcurrencyLimit);
     }
-    const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
-    const root = zarr.root(store);
-    const group = await zarr.open(root, { kind: "group" });
-    const { multiscales, omero } = group.attrs as OMEZarrMetadata;
 
-    // Pick scene (multiscale)
-    if (scene > multiscales.length) {
-      console.warn(`WARNING: OMEZarrLoader: scene ${scene} is invalid. Using scene 0.`);
-      scene = 0;
-    }
-    const multiscale = multiscales[scene];
+    urls = Array.isArray(urls) ? urls : [urls];
+    const scenesArr = Array.isArray(scenes) ? scenes : [scenes];
+    let channelCount = 0;
+    const sourceProms = urls.map(async (url, i) => {
+      const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
+      const root = zarr.root(store);
+      const group = await zarr.open(root, { kind: "group" });
+      const { multiscales, omero } = group.attrs as OMEZarrMetadata;
 
-    // Open all scale levels of multiscale
-    const scaleLevelPromises = multiscale.datasets.map(({ path }) => zarr.open(root.resolve(path), { kind: "array" }));
-    const scaleLevels = (await Promise.all(scaleLevelPromises)) as NumericZarrArray[];
-    const axisTCZYX = remapAxesToTCZYX(multiscale.axes);
+      // Pick scene (multiscale)
+      let scene = scenes[Math.max(i, scenesArr.length - 1)];
+      if (scene > multiscales.length) {
+        console.warn(`WARNING: OMEZarrLoader: scene ${scene} is invalid. Using scene 0.`);
+        scene = 0;
+      }
+      const multiscaleMetadata = multiscales[scene];
 
+      // Open all scale levels of multiscale
+      const lvlProms = multiscaleMetadata.datasets.map(({ path }) => zarr.open(root.resolve(path), { kind: "array" }));
+      const scaleLevels = (await Promise.all(lvlProms)) as NumericZarrArray[];
+      const axisTCZYX = remapAxesToTCZYX(multiscaleMetadata.axes);
+
+      const channelOffset = channelCount;
+      channelCount += omero.channels.length;
+      return {
+        scaleLevels,
+        multiscaleMetadata: multiscaleMetadata,
+        omero,
+        axisTCZYX,
+        channelOffset,
+      } as ZarrSource;
+    });
+    const sources = await Promise.all(sourceProms);
     const priorityDirs = fetchOptions?.priorityDirections ? fetchOptions.priorityDirections.slice() : undefined;
-    return new OMEZarrLoader(store, scaleLevels, multiscale, omero, axisTCZYX, queue, fetchOptions, priorityDirs);
+    return new OMEZarrLoader(sources, queue, fetchOptions, priorityDirs);
   }
 
   private getUnitSymbols(): [string, string] {
