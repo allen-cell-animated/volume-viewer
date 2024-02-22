@@ -109,6 +109,103 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint
   return u8;
 }
 
+/**
+ * Defines a partial order of zarr arrays based on their size. Specifically:
+ * - If array size x, y, z are all equal, the arrays are equal
+ * - otherwise, if all xyz of `a` are less than or equal to those of `b`, `a` is less than `b` (and vice versa)
+ * - if some xyz is less and some is greater, the arrays are uncomparable
+ */
+function compareZarrArraySize(
+  aArr: NumericZarrArray,
+  aTCZYX: TCZYX<number>,
+  bArr: NumericZarrArray,
+  bTCZYX: TCZYX<number>
+): number | undefined {
+  const diffZ = aArr.shape[aTCZYX[2]] - bArr.shape[bTCZYX[2]];
+  const diffY = aArr.shape[aTCZYX[3]] - bArr.shape[bTCZYX[3]];
+  const aX = aTCZYX[4] > -1 ? aArr.shape[aTCZYX[4]] : 1;
+  const bX = bTCZYX[4] > -1 ? bArr.shape[bTCZYX[4]] : 1;
+  const diffX = aX - bX;
+
+  if (diffZ === 0 && diffY === 0 && diffX === 0) {
+    return 0;
+  } else if (diffZ <= 0 && diffY <= 0 && diffX <= 0) {
+    return -1;
+  } else if (diffZ >= 0 && diffY >= 0 && diffX >= 0) {
+    return 1;
+  } else {
+    return undefined;
+  }
+}
+
+function matchSourceScaleLevels(sources: ZarrSource[]): ZarrSource[] {
+  if (sources.length < 2) {
+    return sources;
+  }
+
+  const scaleIndexes = new Array(sources.length).fill(0);
+  const matchingSets: number[][] = [];
+  while (scaleIndexes.every((val, idx) => val < sources[idx].scaleLevels.length)) {
+    // First pass: find the largest source, check if all sources are equal, and verify some invariants
+    let allEqual = true;
+    const largestSrcIdx = sources.reduce((largestIdx, currentSrc, currentIdx) => {
+      const largestSrc = sources[largestIdx];
+      const largestArr = largestSrc.scaleLevels[scaleIndexes[largestIdx]];
+      const currentArr = currentSrc.scaleLevels[scaleIndexes[currentIdx]];
+
+      const ordering = compareZarrArraySize(largestArr, largestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
+      if (!ordering) {
+        // Arrays are equal, or they are uncomparable
+        if (ordering === undefined) {
+          throw new Error("Incompatible zarr arrays: pixel dimensions are mismatched");
+        }
+        // Now we know the arrays are equal, but they may still be invalid to match up because:
+        // - They have different scale transformations
+        // - They have different chunk sizes (TODO update prefetching so this restriction can be removed)
+        // - They have different numbers of timesteps
+        // TODO implement checks for all these
+        if (largestArr.shape[largestSrc.axesTCZYX[0]] !== currentArr.shape[currentSrc.axesTCZYX[0]]) {
+          throw new Error("Incompatible zarr arrays: different numbers of timesteps");
+        }
+        return largestIdx;
+      }
+
+      allEqual = false;
+      return ordering < 0 ? currentIdx : largestIdx;
+    }, 0);
+
+    if (allEqual) {
+      // We've found a matching set of scale levels! Save it and increment all indexes
+      matchingSets.push(scaleIndexes.slice());
+      for (let i = 0; i < scaleIndexes.length; i++) {
+        scaleIndexes[i] += 1;
+      }
+    } else {
+      // Increment the indexes of the sources which are smaller than the largest
+      const largestSrc = sources[largestSrcIdx];
+      const largestArr = largestSrc.scaleLevels[scaleIndexes[largestSrcIdx]];
+      for (const [srcIdx, idx] of scaleIndexes.entries()) {
+        const currentSrc = sources[idx];
+        const currentArr = currentSrc.scaleLevels[srcIdx];
+        const ordering = compareZarrArraySize(largestArr, largestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
+        if (ordering !== 0) {
+          scaleIndexes[idx] += 1;
+        }
+      }
+    }
+  }
+
+  if (matchingSets.length === 0) {
+    throw new Error("Incompatible zarr arrays: no sets of scale levels found that matched in all sources");
+  }
+
+  // TODO actually map out here, or just build in loop above
+  return sources.map((src, srcIdx) => ({
+    ...src,
+    scaleLevels: matchingSets[0].map((lvlIdx) => src.scaleLevels[lvlIdx]),
+  }));
+}
+
 type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;
 
 type ZarrSource = {
@@ -121,10 +218,10 @@ type ZarrSource = {
   omeroMetadata: OmeroTransitionalMetadata;
   /**
    * Zarr dimensions may be ordered in many ways or missing altogether (e.g. TCXYZ, TYX). `axesTCZYX` represents
-   * dimension order as a mapping from dimensions to their indices in dimension-ordered arrays for this zarr.
+   * dimension order as a mapping from dimensions to their indices in dimension-ordered arrays for this source.
    */
   axesTCZYX: TCZYX<number>;
-  /** bleh */
+  /** Which channels in the volume come out of this source - i.e. source channel 0 is volume channel `channelOffset` */
   channelOffset: number;
 };
 
@@ -407,7 +504,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     // Channel names is the other place where we have to check every source
     const channelNames = this.sources.flatMap((src) => src.omeroMetadata.channels.map((ch) => ch.label));
 
-    const scale5d = this.getScale();
+    const scale5d = this.getScale(levelToLoad);
     const timeScale = hasT ? scale5d[t] : 1;
 
     const imgdata: ImageInfo = {
@@ -519,24 +616,23 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     onData: RawChannelDataCallback
   ): Promise<{ imageInfo: ImageInfo }> {
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
-    const source0 = this.sources[0];
-    const [z, y, x] = source0.axesTCZYX.slice(2);
+    const [z, y, x] = this.sources[0].axesTCZYX.slice(2);
     const subregion = composeSubregion(loadSpec.subregion, maxExtent);
 
     const levelIdx = pickLevelToLoad({ ...loadSpec, subregion }, this.getLevelShapesZYX());
-    const levels = this.sources.map((src) => src.scaleLevels[levelIdx]);
-    const level0Shape = levels[0].shape;
+    const arraysAtLevel = this.sources.map((src) => src.scaleLevels[levelIdx]);
+    const array0Shape = arraysAtLevel[0].shape;
 
     const regionPx = convertSubregionToPixels(
       subregion,
-      new Vector3(level0Shape[x], level0Shape[y], z === -1 ? 1 : level0Shape[z])
+      new Vector3(array0Shape[x], array0Shape[y], z === -1 ? 1 : array0Shape[z])
     );
     // Update volume `imageInfo` to reflect potentially new dimensions
     const regionSizePx = regionPx.getSize(new Vector3());
     const atlasTileDims = computePackedAtlasDims(regionSizePx.z, regionSizePx.x, regionSizePx.y);
     const volExtentPx = convertSubregionToPixels(
       maxExtent,
-      new Vector3(level0Shape[x], level0Shape[y], z === -1 ? 1 : level0Shape[z])
+      new Vector3(array0Shape[x], array0Shape[y], z === -1 ? 1 : array0Shape[z])
     );
     const volSizePx = volExtentPx.getSize(new Vector3());
     const updatedImageInfo: ImageInfo = {
@@ -590,7 +686,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     }
     this.loadSubscriber = subscriber;
 
-    this.beginPrefetch(keys, levels);
+    this.beginPrefetch(keys, arraysAtLevel);
 
     Promise.all(channelPromises).then(() => {
       this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
