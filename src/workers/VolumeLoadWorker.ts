@@ -56,7 +56,7 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
     return await loader.loadDims(rebuildLoadSpec(loadSpec));
   },
 
-  [WorkerMsgType.LOAD_VOLUME_DATA]: async ({ imageInfo, loadSpec, loaderId, loadId }) => {
+  [WorkerMsgType.LOAD_VOLUME_DATA]: async ({ imageInfo, loadSpec, syncChannels, loaderId, loadId }) => {
     if (loader === undefined) {
       throw new Error("No loader created");
     }
@@ -64,6 +64,7 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
     return await loader.loadRawChannelData(
       rebuildImageInfo(imageInfo),
       rebuildLoadSpec(loadSpec),
+      syncChannels,
       (channelIndex, data, atlasDims) => {
         const message: WorkerResponse<WorkerMsgType> = {
           responseResult: WorkerResponseResult.EVENT,

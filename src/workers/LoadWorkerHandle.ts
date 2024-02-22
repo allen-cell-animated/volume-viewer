@@ -233,6 +233,7 @@ class WorkerLoader extends ThreadableVolumeLoader {
   async loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
+    syncChannels: boolean,
     onData: RawChannelDataCallback
   ): Promise<Partial<LoadedVolumeInfo>> {
     this.checkIsOpen();
@@ -245,6 +246,7 @@ class WorkerLoader extends ThreadableVolumeLoader {
       {
         imageInfo,
         loadSpec,
+        syncChannels,
         loaderId: this.loaderId,
         loadId: this.currentLoadId,
       }

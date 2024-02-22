@@ -68,7 +68,12 @@ export interface IVolumeLoader {
   // TODO this is not cancellable in the sense that any async requests initiated here are not stored
   // in a way that they can be interrupted.
   // TODO explicitly passing a `LoadSpec` is now rarely useful. Remove?
-  loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): void;
+  loadVolumeData(
+    volume: Volume,
+    syncChannels: boolean,
+    loadSpec?: LoadSpec,
+    onChannelLoaded?: PerChannelCallback
+  ): void;
 
   /** Change which directions to prioritize when prefetching. Currently only implemented on `OMEZarrLoader`. */
   setPrefetchPriority(directions: PrefetchDirection[]): void;
@@ -99,6 +104,7 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
   abstract loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
+    syncChannels: boolean,
     onData: RawChannelDataCallback
   ): Promise<Partial<LoadedVolumeInfo>>;
 
@@ -116,6 +122,7 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
 
   async loadVolumeData(
     volume: Volume,
+    syncChannels: boolean,
     loadSpecOverride?: LoadSpec,
     onChannelLoaded?: PerChannelCallback
   ): Promise<void> {
@@ -129,7 +136,7 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
     };
 
     const spec = { ...loadSpecOverride, ...volume.loadSpec };
-    const { imageInfo, loadSpec } = await this.loadRawChannelData(volume.imageInfo, spec, onChannelData);
+    const { imageInfo, loadSpec } = await this.loadRawChannelData(volume.imageInfo, spec, syncChannels, onChannelData);
 
     if (imageInfo) {
       volume.imageInfo = imageInfo;

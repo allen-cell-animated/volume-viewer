@@ -443,6 +443,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
   loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
+    syncChannels: boolean,
     onData: RawChannelDataCallback
   ): Promise<{ imageInfo: ImageInfo }> {
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
@@ -487,7 +488,6 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       }
     };
 
-    const syncChannels = true;
     const chdata = new Map<number, Uint8Array>();
 
     const channelPromises = channelIndexes.map(async (ch) => {
@@ -501,8 +501,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
         const u8 = convertChannel(result.data);
         if (syncChannels) {
           chdata.set(ch, u8);
-        }
-        else {
+        } else {
           onData(ch, u8);
         }
       } catch (e) {

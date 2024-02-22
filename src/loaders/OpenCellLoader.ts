@@ -60,6 +60,7 @@ class OpenCellLoader extends ThreadableVolumeLoader {
   loadRawChannelData(
     imageInfo: ImageInfo,
     _loadSpec: LoadSpec,
+    syncChannels: boolean,
     onData: RawChannelDataCallback
   ): Promise<Record<string, never>> {
     // HQTILE or LQTILE

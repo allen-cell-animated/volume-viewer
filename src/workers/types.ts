@@ -42,6 +42,7 @@ export type WorkerRequestPayload<T extends WorkerMsgType> = {
   [WorkerMsgType.LOAD_VOLUME_DATA]: {
     imageInfo: ImageInfo;
     loadSpec: LoadSpec;
+    syncChannels: boolean;
     loaderId: number;
     loadId: number;
   };

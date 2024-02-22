@@ -504,9 +504,9 @@ export default class VolumeDrawable {
     const { channels } = this.volume.loadSpecRequired;
     const channelRequired = channels.includes(channelIndex);
     if (enabled && !channelRequired) {
-      this.volume.updateRequiredData({ channels: [...channels, channelIndex] });
+      this.volume.updateRequiredData({ channels: [...channels, channelIndex] }, false);
     } else if (!enabled && channelRequired) {
-      this.volume.updateRequiredData({ channels: channels.filter((i) => i !== channelIndex) });
+      this.volume.updateRequiredData({ channels: channels.filter((i) => i !== channelIndex) }, false);
     }
   }
 
@@ -678,17 +678,17 @@ export default class VolumeDrawable {
     switch (newRenderMode) {
       case RenderMode.PATHTRACE:
         this.volumeRendering = new PathTracedVolume(this.volume, this.settings);
-        this.volume.updateRequiredData({ subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)) });
+        this.volume.updateRequiredData({ subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)) }, false);
         this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
         break;
       case RenderMode.SLICE:
         this.volumeRendering = new Atlas2DSlice(this.volume, this.settings);
-        this.volume.updateRequiredData({ subregion: new Box3(new Vector3(0, 0, 0.5), new Vector3(1, 1, 0.5)) });
+        this.volume.updateRequiredData({ subregion: new Box3(new Vector3(0, 0, 0.5), new Vector3(1, 1, 0.5)) }, false);
         break;
       case RenderMode.RAYMARCH:
       default:
         this.volumeRendering = new RayMarchedAtlasVolume(this.volume, this.settings);
-        this.volume.updateRequiredData({ subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)) });
+        this.volume.updateRequiredData({ subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)) }, false);
         break;
     }
 
