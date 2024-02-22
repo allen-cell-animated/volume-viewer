@@ -25,7 +25,6 @@ import {
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
 import ChunkPrefetchIterator from "./zarr_utils/ChunkPrefetchIterator";
-import { PrefetchDirection } from "./zarr_utils/types";
 import WrappedStore from "./zarr_utils/WrappedStore";
 import {
   OMEAxis,
@@ -35,6 +34,8 @@ import {
   OMEZarrMetadata,
   SubscriberId,
   TCZYX,
+  OMEDataset,
+  PrefetchDirection,
 } from "./zarr_utils/types";
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
@@ -107,6 +108,64 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint
   }
 
   return u8;
+}
+
+/** Reorder an array of values [T, C, Z, Y, X] to the given dimension order */
+function orderByDimension<T>(valsTCZYX: TCZYX<T>, orderTCZYX: TCZYX<number>): T[] {
+  const specLen = getDimensionCount(orderTCZYX);
+  const result: T[] = Array(specLen);
+
+  orderTCZYX.forEach((val, idx) => {
+    if (val > -1) {
+      if (val > specLen) {
+        throw new Error("Unexpected axis index");
+      }
+      result[val] = valsTCZYX[idx];
+    }
+  });
+
+  return result;
+}
+
+/** Reorder an array of values in the given dimension order to [T, C, Z, Y, X] */
+function orderByTCZYX<T>(valsDimension: T[], orderTCZYX: TCZYX<number>, defaultValue: T): TCZYX<T> {
+  const result: TCZYX<T> = [defaultValue, defaultValue, defaultValue, defaultValue, defaultValue];
+
+  orderTCZYX.forEach((val, idx) => {
+    if (val > -1) {
+      if (val > valsDimension.length) {
+        throw new Error("Unexpected axis index");
+      }
+      result[idx] = valsDimension[val];
+    }
+  });
+
+  return result;
+}
+
+/** Select the scale transform from an OME metadata object with coordinate transforms, and return it in TCZYX order */
+function getScale(dataset: OMEDataset | OMEMultiscale, orderTCZYX: TCZYX<number>): TCZYX<number> {
+  const transforms = dataset.coordinateTransformations;
+
+  if (transforms === undefined) {
+    console.error("ERROR: no coordinate transformations for scale level");
+    return [1, 1, 1, 1, 1];
+  }
+
+  // this assumes we'll never encounter the "path" variant
+  const isScaleTransform = (t: OMECoordinateTransformation): t is { type: "scale"; scale: number[] } =>
+    t.type === "scale";
+
+  // there can be any number of coordinateTransformations
+  // but there must be only one of type "scale".
+  const scaleTransform = transforms.find(isScaleTransform);
+  if (!scaleTransform) {
+    console.error(`ERROR: no coordinate transformation of type "scale" for scale level`);
+    return [1, 1, 1, 1, 1];
+  }
+
+  const scale = scaleTransform.scale.slice();
+  return orderByTCZYX(scale, orderTCZYX, 1);
 }
 
 type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;
@@ -215,70 +274,21 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     return [spaceUnitSymbol, timeUnitSymbol];
   }
 
-  private getScale(level = 0): TCZYX<number> {
-    const meta = this.multiscaleMetadata;
-    const transforms = meta.datasets[level].coordinateTransformations ?? meta.coordinateTransformations;
-
-    if (transforms === undefined) {
-      console.error("ERROR: no coordinate transformations for scale level");
-      return [1, 1, 1, 1, 1];
-    }
-
-    // this assumes we'll never encounter the "path" variant
-    const isScaleTransform = (t: OMECoordinateTransformation): t is { type: "scale"; scale: number[] } =>
-      t.type === "scale";
-
-    // there can be any number of coordinateTransformations
-    // but there must be only one of type "scale".
-    const scaleTransform = transforms.find(isScaleTransform);
-    if (!scaleTransform) {
-      console.error(`ERROR: no coordinate transformation of type "scale" for scale level`);
-      return [1, 1, 1, 1, 1];
-    }
-
-    const scale = scaleTransform.scale.slice();
-    while (scale.length < 5) {
-      scale.unshift(1);
-    }
-    return scale as TCZYX<number>;
-  }
-
   private getLevelShapesZYX(): [number, number, number][] {
     const [z, y, x] = this.axesTCZYX.slice(-3);
     return this.scaleLevels.map(({ shape }) => [z === -1 ? 1 : shape[z], shape[y], shape[x]]);
   }
 
-  /** Reorder an array of values [T, C, Z, Y, X] to the actual order of those dimensions in the zarr */
-  private orderByDimension<T>(valsTCZYX: TCZYX<T>): T[] {
-    const specLen = getDimensionCount(this.axesTCZYX);
-    const result: T[] = Array(specLen);
-
-    this.axesTCZYX.forEach((val, idx) => {
-      if (val > -1) {
-        if (val > specLen) {
-          throw new Error("Unexpected axis index");
-        }
-        result[val] = valsTCZYX[idx];
-      }
-    });
-
-    return result;
+  private getScale(level: number): TCZYX<number> {
+    return getScale(this.multiscaleMetadata.datasets[level], this.axesTCZYX);
   }
 
-  /** Reorder an array of values in this zarr's dimension order to [T, C, Z, Y, X] */
+  private orderByDimension<T>(valsTCZYX: TCZYX<T>): T[] {
+    return orderByDimension(valsTCZYX, this.axesTCZYX);
+  }
+
   private orderByTCZYX<T>(valsDimension: T[], defaultValue: T): TCZYX<T> {
-    const result: TCZYX<T> = [defaultValue, defaultValue, defaultValue, defaultValue, defaultValue];
-
-    this.axesTCZYX.forEach((val, idx) => {
-      if (val > -1) {
-        if (val > valsDimension.length) {
-          throw new Error("Unexpected axis index");
-        }
-        result[idx] = valsDimension[val];
-      }
-    });
-
-    return result;
+    return orderByTCZYX(valsDimension, this.axesTCZYX, defaultValue);
   }
 
   /**
