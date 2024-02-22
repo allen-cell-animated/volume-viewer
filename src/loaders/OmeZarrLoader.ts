@@ -487,6 +487,9 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       }
     };
 
+    const syncChannels = true;
+    const chdata = new Map<number, Uint8Array>();
+
     const channelPromises = channelIndexes.map(async (ch) => {
       // Build slice spec
       const { min, max } = regionPx;
@@ -496,7 +499,12 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       try {
         const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } });
         const u8 = convertChannel(result.data);
-        onData(ch, u8);
+        if (syncChannels) {
+          chdata.set(ch, u8);
+        }
+        else {
+          onData(ch, u8);
+        }
       } catch (e) {
         // TODO: verify that cancelling requests in progress doesn't leak memory
         if (e !== CHUNK_REQUEST_CANCEL_REASON) {
@@ -515,6 +523,11 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     this.beginPrefetch(keys, level);
 
     Promise.all(channelPromises).then(() => {
+      if (syncChannels) {
+        for (const [ch, data] of chdata) {
+          onData(ch, data);
+        }
+      }
       this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
     });
     return Promise.resolve({ imageInfo: updatedImageInfo });
