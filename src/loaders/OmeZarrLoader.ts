@@ -25,7 +25,6 @@ import {
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
 import ChunkPrefetchIterator from "./zarr_utils/ChunkPrefetchIterator";
-import { PrefetchDirection } from "./zarr_utils/types";
 import WrappedStore from "./zarr_utils/WrappedStore";
 import {
   OMEAxis,
@@ -35,6 +34,8 @@ import {
   OMEZarrMetadata,
   SubscriberId,
   TCZYX,
+  OMEDataset,
+  PrefetchDirection,
 } from "./zarr_utils/types";
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
@@ -109,6 +110,64 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint
   return u8;
 }
 
+/** Reorder an array of values [T, C, Z, Y, X] to the given dimension order */
+function orderByDimension<T>(valsTCZYX: TCZYX<T>, orderTCZYX: TCZYX<number>): T[] {
+  const specLen = getDimensionCount(orderTCZYX);
+  const result: T[] = Array(specLen);
+
+  orderTCZYX.forEach((val, idx) => {
+    if (val > -1) {
+      if (val > specLen) {
+        throw new Error("Unexpected axis index");
+      }
+      result[val] = valsTCZYX[idx];
+    }
+  });
+
+  return result;
+}
+
+/** Reorder an array of values in the given dimension order to [T, C, Z, Y, X] */
+function orderByTCZYX<T>(valsDimension: T[], orderTCZYX: TCZYX<number>, defaultValue: T): TCZYX<T> {
+  const result: TCZYX<T> = [defaultValue, defaultValue, defaultValue, defaultValue, defaultValue];
+
+  orderTCZYX.forEach((val, idx) => {
+    if (val > -1) {
+      if (val > valsDimension.length) {
+        throw new Error("Unexpected axis index");
+      }
+      result[idx] = valsDimension[val];
+    }
+  });
+
+  return result;
+}
+
+/** Select the scale transform from an OME metadata object with coordinate transforms, and return it in TCZYX order */
+function getScale(dataset: OMEDataset | OMEMultiscale, orderTCZYX: TCZYX<number>): TCZYX<number> {
+  const transforms = dataset.coordinateTransformations;
+
+  if (transforms === undefined) {
+    console.error("ERROR: no coordinate transformations for scale level");
+    return [1, 1, 1, 1, 1];
+  }
+
+  // this assumes we'll never encounter the "path" variant
+  const isScaleTransform = (t: OMECoordinateTransformation): t is { type: "scale"; scale: number[] } =>
+    t.type === "scale";
+
+  // there can be any number of coordinateTransformations
+  // but there must be only one of type "scale".
+  const scaleTransform = transforms.find(isScaleTransform);
+  if (!scaleTransform) {
+    console.error(`ERROR: no coordinate transformation of type "scale" for scale level`);
+    return [1, 1, 1, 1, 1];
+  }
+
+  const scale = scaleTransform.scale.slice();
+  return orderByTCZYX(scale, orderTCZYX, 1);
+}
+
 /**
  * Defines a partial order of zarr arrays based on their size. Specifically:
  * - If array size x, y, z are all equal, the arrays are equal
@@ -138,15 +197,33 @@ function compareZarrArraySize(
   }
 }
 
-function matchSourceScaleLevels(sources: ZarrSource[]): ZarrSource[] {
+function scaleTransformsAreEqual(aSrc: ZarrSource, aLevel: number, bSrc: ZarrSource, bLevel: number): boolean {
+  const aScale = getScale(aSrc.multiscaleMetadata.datasets[aLevel], aSrc.axesTCZYX);
+  const bScale = getScale(bSrc.multiscaleMetadata.datasets[bLevel], bSrc.axesTCZYX);
+  return aScale[2] === bScale[2] && aScale[3] === bScale[3] && aScale[4] === bScale[4];
+}
+
+/**
+ * Ensures that all scale levels in `sources` are matched up by size. More precisely: for any scale level `i`, the size
+ * of zarr array `s[i]` is equal for every source `s`. We accomplish this by removing any arrays (and their associated
+ * scale transformations in OME metadata) which don't match up in all sources.
+ *
+ * Assumes all sources have scale levels ordered by size from largest to smallest. (This should always be true for
+ * compliant OME-Zarr data.)
+ */
+function matchSourceScaleLevels(sources: ZarrSource[]): void {
   if (sources.length < 2) {
-    return sources;
+    return;
   }
 
-  const scaleIndexes = new Array(sources.length).fill(0);
-  const matchingSets: number[][] = [];
+  // Save matching scale levels and metadata here
+  const matchedLevels: NumericZarrArray[][] = new Array(sources.length).fill([]);
+  const matchedMetas: OMEDataset[][] = new Array(sources.length).fill([]);
+
+  // Start as many loop counters as we have sources
+  const scaleIndexes: number[] = new Array(sources.length).fill(0);
   while (scaleIndexes.every((val, idx) => val < sources[idx].scaleLevels.length)) {
-    // First pass: find the largest source, check if all sources are equal, and verify some invariants
+    // First pass: find the largest source / determine if all sources are equal
     let allEqual = true;
     const largestSrcIdx = sources.reduce((largestIdx, currentSrc, currentIdx) => {
       const largestSrc = sources[largestIdx];
@@ -159,12 +236,16 @@ function matchSourceScaleLevels(sources: ZarrSource[]): ZarrSource[] {
         if (ordering === undefined) {
           throw new Error("Incompatible zarr arrays: pixel dimensions are mismatched");
         }
-        // Now we know the arrays are equal, but they may still be invalid to match up because:
-        // - They have different scale transformations
-        // - They have different chunk sizes (TODO update prefetching so this restriction can be removed)
-        // - They have different numbers of timesteps
-        // TODO implement checks for all these
-        if (largestArr.shape[largestSrc.axesTCZYX[0]] !== currentArr.shape[currentSrc.axesTCZYX[0]]) {
+        // Now we know the arrays are equal, but they may still be invalid to match up because...
+        // ...they have different scale transformations
+        if (!scaleTransformsAreEqual(largestSrc, scaleIndexes[largestIdx], currentSrc, scaleIndexes[currentIdx])) {
+          throw new Error("Incompatible zarr arrays: scale levels of equal size have different scale transformations");
+        }
+        // ...they have different chunk sizes (TODO update prefetching so this restriction can be removed)
+        // ...they have different numbers of timesteps
+        const largestT = largestSrc.axesTCZYX[0] > -1 ? largestArr.shape[largestSrc.axesTCZYX[0]] : 1;
+        const currentT = currentSrc.axesTCZYX[0] > -1 ? currentArr.shape[currentSrc.axesTCZYX[0]] : 1;
+        if (largestT !== currentT) {
           throw new Error("Incompatible zarr arrays: different numbers of timesteps");
         }
         return largestIdx;
@@ -176,8 +257,11 @@ function matchSourceScaleLevels(sources: ZarrSource[]): ZarrSource[] {
 
     if (allEqual) {
       // We've found a matching set of scale levels! Save it and increment all indexes
-      matchingSets.push(scaleIndexes.slice());
       for (let i = 0; i < scaleIndexes.length; i++) {
+        const currentSrc = sources[i];
+        const matchedScaleLevel = scaleIndexes[i];
+        matchedLevels[i].push(currentSrc.scaleLevels[matchedScaleLevel]);
+        matchedMetas[i].push(currentSrc.multiscaleMetadata.datasets[matchedScaleLevel]);
         scaleIndexes[i] += 1;
       }
     } else {
@@ -195,15 +279,14 @@ function matchSourceScaleLevels(sources: ZarrSource[]): ZarrSource[] {
     }
   }
 
-  if (matchingSets.length === 0) {
+  if (sources[0].scaleLevels.length === 0) {
     throw new Error("Incompatible zarr arrays: no sets of scale levels found that matched in all sources");
   }
 
-  // TODO actually map out here, or just build in loop above
-  return sources.map((src, srcIdx) => ({
-    ...src,
-    scaleLevels: matchingSets[0].map((lvlIdx) => src.scaleLevels[lvlIdx]),
-  }));
+  for (let i = 0; i < sources.length; i++) {
+    sources[i].scaleLevels = matchedLevels[i];
+    sources[i].multiscaleMetadata.datasets = matchedMetas[i];
+  }
 }
 
 type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;
@@ -353,72 +436,22 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     return [spaceUnitSymbol, timeUnitSymbol];
   }
 
-  private getScale(level = 0): TCZYX<number> {
-    const meta = this.sources[0].multiscaleMetadata;
-    const transforms = meta.datasets[level].coordinateTransformations ?? meta.coordinateTransformations;
-
-    if (transforms === undefined) {
-      console.error("ERROR: no coordinate transformations for scale level");
-      return [1, 1, 1, 1, 1];
-    }
-
-    // this assumes we'll never encounter the "path" variant
-    const isScaleTransform = (t: OMECoordinateTransformation): t is { type: "scale"; scale: number[] } =>
-      t.type === "scale";
-
-    // there can be any number of coordinateTransformations
-    // but there must be only one of type "scale".
-    const scaleTransform = transforms.find(isScaleTransform);
-    if (!scaleTransform) {
-      console.error(`ERROR: no coordinate transformation of type "scale" for scale level`);
-      return [1, 1, 1, 1, 1];
-    }
-
-    const scale = scaleTransform.scale.slice();
-    while (scale.length < 5) {
-      scale.unshift(1);
-    }
-    return scale as TCZYX<number>;
-  }
-
   private getLevelShapesZYX(): [number, number, number][] {
     const source = this.sources[0];
     const [z, y, x] = source.axesTCZYX.slice(-3);
     return source.scaleLevels.map(({ shape }) => [z === -1 ? 1 : shape[z], shape[y], shape[x]]);
   }
 
-  /** Reorder an array of values [T, C, Z, Y, X] to the actual order of those dimensions in the zarr */
-  private orderByDimension<T>(valsTCZYX: TCZYX<T>, sourceIdx = 0): T[] {
-    const { axesTCZYX } = this.sources[sourceIdx];
-    const specLen = getDimensionCount(axesTCZYX);
-    const result: T[] = Array(specLen);
-
-    axesTCZYX.forEach((val, idx) => {
-      if (val > -1) {
-        if (val > specLen) {
-          throw new Error("Unexpected axis index");
-        }
-        result[val] = valsTCZYX[idx];
-      }
-    });
-
-    return result;
+  private getScale(level: number): TCZYX<number> {
+    return getScale(this.sources[0].multiscaleMetadata.datasets[level], this.sources[0].axesTCZYX);
   }
 
-  /** Reorder an array of values in this zarr's dimension order to [T, C, Z, Y, X] */
+  private orderByDimension<T>(valsTCZYX: TCZYX<T>, sourceIdx = 0): T[] {
+    return orderByDimension(valsTCZYX, this.sources[sourceIdx].axesTCZYX);
+  }
+
   private orderByTCZYX<T>(valsDimension: T[], defaultValue: T, sourceIdx = 0): TCZYX<T> {
-    const result: TCZYX<T> = [defaultValue, defaultValue, defaultValue, defaultValue, defaultValue];
-
-    this.sources[sourceIdx].axesTCZYX.forEach((val, idx) => {
-      if (val > -1) {
-        if (val > valsDimension.length) {
-          throw new Error("Unexpected axis index");
-        }
-        result[idx] = valsDimension[val];
-      }
-    });
-
-    return result;
+    return orderByTCZYX(valsDimension, this.sources[sourceIdx].axesTCZYX, defaultValue);
   }
 
   /**
