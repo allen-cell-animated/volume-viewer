@@ -41,7 +41,8 @@ export type LoadedVolumeInfo = {
  */
 export type PerChannelCallback = (volume: Volume, channelIndex: number) => void;
 
-export type RawChannelDataCallback = (channelIndex: number, data: Uint8Array, atlasDims?: [number, number]) => void;
+// allow lists of channel indices and data arrays to be passed to the callback
+export type RawChannelDataCallback = (channelIndex: number[], data: Uint8Array[], atlasDims?: [number, number]) => void;
 
 /**
  * Loads volume data from a source specified by a `LoadSpec`.
@@ -126,13 +127,17 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
     loadSpecOverride?: LoadSpec,
     onChannelLoaded?: PerChannelCallback
   ): Promise<void> {
-    const onChannelData: RawChannelDataCallback = (channelIndex, data, atlasDims) => {
-      if (atlasDims) {
-        volume.setChannelDataFromAtlas(channelIndex, data, atlasDims[0], atlasDims[1]);
-      } else {
-        volume.setChannelDataFromVolume(channelIndex, data);
+    const onChannelData: RawChannelDataCallback = (channelIndices, dataArrays, atlasDims) => {
+      for (let i = 0; i < channelIndices.length; i++) {
+        const channelIndex = channelIndices[i];
+        const data = dataArrays[i];
+        if (atlasDims) {
+          volume.setChannelDataFromAtlas(channelIndex, data, atlasDims[0], atlasDims[1]);
+        } else {
+          volume.setChannelDataFromVolume(channelIndex, data);
+        }
+        onChannelLoaded?.(volume, channelIndex);
       }
-      onChannelLoaded?.(volume, channelIndex);
     };
 
     const spec = { ...loadSpecOverride, ...volume.loadSpec };

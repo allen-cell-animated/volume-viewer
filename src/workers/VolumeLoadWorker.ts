@@ -74,7 +74,8 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
           data,
           atlasDims,
         };
-        (self as unknown as Worker).postMessage(message, copyOnLoad ? [] : [data.buffer]);
+        const dataTransfers = data.map((d) => d.buffer);
+        (self as unknown as Worker).postMessage(message, copyOnLoad ? [] : dataTransfers);
       }
     );
   },

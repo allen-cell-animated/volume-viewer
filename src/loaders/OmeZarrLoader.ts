@@ -488,7 +488,9 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       }
     };
 
-    const chdata = new Map<number, Uint8Array>();
+    syncChannels = true;
+    const resultChannelIndices: number[] = [];
+    const resultChannelData: Uint8Array[] = [];
 
     const channelPromises = channelIndexes.map(async (ch) => {
       // Build slice spec
@@ -500,9 +502,10 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
         const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } });
         const u8 = convertChannel(result.data);
         if (syncChannels) {
-          chdata.set(ch, u8);
+          resultChannelData.push(u8);
+          resultChannelIndices.push(ch);
         } else {
-          onData(ch, u8);
+          onData([ch], [u8]);
         }
       } catch (e) {
         // TODO: verify that cancelling requests in progress doesn't leak memory
@@ -523,9 +526,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     Promise.all(channelPromises).then(() => {
       if (syncChannels) {
-        for (const [ch, data] of chdata) {
-          onData(ch, data);
-        }
+        onData(resultChannelIndices, resultChannelData);
       }
       this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
     });

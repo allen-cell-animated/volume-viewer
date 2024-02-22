@@ -59,12 +59,12 @@ export type WorkerResponsePayload<T extends WorkerMsgType> = {
   [WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS]: void;
 }[T];
 
-/** Currently the only event a loader can produce is a `ChannelLoadEvent` when a single channel loads. */
+/** Currently the only event a loader can produce is a `ChannelLoadEvent` when a batch of channels loads. */
 export type ChannelLoadEvent = {
   loaderId: number;
   loadId: number;
-  channelIndex: number;
-  data: Uint8Array;
+  channelIndex: number[];
+  data: Uint8Array[];
   atlasDims?: [number, number];
 };
 
