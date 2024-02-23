@@ -8,7 +8,7 @@ import {
   OMEDataset,
   OMEMultiscale,
   TCZYX,
-  ZarrSource,
+  ZarrSourceMeta,
 } from "./types";
 
 /** Turns `axesTCZYX` into the number of dimensions in the array */
@@ -139,7 +139,7 @@ function compareZarrArraySize(
   }
 }
 
-function scaleTransformsAreEqual(aSrc: ZarrSource, aLevel: number, bSrc: ZarrSource, bLevel: number): boolean {
+function scaleTransformsAreEqual(aSrc: ZarrSourceMeta, aLevel: number, bSrc: ZarrSourceMeta, bLevel: number): boolean {
   const aScale = getScale(aSrc.multiscaleMetadata.datasets[aLevel], aSrc.axesTCZYX);
   const bScale = getScale(bSrc.multiscaleMetadata.datasets[bLevel], bSrc.axesTCZYX);
   return aScale[2] === bScale[2] && aScale[3] === bScale[3] && aScale[4] === bScale[4];
@@ -153,7 +153,7 @@ function scaleTransformsAreEqual(aSrc: ZarrSource, aLevel: number, bSrc: ZarrSou
  * Assumes all sources have scale levels ordered by size from largest to smallest. (This should always be true for
  * compliant OME-Zarr data.)
  */
-export function matchSourceScaleLevels(sources: ZarrSource[]): void {
+export function matchSourceScaleLevels(sources: ZarrSourceMeta[]): void {
   if (sources.length < 2) {
     return;
   }

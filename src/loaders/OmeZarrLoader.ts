@@ -38,7 +38,7 @@ import {
   SubscriberId,
   TCZYX,
   PrefetchDirection,
-  ZarrSource,
+  ZarrSourceMeta,
   NumericZarrArray,
 } from "./zarr_utils/types";
 
@@ -127,7 +127,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
      * dimension order as a mapping from dimensions to their indices in dimension-ordered arrays for this zarr.
      */
     // private axesTCZYX: TCZYX<number>,
-    private sources: ZarrSource[],
+    private sources: ZarrSourceMeta[],
     /** Handle to a `SubscribableRequestQueue` for smart concurrency management and request cancelling/reissuing. */
     private requestQueue: SubscribableRequestQueue,
     /** Options to configure (pre)fetching behavior. */
@@ -180,7 +180,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
         omeroMetadata: omero,
         axesTCZYX,
         channelOffset,
-      } as ZarrSource;
+      } as ZarrSourceMeta;
     });
     const sources = await Promise.all(sourceProms);
     const priorityDirs = fetchOptions?.priorityDirections ? fetchOptions.priorityDirections.slice() : undefined;
