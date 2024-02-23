@@ -58,8 +58,8 @@ export function orderByDimension<T>(valsTCZYX: TCZYX<T>, orderTCZYX: TCZYX<numbe
   const result: T[] = Array(specLen);
 
   orderTCZYX.forEach((val, idx) => {
-    if (val > -1) {
-      if (val > specLen) {
+    if (val >= 0) {
+      if (val >= specLen) {
         throw new Error("Unexpected axis index");
       }
       result[val] = valsTCZYX[idx];
@@ -74,8 +74,8 @@ export function orderByTCZYX<T>(valsDimension: T[], orderTCZYX: TCZYX<number>, d
   const result: TCZYX<T> = [defaultValue, defaultValue, defaultValue, defaultValue, defaultValue];
 
   orderTCZYX.forEach((val, idx) => {
-    if (val > -1) {
-      if (val > valsDimension.length) {
+    if (val >= 0) {
+      if (val >= valsDimension.length) {
         throw new Error("Unexpected axis index");
       }
       result[idx] = valsDimension[val];
@@ -146,9 +146,9 @@ function scaleTransformsAreEqual(aSrc: ZarrSourceMeta, aLevel: number, bSrc: Zar
 }
 
 /**
- * Ensures that all scale levels in `sources` are matched up by size. More precisely: for any scale level `i`, the size
- * of zarr array `s[i]` is equal for every source `s`. We accomplish this by removing any arrays (and their associated
- * scale transformations in OME metadata) which don't match up in all sources.
+ * Ensures that all scale levels in `sources` are matched up by size. More precisely: enforces that, for any scale
+ * level `i`, the size of zarr array `s[i]` is equal for every source `s`. We accomplish this by removing any arrays
+ * (and their associated OME dataset metadata) which don't match up in all sources.
  *
  * Assumes all sources have scale levels ordered by size from largest to smallest. (This should always be true for
  * compliant OME-Zarr data.)
@@ -162,7 +162,7 @@ export function matchSourceScaleLevels(sources: ZarrSourceMeta[]): void {
   const matchedLevels: NumericZarrArray[][] = new Array(sources.length).fill([]);
   const matchedMetas: OMEDataset[][] = new Array(sources.length).fill([]);
 
-  // Start as many loop counters as we have sources
+  // Start as many index counters as we have sources
   const scaleIndexes: number[] = new Array(sources.length).fill(0);
   while (scaleIndexes.every((val, idx) => val < sources[idx].scaleLevels.length)) {
     // First pass: find the largest source / determine if all sources are equal
