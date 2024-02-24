@@ -920,6 +920,7 @@ function onVolumeCreated(volume: Volume) {
 
 function playTimeSeries(onNewFrameCallback: () => void) {
   window.clearTimeout(myState.timerId);
+  myState.loader.syncMultichannelLoading(true);
   myState.isPlaying = true;
 
   const loadNextFrame = () => {
@@ -1180,6 +1181,7 @@ function main() {
   pauseBtn?.addEventListener("click", () => {
     window.clearTimeout(myState.timerId);
     myState.isPlaying = false;
+    myState.loader.syncMultichannelLoading(false);
   });
 
   const forwardBtn = document.getElementById("forwardBtn");
