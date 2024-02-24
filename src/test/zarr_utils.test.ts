@@ -1,13 +1,91 @@
 import { expect } from "chai";
 
-import { OMEDataset, TCZYX } from "../loaders/zarr_utils/types";
+import { AbsolutePath, SyncReadable } from "@zarrita/storage";
+import * as zarr from "@zarrita/core";
+
+import {
+  NumericZarrArray,
+  OMEDataset,
+  OMEMultiscale,
+  OmeroTransitionalMetadata,
+  TCZYX,
+  ZarrSourceMeta,
+} from "../loaders/zarr_utils/types";
+import WrappedStore from "../loaders/zarr_utils/WrappedStore";
 import {
   getDimensionCount,
   getScale,
+  matchSourceScaleLevels,
   orderByDimension,
   orderByTCZYX,
   remapAxesToTCZYX,
 } from "../loaders/zarr_utils/utils";
+
+const createMockOmeroMetadata = (numChannels: number): OmeroTransitionalMetadata => ({
+  id: 0,
+  name: "0",
+  version: "0.0",
+  channels: Array.from({ length: numChannels }, (_, i) => ({
+    active: true,
+    coefficient: 1,
+    color: "ffffffff",
+    family: "linear",
+    inverted: false,
+    label: `channel ${i}`,
+    window: { end: 1, max: 1, min: 0, start: 0 },
+  })),
+});
+
+const createMockMultiscaleMetadata = (scales: number[][]): OMEMultiscale => ({
+  name: "0",
+  version: "0.0",
+  axes: [{ name: "t" }, { name: "c" }, { name: "z" }, { name: "y" }, { name: "x" }],
+  datasets: scales.map((scale, idx) => ({
+    path: `${idx}`,
+    coordinateTransformations: [{ type: "scale", scale }],
+  })),
+});
+
+class MockStore implements SyncReadable {
+  get(_key: AbsolutePath, _opts?: unknown): Uint8Array | undefined {
+    return undefined;
+  }
+}
+const MOCK_STORE = new WrappedStore(new MockStore());
+
+const createMockArrays = (shapes: number[][]): Promise<NumericZarrArray[]> => {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const promises = shapes.map((shape) => zarr.create(MOCK_STORE, { shape, chunk_shape: shape, data_type: "uint8" }));
+  return Promise.all(promises);
+};
+
+const createOneMockSource = async (
+  shapes: TCZYX<number>[],
+  scales: TCZYX<number>[],
+  channelOffset: number
+): Promise<ZarrSourceMeta> => ({
+  scaleLevels: await createMockArrays(scales),
+  multiscaleMetadata: createMockMultiscaleMetadata(scales),
+  omeroMetadata: createMockOmeroMetadata(shapes[0][1]),
+  axesTCZYX: [0, 1, 2, 3, 4],
+  channelOffset,
+});
+
+type ZarrSourceMockSpec = { shapes: TCZYX<number>[]; scales: TCZYX<number>[] };
+
+const createMockSources = (specs: ZarrSourceMockSpec[]): Promise<ZarrSourceMeta[]> => {
+  let channelOffset = 0;
+  const sourcePromises = specs.map(({ shapes, scales }) => {
+    const result = createOneMockSource(shapes, scales, channelOffset);
+    channelOffset += shapes[0][1];
+    return result;
+  });
+  return Promise.all(sourcePromises);
+};
+
+const createTwoMockSourceArrs = (specs: ZarrSourceMockSpec[]): Promise<[ZarrSourceMeta[], ZarrSourceMeta[]]> => {
+  return Promise.all([createMockSources(specs), createMockSources(specs)]);
+};
 
 describe("zarr_utils", () => {
   describe("getDimensionCount", () => {
@@ -39,7 +117,6 @@ describe("zarr_utils", () => {
       expect(remapAxesToTCZYX(axes)).to.deep.equal([-1, -1, -1, 1, 0]);
     });
   });
-
   // TODO: `pickLevelToLoad`
 
   const VALS_TCZYX: TCZYX<number> = [1, 2, 3, 4, 5];
@@ -111,5 +188,33 @@ describe("zarr_utils", () => {
     it("defaults to `[1, 1, 1, 1, 1]` if no coordinate transformations are present at all", () => {
       expect(getScale({ path: "0" }, [0, 1, 2, 3, 4])).to.deep.equal([1, 1, 1, 1, 1]);
     });
+  });
+
+  describe("matchSourceScaleLevels", () => {
+    it("does nothing if passed only one source scale level", async () => {
+      const [testSource, refSource] = await createTwoMockSourceArrs([
+        { shapes: [[5, 5, 5, 5, 5]], scales: [[1, 1, 1, 1, 1]] },
+      ]);
+      matchSourceScaleLevels(testSource);
+      expect(testSource).to.deep.equal(refSource);
+    });
+
+    it("does nothing if all source scale levels are the same", async () => {
+      const spec: ZarrSourceMockSpec = {
+        shapes: [
+          [1, 1, 5, 5, 5],
+          [1, 1, 10, 10, 10],
+        ],
+        scales: [
+          [1, 1, 1, 1, 1],
+          [1, 1, 1, 1, 1],
+        ],
+      };
+      const [testSource, refSource] = await createTwoMockSourceArrs([spec, spec]);
+      matchSourceScaleLevels(testSource);
+      expect(testSource).to.deep.equal(refSource);
+    });
+
+    // it("");
   });
 });
