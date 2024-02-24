@@ -232,7 +232,7 @@ export class View3d {
 
   setTime(volume: Volume, time: number, onChannelLoaded?: PerChannelCallback): void {
     const timeClamped = Math.max(0, Math.min(time, volume.imageInfo.times - 1));
-    volume.updateRequiredData({ time: timeClamped }, true, onChannelLoaded);
+    volume.updateRequiredData({ time: timeClamped }, onChannelLoaded);
     this.updateTimestepIndicator(volume);
   }
 

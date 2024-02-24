@@ -1035,7 +1035,7 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
 async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<void> {
   const volume = await loader.createVolume(loadSpec, onChannelDataArrived);
   onVolumeCreated(volume);
-  loader.loadVolumeData(volume, false);
+  loader.loadVolumeData(volume);
 
   // Set default zSlice
   goToZSlice(Math.floor(volume.imageInfo.subregionSize.z / 2));

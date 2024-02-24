@@ -56,7 +56,7 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
     return await loader.loadDims(rebuildLoadSpec(loadSpec));
   },
 
-  [WorkerMsgType.LOAD_VOLUME_DATA]: async ({ imageInfo, loadSpec, syncChannels, loaderId, loadId }) => {
+  [WorkerMsgType.LOAD_VOLUME_DATA]: async ({ imageInfo, loadSpec, loaderId, loadId }) => {
     if (loader === undefined) {
       throw new Error("No loader created");
     }
@@ -64,7 +64,6 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
     return await loader.loadRawChannelData(
       rebuildImageInfo(imageInfo),
       rebuildLoadSpec(loadSpec),
-      syncChannels,
       (channelIndex, data, atlasDims) => {
         const message: WorkerResponse<WorkerMsgType> = {
           responseResult: WorkerResponseResult.EVENT,
@@ -83,6 +82,12 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
   [WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS]: (directions) => {
     // Silently does nothing if the loader isn't an `OMEZarrLoader`
     loader?.setPrefetchPriority(directions);
+    return Promise.resolve();
+  },
+
+  [WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING]: (syncChannels) => {
+    // Silently does nothing if the loader isn't an `OMEZarrLoader`
+    loader?.syncMultichannelLoading(syncChannels);
     return Promise.resolve();
   },
 };

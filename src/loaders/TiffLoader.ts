@@ -156,7 +156,6 @@ class TiffLoader extends ThreadableVolumeLoader {
   async loadRawChannelData(
     imageInfo: ImageInfo,
     _loadSpec: LoadSpec,
-    syncChannels: boolean,
     onData: RawChannelDataCallback
   ): Promise<Record<string, never>> {
     const dims = await this.loadOmeDims();

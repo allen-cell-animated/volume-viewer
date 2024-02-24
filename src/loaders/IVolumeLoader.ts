@@ -69,15 +69,19 @@ export interface IVolumeLoader {
   // TODO this is not cancellable in the sense that any async requests initiated here are not stored
   // in a way that they can be interrupted.
   // TODO explicitly passing a `LoadSpec` is now rarely useful. Remove?
-  loadVolumeData(
-    volume: Volume,
-    syncChannels: boolean,
-    loadSpec?: LoadSpec,
-    onChannelLoaded?: PerChannelCallback
-  ): void;
+  loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): void;
 
   /** Change which directions to prioritize when prefetching. Currently only implemented on `OMEZarrLoader`. */
   setPrefetchPriority(directions: PrefetchDirection[]): void;
+
+  /**
+   * By default channel data can arrive out of order and at different times.
+   * This can cause the rendering to update in a way that is not visually appealing.
+   * In particular, during time series playback or Z slice playback, we would like
+   * to see all channels update at the same time.
+   * @param _sync Set true to force all requested channels to load at the same time
+   */
+  syncMultichannelLoading(sync: boolean): void;
 }
 
 /** Abstract class which allows loaders to accept and return types that are easier to transfer to/from a worker. */
@@ -105,12 +109,16 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
   abstract loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
-    syncChannels: boolean,
     onData: RawChannelDataCallback
   ): Promise<Partial<LoadedVolumeInfo>>;
 
   setPrefetchPriority(_directions: PrefetchDirection[]): void {
     // no-op by default
+  }
+
+  syncMultichannelLoading(_sync: boolean): void {
+    // default behavior is async, to update channels as they arrive, depending on each
+    // loader's implementation details.
   }
 
   async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
@@ -123,7 +131,6 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
 
   async loadVolumeData(
     volume: Volume,
-    syncChannels: boolean,
     loadSpecOverride?: LoadSpec,
     onChannelLoaded?: PerChannelCallback
   ): Promise<void> {
@@ -141,7 +148,7 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
     };
 
     const spec = { ...loadSpecOverride, ...volume.loadSpec };
-    const { imageInfo, loadSpec } = await this.loadRawChannelData(volume.imageInfo, spec, syncChannels, onChannelData);
+    const { imageInfo, loadSpec } = await this.loadRawChannelData(volume.imageInfo, spec, onChannelData);
 
     if (imageInfo) {
       volume.imageInfo = imageInfo;

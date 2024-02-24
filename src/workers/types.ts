@@ -10,6 +10,7 @@ export const enum WorkerMsgType {
   LOAD_DIMS,
   LOAD_VOLUME_DATA,
   SET_PREFETCH_PRIORITY_DIRECTIONS,
+  SYNCHRONIZE_MULTICHANNEL_LOADING,
 }
 
 /** The kind of response a worker can return - `SUCCESS`, `ERROR`, or `EVENT`. */
@@ -42,11 +43,11 @@ export type WorkerRequestPayload<T extends WorkerMsgType> = {
   [WorkerMsgType.LOAD_VOLUME_DATA]: {
     imageInfo: ImageInfo;
     loadSpec: LoadSpec;
-    syncChannels: boolean;
     loaderId: number;
     loadId: number;
   };
   [WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS]: PrefetchDirection[];
+  [WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING]: boolean;
 }[T];
 
 /** Maps each `WorkerMsgType` to the type of the payload of responses of that type. */
@@ -57,6 +58,7 @@ export type WorkerResponsePayload<T extends WorkerMsgType> = {
   [WorkerMsgType.LOAD_DIMS]: VolumeDims[];
   [WorkerMsgType.LOAD_VOLUME_DATA]: Partial<LoadedVolumeInfo>;
   [WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS]: void;
+  [WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING]: void;
 }[T];
 
 /** Currently the only event a loader can produce is a `ChannelLoadEvent` when a batch of channels loads. */

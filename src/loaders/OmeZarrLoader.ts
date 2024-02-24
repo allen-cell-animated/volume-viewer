@@ -146,6 +146,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
   //   This may cause errors or incorrect results otherwise!
   private maxExtent?: Box3;
 
+  private syncChannels = false;
+
   private constructor(
     /** An abstraction representing a remote data source, used by zarrita to get chunks and by us to prefetch them. */
     private store: WrappedStore<RequestInit>,
@@ -287,6 +289,10 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
    */
   setPrefetchPriority(directions: PrefetchDirection[]): void {
     this.priorityDirections = directions;
+  }
+
+  syncMultichannelLoading(_sync: boolean): void {
+    this.syncChannels = _sync;
   }
 
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
@@ -443,7 +449,6 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
   loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
-    syncChannels: boolean,
     onData: RawChannelDataCallback
   ): Promise<{ imageInfo: ImageInfo }> {
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
@@ -488,7 +493,6 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       }
     };
 
-    syncChannels = true;
     const resultChannelIndices: number[] = [];
     const resultChannelData: Uint8Array[] = [];
 
@@ -501,7 +505,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       try {
         const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } });
         const u8 = convertChannel(result.data);
-        if (syncChannels) {
+        if (this.syncChannels) {
           resultChannelData.push(u8);
           resultChannelIndices.push(ch);
         } else {
@@ -525,7 +529,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     this.beginPrefetch(keys, level);
 
     Promise.all(channelPromises).then(() => {
-      if (syncChannels) {
+      if (this.syncChannels) {
         onData(resultChannelIndices, resultChannelData);
       }
       this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);

@@ -150,7 +150,6 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
   async loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
-    syncChannels: boolean,
     onData: RawChannelDataCallback
   ): Promise<{ loadSpec?: LoadSpec }> {
     // if you need to adjust image paths prior to download,
