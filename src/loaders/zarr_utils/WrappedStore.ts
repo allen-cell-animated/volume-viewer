@@ -1,5 +1,5 @@
 import { FetchStore } from "zarrita";
-import { AbsolutePath, AsyncReadable, Readable } from "@zarrita/storage";
+import { AbsolutePath, AsyncReadable, AsyncWriteable, Readable } from "@zarrita/storage";
 
 import SubscribableRequestQueue from "../../utils/SubscribableRequestQueue";
 import VolumeCache from "../../VolumeCache";
@@ -17,8 +17,14 @@ type WrappedStoreOpts<Opts> = {
  * `Readable` is zarrita's minimal abstraction for any source of data.
  * `WrappedStore` wraps another `Readable` and adds (optional) connections to `VolumeCache` and `RequestQueue`.
  */
-class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>> implements AsyncReadable<WrappedStoreOpts<Opts>> {
+class WrappedStore<Opts, S extends Readable<Opts> = Readable<Opts>>
+  implements AsyncReadable<WrappedStoreOpts<Opts>>, AsyncWriteable
+{
   constructor(private baseStore: S, private cache?: VolumeCache, private queue?: SubscribableRequestQueue) {}
+  // Dummy implementation to make this class easier to use in tests
+  set(_key: AbsolutePath, _value: Uint8Array): Promise<void> {
+    return Promise.resolve();
+  }
 
   private async getAndCache(key: AbsolutePath, cacheKey: string, opts?: Opts): Promise<Uint8Array | undefined> {
     const result = await this.baseStore.get(key, opts);
