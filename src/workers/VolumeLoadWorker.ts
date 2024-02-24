@@ -86,7 +86,6 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
   },
 
   [WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING]: (syncChannels) => {
-    // Silently does nothing if the loader isn't an `OMEZarrLoader`
     loader?.syncMultichannelLoading(syncChannels);
     return Promise.resolve();
   },

@@ -291,8 +291,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     this.priorityDirections = directions;
   }
 
-  syncMultichannelLoading(_sync: boolean): void {
-    this.syncChannels = _sync;
+  syncMultichannelLoading(sync: boolean): void {
+    this.syncChannels = sync;
   }
 
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {

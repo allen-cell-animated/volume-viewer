@@ -79,7 +79,7 @@ export interface IVolumeLoader {
    * This can cause the rendering to update in a way that is not visually appealing.
    * In particular, during time series playback or Z slice playback, we would like
    * to see all channels update at the same time.
-   * @param _sync Set true to force all requested channels to load at the same time
+   * @param sync Set true to force all requested channels to load at the same time
    */
   syncMultichannelLoading(sync: boolean): void;
 }
