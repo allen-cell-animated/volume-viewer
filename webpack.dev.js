@@ -14,7 +14,7 @@ module.exports = {
   devtool: "source-map",
   devServer: {
     open: ["/"],
-    port: 9020,
+    port: 9021,
     static: [
       {
         staticOptions: {
