@@ -14,20 +14,22 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, "src/index.ts"),
       name: "volume-viewer",
-      fileName: "volume-viewer",
+      fileName: "@aics/volume-viewer",
       formats: ["es"],
     },
     rollupOptions: {
-      input: glob.sync(resolve(__dirname, "src/**/*.{js,css}")),
+      input: glob.sync(resolve(__dirname, "src/**/*.{js,ts,css}")),
       output: {
         preserveModules: true,
         preserveModulesRoot: "src",
-        entryFileNames: ({ name: fileName }) => {
-          return `${fileName}.js`;
-        },
+        entryFileNames: "[name].js",
+        // entryFileNames: ({ name: fileName }) => {
+        //   return `${fileName}.js`;
+        // },
+        interop: "auto",
       },
       external: ["chai", "mocha"],
     },
   },
-  plugins: [dts()],
+  //plugins: [dts()],
 });

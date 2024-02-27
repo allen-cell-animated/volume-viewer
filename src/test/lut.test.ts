@@ -1,6 +1,7 @@
 import { expect } from "chai";
 
 import Histogram from "../Histogram";
+import type { ControlPoint } from "../Histogram";
 import VolumeMaker from "../VolumeMaker";
 
 function clamp(val, cmin, cmax) {
@@ -14,21 +15,21 @@ describe("test histogram", () => {
   describe("binary volume data", () => {
     it("has a min of 255", () => {
       // histogram dataMin is the min nonzero value
-      expect(histogram.dataMin).to.equal(255);
+      expect(histogram.getMin()).to.equal(255);
     });
     it("has a max of 255", () => {
-      expect(histogram.dataMax).to.equal(255);
+      expect(histogram.getMax()).to.equal(255);
     });
     it("is created", () => {
       expect(histogram.maxBin).to.equal(255);
-      expect(histogram.bins[255]).to.be.greaterThan(0);
-      expect(histogram.bins[128]).to.equal(0);
-      expect(histogram.bins[0]).to.be.greaterThan(0);
+      expect(histogram["bins"][255]).to.be.greaterThan(0);
+      expect(histogram["bins"][128]).to.equal(0);
+      expect(histogram["bins"][0]).to.be.greaterThan(0);
     });
   });
 
   describe("generated lut from control points", () => {
-    const controlPoints = [
+    const controlPoints: ControlPoint[] = [
       { x: 0, color: [255, 255, 255], opacity: 0 },
       { x: 126, color: [255, 255, 255], opacity: 0 },
       { x: 128, color: [255, 255, 255], opacity: 1.0 },
@@ -49,7 +50,7 @@ describe("test histogram", () => {
 
   describe("interpolates opacity across consecutive control points", () => {
     it("has interpolated opacity correctly", () => {
-      const controlPoints = [
+      const controlPoints: ControlPoint[] = [
         { x: 0, color: [255, 255, 255], opacity: 0 },
         { x: 1, color: [255, 255, 255], opacity: 1.0 },
         { x: 255, color: [255, 255, 255], opacity: 1.0 },
@@ -60,7 +61,7 @@ describe("test histogram", () => {
       expect(lut.lut[2 * 4 + 3]).to.equal(255);
     });
     it("has interpolated opacity correctly with fractional control point positions", () => {
-      const controlPoints = [
+      const controlPoints: ControlPoint[] = [
         { x: 0, color: [255, 255, 255], opacity: 0 },
         { x: 0.1, color: [255, 255, 255], opacity: 0 },
         { x: 0.9, color: [255, 255, 255], opacity: 1.0 },
@@ -75,7 +76,7 @@ describe("test histogram", () => {
   });
 
   describe("generated lut single control point", () => {
-    const controlPoints = [{ x: 127, color: [255, 255, 255], opacity: 1.0 }];
+    const controlPoints: ControlPoint[] = [{ x: 127, color: [255, 255, 255], opacity: 1.0 }];
     const lut = histogram.lutGenerator_fromControlPoints(controlPoints);
     it("has interpolated opacity correctly", () => {
       expect(lut.lut[0 * 4 + 3]).to.equal(0);
@@ -145,9 +146,9 @@ describe("test histogram", () => {
         expect(lut.lut[255 * 4 + 3]).to.eql(255);
         expect(secondlut.lut[255 * 4 + 3]).to.eql(255);
         // Make sure no NaN values
-        lut.controlPoints.forEach(controlPoint => {
+        lut.controlPoints.forEach((controlPoint) => {
           expect(controlPoint.opacity).to.be.finite;
-        })
+        });
       });
       it("is consistent when min and max are the same positive number less than 255", () => {
         const lut = histogram.lutGenerator_minMax(120, 120);
@@ -162,9 +163,9 @@ describe("test histogram", () => {
         expect(lut.lut[255 * 4 + 3]).to.eql(255);
         expect(secondlut.lut[255 * 4 + 3]).to.eql(255);
         // Make sure no NaN values
-        lut.controlPoints.forEach(controlPoint => {
+        lut.controlPoints.forEach((controlPoint) => {
           expect(controlPoint.opacity).to.be.finite;
-        })
+        });
       });
       it("is consistent when min and max are both negative", () => {
         const lut = histogram.lutGenerator_minMax(-10, -5);
@@ -177,9 +178,9 @@ describe("test histogram", () => {
         expect(secondlut.lut[120 * 4 + 3]).to.eql(255);
         expect(lut.lut[255 * 4 + 3]).to.eql(255);
         expect(secondlut.lut[255 * 4 + 3]).to.eql(255);
-        lut.controlPoints.forEach(controlPoint => {
+        lut.controlPoints.forEach((controlPoint) => {
           expect(controlPoint.opacity).to.eql(1);
-        })
+        });
       });
       it("is consistent when min is 0 and max is 1", () => {
         const lut = histogram.lutGenerator_minMax(0, 1);
@@ -192,9 +193,9 @@ describe("test histogram", () => {
         expect(lut.lut[255 * 4 + 3]).to.eql(255);
         expect(secondlut.lut[255 * 4 + 3]).to.eql(255);
         // Make sure no NaN values
-        lut.controlPoints.forEach(controlPoint => {
+        lut.controlPoints.forEach((controlPoint) => {
           expect(controlPoint.opacity).to.be.finite;
-        })
+        });
       });
       it("is consistent when min is 244 and max is 255", () => {
         const lut = histogram.lutGenerator_minMax(254, 255);
@@ -207,9 +208,9 @@ describe("test histogram", () => {
         expect(lut.lut[255 * 4 + 3]).to.eql(255);
         expect(secondlut.lut[255 * 4 + 3]).to.eql(255);
         // Make sure no NaN values
-        lut.controlPoints.forEach(controlPoint => {
+        lut.controlPoints.forEach((controlPoint) => {
           expect(controlPoint.opacity).to.be.finite;
-        })
+        });
       });
       it("is consistent when min and max are both 255", () => {
         const lut = histogram.lutGenerator_minMax(255, 255);
@@ -219,9 +220,9 @@ describe("test histogram", () => {
         expect(secondlut.lut[3]).to.eql(0);
         expect(lut.lut[255 * 4 + 3]).to.eql(0);
         expect(secondlut.lut[255 * 4 + 3]).to.eql(0);
-        lut.controlPoints.forEach(controlPoint => {
+        lut.controlPoints.forEach((controlPoint) => {
           expect(controlPoint.opacity).to.eql(0);
-        })
+        });
       });
       it("is consistent when min and max are both greater than 255", () => {
         const lut = histogram.lutGenerator_minMax(300, 400);
@@ -234,9 +235,9 @@ describe("test histogram", () => {
         expect(secondlut.lut[120 * 4 + 3]).to.eql(0);
         expect(lut.lut[255 * 4 + 3]).to.eql(0);
         expect(secondlut.lut[255 * 4 + 3]).to.eql(0);
-        lut.controlPoints.forEach(controlPoint => {
+        lut.controlPoints.forEach((controlPoint) => {
           expect(controlPoint.opacity).to.eql(0);
-        })
+        });
       });
     });
 
@@ -316,7 +317,7 @@ describe("test histogram", () => {
           { x: 4, color: [255, 255, 255], opacity: 0 },
           { x: 8, color: [255, 255, 255], opacity: 0 },
           { x: 255, color: [255, 255, 255], opacity: 0 },
-        ],
+        ] as ControlPoint[],
       };
       const secondlut = histogram.lutGenerator_fromControlPoints(lut.controlPoints);
       expect(lut.lut).to.eql(secondlut.lut);

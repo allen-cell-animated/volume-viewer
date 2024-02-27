@@ -3,9 +3,10 @@
   "version": "3.7.0",
   "description": "volume renderer for multichannel 8-bit intensity data stored as 3D arrays",
   "main": "es/index.js",
+  "type": "module",
   "module": "es/index.js",
   "types": "es/types/index.d.ts",
-  "files": [
+    "files": [
     "es",
     "README.md",
     "package.json"
@@ -23,8 +24,8 @@
     "start": "webpack serve --config webpack.dev.js",
     "react-example": "webpack serve --config react-example/webpack.react.js",
     "lint": "eslint --config ./.eslintrc.js --ignore-path ./.eslintignore --ext .jsx --ext .js --ext .ts ./src",
-    "test": "cross-env TS_NODE_PROJECT='./tsconfig.test.json' NODE_OPTIONS=\"--loader ts-node/esm\" mocha --require ts-node/register src/**/test/*.[jt]s",
-    "transpileES": "vite build --config vite.config.ts src/",
+    "test": "cross-env TS_NODE_PROJECT='./tsconfig.test.json' NODE_OPTIONS=\"--loader ts-node/esm\" mocha --require ts-node/register --es-module-specifier-resolution=node src/**/test/*.[jt]s",
+    "transpileES": "tsc -p tsconfig.json --outDir es",
     "typeCheck": "tsc -p tsconfig.json --noEmit"
   },
   "author": "Daniel Toloudis",
@@ -79,7 +80,7 @@
     "regenerator-runtime": "^0.13.9",
     "rimraf": "^3.0.2",
     "ts-node": "^10.9.2",
-    "typescript": "^4.3.5",
+    "typescript": "^5.3.3",
     "url-loader": "^4.1.1",
     "vite": "^5.1.4",
     "vite-plugin-dts": "^3.7.3",
