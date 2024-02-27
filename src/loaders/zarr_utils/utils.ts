@@ -159,8 +159,8 @@ export function matchSourceScaleLevels(sources: ZarrSourceMeta[]): void {
   }
 
   // Save matching scale levels and metadata here
-  const matchedLevels: NumericZarrArray[][] = new Array(sources.length).fill([]);
-  const matchedMetas: OMEDataset[][] = new Array(sources.length).fill([]);
+  const matchedLevels: NumericZarrArray[][] = Array.from({ length: sources.length }, () => []);
+  const matchedMetas: OMEDataset[][] = Array.from({ length: sources.length }, () => []);
 
   // Start as many index counters as we have sources
   const scaleIndexes: number[] = new Array(sources.length).fill(0);
