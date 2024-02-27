@@ -87,6 +87,25 @@ const createTwoMockSourceArrs = (specs: ZarrSourceMockSpec[]): Promise<[ZarrSour
   return Promise.all([createMockSources(specs), createMockSources(specs)]);
 };
 
+/** Chai's deep equality doesn't seem to work for zarr arrays */
+const expectSourcesEqual = (aArr: ZarrSourceMeta[], bArr: ZarrSourceMeta[]) => {
+  expect(aArr.length).to.equal(bArr.length);
+  for (const [idx, a] of aArr.entries()) {
+    const b = bArr[idx];
+    expect(a.multiscaleMetadata).to.deep.equal(b.multiscaleMetadata);
+    expect(a.omeroMetadata).to.deep.equal(b.omeroMetadata);
+    expect(a.axesTCZYX).to.deep.equal(b.axesTCZYX);
+    expect(a.channelOffset).to.equal(b.channelOffset);
+
+    expect(a.scaleLevels.length).to.equal(b.scaleLevels.length);
+    a.scaleLevels.forEach((arr, idx) => {
+      expect(arr.path).to.equal(b.scaleLevels[idx].path);
+      expect(arr.shape).to.deep.equal(b.scaleLevels[idx].shape);
+      expect(arr.chunks).to.deep.equal(b.scaleLevels[idx].chunks);
+    });
+  }
+};
+
 describe("zarr_utils", () => {
   describe("getDimensionCount", () => {
     it("returns 5 when all 5 dimension indices are positive", () => {
@@ -196,7 +215,7 @@ describe("zarr_utils", () => {
         { shapes: [[5, 5, 5, 5, 5]], scales: [[1, 1, 1, 1, 1]] },
       ]);
       matchSourceScaleLevels(testSource);
-      expect(testSource).to.deep.equal(refSource);
+      expectSourcesEqual(testSource, refSource);
     });
 
     it("does nothing if all source scale levels are the same", async () => {
@@ -212,7 +231,7 @@ describe("zarr_utils", () => {
       };
       const [testSource, refSource] = await createTwoMockSourceArrs([spec, spec]);
       matchSourceScaleLevels(testSource);
-      expect(testSource).to.deep.equal(refSource);
+      expectSourcesEqual(testSource, refSource);
     });
 
     // it("");
