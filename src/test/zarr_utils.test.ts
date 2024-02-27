@@ -98,11 +98,12 @@ const expectSourcesEqual = (aArr: ZarrSourceMeta[], bArr: ZarrSourceMeta[]) => {
     expect(a.channelOffset).to.equal(b.channelOffset);
 
     expect(a.scaleLevels.length).to.equal(b.scaleLevels.length);
-    a.scaleLevels.forEach((arr, idx) => {
-      expect(arr.path).to.equal(b.scaleLevels[idx].path);
-      expect(arr.shape).to.deep.equal(b.scaleLevels[idx].shape);
-      expect(arr.chunks).to.deep.equal(b.scaleLevels[idx].chunks);
-    });
+    for (const [idx, aLevel] of a.scaleLevels.entries()) {
+      const bLevel = b.scaleLevels[idx];
+      expect(aLevel.path).to.equal(bLevel.path);
+      expect(aLevel.shape).to.deep.equal(bLevel.shape);
+      expect(aLevel.chunks).to.deep.equal(bLevel.chunks);
+    }
   }
 };
 
