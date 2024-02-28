@@ -271,5 +271,66 @@ describe("zarr_utils", () => {
       expectSourcesEqual(testSourceSmaller, await createMockSources([baseSpec, { ...baseSpec, paths: ["1", "2"] }]));
       expectSourcesEqual(testSourceLarger, refSource);
     });
+
+    it("handles unmatched scale levels within the range of other sources", async () => {
+      // The only level shapes that all three of these sources have in common are [1, 1, 2, 2, 2] and [1, 1, 6, 6, 6]
+      const shapes1: TCZYX<number>[] = [
+        [1, 1, 2, 2, 2],
+        [1, 1, 3, 3, 3],
+        [1, 1, 5, 5, 5],
+        [1, 1, 6, 6, 6],
+      ];
+      const shapes2: TCZYX<number>[] = [
+        [1, 1, 1, 1, 1],
+        [1, 1, 2, 2, 2],
+        [1, 1, 4, 4, 4],
+        [1, 1, 5, 5, 5],
+        [1, 1, 6, 6, 6],
+      ];
+      const shapes3: TCZYX<number>[] = [
+        [1, 1, 2, 2, 2],
+        [1, 1, 4, 4, 4],
+        [1, 1, 6, 6, 6],
+        [1, 1, 7, 7, 7],
+      ];
+
+      const testSources = await createMockSources([{ shapes: shapes1 }, { shapes: shapes2 }, { shapes: shapes3 }]);
+      matchSourceScaleLevels(testSources);
+
+      const shapes: TCZYX<number>[] = [
+        [1, 1, 2, 2, 2],
+        [1, 1, 6, 6, 6],
+      ];
+      const refSources = await createMockSources([
+        { shapes, paths: ["0", "3"] },
+        { shapes, paths: ["1", "4"] },
+        { shapes, paths: ["0", "2"] },
+      ]);
+      expectSourcesEqual(testSources, refSources);
+    });
+
+    it("throws an error if the size of two scale levels are mismatched", async () => {
+      const sources = await createMockSources([{ shapes: [[1, 1, 2, 1, 1]] }, { shapes: [[1, 1, 1, 2, 1]] }]);
+      expect(() => matchSourceScaleLevels(sources)).to.throw(
+        "Incompatible zarr arrays: pixel dimensions are mismatched"
+      );
+    });
+
+    it("throws an error if two scale levels of the same size have different scale transformations", async () => {
+      const sources = await createMockSources([
+        { shapes: [[1, 1, 1, 1, 1]], scales: [[1, 1, 1, 1, 1]] },
+        { shapes: [[1, 1, 1, 1, 1]], scales: [[1, 1, 2, 2, 2]] },
+      ]);
+      expect(() => matchSourceScaleLevels(sources)).to.throw(
+        "Incompatible zarr arrays: scale levels of equal size have different scale transformations"
+      );
+    });
+
+    it("throws an error if two scale levels of the same size have a different number of timesteps", async () => {
+      const sources = await createMockSources([{ shapes: [[1, 1, 1, 1, 1]] }, { shapes: [[2, 1, 1, 1, 1]] }]);
+      expect(() => matchSourceScaleLevels(sources)).to.throw(
+        "Incompatible zarr arrays: different numbers of timesteps"
+      );
+    });
   });
 });
