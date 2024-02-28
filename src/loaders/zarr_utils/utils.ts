@@ -167,9 +167,11 @@ export function matchSourceScaleLevels(sources: ZarrSourceMeta[]): void {
   while (scaleIndexes.every((val, idx) => val < sources[idx].scaleLevels.length)) {
     // First pass: find the largest source / determine if all sources are equal
     let allEqual = true;
-    const largestSrcIdx = sources.reduce((largestIdx, currentSrc, currentIdx) => {
-      const largestSrc = sources[largestIdx];
-      const largestArr = largestSrc.scaleLevels[scaleIndexes[largestIdx]];
+    let largestIdx = 0;
+    let largestSrc = sources[0];
+    let largestArr = largestSrc.scaleLevels[scaleIndexes[0]];
+    for (let currentIdx = 1; currentIdx < sources.length; currentIdx++) {
+      const currentSrc = sources[currentIdx];
       const currentArr = currentSrc.scaleLevels[scaleIndexes[currentIdx]];
 
       const ordering = compareZarrArraySize(largestArr, largestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
@@ -190,12 +192,15 @@ export function matchSourceScaleLevels(sources: ZarrSourceMeta[]): void {
         if (largestT !== currentT) {
           throw new Error("Incompatible zarr arrays: different numbers of timesteps");
         }
-        return largestIdx;
+      } else {
+        allEqual = false;
+        if (ordering < 0) {
+          largestIdx = currentIdx;
+          largestSrc = currentSrc;
+          largestArr = currentArr;
+        }
       }
-
-      allEqual = false;
-      return ordering < 0 ? currentIdx : largestIdx;
-    }, 0);
+    }
 
     if (allEqual) {
       // We've found a matching set of scale levels! Save it and increment all indexes
@@ -208,9 +213,7 @@ export function matchSourceScaleLevels(sources: ZarrSourceMeta[]): void {
       }
     } else {
       // Increment the indexes of the sources which are smaller than the largest
-      const largestSrc = sources[largestSrcIdx];
-      const largestArr = largestSrc.scaleLevels[scaleIndexes[largestSrcIdx]];
-      for (const [srcIdx, idx] of scaleIndexes.entries()) {
+      for (const [idx, srcIdx] of scaleIndexes.entries()) {
         const currentSrc = sources[idx];
         const currentArr = currentSrc.scaleLevels[srcIdx];
         const ordering = compareZarrArraySize(largestArr, largestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
