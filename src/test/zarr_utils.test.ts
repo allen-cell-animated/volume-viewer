@@ -9,7 +9,7 @@ import {
   OMEMultiscale,
   OmeroTransitionalMetadata,
   TCZYX,
-  ZarrSourceMeta,
+  ZarrSource,
 } from "../loaders/zarr_utils/types";
 import WrappedStore from "../loaders/zarr_utils/WrappedStore";
 import {
@@ -74,7 +74,7 @@ const createOneMockSource = async (
   scales: TCZYX<number>[],
   channelOffset: number,
   paths?: string[]
-): Promise<ZarrSourceMeta> => ({
+): Promise<ZarrSource> => ({
   scaleLevels: await createMockArrays(shapes),
   multiscaleMetadata: createMockMultiscaleMetadata(scales, paths),
   omeroMetadata: createMockOmeroMetadata(shapes[0][1]),
@@ -82,7 +82,7 @@ const createOneMockSource = async (
   channelOffset,
 });
 
-const createMockSources = (specs: ZarrSourceMockSpec[]): Promise<ZarrSourceMeta[]> => {
+const createMockSources = (specs: ZarrSourceMockSpec[]): Promise<ZarrSource[]> => {
   let channelOffset = 0;
   const sourcePromises = specs.map(({ shapes, scales, paths }) => {
     if (!scales) {
@@ -95,12 +95,12 @@ const createMockSources = (specs: ZarrSourceMockSpec[]): Promise<ZarrSourceMeta[
   return Promise.all(sourcePromises);
 };
 
-const createTwoMockSourceArrs = (specs: ZarrSourceMockSpec[]): Promise<[ZarrSourceMeta[], ZarrSourceMeta[]]> => {
+const createTwoMockSourceArrs = (specs: ZarrSourceMockSpec[]): Promise<[ZarrSource[], ZarrSource[]]> => {
   return Promise.all([createMockSources(specs), createMockSources(specs)]);
 };
 
 /** Chai's deep equality doesn't seem to work for zarr arrays */
-const expectSourcesEqual = (aArr: ZarrSourceMeta[], bArr: ZarrSourceMeta[]) => {
+const expectSourcesEqual = (aArr: ZarrSource[], bArr: ZarrSource[]) => {
   expect(aArr.length).to.equal(bArr.length);
   for (const [idx, a] of aArr.entries()) {
     const b = bArr[idx];

@@ -107,14 +107,6 @@ export type ZarrSource = {
   omeroMetadata: OmeroTransitionalMetadata;
   /** Which channels in the volume come out of this source - i.e. source channel 0 is volume channel `channelOffset` */
   channelOffset: number;
-};
-
-/**
- * A `ZarrSource` with an additional field for `OMEMultiscale` metadata. After `matchSourceScaleLevels` is run on
- * loader creation, we only need one `OMEMultiscale` total (rather than one per source), so this type is used during
- * loader creation, but the resulting loader stores `ZarrSource`s.
- */
-export type ZarrSourceMeta = ZarrSource & {
   /** OME-specified metadata record with most useful info on the current image, e.g. sizes, axis order, etc. */
   multiscaleMetadata: OMEMultiscale;
 };
