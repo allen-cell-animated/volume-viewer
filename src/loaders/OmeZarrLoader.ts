@@ -114,19 +114,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
   private maxExtent?: Box3;
 
   private constructor(
-    /** An abstraction representing a remote data source, used by zarrita to get chunks and by us to prefetch them. */
-    // private store: WrappedStore<RequestInit>,
-    /** Representations of each scale level in this zarr. We pick one and pass it to `zarrGet` to load data. */
-    // private scaleLevels: NumericZarrArray[],
-    /** OME-specified metadata record with most useful info on the current image, e.g. sizes, axis order, etc. */
-    // private multiscaleMetadata: OMEMultiscale,
-    /** OME-specified "transitional" metadata record which we mostly ignore, but which gives channel & volume names. */
-    // private omeroMetadata: OmeroTransitionalMetadata,
-    /**
-     * Zarr dimensions may be ordered in many ways or missing altogether (e.g. TCXYZ, TYX). `axesTCZYX` represents
-     * dimension order as a mapping from dimensions to their indices in dimension-ordered arrays for this zarr.
-     */
-    // private axesTCZYX: TCZYX<number>,
+    /** Bundles of objects & metadata each representing one source of multiscale zarr data. See `ZarrSource`'s docs. */
     private sources: ZarrSource[],
     /** Handle to a `SubscribableRequestQueue` for smart concurrency management and request cancelling/reissuing. */
     private requestQueue: SubscribableRequestQueue,
