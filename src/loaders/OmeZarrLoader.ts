@@ -114,7 +114,10 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
   private maxExtent?: Box3;
 
   private constructor(
-    /** Bundles of objects & metadata each representing one source of multiscale zarr data. See `ZarrSource`'s docs. */
+    /**
+     * Array of records, each containing the objects and metadata we need to load from one source of multiscale zarr
+     * data. See documentation on `ZarrSource` for more.
+     */
     private sources: ZarrSource[],
     /** Handle to a `SubscribableRequestQueue` for smart concurrency management and request cancelling/reissuing. */
     private requestQueue: SubscribableRequestQueue,
