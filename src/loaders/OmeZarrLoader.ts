@@ -28,6 +28,7 @@ import WrappedStore from "./zarr_utils/WrappedStore";
 import {
   getDimensionCount,
   getScale,
+  matchSourceScaleLevels,
   orderByDimension,
   orderByTCZYX,
   pickLevelToLoad,
@@ -140,10 +141,11 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     if (!queue) {
       queue = new SubscribableRequestQueue(fetchOptions?.concurrencyLimit, fetchOptions?.prefetchConcurrencyLimit);
     }
-
     const urlsArr = Array.isArray(urls) ? urls : [urls];
     const scenesArr = Array.isArray(scenes) ? scenes : [scenes];
     let channelCount = 0;
+
+    // Create one `ZarrSource` per URL
     const sourceProms = urlsArr.map(async (url, i) => {
       const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
       const root = zarr.root(store);
@@ -174,6 +176,11 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       } as ZarrSource;
     });
     const sources = await Promise.all(sourceProms);
+    // Ensure the sizes of all sources' scale levels are matched up. See this function's docs for more.
+    matchSourceScaleLevels(sources);
+    // TODO: if `matchSourceScaleLevels` returned successfully, every one of these sources' `multiscaleMetadata` is the
+    // same in every field we care about, so we only ever use the first source's `multiscaleMetadata` after this point.
+    // Should we only store one `OMEMultiscale` record total, rather than one per source?
     const priorityDirs = fetchOptions?.priorityDirections ? fetchOptions.priorityDirections.slice() : undefined;
     return new OMEZarrLoader(sources, queue, fetchOptions, priorityDirs);
   }
