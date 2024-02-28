@@ -21,6 +21,16 @@ import {
   remapAxesToTCZYX,
 } from "../loaders/zarr_utils/utils";
 
+/** Contains only the data required to produce a mock `ZarrSourceMeta` which is useful for testing */
+type ZarrSourceMockSpec = {
+  /** Shape of zarrita arrays corresponding to each scale level. Must be in ascending order of size. */
+  shapes: TCZYX<number>[];
+  /** Scale transforms per level in OME metadata. Default: array of `[1, 1, 1, 1, 1]` with same length as `shapes`. */
+  scales?: TCZYX<number>[];
+  /** Paths in OME metadata. Default: array ["0", "1", "2", ...] with same length as `scales`. */
+  paths?: string[];
+};
+
 const createMockOmeroMetadata = (numChannels: number): OmeroTransitionalMetadata => ({
   id: 0,
   name: "0",
@@ -36,12 +46,12 @@ const createMockOmeroMetadata = (numChannels: number): OmeroTransitionalMetadata
   })),
 });
 
-const createMockMultiscaleMetadata = (scales: number[][]): OMEMultiscale => ({
+const createMockMultiscaleMetadata = (scales: number[][], paths?: string[]): OMEMultiscale => ({
   name: "0",
   version: "0.0",
   axes: [{ name: "t" }, { name: "c" }, { name: "z" }, { name: "y" }, { name: "x" }],
   datasets: scales.map((scale, idx) => ({
-    path: `${idx}`,
+    path: (paths && paths[idx]) ?? `${idx}`,
     coordinateTransformations: [{ type: "scale", scale }],
   })),
 });
@@ -62,21 +72,23 @@ const createMockArrays = (shapes: number[][]): Promise<NumericZarrArray[]> => {
 const createOneMockSource = async (
   shapes: TCZYX<number>[],
   scales: TCZYX<number>[],
-  channelOffset: number
+  channelOffset: number,
+  paths?: string[]
 ): Promise<ZarrSourceMeta> => ({
-  scaleLevels: await createMockArrays(scales),
-  multiscaleMetadata: createMockMultiscaleMetadata(scales),
+  scaleLevels: await createMockArrays(shapes),
+  multiscaleMetadata: createMockMultiscaleMetadata(scales, paths),
   omeroMetadata: createMockOmeroMetadata(shapes[0][1]),
   axesTCZYX: [0, 1, 2, 3, 4],
   channelOffset,
 });
 
-type ZarrSourceMockSpec = { shapes: TCZYX<number>[]; scales: TCZYX<number>[] };
-
 const createMockSources = (specs: ZarrSourceMockSpec[]): Promise<ZarrSourceMeta[]> => {
   let channelOffset = 0;
-  const sourcePromises = specs.map(({ shapes, scales }) => {
-    const result = createOneMockSource(shapes, scales, channelOffset);
+  const sourcePromises = specs.map(({ shapes, scales, paths }) => {
+    if (!scales) {
+      scales = Array.from({ length: shapes.length }, () => [1, 1, 1, 1, 1]);
+    }
+    const result = createOneMockSource(shapes, scales, channelOffset, paths);
     channelOffset += shapes[0][1];
     return result;
   });
@@ -235,6 +247,29 @@ describe("zarr_utils", () => {
       expectSourcesEqual(testSource, refSource);
     });
 
-    // it("");
+    it("trims source scale levels which are outside the range of any other sources", async () => {
+      const baseSpec: ZarrSourceMockSpec = {
+        shapes: [
+          [1, 1, 5, 5, 5],
+          [1, 1, 10, 10, 10],
+        ],
+      };
+
+      // Has all the same scale levels as `baseSpec`, plus one smaller
+      const specSmaller: ZarrSourceMockSpec = { shapes: [[1, 1, 2, 2, 2], ...baseSpec.shapes.slice()] };
+      // Has all the same scale levels as `baseSpec`, plus one larger
+      const specLarger: ZarrSourceMockSpec = { shapes: [...baseSpec.shapes.slice(), [1, 1, 20, 20, 20]] };
+
+      const refSource = await createMockSources([baseSpec, baseSpec]);
+      const testSourceSmaller = await createMockSources([baseSpec, specSmaller]);
+      const testSourceLarger = await createMockSources([baseSpec, specLarger]);
+
+      matchSourceScaleLevels(testSourceSmaller);
+      matchSourceScaleLevels(testSourceLarger);
+
+      // The smallest source had path "0", so we have to shift the paths to match
+      expectSourcesEqual(testSourceSmaller, await createMockSources([baseSpec, { ...baseSpec, paths: ["1", "2"] }]));
+      expectSourcesEqual(testSourceLarger, refSource);
+    });
   });
 });
