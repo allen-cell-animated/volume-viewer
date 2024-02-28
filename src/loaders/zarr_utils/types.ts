@@ -103,10 +103,10 @@ export type ZarrSource = {
    * dimension order as a mapping from dimensions to their indices in dimension-ordered arrays for this source.
    */
   axesTCZYX: TCZYX<number>;
+  /** OME-specified metadata record with most useful info on the current image, e.g. sizes, axis order, etc. */
+  multiscaleMetadata: OMEMultiscale;
   /** OME-specified "transitional" metadata record which we mostly ignore, but which gives channel & volume names. */
   omeroMetadata: OmeroTransitionalMetadata;
   /** Which channels in the volume come out of this source - i.e. source channel 0 is volume channel `channelOffset` */
   channelOffset: number;
-  /** OME-specified metadata record with most useful info on the current image, e.g. sizes, axis order, etc. */
-  multiscaleMetadata: OMEMultiscale;
 };
