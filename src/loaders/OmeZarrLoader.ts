@@ -143,7 +143,6 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     }
     const urlsArr = Array.isArray(urls) ? urls : [urls];
     const scenesArr = Array.isArray(scenes) ? scenes : [scenes];
-    let channelCount = 0;
 
     // Create one `ZarrSource` per URL
     const sourceProms = urlsArr.map(async (url, i) => {
@@ -165,17 +164,22 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       const scaleLevels = (await Promise.all(lvlProms)) as NumericZarrArray[];
       const axesTCZYX = remapAxesToTCZYX(multiscaleMetadata.axes);
 
-      const channelOffset = channelCount;
-      channelCount += omero.channels.length;
       return {
         scaleLevels,
         multiscaleMetadata,
         omeroMetadata: omero,
         axesTCZYX,
-        channelOffset,
+        channelOffset: 0,
       } as ZarrSource;
     });
     const sources = await Promise.all(sourceProms);
+
+    // Set `channelOffset`s so we can match channel indices to sources
+    let channelCount = 0;
+    for (const s of sources) {
+      s.channelOffset = channelCount;
+      channelCount += s.omeroMetadata.channels.length;
+    }
     // Ensure the sizes of all sources' scale levels are matched up. See this function's docs for more.
     matchSourceScaleLevels(sources);
     // TODO: if `matchSourceScaleLevels` returned successfully, every one of these sources' `multiscaleMetadata` is the
