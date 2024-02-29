@@ -93,20 +93,3 @@ export type OMEZarrMetadata = {
 };
 
 export type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;
-
-export type ZarrSource = {
-  /** Representations of each scale level in this zarr. We pick one and pass it to `zarrGet` to load data. */
-  scaleLevels: NumericZarrArray[];
-  /** OME-specified metadata record with most useful info on the current image, e.g. sizes, axis order, etc. */
-  // TODO this field is only ever read on the first source. Move it back to `OMEZarrLoader`!
-  multiscaleMetadata: OMEMultiscale;
-  /** OME-specified "transitional" metadata record which we mostly ignore, but which gives channel & volume names. */
-  omeroMetadata: OmeroTransitionalMetadata;
-  /**
-   * Zarr dimensions may be ordered in many ways or missing altogether (e.g. TCXYZ, TYX). `axesTCZYX` represents
-   * dimension order as a mapping from dimensions to their indices in dimension-ordered arrays for this source.
-   */
-  axesTCZYX: TCZYX<number>;
-  /** Which channels in the volume come out of this source - i.e. source channel 0 is volume channel `channelOffset` */
-  channelOffset: number;
-};
