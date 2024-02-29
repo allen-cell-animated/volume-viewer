@@ -112,7 +112,7 @@ var Atlas2DSlice = /*#__PURE__*/function () {
       // (re)create channel data
       if (!this.channelData || this.channelData.width !== atlasSize.x || this.channelData.height !== atlasSize.y) {
         var _this$channelData;
-        (_this$channelData = this.channelData) === null || _this$channelData === void 0 ? void 0 : _this$channelData.cleanup();
+        (_this$channelData = this.channelData) === null || _this$channelData === void 0 || _this$channelData.cleanup();
         this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_6__["default"](atlasSize.x, atlasSize.y);
       }
     }
@@ -679,8 +679,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 
 
 
@@ -769,7 +769,6 @@ var FusedChannelData = /*#__PURE__*/function () {
           //break;
         }
       }
-
       if (!canFuse) {
         this.channelsDataToFuse = [];
         this.fuseRequested = [];
@@ -1624,10 +1623,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/assertThisInitialized */ "./node_modules/@babel/runtime/helpers/esm/assertThisInitialized.js");
-/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
-/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
-/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
+/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var _babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/assertThisInitialized */ "./node_modules/@babel/runtime/helpers/esm/assertThisInitialized.js");
+/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
 
@@ -1635,8 +1634,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__["default"])(this, result); }; }
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+function _callSuper(t, o, e) { return o = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_3__["default"])(o), (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_2__["default"])(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_3__["default"])(t).constructor) : o.apply(t, e)); }
+function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
 /**
  * Port of http://webglsamples.org/blob/blob.html
  */
@@ -1645,22 +1644,21 @@ function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Re
 
 
 var MarchingCubes = /*#__PURE__*/function (_Mesh) {
-  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_3__["default"])(MarchingCubes, _Mesh);
-  var _super = _createSuper(MarchingCubes);
+  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_5__["default"])(MarchingCubes, _Mesh);
   //4096; // TODO: find the fastest size for this buffer
 
   function MarchingCubes(resolution, material, enableUvs, enableColors, enableNormals, volumeFieldRef) {
     var _this;
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, MarchingCubes);
     var geometry = new three__WEBPACK_IMPORTED_MODULE_6__.BufferGeometry();
-    _this = _super.call(this, geometry, material);
+    _this = _callSuper(this, MarchingCubes, [geometry, material]);
     _this.maxCount = 16384; //4096; // TODO: find the fastest size for this buffer
     _this.count = 0;
     _this.hasPositions = false;
     _this.hasNormals = false;
     _this.hasColors = false;
     _this.hasUvs = false;
-    var scope = (0,_babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_2__["default"])(_this);
+    var scope = (0,_babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_4__["default"])(_this);
 
     // basic default init; these should be reset later.
     //this.position = new Vector3();
@@ -2120,7 +2118,6 @@ var MarchingCubes = /*#__PURE__*/function (_Mesh) {
           // var face = new Face3( a, b, c, [ na, nb, nc ] );
           // geo.faces.push( face );
         }
-
         geo.setIndex(new three__WEBPACK_IMPORTED_MODULE_6__.BufferAttribute(inds, 1));
         geoparent.push(geo);
         start += nfaces;
@@ -2366,7 +2363,7 @@ var MeshVolume = /*#__PURE__*/function () {
     value: function getOpacity(channel) {
       var meshrep = this.meshrep[channel];
       var opacity = undefined;
-      meshrep === null || meshrep === void 0 ? void 0 : meshrep.traverse(function (obj) {
+      meshrep === null || meshrep === void 0 || meshrep.traverse(function (obj) {
         if (obj instanceof three__WEBPACK_IMPORTED_MODULE_6__.Mesh) {
           opacity = obj.material.opacity;
         }
@@ -2398,7 +2395,7 @@ var MeshVolume = /*#__PURE__*/function () {
       var _loop2 = function _loop2() {
         var meshrep = _this2.meshrep[channel];
         if (!meshrep) {
-          return "continue";
+          return 1; // continue
         }
         var planes = [];
         // up to 6 planes.
@@ -2427,8 +2424,7 @@ var MeshVolume = /*#__PURE__*/function () {
         });
       };
       for (var channel = 0; channel < this.meshrep.length; ++channel) {
-        var _ret = _loop2();
-        if (_ret === "continue") continue;
+        if (_loop2()) continue;
       }
     }
   }, {
@@ -2587,272 +2583,6 @@ var MeshVolume = /*#__PURE__*/function () {
   return MeshVolume;
 }();
 
-
-/***/ }),
-
-/***/ "./src/NaiveSurfaceNets.js":
-/*!*********************************!*\
-  !*** ./src/NaiveSurfaceNets.js ***!
-  \*********************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
-/* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-// The MIT License (MIT)
-//
-// Copyright (c) 2012-2013 Mikola Lysenko
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-// THE SOFTWARE.
-
-/**
- * SurfaceNets in JavaScript
- *
- * Written by Mikola Lysenko (C) 2012
- *
- * MIT License
- *
- * Based on: S.F. Gibson, "Constrained Elastic Surface Nets". (1998) MERL Tech Report.
- */
-
-// MODIFIED 2018 BY DANIELT@ALLENINSTITUTE.ORG TO ACCEPT AN ISOVALUE AND RESCALE VERTEX POSITIONS
-
-var SurfaceNets = function () {
-  "use strict";
-
-  //Precompute edge table, like Paul Bourke does.
-  // This saves a bit of time when computing the centroid of each boundary cell
-  var cube_edges = new Int32Array(24),
-    edge_table = new Int32Array(256);
-  (function () {
-    //Initialize the cube_edges table
-    // This is just the vertex number of each cube
-    var k = 0;
-    for (var i = 0; i < 8; ++i) {
-      for (var j = 1; j <= 4; j <<= 1) {
-        var p = i ^ j;
-        if (i <= p) {
-          cube_edges[k++] = i;
-          cube_edges[k++] = p;
-        }
-      }
-    }
-
-    //Initialize the intersection table.
-    //  This is a 2^(cube configuration) ->  2^(edge configuration) map
-    //  There is one entry for each possible cube configuration, and the output is a 12-bit vector enumerating all edges crossing the 0-level.
-    for (var i = 0; i < 256; ++i) {
-      var em = 0;
-      for (var j = 0; j < 24; j += 2) {
-        var a = !!(i & 1 << cube_edges[j]),
-          b = !!(i & 1 << cube_edges[j + 1]);
-        em |= a !== b ? 1 << (j >> 1) : 0;
-      }
-      edge_table[i] = em;
-    }
-  })();
-
-  //Internal buffer, this may get resized at run time
-  var buffer = new Int32Array(4096);
-  return function (data, dims, isovalue) {
-    var vertices = [],
-      faces = [],
-      n = 0,
-      x = new Int32Array(3),
-      R = new Int32Array([1, dims[0] + 1, (dims[0] + 1) * (dims[1] + 1)]),
-      grid = new Float32Array(8),
-      buf_no = 1;
-
-    //Resize buffer if necessary
-    if (R[2] * 2 > buffer.length) {
-      buffer = new Int32Array(R[2] * 2);
-    }
-
-    //March over the voxel grid
-    for (x[2] = 0; x[2] < dims[2] - 1; ++x[2], n += dims[0], buf_no ^= 1, R[2] = -R[2]) {
-      //m is the pointer into the buffer we are going to use.
-      //This is slightly obtuse because javascript does not have good support for packed data structures, so we must use typed arrays :(
-      //The contents of the buffer will be the indices of the vertices on the previous x/y slice of the volume
-      var m = 1 + (dims[0] + 1) * (1 + buf_no * (dims[1] + 1));
-      for (x[1] = 0; x[1] < dims[1] - 1; ++x[1], ++n, m += 2) for (x[0] = 0; x[0] < dims[0] - 1; ++x[0], ++n, ++m) {
-        //Read in 8 field values around this vertex and store them in an array
-        //Also calculate 8-bit mask, like in marching cubes, so we can speed up sign checks later
-        var mask = 0,
-          g = 0,
-          idx = n;
-        for (var k = 0; k < 2; ++k, idx += dims[0] * (dims[1] - 2)) for (var j = 0; j < 2; ++j, idx += dims[0] - 2) for (var i = 0; i < 2; ++i, ++g, ++idx) {
-          var p = data[idx] - isovalue;
-          grid[g] = p;
-          mask |= p < 0 ? 1 << g : 0;
-        }
-
-        //Check for early termination if cell does not intersect boundary
-        if (mask === 0 || mask === 0xff) {
-          continue;
-        }
-
-        //Sum up edge intersections
-        var edge_mask = edge_table[mask],
-          v = [0.0, 0.0, 0.0],
-          e_count = 0;
-
-        //For every edge of the cube...
-        for (var i = 0; i < 12; ++i) {
-          //Use edge mask to check if it is crossed
-          if (!(edge_mask & 1 << i)) {
-            continue;
-          }
-
-          //If it did, increment number of edge crossings
-          ++e_count;
-
-          //Now find the point of intersection
-          var e0 = cube_edges[i << 1],
-            //Unpack vertices
-            e1 = cube_edges[(i << 1) + 1],
-            g0 = grid[e0],
-            //Unpack grid values
-            g1 = grid[e1],
-            t = g0 - g1; //Compute point of intersection
-          if (Math.abs(t) > 1e-6) {
-            t = g0 / t;
-          } else {
-            continue;
-          }
-
-          //Interpolate vertices and add up intersections (this can be done without multiplying)
-          for (var j = 0, k = 1; j < 3; ++j, k <<= 1) {
-            var a = e0 & k,
-              b = e1 & k;
-            if (a !== b) {
-              v[j] += a ? 1.0 - t : t;
-            } else {
-              v[j] += a ? 1.0 : 0;
-            }
-          }
-        }
-
-        //Now we just average the edge intersections and add them to coordinate
-        var s = 1.0 / e_count;
-        for (var i = 0; i < 3; ++i) {
-          v[i] = x[i] + s * v[i];
-        }
-
-        //Add vertex to buffer, store pointer to vertex index in buffer
-        buffer[m] = vertices.length;
-        vertices.push([2.0 * v[0] / dims[0] - 1.0, 2.0 * v[1] / dims[1] - 1.0, 2.0 * v[2] / dims[2] - 1.0]);
-
-        //Now we need to add faces together, to do this we just loop over 3 basis components
-        for (var i = 0; i < 3; ++i) {
-          //The first three entries of the edge_mask count the crossings along the edge
-          if (!(edge_mask & 1 << i)) {
-            continue;
-          }
-
-          // i = axes we are point along.  iu, iv = orthogonal axes
-          var iu = (i + 1) % 3,
-            iv = (i + 2) % 3;
-
-          //If we are on a boundary, skip it
-          if (x[iu] === 0 || x[iv] === 0) {
-            continue;
-          }
-
-          //Otherwise, look up adjacent edges in buffer
-          var du = R[iu],
-            dv = R[iv];
-
-          //Remember to flip orientation depending on the sign of the corner.
-          if (mask & 1) {
-            faces.push([buffer[m], buffer[m - du], buffer[m - du - dv], buffer[m - dv]]);
-          } else {
-            faces.push([buffer[m], buffer[m - dv], buffer[m - du - dv], buffer[m - du]]);
-          }
-        }
-      }
-    }
-
-    //All done!  Return the result
-    return {
-      vertices: vertices,
-      faces: faces
-    };
-  };
-}();
-
-// returns array of indexed BufferGeometry
-function ConstructTHREEGeometry(surfaceNetResult) {
-  var result = surfaceNetResult;
-  var varray = new Float32Array(result.vertices.length * 3);
-  for (var i = 0; i < result.vertices.length; ++i) {
-    var v = result.vertices[i];
-    varray[i * 3 + 0] = v[0];
-    varray[i * 3 + 1] = v[1];
-    varray[i * 3 + 2] = v[2];
-  }
-
-  // count triangles; split quad faces
-  var n_triangles = 0;
-  for (var i = 0; i < result.faces.length; ++i) {
-    var f = result.faces[i];
-    if (f.length === 3) {
-      n_triangles += 1;
-    } else if (f.length === 4) {
-      n_triangles += 2;
-    } else {
-      //Polygon needs to be subdivided...
-      console.log("unhandled poly with " + f.length + " vertices");
-    }
-  }
-  var inds = new Uint32Array(n_triangles * 3);
-  var j = 0;
-  for (var i = 0; i < result.faces.length; ++i) {
-    var f = result.faces[i];
-    // note what appears to be inverted winding order.
-    // I believe this is related to isosurface < or > testing but have not checked.
-    if (f.length === 3) {
-      inds[j++] = f[2];
-      inds[j++] = f[1];
-      inds[j++] = f[0];
-    } else if (f.length === 4) {
-      // two triangles: (2,1,0) and (3,2,0)
-      inds[j++] = f[2];
-      inds[j++] = f[1];
-      inds[j++] = f[0];
-      inds[j++] = f[3];
-      inds[j++] = f[2];
-      inds[j++] = f[0];
-    }
-  }
-  var geo = new three__WEBPACK_IMPORTED_MODULE_0__.BufferGeometry();
-  geo.setAttribute("position", new three__WEBPACK_IMPORTED_MODULE_0__.BufferAttribute(varray, 3, false));
-  geo.setIndex(new three__WEBPACK_IMPORTED_MODULE_0__.BufferAttribute(inds, 1));
-  geo.computeVertexNormals();
-  return [geo];
-}
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
-  surfaceNets: SurfaceNets,
-  constructTHREEGeometry: ConstructTHREEGeometry
-});
 
 /***/ }),
 
@@ -3543,7 +3273,7 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
       // (re)create channel data
       if (!this.channelData || this.channelData.width !== atlasSize.x || this.channelData.height !== atlasSize.y) {
         var _this$channelData;
-        (_this$channelData = this.channelData) === null || _this$channelData === void 0 ? void 0 : _this$channelData.cleanup();
+        (_this$channelData = this.channelData) === null || _this$channelData === void 0 || _this$channelData.cleanup();
         this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_3__["default"](atlasSize.x, atlasSize.y);
       }
     }
@@ -4167,7 +3897,6 @@ var ThreeJsPanel = /*#__PURE__*/function () {
   }, {
     key: "setIndicatorPosition",
     value: function setIndicatorPosition(timestep, marginX, marginY, corner) {
-      var _Object$assign;
       var _ref = timestep ? this.timestepIndicatorElement : this.scaleBarContainerElement,
         style = _ref.style;
       style.removeProperty("top");
@@ -4176,7 +3905,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       style.removeProperty("right");
       var xProp = (0,_types__WEBPACK_IMPORTED_MODULE_6__.isRight)(corner) ? "right" : "left";
       var yProp = (0,_types__WEBPACK_IMPORTED_MODULE_6__.isTop)(corner) ? "top" : "bottom";
-      Object.assign(style, (_Object$assign = {}, (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(_Object$assign, xProp, marginX + "px"), (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(_Object$assign, yProp, marginY + "px"), _Object$assign));
+      Object.assign(style, (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])({}, xProp, marginX + "px"), yProp, marginY + "px"));
     }
   }, {
     key: "setAutoRotate",
@@ -4467,580 +4196,6 @@ var Timing = /*#__PURE__*/function () {
 
 /***/ }),
 
-/***/ "./src/TrackballControls.js":
-/*!**********************************!*\
-  !*** ./src/TrackballControls.js ***!
-  \**********************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
-/* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/assertThisInitialized */ "./node_modules/@babel/runtime/helpers/esm/assertThisInitialized.js");
-/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
-/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
-/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-
-
-
-
-
-
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__["default"])(this, result); }; }
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
-/**
- * @author Eberhard Graether / http://egraether.com/
- * @author Mark Lundin 	/ http://mark-lundin.com
- * @author Simone Manini / http://daron1337.github.io
- * @author Luca Antiga 	/ http://lantiga.github.io
- */
-
-
-
-// this file is heavily derived from threejs and so we disable a lot of our
-// linting rules just for this file, to allow it to keep a similar form to the
-// original.
-/* eslint-disable @typescript-eslint/naming-convention */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-/* eslint-disable @typescript-eslint/no-this-alias */
-var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
-  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_3__["default"])(TrackballControls, _EventDispatcher);
-  var _super = _createSuper(TrackballControls);
-  function TrackballControls(object, domElement) {
-    var _this;
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, TrackballControls);
-    _this = _super.call(this);
-    var scope = (0,_babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_2__["default"])(_this);
-    var STATE = {
-      NONE: -1,
-      ROTATE: 0,
-      ZOOM: 1,
-      PAN: 2,
-      TOUCH_ROTATE: 3,
-      TOUCH_ZOOM_PAN: 4
-    };
-    _this.object = object;
-    _this.domElement = domElement;
-    // API
-
-    _this.enabled = true;
-    _this.screen = {
-      left: 0,
-      top: 0,
-      width: 0,
-      height: 0
-    };
-    _this.length = 10;
-    _this.scale = 0.5;
-    _this.scale0 = 0.5;
-    _this.aspect = 1.0;
-    _this.rotateSpeed = 1.0;
-    _this.zoomSpeed = 1.2;
-    _this.panSpeed = 0.3;
-    _this.noRotate = false;
-    _this.noZoom = false;
-    _this.noPan = false;
-    _this.staticMoving = false;
-    _this.dynamicDampingFactor = 0.2;
-    _this.minDistance = 0;
-    _this.maxDistance = Infinity;
-    _this.keys = ["KeyA", /*A*/"KeyS", /*S*/"KeyD" /*D*/];
-    _this.mouseButtons = {
-      LEFT: three__WEBPACK_IMPORTED_MODULE_6__.MOUSE.ROTATE,
-      MIDDLE: three__WEBPACK_IMPORTED_MODULE_6__.MOUSE.DOLLY,
-      RIGHT: three__WEBPACK_IMPORTED_MODULE_6__.MOUSE.PAN
-    };
-
-    // Set to true to automatically rotate around the target
-    // If auto-rotate is enabled, you must call controls.update() in your animation loop
-    _this.autoRotate = false;
-    _this.autoRotateSpeed = 2.0; // 30 seconds per round when fps is 60
-
-    // internals
-
-    _this.target = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3();
-    var EPS = 0.000001;
-    var lastPosition = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3();
-    var lastZoom = 1;
-    var _state = STATE.NONE,
-      _keyState = STATE.NONE,
-      _touchZoomDistanceStart = 0,
-      _touchZoomDistanceEnd = 0,
-      _lastAngle = 0;
-    var _eye = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
-      _movePrev = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
-      _moveCurr = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
-      _lastAxis = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
-      _zoomStart = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
-      _zoomEnd = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
-      _panStart = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
-      _panEnd = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
-      _pointers = [],
-      _pointerPositions = {};
-
-    // for reset
-
-    _this.target0 = _this.target.clone();
-    _this.position0 = _this.object.position.clone();
-    _this.up0 = _this.object.up.clone();
-    _this.zoom0 = _this.object.zoom;
-
-    // events
-
-    var _changeEvent = {
-      type: "change"
-    };
-    var _startEvent = {
-      type: "start"
-    };
-    var _endEvent = {
-      type: "end"
-    };
-
-    // methods
-
-    _this.handleResize = function () {
-      var box = scope.domElement.getBoundingClientRect();
-      // adjustments come from similar code in the jquery offset() function
-      var d = scope.domElement.ownerDocument.documentElement;
-      scope.screen.left = box.left + window.pageXOffset - d.clientLeft;
-      scope.screen.top = box.top + window.pageYOffset - d.clientTop;
-      scope.screen.width = box.width;
-      scope.screen.height = box.height;
-    };
-    var getMouseOnScreen = function () {
-      var vector = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2();
-      return function getMouseOnScreen(pageX, pageY) {
-        vector.set((pageX - scope.screen.left) / scope.screen.width, (pageY - scope.screen.top) / scope.screen.height);
-        return vector;
-      };
-    }();
-    var getMouseOnCircle = function () {
-      var vector = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2();
-      return function getMouseOnCircle(pageX, pageY) {
-        vector.set((pageX - scope.screen.width * 0.5 - scope.screen.left) / (scope.screen.width * 0.5), (scope.screen.height + 2 * (scope.screen.top - pageY)) / scope.screen.width // screen.width intentional
-        );
-
-        return vector;
-      };
-    }();
-    function getAutoRotationAngle(delta) {
-      return 2 * Math.PI / 60 / 60 * scope.autoRotateSpeed * (delta * 60.0);
-    }
-    _this.rotateCamera = function () {
-      var axis = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
-        quaternion = new three__WEBPACK_IMPORTED_MODULE_6__.Quaternion(),
-        eyeDirection = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
-        objectUpDirection = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
-        objectSidewaysDirection = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
-        moveDirection = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3();
-      var angle, dx, dy;
-      return function rotateCamera(delta) {
-        dx = _moveCurr.x - _movePrev.x;
-        dy = _moveCurr.y - _movePrev.y;
-        moveDirection.set(dx, dy, 0);
-        angle = moveDirection.length();
-        angle *= scope.rotateSpeed;
-        if (scope.autoRotate && _state === STATE.NONE) {
-          // rotate about vertical axis
-          angle = getAutoRotationAngle(delta);
-          dx = angle;
-          dy = 0;
-          moveDirection.set(angle, 0, 0);
-        }
-        if (angle) {
-          _eye.copy(scope.object.position).sub(scope.target);
-          eyeDirection.copy(_eye).normalize();
-          objectUpDirection.copy(scope.object.up).normalize();
-          objectSidewaysDirection.crossVectors(objectUpDirection, eyeDirection).normalize();
-          objectUpDirection.setLength(dy);
-          objectSidewaysDirection.setLength(dx);
-          moveDirection.copy(objectUpDirection.add(objectSidewaysDirection));
-          axis.crossVectors(moveDirection, _eye).normalize();
-          quaternion.setFromAxisAngle(axis, angle);
-          _eye.applyQuaternion(quaternion);
-          scope.object.up.applyQuaternion(quaternion);
-          _lastAxis.copy(axis);
-          _lastAngle = angle;
-        } else if (!scope.staticMoving && _lastAngle) {
-          _lastAngle *= Math.sqrt(1.0 - scope.dynamicDampingFactor);
-          _eye.copy(scope.object.position).sub(scope.target);
-          quaternion.setFromAxisAngle(_lastAxis, _lastAngle);
-          _eye.applyQuaternion(quaternion);
-          scope.object.up.applyQuaternion(quaternion);
-        }
-        _movePrev.copy(_moveCurr);
-      };
-    }();
-    _this.zoomCamera = function () {
-      var factor;
-      if (_state === STATE.TOUCH_ZOOM_PAN) {
-        factor = _touchZoomDistanceStart / _touchZoomDistanceEnd;
-        _touchZoomDistanceStart = _touchZoomDistanceEnd;
-        if (scope.object.isPerspectiveCamera) {
-          _eye.multiplyScalar(factor);
-        } else if (scope.object.isOrthographicCamera) {
-          scope.scale = scope.scale * factor;
-          scope.object.zoom /= factor;
-          scope.object.updateProjectionMatrix();
-        } else {
-          console.warn("THREE.TrackballControls: Unsupported camera type");
-        }
-      } else {
-        factor = 1.0 + (_zoomEnd.y - _zoomStart.y) * scope.zoomSpeed;
-        if (factor !== 1.0 && factor > 0.0) {
-          if (scope.object.isPerspectiveCamera) {
-            _eye.multiplyScalar(factor);
-          } else if (scope.object.isOrthographicCamera) {
-            scope.scale = scope.scale * factor;
-            scope.object.zoom /= factor;
-            scope.object.updateProjectionMatrix();
-          } else {
-            console.warn("THREE.TrackballControls: Unsupported camera type");
-          }
-        }
-        if (scope.staticMoving) {
-          _zoomStart.copy(_zoomEnd);
-        } else {
-          _zoomStart.y += (_zoomEnd.y - _zoomStart.y) * this.dynamicDampingFactor;
-        }
-      }
-    };
-    _this.panCamera = function () {
-      var mouseChange = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
-        objectUp = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
-        pan = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3();
-      return function panCamera() {
-        mouseChange.copy(_panEnd).sub(_panStart);
-        if (mouseChange.lengthSq()) {
-          if (scope.object.isOrthographicCamera) {
-            var scale_x = (scope.object.right - scope.object.left) / scope.object.zoom / scope.domElement.clientWidth;
-            var scale_y = (scope.object.top - scope.object.bottom) / scope.object.zoom / scope.domElement.clientWidth;
-            mouseChange.x *= scale_x;
-            mouseChange.y *= scale_y;
-          }
-          mouseChange.multiplyScalar(_eye.length() * scope.panSpeed);
-          pan.copy(_eye).cross(scope.object.up).setLength(mouseChange.x);
-          pan.add(objectUp.copy(scope.object.up).setLength(mouseChange.y));
-          scope.object.position.add(pan);
-          scope.target.add(pan);
-          if (scope.staticMoving) {
-            _panStart.copy(_panEnd);
-          } else {
-            _panStart.add(mouseChange.subVectors(_panEnd, _panStart).multiplyScalar(scope.dynamicDampingFactor));
-          }
-        }
-      };
-    }();
-    _this.checkDistances = function () {
-      if (!scope.noZoom || !scope.noPan) {
-        if (_eye.lengthSq() > scope.maxDistance * scope.maxDistance) {
-          scope.object.position.addVectors(scope.target, _eye.setLength(scope.maxDistance));
-          _zoomStart.copy(_zoomEnd);
-        }
-        if (_eye.lengthSq() < scope.minDistance * scope.minDistance) {
-          scope.object.position.addVectors(scope.target, _eye.setLength(scope.minDistance));
-          _zoomStart.copy(_zoomEnd);
-        }
-      }
-    };
-    _this.update = function (delta) {
-      if (scope.enabled === false) return;
-      delta = delta || 0.0;
-      _eye.subVectors(scope.object.position, scope.target);
-      if (!scope.noRotate) {
-        scope.rotateCamera(delta);
-      }
-      if (!scope.noZoom) {
-        scope.zoomCamera();
-      }
-      if (!scope.noPan) {
-        scope.panCamera();
-      }
-      scope.object.position.addVectors(scope.target, _eye);
-      if (scope.object.isPerspectiveCamera) {
-        scope.checkDistances();
-        scope.object.lookAt(scope.target);
-        if (lastPosition.distanceToSquared(scope.object.position) > EPS) {
-          scope.dispatchEvent(_changeEvent);
-          lastPosition.copy(scope.object.position);
-        }
-      } else if (scope.object.isOrthographicCamera) {
-        scope.object.lookAt(scope.target);
-        if (lastPosition.distanceToSquared(scope.object.position) > EPS || lastZoom !== scope.object.zoom) {
-          scope.dispatchEvent(_changeEvent);
-          lastPosition.copy(scope.object.position);
-          lastZoom = scope.object.zoom;
-        }
-      } else {
-        console.warn("THREE.TrackballControls: Unsupported camera type");
-      }
-    };
-    _this.reset = function () {
-      //if (scope.enabled === false) return;
-
-      _state = STATE.NONE;
-      _keyState = STATE.NONE;
-      scope.target.copy(scope.target0);
-      scope.object.position.copy(scope.position0);
-      scope.object.up.copy(scope.up0);
-      scope.object.zoom = scope.zoom0;
-      scope.scale = scope.scale0;
-      scope.object.updateProjectionMatrix();
-      _eye.subVectors(scope.object.position, scope.target);
-      scope.object.lookAt(scope.target);
-      scope.dispatchEvent(_changeEvent);
-      lastPosition.copy(scope.object.position);
-      lastZoom = scope.object.zoom;
-    };
-
-    // listeners
-
-    function onPointerDown(event) {
-      if (scope.enabled === false) return;
-      if (_pointers.length === 0) {
-        scope.domElement.setPointerCapture(event.pointerId);
-        scope.domElement.addEventListener("pointermove", onPointerMove);
-        scope.domElement.addEventListener("pointerup", onPointerUp);
-      } //
-
-      addPointer(event);
-      if (event.pointerType === "touch") {
-        onTouchStart(event);
-      } else {
-        onMouseDown(event);
-      }
-    }
-    function onPointerMove(event) {
-      if (scope.enabled === false) return;
-      if (event.pointerType === "touch") {
-        onTouchMove(event);
-      } else {
-        onMouseMove(event);
-      }
-    }
-    function onPointerUp(event) {
-      if (scope.enabled === false) return;
-      if (event.pointerType === "touch") {
-        onTouchEnd(event);
-      } else {
-        onMouseUp();
-      } //
-
-      removePointer(event);
-      if (_pointers.length === 0) {
-        scope.domElement.releasePointerCapture(event.pointerId);
-        scope.domElement.removeEventListener("pointermove", onPointerMove);
-        scope.domElement.removeEventListener("pointerup", onPointerUp);
-      }
-    }
-    function onPointerCancel(event) {
-      removePointer(event);
-    }
-    function keydown(event) {
-      if (scope.enabled === false) return;
-      window.removeEventListener("keydown", keydown);
-      if (_keyState !== STATE.NONE) {
-        return;
-      } else if (event.code === scope.keys[STATE.ROTATE] && !scope.noRotate) {
-        _keyState = STATE.ROTATE;
-      } else if (event.code === scope.keys[STATE.ZOOM] && !scope.noZoom) {
-        _keyState = STATE.ZOOM;
-      } else if (event.code === scope.keys[STATE.PAN] && !scope.noPan) {
-        _keyState = STATE.PAN;
-      }
-    }
-    function keyup(_event) {
-      if (scope.enabled === false) return;
-      _keyState = STATE.NONE;
-      window.addEventListener("keydown", keydown);
-    }
-    function onMouseDown(event) {
-      if (_state === STATE.NONE) {
-        switch (event.button) {
-          case scope.mouseButtons.LEFT:
-            _state = STATE.ROTATE;
-            break;
-          case scope.mouseButtons.MIDDLE:
-            _state = STATE.ZOOM;
-            break;
-          case scope.mouseButtons.RIGHT:
-            _state = STATE.PAN;
-            break;
-        }
-      }
-      var state = _keyState !== STATE.NONE ? _keyState : _state;
-      if (state === STATE.ROTATE && !scope.noRotate) {
-        _moveCurr.copy(getMouseOnCircle(event.pageX, event.pageY));
-        _movePrev.copy(_moveCurr);
-      } else if (state === STATE.ZOOM && !scope.noZoom) {
-        _zoomStart.copy(getMouseOnScreen(event.pageX, event.pageY));
-        _zoomEnd.copy(_zoomStart);
-      } else if (state === STATE.PAN && !scope.noPan) {
-        _panStart.copy(getMouseOnScreen(event.pageX, event.pageY));
-        _panEnd.copy(_panStart);
-      }
-      scope.dispatchEvent(_startEvent);
-    }
-    function onMouseMove(event) {
-      var state = _keyState !== STATE.NONE ? _keyState : _state;
-      if (state === STATE.ROTATE && !scope.noRotate) {
-        _movePrev.copy(_moveCurr);
-        _moveCurr.copy(getMouseOnCircle(event.pageX, event.pageY));
-      } else if (state === STATE.ZOOM && !scope.noZoom) {
-        _zoomEnd.copy(getMouseOnScreen(event.pageX, event.pageY));
-      } else if (state === STATE.PAN && !scope.noPan) {
-        _panEnd.copy(getMouseOnScreen(event.pageX, event.pageY));
-      }
-    }
-    function onMouseUp() {
-      _state = STATE.NONE;
-      scope.dispatchEvent(_endEvent);
-    }
-    function onMouseWheel(event) {
-      if (scope.enabled === false) return;
-      if (scope.noZoom === true) return;
-      event.preventDefault();
-      switch (event.deltaMode) {
-        case 2:
-          // Zoom in pages
-          _zoomStart.y -= event.deltaY * 0.025;
-          break;
-        case 1:
-          // Zoom in lines
-          _zoomStart.y -= event.deltaY * 0.01;
-          break;
-        default:
-          // undefined, 0, assume pixels
-          _zoomStart.y -= event.deltaY * 0.00025;
-          break;
-      }
-      scope.dispatchEvent(_startEvent);
-      scope.dispatchEvent(_endEvent);
-    }
-    function onTouchStart(event) {
-      trackPointer(event);
-      var dx, dy, x, y;
-      switch (_pointers.length) {
-        case 1:
-          _state = STATE.TOUCH_ROTATE;
-          _moveCurr.copy(getMouseOnCircle(_pointers[0].pageX, _pointers[0].pageY));
-          _movePrev.copy(_moveCurr);
-          break;
-        default:
-          // 2 or more
-          _state = STATE.TOUCH_ZOOM_PAN;
-          dx = _pointers[0].pageX - _pointers[1].pageX;
-          dy = _pointers[0].pageY - _pointers[1].pageY;
-          _touchZoomDistanceEnd = _touchZoomDistanceStart = Math.sqrt(dx * dx + dy * dy);
-          x = (_pointers[0].pageX + _pointers[1].pageX) / 2;
-          y = (_pointers[0].pageY + _pointers[1].pageY) / 2;
-          _panStart.copy(getMouseOnScreen(x, y));
-          _panEnd.copy(_panStart);
-          break;
-      }
-      scope.dispatchEvent(_startEvent);
-    }
-    function onTouchMove(event) {
-      trackPointer(event);
-      var position, dx, dy, x, y;
-      switch (_pointers.length) {
-        case 1:
-          _movePrev.copy(_moveCurr);
-          _moveCurr.copy(getMouseOnCircle(event.pageX, event.pageY));
-          break;
-        default:
-          // 2 or more
-          position = getSecondPointerPosition(event);
-          dx = event.pageX - position.x;
-          dy = event.pageY - position.y;
-          _touchZoomDistanceEnd = Math.sqrt(dx * dx + dy * dy);
-          x = (event.pageX + position.x) / 2;
-          y = (event.pageY + position.y) / 2;
-          _panEnd.copy(getMouseOnScreen(x, y));
-          break;
-      }
-    }
-    function onTouchEnd(event) {
-      switch (_pointers.length) {
-        case 0:
-          _state = STATE.NONE;
-          break;
-        case 1:
-          _state = STATE.TOUCH_ROTATE;
-          _moveCurr.copy(getMouseOnCircle(event.pageX, event.pageY));
-          _movePrev.copy(_moveCurr);
-          break;
-        case 2:
-          _state = STATE.TOUCH_ZOOM_PAN;
-          _moveCurr.copy(getMouseOnCircle(event.pageX - _movePrev.x, event.pageY - _movePrev.y));
-          _movePrev.copy(_moveCurr);
-          break;
-      }
-      scope.dispatchEvent(_endEvent);
-    }
-    function contextmenu(event) {
-      if (scope.enabled === false) return;
-      event.preventDefault();
-    }
-    function addPointer(event) {
-      _pointers.push(event);
-    }
-    function removePointer(event) {
-      delete _pointerPositions[event.pointerId];
-      for (var i = 0; i < _pointers.length; i++) {
-        if (_pointers[i].pointerId == event.pointerId) {
-          _pointers.splice(i, 1);
-          return;
-        }
-      }
-    }
-    function trackPointer(event) {
-      var position = _pointerPositions[event.pointerId];
-      if (position === undefined) {
-        position = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2();
-        _pointerPositions[event.pointerId] = position;
-      }
-      position.set(event.pageX, event.pageY);
-    }
-    function getSecondPointerPosition(event) {
-      var pointer = event.pointerId === _pointers[0].pointerId ? _pointers[1] : _pointers[0];
-      return _pointerPositions[pointer.pointerId];
-    }
-    _this.dispose = function () {
-      scope.domElement.removeEventListener("contextmenu", contextmenu);
-      scope.domElement.removeEventListener("pointerdown", onPointerDown);
-      scope.domElement.removeEventListener("pointercancel", onPointerCancel);
-      scope.domElement.removeEventListener("wheel", onMouseWheel);
-      scope.domElement.removeEventListener("pointermove", onPointerMove);
-      scope.domElement.removeEventListener("pointerup", onPointerUp);
-      window.removeEventListener("keydown", keydown);
-      window.removeEventListener("keyup", keyup);
-    };
-    _this.domElement.addEventListener("contextmenu", contextmenu);
-    _this.domElement.addEventListener("pointerdown", onPointerDown);
-    _this.domElement.addEventListener("pointercancel", onPointerCancel);
-    _this.domElement.addEventListener("wheel", onMouseWheel, {
-      passive: false
-    });
-    window.addEventListener("keydown", keydown);
-    window.addEventListener("keyup", keyup);
-    _this.handleResize(); // force an update at start
-
-    _this.update();
-    return _this;
-  }
-  return (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__["default"])(TrackballControls);
-}(three__WEBPACK_IMPORTED_MODULE_6__.EventDispatcher);
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (TrackballControls);
-
-/***/ }),
-
 /***/ "./src/View3d.ts":
 /*!***********************!*\
   !*** ./src/View3d.ts ***!
@@ -5221,7 +4376,7 @@ var View3d = /*#__PURE__*/function () {
     key: "setVolumeChannelOptions",
     value: function setVolumeChannelOptions(volume, channelIndex, options) {
       var _this$image;
-      (_this$image = this.image) === null || _this$image === void 0 ? void 0 : _this$image.setChannelOptions(channelIndex, options);
+      (_this$image = this.image) === null || _this$image === void 0 || _this$image.setChannelOptions(channelIndex, options);
       this.redraw();
     }
 
@@ -5234,7 +4389,7 @@ var View3d = /*#__PURE__*/function () {
     key: "setVolumeDisplayOptions",
     value: function setVolumeDisplayOptions(volume, options) {
       var _this$image2;
-      (_this$image2 = this.image) === null || _this$image2 === void 0 ? void 0 : _this$image2.setOptions(options);
+      (_this$image2 = this.image) === null || _this$image2 === void 0 || _this$image2.setOptions(options);
       this.redraw();
     }
 
@@ -5274,7 +4429,7 @@ var View3d = /*#__PURE__*/function () {
     value: function setRenderUpdateListener(callback) {
       var _this$image3;
       this.renderUpdateListener = callback;
-      (_this$image3 = this.image) === null || _this$image3 === void 0 ? void 0 : _this$image3.setRenderUpdateListener(callback);
+      (_this$image3 = this.image) === null || _this$image3 === void 0 || _this$image3.setRenderUpdateListener(callback);
     }
 
     // channels is an array of channel indices for which new data just arrived.
@@ -5282,8 +4437,8 @@ var View3d = /*#__PURE__*/function () {
     key: "onVolumeData",
     value: function onVolumeData(volume, channels) {
       var _this$image4, _this$image5;
-      (_this$image4 = this.image) === null || _this$image4 === void 0 ? void 0 : _this$image4.updateScale();
-      (_this$image5 = this.image) === null || _this$image5 === void 0 ? void 0 : _this$image5.onChannelLoaded(channels);
+      (_this$image4 = this.image) === null || _this$image4 === void 0 || _this$image4.updateScale();
+      (_this$image5 = this.image) === null || _this$image5 === void 0 || _this$image5.onChannelLoaded(channels);
       if (volume.isLoaded()) {
         this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
       }
@@ -5294,7 +4449,7 @@ var View3d = /*#__PURE__*/function () {
     key: "onVolumeChannelAdded",
     value: function onVolumeChannelAdded(volume, newChannelIndex) {
       var _this$image6;
-      (_this$image6 = this.image) === null || _this$image6 === void 0 ? void 0 : _this$image6.onChannelAdded(newChannelIndex);
+      (_this$image6 = this.image) === null || _this$image6 === void 0 || _this$image6.onChannelAdded(newChannelIndex);
     }
   }, {
     key: "setTime",
@@ -5315,7 +4470,7 @@ var View3d = /*#__PURE__*/function () {
     key: "setVolumeChannelAsMask",
     value: function setVolumeChannelAsMask(volume, maskChannelIndex) {
       var _this$image7;
-      (_this$image7 = this.image) === null || _this$image7 === void 0 ? void 0 : _this$image7.setChannelAsMask(maskChannelIndex);
+      (_this$image7 = this.image) === null || _this$image7 === void 0 || _this$image7.setChannelAsMask(maskChannelIndex);
       this.redraw();
     }
 
@@ -5341,14 +4496,14 @@ var View3d = /*#__PURE__*/function () {
     key: "setRayStepSizes",
     value: function setRayStepSizes(volume, primary, secondary) {
       var _this$image8;
-      (_this$image8 = this.image) === null || _this$image8 === void 0 ? void 0 : _this$image8.setRayStepSizes(primary, secondary);
+      (_this$image8 = this.image) === null || _this$image8 === void 0 || _this$image8.setRayStepSizes(primary, secondary);
       this.redraw();
     }
   }, {
     key: "setShowBoundingBox",
     value: function setShowBoundingBox(volume, showBoundingBox) {
       var _this$image9;
-      (_this$image9 = this.image) === null || _this$image9 === void 0 ? void 0 : _this$image9.setShowBoundingBox(showBoundingBox);
+      (_this$image9 = this.image) === null || _this$image9 === void 0 || _this$image9.setShowBoundingBox(showBoundingBox);
       this.canvas3d.setShowPerspectiveScaleBar(showBoundingBox && this.canvas3d.showOrthoScaleBar && this.volumeRenderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
       this.redraw();
     }
@@ -5356,7 +4511,7 @@ var View3d = /*#__PURE__*/function () {
     key: "setBoundingBoxColor",
     value: function setBoundingBoxColor(volume, color) {
       var _this$image10;
-      (_this$image10 = this.image) === null || _this$image10 === void 0 ? void 0 : _this$image10.setBoundingBoxColor(color);
+      (_this$image10 = this.image) === null || _this$image10 === void 0 || _this$image10.setBoundingBoxColor(color);
       this.canvas3d.setPerspectiveScaleBarColor(color);
       this.redraw();
     }
@@ -5429,7 +4584,7 @@ var View3d = /*#__PURE__*/function () {
     key: "updateOpacity",
     value: function updateOpacity(volume, channel, opacity) {
       var _this$image12;
-      (_this$image12 = this.image) === null || _this$image12 === void 0 ? void 0 : _this$image12.updateOpacity(channel, opacity);
+      (_this$image12 = this.image) === null || _this$image12 === void 0 || _this$image12.updateOpacity(channel, opacity);
       this.redraw();
     }
 
@@ -5442,7 +4597,7 @@ var View3d = /*#__PURE__*/function () {
     key: "clearIsosurface",
     value: function clearIsosurface(volume, channel) {
       var _this$image13;
-      (_this$image13 = this.image) === null || _this$image13 === void 0 ? void 0 : _this$image13.destroyIsosurface(channel);
+      (_this$image13 = this.image) === null || _this$image13 === void 0 || _this$image13.destroyIsosurface(channel);
       this.redraw();
     }
 
@@ -5456,7 +4611,7 @@ var View3d = /*#__PURE__*/function () {
     key: "saveChannelIsosurface",
     value: function saveChannelIsosurface(volume, channelIndex, type) {
       var _this$image14;
-      (_this$image14 = this.image) === null || _this$image14 === void 0 ? void 0 : _this$image14.saveChannelIsosurface(channelIndex, type);
+      (_this$image14 = this.image) === null || _this$image14 === void 0 || _this$image14.saveChannelIsosurface(channelIndex, type);
     }
 
     // Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will return any prior existing image.
@@ -5489,19 +4644,19 @@ var View3d = /*#__PURE__*/function () {
         // TODO: VR display requires a running renderloop
         this.canvas3d.startRenderLoop();
       }
-      (_this$image15 = this.image) === null || _this$image15 === void 0 ? void 0 : _this$image15.onStartControls();
+      (_this$image15 = this.image) === null || _this$image15 === void 0 || _this$image15.onStartControls();
     }
   }, {
     key: "onChangeControls",
     value: function onChangeControls() {
       var _this$image16;
-      (_this$image16 = this.image) === null || _this$image16 === void 0 ? void 0 : _this$image16.onChangeControls();
+      (_this$image16 = this.image) === null || _this$image16 === void 0 || _this$image16.onChangeControls();
     }
   }, {
     key: "onEndControls",
     value: function onEndControls() {
       var _this$image17;
-      (_this$image17 = this.image) === null || _this$image17 === void 0 ? void 0 : _this$image17.onEndControls();
+      (_this$image17 = this.image) === null || _this$image17 === void 0 || _this$image17.onEndControls();
       // If we are pathtracing or autorotating, then keep rendering. Otherwise stop now.
       if (this.volumeRenderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE && !this.canvas3d.controls.autoRotate) {
         // TODO: VR display requires a running renderloop
@@ -5556,8 +4711,8 @@ var View3d = /*#__PURE__*/function () {
     value: function setCameraMode(mode) {
       var _this$image18, _this$image19;
       this.canvas3d.switchViewMode(mode);
-      (_this$image18 = this.image) === null || _this$image18 === void 0 ? void 0 : _this$image18.setViewMode(mode, this.volumeRenderMode);
-      (_this$image19 = this.image) === null || _this$image19 === void 0 ? void 0 : _this$image19.setIsOrtho(mode !== "3D");
+      (_this$image18 = this.image) === null || _this$image18 === void 0 || _this$image18.setViewMode(mode, this.volumeRenderMode);
+      (_this$image19 = this.image) === null || _this$image19 === void 0 || _this$image19.setIsOrtho(mode !== "3D");
       this.canvas3d.redraw();
     }
   }, {
@@ -5700,14 +4855,14 @@ var View3d = /*#__PURE__*/function () {
     key: "setFlipVolume",
     value: function setFlipVolume(volume, flipX, flipY, flipZ) {
       var _this$image23;
-      (_this$image23 = this.image) === null || _this$image23 === void 0 ? void 0 : _this$image23.setFlipAxes(flipX, flipY, flipZ);
+      (_this$image23 = this.image) === null || _this$image23 === void 0 || _this$image23.setFlipAxes(flipX, flipY, flipZ);
       this.redraw();
     }
   }, {
     key: "setInterpolationEnabled",
     value: function setInterpolationEnabled(volume, active) {
       var _this$image24;
-      (_this$image24 = this.image) === null || _this$image24 === void 0 ? void 0 : _this$image24.setInterpolationEnabled(active);
+      (_this$image24 = this.image) === null || _this$image24 === void 0 || _this$image24.setInterpolationEnabled(active);
       this.redraw();
     }
 
@@ -5725,7 +4880,7 @@ var View3d = /*#__PURE__*/function () {
     value: function resize(comp, w, h, ow, oh, eOpts) {
       var _this$image25;
       this.canvas3d.resize(comp, w, h, ow, oh, eOpts);
-      (_this$image25 = this.image) === null || _this$image25 === void 0 ? void 0 : _this$image25.setResolution(this.canvas3d);
+      (_this$image25 = this.image) === null || _this$image25 === void 0 || _this$image25.setResolution(this.canvas3d);
       this.redraw();
     }
 
@@ -5738,7 +4893,7 @@ var View3d = /*#__PURE__*/function () {
     key: "updateDensity",
     value: function updateDensity(volume, density) {
       var _this$image26;
-      (_this$image26 = this.image) === null || _this$image26 === void 0 ? void 0 : _this$image26.setDensity(density);
+      (_this$image26 = this.image) === null || _this$image26 === void 0 || _this$image26.setDensity(density);
       this.redraw();
     }
 
@@ -5751,7 +4906,7 @@ var View3d = /*#__PURE__*/function () {
     key: "updateShadingMethod",
     value: function updateShadingMethod(volume, isbrdf) {
       var _this$image27;
-      (_this$image27 = this.image) === null || _this$image27 === void 0 ? void 0 : _this$image27.updateShadingMethod(isbrdf);
+      (_this$image27 = this.image) === null || _this$image27 === void 0 || _this$image27.updateShadingMethod(isbrdf);
     }
 
     /**
@@ -5765,7 +4920,7 @@ var View3d = /*#__PURE__*/function () {
     key: "setGamma",
     value: function setGamma(volume, gmin, glevel, gmax) {
       var _this$image28;
-      (_this$image28 = this.image) === null || _this$image28 === void 0 ? void 0 : _this$image28.setGamma(gmin, glevel, gmax);
+      (_this$image28 = this.image) === null || _this$image28 === void 0 || _this$image28.setGamma(gmin, glevel, gmax);
       this.redraw();
     }
 
@@ -5778,7 +4933,7 @@ var View3d = /*#__PURE__*/function () {
     key: "setMaxProjectMode",
     value: function setMaxProjectMode(volume, isMaxProject) {
       var _this$image29;
-      (_this$image29 = this.image) === null || _this$image29 === void 0 ? void 0 : _this$image29.setMaxProjectMode(isMaxProject);
+      (_this$image29 = this.image) === null || _this$image29 === void 0 || _this$image29.setMaxProjectMode(isMaxProject);
       this.redraw();
     }
 
@@ -5790,7 +4945,7 @@ var View3d = /*#__PURE__*/function () {
     key: "updateActiveChannels",
     value: function updateActiveChannels(_volume) {
       var _this$image30;
-      (_this$image30 = this.image) === null || _this$image30 === void 0 ? void 0 : _this$image30.fuse();
+      (_this$image30 = this.image) === null || _this$image30 === void 0 || _this$image30.fuse();
       this.redraw();
     }
 
@@ -5802,7 +4957,7 @@ var View3d = /*#__PURE__*/function () {
     key: "updateLuts",
     value: function updateLuts(_volume) {
       var _this$image31;
-      (_this$image31 = this.image) === null || _this$image31 === void 0 ? void 0 : _this$image31.updateLuts();
+      (_this$image31 = this.image) === null || _this$image31 === void 0 || _this$image31.updateLuts();
       this.redraw();
     }
 
@@ -5814,7 +4969,7 @@ var View3d = /*#__PURE__*/function () {
     key: "updateMaterial",
     value: function updateMaterial(_volume) {
       var _this$image32;
-      (_this$image32 = this.image) === null || _this$image32 === void 0 ? void 0 : _this$image32.updateMaterial();
+      (_this$image32 = this.image) === null || _this$image32 === void 0 || _this$image32.updateMaterial();
       this.redraw();
     }
 
@@ -5827,7 +4982,7 @@ var View3d = /*#__PURE__*/function () {
     value: function updateExposure(e) {
       var _this$image33;
       this.exposure = e;
-      (_this$image33 = this.image) === null || _this$image33 === void 0 ? void 0 : _this$image33.setBrightness(e);
+      (_this$image33 = this.image) === null || _this$image33 === void 0 || _this$image33.setBrightness(e);
       this.redraw();
     }
 
@@ -5842,7 +4997,7 @@ var View3d = /*#__PURE__*/function () {
     value: function updateCamera(fov, focalDistance, apertureSize) {
       var _this$image34;
       this.canvas3d.updateCameraFocus(fov, focalDistance, apertureSize);
-      (_this$image34 = this.image) === null || _this$image34 === void 0 ? void 0 : _this$image34.onCameraChanged(fov, focalDistance, apertureSize);
+      (_this$image34 = this.image) === null || _this$image34 === void 0 || _this$image34.onCameraChanged(fov, focalDistance, apertureSize);
       this.redraw();
     }
 
@@ -5860,7 +5015,7 @@ var View3d = /*#__PURE__*/function () {
     key: "updateClipRegion",
     value: function updateClipRegion(volume, xmin, xmax, ymin, ymax, zmin, zmax) {
       var _this$image35;
-      (_this$image35 = this.image) === null || _this$image35 === void 0 ? void 0 : _this$image35.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
+      (_this$image35 = this.image) === null || _this$image35 === void 0 || _this$image35.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
       this.redraw();
     }
 
@@ -5877,7 +5032,7 @@ var View3d = /*#__PURE__*/function () {
     key: "setAxisClip",
     value: function setAxisClip(volume, axis, minval, maxval, isOrthoAxis) {
       var _this$image36;
-      (_this$image36 = this.image) === null || _this$image36 === void 0 ? void 0 : _this$image36.setAxisClip(axis, minval, maxval, isOrthoAxis);
+      (_this$image36 = this.image) === null || _this$image36 === void 0 || _this$image36.setAxisClip(axis, minval, maxval, isOrthoAxis);
       this.redraw();
     }
 
@@ -5891,7 +5046,7 @@ var View3d = /*#__PURE__*/function () {
       var _this$image37;
       // TODO flesh this out
       this.lights = state;
-      (_this$image37 = this.image) === null || _this$image37 === void 0 ? void 0 : _this$image37.updateLights(state);
+      (_this$image37 = this.image) === null || _this$image37 === void 0 || _this$image37.updateLights(state);
     }
 
     /**
@@ -5906,7 +5061,7 @@ var View3d = /*#__PURE__*/function () {
         return;
       }
       this.pixelSamplingRate = value;
-      (_this$image38 = this.image) === null || _this$image38 === void 0 ? void 0 : _this$image38.setPixelSamplingRate(value);
+      (_this$image38 = this.image) === null || _this$image38 === void 0 || _this$image38.setPixelSamplingRate(value);
     }
 
     /**
@@ -5918,7 +5073,7 @@ var View3d = /*#__PURE__*/function () {
     key: "updateMaskAlpha",
     value: function updateMaskAlpha(volume, value) {
       var _this$image39;
-      (_this$image39 = this.image) === null || _this$image39 === void 0 ? void 0 : _this$image39.setMaskAlpha(value);
+      (_this$image39 = this.image) === null || _this$image39 === void 0 || _this$image39.setMaskAlpha(value);
       this.redraw();
     }
 
@@ -5932,7 +5087,7 @@ var View3d = /*#__PURE__*/function () {
     key: "setVolumeChannelEnabled",
     value: function setVolumeChannelEnabled(volume, channel, enabled) {
       var _this$image40;
-      (_this$image40 = this.image) === null || _this$image40 === void 0 ? void 0 : _this$image40.setChannelOptions(channel, {
+      (_this$image40 = this.image) === null || _this$image40 === void 0 || _this$image40.setChannelOptions(channel, {
         enabled: enabled
       });
       this.redraw();
@@ -5951,7 +5106,7 @@ var View3d = /*#__PURE__*/function () {
     key: "updateChannelMaterial",
     value: function updateChannelMaterial(volume, channelIndex, colorrgb, specularrgb, emissivergb, glossiness) {
       var _this$image41;
-      (_this$image41 = this.image) === null || _this$image41 === void 0 ? void 0 : _this$image41.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
+      (_this$image41 = this.image) === null || _this$image41 === void 0 || _this$image41.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
     }
 
     /**
@@ -5964,7 +5119,7 @@ var View3d = /*#__PURE__*/function () {
     key: "updateChannelColor",
     value: function updateChannelColor(volume, channelIndex, colorrgb) {
       var _this$image42;
-      (_this$image42 = this.image) === null || _this$image42 === void 0 ? void 0 : _this$image42.updateChannelColor(channelIndex, colorrgb);
+      (_this$image42 = this.image) === null || _this$image42 === void 0 || _this$image42.updateChannelColor(channelIndex, colorrgb);
     }
 
     /**
@@ -6014,7 +5169,7 @@ var View3d = /*#__PURE__*/function () {
     key: "setVolumeTranslation",
     value: function setVolumeTranslation(volume, xyz) {
       var _this$image44;
-      (_this$image44 = this.image) === null || _this$image44 === void 0 ? void 0 : _this$image44.setTranslation(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(xyz));
+      (_this$image44 = this.image) === null || _this$image44 === void 0 || _this$image44.setTranslation(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(xyz));
       this.redraw();
     }
 
@@ -6027,7 +5182,7 @@ var View3d = /*#__PURE__*/function () {
     key: "setVolumeRotation",
     value: function setVolumeRotation(volume, eulerXYZ) {
       var _this$image45;
-      (_this$image45 = this.image) === null || _this$image45 === void 0 ? void 0 : _this$image45.setRotation(new three__WEBPACK_IMPORTED_MODULE_10__.Euler().fromArray(eulerXYZ));
+      (_this$image45 = this.image) === null || _this$image45 === void 0 || _this$image45.setRotation(new three__WEBPACK_IMPORTED_MODULE_10__.Euler().fromArray(eulerXYZ));
       this.redraw();
     }
 
@@ -6039,7 +5194,7 @@ var View3d = /*#__PURE__*/function () {
     value: function resetCamera() {
       var _this$image46;
       this.canvas3d.resetCamera();
-      (_this$image46 = this.image) === null || _this$image46 === void 0 ? void 0 : _this$image46.onResetCamera();
+      (_this$image46 = this.image) === null || _this$image46 === void 0 || _this$image46.onResetCamera();
       this.redraw();
     }
   }, {
@@ -6096,7 +5251,7 @@ var View3d = /*#__PURE__*/function () {
       addFolderForLight(this.ambientLight, "ambient light");
       addFolderForLight(this.reflectedLight, "reflected light");
       addFolderForLight(this.fillLight, "fill light");
-      (_this$image47 = this.image) === null || _this$image47 === void 0 ? void 0 : _this$image47.setupGui(pane);
+      (_this$image47 = this.image) === null || _this$image47 === void 0 || _this$image47.setupGui(pane);
       return pane;
     }
   }]);
@@ -6133,8 +5288,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 
 
 
@@ -6296,7 +5451,7 @@ var Volume = /*#__PURE__*/function () {
     /** Call on any state update that may require new data to be loaded (subregion, enabled channels, time, etc.) */
   }, {
     key: "updateRequiredData",
-    value: function () {
+    value: (function () {
       var _updateRequiredData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(required, onChannelLoaded) {
         var _this = this;
         var noReload, _this$loadSpec$multis, _this$loader, currentScale, minLevel, dims, loadableLevel, _this$loader2;
@@ -6335,7 +5490,7 @@ var Volume = /*#__PURE__*/function () {
                   // preserve multiscale option from original `LoadSpec`, if any
                   multiscaleLevel: this.loadSpec.multiscaleLevel
                 });
-                (_this$loader2 = this.loader) === null || _this$loader2 === void 0 ? void 0 : _this$loader2.loadVolumeData(this, undefined, onChannelLoaded);
+                (_this$loader2 = this.loader) === null || _this$loader2 === void 0 || _this$loader2.loadVolumeData(this, undefined, onChannelLoaded);
               }
             case 10:
             case "end":
@@ -6349,6 +5504,7 @@ var Volume = /*#__PURE__*/function () {
       return updateRequiredData;
     }() // we calculate the physical size of the volume (voxels*pixel_size)
     // and then normalize to the max physical dimension
+    )
   }, {
     key: "setVoxelSize",
     value: function setVoxelSize(size) {
@@ -8581,7 +7737,6 @@ var rayMarchingShaderUniforms = function rayMarchingShaderUniforms() {
       type: "f",
       value: 0.5 // needs to come from ThreeJsPanel's setting
     },
-
     AABB_CLIP_MIN: {
       type: "v3",
       value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(-0.5, -0.5, -0.5)
@@ -8714,7 +7869,6 @@ var sliceShaderUniforms = function sliceShaderUniforms() {
       type: "f",
       value: 0.5 // needs to come from ThreeJsPanel's setting
     },
-
     AABB_CLIP_MIN: {
       type: "v3",
       value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(-0.5, -0.5, -0.5)
@@ -8863,8 +8017,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 
 
 
@@ -8960,7 +8114,7 @@ var ThreadableVolumeLoader = /*#__PURE__*/function () {
                 } else {
                   volume.setChannelDataFromVolume(channelIndex, data);
                 }
-                onChannelLoaded === null || onChannelLoaded === void 0 ? void 0 : onChannelLoaded(volume, channelIndex);
+                onChannelLoaded === null || onChannelLoaded === void 0 || onChannelLoaded(volume, channelIndex);
               };
               spec = _objectSpread(_objectSpread({}, loadSpecOverride), volume.loadSpec);
               _context2.next = 4;
@@ -9006,9 +8160,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
-/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
-/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
+/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
@@ -9020,11 +8174,11 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_6__["default"])(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_6__["default"])(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_5__["default"])(this, result); }; }
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+function _callSuper(t, o, e) { return o = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(o), (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__["default"])(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(t).constructor) : o.apply(t, e)); }
+function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
 
 
 
@@ -9059,12 +8213,11 @@ var convertImageInfo = function convertImageInfo(json) {
   };
 };
 var JsonImageInfoLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
-  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_4__["default"])(JsonImageInfoLoader, _ThreadableVolumeLoad);
-  var _super = _createSuper(JsonImageInfoLoader);
+  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_6__["default"])(JsonImageInfoLoader, _ThreadableVolumeLoad);
   function JsonImageInfoLoader(urls, cache) {
     var _this;
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, JsonImageInfoLoader);
-    _this = _super.call(this);
+    _this = _callSuper(this, JsonImageInfoLoader);
     if (Array.isArray(urls)) {
       _this.urls = urls;
     } else {
@@ -9338,7 +8491,7 @@ var JsonImageInfoLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
 
                 for (_ch = 0; _ch < Math.min(image.channels.length, 4); ++_ch) {
                   _chindex = image.channels[_ch];
-                  cache === null || cache === void 0 ? void 0 : cache.insert("".concat(image.name, "/").concat(_chindex), channelsBits[_ch]);
+                  cache === null || cache === void 0 || cache.insert("".concat(image.name, "/").concat(_chindex), channelsBits[_ch]);
                   // NOTE: the atlas dimensions passed in here are currently unused by `JSONImageInfoLoader`
                   onData(_chindex, channelsBits[_ch], [bitmap.width, bitmap.height]);
                 }
@@ -9375,9 +8528,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
-/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
-/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
+/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
 /* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_8__);
@@ -9404,10 +8557,10 @@ function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol 
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_6__["default"])(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_6__["default"])(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_5__["default"])(this, result); }; }
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _callSuper(t, o, e) { return o = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(o), (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__["default"])(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(t).constructor) : o.apply(t, e)); }
+function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
 
 
 
@@ -9497,8 +8650,7 @@ var DEFAULT_FETCH_OPTIONS = {
   maxPrefetchChunks: 30
 };
 var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
-  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_4__["default"])(OMEZarrLoader, _ThreadableVolumeLoad);
-  var _super = _createSuper(OMEZarrLoader);
+  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_6__["default"])(OMEZarrLoader, _ThreadableVolumeLoad);
   /** The ID of the subscriber responsible for "actual loads" (non-prefetch requests) */
 
   /** The ID of the subscriber responsible for prefetches, so that requests can be cancelled and reissued */
@@ -9521,7 +8673,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
     var fetchOptions = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : DEFAULT_FETCH_OPTIONS;
     var priorityDirections = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : [];
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, OMEZarrLoader);
-    _this = _super.call(this);
+    _this = _callSuper(this, OMEZarrLoader);
     _this.store = store;
     _this.scaleLevels = scaleLevels;
     _this.multiscaleMetadata = multiscaleMetadata;
@@ -10003,9 +9155,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
-/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
-/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
+/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_6__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
@@ -10018,17 +9170,16 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__["default"])(this, result); }; }
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+function _callSuper(t, o, e) { return o = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_4__["default"])(o), (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_3__["default"])(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_4__["default"])(t).constructor) : o.apply(t, e)); }
+function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
 
 
 
 var OpenCellLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
-  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_3__["default"])(OpenCellLoader, _ThreadableVolumeLoad);
-  var _super = _createSuper(OpenCellLoader);
+  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_5__["default"])(OpenCellLoader, _ThreadableVolumeLoad);
   function OpenCellLoader() {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, OpenCellLoader);
-    return _super.apply(this, arguments);
+    return _callSuper(this, OpenCellLoader, arguments);
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(OpenCellLoader, [{
     key: "loadDims",
@@ -10139,9 +9290,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   TiffLoader: () => (/* binding */ TiffLoader)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
-/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
-/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
+/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
@@ -10159,8 +9310,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_3__["default"])(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_3__["default"])(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_2__["default"])(this, result); }; }
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+function _callSuper(t, o, e) { return o = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_2__["default"])(o), (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_1__["default"])(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_2__["default"])(t).constructor) : o.apply(t, e)); }
+function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
 
 
 
@@ -10221,12 +9372,11 @@ var getBytesPerSample = function getBytesPerSample(type) {
 // Despite the class `TiffLoader` extends, this loader is not threadable, since geotiff internally uses features that
 // aren't available on workers. It uses its own specialized workers anyways.
 var TiffLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
-  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_1__["default"])(TiffLoader, _ThreadableVolumeLoad);
-  var _super = _createSuper(TiffLoader);
+  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_3__["default"])(TiffLoader, _ThreadableVolumeLoad);
   function TiffLoader(url) {
     var _this;
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_5__["default"])(this, TiffLoader);
-    _this = _super.call(this);
+    _this = _callSuper(this, TiffLoader);
     _this.url = url;
     return _this;
   }
@@ -10454,8 +9604,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 
 
 var MAX_ATLAS_EDGE = 4096;
@@ -10720,7 +9870,6 @@ var directionToIndex = function directionToIndex(dir) {
   var absDir = dir >> 1; // shave off sign bit to get index in TZYX
   return absDir + Number(absDir !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
 };
-
 function updateMinMax(val, minmax) {
   if (val < minmax[0]) {
     minmax[0] = val;
@@ -11456,7 +10605,7 @@ var RequestQueue = /*#__PURE__*/function () {
      */
   }, {
     key: "dequeue",
-    value: function () {
+    value: (function () {
       var _dequeue = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee() {
         var _this$queue$shift;
         var numRequests, requestKey, requestItem, key;
@@ -11516,6 +10665,7 @@ var RequestQueue = /*#__PURE__*/function () {
      * @param key The key that should be matched against.
      * @param cancelReason A message or object that will be used as the promise rejection.
      */
+    )
   }, {
     key: "cancelRequest",
     value: function cancelRequest(key) {
@@ -11654,7 +10804,7 @@ var SubscribableRequestQueue = /*#__PURE__*/function () {
               resolve = _step$value.resolve,
               subscriberId = _step$value.subscriberId;
             resolve(value);
-            (_this$subscribers$get = this.subscribers.get(subscriberId)) === null || _this$subscribers$get === void 0 ? void 0 : _this$subscribers$get["delete"](key);
+            (_this$subscribers$get = this.subscribers.get(subscriberId)) === null || _this$subscribers$get === void 0 || _this$subscribers$get["delete"](key);
           }
         } catch (err) {
           _iterator.e(err);
@@ -11680,7 +10830,7 @@ var SubscribableRequestQueue = /*#__PURE__*/function () {
               reject = _step2$value.reject,
               subscriberId = _step2$value.subscriberId;
             reject(reason);
-            (_this$subscribers$get2 = this.subscribers.get(subscriberId)) === null || _this$subscribers$get2 === void 0 ? void 0 : _this$subscribers$get2["delete"](key);
+            (_this$subscribers$get2 = this.subscribers.get(subscriberId)) === null || _this$subscribers$get2 === void 0 || _this$subscribers$get2["delete"](key);
           }
         } catch (err) {
           _iterator2.e(err);
@@ -11736,12 +10886,12 @@ var SubscribableRequestQueue = /*#__PURE__*/function () {
       // Create promise and add to list of requests
       return new Promise(function (resolve, reject) {
         var _this$requests$get, _this$subscribers$get3;
-        (_this$requests$get = _this.requests.get(key)) === null || _this$requests$get === void 0 ? void 0 : _this$requests$get.push({
+        (_this$requests$get = _this.requests.get(key)) === null || _this$requests$get === void 0 || _this$requests$get.push({
           resolve: resolve,
           reject: reject,
           subscriberId: subscriberId
         });
-        (_this$subscribers$get3 = _this.subscribers.get(subscriberId)) === null || _this$subscribers$get3 === void 0 ? void 0 : _this$subscribers$get3.set(key, reject);
+        (_this$subscribers$get3 = _this.subscribers.get(subscriberId)) === null || _this$subscribers$get3 === void 0 || _this$subscribers$get3.set(key, reject);
       });
     }
 
@@ -11863,10 +11013,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/assertThisInitialized */ "./node_modules/@babel/runtime/helpers/esm/assertThisInitialized.js");
-/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
-/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
-/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
+/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var _babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/assertThisInitialized */ "./node_modules/@babel/runtime/helpers/esm/assertThisInitialized.js");
+/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
 /* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
 /* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
@@ -11888,8 +11038,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_3__["default"])(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_3__["default"])(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_2__["default"])(this, result); }; }
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+function _callSuper(t, o, e) { return o = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_1__["default"])(o), (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_0__["default"])(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_1__["default"])(t).constructor) : o.apply(t, e)); }
+function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function (_e) { function e(_x7) { return _e.apply(this, arguments); } e.toString = function () { return _e.toString(); }; return e; }(function (e) { throw e; }), f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function (_e2) { function e(_x8) { return _e2.apply(this, arguments); } e.toString = function () { return _e2.toString(); }; return e; }(function (e) { didErr = true; err = e; }), f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
@@ -11989,7 +11139,7 @@ var SharedLoadWorkerHandle = /*#__PURE__*/function () {
       var data = _ref.data;
       if (data.responseResult === _types__WEBPACK_IMPORTED_MODULE_13__.WorkerResponseResult.EVENT) {
         var _this$onChannelData;
-        (_this$onChannelData = this.onChannelData) === null || _this$onChannelData === void 0 ? void 0 : _this$onChannelData.call(this, data);
+        (_this$onChannelData = this.onChannelData) === null || _this$onChannelData === void 0 || _this$onChannelData.call(this, data);
       } else {
         var prom = this.pendingRequests[data.msgId];
         if (prom === undefined) {
@@ -12052,7 +11202,7 @@ var VolumeLoaderContext = /*#__PURE__*/function () {
     value: function close() {
       var _this$activeLoader;
       this.workerHandle.close();
-      (_this$activeLoader = this.activeLoader) === null || _this$activeLoader === void 0 ? void 0 : _this$activeLoader.close();
+      (_this$activeLoader = this.activeLoader) === null || _this$activeLoader === void 0 || _this$activeLoader.close();
     }
 
     /**
@@ -12062,7 +11212,7 @@ var VolumeLoaderContext = /*#__PURE__*/function () {
      */
   }, {
     key: "createLoader",
-    value: function () {
+    value: (function () {
       var _createLoader = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_4__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9___default().mark(function _callee(path, options) {
         var _this$activeLoader2;
         var pathString, fileType, success;
@@ -12091,7 +11241,7 @@ var VolumeLoaderContext = /*#__PURE__*/function () {
               }
               throw new Error("Failed to create loader");
             case 9:
-              (_this$activeLoader2 = this.activeLoader) === null || _this$activeLoader2 === void 0 ? void 0 : _this$activeLoader2.close();
+              (_this$activeLoader2 = this.activeLoader) === null || _this$activeLoader2 === void 0 || _this$activeLoader2.close();
               this.activeLoaderId += 1;
               this.activeLoader = new WorkerLoader(this.activeLoaderId, this.workerHandle);
               return _context.abrupt("return", this.activeLoader);
@@ -12105,7 +11255,7 @@ var VolumeLoaderContext = /*#__PURE__*/function () {
         return _createLoader.apply(this, arguments);
       }
       return createLoader;
-    }()
+    }())
   }]);
   return VolumeLoaderContext;
 }();
@@ -12115,18 +11265,17 @@ var VolumeLoaderContext = /*#__PURE__*/function () {
  * Created with `VolumeLoaderContext.createLoader`. See its documentation for more.
  */
 var WorkerLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
-  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_1__["default"])(WorkerLoader, _ThreadableVolumeLoad);
-  var _super = _createSuper(WorkerLoader);
+  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_3__["default"])(WorkerLoader, _ThreadableVolumeLoad);
   function WorkerLoader(loaderId, workerHandle) {
     var _this2;
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_6__["default"])(this, WorkerLoader);
-    _this2 = _super.call(this);
-    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_8__["default"])((0,_babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_0__["default"])(_this2), "isOpen", true);
-    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_8__["default"])((0,_babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_0__["default"])(_this2), "currentLoadId", -1);
-    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_8__["default"])((0,_babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_0__["default"])(_this2), "currentLoadCallback", undefined);
+    _this2 = _callSuper(this, WorkerLoader);
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_8__["default"])((0,_babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_2__["default"])(_this2), "isOpen", true);
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_8__["default"])((0,_babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_2__["default"])(_this2), "currentLoadId", -1);
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_8__["default"])((0,_babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_2__["default"])(_this2), "currentLoadCallback", undefined);
     _this2.loaderId = loaderId;
     _this2.workerHandle = workerHandle;
-    workerHandle.onChannelData = _this2.onChannelData.bind((0,_babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_0__["default"])(_this2));
+    workerHandle.onChannelData = _this2.onChannelData.bind((0,_babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_2__["default"])(_this2));
     return _this2;
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_7__["default"])(WorkerLoader, [{
@@ -12233,7 +11382,7 @@ var WorkerLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       if (e.loaderId !== this.loaderId || e.loadId !== this.currentLoadId) {
         return;
       }
-      (_this$currentLoadCall = this.currentLoadCallback) === null || _this$currentLoadCall === void 0 ? void 0 : _this$currentLoadCall.call(this, e.channelIndex, e.data, e.atlasDims);
+      (_this$currentLoadCall = this.currentLoadCallback) === null || _this$currentLoadCall === void 0 || _this$currentLoadCall.call(this, e.channelIndex, e.data, e.atlasDims);
     }
   }]);
   return WorkerLoader;
@@ -12302,8 +11451,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = null != arguments[i] ? arguments[i] : {}; i % 2 ? ownKeys(Object(source), !0).forEach(function (key) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(target, key, source[key]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } return target; }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 
 /** Recreates a `LoadSpec` that has just been sent to/from a worker to restore three.js object prototypes */
 function rebuildLoadSpec(spec) {
@@ -23529,304 +22678,304 @@ var _typeof = (__webpack_require__(/*! ./typeof.js */ "./node_modules/@babel/run
 function _regeneratorRuntime() {
   "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */
   module.exports = _regeneratorRuntime = function _regeneratorRuntime() {
-    return exports;
+    return e;
   }, module.exports.__esModule = true, module.exports["default"] = module.exports;
-  var exports = {},
-    Op = Object.prototype,
-    hasOwn = Op.hasOwnProperty,
-    defineProperty = Object.defineProperty || function (obj, key, desc) {
-      obj[key] = desc.value;
+  var t,
+    e = {},
+    r = Object.prototype,
+    n = r.hasOwnProperty,
+    o = Object.defineProperty || function (t, e, r) {
+      t[e] = r.value;
     },
-    $Symbol = "function" == typeof Symbol ? Symbol : {},
-    iteratorSymbol = $Symbol.iterator || "@@iterator",
-    asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator",
-    toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
-  function define(obj, key, value) {
-    return Object.defineProperty(obj, key, {
-      value: value,
+    i = "function" == typeof Symbol ? Symbol : {},
+    a = i.iterator || "@@iterator",
+    c = i.asyncIterator || "@@asyncIterator",
+    u = i.toStringTag || "@@toStringTag";
+  function define(t, e, r) {
+    return Object.defineProperty(t, e, {
+      value: r,
       enumerable: !0,
       configurable: !0,
       writable: !0
-    }), obj[key];
+    }), t[e];
   }
   try {
     define({}, "");
-  } catch (err) {
-    define = function define(obj, key, value) {
-      return obj[key] = value;
+  } catch (t) {
+    define = function define(t, e, r) {
+      return t[e] = r;
     };
   }
-  function wrap(innerFn, outerFn, self, tryLocsList) {
-    var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator,
-      generator = Object.create(protoGenerator.prototype),
-      context = new Context(tryLocsList || []);
-    return defineProperty(generator, "_invoke", {
-      value: makeInvokeMethod(innerFn, self, context)
-    }), generator;
+  function wrap(t, e, r, n) {
+    var i = e && e.prototype instanceof Generator ? e : Generator,
+      a = Object.create(i.prototype),
+      c = new Context(n || []);
+    return o(a, "_invoke", {
+      value: makeInvokeMethod(t, r, c)
+    }), a;
   }
-  function tryCatch(fn, obj, arg) {
+  function tryCatch(t, e, r) {
     try {
       return {
         type: "normal",
-        arg: fn.call(obj, arg)
+        arg: t.call(e, r)
       };
-    } catch (err) {
+    } catch (t) {
       return {
         type: "throw",
-        arg: err
+        arg: t
       };
     }
   }
-  exports.wrap = wrap;
-  var ContinueSentinel = {};
+  e.wrap = wrap;
+  var h = "suspendedStart",
+    l = "suspendedYield",
+    f = "executing",
+    s = "completed",
+    y = {};
   function Generator() {}
   function GeneratorFunction() {}
   function GeneratorFunctionPrototype() {}
-  var IteratorPrototype = {};
-  define(IteratorPrototype, iteratorSymbol, function () {
+  var p = {};
+  define(p, a, function () {
     return this;
   });
-  var getProto = Object.getPrototypeOf,
-    NativeIteratorPrototype = getProto && getProto(getProto(values([])));
-  NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype);
-  var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype);
-  function defineIteratorMethods(prototype) {
-    ["next", "throw", "return"].forEach(function (method) {
-      define(prototype, method, function (arg) {
-        return this._invoke(method, arg);
+  var d = Object.getPrototypeOf,
+    v = d && d(d(values([])));
+  v && v !== r && n.call(v, a) && (p = v);
+  var g = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(p);
+  function defineIteratorMethods(t) {
+    ["next", "throw", "return"].forEach(function (e) {
+      define(t, e, function (t) {
+        return this._invoke(e, t);
       });
     });
   }
-  function AsyncIterator(generator, PromiseImpl) {
-    function invoke(method, arg, resolve, reject) {
-      var record = tryCatch(generator[method], generator, arg);
-      if ("throw" !== record.type) {
-        var result = record.arg,
-          value = result.value;
-        return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) {
-          invoke("next", value, resolve, reject);
-        }, function (err) {
-          invoke("throw", err, resolve, reject);
-        }) : PromiseImpl.resolve(value).then(function (unwrapped) {
-          result.value = unwrapped, resolve(result);
-        }, function (error) {
-          return invoke("throw", error, resolve, reject);
+  function AsyncIterator(t, e) {
+    function invoke(r, o, i, a) {
+      var c = tryCatch(t[r], t, o);
+      if ("throw" !== c.type) {
+        var u = c.arg,
+          h = u.value;
+        return h && "object" == _typeof(h) && n.call(h, "__await") ? e.resolve(h.__await).then(function (t) {
+          invoke("next", t, i, a);
+        }, function (t) {
+          invoke("throw", t, i, a);
+        }) : e.resolve(h).then(function (t) {
+          u.value = t, i(u);
+        }, function (t) {
+          return invoke("throw", t, i, a);
         });
       }
-      reject(record.arg);
+      a(c.arg);
     }
-    var previousPromise;
-    defineProperty(this, "_invoke", {
-      value: function value(method, arg) {
+    var r;
+    o(this, "_invoke", {
+      value: function value(t, n) {
         function callInvokeWithMethodAndArg() {
-          return new PromiseImpl(function (resolve, reject) {
-            invoke(method, arg, resolve, reject);
+          return new e(function (e, r) {
+            invoke(t, n, e, r);
           });
         }
-        return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg();
+        return r = r ? r.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg();
       }
     });
   }
-  function makeInvokeMethod(innerFn, self, context) {
-    var state = "suspendedStart";
-    return function (method, arg) {
-      if ("executing" === state) throw new Error("Generator is already running");
-      if ("completed" === state) {
-        if ("throw" === method) throw arg;
-        return doneResult();
+  function makeInvokeMethod(e, r, n) {
+    var o = h;
+    return function (i, a) {
+      if (o === f) throw new Error("Generator is already running");
+      if (o === s) {
+        if ("throw" === i) throw a;
+        return {
+          value: t,
+          done: !0
+        };
       }
-      for (context.method = method, context.arg = arg;;) {
-        var delegate = context.delegate;
-        if (delegate) {
-          var delegateResult = maybeInvokeDelegate(delegate, context);
-          if (delegateResult) {
-            if (delegateResult === ContinueSentinel) continue;
-            return delegateResult;
+      for (n.method = i, n.arg = a;;) {
+        var c = n.delegate;
+        if (c) {
+          var u = maybeInvokeDelegate(c, n);
+          if (u) {
+            if (u === y) continue;
+            return u;
           }
         }
-        if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) {
-          if ("suspendedStart" === state) throw state = "completed", context.arg;
-          context.dispatchException(context.arg);
-        } else "return" === context.method && context.abrupt("return", context.arg);
-        state = "executing";
-        var record = tryCatch(innerFn, self, context);
-        if ("normal" === record.type) {
-          if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue;
+        if ("next" === n.method) n.sent = n._sent = n.arg;else if ("throw" === n.method) {
+          if (o === h) throw o = s, n.arg;
+          n.dispatchException(n.arg);
+        } else "return" === n.method && n.abrupt("return", n.arg);
+        o = f;
+        var p = tryCatch(e, r, n);
+        if ("normal" === p.type) {
+          if (o = n.done ? s : l, p.arg === y) continue;
           return {
-            value: record.arg,
-            done: context.done
+            value: p.arg,
+            done: n.done
           };
         }
-        "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg);
+        "throw" === p.type && (o = s, n.method = "throw", n.arg = p.arg);
       }
     };
   }
-  function maybeInvokeDelegate(delegate, context) {
-    var methodName = context.method,
-      method = delegate.iterator[methodName];
-    if (undefined === method) return context.delegate = null, "throw" === methodName && delegate.iterator["return"] && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method) || "return" !== methodName && (context.method = "throw", context.arg = new TypeError("The iterator does not provide a '" + methodName + "' method")), ContinueSentinel;
-    var record = tryCatch(method, delegate.iterator, context.arg);
-    if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel;
-    var info = record.arg;
-    return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel);
+  function maybeInvokeDelegate(e, r) {
+    var n = r.method,
+      o = e.iterator[n];
+    if (o === t) return r.delegate = null, "throw" === n && e.iterator["return"] && (r.method = "return", r.arg = t, maybeInvokeDelegate(e, r), "throw" === r.method) || "return" !== n && (r.method = "throw", r.arg = new TypeError("The iterator does not provide a '" + n + "' method")), y;
+    var i = tryCatch(o, e.iterator, r.arg);
+    if ("throw" === i.type) return r.method = "throw", r.arg = i.arg, r.delegate = null, y;
+    var a = i.arg;
+    return a ? a.done ? (r[e.resultName] = a.value, r.next = e.nextLoc, "return" !== r.method && (r.method = "next", r.arg = t), r.delegate = null, y) : a : (r.method = "throw", r.arg = new TypeError("iterator result is not an object"), r.delegate = null, y);
   }
-  function pushTryEntry(locs) {
-    var entry = {
-      tryLoc: locs[0]
+  function pushTryEntry(t) {
+    var e = {
+      tryLoc: t[0]
     };
-    1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry);
+    1 in t && (e.catchLoc = t[1]), 2 in t && (e.finallyLoc = t[2], e.afterLoc = t[3]), this.tryEntries.push(e);
   }
-  function resetTryEntry(entry) {
-    var record = entry.completion || {};
-    record.type = "normal", delete record.arg, entry.completion = record;
+  function resetTryEntry(t) {
+    var e = t.completion || {};
+    e.type = "normal", delete e.arg, t.completion = e;
   }
-  function Context(tryLocsList) {
+  function Context(t) {
     this.tryEntries = [{
       tryLoc: "root"
-    }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0);
+    }], t.forEach(pushTryEntry, this), this.reset(!0);
   }
-  function values(iterable) {
-    if (iterable) {
-      var iteratorMethod = iterable[iteratorSymbol];
-      if (iteratorMethod) return iteratorMethod.call(iterable);
-      if ("function" == typeof iterable.next) return iterable;
-      if (!isNaN(iterable.length)) {
-        var i = -1,
-          next = function next() {
-            for (; ++i < iterable.length;) if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next;
-            return next.value = undefined, next.done = !0, next;
+  function values(e) {
+    if (e || "" === e) {
+      var r = e[a];
+      if (r) return r.call(e);
+      if ("function" == typeof e.next) return e;
+      if (!isNaN(e.length)) {
+        var o = -1,
+          i = function next() {
+            for (; ++o < e.length;) if (n.call(e, o)) return next.value = e[o], next.done = !1, next;
+            return next.value = t, next.done = !0, next;
           };
-        return next.next = next;
+        return i.next = i;
       }
     }
-    return {
-      next: doneResult
-    };
+    throw new TypeError(_typeof(e) + " is not iterable");
   }
-  function doneResult() {
-    return {
-      value: undefined,
-      done: !0
-    };
-  }
-  return GeneratorFunction.prototype = GeneratorFunctionPrototype, defineProperty(Gp, "constructor", {
+  return GeneratorFunction.prototype = GeneratorFunctionPrototype, o(g, "constructor", {
     value: GeneratorFunctionPrototype,
     configurable: !0
-  }), defineProperty(GeneratorFunctionPrototype, "constructor", {
+  }), o(GeneratorFunctionPrototype, "constructor", {
     value: GeneratorFunction,
     configurable: !0
-  }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) {
-    var ctor = "function" == typeof genFun && genFun.constructor;
-    return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name));
-  }, exports.mark = function (genFun) {
-    return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun;
-  }, exports.awrap = function (arg) {
+  }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, u, "GeneratorFunction"), e.isGeneratorFunction = function (t) {
+    var e = "function" == typeof t && t.constructor;
+    return !!e && (e === GeneratorFunction || "GeneratorFunction" === (e.displayName || e.name));
+  }, e.mark = function (t) {
+    return Object.setPrototypeOf ? Object.setPrototypeOf(t, GeneratorFunctionPrototype) : (t.__proto__ = GeneratorFunctionPrototype, define(t, u, "GeneratorFunction")), t.prototype = Object.create(g), t;
+  }, e.awrap = function (t) {
     return {
-      __await: arg
+      __await: t
     };
-  }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () {
+  }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, c, function () {
     return this;
-  }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) {
-    void 0 === PromiseImpl && (PromiseImpl = Promise);
-    var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl);
-    return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) {
-      return result.done ? result.value : iter.next();
+  }), e.AsyncIterator = AsyncIterator, e.async = function (t, r, n, o, i) {
+    void 0 === i && (i = Promise);
+    var a = new AsyncIterator(wrap(t, r, n, o), i);
+    return e.isGeneratorFunction(r) ? a : a.next().then(function (t) {
+      return t.done ? t.value : a.next();
     });
-  }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () {
+  }, defineIteratorMethods(g), define(g, u, "Generator"), define(g, a, function () {
     return this;
-  }), define(Gp, "toString", function () {
+  }), define(g, "toString", function () {
     return "[object Generator]";
-  }), exports.keys = function (val) {
-    var object = Object(val),
-      keys = [];
-    for (var key in object) keys.push(key);
-    return keys.reverse(), function next() {
-      for (; keys.length;) {
-        var key = keys.pop();
-        if (key in object) return next.value = key, next.done = !1, next;
+  }), e.keys = function (t) {
+    var e = Object(t),
+      r = [];
+    for (var n in e) r.push(n);
+    return r.reverse(), function next() {
+      for (; r.length;) {
+        var t = r.pop();
+        if (t in e) return next.value = t, next.done = !1, next;
       }
       return next.done = !0, next;
     };
-  }, exports.values = values, Context.prototype = {
+  }, e.values = values, Context.prototype = {
     constructor: Context,
-    reset: function reset(skipTempReset) {
-      if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined);
+    reset: function reset(e) {
+      if (this.prev = 0, this.next = 0, this.sent = this._sent = t, this.done = !1, this.delegate = null, this.method = "next", this.arg = t, this.tryEntries.forEach(resetTryEntry), !e) for (var r in this) "t" === r.charAt(0) && n.call(this, r) && !isNaN(+r.slice(1)) && (this[r] = t);
     },
     stop: function stop() {
       this.done = !0;
-      var rootRecord = this.tryEntries[0].completion;
-      if ("throw" === rootRecord.type) throw rootRecord.arg;
+      var t = this.tryEntries[0].completion;
+      if ("throw" === t.type) throw t.arg;
       return this.rval;
     },
-    dispatchException: function dispatchException(exception) {
-      if (this.done) throw exception;
-      var context = this;
-      function handle(loc, caught) {
-        return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught;
+    dispatchException: function dispatchException(e) {
+      if (this.done) throw e;
+      var r = this;
+      function handle(n, o) {
+        return a.type = "throw", a.arg = e, r.next = n, o && (r.method = "next", r.arg = t), !!o;
       }
-      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-        var entry = this.tryEntries[i],
-          record = entry.completion;
-        if ("root" === entry.tryLoc) return handle("end");
-        if (entry.tryLoc <= this.prev) {
-          var hasCatch = hasOwn.call(entry, "catchLoc"),
-            hasFinally = hasOwn.call(entry, "finallyLoc");
-          if (hasCatch && hasFinally) {
-            if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0);
-            if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc);
-          } else if (hasCatch) {
-            if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0);
+      for (var o = this.tryEntries.length - 1; o >= 0; --o) {
+        var i = this.tryEntries[o],
+          a = i.completion;
+        if ("root" === i.tryLoc) return handle("end");
+        if (i.tryLoc <= this.prev) {
+          var c = n.call(i, "catchLoc"),
+            u = n.call(i, "finallyLoc");
+          if (c && u) {
+            if (this.prev < i.catchLoc) return handle(i.catchLoc, !0);
+            if (this.prev < i.finallyLoc) return handle(i.finallyLoc);
+          } else if (c) {
+            if (this.prev < i.catchLoc) return handle(i.catchLoc, !0);
           } else {
-            if (!hasFinally) throw new Error("try statement without catch or finally");
-            if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc);
+            if (!u) throw new Error("try statement without catch or finally");
+            if (this.prev < i.finallyLoc) return handle(i.finallyLoc);
           }
         }
       }
     },
-    abrupt: function abrupt(type, arg) {
-      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-        var entry = this.tryEntries[i];
-        if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) {
-          var finallyEntry = entry;
+    abrupt: function abrupt(t, e) {
+      for (var r = this.tryEntries.length - 1; r >= 0; --r) {
+        var o = this.tryEntries[r];
+        if (o.tryLoc <= this.prev && n.call(o, "finallyLoc") && this.prev < o.finallyLoc) {
+          var i = o;
           break;
         }
       }
-      finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null);
-      var record = finallyEntry ? finallyEntry.completion : {};
-      return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record);
+      i && ("break" === t || "continue" === t) && i.tryLoc <= e && e <= i.finallyLoc && (i = null);
+      var a = i ? i.completion : {};
+      return a.type = t, a.arg = e, i ? (this.method = "next", this.next = i.finallyLoc, y) : this.complete(a);
     },
-    complete: function complete(record, afterLoc) {
-      if ("throw" === record.type) throw record.arg;
-      return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel;
+    complete: function complete(t, e) {
+      if ("throw" === t.type) throw t.arg;
+      return "break" === t.type || "continue" === t.type ? this.next = t.arg : "return" === t.type ? (this.rval = this.arg = t.arg, this.method = "return", this.next = "end") : "normal" === t.type && e && (this.next = e), y;
     },
-    finish: function finish(finallyLoc) {
-      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-        var entry = this.tryEntries[i];
-        if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel;
+    finish: function finish(t) {
+      for (var e = this.tryEntries.length - 1; e >= 0; --e) {
+        var r = this.tryEntries[e];
+        if (r.finallyLoc === t) return this.complete(r.completion, r.afterLoc), resetTryEntry(r), y;
       }
     },
-    "catch": function _catch(tryLoc) {
-      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-        var entry = this.tryEntries[i];
-        if (entry.tryLoc === tryLoc) {
-          var record = entry.completion;
-          if ("throw" === record.type) {
-            var thrown = record.arg;
-            resetTryEntry(entry);
+    "catch": function _catch(t) {
+      for (var e = this.tryEntries.length - 1; e >= 0; --e) {
+        var r = this.tryEntries[e];
+        if (r.tryLoc === t) {
+          var n = r.completion;
+          if ("throw" === n.type) {
+            var o = n.arg;
+            resetTryEntry(r);
           }
-          return thrown;
+          return o;
         }
       }
       throw new Error("illegal catch attempt");
     },
-    delegateYield: function delegateYield(iterable, resultName, nextLoc) {
+    delegateYield: function delegateYield(e, r, n) {
       return this.delegate = {
-        iterator: values(iterable),
-        resultName: resultName,
-        nextLoc: nextLoc
-      }, "next" === this.method && (this.arg = undefined), ContinueSentinel;
+        iterator: values(e),
+        resultName: r,
+        nextLoc: n
+      }, "next" === this.method && (this.arg = t), y;
     }
-  }, exports;
+  }, e;
 }
 module.exports = _regeneratorRuntime, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
@@ -23838,14 +22987,14 @@ module.exports = _regeneratorRuntime, module.exports.__esModule = true, module.e
   \*******************************************************/
 /***/ ((module) => {
 
-function _typeof(obj) {
+function _typeof(o) {
   "@babel/helpers - typeof";
 
-  return (module.exports = _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) {
-    return typeof obj;
-  } : function (obj) {
-    return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-  }, module.exports.__esModule = true, module.exports["default"] = module.exports), _typeof(obj);
+  return (module.exports = _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) {
+    return typeof o;
+  } : function (o) {
+    return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
+  }, module.exports.__esModule = true, module.exports["default"] = module.exports), _typeof(o);
 }
 module.exports = _typeof, module.exports.__esModule = true, module.exports["default"] = module.exports;
 
@@ -24157,31 +23306,31 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ _iterableToArrayLimit)
 /* harmony export */ });
-function _iterableToArrayLimit(arr, i) {
-  var _i = null == arr ? null : "undefined" != typeof Symbol && arr[Symbol.iterator] || arr["@@iterator"];
-  if (null != _i) {
-    var _s,
-      _e,
-      _x,
-      _r,
-      _arr = [],
-      _n = !0,
-      _d = !1;
+function _iterableToArrayLimit(r, l) {
+  var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"];
+  if (null != t) {
+    var e,
+      n,
+      i,
+      u,
+      a = [],
+      f = !0,
+      o = !1;
     try {
-      if (_x = (_i = _i.call(arr)).next, 0 === i) {
-        if (Object(_i) !== _i) return;
-        _n = !1;
-      } else for (; !(_n = (_s = _x.call(_i)).done) && (_arr.push(_s.value), _arr.length !== i); _n = !0);
-    } catch (err) {
-      _d = !0, _e = err;
+      if (i = (t = t.call(r)).next, 0 === l) {
+        if (Object(t) !== t) return;
+        f = !1;
+      } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0);
+    } catch (r) {
+      o = !0, n = r;
     } finally {
       try {
-        if (!_n && null != _i["return"] && (_r = _i["return"](), Object(_r) !== _r)) return;
+        if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return;
       } finally {
-        if (_d) throw _e;
+        if (o) throw n;
       }
     }
-    return _arr;
+    return a;
   }
 }
 
@@ -24327,19 +23476,19 @@ function _toConsumableArray(arr) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (/* binding */ _toPrimitive)
+/* harmony export */   "default": () => (/* binding */ toPrimitive)
 /* harmony export */ });
 /* harmony import */ var _typeof_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./typeof.js */ "./node_modules/@babel/runtime/helpers/esm/typeof.js");
 
-function _toPrimitive(input, hint) {
-  if ((0,_typeof_js__WEBPACK_IMPORTED_MODULE_0__["default"])(input) !== "object" || input === null) return input;
-  var prim = input[Symbol.toPrimitive];
-  if (prim !== undefined) {
-    var res = prim.call(input, hint || "default");
-    if ((0,_typeof_js__WEBPACK_IMPORTED_MODULE_0__["default"])(res) !== "object") return res;
+function toPrimitive(t, r) {
+  if ("object" != (0,_typeof_js__WEBPACK_IMPORTED_MODULE_0__["default"])(t) || !t) return t;
+  var e = t[Symbol.toPrimitive];
+  if (void 0 !== e) {
+    var i = e.call(t, r || "default");
+    if ("object" != (0,_typeof_js__WEBPACK_IMPORTED_MODULE_0__["default"])(i)) return i;
     throw new TypeError("@@toPrimitive must return a primitive value.");
   }
-  return (hint === "string" ? String : Number)(input);
+  return ("string" === r ? String : Number)(t);
 }
 
 /***/ }),
@@ -24353,15 +23502,15 @@ function _toPrimitive(input, hint) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (/* binding */ _toPropertyKey)
+/* harmony export */   "default": () => (/* binding */ toPropertyKey)
 /* harmony export */ });
 /* harmony import */ var _typeof_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./typeof.js */ "./node_modules/@babel/runtime/helpers/esm/typeof.js");
 /* harmony import */ var _toPrimitive_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./toPrimitive.js */ "./node_modules/@babel/runtime/helpers/esm/toPrimitive.js");
 
 
-function _toPropertyKey(arg) {
-  var key = (0,_toPrimitive_js__WEBPACK_IMPORTED_MODULE_1__["default"])(arg, "string");
-  return (0,_typeof_js__WEBPACK_IMPORTED_MODULE_0__["default"])(key) === "symbol" ? key : String(key);
+function toPropertyKey(t) {
+  var i = (0,_toPrimitive_js__WEBPACK_IMPORTED_MODULE_1__["default"])(t, "string");
+  return "symbol" == (0,_typeof_js__WEBPACK_IMPORTED_MODULE_0__["default"])(i) ? i : String(i);
 }
 
 /***/ }),
@@ -24377,14 +23526,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ _typeof)
 /* harmony export */ });
-function _typeof(obj) {
+function _typeof(o) {
   "@babel/helpers - typeof";
 
-  return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) {
-    return typeof obj;
-  } : function (obj) {
-    return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-  }, _typeof(obj);
+  return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) {
+    return typeof o;
+  } : function (o) {
+    return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
+  }, _typeof(o);
 }
 
 /***/ }),
@@ -24434,7 +23583,6 @@ __webpack_require__.r(__webpack_exports__);
 
 /**
  * returns an unsigned 16-bit float at the specified byte offset from the start of the DataView
- *
  * @param {DataView} dataView
  * @param {number} byteOffset
  * @param {[boolean]} opts
@@ -24448,7 +23596,6 @@ function getFloat16(dataView, byteOffset, ...opts) {
 
 /**
  * stores an unsigned 16-bit float value at the specified byte offset from the start of the DataView
- *
  * @param {DataView} dataView
  * @param {number} byteOffset
  * @param {number} value
@@ -24501,7 +23648,6 @@ const SafeIteratorPrototype = (0,_primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.O
 
 /**
  * Wrap the Array around the SafeIterator If Array.prototype [@@iterator] has been modified
- *
  * @type {<T>(array: T[]) => Iterable<T>}
  */
 function safeIfNeeded(array) {
@@ -24544,7 +23690,6 @@ for (const key of (0,_primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.ReflectOwnKey
 
 /**
  * Wrap the Generator around the dummy ArrayIterator
- *
  * @type {<T>(generator: Generator<T>) => IterableIterator<T>}
  */
 function wrap(generator) {
@@ -24566,19 +23711,72 @@ function wrap(generator) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   convertToNumber: () => (/* binding */ convertToNumber),
+/* harmony export */   roundToFloat16: () => (/* binding */ roundToFloat16),
 /* harmony export */   roundToFloat16Bits: () => (/* binding */ roundToFloat16Bits)
 /* harmony export */ });
 /* harmony import */ var _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./primordials.mjs */ "./node_modules/@petamoriken/float16/src/_util/primordials.mjs");
-// algorithm: http://fox-toolkit.org/ftp/fasthalffloatconversion.pdf
 
 
+const INVERSE_OF_EPSILON = 1 / _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.EPSILON;
+
+/**
+ * rounds to the nearest value;
+ * if the number falls midway, it is rounded to the nearest value with an even least significant digit
+ * @param {number} num
+ * @returns {number}
+ */
+function roundTiesToEven(num) {
+  return (num + INVERSE_OF_EPSILON) - INVERSE_OF_EPSILON;
+}
+
+const FLOAT16_MIN_VALUE = 6.103515625e-05;
+const FLOAT16_MAX_VALUE = 65504;
+const FLOAT16_EPSILON = 0.0009765625;
+
+const FLOAT16_EPSILON_MULTIPLIED_BY_FLOAT16_MIN_VALUE = FLOAT16_EPSILON * FLOAT16_MIN_VALUE;
+const FLOAT16_EPSILON_DEVIDED_BY_EPSILON = FLOAT16_EPSILON * INVERSE_OF_EPSILON;
+
+/**
+ * round a number to a half float number
+ * @param {unknown} num - double float
+ * @returns {number} half float number bits
+ */
+function roundToFloat16(num) {
+  const number = +num;
+
+  // NaN, Infinity, -Infinity, 0, -0
+  if (!(0,_primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.NumberIsFinite)(number) || number === 0) {
+    return number;
+  }
+
+  // finite except 0, -0
+  const sign = number > 0 ? 1 : -1;
+  const absolute = (0,_primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.MathAbs)(number);
+
+  // small number
+  if (absolute < FLOAT16_MIN_VALUE) {
+    return sign * roundTiesToEven(absolute / FLOAT16_EPSILON_MULTIPLIED_BY_FLOAT16_MIN_VALUE) * FLOAT16_EPSILON_MULTIPLIED_BY_FLOAT16_MIN_VALUE;
+  }
+
+  const temp = (1 + FLOAT16_EPSILON_DEVIDED_BY_EPSILON) * absolute;
+  const result = temp - (temp - absolute);
+
+  // large number
+  if (result > FLOAT16_MAX_VALUE || (0,_primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.NumberIsNaN)(result)) {
+    return sign * Infinity;
+  }
+
+  return sign * result;
+}
+
+// base algorithm: http://fox-toolkit.org/ftp/fasthalffloatconversion.pdf
 
 const buffer = new _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.NativeArrayBuffer(4);
 const floatView = new _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.NativeFloat32Array(buffer);
 const uint32View = new _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.NativeUint32Array(buffer);
 
-const baseTable = new _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.NativeUint32Array(512);
-const shiftTable = new _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.NativeUint32Array(512);
+const baseTable = new _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.NativeUint16Array(512);
+const shiftTable = new _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.NativeUint8Array(512);
 
 for (let i = 0; i < 256; ++i) {
   const e = i - 127;
@@ -24622,33 +23820,29 @@ for (let i = 0; i < 256; ++i) {
 
 /**
  * round a number to a half float number bits
- *
  * @param {unknown} num - double float
  * @returns {number} half float number bits
  */
 function roundToFloat16Bits(num) {
-  floatView[0] = /** @type {any} */ (num);
+  floatView[0] = roundToFloat16(num);
   const f = uint32View[0];
   const e = (f >> 23) & 0x1ff;
   return baseTable[e] + ((f & 0x007fffff) >> shiftTable[e]);
 }
 
 const mantissaTable = new _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.NativeUint32Array(2048);
-const exponentTable = new _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.NativeUint32Array(64);
-const offsetTable = new _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.NativeUint32Array(64);
-
 for (let i = 1; i < 1024; ++i) {
-  let m = i << 13;    // zero pad mantissa bits
-  let e = 0;          // zero exponent
+  let m = i << 13; // zero pad mantissa bits
+  let e = 0; // zero exponent
 
   // normalized
-  while((m & 0x00800000) === 0) {
+  while ((m & 0x00800000) === 0) {
     m <<= 1;
-    e -= 0x00800000;  // decrement exponent
+    e -= 0x00800000; // decrement exponent
   }
 
-  m &= ~0x00800000;   // clear leading 1 bit
-  e += 0x38800000;    // adjust bias
+  m &= ~0x00800000; // clear leading 1 bit
+  e += 0x38800000; // adjust bias
 
   mantissaTable[i] = m | e;
 }
@@ -24656,6 +23850,7 @@ for (let i = 1024; i < 2048; ++i) {
   mantissaTable[i] = 0x38000000 + ((i - 1024) << 13);
 }
 
+const exponentTable = new _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.NativeUint32Array(64);
 for (let i = 1; i < 31; ++i) {
   exponentTable[i] = i << 23;
 }
@@ -24666,6 +23861,7 @@ for (let i = 33; i < 63; ++i) {
 }
 exponentTable[63] = 0xc7800000;
 
+const offsetTable = new _primordials_mjs__WEBPACK_IMPORTED_MODULE_0__.NativeUint16Array(64);
 for (let i = 1; i < 64; ++i) {
   if (i !== 32) {
     offsetTable[i] = 1024;
@@ -24674,13 +23870,12 @@ for (let i = 1; i < 64; ++i) {
 
 /**
  * convert a half float number bits to a number
- *
  * @param {number} float16bits - half float number bits
  * @returns {number} double float
  */
 function convertToNumber(float16bits) {
-  const m = float16bits >> 10;
-  uint32View[0] = mantissaTable[offsetTable[m] + (float16bits & 0x3ff)] + exponentTable[m];
+  const i = float16bits >> 10;
+  uint32View[0] = mantissaTable[offsetTable[i] + (float16bits & 0x3ff)] + exponentTable[i];
   return floatView[0];
 }
 
@@ -24757,9 +23952,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   ArrayPrototypeToLocaleString: () => (/* binding */ ArrayPrototypeToLocaleString),
 /* harmony export */   DataViewPrototypeGetUint16: () => (/* binding */ DataViewPrototypeGetUint16),
 /* harmony export */   DataViewPrototypeSetUint16: () => (/* binding */ DataViewPrototypeSetUint16),
+/* harmony export */   EPSILON: () => (/* binding */ EPSILON),
 /* harmony export */   GeneratorPrototypeNext: () => (/* binding */ GeneratorPrototypeNext),
 /* harmony export */   IteratorPrototype: () => (/* binding */ IteratorPrototype),
 /* harmony export */   MAX_SAFE_INTEGER: () => (/* binding */ MAX_SAFE_INTEGER),
+/* harmony export */   MathAbs: () => (/* binding */ MathAbs),
 /* harmony export */   MathTrunc: () => (/* binding */ MathTrunc),
 /* harmony export */   NativeArrayBuffer: () => (/* binding */ NativeArrayBuffer),
 /* harmony export */   NativeArrayPrototypeSymbolIterator: () => (/* binding */ NativeArrayPrototypeSymbolIterator),
@@ -24772,6 +23969,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   NativeTypedArrayPrototypeSymbolIterator: () => (/* binding */ NativeTypedArrayPrototypeSymbolIterator),
 /* harmony export */   NativeUint16Array: () => (/* binding */ NativeUint16Array),
 /* harmony export */   NativeUint32Array: () => (/* binding */ NativeUint32Array),
+/* harmony export */   NativeUint8Array: () => (/* binding */ NativeUint8Array),
 /* harmony export */   NativeWeakMap: () => (/* binding */ NativeWeakMap),
 /* harmony export */   NativeWeakSet: () => (/* binding */ NativeWeakSet),
 /* harmony export */   NumberIsFinite: () => (/* binding */ NumberIsFinite),
@@ -24862,6 +24060,7 @@ const NativeProxy = Proxy;
 
 // Number
 const {
+  EPSILON,
   MAX_SAFE_INTEGER,
   isFinite: NumberIsFinite,
   isNaN: NumberIsNaN,
@@ -24927,7 +24126,10 @@ const NativeArrayPrototypeSymbolIterator = ArrayPrototype[SymbolIterator];
 const ArrayPrototypeSymbolIterator = uncurryThis(NativeArrayPrototypeSymbolIterator);
 
 // Math
-const MathTrunc = Math.trunc;
+const {
+  abs: MathAbs,
+  trunc: MathTrunc,
+} = Math;
 
 // ArrayBuffer
 const NativeArrayBuffer = ArrayBuffer;
@@ -25002,6 +24204,9 @@ const TypedArrayPrototypeGetSymbolToStringTag = uncurryThisGetter(
   SymbolToStringTag
 );
 
+// Uint8Array
+const NativeUint8Array = Uint8Array;
+
 // Uint16Array
 const NativeUint16Array = Uint16Array;
 /** @type {Uint16ArrayConstructor["from"]} */
@@ -25046,7 +24251,6 @@ const NativeRangeError = RangeError;
 // WeakSet
 /**
  * Do not construct with arguments to avoid calling the "add" method
- *
  * @type {{new <T extends {}>(): WeakSet<T>}}
  */
 const NativeWeakSet = WeakSet;
@@ -25059,7 +24263,6 @@ const WeakSetPrototypeHas = uncurryThis(WeakSetPrototype.has);
 // WeakMap
 /**
  * Do not construct with arguments to avoid calling the "set" method
- *
  * @type {{new <K extends {}, V>(): WeakMap<K, V>}}
  */
 const NativeWeakMap = WeakMap;
@@ -27183,6 +26386,844 @@ class UnicodeStringArray {
 
 /***/ }),
 
+/***/ "./src/NaiveSurfaceNets.js":
+/*!*********************************!*\
+  !*** ./src/NaiveSurfaceNets.js ***!
+  \*********************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+// The MIT License (MIT)
+//
+// Copyright (c) 2012-2013 Mikola Lysenko
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+/**
+ * SurfaceNets in JavaScript
+ *
+ * Written by Mikola Lysenko (C) 2012
+ *
+ * MIT License
+ *
+ * Based on: S.F. Gibson, "Constrained Elastic Surface Nets". (1998) MERL Tech Report.
+ */
+
+// MODIFIED 2018 BY DANIELT@ALLENINSTITUTE.ORG TO ACCEPT AN ISOVALUE AND RESCALE VERTEX POSITIONS
+
+var SurfaceNets = function () {
+  "use strict";
+
+  //Precompute edge table, like Paul Bourke does.
+  // This saves a bit of time when computing the centroid of each boundary cell
+  var cube_edges = new Int32Array(24),
+    edge_table = new Int32Array(256);
+  (function () {
+    //Initialize the cube_edges table
+    // This is just the vertex number of each cube
+    var k = 0;
+    for (var i = 0; i < 8; ++i) {
+      for (var j = 1; j <= 4; j <<= 1) {
+        var p = i ^ j;
+        if (i <= p) {
+          cube_edges[k++] = i;
+          cube_edges[k++] = p;
+        }
+      }
+    }
+
+    //Initialize the intersection table.
+    //  This is a 2^(cube configuration) ->  2^(edge configuration) map
+    //  There is one entry for each possible cube configuration, and the output is a 12-bit vector enumerating all edges crossing the 0-level.
+    for (var i = 0; i < 256; ++i) {
+      var em = 0;
+      for (var j = 0; j < 24; j += 2) {
+        var a = !!(i & 1 << cube_edges[j]),
+          b = !!(i & 1 << cube_edges[j + 1]);
+        em |= a !== b ? 1 << (j >> 1) : 0;
+      }
+      edge_table[i] = em;
+    }
+  })();
+
+  //Internal buffer, this may get resized at run time
+  var buffer = new Int32Array(4096);
+  return function (data, dims, isovalue) {
+    var vertices = [],
+      faces = [],
+      n = 0,
+      x = new Int32Array(3),
+      R = new Int32Array([1, dims[0] + 1, (dims[0] + 1) * (dims[1] + 1)]),
+      grid = new Float32Array(8),
+      buf_no = 1;
+
+    //Resize buffer if necessary
+    if (R[2] * 2 > buffer.length) {
+      buffer = new Int32Array(R[2] * 2);
+    }
+
+    //March over the voxel grid
+    for (x[2] = 0; x[2] < dims[2] - 1; ++x[2], n += dims[0], buf_no ^= 1, R[2] = -R[2]) {
+      //m is the pointer into the buffer we are going to use.
+      //This is slightly obtuse because javascript does not have good support for packed data structures, so we must use typed arrays :(
+      //The contents of the buffer will be the indices of the vertices on the previous x/y slice of the volume
+      var m = 1 + (dims[0] + 1) * (1 + buf_no * (dims[1] + 1));
+      for (x[1] = 0; x[1] < dims[1] - 1; ++x[1], ++n, m += 2) for (x[0] = 0; x[0] < dims[0] - 1; ++x[0], ++n, ++m) {
+        //Read in 8 field values around this vertex and store them in an array
+        //Also calculate 8-bit mask, like in marching cubes, so we can speed up sign checks later
+        var mask = 0,
+          g = 0,
+          idx = n;
+        for (var k = 0; k < 2; ++k, idx += dims[0] * (dims[1] - 2)) for (var j = 0; j < 2; ++j, idx += dims[0] - 2) for (var i = 0; i < 2; ++i, ++g, ++idx) {
+          var p = data[idx] - isovalue;
+          grid[g] = p;
+          mask |= p < 0 ? 1 << g : 0;
+        }
+
+        //Check for early termination if cell does not intersect boundary
+        if (mask === 0 || mask === 0xff) {
+          continue;
+        }
+
+        //Sum up edge intersections
+        var edge_mask = edge_table[mask],
+          v = [0.0, 0.0, 0.0],
+          e_count = 0;
+
+        //For every edge of the cube...
+        for (var i = 0; i < 12; ++i) {
+          //Use edge mask to check if it is crossed
+          if (!(edge_mask & 1 << i)) {
+            continue;
+          }
+
+          //If it did, increment number of edge crossings
+          ++e_count;
+
+          //Now find the point of intersection
+          var e0 = cube_edges[i << 1],
+            //Unpack vertices
+            e1 = cube_edges[(i << 1) + 1],
+            g0 = grid[e0],
+            //Unpack grid values
+            g1 = grid[e1],
+            t = g0 - g1; //Compute point of intersection
+          if (Math.abs(t) > 1e-6) {
+            t = g0 / t;
+          } else {
+            continue;
+          }
+
+          //Interpolate vertices and add up intersections (this can be done without multiplying)
+          for (var j = 0, k = 1; j < 3; ++j, k <<= 1) {
+            var a = e0 & k,
+              b = e1 & k;
+            if (a !== b) {
+              v[j] += a ? 1.0 - t : t;
+            } else {
+              v[j] += a ? 1.0 : 0;
+            }
+          }
+        }
+
+        //Now we just average the edge intersections and add them to coordinate
+        var s = 1.0 / e_count;
+        for (var i = 0; i < 3; ++i) {
+          v[i] = x[i] + s * v[i];
+        }
+
+        //Add vertex to buffer, store pointer to vertex index in buffer
+        buffer[m] = vertices.length;
+        vertices.push([2.0 * v[0] / dims[0] - 1.0, 2.0 * v[1] / dims[1] - 1.0, 2.0 * v[2] / dims[2] - 1.0]);
+
+        //Now we need to add faces together, to do this we just loop over 3 basis components
+        for (var i = 0; i < 3; ++i) {
+          //The first three entries of the edge_mask count the crossings along the edge
+          if (!(edge_mask & 1 << i)) {
+            continue;
+          }
+
+          // i = axes we are point along.  iu, iv = orthogonal axes
+          var iu = (i + 1) % 3,
+            iv = (i + 2) % 3;
+
+          //If we are on a boundary, skip it
+          if (x[iu] === 0 || x[iv] === 0) {
+            continue;
+          }
+
+          //Otherwise, look up adjacent edges in buffer
+          var du = R[iu],
+            dv = R[iv];
+
+          //Remember to flip orientation depending on the sign of the corner.
+          if (mask & 1) {
+            faces.push([buffer[m], buffer[m - du], buffer[m - du - dv], buffer[m - dv]]);
+          } else {
+            faces.push([buffer[m], buffer[m - dv], buffer[m - du - dv], buffer[m - du]]);
+          }
+        }
+      }
+    }
+
+    //All done!  Return the result
+    return {
+      vertices: vertices,
+      faces: faces
+    };
+  };
+}();
+
+// returns array of indexed BufferGeometry
+function ConstructTHREEGeometry(surfaceNetResult) {
+  var result = surfaceNetResult;
+  var varray = new Float32Array(result.vertices.length * 3);
+  for (var i = 0; i < result.vertices.length; ++i) {
+    var v = result.vertices[i];
+    varray[i * 3 + 0] = v[0];
+    varray[i * 3 + 1] = v[1];
+    varray[i * 3 + 2] = v[2];
+  }
+
+  // count triangles; split quad faces
+  var n_triangles = 0;
+  for (var i = 0; i < result.faces.length; ++i) {
+    var f = result.faces[i];
+    if (f.length === 3) {
+      n_triangles += 1;
+    } else if (f.length === 4) {
+      n_triangles += 2;
+    } else {
+      //Polygon needs to be subdivided...
+      console.log("unhandled poly with " + f.length + " vertices");
+    }
+  }
+  var inds = new Uint32Array(n_triangles * 3);
+  var j = 0;
+  for (var i = 0; i < result.faces.length; ++i) {
+    var f = result.faces[i];
+    // note what appears to be inverted winding order.
+    // I believe this is related to isosurface < or > testing but have not checked.
+    if (f.length === 3) {
+      inds[j++] = f[2];
+      inds[j++] = f[1];
+      inds[j++] = f[0];
+    } else if (f.length === 4) {
+      // two triangles: (2,1,0) and (3,2,0)
+      inds[j++] = f[2];
+      inds[j++] = f[1];
+      inds[j++] = f[0];
+      inds[j++] = f[3];
+      inds[j++] = f[2];
+      inds[j++] = f[0];
+    }
+  }
+  var geo = new three__WEBPACK_IMPORTED_MODULE_0__.BufferGeometry();
+  geo.setAttribute("position", new three__WEBPACK_IMPORTED_MODULE_0__.BufferAttribute(varray, 3, false));
+  geo.setIndex(new three__WEBPACK_IMPORTED_MODULE_0__.BufferAttribute(inds, 1));
+  geo.computeVertexNormals();
+  return [geo];
+}
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
+  surfaceNets: SurfaceNets,
+  constructTHREEGeometry: ConstructTHREEGeometry
+});
+
+/***/ }),
+
+/***/ "./src/TrackballControls.js":
+/*!**********************************!*\
+  !*** ./src/TrackballControls.js ***!
+  \**********************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
+/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var _babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/assertThisInitialized */ "./node_modules/@babel/runtime/helpers/esm/assertThisInitialized.js");
+/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+
+
+
+
+
+
+function _callSuper(t, o, e) { return o = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_3__["default"])(o), (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_2__["default"])(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_3__["default"])(t).constructor) : o.apply(t, e)); }
+function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
+/**
+ * @author Eberhard Graether / http://egraether.com/
+ * @author Mark Lundin 	/ http://mark-lundin.com
+ * @author Simone Manini / http://daron1337.github.io
+ * @author Luca Antiga 	/ http://lantiga.github.io
+ */
+
+
+
+// this file is heavily derived from threejs and so we disable a lot of our
+// linting rules just for this file, to allow it to keep a similar form to the
+// original.
+/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+/* eslint-disable @typescript-eslint/no-this-alias */
+var TrackballControls = /*#__PURE__*/function (_EventDispatcher) {
+  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_5__["default"])(TrackballControls, _EventDispatcher);
+  function TrackballControls(object, domElement) {
+    var _this;
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, TrackballControls);
+    _this = _callSuper(this, TrackballControls);
+    var scope = (0,_babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_4__["default"])(_this);
+    var STATE = {
+      NONE: -1,
+      ROTATE: 0,
+      ZOOM: 1,
+      PAN: 2,
+      TOUCH_ROTATE: 3,
+      TOUCH_ZOOM_PAN: 4
+    };
+    _this.object = object;
+    _this.domElement = domElement;
+    // API
+
+    _this.enabled = true;
+    _this.screen = {
+      left: 0,
+      top: 0,
+      width: 0,
+      height: 0
+    };
+    _this.length = 10;
+    _this.scale = 0.5;
+    _this.scale0 = 0.5;
+    _this.aspect = 1.0;
+    _this.rotateSpeed = 1.0;
+    _this.zoomSpeed = 1.2;
+    _this.panSpeed = 0.3;
+    _this.noRotate = false;
+    _this.noZoom = false;
+    _this.noPan = false;
+    _this.staticMoving = false;
+    _this.dynamicDampingFactor = 0.2;
+    _this.minDistance = 0;
+    _this.maxDistance = Infinity;
+    _this.keys = ["KeyA", /*A*/"KeyS", /*S*/"KeyD" /*D*/];
+    _this.mouseButtons = {
+      LEFT: three__WEBPACK_IMPORTED_MODULE_6__.MOUSE.ROTATE,
+      MIDDLE: three__WEBPACK_IMPORTED_MODULE_6__.MOUSE.DOLLY,
+      RIGHT: three__WEBPACK_IMPORTED_MODULE_6__.MOUSE.PAN
+    };
+
+    // Set to true to automatically rotate around the target
+    // If auto-rotate is enabled, you must call controls.update() in your animation loop
+    _this.autoRotate = false;
+    _this.autoRotateSpeed = 2.0; // 30 seconds per round when fps is 60
+
+    // internals
+
+    _this.target = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3();
+    var EPS = 0.000001;
+    var lastPosition = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3();
+    var lastZoom = 1;
+    var _state = STATE.NONE,
+      _keyState = STATE.NONE,
+      _touchZoomDistanceStart = 0,
+      _touchZoomDistanceEnd = 0,
+      _lastAngle = 0;
+    var _eye = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
+      _movePrev = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
+      _moveCurr = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
+      _lastAxis = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
+      _zoomStart = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
+      _zoomEnd = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
+      _panStart = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
+      _panEnd = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
+      _pointers = [],
+      _pointerPositions = {};
+
+    // for reset
+
+    _this.target0 = _this.target.clone();
+    _this.position0 = _this.object.position.clone();
+    _this.up0 = _this.object.up.clone();
+    _this.zoom0 = _this.object.zoom;
+
+    // events
+
+    var _changeEvent = {
+      type: "change"
+    };
+    var _startEvent = {
+      type: "start"
+    };
+    var _endEvent = {
+      type: "end"
+    };
+
+    // methods
+
+    _this.handleResize = function () {
+      var box = scope.domElement.getBoundingClientRect();
+      // adjustments come from similar code in the jquery offset() function
+      var d = scope.domElement.ownerDocument.documentElement;
+      scope.screen.left = box.left + window.pageXOffset - d.clientLeft;
+      scope.screen.top = box.top + window.pageYOffset - d.clientTop;
+      scope.screen.width = box.width;
+      scope.screen.height = box.height;
+    };
+    var getMouseOnScreen = function () {
+      var vector = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2();
+      return function getMouseOnScreen(pageX, pageY) {
+        vector.set((pageX - scope.screen.left) / scope.screen.width, (pageY - scope.screen.top) / scope.screen.height);
+        return vector;
+      };
+    }();
+    var getMouseOnCircle = function () {
+      var vector = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2();
+      return function getMouseOnCircle(pageX, pageY) {
+        vector.set((pageX - scope.screen.width * 0.5 - scope.screen.left) / (scope.screen.width * 0.5), (scope.screen.height + 2 * (scope.screen.top - pageY)) / scope.screen.width // screen.width intentional
+        );
+        return vector;
+      };
+    }();
+    function getAutoRotationAngle(delta) {
+      return 2 * Math.PI / 60 / 60 * scope.autoRotateSpeed * (delta * 60.0);
+    }
+    _this.rotateCamera = function () {
+      var axis = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
+        quaternion = new three__WEBPACK_IMPORTED_MODULE_6__.Quaternion(),
+        eyeDirection = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
+        objectUpDirection = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
+        objectSidewaysDirection = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
+        moveDirection = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3();
+      var angle, dx, dy;
+      return function rotateCamera(delta) {
+        dx = _moveCurr.x - _movePrev.x;
+        dy = _moveCurr.y - _movePrev.y;
+        moveDirection.set(dx, dy, 0);
+        angle = moveDirection.length();
+        angle *= scope.rotateSpeed;
+        if (scope.autoRotate && _state === STATE.NONE) {
+          // rotate about vertical axis
+          angle = getAutoRotationAngle(delta);
+          dx = angle;
+          dy = 0;
+          moveDirection.set(angle, 0, 0);
+        }
+        if (angle) {
+          _eye.copy(scope.object.position).sub(scope.target);
+          eyeDirection.copy(_eye).normalize();
+          objectUpDirection.copy(scope.object.up).normalize();
+          objectSidewaysDirection.crossVectors(objectUpDirection, eyeDirection).normalize();
+          objectUpDirection.setLength(dy);
+          objectSidewaysDirection.setLength(dx);
+          moveDirection.copy(objectUpDirection.add(objectSidewaysDirection));
+          axis.crossVectors(moveDirection, _eye).normalize();
+          quaternion.setFromAxisAngle(axis, angle);
+          _eye.applyQuaternion(quaternion);
+          scope.object.up.applyQuaternion(quaternion);
+          _lastAxis.copy(axis);
+          _lastAngle = angle;
+        } else if (!scope.staticMoving && _lastAngle) {
+          _lastAngle *= Math.sqrt(1.0 - scope.dynamicDampingFactor);
+          _eye.copy(scope.object.position).sub(scope.target);
+          quaternion.setFromAxisAngle(_lastAxis, _lastAngle);
+          _eye.applyQuaternion(quaternion);
+          scope.object.up.applyQuaternion(quaternion);
+        }
+        _movePrev.copy(_moveCurr);
+      };
+    }();
+    _this.zoomCamera = function () {
+      var factor;
+      if (_state === STATE.TOUCH_ZOOM_PAN) {
+        factor = _touchZoomDistanceStart / _touchZoomDistanceEnd;
+        _touchZoomDistanceStart = _touchZoomDistanceEnd;
+        if (scope.object.isPerspectiveCamera) {
+          _eye.multiplyScalar(factor);
+        } else if (scope.object.isOrthographicCamera) {
+          scope.scale = scope.scale * factor;
+          scope.object.zoom /= factor;
+          scope.object.updateProjectionMatrix();
+        } else {
+          console.warn("THREE.TrackballControls: Unsupported camera type");
+        }
+      } else {
+        factor = 1.0 + (_zoomEnd.y - _zoomStart.y) * scope.zoomSpeed;
+        if (factor !== 1.0 && factor > 0.0) {
+          if (scope.object.isPerspectiveCamera) {
+            _eye.multiplyScalar(factor);
+          } else if (scope.object.isOrthographicCamera) {
+            scope.scale = scope.scale * factor;
+            scope.object.zoom /= factor;
+            scope.object.updateProjectionMatrix();
+          } else {
+            console.warn("THREE.TrackballControls: Unsupported camera type");
+          }
+        }
+        if (scope.staticMoving) {
+          _zoomStart.copy(_zoomEnd);
+        } else {
+          _zoomStart.y += (_zoomEnd.y - _zoomStart.y) * this.dynamicDampingFactor;
+        }
+      }
+    };
+    _this.panCamera = function () {
+      var mouseChange = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2(),
+        objectUp = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(),
+        pan = new three__WEBPACK_IMPORTED_MODULE_6__.Vector3();
+      return function panCamera() {
+        mouseChange.copy(_panEnd).sub(_panStart);
+        if (mouseChange.lengthSq()) {
+          if (scope.object.isOrthographicCamera) {
+            var scale_x = (scope.object.right - scope.object.left) / scope.object.zoom / scope.domElement.clientWidth;
+            var scale_y = (scope.object.top - scope.object.bottom) / scope.object.zoom / scope.domElement.clientWidth;
+            mouseChange.x *= scale_x;
+            mouseChange.y *= scale_y;
+          }
+          mouseChange.multiplyScalar(_eye.length() * scope.panSpeed);
+          pan.copy(_eye).cross(scope.object.up).setLength(mouseChange.x);
+          pan.add(objectUp.copy(scope.object.up).setLength(mouseChange.y));
+          scope.object.position.add(pan);
+          scope.target.add(pan);
+          if (scope.staticMoving) {
+            _panStart.copy(_panEnd);
+          } else {
+            _panStart.add(mouseChange.subVectors(_panEnd, _panStart).multiplyScalar(scope.dynamicDampingFactor));
+          }
+        }
+      };
+    }();
+    _this.checkDistances = function () {
+      if (!scope.noZoom || !scope.noPan) {
+        if (_eye.lengthSq() > scope.maxDistance * scope.maxDistance) {
+          scope.object.position.addVectors(scope.target, _eye.setLength(scope.maxDistance));
+          _zoomStart.copy(_zoomEnd);
+        }
+        if (_eye.lengthSq() < scope.minDistance * scope.minDistance) {
+          scope.object.position.addVectors(scope.target, _eye.setLength(scope.minDistance));
+          _zoomStart.copy(_zoomEnd);
+        }
+      }
+    };
+    _this.update = function (delta) {
+      if (scope.enabled === false) return;
+      delta = delta || 0.0;
+      _eye.subVectors(scope.object.position, scope.target);
+      if (!scope.noRotate) {
+        scope.rotateCamera(delta);
+      }
+      if (!scope.noZoom) {
+        scope.zoomCamera();
+      }
+      if (!scope.noPan) {
+        scope.panCamera();
+      }
+      scope.object.position.addVectors(scope.target, _eye);
+      if (scope.object.isPerspectiveCamera) {
+        scope.checkDistances();
+        scope.object.lookAt(scope.target);
+        if (lastPosition.distanceToSquared(scope.object.position) > EPS) {
+          scope.dispatchEvent(_changeEvent);
+          lastPosition.copy(scope.object.position);
+        }
+      } else if (scope.object.isOrthographicCamera) {
+        scope.object.lookAt(scope.target);
+        if (lastPosition.distanceToSquared(scope.object.position) > EPS || lastZoom !== scope.object.zoom) {
+          scope.dispatchEvent(_changeEvent);
+          lastPosition.copy(scope.object.position);
+          lastZoom = scope.object.zoom;
+        }
+      } else {
+        console.warn("THREE.TrackballControls: Unsupported camera type");
+      }
+    };
+    _this.reset = function () {
+      //if (scope.enabled === false) return;
+
+      _state = STATE.NONE;
+      _keyState = STATE.NONE;
+      scope.target.copy(scope.target0);
+      scope.object.position.copy(scope.position0);
+      scope.object.up.copy(scope.up0);
+      scope.object.zoom = scope.zoom0;
+      scope.scale = scope.scale0;
+      scope.object.updateProjectionMatrix();
+      _eye.subVectors(scope.object.position, scope.target);
+      scope.object.lookAt(scope.target);
+      scope.dispatchEvent(_changeEvent);
+      lastPosition.copy(scope.object.position);
+      lastZoom = scope.object.zoom;
+    };
+
+    // listeners
+
+    function onPointerDown(event) {
+      if (scope.enabled === false) return;
+      if (_pointers.length === 0) {
+        scope.domElement.setPointerCapture(event.pointerId);
+        scope.domElement.addEventListener("pointermove", onPointerMove);
+        scope.domElement.addEventListener("pointerup", onPointerUp);
+      } //
+
+      addPointer(event);
+      if (event.pointerType === "touch") {
+        onTouchStart(event);
+      } else {
+        onMouseDown(event);
+      }
+    }
+    function onPointerMove(event) {
+      if (scope.enabled === false) return;
+      if (event.pointerType === "touch") {
+        onTouchMove(event);
+      } else {
+        onMouseMove(event);
+      }
+    }
+    function onPointerUp(event) {
+      if (scope.enabled === false) return;
+      if (event.pointerType === "touch") {
+        onTouchEnd(event);
+      } else {
+        onMouseUp();
+      } //
+
+      removePointer(event);
+      if (_pointers.length === 0) {
+        scope.domElement.releasePointerCapture(event.pointerId);
+        scope.domElement.removeEventListener("pointermove", onPointerMove);
+        scope.domElement.removeEventListener("pointerup", onPointerUp);
+      }
+    }
+    function onPointerCancel(event) {
+      removePointer(event);
+    }
+    function keydown(event) {
+      if (scope.enabled === false) return;
+      window.removeEventListener("keydown", keydown);
+      if (_keyState !== STATE.NONE) {
+        return;
+      } else if (event.code === scope.keys[STATE.ROTATE] && !scope.noRotate) {
+        _keyState = STATE.ROTATE;
+      } else if (event.code === scope.keys[STATE.ZOOM] && !scope.noZoom) {
+        _keyState = STATE.ZOOM;
+      } else if (event.code === scope.keys[STATE.PAN] && !scope.noPan) {
+        _keyState = STATE.PAN;
+      }
+    }
+    function keyup(_event) {
+      if (scope.enabled === false) return;
+      _keyState = STATE.NONE;
+      window.addEventListener("keydown", keydown);
+    }
+    function onMouseDown(event) {
+      if (_state === STATE.NONE) {
+        switch (event.button) {
+          case scope.mouseButtons.LEFT:
+            _state = STATE.ROTATE;
+            break;
+          case scope.mouseButtons.MIDDLE:
+            _state = STATE.ZOOM;
+            break;
+          case scope.mouseButtons.RIGHT:
+            _state = STATE.PAN;
+            break;
+        }
+      }
+      var state = _keyState !== STATE.NONE ? _keyState : _state;
+      if (state === STATE.ROTATE && !scope.noRotate) {
+        _moveCurr.copy(getMouseOnCircle(event.pageX, event.pageY));
+        _movePrev.copy(_moveCurr);
+      } else if (state === STATE.ZOOM && !scope.noZoom) {
+        _zoomStart.copy(getMouseOnScreen(event.pageX, event.pageY));
+        _zoomEnd.copy(_zoomStart);
+      } else if (state === STATE.PAN && !scope.noPan) {
+        _panStart.copy(getMouseOnScreen(event.pageX, event.pageY));
+        _panEnd.copy(_panStart);
+      }
+      scope.dispatchEvent(_startEvent);
+    }
+    function onMouseMove(event) {
+      var state = _keyState !== STATE.NONE ? _keyState : _state;
+      if (state === STATE.ROTATE && !scope.noRotate) {
+        _movePrev.copy(_moveCurr);
+        _moveCurr.copy(getMouseOnCircle(event.pageX, event.pageY));
+      } else if (state === STATE.ZOOM && !scope.noZoom) {
+        _zoomEnd.copy(getMouseOnScreen(event.pageX, event.pageY));
+      } else if (state === STATE.PAN && !scope.noPan) {
+        _panEnd.copy(getMouseOnScreen(event.pageX, event.pageY));
+      }
+    }
+    function onMouseUp() {
+      _state = STATE.NONE;
+      scope.dispatchEvent(_endEvent);
+    }
+    function onMouseWheel(event) {
+      if (scope.enabled === false) return;
+      if (scope.noZoom === true) return;
+      event.preventDefault();
+      switch (event.deltaMode) {
+        case 2:
+          // Zoom in pages
+          _zoomStart.y -= event.deltaY * 0.025;
+          break;
+        case 1:
+          // Zoom in lines
+          _zoomStart.y -= event.deltaY * 0.01;
+          break;
+        default:
+          // undefined, 0, assume pixels
+          _zoomStart.y -= event.deltaY * 0.00025;
+          break;
+      }
+      scope.dispatchEvent(_startEvent);
+      scope.dispatchEvent(_endEvent);
+    }
+    function onTouchStart(event) {
+      trackPointer(event);
+      var dx, dy, x, y;
+      switch (_pointers.length) {
+        case 1:
+          _state = STATE.TOUCH_ROTATE;
+          _moveCurr.copy(getMouseOnCircle(_pointers[0].pageX, _pointers[0].pageY));
+          _movePrev.copy(_moveCurr);
+          break;
+        default:
+          // 2 or more
+          _state = STATE.TOUCH_ZOOM_PAN;
+          dx = _pointers[0].pageX - _pointers[1].pageX;
+          dy = _pointers[0].pageY - _pointers[1].pageY;
+          _touchZoomDistanceEnd = _touchZoomDistanceStart = Math.sqrt(dx * dx + dy * dy);
+          x = (_pointers[0].pageX + _pointers[1].pageX) / 2;
+          y = (_pointers[0].pageY + _pointers[1].pageY) / 2;
+          _panStart.copy(getMouseOnScreen(x, y));
+          _panEnd.copy(_panStart);
+          break;
+      }
+      scope.dispatchEvent(_startEvent);
+    }
+    function onTouchMove(event) {
+      trackPointer(event);
+      var position, dx, dy, x, y;
+      switch (_pointers.length) {
+        case 1:
+          _movePrev.copy(_moveCurr);
+          _moveCurr.copy(getMouseOnCircle(event.pageX, event.pageY));
+          break;
+        default:
+          // 2 or more
+          position = getSecondPointerPosition(event);
+          dx = event.pageX - position.x;
+          dy = event.pageY - position.y;
+          _touchZoomDistanceEnd = Math.sqrt(dx * dx + dy * dy);
+          x = (event.pageX + position.x) / 2;
+          y = (event.pageY + position.y) / 2;
+          _panEnd.copy(getMouseOnScreen(x, y));
+          break;
+      }
+    }
+    function onTouchEnd(event) {
+      switch (_pointers.length) {
+        case 0:
+          _state = STATE.NONE;
+          break;
+        case 1:
+          _state = STATE.TOUCH_ROTATE;
+          _moveCurr.copy(getMouseOnCircle(event.pageX, event.pageY));
+          _movePrev.copy(_moveCurr);
+          break;
+        case 2:
+          _state = STATE.TOUCH_ZOOM_PAN;
+          _moveCurr.copy(getMouseOnCircle(event.pageX - _movePrev.x, event.pageY - _movePrev.y));
+          _movePrev.copy(_moveCurr);
+          break;
+      }
+      scope.dispatchEvent(_endEvent);
+    }
+    function contextmenu(event) {
+      if (scope.enabled === false) return;
+      event.preventDefault();
+    }
+    function addPointer(event) {
+      _pointers.push(event);
+    }
+    function removePointer(event) {
+      delete _pointerPositions[event.pointerId];
+      for (var i = 0; i < _pointers.length; i++) {
+        if (_pointers[i].pointerId == event.pointerId) {
+          _pointers.splice(i, 1);
+          return;
+        }
+      }
+    }
+    function trackPointer(event) {
+      var position = _pointerPositions[event.pointerId];
+      if (position === undefined) {
+        position = new three__WEBPACK_IMPORTED_MODULE_6__.Vector2();
+        _pointerPositions[event.pointerId] = position;
+      }
+      position.set(event.pageX, event.pageY);
+    }
+    function getSecondPointerPosition(event) {
+      var pointer = event.pointerId === _pointers[0].pointerId ? _pointers[1] : _pointers[0];
+      return _pointerPositions[pointer.pointerId];
+    }
+    _this.dispose = function () {
+      scope.domElement.removeEventListener("contextmenu", contextmenu);
+      scope.domElement.removeEventListener("pointerdown", onPointerDown);
+      scope.domElement.removeEventListener("pointercancel", onPointerCancel);
+      scope.domElement.removeEventListener("wheel", onMouseWheel);
+      scope.domElement.removeEventListener("pointermove", onPointerMove);
+      scope.domElement.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("keydown", keydown);
+      window.removeEventListener("keyup", keyup);
+    };
+    _this.domElement.addEventListener("contextmenu", contextmenu);
+    _this.domElement.addEventListener("pointerdown", onPointerDown);
+    _this.domElement.addEventListener("pointercancel", onPointerCancel);
+    _this.domElement.addEventListener("wheel", onMouseWheel, {
+      passive: false
+    });
+    window.addEventListener("keydown", keydown);
+    window.addEventListener("keyup", keyup);
+    _this.handleResize(); // force an update at start
+
+    _this.update();
+    return _this;
+  }
+  return (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_0__["default"])(TrackballControls);
+}(three__WEBPACK_IMPORTED_MODULE_6__.EventDispatcher);
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (TrackballControls);
+
+/***/ }),
+
 /***/ "./node_modules/geotiff/dist-module/compression/basedecoder.js":
 /*!*********************************************************************!*\
   !*** ./node_modules/geotiff/dist-module/compression/basedecoder.js ***!
@@ -27258,7 +27299,13 @@ addDecoder(6, () => {
 addDecoder(7, () => __webpack_require__.e(/*! import() */ "vendors-node_modules_geotiff_dist-module_compression_jpeg_js").then(__webpack_require__.bind(__webpack_require__, /*! ./jpeg.js */ "./node_modules/geotiff/dist-module/compression/jpeg.js")).then((m) => m.default));
 addDecoder([8, 32946], () => Promise.all(/*! import() */[__webpack_require__.e("vendors-node_modules_pako_dist_pako_esm_mjs"), __webpack_require__.e("node_modules_geotiff_dist-module_compression_deflate_js")]).then(__webpack_require__.bind(__webpack_require__, /*! ./deflate.js */ "./node_modules/geotiff/dist-module/compression/deflate.js")).then((m) => m.default));
 addDecoder(32773, () => __webpack_require__.e(/*! import() */ "node_modules_geotiff_dist-module_compression_packbits_js").then(__webpack_require__.bind(__webpack_require__, /*! ./packbits.js */ "./node_modules/geotiff/dist-module/compression/packbits.js")).then((m) => m.default));
-addDecoder(34887, () => Promise.all(/*! import() */[__webpack_require__.e("vendors-node_modules_pako_dist_pako_esm_mjs"), __webpack_require__.e("vendors-node_modules_geotiff_dist-module_compression_lerc_js")]).then(__webpack_require__.bind(__webpack_require__, /*! ./lerc.js */ "./node_modules/geotiff/dist-module/compression/lerc.js")).then((m) => m.default));
+addDecoder(34887, () => Promise.all(/*! import() */[__webpack_require__.e("vendors-node_modules_pako_dist_pako_esm_mjs"), __webpack_require__.e("vendors-node_modules_geotiff_dist-module_compression_lerc_js")]).then(__webpack_require__.bind(__webpack_require__, /*! ./lerc.js */ "./node_modules/geotiff/dist-module/compression/lerc.js"))
+  .then(async (m) => {
+    await m.zstd.init();
+    return m;
+  })
+  .then((m) => m.default),
+);
 addDecoder(50001, () => __webpack_require__.e(/*! import() */ "node_modules_geotiff_dist-module_compression_webimage_js").then(__webpack_require__.bind(__webpack_require__, /*! ./webimage.js */ "./node_modules/geotiff/dist-module/compression/webimage.js")).then((m) => m.default));
 
 
@@ -27541,7 +27588,9 @@ class DataView64 {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   BaseClient: () => (/* reexport safe */ _source_client_base_js__WEBPACK_IMPORTED_MODULE_14__.BaseClient),
 /* harmony export */   BaseDecoder: () => (/* reexport safe */ _compression_basedecoder_js__WEBPACK_IMPORTED_MODULE_2__["default"]),
+/* harmony export */   BaseResponse: () => (/* reexport safe */ _source_client_base_js__WEBPACK_IMPORTED_MODULE_14__.BaseResponse),
 /* harmony export */   GeoTIFF: () => (/* binding */ GeoTIFF),
 /* harmony export */   GeoTIFFImage: () => (/* reexport safe */ _geotiffimage_js__WEBPACK_IMPORTED_MODULE_6__["default"]),
 /* harmony export */   MultiGeoTIFF: () => (/* binding */ MultiGeoTIFF),
@@ -27550,6 +27599,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__),
 /* harmony export */   fromArrayBuffer: () => (/* binding */ fromArrayBuffer),
 /* harmony export */   fromBlob: () => (/* binding */ fromBlob),
+/* harmony export */   fromCustomClient: () => (/* binding */ fromCustomClient),
 /* harmony export */   fromFile: () => (/* binding */ fromFile),
 /* harmony export */   fromUrl: () => (/* binding */ fromUrl),
 /* harmony export */   fromUrls: () => (/* binding */ fromUrls),
@@ -27567,6 +27617,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _source_arraybuffer_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./source/arraybuffer.js */ "./node_modules/geotiff/dist-module/source/arraybuffer.js");
 /* harmony import */ var _source_filereader_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./source/filereader.js */ "./node_modules/geotiff/dist-module/source/filereader.js");
 /* harmony import */ var _source_file_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./source/file.js */ "./node_modules/geotiff/dist-module/source/file.js");
+/* harmony import */ var _source_client_base_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./source/client/base.js */ "./node_modules/geotiff/dist-module/source/client/base.js");
 /* harmony import */ var _globals_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./globals.js */ "./node_modules/geotiff/dist-module/globals.js");
 /* harmony import */ var _geotiffwriter_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./geotiffwriter.js */ "./node_modules/geotiff/dist-module/geotiffwriter.js");
 /* harmony import */ var _rgb_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./rgb.js */ "./node_modules/geotiff/dist-module/rgb.js");
@@ -27574,6 +27625,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _logging_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./logging.js */ "./node_modules/geotiff/dist-module/logging.js");
 /* harmony import */ var _compression_basedecoder_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./compression/basedecoder.js */ "./node_modules/geotiff/dist-module/compression/basedecoder.js");
 /** @module geotiff */
+
 
 
 
@@ -28260,6 +28312,19 @@ async function fromUrl(url, options = {}, signal) {
 }
 
 /**
+ * Creates a new GeoTIFF from a custom {@link BaseClient}.
+ * @param {BaseClient} client The client.
+ * @param {object} [options] Additional options to pass to the source.
+ *                           See {@link makeRemoteSource} for details.
+ * @param {AbortSignal} [signal] An AbortSignal that may be signalled if the request is
+ *                               to be aborted
+ * @returns {Promise<GeoTIFF>} The resulting GeoTIFF file.
+ */
+async function fromCustomClient(client, options = {}, signal) {
+  return GeoTIFF.fromSource((0,_source_remote_js__WEBPACK_IMPORTED_MODULE_8__.makeCustomSource)(client, options), signal);
+}
+
+/**
  * Construct a new GeoTIFF from an
  * [ArrayBuffer]{@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer}.
  * @param {ArrayBuffer} arrayBuffer The data to read the file from.
@@ -28329,6 +28394,7 @@ async function fromUrls(mainUrl, overviewUrls = [], options = {}, signal) {
 function writeArrayBuffer(values, metadata) {
   return (0,_geotiffwriter_js__WEBPACK_IMPORTED_MODULE_12__.writeGeotiff)(values, metadata);
 }
+
 
 
 
@@ -28826,13 +28892,18 @@ class GeoTIFFImage {
 
     for (let yTile = minYTile; yTile < maxYTile; ++yTile) {
       for (let xTile = minXTile; xTile < maxXTile; ++xTile) {
+        let getPromise;
+        if (this.planarConfiguration === 1) {
+          getPromise = this.getTileOrStrip(xTile, yTile, 0, poolOrDecoder, signal);
+        }
         for (let sampleIndex = 0; sampleIndex < samples.length; ++sampleIndex) {
           const si = sampleIndex;
           const sample = samples[sampleIndex];
           if (this.planarConfiguration === 2) {
-            bytesPerPixel = this.getSampleByteSize(sampleIndex);
+            bytesPerPixel = this.getSampleByteSize(sample);
+            getPromise = this.getTileOrStrip(xTile, yTile, sample, poolOrDecoder, signal);
           }
-          const promise = this.getTileOrStrip(xTile, yTile, sample, poolOrDecoder, signal).then((tile) => {
+          const promise = getPromise.then((tile) => {
             const buffer = tile.data;
             const dataView = new DataView(buffer);
             const blockHeight = this.getBlockHeight(tile.y);
@@ -29211,11 +29282,19 @@ class GeoTIFFImage {
       ];
     }
     if (modelTransformation) {
+      if (modelTransformation[1] === 0 && modelTransformation[4] === 0) {
+        return [
+          modelTransformation[0],
+          -modelTransformation[5],
+          modelTransformation[10],
+        ];
+      }
       return [
-        modelTransformation[0],
-        modelTransformation[5],
-        modelTransformation[10],
-      ];
+        Math.sqrt((modelTransformation[0] * modelTransformation[0])
+          + (modelTransformation[4] * modelTransformation[4])),
+        -Math.sqrt((modelTransformation[1] * modelTransformation[1])
+          + (modelTransformation[5] * modelTransformation[5])),
+        modelTransformation[10]];
     }
 
     if (referenceImage) {
@@ -29242,24 +29321,56 @@ class GeoTIFFImage {
    * Returns the image bounding box as an array of 4 values: min-x, min-y,
    * max-x and max-y. When the image has no affine transformation, then an
    * exception is thrown.
+   * @param {boolean} [tilegrid=false] If true return extent for a tilegrid
+   *                                   without adjustment for ModelTransformation.
    * @returns {Array<number>} The bounding box
    */
-  getBoundingBox() {
-    const origin = this.getOrigin();
-    const resolution = this.getResolution();
+  getBoundingBox(tilegrid = false) {
+    const height = this.getHeight();
+    const width = this.getWidth();
 
-    const x1 = origin[0];
-    const y1 = origin[1];
+    if (this.fileDirectory.ModelTransformation && !tilegrid) {
+      // eslint-disable-next-line no-unused-vars
+      const [a, b, c, d, e, f, g, h] = this.fileDirectory.ModelTransformation;
 
-    const x2 = x1 + (resolution[0] * this.getWidth());
-    const y2 = y1 + (resolution[1] * this.getHeight());
+      const corners = [
+        [0, 0],
+        [0, height],
+        [width, 0],
+        [width, height],
+      ];
 
-    return [
-      Math.min(x1, x2),
-      Math.min(y1, y2),
-      Math.max(x1, x2),
-      Math.max(y1, y2),
-    ];
+      const projected = corners.map(([I, J]) => [
+        d + (a * I) + (b * J),
+        h + (e * I) + (f * J),
+      ]);
+
+      const xs = projected.map((pt) => pt[0]);
+      const ys = projected.map((pt) => pt[1]);
+
+      return [
+        Math.min(...xs),
+        Math.min(...ys),
+        Math.max(...xs),
+        Math.max(...ys),
+      ];
+    } else {
+      const origin = this.getOrigin();
+      const resolution = this.getResolution();
+
+      const x1 = origin[0];
+      const y1 = origin[1];
+
+      const x2 = x1 + (resolution[0] * width);
+      const y2 = y1 + (resolution[1] * height);
+
+      return [
+        Math.min(x1, x2),
+        Math.min(y1, y2),
+        Math.max(x1, x2),
+        Math.max(y1, y2),
+      ];
+    }
   }
 }
 
@@ -29703,8 +29814,8 @@ function writeGeotiff(data, metadata) {
   }
 
   // delete GeoKeys from metadata, because stored in GeoKeyDirectory tag
-  for (const geoKey in geoKeys) {
-    if (geoKeys.hasOwnProperty(geoKey)) {
+  for (const geoKey of geoKeys) {
+    if (metadata.hasOwnProperty(geoKey)) {
       delete metadata[geoKey];
     }
   }
@@ -29725,6 +29836,7 @@ function writeGeotiff(data, metadata) {
     'SamplesPerPixel',
     'XPosition',
     'YPosition',
+    'RowsPerStrip',
   ].forEach((name) => {
     if (metadata[name]) {
       metadata[name] = toArray(metadata[name]);
@@ -29925,8 +30037,10 @@ const fieldTagTypes = {
   3073: 'ASCII',
   33550: 'DOUBLE',
   33922: 'DOUBLE',
+  34264: 'DOUBLE',
   34665: 'LONG',
   34735: 'SHORT',
+  34736: 'DOUBLE',
   34737: 'ASCII',
   42113: 'ASCII',
 };
@@ -29998,6 +30112,7 @@ const LercParameters = {
 const LercAddCompression = {
   None: 0,
   Deflate: 1,
+  Zstandard: 2,
 };
 
 const geoKeyNames = {
@@ -31175,9 +31290,10 @@ class BaseClient {
 
   /**
    * Send a request with the options
-   * @param {object} [options]
+   * @param {{headers: HeadersInit, signal: AbortSignal}} [options={}]
+   * @returns {Promise<BaseResponse>}
    */
-  async request({ headers, credentials, signal } = {}) { // eslint-disable-line no-unused-vars
+  async request({ headers, signal } = {}) { // eslint-disable-line no-unused-vars
     throw new Error('request is not implemented');
   }
 }
@@ -31231,9 +31347,13 @@ class FetchClient extends _base_js__WEBPACK_IMPORTED_MODULE_0__.BaseClient {
     this.credentials = credentials;
   }
 
-  async request({ headers, credentials, signal } = {}) {
+  /**
+   * @param {{headers: HeadersInit, signal: AbortSignal}} [options={}]
+   * @returns {Promise<FetchResponse>}
+   */
+  async request({ headers, signal } = {}) {
     const response = await fetch(this.url, {
-      headers, credentials, signal,
+      headers, credentials: this.credentials, signal,
     });
     return new FetchResponse(response);
   }
@@ -31725,6 +31845,7 @@ function parseByteRanges(responseArrayBuffer, boundary) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   makeCustomSource: () => (/* binding */ makeCustomSource),
 /* harmony export */   makeFetchSource: () => (/* binding */ makeFetchSource),
 /* harmony export */   makeHttpSource: () => (/* binding */ makeHttpSource),
 /* harmony export */   makeRemoteSource: () => (/* binding */ makeRemoteSource),
@@ -31909,6 +32030,11 @@ function makeXHRSource(url, { headers = {}, maxRanges = 0, allowFullFile = false
 
 function makeHttpSource(url, { headers = {}, maxRanges = 0, allowFullFile = false, ...blockOptions } = {}) {
   const client = new _client_http_js__WEBPACK_IMPORTED_MODULE_5__.HttpClient(url);
+  const source = new RemoteSource(client, headers, maxRanges, allowFullFile);
+  return maybeWrapInBlockedSource(source, blockOptions);
+}
+
+function makeCustomSource(client, { headers = {}, maxRanges = 0, allowFullFile = false, ...blockOptions } = {}) {
   const source = new RemoteSource(client, headers, maxRanges, allowFullFile);
   return maybeWrapInBlockedSource(source, blockOptions);
 }
@@ -32256,6 +32382,8 @@ class QuickLRU extends Map {
 		} else {
 			this._set(key, {value, expiry});
 		}
+
+		return this;
 	}
 
 	has(key) {
@@ -85970,7 +86098,7 @@ const _SRGBAFormat = 1035; // fallback for WebGL 1
 /******/ 				var scripts = document.getElementsByTagName("script");
 /******/ 				if(scripts.length) {
 /******/ 					var i = scripts.length - 1;
-/******/ 					while (i > -1 && !scriptUrl) scriptUrl = scripts[i--].src;
+/******/ 					while (i > -1 && (!scriptUrl || !/^http(s?):/.test(scriptUrl))) scriptUrl = scripts[i--].src;
 /******/ 				}
 /******/ 			}
 /******/ 		}
@@ -86698,7 +86826,6 @@ function goToZSlice(slice) {
 
   // update UI if successful
 }
-
 function createTestVolume() {
   var imgData = {
     name: "AICS-10_5_5",
@@ -86858,7 +86985,7 @@ function main() {
     parentElement: el
   });
   var testDataSelect = document.getElementById("testData");
-  testDataSelect === null || testDataSelect === void 0 ? void 0 : testDataSelect.addEventListener("change", function (_ref) {
+  testDataSelect === null || testDataSelect === void 0 || testDataSelect.addEventListener("change", function (_ref) {
     var currentTarget = _ref.currentTarget;
     var selected = currentTarget === null || currentTarget === void 0 ? void 0 : currentTarget.value;
     var testdata = TEST_DATA[selected];
@@ -86867,38 +86994,38 @@ function main() {
     }
   });
   var xBtn = document.getElementById("X");
-  xBtn === null || xBtn === void 0 ? void 0 : xBtn.addEventListener("click", function () {
+  xBtn === null || xBtn === void 0 || xBtn.addEventListener("click", function () {
     view3D.setCameraMode("X");
   });
   var yBtn = document.getElementById("Y");
-  yBtn === null || yBtn === void 0 ? void 0 : yBtn.addEventListener("click", function () {
+  yBtn === null || yBtn === void 0 || yBtn.addEventListener("click", function () {
     view3D.setCameraMode("Y");
   });
   var zBtn = document.getElementById("Z");
-  zBtn === null || zBtn === void 0 ? void 0 : zBtn.addEventListener("click", function () {
+  zBtn === null || zBtn === void 0 || zBtn.addEventListener("click", function () {
     view3D.setCameraMode("Z");
   });
   var d3Btn = document.getElementById("3D");
-  d3Btn === null || d3Btn === void 0 ? void 0 : d3Btn.addEventListener("click", function () {
+  d3Btn === null || d3Btn === void 0 || d3Btn.addEventListener("click", function () {
     view3D.setCameraMode("3D");
   });
   var rotBtn = document.getElementById("rotBtn");
-  rotBtn === null || rotBtn === void 0 ? void 0 : rotBtn.addEventListener("click", function () {
+  rotBtn === null || rotBtn === void 0 || rotBtn.addEventListener("click", function () {
     myState.isTurntable = !myState.isTurntable;
     view3D.setAutoRotate(myState.isTurntable);
   });
   var axisBtn = document.getElementById("axisBtn");
-  axisBtn === null || axisBtn === void 0 ? void 0 : axisBtn.addEventListener("click", function () {
+  axisBtn === null || axisBtn === void 0 || axisBtn.addEventListener("click", function () {
     myState.isAxisShowing = !myState.isAxisShowing;
     view3D.setShowAxis(myState.isAxisShowing);
   });
   var showBoundsBtn = document.getElementById("showBoundingBox");
-  showBoundsBtn === null || showBoundsBtn === void 0 ? void 0 : showBoundsBtn.addEventListener("click", function () {
+  showBoundsBtn === null || showBoundsBtn === void 0 || showBoundsBtn.addEventListener("click", function () {
     myState.showBoundingBox = !myState.showBoundingBox;
     view3D.setShowBoundingBox(myState.volume, myState.showBoundingBox);
   });
   var showScaleBarBtn = document.getElementById("showScaleBar");
-  showScaleBarBtn === null || showScaleBarBtn === void 0 ? void 0 : showScaleBarBtn.addEventListener("click", function () {
+  showScaleBarBtn === null || showScaleBarBtn === void 0 || showScaleBarBtn.addEventListener("click", function () {
     myState.showScaleBar = !myState.showScaleBar;
     view3D.setShowScaleBar(myState.showScaleBar);
   });
@@ -86909,34 +87036,34 @@ function main() {
     return result ? [parseInt(result[1], 16) / 255.0, parseInt(result[2], 16) / 255.0, parseInt(result[3], 16) / 255.0] : last;
   }
   var boundsColorBtn = document.getElementById("boundingBoxColor");
-  boundsColorBtn === null || boundsColorBtn === void 0 ? void 0 : boundsColorBtn.addEventListener("change", function (event) {
+  boundsColorBtn === null || boundsColorBtn === void 0 || boundsColorBtn.addEventListener("change", function (event) {
     var _event$target;
     myState.boundingBoxColor = hexToRgb((_event$target = event.target) === null || _event$target === void 0 ? void 0 : _event$target.value, myState.boundingBoxColor);
     view3D.setBoundingBoxColor(myState.volume, myState.boundingBoxColor);
   });
   var backgroundColorBtn = document.getElementById("backgroundColor");
-  backgroundColorBtn === null || backgroundColorBtn === void 0 ? void 0 : backgroundColorBtn.addEventListener("change", function (event) {
+  backgroundColorBtn === null || backgroundColorBtn === void 0 || backgroundColorBtn.addEventListener("change", function (event) {
     var _event$target2;
     myState.backgroundColor = hexToRgb((_event$target2 = event.target) === null || _event$target2 === void 0 ? void 0 : _event$target2.value, myState.backgroundColor);
     view3D.setBackgroundColor(myState.backgroundColor);
   });
   var flipXBtn = document.getElementById("flipXBtn");
-  flipXBtn === null || flipXBtn === void 0 ? void 0 : flipXBtn.addEventListener("click", function () {
+  flipXBtn === null || flipXBtn === void 0 || flipXBtn.addEventListener("click", function () {
     myState.flipX *= -1;
     view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
   });
   var flipYBtn = document.getElementById("flipYBtn");
-  flipYBtn === null || flipYBtn === void 0 ? void 0 : flipYBtn.addEventListener("click", function () {
+  flipYBtn === null || flipYBtn === void 0 || flipYBtn.addEventListener("click", function () {
     myState.flipY *= -1;
     view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
   });
   var flipZBtn = document.getElementById("flipZBtn");
-  flipZBtn === null || flipZBtn === void 0 ? void 0 : flipZBtn.addEventListener("click", function () {
+  flipZBtn === null || flipZBtn === void 0 || flipZBtn.addEventListener("click", function () {
     myState.flipZ *= -1;
     view3D.setFlipVolume(myState.volume, myState.flipX, myState.flipY, myState.flipZ);
   });
   var playBtn = document.getElementById("playBtn");
-  playBtn === null || playBtn === void 0 ? void 0 : playBtn.addEventListener("click", function () {
+  playBtn === null || playBtn === void 0 || playBtn.addEventListener("click", function () {
     if (myState.currentFrame >= getNumberOfTimesteps() - 1) {
       myState.currentFrame = -1;
     }
@@ -86950,7 +87077,7 @@ function main() {
     });
   });
   var pauseBtn = document.getElementById("pauseBtn");
-  pauseBtn === null || pauseBtn === void 0 ? void 0 : pauseBtn.addEventListener("click", function () {
+  pauseBtn === null || pauseBtn === void 0 || pauseBtn.addEventListener("click", function () {
     window.clearTimeout(myState.timerId);
     myState.isPlaying = false;
   });
@@ -86958,7 +87085,7 @@ function main() {
   var backBtn = document.getElementById("backBtn");
   var timeSlider = document.getElementById("timeSlider");
   var timeInput = document.getElementById("timeValue");
-  forwardBtn === null || forwardBtn === void 0 ? void 0 : forwardBtn.addEventListener("click", function () {
+  forwardBtn === null || forwardBtn === void 0 || forwardBtn.addEventListener("click", function () {
     if (goToFrame(getCurrentFrame() + 1)) {
       if (timeInput) {
         timeInput.value = "" + getCurrentFrame();
@@ -86968,7 +87095,7 @@ function main() {
       }
     }
   });
-  backBtn === null || backBtn === void 0 ? void 0 : backBtn.addEventListener("click", function () {
+  backBtn === null || backBtn === void 0 || backBtn.addEventListener("click", function () {
     if (goToFrame(getCurrentFrame() - 1)) {
       if (timeInput) {
         timeInput.value = "" + getCurrentFrame();
@@ -86979,7 +87106,7 @@ function main() {
     }
   });
   // only update when DONE sliding: change event
-  timeSlider === null || timeSlider === void 0 ? void 0 : timeSlider.addEventListener("change", function () {
+  timeSlider === null || timeSlider === void 0 || timeSlider.addEventListener("change", function () {
     // trigger loading new time
     if (goToFrame(timeSlider === null || timeSlider === void 0 ? void 0 : timeSlider.valueAsNumber)) {
       if (timeInput) {
@@ -86987,7 +87114,7 @@ function main() {
       }
     }
   });
-  timeInput === null || timeInput === void 0 ? void 0 : timeInput.addEventListener("change", function () {
+  timeInput === null || timeInput === void 0 || timeInput.addEventListener("change", function () {
     // trigger loading new time
     if (goToFrame(timeInput === null || timeInput === void 0 ? void 0 : timeInput.valueAsNumber)) {
       // update slider
@@ -87002,26 +87129,26 @@ function main() {
   var zbackBtn = document.getElementById("zbackBtn");
   var zSlider = document.getElementById("zSlider");
   var zInput = document.getElementById("zValue");
-  zforwardBtn === null || zforwardBtn === void 0 ? void 0 : zforwardBtn.addEventListener("click", function () {
+  zforwardBtn === null || zforwardBtn === void 0 || zforwardBtn.addEventListener("click", function () {
     goToZSlice((zSlider === null || zSlider === void 0 ? void 0 : zSlider.valueAsNumber) + 1);
   });
-  zbackBtn === null || zbackBtn === void 0 ? void 0 : zbackBtn.addEventListener("click", function () {
+  zbackBtn === null || zbackBtn === void 0 || zbackBtn.addEventListener("click", function () {
     goToZSlice((zSlider === null || zSlider === void 0 ? void 0 : zSlider.valueAsNumber) - 1);
   });
-  zSlider === null || zSlider === void 0 ? void 0 : zSlider.addEventListener("change", function () {
+  zSlider === null || zSlider === void 0 || zSlider.addEventListener("change", function () {
     goToZSlice(zSlider === null || zSlider === void 0 ? void 0 : zSlider.valueAsNumber);
   });
-  zInput === null || zInput === void 0 ? void 0 : zInput.addEventListener("change", function () {
+  zInput === null || zInput === void 0 || zInput.addEventListener("change", function () {
     goToZSlice(zInput === null || zInput === void 0 ? void 0 : zInput.valueAsNumber);
   });
   var alignBtn = document.getElementById("xfBtn");
-  alignBtn === null || alignBtn === void 0 ? void 0 : alignBtn.addEventListener("click", function () {
+  alignBtn === null || alignBtn === void 0 || alignBtn.addEventListener("click", function () {
     myState.isAligned = !myState.isAligned;
     view3D.setVolumeTranslation(myState.volume, myState.isAligned ? myState.volume.getTranslation() : [0, 0, 0]);
     view3D.setVolumeRotation(myState.volume, myState.isAligned ? myState.volume.getRotation() : [0, 0, 0]);
   });
   var resetCamBtn = document.getElementById("resetCamBtn");
-  resetCamBtn === null || resetCamBtn === void 0 ? void 0 : resetCamBtn.addEventListener("click", function () {
+  resetCamBtn === null || resetCamBtn === void 0 || resetCamBtn.addEventListener("click", function () {
     view3D.resetCamera();
   });
   var counterSpan = document.getElementById("counter");
@@ -87037,7 +87164,7 @@ function main() {
     view3D.setVolumeRenderMode(pt ? _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_RAYMARCH);
     view3D.setMaxProjectMode(myState.volume, mp);
   };
-  renderModeSelect === null || renderModeSelect === void 0 ? void 0 : renderModeSelect.addEventListener("change", function (_ref2) {
+  renderModeSelect === null || renderModeSelect === void 0 || renderModeSelect.addEventListener("change", function (_ref2) {
     var currentTarget = _ref2.currentTarget;
     var target = currentTarget;
     if (target.value === "PT") {
@@ -87051,12 +87178,12 @@ function main() {
     }
   });
   var interpolateBtn = document.getElementById("interpolateBtn");
-  interpolateBtn === null || interpolateBtn === void 0 ? void 0 : interpolateBtn.addEventListener("click", function () {
+  interpolateBtn === null || interpolateBtn === void 0 || interpolateBtn.addEventListener("click", function () {
     myState.interpolationActive = !myState.interpolationActive;
     view3D.setInterpolationEnabled(myState.volume, myState.interpolationActive);
   });
   var screenshotBtn = document.getElementById("screenshotBtn");
-  screenshotBtn === null || screenshotBtn === void 0 ? void 0 : screenshotBtn.addEventListener("click", function () {
+  screenshotBtn === null || screenshotBtn === void 0 || screenshotBtn.addEventListener("click", function () {
     view3D.capture(function (dataUrl) {
       var anchor = document.createElement("a");
       anchor.href = dataUrl;
@@ -87067,32 +87194,32 @@ function main() {
   var gammaMin = document.getElementById("gammaMin");
   var gammaMax = document.getElementById("gammaMax");
   var gammaScale = document.getElementById("gammaScale");
-  gammaMin === null || gammaMin === void 0 ? void 0 : gammaMin.addEventListener("change", function (_ref3) {
+  gammaMin === null || gammaMin === void 0 || gammaMin.addEventListener("change", function (_ref3) {
     var currentTarget = _ref3.currentTarget;
     var g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
     view3D.setGamma(myState.volume, g[0], g[1], g[2]);
   });
-  gammaMin === null || gammaMin === void 0 ? void 0 : gammaMin.addEventListener("input", function (_ref4) {
+  gammaMin === null || gammaMin === void 0 || gammaMin.addEventListener("input", function (_ref4) {
     var currentTarget = _ref4.currentTarget;
     var g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
     view3D.setGamma(myState.volume, g[0], g[1], g[2]);
   });
-  gammaMax === null || gammaMax === void 0 ? void 0 : gammaMax.addEventListener("change", function (_ref5) {
+  gammaMax === null || gammaMax === void 0 || gammaMax.addEventListener("change", function (_ref5) {
     var currentTarget = _ref5.currentTarget;
     var g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
     view3D.setGamma(myState.volume, g[0], g[1], g[2]);
   });
-  gammaMax === null || gammaMax === void 0 ? void 0 : gammaMax.addEventListener("input", function (_ref6) {
+  gammaMax === null || gammaMax === void 0 || gammaMax.addEventListener("input", function (_ref6) {
     var currentTarget = _ref6.currentTarget;
     var g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
     view3D.setGamma(myState.volume, g[0], g[1], g[2]);
   });
-  gammaScale === null || gammaScale === void 0 ? void 0 : gammaScale.addEventListener("change", function (_ref7) {
+  gammaScale === null || gammaScale === void 0 || gammaScale.addEventListener("change", function (_ref7) {
     var currentTarget = _ref7.currentTarget;
     var g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
     view3D.setGamma(myState.volume, g[0], g[1], g[2]);
   });
-  gammaScale === null || gammaScale === void 0 ? void 0 : gammaScale.addEventListener("input", function (_ref8) {
+  gammaScale === null || gammaScale === void 0 || gammaScale.addEventListener("input", function (_ref8) {
     var currentTarget = _ref8.currentTarget;
     var g = gammaSliderToImageValues([gammaMin.valueAsNumber, gammaScale.valueAsNumber, gammaMax.valueAsNumber]);
     view3D.setGamma(myState.volume, g[0], g[1], g[2]);
