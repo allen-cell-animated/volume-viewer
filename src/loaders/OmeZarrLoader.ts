@@ -258,7 +258,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     const channelNames = this.omeroMetadata.channels.map((ch) => ch.label);
 
-    const scale5d = this.getScale();
+    const scale5d = this.getScale(levelToLoad);
     const timeScale = hasT ? scale5d[t] : 1;
 
     const imgdata: ImageInfo = {
