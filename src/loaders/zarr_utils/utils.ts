@@ -1,13 +1,7 @@
 import { Vector3 } from "three";
 import { LoadSpec } from "../IVolumeLoader";
 import { estimateLevelForAtlas } from "../VolumeLoaderUtils";
-import {
-  OMEAxis,
-  OMECoordinateTransformation,
-  OMEDataset,
-  OMEMultiscale,
-  TCZYX,
-} from "./types";
+import { OMEAxis, OMECoordinateTransformation, OMEDataset, OMEMultiscale, TCZYX } from "./types";
 
 /** Turns `axesTCZYX` into the number of dimensions in the array */
 export const getDimensionCount = ([t, c, z]: TCZYX<number>) => 2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
@@ -56,8 +50,8 @@ export function orderByDimension<T>(valsTCZYX: TCZYX<T>, orderTCZYX: TCZYX<numbe
   const result: T[] = Array(specLen);
 
   orderTCZYX.forEach((val, idx) => {
-    if (val > -1) {
-      if (val > specLen) {
+    if (val >= 0) {
+      if (val >= specLen) {
         throw new Error("Unexpected axis index");
       }
       result[val] = valsTCZYX[idx];
@@ -72,8 +66,8 @@ export function orderByTCZYX<T>(valsDimension: T[], orderTCZYX: TCZYX<number>, d
   const result: TCZYX<T> = [defaultValue, defaultValue, defaultValue, defaultValue, defaultValue];
 
   orderTCZYX.forEach((val, idx) => {
-    if (val > -1) {
-      if (val > valsDimension.length) {
+    if (val >= 0) {
+      if (val >= valsDimension.length) {
         throw new Error("Unexpected axis index");
       }
       result[idx] = valsDimension[val];
