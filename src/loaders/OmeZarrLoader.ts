@@ -38,8 +38,9 @@ import {
   SubscriberId,
   TCZYX,
   PrefetchDirection,
-  ZarrSource,
   NumericZarrArray,
+  OMEMultiscale,
+  OmeroTransitionalMetadata,
 } from "./zarr_utils/types";
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
