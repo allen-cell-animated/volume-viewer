@@ -298,7 +298,19 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const atlasTileDims = computePackedAtlasDims(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
 
     // Channel names is the other place where we have to check every source
-    const channelNames = this.sources.flatMap((src) => src.omeroMetadata.channels.map((ch) => ch.label));
+    const channelNamesMap = new Map<string, number>();
+    const channelNames = this.sources.flatMap((src) => {
+      return src.omeroMetadata.channels.map((ch) => {
+        const numMatchingChannels = channelNamesMap.get(ch.label);
+        if (numMatchingChannels !== undefined) {
+          channelNamesMap.set(ch.label, numMatchingChannels + 1);
+          return `${ch.label} (${numMatchingChannels})`;
+        } else {
+          channelNamesMap.set(ch.label, 1);
+          return ch.label;
+        }
+      });
+    });
 
     const scale5d = this.getScale(levelToLoad);
     const timeScale = hasT ? scale5d[t] : 1;
