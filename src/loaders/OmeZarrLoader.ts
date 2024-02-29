@@ -223,10 +223,16 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
    * returns `[1, 1]` (the second channel of the second zarr).
    */
   private matchChannelToSource(channelIdx: number): [number, number] {
-    const sourceIdx = this.sources.findIndex((src) => src.channelOffset <= channelIdx);
-    if (sourceIdx === -1) {
+    const lastSrcIdx = this.sources.length - 1;
+    const lastSrc = this.sources[lastSrcIdx];
+    const lastSrcNumChannels = lastSrc.scaleLevels[0].shape[lastSrc.axesTCZYX[1]];
+
+    if (channelIdx > lastSrc.channelOffset + lastSrcNumChannels) {
       throw new Error("Channel index out of range");
     }
+
+    const firstGreaterIdx = this.sources.findIndex((src) => src.channelOffset > channelIdx);
+    const sourceIdx = firstGreaterIdx === -1 ? lastSrcIdx : firstGreaterIdx - 1;
     return [sourceIdx, channelIdx - this.sources[sourceIdx].channelOffset];
   }
 
