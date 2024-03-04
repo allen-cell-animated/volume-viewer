@@ -130,6 +130,19 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     super();
   }
 
+  /**
+   * Creates a new `OMEZarrLoader`.
+   *
+   * @param urls The URL(s) of the OME-Zarr data to load. If `urls` is an array, the loader will attempt to find scale
+   *  levels with exactly the same size in every source. If matching level(s) are available, the loader will produce a
+   *  volume containing all channels from every provided zarr in the order they appear in `urls`. If no matching sets
+   *  of scale levels are available, creation fails.
+   * @param scenes The scene(s) to load from each URL. If `urls` is an array, `scenes` may either be an array of values
+   *  corresponding to each URL, or a single value to apply to all URLs.
+   * @param cache A cache to use for storing fetched data. If not provided, a new cache will be created.
+   * @param queue A queue to use for managing requests. If not provided, a new queue will be created.
+   * @param fetchOptions Options to configure (pre)fetching behavior.
+   */
   static async createLoader(
     urls: string | string[],
     scenes: number | number[] = 0,
@@ -223,8 +236,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
   /**
    * Converts a volume channel index to the index of its zarr source and its channel index within that zarr.
-   * e.g., if the loader has 2 zarrs, the first with 3 channels and the second with 2, then `matchChannelToSource(4)`
-   * returns `[1, 1]` (the second channel of the second zarr).
+   * e.g., if the loader has 2 sources, the first with 3 channels and the second with 2, then `matchChannelToSource(4)`
+   * returns `[1, 1]` (the second channel of the second source).
    */
   private matchChannelToSource(channelIdx: number): [number, number] {
     const lastSrcIdx = this.sources.length - 1;
