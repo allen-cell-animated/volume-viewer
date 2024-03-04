@@ -138,7 +138,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
    *  volume containing all channels from every provided zarr in the order they appear in `urls`. If no matching sets
    *  of scale levels are available, creation fails.
    * @param scenes The scene(s) to load from each URL. If `urls` is an array, `scenes` may either be an array of values
-   *  corresponding to each URL, or a single value to apply to all URLs.
+   *  corresponding to each URL, or a single value to apply to all URLs. Default 0.
    * @param cache A cache to use for storing fetched data. If not provided, a new cache will be created.
    * @param queue A queue to use for managing requests. If not provided, a new queue will be created.
    * @param fetchOptions Options to configure (pre)fetching behavior.
