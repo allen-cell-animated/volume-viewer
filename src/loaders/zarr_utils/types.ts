@@ -1,3 +1,6 @@
+import * as zarr from "@zarrita/core";
+
+import WrappedStore from "./WrappedStore";
 import SubscribableRequestQueue from "../../utils/SubscribableRequestQueue";
 
 export type TCZYX<T> = [T, T, T, T, T];
@@ -88,3 +91,5 @@ export type OMEZarrMetadata = {
   multiscales: OMEMultiscale[];
   omero: OmeroTransitionalMetadata;
 };
+
+export type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;

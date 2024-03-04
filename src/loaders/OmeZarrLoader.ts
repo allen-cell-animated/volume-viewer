@@ -21,64 +21,29 @@ import {
   composeSubregion,
   computePackedAtlasDims,
   convertSubregionToPixels,
-  estimateLevelForAtlas,
   unitNameToSymbol,
 } from "./VolumeLoaderUtils";
 import ChunkPrefetchIterator from "./zarr_utils/ChunkPrefetchIterator";
-import { PrefetchDirection } from "./zarr_utils/types";
 import WrappedStore from "./zarr_utils/WrappedStore";
 import {
-  OMEAxis,
-  OMECoordinateTransformation,
-  OMEMultiscale,
-  OmeroTransitionalMetadata,
+  getDimensionCount,
+  getScale,
+  orderByDimension,
+  orderByTCZYX,
+  pickLevelToLoad,
+  remapAxesToTCZYX,
+} from "./zarr_utils/utils";
+import {
   OMEZarrMetadata,
   SubscriberId,
   TCZYX,
+  PrefetchDirection,
+  NumericZarrArray,
+  OMEMultiscale,
+  OmeroTransitionalMetadata,
 } from "./zarr_utils/types";
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
-
-/** Turns `axisTCZYX` into the number of dimensions in the array */
-const getDimensionCount = ([t, c, z]: TCZYX<number>) => 2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
-
-function remapAxesToTCZYX(axes: OMEAxis[]): TCZYX<number> {
-  const axisTCZYX: TCZYX<number> = [-1, -1, -1, -1, -1];
-  const axisNames = ["t", "c", "z", "y", "x"];
-
-  axes.forEach((axis, idx) => {
-    const axisIdx = axisNames.indexOf(axis.name);
-    if (axisIdx > -1) {
-      axisTCZYX[axisIdx] = idx;
-    } else {
-      console.error("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
-    }
-  });
-
-  // it is possible that Z might not exist but we require X and Y at least.
-  if (axisTCZYX[3] === -1 || axisTCZYX[4] === -1) {
-    console.error("ERROR: zarr loader expects a y and an x axis.");
-  }
-
-  return axisTCZYX;
-}
-
-/**
- * Picks the best scale level to load based on scale level dimensions, a max atlas size, and a `LoadSpec`.
- * This works like `estimateLevelForAtlas` but factors in `LoadSpec`'s `subregion` property (shrinks the size of the
- * data, maybe enough to allow loading a higher level) and its `multiscaleLevel` property (sets a max scale level).
- */
-function pickLevelToLoad(loadSpec: LoadSpec, spatialDimsZYX: [number, number, number][]): number {
-  const size = loadSpec.subregion.getSize(new Vector3());
-  const dims = spatialDimsZYX.map(([z, y, x]): [number, number, number] => [
-    Math.max(z * size.z, 1),
-    Math.max(y * size.y, 1),
-    Math.max(x * size.x, 1),
-  ]);
-
-  const optimalLevel = estimateLevelForAtlas(dims);
-  return Math.max(optimalLevel, loadSpec.multiscaleLevel ?? 0);
-}
 
 function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint8Array {
   if (channelData instanceof Uint8Array) {
@@ -108,8 +73,6 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint
 
   return u8;
 }
-
-type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;
 
 export type ZarrLoaderFetchOptions = {
   /** The max. number of requests the loader can issue at a time. Ignored if the constructor also receives a queue. */
@@ -215,70 +178,21 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     return [spaceUnitSymbol, timeUnitSymbol];
   }
 
-  private getScale(level = 0): TCZYX<number> {
-    const meta = this.multiscaleMetadata;
-    const transforms = meta.datasets[level].coordinateTransformations ?? meta.coordinateTransformations;
-
-    if (transforms === undefined) {
-      console.error("ERROR: no coordinate transformations for scale level");
-      return [1, 1, 1, 1, 1];
-    }
-
-    // this assumes we'll never encounter the "path" variant
-    const isScaleTransform = (t: OMECoordinateTransformation): t is { type: "scale"; scale: number[] } =>
-      t.type === "scale";
-
-    // there can be any number of coordinateTransformations
-    // but there must be only one of type "scale".
-    const scaleTransform = transforms.find(isScaleTransform);
-    if (!scaleTransform) {
-      console.error(`ERROR: no coordinate transformation of type "scale" for scale level`);
-      return [1, 1, 1, 1, 1];
-    }
-
-    const scale = scaleTransform.scale.slice();
-    while (scale.length < 5) {
-      scale.unshift(1);
-    }
-    return scale as TCZYX<number>;
-  }
-
   private getLevelShapesZYX(): [number, number, number][] {
     const [z, y, x] = this.axesTCZYX.slice(-3);
     return this.scaleLevels.map(({ shape }) => [z === -1 ? 1 : shape[z], shape[y], shape[x]]);
   }
 
-  /** Reorder an array of values [T, C, Z, Y, X] to the actual order of those dimensions in the zarr */
-  private orderByDimension<T>(valsTCZYX: TCZYX<T>): T[] {
-    const specLen = getDimensionCount(this.axesTCZYX);
-    const result: T[] = Array(specLen);
-
-    this.axesTCZYX.forEach((val, idx) => {
-      if (val > -1) {
-        if (val > specLen) {
-          throw new Error("Unexpected axis index");
-        }
-        result[val] = valsTCZYX[idx];
-      }
-    });
-
-    return result;
+  private getScale(level: number): TCZYX<number> {
+    return getScale(this.multiscaleMetadata.datasets[level], this.axesTCZYX);
   }
 
-  /** Reorder an array of values in this zarr's dimension order to [T, C, Z, Y, X] */
+  private orderByDimension<T>(valsTCZYX: TCZYX<T>): T[] {
+    return orderByDimension(valsTCZYX, this.axesTCZYX);
+  }
+
   private orderByTCZYX<T>(valsDimension: T[], defaultValue: T): TCZYX<T> {
-    const result: TCZYX<T> = [defaultValue, defaultValue, defaultValue, defaultValue, defaultValue];
-
-    this.axesTCZYX.forEach((val, idx) => {
-      if (val > -1) {
-        if (val > valsDimension.length) {
-          throw new Error("Unexpected axis index");
-        }
-        result[idx] = valsDimension[val];
-      }
-    });
-
-    return result;
+    return orderByTCZYX(valsDimension, this.axesTCZYX, defaultValue);
   }
 
   /**
@@ -344,7 +258,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     const channelNames = this.omeroMetadata.channels.map((ch) => ch.label);
 
-    const scale5d = this.getScale();
+    const scale5d = this.getScale(levelToLoad);
     const timeScale = hasT ? scale5d[t] : 1;
 
     const imgdata: ImageInfo = {
