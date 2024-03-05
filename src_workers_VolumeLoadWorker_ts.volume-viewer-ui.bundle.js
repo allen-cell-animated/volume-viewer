@@ -2297,25 +2297,26 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
-/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
-/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
-/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
+/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
+/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_8___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_8__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _zarrita_core__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! @zarrita/core */ "./node_modules/@zarrita/core/dist/src/hierarchy.js");
-/* harmony import */ var _zarrita_core__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! @zarrita/core */ "./node_modules/@zarrita/core/dist/src/open.js");
-/* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/util.js");
-/* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/ops.js");
-/* harmony import */ var zarrita__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! zarrita */ "./node_modules/@zarrita/storage/dist/src/fetch.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _zarrita_core__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! @zarrita/core */ "./node_modules/@zarrita/core/dist/src/hierarchy.js");
+/* harmony import */ var _zarrita_core__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! @zarrita/core */ "./node_modules/@zarrita/core/dist/src/open.js");
+/* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/util.js");
+/* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/ops.js");
+/* harmony import */ var zarrita__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! zarrita */ "./node_modules/@zarrita/storage/dist/src/fetch.js");
 /* harmony import */ var _utils_SubscribableRequestQueue__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../utils/SubscribableRequestQueue */ "./src/utils/SubscribableRequestQueue.ts");
 /* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
 /* harmony import */ var _zarr_utils_ChunkPrefetchIterator__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./zarr_utils/ChunkPrefetchIterator */ "./src/loaders/zarr_utils/ChunkPrefetchIterator.ts");
 /* harmony import */ var _zarr_utils_WrappedStore__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./zarr_utils/WrappedStore */ "./src/loaders/zarr_utils/WrappedStore.ts");
+/* harmony import */ var _zarr_utils_utils__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./zarr_utils/utils */ "./src/loaders/zarr_utils/utils.ts");
 
 
 
@@ -2330,7 +2331,7 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
 
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
-function _callSuper(t, o, e) { return o = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(o), (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__["default"])(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(t).constructor) : o.apply(t, e)); }
+function _callSuper(t, o, e) { return o = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_6__["default"])(o), (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_5__["default"])(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_6__["default"])(t).constructor) : o.apply(t, e)); }
 function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
 
 
@@ -2343,53 +2344,8 @@ function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.
 
 
 
+
 var CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
-
-/** Turns `axisTCZYX` into the number of dimensions in the array */
-var getDimensionCount = function getDimensionCount(_ref) {
-  var _ref2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_7__["default"])(_ref, 3),
-    t = _ref2[0],
-    c = _ref2[1],
-    z = _ref2[2];
-  return 2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
-};
-function remapAxesToTCZYX(axes) {
-  var axisTCZYX = [-1, -1, -1, -1, -1];
-  var axisNames = ["t", "c", "z", "y", "x"];
-  axes.forEach(function (axis, idx) {
-    var axisIdx = axisNames.indexOf(axis.name);
-    if (axisIdx > -1) {
-      axisTCZYX[axisIdx] = idx;
-    } else {
-      console.error("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
-    }
-  });
-
-  // it is possible that Z might not exist but we require X and Y at least.
-  if (axisTCZYX[3] === -1 || axisTCZYX[4] === -1) {
-    console.error("ERROR: zarr loader expects a y and an x axis.");
-  }
-  return axisTCZYX;
-}
-
-/**
- * Picks the best scale level to load based on scale level dimensions, a max atlas size, and a `LoadSpec`.
- * This works like `estimateLevelForAtlas` but factors in `LoadSpec`'s `subregion` property (shrinks the size of the
- * data, maybe enough to allow loading a higher level) and its `multiscaleLevel` property (sets a max scale level).
- */
-function pickLevelToLoad(loadSpec, spatialDimsZYX) {
-  var _loadSpec$multiscaleL;
-  var size = loadSpec.subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_14__.Vector3());
-  var dims = spatialDimsZYX.map(function (_ref3) {
-    var _ref4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_7__["default"])(_ref3, 3),
-      z = _ref4[0],
-      y = _ref4[1],
-      x = _ref4[2];
-    return [Math.max(z * size.z, 1), Math.max(y * size.y, 1), Math.max(x * size.x, 1)];
-  });
-  var optimalLevel = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_11__.estimateLevelForAtlas)(dims);
-  return Math.max(optimalLevel, (_loadSpec$multiscaleL = loadSpec.multiscaleLevel) !== null && _loadSpec$multiscaleL !== void 0 ? _loadSpec$multiscaleL : 0);
-}
 function convertChannel(channelData) {
   if (channelData instanceof Uint8Array) {
     return channelData;
@@ -2421,7 +2377,7 @@ var DEFAULT_FETCH_OPTIONS = {
   maxPrefetchChunks: 30
 };
 var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
-  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_6__["default"])(OMEZarrLoader, _ThreadableVolumeLoad);
+  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_7__["default"])(OMEZarrLoader, _ThreadableVolumeLoad);
   /** The ID of the subscriber responsible for "actual loads" (non-prefetch requests) */
 
   /** The ID of the subscriber responsible for prefetches, so that requests can be cancelled and reissued */
@@ -2443,7 +2399,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
     var _this;
     var fetchOptions = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : DEFAULT_FETCH_OPTIONS;
     var priorityDirections = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : [];
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, OMEZarrLoader);
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_3__["default"])(this, OMEZarrLoader);
     _this = _callSuper(this, OMEZarrLoader);
     _this.store = store;
     _this.scaleLevels = scaleLevels;
@@ -2455,7 +2411,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
     _this.priorityDirections = priorityDirections;
     return _this;
   }
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(OMEZarrLoader, [{
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_4__["default"])(OMEZarrLoader, [{
     key: "getUnitSymbols",
     value: function getUnitSymbols() {
       // Assume all spatial axes have the same units - we have no means of storing per-axis unit symbols
@@ -2468,80 +2424,32 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       return [spaceUnitSymbol, timeUnitSymbol];
     }
   }, {
-    key: "getScale",
-    value: function getScale() {
-      var _meta$datasets$level$;
-      var level = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-      var meta = this.multiscaleMetadata;
-      var transforms = (_meta$datasets$level$ = meta.datasets[level].coordinateTransformations) !== null && _meta$datasets$level$ !== void 0 ? _meta$datasets$level$ : meta.coordinateTransformations;
-      if (transforms === undefined) {
-        console.error("ERROR: no coordinate transformations for scale level");
-        return [1, 1, 1, 1, 1];
-      }
-
-      // this assumes we'll never encounter the "path" variant
-      var isScaleTransform = function isScaleTransform(t) {
-        return t.type === "scale";
-      };
-
-      // there can be any number of coordinateTransformations
-      // but there must be only one of type "scale".
-      var scaleTransform = transforms.find(isScaleTransform);
-      if (!scaleTransform) {
-        console.error("ERROR: no coordinate transformation of type \"scale\" for scale level");
-        return [1, 1, 1, 1, 1];
-      }
-      var scale = scaleTransform.scale.slice();
-      while (scale.length < 5) {
-        scale.unshift(1);
-      }
-      return scale;
-    }
-  }, {
     key: "getLevelShapesZYX",
     value: function getLevelShapesZYX() {
       var _this$axesTCZYX$slice = this.axesTCZYX.slice(-3),
-        _this$axesTCZYX$slice2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_7__["default"])(_this$axesTCZYX$slice, 3),
+        _this$axesTCZYX$slice2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2__["default"])(_this$axesTCZYX$slice, 3),
         z = _this$axesTCZYX$slice2[0],
         y = _this$axesTCZYX$slice2[1],
         x = _this$axesTCZYX$slice2[2];
-      return this.scaleLevels.map(function (_ref5) {
-        var shape = _ref5.shape;
+      return this.scaleLevels.map(function (_ref) {
+        var shape = _ref.shape;
         return [z === -1 ? 1 : shape[z], shape[y], shape[x]];
       });
     }
-
-    /** Reorder an array of values [T, C, Z, Y, X] to the actual order of those dimensions in the zarr */
+  }, {
+    key: "getScale",
+    value: function getScale(level) {
+      return (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_14__.getScale)(this.multiscaleMetadata.datasets[level], this.axesTCZYX);
+    }
   }, {
     key: "orderByDimension",
     value: function orderByDimension(valsTCZYX) {
-      var specLen = getDimensionCount(this.axesTCZYX);
-      var result = Array(specLen);
-      this.axesTCZYX.forEach(function (val, idx) {
-        if (val > -1) {
-          if (val > specLen) {
-            throw new Error("Unexpected axis index");
-          }
-          result[val] = valsTCZYX[idx];
-        }
-      });
-      return result;
+      return (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_14__.orderByDimension)(valsTCZYX, this.axesTCZYX);
     }
-
-    /** Reorder an array of values in this zarr's dimension order to [T, C, Z, Y, X] */
   }, {
     key: "orderByTCZYX",
     value: function orderByTCZYX(valsDimension, defaultValue) {
-      var result = [defaultValue, defaultValue, defaultValue, defaultValue, defaultValue];
-      this.axesTCZYX.forEach(function (val, idx) {
-        if (val > -1) {
-          if (val > valsDimension.length) {
-            throw new Error("Unexpected axis index");
-          }
-          result[idx] = valsDimension[val];
-        }
-      });
-      return result;
+      return (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_14__.orderByTCZYX)(valsDimension, this.axesTCZYX, defaultValue);
     }
 
     /**
@@ -2559,13 +2467,13 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       var _this$maxExtent,
         _this2 = this;
       var _this$getUnitSymbols = this.getUnitSymbols(),
-        _this$getUnitSymbols2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_7__["default"])(_this$getUnitSymbols, 2),
+        _this$getUnitSymbols2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2__["default"])(_this$getUnitSymbols, 2),
         spaceUnit = _this$getUnitSymbols2[0],
         timeUnit = _this$getUnitSymbols2[1];
       // Compute subregion size so we can factor that in
-      var maxExtent = (_this$maxExtent = this.maxExtent) !== null && _this$maxExtent !== void 0 ? _this$maxExtent : new three__WEBPACK_IMPORTED_MODULE_14__.Box3(new three__WEBPACK_IMPORTED_MODULE_14__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_14__.Vector3(1, 1, 1));
+      var maxExtent = (_this$maxExtent = this.maxExtent) !== null && _this$maxExtent !== void 0 ? _this$maxExtent : new three__WEBPACK_IMPORTED_MODULE_15__.Box3(new three__WEBPACK_IMPORTED_MODULE_15__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_15__.Vector3(1, 1, 1));
       var subregion = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_11__.composeSubregion)(loadSpec.subregion, maxExtent);
-      var regionSize = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_14__.Vector3());
+      var regionSize = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_15__.Vector3());
       var regionArr = [1, 1, regionSize.z, regionSize.y, regionSize.x];
       var result = this.scaleLevels.map(function (level, i) {
         var scale = _this2.getScale(i);
@@ -2583,7 +2491,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
   }, {
     key: "createImageInfo",
     value: function createImageInfo(loadSpec) {
-      var _this$axesTCZYX = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_7__["default"])(this.axesTCZYX, 5),
+      var _this$axesTCZYX = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2__["default"])(this.axesTCZYX, 5),
         t = _this$axesTCZYX[0],
         c = _this$axesTCZYX[1],
         z = _this$axesTCZYX[2],
@@ -2593,10 +2501,10 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       var hasC = c > -1;
       var hasZ = z > -1;
       var shape0 = this.scaleLevels[0].shape;
-      var levelToLoad = pickLevelToLoad(loadSpec, this.getLevelShapesZYX());
+      var levelToLoad = (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_14__.pickLevelToLoad)(loadSpec, this.getLevelShapesZYX());
       var shapeLv = this.scaleLevels[levelToLoad].shape;
       var _this$getUnitSymbols3 = this.getUnitSymbols(),
-        _this$getUnitSymbols4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_7__["default"])(_this$getUnitSymbols3, 2),
+        _this$getUnitSymbols4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2__["default"])(_this$getUnitSymbols3, 2),
         spatialUnit = _this$getUnitSymbols4[0],
         timeUnit = _this$getUnitSymbols4[1];
       var numChannels = hasC ? shapeLv[c] : 1;
@@ -2604,15 +2512,15 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       if (!this.maxExtent) {
         this.maxExtent = loadSpec.subregion.clone();
       }
-      var pxDims0 = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_11__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_14__.Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1));
-      var pxSize0 = pxDims0.getSize(new three__WEBPACK_IMPORTED_MODULE_14__.Vector3());
-      var pxDimsLv = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_11__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_14__.Vector3(shapeLv[x], shapeLv[y], hasZ ? shapeLv[z] : 1));
-      var pxSizeLv = pxDimsLv.getSize(new three__WEBPACK_IMPORTED_MODULE_14__.Vector3());
+      var pxDims0 = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_11__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_15__.Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1));
+      var pxSize0 = pxDims0.getSize(new three__WEBPACK_IMPORTED_MODULE_15__.Vector3());
+      var pxDimsLv = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_11__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_15__.Vector3(shapeLv[x], shapeLv[y], hasZ ? shapeLv[z] : 1));
+      var pxSizeLv = pxDimsLv.getSize(new three__WEBPACK_IMPORTED_MODULE_15__.Vector3());
       var atlasTileDims = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_11__.computePackedAtlasDims)(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
       var channelNames = this.omeroMetadata.channels.map(function (ch) {
         return ch.label;
       });
-      var scale5d = this.getScale();
+      var scale5d = this.getScale(levelToLoad);
       var timeScale = hasT ? scale5d[t] : 1;
       var imgdata = {
         name: this.omeroMetadata.name,
@@ -2620,8 +2528,8 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
         atlasTileDims: atlasTileDims,
         volumeSize: pxSizeLv,
         subregionSize: pxSizeLv.clone(),
-        subregionOffset: new three__WEBPACK_IMPORTED_MODULE_14__.Vector3(0, 0, 0),
-        physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_14__.Vector3(scale5d[x], scale5d[y], hasZ ? scale5d[z] : Math.min(scale5d[x], scale5d[y])),
+        subregionOffset: new three__WEBPACK_IMPORTED_MODULE_15__.Vector3(0, 0, 0),
+        physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_15__.Vector3(scale5d[x], scale5d[y], hasZ ? scale5d[z] : Math.min(scale5d[x], scale5d[y])),
         spatialUnit: spatialUnit,
         numChannels: numChannels,
         channelNames: channelNames,
@@ -2631,15 +2539,15 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
         numMultiscaleLevels: this.scaleLevels.length,
         multiscaleLevel: levelToLoad,
         transform: {
-          translation: new three__WEBPACK_IMPORTED_MODULE_14__.Vector3(0, 0, 0),
-          rotation: new three__WEBPACK_IMPORTED_MODULE_14__.Vector3(0, 0, 0)
+          translation: new three__WEBPACK_IMPORTED_MODULE_15__.Vector3(0, 0, 0),
+          rotation: new three__WEBPACK_IMPORTED_MODULE_15__.Vector3(0, 0, 0)
         }
       };
 
       // The `LoadSpec` passed in at this stage should represent the subset which this loader loads, not that
       // which the volume contains. The volume contains the full extent of the subset recognized by this loader.
       var fullExtentLoadSpec = _objectSpread(_objectSpread({}, loadSpec), {}, {
-        subregion: new three__WEBPACK_IMPORTED_MODULE_14__.Box3(new three__WEBPACK_IMPORTED_MODULE_14__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_14__.Vector3(1, 1, 1))
+        subregion: new three__WEBPACK_IMPORTED_MODULE_15__.Box3(new three__WEBPACK_IMPORTED_MODULE_15__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_15__.Vector3(1, 1, 1))
       });
       return Promise.resolve({
         imageInfo: imgdata,
@@ -2688,7 +2596,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
     key: "beginPrefetch",
     value: function beginPrefetch(keys, scaleLevel) {
       var _this3 = this;
-      var numDims = getDimensionCount(this.axesTCZYX);
+      var numDims = (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_14__.getDimensionCount)(this.axesTCZYX);
 
       // Convert keys to arrays of coords
       var chunkCoords = keys.map(function (key) {
@@ -2739,24 +2647,24 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       var _this$maxExtent2,
         _loadSpec$channels,
         _this4 = this;
-      var maxExtent = (_this$maxExtent2 = this.maxExtent) !== null && _this$maxExtent2 !== void 0 ? _this$maxExtent2 : new three__WEBPACK_IMPORTED_MODULE_14__.Box3(new three__WEBPACK_IMPORTED_MODULE_14__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_14__.Vector3(1, 1, 1));
+      var maxExtent = (_this$maxExtent2 = this.maxExtent) !== null && _this$maxExtent2 !== void 0 ? _this$maxExtent2 : new three__WEBPACK_IMPORTED_MODULE_15__.Box3(new three__WEBPACK_IMPORTED_MODULE_15__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_15__.Vector3(1, 1, 1));
       var _this$axesTCZYX$slice3 = this.axesTCZYX.slice(2),
-        _this$axesTCZYX$slice4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_7__["default"])(_this$axesTCZYX$slice3, 3),
+        _this$axesTCZYX$slice4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2__["default"])(_this$axesTCZYX$slice3, 3),
         z = _this$axesTCZYX$slice4[0],
         y = _this$axesTCZYX$slice4[1],
         x = _this$axesTCZYX$slice4[2];
       var subregion = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_11__.composeSubregion)(loadSpec.subregion, maxExtent);
-      var levelIdx = pickLevelToLoad(_objectSpread(_objectSpread({}, loadSpec), {}, {
+      var levelIdx = (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_14__.pickLevelToLoad)(_objectSpread(_objectSpread({}, loadSpec), {}, {
         subregion: subregion
       }), this.getLevelShapesZYX());
       var level = this.scaleLevels[levelIdx];
       var levelShape = level.shape;
-      var regionPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_11__.convertSubregionToPixels)(subregion, new three__WEBPACK_IMPORTED_MODULE_14__.Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z]));
+      var regionPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_11__.convertSubregionToPixels)(subregion, new three__WEBPACK_IMPORTED_MODULE_15__.Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z]));
       // Update volume `imageInfo` to reflect potentially new dimensions
-      var regionSizePx = regionPx.getSize(new three__WEBPACK_IMPORTED_MODULE_14__.Vector3());
+      var regionSizePx = regionPx.getSize(new three__WEBPACK_IMPORTED_MODULE_15__.Vector3());
       var atlasTileDims = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_11__.computePackedAtlasDims)(regionSizePx.z, regionSizePx.x, regionSizePx.y);
-      var volExtentPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_11__.convertSubregionToPixels)(maxExtent, new three__WEBPACK_IMPORTED_MODULE_14__.Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z]));
-      var volSizePx = volExtentPx.getSize(new three__WEBPACK_IMPORTED_MODULE_14__.Vector3());
+      var volExtentPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_11__.convertSubregionToPixels)(maxExtent, new three__WEBPACK_IMPORTED_MODULE_15__.Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z]));
+      var volSizePx = volExtentPx.getSize(new three__WEBPACK_IMPORTED_MODULE_15__.Vector3());
       var updatedImageInfo = _objectSpread(_objectSpread({}, imageInfo), {}, {
         atlasTileDims: atlasTileDims,
         volumeSize: volSizePx,
@@ -2780,18 +2688,18 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
         }
       };
       var channelPromises = channelIndexes.map( /*#__PURE__*/function () {
-        var _ref6 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_8___default().mark(function _callee2(ch) {
+        var _ref2 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_8___default().mark(function _callee2(ch) {
           var min, max, unorderedSpec, sliceSpec, result, u8;
           return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_8___default().wrap(function _callee2$(_context2) {
             while (1) switch (_context2.prev = _context2.next) {
               case 0:
                 // Build slice spec
                 min = regionPx.min, max = regionPx.max;
-                unorderedSpec = [loadSpec.time, ch, (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_15__.slice)(min.z, max.z), (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_15__.slice)(min.y, max.y), (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_15__.slice)(min.x, max.x)];
+                unorderedSpec = [loadSpec.time, ch, (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_16__.slice)(min.z, max.z), (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_16__.slice)(min.y, max.y), (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_16__.slice)(min.x, max.x)];
                 sliceSpec = _this4.orderByDimension(unorderedSpec);
                 _context2.prev = 3;
                 _context2.next = 6;
-                return (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_16__.get)(level, sliceSpec, {
+                return (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_17__.get)(level, sliceSpec, {
                   opts: {
                     subscriber: subscriber,
                     reportKey: reportKey
@@ -2819,7 +2727,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
           }, _callee2, null, [[3, 11]]);
         }));
         return function (_x4) {
-          return _ref6.apply(this, arguments);
+          return _ref2.apply(this, arguments);
         };
       }());
 
@@ -2847,7 +2755,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
           store,
           root,
           group,
-          _ref7,
+          _ref3,
           multiscales,
           omero,
           multiscale,
@@ -2867,23 +2775,23 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               if (!queue) {
                 queue = new _utils_SubscribableRequestQueue__WEBPACK_IMPORTED_MODULE_9__["default"](fetchOptions === null || fetchOptions === void 0 ? void 0 : fetchOptions.concurrencyLimit, fetchOptions === null || fetchOptions === void 0 ? void 0 : fetchOptions.prefetchConcurrencyLimit);
               }
-              store = new _zarr_utils_WrappedStore__WEBPACK_IMPORTED_MODULE_13__["default"](new zarrita__WEBPACK_IMPORTED_MODULE_17__["default"](url), cache, queue);
-              root = _zarrita_core__WEBPACK_IMPORTED_MODULE_18__.root(store);
+              store = new _zarr_utils_WrappedStore__WEBPACK_IMPORTED_MODULE_13__["default"](new zarrita__WEBPACK_IMPORTED_MODULE_18__["default"](url), cache, queue);
+              root = _zarrita_core__WEBPACK_IMPORTED_MODULE_19__.root(store);
               _context3.next = 9;
-              return _zarrita_core__WEBPACK_IMPORTED_MODULE_19__.open(root, {
+              return _zarrita_core__WEBPACK_IMPORTED_MODULE_20__.open(root, {
                 kind: "group"
               });
             case 9:
               group = _context3.sent;
-              _ref7 = group.attrs, multiscales = _ref7.multiscales, omero = _ref7.omero; // Pick scene (multiscale)
+              _ref3 = group.attrs, multiscales = _ref3.multiscales, omero = _ref3.omero; // Pick scene (multiscale)
               if (scene > multiscales.length) {
                 console.warn("WARNING: OMEZarrLoader: scene ".concat(scene, " is invalid. Using scene 0."));
                 scene = 0;
               }
               multiscale = multiscales[scene]; // Open all scale levels of multiscale
-              scaleLevelPromises = multiscale.datasets.map(function (_ref8) {
-                var path = _ref8.path;
-                return _zarrita_core__WEBPACK_IMPORTED_MODULE_19__.open(root.resolve(path), {
+              scaleLevelPromises = multiscale.datasets.map(function (_ref4) {
+                var path = _ref4.path;
+                return _zarrita_core__WEBPACK_IMPORTED_MODULE_20__.open(root.resolve(path), {
                   kind: "array"
                 });
               });
@@ -2891,7 +2799,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               return Promise.all(scaleLevelPromises);
             case 16:
               scaleLevels = _context3.sent;
-              axisTCZYX = remapAxesToTCZYX(multiscale.axes);
+              axisTCZYX = (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_14__.remapAxesToTCZYX)(multiscale.axes);
               priorityDirs = fetchOptions !== null && fetchOptions !== void 0 && fetchOptions.priorityDirections ? fetchOptions.priorityDirections.slice() : undefined;
               return _context3.abrupt("return", new OMEZarrLoader(store, scaleLevels, multiscale, omero, axisTCZYX, queue, fetchOptions, priorityDirs));
             case 20:
@@ -3931,6 +3839,129 @@ var PrefetchDirection = /*#__PURE__*/function (PrefetchDirection) {
 // https://ngff.openmicroscopy.org/latest/#multiscale-md
 
 // https://ngff.openmicroscopy.org/latest/#omero-md
+
+/***/ }),
+
+/***/ "./src/loaders/zarr_utils/utils.ts":
+/*!*****************************************!*\
+  !*** ./src/loaders/zarr_utils/utils.ts ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   getDimensionCount: () => (/* binding */ getDimensionCount),
+/* harmony export */   getScale: () => (/* binding */ getScale),
+/* harmony export */   orderByDimension: () => (/* binding */ orderByDimension),
+/* harmony export */   orderByTCZYX: () => (/* binding */ orderByTCZYX),
+/* harmony export */   pickLevelToLoad: () => (/* binding */ pickLevelToLoad),
+/* harmony export */   remapAxesToTCZYX: () => (/* binding */ remapAxesToTCZYX)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+
+
+
+/** Turns `axesTCZYX` into the number of dimensions in the array */
+var getDimensionCount = function getDimensionCount(_ref) {
+  var _ref2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_ref, 3),
+    t = _ref2[0],
+    c = _ref2[1],
+    z = _ref2[2];
+  return 2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
+};
+function remapAxesToTCZYX(axes) {
+  var axesTCZYX = [-1, -1, -1, -1, -1];
+  var axisNames = ["t", "c", "z", "y", "x"];
+  axes.forEach(function (axis, idx) {
+    var axisIdx = axisNames.indexOf(axis.name);
+    if (axisIdx > -1) {
+      axesTCZYX[axisIdx] = idx;
+    } else {
+      console.error("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
+    }
+  });
+
+  // it is possible that Z might not exist but we require X and Y at least.
+  if (axesTCZYX[3] === -1 || axesTCZYX[4] === -1) {
+    console.error("ERROR: zarr loader expects a y and an x axis.");
+  }
+  return axesTCZYX;
+}
+
+/**
+ * Picks the best scale level to load based on scale level dimensions, a max atlas size, and a `LoadSpec`.
+ * This works like `estimateLevelForAtlas` but factors in `LoadSpec`'s `subregion` property (shrinks the size of the
+ * data, maybe enough to allow loading a higher level) and its `multiscaleLevel` property (sets a max scale level).
+ */
+function pickLevelToLoad(loadSpec, spatialDimsZYX) {
+  var _loadSpec$multiscaleL;
+  var size = loadSpec.subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3());
+  var dims = spatialDimsZYX.map(function (_ref3) {
+    var _ref4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_ref3, 3),
+      z = _ref4[0],
+      y = _ref4[1],
+      x = _ref4[2];
+    return [Math.max(z * size.z, 1), Math.max(y * size.y, 1), Math.max(x * size.x, 1)];
+  });
+  var optimalLevel = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_1__.estimateLevelForAtlas)(dims);
+  return Math.max(optimalLevel, (_loadSpec$multiscaleL = loadSpec.multiscaleLevel) !== null && _loadSpec$multiscaleL !== void 0 ? _loadSpec$multiscaleL : 0);
+}
+
+/** Reorder an array of values [T, C, Z, Y, X] to the given dimension order */
+function orderByDimension(valsTCZYX, orderTCZYX) {
+  var specLen = getDimensionCount(orderTCZYX);
+  var result = Array(specLen);
+  orderTCZYX.forEach(function (val, idx) {
+    if (val >= 0) {
+      if (val >= specLen) {
+        throw new Error("Unexpected axis index");
+      }
+      result[val] = valsTCZYX[idx];
+    }
+  });
+  return result;
+}
+
+/** Reorder an array of values in the given dimension order to [T, C, Z, Y, X] */
+function orderByTCZYX(valsDimension, orderTCZYX, defaultValue) {
+  var result = [defaultValue, defaultValue, defaultValue, defaultValue, defaultValue];
+  orderTCZYX.forEach(function (val, idx) {
+    if (val >= 0) {
+      if (val >= valsDimension.length) {
+        throw new Error("Unexpected axis index");
+      }
+      result[idx] = valsDimension[val];
+    }
+  });
+  return result;
+}
+
+/** Select the scale transform from an OME metadata object with coordinate transforms, and return it in TCZYX order */
+function getScale(dataset, orderTCZYX) {
+  var transforms = dataset.coordinateTransformations;
+  if (transforms === undefined) {
+    console.error("ERROR: no coordinate transformations for scale level");
+    return [1, 1, 1, 1, 1];
+  }
+
+  // this assumes we'll never encounter the "path" variant
+  var isScaleTransform = function isScaleTransform(t) {
+    return t.type === "scale";
+  };
+
+  // there can be any number of coordinateTransformations
+  // but there must be only one of type "scale".
+  var scaleTransform = transforms.find(isScaleTransform);
+  if (!scaleTransform) {
+    console.error("ERROR: no coordinate transformation of type \"scale\" for scale level");
+    return [1, 1, 1, 1, 1];
+  }
+  var scale = scaleTransform.scale.slice();
+  return orderByTCZYX(scale, orderTCZYX, 1);
+}
 
 /***/ }),
 
