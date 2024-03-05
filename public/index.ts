@@ -40,6 +40,10 @@ const TEST_DATA: Record<string, TestDataSpec> = {
     type: VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif",
   },
+  zarrEMT: {
+    url: "https://dev-aics-dtp-001.int.allencell.org/dan-data/3500005818_20230811__20x_Timelapse-02(P27-E7).ome.zarr",
+    type: VolumeFileFormat.ZARR,
+  },
   zarrIDR1: {
     type: VolumeFileFormat.ZARR,
     url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0076A/10501752.zarr",
@@ -916,6 +920,7 @@ function onVolumeCreated(volume: Volume) {
 
 function playTimeSeries(onNewFrameCallback: () => void) {
   window.clearTimeout(myState.timerId);
+  myState.loader.syncMultichannelLoading(true);
   myState.isPlaying = true;
 
   const loadNextFrame = () => {
@@ -1176,6 +1181,7 @@ function main() {
   pauseBtn?.addEventListener("click", () => {
     window.clearTimeout(myState.timerId);
     myState.isPlaying = false;
+    myState.loader.syncMultichannelLoading(false);
   });
 
   const forwardBtn = document.getElementById("forwardBtn");

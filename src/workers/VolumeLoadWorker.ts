@@ -73,7 +73,8 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
           data,
           atlasDims,
         };
-        (self as unknown as Worker).postMessage(message, copyOnLoad ? [] : [data.buffer]);
+        const dataTransfers = data.map((d) => d.buffer);
+        (self as unknown as Worker).postMessage(message, copyOnLoad ? [] : dataTransfers);
       }
     );
   },
@@ -81,6 +82,11 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
   [WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS]: (directions) => {
     // Silently does nothing if the loader isn't an `OMEZarrLoader`
     loader?.setPrefetchPriority(directions);
+    return Promise.resolve();
+  },
+
+  [WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING]: (syncChannels) => {
+    loader?.syncMultichannelLoading(syncChannels);
     return Promise.resolve();
   },
 };

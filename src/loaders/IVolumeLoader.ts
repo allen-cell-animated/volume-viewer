@@ -41,7 +41,8 @@ export type LoadedVolumeInfo = {
  */
 export type PerChannelCallback = (volume: Volume, channelIndex: number) => void;
 
-export type RawChannelDataCallback = (channelIndex: number, data: Uint8Array, atlasDims?: [number, number]) => void;
+// allow lists of channel indices and data arrays to be passed to the callback
+export type RawChannelDataCallback = (channelIndex: number[], data: Uint8Array[], atlasDims?: [number, number]) => void;
 
 /**
  * Loads volume data from a source specified by a `LoadSpec`.
@@ -72,6 +73,15 @@ export interface IVolumeLoader {
 
   /** Change which directions to prioritize when prefetching. Currently only implemented on `OMEZarrLoader`. */
   setPrefetchPriority(directions: PrefetchDirection[]): void;
+
+  /**
+   * By default channel data can arrive out of order and at different times.
+   * This can cause the rendering to update in a way that is not visually appealing.
+   * In particular, during time series playback or Z slice playback, we would like
+   * to see all channels update at the same time.
+   * @param sync Set true to force all requested channels to load at the same time
+   */
+  syncMultichannelLoading(sync: boolean): void;
 }
 
 /** Abstract class which allows loaders to accept and return types that are easier to transfer to/from a worker. */
@@ -106,6 +116,11 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
     // no-op by default
   }
 
+  syncMultichannelLoading(_sync: boolean): void {
+    // default behavior is async, to update channels as they arrive, depending on each
+    // loader's implementation details.
+  }
+
   async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
     const { imageInfo, loadSpec: adjustedLoadSpec } = await this.createImageInfo(loadSpec);
     const vol = new Volume(imageInfo, adjustedLoadSpec, this);
@@ -119,13 +134,17 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
     loadSpecOverride?: LoadSpec,
     onChannelLoaded?: PerChannelCallback
   ): Promise<void> {
-    const onChannelData: RawChannelDataCallback = (channelIndex, data, atlasDims) => {
-      if (atlasDims) {
-        volume.setChannelDataFromAtlas(channelIndex, data, atlasDims[0], atlasDims[1]);
-      } else {
-        volume.setChannelDataFromVolume(channelIndex, data);
+    const onChannelData: RawChannelDataCallback = (channelIndices, dataArrays, atlasDims) => {
+      for (let i = 0; i < channelIndices.length; i++) {
+        const channelIndex = channelIndices[i];
+        const data = dataArrays[i];
+        if (atlasDims) {
+          volume.setChannelDataFromAtlas(channelIndex, data, atlasDims[0], atlasDims[1]);
+        } else {
+          volume.setChannelDataFromVolume(channelIndex, data);
+        }
+        onChannelLoaded?.(volume, channelIndex);
       }
-      onChannelLoaded?.(volume, channelIndex);
     };
 
     const spec = { ...loadSpecOverride, ...volume.loadSpec };

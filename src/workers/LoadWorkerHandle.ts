@@ -212,8 +212,12 @@ class WorkerLoader extends ThreadableVolumeLoader {
    * Change which directions to prioritize when prefetching. All chunks will be prefetched in these directions before
    * any chunks are prefetched in any other directions. Has no effect if this loader doesn't support prefetching.
    */
-  setPrefetchPriorityDirections(directions: PrefetchDirection[]): Promise<void> {
+  setPrefetchPriority(directions: PrefetchDirection[]): Promise<void> {
     return this.workerHandle.sendMessage(WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, directions);
+  }
+
+  syncMultichannelLoading(sync: boolean): Promise<void> {
+    return this.workerHandle.sendMessage(WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, sync);
   }
 
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {

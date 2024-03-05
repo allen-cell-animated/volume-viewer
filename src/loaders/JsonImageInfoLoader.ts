@@ -175,7 +175,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
 
     const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
     const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
-    const wrappedOnData = (ch: number, data: Uint8Array) => onData(ch, data, [w, h]);
+    const wrappedOnData = (ch: number[], data: Uint8Array[]) => onData(ch, data, [w, h]);
     JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
 
     const adjustedLoadSpec = {
@@ -219,7 +219,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
         const chindex = image.channels[j];
         const cacheResult = cache?.get(`${image.name}/${chindex}`);
         if (cacheResult) {
-          onData(chindex, new Uint8Array(cacheResult));
+          onData([chindex], [new Uint8Array(cacheResult)]);
         } else {
           cacheHit = false;
           // we can stop checking because we know we are going to have to fetch the whole batch
@@ -269,7 +269,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
         const chindex = image.channels[ch];
         cache?.insert(`${image.name}/${chindex}`, channelsBits[ch]);
         // NOTE: the atlas dimensions passed in here are currently unused by `JSONImageInfoLoader`
-        onData(chindex, channelsBits[ch], [bitmap.width, bitmap.height]);
+        onData([chindex], [channelsBits[ch]], [bitmap.width, bitmap.height]);
       }
     });
   }
