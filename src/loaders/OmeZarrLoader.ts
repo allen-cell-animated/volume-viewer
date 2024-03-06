@@ -396,7 +396,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
   }
 
   /** Reads a list of chunk keys requested by a `loadVolumeData` call and sets up appropriate prefetch requests. */
-  private beginPrefetch(keys: ZarrChunkFetchInfo[], scaleLevels: NumericZarrArray[]): void {
+  private beginPrefetch(keys: ZarrChunkFetchInfo[], scaleLevel: number): void {
     // Convert keys to arrays of coords
     const chunkCoords = keys.map(({ sourceIdx, key }) => {
       const numDims = getDimensionCount(this.sources[sourceIdx].axesTCZYX);
@@ -414,8 +414,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     });
 
     // Get number of chunks per dimension in `scaleLevel`
-    const level0 = scaleLevels[0];
-    const chunkDimsUnordered = level0.shape.map((dim, idx) => Math.ceil(dim / level0.chunks[idx]));
+    const source0Shape = this.sources[0].scaleLevels[scaleLevel];
+    const chunkDimsUnordered = source0Shape.shape.map((dim, idx) => Math.ceil(dim / source0Shape.chunks[idx]));
     const chunkDims = this.orderByTCZYX(chunkDimsUnordered, 1);
 
     const subscriber = this.requestQueue.addSubscriber();
@@ -435,9 +435,9 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       }
       // Match absolute channel coordinate back to source index and channel index
       const { sourceIndex, channelIndexInSource } = this.matchChannelToSource(chunk[1]);
-      const scaleLevel = scaleLevels[sourceIndex];
+      const sourceScaleLevel = this.sources[sourceIndex].scaleLevels[scaleLevel];
       chunk[1] = channelIndexInSource;
-      this.prefetchChunk(scaleLevel, chunk, subscriber);
+      this.prefetchChunk(sourceScaleLevel, chunk, subscriber);
       prefetchCount++;
     }
 
@@ -458,8 +458,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const subregion = composeSubregion(loadSpec.subregion, maxExtent);
 
     const levelIdx = pickLevelToLoad({ ...loadSpec, subregion }, this.getLevelShapesZYX());
-    const arraysAtLevel = this.sources.map((src) => src.scaleLevels[levelIdx]);
-    const array0Shape = arraysAtLevel[0].shape;
+    const array0Shape = this.sources[0].scaleLevels[levelIdx].shape;
 
     const regionPx = convertSubregionToPixels(
       subregion,
@@ -524,7 +523,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     }
     this.loadSubscriber = subscriber;
 
-    this.beginPrefetch(keys, arraysAtLevel);
+    this.beginPrefetch(keys, levelIdx);
 
     Promise.all(channelPromises).then(() => {
       this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
