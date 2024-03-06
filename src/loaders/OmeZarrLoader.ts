@@ -406,6 +406,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
         .filter((s) => s !== "")
         .map((s) => parseInt(s, 10));
       const sourceCoords = this.orderByTCZYX(coordsInDimensionOrder, 0, sourceIdx);
+      // Convert source channel index to absolute channel index for `ChunkPrefetchIterator`'s benefit
+      // (we match chunk coordinates output from `ChunkPrefetchIterator` back to sources below)
       sourceCoords[1] += this.sources[sourceIdx].channelOffset;
       return sourceCoords;
     });
@@ -430,6 +432,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       if (prefetchCount >= this.fetchOptions.maxPrefetchChunks) {
         break;
       }
+      // Match absolute channel coordinate back to source index and channel index
       const [sourceIdx, sourceCh] = this.matchChannelToSource(chunk[1]);
       const scaleLevel = scaleLevels[sourceIdx];
       chunk[1] = sourceCh;
