@@ -239,18 +239,19 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
    * e.g., if the loader has 2 sources, the first with 3 channels and the second with 2, then `matchChannelToSource(4)`
    * returns `[1, 1]` (the second channel of the second source).
    */
-  private matchChannelToSource(channelIdx: number): [number, number] {
+  private matchChannelToSource(absoluteChannelIndex: number): { sourceIndex: number; channelIndexInSource: number } {
     const lastSrcIdx = this.sources.length - 1;
     const lastSrc = this.sources[lastSrcIdx];
     const lastSrcNumChannels = lastSrc.scaleLevels[0].shape[lastSrc.axesTCZYX[1]];
 
-    if (channelIdx > lastSrc.channelOffset + lastSrcNumChannels) {
+    if (absoluteChannelIndex > lastSrc.channelOffset + lastSrcNumChannels) {
       throw new Error("Channel index out of range");
     }
 
-    const firstGreaterIdx = this.sources.findIndex((src) => src.channelOffset > channelIdx);
-    const sourceIdx = firstGreaterIdx === -1 ? lastSrcIdx : firstGreaterIdx - 1;
-    return [sourceIdx, channelIdx - this.sources[sourceIdx].channelOffset];
+    const firstGreaterIdx = this.sources.findIndex((src) => src.channelOffset > absoluteChannelIndex);
+    const sourceIndex = firstGreaterIdx === -1 ? lastSrcIdx : firstGreaterIdx - 1;
+    const channelIndexInSource = absoluteChannelIndex - this.sources[sourceIndex].channelOffset;
+    return { sourceIndex, channelIndexInSource };
   }
 
   /**
@@ -433,9 +434,9 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
         break;
       }
       // Match absolute channel coordinate back to source index and channel index
-      const [sourceIdx, sourceCh] = this.matchChannelToSource(chunk[1]);
-      const scaleLevel = scaleLevels[sourceIdx];
-      chunk[1] = sourceCh;
+      const { sourceIndex, channelIndexInSource } = this.matchChannelToSource(chunk[1]);
+      const scaleLevel = scaleLevels[sourceIndex];
+      chunk[1] = channelIndexInSource;
       this.prefetchChunk(scaleLevel, chunk, subscriber);
       prefetchCount++;
     }
@@ -497,7 +498,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const channelPromises = channelIndexes.map(async (ch) => {
       // Build slice spec
       const { min, max } = regionPx;
-      const [sourceIdx, sourceCh] = this.matchChannelToSource(ch);
+      const { sourceIndex: sourceIdx, channelIndexInSource: sourceCh } = this.matchChannelToSource(ch);
       const unorderedSpec = [loadSpec.time, sourceCh, slice(min.z, max.z), slice(min.y, max.y), slice(min.x, max.x)];
 
       const level = this.sources[sourceIdx].scaleLevels[levelIdx];
