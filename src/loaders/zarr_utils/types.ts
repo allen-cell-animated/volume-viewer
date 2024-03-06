@@ -96,7 +96,7 @@ export type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<Requ
 
 /** A record with everything we need to access and use a single remote source of multiscale OME-Zarr data. */
 export type ZarrSource = {
-  /** Representations of each scale level in this zarr. We pick one and pass it to `zarrGet` to load data. */
+  /** Representations of each scale level in this zarr. We pick one and pass it to zarrita to load data. */
   scaleLevels: NumericZarrArray[];
   /**
    * Zarr dimensions may be ordered in many ways or missing altogether (e.g. TCXYZ, TYX). `axesTCZYX` represents
