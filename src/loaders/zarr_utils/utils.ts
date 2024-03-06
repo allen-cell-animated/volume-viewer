@@ -170,16 +170,16 @@ export function matchSourceScaleLevels(sources: ZarrSource[]): void {
   // Start as many index counters as we have sources
   const scaleIndexes: number[] = new Array(sources.length).fill(0);
   while (scaleIndexes.every((val, idx) => val < sources[idx].scaleLevels.length)) {
-    // First pass: find the largest source / determine if all sources are equal
+    // First pass: find the smallest source / determine if all sources are equal
     let allEqual = true;
-    let largestIdx = 0;
-    let largestSrc = sources[0];
-    let largestArr = largestSrc.scaleLevels[scaleIndexes[0]];
+    let smallestIdx = 0;
+    let smallestSrc = sources[0];
+    let smallestArr = smallestSrc.scaleLevels[scaleIndexes[0]];
     for (let currentIdx = 1; currentIdx < sources.length; currentIdx++) {
       const currentSrc = sources[currentIdx];
       const currentArr = currentSrc.scaleLevels[scaleIndexes[currentIdx]];
 
-      const ordering = compareZarrArraySize(largestArr, largestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
+      const ordering = compareZarrArraySize(smallestArr, smallestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
       if (!ordering) {
         // Arrays are equal, or they are uncomparable
         if (ordering === undefined) {
@@ -187,25 +187,25 @@ export function matchSourceScaleLevels(sources: ZarrSource[]): void {
         }
         // Now we know the arrays are equal, but they may still be invalid to match up because...
         // ...they have different scale transformations
-        if (!scaleTransformsAreEqual(largestSrc, scaleIndexes[largestIdx], currentSrc, scaleIndexes[currentIdx])) {
+        if (!scaleTransformsAreEqual(smallestSrc, scaleIndexes[smallestIdx], currentSrc, scaleIndexes[currentIdx])) {
           throw new Error("Incompatible zarr arrays: scale levels of equal size have different scale transformations");
         }
         // ...they have different numbers of timesteps
-        const largestT = largestSrc.axesTCZYX[0] > -1 ? largestArr.shape[largestSrc.axesTCZYX[0]] : 1;
+        const largestT = smallestSrc.axesTCZYX[0] > -1 ? smallestArr.shape[smallestSrc.axesTCZYX[0]] : 1;
         const currentT = currentSrc.axesTCZYX[0] > -1 ? currentArr.shape[currentSrc.axesTCZYX[0]] : 1;
         if (largestT !== currentT) {
           throw new Error("Incompatible zarr arrays: different numbers of timesteps");
         }
         // ...they have different chunk sizes (TODO update prefetching so this restriction can be removed)
-        if (!largestArr.chunks.every((val, idx) => val === currentArr.chunks[idx])) {
+        if (!smallestArr.chunks.every((val, idx) => val === currentArr.chunks[idx])) {
           throw new Error("Incompatible zarr arrays: chunk shapes are mismatched");
         }
       } else {
         allEqual = false;
-        if (ordering < 0) {
-          largestIdx = currentIdx;
-          largestSrc = currentSrc;
-          largestArr = currentArr;
+        if (ordering > 0) {
+          smallestIdx = currentIdx;
+          smallestSrc = currentSrc;
+          smallestArr = currentArr;
         }
       }
     }
@@ -220,11 +220,11 @@ export function matchSourceScaleLevels(sources: ZarrSource[]): void {
         scaleIndexes[i] += 1;
       }
     } else {
-      // Increment the indexes of the sources which are smaller than the largest
+      // Increment the indexes of the sources which are larger than the smallest
       for (const [idx, srcIdx] of scaleIndexes.entries()) {
         const currentSrc = sources[idx];
         const currentArr = currentSrc.scaleLevels[srcIdx];
-        const ordering = compareZarrArraySize(largestArr, largestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
+        const ordering = compareZarrArraySize(smallestArr, smallestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
         if (ordering !== 0) {
           scaleIndexes[idx] += 1;
         }

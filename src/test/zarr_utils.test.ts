@@ -224,9 +224,7 @@ describe("zarr_utils", () => {
 
   describe("matchSourceScaleLevels", () => {
     it("does nothing if passed only one source scale level", async () => {
-      const [testSource, refSource] = await createTwoMockSourceArrs([
-        { shapes: [[5, 5, 5, 5, 5]], scales: [[1, 1, 1, 1, 1]] },
-      ]);
+      const [testSource, refSource] = await createTwoMockSourceArrs([{ shapes: [[5, 5, 5, 5, 5]] }]);
       matchSourceScaleLevels(testSource);
       expectSourcesEqual(testSource, refSource);
     });
@@ -234,12 +232,8 @@ describe("zarr_utils", () => {
     it("does nothing if all source scale levels are the same", async () => {
       const spec: ZarrSourceMockSpec = {
         shapes: [
-          [1, 1, 5, 5, 5],
           [1, 1, 10, 10, 10],
-        ],
-        scales: [
-          [1, 1, 1, 1, 1],
-          [1, 1, 1, 1, 1],
+          [1, 1, 5, 5, 5],
         ],
       };
       const [testSource, refSource] = await createTwoMockSourceArrs([spec, spec]);
@@ -250,61 +244,62 @@ describe("zarr_utils", () => {
     it("trims source scale levels which are outside the range of any other sources", async () => {
       const baseSpec: ZarrSourceMockSpec = {
         shapes: [
-          [1, 1, 5, 5, 5],
           [1, 1, 10, 10, 10],
+          [1, 1, 5, 5, 5],
         ],
       };
 
       // Has all the same scale levels as `baseSpec`, plus one smaller
-      const specSmaller: ZarrSourceMockSpec = { shapes: [[1, 1, 2, 2, 2], ...baseSpec.shapes.slice()] };
+      const specSmaller: ZarrSourceMockSpec = { shapes: [...baseSpec.shapes.slice(), [1, 1, 2, 2, 2]] };
       // Has all the same scale levels as `baseSpec`, plus one larger
-      const specLarger: ZarrSourceMockSpec = { shapes: [...baseSpec.shapes.slice(), [1, 1, 20, 20, 20]] };
+      const specLarger: ZarrSourceMockSpec = { shapes: [[1, 1, 20, 20, 20], ...baseSpec.shapes.slice()] };
 
-      const refSource = await createMockSources([baseSpec, baseSpec]);
+      const refSourceSmaller = await createMockSources([baseSpec, baseSpec]);
+      // The largest source will have path "0", so we have to shift the paths to match
+      const refSourceLarger = await createMockSources([baseSpec, { ...baseSpec, paths: ["1", "2"] }]);
       const testSourceSmaller = await createMockSources([baseSpec, specSmaller]);
       const testSourceLarger = await createMockSources([baseSpec, specLarger]);
 
       matchSourceScaleLevels(testSourceSmaller);
       matchSourceScaleLevels(testSourceLarger);
 
-      // The smallest source had path "0", so we have to shift the paths to match
-      expectSourcesEqual(testSourceSmaller, await createMockSources([baseSpec, { ...baseSpec, paths: ["1", "2"] }]));
-      expectSourcesEqual(testSourceLarger, refSource);
+      expectSourcesEqual(testSourceSmaller, refSourceSmaller);
+      expectSourcesEqual(testSourceLarger, refSourceLarger);
     });
 
     it("handles unmatched scale levels within the range of other sources", async () => {
-      // The only level shapes that all three of these sources have in common are [1, 1, 2, 2, 2] and [1, 1, 6, 6, 6]
+      // The only level shapes that all three of these sources have in common are [1, 1, 6, 6, 6] and [1, 1, 2, 2, 2]
       const shapes1: TCZYX<number>[] = [
-        [1, 1, 2, 2, 2],
-        [1, 1, 3, 3, 3],
-        [1, 1, 5, 5, 5],
         [1, 1, 6, 6, 6],
+        [1, 1, 5, 5, 5],
+        [1, 1, 3, 3, 3],
+        [1, 1, 2, 2, 2],
       ];
       const shapes2: TCZYX<number>[] = [
-        [1, 1, 1, 1, 1],
-        [1, 1, 2, 2, 2],
-        [1, 1, 4, 4, 4],
-        [1, 1, 5, 5, 5],
         [1, 1, 6, 6, 6],
+        [1, 1, 5, 5, 5],
+        [1, 1, 4, 4, 4],
+        [1, 1, 2, 2, 2],
+        [1, 1, 1, 1, 1],
       ];
       const shapes3: TCZYX<number>[] = [
-        [1, 1, 2, 2, 2],
-        [1, 1, 4, 4, 4],
-        [1, 1, 6, 6, 6],
         [1, 1, 7, 7, 7],
+        [1, 1, 6, 6, 6],
+        [1, 1, 4, 4, 4],
+        [1, 1, 2, 2, 2],
       ];
 
       const testSources = await createMockSources([{ shapes: shapes1 }, { shapes: shapes2 }, { shapes: shapes3 }]);
       matchSourceScaleLevels(testSources);
 
       const shapes: TCZYX<number>[] = [
-        [1, 1, 2, 2, 2],
         [1, 1, 6, 6, 6],
+        [1, 1, 2, 2, 2],
       ];
       const refSources = await createMockSources([
         { shapes, paths: ["0", "3"] },
-        { shapes, paths: ["1", "4"] },
-        { shapes, paths: ["0", "2"] },
+        { shapes, paths: ["0", "3"] },
+        { shapes, paths: ["1", "3"] },
       ]);
       expectSourcesEqual(testSources, refSources);
     });
@@ -318,8 +313,8 @@ describe("zarr_utils", () => {
 
     it("throws an error if two scale levels of the same size have different scale transformations", async () => {
       const sources = await createMockSources([
-        { shapes: [[1, 1, 1, 1, 1]], scales: [[1, 1, 1, 1, 1]] },
         { shapes: [[1, 1, 1, 1, 1]], scales: [[1, 1, 2, 2, 2]] },
+        { shapes: [[1, 1, 1, 1, 1]], scales: [[1, 1, 1, 1, 1]] },
       ]);
       expect(() => matchSourceScaleLevels(sources)).to.throw(
         "Incompatible zarr arrays: scale levels of equal size have different scale transformations"
