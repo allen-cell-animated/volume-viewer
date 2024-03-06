@@ -139,16 +139,21 @@ function compareZarrArraySize(
   }
 }
 
+const EPSILON = 0.0000001;
+const aboutEquals = (a: number, b: number): boolean => Math.abs(a - b) < EPSILON;
+
 function scaleTransformsAreEqual(aSrc: ZarrSource, aLevel: number, bSrc: ZarrSource, bLevel: number): boolean {
   const aScale = getScale(aSrc.multiscaleMetadata.datasets[aLevel], aSrc.axesTCZYX);
   const bScale = getScale(bSrc.multiscaleMetadata.datasets[bLevel], bSrc.axesTCZYX);
-  return aScale[2] === bScale[2] && aScale[3] === bScale[3] && aScale[4] === bScale[4];
+  return aboutEquals(aScale[2], bScale[2]) && aboutEquals(aScale[3], bScale[3]) && aboutEquals(aScale[4], bScale[4]);
 }
 
 /**
  * Ensures that all scale levels in `sources` are matched up by size. More precisely: enforces that, for any scale
  * level `i`, the size of zarr array `s[i]` is equal for every source `s`. We accomplish this by removing any arrays
  * (and their associated OME dataset metadata) which don't match up in all sources.
+ *
+ * Note that this function modifies the input `sources` array rather than returning a new value.
  *
  * Assumes all sources have scale levels ordered by size from largest to smallest. (This should always be true for
  * compliant OME-Zarr data.)
