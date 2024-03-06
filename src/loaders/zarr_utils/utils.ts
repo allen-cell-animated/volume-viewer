@@ -153,6 +153,8 @@ function scaleTransformsAreEqual(aSrc: ZarrSource, aLevel: number, bSrc: ZarrSou
  * level `i`, the size of zarr array `s[i]` is equal for every source `s`. We accomplish this by removing any arrays
  * (and their associated OME dataset metadata) which don't match up in all sources.
  *
+ * Note that this function modifies the input `sources` array rather than returning a new value.
+ *
  * Assumes all sources have scale levels ordered by size from largest to smallest. (This should always be true for
  * compliant OME-Zarr data.)
  */
