@@ -139,10 +139,13 @@ function compareZarrArraySize(
   }
 }
 
+const EPSILON = 0.0000001;
+const aboutEquals = (a: number, b: number): boolean => Math.abs(a - b) < EPSILON;
+
 function scaleTransformsAreEqual(aSrc: ZarrSource, aLevel: number, bSrc: ZarrSource, bLevel: number): boolean {
   const aScale = getScale(aSrc.multiscaleMetadata.datasets[aLevel], aSrc.axesTCZYX);
   const bScale = getScale(bSrc.multiscaleMetadata.datasets[bLevel], bSrc.axesTCZYX);
-  return aScale[2] === bScale[2] && aScale[3] === bScale[3] && aScale[4] === bScale[4];
+  return aboutEquals(aScale[2], bScale[2]) && aboutEquals(aScale[3], bScale[3]) && aboutEquals(aScale[4], bScale[4]);
 }
 
 /**
