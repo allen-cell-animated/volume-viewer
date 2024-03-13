@@ -18,8 +18,9 @@ import {
   Vector2,
   Vector3,
   WebGLRenderTarget,
+  LinearFilter,
+  NearestFilter,
 } from "three";
-import { LinearFilter, NearestFilter } from "three/src/constants";
 
 import { denoiseFragmentShaderSrc, denoiseShaderUniforms, denoiseVertexShaderSrc } from "./constants/denoiseShader.js";
 import {

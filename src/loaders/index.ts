@@ -5,7 +5,7 @@ import { TiffLoader } from "./TiffLoader.js";
 import VolumeCache from "../VolumeCache.js";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue.js";
 
-export { PrefetchDirection } from "./zarr_utils/types";
+export { PrefetchDirection } from "./zarr_utils/types.js";
 
 export const enum VolumeFileFormat {
   ZARR = "zarr",

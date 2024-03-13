@@ -17,8 +17,8 @@ import {
   CustomBlending,
   MaxEquation,
   Texture,
+  LinearFilter,
 } from "three";
-import { LinearFilter } from "three/src/constants";
 
 import Channel from "./Channel.js";
 import { fuseShaderSrc, fuseVertexShaderSrc } from "./constants/fuseShader.js";

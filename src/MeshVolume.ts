@@ -11,8 +11,8 @@ import {
   Plane,
   DoubleSide,
 } from "three";
-import { STLExporter } from "three/examples/jsm/exporters/STLExporter";
-import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter";
+import { STLExporter } from "three/examples/jsm/exporters/STLExporter.js";
+import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 
 import { defaultMaterialSettings } from "./constants/materials.js";
 
