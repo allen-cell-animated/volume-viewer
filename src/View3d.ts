@@ -11,20 +11,20 @@ import {
 } from "three";
 import { Pane } from "tweakpane";
 
-import { ThreeJsPanel } from "./ThreeJsPanel";
-import lightSettings from "./constants/lights";
-import VolumeDrawable from "./VolumeDrawable";
-import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
-import Volume from "./Volume";
+import { ThreeJsPanel } from "./ThreeJsPanel.js";
+import lightSettings from "./constants/lights.js";
+import VolumeDrawable from "./VolumeDrawable.js";
+import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light.js";
+import Volume from "./Volume.js";
 import {
-  VolumeChannelDisplayOptions,
-  VolumeDisplayOptions,
+  type VolumeChannelDisplayOptions,
+  type VolumeDisplayOptions,
   isOrthographicCamera,
   ViewportCorner,
   RenderMode,
-} from "./types";
-import { Axis } from "./VolumeRenderSettings";
-import { PerChannelCallback } from "./loaders/IVolumeLoader";
+} from "./types.js";
+import { Axis } from "./VolumeRenderSettings.js";
+import { PerChannelCallback } from "./loaders/IVolumeLoader.js";
 
 // Constants are kept for compatibility reasons.
 export const RENDERMODE_RAYMARCH = RenderMode.RAYMARCH;

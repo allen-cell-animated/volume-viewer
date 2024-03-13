@@ -6,9 +6,9 @@ import {
   RawChannelDataCallback,
   VolumeDims,
   LoadedVolumeInfo,
-} from "./IVolumeLoader";
-import { ImageInfo } from "../Volume";
-import { JsonImageInfoLoader } from "./JsonImageInfoLoader";
+} from "./IVolumeLoader.js";
+import { ImageInfo } from "../Volume.js";
+import { JsonImageInfoLoader } from "./JsonImageInfoLoader.js";
 
 class OpenCellLoader extends ThreadableVolumeLoader {
   async loadDims(_: LoadSpec): Promise<VolumeDims[]> {

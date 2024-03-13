@@ -1,19 +1,19 @@
 import { Vector3, Object3D, Euler, Vector2, Box3 } from "three";
-
-import MeshVolume from "./MeshVolume";
-import RayMarchedAtlasVolume from "./RayMarchedAtlasVolume";
-import PathTracedVolume from "./PathTracedVolume";
-import { LUT_ARRAY_LENGTH } from "./Histogram";
-import Volume from "./Volume";
-import { VolumeDisplayOptions, VolumeChannelDisplayOptions } from "./types";
-import { FuseChannel, RenderMode } from "./types";
-import { ThreeJsPanel } from "./ThreeJsPanel";
-import { Light } from "./Light";
-import Channel from "./Channel";
-import { VolumeRenderImpl } from "./VolumeRenderImpl";
 import { Pane } from "tweakpane";
-import Atlas2DSlice from "./Atlas2DSlice";
-import { VolumeRenderSettings, SettingsFlags, Axis } from "./VolumeRenderSettings";
+
+import MeshVolume from "./MeshVolume.js";
+import RayMarchedAtlasVolume from "./RayMarchedAtlasVolume.js";
+import PathTracedVolume from "./PathTracedVolume.js";
+import { LUT_ARRAY_LENGTH } from "./Histogram.js";
+import Volume from "./Volume.js";
+import type { VolumeDisplayOptions, VolumeChannelDisplayOptions, FuseChannel } from "./types.js";
+import { RenderMode } from "./types.js";
+import { ThreeJsPanel } from "./ThreeJsPanel.js";
+import { Light } from "./Light.js";
+import Channel from "./Channel.js";
+import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
+import Atlas2DSlice from "./Atlas2DSlice.js";
+import { VolumeRenderSettings, SettingsFlags, Axis } from "./VolumeRenderSettings.js";
 
 type ColorArray = [number, number, number];
 type ColorObject = { r: number; g: number; b: number };

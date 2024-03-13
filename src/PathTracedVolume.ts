@@ -21,20 +21,20 @@ import {
 } from "three";
 import { LinearFilter, NearestFilter } from "three/src/constants";
 
-import { denoiseFragmentShaderSrc, denoiseShaderUniforms, denoiseVertexShaderSrc } from "./constants/denoiseShader";
+import { denoiseFragmentShaderSrc, denoiseShaderUniforms, denoiseVertexShaderSrc } from "./constants/denoiseShader.js";
 import {
   pathTracingFragmentShaderSrc,
   pathTracingUniforms,
   pathTracingVertexShaderSrc,
-} from "./constants/volumePTshader";
-import { LUT_ARRAY_LENGTH } from "./Histogram";
-import Volume from "./Volume";
-import { FUSE_DISABLED_RGB_COLOR, FuseChannel, isOrthographicCamera } from "./types";
-import { ThreeJsPanel } from "./ThreeJsPanel";
-import { Light } from "./Light";
-import { VolumeRenderImpl } from "./VolumeRenderImpl";
-import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings";
-import Channel from "./Channel";
+} from "./constants/volumePTshader.js";
+import { LUT_ARRAY_LENGTH } from "./Histogram.js";
+import Volume from "./Volume.js";
+import { FUSE_DISABLED_RGB_COLOR, type FuseChannel, isOrthographicCamera } from "./types.js";
+import { ThreeJsPanel } from "./ThreeJsPanel.js";
+import { Light } from "./Light.js";
+import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
+import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings.js";
+import Channel from "./Channel.js";
 
 export default class PathTracedVolume implements VolumeRenderImpl {
   private settings: VolumeRenderSettings;

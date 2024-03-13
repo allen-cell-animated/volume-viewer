@@ -14,13 +14,13 @@ import {
 import { STLExporter } from "three/examples/jsm/exporters/STLExporter";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter";
 
-import { defaultMaterialSettings } from "./constants/materials";
+import { defaultMaterialSettings } from "./constants/materials.js";
 
-import FileSaver from "./FileSaver";
+import FileSaver from "./FileSaver.js";
 import NaiveSurfaceNets from "./NaiveSurfaceNets.js";
-import MarchingCubes from "./MarchingCubes";
-import Volume from "./Volume";
-import { Bounds } from "./types.js";
+import MarchingCubes from "./MarchingCubes.js";
+import Volume from "./Volume.js";
+import type { Bounds } from "./types.js";
 import { ThreeJsPanel } from "./ThreeJsPanel.js";
 
 // this cutoff is chosen to have a small buffer of values before the object is treated

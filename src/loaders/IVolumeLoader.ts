@@ -1,8 +1,8 @@
 import { Box3, Vector3 } from "three";
 
-import Volume, { ImageInfo } from "../Volume";
-import { buildDefaultMetadata } from "./VolumeLoaderUtils";
-import { PrefetchDirection } from "./zarr_utils/types";
+import Volume, { ImageInfo } from "../Volume.js";
+import { buildDefaultMetadata } from "./VolumeLoaderUtils.js";
+import { PrefetchDirection } from "./zarr_utils/types.js";
 
 export class LoadSpec {
   time = 0;

@@ -16,8 +16,8 @@ import {
 } from "three";
 
 import TrackballControls from "./TrackballControls.js";
-import Timing from "./Timing";
-import scaleBarSVG from "./constants/scaleBarSVG";
+import Timing from "./Timing.js";
+import scaleBarSVG from "./constants/scaleBarSVG.js";
 import { isOrthographicCamera, ViewportCorner, isTop, isRight } from "./types";
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
