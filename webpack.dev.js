@@ -58,6 +58,9 @@ export default {
   ],
   resolve: {
     extensions: [".js", ".ts"],
+    extensionAlias: {
+      ".js": [".js", ".ts"],
+    }
   },
   module: {
     rules: [
