@@ -122,11 +122,11 @@ function compareZarrArraySize(
   bArr: NumericZarrArray,
   bTCZYX: TCZYX<number>
 ): number | undefined {
-  const diffZ = aArr.shape[aTCZYX[2]] - bArr.shape[bTCZYX[2]];
+  const aZ = aTCZYX[2] > -1 ? aArr.shape[aTCZYX[2]] : 1;
+  const bZ = bTCZYX[2] > -1 ? bArr.shape[bTCZYX[2]] : 1;
+  const diffZ = aZ - bZ;
   const diffY = aArr.shape[aTCZYX[3]] - bArr.shape[bTCZYX[3]];
-  const aX = aTCZYX[4] > -1 ? aArr.shape[aTCZYX[4]] : 1;
-  const bX = bTCZYX[4] > -1 ? bArr.shape[bTCZYX[4]] : 1;
-  const diffX = aX - bX;
+  const diffX = aArr.shape[aTCZYX[4]] - bArr.shape[bTCZYX[4]];
 
   if (diffZ === 0 && diffY === 0 && diffX === 0) {
     return 0;
