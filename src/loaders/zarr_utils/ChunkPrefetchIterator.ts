@@ -70,12 +70,13 @@ export default class ChunkPrefetchIterator {
 
     for (const [direction, start] of extrema.flat().entries()) {
       const dimension = direction >> 1;
+      const tczyxIndex = dimension + Number(dimension !== 0);
       let end: number | number[];
       if (direction & 1) {
         // Positive direction - end is either the max coordinate in the fetched set plus the max offset in this
         // dimension, or the max chunk coordinate in this dimension, whichever comes first
         const endsPerSource = tczyxChunksPerDimension.map((chunkDims) => {
-          return Math.min(start + tzyxMaxPrefetchOffset[dimension], chunkDims[dimension] - 1);
+          return Math.min(start + tzyxMaxPrefetchOffset[dimension], chunkDims[tczyxIndex] - 1);
         });
 
         // Save some time: if all sources have the same end, we can just store that
