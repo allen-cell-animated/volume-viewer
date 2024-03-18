@@ -6,7 +6,16 @@ type PrefetchDirectionState = {
   direction: PrefetchDirection;
   chunks: TCZYX<number>[];
   start: number;
-  end: number;
+  /** May be either a number for all channels or an array of ends per-channels */
+  end: number | number[];
+};
+
+const allEqual = <T>(arr: T[]): boolean => arr.every((v) => v === arr[0]);
+
+const pushN = <T>(arr: T[], val: T, n: number): void => {
+  for (let i = 0; i < n; i++) {
+    arr.push(val);
+  }
 };
 
 const directionToIndex = (dir: PrefetchDirection): number => {
@@ -37,7 +46,7 @@ export default class ChunkPrefetchIterator {
   constructor(
     chunks: TCZYX<number>[],
     tzyxMaxPrefetchOffset: TZYX,
-    tzyxNumChunks: TZYX,
+    tczyxChunksPerDimension: TCZYX<number>[],
     priorityDirections?: PrefetchDirection[]
   ) {
     // Get min and max chunk coordinates for T/Z/Y/X
@@ -61,11 +70,25 @@ export default class ChunkPrefetchIterator {
 
     for (const [direction, start] of extrema.flat().entries()) {
       const dimension = direction >> 1;
-      let end: number;
+      let end: number | number[];
       if (direction & 1) {
         // Positive direction - end is either the max coordinate in the fetched set plus the max offset in this
         // dimension, or the max chunk coordinate in this dimension, whichever comes first
-        end = Math.min(start + tzyxMaxPrefetchOffset[dimension], tzyxNumChunks[dimension] - 1);
+        const endsPerSource = tczyxChunksPerDimension.map((chunkDims) => {
+          return Math.min(start + tzyxMaxPrefetchOffset[dimension], chunkDims[dimension] - 1);
+        });
+
+        // Save some time: if all sources have the same end, we can just store that
+        if (allEqual(endsPerSource)) {
+          end = endsPerSource[0];
+        } else {
+          // Otherwise, expand our ends per source array to ends per channel
+          end = [];
+          for (const [i, sourceEnd] of endsPerSource.entries()) {
+            pushN(end, sourceEnd, tczyxChunksPerDimension[i][1]);
+          }
+        }
+        // end = Math.min(start + tzyxMaxPrefetchOffset[dimension], tczyxChunksPerDimension[dimension] - 1);
       } else {
         // Negative direction - end is either the min coordinate in the fetched set minus the max offset in this
         // dimension, or 0, whichever comes first
@@ -101,18 +124,23 @@ export default class ChunkPrefetchIterator {
     while (directions.length > 0) {
       // Remove directions in which we have hit a boundary
       directions = directions.filter((dir) => {
+        const end = Array.isArray(dir.end) ? Math.max(...dir.end) : dir.end;
         if (dir.direction & 1) {
-          return dir.start + offset <= dir.end;
+          return dir.start + offset <= end;
         } else {
-          return dir.start - offset >= dir.end;
+          return dir.start - offset >= end;
         }
       });
 
       // Yield chunks one chunk farther out in every remaining direction
       for (const dir of directions) {
+        const offsetDir = offset * (dir.direction & 1 ? 1 : -1);
         for (const chunk of dir.chunks) {
+          if (Array.isArray(dir.end) && chunk[directionToIndex(dir.direction)] + offsetDir >= dir.end[chunk[1]]) {
+            continue;
+          }
           const newChunk = chunk.slice() as TCZYX<number>;
-          newChunk[directionToIndex(dir.direction)] += offset * (dir.direction & 1 ? 1 : -1);
+          newChunk[directionToIndex(dir.direction)] += offsetDir;
           yield newChunk;
         }
       }
