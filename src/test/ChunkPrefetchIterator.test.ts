@@ -29,15 +29,17 @@ const EXPECTED_5X5X5X5_2 = [
   [2, 0, 2, 2, 4], // X++
 ];
 
-function validate(iter: ChunkPrefetchIterator, expected: number[][]) {
-  expect([...iter]).to.deep.equal(expected);
+function validate(iter: ChunkPrefetchIterator, expected: number[][], debug = false) {
+  const iterResult = [...iter];
+  if (debug) console.log(iterResult);
+  expect(iterResult).to.deep.equal(expected);
 }
 
 describe("ChunkPrefetchIterator", () => {
   it("iterates outward in TZYX order, negative then positive", () => {
     // 3x3x3x3, with one chunk in the center
-    const iterator = new ChunkPrefetchIterator([[1, 0, 1, 1, 1]], [1, 1, 1, 1], [3, 3, 3, 3]);
-    validate(iterator, EXPECTED_3X3X3X3);
+    const iterator = new ChunkPrefetchIterator([[1, 0, 1, 1, 1]], [1, 1, 1, 1], [[3, 1, 3, 3, 3]]);
+    validate(iterator, EXPECTED_3X3X3X3, true);
   });
 
   it("finds the borders of a set of multiple chunks and iterates outward from them", () => {
@@ -52,7 +54,7 @@ describe("ChunkPrefetchIterator", () => {
       [1, 0, 2, 2, 1],
       [1, 0, 2, 2, 2],
     ];
-    const iterator = new ChunkPrefetchIterator(fetchedChunks, [1, 1, 1, 1], [3, 4, 4, 4]);
+    const iterator = new ChunkPrefetchIterator(fetchedChunks, [1, 1, 1, 1], [[3, 1, 4, 4, 4]]);
 
     const expected = [
       ...fetchedChunks.map(([_t, c, z, y, x]) => [0, c, z, y, x]), // T-
@@ -69,7 +71,7 @@ describe("ChunkPrefetchIterator", () => {
 
   it("iterates through the same offset in all dimensions before increasing the offset", () => {
     // 5x5x5, with one chunk in the center
-    const iterator = new ChunkPrefetchIterator([[2, 0, 2, 2, 2]], [2, 2, 2, 2], [5, 5, 5, 5]);
+    const iterator = new ChunkPrefetchIterator([[2, 0, 2, 2, 2]], [2, 2, 2, 2], [[5, 1, 5, 5, 5]]);
 
     const expected = [
       // offset = 1
@@ -82,13 +84,13 @@ describe("ChunkPrefetchIterator", () => {
 
   it("stops at the max offset in each dimension", () => {
     // 5x5x5, with one chunk in the center
-    const iterator = new ChunkPrefetchIterator([[2, 0, 2, 2, 2]], [1, 1, 1, 1], [5, 5, 5, 5]);
+    const iterator = new ChunkPrefetchIterator([[2, 0, 2, 2, 2]], [1, 1, 1, 1], [[5, 1, 5, 5, 5]]);
     validate(iterator, EXPECTED_5X5X5X5_1); // never reaches offset = 2, as it does above
   });
 
   it("stops at the borders of the zarr", () => {
     // 3x3x3x3, with one chunk in the center
-    const iterator = new ChunkPrefetchIterator([[1, 0, 1, 1, 1]], [2, 2, 2, 2], [3, 3, 3, 3]);
+    const iterator = new ChunkPrefetchIterator([[1, 0, 1, 1, 1]], [2, 2, 2, 2], [[3, 1, 3, 3, 3]]);
     validate(iterator, EXPECTED_3X3X3X3);
   });
 
@@ -105,7 +107,7 @@ describe("ChunkPrefetchIterator", () => {
       [1, 0, 1, 2, 1], // 2, 1
       [1, 0, 1, 2, 2], // 2, 2
     ];
-    const iterator = new ChunkPrefetchIterator(fetchedChunks, [1, 1, 1, 1], [3, 3, 3, 3]);
+    const iterator = new ChunkPrefetchIterator(fetchedChunks, [1, 1, 1, 1], [[3, 1, 3, 3, 3]]);
 
     const expected = [
       ...fetchedChunks.map(([_t, c, z, y, x]) => [0, c, z, y, x]), // T-
@@ -119,7 +121,7 @@ describe("ChunkPrefetchIterator", () => {
 
   it("does not iterate in dimensions where the max offset is 0", () => {
     // 3x3x3x3, with one chunk in the center
-    const iterator = new ChunkPrefetchIterator([[1, 0, 1, 1, 1]], [1, 0, 1, 0], [3, 3, 3, 3]);
+    const iterator = new ChunkPrefetchIterator([[1, 0, 1, 1, 1]], [1, 0, 1, 0], [[3, 1, 3, 3, 3]]);
 
     const expected = [
       [0, 0, 1, 1, 1], // T-
@@ -137,7 +139,7 @@ describe("ChunkPrefetchIterator", () => {
     const iterator = new ChunkPrefetchIterator(
       [[2, 0, 2, 2, 2]],
       [2, 2, 2, 2],
-      [5, 5, 5, 5],
+      [[5, 1, 5, 5, 5]],
       [PrefetchDirection.T_PLUS, PrefetchDirection.Y_MINUS]
     );
 
@@ -164,7 +166,7 @@ describe("ChunkPrefetchIterator", () => {
       [2, 0, 1, 1, 2],
       [2, 0, 1, 1, 3],
     ];
-    const iterator = new ChunkPrefetchIterator(fetchedChunks, [2, 2, 2, 1], [3, 4, 4, 6]);
+    const iterator = new ChunkPrefetchIterator(fetchedChunks, [2, 2, 2, 1], [[3, 1, 4, 4, 6]]);
 
     // prettier-ignore
     const expected = [
