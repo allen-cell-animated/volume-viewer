@@ -1,6 +1,6 @@
 import { Vector3 } from "three";
-import { LoadSpec } from "../IVolumeLoader";
-import { estimateLevelForAtlas } from "../VolumeLoaderUtils";
+import { LoadSpec } from "../IVolumeLoader.js";
+import { estimateLevelForAtlas } from "../VolumeLoaderUtils.js";
 import {
   NumericZarrArray,
   OMEAxis,
@@ -9,7 +9,7 @@ import {
   OMEMultiscale,
   TCZYX,
   ZarrSource,
-} from "./types";
+} from "./types.js";
 
 /** Turns `axesTCZYX` into the number of dimensions in the array */
 export const getDimensionCount = ([t, c, z]: TCZYX<number>) => 2 + Number(t > -1) + Number(c > -1) + Number(z > -1);

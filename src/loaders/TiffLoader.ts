@@ -4,12 +4,12 @@ import { Vector3 } from "three";
 import {
   ThreadableVolumeLoader,
   LoadSpec,
-  RawChannelDataCallback,
+  type RawChannelDataCallback,
   VolumeDims,
-  LoadedVolumeInfo,
-} from "./IVolumeLoader";
-import { computePackedAtlasDims } from "./VolumeLoaderUtils";
-import { ImageInfo } from "../Volume";
+  type LoadedVolumeInfo,
+} from "./IVolumeLoader.js";
+import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
+import type { ImageInfo } from "../Volume.js";
 
 function prepareXML(xml: string): string {
   // trim trailing unicode zeros?

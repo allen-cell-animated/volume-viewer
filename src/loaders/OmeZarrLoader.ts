@@ -7,24 +7,24 @@ import { AbsolutePath } from "@zarrita/storage";
 // Getting it from the top-level package means we don't get its type. This is also a bug, but it's more acceptable.
 import { FetchStore } from "zarrita";
 
-import { ImageInfo } from "../Volume";
-import VolumeCache from "../VolumeCache";
-import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
+import { ImageInfo } from "../Volume.js";
+import VolumeCache from "../VolumeCache.js";
+import SubscribableRequestQueue from "../utils/SubscribableRequestQueue.js";
 import {
   ThreadableVolumeLoader,
   LoadSpec,
-  RawChannelDataCallback,
+  type RawChannelDataCallback,
   VolumeDims,
-  LoadedVolumeInfo,
-} from "./IVolumeLoader";
+  type LoadedVolumeInfo,
+} from "./IVolumeLoader.js";
 import {
   composeSubregion,
   computePackedAtlasDims,
   convertSubregionToPixels,
   unitNameToSymbol,
-} from "./VolumeLoaderUtils";
-import ChunkPrefetchIterator from "./zarr_utils/ChunkPrefetchIterator";
-import WrappedStore from "./zarr_utils/WrappedStore";
+} from "./VolumeLoaderUtils.js";
+import ChunkPrefetchIterator from "./zarr_utils/ChunkPrefetchIterator.js";
+import WrappedStore from "./zarr_utils/WrappedStore.js";
 import {
   getDimensionCount,
   getScale,
@@ -33,15 +33,15 @@ import {
   orderByTCZYX,
   pickLevelToLoad,
   remapAxesToTCZYX,
-} from "./zarr_utils/utils";
-import {
+} from "./zarr_utils/utils.js";
+import type {
   OMEZarrMetadata,
   SubscriberId,
   TCZYX,
   PrefetchDirection,
   ZarrSource,
   NumericZarrArray,
-} from "./zarr_utils/types";
+} from "./zarr_utils/types.js";
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
@@ -113,6 +113,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
   // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
   //   This may cause errors or incorrect results otherwise!
   private maxExtent?: Box3;
+
+  private syncChannels = false;
 
   private constructor(
     /**
@@ -260,6 +262,10 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
    */
   setPrefetchPriority(directions: PrefetchDirection[]): void {
     this.priorityDirections = directions;
+  }
+
+  syncMultichannelLoading(sync: boolean): void {
+    this.syncChannels = sync;
   }
 
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
@@ -453,6 +459,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     loadSpec: LoadSpec,
     onData: RawChannelDataCallback
   ): Promise<{ imageInfo: ImageInfo }> {
+    const syncChannels = this.syncChannels;
+
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     const [z, y, x] = this.sources[0].axesTCZYX.slice(2);
     const subregion = composeSubregion(loadSpec.subregion, maxExtent);
@@ -494,6 +502,9 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       }
     };
 
+    const resultChannelIndices: number[] = [];
+    const resultChannelData: Uint8Array[] = [];
+
     const channelPromises = channelIndexes.map(async (ch) => {
       // Build slice spec
       const { min, max } = regionPx;
@@ -507,7 +518,12 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       try {
         const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } });
         const u8 = convertChannel(result.data);
-        onData(ch, u8);
+        if (syncChannels) {
+          resultChannelData.push(u8);
+          resultChannelIndices.push(ch);
+        } else {
+          onData([ch], [u8]);
+        }
       } catch (e) {
         // TODO: verify that cancelling requests in progress doesn't leak memory
         if (e !== CHUNK_REQUEST_CANCEL_REASON) {
@@ -526,6 +542,9 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     this.beginPrefetch(keys, levelIdx);
 
     Promise.all(channelPromises).then(() => {
+      if (syncChannels) {
+        onData(resultChannelIndices, resultChannelData);
+      }
       this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
     });
     return Promise.resolve({ imageInfo: updatedImageInfo });

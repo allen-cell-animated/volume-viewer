@@ -19,7 +19,7 @@ export default {
   devtool: "source-map",
   devServer: {
     open: ["/"],
-    port: 9020,
+    port: 9021,
     static: [
       {
         staticOptions: {
@@ -58,6 +58,9 @@ export default {
   ],
   resolve: {
     extensions: [".js", ".ts"],
+    extensionAlias: {
+      ".js": [".js", ".ts"],
+    }
   },
   module: {
     rules: [

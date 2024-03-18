@@ -1,23 +1,23 @@
-import { ImageInfo } from "../Volume";
-import { CreateLoaderOptions, PrefetchDirection, VolumeFileFormat, pathToFileType } from "../loaders";
+import { ImageInfo } from "../Volume.js";
+import { CreateLoaderOptions, PrefetchDirection, VolumeFileFormat, pathToFileType } from "../loaders/index.js";
 import {
   ThreadableVolumeLoader,
   LoadSpec,
   RawChannelDataCallback,
   VolumeDims,
   LoadedVolumeInfo,
-} from "../loaders/IVolumeLoader";
-import { TiffLoader } from "../loaders/TiffLoader";
+} from "../loaders/IVolumeLoader.js";
+import { TiffLoader } from "../loaders/TiffLoader.js";
 import {
   WorkerMsgType,
-  WorkerRequest,
-  WorkerRequestPayload,
-  WorkerResponse,
-  WorkerResponsePayload,
-  ChannelLoadEvent,
+  type WorkerRequest,
+  type WorkerRequestPayload,
+  type WorkerResponse,
+  type WorkerResponsePayload,
+  type ChannelLoadEvent,
   WorkerResponseResult,
-} from "./types";
-import { rebuildImageInfo, rebuildLoadSpec } from "./util";
+} from "./types.js";
+import { rebuildImageInfo, rebuildLoadSpec } from "./util.js";
 
 type StoredPromise<T extends WorkerMsgType> = {
   type: T;
@@ -212,8 +212,12 @@ class WorkerLoader extends ThreadableVolumeLoader {
    * Change which directions to prioritize when prefetching. All chunks will be prefetched in these directions before
    * any chunks are prefetched in any other directions. Has no effect if this loader doesn't support prefetching.
    */
-  setPrefetchPriorityDirections(directions: PrefetchDirection[]): Promise<void> {
+  setPrefetchPriority(directions: PrefetchDirection[]): Promise<void> {
     return this.workerHandle.sendMessage(WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, directions);
+  }
+
+  syncMultichannelLoading(sync: boolean): Promise<void> {
+    return this.workerHandle.sendMessage(WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, sync);
   }
 
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {

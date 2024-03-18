@@ -1,7 +1,7 @@
 import * as zarr from "@zarrita/core";
 
-import WrappedStore from "./WrappedStore";
-import SubscribableRequestQueue from "../../utils/SubscribableRequestQueue";
+import type WrappedStore from "./WrappedStore.js";
+import type SubscribableRequestQueue from "../../utils/SubscribableRequestQueue.js";
 
 export type TCZYX<T> = [T, T, T, T, T];
 export type SubscriberId = ReturnType<SubscribableRequestQueue["addSubscriber"]>;

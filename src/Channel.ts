@@ -1,6 +1,5 @@
 import { DataTexture, RedFormat, UnsignedByteType, RGBAFormat, LinearFilter, NearestFilter } from "three";
-import Histogram from "./Histogram";
-import { LUT_ARRAY_LENGTH } from "./Histogram";
+import Histogram, { LUT_ARRAY_LENGTH } from "./Histogram.js";
 
 interface ChannelImageData {
   /** Returns the one-dimensional array containing the data in RGBA order, as integers in the range 0 to 255. */

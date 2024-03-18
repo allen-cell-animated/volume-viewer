@@ -1,10 +1,10 @@
 import { Vector2, Vector3 } from "three";
 
-import Channel from "./Channel";
-import Histogram from "./Histogram";
-import { getColorByChannelIndex } from "./constants/colors";
-import { IVolumeLoader, LoadSpec, PerChannelCallback } from "./loaders/IVolumeLoader";
-import { estimateLevelForAtlas } from "./loaders/VolumeLoaderUtils";
+import Channel from "./Channel.js";
+import Histogram from "./Histogram.js";
+import { getColorByChannelIndex } from "./constants/colors.js";
+import { type IVolumeLoader, LoadSpec, type PerChannelCallback } from "./loaders/IVolumeLoader.js";
+import { estimateLevelForAtlas } from "./loaders/VolumeLoaderUtils.js";
 
 export type ImageInfo = Readonly<{
   name: string;
