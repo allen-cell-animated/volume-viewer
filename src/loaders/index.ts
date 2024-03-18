@@ -1,12 +1,11 @@
-import { ThreadableVolumeLoader } from "./IVolumeLoader";
+import { ThreadableVolumeLoader } from "./IVolumeLoader.js";
+import { OMEZarrLoader, type ZarrLoaderFetchOptions } from "./OmeZarrLoader.js";
+import { JsonImageInfoLoader } from "./JsonImageInfoLoader.js";
+import { TiffLoader } from "./TiffLoader.js";
+import VolumeCache from "../VolumeCache.js";
+import SubscribableRequestQueue from "../utils/SubscribableRequestQueue.js";
 
-import { OMEZarrLoader, ZarrLoaderFetchOptions } from "./OmeZarrLoader";
-import { JsonImageInfoLoader } from "./JsonImageInfoLoader";
-import { TiffLoader } from "./TiffLoader";
-import VolumeCache from "../VolumeCache";
-import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
-
-export { PrefetchDirection } from "./zarr_utils/types";
+export { PrefetchDirection } from "./zarr_utils/types.js";
 
 export const enum VolumeFileFormat {
   ZARR = "zarr",

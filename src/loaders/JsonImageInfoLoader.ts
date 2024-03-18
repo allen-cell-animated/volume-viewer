@@ -2,13 +2,13 @@ import { Box3, Vector2, Vector3 } from "three";
 
 import {
   ThreadableVolumeLoader,
-  LoadSpec,
-  RawChannelDataCallback,
+  type LoadSpec,
+  type RawChannelDataCallback,
   VolumeDims,
-  LoadedVolumeInfo,
-} from "./IVolumeLoader";
-import { ImageInfo } from "../Volume";
-import VolumeCache from "../VolumeCache";
+  type LoadedVolumeInfo,
+} from "./IVolumeLoader.js";
+import type { ImageInfo } from "../Volume.js";
+import VolumeCache from "../VolumeCache.js";
 
 interface PackedChannelsImage {
   name: string;

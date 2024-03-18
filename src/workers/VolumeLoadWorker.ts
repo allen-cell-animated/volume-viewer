@@ -1,17 +1,11 @@
-import VolumeCache from "../VolumeCache";
-import { VolumeFileFormat, createVolumeLoader, pathToFileType } from "../loaders";
-import { ThreadableVolumeLoader } from "../loaders/IVolumeLoader";
-import RequestQueue from "../utils/RequestQueue";
-import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
-import {
-  WorkerMsgType,
-  WorkerRequest,
-  WorkerRequestPayload,
-  WorkerResponse,
-  WorkerResponseResult,
-  WorkerResponsePayload,
-} from "./types";
-import { rebuildImageInfo, rebuildLoadSpec } from "./util";
+import VolumeCache from "../VolumeCache.js";
+import { VolumeFileFormat, createVolumeLoader, pathToFileType } from "../loaders/index.js";
+import { ThreadableVolumeLoader } from "../loaders/IVolumeLoader.js";
+import RequestQueue from "../utils/RequestQueue.js";
+import SubscribableRequestQueue from "../utils/SubscribableRequestQueue.js";
+import type { WorkerRequest, WorkerRequestPayload, WorkerResponse, WorkerResponsePayload } from "./types.js";
+import { WorkerMsgType, WorkerResponseResult } from "./types.js";
+import { rebuildImageInfo, rebuildLoadSpec } from "./util.js";
 
 let cache: VolumeCache | undefined = undefined;
 let queue: RequestQueue | undefined = undefined;

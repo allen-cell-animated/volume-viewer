@@ -17,19 +17,19 @@ import {
   Vector3,
 } from "three";
 
-import FusedChannelData from "./FusedChannelData";
+import FusedChannelData from "./FusedChannelData.js";
 import {
   rayMarchingVertexShaderSrc,
   rayMarchingFragmentShaderSrc,
   rayMarchingShaderUniforms,
-} from "./constants/volumeRayMarchShader";
-import { Volume } from ".";
-import Channel from "./Channel";
-import { ThreeJsPanel } from "./ThreeJsPanel";
-import { VolumeRenderImpl } from "./VolumeRenderImpl";
+} from "./constants/volumeRayMarchShader.js";
+import { Volume } from "./index.js";
+import Channel from "./Channel.js";
+import { ThreeJsPanel } from "./ThreeJsPanel.js";
+import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
 
-import { FuseChannel } from "./types";
-import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings";
+import type { FuseChannel } from "./types.js";
+import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings.js";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 

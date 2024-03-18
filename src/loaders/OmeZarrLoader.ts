@@ -7,24 +7,24 @@ import { AbsolutePath } from "@zarrita/storage";
 // Getting it from the top-level package means we don't get its type. This is also a bug, but it's more acceptable.
 import { FetchStore } from "zarrita";
 
-import { ImageInfo } from "../Volume";
-import VolumeCache from "../VolumeCache";
-import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
+import { ImageInfo } from "../Volume.js";
+import VolumeCache from "../VolumeCache.js";
+import SubscribableRequestQueue from "../utils/SubscribableRequestQueue.js";
 import {
   ThreadableVolumeLoader,
   LoadSpec,
-  RawChannelDataCallback,
+  type RawChannelDataCallback,
   VolumeDims,
-  LoadedVolumeInfo,
-} from "./IVolumeLoader";
+  type LoadedVolumeInfo,
+} from "./IVolumeLoader.js";
 import {
   composeSubregion,
   computePackedAtlasDims,
   convertSubregionToPixels,
   unitNameToSymbol,
-} from "./VolumeLoaderUtils";
-import ChunkPrefetchIterator from "./zarr_utils/ChunkPrefetchIterator";
-import WrappedStore from "./zarr_utils/WrappedStore";
+} from "./VolumeLoaderUtils.js";
+import ChunkPrefetchIterator from "./zarr_utils/ChunkPrefetchIterator.js";
+import WrappedStore from "./zarr_utils/WrappedStore.js";
 import {
   getDimensionCount,
   getScale,
@@ -32,8 +32,8 @@ import {
   orderByTCZYX,
   pickLevelToLoad,
   remapAxesToTCZYX,
-} from "./zarr_utils/utils";
-import {
+} from "./zarr_utils/utils.js";
+import type {
   OMEZarrMetadata,
   SubscriberId,
   TCZYX,
@@ -41,7 +41,7 @@ import {
   NumericZarrArray,
   OMEMultiscale,
   OmeroTransitionalMetadata,
-} from "./zarr_utils/types";
+} from "./zarr_utils/types.js";
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 

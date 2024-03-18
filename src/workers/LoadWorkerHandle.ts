@@ -1,23 +1,23 @@
-import { ImageInfo } from "../Volume";
-import { CreateLoaderOptions, PrefetchDirection, VolumeFileFormat, pathToFileType } from "../loaders";
+import { ImageInfo } from "../Volume.js";
+import { CreateLoaderOptions, PrefetchDirection, VolumeFileFormat, pathToFileType } from "../loaders/index.js";
 import {
   ThreadableVolumeLoader,
   LoadSpec,
   RawChannelDataCallback,
   VolumeDims,
   LoadedVolumeInfo,
-} from "../loaders/IVolumeLoader";
-import { TiffLoader } from "../loaders/TiffLoader";
+} from "../loaders/IVolumeLoader.js";
+import { TiffLoader } from "../loaders/TiffLoader.js";
 import {
   WorkerMsgType,
-  WorkerRequest,
-  WorkerRequestPayload,
-  WorkerResponse,
-  WorkerResponsePayload,
-  ChannelLoadEvent,
+  type WorkerRequest,
+  type WorkerRequestPayload,
+  type WorkerResponse,
+  type WorkerResponsePayload,
+  type ChannelLoadEvent,
   WorkerResponseResult,
-} from "./types";
-import { rebuildImageInfo, rebuildLoadSpec } from "./util";
+} from "./types.js";
+import { rebuildImageInfo, rebuildLoadSpec } from "./util.js";
 
 type StoredPromise<T extends WorkerMsgType> = {
   type: T;

@@ -1,6 +1,6 @@
-import { ImageInfo } from "../Volume";
-import { CreateLoaderOptions, PrefetchDirection } from "../loaders";
-import { LoadSpec, LoadedVolumeInfo, VolumeDims } from "../loaders/IVolumeLoader";
+import type { ImageInfo } from "../Volume.js";
+import type { CreateLoaderOptions, PrefetchDirection } from "../loaders/index.js";
+import type { LoadSpec, LoadedVolumeInfo, VolumeDims } from "../loaders/IVolumeLoader.js";
 
 /** The types of requests that can be made to the worker. Mostly corresponds to methods on `IVolumeLoader`. */
 export const enum WorkerMsgType {

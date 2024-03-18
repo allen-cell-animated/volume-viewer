@@ -15,12 +15,12 @@ import {
   Vector3,
 } from "three";
 import { Channel, Volume } from ".";
-import { sliceFragmentShaderSrc, sliceShaderUniforms, sliceVertexShaderSrc } from "./constants/volumeSliceShader";
-import { VolumeRenderImpl } from "./VolumeRenderImpl";
-import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings";
-import FusedChannelData from "./FusedChannelData";
-import { FuseChannel } from "./types";
-import { ThreeJsPanel } from "./ThreeJsPanel";
+import { sliceFragmentShaderSrc, sliceShaderUniforms, sliceVertexShaderSrc } from "./constants/volumeSliceShader.js";
+import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
+import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings.js";
+import FusedChannelData from "./FusedChannelData.js";
+import type { FuseChannel } from "./types.js";
+import { ThreeJsPanel } from "./ThreeJsPanel.js";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
