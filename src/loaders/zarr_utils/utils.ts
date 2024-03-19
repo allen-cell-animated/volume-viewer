@@ -196,10 +196,6 @@ export function matchSourceScaleLevels(sources: ZarrSource[]): void {
         if (largestT !== currentT) {
           throw new Error("Incompatible zarr arrays: different numbers of timesteps");
         }
-        // ...they have different chunk sizes (TODO update prefetching so this restriction can be removed)
-        if (!smallestArr.chunks.every((val, idx) => val === currentArr.chunks[idx])) {
-          throw new Error("Incompatible zarr arrays: chunk shapes are mismatched");
-        }
       } else {
         allEqual = false;
         if (ordering > 0) {
