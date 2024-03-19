@@ -29,10 +29,8 @@ const EXPECTED_5X5X5X5_2 = [
   [2, 0, 2, 2, 4], // X++
 ];
 
-function validate(iter: ChunkPrefetchIterator, expected: number[][], debug = false) {
-  const iterResult = [...iter];
-  if (debug) console.log(iterResult);
-  expect(iterResult).to.deep.equal(expected);
+function validate(iter: ChunkPrefetchIterator, expected: number[][]) {
+  expect([...iter]).to.deep.equal(expected);
 }
 
 describe("ChunkPrefetchIterator", () => {
@@ -211,6 +209,6 @@ describe("ChunkPrefetchIterator", () => {
       // skip X--
       [0, 3, 0, 2, 3], // X++: all channels but channel 3 are maxed out
     ];
-    validate(iterator, expected, true);
+    validate(iterator, expected);
   });
 });
