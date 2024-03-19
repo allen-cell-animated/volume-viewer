@@ -419,21 +419,21 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       return sourceCoords;
     });
 
-    // Get number of chunks per dimension in `scaleLevel`
-    const source0Shape = this.sources[0].scaleLevels[scaleLevel];
-    const chunkDimsUnordered = source0Shape.shape.map((dim, idx) => Math.ceil(dim / source0Shape.chunks[idx]));
-    const chunkDims = this.orderByTCZYX(chunkDimsUnordered, 1);
-
-    const subscriber = this.requestQueue.addSubscriber();
+    // Get number of chunks per dimension in every source array
+    const chunkDimsTCZYX = this.sources.map((src) => {
+      const level = src.scaleLevels[scaleLevel];
+      const chunkDimsUnordered = level.shape.map((dim, idx) => Math.ceil(dim / level.chunks[idx]));
+      return this.orderByTCZYX(chunkDimsUnordered, 1);
+    });
     // `ChunkPrefetchIterator` yields chunk coordinates in order of roughly how likely they are to be loaded next
-    const chunkDimsTZYX: [number, number, number, number] = [chunkDims[0], chunkDims[2], chunkDims[3], chunkDims[4]];
     const prefetchIterator = new ChunkPrefetchIterator(
       chunkCoords,
       this.fetchOptions.maxPrefetchDistance,
-      chunkDimsTZYX,
+      chunkDimsTCZYX,
       this.priorityDirections
     );
 
+    const subscriber = this.requestQueue.addSubscriber();
     let prefetchCount = 0;
     for (const chunk of prefetchIterator) {
       if (prefetchCount >= this.fetchOptions.maxPrefetchChunks) {
