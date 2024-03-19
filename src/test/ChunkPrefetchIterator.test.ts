@@ -39,7 +39,7 @@ describe("ChunkPrefetchIterator", () => {
   it("iterates outward in TZYX order, negative then positive", () => {
     // 3x3x3x3, with one chunk in the center
     const iterator = new ChunkPrefetchIterator([[1, 0, 1, 1, 1]], [1, 1, 1, 1], [[3, 1, 3, 3, 3]]);
-    validate(iterator, EXPECTED_3X3X3X3, true);
+    validate(iterator, EXPECTED_3X3X3X3);
   });
 
   it("finds the borders of a set of multiple chunks and iterates outward from them", () => {
@@ -187,5 +187,30 @@ describe("ChunkPrefetchIterator", () => {
       // skip x: already at max offset in x
     ];
     validate(iterator, expected);
+  });
+
+  it("correctly handles sources with differing chunk dimensions", () => {
+    const allChannels = (x: number, y: number, ch = [0, 1, 2, 3]): TCZYX<number>[] => ch.map((c) => [0, c, 0, y, x]);
+    const iterator = new ChunkPrefetchIterator(
+      allChannels(1, 2),
+      [0, 0, 2, 2],
+      [
+        [0, 1, 0, 4, 3],
+        [0, 2, 0, 5, 2],
+        [0, 1, 0, 3, 4],
+      ]
+    );
+
+    const expected = [
+      ...allChannels(1, 1), // Y-
+      ...allChannels(1, 3, [0, 1, 2]), // Y+: channel 3 is maxed out
+      ...allChannels(0, 2), // X-
+      ...allChannels(2, 2, [0, 3]), // X+: channels 1 and 2 are maxed out
+      ...allChannels(1, 0), // Y--
+      ...allChannels(1, 4, [1, 2]), // Y++: channels 0 and 3 are maxed out
+      // skip X--
+      [0, 3, 0, 2, 3], // X++: all channels but channel 3 are maxed out
+    ];
+    validate(iterator, expected, true);
   });
 });
