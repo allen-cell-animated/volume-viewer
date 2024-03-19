@@ -88,14 +88,12 @@ export default class ChunkPrefetchIterator {
           for (const [i, sourceEnd] of endsPerSource.entries()) {
             pushN(end, sourceEnd, tczyxChunksPerDimension[i][1]);
           }
-          console.log(end);
         }
         // end = Math.min(start + tzyxMaxPrefetchOffset[dimension], tczyxChunksPerDimension[dimension] - 1);
       } else {
         // Negative direction - end is either the min coordinate in the fetched set minus the max offset in this
         // dimension, or 0, whichever comes first
         end = Math.max(start - tzyxMaxPrefetchOffset[dimension], 0);
-        console.log(end);
       }
       const directionState = { direction, start, end, chunks: [] };
 
