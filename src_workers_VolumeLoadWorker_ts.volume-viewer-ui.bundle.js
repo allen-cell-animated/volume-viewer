@@ -15,8 +15,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
-
+/* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
 
 
 
@@ -34,18 +33,18 @@ var Channel = /*#__PURE__*/function () {
 
     // on gpu
     this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(new Uint8Array(), 0, 0);
-    this.lutTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH), 256, 1, three__WEBPACK_IMPORTED_MODULE_3__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType);
+    this.lutTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH), 256, 1, three__WEBPACK_IMPORTED_MODULE_3__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType);
     this.lutTexture.minFilter = this.lutTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_3__.LinearFilter;
     this.lutTexture.generateMipmaps = false;
     this.volumeData = new Uint8Array();
     this.name = name;
-    this.histogram = new _Histogram__WEBPACK_IMPORTED_MODULE_2__["default"](new Uint8Array());
+    this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_2__["default"](new Uint8Array());
     this.dims = [0, 0, 0];
 
     // intensity remapping lookup table
-    this.lut = new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH).fill(0);
+    this.lut = new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH).fill(0);
     // per-intensity color labeling (disabled initially)
-    this.colorPalette = new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH).fill(0);
+    this.colorPalette = new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH).fill(0);
     // store in 0..1 range. 1 means fully colorPalette, 0 means fully lut.
     this.colorPaletteAlpha = 0.0;
   }
@@ -54,7 +53,7 @@ var Channel = /*#__PURE__*/function () {
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Channel, [{
     key: "combineLuts",
     value: function combineLuts(rgbColor, out) {
-      var ret = out ? out : new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH);
+      var ret = out ? out : new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH);
       if (!rgbColor) {
         return ret;
       }
@@ -65,13 +64,13 @@ var Channel = /*#__PURE__*/function () {
         ret.set(this.colorPalette);
       } else if (this.colorPaletteAlpha === 0.0) {
         ret.set(this.lut);
-        for (var i = 0; i < _Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH / 4; ++i) {
+        for (var i = 0; i < _Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH / 4; ++i) {
           ret[i * 4 + 0] *= rgb[0];
           ret[i * 4 + 1] *= rgb[1];
           ret[i * 4 + 2] *= rgb[2];
         }
       } else {
-        for (var _i = 0; _i < _Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH / 4; ++_i) {
+        for (var _i = 0; _i < _Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH / 4; ++_i) {
           ret[_i * 4 + 0] = this.colorPalette[_i * 4 + 0] * this.colorPaletteAlpha + this.lut[_i * 4 + 0] * (1.0 - this.colorPaletteAlpha) * rgb[0];
           ret[_i * 4 + 1] = this.colorPalette[_i * 4 + 1] * this.colorPaletteAlpha + this.lut[_i * 4 + 1] * (1.0 - this.colorPaletteAlpha) * rgb[1];
           ret[_i * 4 + 2] = this.colorPalette[_i * 4 + 2] * this.colorPaletteAlpha + this.lut[_i * 4 + 2] * (1.0 - this.colorPaletteAlpha) * rgb[2];
@@ -130,7 +129,7 @@ var Channel = /*#__PURE__*/function () {
       };
       this.rebuildDataTexture(this.imgData.data, w, h);
       this.loaded = true;
-      this.histogram = new _Histogram__WEBPACK_IMPORTED_MODULE_2__["default"](bitsArray);
+      this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_2__["default"](bitsArray);
       this.lutGenerator_auto2();
     }
 
@@ -173,7 +172,7 @@ var Channel = /*#__PURE__*/function () {
       // TODO FIXME performance hit for shuffling the data and storing 2 versions of it (could do this in worker at least?)
       this.packToAtlas(vx, vy, vz, ax, ay);
       this.loaded = true;
-      this.histogram = new _Histogram__WEBPACK_IMPORTED_MODULE_2__["default"](this.volumeData);
+      this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_2__["default"](this.volumeData);
       this.lutGenerator_auto2();
     }
 
@@ -340,7 +339,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _constants_colors__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants/colors */ "./src/constants/colors.ts");
+/* harmony import */ var _constants_colors_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants/colors.js */ "./src/constants/colors.ts");
 
 
 
@@ -656,7 +655,7 @@ var Histogram = /*#__PURE__*/function () {
       // skip zero!!!
       for (var i = 1; i < this.bins.length; ++i) {
         if (this.bins[i] > 0) {
-          var rgb = (0,_constants_colors__WEBPACK_IMPORTED_MODULE_2__.getColorByChannelIndex)(i);
+          var rgb = (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_2__.getColorByChannelIndex)(i);
           lut[i * 4 + 0] = rgb[0];
           lut[i * 4 + 1] = rgb[1];
           lut[i * 4 + 2] = rgb[2];
@@ -1000,10 +999,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _Channel__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Channel */ "./src/Channel.ts");
-/* harmony import */ var _constants_colors__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./constants/colors */ "./src/constants/colors.ts");
-/* harmony import */ var _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./loaders/IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _loaders_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./loaders/VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _Channel_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Channel.js */ "./src/Channel.ts");
+/* harmony import */ var _constants_colors_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./constants/colors.js */ "./src/constants/colors.ts");
+/* harmony import */ var _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./loaders/IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _loaders_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./loaders/VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
 
 
 
@@ -1093,7 +1092,7 @@ var Volume = /*#__PURE__*/function () {
 
   function Volume() {
     var imageInfo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : getDefaultImageInfo();
-    var loadSpec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.LoadSpec();
+    var loadSpec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_7__.LoadSpec();
     var loader = arguments.length > 2 ? arguments[2] : undefined;
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, Volume);
     this.loaded = false;
@@ -1126,17 +1125,17 @@ var Volume = /*#__PURE__*/function () {
     this.numChannels = this.imageInfo.numChannels;
     this.channelNames = this.imageInfo.channelNames.slice();
     this.channelColorsDefault = this.imageInfo.channelColors ? this.imageInfo.channelColors.slice() : this.channelNames.map(function (name, index) {
-      return (0,_constants_colors__WEBPACK_IMPORTED_MODULE_6__.getColorByChannelIndex)(index);
+      return (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_6__.getColorByChannelIndex)(index);
     });
     // fill in gaps
     if (this.channelColorsDefault.length < this.imageInfo.numChannels) {
       for (var i = this.channelColorsDefault.length - 1; i < this.imageInfo.numChannels; ++i) {
-        this.channelColorsDefault[i] = (0,_constants_colors__WEBPACK_IMPORTED_MODULE_6__.getColorByChannelIndex)(i);
+        this.channelColorsDefault[i] = (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_6__.getColorByChannelIndex)(i);
       }
     }
     this.channels = [];
     for (var _i = 0; _i < this.imageInfo.numChannels; ++_i) {
-      var channel = new _Channel__WEBPACK_IMPORTED_MODULE_5__["default"](this.channelNames[_i]);
+      var channel = new _Channel_js__WEBPACK_IMPORTED_MODULE_5__["default"](this.channelNames[_i]);
       this.channels.push(channel);
       // TODO pass in channel constructor...
       channel.dims = this.imageInfo.subregionSize.toArray();
@@ -1195,7 +1194,7 @@ var Volume = /*#__PURE__*/function () {
             case 7:
               dims = _context.sent;
               if (dims) {
-                loadableLevel = (0,_loaders_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.estimateLevelForAtlas)(dims.map(function (_ref) {
+                loadableLevel = (0,_loaders_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_8__.estimateLevelForAtlas)(dims.map(function (_ref) {
                   var shape = _ref.shape;
                   return [shape[2], shape[3], shape[4]];
                 }));
@@ -1332,11 +1331,11 @@ var Volume = /*#__PURE__*/function () {
     value: function appendEmptyChannel(name, color) {
       var idx = this.imageInfo.numChannels;
       var chname = name || "channel_" + idx;
-      var chcolor = color || (0,_constants_colors__WEBPACK_IMPORTED_MODULE_6__.getColorByChannelIndex)(idx);
+      var chcolor = color || (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_6__.getColorByChannelIndex)(idx);
       this.numChannels += 1;
       this.channelNames.push(chname);
       this.channelColorsDefault.push(chcolor);
-      this.channels.push(new _Channel__WEBPACK_IMPORTED_MODULE_5__["default"](chname));
+      this.channels.push(new _Channel_js__WEBPACK_IMPORTED_MODULE_5__["default"](chname));
       for (var i = 0; i < this.volumeDataObservers.length; ++i) {
         this.volumeDataObservers[i].onVolumeChannelAdded(this, idx);
       }
@@ -1782,8 +1781,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
-/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _Volume_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../Volume.js */ "./src/Volume.ts");
+/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
 
 
 
@@ -1864,9 +1863,9 @@ var ThreadableVolumeLoader = /*#__PURE__*/function () {
               _yield$this$createIma = _context.sent;
               imageInfo = _yield$this$createIma.imageInfo;
               adjustedLoadSpec = _yield$this$createIma.loadSpec;
-              vol = new _Volume__WEBPACK_IMPORTED_MODULE_5__["default"](imageInfo, adjustedLoadSpec, this);
+              vol = new _Volume_js__WEBPACK_IMPORTED_MODULE_5__["default"](imageInfo, adjustedLoadSpec, this);
               vol.channelLoadCallback = onChannelLoaded;
-              vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imageInfo);
+              vol.imageMetadata = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imageInfo);
               return _context.abrupt("return", vol);
             case 9:
             case "end":
@@ -1949,7 +1948,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
 
 
 
@@ -2060,7 +2059,7 @@ var JsonImageInfoLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               return this.getJsonImageInfo(loadSpec.time);
             case 2:
               jsonInfo = _context2.sent;
-              d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__.VolumeDims();
+              d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.VolumeDims();
               d.shape = [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tile_height, jsonInfo.tile_width];
               d.spacing = [1, 1, jsonInfo.pixel_size_z, jsonInfo.pixel_size_y, jsonInfo.pixel_size_x];
               d.spaceUnit = jsonInfo.pixel_size_unit || "μm";
@@ -2291,7 +2290,7 @@ var JsonImageInfoLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
     }
   }]);
   return JsonImageInfoLoader;
-}(_IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__.ThreadableVolumeLoader);
+}(_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.ThreadableVolumeLoader);
 
 
 /***/ }),
@@ -2324,12 +2323,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/util.js");
 /* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/ops.js");
 /* harmony import */ var zarrita__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! zarrita */ "./node_modules/@zarrita/storage/dist/src/fetch.js");
-/* harmony import */ var _utils_SubscribableRequestQueue__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../utils/SubscribableRequestQueue */ "./src/utils/SubscribableRequestQueue.ts");
-/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
-/* harmony import */ var _zarr_utils_ChunkPrefetchIterator__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./zarr_utils/ChunkPrefetchIterator */ "./src/loaders/zarr_utils/ChunkPrefetchIterator.ts");
-/* harmony import */ var _zarr_utils_WrappedStore__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./zarr_utils/WrappedStore */ "./src/loaders/zarr_utils/WrappedStore.ts");
-/* harmony import */ var _zarr_utils_utils__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./zarr_utils/utils */ "./src/loaders/zarr_utils/utils.ts");
+/* harmony import */ var _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../utils/SubscribableRequestQueue.js */ "./src/utils/SubscribableRequestQueue.ts");
+/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _zarr_utils_ChunkPrefetchIterator_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./zarr_utils/ChunkPrefetchIterator.js */ "./src/loaders/zarr_utils/ChunkPrefetchIterator.ts");
+/* harmony import */ var _zarr_utils_WrappedStore_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./zarr_utils/WrappedStore.js */ "./src/loaders/zarr_utils/WrappedStore.ts");
+/* harmony import */ var _zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./zarr_utils/utils.js */ "./src/loaders/zarr_utils/utils.ts");
 
 
 
@@ -2429,10 +2428,10 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       // Assume all spatial axes have the same units - we have no means of storing per-axis unit symbols
       var xi = this.axesTCZYX[4];
       var spaceUnitName = this.multiscaleMetadata.axes[xi].unit;
-      var spaceUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
+      var spaceUnitSymbol = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
       var ti = this.axesTCZYX[0];
       var timeUnitName = ti > -1 ? this.multiscaleMetadata.axes[ti].unit : undefined;
-      var timeUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
+      var timeUnitSymbol = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
       return [spaceUnitSymbol, timeUnitSymbol];
     }
   }, {
@@ -2451,17 +2450,17 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
   }, {
     key: "getScale",
     value: function getScale(level) {
-      return (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_15__.getScale)(this.multiscaleMetadata.datasets[level], this.axesTCZYX);
+      return (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.getScale)(this.multiscaleMetadata.datasets[level], this.axesTCZYX);
     }
   }, {
     key: "orderByDimension",
     value: function orderByDimension(valsTCZYX) {
-      return (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_15__.orderByDimension)(valsTCZYX, this.axesTCZYX);
+      return (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.orderByDimension)(valsTCZYX, this.axesTCZYX);
     }
   }, {
     key: "orderByTCZYX",
     value: function orderByTCZYX(valsDimension, defaultValue) {
-      return (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_15__.orderByTCZYX)(valsDimension, this.axesTCZYX, defaultValue);
+      return (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.orderByTCZYX)(valsDimension, this.axesTCZYX, defaultValue);
     }
 
     /**
@@ -2489,12 +2488,12 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
         timeUnit = _this$getUnitSymbols2[1];
       // Compute subregion size so we can factor that in
       var maxExtent = (_this$maxExtent = this.maxExtent) !== null && _this$maxExtent !== void 0 ? _this$maxExtent : new three__WEBPACK_IMPORTED_MODULE_16__.Box3(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(1, 1, 1));
-      var subregion = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.composeSubregion)(loadSpec.subregion, maxExtent);
+      var subregion = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.composeSubregion)(loadSpec.subregion, maxExtent);
       var regionSize = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3());
       var regionArr = [1, 1, regionSize.z, regionSize.y, regionSize.x];
       var result = this.scaleLevels.map(function (level, i) {
         var scale = _this2.getScale(i);
-        var dims = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_11__.VolumeDims();
+        var dims = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__.VolumeDims();
         dims.spaceUnit = spaceUnit;
         dims.timeUnit = timeUnit;
         dims.shape = _this2.orderByTCZYX(level.shape, 1).map(function (val, idx) {
@@ -2518,7 +2517,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       var hasC = c > -1;
       var hasZ = z > -1;
       var shape0 = this.scaleLevels[0].shape;
-      var levelToLoad = (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_15__.pickLevelToLoad)(loadSpec, this.getLevelShapesZYX());
+      var levelToLoad = (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.pickLevelToLoad)(loadSpec, this.getLevelShapesZYX());
       var shapeLv = this.scaleLevels[levelToLoad].shape;
       var _this$getUnitSymbols3 = this.getUnitSymbols(),
         _this$getUnitSymbols4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_this$getUnitSymbols3, 2),
@@ -2529,11 +2528,11 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       if (!this.maxExtent) {
         this.maxExtent = loadSpec.subregion.clone();
       }
-      var pxDims0 = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1));
+      var pxDims0 = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1));
       var pxSize0 = pxDims0.getSize(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3());
-      var pxDimsLv = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(shapeLv[x], shapeLv[y], hasZ ? shapeLv[z] : 1));
+      var pxDimsLv = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(shapeLv[x], shapeLv[y], hasZ ? shapeLv[z] : 1));
       var pxSizeLv = pxDimsLv.getSize(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3());
-      var atlasTileDims = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.computePackedAtlasDims)(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
+      var atlasTileDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.computePackedAtlasDims)(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
       var channelNames = this.omeroMetadata.channels.map(function (ch) {
         return ch.label;
       });
@@ -2613,7 +2612,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
     key: "beginPrefetch",
     value: function beginPrefetch(keys, scaleLevel) {
       var _this3 = this;
-      var numDims = (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_15__.getDimensionCount)(this.axesTCZYX);
+      var numDims = (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.getDimensionCount)(this.axesTCZYX);
 
       // Convert keys to arrays of coords
       var chunkCoords = keys.map(function (key) {
@@ -2633,7 +2632,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       var subscriber = this.requestQueue.addSubscriber();
       // `ChunkPrefetchIterator` yields chunk coordinates in order of roughly how likely they are to be loaded next
       var chunkDimsTZYX = [chunkDims[0], chunkDims[2], chunkDims[3], chunkDims[4]];
-      var prefetchIterator = new _zarr_utils_ChunkPrefetchIterator__WEBPACK_IMPORTED_MODULE_13__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTZYX, this.priorityDirections);
+      var prefetchIterator = new _zarr_utils_ChunkPrefetchIterator_js__WEBPACK_IMPORTED_MODULE_13__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTZYX, this.priorityDirections);
       var prefetchCount = 0;
       var _iterator = _createForOfIteratorHelper(prefetchIterator),
         _step;
@@ -2671,17 +2670,17 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
         z = _this$axesTCZYX$slice4[0],
         y = _this$axesTCZYX$slice4[1],
         x = _this$axesTCZYX$slice4[2];
-      var subregion = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.composeSubregion)(loadSpec.subregion, maxExtent);
-      var levelIdx = (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_15__.pickLevelToLoad)(_objectSpread(_objectSpread({}, loadSpec), {}, {
+      var subregion = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.composeSubregion)(loadSpec.subregion, maxExtent);
+      var levelIdx = (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.pickLevelToLoad)(_objectSpread(_objectSpread({}, loadSpec), {}, {
         subregion: subregion
       }), this.getLevelShapesZYX());
       var level = this.scaleLevels[levelIdx];
       var levelShape = level.shape;
-      var regionPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(subregion, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z]));
+      var regionPx = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(subregion, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z]));
       // Update volume `imageInfo` to reflect potentially new dimensions
       var regionSizePx = regionPx.getSize(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3());
-      var atlasTileDims = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.computePackedAtlasDims)(regionSizePx.z, regionSizePx.x, regionSizePx.y);
-      var volExtentPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(maxExtent, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z]));
+      var atlasTileDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.computePackedAtlasDims)(regionSizePx.z, regionSizePx.x, regionSizePx.y);
+      var volExtentPx = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(maxExtent, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z]));
       var volSizePx = volExtentPx.getSize(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3());
       var updatedImageInfo = _objectSpread(_objectSpread({}, imageInfo), {}, {
         atlasTileDims: atlasTileDims,
@@ -2801,9 +2800,9 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               fetchOptions = _args3.length > 4 ? _args3[4] : undefined;
               // Setup queue and store, get basic metadata
               if (!queue) {
-                queue = new _utils_SubscribableRequestQueue__WEBPACK_IMPORTED_MODULE_10__["default"](fetchOptions === null || fetchOptions === void 0 ? void 0 : fetchOptions.concurrencyLimit, fetchOptions === null || fetchOptions === void 0 ? void 0 : fetchOptions.prefetchConcurrencyLimit);
+                queue = new _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_10__["default"](fetchOptions === null || fetchOptions === void 0 ? void 0 : fetchOptions.concurrencyLimit, fetchOptions === null || fetchOptions === void 0 ? void 0 : fetchOptions.prefetchConcurrencyLimit);
               }
-              store = new _zarr_utils_WrappedStore__WEBPACK_IMPORTED_MODULE_14__["default"](new zarrita__WEBPACK_IMPORTED_MODULE_19__["default"](url), cache, queue);
+              store = new _zarr_utils_WrappedStore_js__WEBPACK_IMPORTED_MODULE_14__["default"](new zarrita__WEBPACK_IMPORTED_MODULE_19__["default"](url), cache, queue);
               root = _zarrita_core__WEBPACK_IMPORTED_MODULE_20__.root(store);
               _context3.next = 9;
               return _zarrita_core__WEBPACK_IMPORTED_MODULE_21__.open(root, {
@@ -2827,7 +2826,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               return Promise.all(scaleLevelPromises);
             case 16:
               scaleLevels = _context3.sent;
-              axisTCZYX = (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_15__.remapAxesToTCZYX)(multiscale.axes);
+              axisTCZYX = (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.remapAxesToTCZYX)(multiscale.axes);
               priorityDirs = fetchOptions !== null && fetchOptions !== void 0 && fetchOptions.priorityDirections ? fetchOptions.priorityDirections.slice() : undefined;
               return _context3.abrupt("return", new OMEZarrLoader(store, scaleLevels, multiscale, omero, axisTCZYX, queue, fetchOptions, priorityDirs));
             case 20:
@@ -2843,7 +2842,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
     }()
   }]);
   return OMEZarrLoader;
-}(_IVolumeLoader__WEBPACK_IMPORTED_MODULE_11__.ThreadableVolumeLoader);
+}(_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__.ThreadableVolumeLoader);
 
 
 /***/ }),
@@ -2870,8 +2869,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__);
 /* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
 
 
 
@@ -3001,7 +3000,7 @@ var TiffLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               return this.loadOmeDims();
             case 2:
               dims = _context2.sent;
-              d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__.VolumeDims();
+              d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.VolumeDims();
               d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
               d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
               d.spaceUnit = dims.unit ? dims.unit : "micron";
@@ -3035,7 +3034,7 @@ var TiffLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               //const height = image.getHeight();
               // TODO allow user setting of this downsampling info?
               // TODO allow ROI selection: range of x,y,z,c for a given t
-              atlasDims = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.computePackedAtlasDims)(dims.sizez, dims.sizex, dims.sizey); // fit tiles to max of 2048x2048?
+              atlasDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_9__.computePackedAtlasDims)(dims.sizez, dims.sizex, dims.sizey); // fit tiles to max of 2048x2048?
               targetSize = 2048;
               tilesizex = Math.floor(targetSize / atlasDims.x);
               tilesizey = Math.floor(targetSize / atlasDims.y); // load tiff and check metadata
@@ -3062,7 +3061,7 @@ var TiffLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               }; // This loader uses no fields from `LoadSpec`. Initialize volume with defaults.
               return _context3.abrupt("return", {
                 imageInfo: imgdata,
-                loadSpec: new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__.LoadSpec()
+                loadSpec: new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.LoadSpec()
               });
             case 9:
             case "end":
@@ -3148,7 +3147,7 @@ var TiffLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
     }()
   }]);
   return TiffLoader;
-}(_IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__.ThreadableVolumeLoader);
+}(_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.ThreadableVolumeLoader);
 
 
 /***/ }),
@@ -3170,13 +3169,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   unitNameToSymbol: () => (/* binding */ unitNameToSymbol)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
-/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! regenerator-runtime/runtime */ "./node_modules/regenerator-runtime/runtime.js");
-/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
-
 
 var MAX_ATLAS_EDGE = 4096;
 
@@ -3246,7 +3242,7 @@ function computePackedAtlasDims(z, tw, th) {
     nextrows = Math.ceil(z / nextcols);
     ratio = nextcols * tw / (nextrows * th);
   }
-  return new three__WEBPACK_IMPORTED_MODULE_2__.Vector2(nrows, ncols);
+  return new three__WEBPACK_IMPORTED_MODULE_1__.Vector2(nrows, ncols);
 }
 
 /** Picks the largest scale level that can fit into a texture atlas */
@@ -3288,7 +3284,7 @@ function convertSubregionToPixels(region, size) {
   if (min.z === max.z && min.z < size.z) {
     max.z += 1;
   }
-  return new three__WEBPACK_IMPORTED_MODULE_2__.Box3(min, max);
+  return new three__WEBPACK_IMPORTED_MODULE_1__.Box3(min, max);
 }
 
 /**
@@ -3296,10 +3292,10 @@ function convertSubregionToPixels(region, size) {
  * and 1). i.e. if `container`'s range on the X axis is 0-4 and `region`'s is 0.25-0.5, the result will have range 1-2.
  */
 function composeSubregion(region, container) {
-  var size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3());
+  var size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3());
   var min = region.min.clone().multiply(size).add(container.min);
   var max = region.max.clone().multiply(size).add(container.min);
-  return new three__WEBPACK_IMPORTED_MODULE_2__.Box3(min, max);
+  return new three__WEBPACK_IMPORTED_MODULE_1__.Box3(min, max);
 }
 function isEmpty(obj) {
   for (var key in obj) {
@@ -3347,7 +3343,7 @@ function buildDefaultMetadata(imageInfo) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _zarr_utils_types__WEBPACK_IMPORTED_MODULE_5__.PrefetchDirection),
+/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _zarr_utils_types_js__WEBPACK_IMPORTED_MODULE_5__.PrefetchDirection),
 /* harmony export */   VolumeFileFormat: () => (/* binding */ VolumeFileFormat),
 /* harmony export */   createVolumeLoader: () => (/* binding */ createVolumeLoader),
 /* harmony export */   pathToFileType: () => (/* binding */ pathToFileType)
@@ -3355,10 +3351,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var _OmeZarrLoader__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./OmeZarrLoader */ "./src/loaders/OmeZarrLoader.ts");
-/* harmony import */ var _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./JsonImageInfoLoader */ "./src/loaders/JsonImageInfoLoader.ts");
-/* harmony import */ var _TiffLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./TiffLoader */ "./src/loaders/TiffLoader.ts");
-/* harmony import */ var _zarr_utils_types__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./zarr_utils/types */ "./src/loaders/zarr_utils/types.ts");
+/* harmony import */ var _OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./OmeZarrLoader.js */ "./src/loaders/OmeZarrLoader.ts");
+/* harmony import */ var _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
+/* harmony import */ var _TiffLoader_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./TiffLoader.js */ "./src/loaders/TiffLoader.ts");
+/* harmony import */ var _zarr_utils_types_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./zarr_utils/types.js */ "./src/loaders/zarr_utils/types.ts");
 
 
 
@@ -3395,13 +3391,13 @@ function _createVolumeLoader() {
           break;
         case 5:
           _context.next = 7;
-          return _OmeZarrLoader__WEBPACK_IMPORTED_MODULE_2__.OMEZarrLoader.createLoader(pathString, options === null || options === void 0 ? void 0 : options.scene, options === null || options === void 0 ? void 0 : options.cache, options === null || options === void 0 ? void 0 : options.queue, options === null || options === void 0 ? void 0 : options.fetchOptions);
+          return _OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_2__.OMEZarrLoader.createLoader(pathString, options === null || options === void 0 ? void 0 : options.scene, options === null || options === void 0 ? void 0 : options.cache, options === null || options === void 0 ? void 0 : options.queue, options === null || options === void 0 ? void 0 : options.fetchOptions);
         case 7:
           return _context.abrupt("return", _context.sent);
         case 8:
-          return _context.abrupt("return", new _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_3__.JsonImageInfoLoader(path, options === null || options === void 0 ? void 0 : options.cache));
+          return _context.abrupt("return", new _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_3__.JsonImageInfoLoader(path, options === null || options === void 0 ? void 0 : options.cache));
         case 9:
-          return _context.abrupt("return", new _TiffLoader__WEBPACK_IMPORTED_MODULE_4__.TiffLoader(pathString));
+          return _context.abrupt("return", new _TiffLoader_js__WEBPACK_IMPORTED_MODULE_4__.TiffLoader(pathString));
         case 10:
         case "end":
           return _context.stop();
@@ -3888,7 +3884,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
 
 
 
@@ -3934,7 +3930,7 @@ function pickLevelToLoad(loadSpec, spatialDimsZYX) {
       x = _ref4[2];
     return [Math.max(z * size.z, 1), Math.max(y * size.y, 1), Math.max(x * size.x, 1)];
   });
-  var optimalLevel = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_1__.estimateLevelForAtlas)(dims);
+  var optimalLevel = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__.estimateLevelForAtlas)(dims);
   return Math.max(optimalLevel, (_loadSpec$multiscaleL = loadSpec.multiscaleLevel) !== null && _loadSpec$multiscaleL !== void 0 ? _loadSpec$multiscaleL : 0);
 }
 
@@ -4372,7 +4368,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _RequestQueue__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./RequestQueue */ "./src/utils/RequestQueue.ts");
+/* harmony import */ var _RequestQueue_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./RequestQueue.js */ "./src/utils/RequestQueue.ts");
 
 
 
@@ -4390,7 +4386,7 @@ var SubscribableRequestQueue = /*#__PURE__*/function () {
   function SubscribableRequestQueue(maxActiveRequests, maxLowPriorityRequests) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, SubscribableRequestQueue);
     if (typeof maxActiveRequests === "number" || maxActiveRequests === undefined) {
-      this.queue = new _RequestQueue__WEBPACK_IMPORTED_MODULE_3__["default"](maxActiveRequests, maxLowPriorityRequests);
+      this.queue = new _RequestQueue_js__WEBPACK_IMPORTED_MODULE_3__["default"](maxActiveRequests, maxLowPriorityRequests);
     } else {
       this.queue = maxActiveRequests;
     }
@@ -4624,12 +4620,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var _VolumeCache__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../VolumeCache */ "./src/VolumeCache.ts");
-/* harmony import */ var _loaders__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../loaders */ "./src/loaders/index.ts");
-/* harmony import */ var _utils_RequestQueue__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../utils/RequestQueue */ "./src/utils/RequestQueue.ts");
-/* harmony import */ var _utils_SubscribableRequestQueue__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../utils/SubscribableRequestQueue */ "./src/utils/SubscribableRequestQueue.ts");
-/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./types */ "./src/workers/types.ts");
-/* harmony import */ var _util__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./util */ "./src/workers/util.ts");
+/* harmony import */ var _VolumeCache_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../VolumeCache.js */ "./src/VolumeCache.ts");
+/* harmony import */ var _loaders_index_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../loaders/index.js */ "./src/loaders/index.ts");
+/* harmony import */ var _utils_RequestQueue_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../utils/RequestQueue.js */ "./src/utils/RequestQueue.ts");
+/* harmony import */ var _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../utils/SubscribableRequestQueue.js */ "./src/utils/SubscribableRequestQueue.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./types.js */ "./src/workers/types.ts");
+/* harmony import */ var _util_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./util.js */ "./src/workers/util.ts");
 
 
 
@@ -4647,18 +4643,18 @@ var subscribableQueue = undefined;
 var loader = undefined;
 var initialized = false;
 var copyOnLoad = false;
-var messageHandlers = (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])({}, _types__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.INIT, function (_ref) {
+var messageHandlers = (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])({}, _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.INIT, function (_ref) {
   var maxCacheSize = _ref.maxCacheSize,
     maxActiveRequests = _ref.maxActiveRequests,
     maxLowPriorityRequests = _ref.maxLowPriorityRequests;
   if (!initialized) {
-    cache = new _VolumeCache__WEBPACK_IMPORTED_MODULE_3__["default"](maxCacheSize);
-    queue = new _utils_RequestQueue__WEBPACK_IMPORTED_MODULE_5__["default"](maxActiveRequests, maxLowPriorityRequests);
-    subscribableQueue = new _utils_SubscribableRequestQueue__WEBPACK_IMPORTED_MODULE_6__["default"](queue);
+    cache = new _VolumeCache_js__WEBPACK_IMPORTED_MODULE_3__["default"](maxCacheSize);
+    queue = new _utils_RequestQueue_js__WEBPACK_IMPORTED_MODULE_5__["default"](maxActiveRequests, maxLowPriorityRequests);
+    subscribableQueue = new _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_6__["default"](queue);
     initialized = true;
   }
   return Promise.resolve();
-}), _types__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.CREATE_LOADER, function () {
+}), _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.CREATE_LOADER, function () {
   var _ref3 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee(_ref2) {
     var path, options, pathString, fileType;
     return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function _callee$(_context) {
@@ -4666,10 +4662,10 @@ var messageHandlers = (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED
         case 0:
           path = _ref2.path, options = _ref2.options;
           pathString = Array.isArray(path) ? path[0] : path;
-          fileType = (options === null || options === void 0 ? void 0 : options.fileType) || (0,_loaders__WEBPACK_IMPORTED_MODULE_4__.pathToFileType)(pathString);
-          copyOnLoad = fileType === _loaders__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.JSON;
+          fileType = (options === null || options === void 0 ? void 0 : options.fileType) || (0,_loaders_index_js__WEBPACK_IMPORTED_MODULE_4__.pathToFileType)(pathString);
+          copyOnLoad = fileType === _loaders_index_js__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.JSON;
           _context.next = 6;
-          return (0,_loaders__WEBPACK_IMPORTED_MODULE_4__.createVolumeLoader)(path, _objectSpread(_objectSpread({}, options), {}, {
+          return (0,_loaders_index_js__WEBPACK_IMPORTED_MODULE_4__.createVolumeLoader)(path, _objectSpread(_objectSpread({}, options), {}, {
             cache: cache,
             queue: subscribableQueue
           }));
@@ -4685,7 +4681,7 @@ var messageHandlers = (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED
   return function (_x) {
     return _ref3.apply(this, arguments);
   };
-}()), _types__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.CREATE_VOLUME, function () {
+}()), _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.CREATE_VOLUME, function () {
   var _ref4 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee2(loadSpec) {
     return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function _callee2$(_context2) {
       while (1) switch (_context2.prev = _context2.next) {
@@ -4697,7 +4693,7 @@ var messageHandlers = (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED
           throw new Error("No loader created");
         case 2:
           _context2.next = 4;
-          return loader.createImageInfo((0,_util__WEBPACK_IMPORTED_MODULE_8__.rebuildLoadSpec)(loadSpec));
+          return loader.createImageInfo((0,_util_js__WEBPACK_IMPORTED_MODULE_8__.rebuildLoadSpec)(loadSpec));
         case 4:
           return _context2.abrupt("return", _context2.sent);
         case 5:
@@ -4709,7 +4705,7 @@ var messageHandlers = (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED
   return function (_x2) {
     return _ref4.apply(this, arguments);
   };
-}()), _types__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.LOAD_DIMS, function () {
+}()), _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.LOAD_DIMS, function () {
   var _ref5 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee3(loadSpec) {
     return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function _callee3$(_context3) {
       while (1) switch (_context3.prev = _context3.next) {
@@ -4721,7 +4717,7 @@ var messageHandlers = (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED
           throw new Error("No loader created");
         case 2:
           _context3.next = 4;
-          return loader.loadDims((0,_util__WEBPACK_IMPORTED_MODULE_8__.rebuildLoadSpec)(loadSpec));
+          return loader.loadDims((0,_util_js__WEBPACK_IMPORTED_MODULE_8__.rebuildLoadSpec)(loadSpec));
         case 4:
           return _context3.abrupt("return", _context3.sent);
         case 5:
@@ -4733,7 +4729,7 @@ var messageHandlers = (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED
   return function (_x3) {
     return _ref5.apply(this, arguments);
   };
-}()), _types__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.LOAD_VOLUME_DATA, function () {
+}()), _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.LOAD_VOLUME_DATA, function () {
   var _ref7 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee4(_ref6) {
     var imageInfo, loadSpec, loaderId, loadId;
     return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function _callee4$(_context4) {
@@ -4747,9 +4743,9 @@ var messageHandlers = (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED
           throw new Error("No loader created");
         case 3:
           _context4.next = 5;
-          return loader.loadRawChannelData((0,_util__WEBPACK_IMPORTED_MODULE_8__.rebuildImageInfo)(imageInfo), (0,_util__WEBPACK_IMPORTED_MODULE_8__.rebuildLoadSpec)(loadSpec), function (channelIndex, data, atlasDims) {
+          return loader.loadRawChannelData((0,_util_js__WEBPACK_IMPORTED_MODULE_8__.rebuildImageInfo)(imageInfo), (0,_util_js__WEBPACK_IMPORTED_MODULE_8__.rebuildLoadSpec)(loadSpec), function (channelIndex, data, atlasDims) {
             var message = {
-              responseResult: _types__WEBPACK_IMPORTED_MODULE_7__.WorkerResponseResult.EVENT,
+              responseResult: _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerResponseResult.EVENT,
               loaderId: loaderId,
               loadId: loadId,
               channelIndex: channelIndex,
@@ -4772,12 +4768,12 @@ var messageHandlers = (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED
   return function (_x4) {
     return _ref7.apply(this, arguments);
   };
-}()), _types__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, function (directions) {
+}()), _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, function (directions) {
   var _loader;
   // Silently does nothing if the loader isn't an `OMEZarrLoader`
   (_loader = loader) === null || _loader === void 0 || _loader.setPrefetchPriority(directions);
   return Promise.resolve();
-}), _types__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, function (syncChannels) {
+}), _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, function (syncChannels) {
   var _loader2;
   (_loader2 = loader) === null || _loader2 === void 0 || _loader2.syncMultichannelLoading(syncChannels);
   return Promise.resolve();
@@ -4796,7 +4792,7 @@ self.onmessage = /*#__PURE__*/function () {
         case 5:
           response = _context5.sent;
           message = {
-            responseResult: _types__WEBPACK_IMPORTED_MODULE_7__.WorkerResponseResult.SUCCESS,
+            responseResult: _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerResponseResult.SUCCESS,
             msgId: msgId,
             type: type,
             payload: response
@@ -4807,7 +4803,7 @@ self.onmessage = /*#__PURE__*/function () {
           _context5.prev = 9;
           _context5.t0 = _context5["catch"](2);
           message = {
-            responseResult: _types__WEBPACK_IMPORTED_MODULE_7__.WorkerResponseResult.ERROR,
+            responseResult: _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerResponseResult.ERROR,
             msgId: msgId,
             type: type,
             payload: _context5.t0.message
@@ -4989,7 +4985,7 @@ function rebuildImageInfo(imageInfo) {
 /******/ 	__webpack_require__.x = () => {
 /******/ 		// Load entry module and return exports
 /******/ 		// This entry module depends on other loaded chunks and execution need to be delayed
-/******/ 		var __webpack_exports__ = __webpack_require__.O(undefined, ["vendors-node_modules_babel_runtime_regenerator_index_js-node_modules_babel_runtime_helpers_es-31f4f7","vendors-node_modules_regenerator-runtime_runtime_js-node_modules_babel_runtime_helpers_esm_cl-5381a7"], () => (__webpack_require__("./src/workers/VolumeLoadWorker.ts")))
+/******/ 		var __webpack_exports__ = __webpack_require__.O(undefined, ["vendors-node_modules_babel_runtime_regenerator_index_js-node_modules_babel_runtime_helpers_es-31f4f7","vendors-node_modules_babel_runtime_helpers_esm_classCallCheck_js-node_modules_babel_runtime_h-afcf4f"], () => (__webpack_require__("./src/workers/VolumeLoadWorker.ts")))
 /******/ 		__webpack_exports__ = __webpack_require__.O(__webpack_exports__);
 /******/ 		return __webpack_exports__;
 /******/ 	};
@@ -5171,7 +5167,7 @@ function rebuildImageInfo(imageInfo) {
 /******/ 		__webpack_require__.x = () => {
 /******/ 			return Promise.all([
 /******/ 				__webpack_require__.e("vendors-node_modules_babel_runtime_regenerator_index_js-node_modules_babel_runtime_helpers_es-31f4f7"),
-/******/ 				__webpack_require__.e("vendors-node_modules_regenerator-runtime_runtime_js-node_modules_babel_runtime_helpers_esm_cl-5381a7")
+/******/ 				__webpack_require__.e("vendors-node_modules_babel_runtime_helpers_esm_classCallCheck_js-node_modules_babel_runtime_h-afcf4f")
 /******/ 			]).then(next);
 /******/ 		};
 /******/ 	})();

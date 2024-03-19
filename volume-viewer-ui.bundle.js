@@ -17,9 +17,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./constants/volumeSliceShader */ "./src/constants/volumeSliceShader.ts");
-/* harmony import */ var _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VolumeRenderSettings */ "./src/VolumeRenderSettings.ts");
-/* harmony import */ var _FusedChannelData__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./FusedChannelData */ "./src/FusedChannelData.ts");
+/* harmony import */ var _constants_volumeSliceShader_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./constants/volumeSliceShader.js */ "./src/constants/volumeSliceShader.ts");
+/* harmony import */ var _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VolumeRenderSettings.js */ "./src/VolumeRenderSettings.ts");
+/* harmony import */ var _FusedChannelData_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./FusedChannelData.js */ "./src/FusedChannelData.ts");
 
 
 
@@ -41,11 +41,11 @@ var Atlas2DSlice = /*#__PURE__*/function () {
    * the given settings. Otherwise, uses the default VolumeRenderSettings.
    */
   function Atlas2DSlice(volume) {
-    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.VolumeRenderSettings(volume);
+    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.VolumeRenderSettings(volume);
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, Atlas2DSlice);
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "sliceUpdateWaiting", false);
     this.volume = volume;
-    this.uniforms = (0,_constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_4__.sliceShaderUniforms)();
+    this.uniforms = (0,_constants_volumeSliceShader_js__WEBPACK_IMPORTED_MODULE_4__.sliceShaderUniforms)();
     var _this$createGeometry = this.createGeometry(this.uniforms);
     var _this$createGeometry2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_this$createGeometry, 2);
     this.geometry = _this$createGeometry2[0];
@@ -59,7 +59,7 @@ var Atlas2DSlice = /*#__PURE__*/function () {
     this.setUniform("Z_SLICE", Math.floor(volume.imageInfo.volumeSize.z / 2));
     this.updateVolumeDimensions();
     this.settings = settings;
-    this.updateSettings(settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ALL);
+    this.updateSettings(settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ALL);
   }
 
   /**
@@ -113,17 +113,17 @@ var Atlas2DSlice = /*#__PURE__*/function () {
       if (!this.channelData || this.channelData.width !== atlasSize.x || this.channelData.height !== atlasSize.y) {
         var _this$channelData;
         (_this$channelData = this.channelData) === null || _this$channelData === void 0 || _this$channelData.cleanup();
-        this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_6__["default"](atlasSize.x, atlasSize.y);
+        this.channelData = new _FusedChannelData_js__WEBPACK_IMPORTED_MODULE_6__["default"](atlasSize.x, atlasSize.y);
       }
     }
   }, {
     key: "updateSettings",
     value: function updateSettings(newSettings, dirtyFlags) {
       if (dirtyFlags === undefined) {
-        dirtyFlags = _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ALL;
+        dirtyFlags = _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ALL;
       }
       this.settings = newSettings;
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.VIEW) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.VIEW) {
         this.geometryMesh.visible = this.settings.visible;
         // Configure ortho
         this.setUniform("orthoScale", this.settings.orthoScale);
@@ -139,30 +139,30 @@ var Atlas2DSlice = /*#__PURE__*/function () {
           this.setUniform("orthoThickness", 1.0);
         }
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.BOUNDING_BOX) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.BOUNDING_BOX) {
         // Configure bounding box
         this.boxHelper.visible = this.settings.showBoundingBox;
         var colorVector = this.settings.boundingBoxColor;
         var newBoxColor = new three__WEBPACK_IMPORTED_MODULE_7__.Color(colorVector[0], colorVector[1], colorVector[2]);
         this.boxHelper.material.color = newBoxColor;
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.TRANSFORM) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.TRANSFORM) {
         // Set rotation and translation
         this.geometryTransformNode.position.copy(this.settings.translation);
         this.geometryTransformNode.rotation.copy(this.settings.rotation);
         this.setUniform("flipVolume", this.settings.flipAxes);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MATERIAL) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MATERIAL) {
         this.setUniform("DENSITY", this.settings.density);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.CAMERA) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.CAMERA) {
         this.setUniform("BRIGHTNESS", this.settings.brightness * 2.0);
         // Gamma
         this.setUniform("GAMMA_MIN", this.settings.gammaMin);
         this.setUniform("GAMMA_MAX", this.settings.gammaMax);
         this.setUniform("GAMMA_SCALE", this.settings.gammaLevel);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ROI) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ROI) {
         // Normalize and set bounds
         var bounds = this.settings.bounds;
         this.setUniform("AABB_CLIP_MIN", bounds.bmin);
@@ -175,14 +175,14 @@ var Atlas2DSlice = /*#__PURE__*/function () {
           });
         }
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.SAMPLING) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.SAMPLING) {
         this.setUniform("interpolationEnabled", this.settings.useInterpolation);
         this.setUniform("iResolution", this.settings.resolution);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MASK_ALPHA) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MASK_ALPHA) {
         this.setUniform("maskAlpha", this.settings.maskChannelIndex < 0 ? 1.0 : this.settings.maskAlpha);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MASK_DATA) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MASK_DATA) {
         this.channelData.setChannelAsMask(this.settings.maskChannelIndex, this.volume.getChannel(this.settings.maskChannelIndex));
       }
     }
@@ -194,8 +194,8 @@ var Atlas2DSlice = /*#__PURE__*/function () {
       mesh.name = "Plane";
 
       // shader,vtx and frag.
-      var vtxsrc = _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_4__.sliceVertexShaderSrc;
-      var fgmtsrc = _constants_volumeSliceShader__WEBPACK_IMPORTED_MODULE_4__.sliceFragmentShaderSrc;
+      var vtxsrc = _constants_volumeSliceShader_js__WEBPACK_IMPORTED_MODULE_4__.sliceVertexShaderSrc;
+      var fgmtsrc = _constants_volumeSliceShader_js__WEBPACK_IMPORTED_MODULE_4__.sliceFragmentShaderSrc;
       var threeMaterial = new three__WEBPACK_IMPORTED_MODULE_7__.ShaderMaterial({
         uniforms: uniforms,
         vertexShader: vtxsrc,
@@ -285,8 +285,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
-
+/* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
 
 
 
@@ -304,18 +303,18 @@ var Channel = /*#__PURE__*/function () {
 
     // on gpu
     this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(new Uint8Array(), 0, 0);
-    this.lutTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH), 256, 1, three__WEBPACK_IMPORTED_MODULE_3__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType);
+    this.lutTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH), 256, 1, three__WEBPACK_IMPORTED_MODULE_3__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType);
     this.lutTexture.minFilter = this.lutTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_3__.LinearFilter;
     this.lutTexture.generateMipmaps = false;
     this.volumeData = new Uint8Array();
     this.name = name;
-    this.histogram = new _Histogram__WEBPACK_IMPORTED_MODULE_2__["default"](new Uint8Array());
+    this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_2__["default"](new Uint8Array());
     this.dims = [0, 0, 0];
 
     // intensity remapping lookup table
-    this.lut = new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH).fill(0);
+    this.lut = new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH).fill(0);
     // per-intensity color labeling (disabled initially)
-    this.colorPalette = new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH).fill(0);
+    this.colorPalette = new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH).fill(0);
     // store in 0..1 range. 1 means fully colorPalette, 0 means fully lut.
     this.colorPaletteAlpha = 0.0;
   }
@@ -324,7 +323,7 @@ var Channel = /*#__PURE__*/function () {
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Channel, [{
     key: "combineLuts",
     value: function combineLuts(rgbColor, out) {
-      var ret = out ? out : new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH);
+      var ret = out ? out : new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH);
       if (!rgbColor) {
         return ret;
       }
@@ -335,13 +334,13 @@ var Channel = /*#__PURE__*/function () {
         ret.set(this.colorPalette);
       } else if (this.colorPaletteAlpha === 0.0) {
         ret.set(this.lut);
-        for (var i = 0; i < _Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH / 4; ++i) {
+        for (var i = 0; i < _Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH / 4; ++i) {
           ret[i * 4 + 0] *= rgb[0];
           ret[i * 4 + 1] *= rgb[1];
           ret[i * 4 + 2] *= rgb[2];
         }
       } else {
-        for (var _i = 0; _i < _Histogram__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH / 4; ++_i) {
+        for (var _i = 0; _i < _Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH / 4; ++_i) {
           ret[_i * 4 + 0] = this.colorPalette[_i * 4 + 0] * this.colorPaletteAlpha + this.lut[_i * 4 + 0] * (1.0 - this.colorPaletteAlpha) * rgb[0];
           ret[_i * 4 + 1] = this.colorPalette[_i * 4 + 1] * this.colorPaletteAlpha + this.lut[_i * 4 + 1] * (1.0 - this.colorPaletteAlpha) * rgb[1];
           ret[_i * 4 + 2] = this.colorPalette[_i * 4 + 2] * this.colorPaletteAlpha + this.lut[_i * 4 + 2] * (1.0 - this.colorPaletteAlpha) * rgb[2];
@@ -400,7 +399,7 @@ var Channel = /*#__PURE__*/function () {
       };
       this.rebuildDataTexture(this.imgData.data, w, h);
       this.loaded = true;
-      this.histogram = new _Histogram__WEBPACK_IMPORTED_MODULE_2__["default"](bitsArray);
+      this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_2__["default"](bitsArray);
       this.lutGenerator_auto2();
     }
 
@@ -443,7 +442,7 @@ var Channel = /*#__PURE__*/function () {
       // TODO FIXME performance hit for shuffling the data and storing 2 versions of it (could do this in worker at least?)
       this.packToAtlas(vx, vy, vz, ax, ay);
       this.loaded = true;
-      this.histogram = new _Histogram__WEBPACK_IMPORTED_MODULE_2__["default"](this.volumeData);
+      this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_2__["default"](this.volumeData);
       this.lutGenerator_auto2();
     }
 
@@ -674,14 +673,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_src_constants__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three/src/constants */ "./node_modules/three/src/constants.js");
-/* harmony import */ var _constants_fuseShader__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./constants/fuseShader */ "./src/constants/fuseShader.ts");
+/* harmony import */ var _constants_fuseShader_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./constants/fuseShader.js */ "./src/constants/fuseShader.ts");
 
 
 
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
-
 
 
 // This is the owner of the fused RGBA volume texture atlas, and the mask texture atlas.
@@ -694,8 +691,8 @@ var FusedChannelData = /*#__PURE__*/function () {
     this.height = atlasY;
     this.maskTexture = new three__WEBPACK_IMPORTED_MODULE_4__.DataTexture(new Uint8ClampedArray(this.width * this.height).fill(255), this.width, this.height, three__WEBPACK_IMPORTED_MODULE_4__.RedFormat, three__WEBPACK_IMPORTED_MODULE_4__.UnsignedByteType);
     this.maskTexture.generateMipmaps = false;
-    this.maskTexture.magFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_5__.LinearFilter;
-    this.maskTexture.minFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_5__.LinearFilter;
+    this.maskTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_4__.LinearFilter;
+    this.maskTexture.minFilter = three__WEBPACK_IMPORTED_MODULE_4__.LinearFilter;
     this.maskTexture.wrapS = three__WEBPACK_IMPORTED_MODULE_4__.ClampToEdgeWrapping;
     this.maskTexture.wrapT = three__WEBPACK_IMPORTED_MODULE_4__.ClampToEdgeWrapping;
     // for single-channel tightly packed array data:
@@ -705,8 +702,8 @@ var FusedChannelData = /*#__PURE__*/function () {
     this.fuseScene = new three__WEBPACK_IMPORTED_MODULE_4__.Scene();
     this.quadCamera = new three__WEBPACK_IMPORTED_MODULE_4__.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.fuseRenderTarget = new three__WEBPACK_IMPORTED_MODULE_4__.WebGLRenderTarget(this.width, this.height, {
-      minFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_5__.LinearFilter,
-      magFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_5__.LinearFilter,
+      minFilter: three__WEBPACK_IMPORTED_MODULE_4__.LinearFilter,
+      magFilter: three__WEBPACK_IMPORTED_MODULE_4__.LinearFilter,
       format: three__WEBPACK_IMPORTED_MODULE_4__.RGBAFormat,
       type: three__WEBPACK_IMPORTED_MODULE_4__.UnsignedByteType,
       // FloatType ?
@@ -717,8 +714,8 @@ var FusedChannelData = /*#__PURE__*/function () {
       wrapT: three__WEBPACK_IMPORTED_MODULE_4__.ClampToEdgeWrapping
     });
     this.fuseMaterialProps = {
-      vertexShader: _constants_fuseShader__WEBPACK_IMPORTED_MODULE_3__.fuseVertexShaderSrc,
-      fragmentShader: _constants_fuseShader__WEBPACK_IMPORTED_MODULE_3__.fuseShaderSrc,
+      vertexShader: _constants_fuseShader_js__WEBPACK_IMPORTED_MODULE_3__.fuseVertexShaderSrc,
+      fragmentShader: _constants_fuseShader_js__WEBPACK_IMPORTED_MODULE_3__.fuseShaderSrc,
       depthTest: false,
       depthWrite: false,
       blending: three__WEBPACK_IMPORTED_MODULE_4__.CustomBlending,
@@ -866,7 +863,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _constants_colors__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants/colors */ "./src/constants/colors.ts");
+/* harmony import */ var _constants_colors_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants/colors.js */ "./src/constants/colors.ts");
 
 
 
@@ -1182,7 +1179,7 @@ var Histogram = /*#__PURE__*/function () {
       // skip zero!!!
       for (var i = 1; i < this.bins.length; ++i) {
         if (this.bins[i] > 0) {
-          var rgb = (0,_constants_colors__WEBPACK_IMPORTED_MODULE_2__.getColorByChannelIndex)(i);
+          var rgb = (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_2__.getColorByChannelIndex)(i);
           lut[i * 4 + 0] = rgb[0];
           lut[i * 4 + 1] = rgb[1];
           lut[i * 4 + 2] = rgb[2];
@@ -2161,12 +2158,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_examples_jsm_exporters_STLExporter__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three/examples/jsm/exporters/STLExporter */ "./node_modules/three/examples/jsm/exporters/STLExporter.js");
-/* harmony import */ var three_examples_jsm_exporters_GLTFExporter__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three/examples/jsm/exporters/GLTFExporter */ "./node_modules/three/examples/jsm/exporters/GLTFExporter.js");
-/* harmony import */ var _constants_materials__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants/materials */ "./src/constants/materials.ts");
-/* harmony import */ var _FileSaver__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./FileSaver */ "./src/FileSaver.ts");
+/* harmony import */ var three_examples_jsm_exporters_STLExporter_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three/examples/jsm/exporters/STLExporter.js */ "./node_modules/three/examples/jsm/exporters/STLExporter.js");
+/* harmony import */ var three_examples_jsm_exporters_GLTFExporter_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three/examples/jsm/exporters/GLTFExporter.js */ "./node_modules/three/examples/jsm/exporters/GLTFExporter.js");
+/* harmony import */ var _constants_materials_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants/materials.js */ "./src/constants/materials.ts");
+/* harmony import */ var _FileSaver_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./FileSaver.js */ "./src/FileSaver.ts");
 /* harmony import */ var _NaiveSurfaceNets_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./NaiveSurfaceNets.js */ "./src/NaiveSurfaceNets.js");
-/* harmony import */ var _MarchingCubes__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./MarchingCubes */ "./src/MarchingCubes.ts");
+/* harmony import */ var _MarchingCubes_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./MarchingCubes.js */ "./src/MarchingCubes.ts");
 
 
 
@@ -2307,8 +2304,8 @@ var MeshVolume = /*#__PURE__*/function () {
       var col = rgb[0] << 16 | rgb[1] << 8 | rgb[2];
       var material = new three__WEBPACK_IMPORTED_MODULE_6__.MeshPhongMaterial({
         color: new three__WEBPACK_IMPORTED_MODULE_6__.Color(col),
-        shininess: _constants_materials__WEBPACK_IMPORTED_MODULE_2__.defaultMaterialSettings.shininess,
-        specular: new three__WEBPACK_IMPORTED_MODULE_6__.Color(_constants_materials__WEBPACK_IMPORTED_MODULE_2__.defaultMaterialSettings.specularColor),
+        shininess: _constants_materials_js__WEBPACK_IMPORTED_MODULE_2__.defaultMaterialSettings.shininess,
+        specular: new three__WEBPACK_IMPORTED_MODULE_6__.Color(_constants_materials_js__WEBPACK_IMPORTED_MODULE_2__.defaultMaterialSettings.specularColor),
         opacity: alpha,
         transparent: alpha < ALPHA_THRESHOLD,
         side: three__WEBPACK_IMPORTED_MODULE_6__.DoubleSide
@@ -2517,20 +2514,20 @@ var MeshVolume = /*#__PURE__*/function () {
   }, {
     key: "exportSTL",
     value: function exportSTL(input, fname) {
-      var ex = new three_examples_jsm_exporters_STLExporter__WEBPACK_IMPORTED_MODULE_7__.STLExporter();
+      var ex = new three_examples_jsm_exporters_STLExporter_js__WEBPACK_IMPORTED_MODULE_7__.STLExporter();
       var output = ex.parse(input, {
         binary: true
       });
       // STLExporter's typing shows that it returns string
       // but this is not the case when binary=true.
-      _FileSaver__WEBPACK_IMPORTED_MODULE_3__["default"].saveBinary(output.buffer, fname + ".stl");
+      _FileSaver_js__WEBPACK_IMPORTED_MODULE_3__["default"].saveBinary(output.buffer, fname + ".stl");
     }
 
     // takes a scene or object or array of scenes or objects or both!
   }, {
     key: "exportGLTF",
     value: function exportGLTF(input, fname) {
-      var gltfExporter = new three_examples_jsm_exporters_GLTFExporter__WEBPACK_IMPORTED_MODULE_8__.GLTFExporter();
+      var gltfExporter = new three_examples_jsm_exporters_GLTFExporter_js__WEBPACK_IMPORTED_MODULE_8__.GLTFExporter();
       var options = {
         // transforms as translate rotate scale?
         trs: false,
@@ -2542,10 +2539,10 @@ var MeshVolume = /*#__PURE__*/function () {
       };
       gltfExporter.parse(input, function (result) {
         if (result instanceof ArrayBuffer) {
-          _FileSaver__WEBPACK_IMPORTED_MODULE_3__["default"].saveArrayBuffer(result, fname + ".glb");
+          _FileSaver_js__WEBPACK_IMPORTED_MODULE_3__["default"].saveArrayBuffer(result, fname + ".glb");
         } else {
           var output = JSON.stringify(result, null, 2);
-          _FileSaver__WEBPACK_IMPORTED_MODULE_3__["default"].saveString(output, fname + ".gltf");
+          _FileSaver_js__WEBPACK_IMPORTED_MODULE_3__["default"].saveString(output, fname + ".gltf");
         }
       }, function (error) {
         console.error(error);
@@ -2561,7 +2558,7 @@ var MeshVolume = /*#__PURE__*/function () {
       var marchingcubes = true;
       var regionSizeArr = this.volume.imageInfo.subregionSize.toArray();
       if (marchingcubes) {
-        var effect = new _MarchingCubes__WEBPACK_IMPORTED_MODULE_5__["default"](regionSizeArr, new three__WEBPACK_IMPORTED_MODULE_6__.Material(), false, false, true, volumeData);
+        var effect = new _MarchingCubes_js__WEBPACK_IMPORTED_MODULE_5__["default"](regionSizeArr, new three__WEBPACK_IMPORTED_MODULE_6__.Material(), false, false, true, volumeData);
         effect.position.copy(this.meshRoot.position);
         effect.scale.set(0.5 * this.scale.x, 0.5 * this.scale.y, 0.5 * this.scale.z);
         effect.isovalue = isovalue;
@@ -2601,13 +2598,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_src_constants__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three/src/constants */ "./node_modules/three/src/constants.js");
-/* harmony import */ var _constants_denoiseShader__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./constants/denoiseShader */ "./src/constants/denoiseShader.ts");
-/* harmony import */ var _constants_volumePTshader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./constants/volumePTshader */ "./src/constants/volumePTshader.ts");
-/* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
-/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./types */ "./src/types.ts");
-/* harmony import */ var _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./VolumeRenderSettings */ "./src/VolumeRenderSettings.ts");
-
+/* harmony import */ var _constants_denoiseShader_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./constants/denoiseShader.js */ "./src/constants/denoiseShader.ts");
+/* harmony import */ var _constants_volumePTshader_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./constants/volumePTshader.js */ "./src/constants/volumePTshader.ts");
+/* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
+/* harmony import */ var _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./VolumeRenderSettings.js */ "./src/VolumeRenderSettings.ts");
 
 
 
@@ -2625,11 +2620,11 @@ var PathTracedVolume = /*#__PURE__*/function () {
    * the given settings. Otherwise, uses the default VolumeRenderSettings.
    */
   function PathTracedVolume(volume) {
-    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.VolumeRenderSettings(volume);
+    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_7__.VolumeRenderSettings(volume);
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, PathTracedVolume);
     // should have 4 or less elements
-    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "denoiseShaderUniforms", (0,_constants_denoiseShader__WEBPACK_IMPORTED_MODULE_3__.denoiseShaderUniforms)());
-    this.pathTracingUniforms = (0,_constants_volumePTshader__WEBPACK_IMPORTED_MODULE_4__.pathTracingUniforms)();
+    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "denoiseShaderUniforms", (0,_constants_denoiseShader_js__WEBPACK_IMPORTED_MODULE_3__.denoiseShaderUniforms)());
+    this.pathTracingUniforms = (0,_constants_volumePTshader_js__WEBPACK_IMPORTED_MODULE_4__.pathTracingUniforms)();
     this.volume = volume;
     this.viewChannels = [-1, -1, -1, -1];
 
@@ -2641,15 +2636,15 @@ var PathTracedVolume = /*#__PURE__*/function () {
     var data = new Uint8Array(sx * sy * sz * 4).fill(0);
     // defaults to rgba and unsignedbytetype so dont need to supply format this time.
     this.volumeTexture = new three__WEBPACK_IMPORTED_MODULE_8__.Data3DTexture(data, sx, sy, sz);
-    this.volumeTexture.minFilter = this.volumeTexture.magFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_9__.LinearFilter;
+    this.volumeTexture.minFilter = this.volumeTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_8__.LinearFilter;
     this.volumeTexture.generateMipmaps = false;
     this.volumeTexture.needsUpdate = true;
 
     // create Lut textures
     // empty array
-    var lutData = new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH * 4).fill(1);
+    var lutData = new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH * 4).fill(1);
     var lut0 = new three__WEBPACK_IMPORTED_MODULE_8__.DataTexture(lutData, 256, 4, three__WEBPACK_IMPORTED_MODULE_8__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_8__.UnsignedByteType);
-    lut0.minFilter = lut0.magFilter = three_src_constants__WEBPACK_IMPORTED_MODULE_9__.LinearFilter;
+    lut0.minFilter = lut0.magFilter = three__WEBPACK_IMPORTED_MODULE_8__.LinearFilter;
     lut0.needsUpdate = true;
     this.pathTracingUniforms.gLutTexture.value = lut0;
     this.cameraIsMoving = false;
@@ -2664,8 +2659,8 @@ var PathTracedVolume = /*#__PURE__*/function () {
     this.quadCamera = new three__WEBPACK_IMPORTED_MODULE_8__.OrthographicCamera(-1, 1, 1, -1, 0, 1);
     this.fullTargetResolution = new three__WEBPACK_IMPORTED_MODULE_8__.Vector2(2, 2);
     this.pathTracingRenderTarget = new three__WEBPACK_IMPORTED_MODULE_8__.WebGLRenderTarget(2, 2, {
-      minFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_9__.NearestFilter,
-      magFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_9__.NearestFilter,
+      minFilter: three__WEBPACK_IMPORTED_MODULE_8__.NearestFilter,
+      magFilter: three__WEBPACK_IMPORTED_MODULE_8__.NearestFilter,
       format: three__WEBPACK_IMPORTED_MODULE_8__.RGBAFormat,
       type: three__WEBPACK_IMPORTED_MODULE_8__.FloatType,
       depthBuffer: false,
@@ -2673,8 +2668,8 @@ var PathTracedVolume = /*#__PURE__*/function () {
     });
     this.pathTracingRenderTarget.texture.generateMipmaps = false;
     this.screenTextureRenderTarget = new three__WEBPACK_IMPORTED_MODULE_8__.WebGLRenderTarget(2, 2, {
-      minFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_9__.NearestFilter,
-      magFilter: three_src_constants__WEBPACK_IMPORTED_MODULE_9__.NearestFilter,
+      minFilter: three__WEBPACK_IMPORTED_MODULE_8__.NearestFilter,
+      magFilter: three__WEBPACK_IMPORTED_MODULE_8__.NearestFilter,
       format: three__WEBPACK_IMPORTED_MODULE_8__.RGBAFormat,
       type: three__WEBPACK_IMPORTED_MODULE_8__.FloatType,
       depthBuffer: false,
@@ -2720,8 +2715,8 @@ var PathTracedVolume = /*#__PURE__*/function () {
     this.pathTracingMaterial = new three__WEBPACK_IMPORTED_MODULE_8__.ShaderMaterial({
       uniforms: this.pathTracingUniforms,
       // defines: pathTracingDefines,
-      vertexShader: _constants_volumePTshader__WEBPACK_IMPORTED_MODULE_4__.pathTracingVertexShaderSrc,
-      fragmentShader: _constants_volumePTshader__WEBPACK_IMPORTED_MODULE_4__.pathTracingFragmentShaderSrc,
+      vertexShader: _constants_volumePTshader_js__WEBPACK_IMPORTED_MODULE_4__.pathTracingVertexShaderSrc,
+      fragmentShader: _constants_volumePTshader_js__WEBPACK_IMPORTED_MODULE_4__.pathTracingFragmentShaderSrc,
       depthTest: false,
       depthWrite: false
     });
@@ -2748,11 +2743,11 @@ var PathTracedVolume = /*#__PURE__*/function () {
       blending: three__WEBPACK_IMPORTED_MODULE_8__.NormalBlending,
       transparent: true
     });
-    this.denoiseShaderUniforms = (0,_constants_denoiseShader__WEBPACK_IMPORTED_MODULE_3__.denoiseShaderUniforms)();
+    this.denoiseShaderUniforms = (0,_constants_denoiseShader_js__WEBPACK_IMPORTED_MODULE_3__.denoiseShaderUniforms)();
     this.screenOutputDenoiseMaterial = new three__WEBPACK_IMPORTED_MODULE_8__.ShaderMaterial({
       uniforms: this.denoiseShaderUniforms,
-      vertexShader: _constants_denoiseShader__WEBPACK_IMPORTED_MODULE_3__.denoiseVertexShaderSrc,
-      fragmentShader: _constants_denoiseShader__WEBPACK_IMPORTED_MODULE_3__.denoiseFragmentShaderSrc,
+      vertexShader: _constants_denoiseShader_js__WEBPACK_IMPORTED_MODULE_3__.denoiseVertexShaderSrc,
+      fragmentShader: _constants_denoiseShader_js__WEBPACK_IMPORTED_MODULE_3__.denoiseFragmentShaderSrc,
       depthWrite: false,
       depthTest: false,
       blending: three__WEBPACK_IMPORTED_MODULE_8__.NormalBlending,
@@ -2809,12 +2804,12 @@ var PathTracedVolume = /*#__PURE__*/function () {
     key: "updateSettings",
     value: function updateSettings(newSettings, dirtyFlags) {
       if (dirtyFlags === undefined) {
-        dirtyFlags = _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.ALL;
+        dirtyFlags = _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.ALL;
       }
       this.settings = newSettings;
 
       // Update resolution
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.SAMPLING) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.SAMPLING) {
         var resolution = this.settings.resolution.clone();
         this.fullTargetResolution = resolution;
         var dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
@@ -2829,16 +2824,16 @@ var PathTracedVolume = /*#__PURE__*/function () {
         this.pathTracingUniforms.gStepSize.value = this.settings.primaryRayStepSize * this.gradientDelta;
         this.pathTracingUniforms.gStepSizeShadow.value = this.settings.secondaryRayStepSize * this.gradientDelta;
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.TRANSFORM) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.TRANSFORM) {
         this.pathTracingUniforms.flipVolume.value = this.settings.flipAxes;
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.MATERIAL) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.MATERIAL) {
         this.pathTracingUniforms.gDensityScale.value = this.settings.density * 150.0;
         this.updateMaterial();
       }
 
       // update bounds
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.ROI) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.ROI) {
         var _this$volume = this.volume,
           normPhysicalSize = _this$volume.normPhysicalSize,
           normRegionSize = _this$volume.normRegionSize,
@@ -2854,18 +2849,18 @@ var PathTracedVolume = /*#__PURE__*/function () {
         this.pathTracingUniforms.gClippedAaBbMax.value = clipMax.clamp(sizeMin, sizeMax);
         this.pathTracingUniforms.gVolCenter.value = this.volume.getContentCenter();
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.CAMERA) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.CAMERA) {
         this.updateExposure(this.settings.brightness);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.MASK_ALPHA) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.MASK_ALPHA) {
         // Update channel and alpha mask if they have changed
         this.updateVolumeData4();
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.VIEW) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.VIEW) {
         this.pathTracingUniforms.gCamera.value.mIsOrtho = this.settings.isOrtho ? 1 : 0;
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.SAMPLING) {
-        this.volumeTexture.minFilter = this.volumeTexture.magFilter = newSettings.useInterpolation ? three_src_constants__WEBPACK_IMPORTED_MODULE_9__.LinearFilter : three_src_constants__WEBPACK_IMPORTED_MODULE_9__.NearestFilter;
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.SAMPLING) {
+        this.volumeTexture.minFilter = this.volumeTexture.magFilter = newSettings.useInterpolation ? three__WEBPACK_IMPORTED_MODULE_8__.LinearFilter : three__WEBPACK_IMPORTED_MODULE_8__.NearestFilter;
         this.volumeTexture.needsUpdate = true;
       }
       this.resetProgress();
@@ -2873,7 +2868,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
   }, {
     key: "updateVolumeDimensions",
     value: function updateVolumeDimensions() {
-      this.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.ROI);
+      this.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_7__.SettingsFlags.ROI);
     }
   }, {
     key: "doRender",
@@ -2918,14 +2913,14 @@ var PathTracedVolume = /*#__PURE__*/function () {
       mypos.applyMatrix4(m);
       myup.applyMatrix4(m);
       mydir.applyMatrix4(m);
-      this.pathTracingUniforms.gCamera.value.mIsOrtho = (0,_types__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(cam) ? 1 : 0;
+      this.pathTracingUniforms.gCamera.value.mIsOrtho = (0,_types_js__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(cam) ? 1 : 0;
       this.pathTracingUniforms.gCamera.value.mFrom.copy(mypos);
       this.pathTracingUniforms.gCamera.value.mN.copy(mydir);
       this.pathTracingUniforms.gCamera.value.mU.crossVectors(this.pathTracingUniforms.gCamera.value.mN, myup).normalize();
       this.pathTracingUniforms.gCamera.value.mV.crossVectors(this.pathTracingUniforms.gCamera.value.mU, this.pathTracingUniforms.gCamera.value.mN).normalize();
 
       // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
-      var fScale = (0,_types__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(cam) ? canvas.getOrthoScale() : Math.tan(0.5 * cam.fov * Math.PI / 180.0);
+      var fScale = (0,_types_js__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(cam) ? canvas.getOrthoScale() : Math.tan(0.5 * cam.fov * Math.PI / 180.0);
       var aspect = this.pathTracingUniforms.uResolution.value.x / this.pathTracingUniforms.uResolution.value.y;
       this.pathTracingUniforms.gCamera.value.mScreen.set(-fScale * aspect, fScale * aspect,
       // the "0" Y pixel will be at +Scale.
@@ -3009,7 +3004,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
       var maxch = 4;
       for (var i = 0; i < NC && activeChannel < maxch; ++i) {
         // check that channel is not disabled and is loaded
-        if (channelColors[i].rgbColor !== _types__WEBPACK_IMPORTED_MODULE_6__.FUSE_DISABLED_RGB_COLOR && channelData[i].loaded) {
+        if (channelColors[i].rgbColor !== _types_js__WEBPACK_IMPORTED_MODULE_6__.FUSE_DISABLED_RGB_COLOR && channelData[i].loaded) {
           ch[activeChannel] = i;
           activeChannel++;
         }
@@ -3078,7 +3073,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
       for (var i = 0; i < this.pathTracingUniforms.gNChannels.value; ++i) {
         var channel = this.viewChannels[i];
         var combinedLut = channelData[channel].combineLuts(channelColors[channel].rgbColor);
-        this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, i * _Histogram__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH);
+        this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, i * _Histogram_js__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH);
         this.pathTracingUniforms.gIntensityMax.value.setComponent(i, this.volume.channels[channel].histogram.getMax() / 255.0);
         this.pathTracingUniforms.gIntensityMin.value.setComponent(i, this.volume.channels[channel].histogram.getMin() / 255.0);
       }
@@ -3097,7 +3092,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
           // diffuse color is actually blended into the LUT now.
           var channelData = this.volume.getChannel(i);
           var combinedLut = channelData.combineLuts(this.settings.diffuse[i]);
-          this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, c * _Histogram__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH);
+          this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, c * _Histogram_js__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH);
           this.pathTracingUniforms.gLutTexture.value.needsUpdate = true;
           this.pathTracingUniforms.gDiffuse.value[c] = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1.0, 1.0, 1.0);
           this.pathTracingUniforms.gSpecular.value[c] = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().fromArray(this.settings.specular[i]).multiplyScalar(1.0 / 255.0);
@@ -3206,9 +3201,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _FusedChannelData__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./FusedChannelData */ "./src/FusedChannelData.ts");
-/* harmony import */ var _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./constants/volumeRayMarchShader */ "./src/constants/volumeRayMarchShader.ts");
-/* harmony import */ var _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VolumeRenderSettings */ "./src/VolumeRenderSettings.ts");
+/* harmony import */ var _FusedChannelData_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./FusedChannelData.js */ "./src/FusedChannelData.ts");
+/* harmony import */ var _constants_volumeRayMarchShader_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./constants/volumeRayMarchShader.js */ "./src/constants/volumeRayMarchShader.ts");
+/* harmony import */ var _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VolumeRenderSettings.js */ "./src/VolumeRenderSettings.ts");
 
 
 
@@ -3225,10 +3220,10 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
    * the given settings. Otherwise, uses the default VolumeRenderSettings.
    */
   function RayMarchedAtlasVolume(volume) {
-    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.VolumeRenderSettings(volume);
+    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.VolumeRenderSettings(volume);
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, RayMarchedAtlasVolume);
     this.volume = volume;
-    this.uniforms = (0,_constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_4__.rayMarchingShaderUniforms)();
+    this.uniforms = (0,_constants_volumeRayMarchShader_js__WEBPACK_IMPORTED_MODULE_4__.rayMarchingShaderUniforms)();
     var _this$createGeometry = this.createGeometry(this.uniforms);
     var _this$createGeometry2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_this$createGeometry, 2);
     this.geometry = _this$createGeometry2[0];
@@ -3244,7 +3239,7 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
     this.updateVolumeDimensions();
     this.settings = settings;
-    this.updateSettings(settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ALL);
+    this.updateSettings(settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ALL);
   }
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(RayMarchedAtlasVolume, [{
     key: "updateVolumeDimensions",
@@ -3259,7 +3254,7 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
       this.setUniform("volumeScale", normPhysicalSize);
       this.boxHelper.box.set(normPhysicalSize.clone().multiplyScalar(-0.5), normPhysicalSize.clone().multiplyScalar(0.5));
       this.tickMarksMesh.scale.copy(normPhysicalSize);
-      this.settings && this.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ROI);
+      this.settings && this.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ROI);
 
       // Set atlas dimension uniforms
       var _this$volume$imageInf = this.volume.imageInfo,
@@ -3274,7 +3269,7 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
       if (!this.channelData || this.channelData.width !== atlasSize.x || this.channelData.height !== atlasSize.y) {
         var _this$channelData;
         (_this$channelData = this.channelData) === null || _this$channelData === void 0 || _this$channelData.cleanup();
-        this.channelData = new _FusedChannelData__WEBPACK_IMPORTED_MODULE_3__["default"](atlasSize.x, atlasSize.y);
+        this.channelData = new _FusedChannelData_js__WEBPACK_IMPORTED_MODULE_3__["default"](atlasSize.x, atlasSize.y);
       }
     }
   }, {
@@ -3286,10 +3281,10 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
     key: "updateSettings",
     value: function updateSettings(newSettings, dirtyFlags) {
       if (dirtyFlags === undefined) {
-        dirtyFlags = _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ALL;
+        dirtyFlags = _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ALL;
       }
       this.settings = newSettings;
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.VIEW) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.VIEW) {
         this.geometryMesh.visible = this.settings.visible;
         // Configure ortho
         this.setUniform("orthoScale", this.settings.orthoScale);
@@ -3306,12 +3301,12 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
           this.setUniform("orthoThickness", 1.0);
         }
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.VIEW || dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.BOUNDING_BOX) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.VIEW || dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.BOUNDING_BOX) {
         // Update tick marks with either view or bounding box changes
         this.tickMarksMesh.visible = this.settings.showBoundingBox && !this.settings.isOrtho;
         this.setUniform("maxProject", this.settings.maxProjectMode ? 1 : 0);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.BOUNDING_BOX) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.BOUNDING_BOX) {
         // Configure bounding box
         this.boxHelper.visible = this.settings.showBoundingBox;
         var colorVector = this.settings.boundingBoxColor;
@@ -3319,16 +3314,16 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
         this.boxHelper.material.color = newBoxColor;
         this.tickMarksMesh.material.color = newBoxColor;
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.TRANSFORM) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.TRANSFORM) {
         // Set rotation and translation
         this.geometryTransformNode.position.copy(this.settings.translation);
         this.geometryTransformNode.rotation.copy(this.settings.rotation);
         this.setUniform("flipVolume", this.settings.flipAxes);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MATERIAL) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MATERIAL) {
         this.setUniform("DENSITY", this.settings.density);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.CAMERA) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.CAMERA) {
         // TODO brightness and exposure should be the same thing?
         this.setUniform("BRIGHTNESS", this.settings.brightness * 2.0);
         // Gamma
@@ -3336,7 +3331,7 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
         this.setUniform("GAMMA_MAX", this.settings.gammaMax);
         this.setUniform("GAMMA_SCALE", this.settings.gammaLevel);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ROI) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.ROI) {
         // Normalize and set bounds
         var bounds = this.settings.bounds;
         var _this$volume2 = this.volume,
@@ -3348,14 +3343,14 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
         this.setUniform("AABB_CLIP_MIN", bmin);
         this.setUniform("AABB_CLIP_MAX", bmax);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.SAMPLING) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.SAMPLING) {
         this.setUniform("interpolationEnabled", this.settings.useInterpolation);
         this.setUniform("iResolution", this.settings.resolution);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MASK_ALPHA) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MASK_ALPHA) {
         this.setUniform("maskAlpha", this.settings.maskChannelIndex < 0 ? 1.0 : this.settings.maskAlpha);
       }
-      if (dirtyFlags & _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MASK_DATA) {
+      if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.SettingsFlags.MASK_DATA) {
         this.channelData.setChannelAsMask(this.settings.maskChannelIndex, this.volume.getChannel(this.settings.maskChannelIndex));
       }
     }
@@ -3373,8 +3368,8 @@ var RayMarchedAtlasVolume = /*#__PURE__*/function () {
       mesh.name = "Volume";
 
       // shader,vtx and frag.
-      var vtxsrc = _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_4__.rayMarchingVertexShaderSrc;
-      var fgmtsrc = _constants_volumeRayMarchShader__WEBPACK_IMPORTED_MODULE_4__.rayMarchingFragmentShaderSrc;
+      var vtxsrc = _constants_volumeRayMarchShader_js__WEBPACK_IMPORTED_MODULE_4__.rayMarchingVertexShaderSrc;
+      var fgmtsrc = _constants_volumeRayMarchShader_js__WEBPACK_IMPORTED_MODULE_4__.rayMarchingFragmentShaderSrc;
       var threeMaterial = new three__WEBPACK_IMPORTED_MODULE_6__.ShaderMaterial({
         uniforms: uniforms,
         vertexShader: vtxsrc,
@@ -3497,9 +3492,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _TrackballControls_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./TrackballControls.js */ "./src/TrackballControls.js");
-/* harmony import */ var _Timing__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Timing */ "./src/Timing.ts");
-/* harmony import */ var _constants_scaleBarSVG__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./constants/scaleBarSVG */ "./src/constants/scaleBarSVG.ts");
-/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./types */ "./src/types.ts");
+/* harmony import */ var _Timing_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Timing.js */ "./src/Timing.ts");
+/* harmony import */ var _constants_scaleBarSVG_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./constants/scaleBarSVG.js */ "./src/constants/scaleBarSVG.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
 
 
 
@@ -3576,7 +3571,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     if (parentElement) {
       this.renderer.setSize(parentElement.offsetWidth, parentElement.offsetHeight);
     }
-    this.timer = new _Timing__WEBPACK_IMPORTED_MODULE_4__["default"]();
+    this.timer = new _Timing_js__WEBPACK_IMPORTED_MODULE_4__["default"]();
     var scale = DEFAULT_ORTHO_SCALE;
     var aspect = this.getWidth() / this.getHeight();
     this.fov = 20;
@@ -3748,10 +3743,10 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       // at offsets lower than BASE_MARGIN, axes may extend off screen
       var BASE_MARGIN = 50;
       this.axisOffset = [marginX + BASE_MARGIN, marginY + BASE_MARGIN];
-      if ((0,_types__WEBPACK_IMPORTED_MODULE_6__.isTop)(corner)) {
+      if ((0,_types_js__WEBPACK_IMPORTED_MODULE_6__.isTop)(corner)) {
         this.axisOffset[1] = this.getHeight() - this.axisOffset[1];
       }
-      if ((0,_types__WEBPACK_IMPORTED_MODULE_6__.isRight)(corner)) {
+      if ((0,_types_js__WEBPACK_IMPORTED_MODULE_6__.isRight)(corner)) {
         this.axisOffset[0] = this.getWidth() - this.axisOffset[0];
       }
       this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
@@ -3812,7 +3807,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       var labeldiv = document.createElement("div");
       var svgdiv = document.createElement("div");
       svgdiv.style.color = "rgb(255, 255, 0)";
-      svgdiv.innerHTML = _constants_scaleBarSVG__WEBPACK_IMPORTED_MODULE_5__["default"];
+      svgdiv.innerHTML = _constants_scaleBarSVG_js__WEBPACK_IMPORTED_MODULE_5__["default"];
       this.perspectiveScaleBarElement.appendChild(labeldiv);
       this.perspectiveScaleBarElement.appendChild(svgdiv);
 
@@ -3870,7 +3865,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
   }, {
     key: "updateScaleBarVisibility",
     value: function updateScaleBarVisibility() {
-      var isOrtho = (0,_types__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(this.camera);
+      var isOrtho = (0,_types_js__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(this.camera);
       var orthoVisible = isOrtho && this.showOrthoScaleBar;
       var perspectiveVisible = !isOrtho && this.showPerspectiveScaleBar;
       this.orthoScaleBarElement.style.display = orthoVisible ? "" : "none";
@@ -3903,8 +3898,8 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       style.removeProperty("bottom");
       style.removeProperty("left");
       style.removeProperty("right");
-      var xProp = (0,_types__WEBPACK_IMPORTED_MODULE_6__.isRight)(corner) ? "right" : "left";
-      var yProp = (0,_types__WEBPACK_IMPORTED_MODULE_6__.isTop)(corner) ? "top" : "bottom";
+      var xProp = (0,_types_js__WEBPACK_IMPORTED_MODULE_6__.isRight)(corner) ? "right" : "left";
+      var yProp = (0,_types_js__WEBPACK_IMPORTED_MODULE_6__.isTop)(corner) ? "top" : "bottom";
       Object.assign(style, (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])({}, xProp, marginX + "px"), yProp, marginY + "px"));
     }
   }, {
@@ -4000,7 +3995,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
       this.orthoControlsY.panSpeed = w * 0.5;
       this.orthoControlsX.aspect = aspect;
       this.orthoControlsX.panSpeed = w * 0.5;
-      if ((0,_types__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(this.camera)) {
+      if ((0,_types_js__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(this.camera)) {
         this.camera.left = -DEFAULT_ORTHO_SCALE * aspect;
         this.camera.right = DEFAULT_ORTHO_SCALE * aspect;
         this.camera.updateProjectionMatrix();
@@ -4041,7 +4036,7 @@ var ThreeJsPanel = /*#__PURE__*/function () {
     key: "render",
     value: function render() {
       // update the axis helper in case the view was rotated
-      if (!(0,_types__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(this.camera)) {
+      if (!(0,_types_js__WEBPACK_IMPORTED_MODULE_6__.isOrthographicCamera)(this.camera)) {
         this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
       }
 
@@ -4215,12 +4210,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var tweakpane__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! tweakpane */ "./node_modules/tweakpane/dist/tweakpane.js");
 /* harmony import */ var tweakpane__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(tweakpane__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _ThreeJsPanel__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./ThreeJsPanel */ "./src/ThreeJsPanel.ts");
-/* harmony import */ var _constants_lights__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./constants/lights */ "./src/constants/lights.ts");
-/* harmony import */ var _VolumeDrawable__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./VolumeDrawable */ "./src/VolumeDrawable.ts");
-/* harmony import */ var _Light__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Light */ "./src/Light.ts");
-/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./types */ "./src/types.ts");
-/* harmony import */ var _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./VolumeRenderSettings */ "./src/VolumeRenderSettings.ts");
+/* harmony import */ var _ThreeJsPanel_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./ThreeJsPanel.js */ "./src/ThreeJsPanel.ts");
+/* harmony import */ var _constants_lights_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./constants/lights.js */ "./src/constants/lights.ts");
+/* harmony import */ var _VolumeDrawable_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./VolumeDrawable.js */ "./src/VolumeDrawable.ts");
+/* harmony import */ var _Light_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Light.js */ "./src/Light.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
+/* harmony import */ var _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./VolumeRenderSettings.js */ "./src/VolumeRenderSettings.ts");
 
 
 
@@ -4233,8 +4228,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 // Constants are kept for compatibility reasons.
-var RENDERMODE_RAYMARCH = _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH;
-var RENDERMODE_PATHTRACE = _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE;
+var RENDERMODE_RAYMARCH = _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH;
+var RENDERMODE_PATHTRACE = _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE;
 /**
  * @class
  */
@@ -4256,14 +4251,14 @@ var View3d = /*#__PURE__*/function () {
       }
     });
     var useWebGL2 = (options === null || options === void 0 ? void 0 : options.useWebGL2) === undefined ? true : options.useWebGL2;
-    this.canvas3d = new _ThreeJsPanel__WEBPACK_IMPORTED_MODULE_4__.ThreeJsPanel(options === null || options === void 0 ? void 0 : options.parentElement, useWebGL2);
+    this.canvas3d = new _ThreeJsPanel_js__WEBPACK_IMPORTED_MODULE_4__.ThreeJsPanel(options === null || options === void 0 ? void 0 : options.parentElement, useWebGL2);
     this.redraw = this.redraw.bind(this);
     this.scene = new three__WEBPACK_IMPORTED_MODULE_10__.Scene();
     this.backgroundColor = new three__WEBPACK_IMPORTED_MODULE_10__.Color(0x000000);
     this.lights = [];
     this.pixelSamplingRate = 0.75;
     this.exposure = 0.5;
-    this.volumeRenderMode = _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH;
+    this.volumeRenderMode = _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH;
     window.addEventListener("resize", function () {
       return _this.resize(null);
     });
@@ -4291,7 +4286,7 @@ var View3d = /*#__PURE__*/function () {
         lightContainer.rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
       }
       // keep the ortho scale up to date.
-      if (this.image && (0,_types__WEBPACK_IMPORTED_MODULE_8__.isOrthographicCamera)(this.canvas3d.camera)) {
+      if (this.image && (0,_types_js__WEBPACK_IMPORTED_MODULE_8__.isOrthographicCamera)(this.canvas3d.camera)) {
         this.image.setOrthoScale(this.canvas3d.controls.scale);
         this.updateOrthoScaleBar(this.image.volume);
       }
@@ -4363,7 +4358,7 @@ var View3d = /*#__PURE__*/function () {
       volume.addVolumeDataObserver(this);
       options = options || {};
       options.renderMode = this.volumeRenderMode;
-      this.setImage(new _VolumeDrawable__WEBPACK_IMPORTED_MODULE_6__["default"](volume, options));
+      this.setImage(new _VolumeDrawable_js__WEBPACK_IMPORTED_MODULE_6__["default"](volume, options));
     }
 
     /**
@@ -4504,7 +4499,7 @@ var View3d = /*#__PURE__*/function () {
     value: function setShowBoundingBox(volume, showBoundingBox) {
       var _this$image9;
       (_this$image9 = this.image) === null || _this$image9 === void 0 || _this$image9.setShowBoundingBox(showBoundingBox);
-      this.canvas3d.setShowPerspectiveScaleBar(showBoundingBox && this.canvas3d.showOrthoScaleBar && this.volumeRenderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
+      this.canvas3d.setShowPerspectiveScaleBar(showBoundingBox && this.canvas3d.showOrthoScaleBar && this.volumeRenderMode !== _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
       this.redraw();
     }
   }, {
@@ -4624,7 +4619,7 @@ var View3d = /*#__PURE__*/function () {
 
       // new image picks up current settings
       this.image.setResolution(this.canvas3d);
-      this.image.setIsOrtho((0,_types__WEBPACK_IMPORTED_MODULE_8__.isOrthographicCamera)(this.canvas3d.camera));
+      this.image.setIsOrtho((0,_types_js__WEBPACK_IMPORTED_MODULE_8__.isOrthographicCamera)(this.canvas3d.camera));
       this.image.setBrightness(this.exposure);
       this.canvas3d.setControlHandlers(this.onStartControls.bind(this), this.onChangeControls.bind(this), this.onEndControls.bind(this));
       this.canvas3d.animateFuncs.push(this.preRender.bind(this));
@@ -4640,7 +4635,7 @@ var View3d = /*#__PURE__*/function () {
     key: "onStartControls",
     value: function onStartControls() {
       var _this$image15;
-      if (this.volumeRenderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
+      if (this.volumeRenderMode !== _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         // TODO: VR display requires a running renderloop
         this.canvas3d.startRenderLoop();
       }
@@ -4658,7 +4653,7 @@ var View3d = /*#__PURE__*/function () {
       var _this$image17;
       (_this$image17 = this.image) === null || _this$image17 === void 0 || _this$image17.onEndControls();
       // If we are pathtracing or autorotating, then keep rendering. Otherwise stop now.
-      if (this.volumeRenderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE && !this.canvas3d.controls.autoRotate) {
+      if (this.volumeRenderMode !== _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE && !this.canvas3d.controls.autoRotate) {
         // TODO: VR display requires a running renderloop
         this.canvas3d.stopRenderLoop();
       }
@@ -4672,31 +4667,31 @@ var View3d = /*#__PURE__*/function () {
 
       // background color
       this.canvas3d.setClearColor(this.backgroundColor, 1.0);
-      this.lights = [new _Light__WEBPACK_IMPORTED_MODULE_7__.Light(_Light__WEBPACK_IMPORTED_MODULE_7__.SKY_LIGHT), new _Light__WEBPACK_IMPORTED_MODULE_7__.Light(_Light__WEBPACK_IMPORTED_MODULE_7__.AREA_LIGHT)];
+      this.lights = [new _Light_js__WEBPACK_IMPORTED_MODULE_7__.Light(_Light_js__WEBPACK_IMPORTED_MODULE_7__.SKY_LIGHT), new _Light_js__WEBPACK_IMPORTED_MODULE_7__.Light(_Light_js__WEBPACK_IMPORTED_MODULE_7__.AREA_LIGHT)];
       this.lightContainer = new three__WEBPACK_IMPORTED_MODULE_10__.Object3D();
       this.lightContainer.name = "lightContainer";
-      this.ambientLight = new three__WEBPACK_IMPORTED_MODULE_10__.AmbientLight(_constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].ambientLightSettings.color, _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].ambientLightSettings.intensity);
+      this.ambientLight = new three__WEBPACK_IMPORTED_MODULE_10__.AmbientLight(_constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].ambientLightSettings.color, _constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].ambientLightSettings.intensity);
       this.lightContainer.add(this.ambientLight);
 
       // key light
-      this.spotLight = new three__WEBPACK_IMPORTED_MODULE_10__.SpotLight(_constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.color, _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.intensity);
-      this.spotLight.position.set(_constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.position.x, _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.position.y, _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.position.z);
+      this.spotLight = new three__WEBPACK_IMPORTED_MODULE_10__.SpotLight(_constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.color, _constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.intensity);
+      this.spotLight.position.set(_constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.position.x, _constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.position.y, _constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.position.z);
       this.spotLight.target = new three__WEBPACK_IMPORTED_MODULE_10__.Object3D(); // this.substrate;
-      this.spotLight.angle = _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.angle;
+      this.spotLight.angle = _constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].spotlightSettings.angle;
       this.lightContainer.add(this.spotLight);
 
       // reflect light
-      this.reflectedLight = new three__WEBPACK_IMPORTED_MODULE_10__.DirectionalLight(_constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.color);
-      this.reflectedLight.position.set(_constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.position.x, _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.position.y, _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.position.z);
-      this.reflectedLight.castShadow = _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.castShadow;
-      this.reflectedLight.intensity = _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.intensity;
+      this.reflectedLight = new three__WEBPACK_IMPORTED_MODULE_10__.DirectionalLight(_constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.color);
+      this.reflectedLight.position.set(_constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.position.x, _constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.position.y, _constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.position.z);
+      this.reflectedLight.castShadow = _constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.castShadow;
+      this.reflectedLight.intensity = _constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].reflectedLightSettings.intensity;
       this.lightContainer.add(this.reflectedLight);
 
       // fill light
-      this.fillLight = new three__WEBPACK_IMPORTED_MODULE_10__.DirectionalLight(_constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.color);
-      this.fillLight.position.set(_constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.position.x, _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.position.y, _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.position.z);
-      this.fillLight.castShadow = _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.castShadow;
-      this.fillLight.intensity = _constants_lights__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.intensity;
+      this.fillLight = new three__WEBPACK_IMPORTED_MODULE_10__.DirectionalLight(_constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.color);
+      this.fillLight.position.set(_constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.position.x, _constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.position.y, _constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.position.z);
+      this.fillLight.castShadow = _constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.castShadow;
+      this.fillLight.intensity = _constants_lights_js__WEBPACK_IMPORTED_MODULE_5__["default"].fillLightSettings.intensity;
       this.lightContainer.add(this.fillLight);
       this.scene.add(this.lightContainer);
     }
@@ -4746,7 +4741,7 @@ var View3d = /*#__PURE__*/function () {
     value: function setShowScaleBar(showScaleBar) {
       var _this$image21;
       this.canvas3d.setShowOrthoScaleBar(showScaleBar);
-      this.canvas3d.setShowPerspectiveScaleBar(showScaleBar && !!((_this$image21 = this.image) !== null && _this$image21 !== void 0 && _this$image21.showBoundingBox) && this.volumeRenderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
+      this.canvas3d.setShowPerspectiveScaleBar(showScaleBar && !!((_this$image21 = this.image) !== null && _this$image21 !== void 0 && _this$image21.showBoundingBox) && this.volumeRenderMode !== _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
     }
 
     /**
@@ -4774,7 +4769,7 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setAxisPosition",
     value: function setAxisPosition(marginX, marginY) {
-      var corner = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _types__WEBPACK_IMPORTED_MODULE_8__.ViewportCorner.BOTTOM_LEFT;
+      var corner = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _types_js__WEBPACK_IMPORTED_MODULE_8__.ViewportCorner.BOTTOM_LEFT;
       this.canvas3d.setAxisPosition(marginX, marginY, corner);
       if (this.canvas3d.showAxis) {
         this.canvas3d.redraw();
@@ -4793,7 +4788,7 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setScaleBarPosition",
     value: function setScaleBarPosition(marginX, marginY) {
-      var corner = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _types__WEBPACK_IMPORTED_MODULE_8__.ViewportCorner.BOTTOM_RIGHT;
+      var corner = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _types_js__WEBPACK_IMPORTED_MODULE_8__.ViewportCorner.BOTTOM_RIGHT;
       this.canvas3d.setIndicatorPosition(false, marginX, marginY, corner);
     }
 
@@ -4809,7 +4804,7 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setTimestepIndicatorPosition",
     value: function setTimestepIndicatorPosition(marginX, marginY) {
-      var corner = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _types__WEBPACK_IMPORTED_MODULE_8__.ViewportCorner.BOTTOM_RIGHT;
+      var corner = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _types_js__WEBPACK_IMPORTED_MODULE_8__.ViewportCorner.BOTTOM_RIGHT;
       this.canvas3d.setIndicatorPosition(true, marginX, marginY, corner);
     }
 
@@ -4838,7 +4833,7 @@ var View3d = /*#__PURE__*/function () {
       if (this.image) {
         this.image.volume.setUnitSymbol(unit);
         this.updatePerspectiveScaleBar(this.image.volume);
-        if ((0,_types__WEBPACK_IMPORTED_MODULE_8__.isOrthographicCamera)(this.canvas3d.camera)) {
+        if ((0,_types_js__WEBPACK_IMPORTED_MODULE_8__.isOrthographicCamera)(this.canvas3d.camera)) {
           this.updateOrthoScaleBar(this.image.volume);
         }
       }
@@ -5136,28 +5131,28 @@ var View3d = /*#__PURE__*/function () {
       this.volumeRenderMode = mode;
       if (this.image) {
         var viewMode = this.image.getViewMode();
-        if (viewMode === _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_9__.Axis.Z) {
+        if (viewMode === _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_9__.Axis.Z) {
           // if the camera view is in single-slice view, then we don't want to change
           // anything but still remember the mode for when we switch back to a volumetric view
           return;
-        } else if (mode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE && this.canvas3d.hasWebGL2) {
-          this.image.setVolumeRendering(_types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
+        } else if (mode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE && this.canvas3d.hasWebGL2) {
+          this.image.setVolumeRendering(_types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
           this.image.updateLights(this.lights);
           // pathtrace is a continuous rendering mode
           this.canvas3d.startRenderLoop();
-        } else if (mode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH) {
-          this.image.setVolumeRendering(_types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH);
+        } else if (mode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH) {
+          this.image.setVolumeRendering(_types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH);
           this.canvas3d.redraw();
         }
         this.updatePixelSamplingRate(this.pixelSamplingRate);
-        this.image.setIsOrtho((0,_types__WEBPACK_IMPORTED_MODULE_8__.isOrthographicCamera)(this.canvas3d.camera));
+        this.image.setIsOrtho((0,_types_js__WEBPACK_IMPORTED_MODULE_8__.isOrthographicCamera)(this.canvas3d.camera));
         this.image.setResolution(this.canvas3d);
         this.setAutoRotate(this.canvas3d.controls.autoRotate);
         this.image.setRenderUpdateListener(this.renderUpdateListener);
       }
 
       // TODO remove when pathtrace supports a bounding box
-      this.canvas3d.setShowPerspectiveScaleBar(this.canvas3d.showOrthoScaleBar && !!((_this$image43 = this.image) !== null && _this$image43 !== void 0 && _this$image43.showBoundingBox) && mode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
+      this.canvas3d.setShowPerspectiveScaleBar(this.canvas3d.showOrthoScaleBar && !!((_this$image43 = this.image) !== null && _this$image43 !== void 0 && _this$image43.showBoundingBox) && mode !== _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
     }
 
     /**
@@ -5279,10 +5274,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _Channel__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Channel */ "./src/Channel.ts");
-/* harmony import */ var _constants_colors__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./constants/colors */ "./src/constants/colors.ts");
-/* harmony import */ var _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./loaders/IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _loaders_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./loaders/VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _Channel_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Channel.js */ "./src/Channel.ts");
+/* harmony import */ var _constants_colors_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./constants/colors.js */ "./src/constants/colors.ts");
+/* harmony import */ var _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./loaders/IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _loaders_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./loaders/VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
 
 
 
@@ -5372,7 +5367,7 @@ var Volume = /*#__PURE__*/function () {
 
   function Volume() {
     var imageInfo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : getDefaultImageInfo();
-    var loadSpec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.LoadSpec();
+    var loadSpec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_7__.LoadSpec();
     var loader = arguments.length > 2 ? arguments[2] : undefined;
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, Volume);
     this.loaded = false;
@@ -5405,17 +5400,17 @@ var Volume = /*#__PURE__*/function () {
     this.numChannels = this.imageInfo.numChannels;
     this.channelNames = this.imageInfo.channelNames.slice();
     this.channelColorsDefault = this.imageInfo.channelColors ? this.imageInfo.channelColors.slice() : this.channelNames.map(function (name, index) {
-      return (0,_constants_colors__WEBPACK_IMPORTED_MODULE_6__.getColorByChannelIndex)(index);
+      return (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_6__.getColorByChannelIndex)(index);
     });
     // fill in gaps
     if (this.channelColorsDefault.length < this.imageInfo.numChannels) {
       for (var i = this.channelColorsDefault.length - 1; i < this.imageInfo.numChannels; ++i) {
-        this.channelColorsDefault[i] = (0,_constants_colors__WEBPACK_IMPORTED_MODULE_6__.getColorByChannelIndex)(i);
+        this.channelColorsDefault[i] = (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_6__.getColorByChannelIndex)(i);
       }
     }
     this.channels = [];
     for (var _i = 0; _i < this.imageInfo.numChannels; ++_i) {
-      var channel = new _Channel__WEBPACK_IMPORTED_MODULE_5__["default"](this.channelNames[_i]);
+      var channel = new _Channel_js__WEBPACK_IMPORTED_MODULE_5__["default"](this.channelNames[_i]);
       this.channels.push(channel);
       // TODO pass in channel constructor...
       channel.dims = this.imageInfo.subregionSize.toArray();
@@ -5474,7 +5469,7 @@ var Volume = /*#__PURE__*/function () {
             case 7:
               dims = _context.sent;
               if (dims) {
-                loadableLevel = (0,_loaders_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_8__.estimateLevelForAtlas)(dims.map(function (_ref) {
+                loadableLevel = (0,_loaders_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_8__.estimateLevelForAtlas)(dims.map(function (_ref) {
                   var shape = _ref.shape;
                   return [shape[2], shape[3], shape[4]];
                 }));
@@ -5611,11 +5606,11 @@ var Volume = /*#__PURE__*/function () {
     value: function appendEmptyChannel(name, color) {
       var idx = this.imageInfo.numChannels;
       var chname = name || "channel_" + idx;
-      var chcolor = color || (0,_constants_colors__WEBPACK_IMPORTED_MODULE_6__.getColorByChannelIndex)(idx);
+      var chcolor = color || (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_6__.getColorByChannelIndex)(idx);
       this.numChannels += 1;
       this.channelNames.push(chname);
       this.channelColorsDefault.push(chcolor);
-      this.channels.push(new _Channel__WEBPACK_IMPORTED_MODULE_5__["default"](chname));
+      this.channels.push(new _Channel_js__WEBPACK_IMPORTED_MODULE_5__["default"](chname));
       for (var i = 0; i < this.volumeDataObservers.length; ++i) {
         this.volumeDataObservers[i].onVolumeChannelAdded(this, idx);
       }
@@ -5984,13 +5979,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
 /* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _MeshVolume__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./MeshVolume */ "./src/MeshVolume.ts");
-/* harmony import */ var _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./RayMarchedAtlasVolume */ "./src/RayMarchedAtlasVolume.ts");
-/* harmony import */ var _PathTracedVolume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./PathTracedVolume */ "./src/PathTracedVolume.ts");
-/* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
-/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./types */ "./src/types.ts");
-/* harmony import */ var _Atlas2DSlice__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./Atlas2DSlice */ "./src/Atlas2DSlice.ts");
-/* harmony import */ var _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./VolumeRenderSettings */ "./src/VolumeRenderSettings.ts");
+/* harmony import */ var _MeshVolume_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./MeshVolume.js */ "./src/MeshVolume.ts");
+/* harmony import */ var _RayMarchedAtlasVolume_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./RayMarchedAtlasVolume.js */ "./src/RayMarchedAtlasVolume.ts");
+/* harmony import */ var _PathTracedVolume_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./PathTracedVolume.js */ "./src/PathTracedVolume.ts");
+/* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
+/* harmony import */ var _Atlas2DSlice_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./Atlas2DSlice.js */ "./src/Atlas2DSlice.ts");
+/* harmony import */ var _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./VolumeRenderSettings.js */ "./src/VolumeRenderSettings.ts");
 
 
 
@@ -6030,9 +6025,9 @@ var VolumeDrawable = /*#__PURE__*/function () {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, VolumeDrawable);
     // THE VOLUME DATA
     this.volume = volume;
-    this.settings = new _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.VolumeRenderSettings(volume);
+    this.settings = new _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.VolumeRenderSettings(volume);
     this.onChannelDataReadyCallback = undefined;
-    this.viewMode = _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.NONE; // 3D mode
+    this.viewMode = _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.Axis.NONE; // 3D mode
 
     this.channelColors = this.volume.channelColorsDefault.slice();
     this.channelOptions = new Array(this.volume.imageInfo.numChannels).fill({});
@@ -6046,28 +6041,28 @@ var VolumeDrawable = /*#__PURE__*/function () {
       }
       return {
         chIndex: index,
-        lut: new Uint8Array(_Histogram__WEBPACK_IMPORTED_MODULE_7__.LUT_ARRAY_LENGTH),
+        lut: new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_7__.LUT_ARRAY_LENGTH),
         rgbColor: rgbColor
       };
     });
     this.sceneRoot = new three__WEBPACK_IMPORTED_MODULE_11__.Object3D(); //create an empty container
 
-    this.meshVolume = new _MeshVolume__WEBPACK_IMPORTED_MODULE_4__["default"](this.volume);
-    options.renderMode = options.renderMode || _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH;
+    this.meshVolume = new _MeshVolume_js__WEBPACK_IMPORTED_MODULE_4__["default"](this.volume);
+    options.renderMode = options.renderMode || _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH;
     switch (options.renderMode) {
-      case _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE:
-        this.renderMode = _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE;
-        this.volumeRendering = new _PathTracedVolume__WEBPACK_IMPORTED_MODULE_6__["default"](this.volume, this.settings);
+      case _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE:
+        this.renderMode = _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE;
+        this.volumeRendering = new _PathTracedVolume_js__WEBPACK_IMPORTED_MODULE_6__["default"](this.volume, this.settings);
         break;
-      case _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE: // default to raymarch even when slice is selected
-      case _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH:
+      case _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE: // default to raymarch even when slice is selected
+      case _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH:
       default:
-        this.renderMode = _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH;
-        this.volumeRendering = new _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume, this.settings);
+        this.renderMode = _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH;
+        this.volumeRendering = new _RayMarchedAtlasVolume_js__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume, this.settings);
     }
 
     // draw meshes first, and volume last, for blending and depth test reasons with raymarch
-    if (options.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH || options.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE) {
+    if (options.renderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH || options.renderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE) {
       this.sceneRoot.add(this.meshVolume.get3dObject());
     }
     this.sceneRoot.add(this.volumeRendering.get3dObject());
@@ -6100,9 +6095,9 @@ var VolumeDrawable = /*#__PURE__*/function () {
           bmax: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(options.clipBounds[1], options.clipBounds[3], options.clipBounds[5])
         };
         // note: dropping isOrthoAxis argument
-        this.setAxisClip(_VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.X, options.clipBounds[0], options.clipBounds[1]);
-        this.setAxisClip(_VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.Y, options.clipBounds[2], options.clipBounds[3]);
-        this.setAxisClip(_VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.Z, options.clipBounds[4], options.clipBounds[5]);
+        this.setAxisClip(_VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.Axis.X, options.clipBounds[0], options.clipBounds[1]);
+        this.setAxisClip(_VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.Axis.Y, options.clipBounds[2], options.clipBounds[3]);
+        this.setAxisClip(_VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.Axis.Z, options.clipBounds[4], options.clipBounds[5]);
       }
       if (options.translation !== undefined) {
         this.setTranslation(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3().fromArray(options.translation));
@@ -6188,7 +6183,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
       if (secondary !== undefined) {
         this.settings.secondaryRayStepSize = secondary;
       }
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.SAMPLING);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.SAMPLING);
     }
   }, {
     key: "updateScale",
@@ -6206,7 +6201,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
         return;
       }
       this.settings.orthoScale = value;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
     }
   }, {
     key: "setResolution",
@@ -6217,7 +6212,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
       if (!this.settings.resolution.equals(resolution)) {
         this.meshVolume.setResolution(x, y);
         this.settings.resolution = resolution;
-        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.SAMPLING);
+        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.SAMPLING);
       }
     }
 
@@ -6240,23 +6235,23 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.settings.isOrtho = isOrthoAxis || false;
 
       // Configure mesh volume when in an orthographic axis alignment
-      if (axis !== _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.NONE && this.renderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
+      if (axis !== _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.Axis.NONE && this.renderMode !== _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.meshVolume.setAxisClip(axis, minval, maxval, !!isOrthoAxis);
       }
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.ROI | _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.ROI | _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
     }
   }, {
     key: "modeStringToAxis",
     value: function modeStringToAxis(mode) {
       var modeToAxis = {
-        X: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.X,
-        YZ: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.X,
-        Y: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.Y,
-        XZ: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.Y,
-        Z: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.Z,
-        XY: _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.Z
+        X: _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.Axis.X,
+        YZ: _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.Axis.X,
+        Y: _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.Axis.Y,
+        XZ: _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.Axis.Y,
+        Z: _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.Axis.Z,
+        XY: _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.Axis.Z
       };
-      return modeToAxis[mode] || _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.NONE;
+      return modeToAxis[mode] || _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.Axis.NONE;
     }
     /**
      * Sets the camera mode of the VolumeDrawable.
@@ -6268,20 +6263,20 @@ var VolumeDrawable = /*#__PURE__*/function () {
       var axis = this.modeStringToAxis(mode);
       this.viewMode = axis;
       // Force a volume render reset if we have switched to or from Z mode while raymarching is enabled.
-      if (axis === _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.Axis.Z) {
+      if (axis === _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.Axis.Z) {
         // If currently in 3D raymarch mode, hotswap the 2D slice
-        if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH || this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
-          this.setVolumeRendering(_types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE);
+        if (this.renderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH || this.renderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
+          this.setVolumeRendering(_types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE);
         }
       } else {
         // If in 2D slice mode, switch back to 3D raymarch mode
-        if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE) {
+        if (this.renderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE) {
           this.setVolumeRendering(volumeRenderModeHint);
         }
       }
       if (this.settings.viewAxis !== axis) {
         this.settings.viewAxis = axis;
-        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
+        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
       }
     }
 
@@ -6294,7 +6289,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
         return;
       }
       this.settings.isOrtho = isOrtho;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
     }
   }, {
     key: "setInterpolationEnabled",
@@ -6303,12 +6298,12 @@ var VolumeDrawable = /*#__PURE__*/function () {
         return;
       }
       this.settings.useInterpolation = active;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.SAMPLING);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.SAMPLING);
     }
   }, {
     key: "setOrthoThickness",
     value: function setOrthoThickness(value) {
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
+      if (this.renderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         return;
       }
       this.meshVolume.setOrthoThickness(value);
@@ -6328,7 +6323,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.settings.gammaMin = gmin;
       this.settings.gammaLevel = glevel;
       this.settings.gammaMax = gmax;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.CAMERA);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.CAMERA);
     }
   }, {
     key: "setFlipAxes",
@@ -6337,7 +6332,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
       if (!this.settings.flipAxes.equals(flipAxes)) {
         this.settings.flipAxes = flipAxes;
         this.meshVolume.setFlipAxes(flipX, flipY, flipZ);
-        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.TRANSFORM);
+        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.TRANSFORM);
       }
     }
   }, {
@@ -6347,7 +6342,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
         return;
       }
       this.settings.maxProjectMode = isMaxProject;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
     }
   }, {
     key: "onAnimate",
@@ -6359,7 +6354,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
 
       // TODO confirm sequence
       this.volumeRendering.doRender(canvas);
-      if (this.renderMode !== _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
+      if (this.renderMode !== _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.meshVolume.doRender(canvas);
       }
     }
@@ -6418,14 +6413,14 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "setRenderUpdateListener",
     value: function setRenderUpdateListener(callback) {
       this.renderUpdateListener = callback;
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
+      if (this.renderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.volumeRendering.setRenderUpdateListener(callback);
       }
     }
   }, {
     key: "updateShadingMethod",
     value: function updateShadingMethod(isbrdf) {
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
+      if (this.renderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.volumeRendering.updateShadingMethod(isbrdf ? 1 : 0);
       }
     }
@@ -6433,13 +6428,13 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "updateMaterial",
     value: function updateMaterial() {
       this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.MATERIAL);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.MATERIAL);
     }
   }, {
     key: "updateLuts",
     value: function updateLuts() {
       this.volumeRendering.updateActiveChannels(this.fusion, this.volume.channels);
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.MATERIAL);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.MATERIAL);
     }
   }, {
     key: "setVoxelSize",
@@ -6478,7 +6473,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.channelColors[newChannelIndex] = this.volume.channelColorsDefault[newChannelIndex];
       this.fusion[newChannelIndex] = {
         chIndex: newChannelIndex,
-        lut: new Uint8Array[_Histogram__WEBPACK_IMPORTED_MODULE_7__.LUT_ARRAY_LENGTH](),
+        lut: new Uint8Array[_Histogram_js__WEBPACK_IMPORTED_MODULE_7__.LUT_ARRAY_LENGTH](),
         rgbColor: [this.channelColors[newChannelIndex][0], this.channelColors[newChannelIndex][1], this.channelColors[newChannelIndex][2]]
       };
       this.settings.diffuse[newChannelIndex] = [this.channelColors[newChannelIndex][0], this.channelColors[newChannelIndex][1], this.channelColors[newChannelIndex][2]];
@@ -6505,7 +6500,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.settings.visible = !this.fusion.every(function (elem) {
         return elem.rgbColor === 0;
       });
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
 
       // add or remove this channel from the list of required channels to load
       var channels = this.volume.loadSpecRequired.channels;
@@ -6583,7 +6578,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "setDensity",
     value: function setDensity(density) {
       this.settings.density = density;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.MATERIAL);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.MATERIAL);
     }
 
     /**
@@ -6598,7 +6593,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "setBrightness",
     value: function setBrightness(brightness) {
       this.settings.brightness = brightness;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.CAMERA);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.CAMERA);
     }
   }, {
     key: "getBrightness",
@@ -6612,25 +6607,25 @@ var VolumeDrawable = /*#__PURE__*/function () {
         return;
       }
       this.settings.maskChannelIndex = channelIndex;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.MASK_DATA);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.MASK_DATA);
     }
   }, {
     key: "setMaskAlpha",
     value: function setMaskAlpha(maskAlpha) {
       this.settings.maskAlpha = maskAlpha;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.MASK_ALPHA);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.MASK_ALPHA);
     }
   }, {
     key: "setShowBoundingBox",
     value: function setShowBoundingBox(showBoundingBox) {
       this.settings.showBoundingBox = showBoundingBox;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.BOUNDING_BOX);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.BOUNDING_BOX);
     }
   }, {
     key: "setBoundingBoxColor",
     value: function setBoundingBoxColor(color) {
       this.settings.boundingBoxColor = color;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.BOUNDING_BOX);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.BOUNDING_BOX);
     }
   }, {
     key: "getIntensity",
@@ -6640,21 +6635,21 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "onStartControls",
     value: function onStartControls() {
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
+      if (this.renderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.volumeRendering.onStartControls();
       }
     }
   }, {
     key: "onChangeControls",
     value: function onChangeControls() {
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
+      if (this.renderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.volumeRendering.onChangeControls();
       }
     }
   }, {
     key: "onEndControls",
     value: function onEndControls() {
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
+      if (this.renderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.volumeRendering.onEndControls();
       }
     }
@@ -6666,7 +6661,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "onCameraChanged",
     value: function onCameraChanged(fov, focalDistance, apertureSize) {
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
+      if (this.renderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.volumeRendering.updateCamera(fov, focalDistance, apertureSize);
       }
     }
@@ -6678,12 +6673,12 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.settings.bounds.bmin = new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5);
       this.settings.bounds.bmax = new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5);
       this.meshVolume.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.ROI);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.ROI);
     }
   }, {
     key: "updateLights",
     value: function updateLights(state) {
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
+      if (this.renderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         this.volumeRendering.updateLights(state);
       }
     }
@@ -6691,18 +6686,18 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "setPixelSamplingRate",
     value: function setPixelSamplingRate(value) {
       this.settings.pixelSamplingRate = value;
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.SAMPLING);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.SAMPLING);
     }
   }, {
     key: "setVolumeRendering",
     value: function setVolumeRendering(newRenderMode) {
       // Skip reassignment of Pathtrace renderer if already using
-      if (newRenderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE && this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
+      if (newRenderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE && this.renderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         return;
       }
 
       // remove old 3d object from scene
-      if (this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE || this.renderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH) {
+      if (this.renderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE || this.renderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH) {
         this.sceneRoot.remove(this.meshVolume.get3dObject());
       }
       this.sceneRoot.remove(this.volumeRendering.get3dObject());
@@ -6712,28 +6707,28 @@ var VolumeDrawable = /*#__PURE__*/function () {
 
       // create new
       switch (newRenderMode) {
-        case _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE:
-          this.volumeRendering = new _PathTracedVolume__WEBPACK_IMPORTED_MODULE_6__["default"](this.volume, this.settings);
+        case _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE:
+          this.volumeRendering = new _PathTracedVolume_js__WEBPACK_IMPORTED_MODULE_6__["default"](this.volume, this.settings);
           this.volume.updateRequiredData({
             subregion: new three__WEBPACK_IMPORTED_MODULE_11__.Box3(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(1, 1, 1))
           });
           this.volumeRendering.setRenderUpdateListener(this.renderUpdateListener);
           break;
-        case _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE:
-          this.volumeRendering = new _Atlas2DSlice__WEBPACK_IMPORTED_MODULE_9__["default"](this.volume, this.settings);
+        case _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE:
+          this.volumeRendering = new _Atlas2DSlice_js__WEBPACK_IMPORTED_MODULE_9__["default"](this.volume, this.settings);
           this.volume.updateRequiredData({
             subregion: new three__WEBPACK_IMPORTED_MODULE_11__.Box3(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0.5), new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(1, 1, 0.5))
           });
           break;
-        case _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH:
+        case _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH:
         default:
-          this.volumeRendering = new _RayMarchedAtlasVolume__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume, this.settings);
+          this.volumeRendering = new _RayMarchedAtlasVolume_js__WEBPACK_IMPORTED_MODULE_5__["default"](this.volume, this.settings);
           this.volume.updateRequiredData({
             subregion: new three__WEBPACK_IMPORTED_MODULE_11__.Box3(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(1, 1, 1))
           });
           break;
       }
-      if (newRenderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH || newRenderMode === _types__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE) {
+      if (newRenderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH || newRenderMode === _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE) {
         if (this.renderUpdateListener) {
           this.renderUpdateListener(0);
         }
@@ -6750,14 +6745,14 @@ var VolumeDrawable = /*#__PURE__*/function () {
     value: function setTranslation(xyz) {
       this.settings.translation.copy(xyz);
       this.meshVolume.setTranslation(this.settings.translation);
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.TRANSFORM);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.TRANSFORM);
     }
   }, {
     key: "setRotation",
     value: function setRotation(eulerXYZ) {
       this.settings.rotation.copy(eulerXYZ);
       this.meshVolume.setRotation(this.settings.rotation);
-      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.TRANSFORM);
+      this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.TRANSFORM);
     }
   }, {
     key: "setupGui",
@@ -6796,7 +6791,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
       var sizez = this.volume.imageInfo.volumeSize.z;
       if (this.settings.zSlice !== slice && slice < sizez && slice > 0) {
         this.settings.zSlice = slice;
-        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.ROI);
+        this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.ROI);
         return true;
       }
       return false;
@@ -7494,7 +7489,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   pathTracingVertexShaderSrc: () => (/* binding */ pathTracingVertexShaderSrc)
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _Light__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../Light */ "./src/Light.ts");
+/* harmony import */ var _Light_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../Light.js */ "./src/Light.ts");
 
 
 /* babel-plugin-inline-import './shaders/pathtrace.vert' */
@@ -7602,7 +7597,7 @@ var pathTracingUniforms = function pathTracingUniforms() {
       }
     },
     gLights: {
-      value: [new _Light__WEBPACK_IMPORTED_MODULE_0__.Light(_Light__WEBPACK_IMPORTED_MODULE_0__.SKY_LIGHT), new _Light__WEBPACK_IMPORTED_MODULE_0__.Light(_Light__WEBPACK_IMPORTED_MODULE_0__.AREA_LIGHT)]
+      value: [new _Light_js__WEBPACK_IMPORTED_MODULE_0__.Light(_Light_js__WEBPACK_IMPORTED_MODULE_0__.SKY_LIGHT), new _Light_js__WEBPACK_IMPORTED_MODULE_0__.Light(_Light_js__WEBPACK_IMPORTED_MODULE_0__.AREA_LIGHT)]
     },
     volumeTexture: {
       type: "t",
@@ -7931,45 +7926,45 @@ var sliceShaderUniforms = function sliceShaderUniforms() {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   AREA_LIGHT: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_15__.AREA_LIGHT),
-/* harmony export */   Channel: () => (/* reexport safe */ _Channel__WEBPACK_IMPORTED_MODULE_2__["default"]),
-/* harmony export */   Histogram: () => (/* reexport safe */ _Histogram__WEBPACK_IMPORTED_MODULE_7__["default"]),
-/* harmony export */   JsonImageInfoLoader: () => (/* reexport safe */ _loaders_JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_12__.JsonImageInfoLoader),
-/* harmony export */   Light: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_15__.Light),
-/* harmony export */   LoadSpec: () => (/* reexport safe */ _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_10__.LoadSpec),
-/* harmony export */   OMEZarrLoader: () => (/* reexport safe */ _loaders_OmeZarrLoader__WEBPACK_IMPORTED_MODULE_11__.OMEZarrLoader),
-/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _loaders__WEBPACK_IMPORTED_MODULE_9__.PrefetchDirection),
-/* harmony export */   RENDERMODE_PATHTRACE: () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_PATHTRACE),
-/* harmony export */   RENDERMODE_RAYMARCH: () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_RAYMARCH),
-/* harmony export */   RequestQueue: () => (/* reexport safe */ _utils_RequestQueue__WEBPACK_IMPORTED_MODULE_5__["default"]),
-/* harmony export */   SKY_LIGHT: () => (/* reexport safe */ _Light__WEBPACK_IMPORTED_MODULE_15__.SKY_LIGHT),
-/* harmony export */   SubscribableRequestQueue: () => (/* reexport safe */ _utils_SubscribableRequestQueue__WEBPACK_IMPORTED_MODULE_6__["default"]),
-/* harmony export */   TiffLoader: () => (/* reexport safe */ _loaders_TiffLoader__WEBPACK_IMPORTED_MODULE_13__.TiffLoader),
-/* harmony export */   View3d: () => (/* reexport safe */ _View3d__WEBPACK_IMPORTED_MODULE_0__.View3d),
-/* harmony export */   ViewportCorner: () => (/* reexport safe */ _types__WEBPACK_IMPORTED_MODULE_8__.ViewportCorner),
-/* harmony export */   Volume: () => (/* reexport safe */ _Volume__WEBPACK_IMPORTED_MODULE_1__["default"]),
-/* harmony export */   VolumeCache: () => (/* reexport safe */ _VolumeCache__WEBPACK_IMPORTED_MODULE_4__["default"]),
-/* harmony export */   VolumeFileFormat: () => (/* reexport safe */ _loaders__WEBPACK_IMPORTED_MODULE_9__.VolumeFileFormat),
-/* harmony export */   VolumeLoaderContext: () => (/* reexport safe */ _workers_LoadWorkerHandle__WEBPACK_IMPORTED_MODULE_14__["default"]),
-/* harmony export */   VolumeMaker: () => (/* reexport safe */ _VolumeMaker__WEBPACK_IMPORTED_MODULE_3__["default"]),
-/* harmony export */   createVolumeLoader: () => (/* reexport safe */ _loaders__WEBPACK_IMPORTED_MODULE_9__.createVolumeLoader)
+/* harmony export */   AREA_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_15__.AREA_LIGHT),
+/* harmony export */   Channel: () => (/* reexport safe */ _Channel_js__WEBPACK_IMPORTED_MODULE_2__["default"]),
+/* harmony export */   Histogram: () => (/* reexport safe */ _Histogram_js__WEBPACK_IMPORTED_MODULE_7__["default"]),
+/* harmony export */   JsonImageInfoLoader: () => (/* reexport safe */ _loaders_JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_12__.JsonImageInfoLoader),
+/* harmony export */   Light: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_15__.Light),
+/* harmony export */   LoadSpec: () => (/* reexport safe */ _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_10__.LoadSpec),
+/* harmony export */   OMEZarrLoader: () => (/* reexport safe */ _loaders_OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_11__.OMEZarrLoader),
+/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_9__.PrefetchDirection),
+/* harmony export */   RENDERMODE_PATHTRACE: () => (/* reexport safe */ _View3d_js__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_PATHTRACE),
+/* harmony export */   RENDERMODE_RAYMARCH: () => (/* reexport safe */ _View3d_js__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_RAYMARCH),
+/* harmony export */   RequestQueue: () => (/* reexport safe */ _utils_RequestQueue_js__WEBPACK_IMPORTED_MODULE_5__["default"]),
+/* harmony export */   SKY_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_15__.SKY_LIGHT),
+/* harmony export */   SubscribableRequestQueue: () => (/* reexport safe */ _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_6__["default"]),
+/* harmony export */   TiffLoader: () => (/* reexport safe */ _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_13__.TiffLoader),
+/* harmony export */   View3d: () => (/* reexport safe */ _View3d_js__WEBPACK_IMPORTED_MODULE_0__.View3d),
+/* harmony export */   ViewportCorner: () => (/* reexport safe */ _types_js__WEBPACK_IMPORTED_MODULE_8__.ViewportCorner),
+/* harmony export */   Volume: () => (/* reexport safe */ _Volume_js__WEBPACK_IMPORTED_MODULE_1__["default"]),
+/* harmony export */   VolumeCache: () => (/* reexport safe */ _VolumeCache_js__WEBPACK_IMPORTED_MODULE_4__["default"]),
+/* harmony export */   VolumeFileFormat: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_9__.VolumeFileFormat),
+/* harmony export */   VolumeLoaderContext: () => (/* reexport safe */ _workers_LoadWorkerHandle_js__WEBPACK_IMPORTED_MODULE_14__["default"]),
+/* harmony export */   VolumeMaker: () => (/* reexport safe */ _VolumeMaker_js__WEBPACK_IMPORTED_MODULE_3__["default"]),
+/* harmony export */   createVolumeLoader: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_9__.createVolumeLoader)
 /* harmony export */ });
-/* harmony import */ var _View3d__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./View3d */ "./src/View3d.ts");
-/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Volume */ "./src/Volume.ts");
-/* harmony import */ var _Channel__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Channel */ "./src/Channel.ts");
-/* harmony import */ var _VolumeMaker__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./VolumeMaker */ "./src/VolumeMaker.ts");
-/* harmony import */ var _VolumeCache__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./VolumeCache */ "./src/VolumeCache.ts");
-/* harmony import */ var _utils_RequestQueue__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./utils/RequestQueue */ "./src/utils/RequestQueue.ts");
-/* harmony import */ var _utils_SubscribableRequestQueue__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./utils/SubscribableRequestQueue */ "./src/utils/SubscribableRequestQueue.ts");
-/* harmony import */ var _Histogram__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Histogram */ "./src/Histogram.ts");
-/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./types */ "./src/types.ts");
-/* harmony import */ var _loaders__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./loaders */ "./src/loaders/index.ts");
-/* harmony import */ var _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./loaders/IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _loaders_OmeZarrLoader__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./loaders/OmeZarrLoader */ "./src/loaders/OmeZarrLoader.ts");
-/* harmony import */ var _loaders_JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./loaders/JsonImageInfoLoader */ "./src/loaders/JsonImageInfoLoader.ts");
-/* harmony import */ var _loaders_TiffLoader__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./loaders/TiffLoader */ "./src/loaders/TiffLoader.ts");
-/* harmony import */ var _workers_LoadWorkerHandle__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./workers/LoadWorkerHandle */ "./src/workers/LoadWorkerHandle.ts");
-/* harmony import */ var _Light__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./Light */ "./src/Light.ts");
+/* harmony import */ var _View3d_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./View3d.js */ "./src/View3d.ts");
+/* harmony import */ var _Volume_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Volume.js */ "./src/Volume.ts");
+/* harmony import */ var _Channel_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Channel.js */ "./src/Channel.ts");
+/* harmony import */ var _VolumeMaker_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./VolumeMaker.js */ "./src/VolumeMaker.ts");
+/* harmony import */ var _VolumeCache_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./VolumeCache.js */ "./src/VolumeCache.ts");
+/* harmony import */ var _utils_RequestQueue_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./utils/RequestQueue.js */ "./src/utils/RequestQueue.ts");
+/* harmony import */ var _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./utils/SubscribableRequestQueue.js */ "./src/utils/SubscribableRequestQueue.ts");
+/* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
+/* harmony import */ var _loaders_index_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./loaders/index.js */ "./src/loaders/index.ts");
+/* harmony import */ var _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./loaders/IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _loaders_OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./loaders/OmeZarrLoader.js */ "./src/loaders/OmeZarrLoader.ts");
+/* harmony import */ var _loaders_JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./loaders/JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
+/* harmony import */ var _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./loaders/TiffLoader.js */ "./src/loaders/TiffLoader.ts");
+/* harmony import */ var _workers_LoadWorkerHandle_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./workers/LoadWorkerHandle.js */ "./src/workers/LoadWorkerHandle.ts");
+/* harmony import */ var _Light_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./Light.js */ "./src/Light.ts");
 
 
 
@@ -8011,8 +8006,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _Volume__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../Volume */ "./src/Volume.ts");
-/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _Volume_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../Volume.js */ "./src/Volume.ts");
+/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
 
 
 
@@ -8093,9 +8088,9 @@ var ThreadableVolumeLoader = /*#__PURE__*/function () {
               _yield$this$createIma = _context.sent;
               imageInfo = _yield$this$createIma.imageInfo;
               adjustedLoadSpec = _yield$this$createIma.loadSpec;
-              vol = new _Volume__WEBPACK_IMPORTED_MODULE_5__["default"](imageInfo, adjustedLoadSpec, this);
+              vol = new _Volume_js__WEBPACK_IMPORTED_MODULE_5__["default"](imageInfo, adjustedLoadSpec, this);
               vol.channelLoadCallback = onChannelLoaded;
-              vol.imageMetadata = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imageInfo);
+              vol.imageMetadata = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imageInfo);
               return _context.abrupt("return", vol);
             case 9:
             case "end":
@@ -8178,7 +8173,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
 
 
 
@@ -8289,7 +8284,7 @@ var JsonImageInfoLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               return this.getJsonImageInfo(loadSpec.time);
             case 2:
               jsonInfo = _context2.sent;
-              d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__.VolumeDims();
+              d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.VolumeDims();
               d.shape = [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tile_height, jsonInfo.tile_width];
               d.spacing = [1, 1, jsonInfo.pixel_size_z, jsonInfo.pixel_size_y, jsonInfo.pixel_size_x];
               d.spaceUnit = jsonInfo.pixel_size_unit || "μm";
@@ -8520,7 +8515,7 @@ var JsonImageInfoLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
     }
   }]);
   return JsonImageInfoLoader;
-}(_IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__.ThreadableVolumeLoader);
+}(_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.ThreadableVolumeLoader);
 
 
 /***/ }),
@@ -8553,12 +8548,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/util.js");
 /* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/ops.js");
 /* harmony import */ var zarrita__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! zarrita */ "./node_modules/@zarrita/storage/dist/src/fetch.js");
-/* harmony import */ var _utils_SubscribableRequestQueue__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../utils/SubscribableRequestQueue */ "./src/utils/SubscribableRequestQueue.ts");
-/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
-/* harmony import */ var _zarr_utils_ChunkPrefetchIterator__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./zarr_utils/ChunkPrefetchIterator */ "./src/loaders/zarr_utils/ChunkPrefetchIterator.ts");
-/* harmony import */ var _zarr_utils_WrappedStore__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./zarr_utils/WrappedStore */ "./src/loaders/zarr_utils/WrappedStore.ts");
-/* harmony import */ var _zarr_utils_utils__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./zarr_utils/utils */ "./src/loaders/zarr_utils/utils.ts");
+/* harmony import */ var _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../utils/SubscribableRequestQueue.js */ "./src/utils/SubscribableRequestQueue.ts");
+/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _zarr_utils_ChunkPrefetchIterator_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./zarr_utils/ChunkPrefetchIterator.js */ "./src/loaders/zarr_utils/ChunkPrefetchIterator.ts");
+/* harmony import */ var _zarr_utils_WrappedStore_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./zarr_utils/WrappedStore.js */ "./src/loaders/zarr_utils/WrappedStore.ts");
+/* harmony import */ var _zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./zarr_utils/utils.js */ "./src/loaders/zarr_utils/utils.ts");
 
 
 
@@ -8658,10 +8653,10 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       // Assume all spatial axes have the same units - we have no means of storing per-axis unit symbols
       var xi = this.axesTCZYX[4];
       var spaceUnitName = this.multiscaleMetadata.axes[xi].unit;
-      var spaceUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
+      var spaceUnitSymbol = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
       var ti = this.axesTCZYX[0];
       var timeUnitName = ti > -1 ? this.multiscaleMetadata.axes[ti].unit : undefined;
-      var timeUnitSymbol = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
+      var timeUnitSymbol = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
       return [spaceUnitSymbol, timeUnitSymbol];
     }
   }, {
@@ -8680,17 +8675,17 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
   }, {
     key: "getScale",
     value: function getScale(level) {
-      return (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_15__.getScale)(this.multiscaleMetadata.datasets[level], this.axesTCZYX);
+      return (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.getScale)(this.multiscaleMetadata.datasets[level], this.axesTCZYX);
     }
   }, {
     key: "orderByDimension",
     value: function orderByDimension(valsTCZYX) {
-      return (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_15__.orderByDimension)(valsTCZYX, this.axesTCZYX);
+      return (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.orderByDimension)(valsTCZYX, this.axesTCZYX);
     }
   }, {
     key: "orderByTCZYX",
     value: function orderByTCZYX(valsDimension, defaultValue) {
-      return (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_15__.orderByTCZYX)(valsDimension, this.axesTCZYX, defaultValue);
+      return (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.orderByTCZYX)(valsDimension, this.axesTCZYX, defaultValue);
     }
 
     /**
@@ -8718,12 +8713,12 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
         timeUnit = _this$getUnitSymbols2[1];
       // Compute subregion size so we can factor that in
       var maxExtent = (_this$maxExtent = this.maxExtent) !== null && _this$maxExtent !== void 0 ? _this$maxExtent : new three__WEBPACK_IMPORTED_MODULE_16__.Box3(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(1, 1, 1));
-      var subregion = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.composeSubregion)(loadSpec.subregion, maxExtent);
+      var subregion = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.composeSubregion)(loadSpec.subregion, maxExtent);
       var regionSize = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3());
       var regionArr = [1, 1, regionSize.z, regionSize.y, regionSize.x];
       var result = this.scaleLevels.map(function (level, i) {
         var scale = _this2.getScale(i);
-        var dims = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_11__.VolumeDims();
+        var dims = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__.VolumeDims();
         dims.spaceUnit = spaceUnit;
         dims.timeUnit = timeUnit;
         dims.shape = _this2.orderByTCZYX(level.shape, 1).map(function (val, idx) {
@@ -8747,7 +8742,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       var hasC = c > -1;
       var hasZ = z > -1;
       var shape0 = this.scaleLevels[0].shape;
-      var levelToLoad = (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_15__.pickLevelToLoad)(loadSpec, this.getLevelShapesZYX());
+      var levelToLoad = (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.pickLevelToLoad)(loadSpec, this.getLevelShapesZYX());
       var shapeLv = this.scaleLevels[levelToLoad].shape;
       var _this$getUnitSymbols3 = this.getUnitSymbols(),
         _this$getUnitSymbols4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_this$getUnitSymbols3, 2),
@@ -8758,11 +8753,11 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       if (!this.maxExtent) {
         this.maxExtent = loadSpec.subregion.clone();
       }
-      var pxDims0 = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1));
+      var pxDims0 = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1));
       var pxSize0 = pxDims0.getSize(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3());
-      var pxDimsLv = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(shapeLv[x], shapeLv[y], hasZ ? shapeLv[z] : 1));
+      var pxDimsLv = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(shapeLv[x], shapeLv[y], hasZ ? shapeLv[z] : 1));
       var pxSizeLv = pxDimsLv.getSize(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3());
-      var atlasTileDims = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.computePackedAtlasDims)(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
+      var atlasTileDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.computePackedAtlasDims)(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
       var channelNames = this.omeroMetadata.channels.map(function (ch) {
         return ch.label;
       });
@@ -8842,7 +8837,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
     key: "beginPrefetch",
     value: function beginPrefetch(keys, scaleLevel) {
       var _this3 = this;
-      var numDims = (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_15__.getDimensionCount)(this.axesTCZYX);
+      var numDims = (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.getDimensionCount)(this.axesTCZYX);
 
       // Convert keys to arrays of coords
       var chunkCoords = keys.map(function (key) {
@@ -8862,7 +8857,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       var subscriber = this.requestQueue.addSubscriber();
       // `ChunkPrefetchIterator` yields chunk coordinates in order of roughly how likely they are to be loaded next
       var chunkDimsTZYX = [chunkDims[0], chunkDims[2], chunkDims[3], chunkDims[4]];
-      var prefetchIterator = new _zarr_utils_ChunkPrefetchIterator__WEBPACK_IMPORTED_MODULE_13__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTZYX, this.priorityDirections);
+      var prefetchIterator = new _zarr_utils_ChunkPrefetchIterator_js__WEBPACK_IMPORTED_MODULE_13__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTZYX, this.priorityDirections);
       var prefetchCount = 0;
       var _iterator = _createForOfIteratorHelper(prefetchIterator),
         _step;
@@ -8900,17 +8895,17 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
         z = _this$axesTCZYX$slice4[0],
         y = _this$axesTCZYX$slice4[1],
         x = _this$axesTCZYX$slice4[2];
-      var subregion = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.composeSubregion)(loadSpec.subregion, maxExtent);
-      var levelIdx = (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_15__.pickLevelToLoad)(_objectSpread(_objectSpread({}, loadSpec), {}, {
+      var subregion = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.composeSubregion)(loadSpec.subregion, maxExtent);
+      var levelIdx = (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.pickLevelToLoad)(_objectSpread(_objectSpread({}, loadSpec), {}, {
         subregion: subregion
       }), this.getLevelShapesZYX());
       var level = this.scaleLevels[levelIdx];
       var levelShape = level.shape;
-      var regionPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(subregion, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z]));
+      var regionPx = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(subregion, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z]));
       // Update volume `imageInfo` to reflect potentially new dimensions
       var regionSizePx = regionPx.getSize(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3());
-      var atlasTileDims = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.computePackedAtlasDims)(regionSizePx.z, regionSizePx.x, regionSizePx.y);
-      var volExtentPx = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(maxExtent, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z]));
+      var atlasTileDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.computePackedAtlasDims)(regionSizePx.z, regionSizePx.x, regionSizePx.y);
+      var volExtentPx = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(maxExtent, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(levelShape[x], levelShape[y], z === -1 ? 1 : levelShape[z]));
       var volSizePx = volExtentPx.getSize(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3());
       var updatedImageInfo = _objectSpread(_objectSpread({}, imageInfo), {}, {
         atlasTileDims: atlasTileDims,
@@ -9030,9 +9025,9 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               fetchOptions = _args3.length > 4 ? _args3[4] : undefined;
               // Setup queue and store, get basic metadata
               if (!queue) {
-                queue = new _utils_SubscribableRequestQueue__WEBPACK_IMPORTED_MODULE_10__["default"](fetchOptions === null || fetchOptions === void 0 ? void 0 : fetchOptions.concurrencyLimit, fetchOptions === null || fetchOptions === void 0 ? void 0 : fetchOptions.prefetchConcurrencyLimit);
+                queue = new _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_10__["default"](fetchOptions === null || fetchOptions === void 0 ? void 0 : fetchOptions.concurrencyLimit, fetchOptions === null || fetchOptions === void 0 ? void 0 : fetchOptions.prefetchConcurrencyLimit);
               }
-              store = new _zarr_utils_WrappedStore__WEBPACK_IMPORTED_MODULE_14__["default"](new zarrita__WEBPACK_IMPORTED_MODULE_19__["default"](url), cache, queue);
+              store = new _zarr_utils_WrappedStore_js__WEBPACK_IMPORTED_MODULE_14__["default"](new zarrita__WEBPACK_IMPORTED_MODULE_19__["default"](url), cache, queue);
               root = _zarrita_core__WEBPACK_IMPORTED_MODULE_20__.root(store);
               _context3.next = 9;
               return _zarrita_core__WEBPACK_IMPORTED_MODULE_21__.open(root, {
@@ -9056,7 +9051,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               return Promise.all(scaleLevelPromises);
             case 16:
               scaleLevels = _context3.sent;
-              axisTCZYX = (0,_zarr_utils_utils__WEBPACK_IMPORTED_MODULE_15__.remapAxesToTCZYX)(multiscale.axes);
+              axisTCZYX = (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.remapAxesToTCZYX)(multiscale.axes);
               priorityDirs = fetchOptions !== null && fetchOptions !== void 0 && fetchOptions.priorityDirections ? fetchOptions.priorityDirections.slice() : undefined;
               return _context3.abrupt("return", new OMEZarrLoader(store, scaleLevels, multiscale, omero, axisTCZYX, queue, fetchOptions, priorityDirs));
             case 20:
@@ -9072,7 +9067,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
     }()
   }]);
   return OMEZarrLoader;
-}(_IVolumeLoader__WEBPACK_IMPORTED_MODULE_11__.ThreadableVolumeLoader);
+}(_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__.ThreadableVolumeLoader);
 
 
 /***/ }),
@@ -9097,8 +9092,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_6__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./JsonImageInfoLoader */ "./src/loaders/JsonImageInfoLoader.ts");
+/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
 
 
 
@@ -9125,7 +9120,7 @@ var OpenCellLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_6___default().wrap(function _callee$(_context) {
           while (1) switch (_context.prev = _context.next) {
             case 0:
-              d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.VolumeDims();
+              d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_7__.VolumeDims();
               d.shape = [1, 2, 27, 600, 600];
               d.spacing = [1, 1, 2, 1, 1];
               d.spaceUnit = ""; // unknown unit.
@@ -9175,7 +9170,7 @@ var OpenCellLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               }; // This loader uses no fields from `LoadSpec`. Initialize volume with defaults.
               return _context2.abrupt("return", {
                 imageInfo: imgdata,
-                loadSpec: new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.LoadSpec()
+                loadSpec: new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_7__.LoadSpec()
               });
             case 4:
             case "end":
@@ -9202,14 +9197,14 @@ var OpenCellLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       }];
       var w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
       var h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
-      _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_8__.JsonImageInfoLoader.loadVolumeAtlasData(urls, function (ch, data) {
+      _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_8__.JsonImageInfoLoader.loadVolumeAtlasData(urls, function (ch, data) {
         return onData(ch, data, [w, h]);
       });
       return Promise.resolve({});
     }
   }]);
   return OpenCellLoader;
-}(_IVolumeLoader__WEBPACK_IMPORTED_MODULE_7__.ThreadableVolumeLoader);
+}(_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_7__.ThreadableVolumeLoader);
 
 
 /***/ }),
@@ -9236,8 +9231,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__);
 /* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
 
 
 
@@ -9367,7 +9362,7 @@ var TiffLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               return this.loadOmeDims();
             case 2:
               dims = _context2.sent;
-              d = new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__.VolumeDims();
+              d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.VolumeDims();
               d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
               d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
               d.spaceUnit = dims.unit ? dims.unit : "micron";
@@ -9401,7 +9396,7 @@ var TiffLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               //const height = image.getHeight();
               // TODO allow user setting of this downsampling info?
               // TODO allow ROI selection: range of x,y,z,c for a given t
-              atlasDims = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.computePackedAtlasDims)(dims.sizez, dims.sizex, dims.sizey); // fit tiles to max of 2048x2048?
+              atlasDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_9__.computePackedAtlasDims)(dims.sizez, dims.sizex, dims.sizey); // fit tiles to max of 2048x2048?
               targetSize = 2048;
               tilesizex = Math.floor(targetSize / atlasDims.x);
               tilesizey = Math.floor(targetSize / atlasDims.y); // load tiff and check metadata
@@ -9428,7 +9423,7 @@ var TiffLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               }; // This loader uses no fields from `LoadSpec`. Initialize volume with defaults.
               return _context3.abrupt("return", {
                 imageInfo: imgdata,
-                loadSpec: new _IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__.LoadSpec()
+                loadSpec: new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.LoadSpec()
               });
             case 9:
             case "end":
@@ -9514,7 +9509,7 @@ var TiffLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
     }()
   }]);
   return TiffLoader;
-}(_IVolumeLoader__WEBPACK_IMPORTED_MODULE_8__.ThreadableVolumeLoader);
+}(_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.ThreadableVolumeLoader);
 
 
 /***/ }),
@@ -9536,13 +9531,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   unitNameToSymbol: () => (/* binding */ unitNameToSymbol)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
-/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! regenerator-runtime/runtime */ "./node_modules/regenerator-runtime/runtime.js");
-/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
-
 
 var MAX_ATLAS_EDGE = 4096;
 
@@ -9612,7 +9604,7 @@ function computePackedAtlasDims(z, tw, th) {
     nextrows = Math.ceil(z / nextcols);
     ratio = nextcols * tw / (nextrows * th);
   }
-  return new three__WEBPACK_IMPORTED_MODULE_2__.Vector2(nrows, ncols);
+  return new three__WEBPACK_IMPORTED_MODULE_1__.Vector2(nrows, ncols);
 }
 
 /** Picks the largest scale level that can fit into a texture atlas */
@@ -9654,7 +9646,7 @@ function convertSubregionToPixels(region, size) {
   if (min.z === max.z && min.z < size.z) {
     max.z += 1;
   }
-  return new three__WEBPACK_IMPORTED_MODULE_2__.Box3(min, max);
+  return new three__WEBPACK_IMPORTED_MODULE_1__.Box3(min, max);
 }
 
 /**
@@ -9662,10 +9654,10 @@ function convertSubregionToPixels(region, size) {
  * and 1). i.e. if `container`'s range on the X axis is 0-4 and `region`'s is 0.25-0.5, the result will have range 1-2.
  */
 function composeSubregion(region, container) {
-  var size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3());
+  var size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3());
   var min = region.min.clone().multiply(size).add(container.min);
   var max = region.max.clone().multiply(size).add(container.min);
-  return new three__WEBPACK_IMPORTED_MODULE_2__.Box3(min, max);
+  return new three__WEBPACK_IMPORTED_MODULE_1__.Box3(min, max);
 }
 function isEmpty(obj) {
   for (var key in obj) {
@@ -9713,7 +9705,7 @@ function buildDefaultMetadata(imageInfo) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _zarr_utils_types__WEBPACK_IMPORTED_MODULE_5__.PrefetchDirection),
+/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _zarr_utils_types_js__WEBPACK_IMPORTED_MODULE_5__.PrefetchDirection),
 /* harmony export */   VolumeFileFormat: () => (/* binding */ VolumeFileFormat),
 /* harmony export */   createVolumeLoader: () => (/* binding */ createVolumeLoader),
 /* harmony export */   pathToFileType: () => (/* binding */ pathToFileType)
@@ -9721,10 +9713,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var _OmeZarrLoader__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./OmeZarrLoader */ "./src/loaders/OmeZarrLoader.ts");
-/* harmony import */ var _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./JsonImageInfoLoader */ "./src/loaders/JsonImageInfoLoader.ts");
-/* harmony import */ var _TiffLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./TiffLoader */ "./src/loaders/TiffLoader.ts");
-/* harmony import */ var _zarr_utils_types__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./zarr_utils/types */ "./src/loaders/zarr_utils/types.ts");
+/* harmony import */ var _OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./OmeZarrLoader.js */ "./src/loaders/OmeZarrLoader.ts");
+/* harmony import */ var _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
+/* harmony import */ var _TiffLoader_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./TiffLoader.js */ "./src/loaders/TiffLoader.ts");
+/* harmony import */ var _zarr_utils_types_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./zarr_utils/types.js */ "./src/loaders/zarr_utils/types.ts");
 
 
 
@@ -9761,13 +9753,13 @@ function _createVolumeLoader() {
           break;
         case 5:
           _context.next = 7;
-          return _OmeZarrLoader__WEBPACK_IMPORTED_MODULE_2__.OMEZarrLoader.createLoader(pathString, options === null || options === void 0 ? void 0 : options.scene, options === null || options === void 0 ? void 0 : options.cache, options === null || options === void 0 ? void 0 : options.queue, options === null || options === void 0 ? void 0 : options.fetchOptions);
+          return _OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_2__.OMEZarrLoader.createLoader(pathString, options === null || options === void 0 ? void 0 : options.scene, options === null || options === void 0 ? void 0 : options.cache, options === null || options === void 0 ? void 0 : options.queue, options === null || options === void 0 ? void 0 : options.fetchOptions);
         case 7:
           return _context.abrupt("return", _context.sent);
         case 8:
-          return _context.abrupt("return", new _JsonImageInfoLoader__WEBPACK_IMPORTED_MODULE_3__.JsonImageInfoLoader(path, options === null || options === void 0 ? void 0 : options.cache));
+          return _context.abrupt("return", new _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_3__.JsonImageInfoLoader(path, options === null || options === void 0 ? void 0 : options.cache));
         case 9:
-          return _context.abrupt("return", new _TiffLoader__WEBPACK_IMPORTED_MODULE_4__.TiffLoader(pathString));
+          return _context.abrupt("return", new _TiffLoader_js__WEBPACK_IMPORTED_MODULE_4__.TiffLoader(pathString));
         case 10:
         case "end":
           return _context.stop();
@@ -10254,7 +10246,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
 
 
 
@@ -10300,7 +10292,7 @@ function pickLevelToLoad(loadSpec, spatialDimsZYX) {
       x = _ref4[2];
     return [Math.max(z * size.z, 1), Math.max(y * size.y, 1), Math.max(x * size.x, 1)];
   });
-  var optimalLevel = (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_1__.estimateLevelForAtlas)(dims);
+  var optimalLevel = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__.estimateLevelForAtlas)(dims);
   return Math.max(optimalLevel, (_loadSpec$multiscaleL = loadSpec.multiscaleLevel) !== null && _loadSpec$multiscaleL !== void 0 ? _loadSpec$multiscaleL : 0);
 }
 
@@ -10821,7 +10813,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _RequestQueue__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./RequestQueue */ "./src/utils/RequestQueue.ts");
+/* harmony import */ var _RequestQueue_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./RequestQueue.js */ "./src/utils/RequestQueue.ts");
 
 
 
@@ -10839,7 +10831,7 @@ var SubscribableRequestQueue = /*#__PURE__*/function () {
   function SubscribableRequestQueue(maxActiveRequests, maxLowPriorityRequests) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, SubscribableRequestQueue);
     if (typeof maxActiveRequests === "number" || maxActiveRequests === undefined) {
-      this.queue = new _RequestQueue__WEBPACK_IMPORTED_MODULE_3__["default"](maxActiveRequests, maxLowPriorityRequests);
+      this.queue = new _RequestQueue_js__WEBPACK_IMPORTED_MODULE_3__["default"](maxActiveRequests, maxLowPriorityRequests);
     } else {
       this.queue = maxActiveRequests;
     }
@@ -11083,11 +11075,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9__);
-/* harmony import */ var _loaders__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../loaders */ "./src/loaders/index.ts");
-/* harmony import */ var _loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../loaders/IVolumeLoader */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _loaders_TiffLoader__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../loaders/TiffLoader */ "./src/loaders/TiffLoader.ts");
-/* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./types */ "./src/workers/types.ts");
-/* harmony import */ var _util__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./util */ "./src/workers/util.ts");
+/* harmony import */ var _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../loaders/index.js */ "./src/loaders/index.ts");
+/* harmony import */ var _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../loaders/IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../loaders/TiffLoader.js */ "./src/loaders/TiffLoader.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./types.js */ "./src/workers/types.ts");
+/* harmony import */ var _util_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./util.js */ "./src/workers/util.ts");
 
 
 
@@ -11196,7 +11188,7 @@ var SharedLoadWorkerHandle = /*#__PURE__*/function () {
     key: "receiveMessage",
     value: function receiveMessage(_ref) {
       var data = _ref.data;
-      if (data.responseResult === _types__WEBPACK_IMPORTED_MODULE_13__.WorkerResponseResult.EVENT) {
+      if (data.responseResult === _types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerResponseResult.EVENT) {
         var _this$onChannelData;
         (_this$onChannelData = this.onChannelData) === null || _this$onChannelData === void 0 || _this$onChannelData.call(this, data);
       } else {
@@ -11207,7 +11199,7 @@ var SharedLoadWorkerHandle = /*#__PURE__*/function () {
         if (prom.type !== data.type) {
           throw new Error("Received response of type ".concat(data.type, " for message of type ").concat(prom.type));
         }
-        if (data.responseResult === _types__WEBPACK_IMPORTED_MODULE_13__.WorkerResponseResult.ERROR) {
+        if (data.responseResult === _types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerResponseResult.ERROR) {
           prom.reject(data.payload);
         } else {
           prom.resolve(data.payload);
@@ -11238,7 +11230,7 @@ var VolumeLoaderContext = /*#__PURE__*/function () {
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_8__["default"])(this, "activeLoader", undefined);
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_8__["default"])(this, "activeLoaderId", -1);
     this.workerHandle = new SharedLoadWorkerHandle();
-    this.openPromise = this.workerHandle.sendMessage(_types__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.INIT, {
+    this.openPromise = this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.INIT, {
       maxCacheSize: maxCacheSize,
       maxActiveRequests: maxActiveRequests,
       maxLowPriorityRequests: maxLowPriorityRequests
@@ -11280,15 +11272,15 @@ var VolumeLoaderContext = /*#__PURE__*/function () {
             case 0:
               // Special case: TIFF loader doesn't work on a worker, has its own workers anyways, and doesn't use cache or queue.
               pathString = Array.isArray(path) ? path[0] : path;
-              fileType = (options === null || options === void 0 ? void 0 : options.fileType) || (0,_loaders__WEBPACK_IMPORTED_MODULE_10__.pathToFileType)(pathString);
-              if (!(fileType === _loaders__WEBPACK_IMPORTED_MODULE_10__.VolumeFileFormat.TIFF)) {
+              fileType = (options === null || options === void 0 ? void 0 : options.fileType) || (0,_loaders_index_js__WEBPACK_IMPORTED_MODULE_10__.pathToFileType)(pathString);
+              if (!(fileType === _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__.VolumeFileFormat.TIFF)) {
                 _context.next = 4;
                 break;
               }
-              return _context.abrupt("return", new _loaders_TiffLoader__WEBPACK_IMPORTED_MODULE_12__.TiffLoader(pathString));
+              return _context.abrupt("return", new _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_12__.TiffLoader(pathString));
             case 4:
               _context.next = 6;
-              return this.workerHandle.sendMessage(_types__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.CREATE_LOADER, {
+              return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.CREATE_LOADER, {
                 path: path,
                 options: options
               });
@@ -11359,18 +11351,18 @@ var WorkerLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
   }, {
     key: "setPrefetchPriority",
     value: function setPrefetchPriority(directions) {
-      return this.workerHandle.sendMessage(_types__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, directions);
+      return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, directions);
     }
   }, {
     key: "syncMultichannelLoading",
     value: function syncMultichannelLoading(sync) {
-      return this.workerHandle.sendMessage(_types__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, sync);
+      return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, sync);
     }
   }, {
     key: "loadDims",
     value: function loadDims(loadSpec) {
       this.checkIsOpen();
-      return this.workerHandle.sendMessage(_types__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.LOAD_DIMS, loadSpec);
+      return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.LOAD_DIMS, loadSpec);
     }
   }, {
     key: "createImageInfo",
@@ -11382,14 +11374,14 @@ var WorkerLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
             case 0:
               this.checkIsOpen();
               _context2.next = 3;
-              return this.workerHandle.sendMessage(_types__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.CREATE_VOLUME, loadSpec);
+              return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.CREATE_VOLUME, loadSpec);
             case 3:
               _yield$this$workerHan = _context2.sent;
               imageInfo = _yield$this$workerHan.imageInfo;
               adjustedLoadSpec = _yield$this$workerHan.loadSpec;
               return _context2.abrupt("return", {
-                imageInfo: (0,_util__WEBPACK_IMPORTED_MODULE_14__.rebuildImageInfo)(imageInfo),
-                loadSpec: (0,_util__WEBPACK_IMPORTED_MODULE_14__.rebuildLoadSpec)(adjustedLoadSpec)
+                imageInfo: (0,_util_js__WEBPACK_IMPORTED_MODULE_14__.rebuildImageInfo)(imageInfo),
+                loadSpec: (0,_util_js__WEBPACK_IMPORTED_MODULE_14__.rebuildLoadSpec)(adjustedLoadSpec)
               });
             case 7:
             case "end":
@@ -11414,7 +11406,7 @@ var WorkerLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               this.currentLoadCallback = onData;
               this.currentLoadId += 1;
               _context3.next = 5;
-              return this.workerHandle.sendMessage(_types__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.LOAD_VOLUME_DATA, {
+              return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.LOAD_VOLUME_DATA, {
                 imageInfo: imageInfo,
                 loadSpec: loadSpec,
                 loaderId: this.loaderId,
@@ -11425,8 +11417,8 @@ var WorkerLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               newImageInfo = _yield$this$workerHan2.imageInfo;
               newLoadSpec = _yield$this$workerHan2.loadSpec;
               return _context3.abrupt("return", {
-                imageInfo: newImageInfo && (0,_util__WEBPACK_IMPORTED_MODULE_14__.rebuildImageInfo)(newImageInfo),
-                loadSpec: newLoadSpec && (0,_util__WEBPACK_IMPORTED_MODULE_14__.rebuildLoadSpec)(newLoadSpec)
+                imageInfo: newImageInfo && (0,_util_js__WEBPACK_IMPORTED_MODULE_14__.rebuildImageInfo)(newImageInfo),
+                loadSpec: newLoadSpec && (0,_util_js__WEBPACK_IMPORTED_MODULE_14__.rebuildLoadSpec)(newLoadSpec)
               });
             case 9:
             case "end":
@@ -11450,7 +11442,7 @@ var WorkerLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
     }
   }]);
   return WorkerLoader;
-}(_loaders_IVolumeLoader__WEBPACK_IMPORTED_MODULE_11__.ThreadableVolumeLoader);
+}(_loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__.ThreadableVolumeLoader);
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (VolumeLoaderContext);
 
 /***/ }),
@@ -14084,777 +14076,6 @@ var index = {
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (index);
 //# sourceMappingURL=dat.gui.module.js.map
-
-
-/***/ }),
-
-/***/ "./node_modules/regenerator-runtime/runtime.js":
-/*!*****************************************************!*\
-  !*** ./node_modules/regenerator-runtime/runtime.js ***!
-  \*****************************************************/
-/***/ ((module) => {
-
-/**
- * Copyright (c) 2014-present, Facebook, Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-
-var runtime = (function (exports) {
-  "use strict";
-
-  var Op = Object.prototype;
-  var hasOwn = Op.hasOwnProperty;
-  var defineProperty = Object.defineProperty || function (obj, key, desc) { obj[key] = desc.value; };
-  var undefined; // More compressible than void 0.
-  var $Symbol = typeof Symbol === "function" ? Symbol : {};
-  var iteratorSymbol = $Symbol.iterator || "@@iterator";
-  var asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator";
-  var toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag";
-
-  function define(obj, key, value) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-    return obj[key];
-  }
-  try {
-    // IE 8 has a broken Object.defineProperty that only works on DOM objects.
-    define({}, "");
-  } catch (err) {
-    define = function(obj, key, value) {
-      return obj[key] = value;
-    };
-  }
-
-  function wrap(innerFn, outerFn, self, tryLocsList) {
-    // If outerFn provided and outerFn.prototype is a Generator, then outerFn.prototype instanceof Generator.
-    var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator;
-    var generator = Object.create(protoGenerator.prototype);
-    var context = new Context(tryLocsList || []);
-
-    // The ._invoke method unifies the implementations of the .next,
-    // .throw, and .return methods.
-    defineProperty(generator, "_invoke", { value: makeInvokeMethod(innerFn, self, context) });
-
-    return generator;
-  }
-  exports.wrap = wrap;
-
-  // Try/catch helper to minimize deoptimizations. Returns a completion
-  // record like context.tryEntries[i].completion. This interface could
-  // have been (and was previously) designed to take a closure to be
-  // invoked without arguments, but in all the cases we care about we
-  // already have an existing method we want to call, so there's no need
-  // to create a new function object. We can even get away with assuming
-  // the method takes exactly one argument, since that happens to be true
-  // in every case, so we don't have to touch the arguments object. The
-  // only additional allocation required is the completion record, which
-  // has a stable shape and so hopefully should be cheap to allocate.
-  function tryCatch(fn, obj, arg) {
-    try {
-      return { type: "normal", arg: fn.call(obj, arg) };
-    } catch (err) {
-      return { type: "throw", arg: err };
-    }
-  }
-
-  var GenStateSuspendedStart = "suspendedStart";
-  var GenStateSuspendedYield = "suspendedYield";
-  var GenStateExecuting = "executing";
-  var GenStateCompleted = "completed";
-
-  // Returning this object from the innerFn has the same effect as
-  // breaking out of the dispatch switch statement.
-  var ContinueSentinel = {};
-
-  // Dummy constructor functions that we use as the .constructor and
-  // .constructor.prototype properties for functions that return Generator
-  // objects. For full spec compliance, you may wish to configure your
-  // minifier not to mangle the names of these two functions.
-  function Generator() {}
-  function GeneratorFunction() {}
-  function GeneratorFunctionPrototype() {}
-
-  // This is a polyfill for %IteratorPrototype% for environments that
-  // don't natively support it.
-  var IteratorPrototype = {};
-  define(IteratorPrototype, iteratorSymbol, function () {
-    return this;
-  });
-
-  var getProto = Object.getPrototypeOf;
-  var NativeIteratorPrototype = getProto && getProto(getProto(values([])));
-  if (NativeIteratorPrototype &&
-      NativeIteratorPrototype !== Op &&
-      hasOwn.call(NativeIteratorPrototype, iteratorSymbol)) {
-    // This environment has a native %IteratorPrototype%; use it instead
-    // of the polyfill.
-    IteratorPrototype = NativeIteratorPrototype;
-  }
-
-  var Gp = GeneratorFunctionPrototype.prototype =
-    Generator.prototype = Object.create(IteratorPrototype);
-  GeneratorFunction.prototype = GeneratorFunctionPrototype;
-  defineProperty(Gp, "constructor", { value: GeneratorFunctionPrototype, configurable: true });
-  defineProperty(
-    GeneratorFunctionPrototype,
-    "constructor",
-    { value: GeneratorFunction, configurable: true }
-  );
-  GeneratorFunction.displayName = define(
-    GeneratorFunctionPrototype,
-    toStringTagSymbol,
-    "GeneratorFunction"
-  );
-
-  // Helper for defining the .next, .throw, and .return methods of the
-  // Iterator interface in terms of a single ._invoke method.
-  function defineIteratorMethods(prototype) {
-    ["next", "throw", "return"].forEach(function(method) {
-      define(prototype, method, function(arg) {
-        return this._invoke(method, arg);
-      });
-    });
-  }
-
-  exports.isGeneratorFunction = function(genFun) {
-    var ctor = typeof genFun === "function" && genFun.constructor;
-    return ctor
-      ? ctor === GeneratorFunction ||
-        // For the native GeneratorFunction constructor, the best we can
-        // do is to check its .name property.
-        (ctor.displayName || ctor.name) === "GeneratorFunction"
-      : false;
-  };
-
-  exports.mark = function(genFun) {
-    if (Object.setPrototypeOf) {
-      Object.setPrototypeOf(genFun, GeneratorFunctionPrototype);
-    } else {
-      genFun.__proto__ = GeneratorFunctionPrototype;
-      define(genFun, toStringTagSymbol, "GeneratorFunction");
-    }
-    genFun.prototype = Object.create(Gp);
-    return genFun;
-  };
-
-  // Within the body of any async function, `await x` is transformed to
-  // `yield regeneratorRuntime.awrap(x)`, so that the runtime can test
-  // `hasOwn.call(value, "__await")` to determine if the yielded value is
-  // meant to be awaited.
-  exports.awrap = function(arg) {
-    return { __await: arg };
-  };
-
-  function AsyncIterator(generator, PromiseImpl) {
-    function invoke(method, arg, resolve, reject) {
-      var record = tryCatch(generator[method], generator, arg);
-      if (record.type === "throw") {
-        reject(record.arg);
-      } else {
-        var result = record.arg;
-        var value = result.value;
-        if (value &&
-            typeof value === "object" &&
-            hasOwn.call(value, "__await")) {
-          return PromiseImpl.resolve(value.__await).then(function(value) {
-            invoke("next", value, resolve, reject);
-          }, function(err) {
-            invoke("throw", err, resolve, reject);
-          });
-        }
-
-        return PromiseImpl.resolve(value).then(function(unwrapped) {
-          // When a yielded Promise is resolved, its final value becomes
-          // the .value of the Promise<{value,done}> result for the
-          // current iteration.
-          result.value = unwrapped;
-          resolve(result);
-        }, function(error) {
-          // If a rejected Promise was yielded, throw the rejection back
-          // into the async generator function so it can be handled there.
-          return invoke("throw", error, resolve, reject);
-        });
-      }
-    }
-
-    var previousPromise;
-
-    function enqueue(method, arg) {
-      function callInvokeWithMethodAndArg() {
-        return new PromiseImpl(function(resolve, reject) {
-          invoke(method, arg, resolve, reject);
-        });
-      }
-
-      return previousPromise =
-        // If enqueue has been called before, then we want to wait until
-        // all previous Promises have been resolved before calling invoke,
-        // so that results are always delivered in the correct order. If
-        // enqueue has not been called before, then it is important to
-        // call invoke immediately, without waiting on a callback to fire,
-        // so that the async generator function has the opportunity to do
-        // any necessary setup in a predictable way. This predictability
-        // is why the Promise constructor synchronously invokes its
-        // executor callback, and why async functions synchronously
-        // execute code before the first await. Since we implement simple
-        // async functions in terms of async generators, it is especially
-        // important to get this right, even though it requires care.
-        previousPromise ? previousPromise.then(
-          callInvokeWithMethodAndArg,
-          // Avoid propagating failures to Promises returned by later
-          // invocations of the iterator.
-          callInvokeWithMethodAndArg
-        ) : callInvokeWithMethodAndArg();
-    }
-
-    // Define the unified helper method that is used to implement .next,
-    // .throw, and .return (see defineIteratorMethods).
-    defineProperty(this, "_invoke", { value: enqueue });
-  }
-
-  defineIteratorMethods(AsyncIterator.prototype);
-  define(AsyncIterator.prototype, asyncIteratorSymbol, function () {
-    return this;
-  });
-  exports.AsyncIterator = AsyncIterator;
-
-  // Note that simple async functions are implemented on top of
-  // AsyncIterator objects; they just return a Promise for the value of
-  // the final result produced by the iterator.
-  exports.async = function(innerFn, outerFn, self, tryLocsList, PromiseImpl) {
-    if (PromiseImpl === void 0) PromiseImpl = Promise;
-
-    var iter = new AsyncIterator(
-      wrap(innerFn, outerFn, self, tryLocsList),
-      PromiseImpl
-    );
-
-    return exports.isGeneratorFunction(outerFn)
-      ? iter // If outerFn is a generator, return the full iterator.
-      : iter.next().then(function(result) {
-          return result.done ? result.value : iter.next();
-        });
-  };
-
-  function makeInvokeMethod(innerFn, self, context) {
-    var state = GenStateSuspendedStart;
-
-    return function invoke(method, arg) {
-      if (state === GenStateExecuting) {
-        throw new Error("Generator is already running");
-      }
-
-      if (state === GenStateCompleted) {
-        if (method === "throw") {
-          throw arg;
-        }
-
-        // Be forgiving, per 25.3.3.3.3 of the spec:
-        // https://people.mozilla.org/~jorendorff/es6-draft.html#sec-generatorresume
-        return doneResult();
-      }
-
-      context.method = method;
-      context.arg = arg;
-
-      while (true) {
-        var delegate = context.delegate;
-        if (delegate) {
-          var delegateResult = maybeInvokeDelegate(delegate, context);
-          if (delegateResult) {
-            if (delegateResult === ContinueSentinel) continue;
-            return delegateResult;
-          }
-        }
-
-        if (context.method === "next") {
-          // Setting context._sent for legacy support of Babel's
-          // function.sent implementation.
-          context.sent = context._sent = context.arg;
-
-        } else if (context.method === "throw") {
-          if (state === GenStateSuspendedStart) {
-            state = GenStateCompleted;
-            throw context.arg;
-          }
-
-          context.dispatchException(context.arg);
-
-        } else if (context.method === "return") {
-          context.abrupt("return", context.arg);
-        }
-
-        state = GenStateExecuting;
-
-        var record = tryCatch(innerFn, self, context);
-        if (record.type === "normal") {
-          // If an exception is thrown from innerFn, we leave state ===
-          // GenStateExecuting and loop back for another invocation.
-          state = context.done
-            ? GenStateCompleted
-            : GenStateSuspendedYield;
-
-          if (record.arg === ContinueSentinel) {
-            continue;
-          }
-
-          return {
-            value: record.arg,
-            done: context.done
-          };
-
-        } else if (record.type === "throw") {
-          state = GenStateCompleted;
-          // Dispatch the exception by looping back around to the
-          // context.dispatchException(context.arg) call above.
-          context.method = "throw";
-          context.arg = record.arg;
-        }
-      }
-    };
-  }
-
-  // Call delegate.iterator[context.method](context.arg) and handle the
-  // result, either by returning a { value, done } result from the
-  // delegate iterator, or by modifying context.method and context.arg,
-  // setting context.delegate to null, and returning the ContinueSentinel.
-  function maybeInvokeDelegate(delegate, context) {
-    var methodName = context.method;
-    var method = delegate.iterator[methodName];
-    if (method === undefined) {
-      // A .throw or .return when the delegate iterator has no .throw
-      // method, or a missing .next mehtod, always terminate the
-      // yield* loop.
-      context.delegate = null;
-
-      // Note: ["return"] must be used for ES3 parsing compatibility.
-      if (methodName === "throw" && delegate.iterator["return"]) {
-        // If the delegate iterator has a return method, give it a
-        // chance to clean up.
-        context.method = "return";
-        context.arg = undefined;
-        maybeInvokeDelegate(delegate, context);
-
-        if (context.method === "throw") {
-          // If maybeInvokeDelegate(context) changed context.method from
-          // "return" to "throw", let that override the TypeError below.
-          return ContinueSentinel;
-        }
-      }
-      if (methodName !== "return") {
-        context.method = "throw";
-        context.arg = new TypeError(
-          "The iterator does not provide a '" + methodName + "' method");
-      }
-
-      return ContinueSentinel;
-    }
-
-    var record = tryCatch(method, delegate.iterator, context.arg);
-
-    if (record.type === "throw") {
-      context.method = "throw";
-      context.arg = record.arg;
-      context.delegate = null;
-      return ContinueSentinel;
-    }
-
-    var info = record.arg;
-
-    if (! info) {
-      context.method = "throw";
-      context.arg = new TypeError("iterator result is not an object");
-      context.delegate = null;
-      return ContinueSentinel;
-    }
-
-    if (info.done) {
-      // Assign the result of the finished delegate to the temporary
-      // variable specified by delegate.resultName (see delegateYield).
-      context[delegate.resultName] = info.value;
-
-      // Resume execution at the desired location (see delegateYield).
-      context.next = delegate.nextLoc;
-
-      // If context.method was "throw" but the delegate handled the
-      // exception, let the outer generator proceed normally. If
-      // context.method was "next", forget context.arg since it has been
-      // "consumed" by the delegate iterator. If context.method was
-      // "return", allow the original .return call to continue in the
-      // outer generator.
-      if (context.method !== "return") {
-        context.method = "next";
-        context.arg = undefined;
-      }
-
-    } else {
-      // Re-yield the result returned by the delegate method.
-      return info;
-    }
-
-    // The delegate iterator is finished, so forget it and continue with
-    // the outer generator.
-    context.delegate = null;
-    return ContinueSentinel;
-  }
-
-  // Define Generator.prototype.{next,throw,return} in terms of the
-  // unified ._invoke helper method.
-  defineIteratorMethods(Gp);
-
-  define(Gp, toStringTagSymbol, "Generator");
-
-  // A Generator should always return itself as the iterator object when the
-  // @@iterator function is called on it. Some browsers' implementations of the
-  // iterator prototype chain incorrectly implement this, causing the Generator
-  // object to not be returned from this call. This ensures that doesn't happen.
-  // See https://github.com/facebook/regenerator/issues/274 for more details.
-  define(Gp, iteratorSymbol, function() {
-    return this;
-  });
-
-  define(Gp, "toString", function() {
-    return "[object Generator]";
-  });
-
-  function pushTryEntry(locs) {
-    var entry = { tryLoc: locs[0] };
-
-    if (1 in locs) {
-      entry.catchLoc = locs[1];
-    }
-
-    if (2 in locs) {
-      entry.finallyLoc = locs[2];
-      entry.afterLoc = locs[3];
-    }
-
-    this.tryEntries.push(entry);
-  }
-
-  function resetTryEntry(entry) {
-    var record = entry.completion || {};
-    record.type = "normal";
-    delete record.arg;
-    entry.completion = record;
-  }
-
-  function Context(tryLocsList) {
-    // The root entry object (effectively a try statement without a catch
-    // or a finally block) gives us a place to store values thrown from
-    // locations where there is no enclosing try statement.
-    this.tryEntries = [{ tryLoc: "root" }];
-    tryLocsList.forEach(pushTryEntry, this);
-    this.reset(true);
-  }
-
-  exports.keys = function(val) {
-    var object = Object(val);
-    var keys = [];
-    for (var key in object) {
-      keys.push(key);
-    }
-    keys.reverse();
-
-    // Rather than returning an object with a next method, we keep
-    // things simple and return the next function itself.
-    return function next() {
-      while (keys.length) {
-        var key = keys.pop();
-        if (key in object) {
-          next.value = key;
-          next.done = false;
-          return next;
-        }
-      }
-
-      // To avoid creating an additional object, we just hang the .value
-      // and .done properties off the next function object itself. This
-      // also ensures that the minifier will not anonymize the function.
-      next.done = true;
-      return next;
-    };
-  };
-
-  function values(iterable) {
-    if (iterable) {
-      var iteratorMethod = iterable[iteratorSymbol];
-      if (iteratorMethod) {
-        return iteratorMethod.call(iterable);
-      }
-
-      if (typeof iterable.next === "function") {
-        return iterable;
-      }
-
-      if (!isNaN(iterable.length)) {
-        var i = -1, next = function next() {
-          while (++i < iterable.length) {
-            if (hasOwn.call(iterable, i)) {
-              next.value = iterable[i];
-              next.done = false;
-              return next;
-            }
-          }
-
-          next.value = undefined;
-          next.done = true;
-
-          return next;
-        };
-
-        return next.next = next;
-      }
-    }
-
-    // Return an iterator with no values.
-    return { next: doneResult };
-  }
-  exports.values = values;
-
-  function doneResult() {
-    return { value: undefined, done: true };
-  }
-
-  Context.prototype = {
-    constructor: Context,
-
-    reset: function(skipTempReset) {
-      this.prev = 0;
-      this.next = 0;
-      // Resetting context._sent for legacy support of Babel's
-      // function.sent implementation.
-      this.sent = this._sent = undefined;
-      this.done = false;
-      this.delegate = null;
-
-      this.method = "next";
-      this.arg = undefined;
-
-      this.tryEntries.forEach(resetTryEntry);
-
-      if (!skipTempReset) {
-        for (var name in this) {
-          // Not sure about the optimal order of these conditions:
-          if (name.charAt(0) === "t" &&
-              hasOwn.call(this, name) &&
-              !isNaN(+name.slice(1))) {
-            this[name] = undefined;
-          }
-        }
-      }
-    },
-
-    stop: function() {
-      this.done = true;
-
-      var rootEntry = this.tryEntries[0];
-      var rootRecord = rootEntry.completion;
-      if (rootRecord.type === "throw") {
-        throw rootRecord.arg;
-      }
-
-      return this.rval;
-    },
-
-    dispatchException: function(exception) {
-      if (this.done) {
-        throw exception;
-      }
-
-      var context = this;
-      function handle(loc, caught) {
-        record.type = "throw";
-        record.arg = exception;
-        context.next = loc;
-
-        if (caught) {
-          // If the dispatched exception was caught by a catch block,
-          // then let that catch block handle the exception normally.
-          context.method = "next";
-          context.arg = undefined;
-        }
-
-        return !! caught;
-      }
-
-      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-        var entry = this.tryEntries[i];
-        var record = entry.completion;
-
-        if (entry.tryLoc === "root") {
-          // Exception thrown outside of any try block that could handle
-          // it, so set the completion value of the entire function to
-          // throw the exception.
-          return handle("end");
-        }
-
-        if (entry.tryLoc <= this.prev) {
-          var hasCatch = hasOwn.call(entry, "catchLoc");
-          var hasFinally = hasOwn.call(entry, "finallyLoc");
-
-          if (hasCatch && hasFinally) {
-            if (this.prev < entry.catchLoc) {
-              return handle(entry.catchLoc, true);
-            } else if (this.prev < entry.finallyLoc) {
-              return handle(entry.finallyLoc);
-            }
-
-          } else if (hasCatch) {
-            if (this.prev < entry.catchLoc) {
-              return handle(entry.catchLoc, true);
-            }
-
-          } else if (hasFinally) {
-            if (this.prev < entry.finallyLoc) {
-              return handle(entry.finallyLoc);
-            }
-
-          } else {
-            throw new Error("try statement without catch or finally");
-          }
-        }
-      }
-    },
-
-    abrupt: function(type, arg) {
-      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-        var entry = this.tryEntries[i];
-        if (entry.tryLoc <= this.prev &&
-            hasOwn.call(entry, "finallyLoc") &&
-            this.prev < entry.finallyLoc) {
-          var finallyEntry = entry;
-          break;
-        }
-      }
-
-      if (finallyEntry &&
-          (type === "break" ||
-           type === "continue") &&
-          finallyEntry.tryLoc <= arg &&
-          arg <= finallyEntry.finallyLoc) {
-        // Ignore the finally entry if control is not jumping to a
-        // location outside the try/catch block.
-        finallyEntry = null;
-      }
-
-      var record = finallyEntry ? finallyEntry.completion : {};
-      record.type = type;
-      record.arg = arg;
-
-      if (finallyEntry) {
-        this.method = "next";
-        this.next = finallyEntry.finallyLoc;
-        return ContinueSentinel;
-      }
-
-      return this.complete(record);
-    },
-
-    complete: function(record, afterLoc) {
-      if (record.type === "throw") {
-        throw record.arg;
-      }
-
-      if (record.type === "break" ||
-          record.type === "continue") {
-        this.next = record.arg;
-      } else if (record.type === "return") {
-        this.rval = this.arg = record.arg;
-        this.method = "return";
-        this.next = "end";
-      } else if (record.type === "normal" && afterLoc) {
-        this.next = afterLoc;
-      }
-
-      return ContinueSentinel;
-    },
-
-    finish: function(finallyLoc) {
-      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-        var entry = this.tryEntries[i];
-        if (entry.finallyLoc === finallyLoc) {
-          this.complete(entry.completion, entry.afterLoc);
-          resetTryEntry(entry);
-          return ContinueSentinel;
-        }
-      }
-    },
-
-    "catch": function(tryLoc) {
-      for (var i = this.tryEntries.length - 1; i >= 0; --i) {
-        var entry = this.tryEntries[i];
-        if (entry.tryLoc === tryLoc) {
-          var record = entry.completion;
-          if (record.type === "throw") {
-            var thrown = record.arg;
-            resetTryEntry(entry);
-          }
-          return thrown;
-        }
-      }
-
-      // The context.catch method must only be called with a location
-      // argument that corresponds to a known catch block.
-      throw new Error("illegal catch attempt");
-    },
-
-    delegateYield: function(iterable, resultName, nextLoc) {
-      this.delegate = {
-        iterator: values(iterable),
-        resultName: resultName,
-        nextLoc: nextLoc
-      };
-
-      if (this.method === "next") {
-        // Deliberately forget the last sent value so that we don't
-        // accidentally pass it on to the delegate.
-        this.arg = undefined;
-      }
-
-      return ContinueSentinel;
-    }
-  };
-
-  // Regardless of whether this script is executing as a CommonJS module
-  // or not, return the runtime object so that we can declare the variable
-  // regeneratorRuntime in the outer scope, which allows this module to be
-  // injected easily by `bin/regenerator --include-runtime script.js`.
-  return exports;
-
-}(
-  // If this script is executing as a CommonJS module, use module.exports
-  // as the regeneratorRuntime namespace. Otherwise create a new empty
-  // object. Either way, the resulting object will be used to initialize
-  // the regeneratorRuntime variable at the top of this file.
-   true ? module.exports : 0
-));
-
-try {
-  regeneratorRuntime = runtime;
-} catch (accidentalStrictMode) {
-  // This module should not be running in strict mode, so the above
-  // assignment should always work unless something is misconfigured. Just
-  // in case runtime.js accidentally runs in strict mode, in modern engines
-  // we can explicitly access globalThis. In older engines we can escape
-  // strict mode using a global Function call. This could conceivably fail
-  // if a Content Security Policy forbids using Function, but in that case
-  // the proper solution is to fix the accidental strict mode problem. If
-  // you've misconfigured your bundler to force strict mode and applied a
-  // CSP to forbid Function, and you're not willing to fix either of those
-  // problems, please detail your unique predicament in a GitHub issue.
-  if (typeof globalThis === "object") {
-    globalThis.regeneratorRuntime = runtime;
-  } else {
-    Function("r", "regeneratorRuntime = r")(runtime);
-  }
-}
 
 
 /***/ }),
@@ -85632,373 +84853,6 @@ class STLExporter {
 
 
 
-/***/ }),
-
-/***/ "./node_modules/three/src/constants.js":
-/*!*********************************************!*\
-  !*** ./node_modules/three/src/constants.js ***!
-  \*********************************************/
-/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   ACESFilmicToneMapping: () => (/* binding */ ACESFilmicToneMapping),
-/* harmony export */   AddEquation: () => (/* binding */ AddEquation),
-/* harmony export */   AddOperation: () => (/* binding */ AddOperation),
-/* harmony export */   AdditiveAnimationBlendMode: () => (/* binding */ AdditiveAnimationBlendMode),
-/* harmony export */   AdditiveBlending: () => (/* binding */ AdditiveBlending),
-/* harmony export */   AlphaFormat: () => (/* binding */ AlphaFormat),
-/* harmony export */   AlwaysDepth: () => (/* binding */ AlwaysDepth),
-/* harmony export */   AlwaysStencilFunc: () => (/* binding */ AlwaysStencilFunc),
-/* harmony export */   BackSide: () => (/* binding */ BackSide),
-/* harmony export */   BasicDepthPacking: () => (/* binding */ BasicDepthPacking),
-/* harmony export */   BasicShadowMap: () => (/* binding */ BasicShadowMap),
-/* harmony export */   ByteType: () => (/* binding */ ByteType),
-/* harmony export */   CineonToneMapping: () => (/* binding */ CineonToneMapping),
-/* harmony export */   ClampToEdgeWrapping: () => (/* binding */ ClampToEdgeWrapping),
-/* harmony export */   CubeReflectionMapping: () => (/* binding */ CubeReflectionMapping),
-/* harmony export */   CubeRefractionMapping: () => (/* binding */ CubeRefractionMapping),
-/* harmony export */   CubeUVReflectionMapping: () => (/* binding */ CubeUVReflectionMapping),
-/* harmony export */   CullFaceBack: () => (/* binding */ CullFaceBack),
-/* harmony export */   CullFaceFront: () => (/* binding */ CullFaceFront),
-/* harmony export */   CullFaceFrontBack: () => (/* binding */ CullFaceFrontBack),
-/* harmony export */   CullFaceNone: () => (/* binding */ CullFaceNone),
-/* harmony export */   CustomBlending: () => (/* binding */ CustomBlending),
-/* harmony export */   CustomToneMapping: () => (/* binding */ CustomToneMapping),
-/* harmony export */   DecrementStencilOp: () => (/* binding */ DecrementStencilOp),
-/* harmony export */   DecrementWrapStencilOp: () => (/* binding */ DecrementWrapStencilOp),
-/* harmony export */   DepthFormat: () => (/* binding */ DepthFormat),
-/* harmony export */   DepthStencilFormat: () => (/* binding */ DepthStencilFormat),
-/* harmony export */   DoubleSide: () => (/* binding */ DoubleSide),
-/* harmony export */   DstAlphaFactor: () => (/* binding */ DstAlphaFactor),
-/* harmony export */   DstColorFactor: () => (/* binding */ DstColorFactor),
-/* harmony export */   DynamicCopyUsage: () => (/* binding */ DynamicCopyUsage),
-/* harmony export */   DynamicDrawUsage: () => (/* binding */ DynamicDrawUsage),
-/* harmony export */   DynamicReadUsage: () => (/* binding */ DynamicReadUsage),
-/* harmony export */   EqualDepth: () => (/* binding */ EqualDepth),
-/* harmony export */   EqualStencilFunc: () => (/* binding */ EqualStencilFunc),
-/* harmony export */   EquirectangularReflectionMapping: () => (/* binding */ EquirectangularReflectionMapping),
-/* harmony export */   EquirectangularRefractionMapping: () => (/* binding */ EquirectangularRefractionMapping),
-/* harmony export */   FloatType: () => (/* binding */ FloatType),
-/* harmony export */   FrontSide: () => (/* binding */ FrontSide),
-/* harmony export */   GLSL1: () => (/* binding */ GLSL1),
-/* harmony export */   GLSL3: () => (/* binding */ GLSL3),
-/* harmony export */   GreaterDepth: () => (/* binding */ GreaterDepth),
-/* harmony export */   GreaterEqualDepth: () => (/* binding */ GreaterEqualDepth),
-/* harmony export */   GreaterEqualStencilFunc: () => (/* binding */ GreaterEqualStencilFunc),
-/* harmony export */   GreaterStencilFunc: () => (/* binding */ GreaterStencilFunc),
-/* harmony export */   HalfFloatType: () => (/* binding */ HalfFloatType),
-/* harmony export */   IncrementStencilOp: () => (/* binding */ IncrementStencilOp),
-/* harmony export */   IncrementWrapStencilOp: () => (/* binding */ IncrementWrapStencilOp),
-/* harmony export */   IntType: () => (/* binding */ IntType),
-/* harmony export */   InterpolateDiscrete: () => (/* binding */ InterpolateDiscrete),
-/* harmony export */   InterpolateLinear: () => (/* binding */ InterpolateLinear),
-/* harmony export */   InterpolateSmooth: () => (/* binding */ InterpolateSmooth),
-/* harmony export */   InvertStencilOp: () => (/* binding */ InvertStencilOp),
-/* harmony export */   KeepStencilOp: () => (/* binding */ KeepStencilOp),
-/* harmony export */   LessDepth: () => (/* binding */ LessDepth),
-/* harmony export */   LessEqualDepth: () => (/* binding */ LessEqualDepth),
-/* harmony export */   LessEqualStencilFunc: () => (/* binding */ LessEqualStencilFunc),
-/* harmony export */   LessStencilFunc: () => (/* binding */ LessStencilFunc),
-/* harmony export */   LinearEncoding: () => (/* binding */ LinearEncoding),
-/* harmony export */   LinearFilter: () => (/* binding */ LinearFilter),
-/* harmony export */   LinearMipMapLinearFilter: () => (/* binding */ LinearMipMapLinearFilter),
-/* harmony export */   LinearMipMapNearestFilter: () => (/* binding */ LinearMipMapNearestFilter),
-/* harmony export */   LinearMipmapLinearFilter: () => (/* binding */ LinearMipmapLinearFilter),
-/* harmony export */   LinearMipmapNearestFilter: () => (/* binding */ LinearMipmapNearestFilter),
-/* harmony export */   LinearSRGBColorSpace: () => (/* binding */ LinearSRGBColorSpace),
-/* harmony export */   LinearToneMapping: () => (/* binding */ LinearToneMapping),
-/* harmony export */   LoopOnce: () => (/* binding */ LoopOnce),
-/* harmony export */   LoopPingPong: () => (/* binding */ LoopPingPong),
-/* harmony export */   LoopRepeat: () => (/* binding */ LoopRepeat),
-/* harmony export */   LuminanceAlphaFormat: () => (/* binding */ LuminanceAlphaFormat),
-/* harmony export */   LuminanceFormat: () => (/* binding */ LuminanceFormat),
-/* harmony export */   MOUSE: () => (/* binding */ MOUSE),
-/* harmony export */   MaxEquation: () => (/* binding */ MaxEquation),
-/* harmony export */   MinEquation: () => (/* binding */ MinEquation),
-/* harmony export */   MirroredRepeatWrapping: () => (/* binding */ MirroredRepeatWrapping),
-/* harmony export */   MixOperation: () => (/* binding */ MixOperation),
-/* harmony export */   MultiplyBlending: () => (/* binding */ MultiplyBlending),
-/* harmony export */   MultiplyOperation: () => (/* binding */ MultiplyOperation),
-/* harmony export */   NearestFilter: () => (/* binding */ NearestFilter),
-/* harmony export */   NearestMipMapLinearFilter: () => (/* binding */ NearestMipMapLinearFilter),
-/* harmony export */   NearestMipMapNearestFilter: () => (/* binding */ NearestMipMapNearestFilter),
-/* harmony export */   NearestMipmapLinearFilter: () => (/* binding */ NearestMipmapLinearFilter),
-/* harmony export */   NearestMipmapNearestFilter: () => (/* binding */ NearestMipmapNearestFilter),
-/* harmony export */   NeverDepth: () => (/* binding */ NeverDepth),
-/* harmony export */   NeverStencilFunc: () => (/* binding */ NeverStencilFunc),
-/* harmony export */   NoBlending: () => (/* binding */ NoBlending),
-/* harmony export */   NoColorSpace: () => (/* binding */ NoColorSpace),
-/* harmony export */   NoToneMapping: () => (/* binding */ NoToneMapping),
-/* harmony export */   NormalAnimationBlendMode: () => (/* binding */ NormalAnimationBlendMode),
-/* harmony export */   NormalBlending: () => (/* binding */ NormalBlending),
-/* harmony export */   NotEqualDepth: () => (/* binding */ NotEqualDepth),
-/* harmony export */   NotEqualStencilFunc: () => (/* binding */ NotEqualStencilFunc),
-/* harmony export */   ObjectSpaceNormalMap: () => (/* binding */ ObjectSpaceNormalMap),
-/* harmony export */   OneFactor: () => (/* binding */ OneFactor),
-/* harmony export */   OneMinusDstAlphaFactor: () => (/* binding */ OneMinusDstAlphaFactor),
-/* harmony export */   OneMinusDstColorFactor: () => (/* binding */ OneMinusDstColorFactor),
-/* harmony export */   OneMinusSrcAlphaFactor: () => (/* binding */ OneMinusSrcAlphaFactor),
-/* harmony export */   OneMinusSrcColorFactor: () => (/* binding */ OneMinusSrcColorFactor),
-/* harmony export */   PCFShadowMap: () => (/* binding */ PCFShadowMap),
-/* harmony export */   PCFSoftShadowMap: () => (/* binding */ PCFSoftShadowMap),
-/* harmony export */   REVISION: () => (/* binding */ REVISION),
-/* harmony export */   RGBADepthPacking: () => (/* binding */ RGBADepthPacking),
-/* harmony export */   RGBAFormat: () => (/* binding */ RGBAFormat),
-/* harmony export */   RGBAIntegerFormat: () => (/* binding */ RGBAIntegerFormat),
-/* harmony export */   RGBA_ASTC_10x10_Format: () => (/* binding */ RGBA_ASTC_10x10_Format),
-/* harmony export */   RGBA_ASTC_10x5_Format: () => (/* binding */ RGBA_ASTC_10x5_Format),
-/* harmony export */   RGBA_ASTC_10x6_Format: () => (/* binding */ RGBA_ASTC_10x6_Format),
-/* harmony export */   RGBA_ASTC_10x8_Format: () => (/* binding */ RGBA_ASTC_10x8_Format),
-/* harmony export */   RGBA_ASTC_12x10_Format: () => (/* binding */ RGBA_ASTC_12x10_Format),
-/* harmony export */   RGBA_ASTC_12x12_Format: () => (/* binding */ RGBA_ASTC_12x12_Format),
-/* harmony export */   RGBA_ASTC_4x4_Format: () => (/* binding */ RGBA_ASTC_4x4_Format),
-/* harmony export */   RGBA_ASTC_5x4_Format: () => (/* binding */ RGBA_ASTC_5x4_Format),
-/* harmony export */   RGBA_ASTC_5x5_Format: () => (/* binding */ RGBA_ASTC_5x5_Format),
-/* harmony export */   RGBA_ASTC_6x5_Format: () => (/* binding */ RGBA_ASTC_6x5_Format),
-/* harmony export */   RGBA_ASTC_6x6_Format: () => (/* binding */ RGBA_ASTC_6x6_Format),
-/* harmony export */   RGBA_ASTC_8x5_Format: () => (/* binding */ RGBA_ASTC_8x5_Format),
-/* harmony export */   RGBA_ASTC_8x6_Format: () => (/* binding */ RGBA_ASTC_8x6_Format),
-/* harmony export */   RGBA_ASTC_8x8_Format: () => (/* binding */ RGBA_ASTC_8x8_Format),
-/* harmony export */   RGBA_BPTC_Format: () => (/* binding */ RGBA_BPTC_Format),
-/* harmony export */   RGBA_ETC2_EAC_Format: () => (/* binding */ RGBA_ETC2_EAC_Format),
-/* harmony export */   RGBA_PVRTC_2BPPV1_Format: () => (/* binding */ RGBA_PVRTC_2BPPV1_Format),
-/* harmony export */   RGBA_PVRTC_4BPPV1_Format: () => (/* binding */ RGBA_PVRTC_4BPPV1_Format),
-/* harmony export */   RGBA_S3TC_DXT1_Format: () => (/* binding */ RGBA_S3TC_DXT1_Format),
-/* harmony export */   RGBA_S3TC_DXT3_Format: () => (/* binding */ RGBA_S3TC_DXT3_Format),
-/* harmony export */   RGBA_S3TC_DXT5_Format: () => (/* binding */ RGBA_S3TC_DXT5_Format),
-/* harmony export */   RGBFormat: () => (/* binding */ RGBFormat),
-/* harmony export */   RGB_ETC1_Format: () => (/* binding */ RGB_ETC1_Format),
-/* harmony export */   RGB_ETC2_Format: () => (/* binding */ RGB_ETC2_Format),
-/* harmony export */   RGB_PVRTC_2BPPV1_Format: () => (/* binding */ RGB_PVRTC_2BPPV1_Format),
-/* harmony export */   RGB_PVRTC_4BPPV1_Format: () => (/* binding */ RGB_PVRTC_4BPPV1_Format),
-/* harmony export */   RGB_S3TC_DXT1_Format: () => (/* binding */ RGB_S3TC_DXT1_Format),
-/* harmony export */   RGFormat: () => (/* binding */ RGFormat),
-/* harmony export */   RGIntegerFormat: () => (/* binding */ RGIntegerFormat),
-/* harmony export */   RedFormat: () => (/* binding */ RedFormat),
-/* harmony export */   RedIntegerFormat: () => (/* binding */ RedIntegerFormat),
-/* harmony export */   ReinhardToneMapping: () => (/* binding */ ReinhardToneMapping),
-/* harmony export */   RepeatWrapping: () => (/* binding */ RepeatWrapping),
-/* harmony export */   ReplaceStencilOp: () => (/* binding */ ReplaceStencilOp),
-/* harmony export */   ReverseSubtractEquation: () => (/* binding */ ReverseSubtractEquation),
-/* harmony export */   SRGBColorSpace: () => (/* binding */ SRGBColorSpace),
-/* harmony export */   ShortType: () => (/* binding */ ShortType),
-/* harmony export */   SrcAlphaFactor: () => (/* binding */ SrcAlphaFactor),
-/* harmony export */   SrcAlphaSaturateFactor: () => (/* binding */ SrcAlphaSaturateFactor),
-/* harmony export */   SrcColorFactor: () => (/* binding */ SrcColorFactor),
-/* harmony export */   StaticCopyUsage: () => (/* binding */ StaticCopyUsage),
-/* harmony export */   StaticDrawUsage: () => (/* binding */ StaticDrawUsage),
-/* harmony export */   StaticReadUsage: () => (/* binding */ StaticReadUsage),
-/* harmony export */   StreamCopyUsage: () => (/* binding */ StreamCopyUsage),
-/* harmony export */   StreamDrawUsage: () => (/* binding */ StreamDrawUsage),
-/* harmony export */   StreamReadUsage: () => (/* binding */ StreamReadUsage),
-/* harmony export */   SubtractEquation: () => (/* binding */ SubtractEquation),
-/* harmony export */   SubtractiveBlending: () => (/* binding */ SubtractiveBlending),
-/* harmony export */   TOUCH: () => (/* binding */ TOUCH),
-/* harmony export */   TangentSpaceNormalMap: () => (/* binding */ TangentSpaceNormalMap),
-/* harmony export */   TriangleFanDrawMode: () => (/* binding */ TriangleFanDrawMode),
-/* harmony export */   TriangleStripDrawMode: () => (/* binding */ TriangleStripDrawMode),
-/* harmony export */   TrianglesDrawMode: () => (/* binding */ TrianglesDrawMode),
-/* harmony export */   UVMapping: () => (/* binding */ UVMapping),
-/* harmony export */   UnsignedByteType: () => (/* binding */ UnsignedByteType),
-/* harmony export */   UnsignedInt248Type: () => (/* binding */ UnsignedInt248Type),
-/* harmony export */   UnsignedIntType: () => (/* binding */ UnsignedIntType),
-/* harmony export */   UnsignedShort4444Type: () => (/* binding */ UnsignedShort4444Type),
-/* harmony export */   UnsignedShort5551Type: () => (/* binding */ UnsignedShort5551Type),
-/* harmony export */   UnsignedShortType: () => (/* binding */ UnsignedShortType),
-/* harmony export */   VSMShadowMap: () => (/* binding */ VSMShadowMap),
-/* harmony export */   WrapAroundEnding: () => (/* binding */ WrapAroundEnding),
-/* harmony export */   ZeroCurvatureEnding: () => (/* binding */ ZeroCurvatureEnding),
-/* harmony export */   ZeroFactor: () => (/* binding */ ZeroFactor),
-/* harmony export */   ZeroSlopeEnding: () => (/* binding */ ZeroSlopeEnding),
-/* harmony export */   ZeroStencilOp: () => (/* binding */ ZeroStencilOp),
-/* harmony export */   _SRGBAFormat: () => (/* binding */ _SRGBAFormat),
-/* harmony export */   sRGBEncoding: () => (/* binding */ sRGBEncoding)
-/* harmony export */ });
-const REVISION = '144';
-const MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2 };
-const TOUCH = { ROTATE: 0, PAN: 1, DOLLY_PAN: 2, DOLLY_ROTATE: 3 };
-const CullFaceNone = 0;
-const CullFaceBack = 1;
-const CullFaceFront = 2;
-const CullFaceFrontBack = 3;
-const BasicShadowMap = 0;
-const PCFShadowMap = 1;
-const PCFSoftShadowMap = 2;
-const VSMShadowMap = 3;
-const FrontSide = 0;
-const BackSide = 1;
-const DoubleSide = 2;
-const NoBlending = 0;
-const NormalBlending = 1;
-const AdditiveBlending = 2;
-const SubtractiveBlending = 3;
-const MultiplyBlending = 4;
-const CustomBlending = 5;
-const AddEquation = 100;
-const SubtractEquation = 101;
-const ReverseSubtractEquation = 102;
-const MinEquation = 103;
-const MaxEquation = 104;
-const ZeroFactor = 200;
-const OneFactor = 201;
-const SrcColorFactor = 202;
-const OneMinusSrcColorFactor = 203;
-const SrcAlphaFactor = 204;
-const OneMinusSrcAlphaFactor = 205;
-const DstAlphaFactor = 206;
-const OneMinusDstAlphaFactor = 207;
-const DstColorFactor = 208;
-const OneMinusDstColorFactor = 209;
-const SrcAlphaSaturateFactor = 210;
-const NeverDepth = 0;
-const AlwaysDepth = 1;
-const LessDepth = 2;
-const LessEqualDepth = 3;
-const EqualDepth = 4;
-const GreaterEqualDepth = 5;
-const GreaterDepth = 6;
-const NotEqualDepth = 7;
-const MultiplyOperation = 0;
-const MixOperation = 1;
-const AddOperation = 2;
-const NoToneMapping = 0;
-const LinearToneMapping = 1;
-const ReinhardToneMapping = 2;
-const CineonToneMapping = 3;
-const ACESFilmicToneMapping = 4;
-const CustomToneMapping = 5;
-
-const UVMapping = 300;
-const CubeReflectionMapping = 301;
-const CubeRefractionMapping = 302;
-const EquirectangularReflectionMapping = 303;
-const EquirectangularRefractionMapping = 304;
-const CubeUVReflectionMapping = 306;
-const RepeatWrapping = 1000;
-const ClampToEdgeWrapping = 1001;
-const MirroredRepeatWrapping = 1002;
-const NearestFilter = 1003;
-const NearestMipmapNearestFilter = 1004;
-const NearestMipMapNearestFilter = 1004;
-const NearestMipmapLinearFilter = 1005;
-const NearestMipMapLinearFilter = 1005;
-const LinearFilter = 1006;
-const LinearMipmapNearestFilter = 1007;
-const LinearMipMapNearestFilter = 1007;
-const LinearMipmapLinearFilter = 1008;
-const LinearMipMapLinearFilter = 1008;
-const UnsignedByteType = 1009;
-const ByteType = 1010;
-const ShortType = 1011;
-const UnsignedShortType = 1012;
-const IntType = 1013;
-const UnsignedIntType = 1014;
-const FloatType = 1015;
-const HalfFloatType = 1016;
-const UnsignedShort4444Type = 1017;
-const UnsignedShort5551Type = 1018;
-const UnsignedInt248Type = 1020;
-const AlphaFormat = 1021;
-const RGBFormat = 1022; // @deprecated since r137
-const RGBAFormat = 1023;
-const LuminanceFormat = 1024;
-const LuminanceAlphaFormat = 1025;
-const DepthFormat = 1026;
-const DepthStencilFormat = 1027;
-const RedFormat = 1028;
-const RedIntegerFormat = 1029;
-const RGFormat = 1030;
-const RGIntegerFormat = 1031;
-const RGBAIntegerFormat = 1033;
-
-const RGB_S3TC_DXT1_Format = 33776;
-const RGBA_S3TC_DXT1_Format = 33777;
-const RGBA_S3TC_DXT3_Format = 33778;
-const RGBA_S3TC_DXT5_Format = 33779;
-const RGB_PVRTC_4BPPV1_Format = 35840;
-const RGB_PVRTC_2BPPV1_Format = 35841;
-const RGBA_PVRTC_4BPPV1_Format = 35842;
-const RGBA_PVRTC_2BPPV1_Format = 35843;
-const RGB_ETC1_Format = 36196;
-const RGB_ETC2_Format = 37492;
-const RGBA_ETC2_EAC_Format = 37496;
-const RGBA_ASTC_4x4_Format = 37808;
-const RGBA_ASTC_5x4_Format = 37809;
-const RGBA_ASTC_5x5_Format = 37810;
-const RGBA_ASTC_6x5_Format = 37811;
-const RGBA_ASTC_6x6_Format = 37812;
-const RGBA_ASTC_8x5_Format = 37813;
-const RGBA_ASTC_8x6_Format = 37814;
-const RGBA_ASTC_8x8_Format = 37815;
-const RGBA_ASTC_10x5_Format = 37816;
-const RGBA_ASTC_10x6_Format = 37817;
-const RGBA_ASTC_10x8_Format = 37818;
-const RGBA_ASTC_10x10_Format = 37819;
-const RGBA_ASTC_12x10_Format = 37820;
-const RGBA_ASTC_12x12_Format = 37821;
-const RGBA_BPTC_Format = 36492;
-const LoopOnce = 2200;
-const LoopRepeat = 2201;
-const LoopPingPong = 2202;
-const InterpolateDiscrete = 2300;
-const InterpolateLinear = 2301;
-const InterpolateSmooth = 2302;
-const ZeroCurvatureEnding = 2400;
-const ZeroSlopeEnding = 2401;
-const WrapAroundEnding = 2402;
-const NormalAnimationBlendMode = 2500;
-const AdditiveAnimationBlendMode = 2501;
-const TrianglesDrawMode = 0;
-const TriangleStripDrawMode = 1;
-const TriangleFanDrawMode = 2;
-const LinearEncoding = 3000;
-const sRGBEncoding = 3001;
-const BasicDepthPacking = 3200;
-const RGBADepthPacking = 3201;
-const TangentSpaceNormalMap = 0;
-const ObjectSpaceNormalMap = 1;
-
-// Color space string identifiers, matching CSS Color Module Level 4 and WebGPU names where available.
-const NoColorSpace = '';
-const SRGBColorSpace = 'srgb';
-const LinearSRGBColorSpace = 'srgb-linear';
-
-const ZeroStencilOp = 0;
-const KeepStencilOp = 7680;
-const ReplaceStencilOp = 7681;
-const IncrementStencilOp = 7682;
-const DecrementStencilOp = 7683;
-const IncrementWrapStencilOp = 34055;
-const DecrementWrapStencilOp = 34056;
-const InvertStencilOp = 5386;
-
-const NeverStencilFunc = 512;
-const LessStencilFunc = 513;
-const EqualStencilFunc = 514;
-const LessEqualStencilFunc = 515;
-const GreaterStencilFunc = 516;
-const NotEqualStencilFunc = 517;
-const GreaterEqualStencilFunc = 518;
-const AlwaysStencilFunc = 519;
-
-const StaticDrawUsage = 35044;
-const DynamicDrawUsage = 35048;
-const StreamDrawUsage = 35040;
-const StaticReadUsage = 35045;
-const DynamicReadUsage = 35049;
-const StreamReadUsage = 35041;
-const StaticCopyUsage = 35046;
-const DynamicCopyUsage = 35050;
-const StreamCopyUsage = 35042;
-
-const GLSL1 = '100';
-const GLSL3 = '300 es';
-
-const _SRGBAFormat = 1035; // fallback for WebGL 1
-
-
 /***/ })
 
 /******/ 	});
@@ -86276,15 +85130,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! regenerator-runtime/runtime */ "./node_modules/regenerator-runtime/runtime.js");
-/* harmony import */ var regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(regenerator_runtime_runtime__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var dat_gui__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! dat.gui */ "./node_modules/dat.gui/build/dat.gui.module.js");
-/* harmony import */ var _src__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../src */ "./src/index.ts");
-/* harmony import */ var _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../src/loaders/OpenCellLoader */ "./src/loaders/OpenCellLoader.ts");
-/* harmony import */ var _src_Volume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../src/Volume */ "./src/Volume.ts");
-/* harmony import */ var _src_workers_LoadWorkerHandle__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../src/workers/LoadWorkerHandle */ "./src/workers/LoadWorkerHandle.ts");
-
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var dat_gui__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! dat.gui */ "./node_modules/dat.gui/build/dat.gui.module.js");
+/* harmony import */ var _src__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../src */ "./src/index.ts");
+/* harmony import */ var _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../src/loaders/OpenCellLoader */ "./src/loaders/OpenCellLoader.ts");
+/* harmony import */ var _src_Volume__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../src/Volume */ "./src/Volume.ts");
+/* harmony import */ var _src_workers_LoadWorkerHandle__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../src/workers/LoadWorkerHandle */ "./src/workers/LoadWorkerHandle.ts");
 
 
 
@@ -86302,48 +85153,48 @@ var MAX_PREFETCH_CHUNKS = 25;
 var PLAYBACK_INTERVAL = 80;
 var TEST_DATA = {
   timeSeries: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.JSON,
+    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.JSON,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json",
     times: 46
   },
   omeTiff: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.TIFF,
+    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif"
   },
   zarrEMT: {
     url: "https://dev-aics-dtp-001.int.allencell.org/dan-data/3500005818_20230811__20x_Timelapse-02(P27-E7).ome.zarr",
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR
+    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR
   },
   zarrIDR1: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR,
     url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0076A/10501752.zarr"
   },
   zarrIDR2: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR,
     url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0054A/5025553.zarr"
   },
   zarrVariance: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr"
   },
   zarrNucmorph0: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P13-C4.zarr/"
   },
   zarrNucmorph1: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P15-C3.zarr/"
   },
   zarrNucmorph2: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P7-B4.zarr/"
   },
   zarrNucmorph3: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P8-B4.zarr/"
   },
   zarrUK: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR,
     url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr"
   },
   opencell: {
@@ -86351,11 +85202,11 @@ var TEST_DATA = {
     url: ""
   },
   cfeJson: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.JSON,
+    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.JSON,
     url: "AICS-12_881_atlas.json"
   },
   abm: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.TIFF,
+    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/HAMILTONIAN_TERM_FOV_VSAHJUP_0000_000192.ome.tif"
   },
   procedural: {
@@ -86364,22 +85215,22 @@ var TEST_DATA = {
   }
 };
 var view3D;
-var loaderContext = new _src_workers_LoadWorkerHandle__WEBPACK_IMPORTED_MODULE_7__["default"](CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
+var loaderContext = new _src_workers_LoadWorkerHandle__WEBPACK_IMPORTED_MODULE_6__["default"](CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 var myState = {
   file: "",
-  volume: new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(),
+  volume: new _src__WEBPACK_IMPORTED_MODULE_3__.Volume(),
   currentFrame: 0,
   lastFrameTime: 0,
   isPlaying: false,
   timerId: 0,
-  loader: new _src__WEBPACK_IMPORTED_MODULE_4__.JsonImageInfoLoader("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json"),
+  loader: new _src__WEBPACK_IMPORTED_MODULE_3__.JsonImageInfoLoader("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json"),
   density: 12.5,
   maskAlpha: 1.0,
   exposure: 0.75,
   aperture: 0.0,
   fov: 20,
   focalDistance: 4.0,
-  lights: [new _src__WEBPACK_IMPORTED_MODULE_4__.Light(_src__WEBPACK_IMPORTED_MODULE_4__.SKY_LIGHT), new _src__WEBPACK_IMPORTED_MODULE_4__.Light(_src__WEBPACK_IMPORTED_MODULE_4__.AREA_LIGHT)],
+  lights: [new _src__WEBPACK_IMPORTED_MODULE_3__.Light(_src__WEBPACK_IMPORTED_MODULE_3__.SKY_LIGHT), new _src__WEBPACK_IMPORTED_MODULE_3__.Light(_src__WEBPACK_IMPORTED_MODULE_3__.AREA_LIGHT)],
   skyTopIntensity: 0.3,
   skyMidIntensity: 0.3,
   skyBotIntensity: 0.3,
@@ -86416,7 +85267,7 @@ var myState = {
   flipY: 1,
   flipZ: 1,
   channelFolderNames: [],
-  infoObj: (0,_src_Volume__WEBPACK_IMPORTED_MODULE_6__.getDefaultImageInfo)(),
+  infoObj: (0,_src_Volume__WEBPACK_IMPORTED_MODULE_5__.getDefaultImageInfo)(),
   channelGui: [],
   currentImageStore: "",
   currentImageName: ""
@@ -86467,24 +85318,24 @@ function makeColorGradient(controlPoints) {
 }
 */
 function initLights() {
-  myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
-  myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
-  myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+  myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+  myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+  myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
   myState.lights[1].mTheta = myState.lightTheta * Math.PI / 180.0;
   myState.lights[1].mPhi = myState.lightPhi * Math.PI / 180.0;
-  myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+  myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
   view3D.updateLights(myState.lights);
 }
 function setInitialRenderMode() {
   if (myState.isPT && myState.isMP) {
     myState.isMP = false;
   }
-  view3D.setVolumeRenderMode(myState.isPT ? _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_RAYMARCH);
+  view3D.setVolumeRenderMode(myState.isPT ? _src__WEBPACK_IMPORTED_MODULE_3__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_3__.RENDERMODE_RAYMARCH);
   view3D.setMaxProjectMode(myState.volume, myState.isMP);
 }
 var gui;
 function setupGui() {
-  gui = new dat_gui__WEBPACK_IMPORTED_MODULE_3__.GUI();
+  gui = new dat_gui__WEBPACK_IMPORTED_MODULE_2__.GUI();
   //gui = new dat.GUI({autoPlace:false, width:200});
 
   gui.add(myState, "density").max(100.0).min(0.0).step(0.001).onChange(function (value) {
@@ -86536,27 +85387,27 @@ function setupGui() {
   });
   var lighting = gui.addFolder("Lighting");
   lighting.addColor(myState, "skyTopColor").name("Sky Top").onChange(function () {
-    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyTopIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "skyMidColor").name("Sky Mid").onChange(function () {
-    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyMidIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "skyBotColor").name("Sky Bottom").onChange(function () {
-    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyBotIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState.lights[1], "mDistance").max(10.0).min(0.0).step(0.1).onChange(function () {
@@ -86576,11 +85427,11 @@ function setupGui() {
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "lightIntensity").max(1000.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "lightColor").name("lightColor").onChange(function () {
-    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
     view3D.updateLights(myState.lights);
   });
   initLights();
@@ -86781,7 +85632,7 @@ function showChannelUI(volume) {
   }
 }
 function loadImageData(jsonData, volumeData) {
-  var vol = new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(jsonData);
+  var vol = new _src__WEBPACK_IMPORTED_MODULE_3__.Volume(jsonData);
   myState.volume = vol;
 
   // tell the viewer about the image AFTER it's loaded
@@ -86899,12 +85750,12 @@ function goToZSlice(slice) {
 function createTestVolume() {
   var imgData = {
     name: "AICS-10_5_5",
-    originalSize: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(64, 64, 64),
-    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_8__.Vector2(8, 8),
-    volumeSize: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(64, 64, 64),
-    subregionSize: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(64, 64, 64),
-    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0),
-    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1, 1, 1),
+    originalSize: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(64, 64, 64),
+    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_7__.Vector2(8, 8),
+    volumeSize: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(64, 64, 64),
+    subregionSize: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(64, 64, 64),
+    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0),
+    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1, 1, 1),
     spatialUnit: "",
     numChannels: 3,
     channelNames: ["DRAQ5", "EGFP", "SEG_Memb"],
@@ -86914,13 +85765,13 @@ function createTestVolume() {
     numMultiscaleLevels: 1,
     multiscaleLevel: 0,
     transform: {
-      translation: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0),
-      rotation: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0)
+      translation: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0),
+      rotation: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0)
     }
   };
 
   // generate some raw volume data
-  var channelVolumes = [_src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createSphere(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24), _src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createTorus(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 8), _src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createCone(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 24)];
+  var channelVolumes = [_src__WEBPACK_IMPORTED_MODULE_3__.VolumeMaker.createSphere(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24), _src__WEBPACK_IMPORTED_MODULE_3__.VolumeMaker.createTorus(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 8), _src__WEBPACK_IMPORTED_MODULE_3__.VolumeMaker.createCone(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 24)];
   return {
     imgData: imgData,
     volumeData: channelVolumes
@@ -86939,13 +85790,13 @@ function _createLoader() {
             _context.next = 2;
             break;
           }
-          return _context.abrupt("return", new _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_5__.OpenCellLoader());
+          return _context.abrupt("return", new _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_4__.OpenCellLoader());
         case 2:
           _context.next = 4;
           return loaderContext.onOpen();
         case 4:
           path = data.url;
-          if (data.type === _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.JSON) {
+          if (data.type === _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.JSON) {
             path = [];
             times = data.times || 0;
             for (t = 0; t <= times; t++) {
@@ -87016,7 +85867,7 @@ function _loadTestData() {
           return createLoader(testdata);
         case 6:
           myState.loader = _context3.sent;
-          loadSpec = new _src__WEBPACK_IMPORTED_MODULE_4__.LoadSpec();
+          loadSpec = new _src__WEBPACK_IMPORTED_MODULE_3__.LoadSpec();
           myState.totalFrames = testdata.times;
           loadVolume(loadSpec, myState.loader);
         case 10:
@@ -87051,7 +85902,7 @@ function main() {
   if (!el) {
     return;
   }
-  view3D = new _src__WEBPACK_IMPORTED_MODULE_4__.View3d({
+  view3D = new _src__WEBPACK_IMPORTED_MODULE_3__.View3d({
     parentElement: el
   });
   var testDataSelect = document.getElementById("testData");
@@ -87232,7 +86083,7 @@ function main() {
   var changeRenderMode = function changeRenderMode(pt, mp) {
     myState.isPT = pt;
     myState.isMP = mp;
-    view3D.setVolumeRenderMode(pt ? _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_RAYMARCH);
+    view3D.setVolumeRenderMode(pt ? _src__WEBPACK_IMPORTED_MODULE_3__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_3__.RENDERMODE_RAYMARCH);
     view3D.setMaxProjectMode(myState.volume, mp);
   };
   renderModeSelect === null || renderModeSelect === void 0 || renderModeSelect.addEventListener("change", function (_ref2) {
