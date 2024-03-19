@@ -88,12 +88,14 @@ export default class ChunkPrefetchIterator {
           for (const [i, sourceEnd] of endsPerSource.entries()) {
             pushN(end, sourceEnd, tczyxChunksPerDimension[i][1]);
           }
+          console.log(end);
         }
         // end = Math.min(start + tzyxMaxPrefetchOffset[dimension], tczyxChunksPerDimension[dimension] - 1);
       } else {
         // Negative direction - end is either the min coordinate in the fetched set minus the max offset in this
         // dimension, or 0, whichever comes first
         end = Math.max(start - tzyxMaxPrefetchOffset[dimension], 0);
+        console.log(end);
       }
       const directionState = { direction, start, end, chunks: [] };
 
@@ -123,7 +125,7 @@ export default class ChunkPrefetchIterator {
     let offset = 1;
 
     while (directions.length > 0) {
-      // Remove directions in which we have hit a boundary
+      // Remove directions in which we have reached the end (or, if per-channel ends, the end for all channels)
       directions = directions.filter((dir) => {
         const end = Array.isArray(dir.end) ? Math.max(...dir.end) : dir.end;
         if (dir.direction & 1) {
@@ -137,7 +139,8 @@ export default class ChunkPrefetchIterator {
       for (const dir of directions) {
         const offsetDir = offset * (dir.direction & 1 ? 1 : -1);
         for (const chunk of dir.chunks) {
-          if (Array.isArray(dir.end) && chunk[directionToIndex(dir.direction)] + offsetDir >= dir.end[chunk[1]]) {
+          // Skip this chunk if this channel has a specific per-channel end and we've reached it
+          if (Array.isArray(dir.end) && chunk[directionToIndex(dir.direction)] + offsetDir > dir.end[chunk[1]]) {
             continue;
           }
           const newChunk = chunk.slice() as TCZYX<number>;
