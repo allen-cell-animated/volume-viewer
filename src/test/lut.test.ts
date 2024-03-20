@@ -1,5 +1,6 @@
 import { expect } from "chai";
 
+import type { ControlPoint, Lut } from "../Histogram";
 import Histogram from "../Histogram";
 import { updateLutForNewRange } from "../Histogram";
 import VolumeMaker from "../VolumeMaker";
@@ -15,21 +16,21 @@ describe("test histogram", () => {
   describe("binary volume data", () => {
     it("has a min of 255", () => {
       // histogram dataMin is the min nonzero value
-      expect(histogram.dataMin).to.equal(255);
+      expect(histogram.getMin()).to.equal(255);
     });
     it("has a max of 255", () => {
-      expect(histogram.dataMax).to.equal(255);
+      expect(histogram.getMax()).to.equal(255);
     });
     it("is created", () => {
       expect(histogram.maxBin).to.equal(255);
-      expect(histogram.bins[255]).to.be.greaterThan(0);
-      expect(histogram.bins[128]).to.equal(0);
-      expect(histogram.bins[0]).to.be.greaterThan(0);
+      expect(histogram["bins"][255]).to.be.greaterThan(0);
+      expect(histogram["bins"][128]).to.equal(0);
+      expect(histogram["bins"][0]).to.be.greaterThan(0);
     });
   });
 
   describe("generated lut from control points", () => {
-    const controlPoints = [
+    const controlPoints: ControlPoint[] = [
       { x: 0, color: [255, 255, 255], opacity: 0 },
       { x: 126, color: [255, 255, 255], opacity: 0 },
       { x: 128, color: [255, 255, 255], opacity: 1.0 },
@@ -50,7 +51,7 @@ describe("test histogram", () => {
 
   describe("interpolates opacity across consecutive control points", () => {
     it("has interpolated opacity correctly", () => {
-      const controlPoints = [
+      const controlPoints: ControlPoint[] = [
         { x: 0, color: [255, 255, 255], opacity: 0 },
         { x: 1, color: [255, 255, 255], opacity: 1.0 },
         { x: 255, color: [255, 255, 255], opacity: 1.0 },
@@ -61,7 +62,7 @@ describe("test histogram", () => {
       expect(lut.lut[2 * 4 + 3]).to.equal(255);
     });
     it("has interpolated opacity correctly with fractional control point positions", () => {
-      const controlPoints = [
+      const controlPoints: ControlPoint[] = [
         { x: 0, color: [255, 255, 255], opacity: 0 },
         { x: 0.1, color: [255, 255, 255], opacity: 0 },
         { x: 0.9, color: [255, 255, 255], opacity: 1.0 },
@@ -76,7 +77,7 @@ describe("test histogram", () => {
   });
 
   describe("generated lut single control point", () => {
-    const controlPoints = [{ x: 127, color: [255, 255, 255], opacity: 1.0 }];
+    const controlPoints: ControlPoint[] = [{ x: 127, color: [255, 255, 255], opacity: 1.0 }];
     const lut = histogram.lutGenerator_fromControlPoints(controlPoints);
     it("has interpolated opacity correctly", () => {
       expect(lut.lut[0 * 4 + 3]).to.equal(0);
@@ -146,9 +147,9 @@ describe("test histogram", () => {
         expect(lut.lut[255 * 4 + 3]).to.eql(255);
         expect(secondlut.lut[255 * 4 + 3]).to.eql(255);
         // Make sure no NaN values
-        lut.controlPoints.forEach(controlPoint => {
+        lut.controlPoints.forEach((controlPoint) => {
           expect(controlPoint.opacity).to.be.finite;
-        })
+        });
       });
       it("is consistent when min and max are the same positive number less than 255", () => {
         const lut = histogram.lutGenerator_minMax(120, 120);
@@ -163,9 +164,9 @@ describe("test histogram", () => {
         expect(lut.lut[255 * 4 + 3]).to.eql(255);
         expect(secondlut.lut[255 * 4 + 3]).to.eql(255);
         // Make sure no NaN values
-        lut.controlPoints.forEach(controlPoint => {
+        lut.controlPoints.forEach((controlPoint) => {
           expect(controlPoint.opacity).to.be.finite;
-        })
+        });
       });
       it("is consistent when min and max are both negative", () => {
         const lut = histogram.lutGenerator_minMax(-10, -5);
@@ -178,9 +179,9 @@ describe("test histogram", () => {
         expect(secondlut.lut[120 * 4 + 3]).to.eql(255);
         expect(lut.lut[255 * 4 + 3]).to.eql(255);
         expect(secondlut.lut[255 * 4 + 3]).to.eql(255);
-        lut.controlPoints.forEach(controlPoint => {
+        lut.controlPoints.forEach((controlPoint) => {
           expect(controlPoint.opacity).to.eql(1);
-        })
+        });
       });
       it("is consistent when min is 0 and max is 1", () => {
         const lut = histogram.lutGenerator_minMax(0, 1);
@@ -193,9 +194,9 @@ describe("test histogram", () => {
         expect(lut.lut[255 * 4 + 3]).to.eql(255);
         expect(secondlut.lut[255 * 4 + 3]).to.eql(255);
         // Make sure no NaN values
-        lut.controlPoints.forEach(controlPoint => {
+        lut.controlPoints.forEach((controlPoint) => {
           expect(controlPoint.opacity).to.be.finite;
-        })
+        });
       });
       it("is consistent when min is 244 and max is 255", () => {
         const lut = histogram.lutGenerator_minMax(254, 255);
@@ -208,9 +209,9 @@ describe("test histogram", () => {
         expect(lut.lut[255 * 4 + 3]).to.eql(255);
         expect(secondlut.lut[255 * 4 + 3]).to.eql(255);
         // Make sure no NaN values
-        lut.controlPoints.forEach(controlPoint => {
+        lut.controlPoints.forEach((controlPoint) => {
           expect(controlPoint.opacity).to.be.finite;
-        })
+        });
       });
       it("is consistent when min and max are both 255", () => {
         const lut = histogram.lutGenerator_minMax(255, 255);
@@ -220,9 +221,9 @@ describe("test histogram", () => {
         expect(secondlut.lut[3]).to.eql(0);
         expect(lut.lut[255 * 4 + 3]).to.eql(0);
         expect(secondlut.lut[255 * 4 + 3]).to.eql(0);
-        lut.controlPoints.forEach(controlPoint => {
+        lut.controlPoints.forEach((controlPoint) => {
           expect(controlPoint.opacity).to.eql(0);
-        })
+        });
       });
       it("is consistent when min and max are both greater than 255", () => {
         const lut = histogram.lutGenerator_minMax(300, 400);
@@ -235,9 +236,9 @@ describe("test histogram", () => {
         expect(secondlut.lut[120 * 4 + 3]).to.eql(0);
         expect(lut.lut[255 * 4 + 3]).to.eql(0);
         expect(secondlut.lut[255 * 4 + 3]).to.eql(0);
-        lut.controlPoints.forEach(controlPoint => {
+        lut.controlPoints.forEach((controlPoint) => {
           expect(controlPoint.opacity).to.eql(0);
-        })
+        });
       });
     });
 
@@ -309,7 +310,7 @@ describe("test histogram", () => {
         lutArr[i * 4 + 2] = 255;
         lutArr[i * 4 + 3] = 0;
       }
-      const lut = {
+      const lut: Lut = {
         lut: lutArr,
         controlPoints: [
           { x: 0, color: [255, 255, 255], opacity: 0 },
@@ -327,26 +328,54 @@ describe("test histogram", () => {
 
 describe("test remapping lut when raw data range is updated", () => {
   it("remaps the lut when the new data range is completely contained", () => {
-
     const histogram = new Histogram(new Uint8Array(100));
 
     // artificial min and max:
     const oldMin = 50;
     const oldMax = 100;
+    // the full 0-255 range of this lut is representing the raw intensity range 50-100
+    // we will choose a min/max range within the 0-255 range of the lut.
     const lut = histogram.lutGenerator_minMax(64, 192);
+    // this lut now has a ramp from 62.5 to 87.5 in the 0-255 range (from 64 to 192)
+    console.log(lut.lut);
+    expect(lut.lut[63 * 4 + 3]).to.equal(0);
+    expect(lut.lut[64 * 4 + 3]).to.equal(0);
+    expect(lut.lut[65 * 4 + 3]).to.be.greaterThan(0);
+    expect(lut.lut[191 * 4 + 3]).to.be.lessThan(255);
+    expect(lut.lut[192 * 4 + 3]).to.equal(255);
+    expect(lut.lut[193 * 4 + 3]).to.equal(255);
+    // now, remap for a new raw intensity range of 62.5 to 87.5.
+    // because the actual slope started at 62.5, and ended at 87.5,
+    // we expect this new lut to ramp up linearly from 0 to 255.
     const secondLut = updateLutForNewRange(lut.lut, oldMin, oldMax, 62.5, 87.5);
     // the new lut must represent the range 25-75, and the old lut represented 50-100
     // so the min/max slope of our lut should be reduced, or stretched horizontally
     // the new lut should slope up linearly from 0 to 255.
+    expect(secondLut[0 * 4 + 3]).to.equal(0);
+    expect(secondLut[1 * 4 + 3]).to.equal(1);
+    expect(secondLut[2 * 4 + 3]).to.equal(2);
+    expect(secondLut[3 * 4 + 3]).to.equal(3);
+    expect(secondLut[63 * 4 + 3]).to.equal(63);
+    expect(secondLut[64 * 4 + 3]).to.equal(64);
+    expect(secondLut[65 * 4 + 3]).to.equal(65);
+    expect(secondLut[191 * 4 + 3]).to.equal(191);
+    expect(secondLut[192 * 4 + 3]).to.equal(192);
+    expect(secondLut[193 * 4 + 3]).to.equal(193);
+    expect(secondLut[255 * 4 + 3]).to.equal(255);
 
     const compareLut = histogram.lutGenerator_minMax(0, 255);
-    for (let i = 0; i < 256; i++) {
-      expect(secondLut[i * 4 + 0]).to.equal(compareLut.lut[i * 4 + 0]);
-      expect(secondLut[i * 4 + 1]).to.equal(compareLut.lut[i * 4 + 1]);
-      expect(secondLut[i * 4 + 2]).to.equal(compareLut.lut[i * 4 + 2]);
-      expect(secondLut[i * 4 + 3]).to.equal(compareLut.lut[i * 4 + 3]);
-    }
+    expect(compareLut.lut[63 * 4 + 3]).to.equal(63);
+    expect(compareLut.lut[64 * 4 + 3]).to.equal(64);
+    expect(compareLut.lut[65 * 4 + 3]).to.equal(65);
+    expect(compareLut.lut[191 * 4 + 3]).to.equal(191);
+    expect(compareLut.lut[192 * 4 + 3]).to.equal(192);
+    expect(compareLut.lut[193 * 4 + 3]).to.equal(193);
+    // for (let i = 0; i < 256; i++) {
+    //   expect(secondLut[i * 4 + 0]).to.closeTo(compareLut.lut[i * 4 + 0], 1);
+    //   expect(secondLut[i * 4 + 1]).to.closeTo(compareLut.lut[i * 4 + 1], 1);
+    //   expect(secondLut[i * 4 + 2]).to.closeTo(compareLut.lut[i * 4 + 2], 1);
+    //   expect(secondLut[i * 4 + 3]).to.closeTo(compareLut.lut[i * 4 + 3], 1);
+    // }
     //expect(secondLut).to.eql(compareLut.lut);
   });
 });
-

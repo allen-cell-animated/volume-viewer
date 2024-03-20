@@ -579,10 +579,10 @@ function lookupInterp(lut: Uint8Array, pct: number): [number, number, number, nu
   //console.log(i0, i1, ai, a);
   //console.log(lut[i0], lut[i1]);
   return [
-    lut[i0 + 0] * ai + lut[i1 + 0] * a,
-    lut[i0 + 1] * ai + lut[i1 + 1] * a,
-    lut[i0 + 2] * ai + lut[i1 + 2] * a,
-    lut[i0 + 3] * ai + lut[i1 + 3] * a,
+    Math.round(lut[i0 + 0] * ai + lut[i1 + 0] * a),
+    Math.round(lut[i0 + 1] * ai + lut[i1 + 1] * a),
+    Math.round(lut[i0 + 2] * ai + lut[i1 + 2] * a),
+    Math.round(lut[i0 + 3] * ai + lut[i1 + 3] * a),
   ];
 }
 
