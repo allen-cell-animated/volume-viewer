@@ -588,6 +588,12 @@ function remapDomain(
   return remapped;
 }
 
+// If the new max is greater than the old max, then
+// the lut's max end will move inward to the left.
+// This is another way of saying that the new max's index is greater than 255 in the old lut
+// If the new min is less than the old min, then
+// the lut's min end will move inward to the right.
+// This is another way of saying that the new min's index is less than 0 in the old lut
 export function remapLut(lut: Uint8Array, oldMin: number, oldMax: number, newMin: number, newMax: number): Uint8Array {
   const newLut = new Uint8Array(LUT_ARRAY_LENGTH);
 

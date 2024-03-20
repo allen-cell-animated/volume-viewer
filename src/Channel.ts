@@ -93,17 +93,7 @@ export default class Channel {
   }
 
   public setRawDataRange(min: number, max: number): void {
-    // If the new max is greater than the old max, then
-    // the lut's max end will move inward to the left.
-    // This is another way of saying that the new max's index is greater than 255 in the old lut
-
-    // if the new min is less than the old min, then
-    // the lut's min end will move inward to the right.
-    // This is another way of saying that the new min's index is less than 0 in the old lut
-
-    // remap the lut which was based on originalMin and originalMax to new min and max
-    // this is done by scaling the lut values by the ratio of the new range to the old range
-
+    // remap the lut which was based on rawMin and rawMax to new min and max
     const newLut = remapLut(this.lut, this.rawMin, this.rawMax, min, max);
     this.rawMin = min;
     this.rawMax = max;
