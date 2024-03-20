@@ -4,7 +4,7 @@ import Channel from "./Channel.js";
 import Histogram from "./Histogram.js";
 import { getColorByChannelIndex } from "./constants/colors.js";
 import { type IVolumeLoader, LoadSpec, type PerChannelCallback } from "./loaders/IVolumeLoader.js";
-import { estimateLevelForAtlas } from "./loaders/VolumeLoaderUtils.js";
+import { MAX_ATLAS_EDGE, estimateLevelForAtlas } from "./loaders/VolumeLoaderUtils.js";
 
 export type ImageInfo = Readonly<{
   name: string;
@@ -172,6 +172,8 @@ export default class Volume {
     this.loadSpec = {
       // Fill in defaults for optional properties
       multiscaleLevel: 0,
+      scaleLevelBias: 0,
+      maxAtlasEdge: MAX_ATLAS_EDGE,
       channels: Array.from({ length: this.imageInfo.numChannels }, (_val, idx) => idx),
       ...loadSpec,
     };
@@ -244,18 +246,26 @@ export default class Volume {
     let noReload =
       this.loadSpec.time === this.loadSpecRequired.time &&
       this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion) &&
-      this.loadSpecRequired.channels.every((channel) => this.loadSpec.channels.includes(channel));
+      this.loadSpecRequired.channels.every((channel) => this.loadSpec.channels.includes(channel)) &&
+      this.loadSpecRequired.scaleLevelBias === this.loadSpec.scaleLevelBias;
 
     // An update to `subregion` should trigger a reload when the new subregion is not contained in the old one
     // OR when the new subregion is smaller than the old one by enough that we can load a higher scale level.
-    if (noReload && !this.loadSpec.subregion.equals(this.loadSpecRequired.subregion)) {
+    if (
+      noReload &&
+      (!this.loadSpec.subregion.equals(this.loadSpecRequired.subregion) ||
+        this.loadSpecRequired.maxAtlasEdge !== this.loadSpec.maxAtlasEdge)
+    ) {
       const currentScale = this.imageInfo.multiscaleLevel;
       // `LoadSpec.multiscaleLevel`, if specified, forces a cap on the scale level we can load.
       const minLevel = this.loadSpec.multiscaleLevel ?? 0;
       // Loaders should cache loaded dimensions so that this call blocks no more than once per valid `LoadSpec`.
       const dims = await this.loader?.loadDims(this.loadSpecRequired);
       if (dims) {
-        const loadableLevel = estimateLevelForAtlas(dims.map(({ shape }) => [shape[2], shape[3], shape[4]]));
+        const dimsZYX = dims.map(({ shape }): [number, number, number] => [shape[2], shape[3], shape[4]]);
+        const optimalLevel = estimateLevelForAtlas(dimsZYX, this.loadSpecRequired.maxAtlasEdge);
+        const levelBias = this.loadSpecRequired.scaleLevelBias ?? 0;
+        const loadableLevel = Math.max(0, Math.min(dims.length - 1, optimalLevel + levelBias));
         noReload = currentScale <= Math.max(loadableLevel, minLevel);
       }
     }

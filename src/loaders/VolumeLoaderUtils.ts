@@ -2,7 +2,7 @@ import { Box3, Vector2, Vector3 } from "three";
 
 import { ImageInfo } from "../Volume.js";
 
-const MAX_ATLAS_EDGE = 4096;
+export const MAX_ATLAS_EDGE = 4096;
 
 // Map from units to their symbols
 const UNIT_SYMBOLS = {
