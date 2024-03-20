@@ -565,13 +565,7 @@ export default class Histogram {
   /* eslint-enable @typescript-eslint/naming-convention */
 }
 
-export function updateLutForNewRange(
-  lut: Uint8Array,
-  oldMin: number,
-  oldMax: number,
-  newMin: number,
-  newMax: number
-): Uint8Array {
+export function remapLut(lut: Uint8Array, oldMin: number, oldMax: number, newMin: number, newMax: number): Uint8Array {
   const newLut = new Uint8Array(LUT_ARRAY_LENGTH);
 
   // we will find what intensity is at each index in the new range,

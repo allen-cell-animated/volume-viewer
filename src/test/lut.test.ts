@@ -2,7 +2,7 @@ import { expect } from "chai";
 
 import type { ControlPoint, Lut } from "../Histogram";
 import Histogram from "../Histogram";
-import { updateLutForNewRange } from "../Histogram";
+import { remapLut } from "../Histogram";
 import VolumeMaker from "../VolumeMaker";
 
 function clamp(val, cmin, cmax) {
@@ -352,7 +352,7 @@ describe("test remapping lut when raw data range is updated", () => {
     // now, remap for a new raw intensity range of newMin to newMax.
     // because the actual slope started at newMin, and ended at newMax,
     // we expect this new lut to ramp up linearly from 0 to 255.
-    const secondLut = updateLutForNewRange(lut.lut, oldMin, oldMax, newMin, newMax);
+    const secondLut = remapLut(lut.lut, oldMin, oldMax, newMin, newMax);
     // the new lut must represent the range 25-75, and the old lut represented 50-100
     // so the min/max slope of our lut should be reduced, or stretched horizontally
     // the new lut should slope up linearly from 0 to 255.
@@ -379,7 +379,7 @@ describe("test remapping lut when raw data range is updated", () => {
     }
 
     // for good measure, just test the reverse mapping too.
-    const thirdLut = updateLutForNewRange(secondLut, newMin, newMax, oldMin, oldMax);
+    const thirdLut = remapLut(secondLut, newMin, newMax, oldMin, oldMax);
     for (let i = 0; i < 256 * 4; ++i) {
       expect(thirdLut[i]).to.be.closeTo(lut.lut[i], 1);
     }
@@ -393,7 +393,7 @@ describe("test remapping lut when raw data range is updated", () => {
     const oldMax = 100;
     const newMin = oldMin;
     const newMax = oldMax;
-    const secondLut = updateLutForNewRange(lut.lut, oldMin, oldMax, newMin, newMax);
+    const secondLut = remapLut(lut.lut, oldMin, oldMax, newMin, newMax);
     for (let i = 0; i < 256 * 4; ++i) {
       expect(secondLut[i]).to.eql(lut.lut[i]);
     }
@@ -434,7 +434,7 @@ describe("test remapping lut when raw data range is updated", () => {
     const newMax = (oldMin + oldMax) / 2 + totalrange / 2;
 
     // now, remap for a new raw intensity range of newMin to newMax.
-    const secondLut = updateLutForNewRange(lut.lut, oldMin, oldMax, newMin, newMax);
+    const secondLut = remapLut(lut.lut, oldMin, oldMax, newMin, newMax);
     expect(secondLut[0 * 4 + 3]).to.equal(0);
     expect(secondLut[1 * 4 + 3]).to.equal(0);
     expect(secondLut[2 * 4 + 3]).to.equal(0);
@@ -457,7 +457,7 @@ describe("test remapping lut when raw data range is updated", () => {
     }
 
     // for good measure, just test the reverse mapping too.
-    const thirdLut = updateLutForNewRange(secondLut, newMin, newMax, oldMin, oldMax);
+    const thirdLut = remapLut(secondLut, newMin, newMax, oldMin, oldMax);
     for (let i = 0; i < 256 * 4; ++i) {
       expect(thirdLut[i]).to.be.closeTo(lut.lut[i], 1);
     }
