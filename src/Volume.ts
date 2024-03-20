@@ -242,6 +242,7 @@ export default class Volume {
 
   /** Call on any state update that may require new data to be loaded (subregion, enabled channels, time, etc.) */
   async updateRequiredData(required: Partial<LoadSpec>, onChannelLoaded?: PerChannelCallback): Promise<void> {
+    console.log("here");
     this.loadSpecRequired = { ...this.loadSpecRequired, ...required };
     let noReload =
       this.loadSpec.time === this.loadSpecRequired.time &&
@@ -254,19 +255,24 @@ export default class Volume {
     if (
       noReload &&
       (!this.loadSpec.subregion.equals(this.loadSpecRequired.subregion) ||
-        this.loadSpecRequired.maxAtlasEdge !== this.loadSpec.maxAtlasEdge)
+        this.loadSpecRequired.maxAtlasEdge !== this.loadSpec.maxAtlasEdge ||
+        this.loadSpecRequired.multiscaleLevel !== this.loadSpec.multiscaleLevel)
     ) {
       const currentScale = this.imageInfo.multiscaleLevel;
-      // `LoadSpec.multiscaleLevel`, if specified, forces a cap on the scale level we can load.
-      const minLevel = this.loadSpec.multiscaleLevel ?? 0;
       // Loaders should cache loaded dimensions so that this call blocks no more than once per valid `LoadSpec`.
       const dims = await this.loader?.loadDims(this.loadSpecRequired);
       if (dims) {
+        // `LoadSpec.scaleLevelBias`, if specified, nudges the scale level we pick up or down.
+        const levelBias = this.loadSpecRequired.scaleLevelBias ?? 0;
+        // `LoadSpec.multiscaleLevel`, if specified, forces a cap on the scale level we can load.
+        const minLevel = this.loadSpecRequired.multiscaleLevel ?? 0;
+
         const dimsZYX = dims.map(({ shape }): [number, number, number] => [shape[2], shape[3], shape[4]]);
         const optimalLevel = estimateLevelForAtlas(dimsZYX, this.loadSpecRequired.maxAtlasEdge);
-        const levelBias = this.loadSpecRequired.scaleLevelBias ?? 0;
-        const loadableLevel = Math.max(0, Math.min(dims.length - 1, optimalLevel + levelBias));
-        noReload = currentScale <= Math.max(loadableLevel, minLevel);
+
+        const levelToLoad = Math.max(optimalLevel + levelBias, minLevel);
+        const clampedLevelToLoad = Math.max(0, Math.min(dims.length - 1, levelToLoad));
+        noReload = currentScale === clampedLevelToLoad;
       }
     }
 
@@ -277,8 +283,6 @@ export default class Volume {
       this.loadSpec = {
         ...this.loadSpecRequired,
         subregion: this.loadSpecRequired.subregion.clone(),
-        // preserve multiscale option from original `LoadSpec`, if any
-        multiscaleLevel: this.loadSpec.multiscaleLevel,
       };
       this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
     }
