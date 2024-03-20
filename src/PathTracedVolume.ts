@@ -28,7 +28,7 @@ import {
   pathTracingUniforms,
   pathTracingVertexShaderSrc,
 } from "./constants/volumePTshader.js";
-import { LUT_ARRAY_LENGTH } from "./Histogram.js";
+import { LUT_ARRAY_LENGTH } from "./Lut.js";
 import Volume from "./Volume.js";
 import { FUSE_DISABLED_RGB_COLOR, type FuseChannel, isOrthographicCamera } from "./types.js";
 import { ThreeJsPanel } from "./ThreeJsPanel.js";

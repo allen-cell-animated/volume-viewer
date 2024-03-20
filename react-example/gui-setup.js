@@ -105,7 +105,9 @@ export function showChannelUI(volume, view3D, gui) {
       })(i),
       pct50_98: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_percentiles(0.5, 0.998);
+          const hmin = volume.getHistogram(j).findBinOfPercentile(0.5);
+          const hmax = volume.getHistogram(j).findBinOfPercentile(0.983);
+          const lut = new Lut().createFromMinMax(hmin, hmax);
           volume.setLut(j, lut.lut);
           view3D.updateLuts(volume);
         };

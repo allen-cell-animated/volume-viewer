@@ -1,5 +1,6 @@
 import { DataTexture, RedFormat, UnsignedByteType, RGBAFormat, LinearFilter, NearestFilter } from "three";
-import Histogram, { LUT_ARRAY_LENGTH, remapLut } from "./Histogram.js";
+import Histogram from "./Histogram.js";
+import { Lut, LUT_ARRAY_LENGTH, remapLut } from "./Lut.js";
 
 interface ChannelImageData {
   /** Returns the one-dimensional array containing the data in RGBA order, as integers in the range 0 to 255. */
@@ -262,7 +263,7 @@ export default class Channel {
     if (!this.loaded) {
       return;
     }
-    const lut = this.histogram.lutGenerator_windowLevel(wnd, lvl);
+    const lut = new Lut().createFromWindowLevel(wnd, lvl);
     this.setLut(lut.lut);
   }
 
@@ -270,7 +271,7 @@ export default class Channel {
     if (!this.loaded) {
       return;
     }
-    const lut = this.histogram.lutGenerator_minMax(imin, imax);
+    const lut = new Lut().createFromMinMax(imin, imax);
     this.setLut(lut.lut);
   }
 
@@ -278,7 +279,7 @@ export default class Channel {
     if (!this.loaded) {
       return;
     }
-    const lut = this.histogram.lutGenerator_fullRange();
+    const lut = new Lut().createFullRange();
     this.setLut(lut.lut);
   }
 
@@ -286,7 +287,7 @@ export default class Channel {
     if (!this.loaded) {
       return;
     }
-    const lut = this.histogram.lutGenerator_dataRange();
+    const lut = new Lut().createFromMinMax(this.histogram.getMin(), this.histogram.getMax());
     this.setLut(lut.lut);
   }
 
@@ -294,7 +295,8 @@ export default class Channel {
     if (!this.loaded) {
       return;
     }
-    const lut = this.histogram.lutGenerator_bestFit();
+    const [hmin, hmax] = this.histogram.findBestFitBins();
+    const lut = new Lut().createFromMinMax(hmin, hmax);
     this.setLut(lut.lut);
   }
 
@@ -303,7 +305,8 @@ export default class Channel {
     if (!this.loaded) {
       return;
     }
-    const lut = this.histogram.lutGenerator_auto2();
+    const [hmin, hmax] = this.histogram.findAutoIJBins();
+    const lut = new Lut().createFromMinMax(hmin, hmax);
     this.setLut(lut.lut);
   }
 
@@ -311,7 +314,8 @@ export default class Channel {
     if (!this.loaded) {
       return;
     }
-    const lut = this.histogram.lutGenerator_auto();
+    const [b, e] = this.histogram.findAutoMinMax();
+    const lut = new Lut().createFromMinMax(b, e);
     this.setLut(lut.lut);
   }
 
@@ -319,7 +323,7 @@ export default class Channel {
     if (!this.loaded) {
       return;
     }
-    const lut = this.histogram.lutGenerator_equalize();
+    const lut = new Lut().createFromEqHistogram(this.histogram);
     this.setLut(lut.lut);
   }
 
@@ -327,7 +331,9 @@ export default class Channel {
     if (!this.loaded) {
       return;
     }
-    const lut = this.histogram.lutGenerator_percentiles(lo, hi);
+    const hmin = this.histogram.findBinOfPercentile(lo);
+    const hmax = this.histogram.findBinOfPercentile(hi);
+    const lut = new Lut().createFromMinMax(hmin, hmax);
     this.setLut(lut.lut);
   }
   /* eslint-enable @typescript-eslint/naming-convention */

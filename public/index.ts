@@ -5,6 +5,7 @@ import {
   ImageInfo,
   IVolumeLoader,
   LoadSpec,
+  Lut,
   JsonImageInfoLoader,
   View3d,
   Volume,
@@ -632,7 +633,8 @@ function showChannelUI(volume: Volume) {
       // this doesn't give good results currently but is an example of a per-channel button callback
       autoIJ: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_auto2();
+          const [hmin, hmax] = volume.getHistogram(j).findAutoIJBins();
+          const lut = new Lut().createFromMinMax(hmin, hmax);
           // TODO: get a proper transfer function editor
           // const lut = { lut: makeColorGradient([
           //     {offset:0, color:"black"},
@@ -648,7 +650,8 @@ function showChannelUI(volume: Volume) {
       // this doesn't give good results currently but is an example of a per-channel button callback
       auto0: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_auto();
+          const [b, e] = volume.getHistogram(j).findAutoMinMax();
+          const lut = new Lut().createFromMinMax(b, e);
           volume.setLut(j, lut.lut);
           view3D.updateLuts(volume);
         };
@@ -656,7 +659,8 @@ function showChannelUI(volume: Volume) {
       // this doesn't give good results currently but is an example of a per-channel button callback
       bestFit: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_bestFit();
+          const [hmin, hmax] = volume.getHistogram(j).findBestFitBins();
+          const lut = new Lut().createFromMinMax(hmin, hmax);
           volume.setLut(j, lut.lut);
           view3D.updateLuts(volume);
         };
@@ -664,7 +668,9 @@ function showChannelUI(volume: Volume) {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       pct50_98: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_percentiles(0.5, 0.998);
+          const hmin = volume.getHistogram(j).findBinOfPercentile(0.5);
+          const hmax = volume.getHistogram(j).findBinOfPercentile(0.983);
+          const lut = new Lut().createFromMinMax(hmin, hmax);
           volume.setLut(j, lut.lut);
           view3D.updateLuts(volume);
         };
@@ -672,7 +678,7 @@ function showChannelUI(volume: Volume) {
       colorizeEnabled: false,
       colorize: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_labelColors();
+          const lut = new Lut().createLabelColors(volume.getHistogram(j));
           volume.setColorPalette(j, lut.lut);
           myState.channelGui[j].colorizeEnabled = !myState.channelGui[j].colorizeEnabled;
           if (myState.channelGui[j].colorizeEnabled) {
