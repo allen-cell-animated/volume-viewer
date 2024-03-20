@@ -30,7 +30,8 @@ export function remapAxesToTCZYX(axes: OMEAxis[]): TCZYX<number> {
 /**
  * Picks the best scale level to load based on scale level dimensions, a max atlas size, and a `LoadSpec`.
  * This works like `estimateLevelForAtlas` but factors in `LoadSpec`'s `subregion` property (shrinks the size of the
- * data, maybe enough to allow loading a higher level) and its `multiscaleLevel` property (sets a max scale level).
+ * data, maybe enough to allow loading a higher level) and its `multiscaleLevel`, `maxAtlasEdge`, and `scaleLevelBias`
+ * properties (which set how the loaded scale level is determined).
  */
 export function pickLevelToLoad(loadSpec: LoadSpec, spatialDimsZYX: [number, number, number][]): number {
   const size = loadSpec.subregion.getSize(new Vector3());
@@ -41,8 +42,8 @@ export function pickLevelToLoad(loadSpec: LoadSpec, spatialDimsZYX: [number, num
   ]);
 
   const optimalLevel = estimateLevelForAtlas(dims, loadSpec.maxAtlasEdge);
-  const levelToLoad = Math.max(0, Math.min(dims.length - 1, optimalLevel + (loadSpec.scaleLevelBias ?? 0)));
-  return Math.max(levelToLoad, loadSpec.multiscaleLevel ?? 0);
+  const levelToLoad = Math.max(optimalLevel + (loadSpec.scaleLevelBias ?? 0), loadSpec.multiscaleLevel ?? 0);
+  return Math.max(0, Math.min(dims.length - 1, levelToLoad));
 }
 
 /** Reorder an array of values [T, C, Z, Y, X] to the given dimension order */
