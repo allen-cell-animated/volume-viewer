@@ -1,5 +1,5 @@
 import { DataTexture, RedFormat, UnsignedByteType, RGBAFormat, LinearFilter, NearestFilter } from "three";
-import Histogram, { LUT_ARRAY_LENGTH } from "./Histogram.js";
+import Histogram, { LUT_ARRAY_LENGTH, updateLutForNewRange } from "./Histogram.js";
 
 interface ChannelImageData {
   /** Returns the one-dimensional array containing the data in RGBA order, as integers in the range 0 to 255. */
@@ -23,10 +23,14 @@ export default class Channel {
   public dims: [number, number, number];
   public dataTexture: DataTexture;
   public lutTexture: DataTexture;
+  public rawMin: number;
+  public rawMax: number;
 
   constructor(name: string) {
     this.loaded = false;
     this.imgData = { data: new Uint8ClampedArray(), width: 0, height: 0 };
+    this.rawMin = 0;
+    this.rawMax = 0;
 
     // on gpu
     this.dataTexture = new DataTexture(new Uint8Array(), 0, 0);
@@ -85,6 +89,24 @@ export default class Channel {
     this.lutTexture.needsUpdate = true;
 
     return ret;
+  }
+
+  public setRawDataRange(min: number, max: number): void {
+    // If the new max is greater than the old max, then
+    // the lut's max end will move inward to the left.
+    // This is another way of saying that the new max's index is greater than 255 in the old lut
+
+    // if the new min is less than the old min, then
+    // the lut's min end will move inward to the right.
+    // This is another way of saying that the new min's index is less than 0 in the old lut
+
+    // remap the lut which was based on originalMin and originalMax to new min and max
+    // this is done by scaling the lut values by the ratio of the new range to the old range
+
+    const newLut = updateLutForNewRange(this.lut, this.rawMin, this.rawMax, min, max);
+    this.rawMin = min;
+    this.rawMax = max;
+    this.lut = newLut;
   }
 
   public getHistogram(): Histogram {

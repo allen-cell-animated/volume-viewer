@@ -1,6 +1,7 @@
 import { expect } from "chai";
 
 import Histogram from "../Histogram";
+import { updateLutForNewRange } from "../Histogram";
 import VolumeMaker from "../VolumeMaker";
 
 function clamp(val, cmin, cmax) {
@@ -323,3 +324,23 @@ describe("test histogram", () => {
     });
   });
 });
+
+// describe("test remapping lut when raw data range is updated", () => {
+//   it("remaps the lut when the new data range is completely contained", () => {
+
+//     const histogram = new Histogram(new Uint8Array(100));
+
+//     // artificial min and max:
+//     const oldMin = 50;
+//     const oldMax = 100;
+//     const lut = histogram.lutGenerator_minMax(64, 192);
+//     const secondLut = updateLutForNewRange(lut, oldMin, oldMax, 62.5, 87.5);
+//     // the new lut must represent the range 25-75, and the old lut represented 50-100
+//     // so the min/max slope of our lut should be reduced, or stretched horizontally
+//     // the new lut should slope up linearly from 0 to 255.
+
+//     const compareLut = histogram.lutGenerator_minMax(0, 255);
+//     expect(secondLut).to.eql(compareLut.lut);
+//   });
+// });
+

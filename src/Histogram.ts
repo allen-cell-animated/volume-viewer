@@ -565,4 +565,69 @@ export default class Histogram {
   /* eslint-enable @typescript-eslint/naming-convention */
 }
 
+function lookupInterp(lut: Uint8Array, x: number): [number, number, number, number] {
+  const i = Math.floor(x);
+  const a = x - i;
+  const ai = 1 - a;
+  const i0 = i * 4;
+  let i1 = i0 + 4;
+  if (i1 > 255) {
+    i1 = 255;
+  }
+  return [
+    lut[i0 + 0] * ai + lut[i1 + 0] * a,
+    lut[i0 + 1] * ai + lut[i1 + 1] * a,
+    lut[i0 + 2] * ai + lut[i1 + 2] * a,
+    lut[i0 + 3] * ai + lut[i1 + 3] * a,
+  ];
+}
+
+export function updateLutForNewRange(
+  lut: Uint8Array,
+  oldMin: number,
+  oldMax: number,
+  newMin: number,
+  newMax: number
+): Uint8Array {
+  const newRange = newMax - newMin;
+  const oldRange = oldMax - oldMin;
+  const scale = newRange / oldRange;
+
+  const newLut = new Uint8Array(LUT_ARRAY_LENGTH);
+
+  // find what lut index corresponds to the new min and max
+  const minIndex = Math.floor(((newMin - oldMin) / oldRange) * LUT_ENTRIES);
+  const maxIndex = Math.floor(((newMax - oldMin) / oldRange) * LUT_ENTRIES);
+  // if either of these values is inside the range, then we will need to extend.
+  // start with the min end of the range
+  if (minIndex > 0) {
+    for (let i = 0; i < minIndex; ++i) {
+      newLut[i * 4 + 0] = lut[minIndex * 4 + 0];
+      newLut[i * 4 + 1] = lut[minIndex * 4 + 1];
+      newLut[i * 4 + 2] = lut[minIndex * 4 + 2];
+      newLut[i * 4 + 3] = lut[minIndex * 4 + 3];
+    }
+  }
+  //now do the middle part.  This is where we scale (stretch/compress) the domain.
+  for (let i = Math.max(minIndex, 0); i < Math.min(LUT_ENTRIES, maxIndex); ++i) {
+    const newIndex = Math.floor((i - minIndex) / scale); // ?????
+    // lerp the values!
+    const val = lookupInterp(lut, newIndex);
+    newLut[newIndex * 4 + 0] = val[0];
+    newLut[newIndex * 4 + 1] = val[1];
+    newLut[newIndex * 4 + 2] = val[2];
+    newLut[newIndex * 4 + 3] = val[3];
+  }
+  // now do the max end of the range
+  if (maxIndex < LUT_ENTRIES) {
+    for (let i = maxIndex; i < LUT_ENTRIES; ++i) {
+      newLut[i * 4 + 0] = lut[maxIndex * 4 + 0];
+      newLut[i * 4 + 1] = lut[maxIndex * 4 + 1];
+      newLut[i * 4 + 2] = lut[maxIndex * 4 + 2];
+      newLut[i * 4 + 3] = lut[maxIndex * 4 + 3];
+    }
+  }
+  return newLut;
+}
+
 export { LUT_ARRAY_LENGTH };

@@ -265,7 +265,7 @@ class WorkerLoader extends ThreadableVolumeLoader {
       return;
     }
 
-    this.currentLoadCallback?.(e.channelIndex, e.data, e.atlasDims);
+    this.currentLoadCallback?.(e.channelIndex, e.data, e.ranges, e.atlasDims);
   }
 }
 
