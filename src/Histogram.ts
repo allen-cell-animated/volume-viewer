@@ -576,13 +576,12 @@ function lookupInterp(lut: Uint8Array, pct: number): [number, number, number, nu
   if (i1 > LUT_ARRAY_LENGTH - 4) {
     i1 = LUT_ARRAY_LENGTH - 4;
   }
-  //console.log(i0, i1, ai, a);
-  //console.log(lut[i0], lut[i1]);
+  // TODO why does ceil work here and not round?
   return [
-    Math.round(lut[i0 + 0] * ai + lut[i1 + 0] * a),
-    Math.round(lut[i0 + 1] * ai + lut[i1 + 1] * a),
-    Math.round(lut[i0 + 2] * ai + lut[i1 + 2] * a),
-    Math.round(lut[i0 + 3] * ai + lut[i1 + 3] * a),
+    Math.ceil(lut[i0 + 0] * ai + lut[i1 + 0] * a),
+    Math.ceil(lut[i0 + 1] * ai + lut[i1 + 1] * a),
+    Math.ceil(lut[i0 + 2] * ai + lut[i1 + 2] * a),
+    Math.ceil(lut[i0 + 3] * ai + lut[i1 + 3] * a),
   ];
 }
 
