@@ -347,8 +347,33 @@ describe("test remapping lut when raw data range is updated", () => {
     const oldMax = 100;
 
     // to test this, I will find the values that should exactly fit this ramp in the new range.
+    /**
+     * Old LUT:
+     * 255 |           o ------o
+     *     |          /
+     *     |         /
+     *     |        /
+     *   0 | o----o
+     *     +-------------------
+     *       0    64    192    255
+     *       v    v     v      v
+     * data: 50   62.5  87.6   100
+     */
     const newMin = oldMin + (oldMax - oldMin) * (64 / 255);
     const newMax = oldMin + (oldMax - oldMin) * (192 / 255);
+
+    /**
+     * New LUT:
+     * 255 |      o
+     *     |     /
+     *     |    /
+     *     |   /
+     *   0 | o
+     *     +--------
+     *       0     255
+     *       v     v
+     * data: 62.5  87.6
+     */
 
     // now, remap for a new raw intensity range of newMin to newMax.
     // because the actual slope started at newMin, and ended at newMax,
@@ -420,6 +445,19 @@ describe("test remapping lut when raw data range is updated", () => {
     expect(lut.lut[192 * 4 + 3]).to.equal(255);
     expect(lut.lut[193 * 4 + 3]).to.equal(255);
 
+    /**
+     * Old LUT:
+     * 255 |           o ------o
+     *     |          /
+     *     |         /
+     *     |        /
+     *   0 | o----o
+     *     +-------------------
+     *       0    64    192    255
+     *       v    v     v      v
+     * data: 50   62.5  87.6   100
+     */
+
     // lets remap so that the new lut has a minmax of 96-160
     // we will carefully pick these values so that it's easy to check the result.
 
@@ -434,6 +472,18 @@ describe("test remapping lut when raw data range is updated", () => {
     // symmetrical spread about the center
     const newMin = (oldMin + oldMax) / 2 - totalrange / 2;
     const newMax = (oldMin + oldMax) / 2 + totalrange / 2;
+    /**
+     * NEW LUT:
+     * 255 |             o--------o
+     *     |            /
+     *     |           /
+     *     |          /
+     *   0 | o------o
+     *     +------------------------
+     *       0      96  160      255
+     *       v      v    v        v
+     * data: 25   62.5  87.6     125
+     */
 
     // now, remap for a new raw intensity range of newMin to newMax.
     const secondLut = remapLut(lut.lut, oldMin, oldMax, newMin, newMax);
@@ -476,7 +526,6 @@ describe("test remapping control points when raw data range is updated", () => {
     ];
     const cp2 = remapControlPoints(cp, 0, 255, 64, 192);
     const positions = cp2.map((cp) => Math.round(cp.x));
-    console.log(positions);
     expect(positions).to.include.members([0, 64, 96, 160, 192, 255]);
   });
   it("remaps the control points correctly when new intensity range expanded", () => {
