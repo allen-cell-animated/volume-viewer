@@ -1,8 +1,8 @@
 import { expect } from "chai";
 
-import type { ControlPoint, Lut } from "../Histogram";
-import Histogram from "../Histogram";
-import { remapLut, remapControlPoints } from "../Histogram";
+import type { ControlPoint } from "../Lut";
+import { Lut } from "../Lut";
+import Histogram, { remapLut, remapControlPoints } from "../Histogram";
 import VolumeMaker from "../VolumeMaker";
 
 function clamp(val, cmin, cmax) {
