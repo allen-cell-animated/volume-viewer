@@ -328,6 +328,7 @@ describe("test histogram", () => {
 
 describe("test remapping lut when raw data range is updated", () => {
   it("remaps the lut when the new data range is completely contained", () => {
+    // histogram values itself doesn't matter.
     const histogram = new Histogram(new Uint8Array(100));
     // the full 0-255 domain of this lut is representing the raw intensity range 50-100
     // we will choose a min/max range within the 0-255 domain of the lut.
@@ -346,8 +347,8 @@ describe("test remapping lut when raw data range is updated", () => {
     const oldMax = 100;
 
     // to test this, I will find the values that should exactly fit this ramp in the new range.
-    const newMin = (1.0 + 64 / 255) * oldMin;
-    const newMax = (1.0 + 192 / 255) * oldMin;
+    const newMin = oldMin + (oldMax - oldMin) * (64 / 255);
+    const newMax = oldMin + (oldMax - oldMin) * (192 / 255);
 
     // now, remap for a new raw intensity range of newMin to newMax.
     // because the actual slope started at newMin, and ended at newMax,
@@ -385,6 +386,7 @@ describe("test remapping lut when raw data range is updated", () => {
     }
   });
   it("remaps the lut when the new data range is identical to previous", () => {
+    // histogram values itself doesn't matter.
     const histogram = new Histogram(new Uint8Array(100));
     const lut = histogram.lutGenerator_minMax(0, 255);
 
@@ -406,7 +408,7 @@ describe("test remapping lut when raw data range is updated", () => {
     // artificial data min and max absolute intensities:
     const oldMin = 50;
     const oldMax = 100;
-    // the full 0-255 domain of this lut is representing the raw intensity domain 50-100.
+    // the full 0-255 domain of this lut is representing the above raw intensity domain 50-100.
     // For test, we will choose a min/max within the 0-255 domain of the lut.
     const lut = histogram.lutGenerator_minMax(64, 192);
     // this lut now has a ramp from 64 to 192 in the 0-255 range
@@ -421,12 +423,12 @@ describe("test remapping lut when raw data range is updated", () => {
     // lets remap so that the new lut has a minmax of 96-160
     // we will carefully pick these values so that it's easy to check the result.
 
-    // the min and max inflection points are at:
+    // Because we chose (64, 192) in the lut above, the min and max inflection points are at:
     const mini = oldMin + (64 / 255) * (oldMax - oldMin);
     const maxi = oldMin + (192 / 255) * (oldMax - oldMin);
     //console.log((mini + maxi) / 2);
 
-    // what do the overall min and max have to be for mini and maxi to map to 96 and 160?
+    // what do the data min and max have to be for mini and maxi to map to 96 and 160?
     // should now span 1/4 of the range, still centered.
     const totalrange = (maxi - mini) / ((160 - 96) / (255 - 0));
     // symmetrical spread about the center
