@@ -40,8 +40,9 @@ export function pickLevelToLoad(loadSpec: LoadSpec, spatialDimsZYX: [number, num
     Math.max(x * size.x, 1),
   ]);
 
-  const optimalLevel = estimateLevelForAtlas(dims);
-  return Math.max(optimalLevel, loadSpec.multiscaleLevel ?? 0);
+  const optimalLevel = estimateLevelForAtlas(dims, loadSpec.maxAtlasEdge);
+  const levelToLoad = Math.max(0, Math.min(dims.length - 1, optimalLevel + (loadSpec.scaleLevelBias ?? 0)));
+  return Math.max(levelToLoad, loadSpec.multiscaleLevel ?? 0);
 }
 
 /** Reorder an array of values [T, C, Z, Y, X] to the given dimension order */
