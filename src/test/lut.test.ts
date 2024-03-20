@@ -2,7 +2,7 @@ import { expect } from "chai";
 
 import type { ControlPoint, Lut } from "../Histogram";
 import Histogram from "../Histogram";
-import { remapLut } from "../Histogram";
+import { remapLut, remapControlPoints } from "../Histogram";
 import VolumeMaker from "../VolumeMaker";
 
 function clamp(val, cmin, cmax) {
@@ -461,5 +461,31 @@ describe("test remapping lut when raw data range is updated", () => {
     for (let i = 0; i < 256 * 4; ++i) {
       expect(thirdLut[i]).to.be.closeTo(lut.lut[i], 1);
     }
+  });
+});
+
+describe("test remapping control points when raw data range is updated", () => {
+  it("remaps the control points correctly when new intensity range contracted", () => {
+    const cp: ControlPoint[] = [
+      { x: 0, color: [255, 255, 255], opacity: 0 },
+      { x: 64, color: [255, 255, 255], opacity: 0 },
+      { x: 192, color: [255, 255, 255], opacity: 1.0 },
+      { x: 255, color: [255, 255, 255], opacity: 1.0 },
+    ];
+    const cp2 = remapControlPoints(cp, 0, 255, 64, 192);
+    const positions = cp2.map((cp) => Math.round(cp.x));
+    console.log(positions);
+    expect(positions).to.include.members([0, 64, 96, 160, 192, 255]);
+  });
+  it("remaps the control points correctly when new intensity range expanded", () => {
+    const cp: ControlPoint[] = [
+      { x: 0, color: [255, 255, 255], opacity: 0 },
+      { x: 64, color: [255, 255, 255], opacity: 0 },
+      { x: 192, color: [255, 255, 255], opacity: 1.0 },
+      { x: 255, color: [255, 255, 255], opacity: 1.0 },
+    ];
+    const cp2 = remapControlPoints(cp, 0, 255, -64, 320);
+    const positions = cp2.map((cp) => Math.round(cp.x));
+    expect(positions).to.include.members([0, 32, 225, 255]);
   });
 });
