@@ -683,7 +683,7 @@ export default class VolumeDrawable {
         break;
       case RenderMode.SLICE:
         this.volumeRendering = new Atlas2DSlice(this.volume, this.settings);
-        this.volume.updateRequiredData({ subregion: new Box3(new Vector3(0, 0, 0.5), new Vector3(1, 1, 0.5)) });
+        // `updateRequiredData` called on construction, via `updateSettings`
         break;
       case RenderMode.RAYMARCH:
       default:
