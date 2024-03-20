@@ -565,26 +565,6 @@ export default class Histogram {
   /* eslint-enable @typescript-eslint/naming-convention */
 }
 
-function lookupInterp(lut: Uint8Array, pct: number): [number, number, number, number] {
-  const x = pct * (LUT_ENTRIES - 1);
-  const i = Math.floor(x);
-  const a = x - i;
-  const ai = 1.0 - a;
-  // assumes the lut is 4 values per entry
-  const i0 = i * 4;
-  let i1 = i0 + 4;
-  if (i1 > LUT_ARRAY_LENGTH - 4) {
-    i1 = LUT_ARRAY_LENGTH - 4;
-  }
-  // TODO why does ceil work here and not round?
-  return [
-    Math.ceil(lut[i0 + 0] * ai + lut[i1 + 0] * a),
-    Math.ceil(lut[i0 + 1] * ai + lut[i1 + 1] * a),
-    Math.ceil(lut[i0 + 2] * ai + lut[i1 + 2] * a),
-    Math.ceil(lut[i0 + 3] * ai + lut[i1 + 3] * a),
-  ];
-}
-
 export function updateLutForNewRange(
   lut: Uint8Array,
   oldMin: number,
@@ -596,27 +576,33 @@ export function updateLutForNewRange(
 
   // we will find what intensity is at each index in the new range,
   // and then try to sample the pre-existing lut as if it spans the old range.
+  // Build new lut by sampling from old lut.
   for (let i = 0; i < LUT_ENTRIES; ++i) {
     const pctOfRange = i / (LUT_ENTRIES - 1);
-    const newIntensityOfI = newMin + (newMax - newMin) * pctOfRange;
-    const pctOfOldRange = (newIntensityOfI - oldMin) / (oldMax - oldMin);
-    let lookupI = pctOfOldRange * (LUT_ENTRIES - 1);
-    if (lookupI < 0) {
-      lookupI = 0;
-    } else if (lookupI > LUT_ENTRIES - 1) {
-      lookupI = LUT_ENTRIES - 1;
+    const newIntensityOfI = (newMax - newMin) * pctOfRange + newMin;
+    // now locate this intensity value as a relative index in the old range
+    let pctOfOldRange = (newIntensityOfI - oldMin) / (oldMax - oldMin);
+    //console.log(`Ii=${newIntensityOfI}, pctOfRange=${pctOfRange}, pctOfOldRange=${pctOfOldRange}`);
+
+    // note that this clamping will not "continue" a slope at the edge of the domain.
+    // it will flatline.
+    if (pctOfOldRange < 0) {
+      pctOfOldRange = 0;
     }
-    // console.log(
-    //   `i=${i}, intensity=${newIntensityOfI} maps to ${pctOfOldRange} percent of previous range of ${oldMin}-${oldMax}`
-    // );
-    const val = lookupInterp(lut, pctOfOldRange);
+    if (pctOfOldRange > 1) {
+      pctOfOldRange = 1;
+    }
+    // get the two indices that pctOfOldRange is between
+    const iOld = pctOfOldRange * (LUT_ENTRIES - 1);
+    const i0 = Math.floor(iOld);
+    const i1 = Math.ceil(iOld);
+    const pct = iOld - i0;
 
-    //console.log(`sample ${pctOfOldRange} returned [${val[0]}, ${val[1]}, ${val[2]}, ${val[3]}]`);
-
-    newLut[i * 4 + 0] = val[0];
-    newLut[i * 4 + 1] = val[1];
-    newLut[i * 4 + 2] = val[2];
-    newLut[i * 4 + 3] = val[3];
+    //console.log(`interpolating ${iOld}: ${lut[i0 * 4 + 3]}, ${lut[i1 * 4 + 3]}, ${pct}`);
+    newLut[i * 4 + 0] = Math.round(lerp(lut[i0 * 4 + 0], lut[i1 * 4 + 0], pct));
+    newLut[i * 4 + 1] = Math.round(lerp(lut[i0 * 4 + 1], lut[i1 * 4 + 1], pct));
+    newLut[i * 4 + 2] = Math.round(lerp(lut[i0 * 4 + 2], lut[i1 * 4 + 2], pct));
+    newLut[i * 4 + 3] = Math.round(lerp(lut[i0 * 4 + 3], lut[i1 * 4 + 3], pct));
   }
 
   return newLut;

@@ -329,27 +329,26 @@ describe("test histogram", () => {
 describe("test remapping lut when raw data range is updated", () => {
   it("remaps the lut when the new data range is completely contained", () => {
     const histogram = new Histogram(new Uint8Array(100));
-
-    // artificial min and max:
-    const oldMin = 50;
-    const oldMax = 100;
-    // the full 0-255 range of this lut is representing the raw intensity range 50-100
-    // we will choose a min/max range within the 0-255 range of the lut.
+    // the full 0-255 domain of this lut is representing the raw intensity range 50-100
+    // we will choose a min/max range within the 0-255 domain of the lut.
     const lut = histogram.lutGenerator_minMax(64, 192);
-
-    // to test this, I will find the values that should exactly fit this ramp in the new range.
-    const newMin = (1.0 + 64 / 255) * oldMin;
-    const newMax = (1.0 + 192 / 255) * oldMin;
-
-    // this lut now has a ramp from 64 to 192 in the 0-255 range
+    // this lut now has a ramp from 64 to 192 in the 0-255 domain
     // (which correspond exactly to the newMin-newMax range in the raw intensities)
-    console.log(lut.lut);
     expect(lut.lut[63 * 4 + 3]).to.equal(0);
     expect(lut.lut[64 * 4 + 3]).to.equal(0);
     expect(lut.lut[65 * 4 + 3]).to.be.greaterThan(0);
     expect(lut.lut[191 * 4 + 3]).to.be.lessThan(255);
     expect(lut.lut[192 * 4 + 3]).to.equal(255);
     expect(lut.lut[193 * 4 + 3]).to.equal(255);
+
+    // artificial data min and max:
+    const oldMin = 50;
+    const oldMax = 100;
+
+    // to test this, I will find the values that should exactly fit this ramp in the new range.
+    const newMin = (1.0 + 64 / 255) * oldMin;
+    const newMax = (1.0 + 192 / 255) * oldMin;
+
     // now, remap for a new raw intensity range of newMin to newMax.
     // because the actual slope started at newMin, and ended at newMax,
     // we expect this new lut to ramp up linearly from 0 to 255.
@@ -358,37 +357,109 @@ describe("test remapping lut when raw data range is updated", () => {
     // so the min/max slope of our lut should be reduced, or stretched horizontally
     // the new lut should slope up linearly from 0 to 255.
     expect(secondLut[0 * 4 + 3]).to.equal(0);
-    expect(secondLut[1 * 4 + 3]).to.equal(1);
-    expect(secondLut[2 * 4 + 3]).to.equal(2);
-    expect(secondLut[3 * 4 + 3]).to.equal(3);
-    expect(secondLut[63 * 4 + 3]).to.equal(63);
-
-    expect(secondLut[64 * 4 + 3]).to.equal(64);
-    expect(secondLut[65 * 4 + 3]).to.equal(65);
-    expect(secondLut[126 * 4 + 3]).to.equal(126);
-    expect(secondLut[127 * 4 + 3]).to.equal(127);
-    expect(secondLut[128 * 4 + 3]).to.equal(128);
-
-    expect(secondLut[191 * 4 + 3]).to.equal(191);
-    expect(secondLut[192 * 4 + 3]).to.equal(192);
-    expect(secondLut[193 * 4 + 3]).to.equal(193);
-    expect(secondLut[253 * 4 + 3]).to.equal(253);
-    expect(secondLut[254 * 4 + 3]).to.equal(254);
-    expect(secondLut[255 * 4 + 3]).to.equal(255);
+    expect(secondLut[1 * 4 + 3]).to.be.closeTo(1, 1);
+    expect(secondLut[2 * 4 + 3]).to.be.closeTo(2, 1);
+    expect(secondLut[3 * 4 + 3]).to.be.closeTo(3, 1);
+    expect(secondLut[63 * 4 + 3]).to.be.closeTo(63, 1);
+    expect(secondLut[64 * 4 + 3]).to.be.closeTo(64, 1);
+    expect(secondLut[65 * 4 + 3]).to.be.closeTo(65, 1);
+    expect(secondLut[126 * 4 + 3]).to.be.closeTo(126, 1);
+    expect(secondLut[127 * 4 + 3]).to.be.closeTo(127, 1);
+    expect(secondLut[128 * 4 + 3]).to.be.closeTo(128, 1);
+    expect(secondLut[191 * 4 + 3]).to.be.closeTo(191, 1);
+    expect(secondLut[192 * 4 + 3]).to.be.closeTo(192, 1);
+    expect(secondLut[193 * 4 + 3]).to.be.closeTo(193, 1);
+    expect(secondLut[253 * 4 + 3]).to.be.closeTo(253, 1);
+    expect(secondLut[254 * 4 + 3]).to.be.closeTo(254, 1);
+    expect(secondLut[255 * 4 + 3]).to.be.closeTo(255, 1);
 
     const compareLut = histogram.lutGenerator_minMax(0, 255);
-    expect(compareLut.lut[63 * 4 + 3]).to.equal(63);
-    expect(compareLut.lut[64 * 4 + 3]).to.equal(64);
-    expect(compareLut.lut[65 * 4 + 3]).to.equal(65);
-    expect(compareLut.lut[191 * 4 + 3]).to.equal(191);
-    expect(compareLut.lut[192 * 4 + 3]).to.equal(192);
-    expect(compareLut.lut[193 * 4 + 3]).to.equal(193);
-    for (let i = 0; i < 256; i++) {
-      expect(secondLut[i * 4 + 0]).to.closeTo(compareLut.lut[i * 4 + 0], 1);
-      expect(secondLut[i * 4 + 1]).to.closeTo(compareLut.lut[i * 4 + 1], 1);
-      expect(secondLut[i * 4 + 2]).to.closeTo(compareLut.lut[i * 4 + 2], 1);
-      expect(secondLut[i * 4 + 3]).to.closeTo(compareLut.lut[i * 4 + 3], 1);
+    for (let i = 0; i < 256 * 4; ++i) {
+      expect(secondLut[i]).to.be.closeTo(compareLut.lut[i], 1);
     }
-    expect(secondLut).to.eql(compareLut.lut);
+
+    // for good measure, just test the reverse mapping too.
+    const thirdLut = updateLutForNewRange(secondLut, newMin, newMax, oldMin, oldMax);
+    for (let i = 0; i < 256 * 4; ++i) {
+      expect(thirdLut[i]).to.be.closeTo(lut.lut[i], 1);
+    }
+  });
+  it("remaps the lut when the new data range is identical to previous", () => {
+    const histogram = new Histogram(new Uint8Array(100));
+    const lut = histogram.lutGenerator_minMax(0, 255);
+
+    // artificial min and max:
+    const oldMin = 50;
+    const oldMax = 100;
+    const newMin = oldMin;
+    const newMax = oldMax;
+    const secondLut = updateLutForNewRange(lut.lut, oldMin, oldMax, newMin, newMax);
+    for (let i = 0; i < 256 * 4; ++i) {
+      expect(secondLut[i]).to.eql(lut.lut[i]);
+    }
+  });
+
+  it("remaps the lut when the new data range is completely overlapped", () => {
+    // histogram values itself doesn't matter.
+    const histogram = new Histogram(new Uint8Array(100));
+
+    // artificial data min and max absolute intensities:
+    const oldMin = 50;
+    const oldMax = 100;
+    // the full 0-255 domain of this lut is representing the raw intensity domain 50-100.
+    // For test, we will choose a min/max within the 0-255 domain of the lut.
+    const lut = histogram.lutGenerator_minMax(64, 192);
+    // this lut now has a ramp from 64 to 192 in the 0-255 range
+    // (which correspond exactly to the newMin-newMax range in the raw intensities)
+    expect(lut.lut[63 * 4 + 3]).to.equal(0);
+    expect(lut.lut[64 * 4 + 3]).to.equal(0);
+    expect(lut.lut[65 * 4 + 3]).to.be.greaterThan(0);
+    expect(lut.lut[191 * 4 + 3]).to.be.lessThan(255);
+    expect(lut.lut[192 * 4 + 3]).to.equal(255);
+    expect(lut.lut[193 * 4 + 3]).to.equal(255);
+
+    // lets remap so that the new lut has a minmax of 96-160
+    // we will carefully pick these values so that it's easy to check the result.
+
+    // the min and max inflection points are at:
+    const mini = oldMin + (64 / 255) * (oldMax - oldMin);
+    const maxi = oldMin + (192 / 255) * (oldMax - oldMin);
+    //console.log((mini + maxi) / 2);
+
+    // what do the overall min and max have to be for mini and maxi to map to 96 and 160?
+    // should now span 1/4 of the range, still centered.
+    const totalrange = (maxi - mini) / ((160 - 96) / (255 - 0));
+    // symmetrical spread about the center
+    const newMin = (oldMin + oldMax) / 2 - totalrange / 2;
+    const newMax = (oldMin + oldMax) / 2 + totalrange / 2;
+
+    // now, remap for a new raw intensity range of newMin to newMax.
+    const secondLut = updateLutForNewRange(lut.lut, oldMin, oldMax, newMin, newMax);
+    expect(secondLut[0 * 4 + 3]).to.equal(0);
+    expect(secondLut[1 * 4 + 3]).to.equal(0);
+    expect(secondLut[2 * 4 + 3]).to.equal(0);
+    expect(secondLut[3 * 4 + 3]).to.equal(0);
+    expect(secondLut[63 * 4 + 3]).to.equal(0);
+    expect(secondLut[64 * 4 + 3]).to.equal(0);
+    expect(secondLut[65 * 4 + 3]).to.equal(0);
+    expect(secondLut[128 * 4 + 3]).to.be.closeTo(128, 1);
+    expect(secondLut[191 * 4 + 3]).to.equal(255);
+    expect(secondLut[192 * 4 + 3]).to.equal(255);
+    expect(secondLut[193 * 4 + 3]).to.equal(255);
+    expect(secondLut[253 * 4 + 3]).to.equal(255);
+    expect(secondLut[254 * 4 + 3]).to.equal(255);
+    expect(secondLut[255 * 4 + 3]).to.equal(255);
+
+    // 96, 160 were chosen above
+    const compareLut = histogram.lutGenerator_minMax(96, 160);
+    for (let i = 0; i < 256 * 4; ++i) {
+      expect(secondLut[i]).to.be.closeTo(compareLut.lut[i], 1);
+    }
+
+    // for good measure, just test the reverse mapping too.
+    const thirdLut = updateLutForNewRange(secondLut, newMin, newMax, oldMin, oldMax);
+    for (let i = 0; i < 256 * 4; ++i) {
+      expect(thirdLut[i]).to.be.closeTo(lut.lut[i], 1);
+    }
   });
 });
