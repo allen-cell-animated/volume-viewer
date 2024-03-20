@@ -242,7 +242,6 @@ export default class Volume {
 
   /** Call on any state update that may require new data to be loaded (subregion, enabled channels, time, etc.) */
   async updateRequiredData(required: Partial<LoadSpec>, onChannelLoaded?: PerChannelCallback): Promise<void> {
-    console.log("here");
     this.loadSpecRequired = { ...this.loadSpecRequired, ...required };
     let noReload =
       this.loadSpec.time === this.loadSpecRequired.time &&
