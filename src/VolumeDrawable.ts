@@ -720,10 +720,12 @@ export default class VolumeDrawable {
   setupGui(pane: Pane): void {
     pane.addInput(this.settings, "translation").on("change", ({ value }) => this.setTranslation(value));
     pane.addInput(this.settings, "rotation").on("change", ({ value }) => this.setRotation(value));
-    pane
+
+    const scaleFolder = pane.addFolder({ title: "Multiscale loading" });
+    scaleFolder
       .addInput(this.volume.loadSpecRequired, "maxAtlasEdge")
       .on("change", ({ value }) => this.volume.updateRequiredData({ maxAtlasEdge: value }));
-    pane
+    scaleFolder
       .addInput(this.volume.loadSpecRequired, "scaleLevelBias")
       .on("change", ({ value }) => this.volume.updateRequiredData({ scaleLevelBias: value }));
 
