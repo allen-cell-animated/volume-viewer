@@ -240,43 +240,61 @@ export default class Volume {
     this.normRegionOffset = subregionOffset.clone().divide(volumeSize);
   }
 
+  /** Returns `true` iff differences between `loadSpec` and `loadSpecRequired` indicate new data *must* be loaded. */
+  private mustLoadNewData(): boolean {
+    return (
+      this.loadSpec.time !== this.loadSpecRequired.time || // time point changed
+      !this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion) || // new subregion not contained in old
+      this.loadSpecRequired.channels.some((channel) => !this.loadSpec.channels.includes(channel)) // new channel(s)
+    );
+  }
+
+  /**
+   * Returns `true` iff differences between `loadSpec` and `loadSpecRequired` indicate a new load *may* get a
+   * different scale level than is currently loaded.
+   */
+  private mayLoadNewScaleLevel(): boolean {
+    return (
+      !this.loadSpec.subregion.equals(this.loadSpecRequired.subregion) ||
+      this.loadSpecRequired.maxAtlasEdge !== this.loadSpec.maxAtlasEdge ||
+      this.loadSpecRequired.multiscaleLevel !== this.loadSpec.multiscaleLevel ||
+      this.loadSpecRequired.scaleLevelBias !== this.loadSpec.scaleLevelBias
+    );
+  }
+
   /** Call on any state update that may require new data to be loaded (subregion, enabled channels, time, etc.) */
   async updateRequiredData(required: Partial<LoadSpec>, onChannelLoaded?: PerChannelCallback): Promise<void> {
     this.loadSpecRequired = { ...this.loadSpecRequired, ...required };
-    let noReload =
-      this.loadSpec.time === this.loadSpecRequired.time &&
-      this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion) &&
-      this.loadSpecRequired.channels.every((channel) => this.loadSpec.channels.includes(channel)) &&
-      this.loadSpecRequired.scaleLevelBias === this.loadSpec.scaleLevelBias;
+    let shouldReload = this.mustLoadNewData();
 
-    // An update to `subregion` should trigger a reload when the new subregion is not contained in the old one
-    // OR when the new subregion is smaller than the old one by enough that we can load a higher scale level.
-    if (
-      noReload &&
-      (!this.loadSpec.subregion.equals(this.loadSpecRequired.subregion) ||
-        this.loadSpecRequired.maxAtlasEdge !== this.loadSpec.maxAtlasEdge ||
-        this.loadSpecRequired.multiscaleLevel !== this.loadSpec.multiscaleLevel)
-    ) {
-      const currentScale = this.imageInfo.multiscaleLevel;
+    // If we're not reloading due to required data changes, check if we should load a new scale level
+    if (!shouldReload && this.mayLoadNewScaleLevel()) {
       // Loaders should cache loaded dimensions so that this call blocks no more than once per valid `LoadSpec`.
       const dims = await this.loader?.loadDims(this.loadSpecRequired);
       if (dims) {
         const dimsZYX = dims.map(({ shape }): [number, number, number] => [shape[2], shape[3], shape[4]]);
+        // Determine which scale level *would* be loaded, and see if it's different than what we have
         const levelToLoad = pickLevelToLoadUnscaled(this.loadSpecRequired, dimsZYX);
-        noReload = currentScale === levelToLoad;
+        shouldReload = this.imageInfo.multiscaleLevel !== levelToLoad;
       }
     }
 
-    // if newly required data is not currently contained in this volume...
-    if (!noReload) {
-      // ...clone `loadSpecRequired` into `loadSpec` and load
-      this.setUnloaded();
-      this.loadSpec = {
-        ...this.loadSpecRequired,
-        subregion: this.loadSpecRequired.subregion.clone(),
-      };
-      this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
+    if (shouldReload) {
+      this.loadNewData(onChannelLoaded);
     }
+  }
+
+  /**
+   * Loads new data as specified in `this.loadSpecRequired`. Clones `loadSpecRequired` into `loadSpec` to indicate
+   * that the data that *must* be loaded is now the data that *has* been loaded.
+   */
+  private loadNewData(onChannelLoaded?: PerChannelCallback): void {
+    this.setUnloaded();
+    this.loadSpec = {
+      ...this.loadSpecRequired,
+      subregion: this.loadSpecRequired.subregion.clone(),
+    };
+    this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
   }
 
   // we calculate the physical size of the volume (voxels*pixel_size)
