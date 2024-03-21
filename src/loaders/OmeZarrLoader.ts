@@ -459,6 +459,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     loadSpec: LoadSpec,
     onData: RawChannelDataCallback
   ): Promise<{ imageInfo: ImageInfo }> {
+    // This seemingly useless line keeps a stable local copy of `syncChannels` which the async closures below capture
+    // so that changes to `this.syncChannels` don't affect the behavior of loads in progress.
     const syncChannels = this.syncChannels;
 
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
