@@ -459,6 +459,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     loadSpec: LoadSpec,
     onData: RawChannelDataCallback
   ): Promise<{ imageInfo: ImageInfo }> {
+    const syncChannels = this.syncChannels;
+
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     const [z, y, x] = this.sources[0].axesTCZYX.slice(2);
     const subregion = composeSubregion(loadSpec.subregion, maxExtent);
@@ -516,7 +518,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       try {
         const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } });
         const u8 = convertChannel(result.data);
-        if (this.syncChannels) {
+        if (syncChannels) {
           resultChannelData.push(u8);
           resultChannelIndices.push(ch);
         } else {
@@ -540,7 +542,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     this.beginPrefetch(keys, levelIdx);
 
     Promise.all(channelPromises).then(() => {
-      if (this.syncChannels) {
+      if (syncChannels) {
         onData(resultChannelIndices, resultChannelData);
       }
       this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
