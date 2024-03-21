@@ -4,7 +4,7 @@ import Channel from "./Channel.js";
 import Histogram from "./Histogram.js";
 import { getColorByChannelIndex } from "./constants/colors.js";
 import { type IVolumeLoader, LoadSpec, type PerChannelCallback } from "./loaders/IVolumeLoader.js";
-import { MAX_ATLAS_EDGE, estimateLevelForAtlas } from "./loaders/VolumeLoaderUtils.js";
+import { MAX_ATLAS_EDGE, pickLevelToLoadUnscaled } from "./loaders/VolumeLoaderUtils.js";
 
 export type ImageInfo = Readonly<{
   name: string;
@@ -261,17 +261,9 @@ export default class Volume {
       // Loaders should cache loaded dimensions so that this call blocks no more than once per valid `LoadSpec`.
       const dims = await this.loader?.loadDims(this.loadSpecRequired);
       if (dims) {
-        // `LoadSpec.scaleLevelBias`, if specified, nudges the scale level we pick up or down.
-        const levelBias = this.loadSpecRequired.scaleLevelBias ?? 0;
-        // `LoadSpec.multiscaleLevel`, if specified, forces a cap on the scale level we can load.
-        const minLevel = this.loadSpecRequired.multiscaleLevel ?? 0;
-
         const dimsZYX = dims.map(({ shape }): [number, number, number] => [shape[2], shape[3], shape[4]]);
-        const optimalLevel = estimateLevelForAtlas(dimsZYX, this.loadSpecRequired.maxAtlasEdge);
-
-        const levelToLoad = Math.max(optimalLevel + levelBias, minLevel);
-        const clampedLevelToLoad = Math.max(0, Math.min(dims.length - 1, levelToLoad));
-        noReload = currentScale === clampedLevelToLoad;
+        const levelToLoad = pickLevelToLoadUnscaled(this.loadSpecRequired, dimsZYX);
+        noReload = currentScale === levelToLoad;
       }
     }
 
