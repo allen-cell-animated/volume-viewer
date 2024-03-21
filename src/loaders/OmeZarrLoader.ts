@@ -21,18 +21,12 @@ import {
   composeSubregion,
   computePackedAtlasDims,
   convertSubregionToPixels,
+  pickLevelToLoad,
   unitNameToSymbol,
 } from "./VolumeLoaderUtils.js";
 import ChunkPrefetchIterator from "./zarr_utils/ChunkPrefetchIterator.js";
 import WrappedStore from "./zarr_utils/WrappedStore.js";
-import {
-  getDimensionCount,
-  getScale,
-  orderByDimension,
-  orderByTCZYX,
-  pickLevelToLoad,
-  remapAxesToTCZYX,
-} from "./zarr_utils/utils.js";
+import { getDimensionCount, getScale, orderByDimension, orderByTCZYX, remapAxesToTCZYX } from "./zarr_utils/utils.js";
 import type {
   OMEZarrMetadata,
   SubscriberId,
@@ -223,7 +217,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
       dims.spaceUnit = spaceUnit;
       dims.timeUnit = timeUnit;
-      dims.shape = this.orderByTCZYX(level.shape, 1).map((val, idx) => Math.ceil(val * regionArr[idx]));
+      dims.shape = this.orderByTCZYX(level.shape, 1).map((val, idx) => Math.max(Math.ceil(val * regionArr[idx]), 1));
       dims.spacing = this.orderByTCZYX(scale, 1);
 
       return dims;
