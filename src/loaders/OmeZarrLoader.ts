@@ -454,6 +454,41 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     this.prefetchSubscriber = subscriber;
   }
 
+  private updateImageInfoForLoad(imageInfo: ImageInfo, loadSpec: LoadSpec): ImageInfo {
+    // Apply `this.maxExtent` to subregion, if it exists
+    const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
+    const subregion = composeSubregion(loadSpec.subregion, maxExtent);
+
+    // Pick the level to load based on the subregion size
+    const multiscaleLevel = pickLevelToLoad({ ...loadSpec, subregion }, this.getLevelShapesZYX());
+    const array0Shape = this.sources[0].scaleLevels[multiscaleLevel].shape;
+
+    // Convert subregion to volume voxels
+    const [z, y, x] = this.sources[0].axesTCZYX.slice(2);
+    const regionPx = convertSubregionToPixels(
+      subregion,
+      new Vector3(array0Shape[x], array0Shape[y], z === -1 ? 1 : array0Shape[z])
+    );
+
+    // Derive other image info properties from subregion and level to load
+    const subregionSize = regionPx.getSize(new Vector3());
+    const atlasTileDims = computePackedAtlasDims(subregionSize.z, subregionSize.x, subregionSize.y);
+    const volumeExtent = convertSubregionToPixels(
+      maxExtent,
+      new Vector3(array0Shape[x], array0Shape[y], z === -1 ? 1 : array0Shape[z])
+    );
+    const volumeSize = volumeExtent.getSize(new Vector3());
+
+    return {
+      ...imageInfo,
+      atlasTileDims,
+      volumeSize,
+      subregionSize,
+      subregionOffset: regionPx.min,
+      multiscaleLevel,
+    };
+  }
+
   loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
@@ -463,35 +498,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     // so that changes to `this.syncChannels` don't affect the behavior of loads in progress.
     const syncChannels = this.syncChannels;
 
-    const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
-    const [z, y, x] = this.sources[0].axesTCZYX.slice(2);
-    const subregion = composeSubregion(loadSpec.subregion, maxExtent);
-
-    const levelIdx = pickLevelToLoad({ ...loadSpec, subregion }, this.getLevelShapesZYX());
-    const array0Shape = this.sources[0].scaleLevels[levelIdx].shape;
-
-    const regionPx = convertSubregionToPixels(
-      subregion,
-      new Vector3(array0Shape[x], array0Shape[y], z === -1 ? 1 : array0Shape[z])
-    );
-    // Update volume `imageInfo` to reflect potentially new dimensions
-    const regionSizePx = regionPx.getSize(new Vector3());
-    const atlasTileDims = computePackedAtlasDims(regionSizePx.z, regionSizePx.x, regionSizePx.y);
-    const volExtentPx = convertSubregionToPixels(
-      maxExtent,
-      new Vector3(array0Shape[x], array0Shape[y], z === -1 ? 1 : array0Shape[z])
-    );
-    const volSizePx = volExtentPx.getSize(new Vector3());
-    const updatedImageInfo: ImageInfo = {
-      ...imageInfo,
-      atlasTileDims,
-      volumeSize: volSizePx,
-      subregionSize: regionSizePx,
-      subregionOffset: regionPx.min,
-      multiscaleLevel: levelIdx,
-    };
-
-    const { numChannels } = updatedImageInfo;
+    const updatedImageInfo = this.updateImageInfoForLoad(imageInfo, loadSpec);
+    const { numChannels, multiscaleLevel } = updatedImageInfo;
     const channelIndexes = loadSpec.channels ?? Array.from({ length: numChannels }, (_, i) => i);
 
     const subscriber = this.requestQueue.addSubscriber();
@@ -509,11 +517,12 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     const channelPromises = channelIndexes.map(async (ch) => {
       // Build slice spec
-      const { min, max } = regionPx;
+      const min = updatedImageInfo.subregionOffset;
+      const max = min.clone().add(updatedImageInfo.subregionSize);
       const { sourceIndex: sourceIdx, channelIndexInSource: sourceCh } = this.matchChannelToSource(ch);
       const unorderedSpec = [loadSpec.time, sourceCh, slice(min.z, max.z), slice(min.y, max.y), slice(min.x, max.x)];
 
-      const level = this.sources[sourceIdx].scaleLevels[levelIdx];
+      const level = this.sources[sourceIdx].scaleLevels[multiscaleLevel];
       const sliceSpec = this.orderByDimension(unorderedSpec as TCZYX<number | Slice>, sourceIdx);
       const reportKey = (key: string, sub: SubscriberId) => reportKeyBase(sourceIdx, key, sub);
 
@@ -541,7 +550,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     }
     this.loadSubscriber = subscriber;
 
-    this.beginPrefetch(keys, levelIdx);
+    this.beginPrefetch(keys, multiscaleLevel);
 
     Promise.all(channelPromises).then(() => {
       if (syncChannels) {
