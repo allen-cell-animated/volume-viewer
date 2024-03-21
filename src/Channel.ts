@@ -46,7 +46,8 @@ export default class Channel {
 
     // intensity remapping lookup table
     this.lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
-    this.lutGenerator_minMax(0, 255);
+    const lut = new Lut().createFromMinMax(0, 255);
+    this.setLut(lut.lut);
     // per-intensity color labeling (disabled initially)
     this.colorPalette = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
     // store in 0..1 range. 1 means fully colorPalette, 0 means fully lut.
@@ -141,7 +142,9 @@ export default class Channel {
     this.loaded = true;
     this.histogram = new Histogram(bitsArray);
 
-    this.lutGenerator_auto2();
+    const [hmin, hmax] = this.histogram.findAutoIJBins();
+    const lut = new Lut().createFromMinMax(hmin, hmax);
+    this.setLut(lut.lut);
   }
 
   // let's rearrange this.imgData.data into a 3d array.
@@ -257,84 +260,4 @@ export default class Channel {
   public setColorPaletteAlpha(alpha: number): void {
     this.colorPaletteAlpha = alpha;
   }
-
-  /* eslint-disable @typescript-eslint/naming-convention */
-  public lutGenerator_windowLevel(wnd: number, lvl: number): void {
-    if (!this.loaded) {
-      return;
-    }
-    const lut = new Lut().createFromWindowLevel(wnd, lvl);
-    this.setLut(lut.lut);
-  }
-
-  public lutGenerator_minMax(imin: number, imax: number): void {
-    if (!this.loaded) {
-      return;
-    }
-    const lut = new Lut().createFromMinMax(imin, imax);
-    this.setLut(lut.lut);
-  }
-
-  public lutGenerator_fullRange(): void {
-    if (!this.loaded) {
-      return;
-    }
-    const lut = new Lut().createFullRange();
-    this.setLut(lut.lut);
-  }
-
-  public lutGenerator_dataRange(): void {
-    if (!this.loaded) {
-      return;
-    }
-    const lut = new Lut().createFromMinMax(this.histogram.getMin(), this.histogram.getMax());
-    this.setLut(lut.lut);
-  }
-
-  public lutGenerator_bestFit(): void {
-    if (!this.loaded) {
-      return;
-    }
-    const [hmin, hmax] = this.histogram.findBestFitBins();
-    const lut = new Lut().createFromMinMax(hmin, hmax);
-    this.setLut(lut.lut);
-  }
-
-  // attempt to redo imagej's Auto
-  public lutGenerator_auto2(): void {
-    if (!this.loaded) {
-      return;
-    }
-    const [hmin, hmax] = this.histogram.findAutoIJBins();
-    const lut = new Lut().createFromMinMax(hmin, hmax);
-    this.setLut(lut.lut);
-  }
-
-  public lutGenerator_auto(): void {
-    if (!this.loaded) {
-      return;
-    }
-    const [b, e] = this.histogram.findAutoMinMax();
-    const lut = new Lut().createFromMinMax(b, e);
-    this.setLut(lut.lut);
-  }
-
-  public lutGenerator_equalize(): void {
-    if (!this.loaded) {
-      return;
-    }
-    const lut = new Lut().createFromEqHistogram(this.histogram);
-    this.setLut(lut.lut);
-  }
-
-  public lutGenerator_percentiles(lo: number, hi: number): void {
-    if (!this.loaded) {
-      return;
-    }
-    const hmin = this.histogram.findBinOfPercentile(lo);
-    const hmax = this.histogram.findBinOfPercentile(hi);
-    const lut = new Lut().createFromMinMax(hmin, hmax);
-    this.setLut(lut.lut);
-  }
-  /* eslint-enable @typescript-eslint/naming-convention */
 }

@@ -31,8 +31,11 @@ export class VolumeViewer extends React.Component {
                     name: `${AICS_CELL_URL}/${img.name}`,
                 }));
                 VolumeLoader.loadVolumeAtlasData(aimg, jsondata.images, (url, channelIndex) => {
-                    aimg.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
-
+                    const hmin = aimg.getHistogram(channelIndex).findBinOfPercentile(0.5);
+                    const hmax = aimg.getHistogram(channelIndex).findBinOfPercentile(0.983);
+                    const lut = new Lut().createFromMinMax(hmin, hmax);
+                    aimg.setLut(channelIndex, lut.lut);
+          
                     this.view3D.setVolumeChannelEnabled(aimg, channelIndex, channelIndex < 3);
                     this.view3D.updateActiveChannels(aimg);
 

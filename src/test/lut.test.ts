@@ -260,11 +260,13 @@ describe("test histogram", () => {
       });
       // TODO this test almost works but there are some very slight rounding errors
       // keeping things from being perfectly equal. Need to work out the precision issue.
-      // it("is consistent for windowLevel extending beyond bounds", () => {
-      //   const lut = histogram.lutGenerator_windowLevel(1.5, 0.5);
-      //   const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
-      //   expect(lut.lut).to.eql(secondlut.lut);
-      // });
+      it("is consistent for windowLevel extending beyond bounds", () => {
+        const lut = new Lut().createFromWindowLevel(1.5, 0.5);
+        const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
+        for (let i = 0; i < 256 * 4; ++i) {
+          expect(lut.lut[i]).to.be.closeTo(secondlut.lut[i], 1);
+        }
+      });
     });
 
     it("is consistent for fullRange", () => {
