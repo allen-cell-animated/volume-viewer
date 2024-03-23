@@ -254,7 +254,7 @@ export default class Volume {
    * different scale level than is currently loaded.
    *
    * This checks for changes in properties that *can*, but do not *always*, change the scale level the loader picks.
-   * For example, a smaller subregion *may* mean a higher scale level will fit within memory constraints, or it may
+   * For example, a smaller `subregion` *may* mean a higher scale level will fit within memory constraints, or it may
    * not. A higher `scaleLevelBias` *may* nudge the volume into a higher scale level, or we may already be at the max
    * imposed by `multiscaleLevel`.
    */
