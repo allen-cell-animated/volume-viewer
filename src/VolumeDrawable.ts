@@ -683,7 +683,7 @@ export default class VolumeDrawable {
         break;
       case RenderMode.SLICE:
         this.volumeRendering = new Atlas2DSlice(this.volume, this.settings);
-        this.volume.updateRequiredData({ subregion: new Box3(new Vector3(0, 0, 0.5), new Vector3(1, 1, 0.5)) });
+        // `updateRequiredData` called on construction, via `updateSettings`
         break;
       case RenderMode.RAYMARCH:
       default:
@@ -721,6 +721,17 @@ export default class VolumeDrawable {
     pane.addInput(this.settings, "translation").on("change", ({ value }) => this.setTranslation(value));
     pane.addInput(this.settings, "rotation").on("change", ({ value }) => this.setRotation(value));
 
+    const scaleFolder = pane.addFolder({ title: "Multiscale loading" });
+    scaleFolder
+      .addInput(this.volume.loadSpecRequired, "maxAtlasEdge")
+      .on("change", ({ value }) => this.volume.updateRequiredData({ maxAtlasEdge: value }));
+    scaleFolder
+      .addInput(this.volume.loadSpecRequired, "scaleLevelBias")
+      .on("change", ({ value }) => this.volume.updateRequiredData({ scaleLevelBias: value }));
+    scaleFolder
+      .addInput(this.volume.loadSpecRequired, "multiscaleLevel")
+      .on("change", ({ value }) => this.volume.updateRequiredData({ multiscaleLevel: value }));
+
     const pathtrace = pane.addFolder({ title: "Pathtrace", expanded: false });
     pathtrace
       .addInput(this.settings, "primaryRayStepSize", { min: 1, max: 100 })
@@ -732,7 +743,7 @@ export default class VolumeDrawable {
 
   setZSlice(slice: number): boolean {
     const sizez = this.volume.imageInfo.volumeSize.z;
-    if (this.settings.zSlice !== slice && slice < sizez && slice > 0) {
+    if (this.settings.zSlice !== slice && slice < sizez && slice >= 0) {
       this.settings.zSlice = slice;
       this.volumeRendering.updateSettings(this.settings, SettingsFlags.ROI);
       return true;

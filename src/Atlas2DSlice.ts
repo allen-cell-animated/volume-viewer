@@ -178,9 +178,10 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
 
       const sliceInBounds = this.updateSlice();
       if (sliceInBounds) {
-        const sliceRatio = Math.floor(this.settings.zSlice) / this.volume.imageInfo.volumeSize.z;
+        const sliceLowerBound = Math.floor(this.settings.zSlice) / this.volume.imageInfo.volumeSize.z;
+        const sliceUpperBound = (Math.floor(this.settings.zSlice) + 1) / this.volume.imageInfo.volumeSize.z;
         this.volume.updateRequiredData({
-          subregion: new Box3(new Vector3(0, 0, sliceRatio), new Vector3(1, 1, sliceRatio)),
+          subregion: new Box3(new Vector3(0, 0, sliceLowerBound), new Vector3(1, 1, sliceUpperBound)),
         });
       }
     }

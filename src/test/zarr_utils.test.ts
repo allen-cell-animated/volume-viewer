@@ -1,13 +1,123 @@
 import { expect } from "chai";
 
-import { OMEDataset, TCZYX } from "../loaders/zarr_utils/types";
+import { AbsolutePath, SyncReadable } from "@zarrita/storage";
+import * as zarr from "@zarrita/core";
+
+import {
+  NumericZarrArray,
+  OMEDataset,
+  OMEMultiscale,
+  OmeroTransitionalMetadata,
+  TCZYX,
+  ZarrSource,
+} from "../loaders/zarr_utils/types";
+import WrappedStore from "../loaders/zarr_utils/WrappedStore";
 import {
   getDimensionCount,
   getScale,
+  matchSourceScaleLevels,
   orderByDimension,
   orderByTCZYX,
   remapAxesToTCZYX,
 } from "../loaders/zarr_utils/utils";
+
+/** Contains only the data required to produce a mock `ZarrSourceMeta` which is useful for testing */
+type ZarrSourceMockSpec = {
+  /** Shape of zarrita arrays corresponding to each scale level. Must be in ascending order of size. */
+  shapes: TCZYX<number>[];
+  /** Scale transforms per level in OME metadata. Default: array of `[1, 1, 1, 1, 1]` with same length as `shapes`. */
+  scales?: TCZYX<number>[];
+  /** Paths in OME metadata. Default: array ["0", "1", "2", ...] with same length as `scales`. */
+  paths?: string[];
+};
+
+const createMockOmeroMetadata = (numChannels: number): OmeroTransitionalMetadata => ({
+  id: 0,
+  name: "0",
+  version: "0.0",
+  channels: Array.from({ length: numChannels }, (_, i) => ({
+    active: true,
+    coefficient: 1,
+    color: "ffffffff",
+    family: "linear",
+    inverted: false,
+    label: `channel ${i}`,
+    window: { end: 1, max: 1, min: 0, start: 0 },
+  })),
+});
+
+const createMockMultiscaleMetadata = (scales: number[][], paths?: string[]): OMEMultiscale => ({
+  name: "0",
+  version: "0.0",
+  axes: [{ name: "t" }, { name: "c" }, { name: "z" }, { name: "y" }, { name: "x" }],
+  datasets: scales.map((scale, idx) => ({
+    path: (paths && paths[idx]) ?? `${idx}`,
+    coordinateTransformations: [{ type: "scale", scale }],
+  })),
+});
+
+class MockStore implements SyncReadable {
+  get(_key: AbsolutePath, _opts?: unknown): Uint8Array | undefined {
+    return undefined;
+  }
+}
+const MOCK_STORE = new WrappedStore(new MockStore());
+
+const createMockArrays = (shapes: number[][]): Promise<NumericZarrArray[]> => {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  const promises = shapes.map((shape) => zarr.create(MOCK_STORE, { shape, chunk_shape: shape, data_type: "uint8" }));
+  return Promise.all(promises);
+};
+
+const createOneMockSource = async (
+  shapes: TCZYX<number>[],
+  scales: TCZYX<number>[],
+  channelOffset: number,
+  paths?: string[]
+): Promise<ZarrSource> => ({
+  scaleLevels: await createMockArrays(shapes),
+  multiscaleMetadata: createMockMultiscaleMetadata(scales, paths),
+  omeroMetadata: createMockOmeroMetadata(shapes[0][1]),
+  axesTCZYX: [0, 1, 2, 3, 4],
+  channelOffset,
+});
+
+const createMockSources = (specs: ZarrSourceMockSpec[]): Promise<ZarrSource[]> => {
+  let channelOffset = 0;
+  const sourcePromises = specs.map(({ shapes, scales, paths }) => {
+    if (!scales) {
+      scales = Array.from({ length: shapes.length }, () => [1, 1, 1, 1, 1]);
+    }
+    const result = createOneMockSource(shapes, scales, channelOffset, paths);
+    channelOffset += shapes[0][1];
+    return result;
+  });
+  return Promise.all(sourcePromises);
+};
+
+const createTwoMockSourceArrs = (specs: ZarrSourceMockSpec[]): Promise<[ZarrSource[], ZarrSource[]]> => {
+  return Promise.all([createMockSources(specs), createMockSources(specs)]);
+};
+
+/** Chai's deep equality doesn't seem to work for zarr arrays */
+const expectSourcesEqual = (aArr: ZarrSource[], bArr: ZarrSource[]) => {
+  expect(aArr.length).to.equal(bArr.length);
+  for (const [idx, a] of aArr.entries()) {
+    const b = bArr[idx];
+    expect(a.multiscaleMetadata).to.deep.equal(b.multiscaleMetadata);
+    expect(a.omeroMetadata).to.deep.equal(b.omeroMetadata);
+    expect(a.axesTCZYX).to.deep.equal(b.axesTCZYX);
+    expect(a.channelOffset).to.equal(b.channelOffset);
+
+    expect(a.scaleLevels.length).to.equal(b.scaleLevels.length);
+    for (const [idx, aLevel] of a.scaleLevels.entries()) {
+      const bLevel = b.scaleLevels[idx];
+      expect(aLevel.path).to.equal(bLevel.path);
+      expect(aLevel.shape).to.deep.equal(bLevel.shape);
+      expect(aLevel.chunks).to.deep.equal(bLevel.chunks);
+    }
+  }
+};
 
 describe("zarr_utils", () => {
   describe("getDimensionCount", () => {
@@ -109,6 +219,113 @@ describe("zarr_utils", () => {
 
     it("defaults to `[1, 1, 1, 1, 1]` if no coordinate transformations are present at all", () => {
       expect(getScale({ path: "0" }, [0, 1, 2, 3, 4])).to.deep.equal([1, 1, 1, 1, 1]);
+    });
+  });
+
+  describe("matchSourceScaleLevels", () => {
+    it("does nothing if passed only one source scale level", async () => {
+      const [testSource, refSource] = await createTwoMockSourceArrs([{ shapes: [[5, 5, 5, 5, 5]] }]);
+      matchSourceScaleLevels(testSource);
+      expectSourcesEqual(testSource, refSource);
+    });
+
+    it("does nothing if all source scale levels are the same", async () => {
+      const spec: ZarrSourceMockSpec = {
+        shapes: [
+          [1, 1, 10, 10, 10],
+          [1, 1, 5, 5, 5],
+        ],
+      };
+      const [testSource, refSource] = await createTwoMockSourceArrs([spec, spec]);
+      matchSourceScaleLevels(testSource);
+      expectSourcesEqual(testSource, refSource);
+    });
+
+    it("trims source scale levels which are outside the range of any other sources", async () => {
+      const baseSpec: ZarrSourceMockSpec = {
+        shapes: [
+          [1, 1, 10, 10, 10],
+          [1, 1, 5, 5, 5],
+        ],
+      };
+
+      // Has all the same scale levels as `baseSpec`, plus one smaller
+      const specSmaller: ZarrSourceMockSpec = { shapes: [...baseSpec.shapes.slice(), [1, 1, 2, 2, 2]] };
+      // Has all the same scale levels as `baseSpec`, plus one larger
+      const specLarger: ZarrSourceMockSpec = { shapes: [[1, 1, 20, 20, 20], ...baseSpec.shapes.slice()] };
+
+      const refSourceSmaller = await createMockSources([baseSpec, baseSpec]);
+      // The largest source will have path "0", so we have to shift the paths to match
+      const refSourceLarger = await createMockSources([baseSpec, { ...baseSpec, paths: ["1", "2"] }]);
+      const testSourceSmaller = await createMockSources([baseSpec, specSmaller]);
+      const testSourceLarger = await createMockSources([baseSpec, specLarger]);
+
+      matchSourceScaleLevels(testSourceSmaller);
+      matchSourceScaleLevels(testSourceLarger);
+
+      expectSourcesEqual(testSourceSmaller, refSourceSmaller);
+      expectSourcesEqual(testSourceLarger, refSourceLarger);
+    });
+
+    it("handles unmatched scale levels within the range of other sources", async () => {
+      // The only level shapes that all three of these sources have in common are [1, 1, 6, 6, 6] and [1, 1, 2, 2, 2]
+      const shapes1: TCZYX<number>[] = [
+        [1, 1, 6, 6, 6],
+        [1, 1, 5, 5, 5],
+        [1, 1, 3, 3, 3],
+        [1, 1, 2, 2, 2],
+      ];
+      const shapes2: TCZYX<number>[] = [
+        [1, 1, 6, 6, 6],
+        [1, 1, 5, 5, 5],
+        [1, 1, 4, 4, 4],
+        [1, 1, 2, 2, 2],
+        [1, 1, 1, 1, 1],
+      ];
+      const shapes3: TCZYX<number>[] = [
+        [1, 1, 7, 7, 7],
+        [1, 1, 6, 6, 6],
+        [1, 1, 4, 4, 4],
+        [1, 1, 2, 2, 2],
+      ];
+
+      const testSources = await createMockSources([{ shapes: shapes1 }, { shapes: shapes2 }, { shapes: shapes3 }]);
+      matchSourceScaleLevels(testSources);
+
+      const shapes: TCZYX<number>[] = [
+        [1, 1, 6, 6, 6],
+        [1, 1, 2, 2, 2],
+      ];
+      const refSources = await createMockSources([
+        { shapes, paths: ["0", "3"] },
+        { shapes, paths: ["0", "3"] },
+        { shapes, paths: ["1", "3"] },
+      ]);
+      expectSourcesEqual(testSources, refSources);
+    });
+
+    it("throws an error if the size of two scale levels are mismatched", async () => {
+      const sources = await createMockSources([{ shapes: [[1, 1, 2, 1, 1]] }, { shapes: [[1, 1, 1, 2, 1]] }]);
+      expect(() => matchSourceScaleLevels(sources)).to.throw(
+        "Incompatible zarr arrays: pixel dimensions are mismatched"
+      );
+    });
+
+    it("throws an error if two scale levels of the same size have different scale transformations", async () => {
+      const sources = await createMockSources([
+        { shapes: [[1, 1, 1, 1, 1]], scales: [[1, 1, 2, 2, 2]] },
+        { shapes: [[1, 1, 1, 1, 1]], scales: [[1, 1, 1, 1, 1]] },
+      ]);
+      expect(() => matchSourceScaleLevels(sources)).to.throw(
+        "Incompatible zarr arrays: scale levels of equal size have different scale transformations"
+      );
+    });
+
+    it("throws an error if two scale levels of the same size have a different number of timesteps", async () => {
+      const sources = await createMockSources([{ shapes: [[1, 1, 1, 1, 1]] }, { shapes: [[2, 1, 1, 1, 1]] }]);
+      expect(() => matchSourceScaleLevels(sources)).to.throw(
+        "Incompatible zarr arrays: different numbers of timesteps"
+      );
     });
   });
 });
