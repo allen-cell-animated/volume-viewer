@@ -252,6 +252,11 @@ export default class Volume {
   /**
    * Returns `true` iff differences between `loadSpec` and `loadSpecRequired` indicate a new load *may* get a
    * different scale level than is currently loaded.
+   *
+   * This checks for changes in properties that *can*, but do not *always*, change the scale level the loader picks.
+   * For example, a smaller subregion *may* mean a higher scale level will fit within memory constraints, or it may
+   * not. A higher `scaleLevelBias` *may* nudge the volume into a higher scale level, or we may already be at the max
+   * imposed by `multiscaleLevel`.
    */
   private mayLoadNewScaleLevel(): boolean {
     return (
