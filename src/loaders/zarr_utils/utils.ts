@@ -1,6 +1,3 @@
-import { Vector3 } from "three";
-import { LoadSpec } from "../IVolumeLoader.js";
-import { estimateLevelForAtlas } from "../VolumeLoaderUtils.js";
 import {
   NumericZarrArray,
   OMEAxis,
@@ -33,23 +30,6 @@ export function remapAxesToTCZYX(axes: OMEAxis[]): TCZYX<number> {
   }
 
   return axesTCZYX;
-}
-
-/**
- * Picks the best scale level to load based on scale level dimensions, a max atlas size, and a `LoadSpec`.
- * This works like `estimateLevelForAtlas` but factors in `LoadSpec`'s `subregion` property (shrinks the size of the
- * data, maybe enough to allow loading a higher level) and its `multiscaleLevel` property (sets a max scale level).
- */
-export function pickLevelToLoad(loadSpec: LoadSpec, spatialDimsZYX: [number, number, number][]): number {
-  const size = loadSpec.subregion.getSize(new Vector3());
-  const dims = spatialDimsZYX.map(([z, y, x]): [number, number, number] => [
-    Math.max(z * size.z, 1),
-    Math.max(y * size.y, 1),
-    Math.max(x * size.x, 1),
-  ]);
-
-  const optimalLevel = estimateLevelForAtlas(dims);
-  return Math.max(optimalLevel, loadSpec.multiscaleLevel ?? 0);
 }
 
 /** Reorder an array of values [T, C, Z, Y, X] to the given dimension order */
