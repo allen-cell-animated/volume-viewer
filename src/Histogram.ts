@@ -1,5 +1,3 @@
-import { Lut } from "./Lut.js";
-
 /**
  * Builds a histogram with 256 bins from a data array. Assume data is 8 bit single channel grayscale.
  * @class
