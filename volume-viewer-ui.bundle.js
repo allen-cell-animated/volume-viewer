@@ -169,9 +169,10 @@ var Atlas2DSlice = /*#__PURE__*/function () {
         this.setUniform("AABB_CLIP_MAX", bounds.bmax);
         var sliceInBounds = this.updateSlice();
         if (sliceInBounds) {
-          var sliceRatio = Math.floor(this.settings.zSlice) / this.volume.imageInfo.volumeSize.z;
+          var sliceLowerBound = Math.floor(this.settings.zSlice) / this.volume.imageInfo.volumeSize.z;
+          var sliceUpperBound = (Math.floor(this.settings.zSlice) + 1) / this.volume.imageInfo.volumeSize.z;
           this.volume.updateRequiredData({
-            subregion: new three__WEBPACK_IMPORTED_MODULE_7__.Box3(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, sliceRatio), new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1, 1, sliceRatio))
+            subregion: new three__WEBPACK_IMPORTED_MODULE_7__.Box3(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, sliceLowerBound), new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1, 1, sliceUpperBound))
           });
         }
       }
@@ -5376,6 +5377,8 @@ var Volume = /*#__PURE__*/function () {
     this.loadSpec = _objectSpread({
       // Fill in defaults for optional properties
       multiscaleLevel: 0,
+      scaleLevelBias: 0,
+      maxAtlasEdge: _loaders_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_8__.MAX_ATLAS_EDGE,
       channels: Array.from({
         length: this.imageInfo.numChannels
       }, function (_val, idx) {
@@ -5443,51 +5446,68 @@ var Volume = /*#__PURE__*/function () {
       this.normRegionOffset = subregionOffset.clone().divide(volumeSize);
     }
 
+    /** Returns `true` iff differences between `loadSpec` and `loadSpecRequired` indicate new data *must* be loaded. */
+  }, {
+    key: "mustLoadNewData",
+    value: function mustLoadNewData() {
+      var _this = this;
+      return this.loadSpec.time !== this.loadSpecRequired.time ||
+      // time point changed
+      !this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion) ||
+      // new subregion not contained in old
+      this.loadSpecRequired.channels.some(function (channel) {
+        return !_this.loadSpec.channels.includes(channel);
+      }) // new channel(s)
+      ;
+    }
+
+    /**
+     * Returns `true` iff differences between `loadSpec` and `loadSpecRequired` indicate a new load *may* get a
+     * different scale level than is currently loaded.
+     *
+     * This checks for changes in properties that *can*, but do not *always*, change the scale level the loader picks.
+     * For example, a smaller `subregion` *may* mean a higher scale level will fit within memory constraints, or it may
+     * not. A higher `scaleLevelBias` *may* nudge the volume into a higher scale level, or we may already be at the max
+     * imposed by `multiscaleLevel`.
+     */
+  }, {
+    key: "mayLoadNewScaleLevel",
+    value: function mayLoadNewScaleLevel() {
+      return !this.loadSpec.subregion.equals(this.loadSpecRequired.subregion) || this.loadSpecRequired.maxAtlasEdge !== this.loadSpec.maxAtlasEdge || this.loadSpecRequired.multiscaleLevel !== this.loadSpec.multiscaleLevel || this.loadSpecRequired.scaleLevelBias !== this.loadSpec.scaleLevelBias;
+    }
+
     /** Call on any state update that may require new data to be loaded (subregion, enabled channels, time, etc.) */
   }, {
     key: "updateRequiredData",
     value: (function () {
       var _updateRequiredData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(required, onChannelLoaded) {
-        var _this = this;
-        var noReload, _this$loadSpec$multis, _this$loader, currentScale, minLevel, dims, loadableLevel, _this$loader2;
+        var shouldReload, _this$loader, dims, dimsZYX, levelToLoad;
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee$(_context) {
           while (1) switch (_context.prev = _context.next) {
             case 0:
               this.loadSpecRequired = _objectSpread(_objectSpread({}, this.loadSpecRequired), required);
-              noReload = this.loadSpec.time === this.loadSpecRequired.time && this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion) && this.loadSpecRequired.channels.every(function (channel) {
-                return _this.loadSpec.channels.includes(channel);
-              }); // An update to `subregion` should trigger a reload when the new subregion is not contained in the old one
-              // OR when the new subregion is smaller than the old one by enough that we can load a higher scale level.
-              if (!(noReload && !this.loadSpec.subregion.equals(this.loadSpecRequired.subregion))) {
-                _context.next = 9;
+              shouldReload = this.mustLoadNewData(); // If we're not reloading due to required data changes, check if we should load a new scale level
+              if (!(!shouldReload && this.mayLoadNewScaleLevel())) {
+                _context.next = 7;
                 break;
               }
-              currentScale = this.imageInfo.multiscaleLevel; // `LoadSpec.multiscaleLevel`, if specified, forces a cap on the scale level we can load.
-              minLevel = (_this$loadSpec$multis = this.loadSpec.multiscaleLevel) !== null && _this$loadSpec$multis !== void 0 ? _this$loadSpec$multis : 0; // Loaders should cache loaded dimensions so that this call blocks no more than once per valid `LoadSpec`.
-              _context.next = 7;
+              _context.next = 5;
               return (_this$loader = this.loader) === null || _this$loader === void 0 ? void 0 : _this$loader.loadDims(this.loadSpecRequired);
-            case 7:
+            case 5:
               dims = _context.sent;
               if (dims) {
-                loadableLevel = (0,_loaders_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_8__.estimateLevelForAtlas)(dims.map(function (_ref) {
+                dimsZYX = dims.map(function (_ref) {
                   var shape = _ref.shape;
                   return [shape[2], shape[3], shape[4]];
-                }));
-                noReload = currentScale <= Math.max(loadableLevel, minLevel);
+                }); // Determine which scale level *would* be loaded, and see if it's different than what we have
+                levelToLoad = (0,_loaders_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_8__.pickLevelToLoadUnscaled)(this.loadSpecRequired, dimsZYX);
+                shouldReload = this.imageInfo.multiscaleLevel !== levelToLoad;
               }
-            case 9:
-              // if newly required data is not currently contained in this volume...
-              if (!noReload) {
-                // ...clone `loadSpecRequired` into `loadSpec` and load
-                this.setUnloaded();
-                this.loadSpec = _objectSpread(_objectSpread({}, this.loadSpecRequired), {}, {
-                  subregion: this.loadSpecRequired.subregion.clone(),
-                  // preserve multiscale option from original `LoadSpec`, if any
-                  multiscaleLevel: this.loadSpec.multiscaleLevel
-                });
-                (_this$loader2 = this.loader) === null || _this$loader2 === void 0 || _this$loader2.loadVolumeData(this, undefined, onChannelLoaded);
+            case 7:
+              if (shouldReload) {
+                this.loadNewData(onChannelLoaded);
               }
-            case 10:
+            case 8:
             case "end":
               return _context.stop();
           }
@@ -5497,9 +5517,25 @@ var Volume = /*#__PURE__*/function () {
         return _updateRequiredData.apply(this, arguments);
       }
       return updateRequiredData;
-    }() // we calculate the physical size of the volume (voxels*pixel_size)
-    // and then normalize to the max physical dimension
+    }()
+    /**
+     * Loads new data as specified in `this.loadSpecRequired`. Clones `loadSpecRequired` into `loadSpec` to indicate
+     * that the data that *must* be loaded is now the data that *has* been loaded.
+     */
     )
+  }, {
+    key: "loadNewData",
+    value: function loadNewData(onChannelLoaded) {
+      var _this$loader2;
+      this.setUnloaded();
+      this.loadSpec = _objectSpread(_objectSpread({}, this.loadSpecRequired), {}, {
+        subregion: this.loadSpecRequired.subregion.clone()
+      });
+      (_this$loader2 = this.loader) === null || _this$loader2 === void 0 || _this$loader2.loadVolumeData(this, undefined, onChannelLoaded);
+    }
+
+    // we calculate the physical size of the volume (voxels*pixel_size)
+    // and then normalize to the max physical dimension
   }, {
     key: "setVoxelSize",
     value: function setVoxelSize(size) {
@@ -6716,9 +6752,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
           break;
         case _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.SLICE:
           this.volumeRendering = new _Atlas2DSlice_js__WEBPACK_IMPORTED_MODULE_9__["default"](this.volume, this.settings);
-          this.volume.updateRequiredData({
-            subregion: new three__WEBPACK_IMPORTED_MODULE_11__.Box3(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0.5), new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(1, 1, 0.5))
-          });
+          // `updateRequiredData` called on construction, via `updateSettings`
           break;
         case _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.RAYMARCH:
         default:
@@ -6766,6 +6800,27 @@ var VolumeDrawable = /*#__PURE__*/function () {
         var value = _ref5.value;
         return _this2.setRotation(value);
       });
+      var scaleFolder = pane.addFolder({
+        title: "Multiscale loading"
+      });
+      scaleFolder.addInput(this.volume.loadSpecRequired, "maxAtlasEdge").on("change", function (_ref6) {
+        var value = _ref6.value;
+        return _this2.volume.updateRequiredData({
+          maxAtlasEdge: value
+        });
+      });
+      scaleFolder.addInput(this.volume.loadSpecRequired, "scaleLevelBias").on("change", function (_ref7) {
+        var value = _ref7.value;
+        return _this2.volume.updateRequiredData({
+          scaleLevelBias: value
+        });
+      });
+      scaleFolder.addInput(this.volume.loadSpecRequired, "multiscaleLevel").on("change", function (_ref8) {
+        var value = _ref8.value;
+        return _this2.volume.updateRequiredData({
+          multiscaleLevel: value
+        });
+      });
       var pathtrace = pane.addFolder({
         title: "Pathtrace",
         expanded: false
@@ -6773,15 +6828,15 @@ var VolumeDrawable = /*#__PURE__*/function () {
       pathtrace.addInput(this.settings, "primaryRayStepSize", {
         min: 1,
         max: 100
-      }).on("change", function (_ref6) {
-        var value = _ref6.value;
+      }).on("change", function (_ref9) {
+        var value = _ref9.value;
         return _this2.setRayStepSizes(value);
       });
       pathtrace.addInput(this.settings, "secondaryRayStepSize", {
         min: 1,
         max: 100
-      }).on("change", function (_ref7) {
-        var value = _ref7.value;
+      }).on("change", function (_ref10) {
+        var value = _ref10.value;
         return _this2.setRayStepSizes(undefined, value);
       });
     }
@@ -6789,7 +6844,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
     key: "setZSlice",
     value: function setZSlice(slice) {
       var sizez = this.volume.imageInfo.volumeSize.z;
-      if (this.settings.zSlice !== slice && slice < sizez && slice > 0) {
+      if (this.settings.zSlice !== slice && slice < sizez && slice >= 0) {
         this.settings.zSlice = slice;
         this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.ROI);
         return true;
@@ -8757,7 +8812,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
         dims.spaceUnit = spaceUnit;
         dims.timeUnit = timeUnit;
         dims.shape = _this2.orderByTCZYX(level.shape, 1).map(function (val, idx) {
-          return Math.ceil(val * regionArr[idx]);
+          return Math.max(Math.ceil(val * regionArr[idx]), 1);
         });
         dims.spacing = _this2.orderByTCZYX(scale, 1);
         return dims;
@@ -8777,7 +8832,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       var hasT = t > -1;
       var hasZ = z > -1;
       var shape0 = source0.scaleLevels[0].shape;
-      var levelToLoad = (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.pickLevelToLoad)(loadSpec, this.getLevelShapesZYX());
+      var levelToLoad = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.pickLevelToLoad)(loadSpec, this.getLevelShapesZYX());
       var shapeLv = source0.scaleLevels[levelToLoad].shape;
       var _this$getUnitSymbols3 = this.getUnitSymbols(),
         _this$getUnitSymbols4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_this$getUnitSymbols3, 2),
@@ -8958,7 +9013,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       var subregion = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.composeSubregion)(loadSpec.subregion, maxExtent);
 
       // Pick the level to load based on the subregion size
-      var multiscaleLevel = (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.pickLevelToLoad)(_objectSpread(_objectSpread({}, loadSpec), {}, {
+      var multiscaleLevel = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.pickLevelToLoad)(_objectSpread(_objectSpread({}, loadSpec), {}, {
         subregion: subregion
       }), this.getLevelShapesZYX());
       var array0Shape = this.sources[0].scaleLevels[multiscaleLevel].shape;
@@ -9659,15 +9714,22 @@ var TiffLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   MAX_ATLAS_EDGE: () => (/* binding */ MAX_ATLAS_EDGE),
 /* harmony export */   buildDefaultMetadata: () => (/* binding */ buildDefaultMetadata),
 /* harmony export */   composeSubregion: () => (/* binding */ composeSubregion),
 /* harmony export */   computePackedAtlasDims: () => (/* binding */ computePackedAtlasDims),
 /* harmony export */   convertSubregionToPixels: () => (/* binding */ convertSubregionToPixels),
 /* harmony export */   estimateLevelForAtlas: () => (/* binding */ estimateLevelForAtlas),
+/* harmony export */   pickLevelToLoad: () => (/* binding */ pickLevelToLoad),
+/* harmony export */   pickLevelToLoadUnscaled: () => (/* binding */ pickLevelToLoadUnscaled),
+/* harmony export */   scaleDimsToSubregion: () => (/* binding */ scaleDimsToSubregion),
+/* harmony export */   scaleMultipleDimsToSubregion: () => (/* binding */ scaleMultipleDimsToSubregion),
 /* harmony export */   unitNameToSymbol: () => (/* binding */ unitNameToSymbol)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+
 
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
@@ -9740,10 +9802,10 @@ function computePackedAtlasDims(z, tw, th) {
     nextrows = Math.ceil(z / nextcols);
     ratio = nextcols * tw / (nextrows * th);
   }
-  return new three__WEBPACK_IMPORTED_MODULE_1__.Vector2(nrows, ncols);
+  return new three__WEBPACK_IMPORTED_MODULE_2__.Vector2(nrows, ncols);
 }
 
-/** Picks the largest scale level that can fit into a texture atlas */
+/** Picks the largest scale level that can fit into a texture atlas with edges no longer than `maxAtlasEdge`. */
 function estimateLevelForAtlas(spatialDimsZYX) {
   var maxAtlasEdge = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : MAX_ATLAS_EDGE;
   if (spatialDimsZYX.length <= 1) {
@@ -9766,6 +9828,53 @@ function estimateLevelForAtlas(spatialDimsZYX) {
   }
   return levelToLoad;
 }
+var maxCeil = function maxCeil(val) {
+  return Math.max(Math.ceil(val), 1);
+};
+var scaleDims = function scaleDims(size, _ref) {
+  var _ref2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_ref, 3),
+    z = _ref2[0],
+    y = _ref2[1],
+    x = _ref2[2];
+  return [maxCeil(z * size.z), maxCeil(y * size.y), maxCeil(x * size.x)];
+};
+function scaleDimsToSubregion(subregion, dims) {
+  var size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3());
+  return scaleDims(size, dims);
+}
+function scaleMultipleDimsToSubregion(subregion, dims) {
+  var size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3());
+  return dims.map(function (dim) {
+    return scaleDims(size, dim);
+  });
+}
+
+/**
+ * Picks the best scale level to load based on scale level dimensions and a `LoadSpec`. This calls
+ * `estimateLevelForAtlas`, then accounts for `LoadSpec`'s scale level picking properties:
+ * - `multiscaleLevel` imposes a minimum scale level (or *maximum* resolution level) to load
+ * - `maxAtlasEdge` sets the maximum size of the texture atlas that may be produced by a load
+ * - `scaleLevelBias` offsets the scale level index after the optimal level is picked based on `maxAtlasEdge`
+ *
+ *  This function assumes that `spatialDimsZYX` has already been appropriately scaled to match `loadSpec`'s `subregion`.
+ */
+function pickLevelToLoadUnscaled(loadSpec, spatialDimsZYX) {
+  var _loadSpec$scaleLevelB, _loadSpec$multiscaleL;
+  var optimalLevel = estimateLevelForAtlas(spatialDimsZYX, loadSpec.maxAtlasEdge);
+  var levelToLoad = Math.max(optimalLevel + ((_loadSpec$scaleLevelB = loadSpec.scaleLevelBias) !== null && _loadSpec$scaleLevelB !== void 0 ? _loadSpec$scaleLevelB : 0), (_loadSpec$multiscaleL = loadSpec.multiscaleLevel) !== null && _loadSpec$multiscaleL !== void 0 ? _loadSpec$multiscaleL : 0);
+  return Math.max(0, Math.min(spatialDimsZYX.length - 1, levelToLoad));
+}
+
+/**
+ * Picks the best scale level to load based on scale level dimensions and a `LoadSpec`. This calls
+ * `estimateLevelForAtlas` and accounts for all properties of `LoadSpec` considered by
+ * `pickLevelToLoadUnscaled`, and additionally scales the dimensions of the scale levels to account for the
+ * `LoadSpec`'s `subregion` property.
+ */
+function pickLevelToLoad(loadSpec, spatialDimsZYX) {
+  var scaledDims = scaleMultipleDimsToSubregion(loadSpec.subregion, spatialDimsZYX);
+  return pickLevelToLoadUnscaled(loadSpec, scaledDims);
+}
 
 /** Given the size of a volume in pixels, convert a `Box3` in the 0-1 range to pixels */
 function convertSubregionToPixels(region, size) {
@@ -9782,7 +9891,7 @@ function convertSubregionToPixels(region, size) {
   if (min.z === max.z && min.z < size.z) {
     max.z += 1;
   }
-  return new three__WEBPACK_IMPORTED_MODULE_1__.Box3(min, max);
+  return new three__WEBPACK_IMPORTED_MODULE_2__.Box3(min, max);
 }
 
 /**
@@ -9790,10 +9899,10 @@ function convertSubregionToPixels(region, size) {
  * and 1). i.e. if `container`'s range on the X axis is 0-4 and `region`'s is 0.25-0.5, the result will have range 1-2.
  */
 function composeSubregion(region, container) {
-  var size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3());
+  var size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3());
   var min = region.min.clone().multiply(size).add(container.min);
   var max = region.max.clone().multiply(size).add(container.min);
-  return new three__WEBPACK_IMPORTED_MODULE_1__.Box3(min, max);
+  return new three__WEBPACK_IMPORTED_MODULE_2__.Box3(min, max);
 }
 function isEmpty(obj) {
   for (var key in obj) {
@@ -10386,18 +10495,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   matchSourceScaleLevels: () => (/* binding */ matchSourceScaleLevels),
 /* harmony export */   orderByDimension: () => (/* binding */ orderByDimension),
 /* harmony export */   orderByTCZYX: () => (/* binding */ orderByTCZYX),
-/* harmony export */   pickLevelToLoad: () => (/* binding */ pickLevelToLoad),
 /* harmony export */   remapAxesToTCZYX: () => (/* binding */ remapAxesToTCZYX)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
 
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
-
-
 /** Turns `axesTCZYX` into the number of dimensions in the array */
 var getDimensionCount = function getDimensionCount(_ref) {
   var _ref2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_ref, 3),
@@ -10423,25 +10527,6 @@ function remapAxesToTCZYX(axes) {
     console.error("ERROR: zarr loader expects a y and an x axis.");
   }
   return axesTCZYX;
-}
-
-/**
- * Picks the best scale level to load based on scale level dimensions, a max atlas size, and a `LoadSpec`.
- * This works like `estimateLevelForAtlas` but factors in `LoadSpec`'s `subregion` property (shrinks the size of the
- * data, maybe enough to allow loading a higher level) and its `multiscaleLevel` property (sets a max scale level).
- */
-function pickLevelToLoad(loadSpec, spatialDimsZYX) {
-  var _loadSpec$multiscaleL;
-  var size = loadSpec.subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3());
-  var dims = spatialDimsZYX.map(function (_ref3) {
-    var _ref4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_ref3, 3),
-      z = _ref4[0],
-      y = _ref4[1],
-      x = _ref4[2];
-    return [Math.max(z * size.z, 1), Math.max(y * size.y, 1), Math.max(x * size.x, 1)];
-  });
-  var optimalLevel = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__.estimateLevelForAtlas)(dims);
-  return Math.max(optimalLevel, (_loadSpec$multiscaleL = loadSpec.multiscaleLevel) !== null && _loadSpec$multiscaleL !== void 0 ? _loadSpec$multiscaleL : 0);
 }
 
 /** Reorder an array of values [T, C, Z, Y, X] to the given dimension order */
