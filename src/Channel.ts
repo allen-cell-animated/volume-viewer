@@ -192,11 +192,11 @@ export default class Channel {
       NearestFilter
     );
     this.dataTexture.needsUpdate = true;
-    this.dataTexture.onUpdate = (): void => {
-      console.log("data texture updated", this.name, this.dtype, w, h, format, dataType);
-    };
+    // this.dataTexture.onUpdate = (): void => {
+    //   console.log("data texture updated", this.name, this.dtype, w, h, format, dataType);
+    // };
 
-    console.log("rebuilding data texture ", this.name, this.dtype, w, h, format, dataType);
+    // console.log("rebuilding data texture ", this.name, this.dtype, w, h, format, dataType);
   }
 
   // give the channel fresh data and initialize from that data

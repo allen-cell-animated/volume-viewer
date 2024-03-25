@@ -1,45 +1,71 @@
 import type { TypedArray, NumberType } from "./types.js";
 
+const NBINS = 256;
+
+function calculateHistogramSimplified(arr, numBins = 0): Uint32Array {
+  // calculate min and max of arr
+  let min = arr[0];
+  let max = arr[0];
+  for (let i = 1; i < arr.length; i++) {
+    if (arr[i] < min) {
+      min = arr[i];
+    } else if (arr[i] > max) {
+      max = arr[i];
+    }
+  }
+  const dataCopy = arr;
+
+  const bins = new Uint32Array(numBins ? numBins : 0).fill(0);
+
+  const binSize = (max - min) / numBins === 0 ? 1 : (max - min) / numBins;
+  for (let i = 0; i < dataCopy.length; i++) {
+    const item = dataCopy[i];
+    let binIndex = Math.floor((item - min) / binSize);
+    // for values that lie exactly on last bin we need to subtract one
+    if (binIndex === numBins) {
+      binIndex--;
+    }
+    bins[binIndex]++;
+  }
+
+  return bins;
+}
+
 /**
  * Builds a histogram with 256 bins from a data array. Assume data is 8 bit single channel grayscale.
  * @class
  * @param {Array.<number>} data
  */
 export default class Histogram {
+  // no more than 2^32 pixels of any one intensity in the data!?!?!
   private bins: Uint32Array;
-  private dataMin: number;
-  private dataMax: number;
-  private nonzeroPixelCount: number;
+  private dataMinBin: number;
+  private dataMaxBin: number;
+  private pixelCount: number;
   public maxBin: number;
 
   constructor(data: TypedArray<NumberType>) {
-    // no more than 2^32 pixels of any one intensity in the data!?!?!
-    this.bins = new Uint32Array(256);
-    this.bins.fill(0);
-    this.dataMin = 255;
-    this.dataMax = 0;
+    this.dataMinBin = 0;
+    this.dataMaxBin = 0;
     this.maxBin = 0;
 
     // build up the histogram
-    for (let i = 0; i < data.length; ++i) {
-      this.bins[data[i]]++;
-    }
+    this.bins = calculateHistogramSimplified(data, NBINS);
     // track the first and last nonzero bins with at least 1 sample
     for (let i = 1; i < this.bins.length; i++) {
       if (this.bins[i] > 0) {
-        this.dataMin = i;
+        this.dataMinBin = i;
         break;
       }
     }
     for (let i = this.bins.length - 1; i >= 1; i--) {
       if (this.bins[i] > 0) {
-        this.dataMax = i;
+        this.dataMaxBin = i;
         break;
       }
     }
 
-    // total number of pixels minus the number of zero pixels
-    this.nonzeroPixelCount = data.length - this.bins[0];
+    this.pixelCount = data.length;
 
     // get the bin with the most frequently occurring NONZERO value
     this.maxBin = 1;
@@ -57,7 +83,7 @@ export default class Histogram {
    * @return {number}
    */
   getMin(): number {
-    return this.dataMin;
+    return this.dataMinBin;
   }
 
   /**
@@ -65,7 +91,7 @@ export default class Histogram {
    * @return {number}
    */
   getMax(): number {
-    return this.dataMax;
+    return this.dataMaxBin;
   }
 
   getNumBins(): number {
@@ -81,8 +107,7 @@ export default class Histogram {
    * @param {number} pct
    */
   findBinOfPercentile(pct: number): number {
-    const pixcount = this.nonzeroPixelCount + this.bins[0];
-    const limit = pixcount * pct;
+    const limit = this.pixelCount * pct;
 
     let i = 0;
     let count = 0;
@@ -97,7 +122,7 @@ export default class Histogram {
 
   // Generate a 10% / 90% lookup table
   findBestFitBins(): [number, number] {
-    const pixcount = this.nonzeroPixelCount;
+    const pixcount = this.pixelCount;
     //const pixcount = this.imgData.data.length;
     const limit = pixcount / 10;
 
@@ -126,7 +151,7 @@ export default class Histogram {
   // Generate a lookup table attempting to replicate ImageJ's "Auto" button
   findAutoIJBins(): [number, number] {
     const AUTO_THRESHOLD = 5000;
-    const pixcount = this.nonzeroPixelCount;
+    const pixcount = this.pixelCount;
     //  const pixcount = this.imgData.data.length;
     const limit = pixcount / 10;
     const threshold = pixcount / AUTO_THRESHOLD;
