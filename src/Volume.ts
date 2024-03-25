@@ -338,9 +338,10 @@ export default class Volume {
     atlasdata: TypedArray<NumberType>,
     atlaswidth: number,
     atlasheight: number,
+    range: [number, number],
     dtype: NumberType = "uint8"
   ): void {
-    this.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight, dtype);
+    this.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight, dtype, range[0], range[1]);
     const { x, y, z } = this.imageInfo.subregionSize;
     this.channels[channelIndex].unpackVolumeFromAtlas(x, y, z);
     this.onChannelLoaded([channelIndex]);

@@ -201,7 +201,14 @@ export default class Channel {
 
   // give the channel fresh data and initialize from that data
   // data is formatted as a texture atlas where each tile is a z slice of the volume
-  public setBits(bitsArray: TypedArray<NumberType>, w: number, h: number, dtype: NumberType): void {
+  public setBits(
+    bitsArray: TypedArray<NumberType>,
+    w: number,
+    h: number,
+    dtype: NumberType,
+    rawMin: number,
+    rawMax: number
+  ): void {
     this.dtype = dtype;
     this.imgData = { data: bitsArray, width: w, height: h };
 
@@ -210,9 +217,8 @@ export default class Channel {
     this.loaded = true;
     this.histogram = new Histogram(bitsArray);
 
-    const [hmin, hmax] = this.histogram.findAutoIJBins();
-    const lut = new Lut().createFromMinMax(hmin, hmax);
-    this.setLut(lut.lut);
+    // update from current histogram?
+    this.setRawDataRange(rawMin, rawMax);
   }
 
   // let's rearrange this.imgData.data into a 3d array.

@@ -155,7 +155,7 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
         const data = dataArrays[i];
         const range = ranges[i];
         if (atlasDims) {
-          volume.setChannelDataFromAtlas(channelIndex, data, atlasDims[0], atlasDims[1], dtype);
+          volume.setChannelDataFromAtlas(channelIndex, data, atlasDims[0], atlasDims[1], range, dtype);
         } else {
           volume.setChannelDataFromVolume(channelIndex, data, range, dtype);
         }
