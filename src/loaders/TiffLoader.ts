@@ -176,10 +176,12 @@ class TiffLoader extends ThreadableVolumeLoader {
       };
       const worker = new Worker(new URL("../workers/FetchTiffWorker", import.meta.url));
       worker.onmessage = (e) => {
-        const u8 = e.data.data;
-        const channel = e.data.channel;
+        const dataArray = e.data.data;
+        const channelIndex = e.data.channel;
         const range = e.data.range;
-        onData([channel], ["uint8"], [u8], [range]);
+        const dtype = e.data.dtype;
+        console.log("got data for channel: min max", channelIndex, range[0], range[1]);
+        onData([channelIndex], [dtype], [dataArray], [range]);
         worker.terminate();
       };
       worker.onerror = (e) => {

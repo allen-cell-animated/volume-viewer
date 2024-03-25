@@ -247,7 +247,7 @@ export default class FusedChannelData {
         //mat.uniforms.lutMinMax.value = this.getMinMax(channels[chIndex]);
         mat.uniforms.srcTexture.value = channels[chIndex].dataTexture;
         this.fuseScene.add(new Mesh(this.fuseGeometry, mat));
-        console.log("fuse channel min and max", channels[chIndex].rawMin, channels[chIndex].rawMax);
+        console.log("fuse channel min and max", chIndex, channels[chIndex].rawMin, channels[chIndex].rawMax);
       }
     }
     renderer.setRenderTarget(this.fuseRenderTarget);
