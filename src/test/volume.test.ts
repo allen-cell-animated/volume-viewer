@@ -67,7 +67,7 @@ function checkChannelDataConstruction(c: Channel, index: number, imgdata: ImageI
   const atlasHeight = imgdata.atlasTileDims.y * imgdata.subregionSize.y;
   expect(c.imgData.width).to.equal(atlasWidth);
   expect(c.imgData.height).to.equal(atlasHeight);
-  expect(c.imgData.data).to.be.a("Uint8ClampedArray");
+  expect(c.imgData.data).to.be.a("Uint8Array");
   expect(c.imgData.data.length).to.equal(atlasWidth * atlasHeight);
   expect(c.lut).to.be.a("Uint8Array");
   expect(c.lut.length).to.equal(LUT_ARRAY_LENGTH);
