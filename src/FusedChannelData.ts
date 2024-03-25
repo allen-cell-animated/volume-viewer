@@ -18,13 +18,37 @@ import {
   MaxEquation,
   Texture,
   LinearFilter,
-  WebGLUtils,
   Vector2,
 } from "three";
 
 import Channel from "./Channel.js";
 import { fuseShaderSrc, fuseVertexShaderSrc } from "./constants/fuseShader.js";
-import type { FuseChannel } from "./types.js";
+import type { FuseChannel, NumberType } from "./types.js";
+
+// these values must match the shader FORMAT defines in fuseShader
+enum ShaderDtype {
+  FLOAT = 1,
+  UINT = 2,
+  INT = 3,
+}
+// 1 for float, 2 for uint, 3 for int
+function getShaderType(dtype: NumberType): ShaderDtype {
+  switch (dtype) {
+    case "float32":
+      return ShaderDtype.FLOAT;
+    case "uint8":
+    case "uint16":
+    case "uint32":
+      return ShaderDtype.UINT;
+    case "int8":
+    case "int16":
+    case "int32":
+      return ShaderDtype.INT;
+    default:
+      throw new Error("Unsupported data type for fuse shader");
+      return ShaderDtype.FLOAT;
+  }
+}
 
 // This is the owner of the fused RGBA volume texture atlas, and the mask texture atlas.
 // This module is responsible for updating the fused texture, given the read-only volume channel data.
@@ -38,7 +62,7 @@ export default class FusedChannelData {
   private channelsDataToFuse: Channel[];
 
   private fuseGeometry: PlaneGeometry;
-  private fuseMaterial: ShaderMaterial;
+  private fuseMaterial: ShaderMaterial[];
   private fuseMaterialProps: Partial<ShaderMaterialParameters>;
   private fuseScene: Scene;
   private quadCamera: OrthographicCamera;
@@ -84,7 +108,6 @@ export default class FusedChannelData {
     this.fuseMaterialProps = {
       vertexShader: fuseVertexShaderSrc,
       fragmentShader: fuseShaderSrc,
-      defines: { FORMAT: 2 }, // 1 for float/rgba8, 2 for uint, 3 for int
       depthTest: false,
       depthWrite: false,
       blending: CustomBlending,
@@ -95,18 +118,47 @@ export default class FusedChannelData {
     // this exists to keep one reference alive
     // to make sure we do not fully delete and re-create
     // a shader every time.
-    this.fuseMaterial = new ShaderMaterial({
-      uniforms: {
-        lutSampler: {
-          value: null,
+    this.fuseMaterial = [
+      new ShaderMaterial({
+        uniforms: {
+          lutSampler: {
+            value: null,
+          },
+          lutMinMax: { value: new Vector2(0, 255) },
+          srcTexture: {
+            value: null,
+          },
         },
-        lutMinMax: { value: new Vector2(0, 255) },
-        srcTexture: {
-          value: null,
+        ...this.fuseMaterialProps,
+        defines: { FORMAT: ShaderDtype.FLOAT },
+      }),
+      new ShaderMaterial({
+        uniforms: {
+          lutSampler: {
+            value: null,
+          },
+          lutMinMax: { value: new Vector2(0, 255) },
+          srcTexture: {
+            value: null,
+          },
         },
-      },
-      ...this.fuseMaterialProps,
-    });
+        ...this.fuseMaterialProps,
+        defines: { FORMAT: ShaderDtype.UINT },
+      }),
+      new ShaderMaterial({
+        uniforms: {
+          lutSampler: {
+            value: null,
+          },
+          lutMinMax: { value: new Vector2(0, 255) },
+          srcTexture: {
+            value: null,
+          },
+        },
+        ...this.fuseMaterialProps,
+        defines: { FORMAT: ShaderDtype.INT },
+      }),
+    ];
     this.fuseGeometry = new PlaneGeometry(2, 2);
   }
 
@@ -161,32 +213,25 @@ export default class FusedChannelData {
       }
     });
     this.fuseScene.clear();
-    const util = new WebGLUtils(renderer.getContext(), renderer.extensions, renderer.capabilities);
     for (let i = 0; i < combination.length; ++i) {
       if (combination[i].rgbColor) {
         const chIndex = combination[i].chIndex;
         // add a draw call per channel here.
         // TODO create these at channel creation time!
+        const shaderType = getShaderType(channels[chIndex].dtype);
         const mat = new ShaderMaterial({
           uniforms: {
             lutSampler: {
               value: channels[chIndex].lutTexture,
             },
-            //lutMinMax: { value: new Vector2(0, 255) },
-            //            lutMinMax: { value: new Vector2(0, channels[chIndex].rawMax) },
             lutMinMax: { value: new Vector2(channels[chIndex].rawMin, channels[chIndex].rawMax) },
             srcTexture: {
               value: channels[chIndex].dataTexture,
             },
           },
           ...this.fuseMaterialProps,
+          defines: { FORMAT: shaderType },
         });
-        console.log(
-          "fuse",
-          chIndex,
-          util.convert(channels[chIndex].dataTexture.type),
-          util.convert(channels[chIndex].dataTexture.format)
-        );
         this.fuseScene.add(new Mesh(this.fuseGeometry, mat));
       }
     }
