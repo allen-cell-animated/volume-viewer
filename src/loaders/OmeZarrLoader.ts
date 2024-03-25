@@ -74,6 +74,7 @@ function convertChannel(
       f32[i] = channelData[i];
     }
     dtype = "float32";
+    channelData = f32;
   }
 
   return [channelData, dtype, min, max];
