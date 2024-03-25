@@ -148,11 +148,11 @@ export default class Channel {
     switch (this.dtype) {
       case "uint8":
         dataType = UnsignedByteType;
-        format = RedFormat;
+        format = RedIntegerFormat;
         break;
       case "int8":
         dataType = ByteType;
-        format = RedFormat;
+        format = RedIntegerFormat;
         break;
       case "uint16":
         dataType = UnsignedShortType;

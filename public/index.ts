@@ -630,6 +630,13 @@ function showChannelUI(volume: Volume) {
       isosurface: false,
       // first 3 channels for starters
       enabled: i < 3,
+      reset: (function (j) {
+        return function () {
+          const lut = new Lut().createFullRange();
+          volume.setLut(j, lut.lut);
+          view3D.updateLuts(volume);
+        };
+      })(i),
       // this doesn't give good results currently but is an example of a per-channel button callback
       autoIJ: (function (j) {
         return function () {
@@ -799,6 +806,7 @@ function showChannelUI(volume: Volume) {
           };
         })(i)
       );
+    f.add(myState.channelGui[i], "reset");
     f.add(myState.channelGui[i], "autoIJ");
     f.add(myState.channelGui[i], "auto0");
     f.add(myState.channelGui[i], "bestFit");

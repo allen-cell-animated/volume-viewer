@@ -19,6 +19,7 @@ import {
   Texture,
   LinearFilter,
   WebGLUtils,
+  Vector2,
 } from "three";
 
 import Channel from "./Channel.js";
@@ -83,6 +84,7 @@ export default class FusedChannelData {
     this.fuseMaterialProps = {
       vertexShader: fuseVertexShaderSrc,
       fragmentShader: fuseShaderSrc,
+      defines: { FORMAT: 2 }, // 1 for float/rgba8, 2 for uint, 3 for int
       depthTest: false,
       depthWrite: false,
       blending: CustomBlending,
@@ -98,6 +100,7 @@ export default class FusedChannelData {
         lutSampler: {
           value: null,
         },
+        lutMinMax: { value: new Vector2(0, 255) },
         srcTexture: {
           value: null,
         },
@@ -169,6 +172,9 @@ export default class FusedChannelData {
             lutSampler: {
               value: channels[chIndex].lutTexture,
             },
+            //lutMinMax: { value: new Vector2(0, 255) },
+            //            lutMinMax: { value: new Vector2(0, channels[chIndex].rawMax) },
+            lutMinMax: { value: new Vector2(channels[chIndex].rawMin, channels[chIndex].rawMax) },
             srcTexture: {
               value: channels[chIndex].dataTexture,
             },
