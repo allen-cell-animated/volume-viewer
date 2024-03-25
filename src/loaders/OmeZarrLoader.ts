@@ -46,7 +46,9 @@ import type {
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
 // returns the converted data and the original min and max values (which have been remapped to 0 and 255)
-function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): [Uint8Array, number, number] {
+function convertChannel(
+  channelData: zarr.TypedArray<zarr.NumberDataType>
+): [zarr.TypedArray<zarr.NumberDataType>, number, number] {
   // get min and max
   let min = channelData[0];
   let max = channelData[0];
@@ -60,18 +62,18 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): [Uin
     }
   }
 
-  if (channelData instanceof Uint8Array) {
-    return [channelData as Uint8Array, min, max];
-  }
+  // if (channelData instanceof Uint8Array) {
+  //   return [channelData as Uint8Array, min, max];
+  // }
 
-  // normalize and convert to u8
-  const u8 = new Uint8Array(channelData.length);
-  const range = max - min;
-  for (let i = 0; i < channelData.length; i++) {
-    u8[i] = ((channelData[i] - min) / range) * 255;
-  }
+  // // normalize and convert to u8
+  // const u8 = new Uint8Array(channelData.length);
+  // const range = max - min;
+  // for (let i = 0; i < channelData.length; i++) {
+  //   u8[i] = ((channelData[i] - min) / range) * 255;
+  // }
 
-  return [u8, min, max];
+  return [channelData, min, max];
 }
 
 export type ZarrLoaderFetchOptions = {
@@ -412,7 +414,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     };
 
     const resultChannelIndices: number[] = [];
-    const resultChannelData: Uint8Array[] = [];
+    const resultChannelData: zarr.TypedArray<zarr.NumberDataType>[] = [];
+    const resultChannelDtype: zarr.NumberDataType[] = [];
     const resultChannelRanges: [number, number][] = [];
 
     const channelPromises = channelIndexes.map(async (ch) => {
@@ -425,11 +428,12 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
         const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } });
         const converted = convertChannel(result.data);
         if (syncChannels) {
+          resultChannelDtype.push(level.dtype);
           resultChannelData.push(converted[0]);
           resultChannelIndices.push(ch);
           resultChannelRanges.push([converted[1], converted[2]]);
         } else {
-          onData([ch], [converted[0]], [[converted[1], converted[2]]]);
+          onData([ch], [level.dtype], [converted[0]], [[converted[1], converted[2]]]);
         }
       } catch (e) {
         // TODO: verify that cancelling requests in progress doesn't leak memory
@@ -450,7 +454,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     Promise.all(channelPromises).then(() => {
       if (syncChannels) {
-        onData(resultChannelIndices, resultChannelData, resultChannelRanges);
+        onData(resultChannelIndices, resultChannelDtype, resultChannelData, resultChannelRanges);
       }
       this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
     });

@@ -1,6 +1,7 @@
 import { Box3, Vector3 } from "three";
 
 import Volume, { ImageInfo } from "../Volume.js";
+import { TypedArray, NumberType } from "../types.js";
 import { buildDefaultMetadata } from "./VolumeLoaderUtils.js";
 import { PrefetchDirection } from "./zarr_utils/types.js";
 
@@ -44,13 +45,15 @@ export type PerChannelCallback = (volume: Volume, channelIndex: number) => void;
 /**
  * @callback RawChannelDataCallback - allow lists of channel indices and data arrays to be passed to the callback
  * @param {number[]} channelIndex - The indices of the channels that were loaded
- * @param {Uint8Array[]} data - The raw data for each channel (renormalized to 0-255 range)
+ * @param {NumberType[]} dtype - The data type of the data arrays
+ * @param {TypedArray<NumberType>[]} data - The raw data for each channel (renormalized to 0-255 range)
  * @param {[number, number][]} ranges - The min and max values for each channel in their original range
  * @param {[number, number]} atlasDims - The dimensions of the atlas, if the data is in an atlas format
  */
 export type RawChannelDataCallback = (
   channelIndex: number[],
-  data: Uint8Array[],
+  dtype: NumberType[],
+  data: TypedArray<NumberType>[],
   ranges: [number, number][],
   atlasDims?: [number, number]
 ) => void;
@@ -145,15 +148,16 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
     loadSpecOverride?: LoadSpec,
     onChannelLoaded?: PerChannelCallback
   ): Promise<void> {
-    const onChannelData: RawChannelDataCallback = (channelIndices, dataArrays, ranges, atlasDims) => {
+    const onChannelData: RawChannelDataCallback = (channelIndices, dtypes, dataArrays, ranges, atlasDims) => {
       for (let i = 0; i < channelIndices.length; i++) {
         const channelIndex = channelIndices[i];
+        const dtype = dtypes[i];
         const data = dataArrays[i];
         const range = ranges[i];
         if (atlasDims) {
-          volume.setChannelDataFromAtlas(channelIndex, data, atlasDims[0], atlasDims[1]);
+          volume.setChannelDataFromAtlas(channelIndex, data, atlasDims[0], atlasDims[1], dtype);
         } else {
-          volume.setChannelDataFromVolume(channelIndex, data, range);
+          volume.setChannelDataFromVolume(channelIndex, data, range, dtype);
         }
         onChannelLoaded?.(volume, channelIndex);
       }

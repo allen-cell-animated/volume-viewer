@@ -1,3 +1,5 @@
+import type { TypedArray, NumberType } from "./types.js";
+
 /**
  * Builds a histogram with 256 bins from a data array. Assume data is 8 bit single channel grayscale.
  * @class
@@ -10,7 +12,7 @@ export default class Histogram {
   private nonzeroPixelCount: number;
   public maxBin: number;
 
-  constructor(data: Uint8Array) {
+  constructor(data: TypedArray<NumberType>) {
     // no more than 2^32 pixels of any one intensity in the data!?!?!
     this.bins = new Uint32Array(256);
     this.bins.fill(0);

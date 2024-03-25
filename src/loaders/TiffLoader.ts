@@ -179,7 +179,7 @@ class TiffLoader extends ThreadableVolumeLoader {
         const u8 = e.data.data;
         const channel = e.data.channel;
         const range = e.data.range;
-        onData([channel], [u8], [range]);
+        onData([channel], ["uint8"], [u8], [range]);
         worker.terminate();
       };
       worker.onerror = (e) => {

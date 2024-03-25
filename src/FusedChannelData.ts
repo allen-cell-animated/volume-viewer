@@ -18,6 +18,7 @@ import {
   MaxEquation,
   Texture,
   LinearFilter,
+  WebGLUtils,
 } from "three";
 
 import Channel from "./Channel.js";
@@ -157,6 +158,7 @@ export default class FusedChannelData {
       }
     });
     this.fuseScene.clear();
+    const util = new WebGLUtils(renderer.getContext(), renderer.extensions, renderer.capabilities);
     for (let i = 0; i < combination.length; ++i) {
       if (combination[i].rgbColor) {
         const chIndex = combination[i].chIndex;
@@ -173,7 +175,12 @@ export default class FusedChannelData {
           },
           ...this.fuseMaterialProps,
         });
-
+        console.log(
+          "fuse",
+          chIndex,
+          util.convert(channels[chIndex].dataTexture.type),
+          util.convert(channels[chIndex].dataTexture.format)
+        );
         this.fuseScene.add(new Mesh(this.fuseGeometry, mat));
       }
     }
@@ -195,9 +202,13 @@ export default class FusedChannelData {
     if (!channel || !channel.loaded) {
       return false;
     }
-    const datacopy = channel.imgData.data.buffer.slice(0);
+    // binarize the data
+    const datacopy = new Uint8ClampedArray(channel.imgData.data.length);
+    for (let i = 0; i < channel.imgData.data.length; i++) {
+      datacopy[i] = channel.imgData.data[i] > 0 ? 255 : 0;
+    }
     const maskData = {
-      data: new Uint8ClampedArray(datacopy),
+      data: datacopy,
       width: this.width,
       height: this.height,
       colorSpace: "srgb" as PredefinedColorSpace,

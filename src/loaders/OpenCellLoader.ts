@@ -77,7 +77,7 @@ class OpenCellLoader extends ThreadableVolumeLoader {
 
     const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
     const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
-    JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, data) => onData(ch, data, [[0, 255]], [w, h]));
+    JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, dtype, data) => onData(ch, dtype, data, [[0, 255]], [w, h]));
     return Promise.resolve({});
   }
 }

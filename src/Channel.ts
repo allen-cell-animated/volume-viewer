@@ -1,10 +1,28 @@
-import { DataTexture, RedFormat, UnsignedByteType, RGBAFormat, LinearFilter, NearestFilter } from "three";
+import {
+  DataTexture,
+  LuminanceFormat,
+  RedFormat,
+  RedIntegerFormat,
+  UnsignedByteType,
+  ByteType,
+  FloatType,
+  IntType,
+  UnsignedIntType,
+  ShortType,
+  UnsignedShortType,
+  RGBAFormat,
+  LinearFilter,
+  NearestFilter,
+  UVMapping,
+  ClampToEdgeWrapping,
+} from "three";
 import Histogram from "./Histogram.js";
 import { Lut, LUT_ARRAY_LENGTH, remapLut } from "./Lut.js";
+import { TypedArray, NumberType, ARRAY_CONSTRUCTORS } from "./types.js";
 
 interface ChannelImageData {
   /** Returns the one-dimensional array containing the data in RGBA order, as integers in the range 0 to 255. */
-  readonly data: Uint8ClampedArray;
+  readonly data: TypedArray<NumberType>;
   /** Returns the actual dimensions of the data in the ImageData object, in pixels. */
   readonly height: number;
   /** Returns the actual dimensions of the data in the ImageData object, in pixels. */
@@ -14,8 +32,9 @@ interface ChannelImageData {
 // Data and processing for a single channel
 export default class Channel {
   public loaded: boolean;
+  public dtype: NumberType;
   public imgData: ChannelImageData;
-  public volumeData: Uint8Array;
+  public volumeData: TypedArray<NumberType>;
   public name: string;
   public histogram: Histogram;
   public lut: Uint8Array;
@@ -29,7 +48,8 @@ export default class Channel {
 
   constructor(name: string) {
     this.loaded = false;
-    this.imgData = { data: new Uint8ClampedArray(), width: 0, height: 0 };
+    this.dtype = "uint8";
+    this.imgData = { data: new Uint8Array(), width: 0, height: 0 };
     this.rawMin = 0;
     this.rawMax = 0;
 
@@ -119,23 +139,71 @@ export default class Channel {
     return this.imgData.data[offset];
   }
 
-  private rebuildDataTexture(data: Uint8ClampedArray, w: number, h: number): void {
+  private rebuildDataTexture(data: TypedArray<NumberType>, w: number, h: number): void {
     if (this.dataTexture) {
       this.dataTexture.dispose();
     }
-    this.dataTexture = new DataTexture(data, w, h);
-    this.dataTexture.format = RedFormat;
-    this.dataTexture.type = UnsignedByteType;
-    this.dataTexture.magFilter = NearestFilter;
-    this.dataTexture.minFilter = NearestFilter;
-    this.dataTexture.generateMipmaps = false;
+    let format = LuminanceFormat;
+    let dataType = UnsignedByteType;
+    switch (this.dtype) {
+      case "uint8":
+        dataType = UnsignedByteType;
+        format = RedFormat;
+        break;
+      case "int8":
+        dataType = ByteType;
+        format = RedFormat;
+        break;
+      case "uint16":
+        dataType = UnsignedShortType;
+        format = RedIntegerFormat;
+        break;
+      case "int16":
+        dataType = ShortType;
+        format = RedIntegerFormat;
+        break;
+      case "uint32":
+        dataType = UnsignedIntType;
+        format = RedIntegerFormat;
+        break;
+      case "int32":
+        dataType = IntType;
+        format = RedIntegerFormat;
+        break;
+      case "float32":
+        dataType = FloatType;
+        format = RedFormat;
+        break;
+      default:
+        console.log("unsupported dtype for channel data", this.dtype);
+        break;
+    }
+
+    this.dataTexture = new DataTexture(
+      data,
+      w,
+      h,
+      format,
+      dataType,
+      UVMapping,
+      ClampToEdgeWrapping,
+      ClampToEdgeWrapping,
+      NearestFilter,
+      NearestFilter
+    );
     this.dataTexture.needsUpdate = true;
+    this.dataTexture.onUpdate = (): void => {
+      console.log("data texture updated", this.name, this.dtype, w, h, format, dataType);
+    };
+
+    console.log("rebuilding data texture ", this.name, this.dtype, w, h, format, dataType);
   }
 
   // give the channel fresh data and initialize from that data
   // data is formatted as a texture atlas where each tile is a z slice of the volume
-  public setBits(bitsArray: Uint8Array, w: number, h: number): void {
-    this.imgData = { data: new Uint8ClampedArray(bitsArray.buffer), width: w, height: h };
+  public setBits(bitsArray: TypedArray<NumberType>, w: number, h: number, dtype: NumberType): void {
+    this.dtype = dtype;
+    this.imgData = { data: bitsArray, width: w, height: h };
 
     this.rebuildDataTexture(this.imgData.data, w, h);
 
@@ -179,17 +247,19 @@ export default class Channel {
 
   // give the channel fresh volume data and initialize from that data
   public setFromVolumeData(
-    bitsArray: Uint8Array,
+    bitsArray: TypedArray<NumberType>,
     vx: number,
     vy: number,
     vz: number,
     ax: number,
     ay: number,
     rawMin = 0,
-    rawMax = 255
+    rawMax = 255,
+    dtype: NumberType
   ): void {
     this.dims = [vx, vy, vz];
     this.volumeData = bitsArray;
+    this.dtype = dtype;
     // TODO FIXME performance hit for shuffling the data and storing 2 versions of it (could do this in worker at least?)
     this.packToAtlas(vx, vy, vz, ax, ay);
     this.loaded = true;
@@ -211,10 +281,11 @@ export default class Channel {
       console.log(ax, ay, vx, vy, vz);
     }
 
+    const ctor = ARRAY_CONSTRUCTORS[this.dtype];
     this.imgData = {
       width: ax,
       height: ay,
-      data: new Uint8ClampedArray(ax * ay),
+      data: new ctor(ax * ay),
     };
     this.imgData.data.fill(0);
 
