@@ -45,10 +45,11 @@ import type {
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
-// returns the converted data and the original min and max values (which have been remapped to 0 and 255)
+// returns the converted data and the original min and max values
 function convertChannel(
-  channelData: zarr.TypedArray<zarr.NumberDataType>
-): [zarr.TypedArray<zarr.NumberDataType>, number, number] {
+  channelData: zarr.TypedArray<zarr.NumberDataType>,
+  dtype: zarr.NumberDataType
+): [zarr.TypedArray<zarr.NumberDataType>, zarr.NumberDataType, number, number] {
   // get min and max
   let min = channelData[0];
   let max = channelData[0];
@@ -66,14 +67,16 @@ function convertChannel(
   //   return [channelData as Uint8Array, min, max];
   // }
 
-  // // normalize and convert to u8
-  // const u8 = new Uint8Array(channelData.length);
-  // const range = max - min;
-  // for (let i = 0; i < channelData.length; i++) {
-  //   u8[i] = ((channelData[i] - min) / range) * 255;
-  // }
+  if (dtype === "float64") {
+    // convert to float32
+    const f32 = new Float32Array(channelData.length);
+    for (let i = 0; i < channelData.length; i++) {
+      f32[i] = channelData[i];
+    }
+    dtype = "float32";
+  }
 
-  return [channelData, min, max];
+  return [channelData, dtype, min, max];
 }
 
 export type ZarrLoaderFetchOptions = {
@@ -426,14 +429,14 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
       try {
         const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } });
-        const converted = convertChannel(result.data);
+        const converted = convertChannel(result.data, level.dtype);
         if (syncChannels) {
-          resultChannelDtype.push(level.dtype);
+          resultChannelDtype.push(converted[1]);
           resultChannelData.push(converted[0]);
           resultChannelIndices.push(ch);
-          resultChannelRanges.push([converted[1], converted[2]]);
+          resultChannelRanges.push([converted[2], converted[3]]);
         } else {
-          onData([ch], [level.dtype], [converted[0]], [[converted[1], converted[2]]]);
+          onData([ch], [converted[1]], [converted[0]], [[converted[2], converted[3]]]);
         }
       } catch (e) {
         // TODO: verify that cancelling requests in progress doesn't leak memory
