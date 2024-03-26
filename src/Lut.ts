@@ -324,7 +324,8 @@ export class Lut {
   }
 
   /**
-   * Generate a lookup table with a different color per intensity value
+   * Generate a lookup table with a different color per intensity value.
+   * This translates to a unique color per histogram bin with more than zero pixels.
    * @return {Lut}
    */
   createLabelColors(histogram: Histogram): Lut {
