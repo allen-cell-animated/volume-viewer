@@ -591,10 +591,13 @@ export default class PathTracedVolume implements VolumeRenderImpl {
         continue;
       }
 
+      const volumeChannel = this.volume.getChannel(ch);
       for (let iz = 0; iz < sz; ++iz) {
         for (let iy = 0; iy < sy; ++iy) {
           for (let ix = 0; ix < sx; ++ix) {
-            data[i + ix * 4 + iy * 4 * sx + iz * 4 * sx * sy] = this.volume.getChannel(ch).getIntensity(ix, iy, iz);
+            // TODO expand to 16-bpp raw intensities?
+            data[i + ix * 4 + iy * 4 * sx + iz * 4 * sx * sy] =
+              255 * volumeChannel.normalizeRaw(volumeChannel.getIntensity(ix, iy, iz));
           }
         }
       }
@@ -630,6 +633,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
       this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, i * LUT_ARRAY_LENGTH);
 
+      // TODO expand to 16-bpp raw intensities?
       this.pathTracingUniforms.gIntensityMax.value.setComponent(
         i,
         this.volume.channels[channel].histogram.getMax() / 255.0

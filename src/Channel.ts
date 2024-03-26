@@ -130,6 +130,10 @@ export default class Channel {
     return this.volumeData[x + y * this.dims[0] + z * (this.dims[0] * this.dims[1])];
   }
 
+  public normalizeRaw(val: number): number {
+    return (val - this.rawMin) / (this.rawMax - this.rawMin);
+  }
+
   // how to index into tiled texture atlas
   public getIntensityFromAtlas(x: number, y: number, z: number): number {
     const numXtiles = this.imgData.width / this.dims[0];
@@ -229,7 +233,8 @@ export default class Channel {
     const volimgdata = this.imgData.data;
 
     this.dims = [x, y, z];
-    this.volumeData = new Uint8Array(x * y * z);
+    const ctor = ARRAY_CONSTRUCTORS[this.dtype];
+    this.volumeData = new ctor(x * y * z);
 
     const numXtiles = this.imgData.width / x;
     const atlasrow = this.imgData.width;
