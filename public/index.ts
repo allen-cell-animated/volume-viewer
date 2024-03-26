@@ -21,6 +21,7 @@ import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
 import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
 import VolumeLoaderContext from "../src/workers/LoadWorkerHandle";
+import { DATARANGE_UINT8 } from "../src/types";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
@@ -848,7 +849,7 @@ function loadImageData(jsonData: ImageInfo, volumeData: Uint8Array[]) {
     // according to jsonData.tile_width*jsonData.tile_height*jsonData.tiles
     // (first row of first plane is the first data in
     // the layout, then second row of first plane, etc)
-    vol.setChannelDataFromVolume(i, volumeData[i]);
+    vol.setChannelDataFromVolume(i, volumeData[i], DATARANGE_UINT8);
 
     setInitialRenderMode();
 
