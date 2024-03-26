@@ -2,7 +2,14 @@ import type { TypedArray, NumberType } from "./types.js";
 
 const NBINS = 256;
 
-function calculateHistogramSimplified(arr, numBins = 0): Uint32Array {
+type HistogramData = {
+  bins: Uint32Array;
+  min: number;
+  max: number;
+  binSize: number;
+};
+
+function calculateHistogram(arr, numBins = 0): HistogramData {
   // calculate min and max of arr
   let min = arr[0];
   let max = arr[0];
@@ -28,7 +35,7 @@ function calculateHistogramSimplified(arr, numBins = 0): Uint32Array {
     bins[binIndex]++;
   }
 
-  return bins;
+  return { bins, min, max, binSize };
 }
 
 /**
@@ -39,6 +46,9 @@ function calculateHistogramSimplified(arr, numBins = 0): Uint32Array {
 export default class Histogram {
   // no more than 2^32 pixels of any one intensity in the data!?!?!
   private bins: Uint32Array;
+  private min: number;
+  private max: number;
+  private binSize: number;
   private dataMinBin: number;
   private dataMaxBin: number;
   private pixelCount: number;
@@ -48,9 +58,15 @@ export default class Histogram {
     this.dataMinBin = 0;
     this.dataMaxBin = 0;
     this.maxBin = 0;
-
+    this.bins = new Uint32Array();
+    this.min = 0;
+    this.max = 0;
     // build up the histogram
-    this.bins = calculateHistogramSimplified(data, NBINS);
+    const hinfo = calculateHistogram(data, NBINS);
+    this.bins = hinfo.bins;
+    this.min = hinfo.min;
+    this.max = hinfo.max;
+    this.binSize = hinfo.binSize;
     // track the first and last nonzero bins with at least 1 sample
     for (let i = 1; i < this.bins.length; i++) {
       if (this.bins[i] > 0) {
@@ -78,6 +94,21 @@ export default class Histogram {
     }
   }
 
+  // return the bin index of the given data value
+  public findBinOfValue(value: number): number {
+    let binIndex = Math.floor((value - this.min) / this.binSize);
+    // for values that lie exactly on last bin we need to subtract one
+    if (binIndex === NBINS) {
+      binIndex--;
+    }
+    return binIndex;
+  }
+  getDataMin(): number {
+    return this.min;
+  }
+  getDataMax(): number {
+    return this.max;
+  }
   /**
    * Return the min data value
    * @return {number}

@@ -329,8 +329,8 @@ export class Lut {
    */
   createLabelColors(histogram: Histogram): Lut {
     const lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
-    // TODO specify type for control point
     const controlPoints: ControlPoint[] = [];
+    // assume zero is No Label
     controlPoints.push({ x: 0, opacity: 0, color: [0, 0, 0] });
     let lastr = 0;
     let lastg = 0;
@@ -341,10 +341,10 @@ export class Lut {
     let b = 0;
     let a = 0;
 
-    // assumes exactly one bin per intensity value?
-    // skip zero!!!
-    for (let i = 1; i < histogram.getNumBins(); ++i) {
-      if (histogram.getBin(i) > 0) {
+    // assumes exactly one color per bin
+    for (let i = 1; i < LUT_ENTRIES; ++i) {
+      const ibin = Math.floor((i / (LUT_ENTRIES - 1)) * histogram.getNumBins());
+      if (histogram.getBin(ibin) > 0) {
         const rgb = getColorByChannelIndex(i);
 
         lut[i * 4 + 0] = rgb[0];
@@ -362,6 +362,7 @@ export class Lut {
         g = 0;
         b = 0;
         a = 0;
+        // lut was initialized to 0 so no need to set it here.
       }
       // if current control point is same as last one don't add it
       if (r !== lastr || g !== lastg || b !== lastb || a !== lasta) {
