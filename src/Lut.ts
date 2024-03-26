@@ -329,7 +329,6 @@ export class Lut {
    */
   createLabelColors(histogram: Histogram): Lut {
     const lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
-    // TODO specify type for control point
     const controlPoints: ControlPoint[] = [];
     controlPoints.push({ x: 0, opacity: 0, color: [0, 0, 0] });
     let lastr = 0;
