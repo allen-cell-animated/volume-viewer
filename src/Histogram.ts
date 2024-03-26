@@ -602,12 +602,7 @@ export function remapLut(lut: Uint8Array, oldMin: number, oldMax: number, newMin
   // Build new lut by sampling from old lut.
   for (let i = 0; i < LUT_ENTRIES; ++i) {
     let iOld = remapDomain(i, 0, LUT_ENTRIES - 1, oldMin, oldMax, newMin, newMax);
-    if (iOld < 0) {
-      iOld = 0;
-    }
-    if (iOld > LUT_ENTRIES - 1) {
-      iOld = LUT_ENTRIES - 1;
-    }
+    iOld = clamp(iOld, 0, LUT_ENTRIES-1);
     // find the indices above and below for interpolation
     const i0 = Math.floor(iOld);
     const i1 = Math.ceil(iOld);
