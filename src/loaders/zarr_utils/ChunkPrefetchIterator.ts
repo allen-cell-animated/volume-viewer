@@ -69,8 +69,8 @@ export default class ChunkPrefetchIterator {
     this.priorityDirectionStates = [];
 
     for (const [direction, start] of extrema.flat().entries()) {
-      const dimension = direction >> 1;
-      const tczyxIndex = dimension + Number(dimension !== 0);
+      const dimension = direction >> 1; // shave off sign bit to get index in TZYX
+      const tczyxIndex = dimension + Number(dimension !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
       let end: number | number[];
       if (direction & 1) {
         // Positive direction - end is either the max coordinate in the fetched set plus the max offset in this
