@@ -343,9 +343,9 @@ export class Lut {
 
     // assumes exactly one color per bin
     for (let i = 1; i < LUT_ENTRIES; ++i) {
-      const ibin = Math.floor((i / (LUT_ENTRIES - 1)) * histogram.getNumBins());
+      const ibin = Math.floor((i / (LUT_ENTRIES - 1)) * (histogram.getNumBins() - 1));
       if (histogram.getBin(ibin) > 0) {
-        const rgb = getColorByChannelIndex(i);
+        const rgb = getColorByChannelIndex(ibin);
 
         lut[i * 4 + 0] = rgb[0];
         lut[i * 4 + 1] = rgb[1];
