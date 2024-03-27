@@ -4,7 +4,7 @@ import Channel from "./Channel.js";
 import Histogram from "./Histogram.js";
 import { getColorByChannelIndex } from "./constants/colors.js";
 import { type IVolumeLoader, LoadSpec, type PerChannelCallback } from "./loaders/IVolumeLoader.js";
-import { estimateLevelForAtlas } from "./loaders/VolumeLoaderUtils.js";
+import { MAX_ATLAS_EDGE, pickLevelToLoadUnscaled } from "./loaders/VolumeLoaderUtils.js";
 import type { NumberType, TypedArray } from "./types.js";
 
 export type ImageInfo = Readonly<{
@@ -173,6 +173,8 @@ export default class Volume {
     this.loadSpec = {
       // Fill in defaults for optional properties
       multiscaleLevel: 0,
+      scaleLevelBias: 0,
+      maxAtlasEdge: MAX_ATLAS_EDGE,
       channels: Array.from({ length: this.imageInfo.numChannels }, (_val, idx) => idx),
       ...loadSpec,
     };
@@ -239,40 +241,66 @@ export default class Volume {
     this.normRegionOffset = subregionOffset.clone().divide(volumeSize);
   }
 
+  /** Returns `true` iff differences between `loadSpec` and `loadSpecRequired` indicate new data *must* be loaded. */
+  private mustLoadNewData(): boolean {
+    return (
+      this.loadSpec.time !== this.loadSpecRequired.time || // time point changed
+      !this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion) || // new subregion not contained in old
+      this.loadSpecRequired.channels.some((channel) => !this.loadSpec.channels.includes(channel)) // new channel(s)
+    );
+  }
+
+  /**
+   * Returns `true` iff differences between `loadSpec` and `loadSpecRequired` indicate a new load *may* get a
+   * different scale level than is currently loaded.
+   *
+   * This checks for changes in properties that *can*, but do not *always*, change the scale level the loader picks.
+   * For example, a smaller `subregion` *may* mean a higher scale level will fit within memory constraints, or it may
+   * not. A higher `scaleLevelBias` *may* nudge the volume into a higher scale level, or we may already be at the max
+   * imposed by `multiscaleLevel`.
+   */
+  private mayLoadNewScaleLevel(): boolean {
+    return (
+      !this.loadSpec.subregion.equals(this.loadSpecRequired.subregion) ||
+      this.loadSpecRequired.maxAtlasEdge !== this.loadSpec.maxAtlasEdge ||
+      this.loadSpecRequired.multiscaleLevel !== this.loadSpec.multiscaleLevel ||
+      this.loadSpecRequired.scaleLevelBias !== this.loadSpec.scaleLevelBias
+    );
+  }
+
   /** Call on any state update that may require new data to be loaded (subregion, enabled channels, time, etc.) */
   async updateRequiredData(required: Partial<LoadSpec>, onChannelLoaded?: PerChannelCallback): Promise<void> {
     this.loadSpecRequired = { ...this.loadSpecRequired, ...required };
-    let noReload =
-      this.loadSpec.time === this.loadSpecRequired.time &&
-      this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion) &&
-      this.loadSpecRequired.channels.every((channel) => this.loadSpec.channels.includes(channel));
+    let shouldReload = this.mustLoadNewData();
 
-    // An update to `subregion` should trigger a reload when the new subregion is not contained in the old one
-    // OR when the new subregion is smaller than the old one by enough that we can load a higher scale level.
-    if (noReload && !this.loadSpec.subregion.equals(this.loadSpecRequired.subregion)) {
-      const currentScale = this.imageInfo.multiscaleLevel;
-      // `LoadSpec.multiscaleLevel`, if specified, forces a cap on the scale level we can load.
-      const minLevel = this.loadSpec.multiscaleLevel ?? 0;
+    // If we're not reloading due to required data changes, check if we should load a new scale level
+    if (!shouldReload && this.mayLoadNewScaleLevel()) {
       // Loaders should cache loaded dimensions so that this call blocks no more than once per valid `LoadSpec`.
       const dims = await this.loader?.loadDims(this.loadSpecRequired);
       if (dims) {
-        const loadableLevel = estimateLevelForAtlas(dims.map(({ shape }) => [shape[2], shape[3], shape[4]]));
-        noReload = currentScale <= Math.max(loadableLevel, minLevel);
+        const dimsZYX = dims.map(({ shape }): [number, number, number] => [shape[2], shape[3], shape[4]]);
+        // Determine which scale level *would* be loaded, and see if it's different than what we have
+        const levelToLoad = pickLevelToLoadUnscaled(this.loadSpecRequired, dimsZYX);
+        shouldReload = this.imageInfo.multiscaleLevel !== levelToLoad;
       }
     }
 
-    // if newly required data is not currently contained in this volume...
-    if (!noReload) {
-      // ...clone `loadSpecRequired` into `loadSpec` and load
-      this.setUnloaded();
-      this.loadSpec = {
-        ...this.loadSpecRequired,
-        subregion: this.loadSpecRequired.subregion.clone(),
-        // preserve multiscale option from original `LoadSpec`, if any
-        multiscaleLevel: this.loadSpec.multiscaleLevel,
-      };
-      this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
+    if (shouldReload) {
+      this.loadNewData(onChannelLoaded);
     }
+  }
+
+  /**
+   * Loads new data as specified in `this.loadSpecRequired`. Clones `loadSpecRequired` into `loadSpec` to indicate
+   * that the data that *must* be loaded is now the data that *has* been loaded.
+   */
+  private loadNewData(onChannelLoaded?: PerChannelCallback): void {
+    this.setUnloaded();
+    this.loadSpec = {
+      ...this.loadSpecRequired,
+      subregion: this.loadSpecRequired.subregion.clone(),
+    };
+    this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
   }
 
   // we calculate the physical size of the volume (voxels*pixel_size)
@@ -356,7 +384,7 @@ export default class Volume {
   setChannelDataFromVolume(
     channelIndex: number,
     volumeData: TypedArray<NumberType>,
-    range: [number, number] = [0, 255],
+    range: [number, number],
     dtype: NumberType = "uint8"
   ): void {
     const { subregionSize, atlasTileDims } = this.imageInfo;

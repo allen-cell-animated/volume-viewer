@@ -151,7 +151,7 @@ export default class Histogram {
     return i;
   }
 
-  // Generate a 10% / 90% lookup table
+  // Find bins at 10th / 90th percentile
   findBestFitBins(): [number, number] {
     const pixcount = this.pixelCount;
     //const pixcount = this.imgData.data.length;
@@ -179,7 +179,7 @@ export default class Histogram {
     return [hmin, hmax];
   }
 
-  // Generate a lookup table attempting to replicate ImageJ's "Auto" button
+  // Find min and max bins attempting to replicate ImageJ's "Auto" button
   findAutoIJBins(): [number, number] {
     const AUTO_THRESHOLD = 5000;
     const pixcount = this.pixelCount;
@@ -211,7 +211,7 @@ export default class Histogram {
     return [hmin, hmax];
   }
 
-  // Generate a lookup table using a percentile of the most commonly occurring value
+  // Find min and max bins using a percentile of the most commonly occurring value
   findAutoMinMax(): [number, number] {
     // simple linear mapping cutting elements with small appearence
     // get 10% threshold

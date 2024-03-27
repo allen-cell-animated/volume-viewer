@@ -7,6 +7,14 @@ import { PrefetchDirection } from "./zarr_utils/types.js";
 
 export class LoadSpec {
   time = 0;
+  /** The max size of a volume atlas that may be produced by a load. Used to pick the appropriate multiscale level. */
+  maxAtlasEdge?: number;
+  /** An optional bias added to the scale level index after the optimal level is picked based on `maxAtlasEdge`. */
+  scaleLevelBias?: number;
+  /**
+   * The max scale level to load. Even when this is specified, the loader may pick a *lower* scale level based on
+   * limits imposed by `scaleLevelBias` and `maxAtlasEdge` (or their defaults if unspecified).
+   */
   multiscaleLevel?: number;
   /** Subregion of volume to load. If not specified, the entire volume is loaded. Specify as floats between 0-1. */
   subregion = new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
