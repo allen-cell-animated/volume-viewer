@@ -106,6 +106,7 @@ export class ThreeJsPanel {
     this.hasWebGL2 = false;
     const context = this.canvas.getContext("webgl2");
     if (context) {
+      console.log("Will use WebGL2");
       this.hasWebGL2 = true;
       this.renderer = new WebGLRenderer({
         context: context,

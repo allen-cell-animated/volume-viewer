@@ -58,12 +58,13 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
     return await loader.loadRawChannelData(
       rebuildImageInfo(imageInfo),
       rebuildLoadSpec(loadSpec),
-      (channelIndex, data, ranges, atlasDims) => {
+      (channelIndex, dtype, data, ranges, atlasDims) => {
         const message: WorkerResponse<WorkerMsgType> = {
           responseResult: WorkerResponseResult.EVENT,
           loaderId,
           loadId,
           channelIndex,
+          dtype,
           data,
           ranges,
           atlasDims,

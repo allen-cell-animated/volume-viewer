@@ -90,6 +90,7 @@ interface ChannelGuiOptions {
   isovalue: number;
   isosurface: boolean;
   enabled: boolean;
+  reset: (channelNum: number) => void;
   autoIJ: (channelNum: number) => void;
   auto0: (channelNum: number) => void;
   bestFit: (channelNum: number) => void;

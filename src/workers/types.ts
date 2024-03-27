@@ -1,6 +1,7 @@
 import type { ImageInfo } from "../Volume.js";
 import type { CreateLoaderOptions, PrefetchDirection } from "../loaders/index.js";
 import type { LoadSpec, LoadedVolumeInfo, VolumeDims } from "../loaders/IVolumeLoader.js";
+import type { TypedArray, NumberType } from "../types.js";
 
 /** The types of requests that can be made to the worker. Mostly corresponds to methods on `IVolumeLoader`. */
 export const enum WorkerMsgType {
@@ -66,7 +67,8 @@ export type ChannelLoadEvent = {
   loaderId: number;
   loadId: number;
   channelIndex: number[];
-  data: Uint8Array[];
+  dtype: NumberType[];
+  data: TypedArray<NumberType>[];
   ranges: [number, number][];
   atlasDims?: [number, number];
 };
