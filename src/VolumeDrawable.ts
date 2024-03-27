@@ -4,7 +4,7 @@ import { Pane } from "tweakpane";
 import MeshVolume from "./MeshVolume.js";
 import RayMarchedAtlasVolume from "./RayMarchedAtlasVolume.js";
 import PathTracedVolume from "./PathTracedVolume.js";
-import { LUT_ARRAY_LENGTH } from "./Histogram.js";
+import { LUT_ARRAY_LENGTH } from "./Lut.js";
 import Volume from "./Volume.js";
 import type { VolumeDisplayOptions, VolumeChannelDisplayOptions, FuseChannel } from "./types.js";
 import { RenderMode } from "./types.js";

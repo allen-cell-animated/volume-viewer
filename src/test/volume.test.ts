@@ -3,7 +3,7 @@ import { Vector2, Vector3 } from "three";
 
 import Volume, { ImageInfo } from "../Volume";
 import VolumeMaker from "../VolumeMaker";
-import { LUT_ARRAY_LENGTH } from "../Histogram";
+import { LUT_ARRAY_LENGTH } from "../Lut";
 import Channel from "../Channel";
 import { DATARANGE_UINT8 } from "../types";
 

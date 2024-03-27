@@ -44,7 +44,10 @@ view3D.addVolume(aimg);
 for (let i = 0; i < volumeData.length; ++i) {
   aimg.setChannelDataFromVolume(i, volumeData[i], [0, 255]);
   // optional: initialize with a lookup table suitable for visualizing noisy biological data
-  aimg.channels[i].lutGenerator_percentiles(0.5, 0.998);
+  const hmin = aimg.getHistogram(i).findBinOfPercentile(0.5);
+  const hmax = aimg.getHistogram(i).findBinOfPercentile(0.983);
+  const lut = new Lut().createFromMinMax(hmin, hmax);
+  aimg.setLut(i, lut.lut);
 }
 
 // enable only the first 3 channels
@@ -101,7 +104,10 @@ export class VolumeViewer extends React.Component {
                 // download the volume data itself in the form of tiled png files
                 VolumeLoader.loadVolumeAtlasData(aimg, jsondata.images, (url, channelIndex) => {
                     // initialize each channel as it arrives and tell the view to update.
-                    aimg.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
+                    const hmin = aimg.getHistogram(channelIndex).findBinOfPercentile(0.5);
+                    const hmax = aimg.getHistogram(channelIndex).findBinOfPercentile(0.983);
+                    const lut = new Lut().createFromMinMax(hmin, hmax);
+                    aimg.setLut(i, lut.lut);
 
                     this.view3D.setVolumeChannelEnabled(aimg, channelIndex, channelIndex < 3);
                     this.view3D.updateActiveChannels(aimg);
