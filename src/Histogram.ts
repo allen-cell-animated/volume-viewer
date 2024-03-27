@@ -565,4 +565,131 @@ export default class Histogram {
   /* eslint-enable @typescript-eslint/naming-convention */
 }
 
+// We have an intensity value that is in the range of valueMin to valueMax.
+// This domain is assumed to have been remapped from oldMin to oldMax.
+// We now wish to find the intensity value that corresponds to the same relative position in the new domain of newMin to newMax.
+// For our Luts valueMin will always be 0, and valueMax will always be 255.
+// oldMin and oldMax will be the domain of the original raw data intensities.
+// newMin and newMax will be the domain of the new raw data intensities.
+function remapDomain(
+  value: number,
+  valueMin: number,
+  valueMax: number,
+  oldMin: number,
+  oldMax: number,
+  newMin: number,
+  newMax: number
+): number {
+  const pctOfRange = (value - valueMin) / (valueMax - valueMin);
+  const newValue = (newMax - newMin) * pctOfRange + newMin;
+  // now locate this value as a relative index in the old range
+  const pctOfOldRange = (newValue - oldMin) / (oldMax - oldMin);
+  const remapped = valueMin + pctOfOldRange * (valueMax - valueMin);
+  return remapped;
+}
+
+// If the new max is greater than the old max, then
+// the lut's max end will move inward to the left.
+// This is another way of saying that the new max's index is greater than 255 in the old lut
+// If the new min is less than the old min, then
+// the lut's min end will move inward to the right.
+// This is another way of saying that the new min's index is less than 0 in the old lut
+export function remapLut(lut: Uint8Array, oldMin: number, oldMax: number, newMin: number, newMax: number): Uint8Array {
+  const newLut = new Uint8Array(LUT_ARRAY_LENGTH);
+
+  // we will find what intensity is at each index in the new range,
+  // and then try to sample the pre-existing lut as if it spans the old range.
+  // Build new lut by sampling from old lut.
+  for (let i = 0; i < LUT_ENTRIES; ++i) {
+    let iOld = remapDomain(i, 0, LUT_ENTRIES - 1, oldMin, oldMax, newMin, newMax);
+    iOld = clamp(iOld, 0, LUT_ENTRIES-1);
+    // find the indices above and below for interpolation
+    const i0 = Math.floor(iOld);
+    const i1 = Math.ceil(iOld);
+    const pct = iOld - i0;
+
+    //console.log(`interpolating ${iOld}: ${lut[i0 * 4 + 3]}, ${lut[i1 * 4 + 3]}, ${pct}`);
+    newLut[i * 4 + 0] = Math.round(lerp(lut[i0 * 4 + 0], lut[i1 * 4 + 0], pct));
+    newLut[i * 4 + 1] = Math.round(lerp(lut[i0 * 4 + 1], lut[i1 * 4 + 1], pct));
+    newLut[i * 4 + 2] = Math.round(lerp(lut[i0 * 4 + 2], lut[i1 * 4 + 2], pct));
+    newLut[i * 4 + 3] = Math.round(lerp(lut[i0 * 4 + 3], lut[i1 * 4 + 3], pct));
+  }
+
+  return newLut;
+}
+
+export function remapControlPoints(
+  controlPoints: ControlPoint[],
+  oldMin: number,
+  oldMax: number,
+  newMin: number,
+  newMax: number
+): ControlPoint[] {
+  const newControlPoints: ControlPoint[] = [];
+
+  // assume control point x domain 0-255 is mapped to oldMin-oldMax
+
+  // remap all cp x values.
+  // interpolate all new colors and opacities
+  // then see if we need to clip?
+  for (let i = 0; i < controlPoints.length; ++i) {
+    const cp = controlPoints[i];
+    const iOld = remapDomain(cp.x, 0, LUT_ENTRIES - 1, oldMin, oldMax, newMin, newMax);
+    const newCP: ControlPoint = {
+      x: iOld,
+      opacity: cp.opacity,
+      color: [cp.color[0], cp.color[1], cp.color[2]],
+    };
+    newControlPoints.push(newCP);
+  }
+  // now fix up any control points that are out of bounds?
+  // For a CP less than 0, shift it to 0 and interpolate the values according to the slope
+  // For a CP greater than 255, shift it to 255 and interpolate the values according to the slope
+  // All others out of this range can then be dropped.
+  // We will look above and below each cp to see if it's on a boundary.
+  const resultControlPoints: ControlPoint[] = [];
+
+  for (let i = 0; i < newControlPoints.length; ++i) {
+    const cp = newControlPoints[i];
+    const cpPrev = i > 0 ? newControlPoints[i - 1] : cp;
+    const cpNext = i < newControlPoints.length - 1 ? newControlPoints[i + 1] : cp;
+
+    if (cp.x < 0 && cpNext.x > 0) {
+      // interpolate
+      const pct = (0 - cp.x) / (cpNext.x - cp.x);
+      cp.opacity = lerp(cp.opacity, cpNext.opacity, pct);
+      cp.color[0] = lerp(cp.color[0], cpNext.color[0], pct);
+      cp.color[1] = lerp(cp.color[1], cpNext.color[1], pct);
+      cp.color[2] = lerp(cp.color[2], cpNext.color[2], pct);
+      // shift cp to 0
+      cp.x = 0;
+    } else if (cp.x > 255 && cpPrev.x < 255) {
+      // interpolate
+      const pct = (cp.x - 255) / (cp.x - cpPrev.x);
+      cp.opacity = lerp(cpPrev.opacity, cp.opacity, pct);
+      cp.color[0] = lerp(cpPrev.color[0], cp.color[0], pct);
+      cp.color[1] = lerp(cpPrev.color[1], cp.color[1], pct);
+      cp.color[2] = lerp(cpPrev.color[2], cp.color[2], pct);
+      // shift cp to 255
+      cp.x = 255;
+    }
+    if (cp.x >= 0 && cp.x <= 255) {
+      resultControlPoints.push(cp);
+    }
+  }
+
+  // lastly, add a point for start and end if needed.
+  if (resultControlPoints[0].x !== 0) {
+    resultControlPoints.unshift({ x: 0, opacity: resultControlPoints[0].opacity, color: resultControlPoints[0].color });
+  }
+  if (resultControlPoints[resultControlPoints.length - 1].x !== 255) {
+    resultControlPoints.push({
+      x: 255,
+      opacity: resultControlPoints[resultControlPoints.length - 1].opacity,
+      color: resultControlPoints[resultControlPoints.length - 1].color,
+    });
+  }
+  return resultControlPoints;
+}
+
 export { LUT_ARRAY_LENGTH };

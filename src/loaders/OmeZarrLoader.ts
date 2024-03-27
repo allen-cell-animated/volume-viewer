@@ -36,22 +36,17 @@ import {
 } from "./zarr_utils/utils.js";
 import type {
   OMEZarrMetadata,
+  PrefetchDirection,
   SubscriberId,
   TCZYX,
-  PrefetchDirection,
   ZarrSource,
   NumericZarrArray,
 } from "./zarr_utils/types.js";
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
-function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint8Array {
-  if (channelData instanceof Uint8Array) {
-    return channelData as Uint8Array;
-  }
-
-  const u8 = new Uint8Array(channelData.length);
-
+// returns the converted data and the original min and max values (which have been remapped to 0 and 255)
+function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): [Uint8Array, number, number] {
   // get min and max
   let min = channelData[0];
   let max = channelData[0];
@@ -65,13 +60,18 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): Uint
     }
   }
 
+  if (channelData instanceof Uint8Array) {
+    return [channelData as Uint8Array, min, max];
+  }
+
   // normalize and convert to u8
+  const u8 = new Uint8Array(channelData.length);
   const range = max - min;
   for (let i = 0; i < channelData.length; i++) {
     u8[i] = ((channelData[i] - min) / range) * 255;
   }
 
-  return u8;
+  return [u8, min, max];
 }
 
 export type ZarrLoaderFetchOptions = {
@@ -345,7 +345,9 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       })
     );
 
-    const scale5d = this.getScale(levelToLoad);
+    // for physicalPixelSize, we use the scale of the first level
+    const scale5d = this.getScale(0);
+    // assume that ImageInfo wants the timeScale of level 0
     const timeScale = hasT ? scale5d[t] : 1;
 
     const imgdata: ImageInfo = {
@@ -514,6 +516,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     const resultChannelIndices: number[] = [];
     const resultChannelData: Uint8Array[] = [];
+    const resultChannelRanges: [number, number][] = [];
 
     const channelPromises = channelIndexes.map(async (ch) => {
       // Build slice spec
@@ -528,12 +531,13 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
       try {
         const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } });
-        const u8 = convertChannel(result.data);
+        const converted = convertChannel(result.data);
         if (syncChannels) {
-          resultChannelData.push(u8);
+          resultChannelData.push(converted[0]);
           resultChannelIndices.push(ch);
+          resultChannelRanges.push([converted[1], converted[2]]);
         } else {
-          onData([ch], [u8]);
+          onData([ch], [converted[0]], [[converted[1], converted[2]]]);
         }
       } catch (e) {
         // TODO: verify that cancelling requests in progress doesn't leak memory
@@ -554,7 +558,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     Promise.all(channelPromises).then(() => {
       if (syncChannels) {
-        onData(resultChannelIndices, resultChannelData);
+        onData(resultChannelIndices, resultChannelData, resultChannelRanges);
       }
       this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
     });

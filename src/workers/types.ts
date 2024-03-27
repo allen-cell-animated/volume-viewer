@@ -67,6 +67,7 @@ export type ChannelLoadEvent = {
   loadId: number;
   channelIndex: number[];
   data: Uint8Array[];
+  ranges: [number, number][];
   atlasDims?: [number, number];
 };
 

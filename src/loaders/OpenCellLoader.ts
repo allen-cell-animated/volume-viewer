@@ -9,6 +9,7 @@ import {
 } from "./IVolumeLoader.js";
 import { ImageInfo } from "../Volume.js";
 import { JsonImageInfoLoader } from "./JsonImageInfoLoader.js";
+import { DATARANGE_UINT8 } from "../types.js";
 
 class OpenCellLoader extends ThreadableVolumeLoader {
   async loadDims(_: LoadSpec): Promise<VolumeDims[]> {
@@ -77,7 +78,8 @@ class OpenCellLoader extends ThreadableVolumeLoader {
 
     const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
     const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
-    JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, data) => onData(ch, data, [w, h]));
+    // all data coming from this loader is natively 8-bit
+    JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, data) => onData(ch, data, [DATARANGE_UINT8], [w, h]));
     return Promise.resolve({});
   }
 }

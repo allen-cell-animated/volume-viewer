@@ -49,8 +49,19 @@ export type LoadedVolumeInfo = {
  */
 export type PerChannelCallback = (volume: Volume, channelIndex: number) => void;
 
-// allow lists of channel indices and data arrays to be passed to the callback
-export type RawChannelDataCallback = (channelIndex: number[], data: Uint8Array[], atlasDims?: [number, number]) => void;
+/**
+ * @callback RawChannelDataCallback - allow lists of channel indices and data arrays to be passed to the callback
+ * @param {number[]} channelIndex - The indices of the channels that were loaded
+ * @param {Uint8Array[]} data - The raw data for each channel (renormalized to 0-255 range)
+ * @param {[number, number][]} ranges - The min and max values for each channel in their original range
+ * @param {[number, number]} atlasDims - The dimensions of the atlas, if the data is in an atlas format
+ */
+export type RawChannelDataCallback = (
+  channelIndex: number[],
+  data: Uint8Array[],
+  ranges: [number, number][],
+  atlasDims?: [number, number]
+) => void;
 
 /**
  * Loads volume data from a source specified by a `LoadSpec`.
@@ -142,14 +153,15 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
     loadSpecOverride?: LoadSpec,
     onChannelLoaded?: PerChannelCallback
   ): Promise<void> {
-    const onChannelData: RawChannelDataCallback = (channelIndices, dataArrays, atlasDims) => {
+    const onChannelData: RawChannelDataCallback = (channelIndices, dataArrays, ranges, atlasDims) => {
       for (let i = 0; i < channelIndices.length; i++) {
         const channelIndex = channelIndices[i];
         const data = dataArrays[i];
+        const range = ranges[i];
         if (atlasDims) {
           volume.setChannelDataFromAtlas(channelIndex, data, atlasDims[0], atlasDims[1]);
         } else {
-          volume.setChannelDataFromVolume(channelIndex, data);
+          volume.setChannelDataFromVolume(channelIndex, data, range);
         }
         onChannelLoaded?.(volume, channelIndex);
       }

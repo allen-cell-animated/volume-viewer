@@ -1,5 +1,5 @@
 import { DataTexture, RedFormat, UnsignedByteType, RGBAFormat, LinearFilter, NearestFilter } from "three";
-import Histogram, { LUT_ARRAY_LENGTH } from "./Histogram.js";
+import Histogram, { LUT_ARRAY_LENGTH, remapLut } from "./Histogram.js";
 
 interface ChannelImageData {
   /** Returns the one-dimensional array containing the data in RGBA order, as integers in the range 0 to 255. */
@@ -23,10 +23,14 @@ export default class Channel {
   public dims: [number, number, number];
   public dataTexture: DataTexture;
   public lutTexture: DataTexture;
+  public rawMin: number;
+  public rawMax: number;
 
   constructor(name: string) {
     this.loaded = false;
     this.imgData = { data: new Uint8ClampedArray(), width: 0, height: 0 };
+    this.rawMin = 0;
+    this.rawMax = 0;
 
     // on gpu
     this.dataTexture = new DataTexture(new Uint8Array(), 0, 0);
@@ -41,6 +45,7 @@ export default class Channel {
 
     // intensity remapping lookup table
     this.lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
+    this.lutGenerator_minMax(0, 255);
     // per-intensity color labeling (disabled initially)
     this.colorPalette = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
     // store in 0..1 range. 1 means fully colorPalette, 0 means fully lut.
@@ -85,6 +90,14 @@ export default class Channel {
     this.lutTexture.needsUpdate = true;
 
     return ret;
+  }
+
+  public setRawDataRange(min: number, max: number): void {
+    // remap the lut which was based on rawMin and rawMax to new min and max
+    const newLut = remapLut(this.lut, this.rawMin, this.rawMax, min, max);
+    this.rawMin = min;
+    this.rawMax = max;
+    this.lut = newLut;
   }
 
   public getHistogram(): Histogram {
@@ -161,14 +174,24 @@ export default class Channel {
   }
 
   // give the channel fresh volume data and initialize from that data
-  public setFromVolumeData(bitsArray: Uint8Array, vx: number, vy: number, vz: number, ax: number, ay: number): void {
+  public setFromVolumeData(
+    bitsArray: Uint8Array,
+    vx: number,
+    vy: number,
+    vz: number,
+    ax: number,
+    ay: number,
+    rawMin = 0,
+    rawMax = 255
+  ): void {
     this.dims = [vx, vy, vz];
     this.volumeData = bitsArray;
     // TODO FIXME performance hit for shuffling the data and storing 2 versions of it (could do this in worker at least?)
     this.packToAtlas(vx, vy, vz, ax, ay);
     this.loaded = true;
+    // update from current histogram?
+    this.setRawDataRange(rawMin, rawMax);
     this.histogram = new Histogram(this.volumeData);
-    this.lutGenerator_auto2();
   }
 
   // given this.volumeData, let's unpack it into a flat textureatlas and fill up this.imgData.
@@ -240,6 +263,14 @@ export default class Channel {
       return;
     }
     const lut = this.histogram.lutGenerator_windowLevel(wnd, lvl);
+    this.setLut(lut.lut);
+  }
+
+  public lutGenerator_minMax(imin: number, imax: number): void {
+    if (!this.loaded) {
+      return;
+    }
+    const lut = this.histogram.lutGenerator_minMax(imin, imax);
     this.setLut(lut.lut);
   }
 

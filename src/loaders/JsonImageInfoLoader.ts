@@ -9,6 +9,7 @@ import {
 } from "./IVolumeLoader.js";
 import type { ImageInfo } from "../Volume.js";
 import VolumeCache from "../VolumeCache.js";
+import { DATARANGE_UINT8 } from "../types.js";
 
 interface PackedChannelsImage {
   name: string;
@@ -175,7 +176,8 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
 
     const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
     const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
-    const wrappedOnData = (ch: number[], data: Uint8Array[]) => onData(ch, data, [w, h]);
+    const wrappedOnData = (ch: number[], data: Uint8Array[], ranges: [number, number][]) =>
+      onData(ch, data, ranges, [w, h]);
     JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
 
     const adjustedLoadSpec = {
@@ -219,7 +221,8 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
         const chindex = image.channels[j];
         const cacheResult = cache?.get(`${image.name}/${chindex}`);
         if (cacheResult) {
-          onData([chindex], [new Uint8Array(cacheResult)]);
+          // all data coming from this loader is natively 8-bit
+          onData([chindex], [new Uint8Array(cacheResult)], [DATARANGE_UINT8]);
         } else {
           cacheHit = false;
           // we can stop checking because we know we are going to have to fetch the whole batch
@@ -269,7 +272,8 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
         const chindex = image.channels[ch];
         cache?.insert(`${image.name}/${chindex}`, channelsBits[ch]);
         // NOTE: the atlas dimensions passed in here are currently unused by `JSONImageInfoLoader`
-        onData([chindex], [channelsBits[ch]], [bitmap.width, bitmap.height]);
+        // all data coming from this loader is natively 8-bit
+        onData([chindex], [channelsBits[ch]], [DATARANGE_UINT8], [bitmap.width, bitmap.height]);
       }
     });
   }

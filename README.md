@@ -42,7 +42,7 @@ view3D.addVolume(aimg);
 // each element in volumeData is a flattened 3d volume stored in xyz order in a Uint8Array.
 // Intensities must have been be scaled to fit in uint8.
 for (let i = 0; i < volumeData.length; ++i) {
-  aimg.setChannelDataFromVolume(i, volumeData[i]);
+  aimg.setChannelDataFromVolume(i, volumeData[i], [0, 255]);
   // optional: initialize with a lookup table suitable for visualizing noisy biological data
   aimg.channels[i].lutGenerator_percentiles(0.5, 0.998);
 }

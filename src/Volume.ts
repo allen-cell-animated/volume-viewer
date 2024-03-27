@@ -373,7 +373,7 @@ export default class Volume {
    * @param {number} channelIndex
    * @param {Uint8Array} volumeData
    */
-  setChannelDataFromVolume(channelIndex: number, volumeData: Uint8Array): void {
+  setChannelDataFromVolume(channelIndex: number, volumeData: Uint8Array, range: [number, number]): void {
     const { subregionSize, atlasTileDims } = this.imageInfo;
     this.channels[channelIndex].setFromVolumeData(
       volumeData,
@@ -381,7 +381,9 @@ export default class Volume {
       subregionSize.y,
       subregionSize.z,
       atlasTileDims.x * subregionSize.x,
-      atlasTileDims.y * subregionSize.y
+      atlasTileDims.y * subregionSize.y,
+      range[0],
+      range[1]
     );
     this.onChannelLoaded([channelIndex]);
   }
