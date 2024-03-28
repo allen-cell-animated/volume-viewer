@@ -99,10 +99,7 @@ export default class Channel {
     // not remap the lut.  This situation can happen at first load, for example,
     // when one channel has arrived but others haven't.
     if (!(this.rawMin === 0 && this.rawMax === 0) && !(min === 0 && max === 0)) {
-      const newLut = remapLut(this.lut.lut, this.rawMin, this.rawMax, min, max);
-      const newControlPoints = remapControlPoints(this.lut.controlPoints, this.rawMin, this.rawMax, min, max);
-      this.lut.lut = newLut;
-      this.lut.controlPoints = newControlPoints;
+      this.lut.remapDomains(this.rawMin, this.rawMax, min, max);
     }
     this.rawMin = min;
     this.rawMax = max;
