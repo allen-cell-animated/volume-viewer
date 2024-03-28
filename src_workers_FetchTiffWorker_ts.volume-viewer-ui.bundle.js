@@ -144,7 +144,8 @@ self.onmessage = /*#__PURE__*/function () {
           }
           results = {
             data: out,
-            channel: channelIndex
+            channel: channelIndex,
+            range: [chmin, chmax]
           };
           self.postMessage(results, [results.data.buffer]);
         case 42:

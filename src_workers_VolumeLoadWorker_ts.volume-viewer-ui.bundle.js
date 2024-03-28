@@ -12,10 +12,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ Channel)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
+/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
+/* harmony import */ var _Lut_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Lut.js */ "./src/Lut.ts");
+
+
 
 
 
@@ -23,37 +27,41 @@ __webpack_require__.r(__webpack_exports__);
 // Data and processing for a single channel
 var Channel = /*#__PURE__*/function () {
   function Channel(name) {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Channel);
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, Channel);
     this.loaded = false;
     this.imgData = {
       data: new Uint8ClampedArray(),
       width: 0,
       height: 0
     };
+    this.rawMin = 0;
+    this.rawMax = 0;
 
     // on gpu
-    this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(new Uint8Array(), 0, 0);
-    this.lutTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH), 256, 1, three__WEBPACK_IMPORTED_MODULE_3__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType);
-    this.lutTexture.minFilter = this.lutTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_3__.LinearFilter;
+    this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_5__.DataTexture(new Uint8Array(), 0, 0);
+    this.lutTexture = new three__WEBPACK_IMPORTED_MODULE_5__.DataTexture(new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH), 256, 1, three__WEBPACK_IMPORTED_MODULE_5__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_5__.UnsignedByteType);
+    this.lutTexture.minFilter = this.lutTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_5__.LinearFilter;
     this.lutTexture.generateMipmaps = false;
     this.volumeData = new Uint8Array();
     this.name = name;
-    this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_2__["default"](new Uint8Array());
+    this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_3__["default"](new Uint8Array());
     this.dims = [0, 0, 0];
 
     // intensity remapping lookup table
-    this.lut = new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH).fill(0);
+    this.lut = new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH).fill(0);
+    var lut = new _Lut_js__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(0, 255);
+    this.setLut(lut.lut);
     // per-intensity color labeling (disabled initially)
-    this.colorPalette = new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH).fill(0);
+    this.colorPalette = new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH).fill(0);
     // store in 0..1 range. 1 means fully colorPalette, 0 means fully lut.
     this.colorPaletteAlpha = 0.0;
   }
 
   // rgbColor is [0..255, 0..255, 0..255]
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Channel, [{
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(Channel, [{
     key: "combineLuts",
     value: function combineLuts(rgbColor, out) {
-      var ret = out ? out : new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH);
+      var ret = out ? out : new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH);
       if (!rgbColor) {
         return ret;
       }
@@ -64,13 +72,13 @@ var Channel = /*#__PURE__*/function () {
         ret.set(this.colorPalette);
       } else if (this.colorPaletteAlpha === 0.0) {
         ret.set(this.lut);
-        for (var i = 0; i < _Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH / 4; ++i) {
+        for (var i = 0; i < _Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH / 4; ++i) {
           ret[i * 4 + 0] *= rgb[0];
           ret[i * 4 + 1] *= rgb[1];
           ret[i * 4 + 2] *= rgb[2];
         }
       } else {
-        for (var _i = 0; _i < _Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH / 4; ++_i) {
+        for (var _i = 0; _i < _Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH / 4; ++_i) {
           ret[_i * 4 + 0] = this.colorPalette[_i * 4 + 0] * this.colorPaletteAlpha + this.lut[_i * 4 + 0] * (1.0 - this.colorPaletteAlpha) * rgb[0];
           ret[_i * 4 + 1] = this.colorPalette[_i * 4 + 1] * this.colorPaletteAlpha + this.lut[_i * 4 + 1] * (1.0 - this.colorPaletteAlpha) * rgb[1];
           ret[_i * 4 + 2] = this.colorPalette[_i * 4 + 2] * this.colorPaletteAlpha + this.lut[_i * 4 + 2] * (1.0 - this.colorPaletteAlpha) * rgb[2];
@@ -80,6 +88,15 @@ var Channel = /*#__PURE__*/function () {
       this.lutTexture.image.data.set(ret);
       this.lutTexture.needsUpdate = true;
       return ret;
+    }
+  }, {
+    key: "setRawDataRange",
+    value: function setRawDataRange(min, max) {
+      // remap the lut which was based on rawMin and rawMax to new min and max
+      var newLut = (0,_Lut_js__WEBPACK_IMPORTED_MODULE_4__.remapLut)(this.lut, this.rawMin, this.rawMax, min, max);
+      this.rawMin = min;
+      this.rawMax = max;
+      this.lut = newLut;
     }
   }, {
     key: "getHistogram",
@@ -108,11 +125,11 @@ var Channel = /*#__PURE__*/function () {
       if (this.dataTexture) {
         this.dataTexture.dispose();
       }
-      this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(data, w, h);
-      this.dataTexture.format = three__WEBPACK_IMPORTED_MODULE_3__.RedFormat;
-      this.dataTexture.type = three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType;
-      this.dataTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
-      this.dataTexture.minFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
+      this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_5__.DataTexture(data, w, h);
+      this.dataTexture.format = three__WEBPACK_IMPORTED_MODULE_5__.RedFormat;
+      this.dataTexture.type = three__WEBPACK_IMPORTED_MODULE_5__.UnsignedByteType;
+      this.dataTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_5__.NearestFilter;
+      this.dataTexture.minFilter = three__WEBPACK_IMPORTED_MODULE_5__.NearestFilter;
       this.dataTexture.generateMipmaps = false;
       this.dataTexture.needsUpdate = true;
     }
@@ -129,8 +146,13 @@ var Channel = /*#__PURE__*/function () {
       };
       this.rebuildDataTexture(this.imgData.data, w, h);
       this.loaded = true;
-      this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_2__["default"](bitsArray);
-      this.lutGenerator_auto2();
+      this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_3__["default"](bitsArray);
+      var _this$histogram$findA = this.histogram.findAutoIJBins(),
+        _this$histogram$findA2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_this$histogram$findA, 2),
+        hmin = _this$histogram$findA2[0],
+        hmax = _this$histogram$findA2[1];
+      var lut = new _Lut_js__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(hmin, hmax);
+      this.setLut(lut.lut);
     }
 
     // let's rearrange this.imgData.data into a 3d array.
@@ -167,13 +189,16 @@ var Channel = /*#__PURE__*/function () {
   }, {
     key: "setFromVolumeData",
     value: function setFromVolumeData(bitsArray, vx, vy, vz, ax, ay) {
+      var rawMin = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 0;
+      var rawMax = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : 255;
       this.dims = [vx, vy, vz];
       this.volumeData = bitsArray;
       // TODO FIXME performance hit for shuffling the data and storing 2 versions of it (could do this in worker at least?)
       this.packToAtlas(vx, vy, vz, ax, ay);
       this.loaded = true;
-      this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_2__["default"](this.volumeData);
-      this.lutGenerator_auto2();
+      // update from current histogram?
+      this.setRawDataRange(rawMin, rawMax);
+      this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_3__["default"](this.volumeData);
     }
 
     // given this.volumeData, let's unpack it into a flat textureatlas and fill up this.imgData.
@@ -241,83 +266,6 @@ var Channel = /*#__PURE__*/function () {
     value: function setColorPaletteAlpha(alpha) {
       this.colorPaletteAlpha = alpha;
     }
-
-    /* eslint-disable @typescript-eslint/naming-convention */
-  }, {
-    key: "lutGenerator_windowLevel",
-    value: function lutGenerator_windowLevel(wnd, lvl) {
-      if (!this.loaded) {
-        return;
-      }
-      var lut = this.histogram.lutGenerator_windowLevel(wnd, lvl);
-      this.setLut(lut.lut);
-    }
-  }, {
-    key: "lutGenerator_fullRange",
-    value: function lutGenerator_fullRange() {
-      if (!this.loaded) {
-        return;
-      }
-      var lut = this.histogram.lutGenerator_fullRange();
-      this.setLut(lut.lut);
-    }
-  }, {
-    key: "lutGenerator_dataRange",
-    value: function lutGenerator_dataRange() {
-      if (!this.loaded) {
-        return;
-      }
-      var lut = this.histogram.lutGenerator_dataRange();
-      this.setLut(lut.lut);
-    }
-  }, {
-    key: "lutGenerator_bestFit",
-    value: function lutGenerator_bestFit() {
-      if (!this.loaded) {
-        return;
-      }
-      var lut = this.histogram.lutGenerator_bestFit();
-      this.setLut(lut.lut);
-    }
-
-    // attempt to redo imagej's Auto
-  }, {
-    key: "lutGenerator_auto2",
-    value: function lutGenerator_auto2() {
-      if (!this.loaded) {
-        return;
-      }
-      var lut = this.histogram.lutGenerator_auto2();
-      this.setLut(lut.lut);
-    }
-  }, {
-    key: "lutGenerator_auto",
-    value: function lutGenerator_auto() {
-      if (!this.loaded) {
-        return;
-      }
-      var lut = this.histogram.lutGenerator_auto();
-      this.setLut(lut.lut);
-    }
-  }, {
-    key: "lutGenerator_equalize",
-    value: function lutGenerator_equalize() {
-      if (!this.loaded) {
-        return;
-      }
-      var lut = this.histogram.lutGenerator_equalize();
-      this.setLut(lut.lut);
-    }
-  }, {
-    key: "lutGenerator_percentiles",
-    value: function lutGenerator_percentiles(lo, hi) {
-      if (!this.loaded) {
-        return;
-      }
-      var lut = this.histogram.lutGenerator_percentiles(lo, hi);
-      this.setLut(lut.lut);
-    }
-    /* eslint-enable @typescript-eslint/naming-convention */
   }]);
   return Channel;
 }();
@@ -334,41 +282,12 @@ var Channel = /*#__PURE__*/function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   LUT_ARRAY_LENGTH: () => (/* binding */ LUT_ARRAY_LENGTH),
 /* harmony export */   "default": () => (/* binding */ Histogram)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _constants_colors_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants/colors.js */ "./src/constants/colors.ts");
 
 
-
-function clamp(val, cmin, cmax) {
-  return Math.min(Math.max(cmin, val), cmax);
-}
-function controlPointToRGBA(controlPoint) {
-  return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], Math.floor(controlPoint.opacity * 255)];
-}
-function lerp(xmin, xmax, a) {
-  return a * (xmax - xmin) + xmin;
-}
-var LUT_ENTRIES = 256;
-var LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
-
-/**
- * @typedef {Object} ControlPoint Used for the TF (transfer function) editor GUI.
- * Need to be converted to LUT for rendering.
- * @property {number} x The X Coordinate
- * @property {number} opacity The Opacity, from 0 to 1
- * @property {Array.<number>} color The Color, 3 numbers from 0-255 for r,g,b
- */
-
-/**
- * @typedef {Object} Lut Used for rendering.
- * @property {Array.<number>} lut LUT_ARRAY_LENGTH element lookup table as array
- * (maps scalar intensity to a rgb color plus alpha, with each value from 0-255)
- * @property {Array.<ControlPoint>} controlPoints
- */
 /**
  * Builds a histogram with 256 bins from a data array. Assume data is 8 bit single channel grayscale.
  * @class
@@ -435,43 +354,218 @@ var Histogram = /*#__PURE__*/function () {
     value: function getMax() {
       return this.dataMax;
     }
-
-    /* eslint-disable @typescript-eslint/naming-convention */
-
-    /**
-     * Generate a Window/level lookup table
-     * @return {Lut}
-     * @param {number} wnd in 0..1 range
-     * @param {number} lvl in 0..1 range
-     */
   }, {
-    key: "lutGenerator_windowLevel",
-    value: function lutGenerator_windowLevel(wnd, lvl) {
-      // simple linear mapping for actual range
-      var b = lvl - wnd * 0.5;
-      var e = lvl + wnd * 0.5;
-      return this.lutGenerator_minMax(b * 255, e * 255);
+    key: "getNumBins",
+    value: function getNumBins() {
+      return this.bins.length;
+    }
+  }, {
+    key: "getBin",
+    value: function getBin(i) {
+      return this.bins[i];
     }
 
     /**
-     * Generate a piecewise linear lookup table that ramps up from 0 to 1 over the b to e domain.
-     * If e === b, then we use a step function with f(b) = 0 and f(b + 1) = 1
-     *  |
-     * 1|               +---------+-----
-     *  |              /
-     *  |             /
-     *  |            /
-     *  |           /
-     *  |          /
-     * 0+=========+---------------+-----
-     *  0         b    e         255
-     * @return {Lut}
-     * @param {number} b
-     * @param {number} e
+     * Find the bin that contains the percentage of pixels below it
+     * @return {number}
+     * @param {number} pct
      */
   }, {
-    key: "lutGenerator_minMax",
-    value: function lutGenerator_minMax(b, e) {
+    key: "findBinOfPercentile",
+    value: function findBinOfPercentile(pct) {
+      var pixcount = this.nonzeroPixelCount + this.bins[0];
+      var limit = pixcount * pct;
+      var i = 0;
+      var count = 0;
+      for (i = 0; i < this.bins.length; ++i) {
+        count += this.bins[i];
+        if (count > limit) {
+          break;
+        }
+      }
+      return i;
+    }
+
+    // Find bins at 10th / 90th percentile
+  }, {
+    key: "findBestFitBins",
+    value: function findBestFitBins() {
+      var pixcount = this.nonzeroPixelCount;
+      //const pixcount = this.imgData.data.length;
+      var limit = pixcount / 10;
+      var i = 0;
+      var count = 0;
+      for (i = 1; i < this.bins.length; ++i) {
+        count += this.bins[i];
+        if (count > limit) {
+          break;
+        }
+      }
+      var hmin = i;
+      count = 0;
+      for (i = this.bins.length - 1; i >= 1; --i) {
+        count += this.bins[i];
+        if (count > limit) {
+          break;
+        }
+      }
+      var hmax = i;
+      return [hmin, hmax];
+    }
+
+    // Find min and max bins attempting to replicate ImageJ's "Auto" button
+  }, {
+    key: "findAutoIJBins",
+    value: function findAutoIJBins() {
+      var AUTO_THRESHOLD = 5000;
+      var pixcount = this.nonzeroPixelCount;
+      //  const pixcount = this.imgData.data.length;
+      var limit = pixcount / 10;
+      var threshold = pixcount / AUTO_THRESHOLD;
+
+      // this will skip the "zero" bin which contains pixels of zero intensity.
+      var hmin = this.bins.length - 1;
+      var hmax = 1;
+      for (var i = 1; i < this.bins.length; ++i) {
+        if (this.bins[i] > threshold && this.bins[i] <= limit) {
+          hmin = i;
+          break;
+        }
+      }
+      for (var _i4 = this.bins.length - 1; _i4 >= 1; --_i4) {
+        if (this.bins[_i4] > threshold && this.bins[_i4] <= limit) {
+          hmax = _i4;
+          break;
+        }
+      }
+      if (hmax < hmin) {
+        hmin = 0;
+        hmax = 255;
+      }
+      return [hmin, hmax];
+    }
+
+    // Find min and max bins using a percentile of the most commonly occurring value
+  }, {
+    key: "findAutoMinMax",
+    value: function findAutoMinMax() {
+      // simple linear mapping cutting elements with small appearence
+      // get 10% threshold
+      var PERCENTAGE = 0.1;
+      var th = Math.floor(this.bins[this.maxBin] * PERCENTAGE);
+      var b = 0;
+      var e = this.bins.length - 1;
+      for (var x = 1; x < this.bins.length; ++x) {
+        if (this.bins[x] > th) {
+          b = x;
+          break;
+        }
+      }
+      for (var _x = this.bins.length - 1; _x >= 1; --_x) {
+        if (this.bins[_x] > th) {
+          e = _x;
+          break;
+        }
+      }
+      return [b, e];
+    }
+  }]);
+  return Histogram;
+}();
+
+
+/***/ }),
+
+/***/ "./src/Lut.ts":
+/*!********************!*\
+  !*** ./src/Lut.ts ***!
+  \********************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   LUT_ARRAY_LENGTH: () => (/* binding */ LUT_ARRAY_LENGTH),
+/* harmony export */   LUT_ENTRIES: () => (/* binding */ LUT_ENTRIES),
+/* harmony export */   Lut: () => (/* binding */ Lut),
+/* harmony export */   remapControlPoints: () => (/* binding */ remapControlPoints),
+/* harmony export */   remapLut: () => (/* binding */ remapLut)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _constants_colors_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants/colors.js */ "./src/constants/colors.ts");
+
+
+
+function clamp(val, cmin, cmax) {
+  return Math.min(Math.max(cmin, val), cmax);
+}
+function lerp(xmin, xmax, a) {
+  return a * (xmax - xmin) + xmin;
+}
+
+// We have an intensity value that is in the range of valueMin to valueMax.
+// This domain is assumed to have been remapped from oldMin to oldMax.
+// We now wish to find the intensity value that corresponds to the same relative position in the new domain of newMin to newMax.
+// For our Luts valueMin will always be 0, and valueMax will always be 255.
+// oldMin and oldMax will be the domain of the original raw data intensities.
+// newMin and newMax will be the domain of the new raw data intensities.
+function remapDomain(value, valueMin, valueMax, oldMin, oldMax, newMin, newMax) {
+  var pctOfRange = (value - valueMin) / (valueMax - valueMin);
+  var newValue = (newMax - newMin) * pctOfRange + newMin;
+  // now locate this value as a relative index in the old range
+  var pctOfOldRange = (newValue - oldMin) / (oldMax - oldMin);
+  var remapped = valueMin + pctOfOldRange * (valueMax - valueMin);
+  return remapped;
+}
+var LUT_ENTRIES = 256;
+var LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
+
+/**
+ * @typedef {Object} ControlPoint Used for the TF (transfer function) editor GUI.
+ * Need to be converted to LUT for rendering.
+ * @property {number} x The X Coordinate
+ * @property {number} opacity The Opacity, from 0 to 1
+ * @property {Array.<number>} color The Color, 3 numbers from 0-255 for r,g,b
+ */
+
+function controlPointToRGBA(controlPoint) {
+  return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], Math.floor(controlPoint.opacity * 255)];
+}
+
+/**
+ * @typedef {Object} Lut Used for rendering.
+ * @property {Array.<number>} lut LUT_ARRAY_LENGTH element lookup table as array
+ * (maps scalar intensity to a rgb color plus alpha, with each value from 0-255)
+ * @property {Array.<ControlPoint>} controlPoints
+ */
+var Lut = /*#__PURE__*/function () {
+  function Lut() {
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Lut);
+    this.lut = new Uint8Array(LUT_ARRAY_LENGTH);
+    this.controlPoints = [];
+    this.createFullRange();
+  }
+
+  /**
+   * Generate a piecewise linear lookup table that ramps up from 0 to 1 over the b to e domain.
+   * If e === b, then we use a step function with f(b) = 0 and f(b + 1) = 1
+   *  |
+   * 1|               +---------+-----
+   *  |              /
+   *  |             /
+   *  |            /
+   *  |           /
+   *  |          /
+   * 0+=========+---------------+-----
+   *  0         b    e         255
+   * @return {Lut}
+   * @param {number} b
+   * @param {number} e
+   */
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Lut, [{
+    key: "createFromMinMax",
+    value: function createFromMinMax(b, e) {
       if (e < b) {
         // swap
         var tmp = e;
@@ -499,32 +593,30 @@ var Histogram = /*#__PURE__*/function () {
 
       // Edge case: b and e are both out of bounds
       if (b < 0 && e < 0) {
-        return {
-          lut: lut,
-          controlPoints: [{
-            x: 0,
-            opacity: 1,
-            color: [255, 255, 255]
-          }, {
-            x: 255,
-            opacity: 1,
-            color: [255, 255, 255]
-          }]
-        };
+        this.lut = lut;
+        this.controlPoints = [{
+          x: 0,
+          opacity: 1,
+          color: [255, 255, 255]
+        }, {
+          x: 255,
+          opacity: 1,
+          color: [255, 255, 255]
+        }];
+        return this;
       }
       if (b >= 255 && e >= 255) {
-        return {
-          lut: lut,
-          controlPoints: [{
-            x: 0,
-            opacity: 0,
-            color: [255, 255, 255]
-          }, {
-            x: 255,
-            opacity: 0,
-            color: [255, 255, 255]
-          }]
-        };
+        this.lut = lut;
+        this.controlPoints = [{
+          x: 0,
+          opacity: 0,
+          color: [255, 255, 255]
+        }, {
+          x: 255,
+          opacity: 0,
+          color: [255, 255, 255]
+        }];
+        return this;
       }
 
       // Generate 2 to 4 control points for a minMax LUT, from left to right
@@ -578,19 +670,15 @@ var Histogram = /*#__PURE__*/function () {
         opacity: endVal,
         color: [255, 255, 255]
       });
-      return {
-        lut: lut,
-        controlPoints: controlPoints
-      };
+      this.lut = lut;
+      this.controlPoints = controlPoints;
+      return this;
     }
 
-    /**
-     * Generate a straight 0-1 linear identity lookup table
-     * @return {Lut}
-     */
+    // basically, the identity LUT with respect to opacity
   }, {
-    key: "lutGenerator_fullRange",
-    value: function lutGenerator_fullRange() {
+    key: "createFullRange",
+    value: function createFullRange() {
       var lut = new Uint8Array(LUT_ARRAY_LENGTH);
 
       // simple linear mapping for actual range
@@ -600,42 +688,184 @@ var Histogram = /*#__PURE__*/function () {
         lut[x * 4 + 2] = 255;
         lut[x * 4 + 3] = x;
       }
-      return {
-        lut: lut,
-        controlPoints: [{
+      this.lut = lut;
+      this.controlPoints = [{
+        x: 0,
+        opacity: 0,
+        color: [255, 255, 255]
+      }, {
+        x: 255,
+        opacity: 1,
+        color: [255, 255, 255]
+      }];
+      return this;
+    }
+
+    /**
+     * Generate a Window/level lookup table
+     * @return {Lut}
+     * @param {number} wnd in 0..1 range
+     * @param {number} lvl in 0..1 range
+     */
+  }, {
+    key: "createFromWindowLevel",
+    value: function createFromWindowLevel(wnd, lvl) {
+      // simple linear mapping for actual range
+      var b = lvl - wnd * 0.5;
+      var e = lvl + wnd * 0.5;
+      return this.createFromMinMax(b * 255, e * 255);
+    }
+
+    // @param {Object[]} controlPoints - array of {x:number 0..255, opacity:number 0..1, color:array of 3 numbers 0..255}
+    // @return {Uint8Array} array of length 256*4 representing the rgba values of the gradient
+  }, {
+    key: "createFromControlPoints",
+    value: function createFromControlPoints(controlPoints) {
+      var lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
+      if (controlPoints.length === 0) {
+        this.lut = lut;
+        this.controlPoints = controlPoints;
+        return this;
+      }
+
+      // ensure they are sorted in ascending order of x
+      controlPoints.sort(function (a, b) {
+        return a.x - b.x;
+      });
+
+      // special case only one control point.
+      if (controlPoints.length === 1) {
+        var rgba = controlPointToRGBA(controlPoints[0]);
+        // copy val from x to 255.
+        for (var x = controlPoints[0].x; x < 256; ++x) {
+          lut[x * 4 + 0] = rgba[0];
+          lut[x * 4 + 1] = rgba[1];
+          lut[x * 4 + 2] = rgba[2];
+          lut[x * 4 + 3] = rgba[3];
+        }
+        this.lut = lut;
+        this.controlPoints = controlPoints;
+        return this;
+      }
+      var c0 = controlPoints[0];
+      var c1 = controlPoints[1];
+      var color0 = controlPointToRGBA(c0);
+      var color1 = controlPointToRGBA(c1);
+      var lastIndex = 1;
+      var a = 0;
+      // if the first control point is after 0, act like there are 0s going all the way up to it.
+      // or lerp up to the first point?
+      for (var _x = c0.x; _x < 256; ++_x) {
+        while (_x > c1.x) {
+          // advance control points
+          c0 = c1;
+          color0 = color1;
+          lastIndex++;
+          if (lastIndex >= controlPoints.length) {
+            // if the last control point is before 255, then we want to continue its value all the way to 255.
+            c1 = {
+              x: 255,
+              color: c1.color,
+              opacity: c1.opacity
+            };
+          } else {
+            c1 = controlPoints[lastIndex];
+          }
+          color1 = controlPointToRGBA(c1);
+        }
+        if (c1.x === c0.x) {
+          // use c1
+          a = 1.0;
+        } else {
+          a = (_x - c0.x) / (c1.x - c0.x);
+        }
+        // lerp the colors
+        lut[_x * 4 + 0] = lerp(color0[0], color1[0], a);
+        lut[_x * 4 + 1] = lerp(color0[1], color1[1], a);
+        lut[_x * 4 + 2] = lerp(color0[2], color1[2], a);
+        lut[_x * 4 + 3] = lerp(color0[3], color1[3], a);
+      }
+      this.lut = lut;
+      this.controlPoints = controlPoints;
+      return this;
+    }
+
+    /**
+     * Generate an "equalized" lookup table
+     * @return {Lut}
+     */
+  }, {
+    key: "createFromEqHistogram",
+    value: function createFromEqHistogram(histogram) {
+      var map = [];
+      for (var i = 0; i < histogram.getNumBins(); ++i) {
+        map[i] = 0;
+      }
+
+      // summed area table?
+      map[0] = histogram.getBin(0);
+      for (var _i = 1; _i < histogram.getNumBins(); ++_i) {
+        map[_i] = map[_i - 1] + histogram.getBin(_i);
+      }
+      var div = map[map.length - 1] - map[0];
+      if (div > 0) {
+        var lut = new Uint8Array(LUT_ARRAY_LENGTH);
+
+        // compute lut and track control points for the piecewise linear sections
+        var lutControlPoints = [{
           x: 0,
           opacity: 0,
           color: [255, 255, 255]
-        }, {
+        }];
+        lut[0] = 255;
+        lut[1] = 255;
+        lut[2] = 255;
+        lut[3] = 0;
+        var slope = 0;
+        var lastSlope = 0;
+        var opacity = 0;
+        var lastOpacity = 0;
+        for (var _i2 = 1; _i2 < lut.length / 4; ++_i2) {
+          lut[_i2 * 4 + 0] = 255;
+          lut[_i2 * 4 + 1] = 255;
+          lut[_i2 * 4 + 2] = 255;
+          lastOpacity = opacity;
+          opacity = clamp(Math.round(255 * (map[_i2] - map[0])), 0, 255);
+          lut[_i2 * 4 + 3] = opacity;
+          slope = opacity - lastOpacity;
+          // if map[i]-map[i-1] is the same as map[i+1]-map[i] then we are in a linear segment and do not need a new control point
+          if (slope != lastSlope) {
+            lutControlPoints.push({
+              x: _i2 - 1,
+              opacity: lastOpacity / 255.0,
+              color: [255, 255, 255]
+            });
+            lastSlope = slope;
+          }
+        }
+        lutControlPoints.push({
           x: 255,
           opacity: 1,
           color: [255, 255, 255]
-        }]
-      };
+        });
+        this.lut = lut;
+        this.controlPoints = lutControlPoints;
+        return this;
+      } else {
+        // just reset to whole range in this case...?
+        return this.createFullRange();
+      }
     }
 
     /**
-     * Generate a lookup table over the min to max range of the data values
+     * Generate a lookup table with a different color per intensity value.
+     * This translates to a unique color per histogram bin with more than zero pixels.
      * @return {Lut}
      */
   }, {
-    key: "lutGenerator_dataRange",
-    value: function lutGenerator_dataRange() {
-      // simple linear mapping for actual range
-      var b = this.dataMin;
-      var e = this.dataMax;
-      return this.lutGenerator_minMax(b, e);
-    }
-
-    /**
-     * Generate a lookup table with a different color per intensity value
-     * @return {Lut}
-     */
-  }, {
-    key: "lutGenerator_labelColors",
-    value: function lutGenerator_labelColors() {
+    key: "createLabelColors",
+    value: function createLabelColors(histogram) {
       var lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
-      // TODO specify type for control point
       var controlPoints = [];
       controlPoints.push({
         x: 0,
@@ -653,8 +883,8 @@ var Histogram = /*#__PURE__*/function () {
 
       // assumes exactly one bin per intensity value?
       // skip zero!!!
-      for (var i = 1; i < this.bins.length; ++i) {
-        if (this.bins[i] > 0) {
+      for (var i = 1; i < histogram.getNumBins(); ++i) {
+        if (histogram.getBin(i) > 0) {
           var rgb = (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_2__.getColorByChannelIndex)(i);
           lut[i * 4 + 0] = rgb[0];
           lut[i * 4 + 1] = rgb[1];
@@ -691,292 +921,126 @@ var Histogram = /*#__PURE__*/function () {
           lasta = a;
         }
       }
-      return {
-        lut: lut,
-        controlPoints: controlPoints
-      };
+      this.lut = lut;
+      this.controlPoints = controlPoints;
+      return this;
     }
 
-    /**
-     * Find the bin that contains the percentage of pixels below it
-     * @return {number}
-     * @param {number} pct
-     */
+    // since this is not a "create" function, it doesn't need to return the object.
   }, {
-    key: "findBinOfPercentile",
-    value: function findBinOfPercentile(pct) {
-      var pixcount = this.nonzeroPixelCount + this.bins[0];
-      var limit = pixcount * pct;
-      var i = 0;
-      var count = 0;
-      for (i = 0; i < this.bins.length; ++i) {
-        count += this.bins[i];
-        if (count > limit) {
-          break;
-        }
-      }
-      return i;
+    key: "remapDomains",
+    value: function remapDomains(oldMin, oldMax, newMin, newMax) {
+      // no attempt is made here to ensure that lut and controlPoints are internally consistent.
+      // if they start out consistent, they should end up consistent. And vice versa.
+      this.lut = remapLut(this.lut, oldMin, oldMax, newMin, newMax);
+      this.controlPoints = remapControlPoints(this.controlPoints, oldMin, oldMax, newMin, newMax);
     }
-
-    /**
-     * Generate a lookup table based on histogram percentiles
-     * @return {Lut}
-     * @param {number} pmin
-     * @param {number} pmax
-     */
-  }, {
-    key: "lutGenerator_percentiles",
-    value: function lutGenerator_percentiles(pmin, pmax) {
-      // e.g. 0.50, 0.983 starts from 50th percentile bucket and ends at 98.3 percentile bucket.
-      var hmin = this.findBinOfPercentile(pmin);
-      var hmax = this.findBinOfPercentile(pmax);
-      return this.lutGenerator_minMax(hmin, hmax);
-    }
-
-    /**
-     * Generate a 10% / 90% lookup table
-     * @return {Lut}
-     */
-  }, {
-    key: "lutGenerator_bestFit",
-    value: function lutGenerator_bestFit() {
-      var pixcount = this.nonzeroPixelCount;
-      //const pixcount = this.imgData.data.length;
-      var limit = pixcount / 10;
-      var i = 0;
-      var count = 0;
-      for (i = 1; i < this.bins.length; ++i) {
-        count += this.bins[i];
-        if (count > limit) {
-          break;
-        }
-      }
-      var hmin = i;
-      count = 0;
-      for (i = this.bins.length - 1; i >= 1; --i) {
-        count += this.bins[i];
-        if (count > limit) {
-          break;
-        }
-      }
-      var hmax = i;
-      return this.lutGenerator_minMax(hmin, hmax);
-    }
-
-    /**
-     * Generate a lookup table attempting to replicate ImageJ's "Auto" button
-     * @return {Lut}
-     */
-  }, {
-    key: "lutGenerator_auto2",
-    value: function lutGenerator_auto2() {
-      var AUTO_THRESHOLD = 5000;
-      var pixcount = this.nonzeroPixelCount;
-      //  const pixcount = this.imgData.data.length;
-      var limit = pixcount / 10;
-      var threshold = pixcount / AUTO_THRESHOLD;
-
-      // this will skip the "zero" bin which contains pixels of zero intensity.
-      var hmin = this.bins.length - 1;
-      var hmax = 1;
-      for (var i = 1; i < this.bins.length; ++i) {
-        if (this.bins[i] > threshold && this.bins[i] <= limit) {
-          hmin = i;
-          break;
-        }
-      }
-      for (var _i4 = this.bins.length - 1; _i4 >= 1; --_i4) {
-        if (this.bins[_i4] > threshold && this.bins[_i4] <= limit) {
-          hmax = _i4;
-          break;
-        }
-      }
-      if (hmax < hmin) {
-        // just reset to whole range in this case.
-        return this.lutGenerator_fullRange();
-      } else {
-        return this.lutGenerator_minMax(hmin, hmax);
-      }
-    }
-
-    /**
-     * Generate a lookup table using a percentile of the most commonly occurring value
-     * @return {Lut}
-     */
-  }, {
-    key: "lutGenerator_auto",
-    value: function lutGenerator_auto() {
-      // simple linear mapping cutting elements with small appearence
-      // get 10% threshold
-      var PERCENTAGE = 0.1;
-      var th = Math.floor(this.bins[this.maxBin] * PERCENTAGE);
-      var b = 0;
-      var e = this.bins.length - 1;
-      for (var x = 1; x < this.bins.length; ++x) {
-        if (this.bins[x] > th) {
-          b = x;
-          break;
-        }
-      }
-      for (var _x = this.bins.length - 1; _x >= 1; --_x) {
-        if (this.bins[_x] > th) {
-          e = _x;
-          break;
-        }
-      }
-      return this.lutGenerator_minMax(b, e);
-    }
-
-    /**
-     * Generate an "equalized" lookup table
-     * @return {Lut}
-     */
-  }, {
-    key: "lutGenerator_equalize",
-    value: function lutGenerator_equalize() {
-      var map = [];
-      for (var i = 0; i < this.bins.length; ++i) {
-        map[i] = 0;
-      }
-
-      // summed area table?
-      map[0] = this.bins[0];
-      for (var _i5 = 1; _i5 < this.bins.length; ++_i5) {
-        map[_i5] = map[_i5 - 1] + this.bins[_i5];
-      }
-      var div = map[map.length - 1] - map[0];
-      if (div > 0) {
-        var lut = new Uint8Array(LUT_ARRAY_LENGTH);
-
-        // compute lut and track control points for the piecewise linear sections
-        var lutControlPoints = [{
-          x: 0,
-          opacity: 0,
-          color: [255, 255, 255]
-        }];
-        lut[0] = 255;
-        lut[1] = 255;
-        lut[2] = 255;
-        lut[3] = 0;
-        var slope = 0;
-        var lastSlope = 0;
-        var opacity = 0;
-        var lastOpacity = 0;
-        for (var _i6 = 1; _i6 < lut.length / 4; ++_i6) {
-          lut[_i6 * 4 + 0] = 255;
-          lut[_i6 * 4 + 1] = 255;
-          lut[_i6 * 4 + 2] = 255;
-          lastOpacity = opacity;
-          opacity = clamp(Math.round(255 * (map[_i6] - map[0])), 0, 255);
-          lut[_i6 * 4 + 3] = opacity;
-          slope = opacity - lastOpacity;
-          // if map[i]-map[i-1] is the same as map[i+1]-map[i] then we are in a linear segment and do not need a new control point
-          if (slope != lastSlope) {
-            lutControlPoints.push({
-              x: _i6 - 1,
-              opacity: lastOpacity / 255.0,
-              color: [255, 255, 255]
-            });
-            lastSlope = slope;
-          }
-        }
-        lutControlPoints.push({
-          x: 255,
-          opacity: 1,
-          color: [255, 255, 255]
-        });
-        return {
-          lut: lut,
-          controlPoints: lutControlPoints
-        };
-      } else {
-        // just reset to whole range in this case...?
-        return this.lutGenerator_fullRange();
-      }
-    }
-
-    // @param {Object[]} controlPoints - array of {x:number 0..255, opacity:number 0..1, color:array of 3 numbers 0..255}
-    // @return {Uint8Array} array of length 256*4 representing the rgba values of the gradient
-  }, {
-    key: "lutGenerator_fromControlPoints",
-    value: function lutGenerator_fromControlPoints(controlPoints) {
-      var lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
-      if (controlPoints.length === 0) {
-        return {
-          lut: lut,
-          controlPoints: controlPoints
-        };
-      }
-
-      // ensure they are sorted in ascending order of x
-      controlPoints.sort(function (a, b) {
-        return a.x - b.x;
-      });
-
-      // special case only one control point.
-      if (controlPoints.length === 1) {
-        var rgba = controlPointToRGBA(controlPoints[0]);
-        // copy val from x to 255.
-        for (var x = controlPoints[0].x; x < 256; ++x) {
-          lut[x * 4 + 0] = rgba[0];
-          lut[x * 4 + 1] = rgba[1];
-          lut[x * 4 + 2] = rgba[2];
-          lut[x * 4 + 3] = rgba[3];
-        }
-        return {
-          lut: lut,
-          controlPoints: controlPoints
-        };
-      }
-      var c0 = controlPoints[0];
-      var c1 = controlPoints[1];
-      var color0 = controlPointToRGBA(c0);
-      var color1 = controlPointToRGBA(c1);
-      var lastIndex = 1;
-      var a = 0;
-      // if the first control point is after 0, act like there are 0s going all the way up to it.
-      // or lerp up to the first point?
-      for (var _x2 = c0.x; _x2 < 256; ++_x2) {
-        while (_x2 > c1.x) {
-          // advance control points
-          c0 = c1;
-          color0 = color1;
-          lastIndex++;
-          if (lastIndex >= controlPoints.length) {
-            // if the last control point is before 255, then we want to continue its value all the way to 255.
-            c1 = {
-              x: 255,
-              color: c1.color,
-              opacity: c1.opacity
-            };
-          } else {
-            c1 = controlPoints[lastIndex];
-          }
-          color1 = controlPointToRGBA(c1);
-        }
-        if (c1.x === c0.x) {
-          // use c1
-          a = 1.0;
-        } else {
-          a = (_x2 - c0.x) / (c1.x - c0.x);
-        }
-        // lerp the colors
-        lut[_x2 * 4 + 0] = lerp(color0[0], color1[0], a);
-        lut[_x2 * 4 + 1] = lerp(color0[1], color1[1], a);
-        lut[_x2 * 4 + 2] = lerp(color0[2], color1[2], a);
-        lut[_x2 * 4 + 3] = lerp(color0[3], color1[3], a);
-      }
-      return {
-        lut: lut,
-        controlPoints: controlPoints
-      };
-    }
-    /* eslint-enable @typescript-eslint/naming-convention */
   }]);
-  return Histogram;
+  return Lut;
 }();
 
+// If the new max is greater than the old max, then
+// the lut's max end will move inward to the left.
+// This is another way of saying that the new max's index is greater than 255 in the old lut
+// If the new min is less than the old min, then
+// the lut's min end will move inward to the right.
+// This is another way of saying that the new min's index is less than 0 in the old lut
+function remapLut(lut, oldMin, oldMax, newMin, newMax) {
+  var newLut = new Uint8Array(LUT_ARRAY_LENGTH);
 
+  // we will find what intensity is at each index in the new range,
+  // and then try to sample the pre-existing lut as if it spans the old range.
+  // Build new lut by sampling from old lut.
+  for (var i = 0; i < LUT_ENTRIES; ++i) {
+    var iOld = remapDomain(i, 0, LUT_ENTRIES - 1, oldMin, oldMax, newMin, newMax);
+    if (iOld < 0) {
+      iOld = 0;
+    }
+    if (iOld > LUT_ENTRIES - 1) {
+      iOld = LUT_ENTRIES - 1;
+    }
+    // find the indices above and below for interpolation
+    var i0 = Math.floor(iOld);
+    var i1 = Math.ceil(iOld);
+    var pct = iOld - i0;
+
+    //console.log(`interpolating ${iOld}: ${lut[i0 * 4 + 3]}, ${lut[i1 * 4 + 3]}, ${pct}`);
+    newLut[i * 4 + 0] = Math.round(lerp(lut[i0 * 4 + 0], lut[i1 * 4 + 0], pct));
+    newLut[i * 4 + 1] = Math.round(lerp(lut[i0 * 4 + 1], lut[i1 * 4 + 1], pct));
+    newLut[i * 4 + 2] = Math.round(lerp(lut[i0 * 4 + 2], lut[i1 * 4 + 2], pct));
+    newLut[i * 4 + 3] = Math.round(lerp(lut[i0 * 4 + 3], lut[i1 * 4 + 3], pct));
+  }
+  return newLut;
+}
+function remapControlPoints(controlPoints, oldMin, oldMax, newMin, newMax) {
+  var newControlPoints = [];
+
+  // assume control point x domain 0-255 is mapped to oldMin-oldMax
+
+  // remap all cp x values.
+  // interpolate all new colors and opacities
+  // then see if we need to clip?
+  for (var i = 0; i < controlPoints.length; ++i) {
+    var cp = controlPoints[i];
+    var iOld = remapDomain(cp.x, 0, LUT_ENTRIES - 1, oldMin, oldMax, newMin, newMax);
+    var newCP = {
+      x: iOld,
+      opacity: cp.opacity,
+      color: [cp.color[0], cp.color[1], cp.color[2]]
+    };
+    newControlPoints.push(newCP);
+  }
+  // now fix up any control points that are out of bounds?
+  // For a CP less than 0, shift it to 0 and interpolate the values according to the slope
+  // For a CP greater than 255, shift it to 255 and interpolate the values according to the slope
+  // All others out of this range can then be dropped.
+  // We will look above and below each cp to see if it's on a boundary.
+  var resultControlPoints = [];
+  for (var _i3 = 0; _i3 < newControlPoints.length; ++_i3) {
+    var _cp = newControlPoints[_i3];
+    var cpPrev = _i3 > 0 ? newControlPoints[_i3 - 1] : _cp;
+    var cpNext = _i3 < newControlPoints.length - 1 ? newControlPoints[_i3 + 1] : _cp;
+    if (_cp.x < 0 && cpNext.x > 0) {
+      // interpolate
+      var pct = (0 - _cp.x) / (cpNext.x - _cp.x);
+      _cp.opacity = lerp(_cp.opacity, cpNext.opacity, pct);
+      _cp.color[0] = lerp(_cp.color[0], cpNext.color[0], pct);
+      _cp.color[1] = lerp(_cp.color[1], cpNext.color[1], pct);
+      _cp.color[2] = lerp(_cp.color[2], cpNext.color[2], pct);
+      // shift cp to 0
+      _cp.x = 0;
+    } else if (_cp.x > 255 && cpPrev.x < 255) {
+      // interpolate
+      var _pct = (_cp.x - 255) / (_cp.x - cpPrev.x);
+      _cp.opacity = lerp(cpPrev.opacity, _cp.opacity, _pct);
+      _cp.color[0] = lerp(cpPrev.color[0], _cp.color[0], _pct);
+      _cp.color[1] = lerp(cpPrev.color[1], _cp.color[1], _pct);
+      _cp.color[2] = lerp(cpPrev.color[2], _cp.color[2], _pct);
+      // shift cp to 255
+      _cp.x = 255;
+    }
+    if (_cp.x >= 0 && _cp.x <= 255) {
+      resultControlPoints.push(_cp);
+    }
+  }
+
+  // lastly, add a point for start and end if needed.
+  if (resultControlPoints[0].x !== 0) {
+    resultControlPoints.unshift({
+      x: 0,
+      opacity: resultControlPoints[0].opacity,
+      color: resultControlPoints[0].color
+    });
+  }
+  if (resultControlPoints[resultControlPoints.length - 1].x !== 255) {
+    resultControlPoints.push({
+      x: 255,
+      opacity: resultControlPoints[resultControlPoints.length - 1].opacity,
+      color: resultControlPoints[resultControlPoints.length - 1].color
+    });
+  }
+  return resultControlPoints;
+}
 
 /***/ }),
 
@@ -1346,11 +1410,11 @@ var Volume = /*#__PURE__*/function () {
      */
   }, {
     key: "setChannelDataFromVolume",
-    value: function setChannelDataFromVolume(channelIndex, volumeData) {
+    value: function setChannelDataFromVolume(channelIndex, volumeData, range) {
       var _this$imageInfo2 = this.imageInfo,
         subregionSize = _this$imageInfo2.subregionSize,
         atlasTileDims = _this$imageInfo2.atlasTileDims;
-      this.channels[channelIndex].setFromVolumeData(volumeData, subregionSize.x, subregionSize.y, subregionSize.z, atlasTileDims.x * subregionSize.x, atlasTileDims.y * subregionSize.y);
+      this.channels[channelIndex].setFromVolumeData(volumeData, subregionSize.x, subregionSize.y, subregionSize.z, atlasTileDims.x * subregionSize.x, atlasTileDims.y * subregionSize.y, range[0], range[1]);
       this.onChannelLoaded([channelIndex]);
     }
 
@@ -1859,7 +1923,13 @@ var VolumeDims = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMP
  * @param {number} channelindex
  */
 
-// allow lists of channel indices and data arrays to be passed to the callback
+/**
+ * @callback RawChannelDataCallback - allow lists of channel indices and data arrays to be passed to the callback
+ * @param {number[]} channelIndex - The indices of the channels that were loaded
+ * @param {Uint8Array[]} data - The raw data for each channel (renormalized to 0-255 range)
+ * @param {[number, number][]} ranges - The min and max values for each channel in their original range
+ * @param {[number, number]} atlasDims - The dimensions of the atlas, if the data is in an atlas format
+ */
 
 /**
  * Loads volume data from a source specified by a `LoadSpec`.
@@ -1921,14 +1991,15 @@ var ThreadableVolumeLoader = /*#__PURE__*/function () {
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee2$(_context2) {
           while (1) switch (_context2.prev = _context2.next) {
             case 0:
-              onChannelData = function onChannelData(channelIndices, dataArrays, atlasDims) {
+              onChannelData = function onChannelData(channelIndices, dataArrays, ranges, atlasDims) {
                 for (var i = 0; i < channelIndices.length; i++) {
                   var _channelIndex = channelIndices[i];
                   var _data = dataArrays[i];
+                  var range = ranges[i];
                   if (atlasDims) {
                     volume.setChannelDataFromAtlas(_channelIndex, _data, atlasDims[0], atlasDims[1]);
                   } else {
-                    volume.setChannelDataFromVolume(_channelIndex, _data);
+                    volume.setChannelDataFromVolume(_channelIndex, _data, range);
                   }
                   onChannelLoaded === null || onChannelLoaded === void 0 || onChannelLoaded(volume, _channelIndex);
                 }
@@ -1982,8 +2053,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
 
 
 
@@ -1999,6 +2071,7 @@ function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.
 
 
 
+
 /* eslint-disable @typescript-eslint/naming-convention */
 
 /* eslint-enable @typescript-eslint/naming-convention */
@@ -2007,12 +2080,12 @@ var convertImageInfo = function convertImageInfo(json) {
   var _json$transform, _json$transform2;
   return {
     name: json.name,
-    originalSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(json.width, json.height, json.tiles),
-    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_9__.Vector2(json.cols, json.rows),
-    volumeSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(json.tile_width, json.tile_height, json.tiles),
-    subregionSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(json.tile_width, json.tile_height, json.tiles),
-    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
-    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
+    originalSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(json.width, json.height, json.tiles),
+    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_10__.Vector2(json.cols, json.rows),
+    volumeSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(json.tile_width, json.tile_height, json.tiles),
+    subregionSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(json.tile_width, json.tile_height, json.tiles),
+    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0),
+    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
     spatialUnit: json.pixel_size_unit || "μm",
     numChannels: json.channels,
     channelNames: json.channel_names,
@@ -2023,8 +2096,8 @@ var convertImageInfo = function convertImageInfo(json) {
     numMultiscaleLevels: 1,
     multiscaleLevel: 0,
     transform: {
-      translation: (_json$transform = json.transform) !== null && _json$transform !== void 0 && _json$transform.translation ? new three__WEBPACK_IMPORTED_MODULE_9__.Vector3().fromArray(json.transform.translation) : new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
-      rotation: (_json$transform2 = json.transform) !== null && _json$transform2 !== void 0 && _json$transform2.rotation ? new three__WEBPACK_IMPORTED_MODULE_9__.Vector3().fromArray(json.transform.rotation) : new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0)
+      translation: (_json$transform = json.transform) !== null && _json$transform !== void 0 && _json$transform.translation ? new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(json.transform.translation) : new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0),
+      rotation: (_json$transform2 = json.transform) !== null && _json$transform2 !== void 0 && _json$transform2.rotation ? new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(json.transform.rotation) : new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0)
     },
     userData: json.userData
   };
@@ -2177,13 +2250,13 @@ var JsonImageInfoLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               });
               w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
               h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
-              wrappedOnData = function wrappedOnData(ch, data) {
-                return onData(ch, data, [w, h]);
+              wrappedOnData = function wrappedOnData(ch, data, ranges) {
+                return onData(ch, data, ranges, [w, h]);
               };
               JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
               adjustedLoadSpec = _objectSpread(_objectSpread({}, loadSpec), {}, {
                 // `subregion` and `multiscaleLevel` are unused by this loader
-                subregion: new three__WEBPACK_IMPORTED_MODULE_9__.Box3(new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(1, 1, 1)),
+                subregion: new three__WEBPACK_IMPORTED_MODULE_10__.Box3(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(1, 1, 1)),
                 multiscaleLevel: 0,
                 // include all channels in any loaded images
                 channels: images.flatMap(function (_ref2) {
@@ -2246,7 +2319,8 @@ var JsonImageInfoLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
                   _context5.next = 9;
                   break;
                 }
-                onData([chindex], [new Uint8Array(cacheResult)]);
+                // all data coming from this loader is natively 8-bit
+                onData([chindex], [new Uint8Array(cacheResult)], [_types_js__WEBPACK_IMPORTED_MODULE_9__.DATARANGE_UINT8]);
                 _context5.next = 11;
                 break;
               case 9:
@@ -2310,7 +2384,8 @@ var JsonImageInfoLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
                   _chindex = image.channels[_ch];
                   cache === null || cache === void 0 || cache.insert("".concat(image.name, "/").concat(_chindex), channelsBits[_ch]);
                   // NOTE: the atlas dimensions passed in here are currently unused by `JSONImageInfoLoader`
-                  onData([_chindex], [channelsBits[_ch]], [bitmap.width, bitmap.height]);
+                  // all data coming from this loader is natively 8-bit
+                  onData([_chindex], [channelsBits[_ch]], [_types_js__WEBPACK_IMPORTED_MODULE_9__.DATARANGE_UINT8], [bitmap.width, bitmap.height]);
                 }
               case 39:
               case "end":
@@ -2394,12 +2469,9 @@ function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.
 
 
 var CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
-function convertChannel(channelData) {
-  if (channelData instanceof Uint8Array) {
-    return channelData;
-  }
-  var u8 = new Uint8Array(channelData.length);
 
+// returns the converted data and the original min and max values (which have been remapped to 0 and 255)
+function convertChannel(channelData) {
   // get min and max
   var min = channelData[0];
   var max = channelData[0];
@@ -2412,13 +2484,17 @@ function convertChannel(channelData) {
       max = val;
     }
   }
+  if (channelData instanceof Uint8Array) {
+    return [channelData, min, max];
+  }
 
   // normalize and convert to u8
+  var u8 = new Uint8Array(channelData.length);
   var range = max - min;
   for (var _i = 0; _i < channelData.length; _i++) {
     u8[_i] = (channelData[_i] - min) / range * 255;
   }
-  return u8;
+  return [u8, min, max];
 }
 var DEFAULT_FETCH_OPTIONS = {
   maxPrefetchDistance: [5, 5, 5, 5],
@@ -2625,7 +2701,10 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
           }
         });
       });
-      var scale5d = this.getScale(levelToLoad);
+
+      // for physicalPixelSize, we use the scale of the first level
+      var scale5d = this.getScale(0);
+      // assume that ImageInfo wants the timeScale of level 0
       var timeScale = hasT ? scale5d[t] : 1;
       var imgdata = {
         name: source0.omeroMetadata.name,
@@ -2719,16 +2798,17 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
         return sourceCoords;
       });
 
-      // Get number of chunks per dimension in `scaleLevel`
-      var source0Shape = this.sources[0].scaleLevels[scaleLevel];
-      var chunkDimsUnordered = source0Shape.shape.map(function (dim, idx) {
-        return Math.ceil(dim / source0Shape.chunks[idx]);
+      // Get number of chunks per dimension in every source array
+      var chunkDimsTCZYX = this.sources.map(function (src) {
+        var level = src.scaleLevels[scaleLevel];
+        var chunkDimsUnordered = level.shape.map(function (dim, idx) {
+          return Math.ceil(dim / level.chunks[idx]);
+        });
+        return _this3.orderByTCZYX(chunkDimsUnordered, 1);
       });
-      var chunkDims = this.orderByTCZYX(chunkDimsUnordered, 1);
-      var subscriber = this.requestQueue.addSubscriber();
       // `ChunkPrefetchIterator` yields chunk coordinates in order of roughly how likely they are to be loaded next
-      var chunkDimsTZYX = [chunkDims[0], chunkDims[2], chunkDims[3], chunkDims[4]];
-      var prefetchIterator = new _zarr_utils_ChunkPrefetchIterator_js__WEBPACK_IMPORTED_MODULE_13__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTZYX, this.priorityDirections);
+      var prefetchIterator = new _zarr_utils_ChunkPrefetchIterator_js__WEBPACK_IMPORTED_MODULE_13__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTCZYX, this.priorityDirections);
+      var subscriber = this.requestQueue.addSubscriber();
       var prefetchCount = 0;
       var _iterator = _createForOfIteratorHelper(prefetchIterator),
         _step;
@@ -2824,9 +2904,10 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       };
       var resultChannelIndices = [];
       var resultChannelData = [];
+      var resultChannelRanges = [];
       var channelPromises = channelIndexes.map( /*#__PURE__*/function () {
         var _ref3 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9___default().mark(function _callee2(ch) {
-          var min, max, _this4$matchChannelTo, sourceIdx, sourceCh, unorderedSpec, level, sliceSpec, reportKey, result, u8;
+          var min, max, _this4$matchChannelTo, sourceIdx, sourceCh, unorderedSpec, level, sliceSpec, reportKey, result, converted;
           return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9___default().wrap(function _callee2$(_context2) {
             while (1) switch (_context2.prev = _context2.next) {
               case 0:
@@ -2850,12 +2931,13 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
                 });
               case 10:
                 result = _context2.sent;
-                u8 = convertChannel(result.data);
+                converted = convertChannel(result.data);
                 if (syncChannels) {
-                  resultChannelData.push(u8);
+                  resultChannelData.push(converted[0]);
                   resultChannelIndices.push(ch);
+                  resultChannelRanges.push([converted[1], converted[2]]);
                 } else {
-                  onData([ch], [u8]);
+                  onData([ch], [converted[0]], [[converted[1], converted[2]]]);
                 }
                 _context2.next = 20;
                 break;
@@ -2887,7 +2969,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       this.beginPrefetch(keys, multiscaleLevel);
       Promise.all(channelPromises).then(function () {
         if (syncChannels) {
-          onData(resultChannelIndices, resultChannelData);
+          onData(resultChannelIndices, resultChannelData, resultChannelRanges);
         }
         _this4.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
       });
@@ -3279,7 +3361,8 @@ var TiffLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
                       worker.onmessage = function (e) {
                         var u8 = e.data.data;
                         var channel = e.data.channel;
-                        onData(channel, u8);
+                        var range = e.data.range;
+                        onData([channel], [u8], [range]);
                         worker.terminate();
                       };
                       worker.onerror = function (e) {
@@ -3645,11 +3728,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ ChunkPrefetchIterator)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/toConsumableArray */ "./node_modules/@babel/runtime/helpers/esm/toConsumableArray.js");
+/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__);
+
 
 
 
@@ -3657,6 +3742,16 @@ __webpack_require__.r(__webpack_exports__);
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
+var allEqual = function allEqual(arr) {
+  return arr.every(function (v) {
+    return v === arr[0];
+  });
+};
+var pushN = function pushN(arr, val, n) {
+  for (var i = 0; i < n; i++) {
+    arr.push(val);
+  }
+};
 var directionToIndex = function directionToIndex(dir) {
   var absDir = dir >> 1; // shave off sign bit to get index in TZYX
   return absDir + Number(absDir !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
@@ -3677,8 +3772,9 @@ function updateMinMax(val, minmax) {
  */
 // NOTE: Assumes `chunks` form a rectangular prism! Will create gaps otherwise! (in practice they always should)
 var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
-  function ChunkPrefetchIterator(chunks, tzyxMaxPrefetchOffset, tzyxNumChunks, priorityDirections) {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, ChunkPrefetchIterator);
+  function ChunkPrefetchIterator(chunks, tzyxMaxPrefetchOffset, tczyxChunksPerSource, priorityDirections) {
+    var _this = this;
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, ChunkPrefetchIterator);
     // Get min and max chunk coordinates for T/Z/Y/X
     var extrema = [[Infinity, -Infinity], [Infinity, -Infinity], [Infinity, -Infinity], [Infinity, -Infinity]];
     var _iterator = _createForOfIteratorHelper(chunks),
@@ -3703,16 +3799,42 @@ var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
     var _iterator2 = _createForOfIteratorHelper(extrema.flat().entries()),
       _step2;
     try {
-      for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-        var _step2$value = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_step2.value, 2),
+      var _loop = function _loop() {
+        var _step2$value = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_step2.value, 2),
           direction = _step2$value[0],
           start = _step2$value[1];
-        var dimension = direction >> 1;
-        var end = void 0;
+        var dimension = direction >> 1; // shave off sign bit to get index in TZYX
+        var tczyxIndex = dimension + Number(dimension !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
+        var end;
         if (direction & 1) {
           // Positive direction - end is either the max coordinate in the fetched set plus the max offset in this
           // dimension, or the max chunk coordinate in this dimension, whichever comes first
-          end = Math.min(start + tzyxMaxPrefetchOffset[dimension], tzyxNumChunks[dimension] - 1);
+          var endsPerSource = tczyxChunksPerSource.map(function (chunkDims) {
+            return Math.min(start + tzyxMaxPrefetchOffset[dimension], chunkDims[tczyxIndex] - 1);
+          });
+
+          // Save some time: if all sources have the same end, we can just store that
+          if (allEqual(endsPerSource)) {
+            end = endsPerSource[0];
+          } else {
+            // Otherwise, expand our ends per source array to ends per channel
+            end = [];
+            var _iterator4 = _createForOfIteratorHelper(endsPerSource.entries()),
+              _step4;
+            try {
+              for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+                var _step4$value = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_step4.value, 2),
+                  i = _step4$value[0],
+                  sourceEnd = _step4$value[1];
+                pushN(end, sourceEnd, tczyxChunksPerSource[i][1]);
+              }
+            } catch (err) {
+              _iterator4.e(err);
+            } finally {
+              _iterator4.f();
+            }
+          }
+          // end = Math.min(start + tzyxMaxPrefetchOffset[dimension], tczyxChunksPerDimension[dimension] - 1);
         } else {
           // Negative direction - end is either the min coordinate in the fetched set minus the max offset in this
           // dimension, or 0, whichever comes first
@@ -3725,10 +3847,13 @@ var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
           chunks: []
         };
         if (priorityDirections && priorityDirections.includes(direction)) {
-          this.priorityDirectionStates.push(directionState);
+          _this.priorityDirectionStates.push(directionState);
         } else {
-          this.directionStates.push(directionState);
+          _this.directionStates.push(directionState);
         }
+      };
+      for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+        _loop();
       }
 
       // Fill each `PrefetchDirectionState` with chunks at the border of the fetched set
@@ -3742,33 +3867,33 @@ var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
     try {
       for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
         var _chunk = _step3.value;
-        var _iterator4 = _createForOfIteratorHelper(this.directionStates),
-          _step4;
-        try {
-          for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-            var dir = _step4.value;
-            if (_chunk[directionToIndex(dir.direction)] === dir.start) {
-              dir.chunks.push(_chunk);
-            }
-          }
-        } catch (err) {
-          _iterator4.e(err);
-        } finally {
-          _iterator4.f();
-        }
-        var _iterator5 = _createForOfIteratorHelper(this.priorityDirectionStates),
+        var _iterator5 = _createForOfIteratorHelper(this.directionStates),
           _step5;
         try {
           for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-            var _dir = _step5.value;
-            if (_chunk[directionToIndex(_dir.direction)] === _dir.start) {
-              _dir.chunks.push(_chunk);
+            var dir = _step5.value;
+            if (_chunk[directionToIndex(dir.direction)] === dir.start) {
+              dir.chunks.push(_chunk);
             }
           }
         } catch (err) {
           _iterator5.e(err);
         } finally {
           _iterator5.f();
+        }
+        var _iterator6 = _createForOfIteratorHelper(this.priorityDirectionStates),
+          _step6;
+        try {
+          for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+            var _dir = _step6.value;
+            if (_chunk[directionToIndex(_dir.direction)] === _dir.start) {
+              _dir.chunks.push(_chunk);
+            }
+          }
+        } catch (err) {
+          _iterator6.e(err);
+        } finally {
+          _iterator6.f();
         }
       }
     } catch (err) {
@@ -3777,26 +3902,26 @@ var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
       _iterator3.f();
     }
   }
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(ChunkPrefetchIterator, [{
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(ChunkPrefetchIterator, [{
     key: _Symbol$iterator,
-    value: /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function value() {
-      var _iterator6, _step6, chunk, _iterator7, _step7, _chunk2;
-      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function value$(_context) {
+    value: /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function value() {
+      var _iterator7, _step7, chunk, _iterator8, _step8, _chunk2;
+      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function value$(_context) {
         while (1) switch (_context.prev = _context.next) {
           case 0:
             if (!(this.priorityDirectionStates.length > 0)) {
               _context.next = 18;
               break;
             }
-            _iterator6 = _createForOfIteratorHelper(ChunkPrefetchIterator.iterateDirections(this.priorityDirectionStates));
+            _iterator7 = _createForOfIteratorHelper(ChunkPrefetchIterator.iterateDirections(this.priorityDirectionStates));
             _context.prev = 2;
-            _iterator6.s();
+            _iterator7.s();
           case 4:
-            if ((_step6 = _iterator6.n()).done) {
+            if ((_step7 = _iterator7.n()).done) {
               _context.next = 10;
               break;
             }
-            chunk = _step6.value;
+            chunk = _step7.value;
             _context.next = 8;
             return chunk;
           case 8:
@@ -3808,22 +3933,22 @@ var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
           case 12:
             _context.prev = 12;
             _context.t0 = _context["catch"](2);
-            _iterator6.e(_context.t0);
+            _iterator7.e(_context.t0);
           case 15:
             _context.prev = 15;
-            _iterator6.f();
+            _iterator7.f();
             return _context.finish(15);
           case 18:
             // Then yield all chunks in other directions
-            _iterator7 = _createForOfIteratorHelper(ChunkPrefetchIterator.iterateDirections(this.directionStates));
+            _iterator8 = _createForOfIteratorHelper(ChunkPrefetchIterator.iterateDirections(this.directionStates));
             _context.prev = 19;
-            _iterator7.s();
+            _iterator8.s();
           case 21:
-            if ((_step7 = _iterator7.n()).done) {
+            if ((_step8 = _iterator8.n()).done) {
               _context.next = 27;
               break;
             }
-            _chunk2 = _step7.value;
+            _chunk2 = _step8.value;
             _context.next = 25;
             return _chunk2;
           case 25:
@@ -3835,10 +3960,10 @@ var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
           case 29:
             _context.prev = 29;
             _context.t1 = _context["catch"](19);
-            _iterator7.e(_context.t1);
+            _iterator8.e(_context.t1);
           case 32:
             _context.prev = 32;
-            _iterator7.f();
+            _iterator8.f();
             return _context.finish(32);
           case 35:
           case "end":
@@ -3848,86 +3973,94 @@ var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
     })
   }], [{
     key: "iterateDirections",
-    value: /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function iterateDirections(directions) {
-      var offset, _iterator8, _step8, dir, _iterator9, _step9, chunk, newChunk;
-      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function iterateDirections$(_context2) {
+    value: /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function iterateDirections(directions) {
+      var offset, _iterator9, _step9, dir, offsetDir, _iterator10, _step10, chunk, newChunk;
+      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function iterateDirections$(_context2) {
         while (1) switch (_context2.prev = _context2.next) {
           case 0:
             offset = 1;
           case 1:
             if (!(directions.length > 0)) {
-              _context2.next = 40;
+              _context2.next = 43;
               break;
             }
-            // Remove directions in which we have hit a boundary
+            // Remove directions in which we have reached the end (or, if per-channel ends, the end for all channels)
             directions = directions.filter(function (dir) {
+              var end = Array.isArray(dir.end) ? Math.max.apply(Math, (0,_babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__["default"])(dir.end)) : dir.end;
               if (dir.direction & 1) {
-                return dir.start + offset <= dir.end;
+                return dir.start + offset <= end;
               } else {
-                return dir.start - offset >= dir.end;
+                return dir.start - offset >= end;
               }
             });
 
             // Yield chunks one chunk farther out in every remaining direction
-            _iterator8 = _createForOfIteratorHelper(directions);
+            _iterator9 = _createForOfIteratorHelper(directions);
             _context2.prev = 4;
-            _iterator8.s();
-          case 6:
-            if ((_step8 = _iterator8.n()).done) {
-              _context2.next = 29;
-              break;
-            }
-            dir = _step8.value;
-            _iterator9 = _createForOfIteratorHelper(dir.chunks);
-            _context2.prev = 9;
             _iterator9.s();
-          case 11:
+          case 6:
             if ((_step9 = _iterator9.n()).done) {
-              _context2.next = 19;
+              _context2.next = 32;
               break;
             }
-            chunk = _step9.value;
+            dir = _step9.value;
+            offsetDir = offset * (dir.direction & 1 ? 1 : -1);
+            _iterator10 = _createForOfIteratorHelper(dir.chunks);
+            _context2.prev = 10;
+            _iterator10.s();
+          case 12:
+            if ((_step10 = _iterator10.n()).done) {
+              _context2.next = 22;
+              break;
+            }
+            chunk = _step10.value;
+            if (!(Array.isArray(dir.end) && chunk[directionToIndex(dir.direction)] + offsetDir > dir.end[chunk[1]])) {
+              _context2.next = 16;
+              break;
+            }
+            return _context2.abrupt("continue", 20);
+          case 16:
             newChunk = chunk.slice();
-            newChunk[directionToIndex(dir.direction)] += offset * (dir.direction & 1 ? 1 : -1);
-            _context2.next = 17;
+            newChunk[directionToIndex(dir.direction)] += offsetDir;
+            _context2.next = 20;
             return newChunk;
-          case 17:
-            _context2.next = 11;
+          case 20:
+            _context2.next = 12;
             break;
-          case 19:
-            _context2.next = 24;
+          case 22:
+            _context2.next = 27;
             break;
-          case 21:
-            _context2.prev = 21;
-            _context2.t0 = _context2["catch"](9);
-            _iterator9.e(_context2.t0);
           case 24:
             _context2.prev = 24;
-            _iterator9.f();
-            return _context2.finish(24);
+            _context2.t0 = _context2["catch"](10);
+            _iterator10.e(_context2.t0);
           case 27:
+            _context2.prev = 27;
+            _iterator10.f();
+            return _context2.finish(27);
+          case 30:
             _context2.next = 6;
             break;
-          case 29:
-            _context2.next = 34;
+          case 32:
+            _context2.next = 37;
             break;
-          case 31:
-            _context2.prev = 31;
-            _context2.t1 = _context2["catch"](4);
-            _iterator8.e(_context2.t1);
           case 34:
             _context2.prev = 34;
-            _iterator8.f();
-            return _context2.finish(34);
+            _context2.t1 = _context2["catch"](4);
+            _iterator9.e(_context2.t1);
           case 37:
+            _context2.prev = 37;
+            _iterator9.f();
+            return _context2.finish(37);
+          case 40:
             offset += 1;
             _context2.next = 1;
             break;
-          case 40:
+          case 43:
           case "end":
             return _context2.stop();
         }
-      }, iterateDirections, null, [[4, 31, 34, 37], [9, 21, 24, 27]]);
+      }, iterateDirections, null, [[4, 34, 37, 40], [10, 24, 27, 30]]);
     })
   }]);
   return ChunkPrefetchIterator;
@@ -4269,7 +4402,7 @@ function matchSourceScaleLevels(sources) {
     var smallestIdx = 0;
     var smallestSrc = sources[0];
     var smallestArr = smallestSrc.scaleLevels[scaleIndexes[0]];
-    var _loop = function _loop() {
+    for (var currentIdx = 1; currentIdx < sources.length; currentIdx++) {
       var currentSrc = sources[currentIdx];
       var currentArr = currentSrc.scaleLevels[scaleIndexes[currentIdx]];
       var ordering = compareZarrArraySize(smallestArr, smallestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
@@ -4289,12 +4422,6 @@ function matchSourceScaleLevels(sources) {
         if (largestT !== currentT) {
           throw new Error("Incompatible zarr arrays: different numbers of timesteps");
         }
-        // ...they have different chunk sizes (TODO update prefetching so this restriction can be removed)
-        if (!smallestArr.chunks.every(function (val, idx) {
-          return val === currentArr.chunks[idx];
-        })) {
-          throw new Error("Incompatible zarr arrays: chunk shapes are mismatched");
-        }
       } else {
         allEqual = false;
         if (ordering > 0) {
@@ -4303,17 +4430,14 @@ function matchSourceScaleLevels(sources) {
           smallestArr = currentArr;
         }
       }
-    };
-    for (var currentIdx = 1; currentIdx < sources.length; currentIdx++) {
-      _loop();
     }
     if (allEqual) {
       // We've found a matching set of scale levels! Save it and increment all indexes
       for (var i = 0; i < scaleIndexes.length; i++) {
-        var currentSrc = sources[i];
+        var _currentSrc = sources[i];
         var matchedScaleLevel = scaleIndexes[i];
-        matchedLevels[i].push(currentSrc.scaleLevels[matchedScaleLevel]);
-        matchedMetas[i].push(currentSrc.multiscaleMetadata.datasets[matchedScaleLevel]);
+        matchedLevels[i].push(_currentSrc.scaleLevels[matchedScaleLevel]);
+        matchedMetas[i].push(_currentSrc.multiscaleMetadata.datasets[matchedScaleLevel]);
         scaleIndexes[i] += 1;
       }
     } else {
@@ -4325,10 +4449,10 @@ function matchSourceScaleLevels(sources) {
           var _step$value = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_step.value, 2),
             idx = _step$value[0],
             srcIdx = _step$value[1];
-          var _currentSrc = sources[idx];
-          var currentArr = _currentSrc.scaleLevels[srcIdx];
-          var ordering = compareZarrArraySize(smallestArr, smallestSrc.axesTCZYX, currentArr, _currentSrc.axesTCZYX);
-          if (ordering !== 0) {
+          var _currentSrc2 = sources[idx];
+          var _currentArr = _currentSrc2.scaleLevels[srcIdx];
+          var _ordering = compareZarrArraySize(smallestArr, smallestSrc.axesTCZYX, _currentArr, _currentSrc2.axesTCZYX);
+          if (_ordering !== 0) {
             scaleIndexes[idx] += 1;
           }
         }
@@ -4347,6 +4471,91 @@ function matchSourceScaleLevels(sources) {
     sources[_i].multiscaleMetadata.datasets = matchedMetas[_i];
   }
 }
+
+/***/ }),
+
+/***/ "./src/types.ts":
+/*!**********************!*\
+  !*** ./src/types.ts ***!
+  \**********************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   DATARANGE_UINT8: () => (/* binding */ DATARANGE_UINT8),
+/* harmony export */   FUSE_DISABLED_RGB_COLOR: () => (/* binding */ FUSE_DISABLED_RGB_COLOR),
+/* harmony export */   RenderMode: () => (/* binding */ RenderMode),
+/* harmony export */   ViewportCorner: () => (/* binding */ ViewportCorner),
+/* harmony export */   isOrthographicCamera: () => (/* binding */ isOrthographicCamera),
+/* harmony export */   isRight: () => (/* binding */ isRight),
+/* harmony export */   isTop: () => (/* binding */ isTop)
+/* harmony export */ });
+/** If `FuseChannel.rgbColor` is this value, it is disabled from fusion. */
+var FUSE_DISABLED_RGB_COLOR = 0;
+
+/**
+ * Provide options to control the visual appearance of a Volume
+ * @typedef {Object} VolumeChannelDisplayOptions
+ * @property {boolean} enabled array of boolean per channel
+ * @property {Array.<number>} color array of rgb per channel
+ * @property {Array.<number>} specularColor array of rgb per channel
+ * @property {Array.<number>} emissiveColor array of rgb per channel
+ * @property {number} glossiness array of float per channel
+ * @property {boolean} isosurfaceEnabled array of boolean per channel
+ * @property {number} isovalue array of number per channel
+ * @property {number} isosurfaceOpacity array of number per channel
+ * @example let options = {
+   };
+ */
+
+var RenderMode = /*#__PURE__*/function (RenderMode) {
+  RenderMode[RenderMode["RAYMARCH"] = 0] = "RAYMARCH";
+  RenderMode[RenderMode["PATHTRACE"] = 1] = "PATHTRACE";
+  RenderMode[RenderMode["SLICE"] = 2] = "SLICE";
+  return RenderMode;
+}({});
+
+/**
+ * Provide options to control the visual appearance of a Volume
+ * @typedef {Object} VolumeDisplayOptions
+ * @property {Array.<VolumeChannelDisplayOptions>} channels array of channel display options
+ * @property {number} density
+ * @property {Array.<number>} translation xyz
+ * @property {Array.<number>} rotation xyz angles in radians
+ * @property {number} maskChannelIndex
+ * @property {number} maskAlpha
+ * @property {Array.<number>} clipBounds [xmin, xmax, ymin, ymax, zmin, zmax] all range from 0 to 1 as a percentage of the volume on that axis
+ * @property {Array.<number>} scale xyz voxel size scaling
+ * @property {boolean} maxProjection true or false (ray marching)
+ * @property {number} renderMode 0 for raymarch, 1 for pathtrace
+ * @property {number} shadingMethod 0 for phase, 1 for brdf, 2 for hybrid (path tracer)
+ * @property {Array.<number>} gamma [min, max, scale]
+ * @property {number} primaryRayStepSize in voxels
+ * @property {number} secondaryRayStepSize in voxels
+ * @property {boolean} showBoundingBox true or false
+ * @property {Array.<number>} boundingBoxColor r,g,b for bounding box lines
+ * @example let options = {
+   };
+ */
+
+var isOrthographicCamera = function isOrthographicCamera(def) {
+  return def && def.isOrthographicCamera;
+};
+var ViewportCorner = /*#__PURE__*/function (ViewportCorner) {
+  ViewportCorner["TOP_LEFT"] = "top_left";
+  ViewportCorner["TOP_RIGHT"] = "top_right";
+  ViewportCorner["BOTTOM_LEFT"] = "bottom_left";
+  ViewportCorner["BOTTOM_RIGHT"] = "bottom_right";
+  return ViewportCorner;
+}({});
+var isTop = function isTop(corner) {
+  return corner === ViewportCorner.TOP_LEFT || corner === ViewportCorner.TOP_RIGHT;
+};
+var isRight = function isRight(corner) {
+  return corner === ViewportCorner.TOP_RIGHT || corner === ViewportCorner.BOTTOM_RIGHT;
+};
+var DATARANGE_UINT8 = [0, 255];
 
 /***/ }),
 
@@ -5104,13 +5313,14 @@ var messageHandlers = (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED
           throw new Error("No loader created");
         case 3:
           _context4.next = 5;
-          return loader.loadRawChannelData((0,_util_js__WEBPACK_IMPORTED_MODULE_8__.rebuildImageInfo)(imageInfo), (0,_util_js__WEBPACK_IMPORTED_MODULE_8__.rebuildLoadSpec)(loadSpec), function (channelIndex, data, atlasDims) {
+          return loader.loadRawChannelData((0,_util_js__WEBPACK_IMPORTED_MODULE_8__.rebuildImageInfo)(imageInfo), (0,_util_js__WEBPACK_IMPORTED_MODULE_8__.rebuildLoadSpec)(loadSpec), function (channelIndex, data, ranges, atlasDims) {
             var message = {
               responseResult: _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerResponseResult.EVENT,
               loaderId: loaderId,
               loadId: loadId,
               channelIndex: channelIndex,
               data: data,
+              ranges: ranges,
               atlasDims: atlasDims
             };
             var dataTransfers = data.map(function (d) {
@@ -5346,7 +5556,7 @@ function rebuildImageInfo(imageInfo) {
 /******/ 	__webpack_require__.x = () => {
 /******/ 		// Load entry module and return exports
 /******/ 		// This entry module depends on other loaded chunks and execution need to be delayed
-/******/ 		var __webpack_exports__ = __webpack_require__.O(undefined, ["vendors-node_modules_babel_runtime_regenerator_index_js-node_modules_babel_runtime_helpers_es-31f4f7","vendors-node_modules_babel_runtime_helpers_esm_classCallCheck_js-node_modules_babel_runtime_h-afcf4f"], () => (__webpack_require__("./src/workers/VolumeLoadWorker.ts")))
+/******/ 		var __webpack_exports__ = __webpack_require__.O(undefined, ["vendors-node_modules_babel_runtime_regenerator_index_js-node_modules_babel_runtime_helpers_es-31f4f7","vendors-node_modules_babel_runtime_helpers_esm_classCallCheck_js-node_modules_babel_runtime_h-896aaa"], () => (__webpack_require__("./src/workers/VolumeLoadWorker.ts")))
 /******/ 		__webpack_exports__ = __webpack_require__.O(__webpack_exports__);
 /******/ 		return __webpack_exports__;
 /******/ 	};
@@ -5528,7 +5738,7 @@ function rebuildImageInfo(imageInfo) {
 /******/ 		__webpack_require__.x = () => {
 /******/ 			return Promise.all([
 /******/ 				__webpack_require__.e("vendors-node_modules_babel_runtime_regenerator_index_js-node_modules_babel_runtime_helpers_es-31f4f7"),
-/******/ 				__webpack_require__.e("vendors-node_modules_babel_runtime_helpers_esm_classCallCheck_js-node_modules_babel_runtime_h-afcf4f")
+/******/ 				__webpack_require__.e("vendors-node_modules_babel_runtime_helpers_esm_classCallCheck_js-node_modules_babel_runtime_h-896aaa")
 /******/ 			]).then(next);
 /******/ 		};
 /******/ 	})();

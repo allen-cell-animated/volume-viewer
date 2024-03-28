@@ -283,10 +283,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ Channel)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
+/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
+/* harmony import */ var _Lut_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Lut.js */ "./src/Lut.ts");
+
+
 
 
 
@@ -294,37 +298,41 @@ __webpack_require__.r(__webpack_exports__);
 // Data and processing for a single channel
 var Channel = /*#__PURE__*/function () {
   function Channel(name) {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Channel);
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, Channel);
     this.loaded = false;
     this.imgData = {
       data: new Uint8ClampedArray(),
       width: 0,
       height: 0
     };
+    this.rawMin = 0;
+    this.rawMax = 0;
 
     // on gpu
-    this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(new Uint8Array(), 0, 0);
-    this.lutTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH), 256, 1, three__WEBPACK_IMPORTED_MODULE_3__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType);
-    this.lutTexture.minFilter = this.lutTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_3__.LinearFilter;
+    this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_5__.DataTexture(new Uint8Array(), 0, 0);
+    this.lutTexture = new three__WEBPACK_IMPORTED_MODULE_5__.DataTexture(new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH), 256, 1, three__WEBPACK_IMPORTED_MODULE_5__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_5__.UnsignedByteType);
+    this.lutTexture.minFilter = this.lutTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_5__.LinearFilter;
     this.lutTexture.generateMipmaps = false;
     this.volumeData = new Uint8Array();
     this.name = name;
-    this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_2__["default"](new Uint8Array());
+    this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_3__["default"](new Uint8Array());
     this.dims = [0, 0, 0];
 
     // intensity remapping lookup table
-    this.lut = new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH).fill(0);
+    this.lut = new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH).fill(0);
+    var lut = new _Lut_js__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(0, 255);
+    this.setLut(lut.lut);
     // per-intensity color labeling (disabled initially)
-    this.colorPalette = new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH).fill(0);
+    this.colorPalette = new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH).fill(0);
     // store in 0..1 range. 1 means fully colorPalette, 0 means fully lut.
     this.colorPaletteAlpha = 0.0;
   }
 
   // rgbColor is [0..255, 0..255, 0..255]
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Channel, [{
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(Channel, [{
     key: "combineLuts",
     value: function combineLuts(rgbColor, out) {
-      var ret = out ? out : new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH);
+      var ret = out ? out : new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH);
       if (!rgbColor) {
         return ret;
       }
@@ -335,13 +343,13 @@ var Channel = /*#__PURE__*/function () {
         ret.set(this.colorPalette);
       } else if (this.colorPaletteAlpha === 0.0) {
         ret.set(this.lut);
-        for (var i = 0; i < _Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH / 4; ++i) {
+        for (var i = 0; i < _Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH / 4; ++i) {
           ret[i * 4 + 0] *= rgb[0];
           ret[i * 4 + 1] *= rgb[1];
           ret[i * 4 + 2] *= rgb[2];
         }
       } else {
-        for (var _i = 0; _i < _Histogram_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH / 4; ++_i) {
+        for (var _i = 0; _i < _Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH / 4; ++_i) {
           ret[_i * 4 + 0] = this.colorPalette[_i * 4 + 0] * this.colorPaletteAlpha + this.lut[_i * 4 + 0] * (1.0 - this.colorPaletteAlpha) * rgb[0];
           ret[_i * 4 + 1] = this.colorPalette[_i * 4 + 1] * this.colorPaletteAlpha + this.lut[_i * 4 + 1] * (1.0 - this.colorPaletteAlpha) * rgb[1];
           ret[_i * 4 + 2] = this.colorPalette[_i * 4 + 2] * this.colorPaletteAlpha + this.lut[_i * 4 + 2] * (1.0 - this.colorPaletteAlpha) * rgb[2];
@@ -351,6 +359,15 @@ var Channel = /*#__PURE__*/function () {
       this.lutTexture.image.data.set(ret);
       this.lutTexture.needsUpdate = true;
       return ret;
+    }
+  }, {
+    key: "setRawDataRange",
+    value: function setRawDataRange(min, max) {
+      // remap the lut which was based on rawMin and rawMax to new min and max
+      var newLut = (0,_Lut_js__WEBPACK_IMPORTED_MODULE_4__.remapLut)(this.lut, this.rawMin, this.rawMax, min, max);
+      this.rawMin = min;
+      this.rawMax = max;
+      this.lut = newLut;
     }
   }, {
     key: "getHistogram",
@@ -379,11 +396,11 @@ var Channel = /*#__PURE__*/function () {
       if (this.dataTexture) {
         this.dataTexture.dispose();
       }
-      this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(data, w, h);
-      this.dataTexture.format = three__WEBPACK_IMPORTED_MODULE_3__.RedFormat;
-      this.dataTexture.type = three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType;
-      this.dataTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
-      this.dataTexture.minFilter = three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter;
+      this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_5__.DataTexture(data, w, h);
+      this.dataTexture.format = three__WEBPACK_IMPORTED_MODULE_5__.RedFormat;
+      this.dataTexture.type = three__WEBPACK_IMPORTED_MODULE_5__.UnsignedByteType;
+      this.dataTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_5__.NearestFilter;
+      this.dataTexture.minFilter = three__WEBPACK_IMPORTED_MODULE_5__.NearestFilter;
       this.dataTexture.generateMipmaps = false;
       this.dataTexture.needsUpdate = true;
     }
@@ -400,8 +417,13 @@ var Channel = /*#__PURE__*/function () {
       };
       this.rebuildDataTexture(this.imgData.data, w, h);
       this.loaded = true;
-      this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_2__["default"](bitsArray);
-      this.lutGenerator_auto2();
+      this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_3__["default"](bitsArray);
+      var _this$histogram$findA = this.histogram.findAutoIJBins(),
+        _this$histogram$findA2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_this$histogram$findA, 2),
+        hmin = _this$histogram$findA2[0],
+        hmax = _this$histogram$findA2[1];
+      var lut = new _Lut_js__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(hmin, hmax);
+      this.setLut(lut.lut);
     }
 
     // let's rearrange this.imgData.data into a 3d array.
@@ -438,13 +460,16 @@ var Channel = /*#__PURE__*/function () {
   }, {
     key: "setFromVolumeData",
     value: function setFromVolumeData(bitsArray, vx, vy, vz, ax, ay) {
+      var rawMin = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 0;
+      var rawMax = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : 255;
       this.dims = [vx, vy, vz];
       this.volumeData = bitsArray;
       // TODO FIXME performance hit for shuffling the data and storing 2 versions of it (could do this in worker at least?)
       this.packToAtlas(vx, vy, vz, ax, ay);
       this.loaded = true;
-      this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_2__["default"](this.volumeData);
-      this.lutGenerator_auto2();
+      // update from current histogram?
+      this.setRawDataRange(rawMin, rawMax);
+      this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_3__["default"](this.volumeData);
     }
 
     // given this.volumeData, let's unpack it into a flat textureatlas and fill up this.imgData.
@@ -512,83 +537,6 @@ var Channel = /*#__PURE__*/function () {
     value: function setColorPaletteAlpha(alpha) {
       this.colorPaletteAlpha = alpha;
     }
-
-    /* eslint-disable @typescript-eslint/naming-convention */
-  }, {
-    key: "lutGenerator_windowLevel",
-    value: function lutGenerator_windowLevel(wnd, lvl) {
-      if (!this.loaded) {
-        return;
-      }
-      var lut = this.histogram.lutGenerator_windowLevel(wnd, lvl);
-      this.setLut(lut.lut);
-    }
-  }, {
-    key: "lutGenerator_fullRange",
-    value: function lutGenerator_fullRange() {
-      if (!this.loaded) {
-        return;
-      }
-      var lut = this.histogram.lutGenerator_fullRange();
-      this.setLut(lut.lut);
-    }
-  }, {
-    key: "lutGenerator_dataRange",
-    value: function lutGenerator_dataRange() {
-      if (!this.loaded) {
-        return;
-      }
-      var lut = this.histogram.lutGenerator_dataRange();
-      this.setLut(lut.lut);
-    }
-  }, {
-    key: "lutGenerator_bestFit",
-    value: function lutGenerator_bestFit() {
-      if (!this.loaded) {
-        return;
-      }
-      var lut = this.histogram.lutGenerator_bestFit();
-      this.setLut(lut.lut);
-    }
-
-    // attempt to redo imagej's Auto
-  }, {
-    key: "lutGenerator_auto2",
-    value: function lutGenerator_auto2() {
-      if (!this.loaded) {
-        return;
-      }
-      var lut = this.histogram.lutGenerator_auto2();
-      this.setLut(lut.lut);
-    }
-  }, {
-    key: "lutGenerator_auto",
-    value: function lutGenerator_auto() {
-      if (!this.loaded) {
-        return;
-      }
-      var lut = this.histogram.lutGenerator_auto();
-      this.setLut(lut.lut);
-    }
-  }, {
-    key: "lutGenerator_equalize",
-    value: function lutGenerator_equalize() {
-      if (!this.loaded) {
-        return;
-      }
-      var lut = this.histogram.lutGenerator_equalize();
-      this.setLut(lut.lut);
-    }
-  }, {
-    key: "lutGenerator_percentiles",
-    value: function lutGenerator_percentiles(lo, hi) {
-      if (!this.loaded) {
-        return;
-      }
-      var lut = this.histogram.lutGenerator_percentiles(lo, hi);
-      this.setLut(lut.lut);
-    }
-    /* eslint-enable @typescript-eslint/naming-convention */
   }]);
   return Channel;
 }();
@@ -859,41 +807,12 @@ var FusedChannelData = /*#__PURE__*/function () {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   LUT_ARRAY_LENGTH: () => (/* binding */ LUT_ARRAY_LENGTH),
 /* harmony export */   "default": () => (/* binding */ Histogram)
 /* harmony export */ });
 /* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
 /* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _constants_colors_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants/colors.js */ "./src/constants/colors.ts");
 
 
-
-function clamp(val, cmin, cmax) {
-  return Math.min(Math.max(cmin, val), cmax);
-}
-function controlPointToRGBA(controlPoint) {
-  return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], Math.floor(controlPoint.opacity * 255)];
-}
-function lerp(xmin, xmax, a) {
-  return a * (xmax - xmin) + xmin;
-}
-var LUT_ENTRIES = 256;
-var LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
-
-/**
- * @typedef {Object} ControlPoint Used for the TF (transfer function) editor GUI.
- * Need to be converted to LUT for rendering.
- * @property {number} x The X Coordinate
- * @property {number} opacity The Opacity, from 0 to 1
- * @property {Array.<number>} color The Color, 3 numbers from 0-255 for r,g,b
- */
-
-/**
- * @typedef {Object} Lut Used for rendering.
- * @property {Array.<number>} lut LUT_ARRAY_LENGTH element lookup table as array
- * (maps scalar intensity to a rgb color plus alpha, with each value from 0-255)
- * @property {Array.<ControlPoint>} controlPoints
- */
 /**
  * Builds a histogram with 256 bins from a data array. Assume data is 8 bit single channel grayscale.
  * @class
@@ -960,266 +879,15 @@ var Histogram = /*#__PURE__*/function () {
     value: function getMax() {
       return this.dataMax;
     }
-
-    /* eslint-disable @typescript-eslint/naming-convention */
-
-    /**
-     * Generate a Window/level lookup table
-     * @return {Lut}
-     * @param {number} wnd in 0..1 range
-     * @param {number} lvl in 0..1 range
-     */
   }, {
-    key: "lutGenerator_windowLevel",
-    value: function lutGenerator_windowLevel(wnd, lvl) {
-      // simple linear mapping for actual range
-      var b = lvl - wnd * 0.5;
-      var e = lvl + wnd * 0.5;
-      return this.lutGenerator_minMax(b * 255, e * 255);
+    key: "getNumBins",
+    value: function getNumBins() {
+      return this.bins.length;
     }
-
-    /**
-     * Generate a piecewise linear lookup table that ramps up from 0 to 1 over the b to e domain.
-     * If e === b, then we use a step function with f(b) = 0 and f(b + 1) = 1
-     *  |
-     * 1|               +---------+-----
-     *  |              /
-     *  |             /
-     *  |            /
-     *  |           /
-     *  |          /
-     * 0+=========+---------------+-----
-     *  0         b    e         255
-     * @return {Lut}
-     * @param {number} b
-     * @param {number} e
-     */
   }, {
-    key: "lutGenerator_minMax",
-    value: function lutGenerator_minMax(b, e) {
-      if (e < b) {
-        // swap
-        var tmp = e;
-        e = b;
-        b = tmp;
-      }
-      var lut = new Uint8Array(LUT_ARRAY_LENGTH);
-      for (var x = 0; x < lut.length / 4; ++x) {
-        lut[x * 4 + 0] = 255;
-        lut[x * 4 + 1] = 255;
-        lut[x * 4 + 2] = 255;
-        if (x > e) {
-          lut[x * 4 + 3] = 255;
-        } else if (x <= b) {
-          lut[x * 4 + 3] = 0;
-        } else {
-          if (e === b) {
-            lut[x * 4 + 3] = 255;
-          } else {
-            var a = (x - b) / (e - b);
-            lut[x * 4 + 3] = lerp(0, 255, a);
-          }
-        }
-      }
-
-      // Edge case: b and e are both out of bounds
-      if (b < 0 && e < 0) {
-        return {
-          lut: lut,
-          controlPoints: [{
-            x: 0,
-            opacity: 1,
-            color: [255, 255, 255]
-          }, {
-            x: 255,
-            opacity: 1,
-            color: [255, 255, 255]
-          }]
-        };
-      }
-      if (b >= 255 && e >= 255) {
-        return {
-          lut: lut,
-          controlPoints: [{
-            x: 0,
-            opacity: 0,
-            color: [255, 255, 255]
-          }, {
-            x: 255,
-            opacity: 0,
-            color: [255, 255, 255]
-          }]
-        };
-      }
-
-      // Generate 2 to 4 control points for a minMax LUT, from left to right
-      var controlPoints = [];
-
-      // Add starting point at x = 0
-      var startVal = 0;
-      if (b < 0) {
-        startVal = -b / (e - b);
-      }
-      controlPoints.push({
-        x: 0,
-        opacity: startVal,
-        color: [255, 255, 255]
-      });
-
-      // If b > 0, add another point at (b, 0)
-      if (b > 0) {
-        controlPoints.push({
-          x: b,
-          opacity: 0,
-          color: [255, 255, 255]
-        });
-      }
-
-      // If e < 255, Add another point at (e, 1)
-      if (e < 255) {
-        if (e === b) {
-          // Use b + 0.5 as x value instead of e to create a near-vertical ramp
-          controlPoints.push({
-            x: b + 0.5,
-            opacity: 1,
-            color: [255, 255, 255]
-          });
-        } else {
-          controlPoints.push({
-            x: e,
-            opacity: 1,
-            color: [255, 255, 255]
-          });
-        }
-      }
-
-      // Add ending point at x = 255
-      var endVal = 1;
-      if (e > 255) {
-        endVal = (255 - b) / (e - b);
-      }
-      controlPoints.push({
-        x: 255,
-        opacity: endVal,
-        color: [255, 255, 255]
-      });
-      return {
-        lut: lut,
-        controlPoints: controlPoints
-      };
-    }
-
-    /**
-     * Generate a straight 0-1 linear identity lookup table
-     * @return {Lut}
-     */
-  }, {
-    key: "lutGenerator_fullRange",
-    value: function lutGenerator_fullRange() {
-      var lut = new Uint8Array(LUT_ARRAY_LENGTH);
-
-      // simple linear mapping for actual range
-      for (var x = 0; x < lut.length / 4; ++x) {
-        lut[x * 4 + 0] = 255;
-        lut[x * 4 + 1] = 255;
-        lut[x * 4 + 2] = 255;
-        lut[x * 4 + 3] = x;
-      }
-      return {
-        lut: lut,
-        controlPoints: [{
-          x: 0,
-          opacity: 0,
-          color: [255, 255, 255]
-        }, {
-          x: 255,
-          opacity: 1,
-          color: [255, 255, 255]
-        }]
-      };
-    }
-
-    /**
-     * Generate a lookup table over the min to max range of the data values
-     * @return {Lut}
-     */
-  }, {
-    key: "lutGenerator_dataRange",
-    value: function lutGenerator_dataRange() {
-      // simple linear mapping for actual range
-      var b = this.dataMin;
-      var e = this.dataMax;
-      return this.lutGenerator_minMax(b, e);
-    }
-
-    /**
-     * Generate a lookup table with a different color per intensity value
-     * @return {Lut}
-     */
-  }, {
-    key: "lutGenerator_labelColors",
-    value: function lutGenerator_labelColors() {
-      var lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
-      // TODO specify type for control point
-      var controlPoints = [];
-      controlPoints.push({
-        x: 0,
-        opacity: 0,
-        color: [0, 0, 0]
-      });
-      var lastr = 0;
-      var lastg = 0;
-      var lastb = 0;
-      var lasta = 0;
-      var r = 0;
-      var g = 0;
-      var b = 0;
-      var a = 0;
-
-      // assumes exactly one bin per intensity value?
-      // skip zero!!!
-      for (var i = 1; i < this.bins.length; ++i) {
-        if (this.bins[i] > 0) {
-          var rgb = (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_2__.getColorByChannelIndex)(i);
-          lut[i * 4 + 0] = rgb[0];
-          lut[i * 4 + 1] = rgb[1];
-          lut[i * 4 + 2] = rgb[2];
-          lut[i * 4 + 3] = 255;
-          r = rgb[0];
-          g = rgb[1];
-          b = rgb[2];
-          a = 1;
-        } else {
-          // add a zero control point?
-          r = 0;
-          g = 0;
-          b = 0;
-          a = 0;
-        }
-        // if current control point is same as last one don't add it
-        if (r !== lastr || g !== lastg || b !== lastb || a !== lasta) {
-          if (lasta === 0) {
-            controlPoints.push({
-              x: i - 0.5,
-              opacity: lasta,
-              color: [lastr, lastg, lastb]
-            });
-          }
-          controlPoints.push({
-            x: i,
-            opacity: a,
-            color: [r, g, b]
-          });
-          lastr = r;
-          lastg = g;
-          lastb = b;
-          lasta = a;
-        }
-      }
-      return {
-        lut: lut,
-        controlPoints: controlPoints
-      };
+    key: "getBin",
+    value: function getBin(i) {
+      return this.bins[i];
     }
 
     /**
@@ -1243,28 +911,10 @@ var Histogram = /*#__PURE__*/function () {
       return i;
     }
 
-    /**
-     * Generate a lookup table based on histogram percentiles
-     * @return {Lut}
-     * @param {number} pmin
-     * @param {number} pmax
-     */
+    // Find bins at 10th / 90th percentile
   }, {
-    key: "lutGenerator_percentiles",
-    value: function lutGenerator_percentiles(pmin, pmax) {
-      // e.g. 0.50, 0.983 starts from 50th percentile bucket and ends at 98.3 percentile bucket.
-      var hmin = this.findBinOfPercentile(pmin);
-      var hmax = this.findBinOfPercentile(pmax);
-      return this.lutGenerator_minMax(hmin, hmax);
-    }
-
-    /**
-     * Generate a 10% / 90% lookup table
-     * @return {Lut}
-     */
-  }, {
-    key: "lutGenerator_bestFit",
-    value: function lutGenerator_bestFit() {
+    key: "findBestFitBins",
+    value: function findBestFitBins() {
       var pixcount = this.nonzeroPixelCount;
       //const pixcount = this.imgData.data.length;
       var limit = pixcount / 10;
@@ -1285,16 +935,13 @@ var Histogram = /*#__PURE__*/function () {
         }
       }
       var hmax = i;
-      return this.lutGenerator_minMax(hmin, hmax);
+      return [hmin, hmax];
     }
 
-    /**
-     * Generate a lookup table attempting to replicate ImageJ's "Auto" button
-     * @return {Lut}
-     */
+    // Find min and max bins attempting to replicate ImageJ's "Auto" button
   }, {
-    key: "lutGenerator_auto2",
-    value: function lutGenerator_auto2() {
+    key: "findAutoIJBins",
+    value: function findAutoIJBins() {
       var AUTO_THRESHOLD = 5000;
       var pixcount = this.nonzeroPixelCount;
       //  const pixcount = this.imgData.data.length;
@@ -1317,20 +964,16 @@ var Histogram = /*#__PURE__*/function () {
         }
       }
       if (hmax < hmin) {
-        // just reset to whole range in this case.
-        return this.lutGenerator_fullRange();
-      } else {
-        return this.lutGenerator_minMax(hmin, hmax);
+        hmin = 0;
+        hmax = 255;
       }
+      return [hmin, hmax];
     }
 
-    /**
-     * Generate a lookup table using a percentile of the most commonly occurring value
-     * @return {Lut}
-     */
+    // Find min and max bins using a percentile of the most commonly occurring value
   }, {
-    key: "lutGenerator_auto",
-    value: function lutGenerator_auto() {
+    key: "findAutoMinMax",
+    value: function findAutoMinMax() {
       // simple linear mapping cutting elements with small appearence
       // get 10% threshold
       var PERCENTAGE = 0.1;
@@ -1349,158 +992,11 @@ var Histogram = /*#__PURE__*/function () {
           break;
         }
       }
-      return this.lutGenerator_minMax(b, e);
+      return [b, e];
     }
-
-    /**
-     * Generate an "equalized" lookup table
-     * @return {Lut}
-     */
-  }, {
-    key: "lutGenerator_equalize",
-    value: function lutGenerator_equalize() {
-      var map = [];
-      for (var i = 0; i < this.bins.length; ++i) {
-        map[i] = 0;
-      }
-
-      // summed area table?
-      map[0] = this.bins[0];
-      for (var _i5 = 1; _i5 < this.bins.length; ++_i5) {
-        map[_i5] = map[_i5 - 1] + this.bins[_i5];
-      }
-      var div = map[map.length - 1] - map[0];
-      if (div > 0) {
-        var lut = new Uint8Array(LUT_ARRAY_LENGTH);
-
-        // compute lut and track control points for the piecewise linear sections
-        var lutControlPoints = [{
-          x: 0,
-          opacity: 0,
-          color: [255, 255, 255]
-        }];
-        lut[0] = 255;
-        lut[1] = 255;
-        lut[2] = 255;
-        lut[3] = 0;
-        var slope = 0;
-        var lastSlope = 0;
-        var opacity = 0;
-        var lastOpacity = 0;
-        for (var _i6 = 1; _i6 < lut.length / 4; ++_i6) {
-          lut[_i6 * 4 + 0] = 255;
-          lut[_i6 * 4 + 1] = 255;
-          lut[_i6 * 4 + 2] = 255;
-          lastOpacity = opacity;
-          opacity = clamp(Math.round(255 * (map[_i6] - map[0])), 0, 255);
-          lut[_i6 * 4 + 3] = opacity;
-          slope = opacity - lastOpacity;
-          // if map[i]-map[i-1] is the same as map[i+1]-map[i] then we are in a linear segment and do not need a new control point
-          if (slope != lastSlope) {
-            lutControlPoints.push({
-              x: _i6 - 1,
-              opacity: lastOpacity / 255.0,
-              color: [255, 255, 255]
-            });
-            lastSlope = slope;
-          }
-        }
-        lutControlPoints.push({
-          x: 255,
-          opacity: 1,
-          color: [255, 255, 255]
-        });
-        return {
-          lut: lut,
-          controlPoints: lutControlPoints
-        };
-      } else {
-        // just reset to whole range in this case...?
-        return this.lutGenerator_fullRange();
-      }
-    }
-
-    // @param {Object[]} controlPoints - array of {x:number 0..255, opacity:number 0..1, color:array of 3 numbers 0..255}
-    // @return {Uint8Array} array of length 256*4 representing the rgba values of the gradient
-  }, {
-    key: "lutGenerator_fromControlPoints",
-    value: function lutGenerator_fromControlPoints(controlPoints) {
-      var lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
-      if (controlPoints.length === 0) {
-        return {
-          lut: lut,
-          controlPoints: controlPoints
-        };
-      }
-
-      // ensure they are sorted in ascending order of x
-      controlPoints.sort(function (a, b) {
-        return a.x - b.x;
-      });
-
-      // special case only one control point.
-      if (controlPoints.length === 1) {
-        var rgba = controlPointToRGBA(controlPoints[0]);
-        // copy val from x to 255.
-        for (var x = controlPoints[0].x; x < 256; ++x) {
-          lut[x * 4 + 0] = rgba[0];
-          lut[x * 4 + 1] = rgba[1];
-          lut[x * 4 + 2] = rgba[2];
-          lut[x * 4 + 3] = rgba[3];
-        }
-        return {
-          lut: lut,
-          controlPoints: controlPoints
-        };
-      }
-      var c0 = controlPoints[0];
-      var c1 = controlPoints[1];
-      var color0 = controlPointToRGBA(c0);
-      var color1 = controlPointToRGBA(c1);
-      var lastIndex = 1;
-      var a = 0;
-      // if the first control point is after 0, act like there are 0s going all the way up to it.
-      // or lerp up to the first point?
-      for (var _x2 = c0.x; _x2 < 256; ++_x2) {
-        while (_x2 > c1.x) {
-          // advance control points
-          c0 = c1;
-          color0 = color1;
-          lastIndex++;
-          if (lastIndex >= controlPoints.length) {
-            // if the last control point is before 255, then we want to continue its value all the way to 255.
-            c1 = {
-              x: 255,
-              color: c1.color,
-              opacity: c1.opacity
-            };
-          } else {
-            c1 = controlPoints[lastIndex];
-          }
-          color1 = controlPointToRGBA(c1);
-        }
-        if (c1.x === c0.x) {
-          // use c1
-          a = 1.0;
-        } else {
-          a = (_x2 - c0.x) / (c1.x - c0.x);
-        }
-        // lerp the colors
-        lut[_x2 * 4 + 0] = lerp(color0[0], color1[0], a);
-        lut[_x2 * 4 + 1] = lerp(color0[1], color1[1], a);
-        lut[_x2 * 4 + 2] = lerp(color0[2], color1[2], a);
-        lut[_x2 * 4 + 3] = lerp(color0[3], color1[3], a);
-      }
-      return {
-        lut: lut,
-        controlPoints: controlPoints
-      };
-    }
-    /* eslint-enable @typescript-eslint/naming-convention */
   }]);
   return Histogram;
 }();
-
 
 
 /***/ }),
@@ -1602,6 +1098,574 @@ var Light = /*#__PURE__*/function () {
   }]);
   return Light;
 }();
+
+/***/ }),
+
+/***/ "./src/Lut.ts":
+/*!********************!*\
+  !*** ./src/Lut.ts ***!
+  \********************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   LUT_ARRAY_LENGTH: () => (/* binding */ LUT_ARRAY_LENGTH),
+/* harmony export */   LUT_ENTRIES: () => (/* binding */ LUT_ENTRIES),
+/* harmony export */   Lut: () => (/* binding */ Lut),
+/* harmony export */   remapControlPoints: () => (/* binding */ remapControlPoints),
+/* harmony export */   remapLut: () => (/* binding */ remapLut)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _constants_colors_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants/colors.js */ "./src/constants/colors.ts");
+
+
+
+function clamp(val, cmin, cmax) {
+  return Math.min(Math.max(cmin, val), cmax);
+}
+function lerp(xmin, xmax, a) {
+  return a * (xmax - xmin) + xmin;
+}
+
+// We have an intensity value that is in the range of valueMin to valueMax.
+// This domain is assumed to have been remapped from oldMin to oldMax.
+// We now wish to find the intensity value that corresponds to the same relative position in the new domain of newMin to newMax.
+// For our Luts valueMin will always be 0, and valueMax will always be 255.
+// oldMin and oldMax will be the domain of the original raw data intensities.
+// newMin and newMax will be the domain of the new raw data intensities.
+function remapDomain(value, valueMin, valueMax, oldMin, oldMax, newMin, newMax) {
+  var pctOfRange = (value - valueMin) / (valueMax - valueMin);
+  var newValue = (newMax - newMin) * pctOfRange + newMin;
+  // now locate this value as a relative index in the old range
+  var pctOfOldRange = (newValue - oldMin) / (oldMax - oldMin);
+  var remapped = valueMin + pctOfOldRange * (valueMax - valueMin);
+  return remapped;
+}
+var LUT_ENTRIES = 256;
+var LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
+
+/**
+ * @typedef {Object} ControlPoint Used for the TF (transfer function) editor GUI.
+ * Need to be converted to LUT for rendering.
+ * @property {number} x The X Coordinate
+ * @property {number} opacity The Opacity, from 0 to 1
+ * @property {Array.<number>} color The Color, 3 numbers from 0-255 for r,g,b
+ */
+
+function controlPointToRGBA(controlPoint) {
+  return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], Math.floor(controlPoint.opacity * 255)];
+}
+
+/**
+ * @typedef {Object} Lut Used for rendering.
+ * @property {Array.<number>} lut LUT_ARRAY_LENGTH element lookup table as array
+ * (maps scalar intensity to a rgb color plus alpha, with each value from 0-255)
+ * @property {Array.<ControlPoint>} controlPoints
+ */
+var Lut = /*#__PURE__*/function () {
+  function Lut() {
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Lut);
+    this.lut = new Uint8Array(LUT_ARRAY_LENGTH);
+    this.controlPoints = [];
+    this.createFullRange();
+  }
+
+  /**
+   * Generate a piecewise linear lookup table that ramps up from 0 to 1 over the b to e domain.
+   * If e === b, then we use a step function with f(b) = 0 and f(b + 1) = 1
+   *  |
+   * 1|               +---------+-----
+   *  |              /
+   *  |             /
+   *  |            /
+   *  |           /
+   *  |          /
+   * 0+=========+---------------+-----
+   *  0         b    e         255
+   * @return {Lut}
+   * @param {number} b
+   * @param {number} e
+   */
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Lut, [{
+    key: "createFromMinMax",
+    value: function createFromMinMax(b, e) {
+      if (e < b) {
+        // swap
+        var tmp = e;
+        e = b;
+        b = tmp;
+      }
+      var lut = new Uint8Array(LUT_ARRAY_LENGTH);
+      for (var x = 0; x < lut.length / 4; ++x) {
+        lut[x * 4 + 0] = 255;
+        lut[x * 4 + 1] = 255;
+        lut[x * 4 + 2] = 255;
+        if (x > e) {
+          lut[x * 4 + 3] = 255;
+        } else if (x <= b) {
+          lut[x * 4 + 3] = 0;
+        } else {
+          if (e === b) {
+            lut[x * 4 + 3] = 255;
+          } else {
+            var a = (x - b) / (e - b);
+            lut[x * 4 + 3] = lerp(0, 255, a);
+          }
+        }
+      }
+
+      // Edge case: b and e are both out of bounds
+      if (b < 0 && e < 0) {
+        this.lut = lut;
+        this.controlPoints = [{
+          x: 0,
+          opacity: 1,
+          color: [255, 255, 255]
+        }, {
+          x: 255,
+          opacity: 1,
+          color: [255, 255, 255]
+        }];
+        return this;
+      }
+      if (b >= 255 && e >= 255) {
+        this.lut = lut;
+        this.controlPoints = [{
+          x: 0,
+          opacity: 0,
+          color: [255, 255, 255]
+        }, {
+          x: 255,
+          opacity: 0,
+          color: [255, 255, 255]
+        }];
+        return this;
+      }
+
+      // Generate 2 to 4 control points for a minMax LUT, from left to right
+      var controlPoints = [];
+
+      // Add starting point at x = 0
+      var startVal = 0;
+      if (b < 0) {
+        startVal = -b / (e - b);
+      }
+      controlPoints.push({
+        x: 0,
+        opacity: startVal,
+        color: [255, 255, 255]
+      });
+
+      // If b > 0, add another point at (b, 0)
+      if (b > 0) {
+        controlPoints.push({
+          x: b,
+          opacity: 0,
+          color: [255, 255, 255]
+        });
+      }
+
+      // If e < 255, Add another point at (e, 1)
+      if (e < 255) {
+        if (e === b) {
+          // Use b + 0.5 as x value instead of e to create a near-vertical ramp
+          controlPoints.push({
+            x: b + 0.5,
+            opacity: 1,
+            color: [255, 255, 255]
+          });
+        } else {
+          controlPoints.push({
+            x: e,
+            opacity: 1,
+            color: [255, 255, 255]
+          });
+        }
+      }
+
+      // Add ending point at x = 255
+      var endVal = 1;
+      if (e > 255) {
+        endVal = (255 - b) / (e - b);
+      }
+      controlPoints.push({
+        x: 255,
+        opacity: endVal,
+        color: [255, 255, 255]
+      });
+      this.lut = lut;
+      this.controlPoints = controlPoints;
+      return this;
+    }
+
+    // basically, the identity LUT with respect to opacity
+  }, {
+    key: "createFullRange",
+    value: function createFullRange() {
+      var lut = new Uint8Array(LUT_ARRAY_LENGTH);
+
+      // simple linear mapping for actual range
+      for (var x = 0; x < lut.length / 4; ++x) {
+        lut[x * 4 + 0] = 255;
+        lut[x * 4 + 1] = 255;
+        lut[x * 4 + 2] = 255;
+        lut[x * 4 + 3] = x;
+      }
+      this.lut = lut;
+      this.controlPoints = [{
+        x: 0,
+        opacity: 0,
+        color: [255, 255, 255]
+      }, {
+        x: 255,
+        opacity: 1,
+        color: [255, 255, 255]
+      }];
+      return this;
+    }
+
+    /**
+     * Generate a Window/level lookup table
+     * @return {Lut}
+     * @param {number} wnd in 0..1 range
+     * @param {number} lvl in 0..1 range
+     */
+  }, {
+    key: "createFromWindowLevel",
+    value: function createFromWindowLevel(wnd, lvl) {
+      // simple linear mapping for actual range
+      var b = lvl - wnd * 0.5;
+      var e = lvl + wnd * 0.5;
+      return this.createFromMinMax(b * 255, e * 255);
+    }
+
+    // @param {Object[]} controlPoints - array of {x:number 0..255, opacity:number 0..1, color:array of 3 numbers 0..255}
+    // @return {Uint8Array} array of length 256*4 representing the rgba values of the gradient
+  }, {
+    key: "createFromControlPoints",
+    value: function createFromControlPoints(controlPoints) {
+      var lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
+      if (controlPoints.length === 0) {
+        this.lut = lut;
+        this.controlPoints = controlPoints;
+        return this;
+      }
+
+      // ensure they are sorted in ascending order of x
+      controlPoints.sort(function (a, b) {
+        return a.x - b.x;
+      });
+
+      // special case only one control point.
+      if (controlPoints.length === 1) {
+        var rgba = controlPointToRGBA(controlPoints[0]);
+        // copy val from x to 255.
+        for (var x = controlPoints[0].x; x < 256; ++x) {
+          lut[x * 4 + 0] = rgba[0];
+          lut[x * 4 + 1] = rgba[1];
+          lut[x * 4 + 2] = rgba[2];
+          lut[x * 4 + 3] = rgba[3];
+        }
+        this.lut = lut;
+        this.controlPoints = controlPoints;
+        return this;
+      }
+      var c0 = controlPoints[0];
+      var c1 = controlPoints[1];
+      var color0 = controlPointToRGBA(c0);
+      var color1 = controlPointToRGBA(c1);
+      var lastIndex = 1;
+      var a = 0;
+      // if the first control point is after 0, act like there are 0s going all the way up to it.
+      // or lerp up to the first point?
+      for (var _x = c0.x; _x < 256; ++_x) {
+        while (_x > c1.x) {
+          // advance control points
+          c0 = c1;
+          color0 = color1;
+          lastIndex++;
+          if (lastIndex >= controlPoints.length) {
+            // if the last control point is before 255, then we want to continue its value all the way to 255.
+            c1 = {
+              x: 255,
+              color: c1.color,
+              opacity: c1.opacity
+            };
+          } else {
+            c1 = controlPoints[lastIndex];
+          }
+          color1 = controlPointToRGBA(c1);
+        }
+        if (c1.x === c0.x) {
+          // use c1
+          a = 1.0;
+        } else {
+          a = (_x - c0.x) / (c1.x - c0.x);
+        }
+        // lerp the colors
+        lut[_x * 4 + 0] = lerp(color0[0], color1[0], a);
+        lut[_x * 4 + 1] = lerp(color0[1], color1[1], a);
+        lut[_x * 4 + 2] = lerp(color0[2], color1[2], a);
+        lut[_x * 4 + 3] = lerp(color0[3], color1[3], a);
+      }
+      this.lut = lut;
+      this.controlPoints = controlPoints;
+      return this;
+    }
+
+    /**
+     * Generate an "equalized" lookup table
+     * @return {Lut}
+     */
+  }, {
+    key: "createFromEqHistogram",
+    value: function createFromEqHistogram(histogram) {
+      var map = [];
+      for (var i = 0; i < histogram.getNumBins(); ++i) {
+        map[i] = 0;
+      }
+
+      // summed area table?
+      map[0] = histogram.getBin(0);
+      for (var _i = 1; _i < histogram.getNumBins(); ++_i) {
+        map[_i] = map[_i - 1] + histogram.getBin(_i);
+      }
+      var div = map[map.length - 1] - map[0];
+      if (div > 0) {
+        var lut = new Uint8Array(LUT_ARRAY_LENGTH);
+
+        // compute lut and track control points for the piecewise linear sections
+        var lutControlPoints = [{
+          x: 0,
+          opacity: 0,
+          color: [255, 255, 255]
+        }];
+        lut[0] = 255;
+        lut[1] = 255;
+        lut[2] = 255;
+        lut[3] = 0;
+        var slope = 0;
+        var lastSlope = 0;
+        var opacity = 0;
+        var lastOpacity = 0;
+        for (var _i2 = 1; _i2 < lut.length / 4; ++_i2) {
+          lut[_i2 * 4 + 0] = 255;
+          lut[_i2 * 4 + 1] = 255;
+          lut[_i2 * 4 + 2] = 255;
+          lastOpacity = opacity;
+          opacity = clamp(Math.round(255 * (map[_i2] - map[0])), 0, 255);
+          lut[_i2 * 4 + 3] = opacity;
+          slope = opacity - lastOpacity;
+          // if map[i]-map[i-1] is the same as map[i+1]-map[i] then we are in a linear segment and do not need a new control point
+          if (slope != lastSlope) {
+            lutControlPoints.push({
+              x: _i2 - 1,
+              opacity: lastOpacity / 255.0,
+              color: [255, 255, 255]
+            });
+            lastSlope = slope;
+          }
+        }
+        lutControlPoints.push({
+          x: 255,
+          opacity: 1,
+          color: [255, 255, 255]
+        });
+        this.lut = lut;
+        this.controlPoints = lutControlPoints;
+        return this;
+      } else {
+        // just reset to whole range in this case...?
+        return this.createFullRange();
+      }
+    }
+
+    /**
+     * Generate a lookup table with a different color per intensity value.
+     * This translates to a unique color per histogram bin with more than zero pixels.
+     * @return {Lut}
+     */
+  }, {
+    key: "createLabelColors",
+    value: function createLabelColors(histogram) {
+      var lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
+      var controlPoints = [];
+      controlPoints.push({
+        x: 0,
+        opacity: 0,
+        color: [0, 0, 0]
+      });
+      var lastr = 0;
+      var lastg = 0;
+      var lastb = 0;
+      var lasta = 0;
+      var r = 0;
+      var g = 0;
+      var b = 0;
+      var a = 0;
+
+      // assumes exactly one bin per intensity value?
+      // skip zero!!!
+      for (var i = 1; i < histogram.getNumBins(); ++i) {
+        if (histogram.getBin(i) > 0) {
+          var rgb = (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_2__.getColorByChannelIndex)(i);
+          lut[i * 4 + 0] = rgb[0];
+          lut[i * 4 + 1] = rgb[1];
+          lut[i * 4 + 2] = rgb[2];
+          lut[i * 4 + 3] = 255;
+          r = rgb[0];
+          g = rgb[1];
+          b = rgb[2];
+          a = 1;
+        } else {
+          // add a zero control point?
+          r = 0;
+          g = 0;
+          b = 0;
+          a = 0;
+        }
+        // if current control point is same as last one don't add it
+        if (r !== lastr || g !== lastg || b !== lastb || a !== lasta) {
+          if (lasta === 0) {
+            controlPoints.push({
+              x: i - 0.5,
+              opacity: lasta,
+              color: [lastr, lastg, lastb]
+            });
+          }
+          controlPoints.push({
+            x: i,
+            opacity: a,
+            color: [r, g, b]
+          });
+          lastr = r;
+          lastg = g;
+          lastb = b;
+          lasta = a;
+        }
+      }
+      this.lut = lut;
+      this.controlPoints = controlPoints;
+      return this;
+    }
+
+    // since this is not a "create" function, it doesn't need to return the object.
+  }, {
+    key: "remapDomains",
+    value: function remapDomains(oldMin, oldMax, newMin, newMax) {
+      // no attempt is made here to ensure that lut and controlPoints are internally consistent.
+      // if they start out consistent, they should end up consistent. And vice versa.
+      this.lut = remapLut(this.lut, oldMin, oldMax, newMin, newMax);
+      this.controlPoints = remapControlPoints(this.controlPoints, oldMin, oldMax, newMin, newMax);
+    }
+  }]);
+  return Lut;
+}();
+
+// If the new max is greater than the old max, then
+// the lut's max end will move inward to the left.
+// This is another way of saying that the new max's index is greater than 255 in the old lut
+// If the new min is less than the old min, then
+// the lut's min end will move inward to the right.
+// This is another way of saying that the new min's index is less than 0 in the old lut
+function remapLut(lut, oldMin, oldMax, newMin, newMax) {
+  var newLut = new Uint8Array(LUT_ARRAY_LENGTH);
+
+  // we will find what intensity is at each index in the new range,
+  // and then try to sample the pre-existing lut as if it spans the old range.
+  // Build new lut by sampling from old lut.
+  for (var i = 0; i < LUT_ENTRIES; ++i) {
+    var iOld = remapDomain(i, 0, LUT_ENTRIES - 1, oldMin, oldMax, newMin, newMax);
+    if (iOld < 0) {
+      iOld = 0;
+    }
+    if (iOld > LUT_ENTRIES - 1) {
+      iOld = LUT_ENTRIES - 1;
+    }
+    // find the indices above and below for interpolation
+    var i0 = Math.floor(iOld);
+    var i1 = Math.ceil(iOld);
+    var pct = iOld - i0;
+
+    //console.log(`interpolating ${iOld}: ${lut[i0 * 4 + 3]}, ${lut[i1 * 4 + 3]}, ${pct}`);
+    newLut[i * 4 + 0] = Math.round(lerp(lut[i0 * 4 + 0], lut[i1 * 4 + 0], pct));
+    newLut[i * 4 + 1] = Math.round(lerp(lut[i0 * 4 + 1], lut[i1 * 4 + 1], pct));
+    newLut[i * 4 + 2] = Math.round(lerp(lut[i0 * 4 + 2], lut[i1 * 4 + 2], pct));
+    newLut[i * 4 + 3] = Math.round(lerp(lut[i0 * 4 + 3], lut[i1 * 4 + 3], pct));
+  }
+  return newLut;
+}
+function remapControlPoints(controlPoints, oldMin, oldMax, newMin, newMax) {
+  var newControlPoints = [];
+
+  // assume control point x domain 0-255 is mapped to oldMin-oldMax
+
+  // remap all cp x values.
+  // interpolate all new colors and opacities
+  // then see if we need to clip?
+  for (var i = 0; i < controlPoints.length; ++i) {
+    var cp = controlPoints[i];
+    var iOld = remapDomain(cp.x, 0, LUT_ENTRIES - 1, oldMin, oldMax, newMin, newMax);
+    var newCP = {
+      x: iOld,
+      opacity: cp.opacity,
+      color: [cp.color[0], cp.color[1], cp.color[2]]
+    };
+    newControlPoints.push(newCP);
+  }
+  // now fix up any control points that are out of bounds?
+  // For a CP less than 0, shift it to 0 and interpolate the values according to the slope
+  // For a CP greater than 255, shift it to 255 and interpolate the values according to the slope
+  // All others out of this range can then be dropped.
+  // We will look above and below each cp to see if it's on a boundary.
+  var resultControlPoints = [];
+  for (var _i3 = 0; _i3 < newControlPoints.length; ++_i3) {
+    var _cp = newControlPoints[_i3];
+    var cpPrev = _i3 > 0 ? newControlPoints[_i3 - 1] : _cp;
+    var cpNext = _i3 < newControlPoints.length - 1 ? newControlPoints[_i3 + 1] : _cp;
+    if (_cp.x < 0 && cpNext.x > 0) {
+      // interpolate
+      var pct = (0 - _cp.x) / (cpNext.x - _cp.x);
+      _cp.opacity = lerp(_cp.opacity, cpNext.opacity, pct);
+      _cp.color[0] = lerp(_cp.color[0], cpNext.color[0], pct);
+      _cp.color[1] = lerp(_cp.color[1], cpNext.color[1], pct);
+      _cp.color[2] = lerp(_cp.color[2], cpNext.color[2], pct);
+      // shift cp to 0
+      _cp.x = 0;
+    } else if (_cp.x > 255 && cpPrev.x < 255) {
+      // interpolate
+      var _pct = (_cp.x - 255) / (_cp.x - cpPrev.x);
+      _cp.opacity = lerp(cpPrev.opacity, _cp.opacity, _pct);
+      _cp.color[0] = lerp(cpPrev.color[0], _cp.color[0], _pct);
+      _cp.color[1] = lerp(cpPrev.color[1], _cp.color[1], _pct);
+      _cp.color[2] = lerp(cpPrev.color[2], _cp.color[2], _pct);
+      // shift cp to 255
+      _cp.x = 255;
+    }
+    if (_cp.x >= 0 && _cp.x <= 255) {
+      resultControlPoints.push(_cp);
+    }
+  }
+
+  // lastly, add a point for start and end if needed.
+  if (resultControlPoints[0].x !== 0) {
+    resultControlPoints.unshift({
+      x: 0,
+      opacity: resultControlPoints[0].opacity,
+      color: resultControlPoints[0].color
+    });
+  }
+  if (resultControlPoints[resultControlPoints.length - 1].x !== 255) {
+    resultControlPoints.push({
+      x: 255,
+      opacity: resultControlPoints[resultControlPoints.length - 1].opacity,
+      color: resultControlPoints[resultControlPoints.length - 1].color
+    });
+  }
+  return resultControlPoints;
+}
 
 /***/ }),
 
@@ -2601,7 +2665,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _constants_denoiseShader_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./constants/denoiseShader.js */ "./src/constants/denoiseShader.ts");
 /* harmony import */ var _constants_volumePTshader_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./constants/volumePTshader.js */ "./src/constants/volumePTshader.ts");
-/* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
+/* harmony import */ var _Lut_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Lut.js */ "./src/Lut.ts");
 /* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
 /* harmony import */ var _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./VolumeRenderSettings.js */ "./src/VolumeRenderSettings.ts");
 
@@ -2643,7 +2707,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
 
     // create Lut textures
     // empty array
-    var lutData = new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH * 4).fill(1);
+    var lutData = new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH * 4).fill(1);
     var lut0 = new three__WEBPACK_IMPORTED_MODULE_8__.DataTexture(lutData, 256, 4, three__WEBPACK_IMPORTED_MODULE_8__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_8__.UnsignedByteType);
     lut0.minFilter = lut0.magFilter = three__WEBPACK_IMPORTED_MODULE_8__.LinearFilter;
     lut0.needsUpdate = true;
@@ -3074,7 +3138,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
       for (var i = 0; i < this.pathTracingUniforms.gNChannels.value; ++i) {
         var channel = this.viewChannels[i];
         var combinedLut = channelData[channel].combineLuts(channelColors[channel].rgbColor);
-        this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, i * _Histogram_js__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH);
+        this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, i * _Lut_js__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH);
         this.pathTracingUniforms.gIntensityMax.value.setComponent(i, this.volume.channels[channel].histogram.getMax() / 255.0);
         this.pathTracingUniforms.gIntensityMin.value.setComponent(i, this.volume.channels[channel].histogram.getMin() / 255.0);
       }
@@ -3093,7 +3157,7 @@ var PathTracedVolume = /*#__PURE__*/function () {
           // diffuse color is actually blended into the LUT now.
           var channelData = this.volume.getChannel(i);
           var combinedLut = channelData.combineLuts(this.settings.diffuse[i]);
-          this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, c * _Histogram_js__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH);
+          this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, c * _Lut_js__WEBPACK_IMPORTED_MODULE_5__.LUT_ARRAY_LENGTH);
           this.pathTracingUniforms.gLutTexture.value.needsUpdate = true;
           this.pathTracingUniforms.gDiffuse.value[c] = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1.0, 1.0, 1.0);
           this.pathTracingUniforms.gSpecular.value[c] = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().fromArray(this.settings.specular[i]).multiplyScalar(1.0 / 255.0);
@@ -5622,11 +5686,11 @@ var Volume = /*#__PURE__*/function () {
      */
   }, {
     key: "setChannelDataFromVolume",
-    value: function setChannelDataFromVolume(channelIndex, volumeData) {
+    value: function setChannelDataFromVolume(channelIndex, volumeData, range) {
       var _this$imageInfo2 = this.imageInfo,
         subregionSize = _this$imageInfo2.subregionSize,
         atlasTileDims = _this$imageInfo2.atlasTileDims;
-      this.channels[channelIndex].setFromVolumeData(volumeData, subregionSize.x, subregionSize.y, subregionSize.z, atlasTileDims.x * subregionSize.x, atlasTileDims.y * subregionSize.y);
+      this.channels[channelIndex].setFromVolumeData(volumeData, subregionSize.x, subregionSize.y, subregionSize.z, atlasTileDims.x * subregionSize.x, atlasTileDims.y * subregionSize.y, range[0], range[1]);
       this.onChannelLoaded([channelIndex]);
     }
 
@@ -6018,7 +6082,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _MeshVolume_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./MeshVolume.js */ "./src/MeshVolume.ts");
 /* harmony import */ var _RayMarchedAtlasVolume_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./RayMarchedAtlasVolume.js */ "./src/RayMarchedAtlasVolume.ts");
 /* harmony import */ var _PathTracedVolume_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./PathTracedVolume.js */ "./src/PathTracedVolume.ts");
-/* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
+/* harmony import */ var _Lut_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Lut.js */ "./src/Lut.ts");
 /* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
 /* harmony import */ var _Atlas2DSlice_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./Atlas2DSlice.js */ "./src/Atlas2DSlice.ts");
 /* harmony import */ var _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./VolumeRenderSettings.js */ "./src/VolumeRenderSettings.ts");
@@ -6077,7 +6141,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
       }
       return {
         chIndex: index,
-        lut: new Uint8Array(_Histogram_js__WEBPACK_IMPORTED_MODULE_7__.LUT_ARRAY_LENGTH),
+        lut: new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_7__.LUT_ARRAY_LENGTH),
         rgbColor: rgbColor
       };
     });
@@ -6509,7 +6573,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.channelColors[newChannelIndex] = this.volume.channelColorsDefault[newChannelIndex];
       this.fusion[newChannelIndex] = {
         chIndex: newChannelIndex,
-        lut: new Uint8Array[_Histogram_js__WEBPACK_IMPORTED_MODULE_7__.LUT_ARRAY_LENGTH](),
+        lut: new Uint8Array[_Lut_js__WEBPACK_IMPORTED_MODULE_7__.LUT_ARRAY_LENGTH](),
         rgbColor: [this.channelColors[newChannelIndex][0], this.channelColors[newChannelIndex][1], this.channelColors[newChannelIndex][2]]
       };
       this.settings.diffuse[newChannelIndex] = [this.channelColors[newChannelIndex][0], this.channelColors[newChannelIndex][1], this.channelColors[newChannelIndex][2]];
@@ -7981,28 +8045,29 @@ var sliceShaderUniforms = function sliceShaderUniforms() {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   AREA_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_15__.AREA_LIGHT),
+/* harmony export */   AREA_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_16__.AREA_LIGHT),
 /* harmony export */   Channel: () => (/* reexport safe */ _Channel_js__WEBPACK_IMPORTED_MODULE_2__["default"]),
 /* harmony export */   Histogram: () => (/* reexport safe */ _Histogram_js__WEBPACK_IMPORTED_MODULE_7__["default"]),
-/* harmony export */   JsonImageInfoLoader: () => (/* reexport safe */ _loaders_JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_12__.JsonImageInfoLoader),
-/* harmony export */   Light: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_15__.Light),
-/* harmony export */   LoadSpec: () => (/* reexport safe */ _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_10__.LoadSpec),
-/* harmony export */   OMEZarrLoader: () => (/* reexport safe */ _loaders_OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_11__.OMEZarrLoader),
-/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_9__.PrefetchDirection),
+/* harmony export */   JsonImageInfoLoader: () => (/* reexport safe */ _loaders_JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_13__.JsonImageInfoLoader),
+/* harmony export */   Light: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_16__.Light),
+/* harmony export */   LoadSpec: () => (/* reexport safe */ _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__.LoadSpec),
+/* harmony export */   Lut: () => (/* reexport safe */ _Lut_js__WEBPACK_IMPORTED_MODULE_8__.Lut),
+/* harmony export */   OMEZarrLoader: () => (/* reexport safe */ _loaders_OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_12__.OMEZarrLoader),
+/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__.PrefetchDirection),
 /* harmony export */   RENDERMODE_PATHTRACE: () => (/* reexport safe */ _View3d_js__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_PATHTRACE),
 /* harmony export */   RENDERMODE_RAYMARCH: () => (/* reexport safe */ _View3d_js__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_RAYMARCH),
 /* harmony export */   RequestQueue: () => (/* reexport safe */ _utils_RequestQueue_js__WEBPACK_IMPORTED_MODULE_5__["default"]),
-/* harmony export */   SKY_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_15__.SKY_LIGHT),
+/* harmony export */   SKY_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_16__.SKY_LIGHT),
 /* harmony export */   SubscribableRequestQueue: () => (/* reexport safe */ _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_6__["default"]),
-/* harmony export */   TiffLoader: () => (/* reexport safe */ _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_13__.TiffLoader),
+/* harmony export */   TiffLoader: () => (/* reexport safe */ _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_14__.TiffLoader),
 /* harmony export */   View3d: () => (/* reexport safe */ _View3d_js__WEBPACK_IMPORTED_MODULE_0__.View3d),
-/* harmony export */   ViewportCorner: () => (/* reexport safe */ _types_js__WEBPACK_IMPORTED_MODULE_8__.ViewportCorner),
+/* harmony export */   ViewportCorner: () => (/* reexport safe */ _types_js__WEBPACK_IMPORTED_MODULE_9__.ViewportCorner),
 /* harmony export */   Volume: () => (/* reexport safe */ _Volume_js__WEBPACK_IMPORTED_MODULE_1__["default"]),
 /* harmony export */   VolumeCache: () => (/* reexport safe */ _VolumeCache_js__WEBPACK_IMPORTED_MODULE_4__["default"]),
-/* harmony export */   VolumeFileFormat: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_9__.VolumeFileFormat),
-/* harmony export */   VolumeLoaderContext: () => (/* reexport safe */ _workers_LoadWorkerHandle_js__WEBPACK_IMPORTED_MODULE_14__["default"]),
+/* harmony export */   VolumeFileFormat: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__.VolumeFileFormat),
+/* harmony export */   VolumeLoaderContext: () => (/* reexport safe */ _workers_LoadWorkerHandle_js__WEBPACK_IMPORTED_MODULE_15__["default"]),
 /* harmony export */   VolumeMaker: () => (/* reexport safe */ _VolumeMaker_js__WEBPACK_IMPORTED_MODULE_3__["default"]),
-/* harmony export */   createVolumeLoader: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_9__.createVolumeLoader)
+/* harmony export */   createVolumeLoader: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__.createVolumeLoader)
 /* harmony export */ });
 /* harmony import */ var _View3d_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./View3d.js */ "./src/View3d.ts");
 /* harmony import */ var _Volume_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Volume.js */ "./src/Volume.ts");
@@ -8012,14 +8077,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _utils_RequestQueue_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./utils/RequestQueue.js */ "./src/utils/RequestQueue.ts");
 /* harmony import */ var _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./utils/SubscribableRequestQueue.js */ "./src/utils/SubscribableRequestQueue.ts");
 /* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
-/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
-/* harmony import */ var _loaders_index_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./loaders/index.js */ "./src/loaders/index.ts");
-/* harmony import */ var _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./loaders/IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _loaders_OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./loaders/OmeZarrLoader.js */ "./src/loaders/OmeZarrLoader.ts");
-/* harmony import */ var _loaders_JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./loaders/JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
-/* harmony import */ var _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./loaders/TiffLoader.js */ "./src/loaders/TiffLoader.ts");
-/* harmony import */ var _workers_LoadWorkerHandle_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./workers/LoadWorkerHandle.js */ "./src/workers/LoadWorkerHandle.ts");
-/* harmony import */ var _Light_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./Light.js */ "./src/Light.ts");
+/* harmony import */ var _Lut_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./Lut.js */ "./src/Lut.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
+/* harmony import */ var _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./loaders/index.js */ "./src/loaders/index.ts");
+/* harmony import */ var _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./loaders/IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _loaders_OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./loaders/OmeZarrLoader.js */ "./src/loaders/OmeZarrLoader.ts");
+/* harmony import */ var _loaders_JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./loaders/JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
+/* harmony import */ var _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./loaders/TiffLoader.js */ "./src/loaders/TiffLoader.ts");
+/* harmony import */ var _workers_LoadWorkerHandle_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./workers/LoadWorkerHandle.js */ "./src/workers/LoadWorkerHandle.ts");
+/* harmony import */ var _Light_js__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ./Light.js */ "./src/Light.ts");
+
 
 
 
@@ -8104,7 +8171,13 @@ var VolumeDims = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMP
  * @param {number} channelindex
  */
 
-// allow lists of channel indices and data arrays to be passed to the callback
+/**
+ * @callback RawChannelDataCallback - allow lists of channel indices and data arrays to be passed to the callback
+ * @param {number[]} channelIndex - The indices of the channels that were loaded
+ * @param {Uint8Array[]} data - The raw data for each channel (renormalized to 0-255 range)
+ * @param {[number, number][]} ranges - The min and max values for each channel in their original range
+ * @param {[number, number]} atlasDims - The dimensions of the atlas, if the data is in an atlas format
+ */
 
 /**
  * Loads volume data from a source specified by a `LoadSpec`.
@@ -8166,14 +8239,15 @@ var ThreadableVolumeLoader = /*#__PURE__*/function () {
         return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee2$(_context2) {
           while (1) switch (_context2.prev = _context2.next) {
             case 0:
-              onChannelData = function onChannelData(channelIndices, dataArrays, atlasDims) {
+              onChannelData = function onChannelData(channelIndices, dataArrays, ranges, atlasDims) {
                 for (var i = 0; i < channelIndices.length; i++) {
                   var _channelIndex = channelIndices[i];
                   var _data = dataArrays[i];
+                  var range = ranges[i];
                   if (atlasDims) {
                     volume.setChannelDataFromAtlas(_channelIndex, _data, atlasDims[0], atlasDims[1]);
                   } else {
-                    volume.setChannelDataFromVolume(_channelIndex, _data);
+                    volume.setChannelDataFromVolume(_channelIndex, _data, range);
                   }
                   onChannelLoaded === null || onChannelLoaded === void 0 || onChannelLoaded(volume, _channelIndex);
                 }
@@ -8227,8 +8301,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
 
 
 
@@ -8244,6 +8319,7 @@ function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.
 
 
 
+
 /* eslint-disable @typescript-eslint/naming-convention */
 
 /* eslint-enable @typescript-eslint/naming-convention */
@@ -8252,12 +8328,12 @@ var convertImageInfo = function convertImageInfo(json) {
   var _json$transform, _json$transform2;
   return {
     name: json.name,
-    originalSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(json.width, json.height, json.tiles),
-    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_9__.Vector2(json.cols, json.rows),
-    volumeSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(json.tile_width, json.tile_height, json.tiles),
-    subregionSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(json.tile_width, json.tile_height, json.tiles),
-    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
-    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
+    originalSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(json.width, json.height, json.tiles),
+    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_10__.Vector2(json.cols, json.rows),
+    volumeSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(json.tile_width, json.tile_height, json.tiles),
+    subregionSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(json.tile_width, json.tile_height, json.tiles),
+    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0),
+    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
     spatialUnit: json.pixel_size_unit || "μm",
     numChannels: json.channels,
     channelNames: json.channel_names,
@@ -8268,8 +8344,8 @@ var convertImageInfo = function convertImageInfo(json) {
     numMultiscaleLevels: 1,
     multiscaleLevel: 0,
     transform: {
-      translation: (_json$transform = json.transform) !== null && _json$transform !== void 0 && _json$transform.translation ? new three__WEBPACK_IMPORTED_MODULE_9__.Vector3().fromArray(json.transform.translation) : new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
-      rotation: (_json$transform2 = json.transform) !== null && _json$transform2 !== void 0 && _json$transform2.rotation ? new three__WEBPACK_IMPORTED_MODULE_9__.Vector3().fromArray(json.transform.rotation) : new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0)
+      translation: (_json$transform = json.transform) !== null && _json$transform !== void 0 && _json$transform.translation ? new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(json.transform.translation) : new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0),
+      rotation: (_json$transform2 = json.transform) !== null && _json$transform2 !== void 0 && _json$transform2.rotation ? new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(json.transform.rotation) : new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0)
     },
     userData: json.userData
   };
@@ -8422,13 +8498,13 @@ var JsonImageInfoLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               });
               w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
               h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
-              wrappedOnData = function wrappedOnData(ch, data) {
-                return onData(ch, data, [w, h]);
+              wrappedOnData = function wrappedOnData(ch, data, ranges) {
+                return onData(ch, data, ranges, [w, h]);
               };
               JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
               adjustedLoadSpec = _objectSpread(_objectSpread({}, loadSpec), {}, {
                 // `subregion` and `multiscaleLevel` are unused by this loader
-                subregion: new three__WEBPACK_IMPORTED_MODULE_9__.Box3(new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(1, 1, 1)),
+                subregion: new three__WEBPACK_IMPORTED_MODULE_10__.Box3(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(1, 1, 1)),
                 multiscaleLevel: 0,
                 // include all channels in any loaded images
                 channels: images.flatMap(function (_ref2) {
@@ -8491,7 +8567,8 @@ var JsonImageInfoLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
                   _context5.next = 9;
                   break;
                 }
-                onData([chindex], [new Uint8Array(cacheResult)]);
+                // all data coming from this loader is natively 8-bit
+                onData([chindex], [new Uint8Array(cacheResult)], [_types_js__WEBPACK_IMPORTED_MODULE_9__.DATARANGE_UINT8]);
                 _context5.next = 11;
                 break;
               case 9:
@@ -8555,7 +8632,8 @@ var JsonImageInfoLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
                   _chindex = image.channels[_ch];
                   cache === null || cache === void 0 || cache.insert("".concat(image.name, "/").concat(_chindex), channelsBits[_ch]);
                   // NOTE: the atlas dimensions passed in here are currently unused by `JSONImageInfoLoader`
-                  onData([_chindex], [channelsBits[_ch]], [bitmap.width, bitmap.height]);
+                  // all data coming from this loader is natively 8-bit
+                  onData([_chindex], [channelsBits[_ch]], [_types_js__WEBPACK_IMPORTED_MODULE_9__.DATARANGE_UINT8], [bitmap.width, bitmap.height]);
                 }
               case 39:
               case "end":
@@ -8639,12 +8717,9 @@ function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.
 
 
 var CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
-function convertChannel(channelData) {
-  if (channelData instanceof Uint8Array) {
-    return channelData;
-  }
-  var u8 = new Uint8Array(channelData.length);
 
+// returns the converted data and the original min and max values (which have been remapped to 0 and 255)
+function convertChannel(channelData) {
   // get min and max
   var min = channelData[0];
   var max = channelData[0];
@@ -8657,13 +8732,17 @@ function convertChannel(channelData) {
       max = val;
     }
   }
+  if (channelData instanceof Uint8Array) {
+    return [channelData, min, max];
+  }
 
   // normalize and convert to u8
+  var u8 = new Uint8Array(channelData.length);
   var range = max - min;
   for (var _i = 0; _i < channelData.length; _i++) {
     u8[_i] = (channelData[_i] - min) / range * 255;
   }
-  return u8;
+  return [u8, min, max];
 }
 var DEFAULT_FETCH_OPTIONS = {
   maxPrefetchDistance: [5, 5, 5, 5],
@@ -8870,7 +8949,10 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
           }
         });
       });
-      var scale5d = this.getScale(levelToLoad);
+
+      // for physicalPixelSize, we use the scale of the first level
+      var scale5d = this.getScale(0);
+      // assume that ImageInfo wants the timeScale of level 0
       var timeScale = hasT ? scale5d[t] : 1;
       var imgdata = {
         name: source0.omeroMetadata.name,
@@ -8964,16 +9046,17 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
         return sourceCoords;
       });
 
-      // Get number of chunks per dimension in `scaleLevel`
-      var source0Shape = this.sources[0].scaleLevels[scaleLevel];
-      var chunkDimsUnordered = source0Shape.shape.map(function (dim, idx) {
-        return Math.ceil(dim / source0Shape.chunks[idx]);
+      // Get number of chunks per dimension in every source array
+      var chunkDimsTCZYX = this.sources.map(function (src) {
+        var level = src.scaleLevels[scaleLevel];
+        var chunkDimsUnordered = level.shape.map(function (dim, idx) {
+          return Math.ceil(dim / level.chunks[idx]);
+        });
+        return _this3.orderByTCZYX(chunkDimsUnordered, 1);
       });
-      var chunkDims = this.orderByTCZYX(chunkDimsUnordered, 1);
-      var subscriber = this.requestQueue.addSubscriber();
       // `ChunkPrefetchIterator` yields chunk coordinates in order of roughly how likely they are to be loaded next
-      var chunkDimsTZYX = [chunkDims[0], chunkDims[2], chunkDims[3], chunkDims[4]];
-      var prefetchIterator = new _zarr_utils_ChunkPrefetchIterator_js__WEBPACK_IMPORTED_MODULE_13__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTZYX, this.priorityDirections);
+      var prefetchIterator = new _zarr_utils_ChunkPrefetchIterator_js__WEBPACK_IMPORTED_MODULE_13__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTCZYX, this.priorityDirections);
+      var subscriber = this.requestQueue.addSubscriber();
       var prefetchCount = 0;
       var _iterator = _createForOfIteratorHelper(prefetchIterator),
         _step;
@@ -9069,9 +9152,10 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       };
       var resultChannelIndices = [];
       var resultChannelData = [];
+      var resultChannelRanges = [];
       var channelPromises = channelIndexes.map( /*#__PURE__*/function () {
         var _ref3 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9___default().mark(function _callee2(ch) {
-          var min, max, _this4$matchChannelTo, sourceIdx, sourceCh, unorderedSpec, level, sliceSpec, reportKey, result, u8;
+          var min, max, _this4$matchChannelTo, sourceIdx, sourceCh, unorderedSpec, level, sliceSpec, reportKey, result, converted;
           return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9___default().wrap(function _callee2$(_context2) {
             while (1) switch (_context2.prev = _context2.next) {
               case 0:
@@ -9095,12 +9179,13 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
                 });
               case 10:
                 result = _context2.sent;
-                u8 = convertChannel(result.data);
+                converted = convertChannel(result.data);
                 if (syncChannels) {
-                  resultChannelData.push(u8);
+                  resultChannelData.push(converted[0]);
                   resultChannelIndices.push(ch);
+                  resultChannelRanges.push([converted[1], converted[2]]);
                 } else {
-                  onData([ch], [u8]);
+                  onData([ch], [converted[0]], [[converted[1], converted[2]]]);
                 }
                 _context2.next = 20;
                 break;
@@ -9132,7 +9217,7 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       this.beginPrefetch(keys, multiscaleLevel);
       Promise.all(channelPromises).then(function () {
         if (syncChannels) {
-          onData(resultChannelIndices, resultChannelData);
+          onData(resultChannelIndices, resultChannelData, resultChannelRanges);
         }
         _this4.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
       });
@@ -9282,9 +9367,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_6__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
 
 
 
@@ -9294,6 +9380,7 @@ __webpack_require__.r(__webpack_exports__);
 
 function _callSuper(t, o, e) { return o = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_4__["default"])(o), (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_3__["default"])(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_4__["default"])(t).constructor) : o.apply(t, e)); }
 function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
+
 
 
 
@@ -9340,12 +9427,12 @@ var OpenCellLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               chnames = ["DNA", "Structure"];
               imgdata = {
                 name: "TEST",
-                originalSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(600, 600, 27),
-                atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_9__.Vector2(27, 1),
-                volumeSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(600, 600, 27),
-                subregionSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(600, 600, 27),
-                subregionOffset: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
-                physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(1, 1, 2),
+                originalSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(600, 600, 27),
+                atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_10__.Vector2(27, 1),
+                volumeSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(600, 600, 27),
+                subregionSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(600, 600, 27),
+                subregionOffset: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0),
+                physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(1, 1, 2),
                 spatialUnit: "µm",
                 numChannels: numChannels,
                 channelNames: chnames,
@@ -9355,8 +9442,8 @@ var OpenCellLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
                 numMultiscaleLevels: 1,
                 multiscaleLevel: 0,
                 transform: {
-                  translation: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
-                  rotation: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0)
+                  translation: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0),
+                  rotation: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0)
                 }
               }; // This loader uses no fields from `LoadSpec`. Initialize volume with defaults.
               return _context2.abrupt("return", {
@@ -9388,8 +9475,9 @@ var OpenCellLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       }];
       var w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
       var h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
+      // all data coming from this loader is natively 8-bit
       _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_8__.JsonImageInfoLoader.loadVolumeAtlasData(urls, function (ch, data) {
-        return onData(ch, data, [w, h]);
+        return onData(ch, data, [_types_js__WEBPACK_IMPORTED_MODULE_9__.DATARANGE_UINT8], [w, h]);
       });
       return Promise.resolve({});
     }
@@ -9661,7 +9749,8 @@ var TiffLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
                       worker.onmessage = function (e) {
                         var u8 = e.data.data;
                         var channel = e.data.channel;
-                        onData(channel, u8);
+                        var range = e.data.range;
+                        onData([channel], [u8], [range]);
                         worker.terminate();
                       };
                       worker.onerror = function (e) {
@@ -10027,11 +10116,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ ChunkPrefetchIterator)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/toConsumableArray */ "./node_modules/@babel/runtime/helpers/esm/toConsumableArray.js");
+/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__);
+
 
 
 
@@ -10039,6 +10130,16 @@ __webpack_require__.r(__webpack_exports__);
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
+var allEqual = function allEqual(arr) {
+  return arr.every(function (v) {
+    return v === arr[0];
+  });
+};
+var pushN = function pushN(arr, val, n) {
+  for (var i = 0; i < n; i++) {
+    arr.push(val);
+  }
+};
 var directionToIndex = function directionToIndex(dir) {
   var absDir = dir >> 1; // shave off sign bit to get index in TZYX
   return absDir + Number(absDir !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
@@ -10059,8 +10160,9 @@ function updateMinMax(val, minmax) {
  */
 // NOTE: Assumes `chunks` form a rectangular prism! Will create gaps otherwise! (in practice they always should)
 var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
-  function ChunkPrefetchIterator(chunks, tzyxMaxPrefetchOffset, tzyxNumChunks, priorityDirections) {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, ChunkPrefetchIterator);
+  function ChunkPrefetchIterator(chunks, tzyxMaxPrefetchOffset, tczyxChunksPerSource, priorityDirections) {
+    var _this = this;
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, ChunkPrefetchIterator);
     // Get min and max chunk coordinates for T/Z/Y/X
     var extrema = [[Infinity, -Infinity], [Infinity, -Infinity], [Infinity, -Infinity], [Infinity, -Infinity]];
     var _iterator = _createForOfIteratorHelper(chunks),
@@ -10085,16 +10187,42 @@ var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
     var _iterator2 = _createForOfIteratorHelper(extrema.flat().entries()),
       _step2;
     try {
-      for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-        var _step2$value = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_step2.value, 2),
+      var _loop = function _loop() {
+        var _step2$value = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_step2.value, 2),
           direction = _step2$value[0],
           start = _step2$value[1];
-        var dimension = direction >> 1;
-        var end = void 0;
+        var dimension = direction >> 1; // shave off sign bit to get index in TZYX
+        var tczyxIndex = dimension + Number(dimension !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
+        var end;
         if (direction & 1) {
           // Positive direction - end is either the max coordinate in the fetched set plus the max offset in this
           // dimension, or the max chunk coordinate in this dimension, whichever comes first
-          end = Math.min(start + tzyxMaxPrefetchOffset[dimension], tzyxNumChunks[dimension] - 1);
+          var endsPerSource = tczyxChunksPerSource.map(function (chunkDims) {
+            return Math.min(start + tzyxMaxPrefetchOffset[dimension], chunkDims[tczyxIndex] - 1);
+          });
+
+          // Save some time: if all sources have the same end, we can just store that
+          if (allEqual(endsPerSource)) {
+            end = endsPerSource[0];
+          } else {
+            // Otherwise, expand our ends per source array to ends per channel
+            end = [];
+            var _iterator4 = _createForOfIteratorHelper(endsPerSource.entries()),
+              _step4;
+            try {
+              for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+                var _step4$value = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_step4.value, 2),
+                  i = _step4$value[0],
+                  sourceEnd = _step4$value[1];
+                pushN(end, sourceEnd, tczyxChunksPerSource[i][1]);
+              }
+            } catch (err) {
+              _iterator4.e(err);
+            } finally {
+              _iterator4.f();
+            }
+          }
+          // end = Math.min(start + tzyxMaxPrefetchOffset[dimension], tczyxChunksPerDimension[dimension] - 1);
         } else {
           // Negative direction - end is either the min coordinate in the fetched set minus the max offset in this
           // dimension, or 0, whichever comes first
@@ -10107,10 +10235,13 @@ var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
           chunks: []
         };
         if (priorityDirections && priorityDirections.includes(direction)) {
-          this.priorityDirectionStates.push(directionState);
+          _this.priorityDirectionStates.push(directionState);
         } else {
-          this.directionStates.push(directionState);
+          _this.directionStates.push(directionState);
         }
+      };
+      for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+        _loop();
       }
 
       // Fill each `PrefetchDirectionState` with chunks at the border of the fetched set
@@ -10124,33 +10255,33 @@ var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
     try {
       for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
         var _chunk = _step3.value;
-        var _iterator4 = _createForOfIteratorHelper(this.directionStates),
-          _step4;
-        try {
-          for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-            var dir = _step4.value;
-            if (_chunk[directionToIndex(dir.direction)] === dir.start) {
-              dir.chunks.push(_chunk);
-            }
-          }
-        } catch (err) {
-          _iterator4.e(err);
-        } finally {
-          _iterator4.f();
-        }
-        var _iterator5 = _createForOfIteratorHelper(this.priorityDirectionStates),
+        var _iterator5 = _createForOfIteratorHelper(this.directionStates),
           _step5;
         try {
           for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-            var _dir = _step5.value;
-            if (_chunk[directionToIndex(_dir.direction)] === _dir.start) {
-              _dir.chunks.push(_chunk);
+            var dir = _step5.value;
+            if (_chunk[directionToIndex(dir.direction)] === dir.start) {
+              dir.chunks.push(_chunk);
             }
           }
         } catch (err) {
           _iterator5.e(err);
         } finally {
           _iterator5.f();
+        }
+        var _iterator6 = _createForOfIteratorHelper(this.priorityDirectionStates),
+          _step6;
+        try {
+          for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+            var _dir = _step6.value;
+            if (_chunk[directionToIndex(_dir.direction)] === _dir.start) {
+              _dir.chunks.push(_chunk);
+            }
+          }
+        } catch (err) {
+          _iterator6.e(err);
+        } finally {
+          _iterator6.f();
         }
       }
     } catch (err) {
@@ -10159,26 +10290,26 @@ var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
       _iterator3.f();
     }
   }
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(ChunkPrefetchIterator, [{
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(ChunkPrefetchIterator, [{
     key: _Symbol$iterator,
-    value: /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function value() {
-      var _iterator6, _step6, chunk, _iterator7, _step7, _chunk2;
-      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function value$(_context) {
+    value: /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function value() {
+      var _iterator7, _step7, chunk, _iterator8, _step8, _chunk2;
+      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function value$(_context) {
         while (1) switch (_context.prev = _context.next) {
           case 0:
             if (!(this.priorityDirectionStates.length > 0)) {
               _context.next = 18;
               break;
             }
-            _iterator6 = _createForOfIteratorHelper(ChunkPrefetchIterator.iterateDirections(this.priorityDirectionStates));
+            _iterator7 = _createForOfIteratorHelper(ChunkPrefetchIterator.iterateDirections(this.priorityDirectionStates));
             _context.prev = 2;
-            _iterator6.s();
+            _iterator7.s();
           case 4:
-            if ((_step6 = _iterator6.n()).done) {
+            if ((_step7 = _iterator7.n()).done) {
               _context.next = 10;
               break;
             }
-            chunk = _step6.value;
+            chunk = _step7.value;
             _context.next = 8;
             return chunk;
           case 8:
@@ -10190,22 +10321,22 @@ var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
           case 12:
             _context.prev = 12;
             _context.t0 = _context["catch"](2);
-            _iterator6.e(_context.t0);
+            _iterator7.e(_context.t0);
           case 15:
             _context.prev = 15;
-            _iterator6.f();
+            _iterator7.f();
             return _context.finish(15);
           case 18:
             // Then yield all chunks in other directions
-            _iterator7 = _createForOfIteratorHelper(ChunkPrefetchIterator.iterateDirections(this.directionStates));
+            _iterator8 = _createForOfIteratorHelper(ChunkPrefetchIterator.iterateDirections(this.directionStates));
             _context.prev = 19;
-            _iterator7.s();
+            _iterator8.s();
           case 21:
-            if ((_step7 = _iterator7.n()).done) {
+            if ((_step8 = _iterator8.n()).done) {
               _context.next = 27;
               break;
             }
-            _chunk2 = _step7.value;
+            _chunk2 = _step8.value;
             _context.next = 25;
             return _chunk2;
           case 25:
@@ -10217,10 +10348,10 @@ var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
           case 29:
             _context.prev = 29;
             _context.t1 = _context["catch"](19);
-            _iterator7.e(_context.t1);
+            _iterator8.e(_context.t1);
           case 32:
             _context.prev = 32;
-            _iterator7.f();
+            _iterator8.f();
             return _context.finish(32);
           case 35:
           case "end":
@@ -10230,86 +10361,94 @@ var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
     })
   }], [{
     key: "iterateDirections",
-    value: /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function iterateDirections(directions) {
-      var offset, _iterator8, _step8, dir, _iterator9, _step9, chunk, newChunk;
-      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function iterateDirections$(_context2) {
+    value: /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function iterateDirections(directions) {
+      var offset, _iterator9, _step9, dir, offsetDir, _iterator10, _step10, chunk, newChunk;
+      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function iterateDirections$(_context2) {
         while (1) switch (_context2.prev = _context2.next) {
           case 0:
             offset = 1;
           case 1:
             if (!(directions.length > 0)) {
-              _context2.next = 40;
+              _context2.next = 43;
               break;
             }
-            // Remove directions in which we have hit a boundary
+            // Remove directions in which we have reached the end (or, if per-channel ends, the end for all channels)
             directions = directions.filter(function (dir) {
+              var end = Array.isArray(dir.end) ? Math.max.apply(Math, (0,_babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__["default"])(dir.end)) : dir.end;
               if (dir.direction & 1) {
-                return dir.start + offset <= dir.end;
+                return dir.start + offset <= end;
               } else {
-                return dir.start - offset >= dir.end;
+                return dir.start - offset >= end;
               }
             });
 
             // Yield chunks one chunk farther out in every remaining direction
-            _iterator8 = _createForOfIteratorHelper(directions);
+            _iterator9 = _createForOfIteratorHelper(directions);
             _context2.prev = 4;
-            _iterator8.s();
-          case 6:
-            if ((_step8 = _iterator8.n()).done) {
-              _context2.next = 29;
-              break;
-            }
-            dir = _step8.value;
-            _iterator9 = _createForOfIteratorHelper(dir.chunks);
-            _context2.prev = 9;
             _iterator9.s();
-          case 11:
+          case 6:
             if ((_step9 = _iterator9.n()).done) {
-              _context2.next = 19;
+              _context2.next = 32;
               break;
             }
-            chunk = _step9.value;
+            dir = _step9.value;
+            offsetDir = offset * (dir.direction & 1 ? 1 : -1);
+            _iterator10 = _createForOfIteratorHelper(dir.chunks);
+            _context2.prev = 10;
+            _iterator10.s();
+          case 12:
+            if ((_step10 = _iterator10.n()).done) {
+              _context2.next = 22;
+              break;
+            }
+            chunk = _step10.value;
+            if (!(Array.isArray(dir.end) && chunk[directionToIndex(dir.direction)] + offsetDir > dir.end[chunk[1]])) {
+              _context2.next = 16;
+              break;
+            }
+            return _context2.abrupt("continue", 20);
+          case 16:
             newChunk = chunk.slice();
-            newChunk[directionToIndex(dir.direction)] += offset * (dir.direction & 1 ? 1 : -1);
-            _context2.next = 17;
+            newChunk[directionToIndex(dir.direction)] += offsetDir;
+            _context2.next = 20;
             return newChunk;
-          case 17:
-            _context2.next = 11;
+          case 20:
+            _context2.next = 12;
             break;
-          case 19:
-            _context2.next = 24;
+          case 22:
+            _context2.next = 27;
             break;
-          case 21:
-            _context2.prev = 21;
-            _context2.t0 = _context2["catch"](9);
-            _iterator9.e(_context2.t0);
           case 24:
             _context2.prev = 24;
-            _iterator9.f();
-            return _context2.finish(24);
+            _context2.t0 = _context2["catch"](10);
+            _iterator10.e(_context2.t0);
           case 27:
+            _context2.prev = 27;
+            _iterator10.f();
+            return _context2.finish(27);
+          case 30:
             _context2.next = 6;
             break;
-          case 29:
-            _context2.next = 34;
+          case 32:
+            _context2.next = 37;
             break;
-          case 31:
-            _context2.prev = 31;
-            _context2.t1 = _context2["catch"](4);
-            _iterator8.e(_context2.t1);
           case 34:
             _context2.prev = 34;
-            _iterator8.f();
-            return _context2.finish(34);
+            _context2.t1 = _context2["catch"](4);
+            _iterator9.e(_context2.t1);
           case 37:
+            _context2.prev = 37;
+            _iterator9.f();
+            return _context2.finish(37);
+          case 40:
             offset += 1;
             _context2.next = 1;
             break;
-          case 40:
+          case 43:
           case "end":
             return _context2.stop();
         }
-      }, iterateDirections, null, [[4, 31, 34, 37], [9, 21, 24, 27]]);
+      }, iterateDirections, null, [[4, 34, 37, 40], [10, 24, 27, 30]]);
     })
   }]);
   return ChunkPrefetchIterator;
@@ -10651,7 +10790,7 @@ function matchSourceScaleLevels(sources) {
     var smallestIdx = 0;
     var smallestSrc = sources[0];
     var smallestArr = smallestSrc.scaleLevels[scaleIndexes[0]];
-    var _loop = function _loop() {
+    for (var currentIdx = 1; currentIdx < sources.length; currentIdx++) {
       var currentSrc = sources[currentIdx];
       var currentArr = currentSrc.scaleLevels[scaleIndexes[currentIdx]];
       var ordering = compareZarrArraySize(smallestArr, smallestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
@@ -10671,12 +10810,6 @@ function matchSourceScaleLevels(sources) {
         if (largestT !== currentT) {
           throw new Error("Incompatible zarr arrays: different numbers of timesteps");
         }
-        // ...they have different chunk sizes (TODO update prefetching so this restriction can be removed)
-        if (!smallestArr.chunks.every(function (val, idx) {
-          return val === currentArr.chunks[idx];
-        })) {
-          throw new Error("Incompatible zarr arrays: chunk shapes are mismatched");
-        }
       } else {
         allEqual = false;
         if (ordering > 0) {
@@ -10685,17 +10818,14 @@ function matchSourceScaleLevels(sources) {
           smallestArr = currentArr;
         }
       }
-    };
-    for (var currentIdx = 1; currentIdx < sources.length; currentIdx++) {
-      _loop();
     }
     if (allEqual) {
       // We've found a matching set of scale levels! Save it and increment all indexes
       for (var i = 0; i < scaleIndexes.length; i++) {
-        var currentSrc = sources[i];
+        var _currentSrc = sources[i];
         var matchedScaleLevel = scaleIndexes[i];
-        matchedLevels[i].push(currentSrc.scaleLevels[matchedScaleLevel]);
-        matchedMetas[i].push(currentSrc.multiscaleMetadata.datasets[matchedScaleLevel]);
+        matchedLevels[i].push(_currentSrc.scaleLevels[matchedScaleLevel]);
+        matchedMetas[i].push(_currentSrc.multiscaleMetadata.datasets[matchedScaleLevel]);
         scaleIndexes[i] += 1;
       }
     } else {
@@ -10707,10 +10837,10 @@ function matchSourceScaleLevels(sources) {
           var _step$value = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_step.value, 2),
             idx = _step$value[0],
             srcIdx = _step$value[1];
-          var _currentSrc = sources[idx];
-          var currentArr = _currentSrc.scaleLevels[srcIdx];
-          var ordering = compareZarrArraySize(smallestArr, smallestSrc.axesTCZYX, currentArr, _currentSrc.axesTCZYX);
-          if (ordering !== 0) {
+          var _currentSrc2 = sources[idx];
+          var _currentArr = _currentSrc2.scaleLevels[srcIdx];
+          var _ordering = compareZarrArraySize(smallestArr, smallestSrc.axesTCZYX, _currentArr, _currentSrc2.axesTCZYX);
+          if (_ordering !== 0) {
             scaleIndexes[idx] += 1;
           }
         }
@@ -10741,6 +10871,7 @@ function matchSourceScaleLevels(sources) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   DATARANGE_UINT8: () => (/* binding */ DATARANGE_UINT8),
 /* harmony export */   FUSE_DISABLED_RGB_COLOR: () => (/* binding */ FUSE_DISABLED_RGB_COLOR),
 /* harmony export */   RenderMode: () => (/* binding */ RenderMode),
 /* harmony export */   ViewportCorner: () => (/* binding */ ViewportCorner),
@@ -10812,6 +10943,7 @@ var isTop = function isTop(corner) {
 var isRight = function isRight(corner) {
   return corner === ViewportCorner.TOP_RIGHT || corner === ViewportCorner.BOTTOM_RIGHT;
 };
+var DATARANGE_UINT8 = [0, 255];
 
 /***/ }),
 
@@ -11819,7 +11951,7 @@ var WorkerLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
       if (e.loaderId !== this.loaderId || e.loadId !== this.currentLoadId) {
         return;
       }
-      (_this$currentLoadCall = this.currentLoadCallback) === null || _this$currentLoadCall === void 0 || _this$currentLoadCall.call(this, e.channelIndex, e.data, e.atlasDims);
+      (_this$currentLoadCall = this.currentLoadCallback) === null || _this$currentLoadCall === void 0 || _this$currentLoadCall.call(this, e.channelIndex, e.data, e.ranges, e.atlasDims);
     }
   }]);
   return WorkerLoader;
@@ -85509,20 +85641,24 @@ var __webpack_exports__ = {};
   \*************************/
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var dat_gui__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! dat.gui */ "./node_modules/dat.gui/build/dat.gui.module.js");
-/* harmony import */ var _src__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../src */ "./src/index.ts");
-/* harmony import */ var _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../src/loaders/OpenCellLoader */ "./src/loaders/OpenCellLoader.ts");
-/* harmony import */ var _src_Volume__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../src/Volume */ "./src/Volume.ts");
-/* harmony import */ var _src_workers_LoadWorkerHandle__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../src/workers/LoadWorkerHandle */ "./src/workers/LoadWorkerHandle.ts");
+/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var dat_gui__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! dat.gui */ "./node_modules/dat.gui/build/dat.gui.module.js");
+/* harmony import */ var _src__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../src */ "./src/index.ts");
+/* harmony import */ var _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../src/loaders/OpenCellLoader */ "./src/loaders/OpenCellLoader.ts");
+/* harmony import */ var _src_Volume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../src/Volume */ "./src/Volume.ts");
+/* harmony import */ var _src_workers_LoadWorkerHandle__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../src/workers/LoadWorkerHandle */ "./src/workers/LoadWorkerHandle.ts");
+/* harmony import */ var _src_types__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../src/types */ "./src/types.ts");
+
 
 
 
 
 
 // special loader really just for this demo app but lives with the other loaders
+
 
 
 
@@ -85534,48 +85670,48 @@ var MAX_PREFETCH_CHUNKS = 25;
 var PLAYBACK_INTERVAL = 80;
 var TEST_DATA = {
   timeSeries: {
-    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.JSON,
+    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.JSON,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json",
     times: 46
   },
   omeTiff: {
-    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.TIFF,
+    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif"
   },
   zarrEMT: {
     url: "https://dev-aics-dtp-001.int.allencell.org/dan-data/3500005818_20230811__20x_Timelapse-02(P27-E7).ome.zarr",
-    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR
+    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR
   },
   zarrIDR1: {
-    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
     url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0076A/10501752.zarr"
   },
   zarrIDR2: {
-    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
     url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0054A/5025553.zarr"
   },
   zarrVariance: {
-    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr"
   },
   zarrNucmorph0: {
-    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P13-C4.zarr/"
   },
   zarrNucmorph1: {
-    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P15-C3.zarr/"
   },
   zarrNucmorph2: {
-    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P7-B4.zarr/"
   },
   zarrNucmorph3: {
-    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P8-B4.zarr/"
   },
   zarrUK: {
-    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
     url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr"
   },
   opencell: {
@@ -85583,11 +85719,11 @@ var TEST_DATA = {
     url: ""
   },
   cfeJson: {
-    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.JSON,
+    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.JSON,
     url: "AICS-12_881_atlas.json"
   },
   abm: {
-    type: _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.TIFF,
+    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/HAMILTONIAN_TERM_FOV_VSAHJUP_0000_000192.ome.tif"
   },
   procedural: {
@@ -85596,22 +85732,22 @@ var TEST_DATA = {
   }
 };
 var view3D;
-var loaderContext = new _src_workers_LoadWorkerHandle__WEBPACK_IMPORTED_MODULE_6__["default"](CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
+var loaderContext = new _src_workers_LoadWorkerHandle__WEBPACK_IMPORTED_MODULE_7__["default"](CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 var myState = {
   file: "",
-  volume: new _src__WEBPACK_IMPORTED_MODULE_3__.Volume(),
+  volume: new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(),
   currentFrame: 0,
   lastFrameTime: 0,
   isPlaying: false,
   timerId: 0,
-  loader: new _src__WEBPACK_IMPORTED_MODULE_3__.JsonImageInfoLoader("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json"),
+  loader: new _src__WEBPACK_IMPORTED_MODULE_4__.JsonImageInfoLoader("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json"),
   density: 12.5,
   maskAlpha: 1.0,
   exposure: 0.75,
   aperture: 0.0,
   fov: 20,
   focalDistance: 4.0,
-  lights: [new _src__WEBPACK_IMPORTED_MODULE_3__.Light(_src__WEBPACK_IMPORTED_MODULE_3__.SKY_LIGHT), new _src__WEBPACK_IMPORTED_MODULE_3__.Light(_src__WEBPACK_IMPORTED_MODULE_3__.AREA_LIGHT)],
+  lights: [new _src__WEBPACK_IMPORTED_MODULE_4__.Light(_src__WEBPACK_IMPORTED_MODULE_4__.SKY_LIGHT), new _src__WEBPACK_IMPORTED_MODULE_4__.Light(_src__WEBPACK_IMPORTED_MODULE_4__.AREA_LIGHT)],
   skyTopIntensity: 0.3,
   skyMidIntensity: 0.3,
   skyBotIntensity: 0.3,
@@ -85648,7 +85784,7 @@ var myState = {
   flipY: 1,
   flipZ: 1,
   channelFolderNames: [],
-  infoObj: (0,_src_Volume__WEBPACK_IMPORTED_MODULE_5__.getDefaultImageInfo)(),
+  infoObj: (0,_src_Volume__WEBPACK_IMPORTED_MODULE_6__.getDefaultImageInfo)(),
   channelGui: [],
   currentImageStore: "",
   currentImageName: ""
@@ -85699,24 +85835,24 @@ function makeColorGradient(controlPoints) {
 }
 */
 function initLights() {
-  myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
-  myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
-  myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+  myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+  myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+  myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
   myState.lights[1].mTheta = myState.lightTheta * Math.PI / 180.0;
   myState.lights[1].mPhi = myState.lightPhi * Math.PI / 180.0;
-  myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+  myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
   view3D.updateLights(myState.lights);
 }
 function setInitialRenderMode() {
   if (myState.isPT && myState.isMP) {
     myState.isMP = false;
   }
-  view3D.setVolumeRenderMode(myState.isPT ? _src__WEBPACK_IMPORTED_MODULE_3__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_3__.RENDERMODE_RAYMARCH);
+  view3D.setVolumeRenderMode(myState.isPT ? _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_RAYMARCH);
   view3D.setMaxProjectMode(myState.volume, myState.isMP);
 }
 var gui;
 function setupGui() {
-  gui = new dat_gui__WEBPACK_IMPORTED_MODULE_2__.GUI();
+  gui = new dat_gui__WEBPACK_IMPORTED_MODULE_3__.GUI();
   //gui = new dat.GUI({autoPlace:false, width:200});
 
   gui.add(myState, "density").max(100.0).min(0.0).step(0.001).onChange(function (value) {
@@ -85768,27 +85904,27 @@ function setupGui() {
   });
   var lighting = gui.addFolder("Lighting");
   lighting.addColor(myState, "skyTopColor").name("Sky Top").onChange(function () {
-    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyTopIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "skyMidColor").name("Sky Mid").onChange(function () {
-    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyMidIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "skyBotColor").name("Sky Bottom").onChange(function () {
-    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyBotIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState.lights[1], "mDistance").max(10.0).min(0.0).step(0.1).onChange(function () {
@@ -85808,11 +85944,11 @@ function setupGui() {
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "lightIntensity").max(1000.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "lightColor").name("lightColor").onChange(function () {
-    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
     view3D.updateLights(myState.lights);
   });
   initLights();
@@ -85886,15 +86022,11 @@ function showChannelUI(volume) {
       // this doesn't give good results currently but is an example of a per-channel button callback
       autoIJ: function (j) {
         return function () {
-          var lut = volume.getHistogram(j).lutGenerator_auto2();
-          // TODO: get a proper transfer function editor
-          // const lut = { lut: makeColorGradient([
-          //     {offset:0, color:"black"},
-          //     {offset:0.2, color:"black"},
-          //     {offset:0.25, color:"red"},
-          //     {offset:0.5, color:"orange"},
-          //     {offset:1.0, color:"yellow"}])
-          // };
+          var _volume$getHistogram$ = volume.getHistogram(j).findAutoIJBins(),
+            _volume$getHistogram$2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_volume$getHistogram$, 2),
+            hmin = _volume$getHistogram$2[0],
+            hmax = _volume$getHistogram$2[1];
+          var lut = new _src__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(hmin, hmax);
           volume.setLut(j, lut.lut);
           view3D.updateLuts(volume);
         };
@@ -85902,7 +86034,11 @@ function showChannelUI(volume) {
       // this doesn't give good results currently but is an example of a per-channel button callback
       auto0: function (j) {
         return function () {
-          var lut = volume.getHistogram(j).lutGenerator_auto();
+          var _volume$getHistogram$3 = volume.getHistogram(j).findAutoMinMax(),
+            _volume$getHistogram$4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_volume$getHistogram$3, 2),
+            b = _volume$getHistogram$4[0],
+            e = _volume$getHistogram$4[1];
+          var lut = new _src__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(b, e);
           volume.setLut(j, lut.lut);
           view3D.updateLuts(volume);
         };
@@ -85910,7 +86046,11 @@ function showChannelUI(volume) {
       // this doesn't give good results currently but is an example of a per-channel button callback
       bestFit: function (j) {
         return function () {
-          var lut = volume.getHistogram(j).lutGenerator_bestFit();
+          var _volume$getHistogram$5 = volume.getHistogram(j).findBestFitBins(),
+            _volume$getHistogram$6 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_volume$getHistogram$5, 2),
+            hmin = _volume$getHistogram$6[0],
+            hmax = _volume$getHistogram$6[1];
+          var lut = new _src__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(hmin, hmax);
           volume.setLut(j, lut.lut);
           view3D.updateLuts(volume);
         };
@@ -85918,7 +86058,9 @@ function showChannelUI(volume) {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       pct50_98: function (j) {
         return function () {
-          var lut = volume.getHistogram(j).lutGenerator_percentiles(0.5, 0.998);
+          var hmin = volume.getHistogram(j).findBinOfPercentile(0.5);
+          var hmax = volume.getHistogram(j).findBinOfPercentile(0.983);
+          var lut = new _src__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(hmin, hmax);
           volume.setLut(j, lut.lut);
           view3D.updateLuts(volume);
         };
@@ -85926,7 +86068,7 @@ function showChannelUI(volume) {
       colorizeEnabled: false,
       colorize: function (j) {
         return function () {
-          var lut = volume.getHistogram(j).lutGenerator_labelColors();
+          var lut = new _src__WEBPACK_IMPORTED_MODULE_4__.Lut().createLabelColors(volume.getHistogram(j));
           volume.setColorPalette(j, lut.lut);
           myState.channelGui[j].colorizeEnabled = !myState.channelGui[j].colorizeEnabled;
           if (myState.channelGui[j].colorizeEnabled) {
@@ -85981,13 +86123,19 @@ function showChannelUI(volume) {
     }(_i));
     f.add(myState.channelGui[_i], "window").max(1.0).min(0.0).step(0.001).onChange(function (j) {
       return function (value) {
-        volume.getChannel(j).lutGenerator_windowLevel(value, myState.channelGui[j].level);
+        var hwindow = value;
+        var hlevel = myState.channelGui[j].level;
+        var lut = new _src__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromWindowLevel(hwindow, hlevel);
+        volume.setLut(j, lut.lut);
         view3D.updateLuts(volume);
       };
     }(_i));
     f.add(myState.channelGui[_i], "level").max(1.0).min(0.0).step(0.001).onChange(function (j) {
       return function (value) {
-        volume.getChannel(j).lutGenerator_windowLevel(myState.channelGui[j].window, value);
+        var hwindow = myState.channelGui[j].window;
+        var hlevel = value;
+        var lut = new _src__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromWindowLevel(hwindow, hlevel);
+        volume.setLut(j, lut.lut);
         view3D.updateLuts(volume);
       };
     }(_i));
@@ -86013,7 +86161,7 @@ function showChannelUI(volume) {
   }
 }
 function loadImageData(jsonData, volumeData) {
-  var vol = new _src__WEBPACK_IMPORTED_MODULE_3__.Volume(jsonData);
+  var vol = new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(jsonData);
   myState.volume = vol;
 
   // tell the viewer about the image AFTER it's loaded
@@ -86026,7 +86174,7 @@ function loadImageData(jsonData, volumeData) {
     // according to jsonData.tile_width*jsonData.tile_height*jsonData.tiles
     // (first row of first plane is the first data in
     // the layout, then second row of first plane, etc)
-    vol.setChannelDataFromVolume(i, volumeData[i]);
+    vol.setChannelDataFromVolume(i, volumeData[i], _src_types__WEBPACK_IMPORTED_MODULE_8__.DATARANGE_UINT8);
     setInitialRenderMode();
     view3D.removeAllVolumes();
     view3D.addVolume(vol);
@@ -86047,7 +86195,10 @@ function loadImageData(jsonData, volumeData) {
 function onChannelDataArrived(v, channelIndex) {
   var currentVol = v; // myState.volume;
 
-  currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
+  var hmin = currentVol.getHistogram(channelIndex).findBinOfPercentile(0.5);
+  var hmax = currentVol.getHistogram(channelIndex).findBinOfPercentile(0.983);
+  var lut = new _src__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(hmin, hmax);
+  currentVol.setLut(channelIndex, lut.lut);
   view3D.onVolumeData(currentVol, [channelIndex]);
   view3D.setVolumeChannelEnabled(currentVol, channelIndex, myState.channelGui[channelIndex].enabled);
   view3D.updateActiveChannels(currentVol);
@@ -86131,12 +86282,12 @@ function goToZSlice(slice) {
 function createTestVolume() {
   var imgData = {
     name: "AICS-10_5_5",
-    originalSize: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(64, 64, 64),
-    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_7__.Vector2(8, 8),
-    volumeSize: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(64, 64, 64),
-    subregionSize: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(64, 64, 64),
-    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0),
-    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1, 1, 1),
+    originalSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(64, 64, 64),
+    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_9__.Vector2(8, 8),
+    volumeSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(64, 64, 64),
+    subregionSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(64, 64, 64),
+    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
+    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(1, 1, 1),
     spatialUnit: "",
     numChannels: 3,
     channelNames: ["DRAQ5", "EGFP", "SEG_Memb"],
@@ -86146,13 +86297,13 @@ function createTestVolume() {
     numMultiscaleLevels: 1,
     multiscaleLevel: 0,
     transform: {
-      translation: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0),
-      rotation: new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0)
+      translation: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
+      rotation: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0)
     }
   };
 
   // generate some raw volume data
-  var channelVolumes = [_src__WEBPACK_IMPORTED_MODULE_3__.VolumeMaker.createSphere(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24), _src__WEBPACK_IMPORTED_MODULE_3__.VolumeMaker.createTorus(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 8), _src__WEBPACK_IMPORTED_MODULE_3__.VolumeMaker.createCone(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 24)];
+  var channelVolumes = [_src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createSphere(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24), _src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createTorus(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 8), _src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createCone(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 24)];
   return {
     imgData: imgData,
     volumeData: channelVolumes
@@ -86162,22 +86313,22 @@ function createLoader(_x) {
   return _createLoader.apply(this, arguments);
 }
 function _createLoader() {
-  _createLoader = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().mark(function _callee(data) {
+  _createLoader = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee(data) {
     var path, times, t;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().wrap(function _callee$(_context) {
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
           if (!(data.type === "opencell")) {
             _context.next = 2;
             break;
           }
-          return _context.abrupt("return", new _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_4__.OpenCellLoader());
+          return _context.abrupt("return", new _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_5__.OpenCellLoader());
         case 2:
           _context.next = 4;
           return loaderContext.onOpen();
         case 4:
           path = data.url;
-          if (data.type === _src__WEBPACK_IMPORTED_MODULE_3__.VolumeFileFormat.JSON) {
+          if (data.type === _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.JSON) {
             path = [];
             times = data.times || 0;
             for (t = 0; t <= times; t++) {
@@ -86205,9 +86356,9 @@ function loadVolume(_x2, _x3) {
   return _loadVolume.apply(this, arguments);
 }
 function _loadVolume() {
-  _loadVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().mark(function _callee2(loadSpec, loader) {
+  _loadVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee2(loadSpec, loader) {
     var volume;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().wrap(function _callee2$(_context2) {
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function _callee2$(_context2) {
       while (1) switch (_context2.prev = _context2.next) {
         case 0:
           _context2.next = 2;
@@ -86231,9 +86382,9 @@ function loadTestData(_x4) {
   return _loadTestData.apply(this, arguments);
 }
 function _loadTestData() {
-  _loadTestData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().mark(function _callee3(testdata) {
+  _loadTestData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee3(testdata) {
     var volumeInfo, loadSpec;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().wrap(function _callee3$(_context3) {
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function _callee3$(_context3) {
       while (1) switch (_context3.prev = _context3.next) {
         case 0:
           if (!(testdata.type === "procedural")) {
@@ -86248,7 +86399,7 @@ function _loadTestData() {
           return createLoader(testdata);
         case 6:
           myState.loader = _context3.sent;
-          loadSpec = new _src__WEBPACK_IMPORTED_MODULE_3__.LoadSpec();
+          loadSpec = new _src__WEBPACK_IMPORTED_MODULE_4__.LoadSpec();
           myState.totalFrames = testdata.times;
           loadVolume(loadSpec, myState.loader);
         case 10:
@@ -86283,7 +86434,7 @@ function main() {
   if (!el) {
     return;
   }
-  view3D = new _src__WEBPACK_IMPORTED_MODULE_3__.View3d({
+  view3D = new _src__WEBPACK_IMPORTED_MODULE_4__.View3d({
     parentElement: el
   });
   var testDataSelect = document.getElementById("testData");
@@ -86464,7 +86615,7 @@ function main() {
   var changeRenderMode = function changeRenderMode(pt, mp) {
     myState.isPT = pt;
     myState.isMP = mp;
-    view3D.setVolumeRenderMode(pt ? _src__WEBPACK_IMPORTED_MODULE_3__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_3__.RENDERMODE_RAYMARCH);
+    view3D.setVolumeRenderMode(pt ? _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_RAYMARCH);
     view3D.setMaxProjectMode(myState.volume, mp);
   };
   renderModeSelect === null || renderModeSelect === void 0 || renderModeSelect.addEventListener("change", function (_ref2) {
