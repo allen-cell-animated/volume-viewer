@@ -2,6 +2,7 @@ import { Vector2, Vector3 } from "three";
 
 import Channel from "./Channel.js";
 import Histogram from "./Histogram.js";
+import { Lut } from "./Lut.js";
 import { getColorByChannelIndex } from "./constants/colors.js";
 import { type IVolumeLoader, LoadSpec, type PerChannelCallback } from "./loaders/IVolumeLoader.js";
 import { MAX_ATLAS_EDGE, pickLevelToLoadUnscaled } from "./loaders/VolumeLoaderUtils.js";
@@ -438,7 +439,7 @@ export default class Volume {
    * @param {number} c The channel index
    * @param {Array.<number>} lut The lut as a 256 element array
    */
-  setLut(c: number, lut: Uint8Array): void {
+  setLut(c: number, lut: Lut): void {
     this.channels[c].setLut(lut);
   }
 

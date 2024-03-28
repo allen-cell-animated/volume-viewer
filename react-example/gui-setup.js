@@ -76,7 +76,7 @@ export function showChannelUI(volume, view3D, gui) {
         return function () {
           const [hmin, hmax] = volume.getHistogram(j).findAutoIJBins();
           const lut = new Lut().createFromMinMax(hmin, hmax);
-          volume.setLut(j, lut.lut);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
@@ -85,7 +85,7 @@ export function showChannelUI(volume, view3D, gui) {
         return function () {
           const [b, e] = volume.getHistogram(j).findAutoMinMax();
           const lut = new Lut().createFromMinMax(b, e);
-          volume.setLut(j, lut.lut);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
@@ -94,7 +94,7 @@ export function showChannelUI(volume, view3D, gui) {
         return function () {
           const [hmin, hmax] = volume.getHistogram(j).findBestFitBins();
           const lut = new Lut().createFromMinMax(hmin, hmax);
-          volume.setLut(j, lut.lut);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
@@ -103,7 +103,7 @@ export function showChannelUI(volume, view3D, gui) {
           const hmin = volume.getHistogram(j).findBinOfPercentile(0.5);
           const hmax = volume.getHistogram(j).findBinOfPercentile(0.983);
           const lut = new Lut().createFromMinMax(hmin, hmax);
-          volume.setLut(j, lut.lut);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
@@ -207,7 +207,7 @@ export function showChannelUI(volume, view3D, gui) {
             const hwindow = value;
             const hlevel = myState.infoObj.channelGui[j].level;
             const lut = new Lut().createFromWindowLevel(hwindow, hlevel);
-            volume.setLut(j, lut.lut);
+            volume.setLut(j, lut);
             view3D.updateLuts(volume);
           };
         })(i)
@@ -224,7 +224,7 @@ export function showChannelUI(volume, view3D, gui) {
             const hwindow = myState.infoObj.channelGui[j].window;
             const hlevel = value;
             const lut = new Lut().createFromWindowLevel(hwindow, hlevel);
-            volume.setLut(j, lut.lut);
+            volume.setLut(j, lut);
             view3D.updateLuts(volume);
           };
         })(i)

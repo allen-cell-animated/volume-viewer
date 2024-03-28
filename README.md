@@ -47,7 +47,7 @@ for (let i = 0; i < volumeData.length; ++i) {
   const hmin = aimg.getHistogram(i).findBinOfPercentile(0.5);
   const hmax = aimg.getHistogram(i).findBinOfPercentile(0.983);
   const lut = new Lut().createFromMinMax(hmin, hmax);
-  aimg.setLut(i, lut.lut);
+  aimg.setLut(i, lut);
 }
 
 // enable only the first 3 channels
@@ -107,7 +107,7 @@ export class VolumeViewer extends React.Component {
                     const hmin = aimg.getHistogram(channelIndex).findBinOfPercentile(0.5);
                     const hmax = aimg.getHistogram(channelIndex).findBinOfPercentile(0.983);
                     const lut = new Lut().createFromMinMax(hmin, hmax);
-                    aimg.setLut(i, lut.lut);
+                    aimg.setLut(i, lut);
 
                     this.view3D.setVolumeChannelEnabled(aimg, channelIndex, channelIndex < 3);
                     this.view3D.updateActiveChannels(aimg);
