@@ -75,15 +75,16 @@ export default class Channel {
       for (let i = 0; i < LUT_ARRAY_LENGTH / 4; ++i) {
         ret[i * 4 + 0] =
           this.colorPalette[i * 4 + 0] * this.colorPaletteAlpha +
-          this.lut[i * 4 + 0] * (1.0 - this.colorPaletteAlpha) * rgb[0];
+          this.lut.lut[i * 4 + 0] * (1.0 - this.colorPaletteAlpha) * rgb[0];
         ret[i * 4 + 1] =
           this.colorPalette[i * 4 + 1] * this.colorPaletteAlpha +
-          this.lut[i * 4 + 1] * (1.0 - this.colorPaletteAlpha) * rgb[1];
+          this.lut.lut[i * 4 + 1] * (1.0 - this.colorPaletteAlpha) * rgb[1];
         ret[i * 4 + 2] =
           this.colorPalette[i * 4 + 2] * this.colorPaletteAlpha +
-          this.lut[i * 4 + 2] * (1.0 - this.colorPaletteAlpha) * rgb[2];
+          this.lut.lut[i * 4 + 2] * (1.0 - this.colorPaletteAlpha) * rgb[2];
         ret[i * 4 + 3] =
-          this.colorPalette[i * 4 + 3] * this.colorPaletteAlpha + this.lut[i * 4 + 3] * (1.0 - this.colorPaletteAlpha);
+          this.colorPalette[i * 4 + 3] * this.colorPaletteAlpha +
+          this.lut.lut[i * 4 + 3] * (1.0 - this.colorPaletteAlpha);
       }
     }
 
