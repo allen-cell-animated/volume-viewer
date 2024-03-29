@@ -32,6 +32,14 @@ function remapDomain(
   return remapped;
 }
 
+// We have an intensity value that is in the range of valueMin to valueMax.
+// The input value range is assumed to represent absolute intensity range oldMin to oldMax.
+// We now wish to find the new position of this intensity value
+// when the valueMin-valueMax represents absolute range newMin to newMax
+// After the remapping, the intensity value will be in the range of valueMin to valueMax.
+// For our Luts valueMin will always be 0, and valueMax will always be 255.
+// oldMin and oldMax will be the domain of the original raw data intensities.
+// newMin and newMax will be the domain of the new raw data intensities.
 function remapDomainForCP(
   value: number,
   valueMin: number,
