@@ -34,7 +34,7 @@ export class VolumeViewer extends React.Component {
                     const hmin = aimg.getHistogram(channelIndex).findBinOfPercentile(0.5);
                     const hmax = aimg.getHistogram(channelIndex).findBinOfPercentile(0.983);
                     const lut = new Lut().createFromMinMax(hmin, hmax);
-                    aimg.setLut(channelIndex, lut.lut);
+                    aimg.setLut(channelIndex, lut);
           
                     this.view3D.setVolumeChannelEnabled(aimg, channelIndex, channelIndex < 3);
                     this.view3D.updateActiveChannels(aimg);

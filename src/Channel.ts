@@ -17,7 +17,7 @@ import {
   ClampToEdgeWrapping,
 } from "three";
 import Histogram from "./Histogram.js";
-import { Lut, LUT_ARRAY_LENGTH, remapLut } from "./Lut.js";
+import { Lut, LUT_ARRAY_LENGTH, remapControlPoints, remapLut } from "./Lut.js";
 import { TypedArray, NumberType, ARRAY_CONSTRUCTORS } from "./types.js";
 
 interface ChannelImageData {
@@ -37,7 +37,7 @@ export default class Channel {
   public volumeData: TypedArray<NumberType>;
   public name: string;
   public histogram: Histogram;
-  public lut: Uint8Array;
+  public lut: Lut;
   public colorPalette: Uint8Array;
   public colorPaletteAlpha: number;
   public dims: [number, number, number];
@@ -65,9 +65,8 @@ export default class Channel {
     this.dims = [0, 0, 0];
 
     // intensity remapping lookup table
-    this.lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
-    const lut = new Lut().createFromMinMax(0, 255);
-    this.setLut(lut.lut);
+    this.lut = new Lut().createFromMinMax(0, 255);
+
     // per-intensity color labeling (disabled initially)
     this.colorPalette = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
     // store in 0..1 range. 1 means fully colorPalette, 0 means fully lut.
@@ -86,7 +85,7 @@ export default class Channel {
     if (this.colorPaletteAlpha === 1.0) {
       ret.set(this.colorPalette);
     } else if (this.colorPaletteAlpha === 0.0) {
-      ret.set(this.lut);
+      ret.set(this.lut.lut);
       for (let i = 0; i < LUT_ARRAY_LENGTH / 4; ++i) {
         ret[i * 4 + 0] *= rgb[0];
         ret[i * 4 + 1] *= rgb[1];
@@ -96,15 +95,16 @@ export default class Channel {
       for (let i = 0; i < LUT_ARRAY_LENGTH / 4; ++i) {
         ret[i * 4 + 0] =
           this.colorPalette[i * 4 + 0] * this.colorPaletteAlpha +
-          this.lut[i * 4 + 0] * (1.0 - this.colorPaletteAlpha) * rgb[0];
+          this.lut.lut[i * 4 + 0] * (1.0 - this.colorPaletteAlpha) * rgb[0];
         ret[i * 4 + 1] =
           this.colorPalette[i * 4 + 1] * this.colorPaletteAlpha +
-          this.lut[i * 4 + 1] * (1.0 - this.colorPaletteAlpha) * rgb[1];
+          this.lut.lut[i * 4 + 1] * (1.0 - this.colorPaletteAlpha) * rgb[1];
         ret[i * 4 + 2] =
           this.colorPalette[i * 4 + 2] * this.colorPaletteAlpha +
-          this.lut[i * 4 + 2] * (1.0 - this.colorPaletteAlpha) * rgb[2];
+          this.lut.lut[i * 4 + 2] * (1.0 - this.colorPaletteAlpha) * rgb[2];
         ret[i * 4 + 3] =
-          this.colorPalette[i * 4 + 3] * this.colorPaletteAlpha + this.lut[i * 4 + 3] * (1.0 - this.colorPaletteAlpha);
+          this.colorPalette[i * 4 + 3] * this.colorPaletteAlpha +
+          this.lut.lut[i * 4 + 3] * (1.0 - this.colorPaletteAlpha);
       }
     }
 
@@ -116,10 +116,14 @@ export default class Channel {
 
   public setRawDataRange(min: number, max: number): void {
     // remap the lut which was based on rawMin and rawMax to new min and max
-    const newLut = remapLut(this.lut, this.rawMin, this.rawMax, min, max);
+    // If either of the min/max ranges are both zero, then we have undefined behavior and should
+    // not remap the lut.  This situation can happen at first load, for example,
+    // when one channel has arrived but others haven't.
+    if (!(this.rawMin === 0 && this.rawMax === 0) && !(min === 0 && max === 0)) {
+      this.lut.remapDomains(this.rawMin, this.rawMax, min, max);
+    }
     this.rawMin = min;
     this.rawMax = max;
-    this.lut = newLut;
   }
 
   public getHistogram(): Histogram {
@@ -329,8 +333,7 @@ export default class Channel {
     this.rebuildDataTexture(this.imgData.data, ax, ay);
   }
 
-  // lut should be an uint8array of 256*4 elements (256 rgba8 values)
-  public setLut(lut: Uint8Array): void {
+  public setLut(lut: Lut): void {
     this.lut = lut;
   }
 

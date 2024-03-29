@@ -643,7 +643,7 @@ function showChannelUI(volume: Volume) {
         return function () {
           const [hmin, hmax] = volume.getHistogram(j).findAutoIJBins();
           const lut = new Lut().createFromMinMax(hmin, hmax);
-          volume.setLut(j, lut.lut);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
@@ -652,7 +652,7 @@ function showChannelUI(volume: Volume) {
         return function () {
           const [b, e] = volume.getHistogram(j).findAutoMinMax();
           const lut = new Lut().createFromMinMax(b, e);
-          volume.setLut(j, lut.lut);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
@@ -661,7 +661,7 @@ function showChannelUI(volume: Volume) {
         return function () {
           const [hmin, hmax] = volume.getHistogram(j).findBestFitBins();
           const lut = new Lut().createFromMinMax(hmin, hmax);
-          volume.setLut(j, lut.lut);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
@@ -671,7 +671,7 @@ function showChannelUI(volume: Volume) {
           const hmin = volume.getHistogram(j).findBinOfPercentile(0.5);
           const hmax = volume.getHistogram(j).findBinOfPercentile(0.983);
           const lut = new Lut().createFromMinMax(hmin, hmax);
-          volume.setLut(j, lut.lut);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
@@ -786,7 +786,7 @@ function showChannelUI(volume: Volume) {
             const hwindow = value;
             const hlevel = myState.channelGui[j].level;
             const lut = new Lut().createFromWindowLevel(hwindow, hlevel);
-            volume.setLut(j, lut.lut);
+            volume.setLut(j, lut);
             view3D.updateLuts(volume);
           };
         })(i)
@@ -802,7 +802,7 @@ function showChannelUI(volume: Volume) {
             const hwindow = myState.channelGui[j].window;
             const hlevel = value;
             const lut = new Lut().createFromWindowLevel(hwindow, hlevel);
-            volume.setLut(j, lut.lut);
+            volume.setLut(j, lut);
             view3D.updateLuts(volume);
           };
         })(i)
@@ -888,10 +888,7 @@ function loadImageData(jsonData: ImageInfo, volumeData: Uint8Array[]) {
 function onChannelDataArrived(v: Volume, channelIndex: number) {
   const currentVol = v; // myState.volume;
 
-  const hmin = currentVol.getHistogram(channelIndex).findBinOfPercentile(0.5);
-  const hmax = currentVol.getHistogram(channelIndex).findBinOfPercentile(0.983);
-  const lut = new Lut().createFromMinMax(hmin, hmax);
-  currentVol.setLut(channelIndex, lut.lut);
+  // optionally can set the LUT here (for example if this is first time loading)
 
   view3D.onVolumeData(currentVol, [channelIndex]);
   view3D.setVolumeChannelEnabled(currentVol, channelIndex, myState.channelGui[channelIndex].enabled);
