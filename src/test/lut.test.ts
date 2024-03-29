@@ -523,9 +523,35 @@ describe("test remapping control points when raw data range is updated", () => {
       { x: 192, color: [255, 255, 255], opacity: 1.0 },
       { x: 255, color: [255, 255, 255], opacity: 1.0 },
     ];
+    /**
+     * Old CPs:
+     * 255 |           o ------o
+     *     |          /
+     *     |         /
+     *     |        /
+     *   0 | o----o
+     *     +-------------------
+     *       0    64    192    255
+     *       v    v     v      v
+     */
     const cp2 = remapControlPoints(cp, 0, 255, 64, 192);
+    /**
+     * New CPs:
+     * 255 |           o
+     *     |          /
+     *     |         /
+     *     |        /
+     *   0 |       o
+     *     +-------------------
+     *             0    255
+     *             v     v
+     * raw values: 64    192
+     */
+    // intensity range contracted from 0-255 to 64-192
+    // therefore the cps should just outside of 64-192 are gone and
+    // the new cp's capture only the ramp up from 64-192 in the original cp list.
     const positions = cp2.map((cp) => Math.round(cp.x));
-    expect(positions).to.include.members([0, 64, 96, 160, 192, 255]);
+    expect(positions).to.include.members([0, 255]);
   });
   it("remaps the control points correctly when new intensity range expanded", () => {
     const cp: ControlPoint[] = [
@@ -534,8 +560,31 @@ describe("test remapping control points when raw data range is updated", () => {
       { x: 192, color: [255, 255, 255], opacity: 1.0 },
       { x: 255, color: [255, 255, 255], opacity: 1.0 },
     ];
+    /**
+     * Old CPs:
+     * 255 |           o ------o
+     *     |          /
+     *     |         /
+     *     |        /
+     *   0 | o----o
+     *     +-------------------
+     *       0    64    192    255
+     *       v    v     v      v
+     */
     const cp2 = remapControlPoints(cp, 0, 255, -64, 320);
+    /**
+     * New CPs:
+     * 255 |           o ------o
+     *     |          /
+     *     |         /
+     *     |        /
+     *   0 | o----o
+     *     +-------------------
+     *       0    85    170    255
+     *       v    v     v      v
+     *     -64    64    192    320 (abs intensities)
+     */
     const positions = cp2.map((cp) => Math.round(cp.x));
-    expect(positions).to.include.members([0, 32, 225, 255]);
+    expect(positions).to.include.members([0, 85, 170, 255]);
   });
 });
