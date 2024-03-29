@@ -17,7 +17,7 @@ import {
   ClampToEdgeWrapping,
 } from "three";
 import Histogram from "./Histogram.js";
-import { Lut, LUT_ARRAY_LENGTH, remapControlPoints, remapLut } from "./Lut.js";
+import { Lut, LUT_ARRAY_LENGTH } from "./Lut.js";
 import { TypedArray, NumberType, ARRAY_CONSTRUCTORS } from "./types.js";
 
 interface ChannelImageData {
