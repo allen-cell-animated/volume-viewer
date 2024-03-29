@@ -32,6 +32,24 @@ function remapDomain(
   return remapped;
 }
 
+function remapDomainForCP(
+  value: number,
+  valueMin: number,
+  valueMax: number,
+  oldMin: number,
+  oldMax: number,
+  newMin: number,
+  newMax: number
+): number {
+  const pctOfRange = (value - valueMin) / (valueMax - valueMin);
+  // find abs intensity from old range
+  const iOld = (oldMax - oldMin) * pctOfRange + oldMin;
+  // now locate this value as a relative index in the new range
+  const pctOfNewRange = (iOld - newMin) / (newMax - newMin);
+  const remapped = valueMin + pctOfNewRange * (valueMax - valueMin);
+  return remapped;
+}
+
 export const LUT_ENTRIES = 256;
 export const LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
 
@@ -441,7 +459,7 @@ export function remapControlPoints(
   // then see if we need to clip?
   for (let i = 0; i < controlPoints.length; ++i) {
     const cp = controlPoints[i];
-    const iOld = remapDomain(cp.x, 0, LUT_ENTRIES - 1, oldMin, oldMax, newMin, newMax);
+    const iOld = remapDomainForCP(cp.x, 0, LUT_ENTRIES - 1, oldMin, oldMax, newMin, newMax);
     const newCP: ControlPoint = {
       x: iOld,
       opacity: cp.opacity,
@@ -487,14 +505,46 @@ export function remapControlPoints(
 
   // lastly, add a point for start and end if needed.
   if (resultControlPoints[0].x !== 0) {
-    resultControlPoints.unshift({ x: 0, opacity: resultControlPoints[0].opacity, color: resultControlPoints[0].color });
+    // if the first 2 points have same opacity and color, then just shift first pt to 0.
+    if (
+      resultControlPoints.length > 1 &&
+      resultControlPoints[0].opacity === resultControlPoints[1].opacity &&
+      resultControlPoints[0].color[0] === resultControlPoints[1].color[0] &&
+      resultControlPoints[0].color[1] === resultControlPoints[1].color[1] &&
+      resultControlPoints[0].color[2] === resultControlPoints[1].color[2]
+    ) {
+      resultControlPoints[0].x = 0;
+    } else {
+      // otherwise, add a point at 0.
+      resultControlPoints.unshift({
+        x: 0,
+        opacity: resultControlPoints[0].opacity,
+        color: resultControlPoints[0].color,
+      });
+    }
   }
   if (resultControlPoints[resultControlPoints.length - 1].x !== 255) {
-    resultControlPoints.push({
-      x: 255,
-      opacity: resultControlPoints[resultControlPoints.length - 1].opacity,
-      color: resultControlPoints[resultControlPoints.length - 1].color,
-    });
+    // if the last 2 points have same opacity and color, then just shift last pt to 255.
+    if (
+      resultControlPoints.length > 1 &&
+      resultControlPoints[resultControlPoints.length - 1].opacity ===
+        resultControlPoints[resultControlPoints.length - 2].opacity &&
+      resultControlPoints[resultControlPoints.length - 1].color[0] ===
+        resultControlPoints[resultControlPoints.length - 2].color[0] &&
+      resultControlPoints[resultControlPoints.length - 1].color[1] ===
+        resultControlPoints[resultControlPoints.length - 2].color[1] &&
+      resultControlPoints[resultControlPoints.length - 1].color[2] ===
+        resultControlPoints[resultControlPoints.length - 2].color[2]
+    ) {
+      resultControlPoints[resultControlPoints.length - 1].x = 255;
+    } else {
+      // otherwise, add a point at 255.
+      resultControlPoints.push({
+        x: 255,
+        opacity: resultControlPoints[resultControlPoints.length - 1].opacity,
+        color: resultControlPoints[resultControlPoints.length - 1].color,
+      });
+    }
   }
   return resultControlPoints;
 }
