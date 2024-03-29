@@ -634,7 +634,7 @@ function showChannelUI(volume: Volume) {
       reset: (function (j) {
         return function () {
           const lut = new Lut().createFullRange();
-          volume.setLut(j, lut.lut);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
