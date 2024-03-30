@@ -48,9 +48,8 @@ var Channel = /*#__PURE__*/function () {
     this.dims = [0, 0, 0];
 
     // intensity remapping lookup table
-    this.lut = new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH).fill(0);
-    var lut = new _Lut_js__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(0, 255);
-    this.setLut(lut.lut);
+    this.lut = new _Lut_js__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(0, 255);
+
     // per-intensity color labeling (disabled initially)
     this.colorPalette = new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH).fill(0);
     // store in 0..1 range. 1 means fully colorPalette, 0 means fully lut.
@@ -71,7 +70,7 @@ var Channel = /*#__PURE__*/function () {
       if (this.colorPaletteAlpha === 1.0) {
         ret.set(this.colorPalette);
       } else if (this.colorPaletteAlpha === 0.0) {
-        ret.set(this.lut);
+        ret.set(this.lut.lut);
         for (var i = 0; i < _Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH / 4; ++i) {
           ret[i * 4 + 0] *= rgb[0];
           ret[i * 4 + 1] *= rgb[1];
@@ -79,10 +78,10 @@ var Channel = /*#__PURE__*/function () {
         }
       } else {
         for (var _i = 0; _i < _Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH / 4; ++_i) {
-          ret[_i * 4 + 0] = this.colorPalette[_i * 4 + 0] * this.colorPaletteAlpha + this.lut[_i * 4 + 0] * (1.0 - this.colorPaletteAlpha) * rgb[0];
-          ret[_i * 4 + 1] = this.colorPalette[_i * 4 + 1] * this.colorPaletteAlpha + this.lut[_i * 4 + 1] * (1.0 - this.colorPaletteAlpha) * rgb[1];
-          ret[_i * 4 + 2] = this.colorPalette[_i * 4 + 2] * this.colorPaletteAlpha + this.lut[_i * 4 + 2] * (1.0 - this.colorPaletteAlpha) * rgb[2];
-          ret[_i * 4 + 3] = this.colorPalette[_i * 4 + 3] * this.colorPaletteAlpha + this.lut[_i * 4 + 3] * (1.0 - this.colorPaletteAlpha);
+          ret[_i * 4 + 0] = this.colorPalette[_i * 4 + 0] * this.colorPaletteAlpha + this.lut.lut[_i * 4 + 0] * (1.0 - this.colorPaletteAlpha) * rgb[0];
+          ret[_i * 4 + 1] = this.colorPalette[_i * 4 + 1] * this.colorPaletteAlpha + this.lut.lut[_i * 4 + 1] * (1.0 - this.colorPaletteAlpha) * rgb[1];
+          ret[_i * 4 + 2] = this.colorPalette[_i * 4 + 2] * this.colorPaletteAlpha + this.lut.lut[_i * 4 + 2] * (1.0 - this.colorPaletteAlpha) * rgb[2];
+          ret[_i * 4 + 3] = this.colorPalette[_i * 4 + 3] * this.colorPaletteAlpha + this.lut.lut[_i * 4 + 3] * (1.0 - this.colorPaletteAlpha);
         }
       }
       this.lutTexture.image.data.set(ret);
@@ -93,10 +92,14 @@ var Channel = /*#__PURE__*/function () {
     key: "setRawDataRange",
     value: function setRawDataRange(min, max) {
       // remap the lut which was based on rawMin and rawMax to new min and max
-      var newLut = (0,_Lut_js__WEBPACK_IMPORTED_MODULE_4__.remapLut)(this.lut, this.rawMin, this.rawMax, min, max);
+      // If either of the min/max ranges are both zero, then we have undefined behavior and should
+      // not remap the lut.  This situation can happen at first load, for example,
+      // when one channel has arrived but others haven't.
+      if (!(this.rawMin === 0 && this.rawMax === 0) && !(min === 0 && max === 0)) {
+        this.lut.remapDomains(this.rawMin, this.rawMax, min, max);
+      }
       this.rawMin = min;
       this.rawMax = max;
-      this.lut = newLut;
     }
   }, {
     key: "getHistogram",
@@ -152,7 +155,7 @@ var Channel = /*#__PURE__*/function () {
         hmin = _this$histogram$findA2[0],
         hmax = _this$histogram$findA2[1];
       var lut = new _Lut_js__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(hmin, hmax);
-      this.setLut(lut.lut);
+      this.setLut(lut);
     }
 
     // let's rearrange this.imgData.data into a 3d array.
@@ -247,8 +250,6 @@ var Channel = /*#__PURE__*/function () {
       }
       this.rebuildDataTexture(this.imgData.data, ax, ay);
     }
-
-    // lut should be an uint8array of 256*4 elements (256 rgba8 values)
   }, {
     key: "setLut",
     value: function setLut(lut) {
@@ -516,6 +517,24 @@ function remapDomain(value, valueMin, valueMax, oldMin, oldMax, newMin, newMax) 
   // now locate this value as a relative index in the old range
   var pctOfOldRange = (newValue - oldMin) / (oldMax - oldMin);
   var remapped = valueMin + pctOfOldRange * (valueMax - valueMin);
+  return remapped;
+}
+
+// We have an intensity value that is in the range of valueMin to valueMax.
+// The input value range is assumed to represent absolute intensity range oldMin to oldMax.
+// We now wish to find the new position of this intensity value
+// when the valueMin-valueMax represents absolute range newMin to newMax
+// After the remapping, the intensity value will be in the range of valueMin to valueMax.
+// For our Luts valueMin will always be 0, and valueMax will always be 255.
+// oldMin and oldMax will be the domain of the original raw data intensities.
+// newMin and newMax will be the domain of the new raw data intensities.
+function remapDomainForCP(value, valueMin, valueMax, oldMin, oldMax, newMin, newMax) {
+  var pctOfRange = (value - valueMin) / (valueMax - valueMin);
+  // find abs intensity from old range
+  var iOld = (oldMax - oldMin) * pctOfRange + oldMin;
+  // now locate this value as a relative index in the new range
+  var pctOfNewRange = (iOld - newMin) / (newMax - newMin);
+  var remapped = valueMin + pctOfNewRange * (valueMax - valueMin);
   return remapped;
 }
 var LUT_ENTRIES = 256;
@@ -982,7 +1001,7 @@ function remapControlPoints(controlPoints, oldMin, oldMax, newMin, newMax) {
   // then see if we need to clip?
   for (var i = 0; i < controlPoints.length; ++i) {
     var cp = controlPoints[i];
-    var iOld = remapDomain(cp.x, 0, LUT_ENTRIES - 1, oldMin, oldMax, newMin, newMax);
+    var iOld = remapDomainForCP(cp.x, 0, LUT_ENTRIES - 1, oldMin, oldMax, newMin, newMax);
     var newCP = {
       x: iOld,
       opacity: cp.opacity,
@@ -1026,18 +1045,30 @@ function remapControlPoints(controlPoints, oldMin, oldMax, newMin, newMax) {
 
   // lastly, add a point for start and end if needed.
   if (resultControlPoints[0].x !== 0) {
-    resultControlPoints.unshift({
-      x: 0,
-      opacity: resultControlPoints[0].opacity,
-      color: resultControlPoints[0].color
-    });
+    // if the first 2 points have same opacity and color, then just shift first pt to 0.
+    if (resultControlPoints.length > 1 && resultControlPoints[0].opacity === resultControlPoints[1].opacity && resultControlPoints[0].color[0] === resultControlPoints[1].color[0] && resultControlPoints[0].color[1] === resultControlPoints[1].color[1] && resultControlPoints[0].color[2] === resultControlPoints[1].color[2]) {
+      resultControlPoints[0].x = 0;
+    } else {
+      // otherwise, add a point at 0.
+      resultControlPoints.unshift({
+        x: 0,
+        opacity: resultControlPoints[0].opacity,
+        color: resultControlPoints[0].color
+      });
+    }
   }
   if (resultControlPoints[resultControlPoints.length - 1].x !== 255) {
-    resultControlPoints.push({
-      x: 255,
-      opacity: resultControlPoints[resultControlPoints.length - 1].opacity,
-      color: resultControlPoints[resultControlPoints.length - 1].color
-    });
+    // if the last 2 points have same opacity and color, then just shift last pt to 255.
+    if (resultControlPoints.length > 1 && resultControlPoints[resultControlPoints.length - 1].opacity === resultControlPoints[resultControlPoints.length - 2].opacity && resultControlPoints[resultControlPoints.length - 1].color[0] === resultControlPoints[resultControlPoints.length - 2].color[0] && resultControlPoints[resultControlPoints.length - 1].color[1] === resultControlPoints[resultControlPoints.length - 2].color[1] && resultControlPoints[resultControlPoints.length - 1].color[2] === resultControlPoints[resultControlPoints.length - 2].color[2]) {
+      resultControlPoints[resultControlPoints.length - 1].x = 255;
+    } else {
+      // otherwise, add a point at 255.
+      resultControlPoints.push({
+        x: 255,
+        opacity: resultControlPoints[resultControlPoints.length - 1].opacity,
+        color: resultControlPoints[resultControlPoints.length - 1].color
+      });
+    }
   }
   return resultControlPoints;
 }
