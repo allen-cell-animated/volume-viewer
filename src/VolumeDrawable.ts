@@ -182,6 +182,7 @@ export default class VolumeDrawable {
           }
           this.createIsosurface(channelIndex, isovalue, isosurfaceOpacity, isosurfaceOpacity < 1.0);
         }
+        this.updateChannelDataRequired(channelIndex);
       } else if (options.isosurfaceEnabled) {
         if (options.isovalue !== undefined) {
           this.updateIsovalue(channelIndex, options.isovalue);
@@ -196,6 +197,28 @@ export default class VolumeDrawable {
       }
       if (options.isosurfaceOpacity !== undefined) {
         this.updateOpacity(channelIndex, options.isosurfaceOpacity);
+      }
+    }
+  }
+
+  /**
+   * Updates whether a channel's data must be loaded for rendering, based on if its volume or isosurface is enabled.
+   * Calls `Volume.updateRequiredData` to update the list of required channels if necessary.
+   */
+  private updateChannelDataRequired(channelIndex: number): void {
+    const { enabled, isosurfaceEnabled } = this.channelOptions[channelIndex];
+    const channelIsRequired = enabled || isosurfaceEnabled;
+    const requiredChannels = this.volume.loadSpecRequired.channels;
+
+    if (requiredChannels.includes(channelIndex)) {
+      if (!channelIsRequired) {
+        // This channel is currently marked required, but both its volume and isosurface are off. Remove it!
+        this.volume.updateRequiredData({ channels: requiredChannels.filter((i) => i !== channelIndex) });
+      }
+    } else {
+      if (channelIsRequired) {
+        // This channel is not marked required, but either its volume or isosurface is on. Add it!
+        this.volume.updateRequiredData({ channels: [...requiredChannels, channelIndex] });
       }
     }
   }
@@ -501,13 +524,7 @@ export default class VolumeDrawable {
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
 
     // add or remove this channel from the list of required channels to load
-    const { channels } = this.volume.loadSpecRequired;
-    const channelRequired = channels.includes(channelIndex);
-    if (enabled && !channelRequired) {
-      this.volume.updateRequiredData({ channels: [...channels, channelIndex] });
-    } else if (!enabled && channelRequired) {
-      this.volume.updateRequiredData({ channels: channels.filter((i) => i !== channelIndex) });
-    }
+    this.updateChannelDataRequired(channelIndex);
   }
 
   isVolumeChannelEnabled(channelIndex: number): boolean {
