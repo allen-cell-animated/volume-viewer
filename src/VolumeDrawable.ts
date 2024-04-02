@@ -470,11 +470,16 @@ export default class VolumeDrawable {
   }
 
   onChannelLoaded(batch: number[]): void {
-    this.meshVolume.onChannelData(batch);
-
     for (let j = 0; j < batch.length; ++j) {
       const idx = batch[j];
-      this.setChannelOptions(idx, this.channelOptions[idx]);
+      const channelOptions = this.channelOptions[idx];
+      // TODO: this is a relatively crude way to ensure that channel settings are synced up when volume data is loaded.
+      //    Can we instead audit which settings updated by `setChannelOptions` actually need to be reset on load?
+      this.setChannelOptions(idx, channelOptions);
+      if (channelOptions.isosurfaceEnabled) {
+        this.destroyIsosurface(idx);
+        this.createIsosurface(idx, channelOptions.isovalue, channelOptions.isosurfaceOpacity);
+      }
     }
 
     // let the outside world have a chance

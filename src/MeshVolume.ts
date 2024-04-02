@@ -79,17 +79,6 @@ export default class MeshVolume {
     return this.meshPivot;
   }
 
-  onChannelData(batch: number[]): void {
-    for (let j = 0; j < batch.length; ++j) {
-      const idx = batch[j];
-      // if an isosurface was created before the channel data arrived, we need to re-calculate it now.
-      if (this.meshrep[idx]) {
-        const isovalue = this.getIsovalue(idx);
-        this.updateIsovalue(idx, isovalue === undefined ? 127 : isovalue);
-      }
-    }
-  }
-
   setScale(scale: Vector3, position = new Vector3(0, 0, 0)): void {
     this.scale = scale;
 
