@@ -698,11 +698,7 @@ function showChannelUI(volume: Volume) {
     f.add(myState.channelGui[i], "isosurface").onChange(
       (function (j) {
         return function (value) {
-          if (value) {
-            view3D.createIsosurface(volume, j, myState.channelGui[j].isovalue, 1.0);
-          } else {
-            view3D.clearIsosurface(volume, j);
-          }
+          view3D.setVolumeChannelOptions(volume, j, { isosurfaceEnabled: value });
         };
       })(i)
     );
@@ -713,7 +709,7 @@ function showChannelUI(volume: Volume) {
       .onChange(
         (function (j) {
           return function (value) {
-            view3D.updateIsosurface(volume, j, value);
+            view3D.setVolumeChannelOptions(volume, j, { isovalue: value });
           };
         })(i)
       );
