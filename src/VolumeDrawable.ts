@@ -171,15 +171,9 @@ export default class VolumeDrawable {
           this.destroyIsosurface(channelIndex);
         } else if (!hasIso && options.isosurfaceEnabled) {
           // 127 is half of the intensity range 0..255
-          let isovalue = 127;
-          if (options.isovalue !== undefined) {
-            isovalue = options.isovalue;
-          }
+          const isovalue = options.isovalue ?? 127;
           // 1.0 is fully opaque
-          let isosurfaceOpacity = 1.0;
-          if (options.isosurfaceOpacity !== undefined) {
-            isosurfaceOpacity = options.isosurfaceOpacity;
-          }
+          const isosurfaceOpacity = options.isosurfaceOpacity ?? 1.0;
           this.createIsosurface(channelIndex, isovalue, isosurfaceOpacity, isosurfaceOpacity < 1.0);
         }
         this.updateChannelDataRequired(channelIndex);
