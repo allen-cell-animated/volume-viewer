@@ -23,9 +23,11 @@ import Volume from "./Volume.js";
 import type { Bounds } from "./types.js";
 import { ThreeJsPanel } from "./ThreeJsPanel.js";
 
-// this cutoff is chosen to have a small buffer of values before the object is treated
-// as transparent for gpu blending and depth testing.
-const ALPHA_THRESHOLD = 0.9;
+/**
+ * this cutoff is chosen to have a small buffer of values before the object is treated
+ * as transparent for gpu blending and depth testing.
+ */
+const ALPHA_THRESHOLD = 0.95;
 
 export default class MeshVolume {
   private volume: Volume;
@@ -286,22 +288,13 @@ export default class MeshVolume {
   createIsosurface(
     channel: number,
     color: [number, number, number],
-    value: number,
-    alpha: number,
-    transp: boolean
+    // 127 is half of the intensity range 0..255
+    value = 127,
+    // 1.0 indicates full opacity, non-transparent
+    alpha = 1.0,
+    transp = alpha < ALPHA_THRESHOLD
   ): void {
     if (!this.meshrep[channel]) {
-      if (value === undefined) {
-        // 127 is half of the intensity range 0..255
-        value = 127;
-      }
-      if (alpha === undefined) {
-        // 1.0 indicates full opacity, non-transparent
-        alpha = 1.0;
-      }
-      if (transp === undefined) {
-        transp = alpha < ALPHA_THRESHOLD;
-      }
       const meshrep = this.createMeshForChannel(channel, color, value, alpha, transp);
       this.meshrep[channel] = meshrep;
       this.channelOpacities[channel] = alpha;
