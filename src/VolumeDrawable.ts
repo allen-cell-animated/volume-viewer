@@ -171,7 +171,7 @@ export default class VolumeDrawable {
           this.destroyIsosurface(channelIndex);
         } else if (!hasIso && options.isosurfaceEnabled && this.volume.channels[channelIndex].loaded) {
           const { isovalue, isosurfaceOpacity } = options;
-          this.createIsosurface(channelIndex, isovalue, isosurfaceOpacity);
+          this.meshVolume.createIsosurface(channelIndex, this.channelColors[channelIndex], isovalue, isosurfaceOpacity);
         }
         this.updateChannelDataRequired(channelIndex);
       } else if (options.isosurfaceEnabled) {
@@ -409,17 +409,6 @@ export default class VolumeDrawable {
     this.meshVolume.updateOpacity(channel, value);
   }
 
-  /**
-   * If an isosurface is not already created, then create one.  Otherwise do nothing.
-   * @param {number} channel The channel to create an isosurface for
-   * @param {number} value The isovalue to use for the isosurface. Default: 127 (middle of 0-255 range)
-   * @param {number} alpha The opacity of the isosurface. Default: 1.0 (opaque)
-   * @param {boolean} transp Whether the isosurface should be transparent. Determined from `alpha` if not provided.
-   */
-  private createIsosurface(channel: number, value = 127, alpha = 1.0, transp = alpha < 1.0): void {
-    this.meshVolume.createIsosurface(channel, this.channelColors[channel], value, alpha, transp);
-  }
-
   // If an isosurface exists for this channel, destroy it now. Don't just hide it - assume we can free up some resources.
   private destroyIsosurface(channel: number): void {
     this.meshVolume.destroyIsosurface(channel);
@@ -478,7 +467,8 @@ export default class VolumeDrawable {
       this.setChannelOptions(idx, channelOptions);
       if (channelOptions.isosurfaceEnabled) {
         this.destroyIsosurface(idx);
-        this.createIsosurface(idx, channelOptions.isovalue, channelOptions.isosurfaceOpacity);
+        const { isovalue, isosurfaceOpacity } = channelOptions;
+        this.meshVolume.createIsosurface(idx, this.channelColors[idx], isovalue, isosurfaceOpacity);
       }
     }
 
