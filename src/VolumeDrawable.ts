@@ -168,7 +168,7 @@ export default class VolumeDrawable {
       const hasIso = this.hasIsosurface(channelIndex);
       if (hasIso !== options.isosurfaceEnabled) {
         if (hasIso && !options.isosurfaceEnabled) {
-          this.destroyIsosurface(channelIndex);
+          this.meshVolume.destroyIsosurface(channelIndex);
         } else if (!hasIso && options.isosurfaceEnabled && this.volume.channels[channelIndex].loaded) {
           const { isovalue, isosurfaceOpacity } = options;
           this.meshVolume.createIsosurface(channelIndex, this.channelColors[channelIndex], isovalue, isosurfaceOpacity);
@@ -176,18 +176,18 @@ export default class VolumeDrawable {
         this.updateChannelDataRequired(channelIndex);
       } else if (options.isosurfaceEnabled) {
         if (options.isovalue !== undefined) {
-          this.updateIsovalue(channelIndex, options.isovalue);
+          this.meshVolume.updateIsovalue(channelIndex, options.isovalue);
         }
         if (options.isosurfaceOpacity !== undefined) {
-          this.updateIsosurfaceOpacity(channelIndex, options.isosurfaceOpacity);
+          this.meshVolume.updateOpacity(channelIndex, options.isosurfaceOpacity);
         }
       }
     } else {
       if (options.isovalue !== undefined) {
-        this.updateIsovalue(channelIndex, options.isovalue);
+        this.meshVolume.updateIsovalue(channelIndex, options.isovalue);
       }
       if (options.isosurfaceOpacity !== undefined) {
-        this.updateIsosurfaceOpacity(channelIndex, options.isosurfaceOpacity);
+        this.meshVolume.updateOpacity(channelIndex, options.isosurfaceOpacity);
       }
     }
   }
@@ -391,27 +391,12 @@ export default class VolumeDrawable {
     return this.viewMode;
   }
 
-  // If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
-  private updateIsovalue(channel: number, value: number): void {
-    this.meshVolume.updateIsovalue(channel, value);
-  }
-
   getIsovalue(channel: number): number | undefined {
     return this.meshVolume.getIsovalue(channel);
   }
 
   hasIsosurface(channel: number): boolean {
     return this.meshVolume.hasIsosurface(channel);
-  }
-
-  /** Set opacity for isosurface */
-  private updateIsosurfaceOpacity(channel: number, value: number): void {
-    this.meshVolume.updateOpacity(channel, value);
-  }
-
-  // If an isosurface exists for this channel, destroy it now. Don't just hide it - assume we can free up some resources.
-  private destroyIsosurface(channel: number): void {
-    this.meshVolume.destroyIsosurface(channel);
   }
 
   fuse(): void {
@@ -466,7 +451,7 @@ export default class VolumeDrawable {
       //    Can we instead audit which settings updated by `setChannelOptions` actually need to be reset on load?
       this.setChannelOptions(idx, channelOptions);
       if (channelOptions.isosurfaceEnabled) {
-        this.destroyIsosurface(idx);
+        this.meshVolume.destroyIsosurface(idx);
         const { isovalue, isosurfaceOpacity } = channelOptions;
         this.meshVolume.createIsosurface(idx, this.channelColors[idx], isovalue, isosurfaceOpacity);
       }
