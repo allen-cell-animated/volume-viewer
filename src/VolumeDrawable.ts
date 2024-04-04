@@ -107,6 +107,28 @@ export default class VolumeDrawable {
     // this.volumeRendering.setZSlice(this.zSlice);
   }
 
+  /**
+   * Updates whether a channel's data must be loaded for rendering, based on if its volume or isosurface is enabled.
+   * Calls `Volume.updateRequiredData` to update the list of required channels if necessary.
+   */
+  private updateChannelDataRequired(channelIndex: number): void {
+    const { enabled, isosurfaceEnabled } = this.channelOptions[channelIndex];
+    const channelIsRequired = enabled || isosurfaceEnabled;
+    const requiredChannels = this.volume.loadSpecRequired.channels;
+
+    if (requiredChannels.includes(channelIndex)) {
+      if (!channelIsRequired) {
+        // This channel is currently marked required, but both its volume and isosurface are off. Remove it!
+        this.volume.updateRequiredData({ channels: requiredChannels.filter((i) => i !== channelIndex) });
+      }
+    } else {
+      if (channelIsRequired) {
+        // This channel is not marked required, but either its volume or isosurface is on. Add it!
+        this.volume.updateRequiredData({ channels: [...requiredChannels, channelIndex] });
+      }
+    }
+  }
+
   setOptions(options: VolumeDisplayOptions): void {
     options = options || {};
     if (options.maskChannelIndex !== undefined) {
@@ -168,34 +190,26 @@ export default class VolumeDrawable {
       const hasIso = this.hasIsosurface(channelIndex);
       if (hasIso !== options.isosurfaceEnabled) {
         if (hasIso && !options.isosurfaceEnabled) {
-          this.destroyIsosurface(channelIndex);
-        } else if (!hasIso && options.isosurfaceEnabled) {
-          // 127 is half of the intensity range 0..255
-          let isovalue = 127;
-          if (options.isovalue !== undefined) {
-            isovalue = options.isovalue;
-          }
-          // 1.0 is fully opaque
-          let isosurfaceOpacity = 1.0;
-          if (options.isosurfaceOpacity !== undefined) {
-            isosurfaceOpacity = options.isosurfaceOpacity;
-          }
-          this.createIsosurface(channelIndex, isovalue, isosurfaceOpacity, isosurfaceOpacity < 1.0);
+          this.meshVolume.destroyIsosurface(channelIndex);
+        } else if (!hasIso && options.isosurfaceEnabled && this.volume.channels[channelIndex].loaded) {
+          const { isovalue, isosurfaceOpacity } = options;
+          this.meshVolume.createIsosurface(channelIndex, this.channelColors[channelIndex], isovalue, isosurfaceOpacity);
         }
+        this.updateChannelDataRequired(channelIndex);
       } else if (options.isosurfaceEnabled) {
         if (options.isovalue !== undefined) {
-          this.updateIsovalue(channelIndex, options.isovalue);
+          this.meshVolume.updateIsovalue(channelIndex, options.isovalue);
         }
         if (options.isosurfaceOpacity !== undefined) {
-          this.updateOpacity(channelIndex, options.isosurfaceOpacity);
+          this.meshVolume.updateOpacity(channelIndex, options.isosurfaceOpacity);
         }
       }
     } else {
       if (options.isovalue !== undefined) {
-        this.updateIsovalue(channelIndex, options.isovalue);
+        this.meshVolume.updateIsovalue(channelIndex, options.isovalue);
       }
       if (options.isosurfaceOpacity !== undefined) {
-        this.updateOpacity(channelIndex, options.isosurfaceOpacity);
+        this.meshVolume.updateOpacity(channelIndex, options.isosurfaceOpacity);
       }
     }
   }
@@ -377,32 +391,12 @@ export default class VolumeDrawable {
     return this.viewMode;
   }
 
-  // If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
-  updateIsovalue(channel: number, value: number): void {
-    this.meshVolume.updateIsovalue(channel, value);
-  }
-
   getIsovalue(channel: number): number | undefined {
     return this.meshVolume.getIsovalue(channel);
   }
 
-  // Set opacity for isosurface
-  updateOpacity(channel: number, value: number): void {
-    this.meshVolume.updateOpacity(channel, value);
-  }
-
   hasIsosurface(channel: number): boolean {
     return this.meshVolume.hasIsosurface(channel);
-  }
-
-  // If an isosurface is not already created, then create one.  Otherwise do nothing.
-  createIsosurface(channel: number, value: number, alpha: number, transp: boolean): void {
-    this.meshVolume.createIsosurface(channel, this.channelColors[channel], value, alpha, transp);
-  }
-
-  // If an isosurface exists for this channel, destroy it now. Don't just hide it - assume we can free up some resources.
-  destroyIsosurface(channel: number): void {
-    this.meshVolume.destroyIsosurface(channel);
   }
 
   fuse(): void {
@@ -450,17 +444,21 @@ export default class VolumeDrawable {
   }
 
   onChannelLoaded(batch: number[]): void {
-    this.meshVolume.onChannelData(batch);
-
     for (let j = 0; j < batch.length; ++j) {
       const idx = batch[j];
-      this.setChannelOptions(idx, this.channelOptions[idx]);
+      const channelOptions = this.channelOptions[idx];
+      // TODO: this is a relatively crude way to ensure that channel settings are synced up when volume data is loaded.
+      //    Can we instead audit which settings updated by `setChannelOptions` actually need to be reset on load?
+      this.setChannelOptions(idx, channelOptions);
+      if (channelOptions.isosurfaceEnabled) {
+        this.meshVolume.destroyIsosurface(idx);
+        const { isovalue, isosurfaceOpacity } = channelOptions;
+        this.meshVolume.createIsosurface(idx, this.channelColors[idx], isovalue, isosurfaceOpacity);
+      }
     }
 
     // let the outside world have a chance
-    if (this.onChannelDataReadyCallback) {
-      this.onChannelDataReadyCallback();
-    }
+    this.onChannelDataReadyCallback?.();
   }
 
   onChannelAdded(newChannelIndex: number): void {
@@ -501,13 +499,7 @@ export default class VolumeDrawable {
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
 
     // add or remove this channel from the list of required channels to load
-    const { channels } = this.volume.loadSpecRequired;
-    const channelRequired = channels.includes(channelIndex);
-    if (enabled && !channelRequired) {
-      this.volume.updateRequiredData({ channels: [...channels, channelIndex] });
-    } else if (!enabled && channelRequired) {
-      this.volume.updateRequiredData({ channels: channels.filter((i) => i !== channelIndex) });
-    }
+    this.updateChannelDataRequired(channelIndex);
   }
 
   isVolumeChannelEnabled(channelIndex: number): boolean {
