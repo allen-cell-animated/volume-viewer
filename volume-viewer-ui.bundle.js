@@ -2269,9 +2269,11 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-// this cutoff is chosen to have a small buffer of values before the object is treated
-// as transparent for gpu blending and depth testing.
-var ALPHA_THRESHOLD = 0.9;
+/**
+ * this cutoff is chosen to have a small buffer of values before the object is treated
+ * as transparent for gpu blending and depth testing.
+ */
+var ALPHA_THRESHOLD = 0.95;
 var MeshVolume = /*#__PURE__*/function () {
   function MeshVolume(volume) {
     (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, MeshVolume);
@@ -2314,18 +2316,6 @@ var MeshVolume = /*#__PURE__*/function () {
     key: "get3dObject",
     value: function get3dObject() {
       return this.meshPivot;
-    }
-  }, {
-    key: "onChannelData",
-    value: function onChannelData(batch) {
-      for (var j = 0; j < batch.length; ++j) {
-        var idx = batch[j];
-        // if an isosurface was created before the channel data arrived, we need to re-calculate it now.
-        if (this.meshrep[idx]) {
-          var isovalue = this.getIsovalue(idx);
-          this.updateIsovalue(idx, isovalue === undefined ? 127 : isovalue);
-        }
-      }
     }
   }, {
     key: "setScale",
@@ -2543,19 +2533,11 @@ var MeshVolume = /*#__PURE__*/function () {
     }
   }, {
     key: "createIsosurface",
-    value: function createIsosurface(channel, color, value, alpha, transp) {
+    value: function createIsosurface(channel, color) {
+      var value = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 127;
+      var alpha = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 1.0;
+      var transp = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : alpha < ALPHA_THRESHOLD;
       if (!this.meshrep[channel]) {
-        if (value === undefined) {
-          // 127 is half of the intensity range 0..255
-          value = 127;
-        }
-        if (alpha === undefined) {
-          // 1.0 indicates full opacity, non-transparent
-          alpha = 1.0;
-        }
-        if (transp === undefined) {
-          transp = alpha < ALPHA_THRESHOLD;
-        }
         var meshrep = this.createMeshForChannel(channel, color, value, alpha, transp);
         this.meshrep[channel] = meshrep;
         this.channelOpacities[channel] = alpha;
@@ -4616,27 +4598,6 @@ var View3d = /*#__PURE__*/function () {
     }
 
     /**
-     * If an isosurface is not already created, then create one.  Otherwise change the isovalue of the existing isosurface.
-     * @param {Object} volume
-     * @param {number} channel
-     * @param {number} isovalue isovalue
-     * @param {number=} alpha Opacity
-     */
-  }, {
-    key: "createIsosurface",
-    value: function createIsosurface(volume, channel, isovalue, alpha) {
-      if (!this.image) {
-        return;
-      }
-      if (this.image.hasIsosurface(channel)) {
-        this.image.updateIsovalue(channel, isovalue);
-      } else {
-        this.image.createIsosurface(channel, isovalue, alpha, alpha < 0.95);
-      }
-      this.redraw();
-    }
-
-    /**
      * Is an isosurface already created for this channel?
      * @param {Object} volume
      * @param {number} channel
@@ -4650,49 +4611,6 @@ var View3d = /*#__PURE__*/function () {
     }
 
     /**
-     * If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
-     * @param {Object} volume
-     * @param {number} channel
-     * @param {number} isovalue
-     */
-  }, {
-    key: "updateIsosurface",
-    value: function updateIsosurface(volume, channel, isovalue) {
-      if (!this.image || !this.image.hasIsosurface(channel)) {
-        return;
-      }
-      this.image.updateIsovalue(channel, isovalue);
-      this.redraw();
-    }
-
-    /**
-     * Set opacity for isosurface
-     * @param {Object} volume
-     * @param {number} channel
-     * @param {number} opacity Opacity
-     */
-  }, {
-    key: "updateOpacity",
-    value: function updateOpacity(volume, channel, opacity) {
-      var _this$image12;
-      (_this$image12 = this.image) === null || _this$image12 === void 0 || _this$image12.updateOpacity(channel, opacity);
-      this.redraw();
-    }
-
-    /**
-     * If an isosurface exists for this channel, hide it now
-     * @param {Object} volume
-     * @param {number} channel
-     */
-  }, {
-    key: "clearIsosurface",
-    value: function clearIsosurface(volume, channel) {
-      var _this$image13;
-      (_this$image13 = this.image) === null || _this$image13 === void 0 || _this$image13.destroyIsosurface(channel);
-      this.redraw();
-    }
-
-    /**
      * Save a channel's isosurface as a triangle mesh to either STL or GLTF2 format.  File will be named automatically, using image name and channel name.
      * @param {Object} volume
      * @param {number} channelIndex
@@ -4701,8 +4619,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "saveChannelIsosurface",
     value: function saveChannelIsosurface(volume, channelIndex, type) {
-      var _this$image14;
-      (_this$image14 = this.image) === null || _this$image14 === void 0 || _this$image14.saveChannelIsosurface(channelIndex, type);
+      var _this$image12;
+      (_this$image12 = this.image) === null || _this$image12 === void 0 || _this$image12.saveChannelIsosurface(channelIndex, type);
     }
 
     // Add a new volume image to the viewer.  The viewer currently only supports a single image at a time, and will return any prior existing image.
@@ -4730,24 +4648,24 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "onStartControls",
     value: function onStartControls() {
-      var _this$image15;
+      var _this$image13;
       if (this.volumeRenderMode !== _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE) {
         // TODO: VR display requires a running renderloop
         this.canvas3d.startRenderLoop();
       }
-      (_this$image15 = this.image) === null || _this$image15 === void 0 || _this$image15.onStartControls();
+      (_this$image13 = this.image) === null || _this$image13 === void 0 || _this$image13.onStartControls();
     }
   }, {
     key: "onChangeControls",
     value: function onChangeControls() {
-      var _this$image16;
-      (_this$image16 = this.image) === null || _this$image16 === void 0 || _this$image16.onChangeControls();
+      var _this$image14;
+      (_this$image14 = this.image) === null || _this$image14 === void 0 || _this$image14.onChangeControls();
     }
   }, {
     key: "onEndControls",
     value: function onEndControls() {
-      var _this$image17;
-      (_this$image17 = this.image) === null || _this$image17 === void 0 || _this$image17.onEndControls();
+      var _this$image15;
+      (_this$image15 = this.image) === null || _this$image15 === void 0 || _this$image15.onEndControls();
       // If we are pathtracing or autorotating, then keep rendering. Otherwise stop now.
       if (this.volumeRenderMode !== _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE && !this.canvas3d.controls.autoRotate) {
         // TODO: VR display requires a running renderloop
@@ -4800,17 +4718,17 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setCameraMode",
     value: function setCameraMode(mode) {
-      var _this$image18, _this$image19;
+      var _this$image16, _this$image17;
       this.canvas3d.switchViewMode(mode);
-      (_this$image18 = this.image) === null || _this$image18 === void 0 || _this$image18.setViewMode(mode, this.volumeRenderMode);
-      (_this$image19 = this.image) === null || _this$image19 === void 0 || _this$image19.setIsOrtho(mode !== "3D");
+      (_this$image16 = this.image) === null || _this$image16 === void 0 || _this$image16.setViewMode(mode, this.volumeRenderMode);
+      (_this$image17 = this.image) === null || _this$image17 === void 0 || _this$image17.setIsOrtho(mode !== "3D");
       this.canvas3d.redraw();
     }
   }, {
     key: "setZSlice",
     value: function setZSlice(volume, slice) {
-      var _this$image20;
-      if ((_this$image20 = this.image) !== null && _this$image20 !== void 0 && _this$image20.setZSlice(slice)) {
+      var _this$image18;
+      if ((_this$image18 = this.image) !== null && _this$image18 !== void 0 && _this$image18.setZSlice(slice)) {
         this.canvas3d.redraw();
         return true;
       }
@@ -4835,9 +4753,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setShowScaleBar",
     value: function setShowScaleBar(showScaleBar) {
-      var _this$image21;
+      var _this$image19;
       this.canvas3d.setShowOrthoScaleBar(showScaleBar);
-      this.canvas3d.setShowPerspectiveScaleBar(showScaleBar && !!((_this$image21 = this.image) !== null && _this$image21 !== void 0 && _this$image21.showBoundingBox) && this.volumeRenderMode !== _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
+      this.canvas3d.setShowPerspectiveScaleBar(showScaleBar && !!((_this$image19 = this.image) !== null && _this$image19 !== void 0 && _this$image19.showBoundingBox) && this.volumeRenderMode !== _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
     }
 
     /**
@@ -4847,8 +4765,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setShowTimestepIndicator",
     value: function setShowTimestepIndicator(showIndicator) {
-      var _this$image22;
-      var times = (_this$image22 = this.image) === null || _this$image22 === void 0 ? void 0 : _this$image22.volume.imageInfo.times;
+      var _this$image20;
+      var times = (_this$image20 = this.image) === null || _this$image20 === void 0 ? void 0 : _this$image20.volume.imageInfo.times;
       var hasTimes = !!times && times > 1;
       this.canvas3d.setShowTimestepIndicator(showIndicator && hasTimes);
     }
@@ -4945,15 +4863,15 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setFlipVolume",
     value: function setFlipVolume(volume, flipX, flipY, flipZ) {
-      var _this$image23;
-      (_this$image23 = this.image) === null || _this$image23 === void 0 || _this$image23.setFlipAxes(flipX, flipY, flipZ);
+      var _this$image21;
+      (_this$image21 = this.image) === null || _this$image21 === void 0 || _this$image21.setFlipAxes(flipX, flipY, flipZ);
       this.redraw();
     }
   }, {
     key: "setInterpolationEnabled",
     value: function setInterpolationEnabled(volume, active) {
-      var _this$image24;
-      (_this$image24 = this.image) === null || _this$image24 === void 0 || _this$image24.setInterpolationEnabled(active);
+      var _this$image22;
+      (_this$image22 = this.image) === null || _this$image22 === void 0 || _this$image22.setInterpolationEnabled(active);
       this.redraw();
     }
 
@@ -4969,9 +4887,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "resize",
     value: function resize(comp, w, h, ow, oh, eOpts) {
-      var _this$image25;
+      var _this$image23;
       this.canvas3d.resize(comp, w, h, ow, oh, eOpts);
-      (_this$image25 = this.image) === null || _this$image25 === void 0 || _this$image25.setResolution(this.canvas3d);
+      (_this$image23 = this.image) === null || _this$image23 === void 0 || _this$image23.setResolution(this.canvas3d);
       this.redraw();
     }
 
@@ -4983,8 +4901,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateDensity",
     value: function updateDensity(volume, density) {
-      var _this$image26;
-      (_this$image26 = this.image) === null || _this$image26 === void 0 || _this$image26.setDensity(density);
+      var _this$image24;
+      (_this$image24 = this.image) === null || _this$image24 === void 0 || _this$image24.setDensity(density);
       this.redraw();
     }
 
@@ -4996,8 +4914,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateShadingMethod",
     value: function updateShadingMethod(volume, isbrdf) {
-      var _this$image27;
-      (_this$image27 = this.image) === null || _this$image27 === void 0 || _this$image27.updateShadingMethod(isbrdf);
+      var _this$image25;
+      (_this$image25 = this.image) === null || _this$image25 === void 0 || _this$image25.updateShadingMethod(isbrdf);
     }
 
     /**
@@ -5010,8 +4928,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setGamma",
     value: function setGamma(volume, gmin, glevel, gmax) {
-      var _this$image28;
-      (_this$image28 = this.image) === null || _this$image28 === void 0 || _this$image28.setGamma(gmin, glevel, gmax);
+      var _this$image26;
+      (_this$image26 = this.image) === null || _this$image26 === void 0 || _this$image26.setGamma(gmin, glevel, gmax);
       this.redraw();
     }
 
@@ -5023,8 +4941,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setMaxProjectMode",
     value: function setMaxProjectMode(volume, isMaxProject) {
-      var _this$image29;
-      (_this$image29 = this.image) === null || _this$image29 === void 0 || _this$image29.setMaxProjectMode(isMaxProject);
+      var _this$image27;
+      (_this$image27 = this.image) === null || _this$image27 === void 0 || _this$image27.setMaxProjectMode(isMaxProject);
       this.redraw();
     }
 
@@ -5035,8 +4953,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateActiveChannels",
     value: function updateActiveChannels(_volume) {
-      var _this$image30;
-      (_this$image30 = this.image) === null || _this$image30 === void 0 || _this$image30.fuse();
+      var _this$image28;
+      (_this$image28 = this.image) === null || _this$image28 === void 0 || _this$image28.fuse();
       this.redraw();
     }
 
@@ -5047,8 +4965,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateLuts",
     value: function updateLuts(_volume) {
-      var _this$image31;
-      (_this$image31 = this.image) === null || _this$image31 === void 0 || _this$image31.updateLuts();
+      var _this$image29;
+      (_this$image29 = this.image) === null || _this$image29 === void 0 || _this$image29.updateLuts();
       this.redraw();
     }
 
@@ -5059,8 +4977,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateMaterial",
     value: function updateMaterial(_volume) {
-      var _this$image32;
-      (_this$image32 = this.image) === null || _this$image32 === void 0 || _this$image32.updateMaterial();
+      var _this$image30;
+      (_this$image30 = this.image) === null || _this$image30 === void 0 || _this$image30.updateMaterial();
       this.redraw();
     }
 
@@ -5071,9 +4989,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateExposure",
     value: function updateExposure(e) {
-      var _this$image33;
+      var _this$image31;
       this.exposure = e;
-      (_this$image33 = this.image) === null || _this$image33 === void 0 || _this$image33.setBrightness(e);
+      (_this$image31 = this.image) === null || _this$image31 === void 0 || _this$image31.setBrightness(e);
       this.redraw();
     }
 
@@ -5086,9 +5004,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateCamera",
     value: function updateCamera(fov, focalDistance, apertureSize) {
-      var _this$image34;
+      var _this$image32;
       this.canvas3d.updateCameraFocus(fov, focalDistance, apertureSize);
-      (_this$image34 = this.image) === null || _this$image34 === void 0 || _this$image34.onCameraChanged(fov, focalDistance, apertureSize);
+      (_this$image32 = this.image) === null || _this$image32 === void 0 || _this$image32.onCameraChanged(fov, focalDistance, apertureSize);
       this.redraw();
     }
 
@@ -5105,8 +5023,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateClipRegion",
     value: function updateClipRegion(volume, xmin, xmax, ymin, ymax, zmin, zmax) {
-      var _this$image35;
-      (_this$image35 = this.image) === null || _this$image35 === void 0 || _this$image35.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
+      var _this$image33;
+      (_this$image33 = this.image) === null || _this$image33 === void 0 || _this$image33.updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax);
       this.redraw();
     }
 
@@ -5122,8 +5040,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setAxisClip",
     value: function setAxisClip(volume, axis, minval, maxval, isOrthoAxis) {
-      var _this$image36;
-      (_this$image36 = this.image) === null || _this$image36 === void 0 || _this$image36.setAxisClip(axis, minval, maxval, isOrthoAxis);
+      var _this$image34;
+      (_this$image34 = this.image) === null || _this$image34 === void 0 || _this$image34.setAxisClip(axis, minval, maxval, isOrthoAxis);
       this.redraw();
     }
 
@@ -5134,10 +5052,10 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateLights",
     value: function updateLights(state) {
-      var _this$image37;
+      var _this$image35;
       // TODO flesh this out
       this.lights = state;
-      (_this$image37 = this.image) === null || _this$image37 === void 0 || _this$image37.updateLights(state);
+      (_this$image35 = this.image) === null || _this$image35 === void 0 || _this$image35.updateLights(state);
     }
 
     /**
@@ -5147,12 +5065,12 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updatePixelSamplingRate",
     value: function updatePixelSamplingRate(value) {
-      var _this$image38;
+      var _this$image36;
       if (this.pixelSamplingRate === value) {
         return;
       }
       this.pixelSamplingRate = value;
-      (_this$image38 = this.image) === null || _this$image38 === void 0 || _this$image38.setPixelSamplingRate(value);
+      (_this$image36 = this.image) === null || _this$image36 === void 0 || _this$image36.setPixelSamplingRate(value);
     }
 
     /**
@@ -5163,8 +5081,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateMaskAlpha",
     value: function updateMaskAlpha(volume, value) {
-      var _this$image39;
-      (_this$image39 = this.image) === null || _this$image39 === void 0 || _this$image39.setMaskAlpha(value);
+      var _this$image37;
+      (_this$image37 = this.image) === null || _this$image37 === void 0 || _this$image37.setMaskAlpha(value);
       this.redraw();
     }
 
@@ -5177,8 +5095,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeChannelEnabled",
     value: function setVolumeChannelEnabled(volume, channel, enabled) {
-      var _this$image40;
-      (_this$image40 = this.image) === null || _this$image40 === void 0 || _this$image40.setChannelOptions(channel, {
+      var _this$image38;
+      (_this$image38 = this.image) === null || _this$image38 === void 0 || _this$image38.setChannelOptions(channel, {
         enabled: enabled
       });
       this.redraw();
@@ -5196,8 +5114,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateChannelMaterial",
     value: function updateChannelMaterial(volume, channelIndex, colorrgb, specularrgb, emissivergb, glossiness) {
-      var _this$image41;
-      (_this$image41 = this.image) === null || _this$image41 === void 0 || _this$image41.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
+      var _this$image39;
+      (_this$image39 = this.image) === null || _this$image39 === void 0 || _this$image39.updateChannelMaterial(channelIndex, colorrgb, specularrgb, emissivergb, glossiness);
     }
 
     /**
@@ -5209,8 +5127,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "updateChannelColor",
     value: function updateChannelColor(volume, channelIndex, colorrgb) {
-      var _this$image42;
-      (_this$image42 = this.image) === null || _this$image42 === void 0 || _this$image42.updateChannelColor(channelIndex, colorrgb);
+      var _this$image40;
+      (_this$image40 = this.image) === null || _this$image40 === void 0 || _this$image40.updateChannelColor(channelIndex, colorrgb);
     }
 
     /**
@@ -5220,7 +5138,7 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeRenderMode",
     value: function setVolumeRenderMode(mode) {
-      var _this$image43;
+      var _this$image41;
       if (mode === this.volumeRenderMode) {
         return;
       }
@@ -5248,7 +5166,7 @@ var View3d = /*#__PURE__*/function () {
       }
 
       // TODO remove when pathtrace supports a bounding box
-      this.canvas3d.setShowPerspectiveScaleBar(this.canvas3d.showOrthoScaleBar && !!((_this$image43 = this.image) !== null && _this$image43 !== void 0 && _this$image43.showBoundingBox) && mode !== _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
+      this.canvas3d.setShowPerspectiveScaleBar(this.canvas3d.showOrthoScaleBar && !!((_this$image41 = this.image) !== null && _this$image41 !== void 0 && _this$image41.showBoundingBox) && mode !== _types_js__WEBPACK_IMPORTED_MODULE_8__.RenderMode.PATHTRACE);
     }
 
     /**
@@ -5259,8 +5177,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeTranslation",
     value: function setVolumeTranslation(volume, xyz) {
-      var _this$image44;
-      (_this$image44 = this.image) === null || _this$image44 === void 0 || _this$image44.setTranslation(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(xyz));
+      var _this$image42;
+      (_this$image42 = this.image) === null || _this$image42 === void 0 || _this$image42.setTranslation(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(xyz));
       this.redraw();
     }
 
@@ -5272,8 +5190,8 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setVolumeRotation",
     value: function setVolumeRotation(volume, eulerXYZ) {
-      var _this$image45;
-      (_this$image45 = this.image) === null || _this$image45 === void 0 || _this$image45.setRotation(new three__WEBPACK_IMPORTED_MODULE_10__.Euler().fromArray(eulerXYZ));
+      var _this$image43;
+      (_this$image43 = this.image) === null || _this$image43 === void 0 || _this$image43.setRotation(new three__WEBPACK_IMPORTED_MODULE_10__.Euler().fromArray(eulerXYZ));
       this.redraw();
     }
 
@@ -5283,9 +5201,9 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "resetCamera",
     value: function resetCamera() {
-      var _this$image46;
+      var _this$image44;
       this.canvas3d.resetCamera();
-      (_this$image46 = this.image) === null || _this$image46 === void 0 || _this$image46.onResetCamera();
+      (_this$image44 = this.image) === null || _this$image44 === void 0 || _this$image44.onResetCamera();
       this.redraw();
     }
   }, {
@@ -5301,7 +5219,7 @@ var View3d = /*#__PURE__*/function () {
   }, {
     key: "setupGui",
     value: function setupGui(container) {
-      var _this$image47;
+      var _this$image45;
       if (this.tweakpane) {
         this.canvas3d.containerdiv.removeChild(this.tweakpane.element);
       }
@@ -5342,7 +5260,7 @@ var View3d = /*#__PURE__*/function () {
       addFolderForLight(this.ambientLight, "ambient light");
       addFolderForLight(this.reflectedLight, "reflected light");
       addFolderForLight(this.fillLight, "fill light");
-      (_this$image47 = this.image) === null || _this$image47 === void 0 || _this$image47.setupGui(pane);
+      (_this$image45 = this.image) === null || _this$image45 === void 0 || _this$image45.setupGui(pane);
       return pane;
     }
   }]);
@@ -6209,7 +6127,38 @@ var VolumeDrawable = /*#__PURE__*/function () {
     this.setOptions(options);
     // this.volumeRendering.setZSlice(this.zSlice);
   }
+
+  /**
+   * Updates whether a channel's data must be loaded for rendering, based on if its volume or isosurface is enabled.
+   * Calls `Volume.updateRequiredData` to update the list of required channels if necessary.
+   */
   (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(VolumeDrawable, [{
+    key: "updateChannelDataRequired",
+    value: function updateChannelDataRequired(channelIndex) {
+      var _this$channelOptions$ = this.channelOptions[channelIndex],
+        enabled = _this$channelOptions$.enabled,
+        isosurfaceEnabled = _this$channelOptions$.isosurfaceEnabled;
+      var channelIsRequired = enabled || isosurfaceEnabled;
+      var requiredChannels = this.volume.loadSpecRequired.channels;
+      if (requiredChannels.includes(channelIndex)) {
+        if (!channelIsRequired) {
+          // This channel is currently marked required, but both its volume and isosurface are off. Remove it!
+          this.volume.updateRequiredData({
+            channels: requiredChannels.filter(function (i) {
+              return i !== channelIndex;
+            })
+          });
+        }
+      } else {
+        if (channelIsRequired) {
+          // This channel is not marked required, but either its volume or isosurface is on. Add it!
+          this.volume.updateRequiredData({
+            channels: [].concat((0,_babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__["default"])(requiredChannels), [channelIndex])
+          });
+        }
+      }
+    }
+  }, {
     key: "setOptions",
     value: function setOptions(options) {
       var _this = this;
@@ -6271,34 +6220,27 @@ var VolumeDrawable = /*#__PURE__*/function () {
         var hasIso = this.hasIsosurface(channelIndex);
         if (hasIso !== options.isosurfaceEnabled) {
           if (hasIso && !options.isosurfaceEnabled) {
-            this.destroyIsosurface(channelIndex);
-          } else if (!hasIso && options.isosurfaceEnabled) {
-            // 127 is half of the intensity range 0..255
-            var isovalue = 127;
-            if (options.isovalue !== undefined) {
-              isovalue = options.isovalue;
-            }
-            // 1.0 is fully opaque
-            var isosurfaceOpacity = 1.0;
-            if (options.isosurfaceOpacity !== undefined) {
+            this.meshVolume.destroyIsosurface(channelIndex);
+          } else if (!hasIso && options.isosurfaceEnabled && this.volume.channels[channelIndex].loaded) {
+            var isovalue = options.isovalue,
               isosurfaceOpacity = options.isosurfaceOpacity;
-            }
-            this.createIsosurface(channelIndex, isovalue, isosurfaceOpacity, isosurfaceOpacity < 1.0);
+            this.meshVolume.createIsosurface(channelIndex, this.channelColors[channelIndex], isovalue, isosurfaceOpacity);
           }
+          this.updateChannelDataRequired(channelIndex);
         } else if (options.isosurfaceEnabled) {
           if (options.isovalue !== undefined) {
-            this.updateIsovalue(channelIndex, options.isovalue);
+            this.meshVolume.updateIsovalue(channelIndex, options.isovalue);
           }
           if (options.isosurfaceOpacity !== undefined) {
-            this.updateOpacity(channelIndex, options.isosurfaceOpacity);
+            this.meshVolume.updateOpacity(channelIndex, options.isosurfaceOpacity);
           }
         }
       } else {
         if (options.isovalue !== undefined) {
-          this.updateIsovalue(channelIndex, options.isovalue);
+          this.meshVolume.updateIsovalue(channelIndex, options.isovalue);
         }
         if (options.isosurfaceOpacity !== undefined) {
-          this.updateOpacity(channelIndex, options.isosurfaceOpacity);
+          this.meshVolume.updateOpacity(channelIndex, options.isosurfaceOpacity);
         }
       }
     }
@@ -6494,43 +6436,15 @@ var VolumeDrawable = /*#__PURE__*/function () {
     value: function getViewMode() {
       return this.viewMode;
     }
-
-    // If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
-  }, {
-    key: "updateIsovalue",
-    value: function updateIsovalue(channel, value) {
-      this.meshVolume.updateIsovalue(channel, value);
-    }
   }, {
     key: "getIsovalue",
     value: function getIsovalue(channel) {
       return this.meshVolume.getIsovalue(channel);
     }
-
-    // Set opacity for isosurface
-  }, {
-    key: "updateOpacity",
-    value: function updateOpacity(channel, value) {
-      this.meshVolume.updateOpacity(channel, value);
-    }
   }, {
     key: "hasIsosurface",
     value: function hasIsosurface(channel) {
       return this.meshVolume.hasIsosurface(channel);
-    }
-
-    // If an isosurface is not already created, then create one.  Otherwise do nothing.
-  }, {
-    key: "createIsosurface",
-    value: function createIsosurface(channel, value, alpha, transp) {
-      this.meshVolume.createIsosurface(channel, this.channelColors[channel], value, alpha, transp);
-    }
-
-    // If an isosurface exists for this channel, destroy it now. Don't just hide it - assume we can free up some resources.
-  }, {
-    key: "destroyIsosurface",
-    value: function destroyIsosurface(channel) {
-      this.meshVolume.destroyIsosurface(channel);
     }
   }, {
     key: "fuse",
@@ -6587,16 +6501,23 @@ var VolumeDrawable = /*#__PURE__*/function () {
   }, {
     key: "onChannelLoaded",
     value: function onChannelLoaded(batch) {
-      this.meshVolume.onChannelData(batch);
+      var _this$onChannelDataRe;
       for (var j = 0; j < batch.length; ++j) {
         var idx = batch[j];
-        this.setChannelOptions(idx, this.channelOptions[idx]);
+        var channelOptions = this.channelOptions[idx];
+        // TODO: this is a relatively crude way to ensure that channel settings are synced up when volume data is loaded.
+        //    Can we instead audit which settings updated by `setChannelOptions` actually need to be reset on load?
+        this.setChannelOptions(idx, channelOptions);
+        if (channelOptions.isosurfaceEnabled) {
+          this.meshVolume.destroyIsosurface(idx);
+          var isovalue = channelOptions.isovalue,
+            isosurfaceOpacity = channelOptions.isosurfaceOpacity;
+          this.meshVolume.createIsosurface(idx, this.channelColors[idx], isovalue, isosurfaceOpacity);
+        }
       }
 
       // let the outside world have a chance
-      if (this.onChannelDataReadyCallback) {
-        this.onChannelDataReadyCallback();
-      }
+      (_this$onChannelDataRe = this.onChannelDataReadyCallback) === null || _this$onChannelDataRe === void 0 || _this$onChannelDataRe.call(this);
     }
   }, {
     key: "onChannelAdded",
@@ -6634,19 +6555,7 @@ var VolumeDrawable = /*#__PURE__*/function () {
       this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_10__.SettingsFlags.VIEW);
 
       // add or remove this channel from the list of required channels to load
-      var channels = this.volume.loadSpecRequired.channels;
-      var channelRequired = channels.includes(channelIndex);
-      if (enabled && !channelRequired) {
-        this.volume.updateRequiredData({
-          channels: [].concat((0,_babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__["default"])(channels), [channelIndex])
-        });
-      } else if (!enabled && channelRequired) {
-        this.volume.updateRequiredData({
-          channels: channels.filter(function (i) {
-            return i !== channelIndex;
-          })
-        });
-      }
+      this.updateChannelDataRequired(channelIndex);
     }
   }, {
     key: "isVolumeChannelEnabled",
@@ -86122,16 +86031,16 @@ function showChannelUI(volume) {
     }(_i));
     f.add(myState.channelGui[_i], "isosurface").onChange(function (j) {
       return function (value) {
-        if (value) {
-          view3D.createIsosurface(volume, j, myState.channelGui[j].isovalue, 1.0);
-        } else {
-          view3D.clearIsosurface(volume, j);
-        }
+        view3D.setVolumeChannelOptions(volume, j, {
+          isosurfaceEnabled: value
+        });
       };
     }(_i));
     f.add(myState.channelGui[_i], "isovalue").max(255).min(0).step(1).onChange(function (j) {
       return function (value) {
-        view3D.updateIsosurface(volume, j, value);
+        view3D.setVolumeChannelOptions(volume, j, {
+          isovalue: value
+        });
       };
     }(_i));
     f.addColor(myState.channelGui[_i], "colorD").name("Diffuse").onChange(function (j) {
