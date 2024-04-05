@@ -241,8 +241,10 @@ export class Lut {
     // special case only one control point.
     if (controlPoints.length === 1) {
       const rgba = controlPointToRGBA(controlPoints[0]);
+      // lut was already filled with zeros
       // copy val from x to 255.
-      for (let x = controlPoints[0].x; x < 256; ++x) {
+      const startx = clamp(controlPoints[0].x, 0, 255);
+      for (let x = startx; x < 256; ++x) {
         lut[x * 4 + 0] = rgba[0];
         lut[x * 4 + 1] = rgba[1];
         lut[x * 4 + 2] = rgba[2];
@@ -281,10 +283,10 @@ export class Lut {
       } else {
         a = (i - c0.x) / (c1.x - c0.x);
       }
-      lut[i * 4 + 0] = lerp(color0[0], color1[0], a);
-      lut[i * 4 + 1] = lerp(color0[1], color1[1], a);
-      lut[i * 4 + 2] = lerp(color0[2], color1[2], a);
-      lut[i * 4 + 3] = lerp(color0[3], color1[3], a);
+      lut[i * 4 + 0] = clamp(lerp(color0[0], color1[0], a), 0, 255);
+      lut[i * 4 + 1] = clamp(lerp(color0[1], color1[1], a), 0, 255);
+      lut[i * 4 + 2] = clamp(lerp(color0[2], color1[2], a), 0, 255);
+      lut[i * 4 + 3] = clamp(lerp(color0[3], color1[3], a), 0, 255);
     }
 
     this.lut = lut;
