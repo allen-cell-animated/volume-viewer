@@ -259,10 +259,9 @@ export class Lut {
     let color1 = controlPointToRGBA(c1);
     let lastIndex = 1;
     let a = 0;
-    // if the first control point is after 0, act like there are 0s going all the way up to it.
-    // or lerp up to the first point?
-    for (let x = c0.x; x < 256; ++x) {
-      while (x > c1.x) {
+    for (let i = 0; i < 256; ++i) {
+      // find the two control points that i is between
+      while (i > c1.x) {
         // advance control points
         c0 = c1;
         color0 = color1;
@@ -275,18 +274,19 @@ export class Lut {
         }
         color1 = controlPointToRGBA(c1);
       }
+      // find the lerp amount between the two control points
       if (c1.x === c0.x) {
         // use c1
         a = 1.0;
       } else {
-        a = (x - c0.x) / (c1.x - c0.x);
+        a = (i - c0.x) / (c1.x - c0.x);
       }
-      // lerp the colors
-      lut[x * 4 + 0] = lerp(color0[0], color1[0], a);
-      lut[x * 4 + 1] = lerp(color0[1], color1[1], a);
-      lut[x * 4 + 2] = lerp(color0[2], color1[2], a);
-      lut[x * 4 + 3] = lerp(color0[3], color1[3], a);
+      lut[i * 4 + 0] = lerp(color0[0], color1[0], a);
+      lut[i * 4 + 1] = lerp(color0[1], color1[1], a);
+      lut[i * 4 + 2] = lerp(color0[2], color1[2], a);
+      lut[i * 4 + 3] = lerp(color0[3], color1[3], a);
     }
+
     this.lut = lut;
     this.controlPoints = controlPoints;
     return this;
@@ -464,7 +464,8 @@ export function remapControlPoints(
 
   // remap all cp x values.
   // interpolate all new colors and opacities
-  // then see if we need to clip?
+  // Do not clip values outside of 0-255. This is important to
+  // preserve information for remapping many consecutive times.
   for (let i = 0; i < controlPoints.length; ++i) {
     const cp = controlPoints[i];
     const iOld = remapDomainForCP(cp.x, 0, LUT_ENTRIES - 1, oldMin, oldMax, newMin, newMax);
@@ -475,84 +476,6 @@ export function remapControlPoints(
     };
     newControlPoints.push(newCP);
   }
-  // now fix up any control points that are out of bounds?
-  // For a CP less than 0, shift it to 0 and interpolate the values according to the slope
-  // For a CP greater than 255, shift it to 255 and interpolate the values according to the slope
-  // All others out of this range can then be dropped.
-  // We will look above and below each cp to see if it's on a boundary.
-  const resultControlPoints: ControlPoint[] = [];
 
-  for (let i = 0; i < newControlPoints.length; ++i) {
-    const cp = newControlPoints[i];
-    const cpPrev = i > 0 ? newControlPoints[i - 1] : cp;
-    const cpNext = i < newControlPoints.length - 1 ? newControlPoints[i + 1] : cp;
-
-    if (cp.x < 0 && cpNext.x > 0) {
-      // interpolate
-      const pct = (0 - cp.x) / (cpNext.x - cp.x);
-      cp.opacity = lerp(cp.opacity, cpNext.opacity, pct);
-      cp.color[0] = lerp(cp.color[0], cpNext.color[0], pct);
-      cp.color[1] = lerp(cp.color[1], cpNext.color[1], pct);
-      cp.color[2] = lerp(cp.color[2], cpNext.color[2], pct);
-      // shift cp to 0
-      cp.x = 0;
-    } else if (cp.x > 255 && cpPrev.x < 255) {
-      // interpolate
-      const pct = (cp.x - 255) / (cp.x - cpPrev.x);
-      cp.opacity = lerp(cpPrev.opacity, cp.opacity, pct);
-      cp.color[0] = lerp(cpPrev.color[0], cp.color[0], pct);
-      cp.color[1] = lerp(cpPrev.color[1], cp.color[1], pct);
-      cp.color[2] = lerp(cpPrev.color[2], cp.color[2], pct);
-      // shift cp to 255
-      cp.x = 255;
-    }
-    if (cp.x >= 0 && cp.x <= 255) {
-      resultControlPoints.push(cp);
-    }
-  }
-
-  // lastly, add a point for start and end if needed.
-  if (resultControlPoints[0].x !== 0) {
-    // if the first 2 points have same opacity and color, then just shift first pt to 0.
-    if (
-      resultControlPoints.length > 1 &&
-      resultControlPoints[0].opacity === resultControlPoints[1].opacity &&
-      resultControlPoints[0].color[0] === resultControlPoints[1].color[0] &&
-      resultControlPoints[0].color[1] === resultControlPoints[1].color[1] &&
-      resultControlPoints[0].color[2] === resultControlPoints[1].color[2]
-    ) {
-      resultControlPoints[0].x = 0;
-    } else {
-      // otherwise, add a point at 0.
-      resultControlPoints.unshift({
-        x: 0,
-        opacity: resultControlPoints[0].opacity,
-        color: resultControlPoints[0].color,
-      });
-    }
-  }
-  if (resultControlPoints[resultControlPoints.length - 1].x !== 255) {
-    // if the last 2 points have same opacity and color, then just shift last pt to 255.
-    if (
-      resultControlPoints.length > 1 &&
-      resultControlPoints[resultControlPoints.length - 1].opacity ===
-        resultControlPoints[resultControlPoints.length - 2].opacity &&
-      resultControlPoints[resultControlPoints.length - 1].color[0] ===
-        resultControlPoints[resultControlPoints.length - 2].color[0] &&
-      resultControlPoints[resultControlPoints.length - 1].color[1] ===
-        resultControlPoints[resultControlPoints.length - 2].color[1] &&
-      resultControlPoints[resultControlPoints.length - 1].color[2] ===
-        resultControlPoints[resultControlPoints.length - 2].color[2]
-    ) {
-      resultControlPoints[resultControlPoints.length - 1].x = 255;
-    } else {
-      // otherwise, add a point at 255.
-      resultControlPoints.push({
-        x: 255,
-        opacity: resultControlPoints[resultControlPoints.length - 1].opacity,
-        color: resultControlPoints[resultControlPoints.length - 1].color,
-      });
-    }
-  }
-  return resultControlPoints;
+  return newControlPoints;
 }
