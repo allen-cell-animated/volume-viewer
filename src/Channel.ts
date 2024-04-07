@@ -31,7 +31,7 @@ export default class Channel {
     this.loaded = false;
     this.imgData = { data: new Uint8ClampedArray(), width: 0, height: 0 };
     this.rawMin = 0;
-    this.rawMax = 0;
+    this.rawMax = 255;
 
     // on gpu
     this.dataTexture = new DataTexture(new Uint8Array(), 0, 0);
@@ -101,9 +101,9 @@ export default class Channel {
     // when one channel has arrived but others haven't.
     if (!(this.rawMin === 0 && this.rawMax === 0) && !(min === 0 && max === 0)) {
       this.lut.remapDomains(this.rawMin, this.rawMax, min, max);
+      this.rawMin = min;
+      this.rawMax = max;
     }
-    this.rawMin = min;
-    this.rawMax = max;
   }
 
   public getHistogram(): Histogram {
