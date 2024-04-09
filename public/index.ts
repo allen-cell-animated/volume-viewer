@@ -26,6 +26,7 @@ import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
 import VolumeLoaderContext from "../src/workers/LoadWorkerHandle";
 import { DATARANGE_UINT8 } from "../src/types";
+import { RawArrayLoaderOptions } from "../src/loaders/RawArrayLoader";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
@@ -990,7 +991,7 @@ function concatenateArrays(arrays: Uint8Array[]): Uint8Array {
   return result;
 }
 
-function createTestVolume() {
+function createTestVolume(): RawArrayLoaderOptions {
   const sizeX = 64;
   const sizeY = 64;
   const sizeZ = 64;
@@ -1013,8 +1014,8 @@ function createTestVolume() {
   ];
   const alldata = concatenateArrays(channelVolumes);
   return {
-    imgData: imgData,
-    volumeData: {
+    metadata: imgData,
+    data: {
       // expected to be "uint8" always
       dtype: "uint8",
       // [c,z,y,x]
@@ -1043,7 +1044,7 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
   } else if (data.type === VolumeFileFormat.DATA) {
     const volumeInfo = createTestVolume();
     options.fileType = VolumeFileFormat.DATA;
-    options.rawArrayOptions = { data: volumeInfo.volumeData, metadata: volumeInfo.imgData };
+    options.rawArrayOptions = { data: volumeInfo.data, metadata: volumeInfo.metadata };
   }
 
   return await loaderContext.createLoader(path, {

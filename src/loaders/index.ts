@@ -59,13 +59,5 @@ export async function createVolumeLoader(
         throw new Error("Must provide RawArrayOptions for RawArrayLoader");
       }
       return new RawArrayLoader(options?.rawArrayOptions.data, options?.rawArrayOptions.metadata, options?.cache);
-    default:
-      if (pathString.endsWith(".json")) {
-        return new JsonImageInfoLoader(path, options?.cache);
-      } else if (pathString.endsWith(".tif") || pathString.endsWith(".tiff")) {
-        return new TiffLoader(pathString);
-      } else {
-        return await OMEZarrLoader.createLoader(pathString, options?.scene, options?.cache, options?.concurrencyLimit);
-      }
   }
 }
