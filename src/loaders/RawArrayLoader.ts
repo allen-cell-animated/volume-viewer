@@ -1,10 +1,16 @@
 import { Box3, Vector3 } from "three";
 
-import { ThreadableVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
-import { buildDefaultMetadata, computePackedAtlasDims } from "./VolumeLoaderUtils";
-import Volume, { ImageInfo } from "../Volume";
+import {
+  ThreadableVolumeLoader,
+  type LoadSpec,
+  type RawChannelDataCallback,
+  VolumeDims,
+  type LoadedVolumeInfo,
+} from "./IVolumeLoader.js";
+import { computePackedAtlasDims } from "./VolumeLoaderUtils";
+import { ImageInfo } from "../Volume";
 import VolumeCache from "../VolumeCache";
-import { PrefetchDirection } from "./zarr_utils/types";
+import { DATARANGE_UINT8 } from "../types.js";
 
 // this is the form in which a 4D numpy array arrives as converted
 // by jupyterlab into a js object.
@@ -102,48 +108,33 @@ class RawArrayLoader extends ThreadableVolumeLoader {
     return [d];
   }
 
-  async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
-    const jsonInfo = this.jsonInfo;
-    const imageInfo = convertImageInfo(jsonInfo);
-
-    const vol = new Volume(imageInfo, loadSpec, this);
-    vol.channelLoadCallback = onChannelLoaded;
-    vol.imageMetadata = buildDefaultMetadata(imageInfo);
-    return vol;
+  async createImageInfo(loadSpec: LoadSpec): Promise<LoadedVolumeInfo> {
+    return { imageInfo: convertImageInfo(this.jsonInfo), loadSpec };
   }
-
-  async loadVolumeData(vol: Volume, explicitLoadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
-    const loadSpec = explicitLoadSpec || vol.loadSpec;
-
+  async loadRawChannelData(
+    imageInfo: ImageInfo,
+    loadSpec: LoadSpec,
+    onData: RawChannelDataCallback
+  ): Promise<{ loadSpec?: LoadSpec }> {
     const requestedChannels = loadSpec.channels;
 
-    vol.loadSpec = {
-      ...loadSpec,
-      // `subregion` and `multiscaleLevel` are unused by this loader
-      subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)),
-      multiscaleLevel: 0,
-      // TODO force include ALL channels always?
-      //channels: requestedChannels,
-    };
-
-    const imageInfo = vol.imageInfo;
-    const cache = this.cache;
     for (let chindex = 0; chindex < imageInfo.numChannels; ++chindex) {
       if (requestedChannels && requestedChannels.length > 0 && !requestedChannels.includes(chindex)) {
         continue;
       }
-      // TODO this loader is its own cache and need not even use the cache?
-      const cacheResult = cache?.get(`${imageInfo.name}/${chindex}`);
-      if (cacheResult) {
-        vol.setChannelDataFromVolume(chindex, new Uint8Array(cacheResult));
-        onChannelLoaded?.(vol, chindex);
-      } else {
-        const volsize = this.data.shape[3] * this.data.shape[2] * this.data.shape[1]; // x*y*z pixels * 1 byte/pixel
-        vol.setChannelDataFromVolume(chindex, new Uint8Array(this.data.buffer.buffer, chindex * volsize, volsize));
-        cache?.insert(`${imageInfo.name}/${chindex}`, vol.channels[chindex].volumeData.buffer);
-        onChannelLoaded?.(vol, chindex);
-      }
+      const volsize = this.data.shape[3] * this.data.shape[2] * this.data.shape[1]; // x*y*z pixels * 1 byte/pixel
+      const channelData = new Uint8Array(this.data.buffer.buffer, chindex * volsize, volsize);
+      // all data coming from this loader is natively 8-bit
+      onData([chindex], [channelData], [DATARANGE_UINT8]);
     }
+
+    const adjustedLoadSpec = {
+      ...loadSpec,
+      // `subregion` and `multiscaleLevel` are unused by this loader
+      subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)),
+      multiscaleLevel: 0,
+    };
+    return { loadSpec: adjustedLoadSpec };
   }
 }
 
