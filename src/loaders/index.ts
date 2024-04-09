@@ -58,6 +58,6 @@ export async function createVolumeLoader(
       if (!options?.rawArrayOptions) {
         throw new Error("Must provide RawArrayOptions for RawArrayLoader");
       }
-      return new RawArrayLoader(options?.rawArrayOptions.data, options?.rawArrayOptions.metadata, options?.cache);
+      return new RawArrayLoader(options?.rawArrayOptions.data, options?.rawArrayOptions.metadata);
   }
 }

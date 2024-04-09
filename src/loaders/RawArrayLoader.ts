@@ -9,7 +9,6 @@ import {
 } from "./IVolumeLoader.js";
 import { computePackedAtlasDims } from "./VolumeLoaderUtils";
 import { ImageInfo } from "../Volume";
-import VolumeCache from "../VolumeCache";
 import { DATARANGE_UINT8 } from "../types.js";
 
 // this is the form in which a 4D numpy array arrives as converted
@@ -79,9 +78,7 @@ class RawArrayLoader extends ThreadableVolumeLoader {
   data: RawArrayData;
   jsonInfo: RawArrayInfo;
 
-  cache?: VolumeCache;
-
-  constructor(rawData: RawArrayData, rawDataInfo: RawArrayInfo, cache?: VolumeCache) {
+  constructor(rawData: RawArrayData, rawDataInfo: RawArrayInfo) {
     super();
     this.jsonInfo = rawDataInfo;
     this.data = rawData;
@@ -94,7 +91,6 @@ class RawArrayLoader extends ThreadableVolumeLoader {
     ) {
       throw new Error("RawArrayLoader: data shape does not match metadata");
     }
-    this.cache = cache;
   }
 
   async loadDims(_loadSpec: LoadSpec): Promise<VolumeDims[]> {
