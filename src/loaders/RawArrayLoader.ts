@@ -107,6 +107,7 @@ class RawArrayLoader extends ThreadableVolumeLoader {
   async createImageInfo(loadSpec: LoadSpec): Promise<LoadedVolumeInfo> {
     return { imageInfo: convertImageInfo(this.jsonInfo), loadSpec };
   }
+
   async loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
