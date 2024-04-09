@@ -11,21 +11,23 @@ import {
   Plane,
   DoubleSide,
 } from "three";
-import { STLExporter } from "three/examples/jsm/exporters/STLExporter";
-import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter";
+import { STLExporter } from "three/examples/jsm/exporters/STLExporter.js";
+import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 
-import { defaultMaterialSettings } from "./constants/materials";
+import { defaultMaterialSettings } from "./constants/materials.js";
 
-import FileSaver from "./FileSaver";
+import FileSaver from "./FileSaver.js";
 import NaiveSurfaceNets from "./NaiveSurfaceNets.js";
-import MarchingCubes from "./MarchingCubes";
-import Volume from "./Volume";
-import { Bounds } from "./types.js";
+import MarchingCubes from "./MarchingCubes.js";
+import Volume from "./Volume.js";
+import type { Bounds } from "./types.js";
 import { ThreeJsPanel } from "./ThreeJsPanel.js";
 
-// this cutoff is chosen to have a small buffer of values before the object is treated
-// as transparent for gpu blending and depth testing.
-const ALPHA_THRESHOLD = 0.9;
+/**
+ * this cutoff is chosen to have a small buffer of values before the object is treated
+ * as transparent for gpu blending and depth testing.
+ */
+const ALPHA_THRESHOLD = 0.95;
 
 export default class MeshVolume {
   private volume: Volume;
@@ -77,17 +79,6 @@ export default class MeshVolume {
 
   get3dObject(): Group {
     return this.meshPivot;
-  }
-
-  onChannelData(batch: number[]): void {
-    for (let j = 0; j < batch.length; ++j) {
-      const idx = batch[j];
-      // if an isosurface was created before the channel data arrived, we need to re-calculate it now.
-      if (this.meshrep[idx]) {
-        const isovalue = this.getIsovalue(idx);
-        this.updateIsovalue(idx, isovalue === undefined ? 127 : isovalue);
-      }
-    }
   }
 
   setScale(scale: Vector3, position = new Vector3(0, 0, 0)): void {
@@ -297,22 +288,13 @@ export default class MeshVolume {
   createIsosurface(
     channel: number,
     color: [number, number, number],
-    value: number,
-    alpha: number,
-    transp: boolean
+    // 127 is half of the intensity range 0..255
+    value = 127,
+    // 1.0 indicates full opacity, non-transparent
+    alpha = 1.0,
+    transp = alpha < ALPHA_THRESHOLD
   ): void {
     if (!this.meshrep[channel]) {
-      if (value === undefined) {
-        // 127 is half of the intensity range 0..255
-        value = 127;
-      }
-      if (alpha === undefined) {
-        // 1.0 indicates full opacity, non-transparent
-        alpha = 1.0;
-      }
-      if (transp === undefined) {
-        transp = alpha < ALPHA_THRESHOLD;
-      }
       const meshrep = this.createMeshForChannel(channel, color, value, alpha, transp);
       this.meshrep[channel] = meshrep;
       this.channelOpacities[channel] = alpha;

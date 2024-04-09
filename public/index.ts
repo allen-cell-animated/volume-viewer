@@ -1,4 +1,3 @@
-import "regenerator-runtime/runtime";
 import { Vector2, Vector3 } from "three";
 import * as dat from "dat.gui";
 
@@ -7,10 +6,10 @@ import {
   ImageInfo,
   IVolumeLoader,
   LoadSpec,
+  Lut,
   JsonImageInfoLoader,
   View3d,
   Volume,
-  VolumeCache,
   VolumeMaker,
   Light,
   AREA_LIGHT,
@@ -18,15 +17,19 @@ import {
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
   VolumeFileFormat,
-  createVolumeLoader,
 } from "../src";
 // special loader really just for this demo app but lives with the other loaders
 import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
 import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
-import { RawArrayData, RawArrayInfo } from "../src/loaders/RawArrayLoader";
+import VolumeLoaderContext from "../src/workers/LoadWorkerHandle";
+import { DATARANGE_UINT8 } from "../src/types";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
+const CONCURRENCY_LIMIT = 8;
+const PREFETCH_CONCURRENCY_LIMIT = 3;
+const PREFETCH_DISTANCE: [number, number, number, number] = [5, 5, 5, 5];
+const MAX_PREFETCH_CHUNKS = 25;
 const PLAYBACK_INTERVAL = 80;
 
 const TEST_DATA: Record<string, TestDataSpec> = {
@@ -38,6 +41,10 @@ const TEST_DATA: Record<string, TestDataSpec> = {
   omeTiff: {
     type: VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif",
+  },
+  zarrEMT: {
+    url: "https://dev-aics-dtp-001.int.allencell.org/dan-data/3500005818_20230811__20x_Timelapse-02(P27-E7).ome.zarr",
+    type: VolumeFileFormat.ZARR,
   },
   zarrIDR1: {
     type: VolumeFileFormat.ZARR,
@@ -85,7 +92,7 @@ const TEST_DATA: Record<string, TestDataSpec> = {
 
 let view3D: View3d;
 
-const volumeCache = new VolumeCache(CACHE_MAX_SIZE);
+const loaderContext = new VolumeLoaderContext(CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 
 const myState: State = {
   file: "",
@@ -628,47 +635,44 @@ function showChannelUI(volume: Volume) {
       // this doesn't give good results currently but is an example of a per-channel button callback
       autoIJ: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_auto2();
-          // TODO: get a proper transfer function editor
-          // const lut = { lut: makeColorGradient([
-          //     {offset:0, color:"black"},
-          //     {offset:0.2, color:"black"},
-          //     {offset:0.25, color:"red"},
-          //     {offset:0.5, color:"orange"},
-          //     {offset:1.0, color:"yellow"}])
-          // };
-          volume.setLut(j, lut.lut);
+          const [hmin, hmax] = volume.getHistogram(j).findAutoIJBins();
+          const lut = new Lut().createFromMinMax(hmin, hmax);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
       // this doesn't give good results currently but is an example of a per-channel button callback
       auto0: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_auto();
-          volume.setLut(j, lut.lut);
+          const [b, e] = volume.getHistogram(j).findAutoMinMax();
+          const lut = new Lut().createFromMinMax(b, e);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
       // this doesn't give good results currently but is an example of a per-channel button callback
       bestFit: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_bestFit();
-          volume.setLut(j, lut.lut);
+          const [hmin, hmax] = volume.getHistogram(j).findBestFitBins();
+          const lut = new Lut().createFromMinMax(hmin, hmax);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
       // eslint-disable-next-line @typescript-eslint/naming-convention
       pct50_98: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_percentiles(0.5, 0.998);
-          volume.setLut(j, lut.lut);
+          const hmin = volume.getHistogram(j).findBinOfPercentile(0.5);
+          const hmax = volume.getHistogram(j).findBinOfPercentile(0.983);
+          const lut = new Lut().createFromMinMax(hmin, hmax);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
       colorizeEnabled: false,
       colorize: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_labelColors();
+          const lut = new Lut().createLabelColors(volume.getHistogram(j));
           volume.setColorPalette(j, lut.lut);
           myState.channelGui[j].colorizeEnabled = !myState.channelGui[j].colorizeEnabled;
           if (myState.channelGui[j].colorizeEnabled) {
@@ -695,11 +699,7 @@ function showChannelUI(volume: Volume) {
     f.add(myState.channelGui[i], "isosurface").onChange(
       (function (j) {
         return function (value) {
-          if (value) {
-            view3D.createIsosurface(volume, j, myState.channelGui[j].isovalue, 1.0);
-          } else {
-            view3D.clearIsosurface(volume, j);
-          }
+          view3D.setVolumeChannelOptions(volume, j, { isosurfaceEnabled: value });
         };
       })(i)
     );
@@ -710,7 +710,7 @@ function showChannelUI(volume: Volume) {
       .onChange(
         (function (j) {
           return function (value) {
-            view3D.updateIsosurface(volume, j, value);
+            view3D.setVolumeChannelOptions(volume, j, { isovalue: value });
           };
         })(i)
       );
@@ -773,7 +773,10 @@ function showChannelUI(volume: Volume) {
       .onChange(
         (function (j) {
           return function (value) {
-            volume.getChannel(j).lutGenerator_windowLevel(value, myState.channelGui[j].level);
+            const hwindow = value;
+            const hlevel = myState.channelGui[j].level;
+            const lut = new Lut().createFromWindowLevel(hwindow, hlevel);
+            volume.setLut(j, lut);
             view3D.updateLuts(volume);
           };
         })(i)
@@ -786,7 +789,10 @@ function showChannelUI(volume: Volume) {
       .onChange(
         (function (j) {
           return function (value) {
-            volume.getChannel(j).lutGenerator_windowLevel(myState.channelGui[j].window, value);
+            const hwindow = myState.channelGui[j].window;
+            const hlevel = value;
+            const lut = new Lut().createFromWindowLevel(hwindow, hlevel);
+            volume.setLut(j, lut);
             view3D.updateLuts(volume);
           };
         })(i)
@@ -844,7 +850,7 @@ function loadImageData(jsonData: ImageInfo, volumeData: Uint8Array[]) {
     // according to jsonData.tile_width*jsonData.tile_height*jsonData.tiles
     // (first row of first plane is the first data in
     // the layout, then second row of first plane, etc)
-    vol.setChannelDataFromVolume(i, volumeData[i]);
+    vol.setChannelDataFromVolume(i, volumeData[i], DATARANGE_UINT8);
 
     setInitialRenderMode();
 
@@ -871,7 +877,8 @@ function loadImageData(jsonData: ImageInfo, volumeData: Uint8Array[]) {
 function onChannelDataArrived(v: Volume, channelIndex: number) {
   const currentVol = v; // myState.volume;
 
-  currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
+  // optionally can set the LUT here (for example if this is first time loading)
+
   view3D.onVolumeData(currentVol, [channelIndex]);
   view3D.setVolumeChannelEnabled(currentVol, channelIndex, myState.channelGui[channelIndex].enabled);
 
@@ -915,6 +922,7 @@ function onVolumeCreated(volume: Volume) {
 
 function playTimeSeries(onNewFrameCallback: () => void) {
   window.clearTimeout(myState.timerId);
+  myState.loader.syncMultichannelLoading(true);
   myState.isPlaying = true;
 
   const loadNextFrame = () => {
@@ -1020,7 +1028,7 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
     return new OpenCellLoader();
   }
 
-  const options: CreateLoaderOptions = { cache: volumeCache };
+  await loaderContext.onOpen();
 
   let path: string | string[] = data.url;
   if (data.type === VolumeFileFormat.JSON) {
@@ -1036,7 +1044,9 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
     options.imageDataInfo = volumeInfo.imgData;
   }
 
-  return await createVolumeLoader(path, options);
+  return await loaderContext.createLoader(path, {
+    fetchOptions: { maxPrefetchDistance: PREFETCH_DISTANCE, maxPrefetchChunks: MAX_PREFETCH_CHUNKS },
+  });
 }
 
 async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<void> {
@@ -1181,6 +1191,7 @@ function main() {
   pauseBtn?.addEventListener("click", () => {
     window.clearTimeout(myState.timerId);
     myState.isPlaying = false;
+    myState.loader.syncMultichannelLoading(false);
   });
 
   const forwardBtn = document.getElementById("forwardBtn");

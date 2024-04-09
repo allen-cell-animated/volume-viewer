@@ -15,12 +15,12 @@ import {
   Vector3,
 } from "three";
 import { Channel, Volume } from ".";
-import { sliceFragmentShaderSrc, sliceShaderUniforms, sliceVertexShaderSrc } from "./constants/volumeSliceShader";
-import { VolumeRenderImpl } from "./VolumeRenderImpl";
-import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings";
-import FusedChannelData from "./FusedChannelData";
-import { FuseChannel } from "./types";
-import { ThreeJsPanel } from "./ThreeJsPanel";
+import { sliceFragmentShaderSrc, sliceShaderUniforms, sliceVertexShaderSrc } from "./constants/volumeSliceShader.js";
+import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
+import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings.js";
+import FusedChannelData from "./FusedChannelData.js";
+import type { FuseChannel } from "./types.js";
+import { ThreeJsPanel } from "./ThreeJsPanel.js";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
@@ -36,6 +36,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
   private boxHelper: Box3Helper;
   private uniforms: ReturnType<typeof sliceShaderUniforms>;
   private channelData!: FusedChannelData;
+  private sliceUpdateWaiting = false;
 
   /**
    * Creates a new Atlas2DSlice.
@@ -66,6 +67,30 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.updateSettings(settings, SettingsFlags.ALL);
   }
 
+  /**
+   * Syncs `this.settings.zSlice` with the corresponding shader uniform, or defers syncing until the slice is loaded.
+   * @returns a boolean indicating whether the slice is out of bounds of the volume entirely.
+   */
+  private updateSlice(): boolean {
+    const slice = Math.floor(this.settings.zSlice);
+    const sizez = this.volume.imageInfo.volumeSize.z;
+    if (slice < 0 || slice >= sizez) {
+      return false;
+    }
+
+    const regionMinZ = this.volume.imageInfo.subregionOffset.z;
+    const regionMaxZ = regionMinZ + this.volume.imageInfo.subregionSize.z;
+    if (slice < regionMinZ || slice >= regionMaxZ) {
+      // If the slice is outside the current loaded subregion, defer until the subregion is updated
+      this.sliceUpdateWaiting = true;
+    } else {
+      this.setUniform("Z_SLICE", slice);
+      this.sliceUpdateWaiting = false;
+    }
+
+    return true;
+  }
+
   public updateVolumeDimensions(): void {
     const scale = this.volume.normPhysicalSize;
     // set scale
@@ -82,6 +107,9 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.setUniform("SLICES", volumeSize.z);
     this.setUniform("SUBSET_SCALE", this.volume.normRegionSize);
     this.setUniform("SUBSET_OFFSET", this.volume.normRegionOffset);
+    if (this.sliceUpdateWaiting) {
+      this.updateSlice();
+    }
 
     // (re)create channel data
     if (!this.channelData || this.channelData.width !== atlasSize.x || this.channelData.height !== atlasSize.y) {
@@ -147,13 +175,13 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
 
       this.setUniform("AABB_CLIP_MIN", bounds.bmin);
       this.setUniform("AABB_CLIP_MAX", bounds.bmax);
-      const slice = Math.floor(this.settings.zSlice);
-      const sizez = this.volume.imageInfo.volumeSize.z;
-      if (slice >= 0 && slice <= sizez - 1) {
-        this.setUniform("Z_SLICE", slice);
-        const sliceRatio = slice / sizez;
+
+      const sliceInBounds = this.updateSlice();
+      if (sliceInBounds) {
+        const sliceLowerBound = Math.floor(this.settings.zSlice) / this.volume.imageInfo.volumeSize.z;
+        const sliceUpperBound = (Math.floor(this.settings.zSlice) + 1) / this.volume.imageInfo.volumeSize.z;
         this.volume.updateRequiredData({
-          subregion: new Box3(new Vector3(0, 0, sliceRatio), new Vector3(1, 1, sliceRatio)),
+          subregion: new Box3(new Vector3(0, 0, sliceLowerBound), new Vector3(1, 1, sliceUpperBound)),
         });
       }
     }

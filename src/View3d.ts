@@ -11,20 +11,20 @@ import {
 } from "three";
 import { Pane } from "tweakpane";
 
-import { ThreeJsPanel } from "./ThreeJsPanel";
-import lightSettings from "./constants/lights";
-import VolumeDrawable from "./VolumeDrawable";
-import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
-import Volume from "./Volume";
+import { ThreeJsPanel } from "./ThreeJsPanel.js";
+import lightSettings from "./constants/lights.js";
+import VolumeDrawable from "./VolumeDrawable.js";
+import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light.js";
+import Volume from "./Volume.js";
 import {
-  VolumeChannelDisplayOptions,
-  VolumeDisplayOptions,
+  type VolumeChannelDisplayOptions,
+  type VolumeDisplayOptions,
   isOrthographicCamera,
   ViewportCorner,
   RenderMode,
-} from "./types";
-import { Axis } from "./VolumeRenderSettings";
-import { PerChannelCallback } from "./loaders/IVolumeLoader";
+} from "./types.js";
+import { Axis } from "./VolumeRenderSettings.js";
+import { PerChannelCallback } from "./loaders/IVolumeLoader.js";
 
 // Constants are kept for compatibility reasons.
 export const RENDERMODE_RAYMARCH = RenderMode.RAYMARCH;
@@ -292,25 +292,6 @@ export class View3d {
   }
 
   /**
-   * If an isosurface is not already created, then create one.  Otherwise change the isovalue of the existing isosurface.
-   * @param {Object} volume
-   * @param {number} channel
-   * @param {number} isovalue isovalue
-   * @param {number=} alpha Opacity
-   */
-  createIsosurface(volume: Volume, channel: number, isovalue: number, alpha: number): void {
-    if (!this.image) {
-      return;
-    }
-    if (this.image.hasIsosurface(channel)) {
-      this.image.updateIsovalue(channel, isovalue);
-    } else {
-      this.image.createIsosurface(channel, isovalue, alpha, alpha < 0.95);
-    }
-    this.redraw();
-  }
-
-  /**
    * Is an isosurface already created for this channel?
    * @param {Object} volume
    * @param {number} channel
@@ -318,41 +299,6 @@ export class View3d {
    */
   hasIsosurface(volume: Volume, channel: number): boolean {
     return this.image?.hasIsosurface(channel) || false;
-  }
-
-  /**
-   * If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
-   * @param {Object} volume
-   * @param {number} channel
-   * @param {number} isovalue
-   */
-  updateIsosurface(volume: Volume, channel: number, isovalue: number): void {
-    if (!this.image || !this.image.hasIsosurface(channel)) {
-      return;
-    }
-    this.image.updateIsovalue(channel, isovalue);
-    this.redraw();
-  }
-
-  /**
-   * Set opacity for isosurface
-   * @param {Object} volume
-   * @param {number} channel
-   * @param {number} opacity Opacity
-   */
-  updateOpacity(volume: Volume, channel: number, opacity: number): void {
-    this.image?.updateOpacity(channel, opacity);
-    this.redraw();
-  }
-
-  /**
-   * If an isosurface exists for this channel, hide it now
-   * @param {Object} volume
-   * @param {number} channel
-   */
-  clearIsosurface(volume: Volume, channel: number): void {
-    this.image?.destroyIsosurface(channel);
-    this.redraw();
   }
 
   /**

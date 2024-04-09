@@ -1,8 +1,9 @@
 import { Object3D } from "three";
-import { ThreeJsPanel } from "./ThreeJsPanel";
-import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings";
-import { FuseChannel } from "./types";
-import Channel from "./Channel";
+
+import { ThreeJsPanel } from "./ThreeJsPanel.js";
+import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings.js";
+import type { FuseChannel } from "./types.js";
+import Channel from "./Channel.js";
 
 export interface VolumeRenderImpl {
   /**

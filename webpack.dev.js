@@ -1,11 +1,16 @@
-const CopyWebpackPlugin = require("copy-webpack-plugin");
+import path from "path";
+import webpack from "webpack";
 
-const path = require("path");
-const webpack = require("webpack");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+import CopyWebpackPlugin from "copy-webpack-plugin";
+import HtmlWebpackPlugin from "html-webpack-plugin";
+import { CleanWebpackPlugin } from "clean-webpack-plugin";
 
-module.exports = {
+import packageJson from "./package.json" assert { type: "json" };
+
+import { fileURLToPath } from "url";
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+
+export default {
   entry: ["./public/index.ts"],
   output: {
     path: path.resolve(__dirname, "volumeviewer"),
@@ -14,7 +19,7 @@ module.exports = {
   devtool: "source-map",
   devServer: {
     open: ["/"],
-    port: 9020,
+    port: 9021,
     static: [
       {
         staticOptions: {
@@ -45,7 +50,7 @@ module.exports = {
       ],
     }),
     new webpack.DefinePlugin({
-      APP_VERSION: JSON.stringify(require("./package.json").version),
+      APP_VERSION: JSON.stringify(packageJson.version),
     }),
     new HtmlWebpackPlugin({
       template: "./public/index.html",
@@ -53,6 +58,9 @@ module.exports = {
   ],
   resolve: {
     extensions: [".js", ".ts"],
+    extensionAlias: {
+      ".js": [".js", ".ts"],
+    }
   },
   module: {
     rules: [

@@ -30,12 +30,24 @@ interface RequestItem<V> {
  * while the original request is still in the queue.
  */
 export default class RequestQueue {
-  /** The maximum number of requests that can be handled concurently.
-    Once reached, additional requests will be queued up to run once a running request completes.*/
+  /**
+   * The maximum number of requests that can be handled concurrently.
+   * Once reached, additional requests will be queued up to run once a running request completes.
+   */
   private maxActiveRequests: number;
+
+  /**
+   * The maximum number of requests that can be handled concurrently if only low-priority requests are waiting. Set
+   * lower than `concurrencyLimit` to always leave space for high-priority requests. Cannot be set higher than
+   * `concurrencyLimit`.
+   */
+  private maxLowPriorityRequests: number;
 
   /** A queue of requests that are ready to be executed, in order of request time. */
   private queue: string[];
+
+  /** A queue of low-priority tasks that are ready to be executed. `queue` must be empty before any of these tasks run. */
+  private queueLowPriority: string[];
 
   /** Stores all requests, even those that are currently active. */
   private allRequests: Map<string, RequestItem<unknown>>;
@@ -46,12 +58,16 @@ export default class RequestQueue {
   /**
    * Creates a new RequestQueue.
    * @param maxActiveRequests The maximum number of requests that will be handled concurrently. This is 10 by default.
+   * @param maxLowPriorityRequests The maximum number of low-priority requests that will be handled concurrently. Equal
+   *    to `maxActiveRequests` by default, but may be set lower to always leave space for new high-priority requests.
    */
-  constructor(maxActiveRequests = 10) {
+  constructor(maxActiveRequests = 10, maxLowPriorityRequests = 5) {
     this.allRequests = new Map();
     this.activeRequests = new Set();
     this.queue = [];
+    this.queueLowPriority = [];
     this.maxActiveRequests = maxActiveRequests;
+    this.maxLowPriorityRequests = Math.min(maxActiveRequests, maxLowPriorityRequests);
   }
 
   /**
@@ -84,8 +100,9 @@ export default class RequestQueue {
   /**
    * Moves a registered request into the processing queue, clearing any timeouts on the request.
    * @param key string identifier of the request.
+   * @param lowPriority Whether this request should be added with low priority. False by default.
    */
-  private addRequestToQueue(key: string): void {
+  private addRequestToQueue(key: string, lowPriority?: boolean): void {
     // Check that this request is not cancelled.
     if (this.allRequests.has(key)) {
       // Clear the request timeout, if it has one, since it is being added to the queue.
@@ -94,9 +111,13 @@ export default class RequestQueue {
         clearTimeout(requestItem.timeoutId);
         requestItem.timeoutId = undefined;
       }
-      if (!this.queue.includes(key)) {
+      if (!this.queue.includes(key) && !this.queueLowPriority.includes(key)) {
         // Add to queue and check if the request can be processed right away.
-        this.queue.push(key);
+        if (lowPriority) {
+          this.queueLowPriority.push(key);
+        } else {
+          this.queue.push(key);
+        }
         this.dequeue();
       }
     }
@@ -108,6 +129,7 @@ export default class RequestQueue {
    * @param requestAction Function that will be called to complete the request. The function
    *  will be run only once per unique key while the request exists, and may be deferred by the
    *  queue at any time.
+   * @param lowPriority Whether this request should be added with low priority. False by default.
    * @param delayMs Minimum delay, in milliseconds, before this request should be executed.
    *
    * NOTE: Cancelling a request while the action is running WILL NOT stop the action. If this behavior is desired,
@@ -119,23 +141,31 @@ export default class RequestQueue {
    *  until the request is resolved or cancelled.
    *  Note that the return type of the promise will match that of the first request's instance.
    */
-  public addRequest<T>(key: string, requestAction: () => Promise<T>, delayMs = 0): Promise<T> {
+  public addRequest<T>(key: string, requestAction: () => Promise<T>, lowPriority = false, delayMs = 0): Promise<T> {
     if (!this.allRequests.has(key)) {
       // New request!
       const requestItem = this.registerRequest(key, requestAction);
       // If a delay is set, wait to add this to the queue.
       if (delayMs > 0) {
-        const timeoutId = setTimeout(() => this.addRequestToQueue(key), delayMs);
+        const timeoutId = setTimeout(() => this.addRequestToQueue(key, lowPriority), delayMs);
         // Save timeout information to request metadata
         requestItem.timeoutId = timeoutId;
       } else {
         // No delay, add immediately
-        this.addRequestToQueue(key);
+        this.addRequestToQueue(key, lowPriority);
       }
-    } else if (delayMs <= 0) {
-      // This request is registered, but is now being requested without a delay.
-      // Move into queue immediately if it's not already added, and clear any timeouts it may have.
-      this.addRequestToQueue(key);
+    } else {
+      const lowPriorityIndex = this.queueLowPriority.indexOf(key);
+      if (lowPriorityIndex > -1 && !lowPriority) {
+        // This request is registered and queued, but is now being requested with high priority.
+        // Promote it to high priority.
+        this.queueLowPriority.splice(lowPriorityIndex, 1);
+        this.addRequestToQueue(key);
+      } else if (delayMs <= 0) {
+        // This request is registered, but is now being requested without a delay.
+        // Move into queue immediately if it's not already added, and clear any timeouts it may have.
+        this.addRequestToQueue(key, lowPriority);
+      }
     }
 
     const promise = this.allRequests.get(key)?.promise;
@@ -148,6 +178,7 @@ export default class RequestQueue {
   /**
    * Adds multiple requests to the queue, with an optional delay between each.
    * @param requests An array of RequestItems, which include a key and a request action.
+   * @param lowPriority Whether these requests should be added with low priority. False by default.
    * @param delayMs An optional minimum delay in milliseconds to be added between each request.
    *  For example, a delay of 10 ms will cause the second request to be added to the processing queue
    *  after 10 ms, the third to added after 20 ms, and so on. Set to 10 ms by default.
@@ -155,11 +186,11 @@ export default class RequestQueue {
    * of the returned array will be a Promise for the resolution of `requests[i]`). If a request
    *  with a matching key is already pending, returns the promise for the initial request.
    */
-  public addRequests<T>(requests: Request<T>[], delayMs = 10): Promise<unknown>[] {
+  public addRequests<T>(requests: Request<T>[], lowPriority = false, delayMs = 10): Promise<unknown>[] {
     const promises: Promise<unknown>[] = [];
     for (let i = 0; i < requests.length; i++) {
       const item = requests[i];
-      const promise = this.addRequest(item.key, item.requestAction, delayMs * i);
+      const promise = this.addRequest(item.key, item.requestAction, lowPriority, delayMs * i);
       promises.push(promise);
     }
     return promises;
@@ -171,10 +202,15 @@ export default class RequestQueue {
    * requests already active.
    */
   private async dequeue(): Promise<void> {
-    if (this.activeRequests.size >= this.maxActiveRequests || this.queue.length === 0) {
+    const numRequests = this.activeRequests.size;
+    if (
+      numRequests >= this.maxActiveRequests ||
+      (this.queue.length === 0 && (numRequests >= this.maxLowPriorityRequests || this.queueLowPriority.length === 0))
+    ) {
       return;
     }
-    const requestKey = this.queue.shift();
+
+    const requestKey = this.queue.shift() ?? this.queueLowPriority.shift();
     if (!requestKey) {
       return;
     }
@@ -217,7 +253,15 @@ export default class RequestQueue {
       // Reject the request, then clear from the queue and known requests.
       requestItem.reject(cancelReason);
     }
-    this.queue = this.queue.filter((k) => key !== k);
+    const queueIndex = this.queue.indexOf(key);
+    if (queueIndex > -1) {
+      this.queue.splice(queueIndex, 1);
+    } else {
+      const lowPriorityIndex = this.queueLowPriority.indexOf(key);
+      if (lowPriorityIndex > -1) {
+        this.queueLowPriority.splice(lowPriorityIndex, 1);
+      }
+    }
     this.allRequests.delete(key);
     this.activeRequests.delete(key);
   }
@@ -227,7 +271,9 @@ export default class RequestQueue {
    * @param cancelReason A message or object that will be used as the promise rejection.
    */
   public cancelAllRequests(cancelReason: unknown = DEFAULT_REQUEST_CANCEL_REASON): void {
-    this.queue = []; // Clear the queue so we don't do extra work while filtering it
+    // Clear the queue so we don't do extra work while filtering it
+    this.queue = [];
+    this.queueLowPriority = [];
     for (const key of this.allRequests.keys()) {
       this.cancelRequest(key, cancelReason);
     }

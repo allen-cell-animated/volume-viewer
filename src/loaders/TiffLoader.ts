@@ -1,10 +1,15 @@
 import { fromUrl } from "geotiff";
 import { Vector3 } from "three";
 
-import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
-import { buildDefaultMetadata, computePackedAtlasDims } from "./VolumeLoaderUtils";
-import { ImageInfo } from "../Volume";
-import Volume from "../Volume";
+import {
+  ThreadableVolumeLoader,
+  LoadSpec,
+  type RawChannelDataCallback,
+  VolumeDims,
+  type LoadedVolumeInfo,
+} from "./IVolumeLoader.js";
+import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
+import type { ImageInfo } from "../Volume.js";
 
 function prepareXML(xml: string): string {
   // trim trailing unicode zeros?
@@ -62,11 +67,14 @@ function getOMEDims(imageEl: Element): OMEDims {
 
 const getBytesPerSample = (type: string): number => (type === "uint8" ? 1 : type === "uint16" ? 2 : 4);
 
-class TiffLoader implements IVolumeLoader {
+// Despite the class `TiffLoader` extends, this loader is not threadable, since geotiff internally uses features that
+// aren't available on workers. It uses its own specialized workers anyways.
+class TiffLoader extends ThreadableVolumeLoader {
   url: string;
   dims?: OMEDims;
 
   constructor(url: string) {
+    super();
     this.url = url;
   }
 
@@ -98,7 +106,7 @@ class TiffLoader implements IVolumeLoader {
     return [d];
   }
 
-  async createVolume(_loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
+  async createImageInfo(_loadSpec: LoadSpec): Promise<LoadedVolumeInfo> {
     const dims = await this.loadOmeDims();
     // compare with sizex, sizey
     //const width = image.getWidth();
@@ -142,16 +150,15 @@ class TiffLoader implements IVolumeLoader {
     };
 
     // This loader uses no fields from `LoadSpec`. Initialize volume with defaults.
-    const vol = new Volume(imgdata, new LoadSpec(), this);
-    vol.channelLoadCallback = onChannelLoaded;
-    vol.imageMetadata = buildDefaultMetadata(imgdata);
-
-    return vol;
+    return { imageInfo: imgdata, loadSpec: new LoadSpec() };
   }
 
-  async loadVolumeData(vol: Volume, _loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void> {
+  async loadRawChannelData(
+    imageInfo: ImageInfo,
+    _loadSpec: LoadSpec,
+    onData: RawChannelDataCallback
+  ): Promise<Record<string, never>> {
     const dims = await this.loadOmeDims();
-    const imageInfo = vol.imageInfo;
 
     // do each channel on a worker?
     for (let channel = 0; channel < imageInfo.numChannels; ++channel) {
@@ -171,9 +178,8 @@ class TiffLoader implements IVolumeLoader {
       worker.onmessage = (e) => {
         const u8 = e.data.data;
         const channel = e.data.channel;
-        vol.setChannelDataFromVolume(channel, u8);
-        // make up a unique name? or have caller pass this in?
-        onChannelLoaded?.(vol, channel);
+        const range = e.data.range;
+        onData([channel], [u8], [range]);
         worker.terminate();
       };
       worker.onerror = (e) => {
@@ -181,6 +187,8 @@ class TiffLoader implements IVolumeLoader {
       };
       worker.postMessage(params);
     }
+
+    return {};
   }
 }
 

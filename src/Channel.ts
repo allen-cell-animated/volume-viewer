@@ -1,6 +1,6 @@
 import { DataTexture, RedFormat, UnsignedByteType, RGBAFormat, LinearFilter, NearestFilter } from "three";
-import Histogram from "./Histogram";
-import { LUT_ARRAY_LENGTH } from "./Histogram";
+import Histogram from "./Histogram.js";
+import { Lut, LUT_ARRAY_LENGTH } from "./Lut.js";
 
 interface ChannelImageData {
   /** Returns the one-dimensional array containing the data in RGBA order, as integers in the range 0 to 255. */
@@ -18,16 +18,20 @@ export default class Channel {
   public volumeData: Uint8Array;
   public name: string;
   public histogram: Histogram;
-  public lut: Uint8Array;
+  public lut: Lut;
   public colorPalette: Uint8Array;
   public colorPaletteAlpha: number;
   public dims: [number, number, number];
   public dataTexture: DataTexture;
   public lutTexture: DataTexture;
+  public rawMin: number;
+  public rawMax: number;
 
   constructor(name: string) {
     this.loaded = false;
     this.imgData = { data: new Uint8ClampedArray(), width: 0, height: 0 };
+    this.rawMin = 0;
+    this.rawMax = 255;
 
     // on gpu
     this.dataTexture = new DataTexture(new Uint8Array(), 0, 0);
@@ -41,7 +45,8 @@ export default class Channel {
     this.dims = [0, 0, 0];
 
     // intensity remapping lookup table
-    this.lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
+    this.lut = new Lut().createFromMinMax(0, 255);
+
     // per-intensity color labeling (disabled initially)
     this.colorPalette = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
     // store in 0..1 range. 1 means fully colorPalette, 0 means fully lut.
@@ -60,7 +65,7 @@ export default class Channel {
     if (this.colorPaletteAlpha === 1.0) {
       ret.set(this.colorPalette);
     } else if (this.colorPaletteAlpha === 0.0) {
-      ret.set(this.lut);
+      ret.set(this.lut.lut);
       for (let i = 0; i < LUT_ARRAY_LENGTH / 4; ++i) {
         ret[i * 4 + 0] *= rgb[0];
         ret[i * 4 + 1] *= rgb[1];
@@ -70,15 +75,16 @@ export default class Channel {
       for (let i = 0; i < LUT_ARRAY_LENGTH / 4; ++i) {
         ret[i * 4 + 0] =
           this.colorPalette[i * 4 + 0] * this.colorPaletteAlpha +
-          this.lut[i * 4 + 0] * (1.0 - this.colorPaletteAlpha) * rgb[0];
+          this.lut.lut[i * 4 + 0] * (1.0 - this.colorPaletteAlpha) * rgb[0];
         ret[i * 4 + 1] =
           this.colorPalette[i * 4 + 1] * this.colorPaletteAlpha +
-          this.lut[i * 4 + 1] * (1.0 - this.colorPaletteAlpha) * rgb[1];
+          this.lut.lut[i * 4 + 1] * (1.0 - this.colorPaletteAlpha) * rgb[1];
         ret[i * 4 + 2] =
           this.colorPalette[i * 4 + 2] * this.colorPaletteAlpha +
-          this.lut[i * 4 + 2] * (1.0 - this.colorPaletteAlpha) * rgb[2];
+          this.lut.lut[i * 4 + 2] * (1.0 - this.colorPaletteAlpha) * rgb[2];
         ret[i * 4 + 3] =
-          this.colorPalette[i * 4 + 3] * this.colorPaletteAlpha + this.lut[i * 4 + 3] * (1.0 - this.colorPaletteAlpha);
+          this.colorPalette[i * 4 + 3] * this.colorPaletteAlpha +
+          this.lut.lut[i * 4 + 3] * (1.0 - this.colorPaletteAlpha);
       }
     }
 
@@ -86,6 +92,18 @@ export default class Channel {
     this.lutTexture.needsUpdate = true;
 
     return ret;
+  }
+
+  public setRawDataRange(min: number, max: number): void {
+    // remap the lut which was based on rawMin and rawMax to new min and max
+    // If either of the min/max ranges are both zero, then we have undefined behavior and should
+    // not remap the lut.  This situation can happen at first load, for example,
+    // when one channel has arrived but others haven't.
+    if (!(this.rawMin === 0 && this.rawMax === 0) && !(min === 0 && max === 0)) {
+      this.lut.remapDomains(this.rawMin, this.rawMax, min, max);
+      this.rawMin = min;
+      this.rawMax = max;
+    }
   }
 
   public getHistogram(): Histogram {
@@ -128,7 +146,9 @@ export default class Channel {
     this.loaded = true;
     this.histogram = new Histogram(bitsArray);
 
-    this.lutGenerator_auto2();
+    const [hmin, hmax] = this.histogram.findAutoIJBins();
+    const lut = new Lut().createFromMinMax(hmin, hmax);
+    this.setLut(lut);
   }
 
   // let's rearrange this.imgData.data into a 3d array.
@@ -162,14 +182,24 @@ export default class Channel {
   }
 
   // give the channel fresh volume data and initialize from that data
-  public setFromVolumeData(bitsArray: Uint8Array, vx: number, vy: number, vz: number, ax: number, ay: number): void {
+  public setFromVolumeData(
+    bitsArray: Uint8Array,
+    vx: number,
+    vy: number,
+    vz: number,
+    ax: number,
+    ay: number,
+    rawMin = 0,
+    rawMax = 255
+  ): void {
     this.dims = [vx, vy, vz];
     this.volumeData = bitsArray;
     // TODO FIXME performance hit for shuffling the data and storing 2 versions of it (could do this in worker at least?)
     this.packToAtlas(vx, vy, vz, ax, ay);
     this.loaded = true;
+    // update from current histogram?
+    this.setRawDataRange(rawMin, rawMax);
     this.histogram = new Histogram(this.volumeData);
-    this.lutGenerator_auto2();
   }
 
   // given this.volumeData, let's unpack it into a flat textureatlas and fill up this.imgData.
@@ -221,8 +251,7 @@ export default class Channel {
     this.rebuildDataTexture(this.imgData.data, ax, ay);
   }
 
-  // lut should be an uint8array of 256*4 elements (256 rgba8 values)
-  public setLut(lut: Uint8Array): void {
+  public setLut(lut: Lut): void {
     this.lut = lut;
   }
 
@@ -234,71 +263,4 @@ export default class Channel {
   public setColorPaletteAlpha(alpha: number): void {
     this.colorPaletteAlpha = alpha;
   }
-
-  /* eslint-disable @typescript-eslint/naming-convention */
-  public lutGenerator_windowLevel(wnd: number, lvl: number): void {
-    if (!this.loaded) {
-      return;
-    }
-    const lut = this.histogram.lutGenerator_windowLevel(wnd, lvl);
-    this.setLut(lut.lut);
-  }
-
-  public lutGenerator_fullRange(): void {
-    if (!this.loaded) {
-      return;
-    }
-    const lut = this.histogram.lutGenerator_fullRange();
-    this.setLut(lut.lut);
-  }
-
-  public lutGenerator_dataRange(): void {
-    if (!this.loaded) {
-      return;
-    }
-    const lut = this.histogram.lutGenerator_dataRange();
-    this.setLut(lut.lut);
-  }
-
-  public lutGenerator_bestFit(): void {
-    if (!this.loaded) {
-      return;
-    }
-    const lut = this.histogram.lutGenerator_bestFit();
-    this.setLut(lut.lut);
-  }
-
-  // attempt to redo imagej's Auto
-  public lutGenerator_auto2(): void {
-    if (!this.loaded) {
-      return;
-    }
-    const lut = this.histogram.lutGenerator_auto2();
-    this.setLut(lut.lut);
-  }
-
-  public lutGenerator_auto(): void {
-    if (!this.loaded) {
-      return;
-    }
-    const lut = this.histogram.lutGenerator_auto();
-    this.setLut(lut.lut);
-  }
-
-  public lutGenerator_equalize(): void {
-    if (!this.loaded) {
-      return;
-    }
-    const lut = this.histogram.lutGenerator_equalize();
-    this.setLut(lut.lut);
-  }
-
-  public lutGenerator_percentiles(lo: number, hi: number): void {
-    if (!this.loaded) {
-      return;
-    }
-    const lut = this.histogram.lutGenerator_percentiles(lo, hi);
-    this.setLut(lut.lut);
-  }
-  /* eslint-enable @typescript-eslint/naming-convention */
 }

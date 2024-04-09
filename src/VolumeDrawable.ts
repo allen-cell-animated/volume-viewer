@@ -1,19 +1,19 @@
 import { Vector3, Object3D, Euler, Vector2, Box3 } from "three";
-
-import MeshVolume from "./MeshVolume";
-import RayMarchedAtlasVolume from "./RayMarchedAtlasVolume";
-import PathTracedVolume from "./PathTracedVolume";
-import { LUT_ARRAY_LENGTH } from "./Histogram";
-import Volume from "./Volume";
-import { VolumeDisplayOptions, VolumeChannelDisplayOptions } from "./types";
-import { FuseChannel, RenderMode } from "./types";
-import { ThreeJsPanel } from "./ThreeJsPanel";
-import { Light } from "./Light";
-import Channel from "./Channel";
-import { VolumeRenderImpl } from "./VolumeRenderImpl";
 import { Pane } from "tweakpane";
-import Atlas2DSlice from "./Atlas2DSlice";
-import { VolumeRenderSettings, SettingsFlags, Axis } from "./VolumeRenderSettings";
+
+import MeshVolume from "./MeshVolume.js";
+import RayMarchedAtlasVolume from "./RayMarchedAtlasVolume.js";
+import PathTracedVolume from "./PathTracedVolume.js";
+import { LUT_ARRAY_LENGTH } from "./Lut.js";
+import Volume from "./Volume.js";
+import type { VolumeDisplayOptions, VolumeChannelDisplayOptions, FuseChannel } from "./types.js";
+import { RenderMode } from "./types.js";
+import { ThreeJsPanel } from "./ThreeJsPanel.js";
+import { Light } from "./Light.js";
+import Channel from "./Channel.js";
+import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
+import Atlas2DSlice from "./Atlas2DSlice.js";
+import { VolumeRenderSettings, SettingsFlags, Axis } from "./VolumeRenderSettings.js";
 
 type ColorArray = [number, number, number];
 type ColorObject = { r: number; g: number; b: number };
@@ -107,6 +107,28 @@ export default class VolumeDrawable {
     // this.volumeRendering.setZSlice(this.zSlice);
   }
 
+  /**
+   * Updates whether a channel's data must be loaded for rendering, based on if its volume or isosurface is enabled.
+   * Calls `Volume.updateRequiredData` to update the list of required channels if necessary.
+   */
+  private updateChannelDataRequired(channelIndex: number): void {
+    const { enabled, isosurfaceEnabled } = this.channelOptions[channelIndex];
+    const channelIsRequired = enabled || isosurfaceEnabled;
+    const requiredChannels = this.volume.loadSpecRequired.channels;
+
+    if (requiredChannels.includes(channelIndex)) {
+      if (!channelIsRequired) {
+        // This channel is currently marked required, but both its volume and isosurface are off. Remove it!
+        this.volume.updateRequiredData({ channels: requiredChannels.filter((i) => i !== channelIndex) });
+      }
+    } else {
+      if (channelIsRequired) {
+        // This channel is not marked required, but either its volume or isosurface is on. Add it!
+        this.volume.updateRequiredData({ channels: [...requiredChannels, channelIndex] });
+      }
+    }
+  }
+
   setOptions(options: VolumeDisplayOptions): void {
     options = options || {};
     if (options.maskChannelIndex !== undefined) {
@@ -168,34 +190,26 @@ export default class VolumeDrawable {
       const hasIso = this.hasIsosurface(channelIndex);
       if (hasIso !== options.isosurfaceEnabled) {
         if (hasIso && !options.isosurfaceEnabled) {
-          this.destroyIsosurface(channelIndex);
-        } else if (!hasIso && options.isosurfaceEnabled) {
-          // 127 is half of the intensity range 0..255
-          let isovalue = 127;
-          if (options.isovalue !== undefined) {
-            isovalue = options.isovalue;
-          }
-          // 1.0 is fully opaque
-          let isosurfaceOpacity = 1.0;
-          if (options.isosurfaceOpacity !== undefined) {
-            isosurfaceOpacity = options.isosurfaceOpacity;
-          }
-          this.createIsosurface(channelIndex, isovalue, isosurfaceOpacity, isosurfaceOpacity < 1.0);
+          this.meshVolume.destroyIsosurface(channelIndex);
+        } else if (!hasIso && options.isosurfaceEnabled && this.volume.channels[channelIndex].loaded) {
+          const { isovalue, isosurfaceOpacity } = options;
+          this.meshVolume.createIsosurface(channelIndex, this.channelColors[channelIndex], isovalue, isosurfaceOpacity);
         }
+        this.updateChannelDataRequired(channelIndex);
       } else if (options.isosurfaceEnabled) {
         if (options.isovalue !== undefined) {
-          this.updateIsovalue(channelIndex, options.isovalue);
+          this.meshVolume.updateIsovalue(channelIndex, options.isovalue);
         }
         if (options.isosurfaceOpacity !== undefined) {
-          this.updateOpacity(channelIndex, options.isosurfaceOpacity);
+          this.meshVolume.updateOpacity(channelIndex, options.isosurfaceOpacity);
         }
       }
     } else {
       if (options.isovalue !== undefined) {
-        this.updateIsovalue(channelIndex, options.isovalue);
+        this.meshVolume.updateIsovalue(channelIndex, options.isovalue);
       }
       if (options.isosurfaceOpacity !== undefined) {
-        this.updateOpacity(channelIndex, options.isosurfaceOpacity);
+        this.meshVolume.updateOpacity(channelIndex, options.isosurfaceOpacity);
       }
     }
   }
@@ -377,32 +391,12 @@ export default class VolumeDrawable {
     return this.viewMode;
   }
 
-  // If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
-  updateIsovalue(channel: number, value: number): void {
-    this.meshVolume.updateIsovalue(channel, value);
-  }
-
   getIsovalue(channel: number): number | undefined {
     return this.meshVolume.getIsovalue(channel);
   }
 
-  // Set opacity for isosurface
-  updateOpacity(channel: number, value: number): void {
-    this.meshVolume.updateOpacity(channel, value);
-  }
-
   hasIsosurface(channel: number): boolean {
     return this.meshVolume.hasIsosurface(channel);
-  }
-
-  // If an isosurface is not already created, then create one.  Otherwise do nothing.
-  createIsosurface(channel: number, value: number, alpha: number, transp: boolean): void {
-    this.meshVolume.createIsosurface(channel, this.channelColors[channel], value, alpha, transp);
-  }
-
-  // If an isosurface exists for this channel, destroy it now. Don't just hide it - assume we can free up some resources.
-  destroyIsosurface(channel: number): void {
-    this.meshVolume.destroyIsosurface(channel);
   }
 
   fuse(): void {
@@ -450,17 +444,21 @@ export default class VolumeDrawable {
   }
 
   onChannelLoaded(batch: number[]): void {
-    this.meshVolume.onChannelData(batch);
-
     for (let j = 0; j < batch.length; ++j) {
       const idx = batch[j];
-      this.setChannelOptions(idx, this.channelOptions[idx]);
+      const channelOptions = this.channelOptions[idx];
+      // TODO: this is a relatively crude way to ensure that channel settings are synced up when volume data is loaded.
+      //    Can we instead audit which settings updated by `setChannelOptions` actually need to be reset on load?
+      this.setChannelOptions(idx, channelOptions);
+      if (channelOptions.isosurfaceEnabled) {
+        this.meshVolume.destroyIsosurface(idx);
+        const { isovalue, isosurfaceOpacity } = channelOptions;
+        this.meshVolume.createIsosurface(idx, this.channelColors[idx], isovalue, isosurfaceOpacity);
+      }
     }
 
     // let the outside world have a chance
-    if (this.onChannelDataReadyCallback) {
-      this.onChannelDataReadyCallback();
-    }
+    this.onChannelDataReadyCallback?.();
   }
 
   onChannelAdded(newChannelIndex: number): void {
@@ -497,12 +495,11 @@ export default class VolumeDrawable {
     // flip the color to the "null" value
     this.fusion[channelIndex].rgbColor = enabled ? this.channelColors[channelIndex] : 0;
     // if all are nulled out, then hide the volume element from the scene.
-    if (this.fusion.every((elem) => elem.rgbColor === 0)) {
-      this.settings.visible = false;
-    } else {
-      this.settings.visible = true;
-    }
+    this.settings.visible = !this.fusion.every((elem) => elem.rgbColor === 0);
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
+
+    // add or remove this channel from the list of required channels to load
+    this.updateChannelDataRequired(channelIndex);
   }
 
   isVolumeChannelEnabled(channelIndex: number): boolean {
@@ -678,7 +675,7 @@ export default class VolumeDrawable {
         break;
       case RenderMode.SLICE:
         this.volumeRendering = new Atlas2DSlice(this.volume, this.settings);
-        this.volume.updateRequiredData({ subregion: new Box3(new Vector3(0, 0, 0.5), new Vector3(1, 1, 0.5)) });
+        // `updateRequiredData` called on construction, via `updateSettings`
         break;
       case RenderMode.RAYMARCH:
       default:
@@ -716,6 +713,17 @@ export default class VolumeDrawable {
     pane.addInput(this.settings, "translation").on("change", ({ value }) => this.setTranslation(value));
     pane.addInput(this.settings, "rotation").on("change", ({ value }) => this.setRotation(value));
 
+    const scaleFolder = pane.addFolder({ title: "Multiscale loading" });
+    scaleFolder
+      .addInput(this.volume.loadSpecRequired, "maxAtlasEdge")
+      .on("change", ({ value }) => this.volume.updateRequiredData({ maxAtlasEdge: value }));
+    scaleFolder
+      .addInput(this.volume.loadSpecRequired, "scaleLevelBias")
+      .on("change", ({ value }) => this.volume.updateRequiredData({ scaleLevelBias: value }));
+    scaleFolder
+      .addInput(this.volume.loadSpecRequired, "multiscaleLevel")
+      .on("change", ({ value }) => this.volume.updateRequiredData({ multiscaleLevel: value }));
+
     const pathtrace = pane.addFolder({ title: "Pathtrace", expanded: false });
     pathtrace
       .addInput(this.settings, "primaryRayStepSize", { min: 1, max: 100 })
@@ -727,7 +735,7 @@ export default class VolumeDrawable {
 
   setZSlice(slice: number): boolean {
     const sizez = this.volume.imageInfo.volumeSize.z;
-    if (this.settings.zSlice !== slice && slice < sizez && slice > 0) {
+    if (this.settings.zSlice !== slice && slice < sizez && slice >= 0) {
       this.settings.zSlice = slice;
       this.volumeRendering.updateSettings(this.settings, SettingsFlags.ROI);
       return true;

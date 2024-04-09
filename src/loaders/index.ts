@@ -1,10 +1,11 @@
-import { IVolumeLoader } from "./IVolumeLoader";
+import { ThreadableVolumeLoader } from "./IVolumeLoader.js";
+import { OMEZarrLoader, type ZarrLoaderFetchOptions } from "./OmeZarrLoader.js";
+import { JsonImageInfoLoader } from "./JsonImageInfoLoader.js";
+import { TiffLoader } from "./TiffLoader.js";
+import VolumeCache from "../VolumeCache.js";
+import SubscribableRequestQueue from "../utils/SubscribableRequestQueue.js";
 
-import { OMEZarrLoader } from "./OmeZarrLoader";
-import { JsonImageInfoLoader } from "./JsonImageInfoLoader";
-import { RawArrayLoader, RawArrayData, RawArrayInfo } from "./RawArrayLoader";
-import { TiffLoader } from "./TiffLoader";
-import VolumeCache from "../VolumeCache";
+export { PrefetchDirection } from "./zarr_utils/types.js";
 
 export const enum VolumeFileFormat {
   ZARR = "zarr",
@@ -17,24 +18,38 @@ export const enum VolumeFileFormat {
 export type CreateLoaderOptions = {
   fileType?: VolumeFileFormat;
   cache?: VolumeCache;
+  queue?: SubscribableRequestQueue;
   scene?: number;
-  concurrencyLimit?: number;
-  // optional raw image data for VolumeFileFormat.DATA
-  imageData?: RawArrayData;
-  imageDataInfo?: RawArrayInfo;
+  fetchOptions?: ZarrLoaderFetchOptions;
 };
+
+export function pathToFileType(path: string): VolumeFileFormat {
+  if (path.endsWith(".json")) {
+    return VolumeFileFormat.JSON;
+  } else if (path.endsWith(".tif") || path.endsWith(".tiff")) {
+    return VolumeFileFormat.TIFF;
+  }
+  return VolumeFileFormat.ZARR;
+}
 
 export async function createVolumeLoader(
   path: string | string[],
   options?: CreateLoaderOptions
-): Promise<IVolumeLoader> {
-  const pathString = typeof path === "object" ? path[0] : path;
+): Promise<ThreadableVolumeLoader> {
+  const pathString = Array.isArray(path) ? path[0] : path;
+  const fileType = options?.fileType || pathToFileType(pathString);
 
-  switch (options?.fileType) {
+  switch (fileType) {
     case VolumeFileFormat.ZARR:
-      return await OMEZarrLoader.createLoader(pathString, options.scene, options.cache, options.concurrencyLimit);
+      return await OMEZarrLoader.createLoader(
+        path,
+        options?.scene,
+        options?.cache,
+        options?.queue,
+        options?.fetchOptions
+      );
     case VolumeFileFormat.JSON:
-      return new JsonImageInfoLoader(path, options.cache);
+      return new JsonImageInfoLoader(path, options?.cache);
     case VolumeFileFormat.TIFF:
       return new TiffLoader(pathString);
     case VolumeFileFormat.DATA:
