@@ -1,9 +1,10 @@
 import { Box3, Vector3 } from "three";
 
-import { IVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
+import { ThreadableVolumeLoader, LoadSpec, PerChannelCallback, VolumeDims } from "./IVolumeLoader";
 import { buildDefaultMetadata, computePackedAtlasDims } from "./VolumeLoaderUtils";
 import Volume, { ImageInfo } from "../Volume";
 import VolumeCache from "../VolumeCache";
+import { PrefetchDirection } from "./zarr_utils/types";
 
 // this is the form in which a 4D numpy array arrives as converted
 // by jupyterlab into a js object.
@@ -29,6 +30,11 @@ export type RawArrayInfo = {
   channelNames: string[];
   userData?: Record<string, unknown>;
 };
+
+export interface RawArrayLoaderOptions {
+  data: RawArrayData;
+  metadata: RawArrayInfo;
+}
 
 const convertImageInfo = (json: RawArrayInfo): ImageInfo => ({
   name: json.name,
@@ -62,7 +68,7 @@ const convertImageInfo = (json: RawArrayInfo): ImageInfo => ({
   userData: json.userData,
 });
 
-class RawArrayLoader implements IVolumeLoader {
+class RawArrayLoader extends ThreadableVolumeLoader {
   // one array per channel
   data: RawArrayData;
   jsonInfo: RawArrayInfo;
@@ -70,6 +76,7 @@ class RawArrayLoader implements IVolumeLoader {
   cache?: VolumeCache;
 
   constructor(rawData: RawArrayData, rawDataInfo: RawArrayInfo, cache?: VolumeCache) {
+    super();
     this.jsonInfo = rawDataInfo;
     this.data = rawData;
     // check consistent dims

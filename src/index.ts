@@ -12,6 +12,7 @@ import { VolumeFileFormat, createVolumeLoader, PrefetchDirection } from "./loade
 import { LoadSpec } from "./loaders/IVolumeLoader.js";
 import { OMEZarrLoader } from "./loaders/OmeZarrLoader.js";
 import { JsonImageInfoLoader } from "./loaders/JsonImageInfoLoader.js";
+import { RawArrayLoader, RawArrayData, RawArrayInfo } from "./loaders/RawArrayLoader.js";
 import { TiffLoader } from "./loaders/TiffLoader.js";
 import VolumeLoaderContext from "./workers/LoadWorkerHandle.js";
 
@@ -36,6 +37,9 @@ export {
   PrefetchDirection,
   OMEZarrLoader,
   JsonImageInfoLoader,
+  RawArrayLoader,
+  RawArrayData,
+  RawArrayInfo,
   TiffLoader,
   VolumeLoaderContext,
   VolumeFileFormat,

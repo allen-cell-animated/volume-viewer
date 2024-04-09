@@ -8,6 +8,8 @@ import {
   LoadSpec,
   Lut,
   JsonImageInfoLoader,
+  RawArrayInfo,
+  RawArrayData,
   View3d,
   Volume,
   VolumeMaker,
@@ -1030,6 +1032,7 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
 
   await loaderContext.onOpen();
 
+  const options: Partial<CreateLoaderOptions> = {};
   let path: string | string[] = data.url;
   if (data.type === VolumeFileFormat.JSON) {
     path = [];
@@ -1040,11 +1043,11 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
   } else if (data.type === VolumeFileFormat.DATA) {
     const volumeInfo = createTestVolume();
     options.fileType = VolumeFileFormat.DATA;
-    options.imageData = volumeInfo.volumeData;
-    options.imageDataInfo = volumeInfo.imgData;
+    options.rawArrayOptions = { data: volumeInfo.volumeData, metadata: volumeInfo.imgData };
   }
 
   return await loaderContext.createLoader(path, {
+    ...options,
     fetchOptions: { maxPrefetchDistance: PREFETCH_DISTANCE, maxPrefetchChunks: MAX_PREFETCH_CHUNKS },
   });
 }

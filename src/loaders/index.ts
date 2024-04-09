@@ -1,6 +1,7 @@
 import { ThreadableVolumeLoader } from "./IVolumeLoader.js";
 import { OMEZarrLoader, type ZarrLoaderFetchOptions } from "./OmeZarrLoader.js";
 import { JsonImageInfoLoader } from "./JsonImageInfoLoader.js";
+import { RawArrayLoader, RawArrayLoaderOptions } from "./RawArrayLoader.js";
 import { TiffLoader } from "./TiffLoader.js";
 import VolumeCache from "../VolumeCache.js";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue.js";
@@ -21,6 +22,7 @@ export type CreateLoaderOptions = {
   queue?: SubscribableRequestQueue;
   scene?: number;
   fetchOptions?: ZarrLoaderFetchOptions;
+  rawArrayOptions?: RawArrayLoaderOptions;
 };
 
 export function pathToFileType(path: string): VolumeFileFormat {
@@ -53,10 +55,10 @@ export async function createVolumeLoader(
     case VolumeFileFormat.TIFF:
       return new TiffLoader(pathString);
     case VolumeFileFormat.DATA:
-      if (!options?.imageData || !options?.imageDataInfo) {
-        throw new Error("Must provide imageData and imageDataInfo for RawArrayLoader");
+      if (!options?.rawArrayOptions) {
+        throw new Error("Must provide RawArrayOptions for RawArrayLoader");
       }
-      return new RawArrayLoader(options.imageData, options.imageDataInfo, options.cache);
+      return new RawArrayLoader(options?.rawArrayOptions.data, options?.rawArrayOptions.metadata, options?.cache);
     default:
       if (pathString.endsWith(".json")) {
         return new JsonImageInfoLoader(path, options?.cache);
