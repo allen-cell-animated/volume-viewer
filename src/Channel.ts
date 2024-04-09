@@ -242,9 +242,10 @@ export default class Channel {
       tileoffset = tilex * x + tiley * y * atlasrow;
       for (let j = 0; j < y; ++j) {
         tilerowoffset = j * atlasrow;
-        for (let k = 0; k < x; ++k) {
-          volimgdata[tileoffset + tilerowoffset + k] = this.volumeData[i * (x * y) + j * x + k];
-        }
+        volimgdata.set(
+          this.volumeData.subarray(i * (x * y) + j * x, i * (x * y) + j * x + x),
+          tileoffset + tilerowoffset
+        );
       }
     }
 
