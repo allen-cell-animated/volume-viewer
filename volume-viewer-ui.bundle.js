@@ -4265,8 +4265,12 @@ var View3d = /*#__PURE__*/function () {
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_2__["default"])(this, "handleKeydown", function (event) {
       // control-option-1 (mac) or ctrl-alt-1 (windows)
       if (event.code === "Digit1" && event.altKey && event.ctrlKey) {
-        _this.tweakpaneOpen = !_this.tweakpaneOpen;
-        _this.tweakpane.element.style.display = _this.tweakpaneOpen ? "block" : "none";
+        if (_this.tweakpane) {
+          _this.tweakpane.dispose();
+          _this.tweakpane = null;
+        } else {
+          _this.tweakpane = _this.setupGui(_this.canvas3d.containerdiv);
+        }
       }
     });
     var useWebGL2 = (options === null || options === void 0 ? void 0 : options.useWebGL2) === undefined ? true : options.useWebGL2;
@@ -4287,8 +4291,7 @@ var View3d = /*#__PURE__*/function () {
     this.reflectedLight = new three__WEBPACK_IMPORTED_MODULE_10__.DirectionalLight();
     this.fillLight = new three__WEBPACK_IMPORTED_MODULE_10__.DirectionalLight();
     this.buildScene();
-    this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
-    this.tweakpaneOpen = false;
+    this.tweakpane = null;
     window.addEventListener("keydown", this.handleKeydown);
   }
 
@@ -4453,8 +4456,8 @@ var View3d = /*#__PURE__*/function () {
       var _this$image4, _this$image5;
       (_this$image4 = this.image) === null || _this$image4 === void 0 || _this$image4.updateScale();
       (_this$image5 = this.image) === null || _this$image5 === void 0 || _this$image5.onChannelLoaded(channels);
-      if (volume.isLoaded()) {
-        this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
+      if (volume.isLoaded() && this.tweakpane) {
+        this.tweakpane.refresh();
       }
     }
 
@@ -5161,9 +5164,6 @@ var View3d = /*#__PURE__*/function () {
     key: "setupGui",
     value: function setupGui(container) {
       var _this$image45;
-      if (this.tweakpane) {
-        this.canvas3d.containerdiv.removeChild(this.tweakpane.element);
-      }
       var pane = new tweakpane__WEBPACK_IMPORTED_MODULE_3__.Pane({
         title: "Advanced Settings",
         container: container
@@ -5171,8 +5171,7 @@ var View3d = /*#__PURE__*/function () {
       var paneStyle = {
         position: "absolute",
         top: "0",
-        right: "0",
-        display: "none"
+        right: "0"
       };
       Object.assign(pane.element.style, paneStyle);
 
