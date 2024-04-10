@@ -74,7 +74,6 @@ const convertImageInfo = (json: RawArrayInfo): ImageInfo => ({
 });
 
 class RawArrayLoader extends ThreadableVolumeLoader {
-  // one array per channel
   data: RawArrayData;
   jsonInfo: RawArrayInfo;
 
@@ -119,8 +118,8 @@ class RawArrayLoader extends ThreadableVolumeLoader {
       if (requestedChannels && requestedChannels.length > 0 && !requestedChannels.includes(chindex)) {
         continue;
       }
-      const volsize = this.data.shape[3] * this.data.shape[2] * this.data.shape[1]; // x*y*z pixels * 1 byte/pixel
-      const channelData = new Uint8Array(this.data.buffer.buffer, chindex * volsize, volsize);
+      const volSizeBytes = this.data.shape[3] * this.data.shape[2] * this.data.shape[1]; // x*y*z pixels * 1 byte/pixel
+      const channelData = new Uint8Array(this.data.buffer.buffer, chindex * volSizeBytes, volSizeBytes);
       // all data coming from this loader is natively 8-bit
       onData([chindex], [channelData], [DATARANGE_UINT8]);
     }

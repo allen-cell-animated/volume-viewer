@@ -1022,7 +1022,7 @@ function createTestVolume(): RawArrayLoaderOptions {
       shape: [channelVolumes.length, sizeZ, sizeY, sizeX],
       // the bits (assumed uint8!!)
       buffer: new DataView(alldata.buffer),
-    } as RawArrayData,
+    },
   };
 }
 
