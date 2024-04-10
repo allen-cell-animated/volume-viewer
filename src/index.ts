@@ -13,7 +13,7 @@ import { LoadSpec } from "./loaders/IVolumeLoader.js";
 import { OMEZarrLoader } from "./loaders/OmeZarrLoader.js";
 import { JsonImageInfoLoader } from "./loaders/JsonImageInfoLoader.js";
 import { TiffLoader } from "./loaders/TiffLoader.js";
-import VolumeLoaderContext from "./workers/LoadWorkerHandle.js";
+import VolumeLoaderContext from "./workers/VolumeLoaderContext.js";
 
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light.js";
 
@@ -22,7 +22,7 @@ export type { ControlPoint } from "./Lut.js";
 export type { CreateLoaderOptions } from "./loaders/index.js";
 export type { IVolumeLoader, PerChannelCallback } from "./loaders/IVolumeLoader.js";
 export type { ZarrLoaderFetchOptions } from "./loaders/OmeZarrLoader.js";
-export type { WorkerLoader } from "./workers/LoadWorkerHandle.js";
+export type { WorkerLoader } from "./workers/VolumeLoaderContext.js";
 export {
   Histogram,
   Lut,
