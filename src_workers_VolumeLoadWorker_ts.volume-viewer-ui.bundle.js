@@ -173,7 +173,8 @@ var Channel = /*#__PURE__*/function () {
       var tilex = 0,
         tiley = 0,
         tileoffset = 0,
-        tilerowoffset = 0;
+        tilerowoffset = 0,
+        destOffset = 0;
       for (var i = 0; i < z; ++i) {
         // tile offset
         tilex = i % numXtiles;
@@ -181,9 +182,8 @@ var Channel = /*#__PURE__*/function () {
         tileoffset = tilex * x + tiley * y * atlasrow;
         for (var j = 0; j < y; ++j) {
           tilerowoffset = j * atlasrow;
-          for (var k = 0; k < x; ++k) {
-            this.volumeData[i * (x * y) + j * x + k] = volimgdata[tileoffset + tilerowoffset + k];
-          }
+          destOffset = i * (x * y) + j * x;
+          this.volumeData.set(volimgdata.subarray(tileoffset + tilerowoffset, tileoffset + tilerowoffset + x), destOffset);
         }
       }
     }
@@ -235,7 +235,8 @@ var Channel = /*#__PURE__*/function () {
       var tilex = 0,
         tiley = 0,
         tileoffset = 0,
-        tilerowoffset = 0;
+        tilerowoffset = 0,
+        sourceOffset = 0;
       for (var i = 0; i < z; ++i) {
         // tile offset
         tilex = i % numXtiles;
@@ -243,9 +244,8 @@ var Channel = /*#__PURE__*/function () {
         tileoffset = tilex * x + tiley * y * atlasrow;
         for (var j = 0; j < y; ++j) {
           tilerowoffset = j * atlasrow;
-          for (var k = 0; k < x; ++k) {
-            volimgdata[tileoffset + tilerowoffset + k] = this.volumeData[i * (x * y) + j * x + k];
-          }
+          sourceOffset = i * (x * y) + j * x;
+          volimgdata.set(this.volumeData.subarray(sourceOffset, sourceOffset + x), tileoffset + tilerowoffset);
         }
       }
       this.rebuildDataTexture(this.imgData.data, ax, ay);
