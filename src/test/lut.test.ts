@@ -551,7 +551,7 @@ describe("test remapping control points when raw data range is updated", () => {
     // therefore the cps should just outside of 64-192 are gone and
     // the new cp's capture only the ramp up from 64-192 in the original cp list.
     const positions = cp2.map((cp) => Math.round(cp.x));
-    expect(positions).to.include.members([0, 255]);
+    expect(positions).to.include.members([-127, 0, 255, 381]);
   });
   it("remaps the control points correctly when new intensity range expanded", () => {
     const cp: ControlPoint[] = [
@@ -585,6 +585,6 @@ describe("test remapping control points when raw data range is updated", () => {
      *     -64    64    192    320 (abs intensities)
      */
     const positions = cp2.map((cp) => Math.round(cp.x));
-    expect(positions).to.include.members([0, 85, 170, 255]);
+    expect(positions).to.include.members([43, 85, 170, 212]);
   });
 });

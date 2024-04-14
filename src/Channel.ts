@@ -51,7 +51,7 @@ export default class Channel {
     this.dtype = "uint8";
     this.imgData = { data: new Uint8Array(), width: 0, height: 0 };
     this.rawMin = 0;
-    this.rawMax = 0;
+    this.rawMax = 255;
 
     // on gpu
     this.dataTexture = new DataTexture(new Uint8Array(), 0, 0);
@@ -121,9 +121,9 @@ export default class Channel {
     // when one channel has arrived but others haven't.
     if (!(this.rawMin === 0 && this.rawMax === 0) && !(min === 0 && max === 0)) {
       this.lut.remapDomains(this.rawMin, this.rawMax, min, max);
+      this.rawMin = min;
+      this.rawMax = max;
     }
-    this.rawMin = min;
-    this.rawMax = max;
   }
 
   public getHistogram(): Histogram {
@@ -245,7 +245,8 @@ export default class Channel {
     let tilex = 0,
       tiley = 0,
       tileoffset = 0,
-      tilerowoffset = 0;
+      tilerowoffset = 0,
+      destOffset = 0;
     for (let i = 0; i < z; ++i) {
       // tile offset
       tilex = i % numXtiles;
@@ -253,9 +254,11 @@ export default class Channel {
       tileoffset = tilex * x + tiley * y * atlasrow;
       for (let j = 0; j < y; ++j) {
         tilerowoffset = j * atlasrow;
-        for (let k = 0; k < x; ++k) {
-          this.volumeData[i * (x * y) + j * x + k] = volimgdata[tileoffset + tilerowoffset + k];
-        }
+        destOffset = i * (x * y) + j * x;
+        this.volumeData.set(
+          volimgdata.subarray(tileoffset + tilerowoffset, tileoffset + tilerowoffset + x),
+          destOffset
+        );
       }
     }
   }
@@ -316,7 +319,8 @@ export default class Channel {
     let tilex = 0,
       tiley = 0,
       tileoffset = 0,
-      tilerowoffset = 0;
+      tilerowoffset = 0,
+      sourceOffset = 0;
     for (let i = 0; i < z; ++i) {
       // tile offset
       tilex = i % numXtiles;
@@ -324,9 +328,8 @@ export default class Channel {
       tileoffset = tilex * x + tiley * y * atlasrow;
       for (let j = 0; j < y; ++j) {
         tilerowoffset = j * atlasrow;
-        for (let k = 0; k < x; ++k) {
-          volimgdata[tileoffset + tilerowoffset + k] = this.volumeData[i * (x * y) + j * x + k];
-        }
+        sourceOffset = i * (x * y) + j * x;
+        volimgdata.set(this.volumeData.subarray(sourceOffset, sourceOffset + x), tileoffset + tilerowoffset);
       }
     }
 

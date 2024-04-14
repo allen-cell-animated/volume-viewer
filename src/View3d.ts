@@ -55,8 +55,7 @@ export class View3d {
   private reflectedLight: DirectionalLight;
   private fillLight: DirectionalLight;
 
-  private tweakpane: Pane;
-  private tweakpaneOpen: boolean;
+  private tweakpane: Pane | null;
 
   /**
    * @param {Object} options Optional options.
@@ -86,8 +85,7 @@ export class View3d {
     this.fillLight = new DirectionalLight();
     this.buildScene();
 
-    this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
-    this.tweakpaneOpen = false;
+    this.tweakpane = null;
     window.addEventListener("keydown", this.handleKeydown);
   }
 
@@ -220,8 +218,8 @@ export class View3d {
   onVolumeData(volume: Volume, channels: number[]): void {
     this.image?.updateScale();
     this.image?.onChannelLoaded(channels);
-    if (volume.isLoaded()) {
-      this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
+    if (volume.isLoaded() && this.tweakpane) {
+      this.tweakpane.refresh();
     }
   }
 
@@ -292,25 +290,6 @@ export class View3d {
   }
 
   /**
-   * If an isosurface is not already created, then create one.  Otherwise change the isovalue of the existing isosurface.
-   * @param {Object} volume
-   * @param {number} channel
-   * @param {number} isovalue isovalue
-   * @param {number=} alpha Opacity
-   */
-  createIsosurface(volume: Volume, channel: number, isovalue: number, alpha: number): void {
-    if (!this.image) {
-      return;
-    }
-    if (this.image.hasIsosurface(channel)) {
-      this.image.updateIsovalue(channel, isovalue);
-    } else {
-      this.image.createIsosurface(channel, isovalue, alpha, alpha < 0.95);
-    }
-    this.redraw();
-  }
-
-  /**
    * Is an isosurface already created for this channel?
    * @param {Object} volume
    * @param {number} channel
@@ -318,41 +297,6 @@ export class View3d {
    */
   hasIsosurface(volume: Volume, channel: number): boolean {
     return this.image?.hasIsosurface(channel) || false;
-  }
-
-  /**
-   * If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
-   * @param {Object} volume
-   * @param {number} channel
-   * @param {number} isovalue
-   */
-  updateIsosurface(volume: Volume, channel: number, isovalue: number): void {
-    if (!this.image || !this.image.hasIsosurface(channel)) {
-      return;
-    }
-    this.image.updateIsovalue(channel, isovalue);
-    this.redraw();
-  }
-
-  /**
-   * Set opacity for isosurface
-   * @param {Object} volume
-   * @param {number} channel
-   * @param {number} opacity Opacity
-   */
-  updateOpacity(volume: Volume, channel: number, opacity: number): void {
-    this.image?.updateOpacity(channel, opacity);
-    this.redraw();
-  }
-
-  /**
-   * If an isosurface exists for this channel, hide it now
-   * @param {Object} volume
-   * @param {number} channel
-   */
-  clearIsosurface(volume: Volume, channel: number): void {
-    this.image?.destroyIsosurface(channel);
-    this.redraw();
   }
 
   /**
@@ -902,8 +846,12 @@ export class View3d {
   handleKeydown = (event: KeyboardEvent): void => {
     // control-option-1 (mac) or ctrl-alt-1 (windows)
     if (event.code === "Digit1" && event.altKey && event.ctrlKey) {
-      this.tweakpaneOpen = !this.tweakpaneOpen;
-      this.tweakpane.element.style.display = this.tweakpaneOpen ? "block" : "none";
+      if (this.tweakpane) {
+        this.tweakpane.dispose();
+        this.tweakpane = null;
+      } else {
+        this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
+      }
     }
   };
 
@@ -912,16 +860,11 @@ export class View3d {
   }
 
   private setupGui(container: HTMLElement): Pane {
-    if (this.tweakpane) {
-      this.canvas3d.containerdiv.removeChild(this.tweakpane.element);
-    }
-
     const pane = new Pane({ title: "Advanced Settings", container });
     const paneStyle: Partial<CSSStyleDeclaration> = {
       position: "absolute",
       top: "0",
       right: "0",
-      display: "none",
     };
     Object.assign(pane.element.style, paneStyle);
 
