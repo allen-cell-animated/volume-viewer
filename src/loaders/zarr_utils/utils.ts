@@ -119,7 +119,7 @@ function compareZarrArraySize(
   }
 }
 
-const EPSILON = 0.0000001;
+const EPSILON = 0.00001;
 const aboutEquals = (a: number, b: number): boolean => Math.abs(a - b) < EPSILON;
 
 function scaleTransformsAreEqual(aSrc: ZarrSource, aLevel: number, bSrc: ZarrSource, bLevel: number): boolean {
@@ -168,7 +168,10 @@ export function matchSourceScaleLevels(sources: ZarrSource[]): void {
         // Now we know the arrays are equal, but they may still be invalid to match up because...
         // ...they have different scale transformations
         if (!scaleTransformsAreEqual(smallestSrc, scaleIndexes[smallestIdx], currentSrc, scaleIndexes[currentIdx])) {
-          throw new Error("Incompatible zarr arrays: scale levels of equal size have different scale transformations");
+          // today we are going to treat this as a warning.
+          // For our implementation it is enough that the xyz pixel ranges are the same.
+          // Ideally scale*arraysize=physical size is really the quantity that should be equal, for combining two volume data sets as channels.
+          console.warn("Incompatible zarr arrays: scale transformations are different.");
         }
         // ...they have different numbers of timesteps
         const largestT = smallestSrc.axesTCZYX[0] > -1 ? smallestArr.shape[smallestSrc.axesTCZYX[0]] : 1;
