@@ -3072,6 +3072,199 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
 
 /***/ }),
 
+/***/ "./src/loaders/RawArrayLoader.ts":
+/*!***************************************!*\
+  !*** ./src/loaders/RawArrayLoader.ts ***!
+  \***************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   RawArrayLoader: () => (/* binding */ RawArrayLoader)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
+/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
+/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__);
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
+
+
+
+
+
+
+
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+
+function _callSuper(t, o, e) { return o = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(o), (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__["default"])(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(t).constructor) : o.apply(t, e)); }
+function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
+
+
+
+
+
+// this is the form in which a 4D numpy array arrives as converted
+// by jupyterlab into a js object.
+// This loader does not yet support multiple time samples.
+
+// minimal metadata for visualization
+
+var convertImageInfo = function convertImageInfo(json) {
+  return {
+    name: json.name,
+    // assumption: the data is already sized to fit in our viewer's preferred
+    // memory footprint (a tiled atlas texture as of this writing)
+    originalSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(json.sizeX, json.sizeY, json.sizeZ),
+    atlasTileDims: (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.computePackedAtlasDims)(json.sizeZ, json.sizeX, json.sizeY),
+    volumeSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(json.sizeX, json.sizeY, json.sizeZ),
+    subregionSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(json.sizeX, json.sizeY, json.sizeZ),
+    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0),
+    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(json.physicalPixelSize[0], json.physicalPixelSize[1], json.physicalPixelSize[2]),
+    spatialUnit: json.spatialUnit || "μm",
+    numChannels: json.sizeC,
+    channelNames: json.channelNames,
+    channelColors: undefined,
+    //json.channelColors,
+
+    times: 1,
+    timeScale: 1,
+    timeUnit: "s",
+    numMultiscaleLevels: 1,
+    multiscaleLevel: 0,
+    transform: {
+      translation: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0),
+      rotation: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0)
+    },
+    userData: json.userData
+  };
+};
+var RawArrayLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
+  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_6__["default"])(RawArrayLoader, _ThreadableVolumeLoad);
+  function RawArrayLoader(rawData, rawDataInfo) {
+    var _this;
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, RawArrayLoader);
+    _this = _callSuper(this, RawArrayLoader);
+    _this.jsonInfo = rawDataInfo;
+    _this.data = rawData;
+    // check consistent dims
+    if (_this.data.shape[0] !== _this.jsonInfo.sizeC || _this.data.shape[1] !== _this.jsonInfo.sizeZ || _this.data.shape[2] !== _this.jsonInfo.sizeY || _this.data.shape[3] !== _this.jsonInfo.sizeX) {
+      throw new Error("RawArrayLoader: data shape does not match metadata");
+    }
+    return _this;
+  }
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(RawArrayLoader, [{
+    key: "loadDims",
+    value: function () {
+      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee(_loadSpec) {
+        var jsonInfo, d;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee$(_context) {
+          while (1) switch (_context.prev = _context.next) {
+            case 0:
+              jsonInfo = this.jsonInfo;
+              d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.VolumeDims();
+              d.shape = [1, jsonInfo.sizeC, jsonInfo.sizeZ, jsonInfo.sizeY, jsonInfo.sizeX];
+              d.spacing = [1, 1, jsonInfo.physicalPixelSize[2], jsonInfo.physicalPixelSize[1], jsonInfo.physicalPixelSize[0]];
+              d.spaceUnit = jsonInfo.spatialUnit || "μm";
+              d.dataType = "uint8";
+              return _context.abrupt("return", [d]);
+            case 7:
+            case "end":
+              return _context.stop();
+          }
+        }, _callee, this);
+      }));
+      function loadDims(_x) {
+        return _loadDims.apply(this, arguments);
+      }
+      return loadDims;
+    }()
+  }, {
+    key: "createImageInfo",
+    value: function () {
+      var _createImageInfo = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee2(loadSpec) {
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee2$(_context2) {
+          while (1) switch (_context2.prev = _context2.next) {
+            case 0:
+              return _context2.abrupt("return", {
+                imageInfo: convertImageInfo(this.jsonInfo),
+                loadSpec: loadSpec
+              });
+            case 1:
+            case "end":
+              return _context2.stop();
+          }
+        }, _callee2, this);
+      }));
+      function createImageInfo(_x2) {
+        return _createImageInfo.apply(this, arguments);
+      }
+      return createImageInfo;
+    }()
+  }, {
+    key: "loadRawChannelData",
+    value: function () {
+      var _loadRawChannelData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee3(imageInfo, loadSpec, onData) {
+        var requestedChannels, chindex, volSizeBytes, channelData, adjustedLoadSpec;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee3$(_context3) {
+          while (1) switch (_context3.prev = _context3.next) {
+            case 0:
+              requestedChannels = loadSpec.channels;
+              chindex = 0;
+            case 2:
+              if (!(chindex < imageInfo.numChannels)) {
+                _context3.next = 11;
+                break;
+              }
+              if (!(requestedChannels && requestedChannels.length > 0 && !requestedChannels.includes(chindex))) {
+                _context3.next = 5;
+                break;
+              }
+              return _context3.abrupt("continue", 8);
+            case 5:
+              volSizeBytes = this.data.shape[3] * this.data.shape[2] * this.data.shape[1]; // x*y*z pixels * 1 byte/pixel
+              channelData = new Uint8Array(this.data.buffer.buffer, chindex * volSizeBytes, volSizeBytes); // all data coming from this loader is natively 8-bit
+              onData([chindex], [channelData], [_types_js__WEBPACK_IMPORTED_MODULE_10__.DATARANGE_UINT8]);
+            case 8:
+              ++chindex;
+              _context3.next = 2;
+              break;
+            case 11:
+              adjustedLoadSpec = _objectSpread(_objectSpread({}, loadSpec), {}, {
+                // `subregion` and `multiscaleLevel` are unused by this loader
+                subregion: new three__WEBPACK_IMPORTED_MODULE_11__.Box3(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(1, 1, 1)),
+                multiscaleLevel: 0
+              });
+              return _context3.abrupt("return", {
+                loadSpec: adjustedLoadSpec
+              });
+            case 13:
+            case "end":
+              return _context3.stop();
+          }
+        }, _callee3, this);
+      }));
+      function loadRawChannelData(_x3, _x4, _x5) {
+        return _loadRawChannelData.apply(this, arguments);
+      }
+      return loadRawChannelData;
+    }()
+  }]);
+  return RawArrayLoader;
+}(_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.ThreadableVolumeLoader);
+
+
+/***/ }),
+
 /***/ "./src/loaders/TiffLoader.ts":
 /*!***********************************!*\
   !*** ./src/loaders/TiffLoader.ts ***!
@@ -3623,7 +3816,7 @@ function buildDefaultMetadata(imageInfo) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _zarr_utils_types_js__WEBPACK_IMPORTED_MODULE_5__.PrefetchDirection),
+/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _zarr_utils_types_js__WEBPACK_IMPORTED_MODULE_6__.PrefetchDirection),
 /* harmony export */   VolumeFileFormat: () => (/* binding */ VolumeFileFormat),
 /* harmony export */   createVolumeLoader: () => (/* binding */ createVolumeLoader),
 /* harmony export */   pathToFileType: () => (/* binding */ pathToFileType)
@@ -3633,8 +3826,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var _OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./OmeZarrLoader.js */ "./src/loaders/OmeZarrLoader.ts");
 /* harmony import */ var _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
-/* harmony import */ var _TiffLoader_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./TiffLoader.js */ "./src/loaders/TiffLoader.ts");
-/* harmony import */ var _zarr_utils_types_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./zarr_utils/types.js */ "./src/loaders/zarr_utils/types.ts");
+/* harmony import */ var _RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./RawArrayLoader.js */ "./src/loaders/RawArrayLoader.ts");
+/* harmony import */ var _TiffLoader_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./TiffLoader.js */ "./src/loaders/TiffLoader.ts");
+/* harmony import */ var _zarr_utils_types_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./zarr_utils/types.js */ "./src/loaders/zarr_utils/types.ts");
+
 
 
 
@@ -3645,8 +3840,12 @@ var VolumeFileFormat = /*#__PURE__*/function (VolumeFileFormat) {
   VolumeFileFormat["ZARR"] = "zarr";
   VolumeFileFormat["JSON"] = "json";
   VolumeFileFormat["TIFF"] = "tiff";
+  VolumeFileFormat["DATA"] = "data";
   return VolumeFileFormat;
 }({});
+
+// superset of all necessary loader options
+
 function pathToFileType(path) {
   if (path.endsWith(".json")) {
     return VolumeFileFormat.JSON;
@@ -3667,7 +3866,7 @@ function _createVolumeLoader() {
           pathString = Array.isArray(path) ? path[0] : path;
           fileType = (options === null || options === void 0 ? void 0 : options.fileType) || pathToFileType(pathString);
           _context.t0 = fileType;
-          _context.next = _context.t0 === VolumeFileFormat.ZARR ? 5 : _context.t0 === VolumeFileFormat.JSON ? 8 : _context.t0 === VolumeFileFormat.TIFF ? 9 : 10;
+          _context.next = _context.t0 === VolumeFileFormat.ZARR ? 5 : _context.t0 === VolumeFileFormat.JSON ? 8 : _context.t0 === VolumeFileFormat.TIFF ? 9 : _context.t0 === VolumeFileFormat.DATA ? 10 : 13;
           break;
         case 5:
           _context.next = 7;
@@ -3677,8 +3876,16 @@ function _createVolumeLoader() {
         case 8:
           return _context.abrupt("return", new _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_3__.JsonImageInfoLoader(path, options === null || options === void 0 ? void 0 : options.cache));
         case 9:
-          return _context.abrupt("return", new _TiffLoader_js__WEBPACK_IMPORTED_MODULE_4__.TiffLoader(pathString));
+          return _context.abrupt("return", new _TiffLoader_js__WEBPACK_IMPORTED_MODULE_5__.TiffLoader(pathString));
         case 10:
+          if (options !== null && options !== void 0 && options.rawArrayOptions) {
+            _context.next = 12;
+            break;
+          }
+          throw new Error("Must provide RawArrayOptions for RawArrayLoader");
+        case 12:
+          return _context.abrupt("return", new _RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_4__.RawArrayLoader(options === null || options === void 0 ? void 0 : options.rawArrayOptions.data, options === null || options === void 0 ? void 0 : options.rawArrayOptions.metadata));
+        case 13:
         case "end":
           return _context.stop();
       }

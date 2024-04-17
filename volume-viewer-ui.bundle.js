@@ -7925,27 +7925,28 @@ var sliceShaderUniforms = function sliceShaderUniforms() {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   AREA_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_16__.AREA_LIGHT),
+/* harmony export */   AREA_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_17__.AREA_LIGHT),
 /* harmony export */   Channel: () => (/* reexport safe */ _Channel_js__WEBPACK_IMPORTED_MODULE_2__["default"]),
 /* harmony export */   Histogram: () => (/* reexport safe */ _Histogram_js__WEBPACK_IMPORTED_MODULE_7__["default"]),
 /* harmony export */   JsonImageInfoLoader: () => (/* reexport safe */ _loaders_JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_13__.JsonImageInfoLoader),
-/* harmony export */   Light: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_16__.Light),
+/* harmony export */   Light: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_17__.Light),
 /* harmony export */   LoadSpec: () => (/* reexport safe */ _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__.LoadSpec),
 /* harmony export */   Lut: () => (/* reexport safe */ _Lut_js__WEBPACK_IMPORTED_MODULE_8__.Lut),
 /* harmony export */   OMEZarrLoader: () => (/* reexport safe */ _loaders_OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_12__.OMEZarrLoader),
 /* harmony export */   PrefetchDirection: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__.PrefetchDirection),
 /* harmony export */   RENDERMODE_PATHTRACE: () => (/* reexport safe */ _View3d_js__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_PATHTRACE),
 /* harmony export */   RENDERMODE_RAYMARCH: () => (/* reexport safe */ _View3d_js__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_RAYMARCH),
+/* harmony export */   RawArrayLoader: () => (/* reexport safe */ _loaders_RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_14__.RawArrayLoader),
 /* harmony export */   RequestQueue: () => (/* reexport safe */ _utils_RequestQueue_js__WEBPACK_IMPORTED_MODULE_5__["default"]),
-/* harmony export */   SKY_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_16__.SKY_LIGHT),
+/* harmony export */   SKY_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_17__.SKY_LIGHT),
 /* harmony export */   SubscribableRequestQueue: () => (/* reexport safe */ _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_6__["default"]),
-/* harmony export */   TiffLoader: () => (/* reexport safe */ _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_14__.TiffLoader),
+/* harmony export */   TiffLoader: () => (/* reexport safe */ _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_15__.TiffLoader),
 /* harmony export */   View3d: () => (/* reexport safe */ _View3d_js__WEBPACK_IMPORTED_MODULE_0__.View3d),
 /* harmony export */   ViewportCorner: () => (/* reexport safe */ _types_js__WEBPACK_IMPORTED_MODULE_9__.ViewportCorner),
 /* harmony export */   Volume: () => (/* reexport safe */ _Volume_js__WEBPACK_IMPORTED_MODULE_1__["default"]),
 /* harmony export */   VolumeCache: () => (/* reexport safe */ _VolumeCache_js__WEBPACK_IMPORTED_MODULE_4__["default"]),
 /* harmony export */   VolumeFileFormat: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__.VolumeFileFormat),
-/* harmony export */   VolumeLoaderContext: () => (/* reexport safe */ _workers_LoadWorkerHandle_js__WEBPACK_IMPORTED_MODULE_15__["default"]),
+/* harmony export */   VolumeLoaderContext: () => (/* reexport safe */ _workers_LoadWorkerHandle_js__WEBPACK_IMPORTED_MODULE_16__["default"]),
 /* harmony export */   VolumeMaker: () => (/* reexport safe */ _VolumeMaker_js__WEBPACK_IMPORTED_MODULE_3__["default"]),
 /* harmony export */   createVolumeLoader: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__.createVolumeLoader)
 /* harmony export */ });
@@ -7963,9 +7964,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./loaders/IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _loaders_OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./loaders/OmeZarrLoader.js */ "./src/loaders/OmeZarrLoader.ts");
 /* harmony import */ var _loaders_JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./loaders/JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
-/* harmony import */ var _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./loaders/TiffLoader.js */ "./src/loaders/TiffLoader.ts");
-/* harmony import */ var _workers_LoadWorkerHandle_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./workers/LoadWorkerHandle.js */ "./src/workers/LoadWorkerHandle.ts");
-/* harmony import */ var _Light_js__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ./Light.js */ "./src/Light.ts");
+/* harmony import */ var _loaders_RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./loaders/RawArrayLoader.js */ "./src/loaders/RawArrayLoader.ts");
+/* harmony import */ var _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./loaders/TiffLoader.js */ "./src/loaders/TiffLoader.ts");
+/* harmony import */ var _workers_LoadWorkerHandle_js__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ./workers/LoadWorkerHandle.js */ "./src/workers/LoadWorkerHandle.ts");
+/* harmony import */ var _Light_js__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ./Light.js */ "./src/Light.ts");
+
 
 
 
@@ -9368,6 +9371,199 @@ var OpenCellLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
 
 /***/ }),
 
+/***/ "./src/loaders/RawArrayLoader.ts":
+/*!***************************************!*\
+  !*** ./src/loaders/RawArrayLoader.ts ***!
+  \***************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   RawArrayLoader: () => (/* binding */ RawArrayLoader)
+/* harmony export */ });
+/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
+/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
+/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
+/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
+/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
+/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
+/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__);
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./VolumeLoaderUtils */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
+
+
+
+
+
+
+
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+
+function _callSuper(t, o, e) { return o = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(o), (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__["default"])(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(t).constructor) : o.apply(t, e)); }
+function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
+
+
+
+
+
+// this is the form in which a 4D numpy array arrives as converted
+// by jupyterlab into a js object.
+// This loader does not yet support multiple time samples.
+
+// minimal metadata for visualization
+
+var convertImageInfo = function convertImageInfo(json) {
+  return {
+    name: json.name,
+    // assumption: the data is already sized to fit in our viewer's preferred
+    // memory footprint (a tiled atlas texture as of this writing)
+    originalSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(json.sizeX, json.sizeY, json.sizeZ),
+    atlasTileDims: (0,_VolumeLoaderUtils__WEBPACK_IMPORTED_MODULE_9__.computePackedAtlasDims)(json.sizeZ, json.sizeX, json.sizeY),
+    volumeSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(json.sizeX, json.sizeY, json.sizeZ),
+    subregionSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(json.sizeX, json.sizeY, json.sizeZ),
+    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0),
+    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(json.physicalPixelSize[0], json.physicalPixelSize[1], json.physicalPixelSize[2]),
+    spatialUnit: json.spatialUnit || "μm",
+    numChannels: json.sizeC,
+    channelNames: json.channelNames,
+    channelColors: undefined,
+    //json.channelColors,
+
+    times: 1,
+    timeScale: 1,
+    timeUnit: "s",
+    numMultiscaleLevels: 1,
+    multiscaleLevel: 0,
+    transform: {
+      translation: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0),
+      rotation: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0)
+    },
+    userData: json.userData
+  };
+};
+var RawArrayLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
+  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_6__["default"])(RawArrayLoader, _ThreadableVolumeLoad);
+  function RawArrayLoader(rawData, rawDataInfo) {
+    var _this;
+    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, RawArrayLoader);
+    _this = _callSuper(this, RawArrayLoader);
+    _this.jsonInfo = rawDataInfo;
+    _this.data = rawData;
+    // check consistent dims
+    if (_this.data.shape[0] !== _this.jsonInfo.sizeC || _this.data.shape[1] !== _this.jsonInfo.sizeZ || _this.data.shape[2] !== _this.jsonInfo.sizeY || _this.data.shape[3] !== _this.jsonInfo.sizeX) {
+      throw new Error("RawArrayLoader: data shape does not match metadata");
+    }
+    return _this;
+  }
+  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(RawArrayLoader, [{
+    key: "loadDims",
+    value: function () {
+      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee(_loadSpec) {
+        var jsonInfo, d;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee$(_context) {
+          while (1) switch (_context.prev = _context.next) {
+            case 0:
+              jsonInfo = this.jsonInfo;
+              d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.VolumeDims();
+              d.shape = [1, jsonInfo.sizeC, jsonInfo.sizeZ, jsonInfo.sizeY, jsonInfo.sizeX];
+              d.spacing = [1, 1, jsonInfo.physicalPixelSize[2], jsonInfo.physicalPixelSize[1], jsonInfo.physicalPixelSize[0]];
+              d.spaceUnit = jsonInfo.spatialUnit || "μm";
+              d.dataType = "uint8";
+              return _context.abrupt("return", [d]);
+            case 7:
+            case "end":
+              return _context.stop();
+          }
+        }, _callee, this);
+      }));
+      function loadDims(_x) {
+        return _loadDims.apply(this, arguments);
+      }
+      return loadDims;
+    }()
+  }, {
+    key: "createImageInfo",
+    value: function () {
+      var _createImageInfo = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee2(loadSpec) {
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee2$(_context2) {
+          while (1) switch (_context2.prev = _context2.next) {
+            case 0:
+              return _context2.abrupt("return", {
+                imageInfo: convertImageInfo(this.jsonInfo),
+                loadSpec: loadSpec
+              });
+            case 1:
+            case "end":
+              return _context2.stop();
+          }
+        }, _callee2, this);
+      }));
+      function createImageInfo(_x2) {
+        return _createImageInfo.apply(this, arguments);
+      }
+      return createImageInfo;
+    }()
+  }, {
+    key: "loadRawChannelData",
+    value: function () {
+      var _loadRawChannelData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee3(imageInfo, loadSpec, onData) {
+        var requestedChannels, chindex, volSizeBytes, channelData, adjustedLoadSpec;
+        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee3$(_context3) {
+          while (1) switch (_context3.prev = _context3.next) {
+            case 0:
+              requestedChannels = loadSpec.channels;
+              chindex = 0;
+            case 2:
+              if (!(chindex < imageInfo.numChannels)) {
+                _context3.next = 11;
+                break;
+              }
+              if (!(requestedChannels && requestedChannels.length > 0 && !requestedChannels.includes(chindex))) {
+                _context3.next = 5;
+                break;
+              }
+              return _context3.abrupt("continue", 8);
+            case 5:
+              volSizeBytes = this.data.shape[3] * this.data.shape[2] * this.data.shape[1]; // x*y*z pixels * 1 byte/pixel
+              channelData = new Uint8Array(this.data.buffer.buffer, chindex * volSizeBytes, volSizeBytes); // all data coming from this loader is natively 8-bit
+              onData([chindex], [channelData], [_types_js__WEBPACK_IMPORTED_MODULE_10__.DATARANGE_UINT8]);
+            case 8:
+              ++chindex;
+              _context3.next = 2;
+              break;
+            case 11:
+              adjustedLoadSpec = _objectSpread(_objectSpread({}, loadSpec), {}, {
+                // `subregion` and `multiscaleLevel` are unused by this loader
+                subregion: new three__WEBPACK_IMPORTED_MODULE_11__.Box3(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(1, 1, 1)),
+                multiscaleLevel: 0
+              });
+              return _context3.abrupt("return", {
+                loadSpec: adjustedLoadSpec
+              });
+            case 13:
+            case "end":
+              return _context3.stop();
+          }
+        }, _callee3, this);
+      }));
+      function loadRawChannelData(_x3, _x4, _x5) {
+        return _loadRawChannelData.apply(this, arguments);
+      }
+      return loadRawChannelData;
+    }()
+  }]);
+  return RawArrayLoader;
+}(_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.ThreadableVolumeLoader);
+
+
+/***/ }),
+
 /***/ "./src/loaders/TiffLoader.ts":
 /*!***********************************!*\
   !*** ./src/loaders/TiffLoader.ts ***!
@@ -9919,7 +10115,7 @@ function buildDefaultMetadata(imageInfo) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _zarr_utils_types_js__WEBPACK_IMPORTED_MODULE_5__.PrefetchDirection),
+/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _zarr_utils_types_js__WEBPACK_IMPORTED_MODULE_6__.PrefetchDirection),
 /* harmony export */   VolumeFileFormat: () => (/* binding */ VolumeFileFormat),
 /* harmony export */   createVolumeLoader: () => (/* binding */ createVolumeLoader),
 /* harmony export */   pathToFileType: () => (/* binding */ pathToFileType)
@@ -9929,8 +10125,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var _OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./OmeZarrLoader.js */ "./src/loaders/OmeZarrLoader.ts");
 /* harmony import */ var _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
-/* harmony import */ var _TiffLoader_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./TiffLoader.js */ "./src/loaders/TiffLoader.ts");
-/* harmony import */ var _zarr_utils_types_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./zarr_utils/types.js */ "./src/loaders/zarr_utils/types.ts");
+/* harmony import */ var _RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./RawArrayLoader.js */ "./src/loaders/RawArrayLoader.ts");
+/* harmony import */ var _TiffLoader_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./TiffLoader.js */ "./src/loaders/TiffLoader.ts");
+/* harmony import */ var _zarr_utils_types_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./zarr_utils/types.js */ "./src/loaders/zarr_utils/types.ts");
+
 
 
 
@@ -9941,8 +10139,12 @@ var VolumeFileFormat = /*#__PURE__*/function (VolumeFileFormat) {
   VolumeFileFormat["ZARR"] = "zarr";
   VolumeFileFormat["JSON"] = "json";
   VolumeFileFormat["TIFF"] = "tiff";
+  VolumeFileFormat["DATA"] = "data";
   return VolumeFileFormat;
 }({});
+
+// superset of all necessary loader options
+
 function pathToFileType(path) {
   if (path.endsWith(".json")) {
     return VolumeFileFormat.JSON;
@@ -9963,7 +10165,7 @@ function _createVolumeLoader() {
           pathString = Array.isArray(path) ? path[0] : path;
           fileType = (options === null || options === void 0 ? void 0 : options.fileType) || pathToFileType(pathString);
           _context.t0 = fileType;
-          _context.next = _context.t0 === VolumeFileFormat.ZARR ? 5 : _context.t0 === VolumeFileFormat.JSON ? 8 : _context.t0 === VolumeFileFormat.TIFF ? 9 : 10;
+          _context.next = _context.t0 === VolumeFileFormat.ZARR ? 5 : _context.t0 === VolumeFileFormat.JSON ? 8 : _context.t0 === VolumeFileFormat.TIFF ? 9 : _context.t0 === VolumeFileFormat.DATA ? 10 : 13;
           break;
         case 5:
           _context.next = 7;
@@ -9973,8 +10175,16 @@ function _createVolumeLoader() {
         case 8:
           return _context.abrupt("return", new _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_3__.JsonImageInfoLoader(path, options === null || options === void 0 ? void 0 : options.cache));
         case 9:
-          return _context.abrupt("return", new _TiffLoader_js__WEBPACK_IMPORTED_MODULE_4__.TiffLoader(pathString));
+          return _context.abrupt("return", new _TiffLoader_js__WEBPACK_IMPORTED_MODULE_5__.TiffLoader(pathString));
         case 10:
+          if (options !== null && options !== void 0 && options.rawArrayOptions) {
+            _context.next = 12;
+            break;
+          }
+          throw new Error("Must provide RawArrayOptions for RawArrayLoader");
+        case 12:
+          return _context.abrupt("return", new _RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_4__.RawArrayLoader(options === null || options === void 0 ? void 0 : options.rawArrayOptions.data, options === null || options === void 0 ? void 0 : options.rawArrayOptions.metadata));
+        case 13:
         case "end":
           return _context.stop();
       }
@@ -11470,9 +11680,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9__);
 /* harmony import */ var _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../loaders/index.js */ "./src/loaders/index.ts");
 /* harmony import */ var _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ../loaders/IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../loaders/TiffLoader.js */ "./src/loaders/TiffLoader.ts");
-/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./types.js */ "./src/workers/types.ts");
-/* harmony import */ var _util_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./util.js */ "./src/workers/util.ts");
+/* harmony import */ var _loaders_RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ../loaders/RawArrayLoader.js */ "./src/loaders/RawArrayLoader.ts");
+/* harmony import */ var _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ../loaders/TiffLoader.js */ "./src/loaders/TiffLoader.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./types.js */ "./src/workers/types.ts");
+/* harmony import */ var _util_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./util.js */ "./src/workers/util.ts");
 
 
 
@@ -11488,6 +11699,7 @@ function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.
 function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function (_e) { function e(_x7) { return _e.apply(this, arguments); } e.toString = function () { return _e.toString(); }; return e; }(function (e) { throw e; }), f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function (_e2) { function e(_x8) { return _e2.apply(this, arguments); } e.toString = function () { return _e2.toString(); }; return e; }(function (e) { didErr = true; err = e; }), f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
 function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
+
 
 
 
@@ -11581,7 +11793,7 @@ var SharedLoadWorkerHandle = /*#__PURE__*/function () {
     key: "receiveMessage",
     value: function receiveMessage(_ref) {
       var data = _ref.data;
-      if (data.responseResult === _types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerResponseResult.EVENT) {
+      if (data.responseResult === _types_js__WEBPACK_IMPORTED_MODULE_14__.WorkerResponseResult.EVENT) {
         var _this$onChannelData;
         (_this$onChannelData = this.onChannelData) === null || _this$onChannelData === void 0 || _this$onChannelData.call(this, data);
       } else {
@@ -11592,7 +11804,7 @@ var SharedLoadWorkerHandle = /*#__PURE__*/function () {
         if (prom.type !== data.type) {
           throw new Error("Received response of type ".concat(data.type, " for message of type ").concat(prom.type));
         }
-        if (data.responseResult === _types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerResponseResult.ERROR) {
+        if (data.responseResult === _types_js__WEBPACK_IMPORTED_MODULE_14__.WorkerResponseResult.ERROR) {
           prom.reject(data.payload);
         } else {
           prom.resolve(data.payload);
@@ -11623,7 +11835,7 @@ var VolumeLoaderContext = /*#__PURE__*/function () {
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_8__["default"])(this, "activeLoader", undefined);
     (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_8__["default"])(this, "activeLoaderId", -1);
     this.workerHandle = new SharedLoadWorkerHandle();
-    this.openPromise = this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.INIT, {
+    this.openPromise = this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_14__.WorkerMsgType.INIT, {
       maxCacheSize: maxCacheSize,
       maxActiveRequests: maxActiveRequests,
       maxLowPriorityRequests: maxLowPriorityRequests
@@ -11667,29 +11879,41 @@ var VolumeLoaderContext = /*#__PURE__*/function () {
               pathString = Array.isArray(path) ? path[0] : path;
               fileType = (options === null || options === void 0 ? void 0 : options.fileType) || (0,_loaders_index_js__WEBPACK_IMPORTED_MODULE_10__.pathToFileType)(pathString);
               if (!(fileType === _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__.VolumeFileFormat.TIFF)) {
-                _context.next = 4;
+                _context.next = 6;
                 break;
               }
-              return _context.abrupt("return", new _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_12__.TiffLoader(pathString));
-            case 4:
-              _context.next = 6;
-              return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.CREATE_LOADER, {
-                path: path,
-                options: options
-              });
+              return _context.abrupt("return", new _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_13__.TiffLoader(pathString));
             case 6:
-              success = _context.sent;
-              if (success) {
+              if (!(fileType === _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__.VolumeFileFormat.DATA)) {
+                _context.next = 10;
+                break;
+              }
+              if (options !== null && options !== void 0 && options.rawArrayOptions) {
                 _context.next = 9;
                 break;
               }
-              throw new Error("Failed to create loader");
+              throw new Error("Failed to create loader: Must provide RawArrayOptions for RawArrayLoader");
             case 9:
+              return _context.abrupt("return", new _loaders_RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_12__.RawArrayLoader(options.rawArrayOptions.data, options.rawArrayOptions.metadata));
+            case 10:
+              _context.next = 12;
+              return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_14__.WorkerMsgType.CREATE_LOADER, {
+                path: path,
+                options: options
+              });
+            case 12:
+              success = _context.sent;
+              if (success) {
+                _context.next = 15;
+                break;
+              }
+              throw new Error("Failed to create loader");
+            case 15:
               (_this$activeLoader2 = this.activeLoader) === null || _this$activeLoader2 === void 0 || _this$activeLoader2.close();
               this.activeLoaderId += 1;
               this.activeLoader = new WorkerLoader(this.activeLoaderId, this.workerHandle);
               return _context.abrupt("return", this.activeLoader);
-            case 13:
+            case 19:
             case "end":
               return _context.stop();
           }
@@ -11744,18 +11968,18 @@ var WorkerLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
   }, {
     key: "setPrefetchPriority",
     value: function setPrefetchPriority(directions) {
-      return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, directions);
+      return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_14__.WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, directions);
     }
   }, {
     key: "syncMultichannelLoading",
     value: function syncMultichannelLoading(sync) {
-      return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, sync);
+      return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_14__.WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, sync);
     }
   }, {
     key: "loadDims",
     value: function loadDims(loadSpec) {
       this.checkIsOpen();
-      return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.LOAD_DIMS, loadSpec);
+      return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_14__.WorkerMsgType.LOAD_DIMS, loadSpec);
     }
   }, {
     key: "createImageInfo",
@@ -11767,14 +11991,14 @@ var WorkerLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
             case 0:
               this.checkIsOpen();
               _context2.next = 3;
-              return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.CREATE_VOLUME, loadSpec);
+              return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_14__.WorkerMsgType.CREATE_VOLUME, loadSpec);
             case 3:
               _yield$this$workerHan = _context2.sent;
               imageInfo = _yield$this$workerHan.imageInfo;
               adjustedLoadSpec = _yield$this$workerHan.loadSpec;
               return _context2.abrupt("return", {
-                imageInfo: (0,_util_js__WEBPACK_IMPORTED_MODULE_14__.rebuildImageInfo)(imageInfo),
-                loadSpec: (0,_util_js__WEBPACK_IMPORTED_MODULE_14__.rebuildLoadSpec)(adjustedLoadSpec)
+                imageInfo: (0,_util_js__WEBPACK_IMPORTED_MODULE_15__.rebuildImageInfo)(imageInfo),
+                loadSpec: (0,_util_js__WEBPACK_IMPORTED_MODULE_15__.rebuildLoadSpec)(adjustedLoadSpec)
               });
             case 7:
             case "end":
@@ -11799,7 +12023,7 @@ var WorkerLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               this.currentLoadCallback = onData;
               this.currentLoadId += 1;
               _context3.next = 5;
-              return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_13__.WorkerMsgType.LOAD_VOLUME_DATA, {
+              return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_14__.WorkerMsgType.LOAD_VOLUME_DATA, {
                 imageInfo: imageInfo,
                 loadSpec: loadSpec,
                 loaderId: this.loaderId,
@@ -11810,8 +12034,8 @@ var WorkerLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
               newImageInfo = _yield$this$workerHan2.imageInfo;
               newLoadSpec = _yield$this$workerHan2.loadSpec;
               return _context3.abrupt("return", {
-                imageInfo: newImageInfo && (0,_util_js__WEBPACK_IMPORTED_MODULE_14__.rebuildImageInfo)(newImageInfo),
-                loadSpec: newLoadSpec && (0,_util_js__WEBPACK_IMPORTED_MODULE_14__.rebuildLoadSpec)(newLoadSpec)
+                imageInfo: newImageInfo && (0,_util_js__WEBPACK_IMPORTED_MODULE_15__.rebuildImageInfo)(newImageInfo),
+                loadSpec: newLoadSpec && (0,_util_js__WEBPACK_IMPORTED_MODULE_15__.rebuildLoadSpec)(newLoadSpec)
               });
             case 9:
             case "end":
@@ -85520,20 +85744,27 @@ var __webpack_exports__ = {};
   !*** ./public/index.ts ***!
   \*************************/
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var dat_gui__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! dat.gui */ "./node_modules/dat.gui/build/dat.gui.module.js");
-/* harmony import */ var _src__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../src */ "./src/index.ts");
-/* harmony import */ var _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../src/loaders/OpenCellLoader */ "./src/loaders/OpenCellLoader.ts");
-/* harmony import */ var _src_Volume__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../src/Volume */ "./src/Volume.ts");
-/* harmony import */ var _src_workers_LoadWorkerHandle__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../src/workers/LoadWorkerHandle */ "./src/workers/LoadWorkerHandle.ts");
-/* harmony import */ var _src_types__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../src/types */ "./src/types.ts");
+/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
+/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
+/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
+/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__);
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var dat_gui__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! dat.gui */ "./node_modules/dat.gui/build/dat.gui.module.js");
+/* harmony import */ var _src__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../src */ "./src/index.ts");
+/* harmony import */ var _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../src/loaders/OpenCellLoader */ "./src/loaders/OpenCellLoader.ts");
+/* harmony import */ var _src_Volume__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../src/Volume */ "./src/Volume.ts");
+/* harmony import */ var _src_workers_LoadWorkerHandle__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../src/workers/LoadWorkerHandle */ "./src/workers/LoadWorkerHandle.ts");
+/* harmony import */ var _src_types__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../src/types */ "./src/types.ts");
 
 
 
+
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
 
 
 
@@ -85550,48 +85781,48 @@ var MAX_PREFETCH_CHUNKS = 25;
 var PLAYBACK_INTERVAL = 80;
 var TEST_DATA = {
   timeSeries: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.JSON,
+    type: _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.JSON,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json",
     times: 46
   },
   omeTiff: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.TIFF,
+    type: _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif"
   },
   zarrEMT: {
     url: "https://dev-aics-dtp-001.int.allencell.org/dan-data/3500005818_20230811__20x_Timelapse-02(P27-E7).ome.zarr",
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR
+    type: _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.ZARR
   },
   zarrIDR1: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.ZARR,
     url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0076A/10501752.zarr"
   },
   zarrIDR2: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.ZARR,
     url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0054A/5025553.zarr"
   },
   zarrVariance: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr"
   },
   zarrNucmorph0: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P13-C4.zarr/"
   },
   zarrNucmorph1: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P15-C3.zarr/"
   },
   zarrNucmorph2: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P7-B4.zarr/"
   },
   zarrNucmorph3: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P8-B4.zarr/"
   },
   zarrUK: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.ZARR,
+    type: _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.ZARR,
     url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr"
   },
   opencell: {
@@ -85599,35 +85830,35 @@ var TEST_DATA = {
     url: ""
   },
   cfeJson: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.JSON,
+    type: _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.JSON,
     url: "AICS-12_881_atlas.json"
   },
   abm: {
-    type: _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.TIFF,
+    type: _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/HAMILTONIAN_TERM_FOV_VSAHJUP_0000_000192.ome.tif"
   },
   procedural: {
-    type: "procedural",
+    type: _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.DATA,
     url: ""
   }
 };
 var view3D;
-var loaderContext = new _src_workers_LoadWorkerHandle__WEBPACK_IMPORTED_MODULE_7__["default"](CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
+var loaderContext = new _src_workers_LoadWorkerHandle__WEBPACK_IMPORTED_MODULE_8__["default"](CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 var myState = {
   file: "",
-  volume: new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(),
+  volume: new _src__WEBPACK_IMPORTED_MODULE_5__.Volume(),
   currentFrame: 0,
   lastFrameTime: 0,
   isPlaying: false,
   timerId: 0,
-  loader: new _src__WEBPACK_IMPORTED_MODULE_4__.JsonImageInfoLoader("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json"),
+  loader: new _src__WEBPACK_IMPORTED_MODULE_5__.JsonImageInfoLoader("https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json"),
   density: 12.5,
   maskAlpha: 1.0,
   exposure: 0.75,
   aperture: 0.0,
   fov: 20,
   focalDistance: 4.0,
-  lights: [new _src__WEBPACK_IMPORTED_MODULE_4__.Light(_src__WEBPACK_IMPORTED_MODULE_4__.SKY_LIGHT), new _src__WEBPACK_IMPORTED_MODULE_4__.Light(_src__WEBPACK_IMPORTED_MODULE_4__.AREA_LIGHT)],
+  lights: [new _src__WEBPACK_IMPORTED_MODULE_5__.Light(_src__WEBPACK_IMPORTED_MODULE_5__.SKY_LIGHT), new _src__WEBPACK_IMPORTED_MODULE_5__.Light(_src__WEBPACK_IMPORTED_MODULE_5__.AREA_LIGHT)],
   skyTopIntensity: 0.3,
   skyMidIntensity: 0.3,
   skyBotIntensity: 0.3,
@@ -85664,7 +85895,7 @@ var myState = {
   flipY: 1,
   flipZ: 1,
   channelFolderNames: [],
-  infoObj: (0,_src_Volume__WEBPACK_IMPORTED_MODULE_6__.getDefaultImageInfo)(),
+  infoObj: (0,_src_Volume__WEBPACK_IMPORTED_MODULE_7__.getDefaultImageInfo)(),
   channelGui: [],
   currentImageStore: "",
   currentImageName: ""
@@ -85715,24 +85946,24 @@ function makeColorGradient(controlPoints) {
 }
 */
 function initLights() {
-  myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
-  myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
-  myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+  myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+  myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+  myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
   myState.lights[1].mTheta = myState.lightTheta * Math.PI / 180.0;
   myState.lights[1].mPhi = myState.lightPhi * Math.PI / 180.0;
-  myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+  myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
   view3D.updateLights(myState.lights);
 }
 function setInitialRenderMode() {
   if (myState.isPT && myState.isMP) {
     myState.isMP = false;
   }
-  view3D.setVolumeRenderMode(myState.isPT ? _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_RAYMARCH);
+  view3D.setVolumeRenderMode(myState.isPT ? _src__WEBPACK_IMPORTED_MODULE_5__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_5__.RENDERMODE_RAYMARCH);
   view3D.setMaxProjectMode(myState.volume, myState.isMP);
 }
 var gui;
 function setupGui() {
-  gui = new dat_gui__WEBPACK_IMPORTED_MODULE_3__.GUI();
+  gui = new dat_gui__WEBPACK_IMPORTED_MODULE_4__.GUI();
   //gui = new dat.GUI({autoPlace:false, width:200});
 
   gui.add(myState, "density").max(100.0).min(0.0).step(0.001).onChange(function (value) {
@@ -85784,27 +86015,27 @@ function setupGui() {
   });
   var lighting = gui.addFolder("Lighting");
   lighting.addColor(myState, "skyTopColor").name("Sky Top").onChange(function () {
-    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyTopIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "skyMidColor").name("Sky Mid").onChange(function () {
-    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyMidIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "skyBotColor").name("Sky Bottom").onChange(function () {
-    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyBotIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState.lights[1], "mDistance").max(10.0).min(0.0).step(0.1).onChange(function () {
@@ -85824,11 +86055,11 @@ function setupGui() {
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "lightIntensity").max(1000.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "lightColor").name("lightColor").onChange(function () {
-    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
     view3D.updateLights(myState.lights);
   });
   initLights();
@@ -85903,10 +86134,10 @@ function showChannelUI(volume) {
       autoIJ: function (j) {
         return function () {
           var _volume$getHistogram$ = volume.getHistogram(j).findAutoIJBins(),
-            _volume$getHistogram$2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_volume$getHistogram$, 2),
+            _volume$getHistogram$2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2__["default"])(_volume$getHistogram$, 2),
             hmin = _volume$getHistogram$2[0],
             hmax = _volume$getHistogram$2[1];
-          var lut = new _src__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(hmin, hmax);
+          var lut = new _src__WEBPACK_IMPORTED_MODULE_5__.Lut().createFromMinMax(hmin, hmax);
           volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
@@ -85915,10 +86146,10 @@ function showChannelUI(volume) {
       auto0: function (j) {
         return function () {
           var _volume$getHistogram$3 = volume.getHistogram(j).findAutoMinMax(),
-            _volume$getHistogram$4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_volume$getHistogram$3, 2),
+            _volume$getHistogram$4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2__["default"])(_volume$getHistogram$3, 2),
             b = _volume$getHistogram$4[0],
             e = _volume$getHistogram$4[1];
-          var lut = new _src__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(b, e);
+          var lut = new _src__WEBPACK_IMPORTED_MODULE_5__.Lut().createFromMinMax(b, e);
           volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
@@ -85927,10 +86158,10 @@ function showChannelUI(volume) {
       bestFit: function (j) {
         return function () {
           var _volume$getHistogram$5 = volume.getHistogram(j).findBestFitBins(),
-            _volume$getHistogram$6 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_volume$getHistogram$5, 2),
+            _volume$getHistogram$6 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2__["default"])(_volume$getHistogram$5, 2),
             hmin = _volume$getHistogram$6[0],
             hmax = _volume$getHistogram$6[1];
-          var lut = new _src__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(hmin, hmax);
+          var lut = new _src__WEBPACK_IMPORTED_MODULE_5__.Lut().createFromMinMax(hmin, hmax);
           volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
@@ -85940,7 +86171,7 @@ function showChannelUI(volume) {
         return function () {
           var hmin = volume.getHistogram(j).findBinOfPercentile(0.5);
           var hmax = volume.getHistogram(j).findBinOfPercentile(0.983);
-          var lut = new _src__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(hmin, hmax);
+          var lut = new _src__WEBPACK_IMPORTED_MODULE_5__.Lut().createFromMinMax(hmin, hmax);
           volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
@@ -85948,7 +86179,7 @@ function showChannelUI(volume) {
       colorizeEnabled: false,
       colorize: function (j) {
         return function () {
-          var lut = new _src__WEBPACK_IMPORTED_MODULE_4__.Lut().createLabelColors(volume.getHistogram(j));
+          var lut = new _src__WEBPACK_IMPORTED_MODULE_5__.Lut().createLabelColors(volume.getHistogram(j));
           volume.setColorPalette(j, lut.lut);
           myState.channelGui[j].colorizeEnabled = !myState.channelGui[j].colorizeEnabled;
           if (myState.channelGui[j].colorizeEnabled) {
@@ -86005,7 +86236,7 @@ function showChannelUI(volume) {
       return function (value) {
         var hwindow = value;
         var hlevel = myState.channelGui[j].level;
-        var lut = new _src__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromWindowLevel(hwindow, hlevel);
+        var lut = new _src__WEBPACK_IMPORTED_MODULE_5__.Lut().createFromWindowLevel(hwindow, hlevel);
         volume.setLut(j, lut);
         view3D.updateLuts(volume);
       };
@@ -86014,7 +86245,7 @@ function showChannelUI(volume) {
       return function (value) {
         var hwindow = myState.channelGui[j].window;
         var hlevel = value;
-        var lut = new _src__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromWindowLevel(hwindow, hlevel);
+        var lut = new _src__WEBPACK_IMPORTED_MODULE_5__.Lut().createFromWindowLevel(hwindow, hlevel);
         volume.setLut(j, lut);
         view3D.updateLuts(volume);
       };
@@ -86041,7 +86272,7 @@ function showChannelUI(volume) {
   }
 }
 function loadImageData(jsonData, volumeData) {
-  var vol = new _src__WEBPACK_IMPORTED_MODULE_4__.Volume(jsonData);
+  var vol = new _src__WEBPACK_IMPORTED_MODULE_5__.Volume(jsonData);
   myState.volume = vol;
 
   // tell the viewer about the image AFTER it's loaded
@@ -86054,7 +86285,7 @@ function loadImageData(jsonData, volumeData) {
     // according to jsonData.tile_width*jsonData.tile_height*jsonData.tiles
     // (first row of first plane is the first data in
     // the layout, then second row of first plane, etc)
-    vol.setChannelDataFromVolume(i, volumeData[i], _src_types__WEBPACK_IMPORTED_MODULE_8__.DATARANGE_UINT8);
+    vol.setChannelDataFromVolume(i, volumeData[i], _src_types__WEBPACK_IMPORTED_MODULE_9__.DATARANGE_UINT8);
     setInitialRenderMode();
     view3D.removeAllVolumes();
     view3D.addVolume(vol);
@@ -86157,72 +86388,101 @@ function goToZSlice(slice) {
 
   // update UI if successful
 }
+function concatenateArrays(arrays) {
+  var totalLength = arrays.reduce(function (acc, arr) {
+    return acc + arr.length;
+  }, 0);
+  var result = new Uint8Array(totalLength);
+  var offset = 0;
+  var _iterator = _createForOfIteratorHelper(arrays),
+    _step;
+  try {
+    for (_iterator.s(); !(_step = _iterator.n()).done;) {
+      var arr = _step.value;
+      result.set(arr, offset);
+      offset += arr.length;
+    }
+  } catch (err) {
+    _iterator.e(err);
+  } finally {
+    _iterator.f();
+  }
+  return result;
+}
 function createTestVolume() {
+  var sizeX = 64;
+  var sizeY = 64;
+  var sizeZ = 64;
   var imgData = {
     name: "AICS-10_5_5",
-    originalSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(64, 64, 64),
-    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_9__.Vector2(8, 8),
-    volumeSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(64, 64, 64),
-    subregionSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(64, 64, 64),
-    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
-    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(1, 1, 1),
+    sizeX: sizeX,
+    sizeY: sizeY,
+    sizeZ: sizeZ,
+    sizeC: 3,
+    physicalPixelSize: [1, 1, 1],
     spatialUnit: "",
-    numChannels: 3,
-    channelNames: ["DRAQ5", "EGFP", "SEG_Memb"],
-    times: 1,
-    timeScale: 1,
-    timeUnit: "",
-    numMultiscaleLevels: 1,
-    multiscaleLevel: 0,
-    transform: {
-      translation: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
-      rotation: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0)
-    }
+    channelNames: ["DRAQ5", "EGFP", "SEG_Memb"]
   };
 
   // generate some raw volume data
-  var channelVolumes = [_src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createSphere(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24), _src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createTorus(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 8), _src__WEBPACK_IMPORTED_MODULE_4__.VolumeMaker.createCone(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 24)];
+  var channelVolumes = [_src__WEBPACK_IMPORTED_MODULE_5__.VolumeMaker.createSphere(sizeX, sizeY, sizeZ, 24), _src__WEBPACK_IMPORTED_MODULE_5__.VolumeMaker.createTorus(sizeX, sizeY, sizeZ, 24, 8), _src__WEBPACK_IMPORTED_MODULE_5__.VolumeMaker.createCone(sizeX, sizeY, sizeZ, 24, 24)];
+  var alldata = concatenateArrays(channelVolumes);
   return {
-    imgData: imgData,
-    volumeData: channelVolumes
+    metadata: imgData,
+    data: {
+      // expected to be "uint8" always
+      dtype: "uint8",
+      // [c,z,y,x]
+      shape: [channelVolumes.length, sizeZ, sizeY, sizeX],
+      // the bits (assumed uint8!!)
+      buffer: new DataView(alldata.buffer)
+    }
   };
 }
 function createLoader(_x) {
   return _createLoader.apply(this, arguments);
 }
 function _createLoader() {
-  _createLoader = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee(data) {
-    var path, times, t;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function _callee$(_context) {
+  _createLoader = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(data) {
+    var options, path, times, t, volumeInfo;
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
           if (!(data.type === "opencell")) {
             _context.next = 2;
             break;
           }
-          return _context.abrupt("return", new _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_5__.OpenCellLoader());
+          return _context.abrupt("return", new _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_6__.OpenCellLoader());
         case 2:
           _context.next = 4;
           return loaderContext.onOpen();
         case 4:
+          options = {};
           path = data.url;
-          if (data.type === _src__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.JSON) {
+          if (data.type === _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.JSON) {
             path = [];
             times = data.times || 0;
             for (t = 0; t <= times; t++) {
               path.push(data.url.replace("%%", t.toString()));
             }
+          } else if (data.type === _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.DATA) {
+            volumeInfo = createTestVolume();
+            options.fileType = _src__WEBPACK_IMPORTED_MODULE_5__.VolumeFileFormat.DATA;
+            options.rawArrayOptions = {
+              data: volumeInfo.data,
+              metadata: volumeInfo.metadata
+            };
           }
-          _context.next = 8;
-          return loaderContext.createLoader(path, {
+          _context.next = 9;
+          return loaderContext.createLoader(path, _objectSpread(_objectSpread({}, options), {}, {
             fetchOptions: {
               maxPrefetchDistance: PREFETCH_DISTANCE,
               maxPrefetchChunks: MAX_PREFETCH_CHUNKS
             }
-          });
-        case 8:
-          return _context.abrupt("return", _context.sent);
+          }));
         case 9:
+          return _context.abrupt("return", _context.sent);
+        case 10:
         case "end":
           return _context.stop();
       }
@@ -86234,9 +86494,9 @@ function loadVolume(_x2, _x3) {
   return _loadVolume.apply(this, arguments);
 }
 function _loadVolume() {
-  _loadVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee2(loadSpec, loader) {
+  _loadVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(loadSpec, loader) {
     var volume;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function _callee2$(_context2) {
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee2$(_context2) {
       while (1) switch (_context2.prev = _context2.next) {
         case 0:
           _context2.next = 2;
@@ -86260,27 +86520,19 @@ function loadTestData(_x4) {
   return _loadTestData.apply(this, arguments);
 }
 function _loadTestData() {
-  _loadTestData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee3(testdata) {
-    var volumeInfo, loadSpec;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function _callee3$(_context3) {
+  _loadTestData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee3(testdata) {
+    var loadSpec;
+    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee3$(_context3) {
       while (1) switch (_context3.prev = _context3.next) {
         case 0:
-          if (!(testdata.type === "procedural")) {
-            _context3.next = 4;
-            break;
-          }
-          volumeInfo = createTestVolume();
-          loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
-          return _context3.abrupt("return");
-        case 4:
-          _context3.next = 6;
+          _context3.next = 2;
           return createLoader(testdata);
-        case 6:
+        case 2:
           myState.loader = _context3.sent;
-          loadSpec = new _src__WEBPACK_IMPORTED_MODULE_4__.LoadSpec();
+          loadSpec = new _src__WEBPACK_IMPORTED_MODULE_5__.LoadSpec();
           myState.totalFrames = testdata.times;
           loadVolume(loadSpec, myState.loader);
-        case 10:
+        case 6:
         case "end":
           return _context3.stop();
       }
@@ -86312,7 +86564,7 @@ function main() {
   if (!el) {
     return;
   }
-  view3D = new _src__WEBPACK_IMPORTED_MODULE_4__.View3d({
+  view3D = new _src__WEBPACK_IMPORTED_MODULE_5__.View3d({
     parentElement: el
   });
   var testDataSelect = document.getElementById("testData");
@@ -86493,7 +86745,7 @@ function main() {
   var changeRenderMode = function changeRenderMode(pt, mp) {
     myState.isPT = pt;
     myState.isMP = mp;
-    view3D.setVolumeRenderMode(pt ? _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_4__.RENDERMODE_RAYMARCH);
+    view3D.setVolumeRenderMode(pt ? _src__WEBPACK_IMPORTED_MODULE_5__.RENDERMODE_PATHTRACE : _src__WEBPACK_IMPORTED_MODULE_5__.RENDERMODE_RAYMARCH);
     view3D.setMaxProjectMode(myState.volume, mp);
   };
   renderModeSelect === null || renderModeSelect === void 0 || renderModeSelect.addEventListener("change", function (_ref2) {
