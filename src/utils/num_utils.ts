@@ -1,4 +1,4 @@
-const DEFAULT_SIG_FIGS = 12;
+const DEFAULT_SIG_FIGS = 4;
 
 // Adapted from https://gist.github.com/ArneS/2ecfbe4a9d7072ac56c0.
 function digitToUnicodeSupercript(n: number): string {
@@ -52,7 +52,8 @@ export function formatNumber(value: number): string {
   } else if (Number.isInteger(value)) {
     return value.toString();
   } else {
-    const numStr = value.toFixed(DEFAULT_SIG_FIGS - 1);
+    // `toPrecision` may try to format numbers in scientific notation, so we do a similar thing with `toFixed` instead.
+    const numStr = value.toFixed(DEFAULT_SIG_FIGS - Math.floor(Math.log10(value)));
     return trimTrailing(numStr, "0");
   }
 }
