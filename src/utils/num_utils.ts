@@ -32,16 +32,27 @@ function numberToSciNotation(input: number, sigFigs = DEFAULT_SIG_FIGS): string 
 
 const ZERO_SCI = numberToSciNotation(0);
 
+/** Trims trailing instances of `char` off the end of `str`. */
+// This is not technically a number utility, but it's useful to `formatNumber` below.
+function trimTrailing(str: string, char: string): string {
+  let i = str.length - 1;
+  while (str[i] === char) {
+    i--;
+  }
+  return str.slice(0, i + 1);
+}
+
 export function formatNumber(value: number): string {
-  if (value < 0.01 || value > 10_000) {
+  if (value < 0.01 || value >= 10_000) {
     const sciNotation = numberToSciNotation(value);
     if (sciNotation === ZERO_SCI) {
       return "0";
     }
     return numberToSciNotation(value, 3);
-  } else if (value < 1) {
-    return value.toPrecision(1);
+  } else if (Number.isInteger(value)) {
+    return value.toString();
   } else {
-    return value.toFixed(0);
+    const numStr = value.toFixed(DEFAULT_SIG_FIGS - 1);
+    return trimTrailing(numStr, "0");
   }
 }
