@@ -22,15 +22,12 @@ function digitToUnicodeSupercript(n: number): string {
  * ```
  */
 function numberToSciNotation(input: number, sigFigs = DEFAULT_SIG_FIGS): string {
-  const expString = input.toExponential(sigFigs - 1);
-  const [coefficient, exponent] = expString.split("e");
+  const nativeExpForm = input.toExponential(sigFigs - 1);
+  const [significand, exponent] = nativeExpForm.split("e");
   const expSign = exponent[0] === "-" ? "⁻" : "";
-  const expSuperscript = exponent
-    .slice(1)
-    .split("")
-    .map((digit) => digitToUnicodeSupercript(Number(digit)))
-    .join("");
-  return `${coefficient}×10${expSign}${expSuperscript}`;
+  const expDigits = exponent.slice(1).split("");
+  const expSuperscript = expDigits.map((digit) => digitToUnicodeSupercript(Number(digit))).join("");
+  return `${significand}×10${expSign}${expSuperscript}`;
 }
 
 const ZERO_SCI = numberToSciNotation(0);
