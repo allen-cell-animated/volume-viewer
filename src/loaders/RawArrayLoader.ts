@@ -7,8 +7,8 @@ import {
   VolumeDims,
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
-import { computePackedAtlasDims } from "./VolumeLoaderUtils";
-import { ImageInfo } from "../Volume";
+import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
+import { ImageInfo } from "../Volume.js";
 import { DATARANGE_UINT8 } from "../types.js";
 
 // this is the form in which a 4D numpy array arrives as converted
