@@ -163,7 +163,12 @@ export function matchSourceScaleLevels(sources: ZarrSource[]): void {
       if (!ordering) {
         // Arrays are equal, or they are uncomparable
         if (ordering === undefined) {
-          throw new Error("Incompatible zarr arrays: pixel dimensions are mismatched");
+          // We don't need to Error on this at this time.
+          // This just means that the dimensions aren't all changing in the same direction.
+          // We can just skip this as a failed check and continue.
+          console.warn("Incompatible zarr arrays: pixel dimensions are mismatched");
+          allEqual = false;
+          continue;
         }
         // Now we know the arrays are equal, but they may still be invalid to match up because...
         // ...they have different scale transformations

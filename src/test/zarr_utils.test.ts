@@ -304,9 +304,9 @@ describe("zarr_utils", () => {
       expectSourcesEqual(testSources, refSources);
     });
 
-    it("throws an error if the size of two scale levels are mismatched", async () => {
+    it("Does not throw an error if the size of two scale levels are mismatched", async () => {
       const sources = await createMockSources([{ shapes: [[1, 1, 2, 1, 1]] }, { shapes: [[1, 1, 1, 2, 1]] }]);
-      expect(() => matchSourceScaleLevels(sources)).to.throw(
+      expect(() => matchSourceScaleLevels(sources)).to.not.throw(
         "Incompatible zarr arrays: pixel dimensions are mismatched"
       );
     });
