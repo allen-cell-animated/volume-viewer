@@ -42,11 +42,11 @@ function trimTrailing(str: string, char: string): string {
   return str.slice(0, i + 1);
 }
 
-export function formatNumber(value: number, sigFigs = DEFAULT_SIG_FIGS): string {
+export function formatNumber(value: number, sigFigs = DEFAULT_SIG_FIGS, sciSigFigs = sigFigs - 2): string {
   const valueAbs = Math.round(Math.abs(value));
   if (valueAbs < 0.01 || valueAbs >= 10_000) {
-    const sciNotation = numberToSciNotation(value, sigFigs);
-    const zeroSci = sigFigs === DEFAULT_SIG_FIGS ? ZERO_SCI : numberToSciNotation(0, sigFigs);
+    const sciNotation = numberToSciNotation(value, sciSigFigs);
+    const zeroSci = sigFigs === DEFAULT_SIG_FIGS ? ZERO_SCI : numberToSciNotation(0, sciSigFigs);
     if (sciNotation === zeroSci) {
       return "0";
     }
