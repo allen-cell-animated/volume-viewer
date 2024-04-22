@@ -1,4 +1,4 @@
-const DEFAULT_SIG_FIGS = 12;
+const DEFAULT_SIG_FIGS = 5;
 
 // Adapted from https://gist.github.com/ArneS/2ecfbe4a9d7072ac56c0.
 function digitToUnicodeSupercript(n: number): string {
@@ -22,29 +22,39 @@ function digitToUnicodeSupercript(n: number): string {
  * ```
  */
 function numberToSciNotation(input: number, sigFigs = DEFAULT_SIG_FIGS): string {
-  const expString = input.toExponential(sigFigs - 1);
-  const [coefficient, exponent] = expString.split("e");
+  const nativeExpForm = input.toExponential(sigFigs - 1);
+  const [significand, exponent] = nativeExpForm.split("e");
   const expSign = exponent[0] === "-" ? "⁻" : "";
-  const expSuperscript = exponent
-    .slice(1)
-    .split("")
-    .map((digit) => digitToUnicodeSupercript(Number(digit)))
-    .join("");
-  return `${coefficient}×10${expSign}${expSuperscript}`;
+  const expDigits = exponent.slice(1).split("");
+  const expSuperscript = expDigits.map((digit) => digitToUnicodeSupercript(Number(digit))).join("");
+  return `${significand}×10${expSign}${expSuperscript}`;
 }
 
 const ZERO_SCI = numberToSciNotation(0);
 
+/** Trims trailing instances of `char` off the end of `str`. */
+// This is not technically a number utility, but it's useful to `formatNumber` below.
+function trimTrailing(str: string, char: string): string {
+  let i = str.length - 1;
+  while (str[i] === char) {
+    i--;
+  }
+  return str.slice(0, i + 1);
+}
+
 export function formatNumber(value: number): string {
-  if (value < 0.01 || value > 10_000) {
+  if (value < 0.01 || value >= 10_000) {
     const sciNotation = numberToSciNotation(value);
     if (sciNotation === ZERO_SCI) {
       return "0";
     }
     return numberToSciNotation(value, 3);
-  } else if (value < 1) {
-    return value.toPrecision(1);
+  } else if (Number.isInteger(value)) {
+    return value.toString();
   } else {
-    return value.toFixed(0);
+    // `toPrecision` may try to format numbers in scientific notation, so we do a similar thing with `toFixed` instead.
+    const numStr = value.toFixed(DEFAULT_SIG_FIGS - Math.floor(Math.log10(value)) - 1);
+    const trimmed = trimTrailing(numStr, "0");
+    return trimmed.endsWith(".") ? trimmed.slice(0, -1) : trimmed;
   }
 }
