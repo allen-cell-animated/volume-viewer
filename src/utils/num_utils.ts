@@ -1,4 +1,4 @@
-const DEFAULT_SIG_FIGS = 5;
+export const DEFAULT_SIG_FIGS = 5;
 
 // Adapted from https://gist.github.com/ArneS/2ecfbe4a9d7072ac56c0.
 function digitToUnicodeSupercript(n: number): string {
@@ -42,11 +42,11 @@ function trimTrailing(str: string, char: string): string {
   return str.slice(0, i + 1);
 }
 
-export function formatNumber(value: number): string {
+export function formatNumber(value: number, sigFigs = DEFAULT_SIG_FIGS): string {
   const valueAbs = Math.abs(value);
   if (valueAbs < 0.01 || valueAbs >= 10_000) {
-    const sciNotation = numberToSciNotation(value);
-    if (sciNotation === ZERO_SCI) {
+    const sciNotation = numberToSciNotation(value, sigFigs);
+    if (sigFigs === undefined ? sciNotation === ZERO_SCI : sciNotation === numberToSciNotation(0, sigFigs)) {
       return "0";
     }
     return sciNotation;
