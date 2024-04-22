@@ -43,7 +43,7 @@ function trimTrailing(str: string, char: string): string {
 }
 
 export function formatNumber(value: number, sigFigs = DEFAULT_SIG_FIGS): string {
-  const valueAbs = Math.abs(value);
+  const valueAbs = Math.round(Math.abs(value));
   if (valueAbs < 0.01 || valueAbs >= 10_000) {
     const sciNotation = numberToSciNotation(value, sigFigs);
     const zeroSci = sigFigs === DEFAULT_SIG_FIGS ? ZERO_SCI : numberToSciNotation(0, sigFigs);
@@ -55,7 +55,7 @@ export function formatNumber(value: number, sigFigs = DEFAULT_SIG_FIGS): string 
     return value.toString();
   } else {
     // `toPrecision` may try to format numbers in scientific notation, so we do a similar thing with `toFixed` instead.
-    const numStr = value.toFixed(sigFigs - Math.floor(Math.log10(value)) - 1);
+    const numStr = value.toFixed(sigFigs - Math.floor(Math.log10(valueAbs)) - 1);
     const trimmed = trimTrailing(numStr, "0");
     return trimmed.endsWith(".") ? trimmed.slice(0, -1) : trimmed;
   }
