@@ -49,7 +49,7 @@ export function formatNumber(value: number): string {
     if (sciNotation === ZERO_SCI) {
       return "0";
     }
-    return numberToSciNotation(value, 3);
+    return sciNotation;
   } else if (Number.isInteger(value)) {
     return value.toString();
   } else {
