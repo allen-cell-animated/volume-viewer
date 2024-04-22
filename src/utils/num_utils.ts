@@ -46,7 +46,8 @@ export function formatNumber(value: number, sigFigs = DEFAULT_SIG_FIGS): string 
   const valueAbs = Math.abs(value);
   if (valueAbs < 0.01 || valueAbs >= 10_000) {
     const sciNotation = numberToSciNotation(value, sigFigs);
-    if (sigFigs === undefined ? sciNotation === ZERO_SCI : sciNotation === numberToSciNotation(0, sigFigs)) {
+    const zeroSci = sigFigs === DEFAULT_SIG_FIGS ? ZERO_SCI : numberToSciNotation(0, sigFigs);
+    if (sciNotation === zeroSci) {
       return "0";
     }
     return sciNotation;
