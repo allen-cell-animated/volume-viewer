@@ -417,11 +417,6 @@ export class ThreeJsPanel {
     const digits = Math.floor(Math.log10(physicalMaxWidth));
     const div10 = 10 ** digits;
     const scaleValue = Math.floor(physicalMaxWidth / div10) * div10;
-    // let scaleStr = scaleValue.toString();
-    // if (digits < 1) {
-    //   // Handle irrational floating point values (e.g. 0.30000000000000004)
-    //   scaleStr = scaleStr.slice(0, Math.abs(digits) + 2);
-    // }
     const scaleStr = formatNumber(scaleValue);
     this.orthoScaleBarElement.innerHTML = `${scaleStr}${unit || ""}`;
     this.orthoScaleBarElement.style.width = `${SCALE_BAR_MAX_WIDTH * (scaleValue / physicalMaxWidth)}px`;
