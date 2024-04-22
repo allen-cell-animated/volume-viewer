@@ -55,7 +55,7 @@ export function formatNumber(value: number, sigFigs = DEFAULT_SIG_FIGS): string 
     return value.toString();
   } else {
     // `toPrecision` may try to format numbers in scientific notation, so we do a similar thing with `toFixed` instead.
-    const numStr = value.toFixed(DEFAULT_SIG_FIGS - Math.floor(Math.log10(value)) - 1);
+    const numStr = value.toFixed(sigFigs - Math.floor(Math.log10(value)) - 1);
     const trimmed = trimTrailing(numStr, "0");
     return trimmed.endsWith(".") ? trimmed.slice(0, -1) : trimmed;
   }
