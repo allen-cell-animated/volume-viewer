@@ -43,7 +43,8 @@ function trimTrailing(str: string, char: string): string {
 }
 
 export function formatNumber(value: number): string {
-  if (value < 0.01 || value >= 10_000) {
+  const valueAbs = Math.abs(value);
+  if (valueAbs < 0.01 || valueAbs >= 10_000) {
     const sciNotation = numberToSciNotation(value);
     if (sciNotation === ZERO_SCI) {
       return "0";
