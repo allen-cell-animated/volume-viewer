@@ -49,6 +49,15 @@ function trimTrailing(str: string, char: string): string {
   return str.slice(0, i + 1);
 }
 
+/**
+ * Formats numbers for display as a string with a (hopefully) limited length.
+ *
+ * - If the number is an integer with 4 or fewer digits, it is returned as a string.
+ * - If the number is a decimal, it is rounded to `sigFigs` significant figures. (default 5)
+ * - If the number's absolute value is over 10,000 or less than 0.01, it is formatted in scientific notation to
+ *   `sciSigFigs` significant figures. (Default `sigFigs - 2`, so 3 if neither are specified. The `- 2` leaves space
+ *   for the exponential part. Remember: the purpose of this function is keeping number strings *consistently* short!)
+ */
 export function formatNumber(value: number, sigFigs = DEFAULT_SIG_FIGS, sciSigFigs = sigFigs - 2): string {
   const valueAbs = Math.abs(value);
 
