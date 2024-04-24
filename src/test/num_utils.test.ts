@@ -45,5 +45,23 @@ describe("num_utils", () => {
       expect(formatNumber(0.00999)).to.equal("9.99×10⁻³");
       expect(formatNumber(0.009999)).to.equal("1.00×10⁻²"); // aw shucks
     });
+
+    it("rounds off decimals to the specified number of significant figures", () => {
+      expect(formatNumber(123.4567, 3)).to.equal("123");
+      expect(formatNumber(123.4567, 4)).to.equal("123.5");
+      expect(formatNumber(123.4567, 6)).to.equal("123.457");
+    });
+
+    it("rounds numbers in scientific notation to the specified number of significant figures", () => {
+      expect(formatNumber(12345, 3, 3)).to.equal("1.23×10⁴");
+      expect(formatNumber(12345, 4, 4)).to.equal("1.235×10⁴");
+      expect(formatNumber(12345, 6, 6)).to.equal("1.23450×10⁴");
+    });
+
+    it("rounds numbers in scientific notation to two fewer significant figures than decimals if unspecified", () => {
+      expect(formatNumber(12345, 5)).to.equal("1.23×10⁴");
+      expect(formatNumber(12345, 6)).to.equal("1.235×10⁴");
+      expect(formatNumber(12345, 8)).to.equal("1.23450×10⁴");
+    });
   });
 });
