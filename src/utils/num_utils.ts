@@ -68,16 +68,4 @@ export function formatNumber(value: number, sigFigs = DEFAULT_SIG_FIGS, sciSigFi
     const trimmed = trimTrailing(numStr, "0");
     return trimmed.endsWith(".") ? trimmed.slice(0, -1) : trimmed;
   }
-  // if (Math.round(valueAbs) >= 10_000 || (valueAbs !== 0 && valueAbs < 0.01)) {
-  //   // Format numbers with many digits in scientific notation
-  //   return numberToSciNotation(value, sciSigFigs);
-  // } else if (Number.isInteger(value)) {
-  //   // Nothing we need to do if the value is an integer
-  //   return value.toString();
-  // } else {
-  //   // `toPrecision` may try to format numbers in scientific notation, so we do a similar thing with `toFixed` instead.
-  //   const numStr = value.toFixed(sigFigs - Math.floor(Math.log10(valueAbs)) - 1);
-  //   const trimmed = trimTrailing(numStr, "0");
-  //   return trimmed.endsWith(".") ? trimmed.slice(0, -1) : trimmed;
-  // }
 }
