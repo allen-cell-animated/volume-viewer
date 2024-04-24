@@ -115,7 +115,6 @@ export class View3d {
   }
 
   private updateTimestepIndicator(volume: Volume): void {
-    // convert names to camel case to keep eslint happy
     const { times, timeScale, timeUnit } = volume.imageInfo;
     const currentTime = volume.loadSpec.time;
     this.canvas3d.updateTimestepIndicator(currentTime * timeScale, times * timeScale, timeUnit);

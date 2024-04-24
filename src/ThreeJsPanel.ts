@@ -19,6 +19,7 @@ import TrackballControls from "./TrackballControls.js";
 import Timing from "./Timing.js";
 import scaleBarSVG from "./constants/scaleBarSVG.js";
 import { isOrthographicCamera, ViewportCorner, isTop, isRight } from "./types.js";
+import { formatNumber } from "./utils/num_utils.js";
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
@@ -416,22 +417,18 @@ export class ThreeJsPanel {
     const digits = Math.floor(Math.log10(physicalMaxWidth));
     const div10 = 10 ** digits;
     const scaleValue = Math.floor(physicalMaxWidth / div10) * div10;
-    let scaleStr = scaleValue.toString();
-    if (digits < 1) {
-      // Handle irrational floating point values (e.g. 0.30000000000000004)
-      scaleStr = scaleStr.slice(0, Math.abs(digits) + 2);
-    }
+    const scaleStr = formatNumber(scaleValue);
     this.orthoScaleBarElement.innerHTML = `${scaleStr}${unit || ""}`;
     this.orthoScaleBarElement.style.width = `${SCALE_BAR_MAX_WIDTH * (scaleValue / physicalMaxWidth)}px`;
   }
 
   updatePerspectiveScaleBar(length: number, unit?: string): void {
     const labeldiv = this.perspectiveScaleBarElement.firstChild as HTMLDivElement;
-    labeldiv.innerHTML = `${length}${unit || ""}`;
+    labeldiv.innerHTML = `${formatNumber(length)}${unit || ""}`;
   }
 
   updateTimestepIndicator(progress: number, total: number, unit: string): void {
-    this.timestepIndicatorElement.innerHTML = `${progress} / ${total} ${unit}`;
+    this.timestepIndicatorElement.innerHTML = `${formatNumber(progress)} / ${formatNumber(total)} ${unit}`;
   }
 
   setPerspectiveScaleBarColor(color: [number, number, number]): void {
