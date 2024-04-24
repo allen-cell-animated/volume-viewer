@@ -30,7 +30,14 @@ function numberToSciNotation(input: number, sigFigs = DEFAULT_SIG_FIGS): string 
   return `${significand}×10${expSign}${expSuperscript}`;
 }
 
-const ZERO_SCI = numberToSciNotation(0);
+/**
+ * Returns a string-encoded number rounded to a specified decimal precision, without ever formatting in scientific
+ * notation like `Number.toPrecision` might do.
+ */
+function toSigFigs(value: number, sigFigs: number): string {
+  const exponent = Math.floor(Math.log10(Math.abs(value)));
+  return value.toFixed(Math.max(sigFigs - exponent - 1, 0));
+}
 
 /** Trims trailing instances of `char` off the end of `str`. */
 // This is not technically a number utility, but it's useful to `formatNumber` below.
@@ -43,20 +50,34 @@ function trimTrailing(str: string, char: string): string {
 }
 
 export function formatNumber(value: number, sigFigs = DEFAULT_SIG_FIGS, sciSigFigs = sigFigs - 2): string {
-  const valueAbs = Math.round(Math.abs(value));
-  if (valueAbs < 0.01 || valueAbs >= 10_000) {
-    const sciNotation = numberToSciNotation(value, sciSigFigs);
-    const zeroSci = sigFigs === DEFAULT_SIG_FIGS ? ZERO_SCI : numberToSciNotation(0, sciSigFigs);
-    if (sciNotation === zeroSci) {
-      return "0";
+  const valueAbs = Math.abs(value);
+
+  if (Number.isInteger(value)) {
+    // Format integers with 5+ digits in scientific notation
+    if (valueAbs >= 10_000) {
+      return numberToSciNotation(value, sciSigFigs);
     }
-    return sciNotation;
-  } else if (Number.isInteger(value)) {
+    // Just stringify other integers
     return value.toString();
   } else {
-    // `toPrecision` may try to format numbers in scientific notation, so we do a similar thing with `toFixed` instead.
-    const numStr = value.toFixed(sigFigs - Math.floor(Math.log10(valueAbs)) - 1);
+    const numStr = toSigFigs(value, sigFigs);
+    const numRounded = Math.abs(Number(numStr));
+    if (numRounded >= 10_000 || numRounded < 0.01) {
+      return numberToSciNotation(value, sciSigFigs);
+    }
     const trimmed = trimTrailing(numStr, "0");
     return trimmed.endsWith(".") ? trimmed.slice(0, -1) : trimmed;
   }
+  // if (Math.round(valueAbs) >= 10_000 || (valueAbs !== 0 && valueAbs < 0.01)) {
+  //   // Format numbers with many digits in scientific notation
+  //   return numberToSciNotation(value, sciSigFigs);
+  // } else if (Number.isInteger(value)) {
+  //   // Nothing we need to do if the value is an integer
+  //   return value.toString();
+  // } else {
+  //   // `toPrecision` may try to format numbers in scientific notation, so we do a similar thing with `toFixed` instead.
+  //   const numStr = value.toFixed(sigFigs - Math.floor(Math.log10(valueAbs)) - 1);
+  //   const trimmed = trimTrailing(numStr, "0");
+  //   return trimmed.endsWith(".") ? trimmed.slice(0, -1) : trimmed;
+  // }
 }
