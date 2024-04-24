@@ -50,6 +50,7 @@ describe("num_utils", () => {
       expect(formatNumber(123.4567, 3)).to.equal("123");
       expect(formatNumber(123.4567, 4)).to.equal("123.5");
       expect(formatNumber(123.4567, 6)).to.equal("123.457");
+      expect(formatNumber(123.4567, 2)).to.equal("123"); // oh well
     });
 
     it("rounds numbers in scientific notation to the specified number of significant figures", () => {
