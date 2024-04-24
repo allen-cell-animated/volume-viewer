@@ -2,11 +2,14 @@ import { Vector2, Vector3 } from "three";
 import * as dat from "dat.gui";
 
 import {
+  CreateLoaderOptions,
   ImageInfo,
   IVolumeLoader,
   LoadSpec,
   Lut,
   JsonImageInfoLoader,
+  RawArrayInfo,
+  RawArrayData,
   View3d,
   Volume,
   VolumeMaker,
@@ -23,6 +26,7 @@ import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
 import VolumeLoaderContext from "../src/workers/VolumeLoaderContext";
 import { DATARANGE_UINT8 } from "../src/types";
+import { RawArrayLoaderOptions } from "../src/loaders/RawArrayLoader";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
@@ -86,7 +90,7 @@ const TEST_DATA: Record<string, TestDataSpec> = {
     type: VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/HAMILTONIAN_TERM_FOV_VSAHJUP_0000_000192.ome.tif",
   },
-  procedural: { type: "procedural", url: "" },
+  procedural: { type: VolumeFileFormat.DATA, url: "" },
 };
 
 let view3D: View3d;
@@ -976,40 +980,49 @@ function goToZSlice(slice: number): boolean {
   // update UI if successful
 }
 
-function createTestVolume() {
-  const imgData: ImageInfo = {
+function concatenateArrays(arrays: Uint8Array[]): Uint8Array {
+  const totalLength = arrays.reduce((acc, arr) => acc + arr.length, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const arr of arrays) {
+    result.set(arr, offset);
+    offset += arr.length;
+  }
+  return result;
+}
+
+function createTestVolume(): RawArrayLoaderOptions {
+  const sizeX = 64;
+  const sizeY = 64;
+  const sizeZ = 64;
+  const imgData: RawArrayInfo = {
     name: "AICS-10_5_5",
-
-    originalSize: new Vector3(64, 64, 64),
-    atlasTileDims: new Vector2(8, 8),
-    volumeSize: new Vector3(64, 64, 64),
-    subregionSize: new Vector3(64, 64, 64),
-    subregionOffset: new Vector3(0, 0, 0),
-    physicalPixelSize: new Vector3(1, 1, 1),
+    sizeX,
+    sizeY,
+    sizeZ,
+    sizeC: 3,
+    physicalPixelSize: [1, 1, 1],
     spatialUnit: "",
-
-    numChannels: 3,
     channelNames: ["DRAQ5", "EGFP", "SEG_Memb"],
-
-    times: 1,
-    timeScale: 1,
-    timeUnit: "",
-
-    numMultiscaleLevels: 1,
-    multiscaleLevel: 0,
-
-    transform: { translation: new Vector3(0, 0, 0), rotation: new Vector3(0, 0, 0) },
   };
 
   // generate some raw volume data
   const channelVolumes = [
-    VolumeMaker.createSphere(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24),
-    VolumeMaker.createTorus(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 8),
-    VolumeMaker.createCone(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 24),
+    VolumeMaker.createSphere(sizeX, sizeY, sizeZ, 24),
+    VolumeMaker.createTorus(sizeX, sizeY, sizeZ, 24, 8),
+    VolumeMaker.createCone(sizeX, sizeY, sizeZ, 24, 24),
   ];
+  const alldata = concatenateArrays(channelVolumes);
   return {
-    imgData: imgData,
-    volumeData: channelVolumes,
+    metadata: imgData,
+    data: {
+      // expected to be "uint8" always
+      dtype: "uint8",
+      // [c,z,y,x]
+      shape: [channelVolumes.length, sizeZ, sizeY, sizeX],
+      // the bits (assumed uint8!!)
+      buffer: new DataView(alldata.buffer),
+    },
   };
 }
 
@@ -1020,6 +1033,7 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
 
   await loaderContext.onOpen();
 
+  const options: Partial<CreateLoaderOptions> = {};
   let path: string | string[] = data.url;
   if (data.type === VolumeFileFormat.JSON) {
     path = [];
@@ -1027,9 +1041,14 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
     for (let t = 0; t <= times; t++) {
       path.push(data.url.replace("%%", t.toString()));
     }
+  } else if (data.type === VolumeFileFormat.DATA) {
+    const volumeInfo = createTestVolume();
+    options.fileType = VolumeFileFormat.DATA;
+    options.rawArrayOptions = { data: volumeInfo.data, metadata: volumeInfo.metadata };
   }
 
   return await loaderContext.createLoader(path, {
+    ...options,
     fetchOptions: { maxPrefetchDistance: PREFETCH_DISTANCE, maxPrefetchChunks: MAX_PREFETCH_CHUNKS },
   });
 }
@@ -1044,12 +1063,6 @@ async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<vo
 }
 
 async function loadTestData(testdata: TestDataSpec) {
-  if (testdata.type === "procedural") {
-    const volumeInfo = createTestVolume();
-    loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
-    return;
-  }
-
   myState.loader = await createLoader(testdata);
 
   const loadSpec = new LoadSpec();

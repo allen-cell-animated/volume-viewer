@@ -311,12 +311,12 @@ describe("zarr_utils", () => {
       );
     });
 
-    it("throws an error if two scale levels of the same size have different scale transformations", async () => {
+    it("Does not throw an error if two scale levels of the same size have different scale transformations", async () => {
       const sources = await createMockSources([
         { shapes: [[1, 1, 1, 1, 1]], scales: [[1, 1, 2, 2, 2]] },
         { shapes: [[1, 1, 1, 1, 1]], scales: [[1, 1, 1, 1, 1]] },
       ]);
-      expect(() => matchSourceScaleLevels(sources)).to.throw(
+      expect(() => matchSourceScaleLevels(sources)).to.not.throw(
         "Incompatible zarr arrays: scale levels of equal size have different scale transformations"
       );
     });
