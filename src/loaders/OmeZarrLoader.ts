@@ -42,6 +42,7 @@ import type {
   ZarrSource,
   NumericZarrArray,
 } from "./zarr_utils/types.js";
+import { VolumeLoadError, VolumeLoadErrorType, wrapVolumeLoadError } from "./VolumeLoadError.js";
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
@@ -163,7 +164,11 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const sourceProms = urlsArr.map(async (url, i) => {
       const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
       const root = zarr.root(store);
-      const group = await zarr.open(root, { kind: "group" });
+
+      const group = await zarr
+        .open(root, { kind: "group" })
+        .catch(wrapVolumeLoadError(`Failed to open OME-Zarr data at ${url}`, VolumeLoadErrorType.NOT_FOUND));
+      // TODO: validate metadata and throw a VolumeLoadError if it's invalid
       const { multiscales, omero } = group.attrs as OMEZarrMetadata;
 
       // Pick scene (multiscale)
@@ -175,7 +180,16 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       const multiscaleMetadata = multiscales[scene];
 
       // Open all scale levels of multiscale
-      const lvlProms = multiscaleMetadata.datasets.map(({ path }) => zarr.open(root.resolve(path), { kind: "array" }));
+      const lvlProms = multiscaleMetadata.datasets.map(({ path }) =>
+        zarr
+          .open(root.resolve(path), { kind: "array" })
+          .catch(
+            wrapVolumeLoadError(
+              `Failed to open scale level ${path} of OME-Zarr data at ${url}`,
+              VolumeLoadErrorType.NOT_FOUND
+            )
+          )
+      );
       const scaleLevels = (await Promise.all(lvlProms)) as NumericZarrArray[];
       const axesTCZYX = remapAxesToTCZYX(multiscaleMetadata.axes);
 
@@ -246,8 +260,12 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const lastSrc = this.sources[lastSrcIdx];
     const lastSrcNumChannels = lastSrc.scaleLevels[0].shape[lastSrc.axesTCZYX[1]];
 
-    if (absoluteChannelIndex > lastSrc.channelOffset + lastSrcNumChannels) {
-      throw new Error("Channel index out of range");
+    const maxChannelIndex = lastSrc.channelOffset + lastSrcNumChannels;
+    if (absoluteChannelIndex > maxChannelIndex) {
+      throw new VolumeLoadError(
+        `Volume channel index ${absoluteChannelIndex} out of range (${maxChannelIndex} channels available)`,
+        { type: VolumeLoadErrorType.INVALID_METADATA }
+      );
     }
 
     const firstGreaterIdx = this.sources.findIndex((src) => src.channelOffset > absoluteChannelIndex);
@@ -393,14 +411,16 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const { store, path } = scaleLevel;
     const separator = path.endsWith("/") ? "" : "/";
     const key = path + separator + this.orderByDimension(coords).join("/");
-    try {
-      // Calling `get` and doing nothing with the result still triggers a cache check, fetch, and insertion
-      await store.get(key as AbsolutePath, { subscriber, isPrefetch: true });
-    } catch (e) {
-      if (e !== CHUNK_REQUEST_CANCEL_REASON) {
-        throw e;
-      }
-    }
+    // Calling `get` and doing nothing with the result still triggers a cache check, fetch, and insertion
+    await store
+      .get(key as AbsolutePath, { subscriber, isPrefetch: true })
+      .catch(
+        wrapVolumeLoadError(
+          `Unable to prefetch chunk with key ${key}`,
+          VolumeLoadErrorType.LOAD_DATA_FAILED,
+          CHUNK_REQUEST_CANCEL_REASON
+        )
+      );
   }
 
   /** Reads a list of chunk keys requested by a `loadVolumeData` call and sets up appropriate prefetch requests. */
@@ -529,22 +549,21 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       const sliceSpec = this.orderByDimension(unorderedSpec as TCZYX<number | Slice>, sourceIdx);
       const reportKey = (key: string, sub: SubscriberId) => reportKeyBase(sourceIdx, key, sub);
 
-      try {
-        const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } });
-        const converted = convertChannel(result.data);
-        if (syncChannels) {
-          resultChannelData.push(converted[0]);
-          resultChannelIndices.push(ch);
-          resultChannelRanges.push([converted[1], converted[2]]);
-        } else {
-          onData([ch], [converted[0]], [[converted[1], converted[2]]]);
-        }
-      } catch (e) {
-        // TODO: verify that cancelling requests in progress doesn't leak memory
-        if (e !== CHUNK_REQUEST_CANCEL_REASON) {
-          console.log(e);
-          throw e;
-        }
+      const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } }).catch(
+        wrapVolumeLoadError(
+          "Could not load OME-Zarr volume data",
+          VolumeLoadErrorType.LOAD_DATA_FAILED,
+          CHUNK_REQUEST_CANCEL_REASON
+        )
+      );
+
+      const converted = convertChannel(result.data);
+      if (syncChannels) {
+        resultChannelData.push(converted[0]);
+        resultChannelIndices.push(ch);
+        resultChannelRanges.push([converted[1], converted[2]]);
+      } else {
+        onData([ch], [converted[0]], [[converted[1], converted[2]]]);
       }
     });
 
