@@ -12,22 +12,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ Channel)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
-/* harmony import */ var _Lut_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Lut.js */ "./src/Lut.ts");
-
-
-
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
+/* harmony import */ var _Lut_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Lut.js */ "./src/Lut.ts");
 
 
 
 // Data and processing for a single channel
-var Channel = /*#__PURE__*/function () {
-  function Channel(name) {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, Channel);
+class Channel {
+  constructor(name) {
     this.loaded = false;
     this.imgData = {
       data: new Uint8ClampedArray(),
@@ -38,239 +31,205 @@ var Channel = /*#__PURE__*/function () {
     this.rawMax = 255;
 
     // on gpu
-    this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_5__.DataTexture(new Uint8Array(), 0, 0);
-    this.lutTexture = new three__WEBPACK_IMPORTED_MODULE_5__.DataTexture(new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH), 256, 1, three__WEBPACK_IMPORTED_MODULE_5__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_5__.UnsignedByteType);
-    this.lutTexture.minFilter = this.lutTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_5__.LinearFilter;
+    this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_2__.DataTexture(new Uint8Array(), 0, 0);
+    this.lutTexture = new three__WEBPACK_IMPORTED_MODULE_2__.DataTexture(new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_1__.LUT_ARRAY_LENGTH), 256, 1, three__WEBPACK_IMPORTED_MODULE_2__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_2__.UnsignedByteType);
+    this.lutTexture.minFilter = this.lutTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_2__.LinearFilter;
     this.lutTexture.generateMipmaps = false;
     this.volumeData = new Uint8Array();
     this.name = name;
-    this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_3__["default"](new Uint8Array());
+    this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_0__["default"](new Uint8Array());
     this.dims = [0, 0, 0];
 
     // intensity remapping lookup table
-    this.lut = new _Lut_js__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(0, 255);
+    this.lut = new _Lut_js__WEBPACK_IMPORTED_MODULE_1__.Lut().createFromMinMax(0, 255);
 
     // per-intensity color labeling (disabled initially)
-    this.colorPalette = new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH).fill(0);
+    this.colorPalette = new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_1__.LUT_ARRAY_LENGTH).fill(0);
     // store in 0..1 range. 1 means fully colorPalette, 0 means fully lut.
     this.colorPaletteAlpha = 0.0;
   }
 
   // rgbColor is [0..255, 0..255, 0..255]
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(Channel, [{
-    key: "combineLuts",
-    value: function combineLuts(rgbColor, out) {
-      var ret = out ? out : new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH);
-      if (!rgbColor) {
-        return ret;
-      }
-      var rgb = [rgbColor[0] / 255.0, rgbColor[1] / 255.0, rgbColor[2] / 255.0];
-      // colorPalette*alpha + rgb*lut*(1-alpha)
-      // a tiny bit faster for the edge cases
-      if (this.colorPaletteAlpha === 1.0) {
-        ret.set(this.colorPalette);
-      } else if (this.colorPaletteAlpha === 0.0) {
-        ret.set(this.lut.lut);
-        for (var i = 0; i < _Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH / 4; ++i) {
-          ret[i * 4 + 0] *= rgb[0];
-          ret[i * 4 + 1] *= rgb[1];
-          ret[i * 4 + 2] *= rgb[2];
-        }
-      } else {
-        for (var _i = 0; _i < _Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH / 4; ++_i) {
-          ret[_i * 4 + 0] = this.colorPalette[_i * 4 + 0] * this.colorPaletteAlpha + this.lut.lut[_i * 4 + 0] * (1.0 - this.colorPaletteAlpha) * rgb[0];
-          ret[_i * 4 + 1] = this.colorPalette[_i * 4 + 1] * this.colorPaletteAlpha + this.lut.lut[_i * 4 + 1] * (1.0 - this.colorPaletteAlpha) * rgb[1];
-          ret[_i * 4 + 2] = this.colorPalette[_i * 4 + 2] * this.colorPaletteAlpha + this.lut.lut[_i * 4 + 2] * (1.0 - this.colorPaletteAlpha) * rgb[2];
-          ret[_i * 4 + 3] = this.colorPalette[_i * 4 + 3] * this.colorPaletteAlpha + this.lut.lut[_i * 4 + 3] * (1.0 - this.colorPaletteAlpha);
-        }
-      }
-      this.lutTexture.image.data.set(ret);
-      this.lutTexture.needsUpdate = true;
+  combineLuts(rgbColor, out) {
+    const ret = out ? out : new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_1__.LUT_ARRAY_LENGTH);
+    if (!rgbColor) {
       return ret;
     }
-  }, {
-    key: "setRawDataRange",
-    value: function setRawDataRange(min, max) {
-      // remap the lut which was based on rawMin and rawMax to new min and max
-      // If either of the min/max ranges are both zero, then we have undefined behavior and should
-      // not remap the lut.  This situation can happen at first load, for example,
-      // when one channel has arrived but others haven't.
-      if (!(this.rawMin === 0 && this.rawMax === 0) && !(min === 0 && max === 0)) {
-        this.lut.remapDomains(this.rawMin, this.rawMax, min, max);
-        this.rawMin = min;
-        this.rawMax = max;
+    const rgb = [rgbColor[0] / 255.0, rgbColor[1] / 255.0, rgbColor[2] / 255.0];
+    // colorPalette*alpha + rgb*lut*(1-alpha)
+    // a tiny bit faster for the edge cases
+    if (this.colorPaletteAlpha === 1.0) {
+      ret.set(this.colorPalette);
+    } else if (this.colorPaletteAlpha === 0.0) {
+      ret.set(this.lut.lut);
+      for (let i = 0; i < _Lut_js__WEBPACK_IMPORTED_MODULE_1__.LUT_ARRAY_LENGTH / 4; ++i) {
+        ret[i * 4 + 0] *= rgb[0];
+        ret[i * 4 + 1] *= rgb[1];
+        ret[i * 4 + 2] *= rgb[2];
+      }
+    } else {
+      for (let i = 0; i < _Lut_js__WEBPACK_IMPORTED_MODULE_1__.LUT_ARRAY_LENGTH / 4; ++i) {
+        ret[i * 4 + 0] = this.colorPalette[i * 4 + 0] * this.colorPaletteAlpha + this.lut.lut[i * 4 + 0] * (1.0 - this.colorPaletteAlpha) * rgb[0];
+        ret[i * 4 + 1] = this.colorPalette[i * 4 + 1] * this.colorPaletteAlpha + this.lut.lut[i * 4 + 1] * (1.0 - this.colorPaletteAlpha) * rgb[1];
+        ret[i * 4 + 2] = this.colorPalette[i * 4 + 2] * this.colorPaletteAlpha + this.lut.lut[i * 4 + 2] * (1.0 - this.colorPaletteAlpha) * rgb[2];
+        ret[i * 4 + 3] = this.colorPalette[i * 4 + 3] * this.colorPaletteAlpha + this.lut.lut[i * 4 + 3] * (1.0 - this.colorPaletteAlpha);
       }
     }
-  }, {
-    key: "getHistogram",
-    value: function getHistogram() {
-      return this.histogram;
+    this.lutTexture.image.data.set(ret);
+    this.lutTexture.needsUpdate = true;
+    return ret;
+  }
+  setRawDataRange(min, max) {
+    // remap the lut which was based on rawMin and rawMax to new min and max
+    // If either of the min/max ranges are both zero, then we have undefined behavior and should
+    // not remap the lut.  This situation can happen at first load, for example,
+    // when one channel has arrived but others haven't.
+    if (!(this.rawMin === 0 && this.rawMax === 0) && !(min === 0 && max === 0)) {
+      this.lut.remapDomains(this.rawMin, this.rawMax, min, max);
+      this.rawMin = min;
+      this.rawMax = max;
     }
-  }, {
-    key: "getIntensity",
-    value: function getIntensity(x, y, z) {
-      return this.volumeData[x + y * this.dims[0] + z * (this.dims[0] * this.dims[1])];
-    }
+  }
+  getHistogram() {
+    return this.histogram;
+  }
+  getIntensity(x, y, z) {
+    return this.volumeData[x + y * this.dims[0] + z * (this.dims[0] * this.dims[1])];
+  }
 
-    // how to index into tiled texture atlas
-  }, {
-    key: "getIntensityFromAtlas",
-    value: function getIntensityFromAtlas(x, y, z) {
-      var numXtiles = this.imgData.width / this.dims[0];
-      var tilex = z % numXtiles;
-      var tiley = Math.floor(z / numXtiles);
-      var offset = tilex * this.dims[0] + x + (tiley * this.dims[1] + y) * this.imgData.width;
-      return this.imgData.data[offset];
+  // how to index into tiled texture atlas
+  getIntensityFromAtlas(x, y, z) {
+    const numXtiles = this.imgData.width / this.dims[0];
+    const tilex = z % numXtiles;
+    const tiley = Math.floor(z / numXtiles);
+    const offset = tilex * this.dims[0] + x + (tiley * this.dims[1] + y) * this.imgData.width;
+    return this.imgData.data[offset];
+  }
+  rebuildDataTexture(data, w, h) {
+    if (this.dataTexture) {
+      this.dataTexture.dispose();
     }
-  }, {
-    key: "rebuildDataTexture",
-    value: function rebuildDataTexture(data, w, h) {
-      if (this.dataTexture) {
-        this.dataTexture.dispose();
+    this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_2__.DataTexture(data, w, h);
+    this.dataTexture.format = three__WEBPACK_IMPORTED_MODULE_2__.RedFormat;
+    this.dataTexture.type = three__WEBPACK_IMPORTED_MODULE_2__.UnsignedByteType;
+    this.dataTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_2__.NearestFilter;
+    this.dataTexture.minFilter = three__WEBPACK_IMPORTED_MODULE_2__.NearestFilter;
+    this.dataTexture.generateMipmaps = false;
+    this.dataTexture.needsUpdate = true;
+  }
+
+  // give the channel fresh data and initialize from that data
+  // data is formatted as a texture atlas where each tile is a z slice of the volume
+  setBits(bitsArray, w, h) {
+    this.imgData = {
+      data: new Uint8ClampedArray(bitsArray.buffer),
+      width: w,
+      height: h
+    };
+    this.rebuildDataTexture(this.imgData.data, w, h);
+    this.loaded = true;
+    this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_0__["default"](bitsArray);
+    const [hmin, hmax] = this.histogram.findAutoIJBins();
+    const lut = new _Lut_js__WEBPACK_IMPORTED_MODULE_1__.Lut().createFromMinMax(hmin, hmax);
+    this.setLut(lut);
+  }
+
+  // let's rearrange this.imgData.data into a 3d array.
+  // it is assumed to be coming in as a flat Uint8Array of size x*y*z
+  // with x*y*z layout (first row of first plane is the first data in the layout,
+  // then second row of first plane, etc)
+  unpackVolumeFromAtlas(x, y, z) {
+    const volimgdata = this.imgData.data;
+    this.dims = [x, y, z];
+    this.volumeData = new Uint8Array(x * y * z);
+    const numXtiles = this.imgData.width / x;
+    const atlasrow = this.imgData.width;
+    let tilex = 0,
+      tiley = 0,
+      tileoffset = 0,
+      tilerowoffset = 0,
+      destOffset = 0;
+    for (let i = 0; i < z; ++i) {
+      // tile offset
+      tilex = i % numXtiles;
+      tiley = Math.floor(i / numXtiles);
+      tileoffset = tilex * x + tiley * y * atlasrow;
+      for (let j = 0; j < y; ++j) {
+        tilerowoffset = j * atlasrow;
+        destOffset = i * (x * y) + j * x;
+        this.volumeData.set(volimgdata.subarray(tileoffset + tilerowoffset, tileoffset + tilerowoffset + x), destOffset);
       }
-      this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_5__.DataTexture(data, w, h);
-      this.dataTexture.format = three__WEBPACK_IMPORTED_MODULE_5__.RedFormat;
-      this.dataTexture.type = three__WEBPACK_IMPORTED_MODULE_5__.UnsignedByteType;
-      this.dataTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_5__.NearestFilter;
-      this.dataTexture.minFilter = three__WEBPACK_IMPORTED_MODULE_5__.NearestFilter;
-      this.dataTexture.generateMipmaps = false;
-      this.dataTexture.needsUpdate = true;
     }
+  }
 
-    // give the channel fresh data and initialize from that data
-    // data is formatted as a texture atlas where each tile is a z slice of the volume
-  }, {
-    key: "setBits",
-    value: function setBits(bitsArray, w, h) {
-      this.imgData = {
-        data: new Uint8ClampedArray(bitsArray.buffer),
-        width: w,
-        height: h
-      };
-      this.rebuildDataTexture(this.imgData.data, w, h);
-      this.loaded = true;
-      this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_3__["default"](bitsArray);
-      var _this$histogram$findA = this.histogram.findAutoIJBins(),
-        _this$histogram$findA2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_this$histogram$findA, 2),
-        hmin = _this$histogram$findA2[0],
-        hmax = _this$histogram$findA2[1];
-      var lut = new _Lut_js__WEBPACK_IMPORTED_MODULE_4__.Lut().createFromMinMax(hmin, hmax);
-      this.setLut(lut);
+  // give the channel fresh volume data and initialize from that data
+  setFromVolumeData(bitsArray, vx, vy, vz, ax, ay, rawMin = 0, rawMax = 255) {
+    this.dims = [vx, vy, vz];
+    this.volumeData = bitsArray;
+    // TODO FIXME performance hit for shuffling the data and storing 2 versions of it (could do this in worker at least?)
+    this.packToAtlas(vx, vy, vz, ax, ay);
+    this.loaded = true;
+    // update from current histogram?
+    this.setRawDataRange(rawMin, rawMax);
+    this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_0__["default"](this.volumeData);
+  }
+
+  // given this.volumeData, let's unpack it into a flat textureatlas and fill up this.imgData.
+  packToAtlas(vx, vy, vz, ax, ay) {
+    // big assumptions:
+    // atlassize is a perfect multiple of volumesize in both x and y
+    // ax % vx == 0
+    // ay % vy == 0
+    // and num slices <= num possible slices in atlas.
+    // (ax/vx) * (ay/vy) >= vz
+    if (ax % vx !== 0 || ay % vy !== 0 || ax / vx * (ay / vy) < vz) {
+      console.log("ERROR - atlas and volume dims are inconsistent");
+      console.log(ax, ay, vx, vy, vz);
     }
+    this.imgData = {
+      width: ax,
+      height: ay,
+      data: new Uint8ClampedArray(ax * ay)
+    };
+    this.imgData.data.fill(0);
 
-    // let's rearrange this.imgData.data into a 3d array.
-    // it is assumed to be coming in as a flat Uint8Array of size x*y*z
-    // with x*y*z layout (first row of first plane is the first data in the layout,
-    // then second row of first plane, etc)
-  }, {
-    key: "unpackVolumeFromAtlas",
-    value: function unpackVolumeFromAtlas(x, y, z) {
-      var volimgdata = this.imgData.data;
-      this.dims = [x, y, z];
-      this.volumeData = new Uint8Array(x * y * z);
-      var numXtiles = this.imgData.width / x;
-      var atlasrow = this.imgData.width;
-      var tilex = 0,
-        tiley = 0,
-        tileoffset = 0,
-        tilerowoffset = 0,
-        destOffset = 0;
-      for (var i = 0; i < z; ++i) {
-        // tile offset
-        tilex = i % numXtiles;
-        tiley = Math.floor(i / numXtiles);
-        tileoffset = tilex * x + tiley * y * atlasrow;
-        for (var j = 0; j < y; ++j) {
-          tilerowoffset = j * atlasrow;
-          destOffset = i * (x * y) + j * x;
-          this.volumeData.set(volimgdata.subarray(tileoffset + tilerowoffset, tileoffset + tilerowoffset + x), destOffset);
-        }
+    // deposit slices one by one into the imgData.data from volData.
+    const volimgdata = this.imgData.data;
+    const x = vx,
+      y = vy,
+      z = vz;
+    const numXtiles = this.imgData.width / x;
+    const atlasrow = this.imgData.width;
+    let tilex = 0,
+      tiley = 0,
+      tileoffset = 0,
+      tilerowoffset = 0,
+      sourceOffset = 0;
+    for (let i = 0; i < z; ++i) {
+      // tile offset
+      tilex = i % numXtiles;
+      tiley = Math.floor(i / numXtiles);
+      tileoffset = tilex * x + tiley * y * atlasrow;
+      for (let j = 0; j < y; ++j) {
+        tilerowoffset = j * atlasrow;
+        sourceOffset = i * (x * y) + j * x;
+        volimgdata.set(this.volumeData.subarray(sourceOffset, sourceOffset + x), tileoffset + tilerowoffset);
       }
     }
+    this.rebuildDataTexture(this.imgData.data, ax, ay);
+  }
+  setLut(lut) {
+    this.lut = lut;
+  }
 
-    // give the channel fresh volume data and initialize from that data
-  }, {
-    key: "setFromVolumeData",
-    value: function setFromVolumeData(bitsArray, vx, vy, vz, ax, ay) {
-      var rawMin = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 0;
-      var rawMax = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : 255;
-      this.dims = [vx, vy, vz];
-      this.volumeData = bitsArray;
-      // TODO FIXME performance hit for shuffling the data and storing 2 versions of it (could do this in worker at least?)
-      this.packToAtlas(vx, vy, vz, ax, ay);
-      this.loaded = true;
-      // update from current histogram?
-      this.setRawDataRange(rawMin, rawMax);
-      this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_3__["default"](this.volumeData);
-    }
-
-    // given this.volumeData, let's unpack it into a flat textureatlas and fill up this.imgData.
-  }, {
-    key: "packToAtlas",
-    value: function packToAtlas(vx, vy, vz, ax, ay) {
-      // big assumptions:
-      // atlassize is a perfect multiple of volumesize in both x and y
-      // ax % vx == 0
-      // ay % vy == 0
-      // and num slices <= num possible slices in atlas.
-      // (ax/vx) * (ay/vy) >= vz
-      if (ax % vx !== 0 || ay % vy !== 0 || ax / vx * (ay / vy) < vz) {
-        console.log("ERROR - atlas and volume dims are inconsistent");
-        console.log(ax, ay, vx, vy, vz);
-      }
-      this.imgData = {
-        width: ax,
-        height: ay,
-        data: new Uint8ClampedArray(ax * ay)
-      };
-      this.imgData.data.fill(0);
-
-      // deposit slices one by one into the imgData.data from volData.
-      var volimgdata = this.imgData.data;
-      var x = vx,
-        y = vy,
-        z = vz;
-      var numXtiles = this.imgData.width / x;
-      var atlasrow = this.imgData.width;
-      var tilex = 0,
-        tiley = 0,
-        tileoffset = 0,
-        tilerowoffset = 0,
-        sourceOffset = 0;
-      for (var i = 0; i < z; ++i) {
-        // tile offset
-        tilex = i % numXtiles;
-        tiley = Math.floor(i / numXtiles);
-        tileoffset = tilex * x + tiley * y * atlasrow;
-        for (var j = 0; j < y; ++j) {
-          tilerowoffset = j * atlasrow;
-          sourceOffset = i * (x * y) + j * x;
-          volimgdata.set(this.volumeData.subarray(sourceOffset, sourceOffset + x), tileoffset + tilerowoffset);
-        }
-      }
-      this.rebuildDataTexture(this.imgData.data, ax, ay);
-    }
-  }, {
-    key: "setLut",
-    value: function setLut(lut) {
-      this.lut = lut;
-    }
-
-    // palette should be an uint8array of 256*4 elements (256 rgba8 values)
-  }, {
-    key: "setColorPalette",
-    value: function setColorPalette(palette) {
-      this.colorPalette = palette;
-    }
-  }, {
-    key: "setColorPaletteAlpha",
-    value: function setColorPaletteAlpha(alpha) {
-      this.colorPaletteAlpha = alpha;
-    }
-  }]);
-  return Channel;
-}();
-
+  // palette should be an uint8array of 256*4 elements (256 rgba8 values)
+  setColorPalette(palette) {
+    this.colorPalette = palette;
+  }
+  setColorPaletteAlpha(alpha) {
+    this.colorPaletteAlpha = alpha;
+  }
+}
 
 /***/ }),
 
@@ -285,18 +244,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ Histogram)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-
-
 /**
  * Builds a histogram with 256 bins from a data array. Assume data is 8 bit single channel grayscale.
  * @class
  * @param {Array.<number>} data
  */
-var Histogram = /*#__PURE__*/function () {
-  function Histogram(data) {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Histogram);
+class Histogram {
+  constructor(data) {
     // no more than 2^32 pixels of any one intensity in the data!?!?!
     this.bins = new Uint32Array(256);
     this.bins.fill(0);
@@ -305,19 +259,19 @@ var Histogram = /*#__PURE__*/function () {
     this.maxBin = 0;
 
     // build up the histogram
-    for (var i = 0; i < data.length; ++i) {
+    for (let i = 0; i < data.length; ++i) {
       this.bins[data[i]]++;
     }
     // track the first and last nonzero bins with at least 1 sample
-    for (var _i = 1; _i < this.bins.length; _i++) {
-      if (this.bins[_i] > 0) {
-        this.dataMin = _i;
+    for (let i = 1; i < this.bins.length; i++) {
+      if (this.bins[i] > 0) {
+        this.dataMin = i;
         break;
       }
     }
-    for (var _i2 = this.bins.length - 1; _i2 >= 1; _i2--) {
-      if (this.bins[_i2] > 0) {
-        this.dataMax = _i2;
+    for (let i = this.bins.length - 1; i >= 1; i--) {
+      if (this.bins[i] > 0) {
+        this.dataMax = i;
         break;
       }
     }
@@ -327,11 +281,11 @@ var Histogram = /*#__PURE__*/function () {
 
     // get the bin with the most frequently occurring NONZERO value
     this.maxBin = 1;
-    var max = this.bins[1];
-    for (var _i3 = 1; _i3 < this.bins.length; _i3++) {
-      if (this.bins[_i3] > max) {
-        this.maxBin = _i3;
-        max = this.bins[_i3];
+    let max = this.bins[1];
+    for (let i = 1; i < this.bins.length; i++) {
+      if (this.bins[i] > max) {
+        this.maxBin = i;
+        max = this.bins[i];
       }
     }
   }
@@ -340,140 +294,121 @@ var Histogram = /*#__PURE__*/function () {
    * Return the min data value
    * @return {number}
    */
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Histogram, [{
-    key: "getMin",
-    value: function getMin() {
-      return this.dataMin;
-    }
+  getMin() {
+    return this.dataMin;
+  }
 
-    /**
-     * Return the max data value
-     * @return {number}
-     */
-  }, {
-    key: "getMax",
-    value: function getMax() {
-      return this.dataMax;
-    }
-  }, {
-    key: "getNumBins",
-    value: function getNumBins() {
-      return this.bins.length;
-    }
-  }, {
-    key: "getBin",
-    value: function getBin(i) {
-      return this.bins[i];
-    }
+  /**
+   * Return the max data value
+   * @return {number}
+   */
+  getMax() {
+    return this.dataMax;
+  }
+  getNumBins() {
+    return this.bins.length;
+  }
+  getBin(i) {
+    return this.bins[i];
+  }
 
-    /**
-     * Find the bin that contains the percentage of pixels below it
-     * @return {number}
-     * @param {number} pct
-     */
-  }, {
-    key: "findBinOfPercentile",
-    value: function findBinOfPercentile(pct) {
-      var pixcount = this.nonzeroPixelCount + this.bins[0];
-      var limit = pixcount * pct;
-      var i = 0;
-      var count = 0;
-      for (i = 0; i < this.bins.length; ++i) {
-        count += this.bins[i];
-        if (count > limit) {
-          break;
-        }
+  /**
+   * Find the bin that contains the percentage of pixels below it
+   * @return {number}
+   * @param {number} pct
+   */
+  findBinOfPercentile(pct) {
+    const pixcount = this.nonzeroPixelCount + this.bins[0];
+    const limit = pixcount * pct;
+    let i = 0;
+    let count = 0;
+    for (i = 0; i < this.bins.length; ++i) {
+      count += this.bins[i];
+      if (count > limit) {
+        break;
       }
-      return i;
     }
+    return i;
+  }
 
-    // Find bins at 10th / 90th percentile
-  }, {
-    key: "findBestFitBins",
-    value: function findBestFitBins() {
-      var pixcount = this.nonzeroPixelCount;
-      //const pixcount = this.imgData.data.length;
-      var limit = pixcount / 10;
-      var i = 0;
-      var count = 0;
-      for (i = 1; i < this.bins.length; ++i) {
-        count += this.bins[i];
-        if (count > limit) {
-          break;
-        }
+  // Find bins at 10th / 90th percentile
+  findBestFitBins() {
+    const pixcount = this.nonzeroPixelCount;
+    //const pixcount = this.imgData.data.length;
+    const limit = pixcount / 10;
+    let i = 0;
+    let count = 0;
+    for (i = 1; i < this.bins.length; ++i) {
+      count += this.bins[i];
+      if (count > limit) {
+        break;
       }
-      var hmin = i;
-      count = 0;
-      for (i = this.bins.length - 1; i >= 1; --i) {
-        count += this.bins[i];
-        if (count > limit) {
-          break;
-        }
-      }
-      var hmax = i;
-      return [hmin, hmax];
     }
-
-    // Find min and max bins attempting to replicate ImageJ's "Auto" button
-  }, {
-    key: "findAutoIJBins",
-    value: function findAutoIJBins() {
-      var AUTO_THRESHOLD = 5000;
-      var pixcount = this.nonzeroPixelCount;
-      //  const pixcount = this.imgData.data.length;
-      var limit = pixcount / 10;
-      var threshold = pixcount / AUTO_THRESHOLD;
-
-      // this will skip the "zero" bin which contains pixels of zero intensity.
-      var hmin = this.bins.length - 1;
-      var hmax = 1;
-      for (var i = 1; i < this.bins.length; ++i) {
-        if (this.bins[i] > threshold && this.bins[i] <= limit) {
-          hmin = i;
-          break;
-        }
+    const hmin = i;
+    count = 0;
+    for (i = this.bins.length - 1; i >= 1; --i) {
+      count += this.bins[i];
+      if (count > limit) {
+        break;
       }
-      for (var _i4 = this.bins.length - 1; _i4 >= 1; --_i4) {
-        if (this.bins[_i4] > threshold && this.bins[_i4] <= limit) {
-          hmax = _i4;
-          break;
-        }
-      }
-      if (hmax < hmin) {
-        hmin = 0;
-        hmax = 255;
-      }
-      return [hmin, hmax];
     }
+    const hmax = i;
+    return [hmin, hmax];
+  }
 
-    // Find min and max bins using a percentile of the most commonly occurring value
-  }, {
-    key: "findAutoMinMax",
-    value: function findAutoMinMax() {
-      // simple linear mapping cutting elements with small appearence
-      // get 10% threshold
-      var PERCENTAGE = 0.1;
-      var th = Math.floor(this.bins[this.maxBin] * PERCENTAGE);
-      var b = 0;
-      var e = this.bins.length - 1;
-      for (var x = 1; x < this.bins.length; ++x) {
-        if (this.bins[x] > th) {
-          b = x;
-          break;
-        }
+  // Find min and max bins attempting to replicate ImageJ's "Auto" button
+  findAutoIJBins() {
+    const AUTO_THRESHOLD = 5000;
+    const pixcount = this.nonzeroPixelCount;
+    //  const pixcount = this.imgData.data.length;
+    const limit = pixcount / 10;
+    const threshold = pixcount / AUTO_THRESHOLD;
+
+    // this will skip the "zero" bin which contains pixels of zero intensity.
+    let hmin = this.bins.length - 1;
+    let hmax = 1;
+    for (let i = 1; i < this.bins.length; ++i) {
+      if (this.bins[i] > threshold && this.bins[i] <= limit) {
+        hmin = i;
+        break;
       }
-      for (var _x = this.bins.length - 1; _x >= 1; --_x) {
-        if (this.bins[_x] > th) {
-          e = _x;
-          break;
-        }
-      }
-      return [b, e];
     }
-  }]);
-  return Histogram;
-}();
+    for (let i = this.bins.length - 1; i >= 1; --i) {
+      if (this.bins[i] > threshold && this.bins[i] <= limit) {
+        hmax = i;
+        break;
+      }
+    }
+    if (hmax < hmin) {
+      hmin = 0;
+      hmax = 255;
+    }
+    return [hmin, hmax];
+  }
 
+  // Find min and max bins using a percentile of the most commonly occurring value
+  findAutoMinMax() {
+    // simple linear mapping cutting elements with small appearence
+    // get 10% threshold
+    const PERCENTAGE = 0.1;
+    const th = Math.floor(this.bins[this.maxBin] * PERCENTAGE);
+    let b = 0;
+    let e = this.bins.length - 1;
+    for (let x = 1; x < this.bins.length; ++x) {
+      if (this.bins[x] > th) {
+        b = x;
+        break;
+      }
+    }
+    for (let x = this.bins.length - 1; x >= 1; --x) {
+      if (this.bins[x] > th) {
+        e = x;
+        break;
+      }
+    }
+    return [b, e];
+  }
+}
 
 /***/ }),
 
@@ -492,11 +427,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   remapControlPoints: () => (/* binding */ remapControlPoints),
 /* harmony export */   remapLut: () => (/* binding */ remapLut)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _constants_colors_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants/colors.js */ "./src/constants/colors.ts");
-
-
+/* harmony import */ var _constants_colors_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./constants/colors.js */ "./src/constants/colors.ts");
 
 function clamp(val, cmin, cmax) {
   return Math.min(Math.max(cmin, val), cmax);
@@ -512,11 +443,11 @@ function lerp(xmin, xmax, a) {
 // oldMin and oldMax will be the domain of the original raw data intensities.
 // newMin and newMax will be the domain of the new raw data intensities.
 function remapDomain(value, valueMin, valueMax, oldMin, oldMax, newMin, newMax) {
-  var pctOfRange = (value - valueMin) / (valueMax - valueMin);
-  var newValue = (newMax - newMin) * pctOfRange + newMin;
+  const pctOfRange = (value - valueMin) / (valueMax - valueMin);
+  const newValue = (newMax - newMin) * pctOfRange + newMin;
   // now locate this value as a relative index in the old range
-  var pctOfOldRange = (newValue - oldMin) / (oldMax - oldMin);
-  var remapped = valueMin + pctOfOldRange * (valueMax - valueMin);
+  const pctOfOldRange = (newValue - oldMin) / (oldMax - oldMin);
+  const remapped = valueMin + pctOfOldRange * (valueMax - valueMin);
   return remapped;
 }
 
@@ -529,16 +460,16 @@ function remapDomain(value, valueMin, valueMax, oldMin, oldMax, newMin, newMax) 
 // oldMin and oldMax will be the domain of the original raw data intensities.
 // newMin and newMax will be the domain of the new raw data intensities.
 function remapDomainForCP(value, valueMin, valueMax, oldMin, oldMax, newMin, newMax) {
-  var pctOfRange = (value - valueMin) / (valueMax - valueMin);
+  const pctOfRange = (value - valueMin) / (valueMax - valueMin);
   // find abs intensity from old range
-  var iOld = (oldMax - oldMin) * pctOfRange + oldMin;
+  const iOld = (oldMax - oldMin) * pctOfRange + oldMin;
   // now locate this value as a relative index in the new range
-  var pctOfNewRange = (iOld - newMin) / (newMax - newMin);
-  var remapped = valueMin + pctOfNewRange * (valueMax - valueMin);
+  const pctOfNewRange = (iOld - newMin) / (newMax - newMin);
+  const remapped = valueMin + pctOfNewRange * (valueMax - valueMin);
   return remapped;
 }
-var LUT_ENTRIES = 256;
-var LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
+const LUT_ENTRIES = 256;
+const LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
 
 /**
  * @typedef {Object} ControlPoint Used for the TF (transfer function) editor GUI.
@@ -558,9 +489,8 @@ function controlPointToRGBA(controlPoint) {
  * (maps scalar intensity to a rgb color plus alpha, with each value from 0-255)
  * @property {Array.<ControlPoint>} controlPoints
  */
-var Lut = /*#__PURE__*/function () {
-  function Lut() {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_0__["default"])(this, Lut);
+class Lut {
+  constructor() {
     this.lut = new Uint8Array(LUT_ARRAY_LENGTH);
     this.controlPoints = [];
     this.createFullRange();
@@ -582,135 +512,38 @@ var Lut = /*#__PURE__*/function () {
    * @param {number} b
    * @param {number} e
    */
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(Lut, [{
-    key: "createFromMinMax",
-    value: function createFromMinMax(b, e) {
-      if (e < b) {
-        // swap
-        var tmp = e;
-        e = b;
-        b = tmp;
-      }
-      var lut = new Uint8Array(LUT_ARRAY_LENGTH);
-      for (var x = 0; x < lut.length / 4; ++x) {
-        lut[x * 4 + 0] = 255;
-        lut[x * 4 + 1] = 255;
-        lut[x * 4 + 2] = 255;
-        if (x > e) {
-          lut[x * 4 + 3] = 255;
-        } else if (x <= b) {
-          lut[x * 4 + 3] = 0;
-        } else {
-          if (e === b) {
-            lut[x * 4 + 3] = 255;
-          } else {
-            var a = (x - b) / (e - b);
-            lut[x * 4 + 3] = lerp(0, 255, a);
-          }
-        }
-      }
-
-      // Edge case: b and e are both out of bounds
-      if (b < 0 && e < 0) {
-        this.lut = lut;
-        this.controlPoints = [{
-          x: 0,
-          opacity: 1,
-          color: [255, 255, 255]
-        }, {
-          x: 255,
-          opacity: 1,
-          color: [255, 255, 255]
-        }];
-        return this;
-      }
-      if (b >= 255 && e >= 255) {
-        this.lut = lut;
-        this.controlPoints = [{
-          x: 0,
-          opacity: 0,
-          color: [255, 255, 255]
-        }, {
-          x: 255,
-          opacity: 0,
-          color: [255, 255, 255]
-        }];
-        return this;
-      }
-
-      // Generate 2 to 4 control points for a minMax LUT, from left to right
-      var controlPoints = [];
-
-      // Add starting point at x = 0
-      var startVal = 0;
-      if (b < 0) {
-        startVal = -b / (e - b);
-      }
-      controlPoints.push({
-        x: 0,
-        opacity: startVal,
-        color: [255, 255, 255]
-      });
-
-      // If b > 0, add another point at (b, 0)
-      if (b > 0) {
-        controlPoints.push({
-          x: b,
-          opacity: 0,
-          color: [255, 255, 255]
-        });
-      }
-
-      // If e < 255, Add another point at (e, 1)
-      if (e < 255) {
+  createFromMinMax(b, e) {
+    if (e < b) {
+      // swap
+      const tmp = e;
+      e = b;
+      b = tmp;
+    }
+    const lut = new Uint8Array(LUT_ARRAY_LENGTH);
+    for (let x = 0; x < lut.length / 4; ++x) {
+      lut[x * 4 + 0] = 255;
+      lut[x * 4 + 1] = 255;
+      lut[x * 4 + 2] = 255;
+      if (x > e) {
+        lut[x * 4 + 3] = 255;
+      } else if (x <= b) {
+        lut[x * 4 + 3] = 0;
+      } else {
         if (e === b) {
-          // Use b + 0.5 as x value instead of e to create a near-vertical ramp
-          controlPoints.push({
-            x: b + 0.5,
-            opacity: 1,
-            color: [255, 255, 255]
-          });
+          lut[x * 4 + 3] = 255;
         } else {
-          controlPoints.push({
-            x: e,
-            opacity: 1,
-            color: [255, 255, 255]
-          });
+          const a = (x - b) / (e - b);
+          lut[x * 4 + 3] = lerp(0, 255, a);
         }
       }
-
-      // Add ending point at x = 255
-      var endVal = 1;
-      if (e > 255) {
-        endVal = (255 - b) / (e - b);
-      }
-      controlPoints.push({
-        x: 255,
-        opacity: endVal,
-        color: [255, 255, 255]
-      });
-      this.lut = lut;
-      this.controlPoints = controlPoints;
-      return this;
     }
 
-    // basically, the identity LUT with respect to opacity
-  }, {
-    key: "createFullRange",
-    value: function createFullRange() {
-      var lut = new Uint8Array(LUT_ARRAY_LENGTH);
-
-      // simple linear mapping for actual range
-      for (var x = 0; x < lut.length / 4; ++x) {
-        lut[x * 4 + 0] = 255;
-        lut[x * 4 + 1] = 255;
-        lut[x * 4 + 2] = 255;
-        lut[x * 4 + 3] = x;
-      }
+    // Edge case: b and e are both out of bounds
+    if (b < 0 && e < 0) {
       this.lut = lut;
       this.controlPoints = [{
         x: 0,
-        opacity: 0,
+        opacity: 1,
         color: [255, 255, 255]
       }, {
         x: 255,
@@ -719,245 +552,324 @@ var Lut = /*#__PURE__*/function () {
       }];
       return this;
     }
-
-    /**
-     * Generate a Window/level lookup table
-     * @return {Lut}
-     * @param {number} wnd in 0..1 range
-     * @param {number} lvl in 0..1 range
-     */
-  }, {
-    key: "createFromWindowLevel",
-    value: function createFromWindowLevel(wnd, lvl) {
-      // simple linear mapping for actual range
-      var b = lvl - wnd * 0.5;
-      var e = lvl + wnd * 0.5;
-      return this.createFromMinMax(b * 255, e * 255);
-    }
-
-    // @param {Object[]} controlPoints - array of {x:number 0..255, opacity:number 0..1, color:array of 3 numbers 0..255}
-    // @return {Uint8Array} array of length 256*4 representing the rgba values of the gradient
-  }, {
-    key: "createFromControlPoints",
-    value: function createFromControlPoints(controlPoints) {
-      var lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
-      if (controlPoints.length === 0) {
-        this.lut = lut;
-        this.controlPoints = controlPoints;
-        return this;
-      }
-
-      // ensure they are sorted in ascending order of x
-      controlPoints.sort(function (a, b) {
-        return a.x - b.x;
-      });
-
-      // special case only one control point.
-      if (controlPoints.length === 1) {
-        var rgba = controlPointToRGBA(controlPoints[0]);
-        // lut was already filled with zeros
-        // copy val from x to 255.
-        var startx = clamp(controlPoints[0].x, 0, 255);
-        for (var x = startx; x < 256; ++x) {
-          lut[x * 4 + 0] = rgba[0];
-          lut[x * 4 + 1] = rgba[1];
-          lut[x * 4 + 2] = rgba[2];
-          lut[x * 4 + 3] = rgba[3];
-        }
-        this.lut = lut;
-        this.controlPoints = controlPoints;
-        return this;
-      }
-      var c0 = controlPoints[0];
-      var c1 = controlPoints[1];
-      var color0 = controlPointToRGBA(c0);
-      var color1 = controlPointToRGBA(c1);
-      var lastIndex = 1;
-      var a = 0;
-      for (var i = 0; i < 256; ++i) {
-        // find the two control points that i is between
-        while (i > c1.x) {
-          // advance control points
-          c0 = c1;
-          color0 = color1;
-          lastIndex++;
-          if (lastIndex >= controlPoints.length) {
-            // if the last control point is before 255, then we want to continue its value all the way to 255.
-            c1 = {
-              x: 255,
-              color: c1.color,
-              opacity: c1.opacity
-            };
-          } else {
-            c1 = controlPoints[lastIndex];
-          }
-          color1 = controlPointToRGBA(c1);
-        }
-        // find the lerp amount between the two control points
-        if (c1.x === c0.x) {
-          // use c1
-          a = 1.0;
-        } else {
-          a = (i - c0.x) / (c1.x - c0.x);
-        }
-        lut[i * 4 + 0] = clamp(lerp(color0[0], color1[0], a), 0, 255);
-        lut[i * 4 + 1] = clamp(lerp(color0[1], color1[1], a), 0, 255);
-        lut[i * 4 + 2] = clamp(lerp(color0[2], color1[2], a), 0, 255);
-        lut[i * 4 + 3] = clamp(lerp(color0[3], color1[3], a), 0, 255);
-      }
+    if (b >= 255 && e >= 255) {
       this.lut = lut;
-      this.controlPoints = controlPoints;
+      this.controlPoints = [{
+        x: 0,
+        opacity: 0,
+        color: [255, 255, 255]
+      }, {
+        x: 255,
+        opacity: 0,
+        color: [255, 255, 255]
+      }];
       return this;
     }
 
-    /**
-     * Generate an "equalized" lookup table
-     * @return {Lut}
-     */
-  }, {
-    key: "createFromEqHistogram",
-    value: function createFromEqHistogram(histogram) {
-      var map = [];
-      for (var i = 0; i < histogram.getNumBins(); ++i) {
-        map[i] = 0;
-      }
+    // Generate 2 to 4 control points for a minMax LUT, from left to right
+    const controlPoints = [];
 
-      // summed area table?
-      map[0] = histogram.getBin(0);
-      for (var _i = 1; _i < histogram.getNumBins(); ++_i) {
-        map[_i] = map[_i - 1] + histogram.getBin(_i);
-      }
-      var div = map[map.length - 1] - map[0];
-      if (div > 0) {
-        var lut = new Uint8Array(LUT_ARRAY_LENGTH);
+    // Add starting point at x = 0
+    let startVal = 0;
+    if (b < 0) {
+      startVal = -b / (e - b);
+    }
+    controlPoints.push({
+      x: 0,
+      opacity: startVal,
+      color: [255, 255, 255]
+    });
 
-        // compute lut and track control points for the piecewise linear sections
-        var lutControlPoints = [{
-          x: 0,
-          opacity: 0,
-          color: [255, 255, 255]
-        }];
-        lut[0] = 255;
-        lut[1] = 255;
-        lut[2] = 255;
-        lut[3] = 0;
-        var slope = 0;
-        var lastSlope = 0;
-        var opacity = 0;
-        var lastOpacity = 0;
-        for (var _i2 = 1; _i2 < lut.length / 4; ++_i2) {
-          lut[_i2 * 4 + 0] = 255;
-          lut[_i2 * 4 + 1] = 255;
-          lut[_i2 * 4 + 2] = 255;
-          lastOpacity = opacity;
-          opacity = clamp(Math.round(255 * (map[_i2] - map[0])), 0, 255);
-          lut[_i2 * 4 + 3] = opacity;
-          slope = opacity - lastOpacity;
-          // if map[i]-map[i-1] is the same as map[i+1]-map[i] then we are in a linear segment and do not need a new control point
-          if (slope != lastSlope) {
-            lutControlPoints.push({
-              x: _i2 - 1,
-              opacity: lastOpacity / 255.0,
-              color: [255, 255, 255]
-            });
-            lastSlope = slope;
-          }
-        }
-        lutControlPoints.push({
-          x: 255,
+    // If b > 0, add another point at (b, 0)
+    if (b > 0) {
+      controlPoints.push({
+        x: b,
+        opacity: 0,
+        color: [255, 255, 255]
+      });
+    }
+
+    // If e < 255, Add another point at (e, 1)
+    if (e < 255) {
+      if (e === b) {
+        // Use b + 0.5 as x value instead of e to create a near-vertical ramp
+        controlPoints.push({
+          x: b + 0.5,
           opacity: 1,
           color: [255, 255, 255]
         });
-        this.lut = lut;
-        this.controlPoints = lutControlPoints;
-        return this;
       } else {
-        // just reset to whole range in this case...?
-        return this.createFullRange();
+        controlPoints.push({
+          x: e,
+          opacity: 1,
+          color: [255, 255, 255]
+        });
       }
     }
 
-    /**
-     * Generate a lookup table with a different color per intensity value.
-     * This translates to a unique color per histogram bin with more than zero pixels.
-     * @return {Lut}
-     */
-  }, {
-    key: "createLabelColors",
-    value: function createLabelColors(histogram) {
-      var lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
-      var controlPoints = [];
-      controlPoints.push({
-        x: 0,
-        opacity: 0,
-        color: [0, 0, 0]
-      });
-      var lastr = 0;
-      var lastg = 0;
-      var lastb = 0;
-      var lasta = 0;
-      var r = 0;
-      var g = 0;
-      var b = 0;
-      var a = 0;
+    // Add ending point at x = 255
+    let endVal = 1;
+    if (e > 255) {
+      endVal = (255 - b) / (e - b);
+    }
+    controlPoints.push({
+      x: 255,
+      opacity: endVal,
+      color: [255, 255, 255]
+    });
+    this.lut = lut;
+    this.controlPoints = controlPoints;
+    return this;
+  }
 
-      // assumes exactly one bin per intensity value?
-      // skip zero!!!
-      for (var i = 1; i < histogram.getNumBins(); ++i) {
-        if (histogram.getBin(i) > 0) {
-          var rgb = (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_2__.getColorByChannelIndex)(i);
-          lut[i * 4 + 0] = rgb[0];
-          lut[i * 4 + 1] = rgb[1];
-          lut[i * 4 + 2] = rgb[2];
-          lut[i * 4 + 3] = 255;
-          r = rgb[0];
-          g = rgb[1];
-          b = rgb[2];
-          a = 1;
-        } else {
-          // add a zero control point?
-          r = 0;
-          g = 0;
-          b = 0;
-          a = 0;
-        }
-        // if current control point is same as last one don't add it
-        if (r !== lastr || g !== lastg || b !== lastb || a !== lasta) {
-          if (lasta === 0) {
-            controlPoints.push({
-              x: i - 0.5,
-              opacity: lasta,
-              color: [lastr, lastg, lastb]
-            });
-          }
-          controlPoints.push({
-            x: i,
-            opacity: a,
-            color: [r, g, b]
-          });
-          lastr = r;
-          lastg = g;
-          lastb = b;
-          lasta = a;
-        }
-      }
+  // basically, the identity LUT with respect to opacity
+  createFullRange() {
+    const lut = new Uint8Array(LUT_ARRAY_LENGTH);
+
+    // simple linear mapping for actual range
+    for (let x = 0; x < lut.length / 4; ++x) {
+      lut[x * 4 + 0] = 255;
+      lut[x * 4 + 1] = 255;
+      lut[x * 4 + 2] = 255;
+      lut[x * 4 + 3] = x;
+    }
+    this.lut = lut;
+    this.controlPoints = [{
+      x: 0,
+      opacity: 0,
+      color: [255, 255, 255]
+    }, {
+      x: 255,
+      opacity: 1,
+      color: [255, 255, 255]
+    }];
+    return this;
+  }
+
+  /**
+   * Generate a Window/level lookup table
+   * @return {Lut}
+   * @param {number} wnd in 0..1 range
+   * @param {number} lvl in 0..1 range
+   */
+  createFromWindowLevel(wnd, lvl) {
+    // simple linear mapping for actual range
+    const b = lvl - wnd * 0.5;
+    const e = lvl + wnd * 0.5;
+    return this.createFromMinMax(b * 255, e * 255);
+  }
+
+  // @param {Object[]} controlPoints - array of {x:number 0..255, opacity:number 0..1, color:array of 3 numbers 0..255}
+  // @return {Uint8Array} array of length 256*4 representing the rgba values of the gradient
+  createFromControlPoints(controlPoints) {
+    const lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
+    if (controlPoints.length === 0) {
       this.lut = lut;
       this.controlPoints = controlPoints;
       return this;
     }
 
-    // since this is not a "create" function, it doesn't need to return the object.
-  }, {
-    key: "remapDomains",
-    value: function remapDomains(oldMin, oldMax, newMin, newMax) {
-      // no attempt is made here to ensure that lut and controlPoints are internally consistent.
-      // if they start out consistent, they should end up consistent. And vice versa.
-      this.lut = remapLut(this.lut, oldMin, oldMax, newMin, newMax);
-      this.controlPoints = remapControlPoints(this.controlPoints, oldMin, oldMax, newMin, newMax);
+    // ensure they are sorted in ascending order of x
+    controlPoints.sort((a, b) => a.x - b.x);
+
+    // special case only one control point.
+    if (controlPoints.length === 1) {
+      const rgba = controlPointToRGBA(controlPoints[0]);
+      // lut was already filled with zeros
+      // copy val from x to 255.
+      const startx = clamp(controlPoints[0].x, 0, 255);
+      for (let x = startx; x < 256; ++x) {
+        lut[x * 4 + 0] = rgba[0];
+        lut[x * 4 + 1] = rgba[1];
+        lut[x * 4 + 2] = rgba[2];
+        lut[x * 4 + 3] = rgba[3];
+      }
+      this.lut = lut;
+      this.controlPoints = controlPoints;
+      return this;
     }
-  }]);
-  return Lut;
-}();
+    let c0 = controlPoints[0];
+    let c1 = controlPoints[1];
+    let color0 = controlPointToRGBA(c0);
+    let color1 = controlPointToRGBA(c1);
+    let lastIndex = 1;
+    let a = 0;
+    for (let i = 0; i < 256; ++i) {
+      // find the two control points that i is between
+      while (i > c1.x) {
+        // advance control points
+        c0 = c1;
+        color0 = color1;
+        lastIndex++;
+        if (lastIndex >= controlPoints.length) {
+          // if the last control point is before 255, then we want to continue its value all the way to 255.
+          c1 = {
+            x: 255,
+            color: c1.color,
+            opacity: c1.opacity
+          };
+        } else {
+          c1 = controlPoints[lastIndex];
+        }
+        color1 = controlPointToRGBA(c1);
+      }
+      // find the lerp amount between the two control points
+      if (c1.x === c0.x) {
+        // use c1
+        a = 1.0;
+      } else {
+        a = (i - c0.x) / (c1.x - c0.x);
+      }
+      lut[i * 4 + 0] = clamp(lerp(color0[0], color1[0], a), 0, 255);
+      lut[i * 4 + 1] = clamp(lerp(color0[1], color1[1], a), 0, 255);
+      lut[i * 4 + 2] = clamp(lerp(color0[2], color1[2], a), 0, 255);
+      lut[i * 4 + 3] = clamp(lerp(color0[3], color1[3], a), 0, 255);
+    }
+    this.lut = lut;
+    this.controlPoints = controlPoints;
+    return this;
+  }
+
+  /**
+   * Generate an "equalized" lookup table
+   * @return {Lut}
+   */
+  createFromEqHistogram(histogram) {
+    const map = [];
+    for (let i = 0; i < histogram.getNumBins(); ++i) {
+      map[i] = 0;
+    }
+
+    // summed area table?
+    map[0] = histogram.getBin(0);
+    for (let i = 1; i < histogram.getNumBins(); ++i) {
+      map[i] = map[i - 1] + histogram.getBin(i);
+    }
+    const div = map[map.length - 1] - map[0];
+    if (div > 0) {
+      const lut = new Uint8Array(LUT_ARRAY_LENGTH);
+
+      // compute lut and track control points for the piecewise linear sections
+      const lutControlPoints = [{
+        x: 0,
+        opacity: 0,
+        color: [255, 255, 255]
+      }];
+      lut[0] = 255;
+      lut[1] = 255;
+      lut[2] = 255;
+      lut[3] = 0;
+      let slope = 0;
+      let lastSlope = 0;
+      let opacity = 0;
+      let lastOpacity = 0;
+      for (let i = 1; i < lut.length / 4; ++i) {
+        lut[i * 4 + 0] = 255;
+        lut[i * 4 + 1] = 255;
+        lut[i * 4 + 2] = 255;
+        lastOpacity = opacity;
+        opacity = clamp(Math.round(255 * (map[i] - map[0])), 0, 255);
+        lut[i * 4 + 3] = opacity;
+        slope = opacity - lastOpacity;
+        // if map[i]-map[i-1] is the same as map[i+1]-map[i] then we are in a linear segment and do not need a new control point
+        if (slope != lastSlope) {
+          lutControlPoints.push({
+            x: i - 1,
+            opacity: lastOpacity / 255.0,
+            color: [255, 255, 255]
+          });
+          lastSlope = slope;
+        }
+      }
+      lutControlPoints.push({
+        x: 255,
+        opacity: 1,
+        color: [255, 255, 255]
+      });
+      this.lut = lut;
+      this.controlPoints = lutControlPoints;
+      return this;
+    } else {
+      // just reset to whole range in this case...?
+      return this.createFullRange();
+    }
+  }
+
+  /**
+   * Generate a lookup table with a different color per intensity value.
+   * This translates to a unique color per histogram bin with more than zero pixels.
+   * @return {Lut}
+   */
+  createLabelColors(histogram) {
+    const lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
+    const controlPoints = [];
+    controlPoints.push({
+      x: 0,
+      opacity: 0,
+      color: [0, 0, 0]
+    });
+    let lastr = 0;
+    let lastg = 0;
+    let lastb = 0;
+    let lasta = 0;
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    let a = 0;
+
+    // assumes exactly one bin per intensity value?
+    // skip zero!!!
+    for (let i = 1; i < histogram.getNumBins(); ++i) {
+      if (histogram.getBin(i) > 0) {
+        const rgb = (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_0__.getColorByChannelIndex)(i);
+        lut[i * 4 + 0] = rgb[0];
+        lut[i * 4 + 1] = rgb[1];
+        lut[i * 4 + 2] = rgb[2];
+        lut[i * 4 + 3] = 255;
+        r = rgb[0];
+        g = rgb[1];
+        b = rgb[2];
+        a = 1;
+      } else {
+        // add a zero control point?
+        r = 0;
+        g = 0;
+        b = 0;
+        a = 0;
+      }
+      // if current control point is same as last one don't add it
+      if (r !== lastr || g !== lastg || b !== lastb || a !== lasta) {
+        if (lasta === 0) {
+          controlPoints.push({
+            x: i - 0.5,
+            opacity: lasta,
+            color: [lastr, lastg, lastb]
+          });
+        }
+        controlPoints.push({
+          x: i,
+          opacity: a,
+          color: [r, g, b]
+        });
+        lastr = r;
+        lastg = g;
+        lastb = b;
+        lasta = a;
+      }
+    }
+    this.lut = lut;
+    this.controlPoints = controlPoints;
+    return this;
+  }
+
+  // since this is not a "create" function, it doesn't need to return the object.
+  remapDomains(oldMin, oldMax, newMin, newMax) {
+    // no attempt is made here to ensure that lut and controlPoints are internally consistent.
+    // if they start out consistent, they should end up consistent. And vice versa.
+    this.lut = remapLut(this.lut, oldMin, oldMax, newMin, newMax);
+    this.controlPoints = remapControlPoints(this.controlPoints, oldMin, oldMax, newMin, newMax);
+  }
+}
 
 // If the new max is greater than the old max, then
 // the lut's max end will move inward to the left.
@@ -966,13 +878,13 @@ var Lut = /*#__PURE__*/function () {
 // the lut's min end will move inward to the right.
 // This is another way of saying that the new min's index is less than 0 in the old lut
 function remapLut(lut, oldMin, oldMax, newMin, newMax) {
-  var newLut = new Uint8Array(LUT_ARRAY_LENGTH);
+  const newLut = new Uint8Array(LUT_ARRAY_LENGTH);
 
   // we will find what intensity is at each index in the new range,
   // and then try to sample the pre-existing lut as if it spans the old range.
   // Build new lut by sampling from old lut.
-  for (var i = 0; i < LUT_ENTRIES; ++i) {
-    var iOld = remapDomain(i, 0, LUT_ENTRIES - 1, oldMin, oldMax, newMin, newMax);
+  for (let i = 0; i < LUT_ENTRIES; ++i) {
+    let iOld = remapDomain(i, 0, LUT_ENTRIES - 1, oldMin, oldMax, newMin, newMax);
     if (iOld < 0) {
       iOld = 0;
     }
@@ -980,9 +892,9 @@ function remapLut(lut, oldMin, oldMax, newMin, newMax) {
       iOld = LUT_ENTRIES - 1;
     }
     // find the indices above and below for interpolation
-    var i0 = Math.floor(iOld);
-    var i1 = Math.ceil(iOld);
-    var pct = iOld - i0;
+    const i0 = Math.floor(iOld);
+    const i1 = Math.ceil(iOld);
+    const pct = iOld - i0;
 
     //console.log(`interpolating ${iOld}: ${lut[i0 * 4 + 3]}, ${lut[i1 * 4 + 3]}, ${pct}`);
     newLut[i * 4 + 0] = Math.round(lerp(lut[i0 * 4 + 0], lut[i1 * 4 + 0], pct));
@@ -993,7 +905,7 @@ function remapLut(lut, oldMin, oldMax, newMin, newMax) {
   return newLut;
 }
 function remapControlPoints(controlPoints, oldMin, oldMax, newMin, newMax) {
-  var newControlPoints = [];
+  const newControlPoints = [];
 
   // assume control point x domain 0-255 is mapped to oldMin-oldMax
 
@@ -1001,10 +913,10 @@ function remapControlPoints(controlPoints, oldMin, oldMax, newMin, newMax) {
   // interpolate all new colors and opacities
   // Do not clip values outside of 0-255. This is important to
   // preserve information for remapping many consecutive times.
-  for (var i = 0; i < controlPoints.length; ++i) {
-    var cp = controlPoints[i];
-    var iOld = remapDomainForCP(cp.x, 0, LUT_ENTRIES - 1, oldMin, oldMax, newMin, newMax);
-    var newCP = {
+  for (let i = 0; i < controlPoints.length; ++i) {
+    const cp = controlPoints[i];
+    const iOld = remapDomainForCP(cp.x, 0, LUT_ENTRIES - 1, oldMin, oldMax, newMin, newMax);
+    const newCP = {
       x: iOld,
       opacity: cp.opacity,
       color: [cp.color[0], cp.color[1], cp.color[2]]
@@ -1028,53 +940,38 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (/* binding */ Volume),
 /* harmony export */   getDefaultImageInfo: () => (/* binding */ getDefaultImageInfo)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _Channel_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./Channel.js */ "./src/Channel.ts");
-/* harmony import */ var _constants_colors_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./constants/colors.js */ "./src/constants/colors.ts");
-/* harmony import */ var _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./loaders/IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _loaders_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./loaders/VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _Channel_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Channel.js */ "./src/Channel.ts");
+/* harmony import */ var _constants_colors_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./constants/colors.js */ "./src/constants/colors.ts");
+/* harmony import */ var _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./loaders/IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _loaders_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./loaders/VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
 
 
 
 
 
-function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_1__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
-
-
-
-
-
-var getDefaultImageInfo = function getDefaultImageInfo() {
-  return {
-    name: "",
-    originalSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(1, 1, 1),
-    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_9__.Vector2(1, 1),
-    volumeSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(1, 1, 1),
-    subregionSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(1, 1, 1),
-    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
-    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(1, 1, 1),
-    spatialUnit: "",
-    numChannels: 0,
-    channelNames: [],
-    channelColors: [],
-    times: 1,
-    timeScale: 1,
-    timeUnit: "",
-    numMultiscaleLevels: 1,
-    multiscaleLevel: 0,
-    transform: {
-      translation: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
-      rotation: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0)
-    }
-  };
-};
+const getDefaultImageInfo = () => ({
+  name: "",
+  originalSize: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1),
+  atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_4__.Vector2(1, 1),
+  volumeSize: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1),
+  subregionSize: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1),
+  subregionOffset: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0),
+  physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1),
+  spatialUnit: "",
+  numChannels: 0,
+  channelNames: [],
+  channelColors: [],
+  times: 1,
+  timeScale: 1,
+  timeUnit: "",
+  numMultiscaleLevels: 1,
+  multiscaleLevel: 0,
+  transform: {
+    translation: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0),
+    rotation: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0)
+  }
+});
 /**
  * Provide dimensions of the volume data, including dimensions for texture atlas data in which the volume z slices
  * are tiled across a single large 2d image plane.
@@ -1117,63 +1014,58 @@ var getDefaultImageInfo = function getDefaultImageInfo() {
   },
   };
  */
+
 /**
  * A renderable multichannel volume image with 8-bits per channel intensity values.
  * @class
  * @param {ImageInfo} imageInfo
  */
-var Volume = /*#__PURE__*/function () {
+class Volume {
   // `LoadSpec` representing the minimum data required to display what's in the viewer (subregion, channels, etc.).
   // Used to intelligently issue load requests whenever required by a state change. Modify with `updateRequiredData`.
 
-  function Volume() {
-    var imageInfo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : getDefaultImageInfo();
-    var loadSpec = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_7__.LoadSpec();
-    var loader = arguments.length > 2 ? arguments[2] : undefined;
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, Volume);
+  constructor(imageInfo = getDefaultImageInfo(), loadSpec = new _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_2__.LoadSpec(), loader) {
     this.loaded = false;
     this.imageInfo = imageInfo;
     this.name = this.imageInfo.name;
-    this.loadSpec = _objectSpread({
+    this.loadSpec = {
       // Fill in defaults for optional properties
       multiscaleLevel: 0,
       scaleLevelBias: 0,
-      maxAtlasEdge: _loaders_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_8__.MAX_ATLAS_EDGE,
+      maxAtlasEdge: _loaders_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_3__.MAX_ATLAS_EDGE,
       channels: Array.from({
         length: this.imageInfo.numChannels
-      }, function (_val, idx) {
-        return idx;
-      })
-    }, loadSpec);
-    this.loadSpecRequired = _objectSpread(_objectSpread({}, this.loadSpec), {}, {
+      }, (_val, idx) => idx),
+      ...loadSpec
+    };
+    this.loadSpecRequired = {
+      ...this.loadSpec,
       channels: this.loadSpec.channels.slice(),
       subregion: this.loadSpec.subregion.clone()
-    });
+    };
     this.loader = loader;
     // imageMetadata to be filled in by Volume Loaders
     this.imageMetadata = {};
-    this.normRegionSize = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(1, 1, 1);
-    this.normRegionOffset = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0);
-    this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(1, 1, 1);
+    this.normRegionSize = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1);
+    this.normRegionOffset = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0);
+    this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1);
     this.physicalScale = 1;
-    this.normPhysicalSize = new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(1, 1, 1);
+    this.normPhysicalSize = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1);
     this.physicalPixelSize = this.imageInfo.physicalPixelSize;
     this.tickMarkPhysicalLength = 1;
     this.setVoxelSize(this.physicalPixelSize);
     this.numChannels = this.imageInfo.numChannels;
     this.channelNames = this.imageInfo.channelNames.slice();
-    this.channelColorsDefault = this.imageInfo.channelColors ? this.imageInfo.channelColors.slice() : this.channelNames.map(function (name, index) {
-      return (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_6__.getColorByChannelIndex)(index);
-    });
+    this.channelColorsDefault = this.imageInfo.channelColors ? this.imageInfo.channelColors.slice() : this.channelNames.map((name, index) => (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_1__.getColorByChannelIndex)(index));
     // fill in gaps
     if (this.channelColorsDefault.length < this.imageInfo.numChannels) {
-      for (var i = this.channelColorsDefault.length - 1; i < this.imageInfo.numChannels; ++i) {
-        this.channelColorsDefault[i] = (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_6__.getColorByChannelIndex)(i);
+      for (let i = this.channelColorsDefault.length - 1; i < this.imageInfo.numChannels; ++i) {
+        this.channelColorsDefault[i] = (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_1__.getColorByChannelIndex)(i);
       }
     }
     this.channels = [];
-    for (var _i = 0; _i < this.imageInfo.numChannels; ++_i) {
-      var channel = new _Channel_js__WEBPACK_IMPORTED_MODULE_5__["default"](this.channelNames[_i]);
+    for (let i = 0; i < this.imageInfo.numChannels; ++i) {
+      const channel = new _Channel_js__WEBPACK_IMPORTED_MODULE_0__["default"](this.channelNames[i]);
       this.channels.push(channel);
       // TODO pass in channel constructor...
       channel.dims = this.imageInfo.subregionSize.toArray();
@@ -1181,354 +1073,274 @@ var Volume = /*#__PURE__*/function () {
     this.physicalUnitSymbol = this.imageInfo.spatialUnit;
     this.volumeDataObservers = [];
   }
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(Volume, [{
-    key: "setUnloaded",
-    value: function setUnloaded() {
-      this.loaded = false;
-      this.channels.forEach(function (channel) {
-        channel.loaded = false;
-      });
-    }
-  }, {
-    key: "isLoaded",
-    value: function isLoaded() {
-      return this.loaded;
-    }
-  }, {
-    key: "updateDimensions",
-    value: function updateDimensions() {
-      var _this$imageInfo = this.imageInfo,
-        volumeSize = _this$imageInfo.volumeSize,
-        subregionSize = _this$imageInfo.subregionSize,
-        subregionOffset = _this$imageInfo.subregionOffset;
-      this.setVoxelSize(this.physicalPixelSize);
-      this.normRegionSize = subregionSize.clone().divide(volumeSize);
-      this.normRegionOffset = subregionOffset.clone().divide(volumeSize);
-    }
+  setUnloaded() {
+    this.loaded = false;
+    this.channels.forEach(channel => {
+      channel.loaded = false;
+    });
+  }
+  isLoaded() {
+    return this.loaded;
+  }
+  updateDimensions() {
+    const {
+      volumeSize,
+      subregionSize,
+      subregionOffset
+    } = this.imageInfo;
+    this.setVoxelSize(this.physicalPixelSize);
+    this.normRegionSize = subregionSize.clone().divide(volumeSize);
+    this.normRegionOffset = subregionOffset.clone().divide(volumeSize);
+  }
 
-    /** Returns `true` iff differences between `loadSpec` and `loadSpecRequired` indicate new data *must* be loaded. */
-  }, {
-    key: "mustLoadNewData",
-    value: function mustLoadNewData() {
-      var _this = this;
-      return this.loadSpec.time !== this.loadSpecRequired.time ||
-      // time point changed
-      !this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion) ||
-      // new subregion not contained in old
-      this.loadSpecRequired.channels.some(function (channel) {
-        return !_this.loadSpec.channels.includes(channel);
-      }) // new channel(s)
-      ;
-    }
+  /** Returns `true` iff differences between `loadSpec` and `loadSpecRequired` indicate new data *must* be loaded. */
+  mustLoadNewData() {
+    return this.loadSpec.time !== this.loadSpecRequired.time ||
+    // time point changed
+    !this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion) ||
+    // new subregion not contained in old
+    this.loadSpecRequired.channels.some(channel => !this.loadSpec.channels.includes(channel)) // new channel(s)
+    ;
+  }
 
-    /**
-     * Returns `true` iff differences between `loadSpec` and `loadSpecRequired` indicate a new load *may* get a
-     * different scale level than is currently loaded.
-     *
-     * This checks for changes in properties that *can*, but do not *always*, change the scale level the loader picks.
-     * For example, a smaller `subregion` *may* mean a higher scale level will fit within memory constraints, or it may
-     * not. A higher `scaleLevelBias` *may* nudge the volume into a higher scale level, or we may already be at the max
-     * imposed by `multiscaleLevel`.
-     */
-  }, {
-    key: "mayLoadNewScaleLevel",
-    value: function mayLoadNewScaleLevel() {
-      return !this.loadSpec.subregion.equals(this.loadSpecRequired.subregion) || this.loadSpecRequired.maxAtlasEdge !== this.loadSpec.maxAtlasEdge || this.loadSpecRequired.multiscaleLevel !== this.loadSpec.multiscaleLevel || this.loadSpecRequired.scaleLevelBias !== this.loadSpec.scaleLevelBias;
-    }
+  /**
+   * Returns `true` iff differences between `loadSpec` and `loadSpecRequired` indicate a new load *may* get a
+   * different scale level than is currently loaded.
+   *
+   * This checks for changes in properties that *can*, but do not *always*, change the scale level the loader picks.
+   * For example, a smaller `subregion` *may* mean a higher scale level will fit within memory constraints, or it may
+   * not. A higher `scaleLevelBias` *may* nudge the volume into a higher scale level, or we may already be at the max
+   * imposed by `multiscaleLevel`.
+   */
+  mayLoadNewScaleLevel() {
+    return !this.loadSpec.subregion.equals(this.loadSpecRequired.subregion) || this.loadSpecRequired.maxAtlasEdge !== this.loadSpec.maxAtlasEdge || this.loadSpecRequired.multiscaleLevel !== this.loadSpec.multiscaleLevel || this.loadSpecRequired.scaleLevelBias !== this.loadSpec.scaleLevelBias;
+  }
 
-    /** Call on any state update that may require new data to be loaded (subregion, enabled channels, time, etc.) */
-  }, {
-    key: "updateRequiredData",
-    value: (function () {
-      var _updateRequiredData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(required, onChannelLoaded) {
-        var shouldReload, _this$loader, dims, dimsZYX, levelToLoad;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee$(_context) {
-          while (1) switch (_context.prev = _context.next) {
-            case 0:
-              this.loadSpecRequired = _objectSpread(_objectSpread({}, this.loadSpecRequired), required);
-              shouldReload = this.mustLoadNewData(); // If we're not reloading due to required data changes, check if we should load a new scale level
-              if (!(!shouldReload && this.mayLoadNewScaleLevel())) {
-                _context.next = 7;
-                break;
-              }
-              _context.next = 5;
-              return (_this$loader = this.loader) === null || _this$loader === void 0 ? void 0 : _this$loader.loadDims(this.loadSpecRequired);
-            case 5:
-              dims = _context.sent;
-              if (dims) {
-                dimsZYX = dims.map(function (_ref) {
-                  var shape = _ref.shape;
-                  return [shape[2], shape[3], shape[4]];
-                }); // Determine which scale level *would* be loaded, and see if it's different than what we have
-                levelToLoad = (0,_loaders_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_8__.pickLevelToLoadUnscaled)(this.loadSpecRequired, dimsZYX);
-                shouldReload = this.imageInfo.multiscaleLevel !== levelToLoad;
-              }
-            case 7:
-              if (shouldReload) {
-                this.loadNewData(onChannelLoaded);
-              }
-            case 8:
-            case "end":
-              return _context.stop();
-          }
-        }, _callee, this);
-      }));
-      function updateRequiredData(_x, _x2) {
-        return _updateRequiredData.apply(this, arguments);
-      }
-      return updateRequiredData;
-    }()
-    /**
-     * Loads new data as specified in `this.loadSpecRequired`. Clones `loadSpecRequired` into `loadSpec` to indicate
-     * that the data that *must* be loaded is now the data that *has* been loaded.
-     */
-    )
-  }, {
-    key: "loadNewData",
-    value: function loadNewData(onChannelLoaded) {
-      var _this$loader2;
-      this.setUnloaded();
-      this.loadSpec = _objectSpread(_objectSpread({}, this.loadSpecRequired), {}, {
-        subregion: this.loadSpecRequired.subregion.clone()
-      });
-      (_this$loader2 = this.loader) === null || _this$loader2 === void 0 || _this$loader2.loadVolumeData(this, undefined, onChannelLoaded);
-    }
+  /** Call on any state update that may require new data to be loaded (subregion, enabled channels, time, etc.) */
+  async updateRequiredData(required, onChannelLoaded) {
+    this.loadSpecRequired = {
+      ...this.loadSpecRequired,
+      ...required
+    };
+    let shouldReload = this.mustLoadNewData();
 
-    // we calculate the physical size of the volume (voxels*pixel_size)
-    // and then normalize to the max physical dimension
-  }, {
-    key: "setVoxelSize",
-    value: function setVoxelSize(size) {
-      // only set the data if it is > 0.  zero is not an allowed value.
-      size.x = size.x > 0 ? size.x : 1.0;
-      size.y = size.y > 0 ? size.y : 1.0;
-      size.z = size.z > 0 ? size.z : 1.0;
-      this.physicalPixelSize = size;
-      this.physicalSize = this.imageInfo.originalSize.clone().multiply(this.physicalPixelSize);
-      // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
-      this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z);
-      // Compute the volume's max extent - scaled to max dimension.
-      this.normPhysicalSize = this.physicalSize.clone().divideScalar(this.physicalScale);
-      // While we're here, pick a power of 10 that divides into our max dimension a reasonable number of times
-      // and save it to be the length of tick marks in 3d.
-      this.tickMarkPhysicalLength = Math.pow(10, Math.floor(Math.log10(this.physicalScale / 2)));
-    }
-  }, {
-    key: "setUnitSymbol",
-    value: function setUnitSymbol(symbol) {
-      this.physicalUnitSymbol = symbol;
-    }
-
-    /** Computes the center of the volume subset */
-  }, {
-    key: "getContentCenter",
-    value: function getContentCenter() {
-      // center point: (normRegionSize / 2 + normRegionOffset - 0.5) * normPhysicalSize;
-      return this.normRegionSize.clone().divideScalar(2).add(this.normRegionOffset).subScalar(0.5).multiply(this.normPhysicalSize);
-    }
-  }, {
-    key: "cleanup",
-    value: function cleanup() {
-      // no op
-    }
-  }, {
-    key: "getChannel",
-    value: function getChannel(channelIndex) {
-      return this.channels[channelIndex];
-    }
-  }, {
-    key: "onChannelLoaded",
-    value: function onChannelLoaded(batch) {
-      var _this2 = this;
-      // check to see if all channels are now loaded, and fire an event(?)
-      if (this.loadSpec.channels.every(function (channelIndex) {
-        return _this2.channels[channelIndex].loaded;
-      })) {
-        this.loaded = true;
-      }
-      batch.forEach(function (channelIndex) {
-        var _this2$channelLoadCal;
-        return (_this2$channelLoadCal = _this2.channelLoadCallback) === null || _this2$channelLoadCal === void 0 ? void 0 : _this2$channelLoadCal.call(_this2, _this2, channelIndex);
-      });
-      this.volumeDataObservers.forEach(function (observer) {
-        return observer.onVolumeData(_this2, batch);
-      });
-    }
-
-    /**
-     * Assign volume data via a 2d array containing the z slices as tiles across it.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
-     * @param {number} channelIndex
-     * @param {Uint8Array} atlasdata
-     * @param {number} atlaswidth
-     * @param {number} atlasheight
-     */
-  }, {
-    key: "setChannelDataFromAtlas",
-    value: function setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight) {
-      this.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight);
-      var _this$imageInfo$subre = this.imageInfo.subregionSize,
-        x = _this$imageInfo$subre.x,
-        y = _this$imageInfo$subre.y,
-        z = _this$imageInfo$subre.z;
-      this.channels[channelIndex].unpackVolumeFromAtlas(x, y, z);
-      this.onChannelLoaded([channelIndex]);
-    }
-
-    // ASSUMES that this.channelData.options is already set and incoming data is consistent with it
-    /**
-     * Assign volume data as a 3d array ordered x,y,z. The xy size must be equal to tilewidth*tileheight from the imageInfo used to construct this Volume.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
-     * @param {number} channelIndex
-     * @param {Uint8Array} volumeData
-     */
-  }, {
-    key: "setChannelDataFromVolume",
-    value: function setChannelDataFromVolume(channelIndex, volumeData, range) {
-      var _this$imageInfo2 = this.imageInfo,
-        subregionSize = _this$imageInfo2.subregionSize,
-        atlasTileDims = _this$imageInfo2.atlasTileDims;
-      this.channels[channelIndex].setFromVolumeData(volumeData, subregionSize.x, subregionSize.y, subregionSize.z, atlasTileDims.x * subregionSize.x, atlasTileDims.y * subregionSize.y, range[0], range[1]);
-      this.onChannelLoaded([channelIndex]);
-    }
-
-    // TODO: decide if this should update imageInfo or not. For now, leave imageInfo alone as the "original" data
-    /**
-     * Add a new channel ready to receive data from one of the setChannelDataFrom* calls.
-     * Name and color will be defaulted if not provided. For now, leave imageInfo alone as the "original" data
-     * @param {string} name
-     * @param {Array.<number>} color [r,g,b]
-     */
-  }, {
-    key: "appendEmptyChannel",
-    value: function appendEmptyChannel(name, color) {
-      var idx = this.imageInfo.numChannels;
-      var chname = name || "channel_" + idx;
-      var chcolor = color || (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_6__.getColorByChannelIndex)(idx);
-      this.numChannels += 1;
-      this.channelNames.push(chname);
-      this.channelColorsDefault.push(chcolor);
-      this.channels.push(new _Channel_js__WEBPACK_IMPORTED_MODULE_5__["default"](chname));
-      for (var i = 0; i < this.volumeDataObservers.length; ++i) {
-        this.volumeDataObservers[i].onVolumeChannelAdded(this, idx);
-      }
-      return idx;
-    }
-
-    /**
-     * Get a value from the volume data
-     * @return {number} the intensity value from the given channel at the given xyz location
-     * @param {number} c The channel index
-     * @param {number} x
-     * @param {number} y
-     * @param {number} z
-     */
-  }, {
-    key: "getIntensity",
-    value: function getIntensity(c, x, y, z) {
-      return this.channels[c].getIntensity(x, y, z);
-    }
-
-    /**
-     * Get the 256-bin histogram for the given channel
-     * @return {Histogram} the histogram
-     * @param {number} c The channel index
-     */
-  }, {
-    key: "getHistogram",
-    value: function getHistogram(c) {
-      return this.channels[c].getHistogram();
-    }
-
-    /**
-     * Set the lut for the given channel
-     * @param {number} c The channel index
-     * @param {Array.<number>} lut The lut as a 256 element array
-     */
-  }, {
-    key: "setLut",
-    value: function setLut(c, lut) {
-      this.channels[c].setLut(lut);
-    }
-
-    /**
-     * Set the color palette for the given channel
-     * @param {number} c The channel index
-     * @param {Array.<number>} palette The colors as a 256 element array * RGBA
-     */
-  }, {
-    key: "setColorPalette",
-    value: function setColorPalette(c, palette) {
-      this.channels[c].setColorPalette(palette);
-    }
-
-    /**
-     * Set the color palette alpha multiplier for the given channel.
-     * This will blend between the ordinary color lut and this colorPalette lut.
-     * @param {number} c The channel index
-     * @param {number} alpha The alpha value as a number from 0 to 1
-     */
-  }, {
-    key: "setColorPaletteAlpha",
-    value: function setColorPaletteAlpha(c, alpha) {
-      this.channels[c].setColorPaletteAlpha(alpha);
-    }
-
-    /**
-     * Return the intrinsic rotation associated with this volume (radians)
-     * @return {Array.<number>} the xyz Euler angles (radians)
-     */
-  }, {
-    key: "getRotation",
-    value: function getRotation() {
-      // default axis order is XYZ
-      return this.imageInfo.transform.rotation.toArray();
-    }
-
-    /**
-     * Return the intrinsic translation (pivot center delta) associated with this volume, in normalized volume units
-     * @return {Array.<number>} the xyz translation in normalized volume units
-     */
-  }, {
-    key: "getTranslation",
-    value: function getTranslation() {
-      return this.voxelsToWorldSpace(this.imageInfo.transform.translation.toArray());
-    }
-
-    /**
-     * Return a translation in normalized volume units, given a translation in image voxels
-     * @return {Array.<number>} the xyz translation in normalized volume units
-     */
-  }, {
-    key: "voxelsToWorldSpace",
-    value: function voxelsToWorldSpace(xyz) {
-      // ASSUME: translation is in original image voxels.
-      // account for pixel_size and normalized scaling in the threejs volume representation we're using
-      var m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
-      return new three__WEBPACK_IMPORTED_MODULE_9__.Vector3().fromArray(xyz).multiply(this.physicalPixelSize).multiplyScalar(m).toArray();
-    }
-  }, {
-    key: "addVolumeDataObserver",
-    value: function addVolumeDataObserver(o) {
-      this.volumeDataObservers.push(o);
-    }
-  }, {
-    key: "removeVolumeDataObserver",
-    value: function removeVolumeDataObserver(o) {
-      if (o) {
-        var i = this.volumeDataObservers.indexOf(o);
-        if (i !== -1) {
-          this.volumeDataObservers.splice(i, 1);
-        }
+    // If we're not reloading due to required data changes, check if we should load a new scale level
+    if (!shouldReload && this.mayLoadNewScaleLevel()) {
+      // Loaders should cache loaded dimensions so that this call blocks no more than once per valid `LoadSpec`.
+      const dims = await this.loader?.loadDims(this.loadSpecRequired);
+      if (dims) {
+        const dimsZYX = dims.map(({
+          shape
+        }) => [shape[2], shape[3], shape[4]]);
+        // Determine which scale level *would* be loaded, and see if it's different than what we have
+        const levelToLoad = (0,_loaders_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_3__.pickLevelToLoadUnscaled)(this.loadSpecRequired, dimsZYX);
+        shouldReload = this.imageInfo.multiscaleLevel !== levelToLoad;
       }
     }
-  }, {
-    key: "removeAllVolumeDataObservers",
-    value: function removeAllVolumeDataObservers() {
-      this.volumeDataObservers = [];
+    if (shouldReload) {
+      this.loadNewData(onChannelLoaded);
     }
-  }]);
-  return Volume;
-}();
+  }
 
+  /**
+   * Loads new data as specified in `this.loadSpecRequired`. Clones `loadSpecRequired` into `loadSpec` to indicate
+   * that the data that *must* be loaded is now the data that *has* been loaded.
+   */
+  loadNewData(onChannelLoaded) {
+    this.setUnloaded();
+    this.loadSpec = {
+      ...this.loadSpecRequired,
+      subregion: this.loadSpecRequired.subregion.clone()
+    };
+    this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
+  }
+
+  // we calculate the physical size of the volume (voxels*pixel_size)
+  // and then normalize to the max physical dimension
+  setVoxelSize(size) {
+    // only set the data if it is > 0.  zero is not an allowed value.
+    size.x = size.x > 0 ? size.x : 1.0;
+    size.y = size.y > 0 ? size.y : 1.0;
+    size.z = size.z > 0 ? size.z : 1.0;
+    this.physicalPixelSize = size;
+    this.physicalSize = this.imageInfo.originalSize.clone().multiply(this.physicalPixelSize);
+    // Volume is scaled such that its largest physical dimension is 1 world unit - save that dimension for conversions
+    this.physicalScale = Math.max(this.physicalSize.x, this.physicalSize.y, this.physicalSize.z);
+    // Compute the volume's max extent - scaled to max dimension.
+    this.normPhysicalSize = this.physicalSize.clone().divideScalar(this.physicalScale);
+    // While we're here, pick a power of 10 that divides into our max dimension a reasonable number of times
+    // and save it to be the length of tick marks in 3d.
+    this.tickMarkPhysicalLength = 10 ** Math.floor(Math.log10(this.physicalScale / 2));
+  }
+  setUnitSymbol(symbol) {
+    this.physicalUnitSymbol = symbol;
+  }
+
+  /** Computes the center of the volume subset */
+  getContentCenter() {
+    // center point: (normRegionSize / 2 + normRegionOffset - 0.5) * normPhysicalSize;
+    return this.normRegionSize.clone().divideScalar(2).add(this.normRegionOffset).subScalar(0.5).multiply(this.normPhysicalSize);
+  }
+  cleanup() {
+    // no op
+  }
+  getChannel(channelIndex) {
+    return this.channels[channelIndex];
+  }
+  onChannelLoaded(batch) {
+    // check to see if all channels are now loaded, and fire an event(?)
+    if (this.loadSpec.channels.every(channelIndex => this.channels[channelIndex].loaded)) {
+      this.loaded = true;
+    }
+    batch.forEach(channelIndex => this.channelLoadCallback?.(this, channelIndex));
+    this.volumeDataObservers.forEach(observer => observer.onVolumeData(this, batch));
+  }
+
+  /**
+   * Assign volume data via a 2d array containing the z slices as tiles across it.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
+   * @param {number} channelIndex
+   * @param {Uint8Array} atlasdata
+   * @param {number} atlaswidth
+   * @param {number} atlasheight
+   */
+  setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight) {
+    this.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight);
+    const {
+      x,
+      y,
+      z
+    } = this.imageInfo.subregionSize;
+    this.channels[channelIndex].unpackVolumeFromAtlas(x, y, z);
+    this.onChannelLoaded([channelIndex]);
+  }
+
+  // ASSUMES that this.channelData.options is already set and incoming data is consistent with it
+  /**
+   * Assign volume data as a 3d array ordered x,y,z. The xy size must be equal to tilewidth*tileheight from the imageInfo used to construct this Volume.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.
+   * @param {number} channelIndex
+   * @param {Uint8Array} volumeData
+   */
+  setChannelDataFromVolume(channelIndex, volumeData, range) {
+    const {
+      subregionSize,
+      atlasTileDims
+    } = this.imageInfo;
+    this.channels[channelIndex].setFromVolumeData(volumeData, subregionSize.x, subregionSize.y, subregionSize.z, atlasTileDims.x * subregionSize.x, atlasTileDims.y * subregionSize.y, range[0], range[1]);
+    this.onChannelLoaded([channelIndex]);
+  }
+
+  // TODO: decide if this should update imageInfo or not. For now, leave imageInfo alone as the "original" data
+  /**
+   * Add a new channel ready to receive data from one of the setChannelDataFrom* calls.
+   * Name and color will be defaulted if not provided. For now, leave imageInfo alone as the "original" data
+   * @param {string} name
+   * @param {Array.<number>} color [r,g,b]
+   */
+  appendEmptyChannel(name, color) {
+    const idx = this.imageInfo.numChannels;
+    const chname = name || "channel_" + idx;
+    const chcolor = color || (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_1__.getColorByChannelIndex)(idx);
+    this.numChannels += 1;
+    this.channelNames.push(chname);
+    this.channelColorsDefault.push(chcolor);
+    this.channels.push(new _Channel_js__WEBPACK_IMPORTED_MODULE_0__["default"](chname));
+    for (let i = 0; i < this.volumeDataObservers.length; ++i) {
+      this.volumeDataObservers[i].onVolumeChannelAdded(this, idx);
+    }
+    return idx;
+  }
+
+  /**
+   * Get a value from the volume data
+   * @return {number} the intensity value from the given channel at the given xyz location
+   * @param {number} c The channel index
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   */
+  getIntensity(c, x, y, z) {
+    return this.channels[c].getIntensity(x, y, z);
+  }
+
+  /**
+   * Get the 256-bin histogram for the given channel
+   * @return {Histogram} the histogram
+   * @param {number} c The channel index
+   */
+  getHistogram(c) {
+    return this.channels[c].getHistogram();
+  }
+
+  /**
+   * Set the lut for the given channel
+   * @param {number} c The channel index
+   * @param {Array.<number>} lut The lut as a 256 element array
+   */
+  setLut(c, lut) {
+    this.channels[c].setLut(lut);
+  }
+
+  /**
+   * Set the color palette for the given channel
+   * @param {number} c The channel index
+   * @param {Array.<number>} palette The colors as a 256 element array * RGBA
+   */
+  setColorPalette(c, palette) {
+    this.channels[c].setColorPalette(palette);
+  }
+
+  /**
+   * Set the color palette alpha multiplier for the given channel.
+   * This will blend between the ordinary color lut and this colorPalette lut.
+   * @param {number} c The channel index
+   * @param {number} alpha The alpha value as a number from 0 to 1
+   */
+  setColorPaletteAlpha(c, alpha) {
+    this.channels[c].setColorPaletteAlpha(alpha);
+  }
+
+  /**
+   * Return the intrinsic rotation associated with this volume (radians)
+   * @return {Array.<number>} the xyz Euler angles (radians)
+   */
+  getRotation() {
+    // default axis order is XYZ
+    return this.imageInfo.transform.rotation.toArray();
+  }
+
+  /**
+   * Return the intrinsic translation (pivot center delta) associated with this volume, in normalized volume units
+   * @return {Array.<number>} the xyz translation in normalized volume units
+   */
+  getTranslation() {
+    return this.voxelsToWorldSpace(this.imageInfo.transform.translation.toArray());
+  }
+
+  /**
+   * Return a translation in normalized volume units, given a translation in image voxels
+   * @return {Array.<number>} the xyz translation in normalized volume units
+   */
+  voxelsToWorldSpace(xyz) {
+    // ASSUME: translation is in original image voxels.
+    // account for pixel_size and normalized scaling in the threejs volume representation we're using
+    const m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
+    return new three__WEBPACK_IMPORTED_MODULE_4__.Vector3().fromArray(xyz).multiply(this.physicalPixelSize).multiplyScalar(m).toArray();
+  }
+  addVolumeDataObserver(o) {
+    this.volumeDataObservers.push(o);
+  }
+  removeVolumeDataObserver(o) {
+    if (o) {
+      const i = this.volumeDataObservers.indexOf(o);
+      if (i !== -1) {
+        this.volumeDataObservers.splice(i, 1);
+      }
+    }
+  }
+  removeAllVolumeDataObservers() {
+    this.volumeDataObservers = [];
+  }
+}
 
 /***/ }),
 
@@ -1543,26 +1355,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ VolumeCache)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-
-
-
-function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
-function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
 /** Default: 250MB. Should be large enough to be useful but safe for most any computer that can run the app */
-var CACHE_MAX_SIZE_DEFAULT = 250000000;
-var VolumeCache = /*#__PURE__*/function () {
+const CACHE_MAX_SIZE_DEFAULT = 250_000_000;
+class VolumeCache {
   // Ends of a linked list of entries, to track LRU and evict efficiently
 
   // TODO implement some way to manage used vs unused (prefetched) entries so
   // that prefetched entries which are never used don't get highest priority!
 
-  function VolumeCache() {
-    var maxSize = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : CACHE_MAX_SIZE_DEFAULT;
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, VolumeCache);
+  constructor(maxSize = CACHE_MAX_SIZE_DEFAULT) {
     this.entries = new Map();
     this.maxSize = maxSize;
     this.currentSize = 0;
@@ -1572,188 +1373,149 @@ var VolumeCache = /*#__PURE__*/function () {
 
   // Hide these behind getters so they're definitely never set from the outside
   /** The size of all data arrays currently stored in this cache, in bytes. */
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(VolumeCache, [{
-    key: "size",
-    get: function get() {
-      return this.currentSize;
+  get size() {
+    return this.currentSize;
+  }
+
+  /** The number of entries currently stored in this cache. */
+  get numberOfEntries() {
+    return this.entries.size;
+  }
+
+  /**
+   * Removes an entry from a store but NOT the LRU list.
+   * Only call from a method with the word "evict" in it!
+   */
+  removeEntryFromStore(entry) {
+    this.entries.delete(entry.key);
+    this.currentSize -= entry.data.byteLength;
+  }
+
+  /**
+   * Removes an entry from the LRU list but NOT its store.
+   * Entry must be replaced in list or removed from store, or it will never be evicted!
+   */
+  removeEntryFromList(entry) {
+    const {
+      prev,
+      next
+    } = entry;
+    if (prev) {
+      prev.next = next;
+    } else {
+      this.first = next;
+    }
+    if (next) {
+      next.prev = prev;
+    } else {
+      this.last = prev;
+    }
+  }
+
+  /** Adds an entry which is *not currently in the list* to the front of the list. */
+  addEntryAsFirst(entry) {
+    if (this.first) {
+      this.first.prev = entry;
+    } else {
+      this.last = entry;
+    }
+    entry.next = this.first;
+    entry.prev = null;
+    this.first = entry;
+  }
+
+  /** Moves an entry which is *currently in the list* to the front of the list. */
+  moveEntryToFirst(entry) {
+    if (entry === this.first) return;
+    this.removeEntryFromList(entry);
+    this.addEntryAsFirst(entry);
+  }
+
+  /** Evicts the least recently used entry from the cache. */
+  evictLast() {
+    if (!this.last) {
+      console.error("VolumeCache: attempt to evict last entry from cache when no last entry is set");
+      return;
+    }
+    this.removeEntryFromStore(this.last);
+    if (this.last.prev) {
+      this.last.prev.next = null;
+    }
+    this.last = this.last.prev;
+  }
+
+  /** Evicts a specific entry from the cache. */
+  evict(entry) {
+    this.removeEntryFromStore(entry);
+    this.removeEntryFromList(entry);
+  }
+
+  /**
+   * Adds a new entry to the cache.
+   * @returns {boolean} a boolean indicating whether the insertion succeeded.
+   */
+  insert(key, data) {
+    if (data.byteLength > this.maxSize) {
+      console.error("VolumeCache: attempt to insert a single entry larger than the cache");
+      return false;
     }
 
-    /** The number of entries currently stored in this cache. */
-  }, {
-    key: "numberOfEntries",
-    get: function get() {
-      return this.entries.size;
-    }
-
-    /**
-     * Removes an entry from a store but NOT the LRU list.
-     * Only call from a method with the word "evict" in it!
-     */
-  }, {
-    key: "removeEntryFromStore",
-    value: function removeEntryFromStore(entry) {
-      this.entries["delete"](entry.key);
-      this.currentSize -= entry.data.byteLength;
-    }
-
-    /**
-     * Removes an entry from the LRU list but NOT its store.
-     * Entry must be replaced in list or removed from store, or it will never be evicted!
-     */
-  }, {
-    key: "removeEntryFromList",
-    value: function removeEntryFromList(entry) {
-      var prev = entry.prev,
-        next = entry.next;
-      if (prev) {
-        prev.next = next;
-      } else {
-        this.first = next;
-      }
-      if (next) {
-        next.prev = prev;
-      } else {
-        this.last = prev;
-      }
-    }
-
-    /** Adds an entry which is *not currently in the list* to the front of the list. */
-  }, {
-    key: "addEntryAsFirst",
-    value: function addEntryAsFirst(entry) {
-      if (this.first) {
-        this.first.prev = entry;
-      } else {
-        this.last = entry;
-      }
-      entry.next = this.first;
-      entry.prev = null;
-      this.first = entry;
-    }
-
-    /** Moves an entry which is *currently in the list* to the front of the list. */
-  }, {
-    key: "moveEntryToFirst",
-    value: function moveEntryToFirst(entry) {
-      if (entry === this.first) return;
-      this.removeEntryFromList(entry);
-      this.addEntryAsFirst(entry);
-    }
-
-    /** Evicts the least recently used entry from the cache. */
-  }, {
-    key: "evictLast",
-    value: function evictLast() {
-      if (!this.last) {
-        console.error("VolumeCache: attempt to evict last entry from cache when no last entry is set");
-        return;
-      }
-      this.removeEntryFromStore(this.last);
-      if (this.last.prev) {
-        this.last.prev.next = null;
-      }
-      this.last = this.last.prev;
-    }
-
-    /** Evicts a specific entry from the cache. */
-  }, {
-    key: "evict",
-    value: function evict(entry) {
-      this.removeEntryFromStore(entry);
-      this.removeEntryFromList(entry);
-    }
-
-    /**
-     * Adds a new entry to the cache.
-     * @returns {boolean} a boolean indicating whether the insertion succeeded.
-     */
-  }, {
-    key: "insert",
-    value: function insert(key, data) {
-      if (data.byteLength > this.maxSize) {
-        console.error("VolumeCache: attempt to insert a single entry larger than the cache");
-        return false;
-      }
-
-      // Check if entry is already in cache
-      // This will move the entry to the front of the LRU list, if present
-      var getResult = this.getEntry(key);
-      if (getResult !== undefined) {
-        getResult.data = data;
-        return true;
-      }
-
-      // Add new entry to cache
-      var newEntry = {
-        data: data,
-        prev: null,
-        next: null,
-        key: key
-      };
-      this.addEntryAsFirst(newEntry);
-      this.entries.set(key, newEntry);
-      this.currentSize += data.byteLength;
-
-      // Evict until size is within limit
-      while (this.currentSize > this.maxSize) {
-        this.evictLast();
-      }
+    // Check if entry is already in cache
+    // This will move the entry to the front of the LRU list, if present
+    const getResult = this.getEntry(key);
+    if (getResult !== undefined) {
+      getResult.data = data;
       return true;
     }
 
-    /** Internal implementation of `get`. Returns all entry metadata, not just the raw data. */
-  }, {
-    key: "getEntry",
-    value: function getEntry(key) {
-      var result = this.entries.get(key);
-      if (result) {
-        this.moveEntryToFirst(result);
-      }
-      return result;
-    }
+    // Add new entry to cache
+    const newEntry = {
+      data,
+      prev: null,
+      next: null,
+      key
+    };
+    this.addEntryAsFirst(newEntry);
+    this.entries.set(key, newEntry);
+    this.currentSize += data.byteLength;
 
-    /** Attempts to get a single entry from the cache. */
-  }, {
-    key: "get",
-    value: function get(key) {
-      var _this$getEntry;
-      return (_this$getEntry = this.getEntry(key)) === null || _this$getEntry === void 0 ? void 0 : _this$getEntry.data;
+    // Evict until size is within limit
+    while (this.currentSize > this.maxSize) {
+      this.evictLast();
     }
+    return true;
+  }
 
-    /** Clears all cache entries whose keys begin with the specified prefix. */
-  }, {
-    key: "clearWithPrefix",
-    value: function clearWithPrefix(prefix) {
-      var _iterator = _createForOfIteratorHelper(this.entries.entries()),
-        _step;
-      try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var _step$value = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_step.value, 2),
-            key = _step$value[0],
-            entry = _step$value[1];
-          if (key.startsWith(prefix)) {
-            this.evict(entry);
-          }
-        }
-      } catch (err) {
-        _iterator.e(err);
-      } finally {
-        _iterator.f();
-      }
+  /** Internal implementation of `get`. Returns all entry metadata, not just the raw data. */
+  getEntry(key) {
+    const result = this.entries.get(key);
+    if (result) {
+      this.moveEntryToFirst(result);
     }
+    return result;
+  }
 
-    /** Clears all data from the cache. */
-  }, {
-    key: "clear",
-    value: function clear() {
-      while (this.last) {
-        this.evictLast();
+  /** Attempts to get a single entry from the cache. */
+  get(key) {
+    return this.getEntry(key)?.data;
+  }
+
+  /** Clears all cache entries whose keys begin with the specified prefix. */
+  clearWithPrefix(prefix) {
+    for (const [key, entry] of this.entries.entries()) {
+      if (key.startsWith(prefix)) {
+        this.evict(entry);
       }
     }
-  }]);
-  return VolumeCache;
-}();
+  }
 
+  /** Clears all data from the cache. */
+  clear() {
+    while (this.last) {
+      this.evictLast();
+    }
+  }
+}
 
 /***/ }),
 
@@ -1769,24 +1531,24 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   defaultColors: () => (/* binding */ defaultColors),
 /* harmony export */   getColorByChannelIndex: () => (/* binding */ getColorByChannelIndex)
 /* harmony export */ });
-var defaultColors = [[255, 0, 255], [255, 255, 255], [0, 255, 255]];
+const defaultColors = [[255, 0, 255], [255, 255, 255], [0, 255, 255]];
 // 0 <= (h, s, v) <= 1
 // returns 0 <= (r, g, b) <= 255 rounded to nearest integer
 // you can also pass in just one arg as an object of {h, s, v} props.
 function HSVtoRGB(h, s, v) {
-  var r, g, b;
-  var hh = 0;
+  let r, g, b;
+  let hh = 0;
   if (arguments.length === 1) {
-    var hsv = h;
+    const hsv = h;
     s = hsv.s, v = hsv.v, hh = hsv.h;
   } else {
     hh = h;
   }
-  var i = Math.floor(hh * 6);
-  var f = hh * 6 - i;
-  var p = v * (1 - s);
-  var q = v * (1 - f * s);
-  var t = v * (1 - (1 - f) * s);
+  const i = Math.floor(hh * 6);
+  const f = hh * 6 - i;
+  const p = v * (1 - s);
+  const q = v * (1 - f * s);
+  const t = v * (1 - (1 - f) * s);
   switch (i % 6) {
     case 0:
       r = v, g = t, b = p;
@@ -1818,11 +1580,11 @@ function LCG(s) {
   };
 }
 // Use it like so:
-var myrand = LCG(123);
+const myrand = LCG(123);
 
 // if index exceeds defaultColors start choosing random ones
 // returns [r,g,b] 0-255 range
-var getColorByChannelIndex = function getColorByChannelIndex(index) {
+const getColorByChannelIndex = index => {
   if (!defaultColors[index]) {
     defaultColors[index] = HSVtoRGB(myrand(), myrand() * 0.5 + 0.5, myrand() * 0.5 + 0.5);
   }
@@ -1845,48 +1607,43 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   VolumeDims: () => (/* binding */ VolumeDims),
 /* harmony export */   loadSpecToString: () => (/* binding */ loadSpecToString)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _Volume_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../Volume.js */ "./src/Volume.ts");
-/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _Volume_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../Volume.js */ "./src/Volume.ts");
+/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
 
 
 
+class LoadSpec {
+  time = 0;
+  /** The max size of a volume atlas that may be produced by a load. Used to pick the appropriate multiscale level. */
 
-function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+  /** An optional bias added to the scale level index after the optimal level is picked based on `maxAtlasEdge`. */
 
+  /**
+   * The max scale level to load. Even when this is specified, the loader may pick a *lower* scale level based on
+   * limits imposed by `scaleLevelBias` and `maxAtlasEdge` (or their defaults if unspecified).
+   */
 
-
-
-var LoadSpec = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(function LoadSpec() {
-  (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, LoadSpec);
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "time", 0);
   /** Subregion of volume to load. If not specified, the entire volume is loaded. Specify as floats between 0-1. */
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "subregion", new three__WEBPACK_IMPORTED_MODULE_7__.Box3(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(1, 1, 1)));
-});
-function loadSpecToString(spec) {
-  var _spec$subregion = spec.subregion,
-    min = _spec$subregion.min,
-    max = _spec$subregion.max;
-  return "".concat(spec.multiscaleLevel, ":").concat(spec.time, ":x(").concat(min.x, ",").concat(max.x, "):y(").concat(min.y, ",").concat(max.y, "):z(").concat(min.z, ",").concat(max.z, ")");
+  subregion = new three__WEBPACK_IMPORTED_MODULE_2__.Box3(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(1, 1, 1));
 }
-var VolumeDims = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(function VolumeDims() {
-  (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, VolumeDims);
+function loadSpecToString(spec) {
+  const {
+    min,
+    max
+  } = spec.subregion;
+  return `${spec.multiscaleLevel}:${spec.time}:x(${min.x},${max.x}):y(${min.y},${max.y}):z(${min.z},${max.z})`;
+}
+class VolumeDims {
   // shape: [t, c, z, y, x]
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "shape", [0, 0, 0, 0, 0]);
+  shape = [0, 0, 0, 0, 0];
   // spacing: [t, c, z, y, x]; generally expect 1 for non-spatial dimensions
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "spacing", [1, 1, 1, 1, 1]);
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "spaceUnit", "μm");
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "timeUnit", "s");
+  spacing = [1, 1, 1, 1, 1];
+  spaceUnit = "μm";
+  timeUnit = "s";
   // TODO make this an enum?
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_3__["default"])(this, "dataType", "uint8");
-});
+  dataType = "uint8";
+}
 
 /**
  * @callback PerChannelCallback
@@ -1911,97 +1668,75 @@ var VolumeDims = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMP
  */
 
 /** Abstract class which allows loaders to accept and return types that are easier to transfer to/from a worker. */
-var ThreadableVolumeLoader = /*#__PURE__*/function () {
-  function ThreadableVolumeLoader() {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, ThreadableVolumeLoader);
+class ThreadableVolumeLoader {
+  /** Unchanged from `IVolumeLoader`. See that interface for details. */
+
+  /**
+   * Creates an `ImageInfo` object from a `LoadSpec`, which may be passed to the `Volume` constructor to create an
+   * empty volume that can accept data loaded with the given `LoadSpec`.
+   *
+   * Also returns a new `LoadSpec` that may have been modified from the input `LoadSpec` to reflect the constraints or
+   * abilities of the loader. This new `LoadSpec` should be used when constructing the `Volume`, _not_ the original.
+   */
+
+  /**
+   * Begins loading per-channel data for the volume specified by `imageInfo` and `loadSpec`.
+   *
+   * Returns a promise that resolves to reflect any modifications to `imageInfo` and/or `loadSpec` that need to be made
+   * based on this load. Actual loaded channel data is passed to `onData` as it is loaded. Depending on the format,
+   * the returned array may be in simple 3d dimension order or reflect a 2d atlas. If the latter, the dimensions of the
+   * atlas are passed as the third argument to `onData`.
+   */
+
+  setPrefetchPriority(_directions) {
+    // no-op by default
   }
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_1__["default"])(ThreadableVolumeLoader, [{
-    key: "setPrefetchPriority",
-    value: function setPrefetchPriority(_directions) {
-      // no-op by default
-    }
-  }, {
-    key: "syncMultichannelLoading",
-    value: function syncMultichannelLoading(_sync) {
-      // default behavior is async, to update channels as they arrive, depending on each
-      // loader's implementation details.
-    }
-  }, {
-    key: "createVolume",
-    value: function () {
-      var _createVolume = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee(loadSpec, onChannelLoaded) {
-        var _yield$this$createIma, imageInfo, adjustedLoadSpec, vol;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee$(_context) {
-          while (1) switch (_context.prev = _context.next) {
-            case 0:
-              _context.next = 2;
-              return this.createImageInfo(loadSpec);
-            case 2:
-              _yield$this$createIma = _context.sent;
-              imageInfo = _yield$this$createIma.imageInfo;
-              adjustedLoadSpec = _yield$this$createIma.loadSpec;
-              vol = new _Volume_js__WEBPACK_IMPORTED_MODULE_5__["default"](imageInfo, adjustedLoadSpec, this);
-              vol.channelLoadCallback = onChannelLoaded;
-              vol.imageMetadata = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_6__.buildDefaultMetadata)(imageInfo);
-              return _context.abrupt("return", vol);
-            case 9:
-            case "end":
-              return _context.stop();
-          }
-        }, _callee, this);
-      }));
-      function createVolume(_x, _x2) {
-        return _createVolume.apply(this, arguments);
+  syncMultichannelLoading(_sync) {
+    // default behavior is async, to update channels as they arrive, depending on each
+    // loader's implementation details.
+  }
+  async createVolume(loadSpec, onChannelLoaded) {
+    const {
+      imageInfo,
+      loadSpec: adjustedLoadSpec
+    } = await this.createImageInfo(loadSpec);
+    const vol = new _Volume_js__WEBPACK_IMPORTED_MODULE_0__["default"](imageInfo, adjustedLoadSpec, this);
+    vol.channelLoadCallback = onChannelLoaded;
+    vol.imageMetadata = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__.buildDefaultMetadata)(imageInfo);
+    return vol;
+  }
+  async loadVolumeData(volume, loadSpecOverride, onChannelLoaded) {
+    const onChannelData = (channelIndices, dataArrays, ranges, atlasDims) => {
+      for (let i = 0; i < channelIndices.length; i++) {
+        const channelIndex = channelIndices[i];
+        const data = dataArrays[i];
+        const range = ranges[i];
+        if (atlasDims) {
+          volume.setChannelDataFromAtlas(channelIndex, data, atlasDims[0], atlasDims[1]);
+        } else {
+          volume.setChannelDataFromVolume(channelIndex, data, range);
+        }
+        onChannelLoaded?.(volume, channelIndex);
       }
-      return createVolume;
-    }()
-  }, {
-    key: "loadVolumeData",
-    value: function () {
-      var _loadVolumeData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function _callee2(volume, loadSpecOverride, onChannelLoaded) {
-        var onChannelData, spec, _yield$this$loadRawCh, imageInfo, loadSpec;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function _callee2$(_context2) {
-          while (1) switch (_context2.prev = _context2.next) {
-            case 0:
-              onChannelData = function onChannelData(channelIndices, dataArrays, ranges, atlasDims) {
-                for (var i = 0; i < channelIndices.length; i++) {
-                  var _channelIndex = channelIndices[i];
-                  var _data = dataArrays[i];
-                  var range = ranges[i];
-                  if (atlasDims) {
-                    volume.setChannelDataFromAtlas(_channelIndex, _data, atlasDims[0], atlasDims[1]);
-                  } else {
-                    volume.setChannelDataFromVolume(_channelIndex, _data, range);
-                  }
-                  onChannelLoaded === null || onChannelLoaded === void 0 || onChannelLoaded(volume, _channelIndex);
-                }
-              };
-              spec = _objectSpread(_objectSpread({}, loadSpecOverride), volume.loadSpec);
-              _context2.next = 4;
-              return this.loadRawChannelData(volume.imageInfo, spec, onChannelData);
-            case 4:
-              _yield$this$loadRawCh = _context2.sent;
-              imageInfo = _yield$this$loadRawCh.imageInfo;
-              loadSpec = _yield$this$loadRawCh.loadSpec;
-              if (imageInfo) {
-                volume.imageInfo = imageInfo;
-                volume.updateDimensions();
-              }
-              volume.loadSpec = _objectSpread(_objectSpread({}, loadSpec), spec);
-            case 9:
-            case "end":
-              return _context2.stop();
-          }
-        }, _callee2, this);
-      }));
-      function loadVolumeData(_x3, _x4, _x5) {
-        return _loadVolumeData.apply(this, arguments);
-      }
-      return loadVolumeData;
-    }()
-  }]);
-  return ThreadableVolumeLoader;
-}();
+    };
+    const spec = {
+      ...loadSpecOverride,
+      ...volume.loadSpec
+    };
+    const {
+      imageInfo,
+      loadSpec
+    } = await this.loadRawChannelData(volume.imageInfo, spec, onChannelData);
+    if (imageInfo) {
+      volume.imageInfo = imageInfo;
+      volume.updateDimensions();
+    }
+    volume.loadSpec = {
+      ...loadSpec,
+      ...spec
+    };
+  }
+}
 
 /***/ }),
 
@@ -2016,30 +1751,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   JsonImageInfoLoader: () => (/* binding */ JsonImageInfoLoader)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
-/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
-/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
-/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
-
-
-
-
-
-
-
-function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
-
-function _callSuper(t, o, e) { return o = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(o), (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__["default"])(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(t).constructor) : o.apply(t, e)); }
-function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
 
 
 
@@ -2048,331 +1762,193 @@ function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.
 
 /* eslint-enable @typescript-eslint/naming-convention */
 
-var convertImageInfo = function convertImageInfo(json) {
-  var _json$transform, _json$transform2;
-  return {
-    name: json.name,
-    originalSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(json.width, json.height, json.tiles),
-    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_10__.Vector2(json.cols, json.rows),
-    volumeSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(json.tile_width, json.tile_height, json.tiles),
-    subregionSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(json.tile_width, json.tile_height, json.tiles),
-    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0),
-    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
-    spatialUnit: json.pixel_size_unit || "μm",
-    numChannels: json.channels,
-    channelNames: json.channel_names,
-    channelColors: json.channel_colors,
-    times: json.times || 1,
-    timeScale: json.time_scale || 1,
-    timeUnit: json.time_unit || "s",
-    numMultiscaleLevels: 1,
-    multiscaleLevel: 0,
-    transform: {
-      translation: (_json$transform = json.transform) !== null && _json$transform !== void 0 && _json$transform.translation ? new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(json.transform.translation) : new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0),
-      rotation: (_json$transform2 = json.transform) !== null && _json$transform2 !== void 0 && _json$transform2.rotation ? new three__WEBPACK_IMPORTED_MODULE_10__.Vector3().fromArray(json.transform.rotation) : new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0)
-    },
-    userData: json.userData
-  };
-};
-var JsonImageInfoLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
-  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_6__["default"])(JsonImageInfoLoader, _ThreadableVolumeLoad);
-  function JsonImageInfoLoader(urls, cache) {
-    var _this;
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, JsonImageInfoLoader);
-    _this = _callSuper(this, JsonImageInfoLoader);
+const convertImageInfo = json => ({
+  name: json.name,
+  originalSize: new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(json.width, json.height, json.tiles),
+  atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_2__.Vector2(json.cols, json.rows),
+  volumeSize: new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(json.tile_width, json.tile_height, json.tiles),
+  subregionSize: new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(json.tile_width, json.tile_height, json.tiles),
+  subregionOffset: new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0),
+  physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
+  spatialUnit: json.pixel_size_unit || "μm",
+  numChannels: json.channels,
+  channelNames: json.channel_names,
+  channelColors: json.channel_colors,
+  times: json.times || 1,
+  timeScale: json.time_scale || 1,
+  timeUnit: json.time_unit || "s",
+  numMultiscaleLevels: 1,
+  multiscaleLevel: 0,
+  transform: {
+    translation: json.transform?.translation ? new three__WEBPACK_IMPORTED_MODULE_2__.Vector3().fromArray(json.transform.translation) : new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0),
+    rotation: json.transform?.rotation ? new three__WEBPACK_IMPORTED_MODULE_2__.Vector3().fromArray(json.transform.rotation) : new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0)
+  },
+  userData: json.userData
+});
+class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.ThreadableVolumeLoader {
+  constructor(urls, cache) {
+    super();
     if (Array.isArray(urls)) {
-      _this.urls = urls;
+      this.urls = urls;
     } else {
-      _this.urls = [urls];
+      this.urls = [urls];
     }
-    _this.jsonInfo = new Array(_this.urls.length);
-    _this.cache = cache;
-    return _this;
+    this.jsonInfo = new Array(this.urls.length);
+    this.cache = cache;
   }
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(JsonImageInfoLoader, [{
-    key: "getJsonImageInfo",
-    value: function () {
-      var _getJsonImageInfo = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee(time) {
-        var cachedInfo, response, imageInfo;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee$(_context) {
-          while (1) switch (_context.prev = _context.next) {
-            case 0:
-              cachedInfo = this.jsonInfo[time];
-              if (!cachedInfo) {
-                _context.next = 3;
-                break;
-              }
-              return _context.abrupt("return", cachedInfo);
-            case 3:
-              _context.next = 5;
-              return fetch(this.urls[time]);
-            case 5:
-              response = _context.sent;
-              _context.next = 8;
-              return response.json();
-            case 8:
-              imageInfo = _context.sent;
-              imageInfo.pixel_size_unit = imageInfo.pixel_size_unit || "μm";
-              imageInfo.times = imageInfo.times || this.urls.length;
-              this.jsonInfo[time] = imageInfo;
-              return _context.abrupt("return", imageInfo);
-            case 13:
-            case "end":
-              return _context.stop();
-          }
-        }, _callee, this);
-      }));
-      function getJsonImageInfo(_x) {
-        return _getJsonImageInfo.apply(this, arguments);
-      }
-      return getJsonImageInfo;
-    }()
-  }, {
-    key: "loadDims",
-    value: function () {
-      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee2(loadSpec) {
-        var jsonInfo, d;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee2$(_context2) {
-          while (1) switch (_context2.prev = _context2.next) {
-            case 0:
-              _context2.next = 2;
-              return this.getJsonImageInfo(loadSpec.time);
-            case 2:
-              jsonInfo = _context2.sent;
-              d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.VolumeDims();
-              d.shape = [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tile_height, jsonInfo.tile_width];
-              d.spacing = [1, 1, jsonInfo.pixel_size_z, jsonInfo.pixel_size_y, jsonInfo.pixel_size_x];
-              d.spaceUnit = jsonInfo.pixel_size_unit || "μm";
-              d.dataType = "uint8";
-              return _context2.abrupt("return", [d]);
-            case 9:
-            case "end":
-              return _context2.stop();
-          }
-        }, _callee2, this);
-      }));
-      function loadDims(_x2) {
-        return _loadDims.apply(this, arguments);
-      }
-      return loadDims;
-    }()
-  }, {
-    key: "createImageInfo",
-    value: function () {
-      var _createImageInfo = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee3(loadSpec) {
-        var jsonInfo;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee3$(_context3) {
-          while (1) switch (_context3.prev = _context3.next) {
-            case 0:
-              _context3.next = 2;
-              return this.getJsonImageInfo(loadSpec.time);
-            case 2:
-              jsonInfo = _context3.sent;
-              return _context3.abrupt("return", {
-                imageInfo: convertImageInfo(jsonInfo),
-                loadSpec: loadSpec
-              });
-            case 4:
-            case "end":
-              return _context3.stop();
-          }
-        }, _callee3, this);
-      }));
-      function createImageInfo(_x3) {
-        return _createImageInfo.apply(this, arguments);
-      }
-      return createImageInfo;
-    }()
-  }, {
-    key: "loadRawChannelData",
-    value: function () {
-      var _loadRawChannelData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee4(imageInfo, loadSpec, onData) {
-        var jsonInfo, images, requestedChannels, urlPrefix, w, h, wrappedOnData, adjustedLoadSpec;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee4$(_context4) {
-          while (1) switch (_context4.prev = _context4.next) {
-            case 0:
-              _context4.next = 2;
-              return this.getJsonImageInfo(loadSpec.time);
-            case 2:
-              jsonInfo = _context4.sent;
-              images = jsonInfo === null || jsonInfo === void 0 ? void 0 : jsonInfo.images;
-              if (images) {
-                _context4.next = 6;
-                break;
-              }
-              return _context4.abrupt("return", {});
-            case 6:
-              requestedChannels = loadSpec.channels;
-              if (requestedChannels) {
-                // If only some channels are requested, load only images which contain at least one requested channel
-                images = images.filter(function (_ref) {
-                  var channels = _ref.channels;
-                  return channels.some(function (ch) {
-                    return ch in requestedChannels;
-                  });
-                });
-              }
-
-              // This regex removes everything after the last slash, so the url had better be simple.
-              urlPrefix = this.urls[loadSpec.time].replace(/[^/]*$/, "");
-              images = images.map(function (element) {
-                return _objectSpread(_objectSpread({}, element), {}, {
-                  name: urlPrefix + element.name
-                });
-              });
-              w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
-              h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
-              wrappedOnData = function wrappedOnData(ch, data, ranges) {
-                return onData(ch, data, ranges, [w, h]);
-              };
-              JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
-              adjustedLoadSpec = _objectSpread(_objectSpread({}, loadSpec), {}, {
-                // `subregion` and `multiscaleLevel` are unused by this loader
-                subregion: new three__WEBPACK_IMPORTED_MODULE_10__.Box3(new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_10__.Vector3(1, 1, 1)),
-                multiscaleLevel: 0,
-                // include all channels in any loaded images
-                channels: images.flatMap(function (_ref2) {
-                  var channels = _ref2.channels;
-                  return channels;
-                })
-              });
-              return _context4.abrupt("return", {
-                loadSpec: adjustedLoadSpec
-              });
-            case 16:
-            case "end":
-              return _context4.stop();
-          }
-        }, _callee4, this);
-      }));
-      function loadRawChannelData(_x4, _x5, _x6) {
-        return _loadRawChannelData.apply(this, arguments);
-      }
-      return loadRawChannelData;
-    }()
-    /**
-     * load per-channel volume data from a batch of image files containing the volume slices tiled across the images
-     * @param {Array.<{name:string, channels:Array.<number>}>} imageArray
-     * @param {RawChannelDataCallback} onData Per-channel callback. Called when each channel's atlased volume data is loaded
-     * @param {VolumeCache} cache
-     * @example loadVolumeAtlasData([{
-     *     "name": "AICS-10_5_5.ome.tif_atlas_0.png",
-     *     "channels": [0, 1, 2]
-     * }, {
-     *     "name": "AICS-10_5_5.ome.tif_atlas_1.png",
-     *     "channels": [3, 4, 5]
-     * }, {
-     *     "name": "AICS-10_5_5.ome.tif_atlas_2.png",
-     *     "channels": [6, 7, 8]
-     * }], mycallback);
-     */
-  }], [{
-    key: "loadVolumeAtlasData",
-    value: function loadVolumeAtlasData(imageArray, onData, cache) {
-      imageArray.forEach( /*#__PURE__*/function () {
-        var _ref3 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee5(image) {
-          var cacheHit, j, chindex, cacheResult, response, blob, bitmap, canvas, ctx, iData, channelsBits, length, ch, _j, px, _ch, _chindex;
-          return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee5$(_context5) {
-            while (1) switch (_context5.prev = _context5.next) {
-              case 0:
-                // Because the data is fetched such that one fetch returns a whole batch,
-                // if any in batch is cached then they all should be. So if any in batch is NOT cached,
-                // then we will have to do a batch request. This logic works both ways because it's all or nothing.
-                cacheHit = true;
-                j = 0;
-              case 2:
-                if (!(j < Math.min(image.channels.length, 4))) {
-                  _context5.next = 14;
-                  break;
-                }
-                chindex = image.channels[j];
-                cacheResult = cache === null || cache === void 0 ? void 0 : cache.get("".concat(image.name, "/").concat(chindex));
-                if (!cacheResult) {
-                  _context5.next = 9;
-                  break;
-                }
-                // all data coming from this loader is natively 8-bit
-                onData([chindex], [new Uint8Array(cacheResult)], [_types_js__WEBPACK_IMPORTED_MODULE_9__.DATARANGE_UINT8]);
-                _context5.next = 11;
-                break;
-              case 9:
-                cacheHit = false;
-                // we can stop checking because we know we are going to have to fetch the whole batch
-                return _context5.abrupt("break", 14);
-              case 11:
-                ++j;
-                _context5.next = 2;
-                break;
-              case 14:
-                if (!cacheHit) {
-                  _context5.next = 16;
-                  break;
-                }
-                return _context5.abrupt("return");
-              case 16:
-                _context5.next = 18;
-                return fetch(image.name, {
-                  mode: "cors"
-                });
-              case 18:
-                response = _context5.sent;
-                _context5.next = 21;
-                return response.blob();
-              case 21:
-                blob = _context5.sent;
-                _context5.next = 24;
-                return createImageBitmap(blob);
-              case 24:
-                bitmap = _context5.sent;
-                canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-                ctx = canvas.getContext("2d");
-                if (ctx) {
-                  _context5.next = 30;
-                  break;
-                }
-                console.log("Error creating canvas 2d context for " + image.name);
-                return _context5.abrupt("return");
-              case 30:
-                ctx.globalCompositeOperation = "copy";
-                ctx.globalAlpha = 1.0;
-                ctx.drawImage(bitmap, 0, 0);
-                iData = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
-                channelsBits = [];
-                length = bitmap.width * bitmap.height; // allocate channels in batch
-                for (ch = 0; ch < Math.min(image.channels.length, 4); ++ch) {
-                  channelsBits.push(new Uint8Array(length));
-                }
-
-                // extract the data
-                for (_j = 0; _j < Math.min(image.channels.length, 4); ++_j) {
-                  for (px = 0; px < length; px++) {
-                    channelsBits[_j][px] = iData.data[px * 4 + _j];
-                  }
-                }
-
-                // done with `iData` and `canvas` now.
-
-                for (_ch = 0; _ch < Math.min(image.channels.length, 4); ++_ch) {
-                  _chindex = image.channels[_ch];
-                  cache === null || cache === void 0 || cache.insert("".concat(image.name, "/").concat(_chindex), channelsBits[_ch]);
-                  // NOTE: the atlas dimensions passed in here are currently unused by `JSONImageInfoLoader`
-                  // all data coming from this loader is natively 8-bit
-                  onData([_chindex], [channelsBits[_ch]], [_types_js__WEBPACK_IMPORTED_MODULE_9__.DATARANGE_UINT8], [bitmap.width, bitmap.height]);
-                }
-              case 39:
-              case "end":
-                return _context5.stop();
-            }
-          }, _callee5);
-        }));
-        return function (_x7) {
-          return _ref3.apply(this, arguments);
-        };
-      }());
+  async getJsonImageInfo(time) {
+    const cachedInfo = this.jsonInfo[time];
+    if (cachedInfo) {
+      return cachedInfo;
     }
-  }]);
-  return JsonImageInfoLoader;
-}(_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.ThreadableVolumeLoader);
+    const response = await fetch(this.urls[time]);
+    const imageInfo = await response.json();
+    imageInfo.pixel_size_unit = imageInfo.pixel_size_unit || "μm";
+    imageInfo.times = imageInfo.times || this.urls.length;
+    this.jsonInfo[time] = imageInfo;
+    return imageInfo;
+  }
+  async loadDims(loadSpec) {
+    const jsonInfo = await this.getJsonImageInfo(loadSpec.time);
+    const d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.VolumeDims();
+    d.shape = [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tile_height, jsonInfo.tile_width];
+    d.spacing = [1, 1, jsonInfo.pixel_size_z, jsonInfo.pixel_size_y, jsonInfo.pixel_size_x];
+    d.spaceUnit = jsonInfo.pixel_size_unit || "μm";
+    d.dataType = "uint8";
+    return [d];
+  }
+  async createImageInfo(loadSpec) {
+    const jsonInfo = await this.getJsonImageInfo(loadSpec.time);
+    return {
+      imageInfo: convertImageInfo(jsonInfo),
+      loadSpec
+    };
+  }
+  async loadRawChannelData(imageInfo, loadSpec, onData) {
+    // if you need to adjust image paths prior to download,
+    // now is the time to do it.
+    // Try to figure out the urlPrefix from the LoadSpec.
+    // For this format we assume the image data is in the same directory as the json file.
+    const jsonInfo = await this.getJsonImageInfo(loadSpec.time);
+    let images = jsonInfo?.images;
+    if (!images) {
+      return {};
+    }
+    const requestedChannels = loadSpec.channels;
+    if (requestedChannels) {
+      // If only some channels are requested, load only images which contain at least one requested channel
+      images = images.filter(({
+        channels
+      }) => channels.some(ch => ch in requestedChannels));
+    }
+
+    // This regex removes everything after the last slash, so the url had better be simple.
+    const urlPrefix = this.urls[loadSpec.time].replace(/[^/]*$/, "");
+    images = images.map(element => ({
+      ...element,
+      name: urlPrefix + element.name
+    }));
+    const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
+    const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
+    const wrappedOnData = (ch, data, ranges) => onData(ch, data, ranges, [w, h]);
+    JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
+    const adjustedLoadSpec = {
+      ...loadSpec,
+      // `subregion` and `multiscaleLevel` are unused by this loader
+      subregion: new three__WEBPACK_IMPORTED_MODULE_2__.Box3(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(1, 1, 1)),
+      multiscaleLevel: 0,
+      // include all channels in any loaded images
+      channels: images.flatMap(({
+        channels
+      }) => channels)
+    };
+    return {
+      loadSpec: adjustedLoadSpec
+    };
+  }
+
+  /**
+   * load per-channel volume data from a batch of image files containing the volume slices tiled across the images
+   * @param {Array.<{name:string, channels:Array.<number>}>} imageArray
+   * @param {RawChannelDataCallback} onData Per-channel callback. Called when each channel's atlased volume data is loaded
+   * @param {VolumeCache} cache
+   * @example loadVolumeAtlasData([{
+   *     "name": "AICS-10_5_5.ome.tif_atlas_0.png",
+   *     "channels": [0, 1, 2]
+   * }, {
+   *     "name": "AICS-10_5_5.ome.tif_atlas_1.png",
+   *     "channels": [3, 4, 5]
+   * }, {
+   *     "name": "AICS-10_5_5.ome.tif_atlas_2.png",
+   *     "channels": [6, 7, 8]
+   * }], mycallback);
+   */
+  static loadVolumeAtlasData(imageArray, onData, cache) {
+    imageArray.forEach(async image => {
+      // Because the data is fetched such that one fetch returns a whole batch,
+      // if any in batch is cached then they all should be. So if any in batch is NOT cached,
+      // then we will have to do a batch request. This logic works both ways because it's all or nothing.
+      let cacheHit = true;
+      for (let j = 0; j < Math.min(image.channels.length, 4); ++j) {
+        const chindex = image.channels[j];
+        const cacheResult = cache?.get(`${image.name}/${chindex}`);
+        if (cacheResult) {
+          // all data coming from this loader is natively 8-bit
+          onData([chindex], [new Uint8Array(cacheResult)], [_types_js__WEBPACK_IMPORTED_MODULE_1__.DATARANGE_UINT8]);
+        } else {
+          cacheHit = false;
+          // we can stop checking because we know we are going to have to fetch the whole batch
+          break;
+        }
+      }
+
+      // if all channels were in cache then we can move on to the next
+      // image (batch) without requesting
+      if (cacheHit) {
+        return;
+      }
+      const response = await fetch(image.name, {
+        mode: "cors"
+      });
+      const blob = await response.blob();
+      const bitmap = await createImageBitmap(blob);
+      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        console.log("Error creating canvas 2d context for " + image.name);
+        return;
+      }
+      ctx.globalCompositeOperation = "copy";
+      ctx.globalAlpha = 1.0;
+      ctx.drawImage(bitmap, 0, 0);
+      const iData = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+      const channelsBits = [];
+      const length = bitmap.width * bitmap.height;
+
+      // allocate channels in batch
+      for (let ch = 0; ch < Math.min(image.channels.length, 4); ++ch) {
+        channelsBits.push(new Uint8Array(length));
+      }
+
+      // extract the data
+      for (let j = 0; j < Math.min(image.channels.length, 4); ++j) {
+        for (let px = 0; px < length; px++) {
+          channelsBits[j][px] = iData.data[px * 4 + j];
+        }
+      }
+
+      // done with `iData` and `canvas` now.
+
+      for (let ch = 0; ch < Math.min(image.channels.length, 4); ++ch) {
+        const chindex = image.channels[ch];
+        cache?.insert(`${image.name}/${chindex}`, channelsBits[ch]);
+        // NOTE: the atlas dimensions passed in here are currently unused by `JSONImageInfoLoader`
+        // all data coming from this loader is natively 8-bit
+        onData([chindex], [channelsBits[ch]], [_types_js__WEBPACK_IMPORTED_MODULE_1__.DATARANGE_UINT8], [bitmap.width, bitmap.height]);
+      }
+    });
+  }
+}
 
 
 /***/ }),
@@ -2388,46 +1964,18 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   OMEZarrLoader: () => (/* binding */ OMEZarrLoader)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
-/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
-/* harmony import */ var _babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/helpers/assertThisInitialized */ "./node_modules/@babel/runtime/helpers/esm/assertThisInitialized.js");
-/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
-/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _zarrita_core__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! @zarrita/core */ "./node_modules/@zarrita/core/dist/src/hierarchy.js");
-/* harmony import */ var _zarrita_core__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__(/*! @zarrita/core */ "./node_modules/@zarrita/core/dist/src/open.js");
-/* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/util.js");
-/* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/ops.js");
-/* harmony import */ var zarrita__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! zarrita */ "./node_modules/@zarrita/storage/dist/src/fetch.js");
-/* harmony import */ var _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../utils/SubscribableRequestQueue.js */ "./src/utils/SubscribableRequestQueue.ts");
-/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
-/* harmony import */ var _zarr_utils_ChunkPrefetchIterator_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./zarr_utils/ChunkPrefetchIterator.js */ "./src/loaders/zarr_utils/ChunkPrefetchIterator.ts");
-/* harmony import */ var _zarr_utils_WrappedStore_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./zarr_utils/WrappedStore.js */ "./src/loaders/zarr_utils/WrappedStore.ts");
-/* harmony import */ var _zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./zarr_utils/utils.js */ "./src/loaders/zarr_utils/utils.ts");
-
-
-
-
-
-
-
-
-
-function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
-function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
-
-function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_8__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
-function _callSuper(t, o, e) { return o = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(o), (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__["default"])(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(t).constructor) : o.apply(t, e)); }
-function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _zarrita_core__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @zarrita/core */ "./node_modules/@zarrita/core/dist/src/hierarchy.js");
+/* harmony import */ var _zarrita_core__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! @zarrita/core */ "./node_modules/@zarrita/core/dist/src/open.js");
+/* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/util.js");
+/* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/ops.js");
+/* harmony import */ var zarrita__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! zarrita */ "./node_modules/@zarrita/storage/dist/src/fetch.js");
+/* harmony import */ var _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils/SubscribableRequestQueue.js */ "./src/utils/SubscribableRequestQueue.ts");
+/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _zarr_utils_ChunkPrefetchIterator_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./zarr_utils/ChunkPrefetchIterator.js */ "./src/loaders/zarr_utils/ChunkPrefetchIterator.ts");
+/* harmony import */ var _zarr_utils_WrappedStore_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./zarr_utils/WrappedStore.js */ "./src/loaders/zarr_utils/WrappedStore.ts");
+/* harmony import */ var _zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./zarr_utils/utils.js */ "./src/loaders/zarr_utils/utils.ts");
 
 
 
@@ -2440,15 +1988,15 @@ function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.
 
 
 
-var CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
+const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
 // returns the converted data and the original min and max values (which have been remapped to 0 and 255)
 function convertChannel(channelData) {
   // get min and max
-  var min = channelData[0];
-  var max = channelData[0];
-  for (var i = 0; i < channelData.length; i++) {
-    var val = channelData[i];
+  let min = channelData[0];
+  let max = channelData[0];
+  for (let i = 0; i < channelData.length; i++) {
+    const val = channelData[i];
     if (val < min) {
       min = val;
     }
@@ -2461,41 +2009,40 @@ function convertChannel(channelData) {
   }
 
   // normalize and convert to u8
-  var u8 = new Uint8Array(channelData.length);
-  var range = max - min;
-  for (var _i = 0; _i < channelData.length; _i++) {
-    u8[_i] = (channelData[_i] - min) / range * 255;
+  const u8 = new Uint8Array(channelData.length);
+  const range = max - min;
+  for (let i = 0; i < channelData.length; i++) {
+    u8[i] = (channelData[i] - min) / range * 255;
   }
   return [u8, min, max];
 }
-var DEFAULT_FETCH_OPTIONS = {
+const DEFAULT_FETCH_OPTIONS = {
   maxPrefetchDistance: [5, 5, 5, 5],
   maxPrefetchChunks: 30
 };
-var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
-  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_7__["default"])(OMEZarrLoader, _ThreadableVolumeLoad);
-  function OMEZarrLoader(
+class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.ThreadableVolumeLoader {
+  /** The ID of the subscriber responsible for "actual loads" (non-prefetch requests) */
+
+  /** The ID of the subscriber responsible for prefetches, so that requests can be cancelled and reissued */
+
+  // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
+  //   This may cause errors or incorrect results otherwise!
+
+  syncChannels = false;
+  constructor(
   /**
    * Array of records, each containing the objects and metadata we need to load from one source of multiscale zarr
    * data. See documentation on `ZarrSource` for more.
    */
   sources, /** Handle to a `SubscribableRequestQueue` for smart concurrency management and request cancelling/reissuing. */
-  requestQueue) {
-    var _this;
-    var fetchOptions = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : DEFAULT_FETCH_OPTIONS;
-    var priorityDirections = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, OMEZarrLoader);
-    _this = _callSuper(this, OMEZarrLoader);
-    /** The ID of the subscriber responsible for "actual loads" (non-prefetch requests) */
-    /** The ID of the subscriber responsible for prefetches, so that requests can be cancelled and reissued */
-    // TODO: this property should definitely be owned by `Volume` if this loader is ever used by multiple volumes.
-    //   This may cause errors or incorrect results otherwise!
-    (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_8__["default"])((0,_babel_runtime_helpers_assertThisInitialized__WEBPACK_IMPORTED_MODULE_6__["default"])(_this), "syncChannels", false);
-    _this.sources = sources;
-    _this.requestQueue = requestQueue;
-    _this.fetchOptions = fetchOptions;
-    _this.priorityDirections = priorityDirections;
-    return _this;
+  requestQueue, /** Options to configure (pre)fetching behavior. */
+  fetchOptions = DEFAULT_FETCH_OPTIONS, /** Direction(s) to prioritize when prefetching. Stored separate from `fetchOptions` since it may be mutated. */
+  priorityDirections = []) {
+    super();
+    this.sources = sources;
+    this.requestQueue = requestQueue;
+    this.fetchOptions = fetchOptions;
+    this.priorityDirections = priorityDirections;
   }
 
   /**
@@ -2511,563 +2058,398 @@ var OMEZarrLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
    * @param queue A queue to use for managing requests. If not provided, a new queue will be created.
    * @param fetchOptions Options to configure (pre)fetching behavior.
    */
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(OMEZarrLoader, [{
-    key: "getUnitSymbols",
-    value: function getUnitSymbols() {
-      var source = this.sources[0];
-      // Assume all spatial axes in all sources have the same units - we have no means of storing per-axis unit symbols
-      var xi = source.axesTCZYX[4];
-      var spaceUnitName = source.multiscaleMetadata.axes[xi].unit;
-      var spaceUnitSymbol = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
-      var ti = source.axesTCZYX[0];
-      var timeUnitName = ti > -1 ? source.multiscaleMetadata.axes[ti].unit : undefined;
-      var timeUnitSymbol = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
-      return [spaceUnitSymbol, timeUnitSymbol];
+  static async createLoader(urls, scenes = 0, cache, queue, fetchOptions) {
+    // Setup queue and store, get basic metadata
+    if (!queue) {
+      queue = new _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_0__["default"](fetchOptions?.concurrencyLimit, fetchOptions?.prefetchConcurrencyLimit);
     }
-  }, {
-    key: "getLevelShapesZYX",
-    value: function getLevelShapesZYX() {
-      var source = this.sources[0];
-      var _source$axesTCZYX$sli = source.axesTCZYX.slice(-3),
-        _source$axesTCZYX$sli2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_source$axesTCZYX$sli, 3),
-        z = _source$axesTCZYX$sli2[0],
-        y = _source$axesTCZYX$sli2[1],
-        x = _source$axesTCZYX$sli2[2];
-      return source.scaleLevels.map(function (_ref) {
-        var shape = _ref.shape;
-        return [z === -1 ? 1 : shape[z], shape[y], shape[x]];
-      });
-    }
-  }, {
-    key: "getScale",
-    value: function getScale(level) {
-      return (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.getScale)(this.sources[0].multiscaleMetadata.datasets[level], this.sources[0].axesTCZYX);
-    }
-  }, {
-    key: "orderByDimension",
-    value: function orderByDimension(valsTCZYX) {
-      var sourceIdx = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-      return (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.orderByDimension)(valsTCZYX, this.sources[sourceIdx].axesTCZYX);
-    }
-  }, {
-    key: "orderByTCZYX",
-    value: function orderByTCZYX(valsDimension, defaultValue) {
-      var sourceIdx = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-      return (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.orderByTCZYX)(valsDimension, this.sources[sourceIdx].axesTCZYX, defaultValue);
-    }
+    const urlsArr = Array.isArray(urls) ? urls : [urls];
+    const scenesArr = Array.isArray(scenes) ? scenes : [scenes];
 
-    /**
-     * Converts a volume channel index to the index of its zarr source and its channel index within that zarr.
-     * e.g., if the loader has 2 sources, the first with 3 channels and the second with 2, then `matchChannelToSource(4)`
-     * returns `[1, 1]` (the second channel of the second source).
-     */
-  }, {
-    key: "matchChannelToSource",
-    value: function matchChannelToSource(absoluteChannelIndex) {
-      var lastSrcIdx = this.sources.length - 1;
-      var lastSrc = this.sources[lastSrcIdx];
-      var lastSrcNumChannels = lastSrc.scaleLevels[0].shape[lastSrc.axesTCZYX[1]];
-      if (absoluteChannelIndex > lastSrc.channelOffset + lastSrcNumChannels) {
-        throw new Error("Channel index out of range");
-      }
-      var firstGreaterIdx = this.sources.findIndex(function (src) {
-        return src.channelOffset > absoluteChannelIndex;
+    // Create one `ZarrSource` per URL
+    const sourceProms = urlsArr.map(async (url, i) => {
+      const store = new _zarr_utils_WrappedStore_js__WEBPACK_IMPORTED_MODULE_4__["default"](new zarrita__WEBPACK_IMPORTED_MODULE_6__["default"](url), cache, queue);
+      const root = _zarrita_core__WEBPACK_IMPORTED_MODULE_7__.root(store);
+      const group = await _zarrita_core__WEBPACK_IMPORTED_MODULE_8__.open(root, {
+        kind: "group"
       });
-      var sourceIndex = firstGreaterIdx === -1 ? lastSrcIdx : firstGreaterIdx - 1;
-      var channelIndexInSource = absoluteChannelIndex - this.sources[sourceIndex].channelOffset;
+      const {
+        multiscales,
+        omero
+      } = group.attrs;
+
+      // Pick scene (multiscale)
+      let scene = scenesArr[Math.min(i, scenesArr.length - 1)];
+      if (scene > multiscales.length) {
+        console.warn(`WARNING: OMEZarrLoader: scene ${scene} is invalid. Using scene 0.`);
+        scene = 0;
+      }
+      const multiscaleMetadata = multiscales[scene];
+
+      // Open all scale levels of multiscale
+      const lvlProms = multiscaleMetadata.datasets.map(({
+        path
+      }) => _zarrita_core__WEBPACK_IMPORTED_MODULE_8__.open(root.resolve(path), {
+        kind: "array"
+      }));
+      const scaleLevels = await Promise.all(lvlProms);
+      const axesTCZYX = (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_5__.remapAxesToTCZYX)(multiscaleMetadata.axes);
       return {
-        sourceIndex: sourceIndex,
-        channelIndexInSource: channelIndexInSource
+        scaleLevels,
+        multiscaleMetadata,
+        omeroMetadata: omero,
+        axesTCZYX,
+        channelOffset: 0
       };
-    }
+    });
+    const sources = await Promise.all(sourceProms);
 
-    /**
-     * Change which directions to prioritize when prefetching. All chunks will be prefetched in these directions before
-     * any chunks are prefetched in any other directions.
-     */
-  }, {
-    key: "setPrefetchPriority",
-    value: function setPrefetchPriority(directions) {
-      this.priorityDirections = directions;
+    // Set `channelOffset`s so we can match channel indices to sources
+    let channelCount = 0;
+    for (const s of sources) {
+      s.channelOffset = channelCount;
+      channelCount += s.omeroMetadata.channels.length;
     }
-  }, {
-    key: "syncMultichannelLoading",
-    value: function syncMultichannelLoading(sync) {
-      this.syncChannels = sync;
-    }
-  }, {
-    key: "loadDims",
-    value: function loadDims(loadSpec) {
-      var _this$maxExtent,
-        _this2 = this;
-      var _this$getUnitSymbols = this.getUnitSymbols(),
-        _this$getUnitSymbols2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_this$getUnitSymbols, 2),
-        spaceUnit = _this$getUnitSymbols2[0],
-        timeUnit = _this$getUnitSymbols2[1];
-      // Compute subregion size so we can factor that in
-      var maxExtent = (_this$maxExtent = this.maxExtent) !== null && _this$maxExtent !== void 0 ? _this$maxExtent : new three__WEBPACK_IMPORTED_MODULE_16__.Box3(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(1, 1, 1));
-      var subregion = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.composeSubregion)(loadSpec.subregion, maxExtent);
-      var regionSize = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3());
-      var regionArr = [1, 1, regionSize.z, regionSize.y, regionSize.x];
-      var result = this.sources[0].scaleLevels.map(function (level, i) {
-        var scale = _this2.getScale(i);
-        var dims = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__.VolumeDims();
-        dims.spaceUnit = spaceUnit;
-        dims.timeUnit = timeUnit;
-        dims.shape = _this2.orderByTCZYX(level.shape, 1).map(function (val, idx) {
-          return Math.max(Math.ceil(val * regionArr[idx]), 1);
-        });
-        dims.spacing = _this2.orderByTCZYX(scale, 1);
-        return dims;
-      });
-      return Promise.resolve(result);
-    }
-  }, {
-    key: "createImageInfo",
-    value: function createImageInfo(loadSpec) {
-      // We ensured most info (dims, chunks, etc.) matched between sources earlier, so we can just use the first source.
-      var source0 = this.sources[0];
-      var _source0$axesTCZYX = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(source0.axesTCZYX, 5),
-        t = _source0$axesTCZYX[0],
-        z = _source0$axesTCZYX[2],
-        y = _source0$axesTCZYX[3],
-        x = _source0$axesTCZYX[4];
-      var hasT = t > -1;
-      var hasZ = z > -1;
-      var shape0 = source0.scaleLevels[0].shape;
-      var levelToLoad = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.pickLevelToLoad)(loadSpec, this.getLevelShapesZYX());
-      var shapeLv = source0.scaleLevels[levelToLoad].shape;
-      var _this$getUnitSymbols3 = this.getUnitSymbols(),
-        _this$getUnitSymbols4 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_this$getUnitSymbols3, 2),
-        spatialUnit = _this$getUnitSymbols4[0],
-        timeUnit = _this$getUnitSymbols4[1];
+    // Ensure the sizes of all sources' scale levels are matched up. See this function's docs for more.
+    (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_5__.matchSourceScaleLevels)(sources);
+    // TODO: if `matchSourceScaleLevels` returned successfully, every one of these sources' `multiscaleMetadata` is the
+    // same in every field we care about, so we only ever use the first source's `multiscaleMetadata` after this point.
+    // Should we only store one `OMEMultiscale` record total, rather than one per source?
+    const priorityDirs = fetchOptions?.priorityDirections ? fetchOptions.priorityDirections.slice() : undefined;
+    return new OMEZarrLoader(sources, queue, fetchOptions, priorityDirs);
+  }
+  getUnitSymbols() {
+    const source = this.sources[0];
+    // Assume all spatial axes in all sources have the same units - we have no means of storing per-axis unit symbols
+    const xi = source.axesTCZYX[4];
+    const spaceUnitName = source.multiscaleMetadata.axes[xi].unit;
+    const spaceUnitSymbol = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.unitNameToSymbol)(spaceUnitName) || spaceUnitName || "";
+    const ti = source.axesTCZYX[0];
+    const timeUnitName = ti > -1 ? source.multiscaleMetadata.axes[ti].unit : undefined;
+    const timeUnitSymbol = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.unitNameToSymbol)(timeUnitName) || timeUnitName || "";
+    return [spaceUnitSymbol, timeUnitSymbol];
+  }
+  getLevelShapesZYX() {
+    const source = this.sources[0];
+    const [z, y, x] = source.axesTCZYX.slice(-3);
+    return source.scaleLevels.map(({
+      shape
+    }) => [z === -1 ? 1 : shape[z], shape[y], shape[x]]);
+  }
+  getScale(level) {
+    return (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_5__.getScale)(this.sources[0].multiscaleMetadata.datasets[level], this.sources[0].axesTCZYX);
+  }
+  orderByDimension(valsTCZYX, sourceIdx = 0) {
+    return (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_5__.orderByDimension)(valsTCZYX, this.sources[sourceIdx].axesTCZYX);
+  }
+  orderByTCZYX(valsDimension, defaultValue, sourceIdx = 0) {
+    return (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_5__.orderByTCZYX)(valsDimension, this.sources[sourceIdx].axesTCZYX, defaultValue);
+  }
 
-      // Now we care about other sources: # of channels is the `channelOffset` of the last source plus its # of channels
-      var sourceLast = this.sources[this.sources.length - 1];
-      var cLast = sourceLast.axesTCZYX[1];
-      var lastHasC = cLast > -1;
-      var numChannels = sourceLast.channelOffset + (lastHasC ? sourceLast.scaleLevels[levelToLoad].shape[cLast] : 1);
-      var times = hasT ? shapeLv[t] : 1;
-      if (!this.maxExtent) {
-        this.maxExtent = loadSpec.subregion.clone();
+  /**
+   * Converts a volume channel index to the index of its zarr source and its channel index within that zarr.
+   * e.g., if the loader has 2 sources, the first with 3 channels and the second with 2, then `matchChannelToSource(4)`
+   * returns `[1, 1]` (the second channel of the second source).
+   */
+  matchChannelToSource(absoluteChannelIndex) {
+    const lastSrcIdx = this.sources.length - 1;
+    const lastSrc = this.sources[lastSrcIdx];
+    const lastSrcNumChannels = lastSrc.scaleLevels[0].shape[lastSrc.axesTCZYX[1]];
+    if (absoluteChannelIndex > lastSrc.channelOffset + lastSrcNumChannels) {
+      throw new Error("Channel index out of range");
+    }
+    const firstGreaterIdx = this.sources.findIndex(src => src.channelOffset > absoluteChannelIndex);
+    const sourceIndex = firstGreaterIdx === -1 ? lastSrcIdx : firstGreaterIdx - 1;
+    const channelIndexInSource = absoluteChannelIndex - this.sources[sourceIndex].channelOffset;
+    return {
+      sourceIndex,
+      channelIndexInSource
+    };
+  }
+
+  /**
+   * Change which directions to prioritize when prefetching. All chunks will be prefetched in these directions before
+   * any chunks are prefetched in any other directions.
+   */
+  setPrefetchPriority(directions) {
+    this.priorityDirections = directions;
+  }
+  syncMultichannelLoading(sync) {
+    this.syncChannels = sync;
+  }
+  loadDims(loadSpec) {
+    const [spaceUnit, timeUnit] = this.getUnitSymbols();
+    // Compute subregion size so we can factor that in
+    const maxExtent = this.maxExtent ?? new three__WEBPACK_IMPORTED_MODULE_9__.Box3(new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(1, 1, 1));
+    const subregion = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.composeSubregion)(loadSpec.subregion, maxExtent);
+    const regionSize = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_9__.Vector3());
+    const regionArr = [1, 1, regionSize.z, regionSize.y, regionSize.x];
+    const result = this.sources[0].scaleLevels.map((level, i) => {
+      const scale = this.getScale(i);
+      const dims = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.VolumeDims();
+      dims.spaceUnit = spaceUnit;
+      dims.timeUnit = timeUnit;
+      dims.shape = this.orderByTCZYX(level.shape, 1).map((val, idx) => Math.max(Math.ceil(val * regionArr[idx]), 1));
+      dims.spacing = this.orderByTCZYX(scale, 1);
+      return dims;
+    });
+    return Promise.resolve(result);
+  }
+  createImageInfo(loadSpec) {
+    // We ensured most info (dims, chunks, etc.) matched between sources earlier, so we can just use the first source.
+    const source0 = this.sources[0];
+    const [t,, z, y, x] = source0.axesTCZYX;
+    const hasT = t > -1;
+    const hasZ = z > -1;
+    const shape0 = source0.scaleLevels[0].shape;
+    const levelToLoad = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.pickLevelToLoad)(loadSpec, this.getLevelShapesZYX());
+    const shapeLv = source0.scaleLevels[levelToLoad].shape;
+    const [spatialUnit, timeUnit] = this.getUnitSymbols();
+
+    // Now we care about other sources: # of channels is the `channelOffset` of the last source plus its # of channels
+    const sourceLast = this.sources[this.sources.length - 1];
+    const cLast = sourceLast.axesTCZYX[1];
+    const lastHasC = cLast > -1;
+    const numChannels = sourceLast.channelOffset + (lastHasC ? sourceLast.scaleLevels[levelToLoad].shape[cLast] : 1);
+    const times = hasT ? shapeLv[t] : 1;
+    if (!this.maxExtent) {
+      this.maxExtent = loadSpec.subregion.clone();
+    }
+    const pxDims0 = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1));
+    const pxSize0 = pxDims0.getSize(new three__WEBPACK_IMPORTED_MODULE_9__.Vector3());
+    const pxDimsLv = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(shapeLv[x], shapeLv[y], hasZ ? shapeLv[z] : 1));
+    const pxSizeLv = pxDimsLv.getSize(new three__WEBPACK_IMPORTED_MODULE_9__.Vector3());
+    const atlasTileDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.computePackedAtlasDims)(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
+
+    // Channel names is the other place where we have to check every source
+    // Track which channel names we've seen so far, so that we can rename them to avoid name collisions
+    const channelNamesMap = new Map();
+    const channelNames = this.sources.flatMap(src => src.omeroMetadata.channels.map(ch => {
+      const numMatchingChannels = channelNamesMap.get(ch.label);
+      if (numMatchingChannels !== undefined) {
+        // If e.g. we've seen channel "Membrane" once before, rename this one to "Membrane (1)"
+        channelNamesMap.set(ch.label, numMatchingChannels + 1);
+        return `${ch.label} (${numMatchingChannels})`;
+      } else {
+        channelNamesMap.set(ch.label, 1);
+        return ch.label;
       }
-      var pxDims0 = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1));
-      var pxSize0 = pxDims0.getSize(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3());
-      var pxDimsLv = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(shapeLv[x], shapeLv[y], hasZ ? shapeLv[z] : 1));
-      var pxSizeLv = pxDimsLv.getSize(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3());
-      var atlasTileDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.computePackedAtlasDims)(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
+    }));
 
-      // Channel names is the other place where we have to check every source
-      // Track which channel names we've seen so far, so that we can rename them to avoid name collisions
-      var channelNamesMap = new Map();
-      var channelNames = this.sources.flatMap(function (src) {
-        return src.omeroMetadata.channels.map(function (ch) {
-          var numMatchingChannels = channelNamesMap.get(ch.label);
-          if (numMatchingChannels !== undefined) {
-            // If e.g. we've seen channel "Membrane" once before, rename this one to "Membrane (1)"
-            channelNamesMap.set(ch.label, numMatchingChannels + 1);
-            return "".concat(ch.label, " (").concat(numMatchingChannels, ")");
-          } else {
-            channelNamesMap.set(ch.label, 1);
-            return ch.label;
-          }
-        });
-      });
-
-      // for physicalPixelSize, we use the scale of the first level
-      var scale5d = this.getScale(0);
-      // assume that ImageInfo wants the timeScale of level 0
-      var timeScale = hasT ? scale5d[t] : 1;
-      var imgdata = {
-        name: source0.omeroMetadata.name,
-        originalSize: pxSize0,
-        atlasTileDims: atlasTileDims,
-        volumeSize: pxSizeLv,
-        subregionSize: pxSizeLv.clone(),
-        subregionOffset: new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(0, 0, 0),
-        physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(scale5d[x], scale5d[y], hasZ ? scale5d[z] : Math.min(scale5d[x], scale5d[y])),
-        spatialUnit: spatialUnit,
-        numChannels: numChannels,
-        channelNames: channelNames,
-        times: times,
-        timeScale: timeScale,
-        timeUnit: timeUnit,
-        numMultiscaleLevels: source0.scaleLevels.length,
-        multiscaleLevel: levelToLoad,
-        transform: {
-          translation: new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(0, 0, 0),
-          rotation: new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(0, 0, 0)
-        }
-      };
-
-      // The `LoadSpec` passed in at this stage should represent the subset which this loader loads, not that
-      // which the volume contains. The volume contains the full extent of the subset recognized by this loader.
-      var fullExtentLoadSpec = _objectSpread(_objectSpread({}, loadSpec), {}, {
-        subregion: new three__WEBPACK_IMPORTED_MODULE_16__.Box3(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(1, 1, 1))
-      });
-      return Promise.resolve({
-        imageInfo: imgdata,
-        loadSpec: fullExtentLoadSpec
-      });
-    }
-  }, {
-    key: "prefetchChunk",
-    value: function () {
-      var _prefetchChunk = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9___default().mark(function _callee(scaleLevel, coords, subscriber) {
-        var store, path, separator, key;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9___default().wrap(function _callee$(_context) {
-          while (1) switch (_context.prev = _context.next) {
-            case 0:
-              store = scaleLevel.store, path = scaleLevel.path;
-              separator = path.endsWith("/") ? "" : "/";
-              key = path + separator + this.orderByDimension(coords).join("/");
-              _context.prev = 3;
-              _context.next = 6;
-              return store.get(key, {
-                subscriber: subscriber,
-                isPrefetch: true
-              });
-            case 6:
-              _context.next = 12;
-              break;
-            case 8:
-              _context.prev = 8;
-              _context.t0 = _context["catch"](3);
-              if (!(_context.t0 !== CHUNK_REQUEST_CANCEL_REASON)) {
-                _context.next = 12;
-                break;
-              }
-              throw _context.t0;
-            case 12:
-            case "end":
-              return _context.stop();
-          }
-        }, _callee, this, [[3, 8]]);
-      }));
-      function prefetchChunk(_x, _x2, _x3) {
-        return _prefetchChunk.apply(this, arguments);
+    // for physicalPixelSize, we use the scale of the first level
+    const scale5d = this.getScale(0);
+    // assume that ImageInfo wants the timeScale of level 0
+    const timeScale = hasT ? scale5d[t] : 1;
+    const imgdata = {
+      name: source0.omeroMetadata.name,
+      originalSize: pxSize0,
+      atlasTileDims,
+      volumeSize: pxSizeLv,
+      subregionSize: pxSizeLv.clone(),
+      subregionOffset: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
+      physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(scale5d[x], scale5d[y], hasZ ? scale5d[z] : Math.min(scale5d[x], scale5d[y])),
+      spatialUnit,
+      numChannels,
+      channelNames,
+      times,
+      timeScale,
+      timeUnit,
+      numMultiscaleLevels: source0.scaleLevels.length,
+      multiscaleLevel: levelToLoad,
+      transform: {
+        translation: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0),
+        rotation: new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0)
       }
-      return prefetchChunk;
-    }() /** Reads a list of chunk keys requested by a `loadVolumeData` call and sets up appropriate prefetch requests. */
-  }, {
-    key: "beginPrefetch",
-    value: function beginPrefetch(keys, scaleLevel) {
-      var _this3 = this;
-      // Convert keys to arrays of coords
-      var chunkCoords = keys.map(function (_ref2) {
-        var sourceIdx = _ref2.sourceIdx,
-          key = _ref2.key;
-        var numDims = (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.getDimensionCount)(_this3.sources[sourceIdx].axesTCZYX);
-        var coordsInDimensionOrder = key.trim().split("/").slice(-numDims).filter(function (s) {
-          return s !== "";
-        }).map(function (s) {
-          return parseInt(s, 10);
-        });
-        var sourceCoords = _this3.orderByTCZYX(coordsInDimensionOrder, 0, sourceIdx);
-        // Convert source channel index to absolute channel index for `ChunkPrefetchIterator`'s benefit
-        // (we match chunk coordinates output from `ChunkPrefetchIterator` back to sources below)
-        sourceCoords[1] += _this3.sources[sourceIdx].channelOffset;
-        return sourceCoords;
-      });
+    };
 
-      // Get number of chunks per dimension in every source array
-      var chunkDimsTCZYX = this.sources.map(function (src) {
-        var level = src.scaleLevels[scaleLevel];
-        var chunkDimsUnordered = level.shape.map(function (dim, idx) {
-          return Math.ceil(dim / level.chunks[idx]);
-        });
-        return _this3.orderByTCZYX(chunkDimsUnordered, 1);
+    // The `LoadSpec` passed in at this stage should represent the subset which this loader loads, not that
+    // which the volume contains. The volume contains the full extent of the subset recognized by this loader.
+    const fullExtentLoadSpec = {
+      ...loadSpec,
+      subregion: new three__WEBPACK_IMPORTED_MODULE_9__.Box3(new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(1, 1, 1))
+    };
+    return Promise.resolve({
+      imageInfo: imgdata,
+      loadSpec: fullExtentLoadSpec
+    });
+  }
+  async prefetchChunk(scaleLevel, coords, subscriber) {
+    const {
+      store,
+      path
+    } = scaleLevel;
+    const separator = path.endsWith("/") ? "" : "/";
+    const key = path + separator + this.orderByDimension(coords).join("/");
+    try {
+      // Calling `get` and doing nothing with the result still triggers a cache check, fetch, and insertion
+      await store.get(key, {
+        subscriber,
+        isPrefetch: true
       });
-      // `ChunkPrefetchIterator` yields chunk coordinates in order of roughly how likely they are to be loaded next
-      var prefetchIterator = new _zarr_utils_ChunkPrefetchIterator_js__WEBPACK_IMPORTED_MODULE_13__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTCZYX, this.priorityDirections);
-      var subscriber = this.requestQueue.addSubscriber();
-      var prefetchCount = 0;
-      var _iterator = _createForOfIteratorHelper(prefetchIterator),
-        _step;
+    } catch (e) {
+      if (e !== CHUNK_REQUEST_CANCEL_REASON) {
+        throw e;
+      }
+    }
+  }
+
+  /** Reads a list of chunk keys requested by a `loadVolumeData` call and sets up appropriate prefetch requests. */
+  beginPrefetch(keys, scaleLevel) {
+    // Convert keys to arrays of coords
+    const chunkCoords = keys.map(({
+      sourceIdx,
+      key
+    }) => {
+      const numDims = (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_5__.getDimensionCount)(this.sources[sourceIdx].axesTCZYX);
+      const coordsInDimensionOrder = key.trim().split("/").slice(-numDims).filter(s => s !== "").map(s => parseInt(s, 10));
+      const sourceCoords = this.orderByTCZYX(coordsInDimensionOrder, 0, sourceIdx);
+      // Convert source channel index to absolute channel index for `ChunkPrefetchIterator`'s benefit
+      // (we match chunk coordinates output from `ChunkPrefetchIterator` back to sources below)
+      sourceCoords[1] += this.sources[sourceIdx].channelOffset;
+      return sourceCoords;
+    });
+
+    // Get number of chunks per dimension in every source array
+    const chunkDimsTCZYX = this.sources.map(src => {
+      const level = src.scaleLevels[scaleLevel];
+      const chunkDimsUnordered = level.shape.map((dim, idx) => Math.ceil(dim / level.chunks[idx]));
+      return this.orderByTCZYX(chunkDimsUnordered, 1);
+    });
+    // `ChunkPrefetchIterator` yields chunk coordinates in order of roughly how likely they are to be loaded next
+    const prefetchIterator = new _zarr_utils_ChunkPrefetchIterator_js__WEBPACK_IMPORTED_MODULE_3__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTCZYX, this.priorityDirections);
+    const subscriber = this.requestQueue.addSubscriber();
+    let prefetchCount = 0;
+    for (const chunk of prefetchIterator) {
+      if (prefetchCount >= this.fetchOptions.maxPrefetchChunks) {
+        break;
+      }
+      // Match absolute channel coordinate back to source index and channel index
+      const {
+        sourceIndex,
+        channelIndexInSource
+      } = this.matchChannelToSource(chunk[1]);
+      const sourceScaleLevel = this.sources[sourceIndex].scaleLevels[scaleLevel];
+      chunk[1] = channelIndexInSource;
+      this.prefetchChunk(sourceScaleLevel, chunk, subscriber);
+      prefetchCount++;
+    }
+
+    // Clear out old prefetch requests (requests which also cover this new prefetch will be preserved)
+    if (this.prefetchSubscriber !== undefined) {
+      this.requestQueue.removeSubscriber(this.prefetchSubscriber, CHUNK_REQUEST_CANCEL_REASON);
+    }
+    this.prefetchSubscriber = subscriber;
+  }
+  updateImageInfoForLoad(imageInfo, loadSpec) {
+    // Apply `this.maxExtent` to subregion, if it exists
+    const maxExtent = this.maxExtent ?? new three__WEBPACK_IMPORTED_MODULE_9__.Box3(new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(1, 1, 1));
+    const subregion = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.composeSubregion)(loadSpec.subregion, maxExtent);
+
+    // Pick the level to load based on the subregion size
+    const multiscaleLevel = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.pickLevelToLoad)({
+      ...loadSpec,
+      subregion
+    }, this.getLevelShapesZYX());
+    const array0Shape = this.sources[0].scaleLevels[multiscaleLevel].shape;
+
+    // Convert subregion to volume voxels
+    const [z, y, x] = this.sources[0].axesTCZYX.slice(2);
+    const regionPx = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.convertSubregionToPixels)(subregion, new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(array0Shape[x], array0Shape[y], z === -1 ? 1 : array0Shape[z]));
+
+    // Derive other image info properties from subregion and level to load
+    const subregionSize = regionPx.getSize(new three__WEBPACK_IMPORTED_MODULE_9__.Vector3());
+    const atlasTileDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.computePackedAtlasDims)(subregionSize.z, subregionSize.x, subregionSize.y);
+    const volumeExtent = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.convertSubregionToPixels)(maxExtent, new three__WEBPACK_IMPORTED_MODULE_9__.Vector3(array0Shape[x], array0Shape[y], z === -1 ? 1 : array0Shape[z]));
+    const volumeSize = volumeExtent.getSize(new three__WEBPACK_IMPORTED_MODULE_9__.Vector3());
+    return {
+      ...imageInfo,
+      atlasTileDims,
+      volumeSize,
+      subregionSize,
+      subregionOffset: regionPx.min,
+      multiscaleLevel
+    };
+  }
+  loadRawChannelData(imageInfo, loadSpec, onData) {
+    // This seemingly useless line keeps a stable local copy of `syncChannels` which the async closures below capture
+    // so that changes to `this.syncChannels` don't affect the behavior of loads in progress.
+    const syncChannels = this.syncChannels;
+    const updatedImageInfo = this.updateImageInfoForLoad(imageInfo, loadSpec);
+    const {
+      numChannels,
+      multiscaleLevel
+    } = updatedImageInfo;
+    const channelIndexes = loadSpec.channels ?? Array.from({
+      length: numChannels
+    }, (_, i) => i);
+    const subscriber = this.requestQueue.addSubscriber();
+
+    // Prefetch housekeeping: we want to save keys involved in this load to prefetch later
+    const keys = [];
+    const reportKeyBase = (sourceIdx, key, sub) => {
+      if (sub === subscriber) {
+        keys.push({
+          sourceIdx,
+          key
+        });
+      }
+    };
+    const resultChannelIndices = [];
+    const resultChannelData = [];
+    const resultChannelRanges = [];
+    const channelPromises = channelIndexes.map(async ch => {
+      // Build slice spec
+      const min = updatedImageInfo.subregionOffset;
+      const max = min.clone().add(updatedImageInfo.subregionSize);
+      const {
+        sourceIndex: sourceIdx,
+        channelIndexInSource: sourceCh
+      } = this.matchChannelToSource(ch);
+      const unorderedSpec = [loadSpec.time, sourceCh, (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_10__.slice)(min.z, max.z), (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_10__.slice)(min.y, max.y), (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_10__.slice)(min.x, max.x)];
+      const level = this.sources[sourceIdx].scaleLevels[multiscaleLevel];
+      const sliceSpec = this.orderByDimension(unorderedSpec, sourceIdx);
+      const reportKey = (key, sub) => reportKeyBase(sourceIdx, key, sub);
       try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var chunk = _step.value;
-          if (prefetchCount >= this.fetchOptions.maxPrefetchChunks) {
-            break;
+        const result = await (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_11__.get)(level, sliceSpec, {
+          opts: {
+            subscriber,
+            reportKey
           }
-          // Match absolute channel coordinate back to source index and channel index
-          var _this$matchChannelToS = this.matchChannelToSource(chunk[1]),
-            sourceIndex = _this$matchChannelToS.sourceIndex,
-            channelIndexInSource = _this$matchChannelToS.channelIndexInSource;
-          var sourceScaleLevel = this.sources[sourceIndex].scaleLevels[scaleLevel];
-          chunk[1] = channelIndexInSource;
-          this.prefetchChunk(sourceScaleLevel, chunk, subscriber);
-          prefetchCount++;
-        }
-
-        // Clear out old prefetch requests (requests which also cover this new prefetch will be preserved)
-      } catch (err) {
-        _iterator.e(err);
-      } finally {
-        _iterator.f();
-      }
-      if (this.prefetchSubscriber !== undefined) {
-        this.requestQueue.removeSubscriber(this.prefetchSubscriber, CHUNK_REQUEST_CANCEL_REASON);
-      }
-      this.prefetchSubscriber = subscriber;
-    }
-  }, {
-    key: "updateImageInfoForLoad",
-    value: function updateImageInfoForLoad(imageInfo, loadSpec) {
-      var _this$maxExtent2;
-      // Apply `this.maxExtent` to subregion, if it exists
-      var maxExtent = (_this$maxExtent2 = this.maxExtent) !== null && _this$maxExtent2 !== void 0 ? _this$maxExtent2 : new three__WEBPACK_IMPORTED_MODULE_16__.Box3(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(1, 1, 1));
-      var subregion = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.composeSubregion)(loadSpec.subregion, maxExtent);
-
-      // Pick the level to load based on the subregion size
-      var multiscaleLevel = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.pickLevelToLoad)(_objectSpread(_objectSpread({}, loadSpec), {}, {
-        subregion: subregion
-      }), this.getLevelShapesZYX());
-      var array0Shape = this.sources[0].scaleLevels[multiscaleLevel].shape;
-
-      // Convert subregion to volume voxels
-      var _this$sources$0$axesT = this.sources[0].axesTCZYX.slice(2),
-        _this$sources$0$axesT2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_this$sources$0$axesT, 3),
-        z = _this$sources$0$axesT2[0],
-        y = _this$sources$0$axesT2[1],
-        x = _this$sources$0$axesT2[2];
-      var regionPx = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(subregion, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(array0Shape[x], array0Shape[y], z === -1 ? 1 : array0Shape[z]));
-
-      // Derive other image info properties from subregion and level to load
-      var subregionSize = regionPx.getSize(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3());
-      var atlasTileDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.computePackedAtlasDims)(subregionSize.z, subregionSize.x, subregionSize.y);
-      var volumeExtent = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_12__.convertSubregionToPixels)(maxExtent, new three__WEBPACK_IMPORTED_MODULE_16__.Vector3(array0Shape[x], array0Shape[y], z === -1 ? 1 : array0Shape[z]));
-      var volumeSize = volumeExtent.getSize(new three__WEBPACK_IMPORTED_MODULE_16__.Vector3());
-      return _objectSpread(_objectSpread({}, imageInfo), {}, {
-        atlasTileDims: atlasTileDims,
-        volumeSize: volumeSize,
-        subregionSize: subregionSize,
-        subregionOffset: regionPx.min,
-        multiscaleLevel: multiscaleLevel
-      });
-    }
-  }, {
-    key: "loadRawChannelData",
-    value: function loadRawChannelData(imageInfo, loadSpec, onData) {
-      var _loadSpec$channels,
-        _this4 = this;
-      // This seemingly useless line keeps a stable local copy of `syncChannels` which the async closures below capture
-      // so that changes to `this.syncChannels` don't affect the behavior of loads in progress.
-      var syncChannels = this.syncChannels;
-      var updatedImageInfo = this.updateImageInfoForLoad(imageInfo, loadSpec);
-      var numChannels = updatedImageInfo.numChannels,
-        multiscaleLevel = updatedImageInfo.multiscaleLevel;
-      var channelIndexes = (_loadSpec$channels = loadSpec.channels) !== null && _loadSpec$channels !== void 0 ? _loadSpec$channels : Array.from({
-        length: numChannels
-      }, function (_, i) {
-        return i;
-      });
-      var subscriber = this.requestQueue.addSubscriber();
-
-      // Prefetch housekeeping: we want to save keys involved in this load to prefetch later
-      var keys = [];
-      var reportKeyBase = function reportKeyBase(sourceIdx, key, sub) {
-        if (sub === subscriber) {
-          keys.push({
-            sourceIdx: sourceIdx,
-            key: key
-          });
-        }
-      };
-      var resultChannelIndices = [];
-      var resultChannelData = [];
-      var resultChannelRanges = [];
-      var channelPromises = channelIndexes.map( /*#__PURE__*/function () {
-        var _ref3 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9___default().mark(function _callee2(ch) {
-          var min, max, _this4$matchChannelTo, sourceIdx, sourceCh, unorderedSpec, level, sliceSpec, reportKey, result, converted;
-          return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9___default().wrap(function _callee2$(_context2) {
-            while (1) switch (_context2.prev = _context2.next) {
-              case 0:
-                // Build slice spec
-                min = updatedImageInfo.subregionOffset;
-                max = min.clone().add(updatedImageInfo.subregionSize);
-                _this4$matchChannelTo = _this4.matchChannelToSource(ch), sourceIdx = _this4$matchChannelTo.sourceIndex, sourceCh = _this4$matchChannelTo.channelIndexInSource;
-                unorderedSpec = [loadSpec.time, sourceCh, (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_17__.slice)(min.z, max.z), (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_17__.slice)(min.y, max.y), (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_17__.slice)(min.x, max.x)];
-                level = _this4.sources[sourceIdx].scaleLevels[multiscaleLevel];
-                sliceSpec = _this4.orderByDimension(unorderedSpec, sourceIdx);
-                reportKey = function reportKey(key, sub) {
-                  return reportKeyBase(sourceIdx, key, sub);
-                };
-                _context2.prev = 7;
-                _context2.next = 10;
-                return (0,_zarrita_indexing__WEBPACK_IMPORTED_MODULE_18__.get)(level, sliceSpec, {
-                  opts: {
-                    subscriber: subscriber,
-                    reportKey: reportKey
-                  }
-                });
-              case 10:
-                result = _context2.sent;
-                converted = convertChannel(result.data);
-                if (syncChannels) {
-                  resultChannelData.push(converted[0]);
-                  resultChannelIndices.push(ch);
-                  resultChannelRanges.push([converted[1], converted[2]]);
-                } else {
-                  onData([ch], [converted[0]], [[converted[1], converted[2]]]);
-                }
-                _context2.next = 20;
-                break;
-              case 15:
-                _context2.prev = 15;
-                _context2.t0 = _context2["catch"](7);
-                if (!(_context2.t0 !== CHUNK_REQUEST_CANCEL_REASON)) {
-                  _context2.next = 20;
-                  break;
-                }
-                console.log(_context2.t0);
-                throw _context2.t0;
-              case 20:
-              case "end":
-                return _context2.stop();
-            }
-          }, _callee2, null, [[7, 15]]);
-        }));
-        return function (_x4) {
-          return _ref3.apply(this, arguments);
-        };
-      }());
-
-      // Cancel any in-flight requests from previous loads that aren't useful to this one
-      if (this.loadSubscriber !== undefined) {
-        this.requestQueue.removeSubscriber(this.loadSubscriber, CHUNK_REQUEST_CANCEL_REASON);
-      }
-      this.loadSubscriber = subscriber;
-      this.beginPrefetch(keys, multiscaleLevel);
-      Promise.all(channelPromises).then(function () {
+        });
+        const converted = convertChannel(result.data);
         if (syncChannels) {
-          onData(resultChannelIndices, resultChannelData, resultChannelRanges);
+          resultChannelData.push(converted[0]);
+          resultChannelIndices.push(ch);
+          resultChannelRanges.push([converted[1], converted[2]]);
+        } else {
+          onData([ch], [converted[0]], [[converted[1], converted[2]]]);
         }
-        _this4.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
-      });
-      return Promise.resolve({
-        imageInfo: updatedImageInfo
-      });
-    }
-  }], [{
-    key: "createLoader",
-    value: (function () {
-      var _createLoader = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9___default().mark(function _callee4(urls) {
-        var scenes,
-          cache,
-          queue,
-          fetchOptions,
-          urlsArr,
-          scenesArr,
-          sourceProms,
-          sources,
-          channelCount,
-          _iterator2,
-          _step2,
-          s,
-          priorityDirs,
-          _args4 = arguments;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9___default().wrap(function _callee4$(_context4) {
-          while (1) switch (_context4.prev = _context4.next) {
-            case 0:
-              scenes = _args4.length > 1 && _args4[1] !== undefined ? _args4[1] : 0;
-              cache = _args4.length > 2 ? _args4[2] : undefined;
-              queue = _args4.length > 3 ? _args4[3] : undefined;
-              fetchOptions = _args4.length > 4 ? _args4[4] : undefined;
-              // Setup queue and store, get basic metadata
-              if (!queue) {
-                queue = new _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_10__["default"](fetchOptions === null || fetchOptions === void 0 ? void 0 : fetchOptions.concurrencyLimit, fetchOptions === null || fetchOptions === void 0 ? void 0 : fetchOptions.prefetchConcurrencyLimit);
-              }
-              urlsArr = Array.isArray(urls) ? urls : [urls];
-              scenesArr = Array.isArray(scenes) ? scenes : [scenes]; // Create one `ZarrSource` per URL
-              sourceProms = urlsArr.map( /*#__PURE__*/function () {
-                var _ref4 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9___default().mark(function _callee3(url, i) {
-                  var store, root, group, _ref5, multiscales, omero, scene, multiscaleMetadata, lvlProms, scaleLevels, axesTCZYX;
-                  return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_9___default().wrap(function _callee3$(_context3) {
-                    while (1) switch (_context3.prev = _context3.next) {
-                      case 0:
-                        store = new _zarr_utils_WrappedStore_js__WEBPACK_IMPORTED_MODULE_14__["default"](new zarrita__WEBPACK_IMPORTED_MODULE_19__["default"](url), cache, queue);
-                        root = _zarrita_core__WEBPACK_IMPORTED_MODULE_20__.root(store);
-                        _context3.next = 4;
-                        return _zarrita_core__WEBPACK_IMPORTED_MODULE_21__.open(root, {
-                          kind: "group"
-                        });
-                      case 4:
-                        group = _context3.sent;
-                        _ref5 = group.attrs, multiscales = _ref5.multiscales, omero = _ref5.omero; // Pick scene (multiscale)
-                        scene = scenesArr[Math.min(i, scenesArr.length - 1)];
-                        if (scene > multiscales.length) {
-                          console.warn("WARNING: OMEZarrLoader: scene ".concat(scene, " is invalid. Using scene 0."));
-                          scene = 0;
-                        }
-                        multiscaleMetadata = multiscales[scene]; // Open all scale levels of multiscale
-                        lvlProms = multiscaleMetadata.datasets.map(function (_ref6) {
-                          var path = _ref6.path;
-                          return _zarrita_core__WEBPACK_IMPORTED_MODULE_21__.open(root.resolve(path), {
-                            kind: "array"
-                          });
-                        });
-                        _context3.next = 12;
-                        return Promise.all(lvlProms);
-                      case 12:
-                        scaleLevels = _context3.sent;
-                        axesTCZYX = (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.remapAxesToTCZYX)(multiscaleMetadata.axes);
-                        return _context3.abrupt("return", {
-                          scaleLevels: scaleLevels,
-                          multiscaleMetadata: multiscaleMetadata,
-                          omeroMetadata: omero,
-                          axesTCZYX: axesTCZYX,
-                          channelOffset: 0
-                        });
-                      case 15:
-                      case "end":
-                        return _context3.stop();
-                    }
-                  }, _callee3);
-                }));
-                return function (_x6, _x7) {
-                  return _ref4.apply(this, arguments);
-                };
-              }());
-              _context4.next = 10;
-              return Promise.all(sourceProms);
-            case 10:
-              sources = _context4.sent;
-              // Set `channelOffset`s so we can match channel indices to sources
-              channelCount = 0;
-              _iterator2 = _createForOfIteratorHelper(sources);
-              try {
-                for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-                  s = _step2.value;
-                  s.channelOffset = channelCount;
-                  channelCount += s.omeroMetadata.channels.length;
-                }
-                // Ensure the sizes of all sources' scale levels are matched up. See this function's docs for more.
-              } catch (err) {
-                _iterator2.e(err);
-              } finally {
-                _iterator2.f();
-              }
-              (0,_zarr_utils_utils_js__WEBPACK_IMPORTED_MODULE_15__.matchSourceScaleLevels)(sources);
-              // TODO: if `matchSourceScaleLevels` returned successfully, every one of these sources' `multiscaleMetadata` is the
-              // same in every field we care about, so we only ever use the first source's `multiscaleMetadata` after this point.
-              // Should we only store one `OMEMultiscale` record total, rather than one per source?
-              priorityDirs = fetchOptions !== null && fetchOptions !== void 0 && fetchOptions.priorityDirections ? fetchOptions.priorityDirections.slice() : undefined;
-              return _context4.abrupt("return", new OMEZarrLoader(sources, queue, fetchOptions, priorityDirs));
-            case 17:
-            case "end":
-              return _context4.stop();
-          }
-        }, _callee4);
-      }));
-      function createLoader(_x5) {
-        return _createLoader.apply(this, arguments);
+      } catch (e) {
+        // TODO: verify that cancelling requests in progress doesn't leak memory
+        if (e !== CHUNK_REQUEST_CANCEL_REASON) {
+          console.log(e);
+          throw e;
+        }
       }
-      return createLoader;
-    }())
-  }]);
-  return OMEZarrLoader;
-}(_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__.ThreadableVolumeLoader);
+    });
+
+    // Cancel any in-flight requests from previous loads that aren't useful to this one
+    if (this.loadSubscriber !== undefined) {
+      this.requestQueue.removeSubscriber(this.loadSubscriber, CHUNK_REQUEST_CANCEL_REASON);
+    }
+    this.loadSubscriber = subscriber;
+    this.beginPrefetch(keys, multiscaleLevel);
+    Promise.all(channelPromises).then(() => {
+      if (syncChannels) {
+        onData(resultChannelIndices, resultChannelData, resultChannelRanges);
+      }
+      this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
+    });
+    return Promise.resolve({
+      imageInfo: updatedImageInfo
+    });
+  }
+}
 
 
 /***/ }),
@@ -3083,31 +2465,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   RawArrayLoader: () => (/* binding */ RawArrayLoader)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
-/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
-/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
-/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
-/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
-
-
-
-
-
-
-
-function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
-
-function _callSuper(t, o, e) { return o = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(o), (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_4__["default"])(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_5__["default"])(t).constructor) : o.apply(t, e)); }
-function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
 
 
 
@@ -3119,148 +2480,80 @@ function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.
 
 // minimal metadata for visualization
 
-var convertImageInfo = function convertImageInfo(json) {
-  return {
-    name: json.name,
-    // assumption: the data is already sized to fit in our viewer's preferred
-    // memory footprint (a tiled atlas texture as of this writing)
-    originalSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(json.sizeX, json.sizeY, json.sizeZ),
-    atlasTileDims: (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_9__.computePackedAtlasDims)(json.sizeZ, json.sizeX, json.sizeY),
-    volumeSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(json.sizeX, json.sizeY, json.sizeZ),
-    subregionSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(json.sizeX, json.sizeY, json.sizeZ),
-    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0),
-    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(json.physicalPixelSize[0], json.physicalPixelSize[1], json.physicalPixelSize[2]),
-    spatialUnit: json.spatialUnit || "μm",
-    numChannels: json.sizeC,
-    channelNames: json.channelNames,
-    channelColors: undefined,
-    //json.channelColors,
+const convertImageInfo = json => ({
+  name: json.name,
+  // assumption: the data is already sized to fit in our viewer's preferred
+  // memory footprint (a tiled atlas texture as of this writing)
+  originalSize: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(json.sizeX, json.sizeY, json.sizeZ),
+  atlasTileDims: (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__.computePackedAtlasDims)(json.sizeZ, json.sizeX, json.sizeY),
+  volumeSize: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(json.sizeX, json.sizeY, json.sizeZ),
+  subregionSize: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(json.sizeX, json.sizeY, json.sizeZ),
+  subregionOffset: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0),
+  physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(json.physicalPixelSize[0], json.physicalPixelSize[1], json.physicalPixelSize[2]),
+  spatialUnit: json.spatialUnit || "μm",
+  numChannels: json.sizeC,
+  channelNames: json.channelNames,
+  channelColors: undefined,
+  //json.channelColors,
 
-    times: 1,
-    timeScale: 1,
-    timeUnit: "s",
-    numMultiscaleLevels: 1,
-    multiscaleLevel: 0,
-    transform: {
-      translation: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0),
-      rotation: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0)
-    },
-    userData: json.userData
-  };
-};
-var RawArrayLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
-  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_6__["default"])(RawArrayLoader, _ThreadableVolumeLoad);
-  function RawArrayLoader(rawData, rawDataInfo) {
-    var _this;
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, RawArrayLoader);
-    _this = _callSuper(this, RawArrayLoader);
-    _this.jsonInfo = rawDataInfo;
-    _this.data = rawData;
+  times: 1,
+  timeScale: 1,
+  timeUnit: "s",
+  numMultiscaleLevels: 1,
+  multiscaleLevel: 0,
+  transform: {
+    translation: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0),
+    rotation: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0)
+  },
+  userData: json.userData
+});
+class RawArrayLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.ThreadableVolumeLoader {
+  constructor(rawData, rawDataInfo) {
+    super();
+    this.jsonInfo = rawDataInfo;
+    this.data = rawData;
     // check consistent dims
-    if (_this.data.shape[0] !== _this.jsonInfo.sizeC || _this.data.shape[1] !== _this.jsonInfo.sizeZ || _this.data.shape[2] !== _this.jsonInfo.sizeY || _this.data.shape[3] !== _this.jsonInfo.sizeX) {
+    if (this.data.shape[0] !== this.jsonInfo.sizeC || this.data.shape[1] !== this.jsonInfo.sizeZ || this.data.shape[2] !== this.jsonInfo.sizeY || this.data.shape[3] !== this.jsonInfo.sizeX) {
       throw new Error("RawArrayLoader: data shape does not match metadata");
     }
-    return _this;
   }
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(RawArrayLoader, [{
-    key: "loadDims",
-    value: function () {
-      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee(_loadSpec) {
-        var jsonInfo, d;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee$(_context) {
-          while (1) switch (_context.prev = _context.next) {
-            case 0:
-              jsonInfo = this.jsonInfo;
-              d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.VolumeDims();
-              d.shape = [1, jsonInfo.sizeC, jsonInfo.sizeZ, jsonInfo.sizeY, jsonInfo.sizeX];
-              d.spacing = [1, 1, jsonInfo.physicalPixelSize[2], jsonInfo.physicalPixelSize[1], jsonInfo.physicalPixelSize[0]];
-              d.spaceUnit = jsonInfo.spatialUnit || "μm";
-              d.dataType = "uint8";
-              return _context.abrupt("return", [d]);
-            case 7:
-            case "end":
-              return _context.stop();
-          }
-        }, _callee, this);
-      }));
-      function loadDims(_x) {
-        return _loadDims.apply(this, arguments);
+  async loadDims(_loadSpec) {
+    const jsonInfo = this.jsonInfo;
+    const d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.VolumeDims();
+    d.shape = [1, jsonInfo.sizeC, jsonInfo.sizeZ, jsonInfo.sizeY, jsonInfo.sizeX];
+    d.spacing = [1, 1, jsonInfo.physicalPixelSize[2], jsonInfo.physicalPixelSize[1], jsonInfo.physicalPixelSize[0]];
+    d.spaceUnit = jsonInfo.spatialUnit || "μm";
+    d.dataType = "uint8";
+    return [d];
+  }
+  async createImageInfo(loadSpec) {
+    return {
+      imageInfo: convertImageInfo(this.jsonInfo),
+      loadSpec
+    };
+  }
+  async loadRawChannelData(imageInfo, loadSpec, onData) {
+    const requestedChannels = loadSpec.channels;
+    for (let chindex = 0; chindex < imageInfo.numChannels; ++chindex) {
+      if (requestedChannels && requestedChannels.length > 0 && !requestedChannels.includes(chindex)) {
+        continue;
       }
-      return loadDims;
-    }()
-  }, {
-    key: "createImageInfo",
-    value: function () {
-      var _createImageInfo = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee2(loadSpec) {
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee2$(_context2) {
-          while (1) switch (_context2.prev = _context2.next) {
-            case 0:
-              return _context2.abrupt("return", {
-                imageInfo: convertImageInfo(this.jsonInfo),
-                loadSpec: loadSpec
-              });
-            case 1:
-            case "end":
-              return _context2.stop();
-          }
-        }, _callee2, this);
-      }));
-      function createImageInfo(_x2) {
-        return _createImageInfo.apply(this, arguments);
-      }
-      return createImageInfo;
-    }()
-  }, {
-    key: "loadRawChannelData",
-    value: function () {
-      var _loadRawChannelData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee3(imageInfo, loadSpec, onData) {
-        var requestedChannels, chindex, volSizeBytes, channelData, adjustedLoadSpec;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee3$(_context3) {
-          while (1) switch (_context3.prev = _context3.next) {
-            case 0:
-              requestedChannels = loadSpec.channels;
-              chindex = 0;
-            case 2:
-              if (!(chindex < imageInfo.numChannels)) {
-                _context3.next = 11;
-                break;
-              }
-              if (!(requestedChannels && requestedChannels.length > 0 && !requestedChannels.includes(chindex))) {
-                _context3.next = 5;
-                break;
-              }
-              return _context3.abrupt("continue", 8);
-            case 5:
-              volSizeBytes = this.data.shape[3] * this.data.shape[2] * this.data.shape[1]; // x*y*z pixels * 1 byte/pixel
-              channelData = new Uint8Array(this.data.buffer.buffer, chindex * volSizeBytes, volSizeBytes); // all data coming from this loader is natively 8-bit
-              onData([chindex], [channelData], [_types_js__WEBPACK_IMPORTED_MODULE_10__.DATARANGE_UINT8]);
-            case 8:
-              ++chindex;
-              _context3.next = 2;
-              break;
-            case 11:
-              adjustedLoadSpec = _objectSpread(_objectSpread({}, loadSpec), {}, {
-                // `subregion` and `multiscaleLevel` are unused by this loader
-                subregion: new three__WEBPACK_IMPORTED_MODULE_11__.Box3(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(1, 1, 1)),
-                multiscaleLevel: 0
-              });
-              return _context3.abrupt("return", {
-                loadSpec: adjustedLoadSpec
-              });
-            case 13:
-            case "end":
-              return _context3.stop();
-          }
-        }, _callee3, this);
-      }));
-      function loadRawChannelData(_x3, _x4, _x5) {
-        return _loadRawChannelData.apply(this, arguments);
-      }
-      return loadRawChannelData;
-    }()
-  }]);
-  return RawArrayLoader;
-}(_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.ThreadableVolumeLoader);
+      const volSizeBytes = this.data.shape[3] * this.data.shape[2] * this.data.shape[1]; // x*y*z pixels * 1 byte/pixel
+      const channelData = new Uint8Array(this.data.buffer.buffer, chindex * volSizeBytes, volSizeBytes);
+      // all data coming from this loader is natively 8-bit
+      onData([chindex], [channelData], [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8]);
+    }
+    const adjustedLoadSpec = {
+      ...loadSpec,
+      // `subregion` and `multiscaleLevel` are unused by this loader
+      subregion: new three__WEBPACK_IMPORTED_MODULE_3__.Box3(new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(1, 1, 1)),
+      multiscaleLevel: 0
+    };
+    return {
+      loadSpec: adjustedLoadSpec
+    };
+  }
+}
 
 
 /***/ }),
@@ -3276,29 +2569,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   TiffLoader: () => (/* binding */ TiffLoader)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/possibleConstructorReturn */ "./node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js");
-/* harmony import */ var _babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/getPrototypeOf */ "./node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js");
-/* harmony import */ var _babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/inherits */ "./node_modules/@babel/runtime/helpers/esm/inherits.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7__);
-/* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
-
-
-
-
-
-
-
-
-function _callSuper(t, o, e) { return o = (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_2__["default"])(o), (0,_babel_runtime_helpers_possibleConstructorReturn__WEBPACK_IMPORTED_MODULE_1__["default"])(t, _isNativeReflectConstruct() ? Reflect.construct(o, e || [], (0,_babel_runtime_helpers_getPrototypeOf__WEBPACK_IMPORTED_MODULE_2__["default"])(t).constructor) : o.apply(t, e)); }
-function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); } catch (t) {} return (_isNativeReflectConstruct = function _isNativeReflectConstruct() { return !!t; })(); }
+/* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
 
 
 
@@ -3306,33 +2580,32 @@ function _isNativeReflectConstruct() { try { var t = !Boolean.prototype.valueOf.
 function prepareXML(xml) {
   // trim trailing unicode zeros?
   // eslint-disable-next-line no-control-regex
-  var expr = /[\u0000]$/g;
+  const expr = /[\u0000]$/g;
   return xml.trim().replace(expr, "").trim();
 }
 function getOME(xml) {
-  var parser = new DOMParser();
-  var xmlDoc = parser.parseFromString(xml, "text/xml");
-  var omeEl = xmlDoc.getElementsByTagName("OME")[0];
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(xml, "text/xml");
+  const omeEl = xmlDoc.getElementsByTagName("OME")[0];
   return omeEl;
 }
-var OMEDims = /*#__PURE__*/(0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_4__["default"])(function OMEDims() {
-  (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_5__["default"])(this, OMEDims);
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_6__["default"])(this, "sizex", 0);
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_6__["default"])(this, "sizey", 0);
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_6__["default"])(this, "sizez", 0);
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_6__["default"])(this, "sizec", 0);
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_6__["default"])(this, "sizet", 0);
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_6__["default"])(this, "unit", "");
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_6__["default"])(this, "pixeltype", "");
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_6__["default"])(this, "dimensionorder", "");
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_6__["default"])(this, "pixelsizex", 0);
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_6__["default"])(this, "pixelsizey", 0);
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_6__["default"])(this, "pixelsizez", 0);
-  (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_6__["default"])(this, "channelnames", []);
-});
+class OMEDims {
+  sizex = 0;
+  sizey = 0;
+  sizez = 0;
+  sizec = 0;
+  sizet = 0;
+  unit = "";
+  pixeltype = "";
+  dimensionorder = "";
+  pixelsizex = 0;
+  pixelsizey = 0;
+  pixelsizez = 0;
+  channelnames = [];
+}
 function getOMEDims(imageEl) {
-  var dims = new OMEDims();
-  var pixelsEl = imageEl.getElementsByTagName("Pixels")[0];
+  const dims = new OMEDims();
+  const pixelsEl = imageEl.getElementsByTagName("Pixels")[0];
   dims.sizex = Number(pixelsEl.getAttribute("SizeX"));
   dims.sizey = Number(pixelsEl.getAttribute("SizeY"));
   dims.sizez = Number(pixelsEl.getAttribute("SizeZ"));
@@ -3344,229 +2617,125 @@ function getOMEDims(imageEl) {
   dims.pixelsizex = Number(pixelsEl.getAttribute("PhysicalSizeX"));
   dims.pixelsizey = Number(pixelsEl.getAttribute("PhysicalSizeY"));
   dims.pixelsizez = Number(pixelsEl.getAttribute("PhysicalSizeZ"));
-  var channelsEls = pixelsEl.getElementsByTagName("Channel");
-  for (var i = 0; i < channelsEls.length; ++i) {
-    var name = channelsEls[i].getAttribute("Name");
-    var id = channelsEls[i].getAttribute("ID");
+  const channelsEls = pixelsEl.getElementsByTagName("Channel");
+  for (let i = 0; i < channelsEls.length; ++i) {
+    const name = channelsEls[i].getAttribute("Name");
+    const id = channelsEls[i].getAttribute("ID");
     dims.channelnames.push(name ? name : id ? id : "Channel" + i);
   }
   return dims;
 }
-var getBytesPerSample = function getBytesPerSample(type) {
-  return type === "uint8" ? 1 : type === "uint16" ? 2 : 4;
-};
+const getBytesPerSample = type => type === "uint8" ? 1 : type === "uint16" ? 2 : 4;
 
 // Despite the class `TiffLoader` extends, this loader is not threadable, since geotiff internally uses features that
 // aren't available on workers. It uses its own specialized workers anyways.
-var TiffLoader = /*#__PURE__*/function (_ThreadableVolumeLoad) {
-  (0,_babel_runtime_helpers_inherits__WEBPACK_IMPORTED_MODULE_3__["default"])(TiffLoader, _ThreadableVolumeLoad);
-  function TiffLoader(url) {
-    var _this;
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_5__["default"])(this, TiffLoader);
-    _this = _callSuper(this, TiffLoader);
-    _this.url = url;
-    return _this;
+class TiffLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.ThreadableVolumeLoader {
+  constructor(url) {
+    super();
+    this.url = url;
   }
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_4__["default"])(TiffLoader, [{
-    key: "loadOmeDims",
-    value: function () {
-      var _loadOmeDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee() {
-        var tiff, image, tiffimgdesc, omeEl, image0El;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee$(_context) {
-          while (1) switch (_context.prev = _context.next) {
-            case 0:
-              if (this.dims) {
-                _context.next = 11;
-                break;
-              }
-              _context.next = 3;
-              return (0,geotiff__WEBPACK_IMPORTED_MODULE_10__.fromUrl)(this.url, {
-                allowFullFile: true
-              });
-            case 3:
-              tiff = _context.sent;
-              _context.next = 6;
-              return tiff.getImage();
-            case 6:
-              image = _context.sent;
-              tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
-              omeEl = getOME(tiffimgdesc);
-              image0El = omeEl.getElementsByTagName("Image")[0];
-              this.dims = getOMEDims(image0El);
-            case 11:
-              return _context.abrupt("return", this.dims);
-            case 12:
-            case "end":
-              return _context.stop();
-          }
-        }, _callee, this);
-      }));
-      function loadOmeDims() {
-        return _loadOmeDims.apply(this, arguments);
+  async loadOmeDims() {
+    if (!this.dims) {
+      const tiff = await (0,geotiff__WEBPACK_IMPORTED_MODULE_2__.fromUrl)(this.url, {
+        allowFullFile: true
+      });
+      // DO NOT DO THIS, ITS SLOW
+      // const imagecount = await tiff.getImageCount();
+      // read the FIRST image
+      const image = await tiff.getImage();
+      const tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
+      const omeEl = getOME(tiffimgdesc);
+      const image0El = omeEl.getElementsByTagName("Image")[0];
+      this.dims = getOMEDims(image0El);
+    }
+    return this.dims;
+  }
+  async loadDims(_loadSpec) {
+    const dims = await this.loadOmeDims();
+    const d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.VolumeDims();
+    d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
+    d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
+    d.spaceUnit = dims.unit ? dims.unit : "micron";
+    d.dataType = dims.pixeltype ? dims.pixeltype : "uint8";
+    return [d];
+  }
+  async createImageInfo(_loadSpec) {
+    const dims = await this.loadOmeDims();
+    // compare with sizex, sizey
+    //const width = image.getWidth();
+    //const height = image.getHeight();
+
+    // TODO allow user setting of this downsampling info?
+    // TODO allow ROI selection: range of x,y,z,c for a given t
+    const atlasDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__.computePackedAtlasDims)(dims.sizez, dims.sizex, dims.sizey);
+    // fit tiles to max of 2048x2048?
+    const targetSize = 2048;
+    const tilesizex = Math.floor(targetSize / atlasDims.x);
+    const tilesizey = Math.floor(targetSize / atlasDims.y);
+
+    // load tiff and check metadata
+
+    const imgdata = {
+      name: "TEST",
+      originalSize: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(dims.sizex, dims.sizey, dims.sizez),
+      atlasTileDims: atlasDims,
+      volumeSize: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(tilesizex, tilesizey, dims.sizez),
+      subregionSize: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(tilesizex, tilesizey, dims.sizez),
+      subregionOffset: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0),
+      physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(dims.pixelsizex, dims.pixelsizey, dims.pixelsizez),
+      spatialUnit: dims.unit || "",
+      numChannels: dims.sizec,
+      channelNames: dims.channelnames,
+      times: dims.sizet,
+      timeScale: 1,
+      timeUnit: "",
+      numMultiscaleLevels: 1,
+      multiscaleLevel: 0,
+      transform: {
+        translation: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0),
+        rotation: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0)
       }
-      return loadOmeDims;
-    }()
-  }, {
-    key: "loadDims",
-    value: function () {
-      var _loadDims = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee2(_loadSpec) {
-        var dims, d;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee2$(_context2) {
-          while (1) switch (_context2.prev = _context2.next) {
-            case 0:
-              _context2.next = 2;
-              return this.loadOmeDims();
-            case 2:
-              dims = _context2.sent;
-              d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.VolumeDims();
-              d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
-              d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
-              d.spaceUnit = dims.unit ? dims.unit : "micron";
-              d.dataType = dims.pixeltype ? dims.pixeltype : "uint8";
-              return _context2.abrupt("return", [d]);
-            case 9:
-            case "end":
-              return _context2.stop();
-          }
-        }, _callee2, this);
-      }));
-      function loadDims(_x) {
-        return _loadDims.apply(this, arguments);
-      }
-      return loadDims;
-    }()
-  }, {
-    key: "createImageInfo",
-    value: function () {
-      var _createImageInfo = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee3(_loadSpec) {
-        var dims, atlasDims, targetSize, tilesizex, tilesizey, imgdata;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee3$(_context3) {
-          while (1) switch (_context3.prev = _context3.next) {
-            case 0:
-              _context3.next = 2;
-              return this.loadOmeDims();
-            case 2:
-              dims = _context3.sent;
-              // compare with sizex, sizey
-              //const width = image.getWidth();
-              //const height = image.getHeight();
-              // TODO allow user setting of this downsampling info?
-              // TODO allow ROI selection: range of x,y,z,c for a given t
-              atlasDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_9__.computePackedAtlasDims)(dims.sizez, dims.sizex, dims.sizey); // fit tiles to max of 2048x2048?
-              targetSize = 2048;
-              tilesizex = Math.floor(targetSize / atlasDims.x);
-              tilesizey = Math.floor(targetSize / atlasDims.y); // load tiff and check metadata
-              imgdata = {
-                name: "TEST",
-                originalSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(dims.sizex, dims.sizey, dims.sizez),
-                atlasTileDims: atlasDims,
-                volumeSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(tilesizex, tilesizey, dims.sizez),
-                subregionSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(tilesizex, tilesizey, dims.sizez),
-                subregionOffset: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0),
-                physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(dims.pixelsizex, dims.pixelsizey, dims.pixelsizez),
-                spatialUnit: dims.unit || "",
-                numChannels: dims.sizec,
-                channelNames: dims.channelnames,
-                times: dims.sizet,
-                timeScale: 1,
-                timeUnit: "",
-                numMultiscaleLevels: 1,
-                multiscaleLevel: 0,
-                transform: {
-                  translation: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0),
-                  rotation: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0)
-                }
-              }; // This loader uses no fields from `LoadSpec`. Initialize volume with defaults.
-              return _context3.abrupt("return", {
-                imageInfo: imgdata,
-                loadSpec: new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.LoadSpec()
-              });
-            case 9:
-            case "end":
-              return _context3.stop();
-          }
-        }, _callee3, this);
-      }));
-      function createImageInfo(_x2) {
-        return _createImageInfo.apply(this, arguments);
-      }
-      return createImageInfo;
-    }()
-  }, {
-    key: "loadRawChannelData",
-    value: function () {
-      var _loadRawChannelData = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _callee4(imageInfo, _loadSpec, onData) {
-        var _this2 = this;
-        var dims, _loop, channel;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _callee4$(_context5) {
-          while (1) switch (_context5.prev = _context5.next) {
-            case 0:
-              _context5.next = 2;
-              return this.loadOmeDims();
-            case 2:
-              dims = _context5.sent;
-              _loop = /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().mark(function _loop() {
-                var params, worker;
-                return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_7___default().wrap(function _loop$(_context4) {
-                  while (1) switch (_context4.prev = _context4.next) {
-                    case 0:
-                      params = {
-                        channel: channel,
-                        // these are target xy sizes for the in-memory volume data
-                        // they may or may not be the same size as original xy sizes
-                        tilesizex: imageInfo.volumeSize.x,
-                        tilesizey: imageInfo.volumeSize.y,
-                        sizec: imageInfo.numChannels,
-                        sizez: imageInfo.volumeSize.z,
-                        dimensionOrder: dims.dimensionorder,
-                        bytesPerSample: getBytesPerSample(dims.pixeltype),
-                        url: _this2.url
-                      };
-                      worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchTiffWorker_ts"), __webpack_require__.b));
-                      worker.onmessage = function (e) {
-                        var u8 = e.data.data;
-                        var channel = e.data.channel;
-                        var range = e.data.range;
-                        onData([channel], [u8], [range]);
-                        worker.terminate();
-                      };
-                      worker.onerror = function (e) {
-                        alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
-                      };
-                      worker.postMessage(params);
-                    case 5:
-                    case "end":
-                      return _context4.stop();
-                  }
-                }, _loop);
-              });
-              channel = 0;
-            case 5:
-              if (!(channel < imageInfo.numChannels)) {
-                _context5.next = 10;
-                break;
-              }
-              return _context5.delegateYield(_loop(), "t0", 7);
-            case 7:
-              ++channel;
-              _context5.next = 5;
-              break;
-            case 10:
-              return _context5.abrupt("return", {});
-            case 11:
-            case "end":
-              return _context5.stop();
-          }
-        }, _callee4, this);
-      }));
-      function loadRawChannelData(_x3, _x4, _x5) {
-        return _loadRawChannelData.apply(this, arguments);
-      }
-      return loadRawChannelData;
-    }()
-  }]);
-  return TiffLoader;
-}(_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_8__.ThreadableVolumeLoader);
+    };
+
+    // This loader uses no fields from `LoadSpec`. Initialize volume with defaults.
+    return {
+      imageInfo: imgdata,
+      loadSpec: new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.LoadSpec()
+    };
+  }
+  async loadRawChannelData(imageInfo, _loadSpec, onData) {
+    const dims = await this.loadOmeDims();
+
+    // do each channel on a worker?
+    for (let channel = 0; channel < imageInfo.numChannels; ++channel) {
+      const params = {
+        channel: channel,
+        // these are target xy sizes for the in-memory volume data
+        // they may or may not be the same size as original xy sizes
+        tilesizex: imageInfo.volumeSize.x,
+        tilesizey: imageInfo.volumeSize.y,
+        sizec: imageInfo.numChannels,
+        sizez: imageInfo.volumeSize.z,
+        dimensionOrder: dims.dimensionorder,
+        bytesPerSample: getBytesPerSample(dims.pixeltype),
+        url: this.url
+      };
+      const worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchTiffWorker_ts"), __webpack_require__.b));
+      worker.onmessage = e => {
+        const u8 = e.data.data;
+        const channel = e.data.channel;
+        const range = e.data.range;
+        onData([channel], [u8], [range]);
+        worker.terminate();
+      };
+      worker.onerror = e => {
+        alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
+      };
+      worker.postMessage(params);
+    }
+    return {};
+  }
+}
 
 
 /***/ }),
@@ -3592,18 +2761,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   scaleMultipleDimsToSubregion: () => (/* binding */ scaleMultipleDimsToSubregion),
 /* harmony export */   unitNameToSymbol: () => (/* binding */ unitNameToSymbol)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
-/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
-
-function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
-
-var MAX_ATLAS_EDGE = 4096;
+const MAX_ATLAS_EDGE = 4096;
 
 // Map from units to their symbols
-var UNIT_SYMBOLS = {
+const UNIT_SYMBOLS = {
   angstrom: "Å",
   day: "d",
   foot: "ft",
@@ -3618,10 +2781,10 @@ var UNIT_SYMBOLS = {
 };
 
 // Units which may take SI prefixes (e.g. micro-, tera-)
-var SI_UNITS = ["meter", "second"];
+const SI_UNITS = ["meter", "second"];
 
 // SI prefixes which abbreviate in nonstandard ways
-var SI_PREFIX_ABBVS = {
+const SI_PREFIX_ABBVS = {
   micro: "μ",
   deca: "da"
 };
@@ -3635,19 +2798,17 @@ function unitNameToSymbol(unitName) {
   if (UNIT_SYMBOLS[unitName]) {
     return UNIT_SYMBOLS[unitName];
   }
-  var prefixedSIUnit = SI_UNITS.find(function (siUnit) {
-    return unitName.endsWith(siUnit);
-  });
+  const prefixedSIUnit = SI_UNITS.find(siUnit => unitName.endsWith(siUnit));
   if (prefixedSIUnit) {
-    var prefix = unitName.substring(0, unitName.length - prefixedSIUnit.length);
+    const prefix = unitName.substring(0, unitName.length - prefixedSIUnit.length);
     if (SI_PREFIX_ABBVS[prefix]) {
       // "special" SI prefix
       return SI_PREFIX_ABBVS[prefix] + UNIT_SYMBOLS[prefixedSIUnit];
     }
 
     // almost all SI prefixes are abbreviated by first letter, capitalized if prefix ends with "a"
-    var capitalize = prefix.endsWith("a");
-    var prefixAbbr = capitalize ? prefix[0].toUpperCase() : prefix[0];
+    const capitalize = prefix.endsWith("a");
+    const prefixAbbr = capitalize ? prefix[0].toUpperCase() : prefix[0];
     return prefixAbbr + UNIT_SYMBOLS[prefixedSIUnit];
   }
   return null;
@@ -3656,11 +2817,11 @@ function unitNameToSymbol(unitName) {
 // We want to find the most "square" packing of z tw by th tiles.
 // Compute number of rows and columns.
 function computePackedAtlasDims(z, tw, th) {
-  var nextrows = 1;
-  var nextcols = z;
-  var ratio = nextcols * tw / (nextrows * th);
-  var nrows = nextrows;
-  var ncols = nextcols;
+  let nextrows = 1;
+  let nextcols = z;
+  let ratio = nextcols * tw / (nextrows * th);
+  let nrows = nextrows;
+  let ncols = nextcols;
   while (ratio > 1) {
     nrows = nextrows;
     ncols = nextcols;
@@ -3668,25 +2829,24 @@ function computePackedAtlasDims(z, tw, th) {
     nextrows = Math.ceil(z / nextcols);
     ratio = nextcols * tw / (nextrows * th);
   }
-  return new three__WEBPACK_IMPORTED_MODULE_2__.Vector2(nrows, ncols);
+  return new three__WEBPACK_IMPORTED_MODULE_0__.Vector2(nrows, ncols);
 }
 
 /** Picks the largest scale level that can fit into a texture atlas with edges no longer than `maxAtlasEdge`. */
-function estimateLevelForAtlas(spatialDimsZYX) {
-  var maxAtlasEdge = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : MAX_ATLAS_EDGE;
+function estimateLevelForAtlas(spatialDimsZYX, maxAtlasEdge = MAX_ATLAS_EDGE) {
   if (spatialDimsZYX.length <= 1) {
     return 0;
   }
 
   // update levelToLoad after we get size info about multiscales
-  var levelToLoad = spatialDimsZYX.length - 1;
-  for (var i = 0; i < spatialDimsZYX.length; ++i) {
+  let levelToLoad = spatialDimsZYX.length - 1;
+  for (let i = 0; i < spatialDimsZYX.length; ++i) {
     // estimate atlas size:
-    var x = spatialDimsZYX[i][2];
-    var y = spatialDimsZYX[i][1];
-    var z = spatialDimsZYX[i][0];
-    var xtiles = Math.floor(maxAtlasEdge / x);
-    var ytiles = Math.floor(maxAtlasEdge / y);
+    const x = spatialDimsZYX[i][2];
+    const y = spatialDimsZYX[i][1];
+    const z = spatialDimsZYX[i][0];
+    const xtiles = Math.floor(maxAtlasEdge / x);
+    const ytiles = Math.floor(maxAtlasEdge / y);
     if (xtiles * ytiles >= z) {
       levelToLoad = i;
       break;
@@ -3694,25 +2854,15 @@ function estimateLevelForAtlas(spatialDimsZYX) {
   }
   return levelToLoad;
 }
-var maxCeil = function maxCeil(val) {
-  return Math.max(Math.ceil(val), 1);
-};
-var scaleDims = function scaleDims(size, _ref) {
-  var _ref2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_ref, 3),
-    z = _ref2[0],
-    y = _ref2[1],
-    x = _ref2[2];
-  return [maxCeil(z * size.z), maxCeil(y * size.y), maxCeil(x * size.x)];
-};
+const maxCeil = val => Math.max(Math.ceil(val), 1);
+const scaleDims = (size, [z, y, x]) => [maxCeil(z * size.z), maxCeil(y * size.y), maxCeil(x * size.x)];
 function scaleDimsToSubregion(subregion, dims) {
-  var size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3());
+  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3());
   return scaleDims(size, dims);
 }
 function scaleMultipleDimsToSubregion(subregion, dims) {
-  var size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3());
-  return dims.map(function (dim) {
-    return scaleDims(size, dim);
-  });
+  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3());
+  return dims.map(dim => scaleDims(size, dim));
 }
 
 /**
@@ -3725,9 +2875,8 @@ function scaleMultipleDimsToSubregion(subregion, dims) {
  *  This function assumes that `spatialDimsZYX` has already been appropriately scaled to match `loadSpec`'s `subregion`.
  */
 function pickLevelToLoadUnscaled(loadSpec, spatialDimsZYX) {
-  var _loadSpec$scaleLevelB, _loadSpec$multiscaleL;
-  var optimalLevel = estimateLevelForAtlas(spatialDimsZYX, loadSpec.maxAtlasEdge);
-  var levelToLoad = Math.max(optimalLevel + ((_loadSpec$scaleLevelB = loadSpec.scaleLevelBias) !== null && _loadSpec$scaleLevelB !== void 0 ? _loadSpec$scaleLevelB : 0), (_loadSpec$multiscaleL = loadSpec.multiscaleLevel) !== null && _loadSpec$multiscaleL !== void 0 ? _loadSpec$multiscaleL : 0);
+  const optimalLevel = estimateLevelForAtlas(spatialDimsZYX, loadSpec.maxAtlasEdge);
+  const levelToLoad = Math.max(optimalLevel + (loadSpec.scaleLevelBias ?? 0), loadSpec.multiscaleLevel ?? 0);
   return Math.max(0, Math.min(spatialDimsZYX.length - 1, levelToLoad));
 }
 
@@ -3738,14 +2887,14 @@ function pickLevelToLoadUnscaled(loadSpec, spatialDimsZYX) {
  * `LoadSpec`'s `subregion` property.
  */
 function pickLevelToLoad(loadSpec, spatialDimsZYX) {
-  var scaledDims = scaleMultipleDimsToSubregion(loadSpec.subregion, spatialDimsZYX);
+  const scaledDims = scaleMultipleDimsToSubregion(loadSpec.subregion, spatialDimsZYX);
   return pickLevelToLoadUnscaled(loadSpec, scaledDims);
 }
 
 /** Given the size of a volume in pixels, convert a `Box3` in the 0-1 range to pixels */
 function convertSubregionToPixels(region, size) {
-  var min = region.min.clone().multiply(size).floor();
-  var max = region.max.clone().multiply(size).ceil();
+  const min = region.min.clone().multiply(size).floor();
+  const max = region.max.clone().multiply(size).ceil();
 
   // ensure it's always valid to specify the same number at both ends and get a single slice
   if (min.x === max.x && min.x < size.x) {
@@ -3757,7 +2906,7 @@ function convertSubregionToPixels(region, size) {
   if (min.z === max.z && min.z < size.z) {
     max.z += 1;
   }
-  return new three__WEBPACK_IMPORTED_MODULE_2__.Box3(min, max);
+  return new three__WEBPACK_IMPORTED_MODULE_0__.Box3(min, max);
 }
 
 /**
@@ -3765,13 +2914,13 @@ function convertSubregionToPixels(region, size) {
  * and 1). i.e. if `container`'s range on the X axis is 0-4 and `region`'s is 0.25-0.5, the result will have range 1-2.
  */
 function composeSubregion(region, container) {
-  var size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3());
-  var min = region.min.clone().multiply(size).add(container.min);
-  var max = region.max.clone().multiply(size).add(container.min);
-  return new three__WEBPACK_IMPORTED_MODULE_2__.Box3(min, max);
+  const size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3());
+  const min = region.min.clone().multiply(size).add(container.min);
+  const max = region.max.clone().multiply(size).add(container.min);
+  return new three__WEBPACK_IMPORTED_MODULE_0__.Box3(min, max);
 }
 function isEmpty(obj) {
-  for (var key in obj) {
+  for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
       return false;
     }
@@ -3782,10 +2931,14 @@ function isEmpty(obj) {
 // currently everything needed can come from the imageInfo
 // but in the future each IVolumeLoader could have a completely separate implementation.
 function buildDefaultMetadata(imageInfo) {
-  var physicalSize = imageInfo.volumeSize.clone().multiply(imageInfo.physicalPixelSize);
-  var metadata = {};
-  metadata["Dimensions"] = _objectSpread({}, imageInfo.subregionSize);
-  metadata["Original dimensions"] = _objectSpread({}, imageInfo.originalSize);
+  const physicalSize = imageInfo.volumeSize.clone().multiply(imageInfo.physicalPixelSize);
+  const metadata = {};
+  metadata["Dimensions"] = {
+    ...imageInfo.subregionSize
+  };
+  metadata["Original dimensions"] = {
+    ...imageInfo.originalSize
+  };
   metadata["Physical size"] = {
     x: physicalSize.x + imageInfo.spatialUnit,
     y: physicalSize.y + imageInfo.spatialUnit,
@@ -3816,27 +2969,22 @@ function buildDefaultMetadata(imageInfo) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _zarr_utils_types_js__WEBPACK_IMPORTED_MODULE_6__.PrefetchDirection),
+/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _zarr_utils_types_js__WEBPACK_IMPORTED_MODULE_4__.PrefetchDirection),
 /* harmony export */   VolumeFileFormat: () => (/* binding */ VolumeFileFormat),
 /* harmony export */   createVolumeLoader: () => (/* binding */ createVolumeLoader),
 /* harmony export */   pathToFileType: () => (/* binding */ pathToFileType)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var _OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./OmeZarrLoader.js */ "./src/loaders/OmeZarrLoader.ts");
-/* harmony import */ var _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
-/* harmony import */ var _RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./RawArrayLoader.js */ "./src/loaders/RawArrayLoader.ts");
-/* harmony import */ var _TiffLoader_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./TiffLoader.js */ "./src/loaders/TiffLoader.ts");
-/* harmony import */ var _zarr_utils_types_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./zarr_utils/types.js */ "./src/loaders/zarr_utils/types.ts");
+/* harmony import */ var _OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./OmeZarrLoader.js */ "./src/loaders/OmeZarrLoader.ts");
+/* harmony import */ var _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
+/* harmony import */ var _RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./RawArrayLoader.js */ "./src/loaders/RawArrayLoader.ts");
+/* harmony import */ var _TiffLoader_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./TiffLoader.js */ "./src/loaders/TiffLoader.ts");
+/* harmony import */ var _zarr_utils_types_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./zarr_utils/types.js */ "./src/loaders/zarr_utils/types.ts");
 
 
 
 
 
-
-
-var VolumeFileFormat = /*#__PURE__*/function (VolumeFileFormat) {
+let VolumeFileFormat = /*#__PURE__*/function (VolumeFileFormat) {
   VolumeFileFormat["ZARR"] = "zarr";
   VolumeFileFormat["JSON"] = "json";
   VolumeFileFormat["TIFF"] = "tiff";
@@ -3854,44 +3002,22 @@ function pathToFileType(path) {
   }
   return VolumeFileFormat.ZARR;
 }
-function createVolumeLoader(_x, _x2) {
-  return _createVolumeLoader.apply(this, arguments);
-}
-function _createVolumeLoader() {
-  _createVolumeLoader = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().mark(function _callee(path, options) {
-    var pathString, fileType;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().wrap(function _callee$(_context) {
-      while (1) switch (_context.prev = _context.next) {
-        case 0:
-          pathString = Array.isArray(path) ? path[0] : path;
-          fileType = (options === null || options === void 0 ? void 0 : options.fileType) || pathToFileType(pathString);
-          _context.t0 = fileType;
-          _context.next = _context.t0 === VolumeFileFormat.ZARR ? 5 : _context.t0 === VolumeFileFormat.JSON ? 8 : _context.t0 === VolumeFileFormat.TIFF ? 9 : _context.t0 === VolumeFileFormat.DATA ? 10 : 13;
-          break;
-        case 5:
-          _context.next = 7;
-          return _OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_2__.OMEZarrLoader.createLoader(path, options === null || options === void 0 ? void 0 : options.scene, options === null || options === void 0 ? void 0 : options.cache, options === null || options === void 0 ? void 0 : options.queue, options === null || options === void 0 ? void 0 : options.fetchOptions);
-        case 7:
-          return _context.abrupt("return", _context.sent);
-        case 8:
-          return _context.abrupt("return", new _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_3__.JsonImageInfoLoader(path, options === null || options === void 0 ? void 0 : options.cache));
-        case 9:
-          return _context.abrupt("return", new _TiffLoader_js__WEBPACK_IMPORTED_MODULE_5__.TiffLoader(pathString));
-        case 10:
-          if (options !== null && options !== void 0 && options.rawArrayOptions) {
-            _context.next = 12;
-            break;
-          }
-          throw new Error("Must provide RawArrayOptions for RawArrayLoader");
-        case 12:
-          return _context.abrupt("return", new _RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_4__.RawArrayLoader(options === null || options === void 0 ? void 0 : options.rawArrayOptions.data, options === null || options === void 0 ? void 0 : options.rawArrayOptions.metadata));
-        case 13:
-        case "end":
-          return _context.stop();
+async function createVolumeLoader(path, options) {
+  const pathString = Array.isArray(path) ? path[0] : path;
+  const fileType = options?.fileType || pathToFileType(pathString);
+  switch (fileType) {
+    case VolumeFileFormat.ZARR:
+      return await _OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_0__.OMEZarrLoader.createLoader(path, options?.scene, options?.cache, options?.queue, options?.fetchOptions);
+    case VolumeFileFormat.JSON:
+      return new _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_1__.JsonImageInfoLoader(path, options?.cache);
+    case VolumeFileFormat.TIFF:
+      return new _TiffLoader_js__WEBPACK_IMPORTED_MODULE_3__.TiffLoader(pathString);
+    case VolumeFileFormat.DATA:
+      if (!options?.rawArrayOptions) {
+        throw new Error("Must provide RawArrayOptions for RawArrayLoader");
       }
-    }, _callee);
-  }));
-  return _createVolumeLoader.apply(this, arguments);
+      return new _RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_2__.RawArrayLoader(options?.rawArrayOptions.data, options?.rawArrayOptions.metadata);
+  }
 }
 
 /***/ }),
@@ -3907,32 +3033,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ ChunkPrefetchIterator)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/toConsumableArray */ "./node_modules/@babel/runtime/helpers/esm/toConsumableArray.js");
-/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4__);
-
-
-
-
-
-function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
-function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
-var allEqual = function allEqual(arr) {
-  return arr.every(function (v) {
-    return v === arr[0];
-  });
-};
-var pushN = function pushN(arr, val, n) {
-  for (var i = 0; i < n; i++) {
+const allEqual = arr => arr.every(v => v === arr[0]);
+const pushN = (arr, val, n) => {
+  for (let i = 0; i < n; i++) {
     arr.push(val);
   }
 };
-var directionToIndex = function directionToIndex(dir) {
-  var absDir = dir >> 1; // shave off sign bit to get index in TZYX
+const directionToIndex = dir => {
+  const absDir = dir >> 1; // shave off sign bit to get index in TZYX
   return absDir + Number(absDir !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
 };
 function updateMinMax(val, minmax) {
@@ -3950,301 +3058,117 @@ function updateMinMax(val, minmax) {
  * Given a list of just-loaded chunks and some bounds, `ChunkPrefetchIterator` iterates evenly outwards in T/Z/Y/X.
  */
 // NOTE: Assumes `chunks` form a rectangular prism! Will create gaps otherwise! (in practice they always should)
-var ChunkPrefetchIterator = /*#__PURE__*/function (_Symbol$iterator) {
-  function ChunkPrefetchIterator(chunks, tzyxMaxPrefetchOffset, tczyxChunksPerSource, priorityDirections) {
-    var _this = this;
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_2__["default"])(this, ChunkPrefetchIterator);
+class ChunkPrefetchIterator {
+  constructor(chunks, tzyxMaxPrefetchOffset, tczyxChunksPerSource, priorityDirections) {
     // Get min and max chunk coordinates for T/Z/Y/X
-    var extrema = [[Infinity, -Infinity], [Infinity, -Infinity], [Infinity, -Infinity], [Infinity, -Infinity]];
-    var _iterator = _createForOfIteratorHelper(chunks),
-      _step;
-    try {
-      for (_iterator.s(); !(_step = _iterator.n()).done;) {
-        var chunk = _step.value;
-        updateMinMax(chunk[0], extrema[0]);
-        updateMinMax(chunk[2], extrema[1]);
-        updateMinMax(chunk[3], extrema[2]);
-        updateMinMax(chunk[4], extrema[3]);
-      }
-
-      // Create `PrefetchDirectionState`s for each direction
-    } catch (err) {
-      _iterator.e(err);
-    } finally {
-      _iterator.f();
+    const extrema = [[Infinity, -Infinity], [Infinity, -Infinity], [Infinity, -Infinity], [Infinity, -Infinity]];
+    for (const chunk of chunks) {
+      updateMinMax(chunk[0], extrema[0]);
+      updateMinMax(chunk[2], extrema[1]);
+      updateMinMax(chunk[3], extrema[2]);
+      updateMinMax(chunk[4], extrema[3]);
     }
+
+    // Create `PrefetchDirectionState`s for each direction
     this.directionStates = [];
     this.priorityDirectionStates = [];
-    var _iterator2 = _createForOfIteratorHelper(extrema.flat().entries()),
-      _step2;
-    try {
-      var _loop = function _loop() {
-        var _step2$value = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_step2.value, 2),
-          direction = _step2$value[0],
-          start = _step2$value[1];
-        var dimension = direction >> 1; // shave off sign bit to get index in TZYX
-        var tczyxIndex = dimension + Number(dimension !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
-        var end;
-        if (direction & 1) {
-          // Positive direction - end is either the max coordinate in the fetched set plus the max offset in this
-          // dimension, or the max chunk coordinate in this dimension, whichever comes first
-          var endsPerSource = tczyxChunksPerSource.map(function (chunkDims) {
-            return Math.min(start + tzyxMaxPrefetchOffset[dimension], chunkDims[tczyxIndex] - 1);
-          });
+    for (const [direction, start] of extrema.flat().entries()) {
+      const dimension = direction >> 1; // shave off sign bit to get index in TZYX
+      const tczyxIndex = dimension + Number(dimension !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
+      let end;
+      if (direction & 1) {
+        // Positive direction - end is either the max coordinate in the fetched set plus the max offset in this
+        // dimension, or the max chunk coordinate in this dimension, whichever comes first
+        const endsPerSource = tczyxChunksPerSource.map(chunkDims => {
+          return Math.min(start + tzyxMaxPrefetchOffset[dimension], chunkDims[tczyxIndex] - 1);
+        });
 
-          // Save some time: if all sources have the same end, we can just store that
-          if (allEqual(endsPerSource)) {
-            end = endsPerSource[0];
-          } else {
-            // Otherwise, expand our ends per source array to ends per channel
-            end = [];
-            var _iterator4 = _createForOfIteratorHelper(endsPerSource.entries()),
-              _step4;
-            try {
-              for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-                var _step4$value = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_1__["default"])(_step4.value, 2),
-                  i = _step4$value[0],
-                  sourceEnd = _step4$value[1];
-                pushN(end, sourceEnd, tczyxChunksPerSource[i][1]);
-              }
-            } catch (err) {
-              _iterator4.e(err);
-            } finally {
-              _iterator4.f();
-            }
+        // Save some time: if all sources have the same end, we can just store that
+        if (allEqual(endsPerSource)) {
+          end = endsPerSource[0];
+        } else {
+          // Otherwise, expand our ends per source array to ends per channel
+          end = [];
+          for (const [i, sourceEnd] of endsPerSource.entries()) {
+            pushN(end, sourceEnd, tczyxChunksPerSource[i][1]);
           }
-          // end = Math.min(start + tzyxMaxPrefetchOffset[dimension], tczyxChunksPerDimension[dimension] - 1);
-        } else {
-          // Negative direction - end is either the min coordinate in the fetched set minus the max offset in this
-          // dimension, or 0, whichever comes first
-          end = Math.max(start - tzyxMaxPrefetchOffset[dimension], 0);
         }
-        var directionState = {
-          direction: direction,
-          start: start,
-          end: end,
-          chunks: []
-        };
-        if (priorityDirections && priorityDirections.includes(direction)) {
-          _this.priorityDirectionStates.push(directionState);
-        } else {
-          _this.directionStates.push(directionState);
-        }
+        // end = Math.min(start + tzyxMaxPrefetchOffset[dimension], tczyxChunksPerDimension[dimension] - 1);
+      } else {
+        // Negative direction - end is either the min coordinate in the fetched set minus the max offset in this
+        // dimension, or 0, whichever comes first
+        end = Math.max(start - tzyxMaxPrefetchOffset[dimension], 0);
+      }
+      const directionState = {
+        direction,
+        start,
+        end,
+        chunks: []
       };
-      for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-        _loop();
+      if (priorityDirections && priorityDirections.includes(direction)) {
+        this.priorityDirectionStates.push(directionState);
+      } else {
+        this.directionStates.push(directionState);
       }
-
-      // Fill each `PrefetchDirectionState` with chunks at the border of the fetched set
-    } catch (err) {
-      _iterator2.e(err);
-    } finally {
-      _iterator2.f();
     }
-    var _iterator3 = _createForOfIteratorHelper(chunks),
-      _step3;
-    try {
-      for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-        var _chunk = _step3.value;
-        var _iterator5 = _createForOfIteratorHelper(this.directionStates),
-          _step5;
-        try {
-          for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-            var dir = _step5.value;
-            if (_chunk[directionToIndex(dir.direction)] === dir.start) {
-              dir.chunks.push(_chunk);
-            }
-          }
-        } catch (err) {
-          _iterator5.e(err);
-        } finally {
-          _iterator5.f();
-        }
-        var _iterator6 = _createForOfIteratorHelper(this.priorityDirectionStates),
-          _step6;
-        try {
-          for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-            var _dir = _step6.value;
-            if (_chunk[directionToIndex(_dir.direction)] === _dir.start) {
-              _dir.chunks.push(_chunk);
-            }
-          }
-        } catch (err) {
-          _iterator6.e(err);
-        } finally {
-          _iterator6.f();
+
+    // Fill each `PrefetchDirectionState` with chunks at the border of the fetched set
+    for (const chunk of chunks) {
+      for (const dir of this.directionStates) {
+        if (chunk[directionToIndex(dir.direction)] === dir.start) {
+          dir.chunks.push(chunk);
         }
       }
-    } catch (err) {
-      _iterator3.e(err);
-    } finally {
-      _iterator3.f();
+      for (const dir of this.priorityDirectionStates) {
+        if (chunk[directionToIndex(dir.direction)] === dir.start) {
+          dir.chunks.push(chunk);
+        }
+      }
     }
   }
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_3__["default"])(ChunkPrefetchIterator, [{
-    key: _Symbol$iterator,
-    value: /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function value() {
-      var _iterator7, _step7, chunk, _iterator8, _step8, _chunk2;
-      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function value$(_context) {
-        while (1) switch (_context.prev = _context.next) {
-          case 0:
-            if (!(this.priorityDirectionStates.length > 0)) {
-              _context.next = 18;
-              break;
-            }
-            _iterator7 = _createForOfIteratorHelper(ChunkPrefetchIterator.iterateDirections(this.priorityDirectionStates));
-            _context.prev = 2;
-            _iterator7.s();
-          case 4:
-            if ((_step7 = _iterator7.n()).done) {
-              _context.next = 10;
-              break;
-            }
-            chunk = _step7.value;
-            _context.next = 8;
-            return chunk;
-          case 8:
-            _context.next = 4;
-            break;
-          case 10:
-            _context.next = 15;
-            break;
-          case 12:
-            _context.prev = 12;
-            _context.t0 = _context["catch"](2);
-            _iterator7.e(_context.t0);
-          case 15:
-            _context.prev = 15;
-            _iterator7.f();
-            return _context.finish(15);
-          case 18:
-            // Then yield all chunks in other directions
-            _iterator8 = _createForOfIteratorHelper(ChunkPrefetchIterator.iterateDirections(this.directionStates));
-            _context.prev = 19;
-            _iterator8.s();
-          case 21:
-            if ((_step8 = _iterator8.n()).done) {
-              _context.next = 27;
-              break;
-            }
-            _chunk2 = _step8.value;
-            _context.next = 25;
-            return _chunk2;
-          case 25:
-            _context.next = 21;
-            break;
-          case 27:
-            _context.next = 32;
-            break;
-          case 29:
-            _context.prev = 29;
-            _context.t1 = _context["catch"](19);
-            _iterator8.e(_context.t1);
-          case 32:
-            _context.prev = 32;
-            _iterator8.f();
-            return _context.finish(32);
-          case 35:
-          case "end":
-            return _context.stop();
+  static *iterateDirections(directions) {
+    let offset = 1;
+    while (directions.length > 0) {
+      // Remove directions in which we have reached the end (or, if per-channel ends, the end for all channels)
+      directions = directions.filter(dir => {
+        const end = Array.isArray(dir.end) ? Math.max(...dir.end) : dir.end;
+        if (dir.direction & 1) {
+          return dir.start + offset <= end;
+        } else {
+          return dir.start - offset >= end;
         }
-      }, value, this, [[2, 12, 15, 18], [19, 29, 32, 35]]);
-    })
-  }], [{
-    key: "iterateDirections",
-    value: /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().mark(function iterateDirections(directions) {
-      var offset, _iterator9, _step9, dir, offsetDir, _iterator10, _step10, chunk, newChunk;
-      return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_4___default().wrap(function iterateDirections$(_context2) {
-        while (1) switch (_context2.prev = _context2.next) {
-          case 0:
-            offset = 1;
-          case 1:
-            if (!(directions.length > 0)) {
-              _context2.next = 43;
-              break;
-            }
-            // Remove directions in which we have reached the end (or, if per-channel ends, the end for all channels)
-            directions = directions.filter(function (dir) {
-              var end = Array.isArray(dir.end) ? Math.max.apply(Math, (0,_babel_runtime_helpers_toConsumableArray__WEBPACK_IMPORTED_MODULE_0__["default"])(dir.end)) : dir.end;
-              if (dir.direction & 1) {
-                return dir.start + offset <= end;
-              } else {
-                return dir.start - offset >= end;
-              }
-            });
+      });
 
-            // Yield chunks one chunk farther out in every remaining direction
-            _iterator9 = _createForOfIteratorHelper(directions);
-            _context2.prev = 4;
-            _iterator9.s();
-          case 6:
-            if ((_step9 = _iterator9.n()).done) {
-              _context2.next = 32;
-              break;
-            }
-            dir = _step9.value;
-            offsetDir = offset * (dir.direction & 1 ? 1 : -1);
-            _iterator10 = _createForOfIteratorHelper(dir.chunks);
-            _context2.prev = 10;
-            _iterator10.s();
-          case 12:
-            if ((_step10 = _iterator10.n()).done) {
-              _context2.next = 22;
-              break;
-            }
-            chunk = _step10.value;
-            if (!(Array.isArray(dir.end) && chunk[directionToIndex(dir.direction)] + offsetDir > dir.end[chunk[1]])) {
-              _context2.next = 16;
-              break;
-            }
-            return _context2.abrupt("continue", 20);
-          case 16:
-            newChunk = chunk.slice();
-            newChunk[directionToIndex(dir.direction)] += offsetDir;
-            _context2.next = 20;
-            return newChunk;
-          case 20:
-            _context2.next = 12;
-            break;
-          case 22:
-            _context2.next = 27;
-            break;
-          case 24:
-            _context2.prev = 24;
-            _context2.t0 = _context2["catch"](10);
-            _iterator10.e(_context2.t0);
-          case 27:
-            _context2.prev = 27;
-            _iterator10.f();
-            return _context2.finish(27);
-          case 30:
-            _context2.next = 6;
-            break;
-          case 32:
-            _context2.next = 37;
-            break;
-          case 34:
-            _context2.prev = 34;
-            _context2.t1 = _context2["catch"](4);
-            _iterator9.e(_context2.t1);
-          case 37:
-            _context2.prev = 37;
-            _iterator9.f();
-            return _context2.finish(37);
-          case 40:
-            offset += 1;
-            _context2.next = 1;
-            break;
-          case 43:
-          case "end":
-            return _context2.stop();
+      // Yield chunks one chunk farther out in every remaining direction
+      for (const dir of directions) {
+        const offsetDir = offset * (dir.direction & 1 ? 1 : -1);
+        for (const chunk of dir.chunks) {
+          // Skip this chunk if this channel has a specific per-channel end and we've reached it
+          if (Array.isArray(dir.end) && chunk[directionToIndex(dir.direction)] + offsetDir > dir.end[chunk[1]]) {
+            continue;
+          }
+          const newChunk = chunk.slice();
+          newChunk[directionToIndex(dir.direction)] += offsetDir;
+          yield newChunk;
         }
-      }, iterateDirections, null, [[4, 34, 37, 40], [10, 24, 27, 30]]);
-    })
-  }]);
-  return ChunkPrefetchIterator;
-}(Symbol.iterator);
+      }
+      offset += 1;
+    }
+  }
+  *[Symbol.iterator]() {
+    // Yield all chunks in priority direction(s) first, if any
+    if (this.priorityDirectionStates.length > 0) {
+      for (const chunk of ChunkPrefetchIterator.iterateDirections(this.priorityDirectionStates)) {
+        yield chunk;
+      }
+    }
 
+    // Then yield all chunks in other directions
+    for (const chunk of ChunkPrefetchIterator.iterateDirections(this.directionStates)) {
+      yield chunk;
+    }
+  }
+}
 
 /***/ }),
 
@@ -4259,116 +3183,56 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__);
-
-
-
-
 /**
  * `Readable` is zarrita's minimal abstraction for any source of data.
  * `WrappedStore` wraps another `Readable` and adds (optional) connections to `VolumeCache` and `RequestQueue`.
  */
-var WrappedStore = /*#__PURE__*/function () {
-  function WrappedStore(baseStore, cache, queue) {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, WrappedStore);
+class WrappedStore {
+  constructor(baseStore, cache, queue) {
     this.baseStore = baseStore;
     this.cache = cache;
     this.queue = queue;
   }
   // Dummy implementation to make this class easier to use in tests
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(WrappedStore, [{
-    key: "set",
-    value: function set(_key, _value) {
-      return Promise.resolve();
+  set(_key, _value) {
+    return Promise.resolve();
+  }
+  async getAndCache(key, cacheKey, opts) {
+    const result = await this.baseStore.get(key, opts);
+    if (this.cache && result) {
+      this.cache.insert(cacheKey, result);
     }
-  }, {
-    key: "getAndCache",
-    value: function () {
-      var _getAndCache = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee(key, cacheKey, opts) {
-        var result;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
-          while (1) switch (_context.prev = _context.next) {
-            case 0:
-              _context.next = 2;
-              return this.baseStore.get(key, opts);
-            case 2:
-              result = _context.sent;
-              if (this.cache && result) {
-                this.cache.insert(cacheKey, result);
-              }
-              return _context.abrupt("return", result);
-            case 5:
-            case "end":
-              return _context.stop();
-          }
-        }, _callee, this);
-      }));
-      function getAndCache(_x, _x2, _x3) {
-        return _getAndCache.apply(this, arguments);
-      }
-      return getAndCache;
-    }()
-  }, {
-    key: "get",
-    value: function () {
-      var _get = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee2(key, opts) {
-        var _url,
-          _this = this;
-        var ZARR_EXTS, keyPrefix, fullKey, cacheResult;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee2$(_context2) {
-          while (1) switch (_context2.prev = _context2.next) {
-            case 0:
-              ZARR_EXTS = [".zarray", ".zgroup", ".zattrs", "zarr.json"];
-              if (!(!this.cache || ZARR_EXTS.some(function (s) {
-                return key.endsWith(s);
-              }))) {
-                _context2.next = 3;
-                break;
-              }
-              return _context2.abrupt("return", this.baseStore.get(key, opts === null || opts === void 0 ? void 0 : opts.options));
-            case 3:
-              if (opts !== null && opts !== void 0 && opts.reportKey) {
-                opts.reportKey(key, opts.subscriber);
-              }
-              keyPrefix = (_url = this.baseStore.url) !== null && _url !== void 0 ? _url : "";
-              if (keyPrefix !== "" && !(keyPrefix instanceof URL) && !keyPrefix.endsWith("/")) {
-                keyPrefix += "/";
-              }
-              fullKey = keyPrefix + key.slice(1); // Check the cache
-              cacheResult = this.cache.get(fullKey);
-              if (!cacheResult) {
-                _context2.next = 10;
-                break;
-              }
-              return _context2.abrupt("return", new Uint8Array(cacheResult));
-            case 10:
-              if (!(this.queue && opts)) {
-                _context2.next = 14;
-                break;
-              }
-              return _context2.abrupt("return", this.queue.addRequest(fullKey, opts.subscriber, function () {
-                return _this.getAndCache(key, fullKey, opts === null || opts === void 0 ? void 0 : opts.options);
-              }, opts.isPrefetch));
-            case 14:
-              return _context2.abrupt("return", this.getAndCache(key, fullKey, opts === null || opts === void 0 ? void 0 : opts.options));
-            case 15:
-            case "end":
-              return _context2.stop();
-          }
-        }, _callee2, this);
-      }));
-      function get(_x4, _x5) {
-        return _get.apply(this, arguments);
-      }
-      return get;
-    }()
-  }]);
-  return WrappedStore;
-}();
+    return result;
+  }
+  async get(key, opts) {
+    const ZARR_EXTS = [".zarray", ".zgroup", ".zattrs", "zarr.json"];
+    if (!this.cache || ZARR_EXTS.some(s => key.endsWith(s))) {
+      return this.baseStore.get(key, opts?.options);
+    }
+    if (opts?.reportKey) {
+      opts.reportKey(key, opts.subscriber);
+    }
+    let keyPrefix = this.baseStore.url ?? "";
+    if (keyPrefix !== "" && !(keyPrefix instanceof URL) && !keyPrefix.endsWith("/")) {
+      keyPrefix += "/";
+    }
+    const fullKey = keyPrefix + key.slice(1);
+
+    // Check the cache
+    const cacheResult = this.cache.get(fullKey);
+    if (cacheResult) {
+      return new Uint8Array(cacheResult);
+    }
+
+    // Not in cache; load the chunk and cache it
+    if (this.queue && opts) {
+      return this.queue.addRequest(fullKey, opts.subscriber, () => this.getAndCache(key, fullKey, opts?.options), opts.isPrefetch);
+    } else {
+      // Should we ever hit this code?  We should always have a request queue.
+      return this.getAndCache(key, fullKey, opts?.options);
+    }
+  }
+}
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (WrappedStore);
 
 /***/ }),
@@ -4391,7 +3255,7 @@ __webpack_require__.r(__webpack_exports__);
  * and because it lets us treat the least significant bit as the sign. So `direction >> 1` gives the index of the
  * direction in TZYX-ordered arrays, and `direction & 1` gives the sign of the direction (e.g. positive vs negative Z).
  */
-var PrefetchDirection = /*#__PURE__*/function (PrefetchDirection) {
+let PrefetchDirection = /*#__PURE__*/function (PrefetchDirection) {
   PrefetchDirection[PrefetchDirection["T_MINUS"] = 0] = "T_MINUS";
   PrefetchDirection[PrefetchDirection["T_PLUS"] = 1] = "T_PLUS";
   PrefetchDirection[PrefetchDirection["Z_MINUS"] = 2] = "Z_MINUS";
@@ -4427,24 +3291,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   orderByTCZYX: () => (/* binding */ orderByTCZYX),
 /* harmony export */   remapAxesToTCZYX: () => (/* binding */ remapAxesToTCZYX)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
-
-function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
-function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
 /** Turns `axesTCZYX` into the number of dimensions in the array */
-var getDimensionCount = function getDimensionCount(_ref) {
-  var _ref2 = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_ref, 3),
-    t = _ref2[0],
-    c = _ref2[1],
-    z = _ref2[2];
-  return 2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
-};
+const getDimensionCount = ([t, c, z]) => 2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
 function remapAxesToTCZYX(axes) {
-  var axesTCZYX = [-1, -1, -1, -1, -1];
-  var axisNames = ["t", "c", "z", "y", "x"];
-  axes.forEach(function (axis, idx) {
-    var axisIdx = axisNames.indexOf(axis.name);
+  const axesTCZYX = [-1, -1, -1, -1, -1];
+  const axisNames = ["t", "c", "z", "y", "x"];
+  axes.forEach((axis, idx) => {
+    const axisIdx = axisNames.indexOf(axis.name);
     if (axisIdx > -1) {
       axesTCZYX[axisIdx] = idx;
     } else {
@@ -4461,9 +3314,9 @@ function remapAxesToTCZYX(axes) {
 
 /** Reorder an array of values [T, C, Z, Y, X] to the given dimension order */
 function orderByDimension(valsTCZYX, orderTCZYX) {
-  var specLen = getDimensionCount(orderTCZYX);
-  var result = Array(specLen);
-  orderTCZYX.forEach(function (val, idx) {
+  const specLen = getDimensionCount(orderTCZYX);
+  const result = Array(specLen);
+  orderTCZYX.forEach((val, idx) => {
     if (val >= 0) {
       if (val >= specLen) {
         throw new Error("Unexpected axis index");
@@ -4476,8 +3329,8 @@ function orderByDimension(valsTCZYX, orderTCZYX) {
 
 /** Reorder an array of values in the given dimension order to [T, C, Z, Y, X] */
 function orderByTCZYX(valsDimension, orderTCZYX, defaultValue) {
-  var result = [defaultValue, defaultValue, defaultValue, defaultValue, defaultValue];
-  orderTCZYX.forEach(function (val, idx) {
+  const result = [defaultValue, defaultValue, defaultValue, defaultValue, defaultValue];
+  orderTCZYX.forEach((val, idx) => {
     if (val >= 0) {
       if (val >= valsDimension.length) {
         throw new Error("Unexpected axis index");
@@ -4490,25 +3343,23 @@ function orderByTCZYX(valsDimension, orderTCZYX, defaultValue) {
 
 /** Select the scale transform from an OME metadata object with coordinate transforms, and return it in TCZYX order */
 function getScale(dataset, orderTCZYX) {
-  var transforms = dataset.coordinateTransformations;
+  const transforms = dataset.coordinateTransformations;
   if (transforms === undefined) {
     console.error("ERROR: no coordinate transformations for scale level");
     return [1, 1, 1, 1, 1];
   }
 
   // this assumes we'll never encounter the "path" variant
-  var isScaleTransform = function isScaleTransform(t) {
-    return t.type === "scale";
-  };
+  const isScaleTransform = t => t.type === "scale";
 
   // there can be any number of coordinateTransformations
   // but there must be only one of type "scale".
-  var scaleTransform = transforms.find(isScaleTransform);
+  const scaleTransform = transforms.find(isScaleTransform);
   if (!scaleTransform) {
-    console.error("ERROR: no coordinate transformation of type \"scale\" for scale level");
+    console.error(`ERROR: no coordinate transformation of type "scale" for scale level`);
     return [1, 1, 1, 1, 1];
   }
-  var scale = scaleTransform.scale.slice();
+  const scale = scaleTransform.scale.slice();
   return orderByTCZYX(scale, orderTCZYX, 1);
 }
 
@@ -4519,11 +3370,11 @@ function getScale(dataset, orderTCZYX) {
  * - if some xyz is less and some is greater, the arrays are uncomparable
  */
 function compareZarrArraySize(aArr, aTCZYX, bArr, bTCZYX) {
-  var aZ = aTCZYX[2] > -1 ? aArr.shape[aTCZYX[2]] : 1;
-  var bZ = bTCZYX[2] > -1 ? bArr.shape[bTCZYX[2]] : 1;
-  var diffZ = aZ - bZ;
-  var diffY = aArr.shape[aTCZYX[3]] - bArr.shape[bTCZYX[3]];
-  var diffX = aArr.shape[aTCZYX[4]] - bArr.shape[bTCZYX[4]];
+  const aZ = aTCZYX[2] > -1 ? aArr.shape[aTCZYX[2]] : 1;
+  const bZ = bTCZYX[2] > -1 ? bArr.shape[bTCZYX[2]] : 1;
+  const diffZ = aZ - bZ;
+  const diffY = aArr.shape[aTCZYX[3]] - bArr.shape[bTCZYX[3]];
+  const diffX = aArr.shape[aTCZYX[4]] - bArr.shape[bTCZYX[4]];
   if (diffZ === 0 && diffY === 0 && diffX === 0) {
     return 0;
   } else if (diffZ <= 0 && diffY <= 0 && diffX <= 0) {
@@ -4534,13 +3385,11 @@ function compareZarrArraySize(aArr, aTCZYX, bArr, bTCZYX) {
     return undefined;
   }
 }
-var EPSILON = 0.00001;
-var aboutEquals = function aboutEquals(a, b) {
-  return Math.abs(a - b) < EPSILON;
-};
+const EPSILON = 0.00001;
+const aboutEquals = (a, b) => Math.abs(a - b) < EPSILON;
 function scaleTransformsAreEqual(aSrc, aLevel, bSrc, bLevel) {
-  var aScale = getScale(aSrc.multiscaleMetadata.datasets[aLevel], aSrc.axesTCZYX);
-  var bScale = getScale(bSrc.multiscaleMetadata.datasets[bLevel], bSrc.axesTCZYX);
+  const aScale = getScale(aSrc.multiscaleMetadata.datasets[aLevel], aSrc.axesTCZYX);
+  const bScale = getScale(bSrc.multiscaleMetadata.datasets[bLevel], bSrc.axesTCZYX);
   return aboutEquals(aScale[2], bScale[2]) && aboutEquals(aScale[3], bScale[3]) && aboutEquals(aScale[4], bScale[4]);
 }
 
@@ -4560,31 +3409,25 @@ function matchSourceScaleLevels(sources) {
   }
 
   // Save matching scale levels and metadata here
-  var matchedLevels = Array.from({
+  const matchedLevels = Array.from({
     length: sources.length
-  }, function () {
-    return [];
-  });
-  var matchedMetas = Array.from({
+  }, () => []);
+  const matchedMetas = Array.from({
     length: sources.length
-  }, function () {
-    return [];
-  });
+  }, () => []);
 
   // Start as many index counters as we have sources
-  var scaleIndexes = new Array(sources.length).fill(0);
-  while (scaleIndexes.every(function (val, idx) {
-    return val < sources[idx].scaleLevels.length;
-  })) {
+  const scaleIndexes = new Array(sources.length).fill(0);
+  while (scaleIndexes.every((val, idx) => val < sources[idx].scaleLevels.length)) {
     // First pass: find the smallest source / determine if all sources are equal
-    var allEqual = true;
-    var smallestIdx = 0;
-    var smallestSrc = sources[0];
-    var smallestArr = smallestSrc.scaleLevels[scaleIndexes[0]];
-    for (var currentIdx = 1; currentIdx < sources.length; currentIdx++) {
-      var currentSrc = sources[currentIdx];
-      var currentArr = currentSrc.scaleLevels[scaleIndexes[currentIdx]];
-      var ordering = compareZarrArraySize(smallestArr, smallestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
+    let allEqual = true;
+    let smallestIdx = 0;
+    let smallestSrc = sources[0];
+    let smallestArr = smallestSrc.scaleLevels[scaleIndexes[0]];
+    for (let currentIdx = 1; currentIdx < sources.length; currentIdx++) {
+      const currentSrc = sources[currentIdx];
+      const currentArr = currentSrc.scaleLevels[scaleIndexes[currentIdx]];
+      const ordering = compareZarrArraySize(smallestArr, smallestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
       if (!ordering) {
         // Arrays are equal, or they are uncomparable
         if (ordering === undefined) {
@@ -4599,8 +3442,8 @@ function matchSourceScaleLevels(sources) {
           console.warn("Incompatible zarr arrays: scale levels of equal size have different scale transformations");
         }
         // ...they have different numbers of timesteps
-        var largestT = smallestSrc.axesTCZYX[0] > -1 ? smallestArr.shape[smallestSrc.axesTCZYX[0]] : 1;
-        var currentT = currentSrc.axesTCZYX[0] > -1 ? currentArr.shape[currentSrc.axesTCZYX[0]] : 1;
+        const largestT = smallestSrc.axesTCZYX[0] > -1 ? smallestArr.shape[smallestSrc.axesTCZYX[0]] : 1;
+        const currentT = currentSrc.axesTCZYX[0] > -1 ? currentArr.shape[currentSrc.axesTCZYX[0]] : 1;
         if (largestT !== currentT) {
           throw new Error("Incompatible zarr arrays: different numbers of timesteps");
         }
@@ -4615,42 +3458,31 @@ function matchSourceScaleLevels(sources) {
     }
     if (allEqual) {
       // We've found a matching set of scale levels! Save it and increment all indexes
-      for (var i = 0; i < scaleIndexes.length; i++) {
-        var _currentSrc = sources[i];
-        var matchedScaleLevel = scaleIndexes[i];
-        matchedLevels[i].push(_currentSrc.scaleLevels[matchedScaleLevel]);
-        matchedMetas[i].push(_currentSrc.multiscaleMetadata.datasets[matchedScaleLevel]);
+      for (let i = 0; i < scaleIndexes.length; i++) {
+        const currentSrc = sources[i];
+        const matchedScaleLevel = scaleIndexes[i];
+        matchedLevels[i].push(currentSrc.scaleLevels[matchedScaleLevel]);
+        matchedMetas[i].push(currentSrc.multiscaleMetadata.datasets[matchedScaleLevel]);
         scaleIndexes[i] += 1;
       }
     } else {
       // Increment the indexes of the sources which are larger than the smallest
-      var _iterator = _createForOfIteratorHelper(scaleIndexes.entries()),
-        _step;
-      try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var _step$value = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_step.value, 2),
-            idx = _step$value[0],
-            srcIdx = _step$value[1];
-          var _currentSrc2 = sources[idx];
-          var _currentArr = _currentSrc2.scaleLevels[srcIdx];
-          var _ordering = compareZarrArraySize(smallestArr, smallestSrc.axesTCZYX, _currentArr, _currentSrc2.axesTCZYX);
-          if (_ordering !== 0) {
-            scaleIndexes[idx] += 1;
-          }
+      for (const [idx, srcIdx] of scaleIndexes.entries()) {
+        const currentSrc = sources[idx];
+        const currentArr = currentSrc.scaleLevels[srcIdx];
+        const ordering = compareZarrArraySize(smallestArr, smallestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
+        if (ordering !== 0) {
+          scaleIndexes[idx] += 1;
         }
-      } catch (err) {
-        _iterator.e(err);
-      } finally {
-        _iterator.f();
       }
     }
   }
   if (sources[0].scaleLevels.length === 0) {
     throw new Error("Incompatible zarr arrays: no sets of scale levels found that matched in all sources");
   }
-  for (var _i = 0; _i < sources.length; _i++) {
-    sources[_i].scaleLevels = matchedLevels[_i];
-    sources[_i].multiscaleMetadata.datasets = matchedMetas[_i];
+  for (let i = 0; i < sources.length; i++) {
+    sources[i].scaleLevels = matchedLevels[i];
+    sources[i].multiscaleMetadata.datasets = matchedMetas[i];
   }
 }
 
@@ -4674,7 +3506,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   isTop: () => (/* binding */ isTop)
 /* harmony export */ });
 /** If `FuseChannel.rgbColor` is this value, it is disabled from fusion. */
-var FUSE_DISABLED_RGB_COLOR = 0;
+const FUSE_DISABLED_RGB_COLOR = 0;
 
 /**
  * Provide options to control the visual appearance of a Volume
@@ -4691,7 +3523,7 @@ var FUSE_DISABLED_RGB_COLOR = 0;
    };
  */
 
-var RenderMode = /*#__PURE__*/function (RenderMode) {
+let RenderMode = /*#__PURE__*/function (RenderMode) {
   RenderMode[RenderMode["RAYMARCH"] = 0] = "RAYMARCH";
   RenderMode[RenderMode["PATHTRACE"] = 1] = "PATHTRACE";
   RenderMode[RenderMode["SLICE"] = 2] = "SLICE";
@@ -4721,23 +3553,17 @@ var RenderMode = /*#__PURE__*/function (RenderMode) {
    };
  */
 
-var isOrthographicCamera = function isOrthographicCamera(def) {
-  return def && def.isOrthographicCamera;
-};
-var ViewportCorner = /*#__PURE__*/function (ViewportCorner) {
+const isOrthographicCamera = def => def && def.isOrthographicCamera;
+let ViewportCorner = /*#__PURE__*/function (ViewportCorner) {
   ViewportCorner["TOP_LEFT"] = "top_left";
   ViewportCorner["TOP_RIGHT"] = "top_right";
   ViewportCorner["BOTTOM_LEFT"] = "bottom_left";
   ViewportCorner["BOTTOM_RIGHT"] = "bottom_right";
   return ViewportCorner;
 }({});
-var isTop = function isTop(corner) {
-  return corner === ViewportCorner.TOP_LEFT || corner === ViewportCorner.TOP_RIGHT;
-};
-var isRight = function isRight(corner) {
-  return corner === ViewportCorner.TOP_RIGHT || corner === ViewportCorner.BOTTOM_RIGHT;
-};
-var DATARANGE_UINT8 = [0, 255];
+const isTop = corner => corner === ViewportCorner.TOP_LEFT || corner === ViewportCorner.TOP_RIGHT;
+const isRight = corner => corner === ViewportCorner.TOP_RIGHT || corner === ViewportCorner.BOTTOM_RIGHT;
+const DATARANGE_UINT8 = [0, 255];
 
 /***/ }),
 
@@ -4753,31 +3579,20 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   DEFAULT_REQUEST_CANCEL_REASON: () => (/* binding */ DEFAULT_REQUEST_CANCEL_REASON),
 /* harmony export */   "default": () => (/* binding */ RequestQueue)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3__);
-
-
-
-function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
-function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
-
 /** Object format used when passing multiple requests to RequestQueue at once. */
 
-var DEFAULT_REQUEST_CANCEL_REASON = "request cancelled";
+const DEFAULT_REQUEST_CANCEL_REASON = "request cancelled";
 
 /**
  * Internal object interface used by RequestQueue to store request metadata and callbacks.
  */
+
 /**
  * Manages a queue of asynchronous requests with unique string keys, which can be added to or cancelled.
  * If redundant requests with the same key are issued, the request action will only be run once per key
  * while the original request is still in the queue.
  */
-var RequestQueue = /*#__PURE__*/function () {
+class RequestQueue {
   /**
    * The maximum number of requests that can be handled concurrently.
    * Once reached, additional requests will be queued up to run once a running request completes.
@@ -4803,10 +3618,7 @@ var RequestQueue = /*#__PURE__*/function () {
    * @param maxLowPriorityRequests The maximum number of low-priority requests that will be handled concurrently. Equal
    *    to `maxActiveRequests` by default, but may be set lower to always leave space for new high-priority requests.
    */
-  function RequestQueue() {
-    var maxActiveRequests = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
-    var maxLowPriorityRequests = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 5;
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, RequestQueue);
+  constructor(maxActiveRequests = 10, maxLowPriorityRequests = 5) {
     this.allRequests = new Map();
     this.activeRequests = new Set();
     this.queue = [];
@@ -4821,288 +3633,219 @@ var RequestQueue = /*#__PURE__*/function () {
    * @param requestAction callable function action of the request.
    * @returns a reference to the new, registered RequestItem.
    */
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(RequestQueue, [{
-    key: "registerRequest",
-    value: function registerRequest(key, requestAction) {
-      // Create a new promise and store the resolve and reject callbacks for later.
-      // This lets us perform the actual action at a later point, when the request is at the
-      // front of the processing queue.
-      var promiseResolve, promiseReject;
-      var promise = new Promise(function (resolve, reject) {
-        promiseResolve = resolve;
-        promiseReject = reject;
-      });
-      // Store the request data.
-      var requestItem = {
-        key: key,
-        action: requestAction,
-        resolve: promiseResolve,
-        reject: promiseReject,
-        promise: promise
-      };
-      this.allRequests.set(key, requestItem);
-      return requestItem;
-    }
+  registerRequest(key, requestAction) {
+    // Create a new promise and store the resolve and reject callbacks for later.
+    // This lets us perform the actual action at a later point, when the request is at the
+    // front of the processing queue.
+    let promiseResolve, promiseReject;
+    const promise = new Promise((resolve, reject) => {
+      promiseResolve = resolve;
+      promiseReject = reject;
+    });
+    // Store the request data.
+    const requestItem = {
+      key: key,
+      action: requestAction,
+      resolve: promiseResolve,
+      reject: promiseReject,
+      promise
+    };
+    this.allRequests.set(key, requestItem);
+    return requestItem;
+  }
 
-    /**
-     * Moves a registered request into the processing queue, clearing any timeouts on the request.
-     * @param key string identifier of the request.
-     * @param lowPriority Whether this request should be added with low priority. False by default.
-     */
-  }, {
-    key: "addRequestToQueue",
-    value: function addRequestToQueue(key, lowPriority) {
-      // Check that this request is not cancelled.
-      if (this.allRequests.has(key)) {
-        // Clear the request timeout, if it has one, since it is being added to the queue.
-        var requestItem = this.allRequests.get(key);
-        if (requestItem && requestItem.timeoutId) {
-          clearTimeout(requestItem.timeoutId);
-          requestItem.timeoutId = undefined;
-        }
-        if (!this.queue.includes(key) && !this.queueLowPriority.includes(key)) {
-          // Add to queue and check if the request can be processed right away.
-          if (lowPriority) {
-            this.queueLowPriority.push(key);
-          } else {
-            this.queue.push(key);
-          }
-          this.dequeue();
-        }
+  /**
+   * Moves a registered request into the processing queue, clearing any timeouts on the request.
+   * @param key string identifier of the request.
+   * @param lowPriority Whether this request should be added with low priority. False by default.
+   */
+  addRequestToQueue(key, lowPriority) {
+    // Check that this request is not cancelled.
+    if (this.allRequests.has(key)) {
+      // Clear the request timeout, if it has one, since it is being added to the queue.
+      const requestItem = this.allRequests.get(key);
+      if (requestItem && requestItem.timeoutId) {
+        clearTimeout(requestItem.timeoutId);
+        requestItem.timeoutId = undefined;
       }
-    }
-
-    /**
-     * Adds a request with a unique key to the queue, if it doesn't already exist.
-     * @param key The key used to track the request.
-     * @param requestAction Function that will be called to complete the request. The function
-     *  will be run only once per unique key while the request exists, and may be deferred by the
-     *  queue at any time.
-     * @param lowPriority Whether this request should be added with low priority. False by default.
-     * @param delayMs Minimum delay, in milliseconds, before this request should be executed.
-     *
-     * NOTE: Cancelling a request while the action is running WILL NOT stop the action. If this behavior is desired,
-     * actions must be responsible for checking the RequestQueue, determining if the request is still valid (e.g.
-     * using `.hasRequest()`), and stopping or returning early.
-     *
-     * @returns A promise that will resolve on completion of the request, or reject if the request is cancelled.
-     *  If multiple requests are issued with the same key, a promise for the first request will be returned
-     *  until the request is resolved or cancelled.
-     *  Note that the return type of the promise will match that of the first request's instance.
-     */
-  }, {
-    key: "addRequest",
-    value: function addRequest(key, requestAction) {
-      var _this = this,
-        _this$allRequests$get;
-      var lowPriority = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-      var delayMs = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
-      if (!this.allRequests.has(key)) {
-        // New request!
-        var requestItem = this.registerRequest(key, requestAction);
-        // If a delay is set, wait to add this to the queue.
-        if (delayMs > 0) {
-          var timeoutId = setTimeout(function () {
-            return _this.addRequestToQueue(key, lowPriority);
-          }, delayMs);
-          // Save timeout information to request metadata
-          requestItem.timeoutId = timeoutId;
+      if (!this.queue.includes(key) && !this.queueLowPriority.includes(key)) {
+        // Add to queue and check if the request can be processed right away.
+        if (lowPriority) {
+          this.queueLowPriority.push(key);
         } else {
-          // No delay, add immediately
-          this.addRequestToQueue(key, lowPriority);
+          this.queue.push(key);
         }
+        this.dequeue();
+      }
+    }
+  }
+
+  /**
+   * Adds a request with a unique key to the queue, if it doesn't already exist.
+   * @param key The key used to track the request.
+   * @param requestAction Function that will be called to complete the request. The function
+   *  will be run only once per unique key while the request exists, and may be deferred by the
+   *  queue at any time.
+   * @param lowPriority Whether this request should be added with low priority. False by default.
+   * @param delayMs Minimum delay, in milliseconds, before this request should be executed.
+   *
+   * NOTE: Cancelling a request while the action is running WILL NOT stop the action. If this behavior is desired,
+   * actions must be responsible for checking the RequestQueue, determining if the request is still valid (e.g.
+   * using `.hasRequest()`), and stopping or returning early.
+   *
+   * @returns A promise that will resolve on completion of the request, or reject if the request is cancelled.
+   *  If multiple requests are issued with the same key, a promise for the first request will be returned
+   *  until the request is resolved or cancelled.
+   *  Note that the return type of the promise will match that of the first request's instance.
+   */
+  addRequest(key, requestAction, lowPriority = false, delayMs = 0) {
+    if (!this.allRequests.has(key)) {
+      // New request!
+      const requestItem = this.registerRequest(key, requestAction);
+      // If a delay is set, wait to add this to the queue.
+      if (delayMs > 0) {
+        const timeoutId = setTimeout(() => this.addRequestToQueue(key, lowPriority), delayMs);
+        // Save timeout information to request metadata
+        requestItem.timeoutId = timeoutId;
       } else {
-        var lowPriorityIndex = this.queueLowPriority.indexOf(key);
-        if (lowPriorityIndex > -1 && !lowPriority) {
-          // This request is registered and queued, but is now being requested with high priority.
-          // Promote it to high priority.
-          this.queueLowPriority.splice(lowPriorityIndex, 1);
-          this.addRequestToQueue(key);
-        } else if (delayMs <= 0) {
-          // This request is registered, but is now being requested without a delay.
-          // Move into queue immediately if it's not already added, and clear any timeouts it may have.
-          this.addRequestToQueue(key, lowPriority);
-        }
+        // No delay, add immediately
+        this.addRequestToQueue(key, lowPriority);
       }
-      var promise = (_this$allRequests$get = this.allRequests.get(key)) === null || _this$allRequests$get === void 0 ? void 0 : _this$allRequests$get.promise;
-      if (!promise) {
-        throw new Error("Found no promise to return when getting stored request data.");
-      }
-      return promise;
-    }
-
-    /**
-     * Adds multiple requests to the queue, with an optional delay between each.
-     * @param requests An array of RequestItems, which include a key and a request action.
-     * @param lowPriority Whether these requests should be added with low priority. False by default.
-     * @param delayMs An optional minimum delay in milliseconds to be added between each request.
-     *  For example, a delay of 10 ms will cause the second request to be added to the processing queue
-     *  after 10 ms, the third to added after 20 ms, and so on. Set to 10 ms by default.
-     * @returns An array of promises corresponding to the provided requests. (i.e., the `i`th value
-     * of the returned array will be a Promise for the resolution of `requests[i]`). If a request
-     *  with a matching key is already pending, returns the promise for the initial request.
-     */
-  }, {
-    key: "addRequests",
-    value: function addRequests(requests) {
-      var lowPriority = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-      var delayMs = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 10;
-      var promises = [];
-      for (var i = 0; i < requests.length; i++) {
-        var item = requests[i];
-        var promise = this.addRequest(item.key, item.requestAction, lowPriority, delayMs * i);
-        promises.push(promise);
-      }
-      return promises;
-    }
-
-    /**
-     * Attempts to remove and run the next queued request item, if resources are available.
-     * @returns true if a request was started, or false if there are too many
-     * requests already active.
-     */
-  }, {
-    key: "dequeue",
-    value: (function () {
-      var _dequeue = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().mark(function _callee() {
-        var _this$queue$shift;
-        var numRequests, requestKey, requestItem, key;
-        return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_3___default().wrap(function _callee$(_context) {
-          while (1) switch (_context.prev = _context.next) {
-            case 0:
-              numRequests = this.activeRequests.size;
-              if (!(numRequests >= this.maxActiveRequests || this.queue.length === 0 && (numRequests >= this.maxLowPriorityRequests || this.queueLowPriority.length === 0))) {
-                _context.next = 3;
-                break;
-              }
-              return _context.abrupt("return");
-            case 3:
-              requestKey = (_this$queue$shift = this.queue.shift()) !== null && _this$queue$shift !== void 0 ? _this$queue$shift : this.queueLowPriority.shift();
-              if (requestKey) {
-                _context.next = 6;
-                break;
-              }
-              return _context.abrupt("return");
-            case 6:
-              if (!this.activeRequests.has(requestKey)) {
-                _context.next = 9;
-                break;
-              }
-              // This request is already active, try the next one instead. (this shouldn't happen)
-              this.dequeue();
-              return _context.abrupt("return");
-            case 9:
-              requestItem = this.allRequests.get(requestKey);
-              if (requestItem) {
-                _context.next = 12;
-                break;
-              }
-              return _context.abrupt("return");
-            case 12:
-              key = requestItem.key; // Mark that this request is active
-              this.activeRequests.add(key);
-              _context.next = 16;
-              return requestItem.action().then(requestItem.resolve, requestItem.reject);
-            case 16:
-              this.activeRequests["delete"](key);
-              this.allRequests["delete"](key);
-              this.dequeue();
-            case 19:
-            case "end":
-              return _context.stop();
-          }
-        }, _callee, this);
-      }));
-      function dequeue() {
-        return _dequeue.apply(this, arguments);
-      }
-      return dequeue;
-    }()
-    /**
-     * Removes any request matching the provided key from the queue and rejects its promise.
-     * @param key The key that should be matched against.
-     * @param cancelReason A message or object that will be used as the promise rejection.
-     */
-    )
-  }, {
-    key: "cancelRequest",
-    value: function cancelRequest(key) {
-      var cancelReason = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : DEFAULT_REQUEST_CANCEL_REASON;
-      if (!this.allRequests.has(key)) {
-        return;
-      }
-      var requestItem = this.allRequests.get(key);
-      if (requestItem) {
-        if (requestItem.timeoutId) {
-          // Cancel requests that have not been queued yet.
-          clearTimeout(requestItem.timeoutId);
-        }
-        // Reject the request, then clear from the queue and known requests.
-        requestItem.reject(cancelReason);
-      }
-      var queueIndex = this.queue.indexOf(key);
-      if (queueIndex > -1) {
-        this.queue.splice(queueIndex, 1);
-      } else {
-        var lowPriorityIndex = this.queueLowPriority.indexOf(key);
-        if (lowPriorityIndex > -1) {
-          this.queueLowPriority.splice(lowPriorityIndex, 1);
-        }
-      }
-      this.allRequests["delete"](key);
-      this.activeRequests["delete"](key);
-    }
-
-    /**
-     * Rejects all request promises and clears the queue.
-     * @param cancelReason A message or object that will be used as the promise rejection.
-     */
-  }, {
-    key: "cancelAllRequests",
-    value: function cancelAllRequests() {
-      var cancelReason = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : DEFAULT_REQUEST_CANCEL_REASON;
-      // Clear the queue so we don't do extra work while filtering it
-      this.queue = [];
-      this.queueLowPriority = [];
-      var _iterator = _createForOfIteratorHelper(this.allRequests.keys()),
-        _step;
-      try {
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          var key = _step.value;
-          this.cancelRequest(key, cancelReason);
-        }
-      } catch (err) {
-        _iterator.e(err);
-      } finally {
-        _iterator.f();
+    } else {
+      const lowPriorityIndex = this.queueLowPriority.indexOf(key);
+      if (lowPriorityIndex > -1 && !lowPriority) {
+        // This request is registered and queued, but is now being requested with high priority.
+        // Promote it to high priority.
+        this.queueLowPriority.splice(lowPriorityIndex, 1);
+        this.addRequestToQueue(key);
+      } else if (delayMs <= 0) {
+        // This request is registered, but is now being requested without a delay.
+        // Move into queue immediately if it's not already added, and clear any timeouts it may have.
+        this.addRequestToQueue(key, lowPriority);
       }
     }
-
-    /**
-     * Returns whether a request with the given key exists in the RequestQueue and is not cancelled.
-     * @param key the key to search for.
-     * @returns true if the request is in the RequestQueue.
-     */
-  }, {
-    key: "hasRequest",
-    value: function hasRequest(key) {
-      return this.allRequests.has(key);
+    const promise = this.allRequests.get(key)?.promise;
+    if (!promise) {
+      throw new Error("Found no promise to return when getting stored request data.");
     }
+    return promise;
+  }
 
-    /**
-     * Returns whether the request with the given key is currently running (not waiting in the queue).
-     * @param key the key to search for.
-     * @returns true if the request is actively running.
-     */
-  }, {
-    key: "requestRunning",
-    value: function requestRunning(key) {
-      return this.activeRequests.has(key);
+  /**
+   * Adds multiple requests to the queue, with an optional delay between each.
+   * @param requests An array of RequestItems, which include a key and a request action.
+   * @param lowPriority Whether these requests should be added with low priority. False by default.
+   * @param delayMs An optional minimum delay in milliseconds to be added between each request.
+   *  For example, a delay of 10 ms will cause the second request to be added to the processing queue
+   *  after 10 ms, the third to added after 20 ms, and so on. Set to 10 ms by default.
+   * @returns An array of promises corresponding to the provided requests. (i.e., the `i`th value
+   * of the returned array will be a Promise for the resolution of `requests[i]`). If a request
+   *  with a matching key is already pending, returns the promise for the initial request.
+   */
+  addRequests(requests, lowPriority = false, delayMs = 10) {
+    const promises = [];
+    for (let i = 0; i < requests.length; i++) {
+      const item = requests[i];
+      const promise = this.addRequest(item.key, item.requestAction, lowPriority, delayMs * i);
+      promises.push(promise);
     }
-  }]);
-  return RequestQueue;
-}();
+    return promises;
+  }
 
+  /**
+   * Attempts to remove and run the next queued request item, if resources are available.
+   * @returns true if a request was started, or false if there are too many
+   * requests already active.
+   */
+  async dequeue() {
+    const numRequests = this.activeRequests.size;
+    if (numRequests >= this.maxActiveRequests || this.queue.length === 0 && (numRequests >= this.maxLowPriorityRequests || this.queueLowPriority.length === 0)) {
+      return;
+    }
+    const requestKey = this.queue.shift() ?? this.queueLowPriority.shift();
+    if (!requestKey) {
+      return;
+    }
+    if (this.activeRequests.has(requestKey)) {
+      // This request is already active, try the next one instead. (this shouldn't happen)
+      this.dequeue();
+      return;
+    }
+    const requestItem = this.allRequests.get(requestKey);
+    if (!requestItem) {
+      return;
+    }
+    const key = requestItem.key;
+    // Mark that this request is active
+    this.activeRequests.add(key);
+    await requestItem.action().then(requestItem.resolve, requestItem.reject);
+    this.activeRequests.delete(key);
+    this.allRequests.delete(key);
+    this.dequeue();
+  }
+
+  /**
+   * Removes any request matching the provided key from the queue and rejects its promise.
+   * @param key The key that should be matched against.
+   * @param cancelReason A message or object that will be used as the promise rejection.
+   */
+  cancelRequest(key, cancelReason = DEFAULT_REQUEST_CANCEL_REASON) {
+    if (!this.allRequests.has(key)) {
+      return;
+    }
+    const requestItem = this.allRequests.get(key);
+    if (requestItem) {
+      if (requestItem.timeoutId) {
+        // Cancel requests that have not been queued yet.
+        clearTimeout(requestItem.timeoutId);
+      }
+      // Reject the request, then clear from the queue and known requests.
+      requestItem.reject(cancelReason);
+    }
+    const queueIndex = this.queue.indexOf(key);
+    if (queueIndex > -1) {
+      this.queue.splice(queueIndex, 1);
+    } else {
+      const lowPriorityIndex = this.queueLowPriority.indexOf(key);
+      if (lowPriorityIndex > -1) {
+        this.queueLowPriority.splice(lowPriorityIndex, 1);
+      }
+    }
+    this.allRequests.delete(key);
+    this.activeRequests.delete(key);
+  }
+
+  /**
+   * Rejects all request promises and clears the queue.
+   * @param cancelReason A message or object that will be used as the promise rejection.
+   */
+  cancelAllRequests(cancelReason = DEFAULT_REQUEST_CANCEL_REASON) {
+    // Clear the queue so we don't do extra work while filtering it
+    this.queue = [];
+    this.queueLowPriority = [];
+    for (const key of this.allRequests.keys()) {
+      this.cancelRequest(key, cancelReason);
+    }
+  }
+
+  /**
+   * Returns whether a request with the given key exists in the RequestQueue and is not cancelled.
+   * @param key the key to search for.
+   * @returns true if the request is in the RequestQueue.
+   */
+  hasRequest(key) {
+    return this.allRequests.has(key);
+  }
+
+  /**
+   * Returns whether the request with the given key is currently running (not waiting in the queue).
+   * @param key the key to search for.
+   * @returns true if the request is actively running.
+   */
+  requestRunning(key) {
+    return this.activeRequests.has(key);
+  }
+}
 
 /***/ }),
 
@@ -5117,28 +3860,33 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ SubscribableRequestQueue)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/slicedToArray */ "./node_modules/@babel/runtime/helpers/esm/slicedToArray.js");
-/* harmony import */ var _babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/classCallCheck */ "./node_modules/@babel/runtime/helpers/esm/classCallCheck.js");
-/* harmony import */ var _babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/helpers/createClass */ "./node_modules/@babel/runtime/helpers/esm/createClass.js");
-/* harmony import */ var _RequestQueue_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./RequestQueue.js */ "./src/utils/RequestQueue.ts");
-
-
-
-function _createForOfIteratorHelper(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (!it) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = it.call(o); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
-function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
-function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i]; return arr2; }
+/* harmony import */ var _RequestQueue_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./RequestQueue.js */ "./src/utils/RequestQueue.ts");
 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 /**
  * An extension of `RequestQueue` that adds a concept of "subscribers," which may share references to a single request
  * or cancel their subscription without disrupting the request for other subscribers.
  */
-var SubscribableRequestQueue = /*#__PURE__*/function () {
-  function SubscribableRequestQueue(maxActiveRequests, maxLowPriorityRequests) {
-    (0,_babel_runtime_helpers_classCallCheck__WEBPACK_IMPORTED_MODULE_1__["default"])(this, SubscribableRequestQueue);
+class SubscribableRequestQueue {
+  /** The next unused subscriber ID. Increments whenever a subscriber is added. */
+
+  /**
+   * Map of subscribers keyed by ID. Subscribers store a map to all their subscriptions by request key.
+   * Subscribers are only useful as handles to cancel subscriptions early, so we only need to store rejecters here.
+   */
+
+  /** Map from "inner" request (managed by `queue`) to "outer" promises generated per-subscriber. */
+
+  /**
+   * Since `SubscribableRequestQueue` wraps `RequestQueue`, its constructor may either take the same arguments as the
+   * `RequestQueue` constructor and create a new `RequestQueue`, or it may take an existing `RequestQueue` to wrap.
+   */
+
+  constructor(maxActiveRequests, maxLowPriorityRequests) {
     if (typeof maxActiveRequests === "number" || maxActiveRequests === undefined) {
-      this.queue = new _RequestQueue_js__WEBPACK_IMPORTED_MODULE_3__["default"](maxActiveRequests, maxLowPriorityRequests);
+      this.queue = new _RequestQueue_js__WEBPACK_IMPORTED_MODULE_0__["default"](maxActiveRequests, maxLowPriorityRequests);
     } else {
       this.queue = maxActiveRequests;
     }
@@ -5148,215 +3896,152 @@ var SubscribableRequestQueue = /*#__PURE__*/function () {
   }
 
   /** Resolves all subscriptions to request `key` with `value` */
-  (0,_babel_runtime_helpers_createClass__WEBPACK_IMPORTED_MODULE_2__["default"])(SubscribableRequestQueue, [{
-    key: "resolveAll",
-    value: function resolveAll(key, value) {
-      var requests = this.requests.get(key);
-      if (requests) {
-        var _iterator = _createForOfIteratorHelper(requests),
-          _step;
-        try {
-          for (_iterator.s(); !(_step = _iterator.n()).done;) {
-            var _this$subscribers$get;
-            var _step$value = _step.value,
-              resolve = _step$value.resolve,
-              subscriberId = _step$value.subscriberId;
-            resolve(value);
-            (_this$subscribers$get = this.subscribers.get(subscriberId)) === null || _this$subscribers$get === void 0 || _this$subscribers$get["delete"](key);
-          }
-        } catch (err) {
-          _iterator.e(err);
-        } finally {
-          _iterator.f();
-        }
-        this.requests["delete"](key);
+  resolveAll(key, value) {
+    const requests = this.requests.get(key);
+    if (requests) {
+      for (const {
+        resolve,
+        subscriberId
+      } of requests) {
+        resolve(value);
+        this.subscribers.get(subscriberId)?.delete(key);
       }
+      this.requests.delete(key);
     }
+  }
 
-    /** Rejects all subscriptions to request `key` with `reason` */
-  }, {
-    key: "rejectAll",
-    value: function rejectAll(key, reason) {
-      var requests = this.requests.get(key);
-      if (requests) {
-        var _iterator2 = _createForOfIteratorHelper(requests),
-          _step2;
-        try {
-          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-            var _this$subscribers$get2;
-            var _step2$value = _step2.value,
-              reject = _step2$value.reject,
-              subscriberId = _step2$value.subscriberId;
-            reject(reason);
-            (_this$subscribers$get2 = this.subscribers.get(subscriberId)) === null || _this$subscribers$get2 === void 0 || _this$subscribers$get2["delete"](key);
-          }
-        } catch (err) {
-          _iterator2.e(err);
-        } finally {
-          _iterator2.f();
-        }
-        this.requests["delete"](key);
+  /** Rejects all subscriptions to request `key` with `reason` */
+  rejectAll(key, reason) {
+    const requests = this.requests.get(key);
+    if (requests) {
+      for (const {
+        reject,
+        subscriberId
+      } of requests) {
+        reject(reason);
+        this.subscribers.get(subscriberId)?.delete(key);
       }
+      this.requests.delete(key);
+    }
+  }
+
+  /** Adds a new request subscriber. Returns a unique ID to identify this subscriber. */
+  addSubscriber() {
+    const subscriberId = this.nextSubscriberId;
+    this.nextSubscriberId++;
+    this.subscribers.set(subscriberId, new Map());
+    return subscriberId;
+  }
+
+  /**
+   * Queues a new request, or adds a subscription if the request is already queued/running.
+   *
+   * If `subscriberId` is already subscribed to the request, this rejects the existing promise and returns a new one.
+   */
+  addRequest(key, subscriberId, requestAction, lowPriority, delayMs) {
+    // Create single underlying request if it does not yet exist
+    this.queue.addRequest(key, requestAction, lowPriority, delayMs).then(value => this.resolveAll(key, value)).catch(reason => this.rejectAll(key, reason));
+    if (!this.requests.has(key)) {
+      this.requests.set(key, []);
     }
 
-    /** Adds a new request subscriber. Returns a unique ID to identify this subscriber. */
-  }, {
-    key: "addSubscriber",
-    value: function addSubscriber() {
-      var subscriberId = this.nextSubscriberId;
-      this.nextSubscriberId++;
-      this.subscribers.set(subscriberId, new Map());
-      return subscriberId;
+    // Validate subscriber
+    if (subscriberId >= this.nextSubscriberId || subscriberId < 0) {
+      throw new Error(`SubscribableRequestQueue: subscriber id ${subscriberId} has not been registered`);
+    }
+    const subscriber = this.subscribers.get(subscriberId);
+    if (!subscriber) {
+      throw new Error(`SubscribableRequestQueue: subscriber id ${subscriberId} has been removed`);
+    }
+    const existingRequest = subscriber.get(key);
+    if (existingRequest) {
+      this.rejectSubscription(key, existingRequest, "SubscribableRequestQueue: request re-queued while running");
     }
 
-    /**
-     * Queues a new request, or adds a subscription if the request is already queued/running.
-     *
-     * If `subscriberId` is already subscribed to the request, this rejects the existing promise and returns a new one.
-     */
-  }, {
-    key: "addRequest",
-    value: function addRequest(key, subscriberId, requestAction, lowPriority, delayMs) {
-      var _this = this;
-      // Create single underlying request if it does not yet exist
-      this.queue.addRequest(key, requestAction, lowPriority, delayMs).then(function (value) {
-        return _this.resolveAll(key, value);
-      })["catch"](function (reason) {
-        return _this.rejectAll(key, reason);
+    // Create promise and add to list of requests
+    return new Promise((resolve, reject) => {
+      this.requests.get(key)?.push({
+        resolve,
+        reject,
+        subscriberId
       });
-      if (!this.requests.has(key)) {
-        this.requests.set(key, []);
-      }
+      this.subscribers.get(subscriberId)?.set(key, reject);
+    });
+  }
 
-      // Validate subscriber
-      if (subscriberId >= this.nextSubscriberId || subscriberId < 0) {
-        throw new Error("SubscribableRequestQueue: subscriber id ".concat(subscriberId, " has not been registered"));
-      }
-      var subscriber = this.subscribers.get(subscriberId);
-      if (!subscriber) {
-        throw new Error("SubscribableRequestQueue: subscriber id ".concat(subscriberId, " has been removed"));
-      }
-      var existingRequest = subscriber.get(key);
-      if (existingRequest) {
-        this.rejectSubscription(key, existingRequest, "SubscribableRequestQueue: request re-queued while running");
-      }
+  /**
+   * Rejects a subscription and removes it from the list of subscriptions for a request, then cancels the underlying
+   * request if it is no longer subscribed and is not running already.
+   */
+  rejectSubscription(key, reject, cancelReason) {
+    // Reject the outer "subscription" promise
+    reject(cancelReason);
 
-      // Create promise and add to list of requests
-      return new Promise(function (resolve, reject) {
-        var _this$requests$get, _this$subscribers$get3;
-        (_this$requests$get = _this.requests.get(key)) === null || _this$requests$get === void 0 || _this$requests$get.push({
-          resolve: resolve,
-          reject: reject,
-          subscriberId: subscriberId
-        });
-        (_this$subscribers$get3 = _this.subscribers.get(subscriberId)) === null || _this$subscribers$get3 === void 0 || _this$subscribers$get3.set(key, reject);
-      });
+    // Get the list of subscriptions for this request
+    const subscriptions = this.requests.get(key);
+    if (!subscriptions) {
+      // This should never happen
+      return;
+    }
+    // Remove this request subscription by ref equality to `reject`
+    const idx = subscriptions.findIndex(sub => sub.reject === reject);
+    if (idx >= 0) {
+      subscriptions.splice(idx, 1);
     }
 
-    /**
-     * Rejects a subscription and removes it from the list of subscriptions for a request, then cancels the underlying
-     * request if it is no longer subscribed and is not running already.
-     */
-  }, {
-    key: "rejectSubscription",
-    value: function rejectSubscription(key, reject, cancelReason) {
-      // Reject the outer "subscription" promise
-      reject(cancelReason);
+    // Remove the underlying request if there are no more subscribers and the request is not already running
+    if (subscriptions.length < 1 && !this.queue.requestRunning(key)) {
+      this.queue.cancelRequest(key, cancelReason);
+      this.requests.delete(key);
+    }
+  }
 
-      // Get the list of subscriptions for this request
-      var subscriptions = this.requests.get(key);
-      if (!subscriptions) {
-        // This should never happen
-        return;
+  /** Cancels a request subscription, and cancels the underlying request if it is no longer subscribed or running. */
+  cancelRequest(key, subscriberId, cancelReason) {
+    const subscriber = this.subscribers.get(subscriberId);
+    if (!subscriber) {
+      return false;
+    }
+    const reject = subscriber.get(key);
+    if (!reject) {
+      return false;
+    }
+    this.rejectSubscription(key, reject, cancelReason);
+    subscriber.delete(key);
+    return true;
+  }
+
+  /** Removes a subscriber and cancels its remaining subscriptions. */
+  removeSubscriber(subscriberId, cancelReason) {
+    const subscriptions = this.subscribers.get(subscriberId);
+    if (subscriptions) {
+      for (const [key, reject] of subscriptions.entries()) {
+        this.rejectSubscription(key, reject, cancelReason);
       }
-      // Remove this request subscription by ref equality to `reject`
-      var idx = subscriptions.findIndex(function (sub) {
-        return sub.reject === reject;
-      });
-      if (idx >= 0) {
-        subscriptions.splice(idx, 1);
-      }
-
-      // Remove the underlying request if there are no more subscribers and the request is not already running
-      if (subscriptions.length < 1 && !this.queue.requestRunning(key)) {
-        this.queue.cancelRequest(key, cancelReason);
-        this.requests["delete"](key);
-      }
+      this.subscribers.delete(subscriberId);
     }
+  }
 
-    /** Cancels a request subscription, and cancels the underlying request if it is no longer subscribed or running. */
-  }, {
-    key: "cancelRequest",
-    value: function cancelRequest(key, subscriberId, cancelReason) {
-      var subscriber = this.subscribers.get(subscriberId);
-      if (!subscriber) {
-        return false;
-      }
-      var reject = subscriber.get(key);
-      if (!reject) {
-        return false;
-      }
-      this.rejectSubscription(key, reject, cancelReason);
-      subscriber["delete"](key);
-      return true;
-    }
+  /** Returns whether a request with the given `key` is running or waiting in the queue */
+  hasRequest(key) {
+    return this.queue.hasRequest(key);
+  }
 
-    /** Removes a subscriber and cancels its remaining subscriptions. */
-  }, {
-    key: "removeSubscriber",
-    value: function removeSubscriber(subscriberId, cancelReason) {
-      var subscriptions = this.subscribers.get(subscriberId);
-      if (subscriptions) {
-        var _iterator3 = _createForOfIteratorHelper(subscriptions.entries()),
-          _step3;
-        try {
-          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-            var _step3$value = (0,_babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_0__["default"])(_step3.value, 2),
-              key = _step3$value[0],
-              reject = _step3$value[1];
-            this.rejectSubscription(key, reject, cancelReason);
-          }
-        } catch (err) {
-          _iterator3.e(err);
-        } finally {
-          _iterator3.f();
-        }
-        this.subscribers["delete"](subscriberId);
-      }
-    }
+  /** Returns whether a request with the given `key` is running */
+  requestRunning(key) {
+    return this.queue.requestRunning(key);
+  }
 
-    /** Returns whether a request with the given `key` is running or waiting in the queue */
-  }, {
-    key: "hasRequest",
-    value: function hasRequest(key) {
-      return this.queue.hasRequest(key);
-    }
+  /** Returns whether a subscriber with the given `subscriberId` exists */
+  hasSubscriber(subscriberId) {
+    return this.subscribers.has(subscriberId);
+  }
 
-    /** Returns whether a request with the given `key` is running */
-  }, {
-    key: "requestRunning",
-    value: function requestRunning(key) {
-      return this.queue.requestRunning(key);
-    }
-
-    /** Returns whether a subscriber with the given `subscriberId` exists */
-  }, {
-    key: "hasSubscriber",
-    value: function hasSubscriber(subscriberId) {
-      return this.subscribers.has(subscriberId);
-    }
-
-    /** Returns whether a subscriber with the given `subscriberId` is subscribed to the request with the given `key` */
-  }, {
-    key: "isSubscribed",
-    value: function isSubscribed(subscriberId, key) {
-      var _this$subscribers$get4, _this$subscribers$get5;
-      return (_this$subscribers$get4 = (_this$subscribers$get5 = this.subscribers.get(subscriberId)) === null || _this$subscribers$get5 === void 0 ? void 0 : _this$subscribers$get5.has(key)) !== null && _this$subscribers$get4 !== void 0 ? _this$subscribers$get4 : false;
-    }
-  }]);
-  return SubscribableRequestQueue;
-}();
-
+  /** Returns whether a subscriber with the given `subscriberId` is subscribed to the request with the given `key` */
+  isSubscribed(subscriberId, key) {
+    return this.subscribers.get(subscriberId)?.has(key) ?? false;
+  }
+}
 
 /***/ }),
 
@@ -5368,211 +4053,124 @@ var SubscribableRequestQueue = /*#__PURE__*/function () {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
-/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2__);
-/* harmony import */ var _VolumeCache_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../VolumeCache.js */ "./src/VolumeCache.ts");
-/* harmony import */ var _loaders_index_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../loaders/index.js */ "./src/loaders/index.ts");
-/* harmony import */ var _utils_RequestQueue_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../utils/RequestQueue.js */ "./src/utils/RequestQueue.ts");
-/* harmony import */ var _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ../utils/SubscribableRequestQueue.js */ "./src/utils/SubscribableRequestQueue.ts");
-/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./types.js */ "./src/workers/types.ts");
-/* harmony import */ var _util_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./util.js */ "./src/workers/util.ts");
-
-
-
-function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+/* harmony import */ var _VolumeCache_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../VolumeCache.js */ "./src/VolumeCache.ts");
+/* harmony import */ var _loaders_index_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../loaders/index.js */ "./src/loaders/index.ts");
+/* harmony import */ var _utils_RequestQueue_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/RequestQueue.js */ "./src/utils/RequestQueue.ts");
+/* harmony import */ var _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils/SubscribableRequestQueue.js */ "./src/utils/SubscribableRequestQueue.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./types.js */ "./src/workers/types.ts");
+/* harmony import */ var _util_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./util.js */ "./src/workers/util.ts");
 
 
 
 
 
 
-var cache = undefined;
-var queue = undefined;
-var subscribableQueue = undefined;
-var loader = undefined;
-var initialized = false;
-var copyOnLoad = false;
-var messageHandlers = (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])((0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])({}, _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.INIT, function (_ref) {
-  var maxCacheSize = _ref.maxCacheSize,
-    maxActiveRequests = _ref.maxActiveRequests,
-    maxLowPriorityRequests = _ref.maxLowPriorityRequests;
-  if (!initialized) {
-    cache = new _VolumeCache_js__WEBPACK_IMPORTED_MODULE_3__["default"](maxCacheSize);
-    queue = new _utils_RequestQueue_js__WEBPACK_IMPORTED_MODULE_5__["default"](maxActiveRequests, maxLowPriorityRequests);
-    subscribableQueue = new _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_6__["default"](queue);
-    initialized = true;
+let cache = undefined;
+let queue = undefined;
+let subscribableQueue = undefined;
+let loader = undefined;
+let initialized = false;
+let copyOnLoad = false;
+const messageHandlers = {
+  [_types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerMsgType.INIT]: ({
+    maxCacheSize,
+    maxActiveRequests,
+    maxLowPriorityRequests
+  }) => {
+    if (!initialized) {
+      cache = new _VolumeCache_js__WEBPACK_IMPORTED_MODULE_0__["default"](maxCacheSize);
+      queue = new _utils_RequestQueue_js__WEBPACK_IMPORTED_MODULE_2__["default"](maxActiveRequests, maxLowPriorityRequests);
+      subscribableQueue = new _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_3__["default"](queue);
+      initialized = true;
+    }
+    return Promise.resolve();
+  },
+  [_types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerMsgType.CREATE_LOADER]: async ({
+    path,
+    options
+  }) => {
+    const pathString = Array.isArray(path) ? path[0] : path;
+    const fileType = options?.fileType || (0,_loaders_index_js__WEBPACK_IMPORTED_MODULE_1__.pathToFileType)(pathString);
+    copyOnLoad = fileType === _loaders_index_js__WEBPACK_IMPORTED_MODULE_1__.VolumeFileFormat.JSON;
+    loader = await (0,_loaders_index_js__WEBPACK_IMPORTED_MODULE_1__.createVolumeLoader)(path, {
+      ...options,
+      cache,
+      queue: subscribableQueue
+    });
+    return loader !== undefined;
+  },
+  [_types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerMsgType.CREATE_VOLUME]: async loadSpec => {
+    if (loader === undefined) {
+      throw new Error("No loader created");
+    }
+    return await loader.createImageInfo((0,_util_js__WEBPACK_IMPORTED_MODULE_5__.rebuildLoadSpec)(loadSpec));
+  },
+  [_types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerMsgType.LOAD_DIMS]: async loadSpec => {
+    if (loader === undefined) {
+      throw new Error("No loader created");
+    }
+    return await loader.loadDims((0,_util_js__WEBPACK_IMPORTED_MODULE_5__.rebuildLoadSpec)(loadSpec));
+  },
+  [_types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerMsgType.LOAD_VOLUME_DATA]: async ({
+    imageInfo,
+    loadSpec,
+    loaderId,
+    loadId
+  }) => {
+    if (loader === undefined) {
+      throw new Error("No loader created");
+    }
+    return await loader.loadRawChannelData((0,_util_js__WEBPACK_IMPORTED_MODULE_5__.rebuildImageInfo)(imageInfo), (0,_util_js__WEBPACK_IMPORTED_MODULE_5__.rebuildLoadSpec)(loadSpec), (channelIndex, data, ranges, atlasDims) => {
+      const message = {
+        responseResult: _types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerResponseResult.EVENT,
+        loaderId,
+        loadId,
+        channelIndex,
+        data,
+        ranges,
+        atlasDims
+      };
+      const dataTransfers = data.map(d => d.buffer);
+      self.postMessage(message, copyOnLoad ? [] : dataTransfers);
+    });
+  },
+  [_types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS]: directions => {
+    // Silently does nothing if the loader isn't an `OMEZarrLoader`
+    loader?.setPrefetchPriority(directions);
+    return Promise.resolve();
+  },
+  [_types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING]: syncChannels => {
+    loader?.syncMultichannelLoading(syncChannels);
+    return Promise.resolve();
   }
-  return Promise.resolve();
-}), _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.CREATE_LOADER, function () {
-  var _ref3 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee(_ref2) {
-    var path, options, pathString, fileType;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function _callee$(_context) {
-      while (1) switch (_context.prev = _context.next) {
-        case 0:
-          path = _ref2.path, options = _ref2.options;
-          pathString = Array.isArray(path) ? path[0] : path;
-          fileType = (options === null || options === void 0 ? void 0 : options.fileType) || (0,_loaders_index_js__WEBPACK_IMPORTED_MODULE_4__.pathToFileType)(pathString);
-          copyOnLoad = fileType === _loaders_index_js__WEBPACK_IMPORTED_MODULE_4__.VolumeFileFormat.JSON;
-          _context.next = 6;
-          return (0,_loaders_index_js__WEBPACK_IMPORTED_MODULE_4__.createVolumeLoader)(path, _objectSpread(_objectSpread({}, options), {}, {
-            cache: cache,
-            queue: subscribableQueue
-          }));
-        case 6:
-          loader = _context.sent;
-          return _context.abrupt("return", loader !== undefined);
-        case 8:
-        case "end":
-          return _context.stop();
-      }
-    }, _callee);
-  }));
-  return function (_x) {
-    return _ref3.apply(this, arguments);
-  };
-}()), _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.CREATE_VOLUME, function () {
-  var _ref4 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee2(loadSpec) {
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function _callee2$(_context2) {
-      while (1) switch (_context2.prev = _context2.next) {
-        case 0:
-          if (!(loader === undefined)) {
-            _context2.next = 2;
-            break;
-          }
-          throw new Error("No loader created");
-        case 2:
-          _context2.next = 4;
-          return loader.createImageInfo((0,_util_js__WEBPACK_IMPORTED_MODULE_8__.rebuildLoadSpec)(loadSpec));
-        case 4:
-          return _context2.abrupt("return", _context2.sent);
-        case 5:
-        case "end":
-          return _context2.stop();
-      }
-    }, _callee2);
-  }));
-  return function (_x2) {
-    return _ref4.apply(this, arguments);
-  };
-}()), _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.LOAD_DIMS, function () {
-  var _ref5 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee3(loadSpec) {
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function _callee3$(_context3) {
-      while (1) switch (_context3.prev = _context3.next) {
-        case 0:
-          if (!(loader === undefined)) {
-            _context3.next = 2;
-            break;
-          }
-          throw new Error("No loader created");
-        case 2:
-          _context3.next = 4;
-          return loader.loadDims((0,_util_js__WEBPACK_IMPORTED_MODULE_8__.rebuildLoadSpec)(loadSpec));
-        case 4:
-          return _context3.abrupt("return", _context3.sent);
-        case 5:
-        case "end":
-          return _context3.stop();
-      }
-    }, _callee3);
-  }));
-  return function (_x3) {
-    return _ref5.apply(this, arguments);
-  };
-}()), _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.LOAD_VOLUME_DATA, function () {
-  var _ref7 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee4(_ref6) {
-    var imageInfo, loadSpec, loaderId, loadId;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function _callee4$(_context4) {
-      while (1) switch (_context4.prev = _context4.next) {
-        case 0:
-          imageInfo = _ref6.imageInfo, loadSpec = _ref6.loadSpec, loaderId = _ref6.loaderId, loadId = _ref6.loadId;
-          if (!(loader === undefined)) {
-            _context4.next = 3;
-            break;
-          }
-          throw new Error("No loader created");
-        case 3:
-          _context4.next = 5;
-          return loader.loadRawChannelData((0,_util_js__WEBPACK_IMPORTED_MODULE_8__.rebuildImageInfo)(imageInfo), (0,_util_js__WEBPACK_IMPORTED_MODULE_8__.rebuildLoadSpec)(loadSpec), function (channelIndex, data, ranges, atlasDims) {
-            var message = {
-              responseResult: _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerResponseResult.EVENT,
-              loaderId: loaderId,
-              loadId: loadId,
-              channelIndex: channelIndex,
-              data: data,
-              ranges: ranges,
-              atlasDims: atlasDims
-            };
-            var dataTransfers = data.map(function (d) {
-              return d.buffer;
-            });
-            self.postMessage(message, copyOnLoad ? [] : dataTransfers);
-          });
-        case 5:
-          return _context4.abrupt("return", _context4.sent);
-        case 6:
-        case "end":
-          return _context4.stop();
-      }
-    }, _callee4);
-  }));
-  return function (_x4) {
-    return _ref7.apply(this, arguments);
-  };
-}()), _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, function (directions) {
-  var _loader;
-  // Silently does nothing if the loader isn't an `OMEZarrLoader`
-  (_loader = loader) === null || _loader === void 0 || _loader.setPrefetchPriority(directions);
-  return Promise.resolve();
-}), _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, function (syncChannels) {
-  var _loader2;
-  (_loader2 = loader) === null || _loader2 === void 0 || _loader2.syncMultichannelLoading(syncChannels);
-  return Promise.resolve();
-});
-self.onmessage = /*#__PURE__*/function () {
-  var _ref9 = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_1__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().mark(function _callee5(_ref8) {
-    var data, msgId, type, payload, message, response;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_2___default().wrap(function _callee5$(_context5) {
-      while (1) switch (_context5.prev = _context5.next) {
-        case 0:
-          data = _ref8.data;
-          msgId = data.msgId, type = data.type, payload = data.payload;
-          _context5.prev = 2;
-          _context5.next = 5;
-          return messageHandlers[type](payload);
-        case 5:
-          response = _context5.sent;
-          message = {
-            responseResult: _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerResponseResult.SUCCESS,
-            msgId: msgId,
-            type: type,
-            payload: response
-          };
-          _context5.next = 12;
-          break;
-        case 9:
-          _context5.prev = 9;
-          _context5.t0 = _context5["catch"](2);
-          message = {
-            responseResult: _types_js__WEBPACK_IMPORTED_MODULE_7__.WorkerResponseResult.ERROR,
-            msgId: msgId,
-            type: type,
-            payload: _context5.t0.message
-          };
-        case 12:
-          self.postMessage(message);
-        case 13:
-        case "end":
-          return _context5.stop();
-      }
-    }, _callee5, null, [[2, 9]]);
-  }));
-  return function (_x5) {
-    return _ref9.apply(this, arguments);
-  };
-}();
+};
+self.onmessage = async ({
+  data
+}) => {
+  const {
+    msgId,
+    type,
+    payload
+  } = data;
+  let message;
+  try {
+    const response = await messageHandlers[type](payload);
+    message = {
+      responseResult: _types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerResponseResult.SUCCESS,
+      msgId,
+      type,
+      payload: response
+    };
+  } catch (e) {
+    message = {
+      responseResult: _types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerResponseResult.ERROR,
+      msgId,
+      type,
+      payload: e.message
+    };
+  }
+  self.postMessage(message);
+};
 
 /***/ }),
 
@@ -5589,7 +4187,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   WorkerResponseResult: () => (/* binding */ WorkerResponseResult)
 /* harmony export */ });
 /** The types of requests that can be made to the worker. Mostly corresponds to methods on `IVolumeLoader`. */
-var WorkerMsgType = /*#__PURE__*/function (WorkerMsgType) {
+let WorkerMsgType = /*#__PURE__*/function (WorkerMsgType) {
   WorkerMsgType[WorkerMsgType["INIT"] = 0] = "INIT";
   WorkerMsgType[WorkerMsgType["CREATE_LOADER"] = 1] = "CREATE_LOADER";
   WorkerMsgType[WorkerMsgType["CREATE_VOLUME"] = 2] = "CREATE_VOLUME";
@@ -5601,7 +4199,7 @@ var WorkerMsgType = /*#__PURE__*/function (WorkerMsgType) {
 }({});
 
 /** The kind of response a worker can return - `SUCCESS`, `ERROR`, or `EVENT`. */
-var WorkerResponseResult = /*#__PURE__*/function (WorkerResponseResult) {
+let WorkerResponseResult = /*#__PURE__*/function (WorkerResponseResult) {
   WorkerResponseResult[WorkerResponseResult["SUCCESS"] = 0] = "SUCCESS";
   WorkerResponseResult[WorkerResponseResult["ERROR"] = 1] = "ERROR";
   WorkerResponseResult[WorkerResponseResult["EVENT"] = 2] = "EVENT";
@@ -5634,33 +4232,31 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   rebuildImageInfo: () => (/* binding */ rebuildImageInfo),
 /* harmony export */   rebuildLoadSpec: () => (/* binding */ rebuildLoadSpec)
 /* harmony export */ });
-/* harmony import */ var _babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/defineProperty */ "./node_modules/@babel/runtime/helpers/esm/defineProperty.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-
-function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { (0,_babel_runtime_helpers_defineProperty__WEBPACK_IMPORTED_MODULE_0__["default"])(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
 /** Recreates a `LoadSpec` that has just been sent to/from a worker to restore three.js object prototypes */
 function rebuildLoadSpec(spec) {
-  return _objectSpread(_objectSpread({}, spec), {}, {
-    subregion: new three__WEBPACK_IMPORTED_MODULE_1__.Box3(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3().copy(spec.subregion.min), new three__WEBPACK_IMPORTED_MODULE_1__.Vector3().copy(spec.subregion.max))
-  });
+  return {
+    ...spec,
+    subregion: new three__WEBPACK_IMPORTED_MODULE_0__.Box3(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(spec.subregion.min), new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(spec.subregion.max))
+  };
 }
 
 /** Recreates an `ImageInfo` that has just been sent to/from a worker to restore three.js object prototypes */
 function rebuildImageInfo(imageInfo) {
-  return _objectSpread(_objectSpread({}, imageInfo), {}, {
-    originalSize: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3().copy(imageInfo.originalSize),
-    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_1__.Vector2().copy(imageInfo.atlasTileDims),
-    volumeSize: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3().copy(imageInfo.volumeSize),
-    subregionSize: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3().copy(imageInfo.subregionSize),
-    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3().copy(imageInfo.subregionOffset),
-    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3().copy(imageInfo.physicalPixelSize),
+  return {
+    ...imageInfo,
+    originalSize: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(imageInfo.originalSize),
+    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_0__.Vector2().copy(imageInfo.atlasTileDims),
+    volumeSize: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(imageInfo.volumeSize),
+    subregionSize: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(imageInfo.subregionSize),
+    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(imageInfo.subregionOffset),
+    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(imageInfo.physicalPixelSize),
     transform: {
-      translation: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3().copy(imageInfo.transform.translation),
-      rotation: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3().copy(imageInfo.transform.rotation)
+      translation: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(imageInfo.transform.translation),
+      rotation: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(imageInfo.transform.rotation)
     }
-  });
+  };
 }
 
 /***/ }),
@@ -5738,7 +4334,7 @@ function rebuildImageInfo(imageInfo) {
 /******/ 	__webpack_require__.x = () => {
 /******/ 		// Load entry module and return exports
 /******/ 		// This entry module depends on other loaded chunks and execution need to be delayed
-/******/ 		var __webpack_exports__ = __webpack_require__.O(undefined, ["vendors-node_modules_babel_runtime_regenerator_index_js-node_modules_babel_runtime_helpers_es-31f4f7","vendors-node_modules_babel_runtime_helpers_esm_classCallCheck_js-node_modules_babel_runtime_h-896aaa"], () => (__webpack_require__("./src/workers/VolumeLoadWorker.ts")))
+/******/ 		var __webpack_exports__ = __webpack_require__.O(undefined, ["vendors-node_modules_geotiff_dist-module_geotiff_js","vendors-node_modules_zarrita_core_dist_src_open_js-node_modules_zarrita_indexing_dist_src_ops-e78182"], () => (__webpack_require__("./src/workers/VolumeLoadWorker.ts")))
 /******/ 		__webpack_exports__ = __webpack_require__.O(__webpack_exports__);
 /******/ 		return __webpack_exports__;
 /******/ 	};
@@ -5773,18 +4369,6 @@ function rebuildImageInfo(imageInfo) {
 /******/ 				}
 /******/ 			}
 /******/ 			return result;
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/compat get default export */
-/******/ 	(() => {
-/******/ 		// getDefaultExport function for compatibility with non-harmony modules
-/******/ 		__webpack_require__.n = (module) => {
-/******/ 			var getter = module && module.__esModule ?
-/******/ 				() => (module['default']) :
-/******/ 				() => (module);
-/******/ 			__webpack_require__.d(getter, { a: getter });
-/******/ 			return getter;
 /******/ 		};
 /******/ 	})();
 /******/ 	
@@ -5919,8 +4503,8 @@ function rebuildImageInfo(imageInfo) {
 /******/ 		var next = __webpack_require__.x;
 /******/ 		__webpack_require__.x = () => {
 /******/ 			return Promise.all([
-/******/ 				__webpack_require__.e("vendors-node_modules_babel_runtime_regenerator_index_js-node_modules_babel_runtime_helpers_es-31f4f7"),
-/******/ 				__webpack_require__.e("vendors-node_modules_babel_runtime_helpers_esm_classCallCheck_js-node_modules_babel_runtime_h-896aaa")
+/******/ 				__webpack_require__.e("vendors-node_modules_geotiff_dist-module_geotiff_js"),
+/******/ 				__webpack_require__.e("vendors-node_modules_zarrita_core_dist_src_open_js-node_modules_zarrita_indexing_dist_src_ops-e78182")
 /******/ 			]).then(next);
 /******/ 		};
 /******/ 	})();

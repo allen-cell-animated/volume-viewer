@@ -9,17 +9,12 @@
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ "./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @babel/runtime/regenerator */ "./node_modules/@babel/runtime/regenerator/index.js");
-/* harmony import */ var _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1__);
-/* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
-
-
+/* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
 
 // from TIFF
-var SAMPLEFORMAT_UINT = 1;
-var SAMPLEFORMAT_INT = 2;
-var SAMPLEFORMAT_IEEEFP = 3;
+const SAMPLEFORMAT_UINT = 1;
+const SAMPLEFORMAT_INT = 2;
+const SAMPLEFORMAT_IEEEFP = 3;
 function castToArray(buf, bytesPerPixel, sampleFormat) {
   if (sampleFormat === SAMPLEFORMAT_IEEEFP) {
     if (bytesPerPixel === 4) {
@@ -42,122 +37,92 @@ function castToArray(buf, bytesPerPixel, sampleFormat) {
       return new Uint32Array(buf);
     }
   }
-  console.error("TIFF Worker: unsupported sample format ".concat(sampleFormat, " and bytes per pixel ").concat(bytesPerPixel));
+  console.error(`TIFF Worker: unsupported sample format ${sampleFormat} and bytes per pixel ${bytesPerPixel}`);
   return new Uint8Array(buf);
 }
-self.onmessage = /*#__PURE__*/function () {
-  var _ref = (0,_babel_runtime_helpers_asyncToGenerator__WEBPACK_IMPORTED_MODULE_0__["default"])( /*#__PURE__*/_babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().mark(function _callee(e) {
-    var channelIndex, tilesizex, tilesizey, sizez, sizec, dimensionOrder, bytesPerSample, tiff, startindex, incrementz, image, sampleFormat, bytesPerPixel, buffer, u8, imageIndex, zslice, _image, result, arrayresult, offset, src, chmin, chmax, j, val, out, _j, results;
-    return _babel_runtime_regenerator__WEBPACK_IMPORTED_MODULE_1___default().wrap(function _callee$(_context) {
-      while (1) switch (_context.prev = _context.next) {
-        case 0:
-          // TODO index images by time
-          // const time = e.data.time;
-          channelIndex = e.data.channel;
-          tilesizex = e.data.tilesizex;
-          tilesizey = e.data.tilesizey;
-          sizez = e.data.sizez;
-          sizec = e.data.sizec;
-          dimensionOrder = e.data.dimensionOrder;
-          bytesPerSample = e.data.bytesPerSample;
-          _context.next = 9;
-          return (0,geotiff__WEBPACK_IMPORTED_MODULE_2__.fromUrl)(e.data.url, {
-            allowFullFile: true
-          });
-        case 9:
-          tiff = _context.sent;
-          // load the images of this channel from the tiff
-          // today assume TCZYX so the slices are already in order.
-          startindex = 0;
-          incrementz = 1;
-          if (dimensionOrder === "XYZCT") {
-            // we have XYZCT which is the "good" case
-            // TCZYX
-            startindex = sizez * channelIndex;
-            incrementz = 1;
-          } else if (dimensionOrder === "XYCZT") {
-            // we have to loop differently to increment channels
-            // TZCYX
-            startindex = channelIndex;
-            incrementz = sizec;
-          }
+self.onmessage = async function (e) {
+  // TODO index images by time
+  // const time = e.data.time;
 
-          // huge assumption: planes are in a particular order relative to z and c
+  const channelIndex = e.data.channel;
+  const tilesizex = e.data.tilesizex;
+  const tilesizey = e.data.tilesizey;
+  const sizez = e.data.sizez;
+  const sizec = e.data.sizec;
+  const dimensionOrder = e.data.dimensionOrder;
+  const bytesPerSample = e.data.bytesPerSample;
+  const tiff = await (0,geotiff__WEBPACK_IMPORTED_MODULE_0__.fromUrl)(e.data.url, {
+    allowFullFile: true
+  });
 
-          // get first plane, to get some details about the image
-          _context.next = 15;
-          return tiff.getImage(startindex);
-        case 15:
-          image = _context.sent;
-          // on first image, set up some stuff:
-          sampleFormat = image.getSampleFormat();
-          bytesPerPixel = image.getBytesPerPixel(); // allocate a buffer for one channel
-          buffer = new ArrayBuffer(tilesizex * tilesizey * sizez * bytesPerPixel);
-          u8 = new Uint8Array(buffer);
-          imageIndex = startindex, zslice = 0;
-        case 21:
-          if (!(zslice < sizez)) {
-            _context.next = 34;
-            break;
-          }
-          _context.next = 24;
-          return tiff.getImage(imageIndex);
-        case 24:
-          _image = _context.sent;
-          _context.next = 27;
-          return _image.readRasters({
-            width: tilesizex,
-            height: tilesizey
-          });
-        case 27:
-          result = _context.sent;
-          arrayresult = Array.isArray(result) ? result[0] : result; // deposit in full channel array in the right place
-          offset = zslice * tilesizex * tilesizey;
-          if (arrayresult.BYTES_PER_ELEMENT > 4) {
-            console.log("byte size not supported yet");
-          } else if (arrayresult.BYTES_PER_ELEMENT !== bytesPerSample) {
-            console.log("tiff bytes per element mismatch with OME metadata");
-          } else {
-            u8.set(new Uint8Array(arrayresult.buffer), offset * arrayresult.BYTES_PER_ELEMENT);
-          }
-        case 31:
-          imageIndex += incrementz, ++zslice;
-          _context.next = 21;
-          break;
-        case 34:
-          // all slices collected, now resample to 8 bits full data range
-          src = castToArray(buffer, bytesPerPixel, sampleFormat);
-          chmin = src[0];
-          chmax = src[0];
-          for (j = 0; j < src.length; ++j) {
-            val = src[j];
-            if (val < chmin) {
-              chmin = val;
-            }
-            if (val > chmax) {
-              chmax = val;
-            }
-          }
-          out = new Uint8Array(src.length);
-          for (_j = 0; _j < src.length; ++_j) {
-            out[_j] = (src[_j] - chmin) / (chmax - chmin) * 255;
-          }
-          results = {
-            data: out,
-            channel: channelIndex,
-            range: [chmin, chmax]
-          };
-          self.postMessage(results, [results.data.buffer]);
-        case 42:
-        case "end":
-          return _context.stop();
-      }
-    }, _callee);
-  }));
-  return function (_x) {
-    return _ref.apply(this, arguments);
+  // load the images of this channel from the tiff
+  // today assume TCZYX so the slices are already in order.
+  let startindex = 0;
+  let incrementz = 1;
+  if (dimensionOrder === "XYZCT") {
+    // we have XYZCT which is the "good" case
+    // TCZYX
+    startindex = sizez * channelIndex;
+    incrementz = 1;
+  } else if (dimensionOrder === "XYCZT") {
+    // we have to loop differently to increment channels
+    // TZCYX
+    startindex = channelIndex;
+    incrementz = sizec;
+  }
+
+  // huge assumption: planes are in a particular order relative to z and c
+
+  // get first plane, to get some details about the image
+  const image = await tiff.getImage(startindex);
+  // on first image, set up some stuff:
+  const sampleFormat = image.getSampleFormat();
+  const bytesPerPixel = image.getBytesPerPixel();
+  // allocate a buffer for one channel
+  const buffer = new ArrayBuffer(tilesizex * tilesizey * sizez * bytesPerPixel);
+  const u8 = new Uint8Array(buffer);
+  for (let imageIndex = startindex, zslice = 0; zslice < sizez; imageIndex += incrementz, ++zslice) {
+    const image = await tiff.getImage(imageIndex);
+    // download and downsample on client
+    const result = await image.readRasters({
+      width: tilesizex,
+      height: tilesizey
+    });
+    const arrayresult = Array.isArray(result) ? result[0] : result;
+    // deposit in full channel array in the right place
+    const offset = zslice * tilesizex * tilesizey;
+    if (arrayresult.BYTES_PER_ELEMENT > 4) {
+      console.log("byte size not supported yet");
+    } else if (arrayresult.BYTES_PER_ELEMENT !== bytesPerSample) {
+      console.log("tiff bytes per element mismatch with OME metadata");
+    } else {
+      u8.set(new Uint8Array(arrayresult.buffer), offset * arrayresult.BYTES_PER_ELEMENT);
+    }
+  }
+  // all slices collected, now resample to 8 bits full data range
+  const src = castToArray(buffer, bytesPerPixel, sampleFormat);
+  let chmin = src[0];
+  let chmax = src[0];
+  for (let j = 0; j < src.length; ++j) {
+    const val = src[j];
+    if (val < chmin) {
+      chmin = val;
+    }
+    if (val > chmax) {
+      chmax = val;
+    }
+  }
+  const out = new Uint8Array(src.length);
+  for (let j = 0; j < src.length; ++j) {
+    out[j] = (src[j] - chmin) / (chmax - chmin) * 255;
+  }
+  const results = {
+    data: out,
+    channel: channelIndex,
+    range: [chmin, chmax]
   };
-}();
+  self.postMessage(results, [results.data.buffer]);
+};
 
 /***/ }),
 
@@ -234,7 +199,7 @@ self.onmessage = /*#__PURE__*/function () {
 /******/ 	__webpack_require__.x = () => {
 /******/ 		// Load entry module and return exports
 /******/ 		// This entry module depends on other loaded chunks and execution need to be delayed
-/******/ 		var __webpack_exports__ = __webpack_require__.O(undefined, ["vendors-node_modules_babel_runtime_regenerator_index_js-node_modules_babel_runtime_helpers_es-31f4f7"], () => (__webpack_require__("./src/workers/FetchTiffWorker.ts")))
+/******/ 		var __webpack_exports__ = __webpack_require__.O(undefined, ["vendors-node_modules_geotiff_dist-module_geotiff_js"], () => (__webpack_require__("./src/workers/FetchTiffWorker.ts")))
 /******/ 		__webpack_exports__ = __webpack_require__.O(__webpack_exports__);
 /******/ 		return __webpack_exports__;
 /******/ 	};
@@ -269,18 +234,6 @@ self.onmessage = /*#__PURE__*/function () {
 /******/ 				}
 /******/ 			}
 /******/ 			return result;
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/compat get default export */
-/******/ 	(() => {
-/******/ 		// getDefaultExport function for compatibility with non-harmony modules
-/******/ 		__webpack_require__.n = (module) => {
-/******/ 			var getter = module && module.__esModule ?
-/******/ 				() => (module['default']) :
-/******/ 				() => (module);
-/******/ 			__webpack_require__.d(getter, { a: getter });
-/******/ 			return getter;
 /******/ 		};
 /******/ 	})();
 /******/ 	
@@ -414,7 +367,7 @@ self.onmessage = /*#__PURE__*/function () {
 /******/ 	(() => {
 /******/ 		var next = __webpack_require__.x;
 /******/ 		__webpack_require__.x = () => {
-/******/ 			return __webpack_require__.e("vendors-node_modules_babel_runtime_regenerator_index_js-node_modules_babel_runtime_helpers_es-31f4f7").then(next);
+/******/ 			return __webpack_require__.e("vendors-node_modules_geotiff_dist-module_geotiff_js").then(next);
 /******/ 		};
 /******/ 	})();
 /******/ 	
