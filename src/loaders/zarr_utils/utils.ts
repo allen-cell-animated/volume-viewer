@@ -1,4 +1,5 @@
-import {
+import { VolumeLoadErrorType, VolumeLoadError } from "../VolumeLoadError.js";
+import type {
   NumericZarrArray,
   OMEAxis,
   OMECoordinateTransformation,
@@ -20,13 +21,18 @@ export function remapAxesToTCZYX(axes: OMEAxis[]): TCZYX<number> {
     if (axisIdx > -1) {
       axesTCZYX[axisIdx] = idx;
     } else {
-      console.error("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
+      throw new VolumeLoadError(`Unrecognized axis in zarr: ${axis.name}`, {
+        type: VolumeLoadErrorType.INVALID_METADATA,
+      });
     }
   });
 
   // it is possible that Z might not exist but we require X and Y at least.
-  if (axesTCZYX[3] === -1 || axesTCZYX[4] === -1) {
-    console.error("ERROR: zarr loader expects a y and an x axis.");
+  const noXAxis = axesTCZYX[4] === -1;
+  if (noXAxis || axesTCZYX[3] === -1) {
+    throw new VolumeLoadError(`Did not find ${noXAxis ? "an X" : "a Y"} axis in zarr`, {
+      type: VolumeLoadErrorType.INVALID_METADATA,
+    });
   }
 
   return axesTCZYX;
@@ -40,7 +46,9 @@ export function orderByDimension<T>(valsTCZYX: TCZYX<T>, orderTCZYX: TCZYX<numbe
   orderTCZYX.forEach((val, idx) => {
     if (val >= 0) {
       if (val >= specLen) {
-        throw new Error("Unexpected axis index");
+        throw new VolumeLoadError(`Unexpected axis index in zarr: ${val}`, {
+          type: VolumeLoadErrorType.INVALID_METADATA,
+        });
       }
       result[val] = valsTCZYX[idx];
     }
@@ -56,7 +64,9 @@ export function orderByTCZYX<T>(valsDimension: T[], orderTCZYX: TCZYX<number>, d
   orderTCZYX.forEach((val, idx) => {
     if (val >= 0) {
       if (val >= valsDimension.length) {
-        throw new Error("Unexpected axis index");
+        throw new VolumeLoadError(`Unexpected axis index in zarr: ${val}`, {
+          type: VolumeLoadErrorType.INVALID_METADATA,
+        });
       }
       result[idx] = valsDimension[val];
     }
@@ -70,7 +80,7 @@ export function getScale(dataset: OMEDataset | OMEMultiscale, orderTCZYX: TCZYX<
   const transforms = dataset.coordinateTransformations;
 
   if (transforms === undefined) {
-    console.error("ERROR: no coordinate transformations for scale level");
+    console.warn("WARNING: no coordinate transformations for scale level");
     return [1, 1, 1, 1, 1];
   }
 
@@ -82,7 +92,7 @@ export function getScale(dataset: OMEDataset | OMEMultiscale, orderTCZYX: TCZYX<
   // but there must be only one of type "scale".
   const scaleTransform = transforms.find(isScaleTransform);
   if (!scaleTransform) {
-    console.error(`ERROR: no coordinate transformation of type "scale" for scale level`);
+    console.warn(`WARNING: no coordinate transformation of type "scale" for scale level`);
     return [1, 1, 1, 1, 1];
   }
 
@@ -163,8 +173,11 @@ export function matchSourceScaleLevels(sources: ZarrSource[]): void {
       if (!ordering) {
         // Arrays are equal, or they are uncomparable
         if (ordering === undefined) {
-          throw new Error("Incompatible zarr arrays: pixel dimensions are mismatched");
+          throw new VolumeLoadError("Incompatible zarr arrays: pixel dimensions are mismatched", {
+            type: VolumeLoadErrorType.INVALID_MULTI_SOURCE_ZARR,
+          });
         }
+
         // Now we know the arrays are equal, but they may still be invalid to match up because...
         // ...they have different scale transformations
         if (!scaleTransformsAreEqual(smallestSrc, scaleIndexes[smallestIdx], currentSrc, scaleIndexes[currentIdx])) {
@@ -173,11 +186,14 @@ export function matchSourceScaleLevels(sources: ZarrSource[]): void {
           // Ideally scale*arraysize=physical size is really the quantity that should be equal, for combining two volume data sets as channels.
           console.warn("Incompatible zarr arrays: scale levels of equal size have different scale transformations");
         }
+
         // ...they have different numbers of timesteps
         const largestT = smallestSrc.axesTCZYX[0] > -1 ? smallestArr.shape[smallestSrc.axesTCZYX[0]] : 1;
         const currentT = currentSrc.axesTCZYX[0] > -1 ? currentArr.shape[currentSrc.axesTCZYX[0]] : 1;
         if (largestT !== currentT) {
-          throw new Error("Incompatible zarr arrays: different numbers of timesteps");
+          throw new VolumeLoadError("Incompatible zarr arrays: different numbers of timesteps", {
+            type: VolumeLoadErrorType.INVALID_MULTI_SOURCE_ZARR,
+          });
         }
       } else {
         allEqual = false;
@@ -212,7 +228,9 @@ export function matchSourceScaleLevels(sources: ZarrSource[]): void {
   }
 
   if (sources[0].scaleLevels.length === 0) {
-    throw new Error("Incompatible zarr arrays: no sets of scale levels found that matched in all sources");
+    throw new VolumeLoadError("Incompatible zarr arrays: no sets of scale levels found that matched in all sources", {
+      type: VolumeLoadErrorType.INVALID_MULTI_SOURCE_ZARR,
+    });
   }
 
   for (let i = 0; i < sources.length; i++) {
