@@ -35,24 +35,34 @@ function getOME(xml: string): Element {
 class OMEDims {
   sizex = 0;
   sizey = 0;
-  sizez = 0;
-  sizec = 0;
-  sizet = 0;
+  sizez = 1;
+  sizec = 1;
+  sizet = 1;
   unit = "";
   pixeltype = "";
   dimensionorder = "";
-  pixelsizex = 0;
-  pixelsizey = 0;
-  pixelsizez = 0;
+  pixelsizex = 1;
+  pixelsizey = 1;
+  pixelsizez = 1;
   channelnames: string[] = [];
+}
+
+function getAttributeOrError(el: Element, attr: string): string {
+  const val = el.getAttribute(attr);
+  if (val === null) {
+    throw new VolumeLoadError(`Missing attribute ${attr} in OME-TIFF metadata`, {
+      type: VolumeLoadErrorType.INVALID_METADATA,
+    });
+  }
+  return val;
 }
 
 function getOMEDims(imageEl: Element): OMEDims {
   const dims = new OMEDims();
 
   const pixelsEl = imageEl.getElementsByTagName("Pixels")[0];
-  dims.sizex = Number(pixelsEl.getAttribute("SizeX"));
-  dims.sizey = Number(pixelsEl.getAttribute("SizeY"));
+  dims.sizex = Number(getAttributeOrError(pixelsEl, "SizeX"));
+  dims.sizey = Number(getAttributeOrError(pixelsEl, "SizeY"));
   dims.sizez = Number(pixelsEl.getAttribute("SizeZ"));
   dims.sizec = Number(pixelsEl.getAttribute("SizeC"));
   dims.sizet = Number(pixelsEl.getAttribute("SizeT"));
