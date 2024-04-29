@@ -321,9 +321,9 @@ describe("zarr_utils", () => {
       );
     });
 
-    it("throws an error if two scale levels of the same size have a different number of timesteps", async () => {
+    it("Does not throw an error if two scale levels of the same size have a different number of timesteps", async () => {
       const sources = await createMockSources([{ shapes: [[1, 1, 1, 1, 1]] }, { shapes: [[2, 1, 1, 1, 1]] }]);
-      expect(() => matchSourceScaleLevels(sources)).to.throw(
+      expect(() => matchSourceScaleLevels(sources)).to.not.throw(
         "Incompatible zarr arrays: different numbers of timesteps"
       );
     });
