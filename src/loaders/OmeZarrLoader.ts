@@ -44,6 +44,7 @@ import type {
   NumericZarrArray,
 } from "./zarr_utils/types.js";
 import { VolumeLoadError, VolumeLoadErrorType, wrapVolumeLoadError } from "./VolumeLoadError.js";
+import { validateOMEZarrMetadata } from "./zarr_utils/validation.js";
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
@@ -169,15 +170,16 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       const group = await zarr
         .open(root, { kind: "group" })
         .catch(wrapVolumeLoadError(`Failed to open OME-Zarr data at ${url}`, VolumeLoadErrorType.NOT_FOUND));
-      // TODO: validate metadata and throw a VolumeLoadError if it's invalid
-      const { multiscales, omero } = group.attrs as OMEZarrMetadata;
 
       // Pick scene (multiscale)
       let scene = scenesArr[Math.min(i, scenesArr.length - 1)];
-      if (scene > multiscales.length) {
+      if (scene > group.attrs.multiscales?.length) {
         console.warn(`WARNING: OMEZarrLoader: scene ${scene} is invalid. Using scene 0.`);
         scene = 0;
       }
+
+      validateOMEZarrMetadata(group.attrs, scene, url);
+      const { multiscales, omero } = group.attrs as OMEZarrMetadata;
       const multiscaleMetadata = multiscales[scene];
 
       // Open all scale levels of multiscale
