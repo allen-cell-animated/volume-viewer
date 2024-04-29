@@ -29,6 +29,7 @@ import WrappedStore from "./zarr_utils/WrappedStore.js";
 import {
   getDimensionCount,
   getScale,
+  getSourceChannelNames,
   matchSourceScaleLevels,
   orderByDimension,
   orderByTCZYX,
@@ -348,14 +349,12 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     // Channel names is the other place where we have to check every source
     // Track which channel names we've seen so far, so that we can rename them to avoid name collisions
     const channelNamesMap = new Map<string, number>();
-    let unnamedChannelCount = 0;
-    const channelNames = this.sources.flatMap((src) =>
-      src.omeroMetadata.channels.map((ch) => {
-        let channelName = ch?.label;
-        if (channelName === undefined) {
-          channelName = `Channel ${unnamedChannelCount}`;
-          unnamedChannelCount++;
-        }
+    let channelOffset = 0;
+    const channelNames = this.sources.flatMap((src) => {
+      const sourceChannelNames = getSourceChannelNames(src, channelOffset);
+
+      // Resolve name collisions
+      const resolvedChannelNames = sourceChannelNames.map((channelName) => {
         const numMatchingChannels = channelNamesMap.get(channelName);
 
         if (numMatchingChannels !== undefined) {
@@ -366,8 +365,11 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
           channelNamesMap.set(channelName, 1);
           return channelName;
         }
-      })
-    );
+      });
+
+      channelOffset += sourceChannelNames.length;
+      return resolvedChannelNames;
+    });
 
     // for physicalPixelSize, we use the scale of the first level
     const scale5d = this.getScale(0);
