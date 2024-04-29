@@ -55,7 +55,7 @@ export type OMEDataset = {
   coordinateTransformations?: OMECoordinateTransformation[];
 };
 
-// https://ngff.openmicroscopy.org/latest/#multiscale-md
+/** https://ngff.openmicroscopy.org/latest/#multiscale-md */
 export type OMEMultiscale = {
   version?: string;
   name?: string;
@@ -66,7 +66,7 @@ export type OMEMultiscale = {
   metadata?: Record<string, unknown>;
 };
 
-// https://ngff.openmicroscopy.org/latest/#omero-md
+/** https://ngff.openmicroscopy.org/latest/#omero-md */
 export type OmeroTransitionalMetadata = {
   id: number;
   name: string;
