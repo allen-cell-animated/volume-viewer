@@ -309,7 +309,19 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const cLast = sourceLast.axesTCZYX[1];
     const lastHasC = cLast > -1;
     const numChannels = sourceLast.channelOffset + (lastHasC ? sourceLast.scaleLevels[levelToLoad].shape[cLast] : 1);
-    const times = hasT ? shapeLv[t] : 1;
+    // we need to make sure that the corresponding matched shapes
+    // use the min size of T
+    let times = 1;
+    if (hasT) {
+      times = shapeLv[t];
+      for (let i = 0; i < this.sources.length; i++) {
+        const shape = this.sources[i].scaleLevels[levelToLoad].shape;
+        if (shape[t] < times) {
+          console.warn("The number of time points is not consistent across sources: ", shape[t], times);
+          times = shape[t];
+        }
+      }
+    }
 
     if (!this.maxExtent) {
       this.maxExtent = loadSpec.subregion.clone();
