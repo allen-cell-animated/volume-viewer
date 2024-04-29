@@ -348,17 +348,23 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     // Channel names is the other place where we have to check every source
     // Track which channel names we've seen so far, so that we can rename them to avoid name collisions
     const channelNamesMap = new Map<string, number>();
+    let unnamedChannelCount = 0;
     const channelNames = this.sources.flatMap((src) =>
       src.omeroMetadata.channels.map((ch) => {
-        const numMatchingChannels = channelNamesMap.get(ch.label);
+        let channelName = ch?.label;
+        if (channelName === undefined) {
+          channelName = `Channel ${unnamedChannelCount}`;
+          unnamedChannelCount++;
+        }
+        const numMatchingChannels = channelNamesMap.get(channelName);
 
         if (numMatchingChannels !== undefined) {
           // If e.g. we've seen channel "Membrane" once before, rename this one to "Membrane (1)"
-          channelNamesMap.set(ch.label, numMatchingChannels + 1);
-          return `${ch.label} (${numMatchingChannels})`;
+          channelNamesMap.set(channelName, numMatchingChannels + 1);
+          return `${channelName} (${numMatchingChannels})`;
         } else {
-          channelNamesMap.set(ch.label, 1);
-          return ch.label;
+          channelNamesMap.set(channelName, 1);
+          return channelName;
         }
       })
     );
