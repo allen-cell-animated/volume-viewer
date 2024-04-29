@@ -80,7 +80,7 @@ export function getScale(dataset: OMEDataset | OMEMultiscale, orderTCZYX: TCZYX<
   const transforms = dataset.coordinateTransformations;
 
   if (transforms === undefined) {
-    console.warn("WARNING: no coordinate transformations for scale level");
+    console.warn("WARNING: OMEZarrLoader: no coordinate transformations for scale level.");
     return [1, 1, 1, 1, 1];
   }
 
@@ -92,7 +92,7 @@ export function getScale(dataset: OMEDataset | OMEMultiscale, orderTCZYX: TCZYX<
   // but there must be only one of type "scale".
   const scaleTransform = transforms.find(isScaleTransform);
   if (!scaleTransform) {
-    console.warn(`WARNING: no coordinate transformation of type "scale" for scale level`);
+    console.warn(`WARNING: OMEZarrLoader: no coordinate transformation of type "scale" for scale level.`);
     return [1, 1, 1, 1, 1];
   }
 
