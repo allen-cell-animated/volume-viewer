@@ -100,17 +100,13 @@ export function getScale(dataset: OMEDataset | OMEMultiscale, orderTCZYX: TCZYX<
   return orderByTCZYX(scale, orderTCZYX, 1);
 }
 
-/**
- * Generates a list of channel names from a zarr source. Accounts for potentially missing `omeroMetadata`.
- * Pass an optional `channelOffset` to offset indexes in automatically generated channel names (for multi-source zarr).
- * Does *not* resolve name collisions. TODO unit test.
- */
-export function getSourceChannelNames(src: ZarrSource, channelOffset = 0): string[] {
+/** Extracts channel names from a `ZarrSource`. Handles missing `omeroMetadata`. Does *not* resolve name collisions. */
+export function getSourceChannelNames(src: ZarrSource): string[] {
   if (src.omeroMetadata?.channels) {
-    return src.omeroMetadata.channels.map(({ label }, idx) => label ?? `Channel ${idx + channelOffset}`);
+    return src.omeroMetadata.channels.map(({ label }, idx) => label ?? `Channel ${idx + src.channelOffset}`);
   }
   const length = src.scaleLevels[0].shape[src.axesTCZYX[0]];
-  return Array.from({ length }, (_, idx) => `Channel ${idx + channelOffset}`);
+  return Array.from({ length }, (_, idx) => `Channel ${idx + src.channelOffset}`);
 }
 
 /**

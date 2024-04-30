@@ -210,7 +210,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     let channelCount = 0;
     for (const s of sources) {
       s.channelOffset = channelCount;
-      channelCount += s.omeroMetadata.channels.length;
+      channelCount += s.omeroMetadata?.channels.length ?? s.scaleLevels[0].shape[s.axesTCZYX[1]];
     }
     // Ensure the sizes of all sources' scale levels are matched up. See this function's docs for more.
     matchSourceScaleLevels(sources);
@@ -351,12 +351,11 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     // Channel names is the other place where we have to check every source
     // Track which channel names we've seen so far, so that we can rename them to avoid name collisions
     const channelNamesMap = new Map<string, number>();
-    let channelOffset = 0;
     const channelNames = this.sources.flatMap((src) => {
-      const sourceChannelNames = getSourceChannelNames(src, channelOffset);
+      const sourceChannelNames = getSourceChannelNames(src);
 
       // Resolve name collisions
-      const resolvedChannelNames = sourceChannelNames.map((channelName) => {
+      return sourceChannelNames.map((channelName) => {
         const numMatchingChannels = channelNamesMap.get(channelName);
 
         if (numMatchingChannels !== undefined) {
@@ -368,9 +367,6 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
           return channelName;
         }
       });
-
-      channelOffset += sourceChannelNames.length;
-      return resolvedChannelNames;
     });
 
     // for physicalPixelSize, we use the scale of the first level
@@ -379,7 +375,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const timeScale = hasT ? scale5d[t] : 1;
 
     const imgdata: ImageInfo = {
-      name: source0.omeroMetadata.name,
+      name: source0.omeroMetadata?.name || "Volume",
 
       originalSize: pxSize0,
       atlasTileDims,
