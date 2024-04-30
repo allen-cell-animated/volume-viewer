@@ -1,3 +1,5 @@
+import { serializeError } from "serialize-error";
+
 import VolumeCache from "../VolumeCache.js";
 import { VolumeFileFormat, createVolumeLoader, pathToFileType } from "../loaders/index.js";
 import { ThreadableVolumeLoader } from "../loaders/IVolumeLoader.js";
@@ -94,7 +96,7 @@ self.onmessage = async <T extends WorkerMsgType>({ data }: MessageEvent<WorkerRe
     const response = await messageHandlers[type](payload);
     message = { responseResult: WorkerResponseResult.SUCCESS, msgId, type, payload: response };
   } catch (e) {
-    message = { responseResult: WorkerResponseResult.ERROR, msgId, type, payload: (e as Error).message };
+    message = { responseResult: WorkerResponseResult.ERROR, msgId, type, payload: serializeError(e) };
   }
   self.postMessage(message);
 };

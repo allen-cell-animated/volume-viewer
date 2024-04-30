@@ -76,5 +76,5 @@ export type WorkerRequest<T extends WorkerMsgType> = WorkerMsgBase<T, WorkerRequ
 /** All valid types of worker responses: `SUCCESS` with a matching payload, `ERROR` with a message, or an `EVENT`. */
 export type WorkerResponse<T extends WorkerMsgType> =
   | ({ responseResult: WorkerResponseResult.SUCCESS } & WorkerMsgBase<T, WorkerResponsePayload<T>>)
-  | ({ responseResult: WorkerResponseResult.ERROR } & WorkerMsgBase<T, string>)
+  | ({ responseResult: WorkerResponseResult.ERROR } & WorkerMsgBase<T, unknown>)
   | ({ responseResult: WorkerResponseResult.EVENT } & ChannelLoadEvent);
