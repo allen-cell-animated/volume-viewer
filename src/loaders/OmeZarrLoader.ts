@@ -178,7 +178,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
         scene = 0;
       }
 
-      validateOMEZarrMetadata(group.attrs, scene, url);
+      validateOMEZarrMetadata(group.attrs, scene, urlsArr.length > 1 ? `Zarr source ${i}` : "Zarr");
       const { multiscales, omero } = group.attrs as OMEZarrMetadata;
       const multiscaleMetadata = multiscales[scene];
 
