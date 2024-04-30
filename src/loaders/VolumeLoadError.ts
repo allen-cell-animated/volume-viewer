@@ -21,6 +21,7 @@ export class VolumeLoadError extends Error {
   }
 }
 
+// TODO work out if we can get rid of these casts?
 errorConstructors.set("NodeNotFoundError", NodeNotFoundError as ErrorConstructor);
 errorConstructors.set("KeyError", KeyError as ErrorConstructor);
 errorConstructors.set("VolumeLoadError", VolumeLoadError as unknown as ErrorConstructor);
