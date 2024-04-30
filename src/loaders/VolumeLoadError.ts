@@ -21,8 +21,8 @@ export class VolumeLoadError extends Error {
   }
 }
 
-// serialize-errors only ever calls an error constructor with zero arguments. The required `ErrorConstructor`
-// type is a bit too restrictive - as long as the constructor can be called with 0 arguments it's fine.
+// serialize-error only ever calls an error constructor with zero arguments. The required `ErrorConstructor`
+// type is a bit too restrictive - as long as the constructor can be called with no arguments it's fine.
 errorConstructors.set("NodeNotFoundError", NodeNotFoundError as ErrorConstructor);
 errorConstructors.set("KeyError", KeyError as ErrorConstructor);
 errorConstructors.set("VolumeLoadError", VolumeLoadError as unknown as ErrorConstructor);
