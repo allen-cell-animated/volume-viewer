@@ -9,6 +9,15 @@ import type {
   ZarrSource,
 } from "./types.js";
 
+/** Extracts channel names from a `ZarrSource`. Handles missing `omeroMetadata`. Does *not* resolve name collisions. */
+export function getSourceChannelNames(src: ZarrSource): string[] {
+  if (src.omeroMetadata?.channels) {
+    return src.omeroMetadata.channels.map(({ label }, idx) => label ?? `Channel ${idx + src.channelOffset}`);
+  }
+  const length = src.scaleLevels[0].shape[src.axesTCZYX[1]];
+  return Array.from({ length }, (_, idx) => `Channel ${idx + src.channelOffset}`);
+}
+
 /** Turns `axesTCZYX` into the number of dimensions in the array */
 export const getDimensionCount = ([t, c, z]: TCZYX<number>) => 2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
 
@@ -98,15 +107,6 @@ export function getScale(dataset: OMEDataset | OMEMultiscale, orderTCZYX: TCZYX<
 
   const scale = scaleTransform.scale.slice();
   return orderByTCZYX(scale, orderTCZYX, 1);
-}
-
-/** Extracts channel names from a `ZarrSource`. Handles missing `omeroMetadata`. Does *not* resolve name collisions. */
-export function getSourceChannelNames(src: ZarrSource): string[] {
-  if (src.omeroMetadata?.channels) {
-    return src.omeroMetadata.channels.map(({ label }, idx) => label ?? `Channel ${idx + src.channelOffset}`);
-  }
-  const length = src.scaleLevels[0].shape[src.axesTCZYX[0]];
-  return Array.from({ length }, (_, idx) => `Channel ${idx + src.channelOffset}`);
 }
 
 /**
