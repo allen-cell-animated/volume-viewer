@@ -316,9 +316,10 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       times = shapeLv[t];
       for (let i = 0; i < this.sources.length; i++) {
         const shape = this.sources[i].scaleLevels[levelToLoad].shape;
-        if (shape[t] < times) {
-          console.warn("The number of time points is not consistent across sources: ", shape[t], times);
-          times = shape[t];
+        const tindex = this.sources[i].axesTCZYX[0];
+        if (shape[tindex] < times) {
+          console.warn("The number of time points is not consistent across sources: ", shape[tindex], times);
+          times = shape[tindex];
         }
       }
     }
