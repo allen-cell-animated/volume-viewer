@@ -177,7 +177,9 @@ export function matchSourceScaleLevels(sources: ZarrSource[]): void {
         const largestT = smallestSrc.axesTCZYX[0] > -1 ? smallestArr.shape[smallestSrc.axesTCZYX[0]] : 1;
         const currentT = currentSrc.axesTCZYX[0] > -1 ? currentArr.shape[currentSrc.axesTCZYX[0]] : 1;
         if (largestT !== currentT) {
-          throw new Error("Incompatible zarr arrays: different numbers of timesteps");
+          // we also treat this as a warning.
+          // In OmeZarrLoader we will take the minimum T size of all sources
+          console.warn(`Incompatible zarr arrays: different numbers of timesteps: ${largestT} vs ${currentT}`);
         }
       } else {
         allEqual = false;
