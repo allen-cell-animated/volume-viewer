@@ -2211,7 +2211,20 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
     const cLast = sourceLast.axesTCZYX[1];
     const lastHasC = cLast > -1;
     const numChannels = sourceLast.channelOffset + (lastHasC ? sourceLast.scaleLevels[levelToLoad].shape[cLast] : 1);
-    const times = hasT ? shapeLv[t] : 1;
+    // we need to make sure that the corresponding matched shapes
+    // use the min size of T
+    let times = 1;
+    if (hasT) {
+      times = shapeLv[t];
+      for (let i = 0; i < this.sources.length; i++) {
+        const shape = this.sources[i].scaleLevels[levelToLoad].shape;
+        const tindex = this.sources[i].axesTCZYX[0];
+        if (shape[tindex] < times) {
+          console.warn("The number of time points is not consistent across sources: ", shape[tindex], times);
+          times = shape[tindex];
+        }
+      }
+    }
     if (!this.maxExtent) {
       this.maxExtent = loadSpec.subregion.clone();
     }
@@ -3445,7 +3458,9 @@ function matchSourceScaleLevels(sources) {
         const largestT = smallestSrc.axesTCZYX[0] > -1 ? smallestArr.shape[smallestSrc.axesTCZYX[0]] : 1;
         const currentT = currentSrc.axesTCZYX[0] > -1 ? currentArr.shape[currentSrc.axesTCZYX[0]] : 1;
         if (largestT !== currentT) {
-          throw new Error("Incompatible zarr arrays: different numbers of timesteps");
+          // we also treat this as a warning.
+          // In OmeZarrLoader we will take the minimum T size of all sources
+          console.warn(`Incompatible zarr arrays: different numbers of timesteps: ${largestT} vs ${currentT}`);
         }
       } else {
         allEqual = false;
