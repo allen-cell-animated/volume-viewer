@@ -1,3 +1,5 @@
+import type { ErrorObject } from "serialize-error";
+
 import type { ImageInfo } from "../Volume.js";
 import type { CreateLoaderOptions, PrefetchDirection } from "../loaders/index.js";
 import type { LoadSpec, LoadedVolumeInfo, VolumeDims } from "../loaders/IVolumeLoader.js";
@@ -76,5 +78,5 @@ export type WorkerRequest<T extends WorkerMsgType> = WorkerMsgBase<T, WorkerRequ
 /** All valid types of worker responses: `SUCCESS` with a matching payload, `ERROR` with a message, or an `EVENT`. */
 export type WorkerResponse<T extends WorkerMsgType> =
   | ({ responseResult: WorkerResponseResult.SUCCESS } & WorkerMsgBase<T, WorkerResponsePayload<T>>)
-  | ({ responseResult: WorkerResponseResult.ERROR } & WorkerMsgBase<T, string>)
+  | ({ responseResult: WorkerResponseResult.ERROR } & WorkerMsgBase<T, ErrorObject>)
   | ({ responseResult: WorkerResponseResult.EVENT } & ChannelLoadEvent);

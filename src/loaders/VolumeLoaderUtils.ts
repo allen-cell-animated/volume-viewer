@@ -13,6 +13,7 @@ const UNIT_SYMBOLS = {
   hour: "h",
   inch: "in",
   meter: "m",
+  micron: "μm",
   mile: "mi",
   minute: "min",
   parsec: "pc",

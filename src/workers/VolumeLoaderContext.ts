@@ -1,3 +1,5 @@
+import { deserializeError } from "serialize-error";
+
 import { ImageInfo } from "../Volume.js";
 import { CreateLoaderOptions, PrefetchDirection, VolumeFileFormat, pathToFileType } from "../loaders/index.js";
 import {
@@ -102,7 +104,7 @@ class SharedLoadWorkerHandle {
       }
 
       if (data.responseResult === WorkerResponseResult.ERROR) {
-        prom.reject(data.payload);
+        prom.reject(deserializeError(data.payload));
       } else {
         prom.resolve(data.payload);
       }
