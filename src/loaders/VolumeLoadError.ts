@@ -4,11 +4,11 @@ import { NodeNotFoundError, KeyError } from "@zarrita/core";
 
 /** Groups possible load errors into a few broad categories which we can give similar guidance to the user about. */
 export const enum VolumeLoadErrorType {
-  UNKNOWN,
-  NOT_FOUND,
-  LOAD_DATA_FAILED,
-  INVALID_METADATA,
-  INVALID_MULTI_SOURCE_ZARR,
+  UNKNOWN = "unknown",
+  NOT_FOUND = "not_found",
+  LOAD_DATA_FAILED = "load_data_failed",
+  INVALID_METADATA = "invalid_metadata",
+  INVALID_MULTI_SOURCE_ZARR = "invalid_multi_source_zarr",
 }
 
 export class VolumeLoadError extends Error {
@@ -21,7 +21,8 @@ export class VolumeLoadError extends Error {
   }
 }
 
-// TODO work out if we can get rid of these casts?
+// serialize-error only ever calls an error constructor with zero arguments. The required `ErrorConstructor`
+// type is a bit too restrictive - as long as the constructor can be called with no arguments it's fine.
 errorConstructors.set("NodeNotFoundError", NodeNotFoundError as ErrorConstructor);
 errorConstructors.set("KeyError", KeyError as ErrorConstructor);
 errorConstructors.set("VolumeLoadError", VolumeLoadError as unknown as ErrorConstructor);

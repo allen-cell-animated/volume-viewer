@@ -15,6 +15,7 @@ import WrappedStore from "../loaders/zarr_utils/WrappedStore";
 import {
   getDimensionCount,
   getScale,
+  getSourceChannelNames,
   matchSourceScaleLevels,
   orderByDimension,
   orderByTCZYX,
@@ -31,17 +32,17 @@ type ZarrSourceMockSpec = {
   paths?: string[];
 };
 
-const createMockOmeroMetadata = (numChannels: number): OmeroTransitionalMetadata => ({
+const createMockOmeroMetadata = (numChannels: number, channelNames?: string[]): OmeroTransitionalMetadata => ({
   id: 0,
   name: "0",
   version: "0.0",
-  channels: Array.from({ length: numChannels }, (_, i) => ({
+  channels: (channelNames ?? Array.from({ length: numChannels }, (_, i) => `channel ${i}`)).map((label) => ({
+    label,
     active: true,
     coefficient: 1,
     color: "ffffffff",
     family: "linear",
     inverted: false,
-    label: `channel ${i}`,
     window: { end: 1, max: 1, min: 0, start: 0 },
   })),
 });
@@ -73,11 +74,12 @@ const createOneMockSource = async (
   shapes: TCZYX<number>[],
   scales: TCZYX<number>[],
   channelOffset: number,
-  paths?: string[]
+  paths?: string[],
+  names?: string[]
 ): Promise<ZarrSource> => ({
   scaleLevels: await createMockArrays(shapes),
   multiscaleMetadata: createMockMultiscaleMetadata(scales, paths),
-  omeroMetadata: createMockOmeroMetadata(shapes[0][1]),
+  omeroMetadata: createMockOmeroMetadata(shapes[0][1], names),
   axesTCZYX: [0, 1, 2, 3, 4],
   channelOffset,
 });
@@ -120,6 +122,38 @@ const expectSourcesEqual = (aArr: ZarrSource[], bArr: ZarrSource[]) => {
 };
 
 describe("zarr_utils", () => {
+  describe("getSourceChannelNames", () => {
+    it("extracts a list of channel labels from the given source", async () => {
+      const names = ["foo", "bar", "baz"];
+      const source = await createOneMockSource([[1, 3, 1, 1, 1]], [[1, 1, 1, 1, 1]], 0, ["1", "2", "3"], names);
+      expect(getSourceChannelNames(source)).to.deep.equal(names);
+    });
+
+    it("does not resolve channel name collisions", async () => {
+      const names = ["foo", "bar", "foo"];
+      const source = await createOneMockSource([[1, 3, 1, 1, 1]], [[1, 1, 1, 1, 1]], 0, ["1", "2", "3"], names);
+      expect(getSourceChannelNames(source)).to.deep.equal(names);
+    });
+
+    it('applies default names of the form "Channel N" for missing labels', async () => {
+      const names = ["foo", "bar", undefined] as string[];
+      const source = await createOneMockSource([[1, 3, 1, 1, 1]], [[1, 1, 1, 1, 1]], 0, ["1", "2", "3"], names);
+      expect(getSourceChannelNames(source)).to.deep.equal(["foo", "bar", "Channel 2"]);
+    });
+
+    it("applies default names when `omeroMetadata` is missing entirely", async () => {
+      const source = await createOneMockSource([[1, 3, 1, 1, 1]], [[1, 1, 1, 1, 1]], 0);
+      delete source.omeroMetadata;
+      expect(getSourceChannelNames(source)).to.deep.equal(["Channel 0", "Channel 1", "Channel 2"]);
+    });
+
+    it("applies `channelOffset` to default names", async () => {
+      const source = await createOneMockSource([[1, 3, 1, 1, 1]], [[1, 1, 1, 1, 1]], 3);
+      delete source.omeroMetadata;
+      expect(getSourceChannelNames(source)).to.deep.equal(["Channel 3", "Channel 4", "Channel 5"]);
+    });
+  });
+
   describe("getDimensionCount", () => {
     it("returns 5 when all 5 dimension indices are positive", () => {
       expect(getDimensionCount([1, 1, 1, 1, 1])).to.equal(5);
