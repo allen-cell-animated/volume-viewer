@@ -155,13 +155,12 @@ export function pickLevelToLoadUnscaled(loadSpec: LoadSpec, spatialDimsZYX: ZYX[
 
   // Level to load could not be loaded due to atlas size constraints.
   if (levelToLoad === undefined) {
+    // No optimal level exists so choose the smallest level to report out
     levelToLoad = spatialDimsZYX.length - 1;
   }
   const smallestDims = spatialDimsZYX[levelToLoad];
   console.error(
-    `Volume is too large; no multiscale level found that fits in preferred memory footprint. Selected level ${levelToLoad} (optimal ${optimalLevel} + bias ${
-      loadSpec.scaleLevelBias ?? 0
-    }) has dimensions `,
+    `Volume is too large; no multiscale level found that fits in preferred memory footprint. Selected level ${levelToLoad}  has dimensions `,
     smallestDims,
     `. Max atlas edge allowed is ${loadSpec.maxAtlasEdge}.`
   );
