@@ -148,6 +148,11 @@ describe("zarr_utils", () => {
       const axes = [{ name: "x" }, { name: "y" }];
       expect(remapAxesToTCZYX(axes)).to.deep.equal([-1, -1, -1, 1, 0]);
     });
+
+    it("throws an error if it encounters an unrecognized (not t, c, z, y, or x) axis name", () => {
+      const axes = [{ name: "t" }, { name: "c" }, { name: "x" }, { name: "y" }, { name: "foo" }];
+      expect(() => remapAxesToTCZYX(axes)).to.throw("Unrecognized axis name");
+    });
   });
   // TODO: `pickLevelToLoad`
 
