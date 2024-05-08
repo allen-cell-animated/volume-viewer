@@ -185,7 +185,7 @@ describe("zarr_utils", () => {
 
     it("throws an error if it encounters an unrecognized (not t, c, z, y, or x) axis name", () => {
       const axes = [{ name: "t" }, { name: "c" }, { name: "x" }, { name: "y" }, { name: "foo" }];
-      expect(() => remapAxesToTCZYX(axes)).to.throw("Unrecognized axis name");
+      expect(() => remapAxesToTCZYX(axes)).to.throw("Unrecognized axis");
     });
   });
   // TODO: `pickLevelToLoad`
