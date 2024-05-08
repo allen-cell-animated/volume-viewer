@@ -164,6 +164,7 @@ export function pickLevelToLoadUnscaled(loadSpec: LoadSpec, spatialDimsZYX: ZYX[
     smallestDims,
     `. Max atlas edge allowed is ${loadSpec.maxAtlasEdge}.`
   );
+  console.log("All available levels: ", spatialDimsZYX);
   throw new VolumeLoadError(`Volume is too large; multiscale level does not fit in preferred memory footprint.`, {
     type: VolumeLoadErrorType.TOO_LARGE,
   });
