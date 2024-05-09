@@ -100,13 +100,10 @@ export function estimateLevelForAtlas(
     return 0;
   }
 
-  // update levelToLoad after we get size info about multiscales
-  let levelToLoad = spatialDimsZYX.length - 1;
   for (let i = 0; i < spatialDimsZYX.length; ++i) {
     // estimate atlas size:
     if (doesSpatialDimensionFitInAtlas(spatialDimsZYX[i], maxAtlasEdge)) {
-      levelToLoad = i;
-      return levelToLoad;
+      return i;
     }
   }
   return undefined;
@@ -140,12 +137,10 @@ export function scaleMultipleDimsToSubregion(subregion: Box3, dims: ZYX[]): ZYX[
  *  This function assumes that `spatialDimsZYX` has already been appropriately scaled to match `loadSpec`'s `subregion`.
  */
 export function pickLevelToLoadUnscaled(loadSpec: LoadSpec, spatialDimsZYX: ZYX[]): number {
-  const optimalLevel = estimateLevelForAtlas(spatialDimsZYX, loadSpec.maxAtlasEdge);
-  let levelToLoad = optimalLevel;
-
-  // Check here for whether optimalLevel is within max atlas size?
-  if (optimalLevel !== undefined) {
-    levelToLoad = Math.max(optimalLevel + (loadSpec.scaleLevelBias ?? 0), loadSpec.multiscaleLevel ?? 0);
+  let levelToLoad = estimateLevelForAtlas(spatialDimsZYX, loadSpec.maxAtlasEdge);
+  // Check here for whether levelToLoad is within max atlas size?
+  if (levelToLoad !== undefined) {
+    levelToLoad = Math.max(levelToLoad + (loadSpec.scaleLevelBias ?? 0), loadSpec.multiscaleLevel ?? 0);
     levelToLoad = Math.max(0, Math.min(spatialDimsZYX.length - 1, levelToLoad));
 
     if (doesSpatialDimensionFitInAtlas(spatialDimsZYX[levelToLoad], loadSpec.maxAtlasEdge)) {
