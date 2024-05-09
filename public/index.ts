@@ -77,6 +77,10 @@ const TEST_DATA: Record<string, TestDataSpec> = {
     type: VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P8-B4.zarr/",
   },
+  zarrFlyBrain: {
+    type: VolumeFileFormat.ZARR,
+    url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846152.zarr/",
+  },
   zarrUK: {
     type: VolumeFileFormat.ZARR,
     url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr",

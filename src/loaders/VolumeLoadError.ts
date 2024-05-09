@@ -6,6 +6,7 @@ import { NodeNotFoundError, KeyError } from "@zarrita/core";
 export const enum VolumeLoadErrorType {
   UNKNOWN = "unknown",
   NOT_FOUND = "not_found",
+  TOO_LARGE = "too_large",
   LOAD_DATA_FAILED = "load_data_failed",
   INVALID_METADATA = "invalid_metadata",
   INVALID_MULTI_SOURCE_ZARR = "invalid_multi_source_zarr",

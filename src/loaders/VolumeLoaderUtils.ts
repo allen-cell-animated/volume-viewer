@@ -2,6 +2,7 @@ import { Box3, Vector2, Vector3 } from "three";
 
 import { ImageInfo } from "../Volume.js";
 import { LoadSpec } from "./IVolumeLoader.js";
+import { VolumeLoadError, VolumeLoadErrorType } from "./VolumeLoadError.js";
 
 export const MAX_ATLAS_EDGE = 4096;
 
@@ -77,28 +78,35 @@ export function computePackedAtlasDims(z: number, tw: number, th: number): Vecto
   return new Vector2(nrows, ncols);
 }
 
+function doesSpatialDimensionFitInAtlas(
+  spatialDimZYX: [number, number, number],
+  maxAtlasEdge = MAX_ATLAS_EDGE
+): boolean {
+  // Estimate atlas size
+  const x = spatialDimZYX[2];
+  const y = spatialDimZYX[1];
+  const z = spatialDimZYX[0];
+  const xtiles = Math.floor(maxAtlasEdge / x);
+  const ytiles = Math.floor(maxAtlasEdge / y);
+  return xtiles * ytiles >= z;
+}
+
 /** Picks the largest scale level that can fit into a texture atlas with edges no longer than `maxAtlasEdge`. */
-export function estimateLevelForAtlas(spatialDimsZYX: [number, number, number][], maxAtlasEdge = MAX_ATLAS_EDGE) {
+export function estimateLevelForAtlas(
+  spatialDimsZYX: [number, number, number][],
+  maxAtlasEdge = MAX_ATLAS_EDGE
+): number | undefined {
   if (spatialDimsZYX.length <= 1) {
     return 0;
   }
 
-  // update levelToLoad after we get size info about multiscales
-  let levelToLoad = spatialDimsZYX.length - 1;
   for (let i = 0; i < spatialDimsZYX.length; ++i) {
     // estimate atlas size:
-    const x = spatialDimsZYX[i][2];
-    const y = spatialDimsZYX[i][1];
-    const z = spatialDimsZYX[i][0];
-    const xtiles = Math.floor(maxAtlasEdge / x);
-    const ytiles = Math.floor(maxAtlasEdge / y);
-
-    if (xtiles * ytiles >= z) {
-      levelToLoad = i;
-      break;
+    if (doesSpatialDimensionFitInAtlas(spatialDimsZYX[i], maxAtlasEdge)) {
+      return i;
     }
   }
-  return levelToLoad;
+  return undefined;
 }
 
 type ZYX = [number, number, number];
@@ -129,9 +137,32 @@ export function scaleMultipleDimsToSubregion(subregion: Box3, dims: ZYX[]): ZYX[
  *  This function assumes that `spatialDimsZYX` has already been appropriately scaled to match `loadSpec`'s `subregion`.
  */
 export function pickLevelToLoadUnscaled(loadSpec: LoadSpec, spatialDimsZYX: ZYX[]): number {
-  const optimalLevel = estimateLevelForAtlas(spatialDimsZYX, loadSpec.maxAtlasEdge);
-  const levelToLoad = Math.max(optimalLevel + (loadSpec.scaleLevelBias ?? 0), loadSpec.multiscaleLevel ?? 0);
-  return Math.max(0, Math.min(spatialDimsZYX.length - 1, levelToLoad));
+  let levelToLoad = estimateLevelForAtlas(spatialDimsZYX, loadSpec.maxAtlasEdge);
+  // Check here for whether levelToLoad is within max atlas size?
+  if (levelToLoad !== undefined) {
+    levelToLoad = Math.max(levelToLoad + (loadSpec.scaleLevelBias ?? 0), loadSpec.multiscaleLevel ?? 0);
+    levelToLoad = Math.max(0, Math.min(spatialDimsZYX.length - 1, levelToLoad));
+
+    if (doesSpatialDimensionFitInAtlas(spatialDimsZYX[levelToLoad], loadSpec.maxAtlasEdge)) {
+      return levelToLoad;
+    }
+  }
+
+  // Level to load could not be loaded due to atlas size constraints.
+  if (levelToLoad === undefined) {
+    // No optimal level exists so choose the smallest level to report out
+    levelToLoad = spatialDimsZYX.length - 1;
+  }
+  const smallestDims = spatialDimsZYX[levelToLoad];
+  console.error(
+    `Volume is too large; no multiscale level found that fits in preferred memory footprint. Selected level ${levelToLoad}  has dimensions `,
+    smallestDims,
+    `. Max atlas edge allowed is ${loadSpec.maxAtlasEdge}.`
+  );
+  console.log("All available levels: ", spatialDimsZYX);
+  throw new VolumeLoadError(`Volume is too large; multiscale level does not fit in preferred memory footprint.`, {
+    type: VolumeLoadErrorType.TOO_LARGE,
+  });
 }
 
 /**
