@@ -2792,6 +2792,7 @@ __webpack_require__.r(__webpack_exports__);
 let VolumeLoadErrorType = /*#__PURE__*/function (VolumeLoadErrorType) {
   VolumeLoadErrorType["UNKNOWN"] = "unknown";
   VolumeLoadErrorType["NOT_FOUND"] = "not_found";
+  VolumeLoadErrorType["TOO_LARGE"] = "too_large";
   VolumeLoadErrorType["LOAD_DATA_FAILED"] = "load_data_failed";
   VolumeLoadErrorType["INVALID_METADATA"] = "invalid_metadata";
   VolumeLoadErrorType["INVALID_MULTI_SOURCE_ZARR"] = "invalid_multi_source_zarr";
@@ -2850,7 +2851,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   scaleMultipleDimsToSubregion: () => (/* binding */ scaleMultipleDimsToSubregion),
 /* harmony export */   unitNameToSymbol: () => (/* binding */ unitNameToSymbol)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./VolumeLoadError.js */ "./src/loaders/VolumeLoadError.ts");
+
 
 const MAX_ATLAS_EDGE = 4096;
 
@@ -2919,7 +2922,16 @@ function computePackedAtlasDims(z, tw, th) {
     nextrows = Math.ceil(z / nextcols);
     ratio = nextcols * tw / (nextrows * th);
   }
-  return new three__WEBPACK_IMPORTED_MODULE_0__.Vector2(nrows, ncols);
+  return new three__WEBPACK_IMPORTED_MODULE_1__.Vector2(nrows, ncols);
+}
+function doesSpatialDimensionFitInAtlas(spatialDimZYX, maxAtlasEdge = MAX_ATLAS_EDGE) {
+  // Estimate atlas size
+  const x = spatialDimZYX[2];
+  const y = spatialDimZYX[1];
+  const z = spatialDimZYX[0];
+  const xtiles = Math.floor(maxAtlasEdge / x);
+  const ytiles = Math.floor(maxAtlasEdge / y);
+  return xtiles * ytiles >= z;
 }
 
 /** Picks the largest scale level that can fit into a texture atlas with edges no longer than `maxAtlasEdge`. */
@@ -2927,31 +2939,22 @@ function estimateLevelForAtlas(spatialDimsZYX, maxAtlasEdge = MAX_ATLAS_EDGE) {
   if (spatialDimsZYX.length <= 1) {
     return 0;
   }
-
-  // update levelToLoad after we get size info about multiscales
-  let levelToLoad = spatialDimsZYX.length - 1;
   for (let i = 0; i < spatialDimsZYX.length; ++i) {
     // estimate atlas size:
-    const x = spatialDimsZYX[i][2];
-    const y = spatialDimsZYX[i][1];
-    const z = spatialDimsZYX[i][0];
-    const xtiles = Math.floor(maxAtlasEdge / x);
-    const ytiles = Math.floor(maxAtlasEdge / y);
-    if (xtiles * ytiles >= z) {
-      levelToLoad = i;
-      break;
+    if (doesSpatialDimensionFitInAtlas(spatialDimsZYX[i], maxAtlasEdge)) {
+      return i;
     }
   }
-  return levelToLoad;
+  return undefined;
 }
 const maxCeil = val => Math.max(Math.ceil(val), 1);
 const scaleDims = (size, [z, y, x]) => [maxCeil(z * size.z), maxCeil(y * size.y), maxCeil(x * size.x)];
 function scaleDimsToSubregion(subregion, dims) {
-  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3());
+  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3());
   return scaleDims(size, dims);
 }
 function scaleMultipleDimsToSubregion(subregion, dims) {
-  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3());
+  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3());
   return dims.map(dim => scaleDims(size, dim));
 }
 
@@ -2965,9 +2968,27 @@ function scaleMultipleDimsToSubregion(subregion, dims) {
  *  This function assumes that `spatialDimsZYX` has already been appropriately scaled to match `loadSpec`'s `subregion`.
  */
 function pickLevelToLoadUnscaled(loadSpec, spatialDimsZYX) {
-  const optimalLevel = estimateLevelForAtlas(spatialDimsZYX, loadSpec.maxAtlasEdge);
-  const levelToLoad = Math.max(optimalLevel + (loadSpec.scaleLevelBias ?? 0), loadSpec.multiscaleLevel ?? 0);
-  return Math.max(0, Math.min(spatialDimsZYX.length - 1, levelToLoad));
+  let levelToLoad = estimateLevelForAtlas(spatialDimsZYX, loadSpec.maxAtlasEdge);
+  // Check here for whether levelToLoad is within max atlas size?
+  if (levelToLoad !== undefined) {
+    levelToLoad = Math.max(levelToLoad + (loadSpec.scaleLevelBias ?? 0), loadSpec.multiscaleLevel ?? 0);
+    levelToLoad = Math.max(0, Math.min(spatialDimsZYX.length - 1, levelToLoad));
+    if (doesSpatialDimensionFitInAtlas(spatialDimsZYX[levelToLoad], loadSpec.maxAtlasEdge)) {
+      return levelToLoad;
+    }
+  }
+
+  // Level to load could not be loaded due to atlas size constraints.
+  if (levelToLoad === undefined) {
+    // No optimal level exists so choose the smallest level to report out
+    levelToLoad = spatialDimsZYX.length - 1;
+  }
+  const smallestDims = spatialDimsZYX[levelToLoad];
+  console.error(`Volume is too large; no multiscale level found that fits in preferred memory footprint. Selected level ${levelToLoad}  has dimensions `, smallestDims, `. Max atlas edge allowed is ${loadSpec.maxAtlasEdge}.`);
+  console.log("All available levels: ", spatialDimsZYX);
+  throw new _VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_0__.VolumeLoadError(`Volume is too large; multiscale level does not fit in preferred memory footprint.`, {
+    type: _VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_0__.VolumeLoadErrorType.TOO_LARGE
+  });
 }
 
 /**
@@ -2996,7 +3017,7 @@ function convertSubregionToPixels(region, size) {
   if (min.z === max.z && min.z < size.z) {
     max.z += 1;
   }
-  return new three__WEBPACK_IMPORTED_MODULE_0__.Box3(min, max);
+  return new three__WEBPACK_IMPORTED_MODULE_1__.Box3(min, max);
 }
 
 /**
@@ -3004,10 +3025,10 @@ function convertSubregionToPixels(region, size) {
  * and 1). i.e. if `container`'s range on the X axis is 0-4 and `region`'s is 0.25-0.5, the result will have range 1-2.
  */
 function composeSubregion(region, container) {
-  const size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3());
+  const size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3());
   const min = region.min.clone().multiply(size).add(container.min);
   const max = region.max.clone().multiply(size).add(container.min);
-  return new three__WEBPACK_IMPORTED_MODULE_0__.Box3(min, max);
+  return new three__WEBPACK_IMPORTED_MODULE_1__.Box3(min, max);
 }
 function isEmpty(obj) {
   for (const key in obj) {
