@@ -177,8 +177,9 @@ class TiffLoader extends ThreadableVolumeLoader {
   async loadRawChannelData(
     imageInfo: ImageInfo,
     _loadSpec: LoadSpec,
+    _onUpdateMetadata: () => void,
     onData: RawChannelDataCallback
-  ): Promise<Record<string, never>> {
+  ): Promise<void> {
     const dims = await this.loadOmeDims();
 
     // do each channel on a worker?
@@ -203,13 +204,12 @@ class TiffLoader extends ThreadableVolumeLoader {
         onData([channel], [u8], [range]);
         worker.terminate();
       };
+      // TODO propagate original errors with serialize-error
       worker.onerror = (e) => {
         alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
       };
       worker.postMessage(params);
     }
-
-    return {};
   }
 }
 

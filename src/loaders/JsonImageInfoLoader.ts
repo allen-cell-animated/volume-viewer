@@ -151,8 +151,9 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
   async loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
+    onUpdateMetadata: (imageInfo: undefined, loadSpec?: LoadSpec) => void,
     onData: RawChannelDataCallback
-  ): Promise<{ loadSpec?: LoadSpec }> {
+  ): Promise<void> {
     // if you need to adjust image paths prior to download,
     // now is the time to do it.
     // Try to figure out the urlPrefix from the LoadSpec.
@@ -161,7 +162,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
 
     let images = jsonInfo?.images;
     if (!images) {
-      return {};
+      return;
     }
 
     const requestedChannels = loadSpec.channels;
@@ -174,12 +175,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
     const urlPrefix = this.urls[loadSpec.time].replace(/[^/]*$/, "");
     images = images.map((element) => ({ ...element, name: urlPrefix + element.name }));
 
-    const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
-    const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
-    const wrappedOnData = (ch: number[], data: Uint8Array[], ranges: [number, number][]) =>
-      onData(ch, data, ranges, [w, h]);
-    JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
-
+    // Update `image`'s `loadSpec` before loading
     const adjustedLoadSpec = {
       ...loadSpec,
       // `subregion` and `multiscaleLevel` are unused by this loader
@@ -188,7 +184,13 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
       // include all channels in any loaded images
       channels: images.flatMap(({ channels }) => channels),
     };
-    return { loadSpec: adjustedLoadSpec };
+    onUpdateMetadata(undefined, adjustedLoadSpec);
+
+    const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
+    const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
+    const wrappedOnData = (ch: number[], data: Uint8Array[], ranges: [number, number][]) =>
+      onData(ch, data, ranges, [w, h]);
+    await JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
   }
 
   /**
@@ -207,12 +209,12 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
    *     "channels": [6, 7, 8]
    * }], mycallback);
    */
-  static loadVolumeAtlasData(
+  static async loadVolumeAtlasData(
     imageArray: PackedChannelsImage[],
     onData: RawChannelDataCallback,
     cache?: VolumeCache
-  ): void {
-    imageArray.forEach(async (image) => {
+  ): Promise<void> {
+    const imagePromises = imageArray.map(async (image) => {
       // Because the data is fetched such that one fetch returns a whole batch,
       // if any in batch is cached then they all should be. So if any in batch is NOT cached,
       // then we will have to do a batch request. This logic works both ways because it's all or nothing.
@@ -276,6 +278,8 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
         onData([chindex], [channelsBits[ch]], [DATARANGE_UINT8], [bitmap.width, bitmap.height]);
       }
     });
+
+    await Promise.all(imagePromises);
   }
 }
 
