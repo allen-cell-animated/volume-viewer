@@ -121,7 +121,7 @@ class RawArrayLoader extends ThreadableVolumeLoader {
       const volSizeBytes = this.data.shape[3] * this.data.shape[2] * this.data.shape[1]; // x*y*z pixels * 1 byte/pixel
       const channelData = new Uint8Array(this.data.buffer.buffer, chindex * volSizeBytes, volSizeBytes);
       // all data coming from this loader is natively 8-bit
-      onData([chindex], [channelData], [DATARANGE_UINT8]);
+      onData([chindex], ["uint8"], [channelData], [DATARANGE_UINT8]);
     }
 
     const adjustedLoadSpec = {
