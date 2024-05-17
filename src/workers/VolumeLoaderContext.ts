@@ -1,3 +1,5 @@
+import { deserializeError } from "serialize-error";
+
 import { ImageInfo } from "../Volume.js";
 import { CreateLoaderOptions, PrefetchDirection, VolumeFileFormat, pathToFileType } from "../loaders/index.js";
 import {
@@ -7,6 +9,7 @@ import {
   VolumeDims,
   LoadedVolumeInfo,
 } from "../loaders/IVolumeLoader.js";
+import { RawArrayLoader } from "../loaders/RawArrayLoader.js";
 import { TiffLoader } from "../loaders/TiffLoader.js";
 import {
   WorkerMsgType,
@@ -101,7 +104,7 @@ class SharedLoadWorkerHandle {
       }
 
       if (data.responseResult === WorkerResponseResult.ERROR) {
-        prom.reject(data.payload);
+        prom.reject(deserializeError(data.payload));
       } else {
         prom.resolve(data.payload);
       }
@@ -162,12 +165,17 @@ class VolumeLoaderContext {
   async createLoader(
     path: string | string[],
     options?: Omit<CreateLoaderOptions, "cache" | "queue">
-  ): Promise<WorkerLoader | TiffLoader> {
+  ): Promise<WorkerLoader | TiffLoader | RawArrayLoader> {
     // Special case: TIFF loader doesn't work on a worker, has its own workers anyways, and doesn't use cache or queue.
     const pathString = Array.isArray(path) ? path[0] : path;
     const fileType = options?.fileType || pathToFileType(pathString);
     if (fileType === VolumeFileFormat.TIFF) {
       return new TiffLoader(pathString);
+    } else if (fileType === VolumeFileFormat.DATA) {
+      if (!options?.rawArrayOptions) {
+        throw new Error("Failed to create loader: Must provide RawArrayOptions for RawArrayLoader");
+      }
+      return new RawArrayLoader(options.rawArrayOptions.data, options.rawArrayOptions.metadata);
     }
 
     const success = await this.workerHandle.sendMessage(WorkerMsgType.CREATE_LOADER, { path, options });

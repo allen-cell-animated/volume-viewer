@@ -9,6 +9,7 @@ import {
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
 import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
+import { VolumeLoadError, VolumeLoadErrorType, wrapVolumeLoadError } from "./VolumeLoadError.js";
 import type { ImageInfo } from "../Volume.js";
 
 function prepareXML(xml: string): string {
@@ -20,32 +21,48 @@ function prepareXML(xml: string): string {
 
 function getOME(xml: string): Element {
   const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(xml, "text/xml");
-  const omeEl = xmlDoc.getElementsByTagName("OME")[0];
-  return omeEl;
+  try {
+    const xmlDoc = parser.parseFromString(xml, "text/xml");
+    return xmlDoc.getElementsByTagName("OME")[0];
+  } catch (e) {
+    throw new VolumeLoadError("Could not find OME metadata in TIFF file", {
+      type: VolumeLoadErrorType.INVALID_METADATA,
+      cause: e,
+    });
+  }
 }
 
 class OMEDims {
   sizex = 0;
   sizey = 0;
-  sizez = 0;
-  sizec = 0;
-  sizet = 0;
+  sizez = 1;
+  sizec = 1;
+  sizet = 1;
   unit = "";
   pixeltype = "";
   dimensionorder = "";
-  pixelsizex = 0;
-  pixelsizey = 0;
-  pixelsizez = 0;
+  pixelsizex = 1;
+  pixelsizey = 1;
+  pixelsizez = 1;
   channelnames: string[] = [];
+}
+
+function getAttributeOrError(el: Element, attr: string): string {
+  const val = el.getAttribute(attr);
+  if (val === null) {
+    throw new VolumeLoadError(`Missing attribute ${attr} in OME-TIFF metadata`, {
+      type: VolumeLoadErrorType.INVALID_METADATA,
+    });
+  }
+  return val;
 }
 
 function getOMEDims(imageEl: Element): OMEDims {
   const dims = new OMEDims();
 
   const pixelsEl = imageEl.getElementsByTagName("Pixels")[0];
-  dims.sizex = Number(pixelsEl.getAttribute("SizeX"));
-  dims.sizey = Number(pixelsEl.getAttribute("SizeY"));
+  dims.sizex = Number(getAttributeOrError(pixelsEl, "SizeX"));
+  dims.sizey = Number(getAttributeOrError(pixelsEl, "SizeY"));
   dims.sizez = Number(pixelsEl.getAttribute("SizeZ"));
   dims.sizec = Number(pixelsEl.getAttribute("SizeC"));
   dims.sizet = Number(pixelsEl.getAttribute("SizeT"));
@@ -80,11 +97,15 @@ class TiffLoader extends ThreadableVolumeLoader {
 
   private async loadOmeDims(): Promise<OMEDims> {
     if (!this.dims) {
-      const tiff = await fromUrl(this.url, { allowFullFile: true });
+      const tiff = await fromUrl(this.url, { allowFullFile: true }).catch(
+        wrapVolumeLoadError(`Could not open TIFF file at ${this.url}`, VolumeLoadErrorType.NOT_FOUND)
+      );
       // DO NOT DO THIS, ITS SLOW
       // const imagecount = await tiff.getImageCount();
       // read the FIRST image
-      const image = await tiff.getImage();
+      const image = await tiff
+        .getImage()
+        .catch(wrapVolumeLoadError("Failed to open TIFF image", VolumeLoadErrorType.NOT_FOUND));
 
       const tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
       const omeEl = getOME(tiffimgdesc);

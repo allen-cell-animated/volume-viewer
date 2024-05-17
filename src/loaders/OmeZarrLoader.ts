@@ -29,6 +29,7 @@ import WrappedStore from "./zarr_utils/WrappedStore.js";
 import {
   getDimensionCount,
   getScale,
+  getSourceChannelNames,
   matchSourceScaleLevels,
   orderByDimension,
   orderByTCZYX,
@@ -42,6 +43,8 @@ import type {
   ZarrSource,
   NumericZarrArray,
 } from "./zarr_utils/types.js";
+import { VolumeLoadError, VolumeLoadErrorType, wrapVolumeLoadError } from "./VolumeLoadError.js";
+import { validateOMEZarrMetadata } from "./zarr_utils/validation.js";
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
@@ -169,19 +172,33 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const sourceProms = urlsArr.map(async (url, i) => {
       const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
       const root = zarr.root(store);
-      const group = await zarr.open(root, { kind: "group" });
-      const { multiscales, omero } = group.attrs as OMEZarrMetadata;
+
+      const group = await zarr
+        .open(root, { kind: "group" })
+        .catch(wrapVolumeLoadError(`Failed to open OME-Zarr data at ${url}`, VolumeLoadErrorType.NOT_FOUND));
 
       // Pick scene (multiscale)
       let scene = scenesArr[Math.min(i, scenesArr.length - 1)];
-      if (scene > multiscales.length) {
+      if (scene > group.attrs.multiscales?.length) {
         console.warn(`WARNING: OMEZarrLoader: scene ${scene} is invalid. Using scene 0.`);
         scene = 0;
       }
+
+      validateOMEZarrMetadata(group.attrs, scene, urlsArr.length > 1 ? `Zarr source ${i}` : "Zarr");
+      const { multiscales, omero } = group.attrs as OMEZarrMetadata;
       const multiscaleMetadata = multiscales[scene];
 
       // Open all scale levels of multiscale
-      const lvlProms = multiscaleMetadata.datasets.map(({ path }) => zarr.open(root.resolve(path), { kind: "array" }));
+      const lvlProms = multiscaleMetadata.datasets.map(({ path }) =>
+        zarr
+          .open(root.resolve(path), { kind: "array" })
+          .catch(
+            wrapVolumeLoadError(
+              `Failed to open scale level ${path} of OME-Zarr data at ${url}`,
+              VolumeLoadErrorType.NOT_FOUND
+            )
+          )
+      );
       const scaleLevels = (await Promise.all(lvlProms)) as NumericZarrArray[];
       const axesTCZYX = remapAxesToTCZYX(multiscaleMetadata.axes);
 
@@ -199,7 +216,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     let channelCount = 0;
     for (const s of sources) {
       s.channelOffset = channelCount;
-      channelCount += s.omeroMetadata.channels.length;
+      channelCount += s.omeroMetadata?.channels.length ?? s.scaleLevels[0].shape[s.axesTCZYX[1]];
     }
     // Ensure the sizes of all sources' scale levels are matched up. See this function's docs for more.
     matchSourceScaleLevels(sources);
@@ -252,8 +269,12 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const lastSrc = this.sources[lastSrcIdx];
     const lastSrcNumChannels = lastSrc.scaleLevels[0].shape[lastSrc.axesTCZYX[1]];
 
-    if (absoluteChannelIndex > lastSrc.channelOffset + lastSrcNumChannels) {
-      throw new Error("Channel index out of range");
+    const maxChannelIndex = lastSrc.channelOffset + lastSrcNumChannels;
+    if (absoluteChannelIndex > maxChannelIndex) {
+      throw new VolumeLoadError(
+        `Volume channel index ${absoluteChannelIndex} out of range (${maxChannelIndex} channels available)`,
+        { type: VolumeLoadErrorType.INVALID_METADATA }
+      );
     }
 
     const firstGreaterIdx = this.sources.findIndex((src) => src.channelOffset > absoluteChannelIndex);
@@ -315,7 +336,20 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const cLast = sourceLast.axesTCZYX[1];
     const lastHasC = cLast > -1;
     const numChannels = sourceLast.channelOffset + (lastHasC ? sourceLast.scaleLevels[levelToLoad].shape[cLast] : 1);
-    const times = hasT ? shapeLv[t] : 1;
+    // we need to make sure that the corresponding matched shapes
+    // use the min size of T
+    let times = 1;
+    if (hasT) {
+      times = shapeLv[t];
+      for (let i = 0; i < this.sources.length; i++) {
+        const shape = this.sources[i].scaleLevels[levelToLoad].shape;
+        const tindex = this.sources[i].axesTCZYX[0];
+        if (shape[tindex] < times) {
+          console.warn("The number of time points is not consistent across sources: ", shape[tindex], times);
+          times = shape[tindex];
+        }
+      }
+    }
 
     if (!this.maxExtent) {
       this.maxExtent = loadSpec.subregion.clone();
@@ -336,20 +370,23 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     // Channel names is the other place where we have to check every source
     // Track which channel names we've seen so far, so that we can rename them to avoid name collisions
     const channelNamesMap = new Map<string, number>();
-    const channelNames = this.sources.flatMap((src) =>
-      src.omeroMetadata.channels.map((ch) => {
-        const numMatchingChannels = channelNamesMap.get(ch.label);
+    const channelNames = this.sources.flatMap((src) => {
+      const sourceChannelNames = getSourceChannelNames(src);
+
+      // Resolve name collisions
+      return sourceChannelNames.map((channelName) => {
+        const numMatchingChannels = channelNamesMap.get(channelName);
 
         if (numMatchingChannels !== undefined) {
           // If e.g. we've seen channel "Membrane" once before, rename this one to "Membrane (1)"
-          channelNamesMap.set(ch.label, numMatchingChannels + 1);
-          return `${ch.label} (${numMatchingChannels})`;
+          channelNamesMap.set(channelName, numMatchingChannels + 1);
+          return `${channelName} (${numMatchingChannels})`;
         } else {
-          channelNamesMap.set(ch.label, 1);
-          return ch.label;
+          channelNamesMap.set(channelName, 1);
+          return channelName;
         }
-      })
-    );
+      });
+    });
 
     // for physicalPixelSize, we use the scale of the first level
     const scale5d = this.getScale(0);
@@ -357,7 +394,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const timeScale = hasT ? scale5d[t] : 1;
 
     const imgdata: ImageInfo = {
-      name: source0.omeroMetadata.name,
+      name: source0.omeroMetadata?.name || "Volume",
 
       originalSize: pxSize0,
       atlasTileDims,
@@ -399,14 +436,16 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const { store, path } = scaleLevel;
     const separator = path.endsWith("/") ? "" : "/";
     const key = path + separator + this.orderByDimension(coords).join("/");
-    try {
-      // Calling `get` and doing nothing with the result still triggers a cache check, fetch, and insertion
-      await store.get(key as AbsolutePath, { subscriber, isPrefetch: true });
-    } catch (e) {
-      if (e !== CHUNK_REQUEST_CANCEL_REASON) {
-        throw e;
-      }
-    }
+    // Calling `get` and doing nothing with the result still triggers a cache check, fetch, and insertion
+    await store
+      .get(key as AbsolutePath, { subscriber, isPrefetch: true })
+      .catch(
+        wrapVolumeLoadError(
+          `Unable to prefetch chunk with key ${key}`,
+          VolumeLoadErrorType.LOAD_DATA_FAILED,
+          CHUNK_REQUEST_CANCEL_REASON
+        )
+      );
   }
 
   /** Reads a list of chunk keys requested by a `loadVolumeData` call and sets up appropriate prefetch requests. */
@@ -536,23 +575,21 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       const sliceSpec = this.orderByDimension(unorderedSpec as TCZYX<number | Slice>, sourceIdx);
       const reportKey = (key: string, sub: SubscriberId) => reportKeyBase(sourceIdx, key, sub);
 
-      try {
-        const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } });
-        const converted = convertChannel(result.data, level.dtype);
-        if (syncChannels) {
-          resultChannelDtype.push(converted[1]);
-          resultChannelData.push(converted[0]);
-          resultChannelIndices.push(ch);
-          resultChannelRanges.push([converted[2], converted[3]]);
-        } else {
-          onData([ch], [converted[1]], [converted[0]], [[converted[2], converted[3]]]);
-        }
-      } catch (e) {
-        // TODO: verify that cancelling requests in progress doesn't leak memory
-        if (e !== CHUNK_REQUEST_CANCEL_REASON) {
-          console.log(e);
-          throw e;
-        }
+      const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } }).catch(
+        wrapVolumeLoadError(
+          "Could not load OME-Zarr volume data",
+          VolumeLoadErrorType.LOAD_DATA_FAILED,
+          CHUNK_REQUEST_CANCEL_REASON
+        )
+      );
+      const converted = convertChannel(result.data, level.dtype);
+      if (syncChannels) {
+        resultChannelDtype.push(converted[1]);
+        resultChannelData.push(converted[0]);
+        resultChannelIndices.push(ch);
+        resultChannelRanges.push([converted[2], converted[3]]);
+      } else {
+        onData([ch], [converted[1]], [converted[0]], [[converted[2], converted[3]]]);
       }
     });
 
