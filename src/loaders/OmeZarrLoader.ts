@@ -578,6 +578,10 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
         )
       );
 
+      if (result?.data === undefined) {
+        return;
+      }
+
       const converted = convertChannel(result.data);
       if (syncChannels) {
         resultChannelData.push(converted[0]);
