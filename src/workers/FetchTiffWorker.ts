@@ -1,4 +1,6 @@
 import { fromUrl } from "geotiff";
+import { serializeError } from "serialize-error";
+import type { TiffLoadResult, TiffWorkerParams } from "../loaders/TiffLoader";
 
 type TypedArray =
   | Uint8Array
@@ -41,7 +43,7 @@ function castToArray(buf: ArrayBuffer, bytesPerPixel: number, sampleFormat: numb
   return new Uint8Array(buf);
 }
 
-self.onmessage = async function (e) {
+async function loadTiffChannel(e: MessageEvent<TiffWorkerParams>): Promise<TiffLoadResult> {
   // TODO index images by time
   // const time = e.data.time;
 
@@ -114,6 +116,14 @@ self.onmessage = async function (e) {
   for (let j = 0; j < src.length; ++j) {
     out[j] = ((src[j] - chmin) / (chmax - chmin)) * 255;
   }
-  const results = { data: out, channel: channelIndex, range: [chmin, chmax] };
-  (self as unknown as Worker).postMessage(results, [results.data.buffer]);
+  return { data: out, channel: channelIndex, range: [chmin, chmax], isError: false };
+}
+
+self.onmessage = async (e) => {
+  try {
+    const result = await loadTiffChannel(e);
+    (self as unknown as Worker).postMessage(result, [result.data.buffer]);
+  } catch (err) {
+    self.postMessage({ isError: true, error: serializeError(err) });
+  }
 };
