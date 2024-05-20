@@ -1,6 +1,7 @@
 import { fromUrl } from "geotiff";
 import { serializeError } from "serialize-error";
 import type { TiffLoadResult, TiffWorkerParams } from "../loaders/TiffLoader";
+import { VolumeLoadError, VolumeLoadErrorType } from "../loaders/VolumeLoadError";
 
 type TypedArray =
   | Uint8Array
@@ -92,9 +93,11 @@ async function loadTiffChannel(e: MessageEvent<TiffWorkerParams>): Promise<TiffL
     // deposit in full channel array in the right place
     const offset = zslice * tilesizex * tilesizey;
     if (arrayresult.BYTES_PER_ELEMENT > 4) {
-      console.log("byte size not supported yet");
+      throw new VolumeLoadError("byte size not supported yet", { type: VolumeLoadErrorType.INVALID_METADATA });
     } else if (arrayresult.BYTES_PER_ELEMENT !== bytesPerSample) {
-      console.log("tiff bytes per element mismatch with OME metadata");
+      throw new VolumeLoadError("tiff bytes per element mismatch with OME metadata", {
+        type: VolumeLoadErrorType.INVALID_METADATA,
+      });
     } else {
       u8.set(new Uint8Array(arrayresult.buffer), offset * arrayresult.BYTES_PER_ELEMENT);
     }
