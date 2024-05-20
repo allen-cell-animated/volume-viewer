@@ -22,6 +22,7 @@ import { TiffLoader } from "./loaders/TiffLoader.js";
 import VolumeLoaderContext from "./workers/VolumeLoaderContext.js";
 
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light.js";
+import { VolumeLoadError, VolumeLoadErrorType } from "./loaders/VolumeLoadError.js";
 
 export type { ImageInfo } from "./Volume.js";
 export type { ControlPoint } from "./Lut.js";
@@ -48,6 +49,8 @@ export {
   type RawArrayLoaderOptions,
   TiffLoader,
   VolumeLoaderContext,
+  VolumeLoadError,
+  type VolumeLoadErrorType,
   VolumeFileFormat,
   createVolumeLoader,
   Channel,
