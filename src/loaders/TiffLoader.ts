@@ -1,5 +1,6 @@
 import { fromUrl } from "geotiff";
 import { Vector3 } from "three";
+import { ErrorObject, deserializeError } from "serialize-error";
 
 import {
   ThreadableVolumeLoader,
@@ -11,7 +12,6 @@ import {
 import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
 import { VolumeLoadError, VolumeLoadErrorType, wrapVolumeLoadError } from "./VolumeLoadError.js";
 import type { ImageInfo } from "../Volume.js";
-import { ErrorObject, deserializeError } from "serialize-error";
 
 function prepareXML(xml: string): string {
   // trim trailing unicode zeros?
