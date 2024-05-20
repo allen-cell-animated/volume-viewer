@@ -1,7 +1,8 @@
 import { fromUrl } from "geotiff";
 import { serializeError } from "serialize-error";
-import type { TiffLoadResult, TiffWorkerParams } from "../loaders/TiffLoader";
-import { VolumeLoadError, VolumeLoadErrorType } from "../loaders/VolumeLoadError";
+
+import type { TiffLoadResult, TiffWorkerParams } from "../loaders/TiffLoader.js";
+import { VolumeLoadError, VolumeLoadErrorType } from "../loaders/VolumeLoadError.js";
 
 type TypedArray =
   | Uint8Array
