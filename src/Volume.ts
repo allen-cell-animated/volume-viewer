@@ -84,6 +84,7 @@ export const getDefaultImageInfo = (): ImageInfo => ({
 interface VolumeDataObserver {
   onVolumeData: (vol: Volume, batch: number[]) => void;
   onVolumeChannelAdded: (vol: Volume, idx: number) => void;
+  onVolumeLoadError: (vol: Volume, error: Error) => void;
 }
 
 /**
