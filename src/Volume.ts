@@ -286,7 +286,7 @@ export default class Volume {
     }
 
     if (shouldReload) {
-      this.loadNewData(onChannelLoaded);
+      await this.loadNewData(onChannelLoaded);
     }
   }
 
@@ -294,13 +294,13 @@ export default class Volume {
    * Loads new data as specified in `this.loadSpecRequired`. Clones `loadSpecRequired` into `loadSpec` to indicate
    * that the data that *must* be loaded is now the data that *has* been loaded.
    */
-  private loadNewData(onChannelLoaded?: PerChannelCallback): void {
+  private loadNewData(onChannelLoaded?: PerChannelCallback): Promise<void> | undefined {
     this.setUnloaded();
     this.loadSpec = {
       ...this.loadSpecRequired,
       subregion: this.loadSpecRequired.subregion.clone(),
     };
-    this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
+    return this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
   }
 
   // we calculate the physical size of the volume (voxels*pixel_size)
