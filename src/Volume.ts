@@ -84,7 +84,7 @@ export const getDefaultImageInfo = (): ImageInfo => ({
 interface VolumeDataObserver {
   onVolumeData: (vol: Volume, batch: number[]) => void;
   onVolumeChannelAdded: (vol: Volume, idx: number) => void;
-  onVolumeLoadError: (vol: Volume, error: Error) => void;
+  onVolumeLoadError: (vol: Volume, error: unknown) => void;
 }
 
 /**
@@ -295,13 +295,19 @@ export default class Volume {
    * Loads new data as specified in `this.loadSpecRequired`. Clones `loadSpecRequired` into `loadSpec` to indicate
    * that the data that *must* be loaded is now the data that *has* been loaded.
    */
-  private loadNewData(onChannelLoaded?: PerChannelCallback): Promise<void> | undefined {
+  private async loadNewData(onChannelLoaded?: PerChannelCallback): Promise<void> {
     this.setUnloaded();
     this.loadSpec = {
       ...this.loadSpecRequired,
       subregion: this.loadSpecRequired.subregion.clone(),
     };
-    return this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
+
+    try {
+      await this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
+    } catch (e) {
+      this.volumeDataObservers.forEach((observer) => observer.onVolumeLoadError(this, e));
+      throw e;
+    }
   }
 
   // we calculate the physical size of the volume (voxels*pixel_size)
