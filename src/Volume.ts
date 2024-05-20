@@ -4,7 +4,7 @@ import Channel from "./Channel.js";
 import Histogram from "./Histogram.js";
 import { Lut } from "./Lut.js";
 import { getColorByChannelIndex } from "./constants/colors.js";
-import { type IVolumeLoader, LoadSpec, type PerChannelCallback } from "./loaders/IVolumeLoader.js";
+import { type IVolumeLoader, LoadSpec, type PerChannelCallback, VolumeDims } from "./loaders/IVolumeLoader.js";
 import { MAX_ATLAS_EDGE, pickLevelToLoadUnscaled } from "./loaders/VolumeLoaderUtils.js";
 
 export type ImageInfo = Readonly<{
@@ -277,7 +277,7 @@ export default class Volume {
     // If we're not reloading due to required data changes, check if we should load a new scale level
     if (!shouldReload && this.mayLoadNewScaleLevel()) {
       // Loaders should cache loaded dimensions so that this call blocks no more than once per valid `LoadSpec`.
-      const dims = await this.loader?.loadDims(this.loadSpecRequired);
+      const dims = await this.loadScaleLevelDims();
       if (dims) {
         const dimsZYX = dims.map(({ shape }): [number, number, number] => [shape[2], shape[3], shape[4]]);
         // Determine which scale level *would* be loaded, and see if it's different than what we have
@@ -288,6 +288,15 @@ export default class Volume {
 
     if (shouldReload) {
       await this.loadNewData(onChannelLoaded);
+    }
+  }
+
+  private async loadScaleLevelDims(): Promise<VolumeDims[] | undefined> {
+    try {
+      return await this.loader?.loadDims(this.loadSpecRequired);
+    } catch (e) {
+      this.volumeDataObservers.forEach((observer) => observer.onVolumeLoadError(this, e));
+      return undefined;
     }
   }
 
