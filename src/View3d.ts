@@ -46,7 +46,7 @@ export class View3d {
   private exposure: number;
   private volumeRenderMode: RenderMode.PATHTRACE | RenderMode.RAYMARCH;
   private renderUpdateListener?: (iteration: number) => void;
-  private loadErrorHandler?: (volume: Volume, error: Error) => void;
+  private loadErrorHandler?: (volume: Volume, error: unknown) => void;
   private image?: VolumeDrawable;
 
   private lights: Light[];
@@ -228,11 +228,11 @@ export class View3d {
     this.image?.onChannelAdded(newChannelIndex);
   }
 
-  onVolumeLoadError(volume: Volume, error: Error): void {
+  onVolumeLoadError(volume: Volume, error: unknown): void {
     this.loadErrorHandler?.(volume, error);
   }
 
-  setLoadErrorHandler(handler: ((volume: Volume, error: Error) => void) | undefined): void {
+  setLoadErrorHandler(handler: ((volume: Volume, error: unknown) => void) | undefined): void {
     this.loadErrorHandler = handler;
   }
 
