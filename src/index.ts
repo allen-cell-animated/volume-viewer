@@ -20,9 +20,9 @@ import {
 } from "./loaders/RawArrayLoader.js";
 import { TiffLoader } from "./loaders/TiffLoader.js";
 import VolumeLoaderContext from "./workers/VolumeLoaderContext.js";
+import { VolumeLoadError, type VolumeLoadErrorType } from "./loaders/VolumeLoadError.js";
 
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light.js";
-import { VolumeLoadError, VolumeLoadErrorType } from "./loaders/VolumeLoadError.js";
 
 export type { ImageInfo } from "./Volume.js";
 export type { ControlPoint } from "./Lut.js";
