@@ -107,12 +107,21 @@ class RawArrayLoader extends ThreadableVolumeLoader {
     return { imageInfo: convertImageInfo(this.jsonInfo), loadSpec };
   }
 
-  async loadRawChannelData(
+  loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
+    onUpdateMetadata: (imageInfo: undefined, loadSpec: LoadSpec) => void,
     onData: RawChannelDataCallback
-  ): Promise<{ loadSpec?: LoadSpec }> {
+  ): Promise<void> {
     const requestedChannels = loadSpec.channels;
+
+    const adjustedLoadSpec = {
+      ...loadSpec,
+      // `subregion` and `multiscaleLevel` are unused by this loader
+      subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)),
+      multiscaleLevel: 0,
+    };
+    onUpdateMetadata(undefined, adjustedLoadSpec);
 
     for (let chindex = 0; chindex < imageInfo.numChannels; ++chindex) {
       if (requestedChannels && requestedChannels.length > 0 && !requestedChannels.includes(chindex)) {
@@ -124,13 +133,7 @@ class RawArrayLoader extends ThreadableVolumeLoader {
       onData([chindex], [channelData], [DATARANGE_UINT8]);
     }
 
-    const adjustedLoadSpec = {
-      ...loadSpec,
-      // `subregion` and `multiscaleLevel` are unused by this loader
-      subregion: new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1)),
-      multiscaleLevel: 0,
-    };
-    return { loadSpec: adjustedLoadSpec };
+    return Promise.resolve();
   }
 }
 

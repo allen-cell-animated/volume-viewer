@@ -530,16 +530,18 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     };
   }
 
-  loadRawChannelData(
+  async loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
+    onUpdateMetadata: (imageInfo: ImageInfo) => void,
     onData: RawChannelDataCallback
-  ): Promise<{ imageInfo: ImageInfo }> {
+  ): Promise<void> {
     // This seemingly useless line keeps a stable local copy of `syncChannels` which the async closures below capture
     // so that changes to `this.syncChannels` don't affect the behavior of loads in progress.
     const syncChannels = this.syncChannels;
 
     const updatedImageInfo = this.updateImageInfoForLoad(imageInfo, loadSpec);
+    onUpdateMetadata(updatedImageInfo);
     const { numChannels, multiscaleLevel } = updatedImageInfo;
     const channelIndexes = loadSpec.channels ?? Array.from({ length: numChannels }, (_, i) => i);
 
@@ -576,6 +578,10 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
         )
       );
 
+      if (result?.data === undefined) {
+        return;
+      }
+
       const converted = convertChannel(result.data);
       if (syncChannels) {
         resultChannelData.push(converted[0]);
@@ -594,13 +600,12 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     this.beginPrefetch(keys, multiscaleLevel);
 
-    Promise.all(channelPromises).then(() => {
-      if (syncChannels) {
-        onData(resultChannelIndices, resultChannelData, resultChannelRanges);
-      }
-      this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
-    });
-    return Promise.resolve({ imageInfo: updatedImageInfo });
+    await Promise.all(channelPromises);
+
+    if (syncChannels) {
+      onData(resultChannelIndices, resultChannelData, resultChannelRanges);
+    }
+    this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
   }
 }
 

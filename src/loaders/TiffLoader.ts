@@ -1,5 +1,6 @@
 import { fromUrl } from "geotiff";
 import { Vector3 } from "three";
+import { ErrorObject, deserializeError } from "serialize-error";
 
 import {
   ThreadableVolumeLoader,
@@ -46,6 +47,24 @@ class OMEDims {
   pixelsizez = 1;
   channelnames: string[] = [];
 }
+
+export type TiffWorkerParams = {
+  channel: number;
+  tilesizex: number;
+  tilesizey: number;
+  sizec: number;
+  sizez: number;
+  dimensionOrder: string;
+  bytesPerSample: number;
+  url: string;
+};
+
+export type TiffLoadResult = {
+  isError: false;
+  data: Uint8Array;
+  channel: number;
+  range: [number, number];
+};
 
 function getAttributeOrError(el: Element, attr: string): string {
   const val = el.getAttribute(attr);
@@ -177,39 +196,48 @@ class TiffLoader extends ThreadableVolumeLoader {
   async loadRawChannelData(
     imageInfo: ImageInfo,
     _loadSpec: LoadSpec,
+    _onUpdateMetadata: () => void,
     onData: RawChannelDataCallback
-  ): Promise<Record<string, never>> {
+  ): Promise<void> {
     const dims = await this.loadOmeDims();
 
+    const channelProms: Promise<void>[] = [];
     // do each channel on a worker?
     for (let channel = 0; channel < imageInfo.numChannels; ++channel) {
-      const params = {
-        channel: channel,
-        // these are target xy sizes for the in-memory volume data
-        // they may or may not be the same size as original xy sizes
-        tilesizex: imageInfo.volumeSize.x,
-        tilesizey: imageInfo.volumeSize.y,
-        sizec: imageInfo.numChannels,
-        sizez: imageInfo.volumeSize.z,
-        dimensionOrder: dims.dimensionorder,
-        bytesPerSample: getBytesPerSample(dims.pixeltype),
-        url: this.url,
-      };
-      const worker = new Worker(new URL("../workers/FetchTiffWorker", import.meta.url));
-      worker.onmessage = (e) => {
-        const u8 = e.data.data;
-        const channel = e.data.channel;
-        const range = e.data.range;
-        onData([channel], [u8], [range]);
-        worker.terminate();
-      };
-      worker.onerror = (e) => {
-        alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
-      };
-      worker.postMessage(params);
+      const thisChannelProm = new Promise<void>((resolve, reject) => {
+        const params: TiffWorkerParams = {
+          channel: channel,
+          // these are target xy sizes for the in-memory volume data
+          // they may or may not be the same size as original xy sizes
+          tilesizex: imageInfo.volumeSize.x,
+          tilesizey: imageInfo.volumeSize.y,
+          sizec: imageInfo.numChannels,
+          sizez: imageInfo.volumeSize.z,
+          dimensionOrder: dims.dimensionorder,
+          bytesPerSample: getBytesPerSample(dims.pixeltype),
+          url: this.url,
+        };
+
+        const worker = new Worker(new URL("../workers/FetchTiffWorker", import.meta.url));
+        worker.onmessage = (e: MessageEvent<TiffLoadResult | { isError: true; error: ErrorObject }>) => {
+          if (e.data.isError) {
+            reject(deserializeError(e.data.error));
+            return;
+          }
+          const { data, channel, range } = e.data;
+          onData([channel], [data], [range]);
+          worker.terminate();
+          resolve();
+        };
+
+        worker.postMessage(params);
+      });
+
+      channelProms.push(thisChannelProm);
     }
 
-    return {};
+    // waiting for all channels to load allows errors to propagate to the caller via this promise
+    await Promise.all(channelProms);
   }
 }
 

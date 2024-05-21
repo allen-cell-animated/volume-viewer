@@ -4,7 +4,7 @@ import Channel from "./Channel.js";
 import Histogram from "./Histogram.js";
 import { Lut } from "./Lut.js";
 import { getColorByChannelIndex } from "./constants/colors.js";
-import { type IVolumeLoader, LoadSpec, type PerChannelCallback } from "./loaders/IVolumeLoader.js";
+import { type IVolumeLoader, LoadSpec, type PerChannelCallback, VolumeDims } from "./loaders/IVolumeLoader.js";
 import { MAX_ATLAS_EDGE, pickLevelToLoadUnscaled } from "./loaders/VolumeLoaderUtils.js";
 
 export type ImageInfo = Readonly<{
@@ -84,6 +84,7 @@ export const getDefaultImageInfo = (): ImageInfo => ({
 interface VolumeDataObserver {
   onVolumeData: (vol: Volume, batch: number[]) => void;
   onVolumeChannelAdded: (vol: Volume, idx: number) => void;
+  onVolumeLoadError: (vol: Volume, error: unknown) => void;
 }
 
 /**
@@ -276,7 +277,7 @@ export default class Volume {
     // If we're not reloading due to required data changes, check if we should load a new scale level
     if (!shouldReload && this.mayLoadNewScaleLevel()) {
       // Loaders should cache loaded dimensions so that this call blocks no more than once per valid `LoadSpec`.
-      const dims = await this.loader?.loadDims(this.loadSpecRequired);
+      const dims = await this.loadScaleLevelDims();
       if (dims) {
         const dimsZYX = dims.map(({ shape }): [number, number, number] => [shape[2], shape[3], shape[4]]);
         // Determine which scale level *would* be loaded, and see if it's different than what we have
@@ -290,17 +291,32 @@ export default class Volume {
     }
   }
 
+  private async loadScaleLevelDims(): Promise<VolumeDims[] | undefined> {
+    try {
+      return await this.loader?.loadDims(this.loadSpecRequired);
+    } catch (e) {
+      this.volumeDataObservers.forEach((observer) => observer.onVolumeLoadError(this, e));
+      return undefined;
+    }
+  }
+
   /**
    * Loads new data as specified in `this.loadSpecRequired`. Clones `loadSpecRequired` into `loadSpec` to indicate
    * that the data that *must* be loaded is now the data that *has* been loaded.
    */
-  private loadNewData(onChannelLoaded?: PerChannelCallback): void {
+  private async loadNewData(onChannelLoaded?: PerChannelCallback): Promise<void> {
     this.setUnloaded();
     this.loadSpec = {
       ...this.loadSpecRequired,
       subregion: this.loadSpecRequired.subregion.clone(),
     };
-    this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
+
+    try {
+      await this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
+    } catch (e) {
+      this.volumeDataObservers.forEach((observer) => observer.onVolumeLoadError(this, e));
+      throw e;
+    }
   }
 
   // we calculate the physical size of the volume (voxels*pixel_size)

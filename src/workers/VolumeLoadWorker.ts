@@ -3,10 +3,11 @@ import { serializeError } from "serialize-error";
 import VolumeCache from "../VolumeCache.js";
 import { VolumeFileFormat, createVolumeLoader, pathToFileType } from "../loaders/index.js";
 import { ThreadableVolumeLoader } from "../loaders/IVolumeLoader.js";
+import { VolumeLoadError } from "../loaders/VolumeLoadError.js";
 import RequestQueue from "../utils/RequestQueue.js";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue.js";
 import type { WorkerRequest, WorkerRequestPayload, WorkerResponse, WorkerResponsePayload } from "./types.js";
-import { WorkerMsgType, WorkerResponseResult } from "./types.js";
+import { WorkerEventType, WorkerMsgType, WorkerResponseResult } from "./types.js";
 import { rebuildImageInfo, rebuildLoadSpec } from "./util.js";
 
 let cache: VolumeCache | undefined = undefined;
@@ -39,7 +40,7 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
 
   [WorkerMsgType.CREATE_VOLUME]: async (loadSpec) => {
     if (loader === undefined) {
-      throw new Error("No loader created");
+      throw new VolumeLoadError("No loader created");
     }
 
     return await loader.createImageInfo(rebuildLoadSpec(loadSpec));
@@ -47,22 +48,34 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
 
   [WorkerMsgType.LOAD_DIMS]: async (loadSpec) => {
     if (loader === undefined) {
-      throw new Error("No loader created");
+      throw new VolumeLoadError("No loader created");
     }
     return await loader.loadDims(rebuildLoadSpec(loadSpec));
   },
 
-  [WorkerMsgType.LOAD_VOLUME_DATA]: async ({ imageInfo, loadSpec, loaderId, loadId }) => {
+  [WorkerMsgType.LOAD_VOLUME_DATA]: ({ imageInfo, loadSpec, loaderId, loadId }) => {
     if (loader === undefined) {
-      throw new Error("No loader created");
+      throw new VolumeLoadError("No loader created");
     }
 
-    return await loader.loadRawChannelData(
+    return loader.loadRawChannelData(
       rebuildImageInfo(imageInfo),
       rebuildLoadSpec(loadSpec),
+      (imageInfo, loadSpec) => {
+        const message: WorkerResponse<WorkerMsgType> = {
+          responseResult: WorkerResponseResult.EVENT,
+          eventType: WorkerEventType.METADATA_UPDATE,
+          loaderId,
+          loadId,
+          imageInfo,
+          loadSpec,
+        };
+        self.postMessage(message);
+      },
       (channelIndex, data, ranges, atlasDims) => {
         const message: WorkerResponse<WorkerMsgType> = {
           responseResult: WorkerResponseResult.EVENT,
+          eventType: WorkerEventType.CHANNEL_LOAD,
           loaderId,
           loadId,
           channelIndex,
@@ -70,8 +83,7 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
           ranges,
           atlasDims,
         };
-        const dataTransfers = data.map((d) => d.buffer);
-        (self as unknown as Worker).postMessage(message, copyOnLoad ? [] : dataTransfers);
+        (self as unknown as Worker).postMessage(message, copyOnLoad ? [] : data.map((d) => d.buffer));
       }
     );
   },

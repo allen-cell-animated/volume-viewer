@@ -1,4 +1,8 @@
 import { fromUrl } from "geotiff";
+import { serializeError } from "serialize-error";
+
+import type { TiffLoadResult, TiffWorkerParams } from "../loaders/TiffLoader.js";
+import { VolumeLoadError, VolumeLoadErrorType } from "../loaders/VolumeLoadError.js";
 
 type TypedArray =
   | Uint8Array
@@ -41,7 +45,7 @@ function castToArray(buf: ArrayBuffer, bytesPerPixel: number, sampleFormat: numb
   return new Uint8Array(buf);
 }
 
-self.onmessage = async function (e) {
+async function loadTiffChannel(e: MessageEvent<TiffWorkerParams>): Promise<TiffLoadResult> {
   // TODO index images by time
   // const time = e.data.time;
 
@@ -90,9 +94,13 @@ self.onmessage = async function (e) {
     // deposit in full channel array in the right place
     const offset = zslice * tilesizex * tilesizey;
     if (arrayresult.BYTES_PER_ELEMENT > 4) {
-      console.log("byte size not supported yet");
+      throw new VolumeLoadError("byte size not supported yet: " + arrayresult.BYTES_PER_ELEMENT, {
+        type: VolumeLoadErrorType.INVALID_METADATA,
+      });
     } else if (arrayresult.BYTES_PER_ELEMENT !== bytesPerSample) {
-      console.log("tiff bytes per element mismatch with OME metadata");
+      throw new VolumeLoadError("tiff bytes per element mismatch with OME metadata", {
+        type: VolumeLoadErrorType.INVALID_METADATA,
+      });
     } else {
       u8.set(new Uint8Array(arrayresult.buffer), offset * arrayresult.BYTES_PER_ELEMENT);
     }
@@ -114,6 +122,14 @@ self.onmessage = async function (e) {
   for (let j = 0; j < src.length; ++j) {
     out[j] = ((src[j] - chmin) / (chmax - chmin)) * 255;
   }
-  const results = { data: out, channel: channelIndex, range: [chmin, chmax] };
-  (self as unknown as Worker).postMessage(results, [results.data.buffer]);
+  return { data: out, channel: channelIndex, range: [chmin, chmax], isError: false };
+}
+
+self.onmessage = async (e) => {
+  try {
+    const result = await loadTiffChannel(e);
+    (self as unknown as Worker).postMessage(result, [result.data.buffer]);
+  } catch (err) {
+    self.postMessage({ isError: true, error: serializeError(err) });
+  }
 };
