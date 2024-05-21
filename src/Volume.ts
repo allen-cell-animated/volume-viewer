@@ -287,7 +287,7 @@ export default class Volume {
     }
 
     if (shouldReload) {
-      await this.loadNewData(onChannelLoaded);
+      this.loadNewData(onChannelLoaded);
     }
   }
 
