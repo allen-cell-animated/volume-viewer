@@ -22,9 +22,11 @@ export const enum WorkerResponseResult {
   EVENT,
 }
 
-/** The kind of events that can occur when loading - updates to metadata, or new channel data */
+/** The kind of events that can occur when loading */
 export const enum WorkerEventType {
+  /** Fired to update a `Volume`'s `imageInfo` and/or `loadSpec` based on loaded data (time, channels, region, etc.) */
   METADATA_UPDATE,
+  /** Fired when data for a channel (or batch of channels) is loaded */
   CHANNEL_LOAD,
 }
 
