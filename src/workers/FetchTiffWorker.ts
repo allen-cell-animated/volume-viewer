@@ -94,7 +94,9 @@ async function loadTiffChannel(e: MessageEvent<TiffWorkerParams>): Promise<TiffL
     // deposit in full channel array in the right place
     const offset = zslice * tilesizex * tilesizey;
     if (arrayresult.BYTES_PER_ELEMENT > 4) {
-      throw new VolumeLoadError("byte size not supported yet", { type: VolumeLoadErrorType.INVALID_METADATA });
+      throw new VolumeLoadError("byte size not supported yet: " + arrayresult.BYTES_PER_ELEMENT, {
+        type: VolumeLoadErrorType.INVALID_METADATA,
+      });
     } else if (arrayresult.BYTES_PER_ELEMENT !== bytesPerSample) {
       throw new VolumeLoadError("tiff bytes per element mismatch with OME metadata", {
         type: VolumeLoadErrorType.INVALID_METADATA,
