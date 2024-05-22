@@ -1,6 +1,67 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./src/loaders/VolumeLoadError.ts":
+/*!****************************************!*\
+  !*** ./src/loaders/VolumeLoadError.ts ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   VolumeLoadError: () => (/* binding */ VolumeLoadError),
+/* harmony export */   VolumeLoadErrorType: () => (/* binding */ VolumeLoadErrorType),
+/* harmony export */   wrapVolumeLoadError: () => (/* binding */ wrapVolumeLoadError)
+/* harmony export */ });
+/* harmony import */ var serialize_error__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! serialize-error */ "./node_modules/serialize-error/error-constructors.js");
+/* harmony import */ var _zarrita_core__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @zarrita/core */ "./node_modules/@zarrita/core/dist/src/errors.js");
+
+
+// geotiff doesn't export its error types...
+
+/** Groups possible load errors into a few broad categories which we can give similar guidance to the user about. */
+let VolumeLoadErrorType = /*#__PURE__*/function (VolumeLoadErrorType) {
+  VolumeLoadErrorType["UNKNOWN"] = "unknown";
+  VolumeLoadErrorType["NOT_FOUND"] = "not_found";
+  VolumeLoadErrorType["TOO_LARGE"] = "too_large";
+  VolumeLoadErrorType["LOAD_DATA_FAILED"] = "load_data_failed";
+  VolumeLoadErrorType["INVALID_METADATA"] = "invalid_metadata";
+  VolumeLoadErrorType["INVALID_MULTI_SOURCE_ZARR"] = "invalid_multi_source_zarr";
+  return VolumeLoadErrorType;
+}({});
+class VolumeLoadError extends Error {
+  constructor(message, options) {
+    super(message, options);
+    this.name = "VolumeLoadError";
+    this.type = options?.type ?? VolumeLoadErrorType.UNKNOWN;
+  }
+}
+
+// serialize-error only ever calls an error constructor with zero arguments. The required `ErrorConstructor`
+// type is a bit too restrictive - as long as the constructor can be called with no arguments it's fine.
+serialize_error__WEBPACK_IMPORTED_MODULE_0__["default"].set("NodeNotFoundError", _zarrita_core__WEBPACK_IMPORTED_MODULE_1__.NodeNotFoundError);
+serialize_error__WEBPACK_IMPORTED_MODULE_0__["default"].set("KeyError", _zarrita_core__WEBPACK_IMPORTED_MODULE_1__.KeyError);
+serialize_error__WEBPACK_IMPORTED_MODULE_0__["default"].set("VolumeLoadError", VolumeLoadError);
+
+/** Curried function to re-throw an error wrapped in a `VolumeLoadError` with the given `message` and `type`. */
+function wrapVolumeLoadError(message = "Unknown error occurred while loading volume data", type = VolumeLoadErrorType.UNKNOWN, ignore) {
+  return e => {
+    if (ignore !== undefined && e === ignore) {
+      return e;
+    }
+    if (e instanceof VolumeLoadError) {
+      throw e;
+    }
+    throw new VolumeLoadError(message, {
+      type,
+      cause: e
+    });
+  };
+}
+
+/***/ }),
+
 /***/ "./src/workers/FetchTiffWorker.ts":
 /*!****************************************!*\
   !*** ./src/workers/FetchTiffWorker.ts ***!
@@ -9,7 +70,11 @@
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
+/* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
+/* harmony import */ var serialize_error__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! serialize-error */ "./node_modules/serialize-error/index.js");
+/* harmony import */ var _loaders_VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../loaders/VolumeLoadError.js */ "./src/loaders/VolumeLoadError.ts");
+
+
 
 // from TIFF
 const SAMPLEFORMAT_UINT = 1;
@@ -40,7 +105,7 @@ function castToArray(buf, bytesPerPixel, sampleFormat) {
   console.error(`TIFF Worker: unsupported sample format ${sampleFormat} and bytes per pixel ${bytesPerPixel}`);
   return new Uint8Array(buf);
 }
-self.onmessage = async function (e) {
+async function loadTiffChannel(e) {
   // TODO index images by time
   // const time = e.data.time;
 
@@ -51,7 +116,7 @@ self.onmessage = async function (e) {
   const sizec = e.data.sizec;
   const dimensionOrder = e.data.dimensionOrder;
   const bytesPerSample = e.data.bytesPerSample;
-  const tiff = await (0,geotiff__WEBPACK_IMPORTED_MODULE_0__.fromUrl)(e.data.url, {
+  const tiff = await (0,geotiff__WEBPACK_IMPORTED_MODULE_1__.fromUrl)(e.data.url, {
     allowFullFile: true
   });
 
@@ -92,9 +157,13 @@ self.onmessage = async function (e) {
     // deposit in full channel array in the right place
     const offset = zslice * tilesizex * tilesizey;
     if (arrayresult.BYTES_PER_ELEMENT > 4) {
-      console.log("byte size not supported yet");
+      throw new _loaders_VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_0__.VolumeLoadError("byte size not supported yet: " + arrayresult.BYTES_PER_ELEMENT, {
+        type: _loaders_VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_0__.VolumeLoadErrorType.INVALID_METADATA
+      });
     } else if (arrayresult.BYTES_PER_ELEMENT !== bytesPerSample) {
-      console.log("tiff bytes per element mismatch with OME metadata");
+      throw new _loaders_VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_0__.VolumeLoadError("tiff bytes per element mismatch with OME metadata", {
+        type: _loaders_VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_0__.VolumeLoadErrorType.INVALID_METADATA
+      });
     } else {
       u8.set(new Uint8Array(arrayresult.buffer), offset * arrayresult.BYTES_PER_ELEMENT);
     }
@@ -116,12 +185,23 @@ self.onmessage = async function (e) {
   for (let j = 0; j < src.length; ++j) {
     out[j] = (src[j] - chmin) / (chmax - chmin) * 255;
   }
-  const results = {
+  return {
     data: out,
     channel: channelIndex,
-    range: [chmin, chmax]
+    range: [chmin, chmax],
+    isError: false
   };
-  self.postMessage(results, [results.data.buffer]);
+}
+self.onmessage = async e => {
+  try {
+    const result = await loadTiffChannel(e);
+    self.postMessage(result, [result.data.buffer]);
+  } catch (err) {
+    self.postMessage({
+      isError: true,
+      error: (0,serialize_error__WEBPACK_IMPORTED_MODULE_2__.serializeError)(err)
+    });
+  }
 };
 
 /***/ }),
@@ -199,7 +279,7 @@ self.onmessage = async function (e) {
 /******/ 	__webpack_require__.x = () => {
 /******/ 		// Load entry module and return exports
 /******/ 		// This entry module depends on other loaded chunks and execution need to be delayed
-/******/ 		var __webpack_exports__ = __webpack_require__.O(undefined, ["vendors-node_modules_geotiff_dist-module_geotiff_js"], () => (__webpack_require__("./src/workers/FetchTiffWorker.ts")))
+/******/ 		var __webpack_exports__ = __webpack_require__.O(undefined, ["vendors-node_modules_zarrita_core_dist_src_errors_js-node_modules_geotiff_dist-module_geotiff-5b1ba2"], () => (__webpack_require__("./src/workers/FetchTiffWorker.ts")))
 /******/ 		__webpack_exports__ = __webpack_require__.O(__webpack_exports__);
 /******/ 		return __webpack_exports__;
 /******/ 	};
@@ -367,7 +447,7 @@ self.onmessage = async function (e) {
 /******/ 	(() => {
 /******/ 		var next = __webpack_require__.x;
 /******/ 		__webpack_require__.x = () => {
-/******/ 			return __webpack_require__.e("vendors-node_modules_geotiff_dist-module_geotiff_js").then(next);
+/******/ 			return __webpack_require__.e("vendors-node_modules_zarrita_core_dist_src_errors_js-node_modules_geotiff_dist-module_geotiff-5b1ba2").then(next);
 /******/ 		};
 /******/ 	})();
 /******/ 	

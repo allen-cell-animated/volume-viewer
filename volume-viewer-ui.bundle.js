@@ -3966,6 +3966,12 @@ class View3d {
   onVolumeChannelAdded(volume, newChannelIndex) {
     this.image?.onChannelAdded(newChannelIndex);
   }
+  onVolumeLoadError(volume, error) {
+    this.loadErrorHandler?.(volume, error);
+  }
+  setLoadErrorHandler(handler) {
+    this.loadErrorHandler = handler;
+  }
   setTime(volume, time, onChannelLoaded) {
     const timeClamped = Math.max(0, Math.min(time, volume.imageInfo.times - 1));
     volume.updateRequiredData({
@@ -4772,7 +4778,7 @@ class Volume {
     // If we're not reloading due to required data changes, check if we should load a new scale level
     if (!shouldReload && this.mayLoadNewScaleLevel()) {
       // Loaders should cache loaded dimensions so that this call blocks no more than once per valid `LoadSpec`.
-      const dims = await this.loader?.loadDims(this.loadSpecRequired);
+      const dims = await this.loadScaleLevelDims();
       if (dims) {
         const dimsZYX = dims.map(({
           shape
@@ -4786,18 +4792,31 @@ class Volume {
       this.loadNewData(onChannelLoaded);
     }
   }
+  async loadScaleLevelDims() {
+    try {
+      return await this.loader?.loadDims(this.loadSpecRequired);
+    } catch (e) {
+      this.volumeDataObservers.forEach(observer => observer.onVolumeLoadError(this, e));
+      return undefined;
+    }
+  }
 
   /**
    * Loads new data as specified in `this.loadSpecRequired`. Clones `loadSpecRequired` into `loadSpec` to indicate
    * that the data that *must* be loaded is now the data that *has* been loaded.
    */
-  loadNewData(onChannelLoaded) {
+  async loadNewData(onChannelLoaded) {
     this.setUnloaded();
     this.loadSpec = {
       ...this.loadSpecRequired,
       subregion: this.loadSpecRequired.subregion.clone()
     };
-    this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
+    try {
+      await this.loader?.loadVolumeData(this, undefined, onChannelLoaded);
+    } catch (e) {
+      this.volumeDataObservers.forEach(observer => observer.onVolumeLoadError(this, e));
+      throw e;
+    }
   }
 
   // we calculate the physical size of the volume (voxels*pixel_size)
@@ -7139,11 +7158,11 @@ const sliceShaderUniforms = () => {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   AREA_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_17__.AREA_LIGHT),
+/* harmony export */   AREA_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_18__.AREA_LIGHT),
 /* harmony export */   Channel: () => (/* reexport safe */ _Channel_js__WEBPACK_IMPORTED_MODULE_2__["default"]),
 /* harmony export */   Histogram: () => (/* reexport safe */ _Histogram_js__WEBPACK_IMPORTED_MODULE_7__["default"]),
 /* harmony export */   JsonImageInfoLoader: () => (/* reexport safe */ _loaders_JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_13__.JsonImageInfoLoader),
-/* harmony export */   Light: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_17__.Light),
+/* harmony export */   Light: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_18__.Light),
 /* harmony export */   LoadSpec: () => (/* reexport safe */ _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__.LoadSpec),
 /* harmony export */   Lut: () => (/* reexport safe */ _Lut_js__WEBPACK_IMPORTED_MODULE_8__.Lut),
 /* harmony export */   OMEZarrLoader: () => (/* reexport safe */ _loaders_OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_12__.OMEZarrLoader),
@@ -7152,7 +7171,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   RENDERMODE_RAYMARCH: () => (/* reexport safe */ _View3d_js__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_RAYMARCH),
 /* harmony export */   RawArrayLoader: () => (/* reexport safe */ _loaders_RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_14__.RawArrayLoader),
 /* harmony export */   RequestQueue: () => (/* reexport safe */ _utils_RequestQueue_js__WEBPACK_IMPORTED_MODULE_5__["default"]),
-/* harmony export */   SKY_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_17__.SKY_LIGHT),
+/* harmony export */   SKY_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_18__.SKY_LIGHT),
 /* harmony export */   SubscribableRequestQueue: () => (/* reexport safe */ _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_6__["default"]),
 /* harmony export */   TiffLoader: () => (/* reexport safe */ _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_15__.TiffLoader),
 /* harmony export */   View3d: () => (/* reexport safe */ _View3d_js__WEBPACK_IMPORTED_MODULE_0__.View3d),
@@ -7160,6 +7179,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   Volume: () => (/* reexport safe */ _Volume_js__WEBPACK_IMPORTED_MODULE_1__["default"]),
 /* harmony export */   VolumeCache: () => (/* reexport safe */ _VolumeCache_js__WEBPACK_IMPORTED_MODULE_4__["default"]),
 /* harmony export */   VolumeFileFormat: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__.VolumeFileFormat),
+/* harmony export */   VolumeLoadError: () => (/* reexport safe */ _loaders_VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_17__.VolumeLoadError),
+/* harmony export */   VolumeLoadErrorType: () => (/* reexport safe */ _loaders_VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_17__.VolumeLoadErrorType),
 /* harmony export */   VolumeLoaderContext: () => (/* reexport safe */ _workers_VolumeLoaderContext_js__WEBPACK_IMPORTED_MODULE_16__["default"]),
 /* harmony export */   VolumeMaker: () => (/* reexport safe */ _VolumeMaker_js__WEBPACK_IMPORTED_MODULE_3__["default"]),
 /* harmony export */   createVolumeLoader: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__.createVolumeLoader)
@@ -7181,7 +7202,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _loaders_RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./loaders/RawArrayLoader.js */ "./src/loaders/RawArrayLoader.ts");
 /* harmony import */ var _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./loaders/TiffLoader.js */ "./src/loaders/TiffLoader.ts");
 /* harmony import */ var _workers_VolumeLoaderContext_js__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ./workers/VolumeLoaderContext.js */ "./src/workers/VolumeLoaderContext.ts");
-/* harmony import */ var _Light_js__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ./Light.js */ "./src/Light.ts");
+/* harmony import */ var _loaders_VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ./loaders/VolumeLoadError.js */ "./src/loaders/VolumeLoadError.ts");
+/* harmony import */ var _Light_js__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ./Light.js */ "./src/Light.ts");
+
 
 
 
@@ -7293,10 +7316,14 @@ class ThreadableVolumeLoader {
   /**
    * Begins loading per-channel data for the volume specified by `imageInfo` and `loadSpec`.
    *
-   * Returns a promise that resolves to reflect any modifications to `imageInfo` and/or `loadSpec` that need to be made
-   * based on this load. Actual loaded channel data is passed to `onData` as it is loaded. Depending on the format,
-   * the returned array may be in simple 3d dimension order or reflect a 2d atlas. If the latter, the dimensions of the
-   * atlas are passed as the third argument to `onData`.
+   * This function accepts two required callbacks. The first, `onUpdateVolumeMetadata`, should be called at most once
+   * to modify the `Volume`'s `imageInfo` and/or `loadSpec` properties based on changes made by this load. Actual
+   * loaded channel data is passed to `onData` as it is loaded.
+   *
+   * Depending on the loader, the array passed to `onData` may be in simple 3d dimension order or reflect a 2d atlas.
+   * If the latter, the dimensions of the atlas are passed as the third argument to `onData`.
+   *
+   * The returned promise should resolve when all data has been loaded, or reject if any error occurs while loading.
    */
 
   setPrefetchPriority(_directions) {
@@ -7317,6 +7344,16 @@ class ThreadableVolumeLoader {
     return vol;
   }
   async loadVolumeData(volume, loadSpecOverride, onChannelLoaded) {
+    const onUpdateMetadata = (imageInfo, loadSpec) => {
+      if (imageInfo) {
+        volume.imageInfo = imageInfo;
+        volume.updateDimensions();
+      }
+      volume.loadSpec = {
+        ...loadSpec,
+        ...spec
+      };
+    };
     const onChannelData = (channelIndices, dataArrays, ranges, atlasDims) => {
       for (let i = 0; i < channelIndices.length; i++) {
         const channelIndex = channelIndices[i];
@@ -7334,18 +7371,7 @@ class ThreadableVolumeLoader {
       ...loadSpecOverride,
       ...volume.loadSpec
     };
-    const {
-      imageInfo,
-      loadSpec
-    } = await this.loadRawChannelData(volume.imageInfo, spec, onChannelData);
-    if (imageInfo) {
-      volume.imageInfo = imageInfo;
-      volume.updateDimensions();
-    }
-    volume.loadSpec = {
-      ...loadSpec,
-      ...spec
-    };
+    return this.loadRawChannelData(volume.imageInfo, spec, onUpdateMetadata, onChannelData);
   }
 }
 
@@ -7435,7 +7461,7 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
       loadSpec
     };
   }
-  async loadRawChannelData(imageInfo, loadSpec, onData) {
+  async loadRawChannelData(imageInfo, loadSpec, onUpdateMetadata, onData) {
     // if you need to adjust image paths prior to download,
     // now is the time to do it.
     // Try to figure out the urlPrefix from the LoadSpec.
@@ -7443,7 +7469,7 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
     const jsonInfo = await this.getJsonImageInfo(loadSpec.time);
     let images = jsonInfo?.images;
     if (!images) {
-      return {};
+      return;
     }
     const requestedChannels = loadSpec.channels;
     if (requestedChannels) {
@@ -7459,10 +7485,8 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
       ...element,
       name: urlPrefix + element.name
     }));
-    const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
-    const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
-    const wrappedOnData = (ch, data, ranges) => onData(ch, data, ranges, [w, h]);
-    JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
+
+    // Update `image`'s `loadSpec` before loading
     const adjustedLoadSpec = {
       ...loadSpec,
       // `subregion` and `multiscaleLevel` are unused by this loader
@@ -7473,9 +7497,11 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
         channels
       }) => channels)
     };
-    return {
-      loadSpec: adjustedLoadSpec
-    };
+    onUpdateMetadata(undefined, adjustedLoadSpec);
+    const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
+    const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
+    const wrappedOnData = (ch, data, ranges) => onData(ch, data, ranges, [w, h]);
+    await JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
   }
 
   /**
@@ -7494,8 +7520,8 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
    *     "channels": [6, 7, 8]
    * }], mycallback);
    */
-  static loadVolumeAtlasData(imageArray, onData, cache) {
-    imageArray.forEach(async image => {
+  static async loadVolumeAtlasData(imageArray, onData, cache) {
+    const imagePromises = imageArray.map(async image => {
       // Because the data is fetched such that one fetch returns a whole batch,
       // if any in batch is cached then they all should be. So if any in batch is NOT cached,
       // then we will have to do a batch request. This logic works both ways because it's all or nothing.
@@ -7558,6 +7584,7 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
         onData([chindex], [channelsBits[ch]], [_types_js__WEBPACK_IMPORTED_MODULE_1__.DATARANGE_UINT8], [bitmap.width, bitmap.height]);
       }
     });
+    await Promise.all(imagePromises);
   }
 }
 
@@ -8001,11 +8028,12 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
       multiscaleLevel
     };
   }
-  loadRawChannelData(imageInfo, loadSpec, onData) {
+  async loadRawChannelData(imageInfo, loadSpec, onUpdateMetadata, onData) {
     // This seemingly useless line keeps a stable local copy of `syncChannels` which the async closures below capture
     // so that changes to `this.syncChannels` don't affect the behavior of loads in progress.
     const syncChannels = this.syncChannels;
     const updatedImageInfo = this.updateImageInfoForLoad(imageInfo, loadSpec);
+    onUpdateMetadata(updatedImageInfo);
     const {
       numChannels,
       multiscaleLevel
@@ -8046,6 +8074,9 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
           reportKey
         }
       }).catch((0,_VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_6__.wrapVolumeLoadError)("Could not load OME-Zarr volume data", _VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_6__.VolumeLoadErrorType.LOAD_DATA_FAILED, CHUNK_REQUEST_CANCEL_REASON));
+      if (result?.data === undefined) {
+        return;
+      }
       const converted = convertChannel(result.data);
       if (syncChannels) {
         resultChannelData.push(converted[0]);
@@ -8062,15 +8093,11 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
     }
     this.loadSubscriber = subscriber;
     this.beginPrefetch(keys, multiscaleLevel);
-    Promise.all(channelPromises).then(() => {
-      if (syncChannels) {
-        onData(resultChannelIndices, resultChannelData, resultChannelRanges);
-      }
-      this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
-    });
-    return Promise.resolve({
-      imageInfo: updatedImageInfo
-    });
+    await Promise.all(channelPromises);
+    if (syncChannels) {
+      onData(resultChannelIndices, resultChannelData, resultChannelRanges);
+    }
+    this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
   }
 }
 
@@ -8138,7 +8165,7 @@ class OpenCellLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Thre
       loadSpec: new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.LoadSpec()
     };
   }
-  loadRawChannelData(imageInfo, _loadSpec, onData) {
+  loadRawChannelData(imageInfo, _loadSpec, _onUpdateMetadata, onData) {
     // HQTILE or LQTILE
     // make a json metadata dict for the two channels:
     const urls = [{
@@ -8151,8 +8178,7 @@ class OpenCellLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Thre
     const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
     const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
     // all data coming from this loader is natively 8-bit
-    _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_1__.JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, data) => onData(ch, data, [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8], [w, h]));
-    return Promise.resolve({});
+    return _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_1__.JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, data) => onData(ch, data, [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8], [w, h]));
   }
 }
 
@@ -8237,8 +8263,15 @@ class RawArrayLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Thre
       loadSpec
     };
   }
-  async loadRawChannelData(imageInfo, loadSpec, onData) {
+  loadRawChannelData(imageInfo, loadSpec, onUpdateMetadata, onData) {
     const requestedChannels = loadSpec.channels;
+    const adjustedLoadSpec = {
+      ...loadSpec,
+      // `subregion` and `multiscaleLevel` are unused by this loader
+      subregion: new three__WEBPACK_IMPORTED_MODULE_3__.Box3(new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(1, 1, 1)),
+      multiscaleLevel: 0
+    };
+    onUpdateMetadata(undefined, adjustedLoadSpec);
     for (let chindex = 0; chindex < imageInfo.numChannels; ++chindex) {
       if (requestedChannels && requestedChannels.length > 0 && !requestedChannels.includes(chindex)) {
         continue;
@@ -8248,15 +8281,7 @@ class RawArrayLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Thre
       // all data coming from this loader is natively 8-bit
       onData([chindex], [channelData], [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8]);
     }
-    const adjustedLoadSpec = {
-      ...loadSpec,
-      // `subregion` and `multiscaleLevel` are unused by this loader
-      subregion: new three__WEBPACK_IMPORTED_MODULE_3__.Box3(new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(1, 1, 1)),
-      multiscaleLevel: 0
-    };
-    return {
-      loadSpec: adjustedLoadSpec
-    };
+    return Promise.resolve();
   }
 }
 
@@ -8276,9 +8301,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var serialize_error__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! serialize-error */ "./node_modules/serialize-error/index.js");
 /* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
 /* harmony import */ var _VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./VolumeLoadError.js */ "./src/loaders/VolumeLoadError.ts");
+
 
 
 
@@ -8425,37 +8452,46 @@ class TiffLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Threadab
       loadSpec: new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.LoadSpec()
     };
   }
-  async loadRawChannelData(imageInfo, _loadSpec, onData) {
+  async loadRawChannelData(imageInfo, _loadSpec, _onUpdateMetadata, onData) {
     const dims = await this.loadOmeDims();
-
+    const channelProms = [];
     // do each channel on a worker?
     for (let channel = 0; channel < imageInfo.numChannels; ++channel) {
-      const params = {
-        channel: channel,
-        // these are target xy sizes for the in-memory volume data
-        // they may or may not be the same size as original xy sizes
-        tilesizex: imageInfo.volumeSize.x,
-        tilesizey: imageInfo.volumeSize.y,
-        sizec: imageInfo.numChannels,
-        sizez: imageInfo.volumeSize.z,
-        dimensionOrder: dims.dimensionorder,
-        bytesPerSample: getBytesPerSample(dims.pixeltype),
-        url: this.url
-      };
-      const worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchTiffWorker_ts"), __webpack_require__.b));
-      worker.onmessage = e => {
-        const u8 = e.data.data;
-        const channel = e.data.channel;
-        const range = e.data.range;
-        onData([channel], [u8], [range]);
-        worker.terminate();
-      };
-      worker.onerror = e => {
-        alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
-      };
-      worker.postMessage(params);
+      const thisChannelProm = new Promise((resolve, reject) => {
+        const params = {
+          channel: channel,
+          // these are target xy sizes for the in-memory volume data
+          // they may or may not be the same size as original xy sizes
+          tilesizex: imageInfo.volumeSize.x,
+          tilesizey: imageInfo.volumeSize.y,
+          sizec: imageInfo.numChannels,
+          sizez: imageInfo.volumeSize.z,
+          dimensionOrder: dims.dimensionorder,
+          bytesPerSample: getBytesPerSample(dims.pixeltype),
+          url: this.url
+        };
+        const worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_FetchTiffWorker_ts"), __webpack_require__.b));
+        worker.onmessage = e => {
+          if (e.data.isError) {
+            reject((0,serialize_error__WEBPACK_IMPORTED_MODULE_5__.deserializeError)(e.data.error));
+            return;
+          }
+          const {
+            data,
+            channel,
+            range
+          } = e.data;
+          onData([channel], [data], [range]);
+          worker.terminate();
+          resolve();
+        };
+        worker.postMessage(params);
+      });
+      channelProms.push(thisChannelProm);
     }
-    return {};
+
+    // waiting for all channels to load allows errors to propagate to the caller via this promise
+    await Promise.all(channelProms);
   }
 }
 
@@ -10080,6 +10116,7 @@ class SharedLoadWorkerHandle {
   pendingRequests = [];
   workerOpen = true;
   onChannelData = undefined;
+  onUpdateMetadata = undefined;
   constructor() {
     this.worker = new Worker(new URL(/* worker import */ __webpack_require__.p + __webpack_require__.u("src_workers_VolumeLoadWorker_ts"), __webpack_require__.b));
     this.worker.onmessage = this.receiveMessage.bind(this);
@@ -10132,7 +10169,11 @@ class SharedLoadWorkerHandle {
     data
   }) {
     if (data.responseResult === _types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerResponseResult.EVENT) {
-      this.onChannelData?.(data);
+      if (data.eventType === _types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerEventType.CHANNEL_LOAD) {
+        this.onChannelData?.(data);
+      } else if (data.eventType === _types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerEventType.METADATA_UPDATE) {
+        this.onUpdateMetadata?.(data);
+      }
     } else {
       const prom = this.pendingRequests[data.msgId];
       if (prom === undefined) {
@@ -10231,11 +10272,13 @@ class WorkerLoader extends _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1_
   isOpen = true;
   currentLoadId = -1;
   currentLoadCallback = undefined;
+  currentMetadataUpdateCallback = undefined;
   constructor(loaderId, workerHandle) {
     super();
     this.loaderId = loaderId;
     this.workerHandle = workerHandle;
     workerHandle.onChannelData = this.onChannelData.bind(this);
+    workerHandle.onUpdateMetadata = this.onUpdateMetadata.bind(this);
   }
   checkIsOpen() {
     if (!this.isOpen || !this.workerHandle.isOpen) {
@@ -10273,29 +10316,31 @@ class WorkerLoader extends _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1_
       loadSpec: (0,_util_js__WEBPACK_IMPORTED_MODULE_5__.rebuildLoadSpec)(adjustedLoadSpec)
     };
   }
-  async loadRawChannelData(imageInfo, loadSpec, onData) {
+  loadRawChannelData(imageInfo, loadSpec, onUpdateMetadata, onData) {
     this.checkIsOpen();
     this.currentLoadCallback = onData;
+    this.currentMetadataUpdateCallback = onUpdateMetadata;
     this.currentLoadId += 1;
-    const {
-      imageInfo: newImageInfo,
-      loadSpec: newLoadSpec
-    } = await this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerMsgType.LOAD_VOLUME_DATA, {
+    return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerMsgType.LOAD_VOLUME_DATA, {
       imageInfo,
       loadSpec,
       loaderId: this.loaderId,
       loadId: this.currentLoadId
     });
-    return {
-      imageInfo: newImageInfo && (0,_util_js__WEBPACK_IMPORTED_MODULE_5__.rebuildImageInfo)(newImageInfo),
-      loadSpec: newLoadSpec && (0,_util_js__WEBPACK_IMPORTED_MODULE_5__.rebuildLoadSpec)(newLoadSpec)
-    };
   }
   onChannelData(e) {
     if (e.loaderId !== this.loaderId || e.loadId !== this.currentLoadId) {
       return;
     }
     this.currentLoadCallback?.(e.channelIndex, e.data, e.ranges, e.atlasDims);
+  }
+  onUpdateMetadata(e) {
+    if (e.loaderId !== this.loaderId || e.loadId !== this.currentLoadId) {
+      return;
+    }
+    const imageInfo = e.imageInfo && (0,_util_js__WEBPACK_IMPORTED_MODULE_5__.rebuildImageInfo)(e.imageInfo);
+    const loadSpec = e.loadSpec && (0,_util_js__WEBPACK_IMPORTED_MODULE_5__.rebuildLoadSpec)(e.loadSpec);
+    this.currentMetadataUpdateCallback?.(imageInfo, loadSpec);
   }
 }
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (VolumeLoaderContext);
@@ -10311,6 +10356,7 @@ class WorkerLoader extends _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1_
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   WorkerEventType: () => (/* binding */ WorkerEventType),
 /* harmony export */   WorkerMsgType: () => (/* binding */ WorkerMsgType),
 /* harmony export */   WorkerResponseResult: () => (/* binding */ WorkerResponseResult)
 /* harmony export */ });
@@ -10334,13 +10380,22 @@ let WorkerResponseResult = /*#__PURE__*/function (WorkerResponseResult) {
   return WorkerResponseResult;
 }({});
 
+/** The kind of events that can occur when loading */
+let WorkerEventType = /*#__PURE__*/function (WorkerEventType) {
+  WorkerEventType[WorkerEventType["METADATA_UPDATE"] = 0] = "METADATA_UPDATE";
+  WorkerEventType[WorkerEventType["CHANNEL_LOAD"] = 1] = "CHANNEL_LOAD";
+  return WorkerEventType;
+}({});
+
 /** All messages to/from a worker carry a `msgId`, a `type`, and a `payload` (whose type is determined by `type`). */
 
 /** Maps each `WorkerMsgType` to the type of the payload of requests of that type. */
 
 /** Maps each `WorkerMsgType` to the type of the payload of responses of that type. */
 
-/** Currently the only event a loader can produce is a `ChannelLoadEvent` when a batch of channels loads. */
+/** Event for when a batch of channel data loads. */
+
+/** Event for when metadata updates. */
 
 /** All valid types of worker requests, with some `WorkerMsgType` and a matching payload type. */
 
