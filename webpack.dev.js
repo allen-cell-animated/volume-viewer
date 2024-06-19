@@ -5,7 +5,7 @@ import CopyWebpackPlugin from "copy-webpack-plugin";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import { CleanWebpackPlugin } from "clean-webpack-plugin";
 
-import packageJson from "./package.json" with { type: "json" };
+import packageJson from "./package.json" assert { type: "json" };
 
 import { fileURLToPath } from "url";
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
@@ -60,7 +60,7 @@ export default {
     extensions: [".js", ".ts"],
     extensionAlias: {
       ".js": [".js", ".ts"],
-    }
+    },
   },
   module: {
     rules: [
