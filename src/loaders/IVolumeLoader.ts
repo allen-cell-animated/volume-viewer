@@ -84,14 +84,17 @@ export interface IVolumeLoader {
 
   /**
    * Begin loading a volume's data, as specified in its `LoadSpec`.
-   * Pass a callback to respond when this request loads a new channel. This callback will execute after the
-   * one assigned in `createVolume`, if any.
+   *
+   * Pass a callback to respond when this request loads a new channel. This callback will execute after the one
+   * assigned in `createVolume`, if any.
+   *
+   * The returned `Promise` resolves once all channels load, or rejects with any error that occurs during loading.
    */
   // TODO make this return a promise that resolves when loading is done?
   // TODO this is not cancellable in the sense that any async requests initiated here are not stored
   // in a way that they can be interrupted.
   // TODO explicitly passing a `LoadSpec` is now rarely useful. Remove?
-  loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): void;
+  loadVolumeData(volume: Volume, loadSpec?: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<void>;
 
   /** Change which directions to prioritize when prefetching. Currently only implemented on `OMEZarrLoader`. */
   setPrefetchPriority(directions: PrefetchDirection[]): void;
@@ -123,16 +126,21 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
   /**
    * Begins loading per-channel data for the volume specified by `imageInfo` and `loadSpec`.
    *
-   * Returns a promise that resolves to reflect any modifications to `imageInfo` and/or `loadSpec` that need to be made
-   * based on this load. Actual loaded channel data is passed to `onData` as it is loaded. Depending on the format,
-   * the returned array may be in simple 3d dimension order or reflect a 2d atlas. If the latter, the dimensions of the
-   * atlas are passed as the third argument to `onData`.
+   * This function accepts two required callbacks. The first, `onUpdateVolumeMetadata`, should be called at most once
+   * to modify the `Volume`'s `imageInfo` and/or `loadSpec` properties based on changes made by this load. Actual
+   * loaded channel data is passed to `onData` as it is loaded.
+   *
+   * Depending on the loader, the array passed to `onData` may be in simple 3d dimension order or reflect a 2d atlas.
+   * If the latter, the dimensions of the atlas are passed as the third argument to `onData`.
+   *
+   * The returned promise should resolve when all data has been loaded, or reject if any error occurs while loading.
    */
   abstract loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
+    onUpdateVolumeMetadata: (imageInfo?: ImageInfo, loadSpec?: LoadSpec) => void,
     onData: RawChannelDataCallback
-  ): Promise<Partial<LoadedVolumeInfo>>;
+  ): Promise<void>;
 
   setPrefetchPriority(_directions: PrefetchDirection[]): void {
     // no-op by default
@@ -156,6 +164,14 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
     loadSpecOverride?: LoadSpec,
     onChannelLoaded?: PerChannelCallback
   ): Promise<void> {
+    const onUpdateMetadata = (imageInfo?: ImageInfo, loadSpec?: LoadSpec): void => {
+      if (imageInfo) {
+        volume.imageInfo = imageInfo;
+        volume.updateDimensions();
+      }
+      volume.loadSpec = { ...loadSpec, ...spec };
+    };
+
     const onChannelData: RawChannelDataCallback = (channelIndices, dtypes, dataArrays, ranges, atlasDims) => {
       for (let i = 0; i < channelIndices.length; i++) {
         const channelIndex = channelIndices[i];
@@ -172,12 +188,6 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
     };
 
     const spec = { ...loadSpecOverride, ...volume.loadSpec };
-    const { imageInfo, loadSpec } = await this.loadRawChannelData(volume.imageInfo, spec, onChannelData);
-
-    if (imageInfo) {
-      volume.imageInfo = imageInfo;
-      volume.updateDimensions();
-    }
-    volume.loadSpec = { ...loadSpec, ...spec };
+    return this.loadRawChannelData(volume.imageInfo, spec, onUpdateMetadata, onChannelData);
   }
 }
