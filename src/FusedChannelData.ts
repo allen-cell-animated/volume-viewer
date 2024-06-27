@@ -18,11 +18,12 @@ import {
   MaxEquation,
   Texture,
   LinearFilter,
+  Vector2,
 } from "three";
 
 import Channel from "./Channel.js";
-import { fuseShaderSrc, fuseVertexShaderSrc } from "./constants/fuseShader.js";
-import type { FuseChannel } from "./types.js";
+import { fuseShaderSrcF, fuseShaderSrcI, fuseShaderSrcUI, fuseVertexShaderSrc } from "./constants/fuseShader.js";
+import type { FuseChannel, NumberType } from "./types.js";
 
 // This is the owner of the fused RGBA volume texture atlas, and the mask texture atlas.
 // This module is responsible for updating the fused texture, given the read-only volume channel data.
@@ -36,7 +37,7 @@ export default class FusedChannelData {
   private channelsDataToFuse: Channel[];
 
   private fuseGeometry: PlaneGeometry;
-  private fuseMaterial: ShaderMaterial;
+  private fuseMaterial: ShaderMaterial[];
   private fuseMaterialProps: Partial<ShaderMaterialParameters>;
   private fuseScene: Scene;
   private quadCamera: OrthographicCamera;
@@ -81,7 +82,6 @@ export default class FusedChannelData {
 
     this.fuseMaterialProps = {
       vertexShader: fuseVertexShaderSrc,
-      fragmentShader: fuseShaderSrc,
       depthTest: false,
       depthWrite: false,
       blending: CustomBlending,
@@ -92,17 +92,50 @@ export default class FusedChannelData {
     // this exists to keep one reference alive
     // to make sure we do not fully delete and re-create
     // a shader every time.
-    this.fuseMaterial = new ShaderMaterial({
-      uniforms: {
-        lutSampler: {
-          value: null,
+    this.fuseMaterial = [
+      new ShaderMaterial({
+        uniforms: {
+          lutSampler: {
+            value: null,
+          },
+          lutMinMax: { value: new Vector2(0, 255) },
+          srcTexture: {
+            value: null,
+          },
         },
-        srcTexture: {
-          value: null,
+        fragmentShader: fuseShaderSrcF,
+        ...this.fuseMaterialProps,
+      }),
+      new ShaderMaterial({
+        uniforms: {
+          lutSampler: {
+            value: null,
+          },
+          lutMinMax: { value: new Vector2(0, 255) },
+          srcTexture: {
+            value: null,
+          },
         },
-      },
-      ...this.fuseMaterialProps,
-    });
+        fragmentShader: fuseShaderSrcUI,
+        ...this.fuseMaterialProps,
+      }),
+      new ShaderMaterial({
+        uniforms: {
+          lutSampler: {
+            value: null,
+          },
+          lutMinMax: { value: new Vector2(0, 255) },
+          srcTexture: {
+            value: null,
+          },
+        },
+        fragmentShader: fuseShaderSrcI,
+        ...this.fuseMaterialProps,
+      }),
+    ];
+    this.fuseMaterial[0].needsUpdate = true;
+    this.fuseMaterial[1].needsUpdate = true;
+    this.fuseMaterial[2].needsUpdate = true;
     this.fuseGeometry = new PlaneGeometry(2, 2);
   }
 
@@ -113,6 +146,52 @@ export default class FusedChannelData {
   public cleanup(): void {
     this.fuseScene.clear();
     this.maskTexture.dispose();
+  }
+
+  private getShader(dtype: NumberType): ShaderMaterial {
+    switch (dtype) {
+      case "float32":
+        return this.fuseMaterial[0];
+        break;
+      case "uint8":
+      case "uint16":
+      case "uint32":
+        return this.fuseMaterial[1];
+        break;
+      case "int8":
+      case "int16":
+      case "int32":
+        return this.fuseMaterial[2];
+        break;
+      default:
+        throw new Error("Unsupported data type for fuse shader");
+        return this.fuseMaterial[0];
+        break;
+    }
+  }
+
+  private getMinMax(c: Channel): Vector2 {
+    // return min and max of data range types
+    switch (c.dtype) {
+      case "float32":
+        return new Vector2(0, 1);
+      case "uint8":
+        return new Vector2(0, 255);
+      case "uint16":
+        return new Vector2(0, 65535);
+      case "uint32":
+        return new Vector2(0, 4294967295);
+      case "int8":
+        return new Vector2(-128, 127);
+      case "int16":
+        return new Vector2(-32768, 32767);
+      case "int32":
+        return new Vector2(-2147483648, 2147483647);
+      default:
+        throw new Error("Unsupported data type for fuse shader");
+        return new Vector2(0, 1);
+        break;
+    }
   }
 
   fuse(combination: FuseChannel[], channels: Channel[]): void {
@@ -161,20 +240,14 @@ export default class FusedChannelData {
       if (combination[i].rgbColor) {
         const chIndex = combination[i].chIndex;
         // add a draw call per channel here.
-        // TODO create these at channel creation time!
-        const mat = new ShaderMaterial({
-          uniforms: {
-            lutSampler: {
-              value: channels[chIndex].lutTexture,
-            },
-            srcTexture: {
-              value: channels[chIndex].dataTexture,
-            },
-          },
-          ...this.fuseMaterialProps,
-        });
-
+        // must clone the material to keep a unique set of uniforms
+        const mat = this.getShader(channels[chIndex].dtype).clone();
+        mat.uniforms.lutSampler.value = channels[chIndex].lutTexture;
+        mat.uniforms.lutMinMax.value = new Vector2(channels[chIndex].rawMin, channels[chIndex].rawMax);
+        //mat.uniforms.lutMinMax.value = this.getMinMax(channels[chIndex]);
+        mat.uniforms.srcTexture.value = channels[chIndex].dataTexture;
         this.fuseScene.add(new Mesh(this.fuseGeometry, mat));
+        console.log("fuse channel min and max", chIndex, channels[chIndex].rawMin, channels[chIndex].rawMax);
       }
     }
     renderer.setRenderTarget(this.fuseRenderTarget);
@@ -195,9 +268,13 @@ export default class FusedChannelData {
     if (!channel || !channel.loaded) {
       return false;
     }
-    const datacopy = channel.imgData.data.buffer.slice(0);
+    // binarize the data
+    const datacopy = new Uint8ClampedArray(channel.imgData.data.length);
+    for (let i = 0; i < channel.imgData.data.length; i++) {
+      datacopy[i] = channel.imgData.data[i] > 0 ? 255 : 0;
+    }
     const maskData = {
-      data: new Uint8ClampedArray(datacopy),
+      data: datacopy,
       width: this.width,
       height: this.height,
       colorSpace: "srgb" as PredefinedColorSpace,
