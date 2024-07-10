@@ -105,8 +105,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.setUniform("ATLAS_DIMS", atlasTileDims);
     this.setUniform("textureRes", atlasSize);
     this.setUniform("SLICES", volumeSize.z);
-    this.setUniform("SUBSET_SCALE", this.volume.normRegionSize);
-    this.setUniform("SUBSET_OFFSET", this.volume.normRegionOffset);
     if (this.sliceUpdateWaiting) {
       this.updateSlice();
     }
