@@ -73,6 +73,7 @@ class Atlas2DSlice {
   }
   updateVolumeDimensions() {
     const scale = this.volume.normPhysicalSize;
+    this.geometryMesh.position.copy(this.volume.getContentCenter());
     // set scale
     this.geometryMesh.scale.copy(scale);
     this.setUniform("volumeScale", scale);
@@ -88,8 +89,6 @@ class Atlas2DSlice {
     this.setUniform("ATLAS_DIMS", atlasTileDims);
     this.setUniform("textureRes", atlasSize);
     this.setUniform("SLICES", volumeSize.z);
-    this.setUniform("SUBSET_SCALE", this.volume.normRegionSize);
-    this.setUniform("SUBSET_OFFSET", this.volume.normRegionOffset);
     if (this.sliceUpdateWaiting) {
       this.updateSlice();
     }
@@ -147,8 +146,15 @@ class Atlas2DSlice {
     if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_1__.SettingsFlags.ROI) {
       // Normalize and set bounds
       const bounds = this.settings.bounds;
-      this.setUniform("AABB_CLIP_MIN", bounds.bmin);
-      this.setUniform("AABB_CLIP_MAX", bounds.bmax);
+      const {
+        normRegionSize,
+        normRegionOffset
+      } = this.volume;
+      const offsetToCenter = normRegionSize.clone().divideScalar(2).add(normRegionOffset).subScalar(0.5);
+      const bmin = bounds.bmin.clone().sub(offsetToCenter).divide(normRegionSize).clampScalar(-0.5, 0.5);
+      const bmax = bounds.bmax.clone().sub(offsetToCenter).divide(normRegionSize).clampScalar(-0.5, 0.5);
+      this.setUniform("AABB_CLIP_MIN", bmin);
+      this.setUniform("AABB_CLIP_MAX", bmax);
       const sliceInBounds = this.updateSlice();
       if (sliceInBounds) {
         const sliceLowerBound = Math.floor(this.settings.zSlice) / this.volume.imageInfo.volumeSize.z;
@@ -7026,7 +7032,7 @@ __webpack_require__.r(__webpack_exports__);
 /* babel-plugin-inline-import './shaders/slice.vert' */
 const sliceVertexShader = "precision highp float;\nprecision highp int;\n\nvarying vec2 vUv;\n\nvoid main() {\n  vUv = uv;\n  gl_Position = projectionMatrix *\n    modelViewMatrix *\n    vec4(position, 1.0);\n}\n";
 /* babel-plugin-inline-import './shaders/slice.frag' */
-const sliceFragShader = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform vec2 ATLAS_DIMS;\nuniform vec3 AABB_CLIP_MIN;\nuniform vec3 AABB_CLIP_MAX;\nuniform vec3 SUBSET_SCALE;\nuniform vec3 SUBSET_OFFSET;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform int Z_SLICE;\nuniform float SLICES;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\n\nvarying vec2 vUv;\n\n// for atlased texture, we need to find the uv offset for the slice at t\nvec2 offsetFrontBack(float t) {\n  int a = int(t);\n  int ax = int(ATLAS_DIMS.x);\n  vec2 os = vec2(float(a - (a / ax) * ax), float(a / ax)) / ATLAS_DIMS;\n  return clamp(os, vec2(0.0), vec2(1.0) - vec2(1.0) / ATLAS_DIMS);\n}\n\nvec4 sampleAtlas(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n    pos[1] >= 0.0 && pos[1] <= 1.0 &&\n    pos[2] >= 0.0 && pos[2] <= 1.0);\n  float nSlices = float(SLICES);\n\n  vec2 loc0 = ((pos.xy - 0.5) * flipVolume.xy + 0.5) / ATLAS_DIMS;\n\n\n  if (interpolationEnabled) {\n    // loc ranges from 0 to 1/ATLAS_DIMS\n    // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n    loc0 = loc0 * (vec2(1.0) - ATLAS_DIMS / textureRes);\n  }\n  else {\n    // No interpolation - sample just one slice at a pixel center.\n    loc0 = floor(loc0 * textureRes) / textureRes;\n  }\n  loc0 += vec2(0.5) / textureRes;\n\n  float z = min(floor(pos.z * nSlices), nSlices - 1.0);\n\n  if(flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds * voxelColor;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n  // Normalize UV for [-0.5, 0.5] range\n  vec2 normUv = vUv - vec2(0.5);\n\n  // Return background color if outside of clipping box\n  if(normUv.x < boxMin.x || normUv.x > boxMax.x || normUv.y < boxMin.y || normUv.y > boxMax.y) {\n    gl_FragColor = vec4(0.0);\n    return;\n  }\n\n  // Normalize z-slice by total slices\n  vec4 pos = vec4(vUv, \n    (SLICES==1.0 && Z_SLICE==0) ? 0.0 : float(Z_SLICE) / (SLICES - 1.0), \n    0.0);\n  pos.xyz = (pos.xyz - SUBSET_OFFSET) / SUBSET_SCALE;\n\n  vec4 C;\n  C = sampleAtlas(textureAtlas, pos);\n  C.xyz *= BRIGHTNESS;\n\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}";
+const sliceFragShader = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform vec2 ATLAS_DIMS;\nuniform vec3 AABB_CLIP_MIN;\nuniform vec3 AABB_CLIP_MAX;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform int Z_SLICE;\nuniform float SLICES;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\n\nvarying vec2 vUv;\n\n// for atlased texture, we need to find the uv offset for the slice at t\nvec2 offsetFrontBack(float t) {\n  int a = int(t);\n  int ax = int(ATLAS_DIMS.x);\n  vec2 os = vec2(float(a - (a / ax) * ax), float(a / ax)) / ATLAS_DIMS;\n  return clamp(os, vec2(0.0), vec2(1.0) - vec2(1.0) / ATLAS_DIMS);\n}\n\nvec4 sampleAtlas(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n    pos[1] >= 0.0 && pos[1] <= 1.0 &&\n    pos[2] >= 0.0 && pos[2] <= 1.0);\n\n  float nSlices = float(SLICES);\n\n  vec2 loc0 = ((pos.xy - 0.5) * flipVolume.xy + 0.5) / ATLAS_DIMS;\n\n\n  if (interpolationEnabled) {\n    // loc ranges from 0 to 1/ATLAS_DIMS\n    // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n    loc0 = loc0 * (vec2(1.0) - ATLAS_DIMS / textureRes);\n  }\n  else {\n    // No interpolation - sample just one slice at a pixel center.\n    loc0 = floor(loc0 * textureRes) / textureRes;\n  }\n  loc0 += vec2(0.5) / textureRes;\n\n  float z = min(floor(pos.z * nSlices), nSlices - 1.0);\n\n  if(flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds * voxelColor;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n  // Normalize UV for [-0.5, 0.5] range\n  vec2 normUv = vUv - vec2(0.5);\n\n  // Return background color if outside of clipping box\n  if(normUv.x < boxMin.x || normUv.x > boxMax.x || normUv.y < boxMin.y || normUv.y > boxMax.y) {\n    gl_FragColor = vec4(0.0);\n    return;\n  }\n\n  // Normalize z-slice by total slices\n  vec4 pos = vec4(vUv, \n    (SLICES==1.0 && Z_SLICE==0) ? 0.0 : float(Z_SLICE) / (SLICES - 1.0), \n    0.0);\n\n  vec4 C;\n  C = sampleAtlas(textureAtlas, pos);\n  C.xyz *= BRIGHTNESS;\n\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}";
 
 const sliceVertexShaderSrc = sliceVertexShader;
 const sliceFragmentShaderSrc = sliceFragShader;
@@ -7103,14 +7109,6 @@ const sliceShaderUniforms = () => {
     AABB_CLIP_MAX: {
       type: "v3",
       value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0.5, 0.5, 0.5)
-    },
-    SUBSET_SCALE: {
-      type: "v3",
-      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(1, 1, 1)
-    },
-    SUBSET_OFFSET: {
-      type: "v3",
-      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0, 0, 0)
     },
     inverseModelViewMatrix: {
       type: "m4",
@@ -83605,8 +83603,8 @@ function updateZSliceUI(volume) {
   const zSlider = document.getElementById("zSlider");
   const zInput = document.getElementById("zValue");
   const totalZSlices = volume.imageInfo.volumeSize.z;
-  zSlider.max = `${totalZSlices}`;
-  zInput.max = `${totalZSlices}`;
+  zSlider.max = `${totalZSlices - 1}`;
+  zInput.max = `${totalZSlices - 1}`;
   zInput.value = `${Math.floor(totalZSlices / 2)}`;
   zSlider.value = `${Math.floor(totalZSlices / 2)}`;
 }
