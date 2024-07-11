@@ -93,6 +93,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
 
   public updateVolumeDimensions(): void {
     const scale = this.volume.normPhysicalSize;
+    this.geometryMesh.position.copy(this.volume.getContentCenter());
     // set scale
     this.geometryMesh.scale.copy(scale);
     this.setUniform("volumeScale", scale);
@@ -105,8 +106,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.setUniform("ATLAS_DIMS", atlasTileDims);
     this.setUniform("textureRes", atlasSize);
     this.setUniform("SLICES", volumeSize.z);
-    this.setUniform("SUBSET_SCALE", this.volume.normRegionSize);
-    this.setUniform("SUBSET_OFFSET", this.volume.normRegionOffset);
     if (this.sliceUpdateWaiting) {
       this.updateSlice();
     }
@@ -172,9 +171,13 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     if (dirtyFlags & SettingsFlags.ROI) {
       // Normalize and set bounds
       const bounds = this.settings.bounds;
+      const { normRegionSize, normRegionOffset } = this.volume;
+      const offsetToCenter = normRegionSize.clone().divideScalar(2).add(normRegionOffset).subScalar(0.5);
+      const bmin = bounds.bmin.clone().sub(offsetToCenter).divide(normRegionSize).clampScalar(-0.5, 0.5);
+      const bmax = bounds.bmax.clone().sub(offsetToCenter).divide(normRegionSize).clampScalar(-0.5, 0.5);
 
-      this.setUniform("AABB_CLIP_MIN", bounds.bmin);
-      this.setUniform("AABB_CLIP_MAX", bounds.bmax);
+      this.setUniform("AABB_CLIP_MIN", bmin);
+      this.setUniform("AABB_CLIP_MAX", bmax);
 
       const sliceInBounds = this.updateSlice();
       if (sliceInBounds) {
