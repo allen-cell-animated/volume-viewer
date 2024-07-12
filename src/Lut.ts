@@ -505,18 +505,28 @@ export function remapControlPoints(
     newControlPoints.push(newCP);
   }
 
-  if (noNudge) {
-    return newControlPoints;
-  }
+  return noNudge ? newControlPoints : nudgeRemappedEndControlPoints(newControlPoints, oldFirstX, oldLastX);
+}
 
-  // Commonly (e.g. in the output of most of the LUT generators above), the first and last control points define a line
-  // of constant opacity and are just there to connect the function to the ends of the range. Remapping these points
-  // just makes things look weird. We should do our best to keep them in place without losing information.
+/**
+ * Attempts to keep the first and last control points in a remapped list in a sensible place if they were previously on
+ * or outside the edge of the range.
+ *
+ * Commonly (e.g. in the output of nearly all the factory methods in `Lut`), the very first and last control points
+ * just define a line of constant opacity out to the upper/lower edge of the range. Remapping these points naively
+ * means that the range of the transfer function no longer matches the actual range of intensities. This isn't a
+ * problem for producing a lut, but it does make things look weird. If it is possible to do so without losing
+ * information, we should try to keep these points in place.
+ *
+ * In addition to a list of control points, this function requires the x coordinate of the end points _before_
+ * remapping, to determine whether the points used to be at or outside the edges of the range.
+ */
+function nudgeRemappedEndControlPoints(controlPoints: ControlPoint[], oldFirstX: number, oldLastX: number) {
   const EPSILON = 0.0001;
-  const first = newControlPoints[0];
-  const second = newControlPoints[1];
-  const secondLast = newControlPoints[newControlPoints.length - 2];
-  const last = newControlPoints[newControlPoints.length - 1];
+  const first = controlPoints[0];
+  const second = controlPoints[1];
+  const secondLast = controlPoints[controlPoints.length - 2];
+  const last = controlPoints[controlPoints.length - 1];
 
   if (Math.abs(first.opacity - (second?.opacity ?? Infinity)) < EPSILON) {
     if (first.x < 0) {
@@ -538,5 +548,5 @@ export function remapControlPoints(
     }
   }
 
-  return newControlPoints;
+  return controlPoints;
 }
