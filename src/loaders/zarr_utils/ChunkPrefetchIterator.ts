@@ -68,6 +68,9 @@ export default class ChunkPrefetchIterator {
     this.directionStates = [];
     this.priorityDirectionStates = [];
 
+    // iterating like this: direction is the index in the flattened entries
+    // and corresponds to our +T, -T, +Z, -Z, +Y, -Y, +X, -X directions in order
+    // because extrema is in TZYX order.
     for (const [direction, start] of extrema.flat().entries()) {
       const dimension = direction >> 1; // shave off sign bit to get index in TZYX
       const tczyxIndex = dimension + Number(dimension !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
@@ -100,7 +103,7 @@ export default class ChunkPrefetchIterator {
       if (priorityDirections && priorityDirections.includes(direction)) {
         this.priorityDirectionStates.push(directionState);
       } else {
-        this.directionStates.push(directionState);
+        //this.directionStates.push(directionState);
       }
     }
 

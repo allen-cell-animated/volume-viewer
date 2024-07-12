@@ -1,4 +1,5 @@
 import { deserializeError } from "serialize-error";
+import throttledQueue from "throttled-queue";
 
 import { ImageInfo } from "../Volume.js";
 import { CreateLoaderOptions, PrefetchDirection, VolumeFileFormat, pathToFileType } from "../loaders/index.js";
@@ -28,6 +29,7 @@ type StoredPromise<T extends WorkerMsgType> = {
   reject: (reason?: unknown) => void;
 };
 
+const throttle = throttledQueue(1, 16);
 /**
  * A handle that holds the worker and manages requests and messages to/from it.
  *
@@ -94,7 +96,10 @@ class SharedLoadWorkerHandle {
   private receiveMessage<T extends WorkerMsgType>({ data }: MessageEvent<WorkerResponse<T>>): void {
     if (data.responseResult === WorkerResponseResult.EVENT) {
       if (data.eventType === WorkerEventType.CHANNEL_LOAD) {
-        this.onChannelData?.(data);
+        if (this.onChannelData) {
+          //throttle(() => (this.onChannelData ? this.onChannelData(data) : {}));
+          this.onChannelData ? this.onChannelData(data) : {};
+        }
       } else if (data.eventType === WorkerEventType.METADATA_UPDATE) {
         this.onUpdateMetadata?.(data);
       }
