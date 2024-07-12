@@ -534,7 +534,7 @@ describe("test remapping control points when raw data range is updated", () => {
      *       0    64    192    255
      *       v    v     v      v
      */
-    const cp2 = remapControlPoints(cp, 0, 255, 64, 192);
+    const cp2 = remapControlPoints(cp, 0, 255, 64, 192, false);
     /**
      * New CPs:
      * 255 |           o
@@ -571,7 +571,7 @@ describe("test remapping control points when raw data range is updated", () => {
      *       0    64    192    255
      *       v    v     v      v
      */
-    const cp2 = remapControlPoints(cp, 0, 255, -64, 320);
+    const cp2 = remapControlPoints(cp, 0, 255, -64, 320, false);
     /**
      * New CPs:
      * 255 |           o ------o
