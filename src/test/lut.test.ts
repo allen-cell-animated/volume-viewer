@@ -584,4 +584,45 @@ describe("test remapping control points when raw data range is updated", () => {
     const positions = cp2.map((cp) => Math.round(cp.x));
     expect(positions).to.include.members([43, 85, 170, 212]);
   });
+  it("keeps ending points on the edge of the data range when new intensity range contracted and nudge is enabled", () => {
+    const cp = createMockCPs();
+    // NOTE: this range is not contracted as much as the previous test above. That range pushes the inner points to the
+    // edge as well, which would cause different behavior. That behavior is checked two tests down.
+    const cp2 = remapControlPoints(cp, 0, 255, 32, 224, true);
+    const positions = cp2.map((cp) => Math.round(cp.x));
+    expect(positions).to.include.members([0, 43, 213, 255]);
+  });
+  it("keeps ending points on the edge of the data range when new intensity range expanded and nudge is enabled", () => {
+    const cp = createMockCPs();
+    const cp2 = remapControlPoints(cp, 0, 255, -64, 320, true);
+    const positions = cp2.map((cp) => Math.round(cp.x));
+    expect(positions).to.include.members([0, 85, 170, 255]);
+  });
+  it("avoids nudging ending points into an out-of-order position when the next points in are also mapped outside the range", () => {
+    const cp = createMockCPs();
+    const cp2 = remapControlPoints(cp, 0, 255, 96, 160, true);
+    const [first, second, secondLast, last] = cp2.map((cp) => Math.round(cp.x));
+    // Inner points are outside the range. If the ending points were nudged into the range, they'd be out of order!
+    expect([second, secondLast]).to.include.members([-127, 383]);
+    // Instead, they should be kept in order, and at a safe distance from their inner neighbors.
+    expect(first).to.be.lessThanOrEqual(second - 1);
+    expect(last).to.be.greaterThanOrEqual(secondLast + 1);
+  });
+  it("does not try to keep ending points in range when they define a line with nonzero slope", () => {
+    const cp = createMockCPs();
+    cp[1].opacity = 0.2;
+    cp[2].opacity = 0.8;
+    // Now, if the outer control points were nudged, the slope of the lines would be changed.
+    const cp2 = remapControlPoints(cp, 0, 255, 64, 192, true);
+    const positions = cp2.map((cp) => Math.round(cp.x));
+    expect(positions).to.include.members([-127, 0, 255, 381]);
+  });
+  it("does not snap outer control points to the edge if they did not start on the edge", () => {
+    const cp = createMockCPs();
+    cp[0].x = 24;
+    cp[3].x = 231;
+    const cp2 = remapControlPoints(cp, 0, 255, -64, 320, true);
+    const positions = cp2.map((cp) => Math.round(cp.x));
+    expect(positions).to.include.members([58, 85, 170, 196]);
+  });
 });
