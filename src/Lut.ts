@@ -191,10 +191,6 @@ export class Lut {
     return this.#lut as Uint8Array;
   }
 
-  set lut(lut: Uint8Array) {
-    this.#lut = lut;
-  }
-
   /**
    * Generate a piecewise linear lookup table that ramps up from 0 to 1 over the b to e domain.
    * If e === b, then we use a step function with f(b) = 0 and f(b + 1) = 1
