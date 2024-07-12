@@ -182,10 +182,10 @@ export class Lut {
         const [first, last] = this.controlPoints;
         if (first.x === 0 && last.x === 255 && first.opacity === 0 && last.opacity === 1) {
           this.#lut = createFullRangeLut();
+          return this.#lut;
         }
-      } else {
-        this.#lut = controlPointsToLut(this.controlPoints);
       }
+      this.#lut = controlPointsToLut(this.controlPoints);
     }
 
     return this.#lut as Uint8Array;
