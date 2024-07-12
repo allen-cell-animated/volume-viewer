@@ -516,7 +516,7 @@ describe("test remapping lut when raw data range is updated", () => {
 });
 
 describe("test remapping control points when raw data range is updated", () => {
-  const cp: ControlPoint[] = [
+  const createMockCPs = (): ControlPoint[] => [
     { x: 0, color: [255, 255, 255], opacity: 0 },
     { x: 64, color: [255, 255, 255], opacity: 0 },
     { x: 192, color: [255, 255, 255], opacity: 1.0 },
@@ -524,6 +524,7 @@ describe("test remapping control points when raw data range is updated", () => {
   ];
 
   it("remaps the control points correctly when new intensity range contracted", () => {
+    const cp = createMockCPs();
     /**
      * Old CPs:
      * 255 |           o ------o
@@ -555,6 +556,7 @@ describe("test remapping control points when raw data range is updated", () => {
     expect(positions).to.include.members([-127, 0, 255, 381]);
   });
   it("remaps the control points correctly when new intensity range expanded", () => {
+    const cp = createMockCPs();
     /**
      * Old CPs:
      * 255 |           o ------o
