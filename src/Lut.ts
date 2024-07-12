@@ -475,7 +475,8 @@ export function remapControlPoints(
   oldMin: number,
   oldMax: number,
   newMin: number,
-  newMax: number
+  newMax: number,
+  noNudge = false
 ): ControlPoint[] {
   if (controlPoints.length === 0) {
     return controlPoints;
@@ -502,6 +503,10 @@ export function remapControlPoints(
       color: [cp.color[0], cp.color[1], cp.color[2]],
     };
     newControlPoints.push(newCP);
+  }
+
+  if (noNudge) {
+    return newControlPoints;
   }
 
   // Commonly (e.g. in the output of most of the LUT generators above), the first and last control points define a line
