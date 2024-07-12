@@ -460,7 +460,15 @@ export function remapControlPoints(
   newMin: number,
   newMax: number
 ): ControlPoint[] {
+  if (controlPoints.length === 0) {
+    return controlPoints;
+  }
+
   const newControlPoints: ControlPoint[] = [];
+
+  // Save the current position of control points at the ends of the list
+  const oldFirstX = controlPoints[0].x;
+  const oldLastX = controlPoints[controlPoints.length - 1].x;
 
   // assume control point x domain 0-255 is mapped to oldMin-oldMax
 
@@ -477,6 +485,35 @@ export function remapControlPoints(
       color: [cp.color[0], cp.color[1], cp.color[2]],
     };
     newControlPoints.push(newCP);
+  }
+
+  // Commonly (e.g. in the output of most of the LUT generators above), the first and last control points define a line
+  // of constant opacity and are just there to connect the function to the ends of the range. Remapping these points
+  // just makes things look weird. We should do our best to keep them in place without losing information.
+  const EPSILON = 0.0001;
+  const first = newControlPoints[0];
+  const second = newControlPoints[1];
+  const secondLast = newControlPoints[newControlPoints.length - 2];
+  const last = newControlPoints[newControlPoints.length - 1];
+
+  if (Math.abs(first.opacity - (second?.opacity ?? Infinity)) < EPSILON) {
+    if (first.x < 0) {
+      // control point is now out of bounds - clamp it to 0 (or as close as we can get without losing information)
+      first.x = Math.min(0, second.x - 1);
+    } else if (oldFirstX < EPSILON) {
+      // control point was at or below 0 and has moved inward - snap it to 0 to cover the full range
+      first.x = 0;
+    }
+  }
+
+  if (Math.abs(last.opacity - (secondLast?.opacity ?? Infinity)) < EPSILON) {
+    if (last.x > 255) {
+      // control point is now out of bounds - clamp it to 255 (or as close as we can get without losing information)
+      last.x = Math.max(255, secondLast.x + 1);
+    } else if (oldLastX > 255 - EPSILON) {
+      // control point was at or above 255 and has moved inward - snap it to 255 to cover the full range
+      last.x = 255;
+    }
   }
 
   return newControlPoints;
