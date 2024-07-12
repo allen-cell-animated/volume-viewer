@@ -78,6 +78,11 @@ function controlPointToRGBA(controlPoint) {
   return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], Math.floor(controlPoint.opacity * 255)];
 }
 
+const createFullRangeControlPoints = (opacityMin = 0, opacityMax = 1): [ControlPoint, ControlPoint] => [
+  { x: 0, opacity: opacityMin, color: [255, 255, 255] },
+  { x: 255, opacity: opacityMax, color: [255, 255, 255] },
+];
+
 /**
  * @typedef {Object} Lut Used for rendering.
  * @property {Array.<number>} lut LUT_ARRAY_LENGTH element lookup table as array
@@ -139,18 +144,12 @@ export class Lut {
     // Edge case: b and e are both out of bounds
     if (b < 0 && e < 0) {
       this.lut = lut;
-      this.controlPoints = [
-        { x: 0, opacity: 1, color: [255, 255, 255] },
-        { x: 255, opacity: 1, color: [255, 255, 255] },
-      ];
+      this.controlPoints = createFullRangeControlPoints(1, 1);
       return this;
     }
     if (b >= 255 && e >= 255) {
       this.lut = lut;
-      this.controlPoints = [
-        { x: 0, opacity: 0, color: [255, 255, 255] },
-        { x: 255, opacity: 0, color: [255, 255, 255] },
-      ];
+      this.controlPoints = createFullRangeControlPoints(0, 0);
       return this;
     }
 
@@ -204,10 +203,7 @@ export class Lut {
     }
 
     this.lut = lut;
-    this.controlPoints = [
-      { x: 0, opacity: 0, color: [255, 255, 255] },
-      { x: 255, opacity: 1, color: [255, 255, 255] },
-    ];
+    this.controlPoints = createFullRangeControlPoints();
     return this;
   }
 
