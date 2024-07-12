@@ -83,6 +83,20 @@ const createFullRangeControlPoints = (opacityMin = 0, opacityMax = 1): [ControlP
   { x: 255, opacity: opacityMax, color: [255, 255, 255] },
 ];
 
+function createFullRangeLut(): Uint8Array {
+  const lut = new Uint8Array(LUT_ARRAY_LENGTH);
+
+  // simple linear mapping for actual range
+  for (let x = 0; x < lut.length / 4; ++x) {
+    lut[x * 4 + 0] = 255;
+    lut[x * 4 + 1] = 255;
+    lut[x * 4 + 2] = 255;
+    lut[x * 4 + 3] = x;
+  }
+
+  return lut;
+}
+
 /**
  * @typedef {Object} Lut Used for rendering.
  * @property {Array.<number>} lut LUT_ARRAY_LENGTH element lookup table as array
@@ -192,17 +206,7 @@ export class Lut {
 
   // basically, the identity LUT with respect to opacity
   createFullRange(): Lut {
-    const lut = new Uint8Array(LUT_ARRAY_LENGTH);
-
-    // simple linear mapping for actual range
-    for (let x = 0; x < lut.length / 4; ++x) {
-      lut[x * 4 + 0] = 255;
-      lut[x * 4 + 1] = 255;
-      lut[x * 4 + 2] = 255;
-      lut[x * 4 + 3] = x;
-    }
-
-    this.lut = lut;
+    this.lut = createFullRangeLut();
     this.controlPoints = createFullRangeControlPoints();
     return this;
   }
