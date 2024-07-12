@@ -476,7 +476,7 @@ export function remapControlPoints(
   oldMax: number,
   newMin: number,
   newMax: number,
-  noNudge = false
+  nudgeEndPoints = true
 ): ControlPoint[] {
   if (controlPoints.length === 0) {
     return controlPoints;
@@ -505,7 +505,7 @@ export function remapControlPoints(
     newControlPoints.push(newCP);
   }
 
-  return noNudge ? newControlPoints : nudgeRemappedEndControlPoints(newControlPoints, oldFirstX, oldLastX);
+  return nudgeEndPoints ? nudgeRemappedEndControlPoints(newControlPoints, oldFirstX, oldLastX) : newControlPoints;
 }
 
 /**
