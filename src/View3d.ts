@@ -25,6 +25,7 @@ import {
 } from "./types.js";
 import { Axis } from "./VolumeRenderSettings.js";
 import { PerChannelCallback } from "./loaders/IVolumeLoader.js";
+import VolumeLoaderContext from "./workers/VolumeLoaderContext.js";
 
 // Constants are kept for compatibility reasons.
 export const RENDERMODE_RAYMARCH = RenderMode.RAYMARCH;
@@ -35,10 +36,19 @@ export interface View3dOptions {
   useWebGL2?: boolean;
 }
 
+const allGlobalLoadingOptions = {
+  numChunksToPrefetchAhead: 10,
+  numChunksToPrefetchBehind: 0,
+  prefetchAlongNonPlayingAxis: false,
+  throttleArrivingChannelData: true,
+};
+
 /**
  * @class
  */
 export class View3d {
+  public loaderContext?: VolumeLoaderContext;
+
   private canvas3d: ThreeJsPanel;
   private scene: Scene;
   private backgroundColor: Color;
@@ -894,6 +904,21 @@ export class View3d {
     addFolderForLight(this.fillLight, "fill light");
 
     this.image?.setupGui(pane);
+
+    const prefetch = pane.addFolder({ title: "Prefetch" });
+    prefetch.addInput(allGlobalLoadingOptions, "numChunksToPrefetchAhead").on("change", () => {
+      this.loaderContext?.getActiveLoader()?.updateFetchOptions({});
+      this.image?.volume.updateRequiredData({});
+    });
+    prefetch
+      .addInput(allGlobalLoadingOptions, "numChunksToPrefetchBehind")
+      .on("change", () => this.image?.volume.updateRequiredData({}));
+    prefetch.addInput(allGlobalLoadingOptions, "prefetchAlongNonPlayingAxis").on("change", (event) => {
+      this.loaderContext?.getActiveLoader()?.updateFetchOptions({ onlyPriorityDirections: !event.value });
+    });
+    prefetch.addInput(allGlobalLoadingOptions, "throttleArrivingChannelData").on("change", (event) => {
+      this.loaderContext?.setThrottleChannelData(event.value);
+    });
 
     return pane;
   }

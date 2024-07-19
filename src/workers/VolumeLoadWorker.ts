@@ -98,6 +98,11 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
     loader?.syncMultichannelLoading(syncChannels);
     return Promise.resolve();
   },
+
+  [WorkerMsgType.UPDATE_FETCH_OPTIONS]: (fetchOptions) => {
+    loader?.updateFetchOptions(fetchOptions);
+    return Promise.resolve();
+  },
 };
 
 self.onmessage = async <T extends WorkerMsgType>({ data }: MessageEvent<WorkerRequest<T>>) => {

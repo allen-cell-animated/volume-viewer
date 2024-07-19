@@ -1099,6 +1099,7 @@ function main() {
     return;
   }
   view3D = new View3d({ parentElement: el });
+  view3D.loaderContext = loaderContext;
 
   const testDataSelect = document.getElementById("testData");
   testDataSelect?.addEventListener("change", ({ currentTarget }) => {

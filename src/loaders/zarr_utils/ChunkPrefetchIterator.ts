@@ -47,7 +47,8 @@ export default class ChunkPrefetchIterator {
     chunks: TCZYX<number>[],
     tzyxMaxPrefetchOffset: TZYX,
     tczyxChunksPerSource: TCZYX<number>[],
-    priorityDirections?: PrefetchDirection[]
+    priorityDirections?: PrefetchDirection[],
+    onlyPriorityDirections = false
   ) {
     // Get min and max chunk coordinates for T/Z/Y/X
     const extrema: [number, number][] = [
@@ -103,7 +104,10 @@ export default class ChunkPrefetchIterator {
       if (priorityDirections && priorityDirections.includes(direction)) {
         this.priorityDirectionStates.push(directionState);
       } else {
-        //this.directionStates.push(directionState);
+        // we have an option settingthat can let us ignore non-priority directions
+        if (!onlyPriorityDirections) {
+          this.directionStates.push(directionState);
+        }
       }
     }
 

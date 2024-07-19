@@ -3,6 +3,7 @@ import type { ErrorObject } from "serialize-error";
 import type { ImageInfo } from "../Volume.js";
 import type { CreateLoaderOptions, PrefetchDirection } from "../loaders/index.js";
 import type { LoadSpec, LoadedVolumeInfo, VolumeDims } from "../loaders/IVolumeLoader.js";
+import type { ZarrLoaderFetchOptions } from "../loaders/OmeZarrLoader.js";
 
 /** The types of requests that can be made to the worker. Mostly corresponds to methods on `IVolumeLoader`. */
 export const enum WorkerMsgType {
@@ -13,6 +14,7 @@ export const enum WorkerMsgType {
   LOAD_VOLUME_DATA,
   SET_PREFETCH_PRIORITY_DIRECTIONS,
   SYNCHRONIZE_MULTICHANNEL_LOADING,
+  UPDATE_FETCH_OPTIONS,
 }
 
 /** The kind of response a worker can return - `SUCCESS`, `ERROR`, or `EVENT`. */
@@ -58,6 +60,7 @@ export type WorkerRequestPayload<T extends WorkerMsgType> = {
   };
   [WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS]: PrefetchDirection[];
   [WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING]: boolean;
+  [WorkerMsgType.UPDATE_FETCH_OPTIONS]: Partial<ZarrLoaderFetchOptions>;
 }[T];
 
 /** Maps each `WorkerMsgType` to the type of the payload of responses of that type. */
@@ -69,6 +72,7 @@ export type WorkerResponsePayload<T extends WorkerMsgType> = {
   [WorkerMsgType.LOAD_VOLUME_DATA]: void;
   [WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS]: void;
   [WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING]: void;
+  [WorkerMsgType.UPDATE_FETCH_OPTIONS]: void;
 }[T];
 
 /** Event for when a batch of channel data loads. */
