@@ -29,10 +29,10 @@ const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 const DEFAULT_ORTHO_SCALE = 0.5;
 
 export type CameraTransform = {
-  position: Vector3;
-  rotation: Euler;
-  up: Vector3;
-  target: Vector3;
+  position: [number, number, number];
+  rotation: [number, number, number];
+  up: [number, number, number];
+  target: [number, number, number];
 };
 
 export class ThreeJsPanel {
@@ -615,10 +615,10 @@ export class ThreeJsPanel {
 
   getCameraTransform(): CameraTransform {
     return {
-      position: this.camera.position.clone(),
-      rotation: this.camera.rotation.clone(),
-      up: this.camera.up.clone(),
-      target: this.controls.target.clone(),
+      position: this.camera.position.toArray(),
+      rotation: this.camera.rotation.toArray() as [number, number, number],
+      up: this.camera.up.toArray(),
+      target: this.controls.target.toArray(),
     };
   }
 
@@ -626,11 +626,11 @@ export class ThreeJsPanel {
     const currentTransform = this.getCameraTransform();
     // Fill in any missing properties with current
     const newTransform = { ...currentTransform, ...transform };
-    this.camera.up = newTransform.up.normalize();
-    const newPos = newTransform.position;
-    this.camera.position.set(newPos.x, newPos.y, newPos.z);
-    this.camera.setRotationFromEuler(newTransform.rotation);
-    this.controls.target = newTransform.target;
+
+    this.camera.up = new Vector3().fromArray(newTransform.up).normalize();
+    this.camera.position.set(...newTransform.position);
+    this.camera.setRotationFromEuler(new Euler().fromArray(newTransform.rotation));
+    this.controls.target = new Vector3().fromArray(newTransform.target);
   }
 
   render(): void {
