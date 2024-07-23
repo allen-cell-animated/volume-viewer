@@ -242,6 +242,10 @@ export class View3d {
     this.updateTimestepIndicator(volume);
   }
 
+  setScaleLevelBias(volume: Volume, scaleLevelBias: number): void {
+    volume.updateRequiredData({ scaleLevelBias });
+  }
+
   /**
    * Assign a channel index as a mask channel (will multiply its color against the entire visible volume)
    * @param {Object} volume
