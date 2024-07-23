@@ -21,13 +21,19 @@ import Timing from "./Timing.js";
 import scaleBarSVG from "./constants/scaleBarSVG.js";
 import { isOrthographicCamera, ViewportCorner, isTop, isRight } from "./types.js";
 import { formatNumber } from "./utils/num_utils.js";
-import { CameraTransform } from "../public/types.js";
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
 const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 
 const DEFAULT_ORTHO_SCALE = 0.5;
+
+export type CameraTransform = {
+  position: Vector3;
+  rotation: Euler;
+  up: Vector3;
+  target: Vector3;
+};
 
 export class ThreeJsPanel {
   public containerdiv: HTMLDivElement;

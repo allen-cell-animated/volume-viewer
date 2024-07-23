@@ -11,7 +11,7 @@ import {
 } from "three";
 import { Pane } from "tweakpane";
 
-import { ThreeJsPanel } from "./ThreeJsPanel.js";
+import { CameraTransform, ThreeJsPanel } from "./ThreeJsPanel.js";
 import lightSettings from "./constants/lights.js";
 import VolumeDrawable from "./VolumeDrawable.js";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light.js";
@@ -25,7 +25,6 @@ import {
 } from "./types.js";
 import { Axis } from "./VolumeRenderSettings.js";
 import { PerChannelCallback } from "./loaders/IVolumeLoader.js";
-import { CameraTransform } from "../public/types.js";
 
 // Constants are kept for compatibility reasons.
 export const RENDERMODE_RAYMARCH = RenderMode.RAYMARCH;
