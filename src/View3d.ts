@@ -133,6 +133,15 @@ export class View3d {
     return this.canvas3d.containerdiv;
   }
 
+  getCameraTransform(): { position: Vector3; rotation: Euler; up: Vector3 } {
+    return this.canvas3d.getCameraTransform();
+  }
+
+  setCameraTransform(transform: Partial<{ position: Vector3; rotation: Euler; up: Vector3 }>) {
+    this.canvas3d.setCameraTransform(transform);
+    this.redraw();
+  }
+
   /**
    * Force a redraw.
    */

@@ -13,6 +13,7 @@ import {
   NormalBlending,
   WebGLRenderer,
   Scene,
+  Euler,
 } from "three";
 
 import TrackballControls from "./TrackballControls.js";
@@ -603,6 +604,24 @@ export class ThreeJsPanel {
 
   getHeight(): number {
     return this.renderer.getContext().canvas.height;
+  }
+
+  getCameraTransform(): { position: Vector3; rotation: Euler; up: Vector3 } {
+    return {
+      position: this.camera.position.clone(),
+      rotation: this.camera.rotation.clone(),
+      up: this.camera.up.clone(),
+    };
+  }
+
+  setCameraTransform(transform: Partial<{ position: Vector3; rotation: Euler; up: Vector3 }>) {
+    const currentTransform = this.getCameraTransform();
+    // Fill in any missing properties with current
+    const newTransform = { ...currentTransform, ...transform };
+    this.camera.up = newTransform.up.normalize();
+    const newPos = newTransform.position;
+    this.camera.position.set(newPos.x, newPos.y, newPos.z);
+    this.camera.setRotationFromEuler(newTransform.rotation);
   }
 
   render(): void {
