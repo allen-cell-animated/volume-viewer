@@ -21,6 +21,7 @@ import Timing from "./Timing.js";
 import scaleBarSVG from "./constants/scaleBarSVG.js";
 import { isOrthographicCamera, ViewportCorner, isTop, isRight } from "./types.js";
 import { formatNumber } from "./utils/num_utils.js";
+import { CameraTransform } from "../public/types.js";
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
@@ -606,15 +607,16 @@ export class ThreeJsPanel {
     return this.renderer.getContext().canvas.height;
   }
 
-  getCameraTransform(): { position: Vector3; rotation: Euler; up: Vector3 } {
+  getCameraTransform(): CameraTransform {
     return {
       position: this.camera.position.clone(),
       rotation: this.camera.rotation.clone(),
       up: this.camera.up.clone(),
+      target: this.controls.target.clone(),
     };
   }
 
-  setCameraTransform(transform: Partial<{ position: Vector3; rotation: Euler; up: Vector3 }>) {
+  setCameraTransform(transform: Partial<CameraTransform>) {
     const currentTransform = this.getCameraTransform();
     // Fill in any missing properties with current
     const newTransform = { ...currentTransform, ...transform };
@@ -622,6 +624,7 @@ export class ThreeJsPanel {
     const newPos = newTransform.position;
     this.camera.position.set(newPos.x, newPos.y, newPos.z);
     this.camera.setRotationFromEuler(newTransform.rotation);
+    this.controls.target = newTransform.target;
   }
 
   render(): void {

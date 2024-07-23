@@ -1,3 +1,4 @@
+import { Euler, Vector3 } from "three";
 import { Volume, Light } from "../src";
 import { VolumeFileFormat } from "../src/loaders";
 import { IVolumeLoader } from "../src/loaders/IVolumeLoader";
@@ -98,4 +99,11 @@ interface ChannelGuiOptions {
   colorizeEnabled: boolean;
   colorize: (channelNum: number) => void;
   colorizeAlpha: number;
+}
+
+export interface CameraTransform {
+  position: Vector3;
+  rotation: Euler;
+  up: Vector3;
+  target: Vector3;
 }

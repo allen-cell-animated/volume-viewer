@@ -25,6 +25,7 @@ import {
 } from "./types.js";
 import { Axis } from "./VolumeRenderSettings.js";
 import { PerChannelCallback } from "./loaders/IVolumeLoader.js";
+import { CameraTransform } from "../public/types.js";
 
 // Constants are kept for compatibility reasons.
 export const RENDERMODE_RAYMARCH = RenderMode.RAYMARCH;
@@ -133,11 +134,11 @@ export class View3d {
     return this.canvas3d.containerdiv;
   }
 
-  getCameraTransform(): { position: Vector3; rotation: Euler; up: Vector3 } {
+  getCameraTransform(): CameraTransform {
     return this.canvas3d.getCameraTransform();
   }
 
-  setCameraTransform(transform: Partial<{ position: Vector3; rotation: Euler; up: Vector3 }>) {
+  setCameraTransform(transform: Partial<CameraTransform>) {
     this.canvas3d.setCameraTransform(transform);
     this.redraw();
   }
