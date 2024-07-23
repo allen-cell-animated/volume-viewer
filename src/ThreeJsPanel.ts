@@ -28,12 +28,12 @@ const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 
 const DEFAULT_ORTHO_SCALE = 0.5;
 
-export type CameraTransform = {
+export interface CameraTransform {
   position: [number, number, number];
   rotation: [number, number, number];
   up: [number, number, number];
   target: [number, number, number];
-};
+}
 
 export class ThreeJsPanel {
   public containerdiv: HTMLDivElement;

@@ -60,5 +60,5 @@ export {
   RENDERMODE_PATHTRACE,
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
-  type CameraTransform,
+  CameraTransform,
 };
