@@ -33,6 +33,7 @@ export type CameraTransform = {
   rotation: [number, number, number];
   up: [number, number, number];
   target: [number, number, number];
+  orthoScales: [number, number, number];
 };
 
 export class ThreeJsPanel {
@@ -619,6 +620,7 @@ export class ThreeJsPanel {
       rotation: this.camera.rotation.toArray() as [number, number, number],
       up: this.camera.up.toArray(),
       target: this.controls.target.toArray(),
+      orthoScales: [this.orthoControlsX.scale, this.orthoControlsY.scale, this.orthoControlsZ.scale],
     };
   }
 
@@ -631,6 +633,14 @@ export class ThreeJsPanel {
     this.camera.position.set(...newTransform.position);
     this.camera.setRotationFromEuler(new Euler().fromArray(newTransform.rotation));
     this.controls.target = new Vector3().fromArray(newTransform.target);
+    // Update orthographic cameras
+    const orthoControls = [this.orthoControlsX, this.orthoControlsY, this.orthoControlsZ];
+    const orthoCameras = [this.orthographicCameraX, this.orthographicCameraY, this.orthographicCameraZ];
+    for (let i = 0; i < orthoControls.length; i++) {
+      const scale = newTransform.orthoScales[i];
+      orthoControls[i].scale = scale;
+      orthoCameras[i].zoom = 0.5 / scale;
+    }
   }
 
   render(): void {
