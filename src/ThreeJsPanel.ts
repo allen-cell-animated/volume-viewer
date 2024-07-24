@@ -28,12 +28,12 @@ const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 
 const DEFAULT_ORTHO_SCALE = 0.5;
 
-export interface CameraTransform {
+export type CameraTransform = {
   position: [number, number, number];
   rotation: [number, number, number];
   up: [number, number, number];
   target: [number, number, number];
-}
+};
 
 export class ThreeJsPanel {
   public containerdiv: HTMLDivElement;
@@ -624,7 +624,7 @@ export class ThreeJsPanel {
 
   setCameraTransform(transform: Partial<CameraTransform>) {
     const currentTransform = this.getCameraTransform();
-    // Fill in any missing properties with current
+    // Fill in any missing properties with current transform
     const newTransform = { ...currentTransform, ...transform };
 
     this.camera.up = new Vector3().fromArray(newTransform.up).normalize();
