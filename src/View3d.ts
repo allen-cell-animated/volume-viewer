@@ -242,6 +242,10 @@ export class View3d {
     this.updateTimestepIndicator(volume);
   }
 
+  /**
+   * Nudge the scale level loaded into this volume off the one chosen by the loader.
+   * E.g. a bias of `1` will load 1 scale level lower than "ideal."
+   */
   setScaleLevelBias(volume: Volume, scaleLevelBias: number): void {
     volume.updateRequiredData({ scaleLevelBias });
   }
