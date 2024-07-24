@@ -640,6 +640,7 @@ export class ThreeJsPanel {
       const scale = newTransform.orthoScales[i];
       orthoControls[i].scale = scale;
       orthoCameras[i].zoom = 0.5 / scale;
+      orthoCameras[i].updateProjectionMatrix();
     }
   }
 
