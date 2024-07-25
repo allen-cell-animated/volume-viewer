@@ -78,6 +78,11 @@ function controlPointToRGBA(controlPoint) {
   return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], Math.floor(controlPoint.opacity * 255)];
 }
 
+const createFullRangeControlPoints = (opacityMin = 0, opacityMax = 1): [ControlPoint, ControlPoint] => [
+  { x: 0, opacity: opacityMin, color: [255, 255, 255] },
+  { x: 255, opacity: opacityMax, color: [255, 255, 255] },
+];
+
 /**
  * @typedef {Object} Lut Used for rendering.
  * @property {Array.<number>} lut LUT_ARRAY_LENGTH element lookup table as array
@@ -139,18 +144,12 @@ export class Lut {
     // Edge case: b and e are both out of bounds
     if (b < 0 && e < 0) {
       this.lut = lut;
-      this.controlPoints = [
-        { x: 0, opacity: 1, color: [255, 255, 255] },
-        { x: 255, opacity: 1, color: [255, 255, 255] },
-      ];
+      this.controlPoints = createFullRangeControlPoints(1, 1);
       return this;
     }
     if (b >= 255 && e >= 255) {
       this.lut = lut;
-      this.controlPoints = [
-        { x: 0, opacity: 0, color: [255, 255, 255] },
-        { x: 255, opacity: 0, color: [255, 255, 255] },
-      ];
+      this.controlPoints = createFullRangeControlPoints(0, 0);
       return this;
     }
 
@@ -204,10 +203,7 @@ export class Lut {
     }
 
     this.lut = lut;
-    this.controlPoints = [
-      { x: 0, opacity: 0, color: [255, 255, 255] },
-      { x: 255, opacity: 1, color: [255, 255, 255] },
-    ];
+    this.controlPoints = createFullRangeControlPoints();
     return this;
   }
 
@@ -458,9 +454,18 @@ export function remapControlPoints(
   oldMin: number,
   oldMax: number,
   newMin: number,
-  newMax: number
+  newMax: number,
+  nudgeEndPoints = true
 ): ControlPoint[] {
+  if (controlPoints.length === 0) {
+    return controlPoints;
+  }
+
   const newControlPoints: ControlPoint[] = [];
+
+  // Save the current position of control points at the ends of the list
+  const oldFirstX = controlPoints[0].x;
+  const oldLastX = controlPoints[controlPoints.length - 1].x;
 
   // assume control point x domain 0-255 is mapped to oldMin-oldMax
 
@@ -479,5 +484,48 @@ export function remapControlPoints(
     newControlPoints.push(newCP);
   }
 
-  return newControlPoints;
+  return nudgeEndPoints ? nudgeRemappedEndControlPoints(newControlPoints, oldFirstX, oldLastX) : newControlPoints;
+}
+
+/**
+ * Attempts to keep the first and last control points in a remapped list in a sensible place if they were previously on
+ * or outside the edge of the range.
+ *
+ * Commonly (e.g. in the output of nearly all the factory methods in `Lut`), the very first and last control points
+ * just define a line of constant opacity out to the upper/lower edge of the range. Remapping these points naively
+ * means that the range of the transfer function no longer matches the actual range of intensities. This isn't a
+ * problem for producing a lut, but it does make things look weird. If it is possible to do so without losing
+ * information, we should try to keep these points in place.
+ *
+ * In addition to a list of control points, this function requires the x coordinate of the end points _before_
+ * remapping, to determine whether the points used to be at or outside the edges of the range.
+ */
+function nudgeRemappedEndControlPoints(controlPoints: ControlPoint[], oldFirstX: number, oldLastX: number) {
+  const EPSILON = 0.0001;
+  const first = controlPoints[0];
+  const second = controlPoints[1];
+  const secondLast = controlPoints[controlPoints.length - 2];
+  const last = controlPoints[controlPoints.length - 1];
+
+  if (Math.abs(first.opacity - (second?.opacity ?? Infinity)) < EPSILON) {
+    if (first.x < 0) {
+      // control point is now out of bounds - clamp it to 0 (or as close as we can get without losing information)
+      first.x = Math.min(0, second.x - 1);
+    } else if (oldFirstX < EPSILON) {
+      // control point was at or below 0 and has moved inward - snap it to 0 to cover the full range
+      first.x = 0;
+    }
+  }
+
+  if (Math.abs(last.opacity - (secondLast?.opacity ?? Infinity)) < EPSILON) {
+    if (last.x > 255) {
+      // control point is now out of bounds - clamp it to 255 (or as close as we can get without losing information)
+      last.x = Math.max(255, secondLast.x + 1);
+    } else if (oldLastX > 255 - EPSILON) {
+      // control point was at or above 255 and has moved inward - snap it to 255 to cover the full range
+      last.x = 255;
+    }
+  }
+
+  return controlPoints;
 }
