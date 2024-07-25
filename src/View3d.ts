@@ -243,6 +243,14 @@ export class View3d {
   }
 
   /**
+   * Nudge the scale level loaded into this volume off the one chosen by the loader.
+   * E.g. a bias of `1` will load 1 scale level lower than "ideal."
+   */
+  setScaleLevelBias(volume: Volume, scaleLevelBias: number): void {
+    volume.updateRequiredData({ scaleLevelBias });
+  }
+
+  /**
    * Assign a channel index as a mask channel (will multiply its color against the entire visible volume)
    * @param {Object} volume
    * @param {number} maskChannelIndex
