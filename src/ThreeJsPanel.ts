@@ -629,10 +629,10 @@ export class ThreeJsPanel {
     // Fill in any missing properties with current transform
     const newTransform = { ...currentTransform, ...transform };
 
-    this.camera.up = new Vector3().fromArray(newTransform.up).normalize();
-    this.camera.position.set(...newTransform.position);
+    this.camera.up.fromArray(newTransform.up).normalize();
+    this.camera.position.fromArray(newTransform.position);
+    this.controls.target.fromArray(newTransform.target);
     this.camera.setRotationFromEuler(new Euler().fromArray(newTransform.rotation));
-    this.controls.target = new Vector3().fromArray(newTransform.target);
     // Update orthographic cameras
     const orthoControls = [this.orthoControlsX, this.orthoControlsY, this.orthoControlsZ];
     const orthoCameras = [this.orthographicCameraX, this.orthographicCameraY, this.orthographicCameraZ];
