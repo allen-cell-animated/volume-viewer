@@ -21,7 +21,7 @@ import {
 import { TiffLoader } from "./loaders/TiffLoader.js";
 import VolumeLoaderContext from "./workers/VolumeLoaderContext.js";
 import { VolumeLoadError, VolumeLoadErrorType } from "./loaders/VolumeLoadError.js";
-import { CameraTransform } from "./ThreeJsPanel.js";
+import { type CameraTransform } from "./ThreeJsPanel.js";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light.js";
 
 export type { ImageInfo } from "./Volume.js";
