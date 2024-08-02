@@ -28,13 +28,13 @@ const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 
 const DEFAULT_ORTHO_SCALE = 0.5;
 
-export type CameraTransform = {
+export type CameraState = {
   position: [number, number, number];
   up: [number, number, number];
   target: [number, number, number];
-  /** Full vertical FOV in degrees, from bottom to top of the view frustum. */
+  /** Full vertical FOV in degrees, from bottom to top of the view frustum. Defined only for perspective cameras. */
   fov?: number;
-  /** The orthographic scale value used on the camera */
+  /** The scale value for the orthographic camera controls; undefined for perspective cameras. */
   orthoScale?: number;
 };
 
@@ -616,7 +616,7 @@ export class ThreeJsPanel {
     return this.renderer.getContext().canvas.height;
   }
 
-  getCameraTransform(): CameraTransform {
+  getCameraState(): CameraState {
     return {
       position: this.camera.position.toArray(),
       up: this.camera.up.toArray(),
@@ -626,8 +626,8 @@ export class ThreeJsPanel {
     };
   }
 
-  setCameraTransform(transform: Partial<CameraTransform>) {
-    const currentTransform = this.getCameraTransform();
+  setCameraState(transform: Partial<CameraState>) {
+    const currentTransform = this.getCameraState();
     // Fill in any missing properties with current transform
     const newTransform = { ...currentTransform, ...transform };
 

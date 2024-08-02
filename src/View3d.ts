@@ -11,7 +11,7 @@ import {
 } from "three";
 import { Pane } from "tweakpane";
 
-import { CameraTransform, ThreeJsPanel } from "./ThreeJsPanel.js";
+import { CameraState, ThreeJsPanel } from "./ThreeJsPanel.js";
 import lightSettings from "./constants/lights.js";
 import VolumeDrawable from "./VolumeDrawable.js";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light.js";
@@ -133,12 +133,12 @@ export class View3d {
     return this.canvas3d.containerdiv;
   }
 
-  getCameraTransform(): CameraTransform {
-    return this.canvas3d.getCameraTransform();
+  getCameraState(): CameraState {
+    return this.canvas3d.getCameraState();
   }
 
-  setCameraTransform(transform: Partial<CameraTransform>) {
-    this.canvas3d.setCameraTransform(transform);
+  setCameraState(transform: Partial<CameraState>) {
+    this.canvas3d.setCameraState(transform);
     this.redraw();
   }
 
