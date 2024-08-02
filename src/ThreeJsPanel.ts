@@ -30,10 +30,12 @@ const DEFAULT_ORTHO_SCALE = 0.5;
 
 export type CameraTransform = {
   position: [number, number, number];
-  rotation: [number, number, number];
   up: [number, number, number];
   target: [number, number, number];
-  orthoScales: [number, number, number];
+  /** Full vertical FOV in degrees, from bottom to top of the view frustum. */
+  fov?: number;
+  /** The orthographic scale value used on the camera */
+  orthoScale?: number;
 };
 
 export class ThreeJsPanel {
@@ -617,10 +619,10 @@ export class ThreeJsPanel {
   getCameraTransform(): CameraTransform {
     return {
       position: this.camera.position.toArray(),
-      rotation: this.camera.rotation.toArray() as [number, number, number],
       up: this.camera.up.toArray(),
       target: this.controls.target.toArray(),
-      orthoScales: [this.orthoControlsX.scale, this.orthoControlsY.scale, this.orthoControlsZ.scale],
+      orthoScale: this.camera.type === "OrthographicCamera" ? this.controls.scale : undefined,
+      fov: this.camera.type === "PerspectiveCamera" ? this.camera.fov : undefined,
     };
   }
 
@@ -632,15 +634,14 @@ export class ThreeJsPanel {
     this.camera.up.fromArray(newTransform.up).normalize();
     this.camera.position.fromArray(newTransform.position);
     this.controls.target.fromArray(newTransform.target);
-    this.camera.setRotationFromEuler(new Euler().fromArray(newTransform.rotation));
+
     // Update orthographic cameras
-    const orthoControls = [this.orthoControlsX, this.orthoControlsY, this.orthoControlsZ];
-    const orthoCameras = [this.orthographicCameraX, this.orthographicCameraY, this.orthographicCameraZ];
-    for (let i = 0; i < orthoControls.length; i++) {
-      const scale = newTransform.orthoScales[i];
-      orthoControls[i].scale = scale;
-      orthoCameras[i].zoom = 0.5 / scale;
-      orthoCameras[i].updateProjectionMatrix();
+    if (this.camera.type === "OrthographicCamera") {
+      const scale = newTransform.orthoScale || DEFAULT_ORTHO_SCALE;
+      this.controls.scale = scale;
+      this.camera.zoom = 0.5 / scale;
+    } else {
+      this.camera.fov;
     }
   }
 
