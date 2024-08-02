@@ -626,22 +626,22 @@ export class ThreeJsPanel {
     };
   }
 
-  setCameraState(transform: Partial<CameraState>) {
-    const currentTransform = this.getCameraState();
-    // Fill in any missing properties with current transform
-    const newTransform = { ...currentTransform, ...transform };
+  setCameraState(state: Partial<CameraState>) {
+    const currentState = this.getCameraState();
+    // Fill in any missing properties with current state
+    const newState = { ...currentState, ...state };
 
-    this.camera.up.fromArray(newTransform.up).normalize();
-    this.camera.position.fromArray(newTransform.position);
-    this.controls.target.fromArray(newTransform.target);
+    this.camera.up.fromArray(newState.up).normalize();
+    this.camera.position.fromArray(newState.position);
+    this.controls.target.fromArray(newState.target);
 
-    // Update orthographic cameras
+    // Update fields by camera type
     if (this.camera.type === "OrthographicCamera") {
-      const scale = newTransform.orthoScale || DEFAULT_ORTHO_SCALE;
+      const scale = newState.orthoScale || DEFAULT_ORTHO_SCALE;
       this.controls.scale = scale;
       this.camera.zoom = 0.5 / scale;
     } else {
-      this.camera.fov;
+      this.camera.fov = newState.fov || this.fov;
     }
   }
 
