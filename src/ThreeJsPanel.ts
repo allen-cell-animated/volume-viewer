@@ -13,7 +13,6 @@ import {
   NormalBlending,
   WebGLRenderer,
   Scene,
-  Euler,
 } from "three";
 
 import TrackballControls from "./TrackballControls.js";
