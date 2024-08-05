@@ -659,6 +659,9 @@ export class ThreeJsPanel {
     } else {
       this.camera.fov = newState.fov || this.fov;
     }
+
+    this.controls.update();
+    this.camera.updateProjectionMatrix();
   }
 
   render(): void {
