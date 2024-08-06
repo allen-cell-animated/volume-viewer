@@ -1,5 +1,3 @@
-import { use } from "chai";
-
 import { parseTimeUnit, TimeUnit } from "../constants/time.js";
 
 export const DEFAULT_SIG_FIGS = 5;

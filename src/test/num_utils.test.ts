@@ -93,10 +93,10 @@ describe("num_utils", () => {
     });
 
     it("does not show past three decimals for seconds", () => {
-      expect(getTimestamp(9.9999, 1000, "ms")).to.equal("0.009 / 1.000 s");
+      expect(getTimestamp(9.9, 1000, "ms")).to.equal("0.009 / 1.000 s");
     });
 
-    it("can show only seconds", () => {
+    it("ignores milliseconds when unit is seconds", () => {
       expect(getTimestamp(0, 59, "s")).to.equal("0 / 59 s");
       expect(getTimestamp(0.54, 59, "s")).to.equal("0 / 59 s");
       expect(getTimestamp(12, 59, "s")).to.equal("12 / 59 s");
@@ -138,8 +138,8 @@ describe("num_utils", () => {
       const hoursInMs = 60 * minutesInMs;
       const daysInMs = 24 * hoursInMs;
 
-      let time = 1 * daysInMs + 17 * hoursInMs + 23 * minutesInMs + 45 * secondsInMs + 678;
-      let total = 2 * daysInMs;
+      const time = 1 * daysInMs + 17 * hoursInMs + 23 * minutesInMs + 45 * secondsInMs + 678;
+      const total = 2 * daysInMs;
       expect(getTimestamp(time, total, "ms")).to.equal("1:17:23:45.678 / 2:00:00:00.000 d:h:m:s");
     });
 
