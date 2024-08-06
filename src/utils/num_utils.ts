@@ -4,10 +4,10 @@ import { parseTimeUnit, TimeUnit } from "../constants/time.js";
 
 export const DEFAULT_SIG_FIGS = 5;
 
-const SECONDS_IN_MILLISECONDS = 1000;
-const MINUTES_IN_MILLISECONDS = 1000 * 60;
-const HOURS_IN_MILLISECONDS = 1000 * 60 * 60;
-const DAYS_IN_MILLISECONDS = 1000 * 60 * 60 * 24;
+const SECONDS_IN_MS = 1000;
+const MINUTES_IN_MS = 1000 * 60;
+const HOURS_IN_MS = 1000 * 60 * 60;
+const DAYS_IN_MS = 1000 * 60 * 60 * 24;
 
 // Adapted from https://gist.github.com/ArneS/2ecfbe4a9d7072ac56c0.
 function digitToUnicodeSupercript(n: number): string {
@@ -92,13 +92,13 @@ export function timeToMilliseconds(time: number, unit: TimeUnit): number {
   if (unit == TimeUnit.Millisecond) {
     return time;
   } else if (unit == TimeUnit.Second) {
-    return time * SECONDS_IN_MILLISECONDS;
+    return time * SECONDS_IN_MS;
   } else if (unit == TimeUnit.Minute) {
-    return time * MINUTES_IN_MILLISECONDS;
+    return time * MINUTES_IN_MS;
   } else if (unit == TimeUnit.Hour) {
-    return time * HOURS_IN_MILLISECONDS;
+    return time * HOURS_IN_MS;
   } else if (unit == TimeUnit.Day) {
-    return time * DAYS_IN_MILLISECONDS;
+    return time * DAYS_IN_MS;
   } else {
     throw new Error("Unrecognized time unit");
   }
@@ -123,33 +123,38 @@ function formatTimestamp(
   const units: string[] = [];
 
   if (useDays) {
-    const days = Math.floor(timeMs / DAYS_IN_MILLISECONDS);
+    const days = Math.floor(timeMs / DAYS_IN_MS);
     digits.push(days.toString());
     units.push("d");
   }
   if (useHours) {
-    const hours = Math.floor((timeMs % DAYS_IN_MILLISECONDS) / HOURS_IN_MILLISECONDS);
+    const hours = Math.floor((timeMs % DAYS_IN_MS) / HOURS_IN_MS);
     // If the previous unit is included, pad the hours to 2 digits so the
     // timestamp is consistent.
     digits.push(padConditionally(hours, 2, useDays));
     units.push("h");
   }
   if (useMin) {
-    const minutes = Math.floor((timeMs % HOURS_IN_MILLISECONDS) / MINUTES_IN_MILLISECONDS);
+    const minutes = Math.floor((timeMs % HOURS_IN_MS) / MINUTES_IN_MS);
     digits.push(useHours ? minutes.toString().padStart(2, "0") : minutes.toString());
     units.push("m");
   }
   if (useSec) {
-    const seconds = Math.floor((timeMs % MINUTES_IN_MILLISECONDS) / SECONDS_IN_MILLISECONDS);
+    const seconds = Math.floor((timeMs % MINUTES_IN_MS) / SECONDS_IN_MS);
     let secondString = useMin ? seconds.toString().padStart(2, "0") : seconds.toString();
     units.push("s");
     // If using milliseconds, add as a decimal to the seconds string.
     if (useMs) {
-      const milliseconds = timeMs % SECONDS_IN_MILLISECONDS;
+      const milliseconds = Math.floor(timeMs % SECONDS_IN_MS);
       secondString += "." + milliseconds.toString().padStart(3, "0");
-      units.push("ms");
+      // Do not add milliseconds to unit label, since they'll be shown as
+      // part of the seconds string.
     }
     digits.push(secondString);
+  } else if (useMs) {
+    const milliseconds = Math.floor(timeMs % SECONDS_IN_MS);
+    digits.push(milliseconds.toString());
+    units.push("ms");
   }
   return { timestamp: digits.join(":"), units: units.join(":") };
 }
@@ -181,21 +186,15 @@ export function getTimestamp(time: number, total: number, unit: string): string 
   const timeMs = timeToMilliseconds(time, timeUnit);
   const totalMs = timeToMilliseconds(total, timeUnit);
 
-  console.log("timeMs", timeMs);
-  console.log("totalMs", totalMs);
-
   // Enable each unit based on the total time.
   // Exploit an enum property where TimeUnit.Milliseconds < TimeUnit.Second < TimeUnit.Minute ... etc.
   const options = {
     useMs: timeUnit == TimeUnit.Millisecond,
-    useSec: timeUnit == TimeUnit.Second || (timeUnit <= TimeUnit.Second && totalMs >= SECONDS_IN_MILLISECONDS),
-    useMin: timeUnit == TimeUnit.Minute || (timeUnit <= TimeUnit.Minute && totalMs >= MINUTES_IN_MILLISECONDS),
-    useHours: timeUnit == TimeUnit.Hour || (timeUnit <= TimeUnit.Hour && totalMs >= HOURS_IN_MILLISECONDS),
-    useDays: timeUnit == TimeUnit.Day || (timeUnit <= TimeUnit.Day && totalMs >= DAYS_IN_MILLISECONDS),
+    useSec: timeUnit == TimeUnit.Second || (timeUnit <= TimeUnit.Second && totalMs >= SECONDS_IN_MS),
+    useMin: timeUnit == TimeUnit.Minute || (timeUnit <= TimeUnit.Minute && totalMs >= MINUTES_IN_MS),
+    useHours: timeUnit == TimeUnit.Hour || (timeUnit <= TimeUnit.Hour && totalMs >= HOURS_IN_MS),
+    useDays: timeUnit == TimeUnit.Day || (timeUnit <= TimeUnit.Day && totalMs >= DAYS_IN_MS),
   };
-  console.log("options", options);
-  console.log("TimeUnit Ms", TimeUnit.Millisecond);
-  console.log("TimeUnit Min", TimeUnit.Minute);
 
   const { timestamp, units } = formatTimestamp(timeMs, options);
   const { timestamp: totalTimestamp } = formatTimestamp(totalMs, options);
