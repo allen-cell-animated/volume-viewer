@@ -353,7 +353,7 @@ export class ThreeJsPanel {
     const scaleBarContainerStyle: Partial<CSSStyleDeclaration> = {
       fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
       position: "absolute",
-      right: "20px",
+      right: "169px",
       bottom: "20px",
     };
     Object.assign(this.scaleBarContainerElement.style, scaleBarContainerStyle);
@@ -372,6 +372,8 @@ export class ThreeJsPanel {
       lineHeight: "0",
       boxSizing: "border-box",
       paddingRight: "10px",
+      // TODO: Adjust based on width of timestamp
+      marginRight: "40px",
     };
     Object.assign(this.orthoScaleBarElement.style, orthoScaleBarStyle);
     this.scaleBarContainerElement.appendChild(this.orthoScaleBarElement);
