@@ -39,20 +39,21 @@ export type ImageInfo = Readonly<{
   times: number;
   /** Size of each timestep in temporal units */
   timeScale: number;
-  /** Symbol of temporal unit used by `timeScale`, e.g. "hr"
+  /**
+   * Symbol of temporal unit used by `timeScale`, e.g. "hr".
    *
    * If units match one of the following, the viewer will automatically format
-   * timestamps to a d:hh:mm:ss.sss format, rounding to the nearest integer of the unit specified.
+   * timestamps to a d:hh:mm:ss.sss format, truncated as an integer of the unit specified.
    * See https://ngff.openmicroscopy.org/latest/index.html#axes-md for a list of valid time units.
-   * - "ms", "millisecond" for milliseconds: d:hh:mm:ss.sss
-   * - "s", "sec", "second", or "seconds" for seconds: d:hh:mm:ss
-   * - "m", "min", "minute", or "minutes" for minutes: d:hh:mm
-   * - "h", "hr", "hour", or "hours" for hours: d:hh
-   * - "d", "day", or "days" for days: d
+   * - "ms", "millisecond" for milliseconds: `d:hh:mm:ss.sss`
+   * - "s", "sec", "second", or "seconds" for seconds: `d:hh:mm:ss`
+   * - "m", "min", "minute", or "minutes" for minutes: `d:hh:mm`
+   * - "h", "hr", "hour", or "hours" for hours: `d:hh`
+   * - "d", "day", or "days" for days: `d`
    *
-   * Segments of the timestamp will be omitted if the maximum timestamp value wouldn't include them.
+   * The maximum timestamp value is used to determine the maximum unit shown.
    * For example, if the time unit is in seconds, and the maximum time is 90 seconds, the timestamp
-   * will be formatted as "{m:ss} (m:s)".
+   * will be formatted as "{m:ss} (m:s)", and the day and hour segments will be omitted.
    */
   timeUnit: string;
 

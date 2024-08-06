@@ -89,15 +89,15 @@ export function formatNumber(value: number, sigFigs = DEFAULT_SIG_FIGS, sciSigFi
 }
 
 export function timeToMilliseconds(time: number, unit: TimeUnit): number {
-  if (unit == TimeUnit.Millisecond) {
+  if (unit == TimeUnit.MILLISECOND) {
     return time;
-  } else if (unit == TimeUnit.Second) {
+  } else if (unit == TimeUnit.SECOND) {
     return time * SECONDS_IN_MS;
-  } else if (unit == TimeUnit.Minute) {
+  } else if (unit == TimeUnit.MINUTE) {
     return time * MINUTES_IN_MS;
-  } else if (unit == TimeUnit.Hour) {
+  } else if (unit == TimeUnit.HOUR) {
     return time * HOURS_IN_MS;
-  } else if (unit == TimeUnit.Day) {
+  } else if (unit == TimeUnit.DAY) {
     return time * DAYS_IN_MS;
   } else {
     throw new Error("Unrecognized time unit");
@@ -189,11 +189,11 @@ export function getTimestamp(time: number, total: number, unit: string): string 
   // Enable each unit based on the total time.
   // Exploit an enum property where TimeUnit.Milliseconds < TimeUnit.Second < TimeUnit.Minute ... etc.
   const options = {
-    useMs: timeUnit == TimeUnit.Millisecond,
-    useSec: timeUnit == TimeUnit.Second || (timeUnit <= TimeUnit.Second && totalMs >= SECONDS_IN_MS),
-    useMin: timeUnit == TimeUnit.Minute || (timeUnit <= TimeUnit.Minute && totalMs >= MINUTES_IN_MS),
-    useHours: timeUnit == TimeUnit.Hour || (timeUnit <= TimeUnit.Hour && totalMs >= HOURS_IN_MS),
-    useDays: timeUnit == TimeUnit.Day || (timeUnit <= TimeUnit.Day && totalMs >= DAYS_IN_MS),
+    useMs: timeUnit == TimeUnit.MILLISECOND,
+    useSec: timeUnit == TimeUnit.SECOND || (timeUnit <= TimeUnit.SECOND && totalMs >= SECONDS_IN_MS),
+    useMin: timeUnit == TimeUnit.MINUTE || (timeUnit <= TimeUnit.MINUTE && totalMs >= MINUTES_IN_MS),
+    useHours: timeUnit == TimeUnit.HOUR || (timeUnit <= TimeUnit.HOUR && totalMs >= HOURS_IN_MS),
+    useDays: timeUnit == TimeUnit.DAY || (timeUnit <= TimeUnit.DAY && totalMs >= DAYS_IN_MS),
   };
 
   const { timestamp, units } = formatTimestamp(timeMs, options);
