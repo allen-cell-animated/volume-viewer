@@ -102,8 +102,12 @@ export function timeToMilliseconds(time: number, unit: TimeUnit): number {
   }
 }
 
-function padConditionally(value: number, pad: number, shouldPad: boolean): string {
-  return shouldPad ? value.toString().padStart(pad, "0") : value.toString();
+/**
+ * Pads the `value` with zeroes to the specified `length` if `shouldPad` is true
+ * and returns the resulting string. Otherwise, returns the string representation of `value`.
+ */
+function padConditionally(value: number, length: number, shouldPad: boolean): string {
+  return shouldPad ? value.toString().padStart(length, "0") : value.toString();
 }
 
 function formatTimestamp(
@@ -134,12 +138,12 @@ function formatTimestamp(
   }
   if (useMin) {
     const minutes = Math.floor((timeMs % HOURS_IN_MS) / MINUTES_IN_MS);
-    digits.push(useHours ? minutes.toString().padStart(2, "0") : minutes.toString());
+    digits.push(padConditionally(minutes, 2, useHours));
     units.push("m");
   }
   if (useSec) {
     const seconds = Math.floor((timeMs % MINUTES_IN_MS) / SECONDS_IN_MS);
-    let secondString = useMin ? seconds.toString().padStart(2, "0") : seconds.toString();
+    let secondString = padConditionally(seconds, 2, useMin);
     units.push("s");
     // If using milliseconds, add as a decimal to the seconds string.
     if (useMs) {
@@ -173,9 +177,6 @@ function formatTimestamp(
  */
 export function getTimestamp(time: number, total: number, unit: string): string {
   const timeUnit = parseTimeUnit(unit);
-  console.log("time", time);
-  console.log("timeUnit", timeUnit);
-  console.log("unit", unit);
 
   if (timeUnit === undefined) {
     return `${formatNumber(time)} / ${formatNumber(total)} ${unit}`;
@@ -184,7 +185,7 @@ export function getTimestamp(time: number, total: number, unit: string): string 
   const timeMs = timeToMilliseconds(time, timeUnit);
   const totalMs = timeToMilliseconds(total, timeUnit);
 
-  // Enable each unit based on the total time.
+  // Toggle each unit based on the total time and the provided timeUnit.
   // Exploit an enum property where TimeUnit.Milliseconds < TimeUnit.Second < TimeUnit.Minute ... etc.
   const options = {
     useMs: timeUnit == TimeUnit.MILLISECOND,
