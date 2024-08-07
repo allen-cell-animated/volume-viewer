@@ -1,3 +1,5 @@
+import { Axis } from "../VolumeRenderSettings.js";
+
 export const DEFAULT_SIG_FIGS = 5;
 
 // Adapted from https://gist.github.com/ArneS/2ecfbe4a9d7072ac56c0.
@@ -76,5 +78,34 @@ export function formatNumber(value: number, sigFigs = DEFAULT_SIG_FIGS, sciSigFi
     }
     const trimmed = trimTrailing(numStr, "0");
     return trimmed.endsWith(".") ? trimmed.slice(0, -1) : trimmed;
+  }
+}
+
+/**
+ * Constrains the `src` vector relative to the `target` so it only has freedom along the
+ * specified `axis`. Does nothing if `axis = Axis.NONE`.
+ *
+ * @example
+ * ```
+ *   const src = [1, 2, 3];
+ *   const target = [4, 5, 6];
+ *   const constrained = constrainToAxis(src, target, Axis.X);
+ *   console.log(constrained); // [1, 5, 6]
+ * ```
+ */
+export function constrainToAxis(
+  src: [number, number, number],
+  target: [number, number, number],
+  axis: Axis
+): [number, number, number] {
+  switch (axis) {
+    case Axis.X:
+      return [src[0], target[1], target[2]];
+    case Axis.Y:
+      return [target[0], src[1], target[2]];
+    case Axis.Z:
+      return [target[0], target[1], src[2]];
+    default:
+      return [...src];
   }
 }

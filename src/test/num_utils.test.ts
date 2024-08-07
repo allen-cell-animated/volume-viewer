@@ -1,6 +1,8 @@
 import { expect } from "chai";
+import { it } from "mocha";
 
-import { formatNumber } from "../utils/num_utils";
+import { constrainToAxis, formatNumber } from "../utils/num_utils.js";
+import { Axis } from "../VolumeRenderSettings.js";
 
 describe("num_utils", () => {
   describe("formatNumber", () => {
@@ -63,6 +65,24 @@ describe("num_utils", () => {
       expect(formatNumber(12345, 5)).to.equal("1.23×10⁴");
       expect(formatNumber(12345, 6)).to.equal("1.235×10⁴");
       expect(formatNumber(12345, 8)).to.equal("1.23450×10⁴");
+    });
+  });
+
+  describe("constrainToAxis", () => {
+    type Number3 = [number, number, number];
+
+    it("constrains to the X, Y, Z axis", () => {
+      const src: Number3 = [1, 2, 3];
+      const target: Number3 = [4, 5, 6];
+      expect(constrainToAxis(src, target, Axis.X)).to.eql([1, 5, 6]);
+      expect(constrainToAxis(src, target, Axis.Y)).to.eql([4, 2, 6]);
+      expect(constrainToAxis(src, target, Axis.Z)).to.eql([4, 5, 3]);
+    });
+
+    it("does nothing if Axis.None is specified", () => {
+      const src: Number3 = [1, 2, 3];
+      const target: Number3 = [4, 5, 6];
+      expect(constrainToAxis(src, target, Axis.NONE)).to.eql([1, 2, 3]);
     });
   });
 });

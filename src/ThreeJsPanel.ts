@@ -19,13 +19,24 @@ import TrackballControls from "./TrackballControls.js";
 import Timing from "./Timing.js";
 import scaleBarSVG from "./constants/scaleBarSVG.js";
 import { isOrthographicCamera, ViewportCorner, isTop, isRight } from "./types.js";
-import { formatNumber } from "./utils/num_utils.js";
+import { constrainToAxis, formatNumber } from "./utils/num_utils.js";
+import { Axis } from "./VolumeRenderSettings.js";
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
 const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 
 const DEFAULT_ORTHO_SCALE = 0.5;
+
+export type CameraState = {
+  position: [number, number, number];
+  up: [number, number, number];
+  target: [number, number, number];
+  /** Full vertical FOV in degrees, from bottom to top of the view frustum. Defined only for perspective cameras. */
+  fov?: number;
+  /** The scale value for the orthographic camera controls; undefined for perspective cameras. */
+  orthoScale?: number;
+};
 
 export class ThreeJsPanel {
   public containerdiv: HTMLDivElement;
@@ -48,6 +59,7 @@ export class ThreeJsPanel {
   private orthographicCameraZ: OrthographicCamera;
   private orthoControlsZ: TrackballControls;
   public camera: PerspectiveCamera | OrthographicCamera;
+  private viewMode: Axis;
   public controls: TrackballControls;
   private controlEndHandler?: EventListener<Event, "end", TrackballControls>;
   private controlChangeHandler?: EventListener<Event, "change", TrackballControls>;
@@ -198,6 +210,7 @@ export class ThreeJsPanel {
 
     this.camera = this.perspectiveCamera;
     this.controls = this.perspectiveControls;
+    this.viewMode = Axis.NONE;
 
     this.axisCamera = new OrthographicCamera();
     this.axisHelperScene = new Scene();
@@ -524,23 +537,27 @@ export class ThreeJsPanel {
         this.replaceCamera(this.orthographicCameraX);
         this.replaceControls(this.orthoControlsX);
         this.axisHelperObject.rotation.set(0, Math.PI * 0.5, 0);
+        this.viewMode = Axis.X;
         break;
       case "XZ":
       case "Y":
         this.replaceCamera(this.orthographicCameraY);
         this.replaceControls(this.orthoControlsY);
         this.axisHelperObject.rotation.set(Math.PI * 0.5, 0, 0);
+        this.viewMode = Axis.Y;
         break;
       case "XY":
       case "Z":
         this.replaceCamera(this.orthographicCameraZ);
         this.replaceControls(this.orthoControlsZ);
         this.axisHelperObject.rotation.set(0, 0, 0);
+        this.viewMode = Axis.Z;
         break;
       default:
         this.replaceCamera(this.perspectiveCamera);
         this.replaceControls(this.perspectiveControls);
         this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
+        this.viewMode = Axis.NONE;
         break;
     }
     this.updateScaleBarVisibility();
@@ -603,6 +620,48 @@ export class ThreeJsPanel {
 
   getHeight(): number {
     return this.renderer.getContext().canvas.height;
+  }
+
+  getCameraState(): CameraState {
+    return {
+      position: this.camera.position.toArray(),
+      up: this.camera.up.toArray(),
+      target: this.controls.target.toArray(),
+      orthoScale: isOrthographicCamera(this.camera) ? this.controls.scale : undefined,
+      fov: this.camera.type === "PerspectiveCamera" ? this.camera.fov : undefined,
+    };
+  }
+
+  /**
+   * Updates the camera's state, including the position, up vector, target position,
+   * scaling, and FOV. If values are missing from `state`, they will be left unchanged.
+   *
+   * @param state Partial `CameraState` object.
+   *
+   * If an OrthographicCamera is used, the camera's position will be constrained to match
+   * the `target` position along the current view mode.
+   */
+  setCameraState(state: Partial<CameraState>) {
+    const currentState = this.getCameraState();
+    // Fill in any missing properties with current state
+    const newState = { ...currentState, ...state };
+
+    this.camera.up.fromArray(newState.up).normalize();
+    this.controls.target.fromArray(newState.target);
+    const constrainedPosition = constrainToAxis(newState.position, newState.target, this.viewMode);
+    this.camera.position.fromArray(constrainedPosition);
+
+    // Update fields by camera type
+    if (isOrthographicCamera(this.camera)) {
+      const scale = newState.orthoScale || DEFAULT_ORTHO_SCALE;
+      this.controls.scale = scale;
+      this.camera.zoom = 0.5 / scale;
+    } else {
+      this.camera.fov = newState.fov || this.fov;
+    }
+
+    this.controls.update();
+    this.camera.updateProjectionMatrix();
   }
 
   render(): void {
