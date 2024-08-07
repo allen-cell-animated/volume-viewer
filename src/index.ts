@@ -6,7 +6,7 @@ import VolumeCache from "./VolumeCache.js";
 import RequestQueue from "./utils/RequestQueue.js";
 import SubscribableRequestQueue from "./utils/SubscribableRequestQueue.js";
 import Histogram from "./Histogram.js";
-import { Lut } from "./Lut.js";
+import { Lut, remapControlPoints } from "./Lut.js";
 import { ViewportCorner } from "./types.js";
 import { VolumeFileFormat, createVolumeLoader, PrefetchDirection } from "./loaders/index.js";
 import { LoadSpec } from "./loaders/IVolumeLoader.js";
@@ -33,6 +33,7 @@ export type { WorkerLoader } from "./workers/VolumeLoaderContext.js";
 export {
   Histogram,
   Lut,
+  remapControlPoints,
   View3d,
   Volume,
   LoadSpec,
