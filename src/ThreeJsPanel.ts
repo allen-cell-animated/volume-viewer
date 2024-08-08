@@ -628,7 +628,7 @@ export class ThreeJsPanel {
       up: this.camera.up.toArray(),
       target: this.controls.target.toArray(),
       orthoScale: isOrthographicCamera(this.camera) ? this.controls.scale : undefined,
-      fov: this.camera.type === "PerspectiveCamera" ? this.camera.fov : undefined,
+      fov: isPerspectiveCamera(this.camera) ? this.camera.fov : undefined,
     };
   }
 
