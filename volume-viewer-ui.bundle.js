@@ -3202,12 +3202,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   ThreeJsPanel: () => (/* binding */ ThreeJsPanel)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _TrackballControls_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./TrackballControls.js */ "./src/TrackballControls.js");
 /* harmony import */ var _Timing_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Timing.js */ "./src/Timing.ts");
 /* harmony import */ var _constants_scaleBarSVG_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants/scaleBarSVG.js */ "./src/constants/scaleBarSVG.ts");
 /* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
 /* harmony import */ var _utils_num_utils_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./utils/num_utils.js */ "./src/utils/num_utils.ts");
+/* harmony import */ var _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VolumeRenderSettings.js */ "./src/VolumeRenderSettings.ts");
+
 
 
 
@@ -3230,7 +3232,7 @@ class ThreeJsPanel {
       this.canvas.width = parentElement.offsetWidth;
       parentElement.appendChild(this.containerdiv);
     }
-    this.scene = new three__WEBPACK_IMPORTED_MODULE_5__.Scene();
+    this.scene = new three__WEBPACK_IMPORTED_MODULE_6__.Scene();
     this.scaleBarContainerElement = document.createElement("div");
     this.orthoScaleBarElement = document.createElement("div");
     this.showOrthoScaleBar = true;
@@ -3252,7 +3254,7 @@ class ThreeJsPanel {
     const context = this.canvas.getContext("webgl2");
     if (context) {
       this.hasWebGL2 = true;
-      this.renderer = new three__WEBPACK_IMPORTED_MODULE_5__.WebGLRenderer({
+      this.renderer = new three__WEBPACK_IMPORTED_MODULE_6__.WebGLRenderer({
         context: context,
         canvas: this.canvas,
         preserveDrawingBuffer: true,
@@ -3262,20 +3264,20 @@ class ThreeJsPanel {
       //this.renderer.autoClear = false;
       // set pixel ratio to 0.25 or 0.5 to render at lower res.
       this.renderer.setPixelRatio(window.devicePixelRatio);
-      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_5__.NormalBlending);
+      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_6__.NormalBlending);
       //required by WebGL 2.0 for rendering to FLOAT textures
       this.renderer.getContext().getExtension("EXT_color_buffer_float");
     } else {
       // TODO Deprecate this code path.
       console.warn("WebGL 2.0 not available. Some functionality may be limited. Please use a browser that supports WebGL 2.0.");
-      this.renderer = new three__WEBPACK_IMPORTED_MODULE_5__.WebGLRenderer({
+      this.renderer = new three__WEBPACK_IMPORTED_MODULE_6__.WebGLRenderer({
         canvas: this.canvas,
         preserveDrawingBuffer: true,
         alpha: true,
         premultipliedAlpha: false
       });
       this.renderer.setPixelRatio(window.devicePixelRatio);
-      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_5__.NormalBlending);
+      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_6__.NormalBlending);
     }
     this.renderer.localClippingEnabled = true;
     if (parentElement) {
@@ -3285,7 +3287,7 @@ class ThreeJsPanel {
     const scale = DEFAULT_ORTHO_SCALE;
     const aspect = this.getWidth() / this.getHeight();
     this.fov = 20;
-    this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_5__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
+    this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_6__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
     this.resetPerspectiveCamera();
     this.perspectiveControls = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_0__["default"](this.perspectiveCamera, this.canvas);
     this.perspectiveControls.rotateSpeed = 4.0 / window.devicePixelRatio;
@@ -3294,7 +3296,7 @@ class ThreeJsPanel {
     this.perspectiveControls.length = 10;
     this.perspectiveControls.enabled = true; //turn off mouse moments by setting to false
 
-    this.orthographicCameraX = new three__WEBPACK_IMPORTED_MODULE_5__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
+    this.orthographicCameraX = new three__WEBPACK_IMPORTED_MODULE_6__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraX();
     this.orthoControlsX = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_0__["default"](this.orthographicCameraX, this.canvas);
     this.orthoControlsX.noRotate = true;
@@ -3304,7 +3306,7 @@ class ThreeJsPanel {
     this.orthoControlsX.staticMoving = true;
     this.orthoControlsX.enabled = false;
     this.orthoControlsX.panSpeed = this.canvas.clientWidth * 0.5;
-    this.orthographicCameraY = new three__WEBPACK_IMPORTED_MODULE_5__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
+    this.orthographicCameraY = new three__WEBPACK_IMPORTED_MODULE_6__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraY();
     this.orthoControlsY = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_0__["default"](this.orthographicCameraY, this.canvas);
     this.orthoControlsY.noRotate = true;
@@ -3314,7 +3316,7 @@ class ThreeJsPanel {
     this.orthoControlsY.staticMoving = true;
     this.orthoControlsY.enabled = false;
     this.orthoControlsY.panSpeed = this.canvas.clientWidth * 0.5;
-    this.orthographicCameraZ = new three__WEBPACK_IMPORTED_MODULE_5__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
+    this.orthographicCameraZ = new three__WEBPACK_IMPORTED_MODULE_6__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraZ();
     this.orthoControlsZ = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_0__["default"](this.orthographicCameraZ, this.canvas);
     this.orthoControlsZ.noRotate = true;
@@ -3326,9 +3328,10 @@ class ThreeJsPanel {
     this.orthoControlsZ.panSpeed = this.canvas.clientWidth * 0.5;
     this.camera = this.perspectiveCamera;
     this.controls = this.perspectiveControls;
-    this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_5__.OrthographicCamera();
-    this.axisHelperScene = new three__WEBPACK_IMPORTED_MODULE_5__.Scene();
-    this.axisHelperObject = new three__WEBPACK_IMPORTED_MODULE_5__.Object3D();
+    this.viewMode = _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.Axis.NONE;
+    this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_6__.OrthographicCamera();
+    this.axisHelperScene = new three__WEBPACK_IMPORTED_MODULE_6__.Scene();
+    this.axisHelperObject = new three__WEBPACK_IMPORTED_MODULE_6__.Object3D();
     this.axisHelperObject.name = "axisHelperParentObject";
     this.showAxis = false;
     // size of axes in px.
@@ -3358,7 +3361,7 @@ class ThreeJsPanel {
     this.orthographicCameraX.up.x = 0.0;
     this.orthographicCameraX.up.y = 0.0;
     this.orthographicCameraX.up.z = 1.0;
-    this.orthographicCameraX.lookAt(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0));
+    this.orthographicCameraX.lookAt(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, 0));
   }
   resetOrthographicCameraY() {
     this.orthographicCameraY.position.x = 0.0;
@@ -3367,7 +3370,7 @@ class ThreeJsPanel {
     this.orthographicCameraY.up.x = 0.0;
     this.orthographicCameraY.up.y = 0.0;
     this.orthographicCameraY.up.z = 1.0;
-    this.orthographicCameraY.lookAt(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0));
+    this.orthographicCameraY.lookAt(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, 0));
   }
   resetOrthographicCameraZ() {
     this.orthographicCameraZ.position.x = 0.0;
@@ -3376,7 +3379,7 @@ class ThreeJsPanel {
     this.orthographicCameraZ.up.x = 0.0;
     this.orthographicCameraZ.up.y = 1.0;
     this.orthographicCameraZ.up.z = 0.0;
-    this.orthographicCameraZ.lookAt(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0));
+    this.orthographicCameraZ.lookAt(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, 0));
   }
   requestCapture(dataurlcallback) {
     this.dataurlcallback = dataurlcallback;
@@ -3387,7 +3390,7 @@ class ThreeJsPanel {
   }
   resetToPerspectiveCamera() {
     const aspect = this.getWidth() / this.getHeight();
-    this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_5__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
+    this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_6__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
     this.resetPerspectiveCamera();
     this.switchViewMode("3D");
     this.controls.object = this.perspectiveCamera;
@@ -3409,21 +3412,21 @@ class ThreeJsPanel {
   setupAxisHelper() {
     // set up axis widget.
 
-    const axisCubeMaterial = new three__WEBPACK_IMPORTED_MODULE_5__.MeshBasicMaterial({
+    const axisCubeMaterial = new three__WEBPACK_IMPORTED_MODULE_6__.MeshBasicMaterial({
       color: 0xaeacad
     });
-    const axisCube = new three__WEBPACK_IMPORTED_MODULE_5__.BoxGeometry(this.axisScale / 5, this.axisScale / 5, this.axisScale / 5);
-    const axisCubeMesh = new three__WEBPACK_IMPORTED_MODULE_5__.Mesh(axisCube, axisCubeMaterial);
+    const axisCube = new three__WEBPACK_IMPORTED_MODULE_6__.BoxGeometry(this.axisScale / 5, this.axisScale / 5, this.axisScale / 5);
+    const axisCubeMesh = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(axisCube, axisCubeMaterial);
     this.axisHelperObject.add(axisCubeMesh);
-    const axisHelper = new three__WEBPACK_IMPORTED_MODULE_5__.AxesHelper(this.axisScale);
+    const axisHelper = new three__WEBPACK_IMPORTED_MODULE_6__.AxesHelper(this.axisScale);
     this.axisHelperObject.add(axisHelper);
     this.axisHelperScene.add(this.axisHelperObject);
-    this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_5__.OrthographicCamera(0, this.getWidth(), this.getHeight(), 0, 0.001, this.axisScale * 4.0);
+    this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_6__.OrthographicCamera(0, this.getWidth(), this.getHeight(), 0, 0.001, this.axisScale * 4.0);
     this.axisCamera.position.z = 1.0;
     this.axisCamera.up.x = 0.0;
     this.axisCamera.up.y = 1.0;
     this.axisCamera.up.z = 0.0;
-    this.axisCamera.lookAt(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0));
+    this.axisCamera.lookAt(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, 0));
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
   setAxisPosition(marginX, marginY, corner) {
@@ -3607,23 +3610,27 @@ class ThreeJsPanel {
         this.replaceCamera(this.orthographicCameraX);
         this.replaceControls(this.orthoControlsX);
         this.axisHelperObject.rotation.set(0, Math.PI * 0.5, 0);
+        this.viewMode = _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.Axis.X;
         break;
       case "XZ":
       case "Y":
         this.replaceCamera(this.orthographicCameraY);
         this.replaceControls(this.orthoControlsY);
         this.axisHelperObject.rotation.set(Math.PI * 0.5, 0, 0);
+        this.viewMode = _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.Axis.Y;
         break;
       case "XY":
       case "Z":
         this.replaceCamera(this.orthographicCameraZ);
         this.replaceControls(this.orthoControlsZ);
         this.axisHelperObject.rotation.set(0, 0, 0);
+        this.viewMode = _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.Axis.Z;
         break;
       default:
         this.replaceCamera(this.perspectiveCamera);
         this.replaceControls(this.perspectiveControls);
         this.axisHelperObject.rotation.setFromRotationMatrix(this.camera.matrixWorldInverse);
+        this.viewMode = _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.Axis.NONE;
         break;
     }
     this.updateScaleBarVisibility();
@@ -3674,6 +3681,48 @@ class ThreeJsPanel {
   }
   getHeight() {
     return this.renderer.getContext().canvas.height;
+  }
+  getCameraState() {
+    return {
+      position: this.camera.position.toArray(),
+      up: this.camera.up.toArray(),
+      target: this.controls.target.toArray(),
+      orthoScale: (0,_types_js__WEBPACK_IMPORTED_MODULE_3__.isOrthographicCamera)(this.camera) ? this.controls.scale : undefined,
+      fov: this.camera.type === "PerspectiveCamera" ? this.camera.fov : undefined
+    };
+  }
+
+  /**
+   * Updates the camera's state, including the position, up vector, target position,
+   * scaling, and FOV. If values are missing from `state`, they will be left unchanged.
+   *
+   * @param state Partial `CameraState` object.
+   *
+   * If an OrthographicCamera is used, the camera's position will be constrained to match
+   * the `target` position along the current view mode.
+   */
+  setCameraState(state) {
+    const currentState = this.getCameraState();
+    // Fill in any missing properties with current state
+    const newState = {
+      ...currentState,
+      ...state
+    };
+    this.camera.up.fromArray(newState.up).normalize();
+    this.controls.target.fromArray(newState.target);
+    const constrainedPosition = (0,_utils_num_utils_js__WEBPACK_IMPORTED_MODULE_4__.constrainToAxis)(newState.position, newState.target, this.viewMode);
+    this.camera.position.fromArray(constrainedPosition);
+
+    // Update fields by camera type
+    if ((0,_types_js__WEBPACK_IMPORTED_MODULE_3__.isOrthographicCamera)(this.camera)) {
+      const scale = newState.orthoScale || DEFAULT_ORTHO_SCALE;
+      this.controls.scale = scale;
+      this.camera.zoom = 0.5 / scale;
+    } else {
+      this.camera.fov = newState.fov || this.fov;
+    }
+    this.controls.update();
+    this.camera.updateProjectionMatrix();
   }
   render() {
     // update the axis helper in case the view was rotated
@@ -3909,6 +3958,13 @@ class View3d {
   }
   getDOMElement() {
     return this.canvas3d.containerdiv;
+  }
+  getCameraState() {
+    return this.canvas3d.getCameraState();
+  }
+  setCameraState(transform) {
+    this.canvas3d.setCameraState(transform);
+    this.redraw();
   }
 
   /**
@@ -10033,8 +10089,11 @@ class SubscribableRequestQueue {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   DEFAULT_SIG_FIGS: () => (/* binding */ DEFAULT_SIG_FIGS),
+/* harmony export */   constrainToAxis: () => (/* binding */ constrainToAxis),
 /* harmony export */   formatNumber: () => (/* binding */ formatNumber)
 /* harmony export */ });
+/* harmony import */ var _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../VolumeRenderSettings.js */ "./src/VolumeRenderSettings.ts");
+
 const DEFAULT_SIG_FIGS = 5;
 
 // Adapted from https://gist.github.com/ArneS/2ecfbe4a9d7072ac56c0.
@@ -10112,6 +10171,31 @@ function formatNumber(value, sigFigs = DEFAULT_SIG_FIGS, sciSigFigs = sigFigs - 
     }
     const trimmed = trimTrailing(numStr, "0");
     return trimmed.endsWith(".") ? trimmed.slice(0, -1) : trimmed;
+  }
+}
+
+/**
+ * Constrains the `src` vector relative to the `target` so it only has freedom along the
+ * specified `axis`. Does nothing if `axis = Axis.NONE`.
+ *
+ * @example
+ * ```
+ *   const src = [1, 2, 3];
+ *   const target = [4, 5, 6];
+ *   const constrained = constrainToAxis(src, target, Axis.X);
+ *   console.log(constrained); // [1, 5, 6]
+ * ```
+ */
+function constrainToAxis(src, target, axis) {
+  switch (axis) {
+    case _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_0__.Axis.X:
+      return [src[0], target[1], target[2]];
+    case _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_0__.Axis.Y:
+      return [target[0], src[1], target[2]];
+    case _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_0__.Axis.Z:
+      return [target[0], target[1], src[2]];
+    default:
+      return [...src];
   }
 }
 
