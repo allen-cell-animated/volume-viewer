@@ -18,7 +18,7 @@ import {
 import TrackballControls from "./TrackballControls.js";
 import Timing from "./Timing.js";
 import scaleBarSVG from "./constants/scaleBarSVG.js";
-import { isOrthographicCamera, ViewportCorner, isTop, isRight } from "./types.js";
+import { isOrthographicCamera, isPerspectiveCamera, ViewportCorner, isTop, isRight } from "./types.js";
 import { constrainToAxis, formatNumber } from "./utils/num_utils.js";
 import { Axis } from "./VolumeRenderSettings.js";
 
