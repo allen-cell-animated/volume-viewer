@@ -37,6 +37,7 @@
     "geotiff": "^2.0.5",
     "serialize-error": "^11.0.3",
     "three": "^0.144.0",
+    "throttled-queue": "^2.1.4",
     "tweakpane": "^3.1.9",
     "zarrita": "^0.3.2"
   },

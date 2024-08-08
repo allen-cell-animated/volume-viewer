@@ -95,6 +95,8 @@ export type ZarrLoaderFetchOptions = {
   maxPrefetchChunks: number;
   /** The initial directions to prioritize when prefetching */
   priorityDirections?: PrefetchDirection[];
+  /** only use priority directions */
+  onlyPriorityDirections?: boolean;
 };
 
 type ZarrChunkFetchInfo = {
@@ -103,7 +105,7 @@ type ZarrChunkFetchInfo = {
 };
 
 const DEFAULT_FETCH_OPTIONS = {
-  maxPrefetchDistance: [5, 5, 5, 5] as [number, number, number, number],
+  maxPrefetchDistance: [10, 5, 5, 5] as [number, number, number, number],
   maxPrefetchChunks: 30,
 };
 
@@ -289,6 +291,10 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     this.syncChannels = sync;
   }
 
+  updateFetchOptions(options: Partial<ZarrLoaderFetchOptions>): void {
+    this.fetchOptions = { ...this.fetchOptions, ...options };
+  }
+
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const [spaceUnit, timeUnit] = this.getUnitSymbols();
     // Compute subregion size so we can factor that in
@@ -471,7 +477,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       chunkCoords,
       this.fetchOptions.maxPrefetchDistance,
       chunkDimsTCZYX,
-      this.priorityDirections
+      this.priorityDirections,
+      this.fetchOptions.onlyPriorityDirections
     );
 
     const subscriber = this.requestQueue.addSubscriber();

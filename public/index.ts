@@ -31,7 +31,7 @@ import { RawArrayLoaderOptions } from "../src/loaders/RawArrayLoader";
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
 const PREFETCH_CONCURRENCY_LIMIT = 3;
-const PREFETCH_DISTANCE: [number, number, number, number] = [5, 5, 5, 5];
+const PREFETCH_DISTANCE: [number, number, number, number] = [10, 5, 5, 5];
 const MAX_PREFETCH_CHUNKS = 25;
 const PLAYBACK_INTERVAL = 80;
 
@@ -890,9 +890,9 @@ function onChannelDataArrived(v: Volume, channelIndex: number) {
   view3D.updateActiveChannels(currentVol);
   view3D.updateLuts(currentVol);
 
-  if (currentVol.isLoaded()) {
-    console.log("currentVol with name " + currentVol.name + " is loaded");
-  }
+  // if (currentVol.isLoaded()) {
+  //   console.log("currentVol with name " + currentVol.name + " is loaded");
+  // }
   view3D.redraw();
 }
 
@@ -1099,6 +1099,7 @@ function main() {
     return;
   }
   view3D = new View3d({ parentElement: el });
+  view3D.loaderContext = loaderContext;
 
   const testDataSelect = document.getElementById("testData");
   testDataSelect?.addEventListener("change", ({ currentTarget }) => {

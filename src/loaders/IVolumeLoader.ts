@@ -3,6 +3,7 @@ import { Box3, Vector3 } from "three";
 import Volume, { ImageInfo } from "../Volume.js";
 import { buildDefaultMetadata } from "./VolumeLoaderUtils.js";
 import { PrefetchDirection } from "./zarr_utils/types.js";
+import { ZarrLoaderFetchOptions } from "./OmeZarrLoader.js";
 
 export class LoadSpec {
   time = 0;
@@ -146,6 +147,10 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
   syncMultichannelLoading(_sync: boolean): void {
     // default behavior is async, to update channels as they arrive, depending on each
     // loader's implementation details.
+  }
+
+  updateFetchOptions(_options: Partial<ZarrLoaderFetchOptions>): void {
+    // no-op by default
   }
 
   async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {
