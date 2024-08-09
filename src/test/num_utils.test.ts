@@ -1,7 +1,8 @@
 import { expect } from "chai";
 import { it } from "mocha";
 
-import { formatNumber, getTimestamp } from "../utils/num_utils";
+import { constrainToAxis, formatNumber, getTimestamp } from "../utils/num_utils";
+import { Axis } from "../VolumeRenderSettings.js";
 
 describe("num_utils", () => {
   describe("formatNumber", () => {
@@ -147,6 +148,24 @@ describe("num_utils", () => {
       expect(getTimestamp(0, 123 * 24, "h")).to.equal("0:00 / 123:00 d:h");
       expect(getTimestamp(23, 123 * 24, "h")).to.equal("0:23 / 123:00 d:h");
       expect(getTimestamp(24 + 5, 123 * 24, "h")).to.equal("1:05 / 123:00 d:h");
+    });
+  });
+
+  describe("constrainToAxis", () => {
+    type Number3 = [number, number, number];
+
+    it("constrains to the X, Y, Z axis", () => {
+      const src: Number3 = [1, 2, 3];
+      const target: Number3 = [4, 5, 6];
+      expect(constrainToAxis(src, target, Axis.X)).to.eql([1, 5, 6]);
+      expect(constrainToAxis(src, target, Axis.Y)).to.eql([4, 2, 6]);
+      expect(constrainToAxis(src, target, Axis.Z)).to.eql([4, 5, 3]);
+    });
+
+    it("does nothing if Axis.None is specified", () => {
+      const src: Number3 = [1, 2, 3];
+      const target: Number3 = [4, 5, 6];
+      expect(constrainToAxis(src, target, Axis.NONE)).to.eql([1, 2, 3]);
     });
   });
 });

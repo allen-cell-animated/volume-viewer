@@ -1,4 +1,5 @@
 import { parseTimeUnit, TimeUnit } from "../constants/time.js";
+import { Axis } from "../VolumeRenderSettings.js";
 
 export const DEFAULT_SIG_FIGS = 5;
 
@@ -199,4 +200,33 @@ export function getTimestamp(time: number, total: number, unit: string): string 
   const { timestamp: totalTimestamp } = formatTimestamp(totalMs, options);
 
   return `${timestamp} / ${totalTimestamp} ${units}`;
+}
+
+/**
+ * Constrains the `src` vector relative to the `target` so it only has freedom along the
+ * specified `axis`. Does nothing if `axis = Axis.NONE`.
+ *
+ * @example
+ * ```
+ *   const src = [1, 2, 3];
+ *   const target = [4, 5, 6];
+ *   const constrained = constrainToAxis(src, target, Axis.X);
+ *   console.log(constrained); // [1, 5, 6]
+ * ```
+ */
+export function constrainToAxis(
+  src: [number, number, number],
+  target: [number, number, number],
+  axis: Axis
+): [number, number, number] {
+  switch (axis) {
+    case Axis.X:
+      return [src[0], target[1], target[2]];
+    case Axis.Y:
+      return [target[0], src[1], target[2]];
+    case Axis.Z:
+      return [target[0], target[1], src[2]];
+    default:
+      return [...src];
+  }
 }
