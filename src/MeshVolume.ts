@@ -169,6 +169,7 @@ export default class MeshVolume {
     // proper scaling will be done in parent object
     for (let i = 0; i < geometries.length; ++i) {
       const mesh = new Mesh(geometries[i], material);
+      mesh.layers.set(1);
       theObject.add(mesh);
     }
     return theObject;

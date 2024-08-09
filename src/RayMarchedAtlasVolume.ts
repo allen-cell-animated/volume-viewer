@@ -307,6 +307,8 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       return;
     }
 
+    this.setUniform("textureDepth", canvas.getDepthTexture());
+
     this.channelData.gpuFuse(canvas.renderer);
     this.setUniform("textureAtlas", this.channelData.getFusedTexture());
 

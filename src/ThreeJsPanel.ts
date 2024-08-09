@@ -14,6 +14,7 @@ import {
   WebGLRenderer,
   Scene,
   DepthTexture,
+  WebGLRenderTarget,
 } from "three";
 
 import TrackballControls from "./TrackballControls.js";
@@ -43,7 +44,10 @@ export class ThreeJsPanel {
   public containerdiv: HTMLDivElement;
   private canvas: HTMLCanvasElement;
   public scene: Scene;
-  private zooming: boolean;
+
+  private meshRenderTarget: WebGLRenderTarget;
+  private meshDepthTexture: DepthTexture;
+
   public animateFuncs: ((panel: ThreeJsPanel) => void)[];
   private inRenderLoop: boolean;
   private requestedRender: number;
@@ -98,6 +102,10 @@ export class ThreeJsPanel {
     }
 
     this.scene = new Scene();
+    this.meshRenderTarget = new WebGLRenderTarget(this.canvas.width, this.canvas.height);
+    window.setTimeout(() => console.log(this.scene), 1000);
+    this.meshDepthTexture = new DepthTexture(this.canvas.width, this.canvas.height);
+    this.meshRenderTarget.depthTexture = this.meshDepthTexture;
 
     this.scaleBarContainerElement = document.createElement("div");
     this.orthoScaleBarElement = document.createElement("div");
@@ -107,7 +115,6 @@ export class ThreeJsPanel {
     this.timestepIndicatorElement = document.createElement("div");
     this.showTimestepIndicator = false;
 
-    this.zooming = false;
     this.animateFuncs = [];
 
     // are we in a constant render loop or not?
@@ -564,8 +571,9 @@ export class ThreeJsPanel {
     this.updateScaleBarVisibility();
   }
 
-  getDepthTexture(): DepthTexture | undefined {
-    return this.renderer.getRenderTarget()?.depthTexture;
+  getDepthTexture(): DepthTexture {
+    console.log("dogs");
+    return this.meshDepthTexture;
   }
 
   resize(comp: HTMLElement | null, w?: number, h?: number, _ow?: number, _oh?: number, _eOpts?: unknown): void {
@@ -604,6 +612,7 @@ export class ThreeJsPanel {
     }
 
     this.renderer.setSize(w, h);
+    this.meshRenderTarget.setSize(w, h);
 
     this.perspectiveControls.handleResize();
     this.orthoControlsZ.handleResize();
@@ -678,7 +687,14 @@ export class ThreeJsPanel {
       }
     }
 
+    this.camera.layers.set(1);
+    this.renderer.setRenderTarget(this.meshRenderTarget);
     this.renderer.render(this.scene, this.camera);
+
+    this.camera.layers.set(0);
+    this.renderer.setRenderTarget(null);
+    this.renderer.render(this.scene, this.camera);
+
     // overlay
     if (this.showAxis) {
       this.renderer.autoClear = false;
