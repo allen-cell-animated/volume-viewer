@@ -3,9 +3,9 @@ import { parseTimeUnit, TimeUnit } from "../constants/time.js";
 export const DEFAULT_SIG_FIGS = 5;
 
 const SECONDS_IN_MS = 1000;
-const MINUTES_IN_MS = 1000 * 60;
-const HOURS_IN_MS = 1000 * 60 * 60;
-const DAYS_IN_MS = 1000 * 60 * 60 * 24;
+const MINUTES_IN_MS = SECONDS_IN_MS * 60;
+const HOURS_IN_MS = MINUTES_IN_MS * 60;
+const DAYS_IN_MS = HOURS_IN_MS * 24;
 
 // Adapted from https://gist.github.com/ArneS/2ecfbe4a9d7072ac56c0.
 function digitToUnicodeSupercript(n: number): string {
@@ -86,20 +86,20 @@ export function formatNumber(value: number, sigFigs = DEFAULT_SIG_FIGS, sciSigFi
   }
 }
 
+const timeUnitEnumToMilliseconds = {
+  [TimeUnit.MILLISECOND]: 1,
+  [TimeUnit.SECOND]: SECONDS_IN_MS,
+  [TimeUnit.MINUTE]: MINUTES_IN_MS,
+  [TimeUnit.HOUR]: HOURS_IN_MS,
+  [TimeUnit.DAY]: DAYS_IN_MS,
+};
+
 export function timeToMilliseconds(time: number, unit: TimeUnit): number {
-  if (unit == TimeUnit.MILLISECOND) {
-    return time;
-  } else if (unit == TimeUnit.SECOND) {
-    return time * SECONDS_IN_MS;
-  } else if (unit == TimeUnit.MINUTE) {
-    return time * MINUTES_IN_MS;
-  } else if (unit == TimeUnit.HOUR) {
-    return time * HOURS_IN_MS;
-  } else if (unit == TimeUnit.DAY) {
-    return time * DAYS_IN_MS;
-  } else {
+  const timeUnitMultiplier = timeUnitEnumToMilliseconds[unit];
+  if (timeUnitMultiplier === undefined) {
     throw new Error("Unrecognized time unit");
   }
+  return time * timeUnitMultiplier;
 }
 
 /**
