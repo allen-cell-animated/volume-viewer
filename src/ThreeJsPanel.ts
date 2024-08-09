@@ -13,6 +13,7 @@ import {
   NormalBlending,
   WebGLRenderer,
   Scene,
+  DepthTexture,
 } from "three";
 
 import TrackballControls from "./TrackballControls.js";
@@ -563,8 +564,8 @@ export class ThreeJsPanel {
     this.updateScaleBarVisibility();
   }
 
-  getCanvas(): HTMLCanvasElement {
-    return this.canvas;
+  getDepthTexture(): DepthTexture | undefined {
+    return this.renderer.getRenderTarget()?.depthTexture;
   }
 
   resize(comp: HTMLElement | null, w?: number, h?: number, _ow?: number, _oh?: number, _eOpts?: unknown): void {
