@@ -1,6 +1,12 @@
+import { parseTimeUnit, TimeUnit } from "../constants/time.js";
 import { Axis } from "../VolumeRenderSettings.js";
 
 export const DEFAULT_SIG_FIGS = 5;
+
+const SECONDS_IN_MS = 1000;
+const MINUTES_IN_MS = SECONDS_IN_MS * 60;
+const HOURS_IN_MS = MINUTES_IN_MS * 60;
+const DAYS_IN_MS = HOURS_IN_MS * 24;
 
 // Adapted from https://gist.github.com/ArneS/2ecfbe4a9d7072ac56c0.
 function digitToUnicodeSupercript(n: number): string {
@@ -79,6 +85,121 @@ export function formatNumber(value: number, sigFigs = DEFAULT_SIG_FIGS, sciSigFi
     const trimmed = trimTrailing(numStr, "0");
     return trimmed.endsWith(".") ? trimmed.slice(0, -1) : trimmed;
   }
+}
+
+const timeUnitEnumToMilliseconds = {
+  [TimeUnit.MILLISECOND]: 1,
+  [TimeUnit.SECOND]: SECONDS_IN_MS,
+  [TimeUnit.MINUTE]: MINUTES_IN_MS,
+  [TimeUnit.HOUR]: HOURS_IN_MS,
+  [TimeUnit.DAY]: DAYS_IN_MS,
+};
+
+export function timeToMilliseconds(time: number, unit: TimeUnit): number {
+  const timeUnitMultiplier = timeUnitEnumToMilliseconds[unit];
+  if (timeUnitMultiplier === undefined) {
+    throw new Error("Unrecognized time unit");
+  }
+  return time * timeUnitMultiplier;
+}
+
+/**
+ * Pads the `value` with zeroes to the specified `length` if `shouldPad` is true
+ * and returns the resulting string. Otherwise, returns the string representation of `value`.
+ */
+function padConditionally(value: number, length: number, shouldPad: boolean): string {
+  return shouldPad ? value.toString().padStart(length, "0") : value.toString();
+}
+
+function formatTimestamp(
+  timeMs: number,
+  options: {
+    useMs: boolean;
+    useSec: boolean;
+    useMin: boolean;
+    useHours: boolean;
+    useDays: boolean;
+  }
+): { timestamp: string; units: string } {
+  const { useMs, useSec, useMin, useHours, useDays } = options;
+  const digits: string[] = [];
+  const units: string[] = [];
+
+  if (useDays) {
+    const days = Math.floor(timeMs / DAYS_IN_MS);
+    digits.push(days.toString());
+    units.push("d");
+  }
+  if (useHours) {
+    const hours = Math.floor((timeMs % DAYS_IN_MS) / HOURS_IN_MS);
+    // If the previous unit is included, pad the hours to 2 digits so the
+    // timestamp is consistent.
+    digits.push(padConditionally(hours, 2, useDays));
+    units.push("h");
+  }
+  if (useMin) {
+    const minutes = Math.floor((timeMs % HOURS_IN_MS) / MINUTES_IN_MS);
+    digits.push(padConditionally(minutes, 2, useHours));
+    units.push("m");
+  }
+  if (useSec) {
+    const seconds = Math.floor((timeMs % MINUTES_IN_MS) / SECONDS_IN_MS);
+    let secondString = padConditionally(seconds, 2, useMin);
+    units.push("s");
+    // If using milliseconds, add as a decimal to the seconds string.
+    if (useMs) {
+      const milliseconds = Math.floor(timeMs % SECONDS_IN_MS);
+      secondString += "." + milliseconds.toString().padStart(3, "0");
+      // Do not add milliseconds to unit label, since they'll be shown as
+      // part of the seconds string.
+    }
+    digits.push(secondString);
+  } else if (useMs) {
+    const milliseconds = Math.floor(timeMs % SECONDS_IN_MS);
+    digits.push(milliseconds.toString());
+    units.push("ms");
+  }
+  return { timestamp: digits.join(":"), units: units.join(":") };
+}
+
+/**
+ * Gets a timestamp formatted as `{time} / {total} {unit}`. If `unit` is a recognized
+ * time unit, the timestamp will be formatted as a `d:hh:mm:ss.ms` string.
+ *
+ * @param time Current time, in specified units.
+ * @param total Total time, in specified units.
+ * @param unit The unit of time.
+ * @returns A formatted timestamp string.
+ * - If `unit` is not recognized, the timestamp will be formatted as `{time} / {total} {unit}`,
+ * where `time` and `total` are formatted with significant digits as needed.
+ * - If `unit` is recognized, the timestamp will be formatted as `d:hh:mm:ss.ms`, specifying
+ * the most significant unit based on the total time, and the least significant unit with
+ * `unit`. See `parseTimeUnit()` for recognized time units.
+ */
+export function getTimestamp(time: number, total: number, unit: string): string {
+  const timeUnit = parseTimeUnit(unit);
+
+  if (timeUnit === undefined) {
+    return `${formatNumber(time)} / ${formatNumber(total)} ${unit}`;
+  }
+
+  const timeMs = timeToMilliseconds(time, timeUnit);
+  const totalMs = timeToMilliseconds(total, timeUnit);
+
+  // Toggle each unit based on the total time and the provided timeUnit.
+  // Exploit an enum property where TimeUnit.Milliseconds < TimeUnit.Second < TimeUnit.Minute ... etc.
+  const options = {
+    useMs: timeUnit == TimeUnit.MILLISECOND,
+    useSec: timeUnit == TimeUnit.SECOND || (timeUnit <= TimeUnit.SECOND && totalMs >= SECONDS_IN_MS),
+    useMin: timeUnit == TimeUnit.MINUTE || (timeUnit <= TimeUnit.MINUTE && totalMs >= MINUTES_IN_MS),
+    useHours: timeUnit == TimeUnit.HOUR || (timeUnit <= TimeUnit.HOUR && totalMs >= HOURS_IN_MS),
+    useDays: timeUnit == TimeUnit.DAY || (timeUnit <= TimeUnit.DAY && totalMs >= DAYS_IN_MS),
+  };
+
+  const { timestamp, units } = formatTimestamp(timeMs, options);
+  const { timestamp: totalTimestamp } = formatTimestamp(totalMs, options);
+
+  return `${timestamp} / ${totalTimestamp} ${units}`;
 }
 
 /**
