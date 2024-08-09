@@ -87,6 +87,10 @@ export const rayMarchingShaderUniforms = () => {
       type: "t",
       value: new Texture(),
     },
+    textureDepth: {
+      type: "t",
+      value: new Texture(),
+    },
     maxProject: {
       type: "i",
       value: 0,
