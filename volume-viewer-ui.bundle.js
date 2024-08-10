@@ -3457,7 +3457,7 @@ class ThreeJsPanel {
     const scaleBarContainerStyle = {
       fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
       position: "absolute",
-      right: "20px",
+      right: "169px",
       bottom: "20px"
     };
     Object.assign(this.scaleBarContainerElement.style, scaleBarContainerStyle);
@@ -3475,7 +3475,9 @@ class ThreeJsPanel {
       textAlign: "right",
       lineHeight: "0",
       boxSizing: "border-box",
-      paddingRight: "10px"
+      paddingRight: "10px",
+      // TODO: Adjust based on width of timestamp
+      marginRight: "40px"
     };
     Object.assign(this.orthoScaleBarElement.style, orthoScaleBarStyle);
     this.scaleBarContainerElement.appendChild(this.orthoScaleBarElement);
@@ -3528,7 +3530,7 @@ class ThreeJsPanel {
     labeldiv.innerHTML = `${(0,_utils_num_utils_js__WEBPACK_IMPORTED_MODULE_4__.formatNumber)(length)}${unit || ""}`;
   }
   updateTimestepIndicator(progress, total, unit) {
-    this.timestepIndicatorElement.innerHTML = `${(0,_utils_num_utils_js__WEBPACK_IMPORTED_MODULE_4__.formatNumber)(progress)} / ${(0,_utils_num_utils_js__WEBPACK_IMPORTED_MODULE_4__.formatNumber)(total)} ${unit}`;
+    this.timestepIndicatorElement.innerHTML = (0,_utils_num_utils_js__WEBPACK_IMPORTED_MODULE_4__.getTimestamp)(progress, total, unit);
   }
   setPerspectiveScaleBarColor(color) {
     // set the font color of the SVG container. only paths with `stroke="currentColor"` will react to this.
@@ -6811,6 +6813,55 @@ const scaleBarSVG = `
 
 /***/ }),
 
+/***/ "./src/constants/time.ts":
+/*!*******************************!*\
+  !*** ./src/constants/time.ts ***!
+  \*******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TimeUnit: () => (/* binding */ TimeUnit),
+/* harmony export */   parseTimeUnit: () => (/* binding */ parseTimeUnit)
+/* harmony export */ });
+let TimeUnit = /*#__PURE__*/function (TimeUnit) {
+  TimeUnit[TimeUnit["MILLISECOND"] = 0] = "MILLISECOND";
+  TimeUnit[TimeUnit["SECOND"] = 1] = "SECOND";
+  TimeUnit[TimeUnit["MINUTE"] = 2] = "MINUTE";
+  TimeUnit[TimeUnit["HOUR"] = 3] = "HOUR";
+  TimeUnit[TimeUnit["DAY"] = 4] = "DAY";
+  return TimeUnit;
+}({});
+const recognizedTimeUnits = {
+  [TimeUnit.MILLISECOND]: new Set(["ms", "millisecond", "milliseconds"]),
+  [TimeUnit.SECOND]: new Set(["s", "sec", "second", "seconds"]),
+  [TimeUnit.MINUTE]: new Set(["m", "min", "minute", "minutes"]),
+  [TimeUnit.HOUR]: new Set(["h", "hr", "hour", "hours"]),
+  [TimeUnit.DAY]: new Set(["d", "day", "days"])
+};
+
+/**
+ * Parses an OME-compatible time unit into a TimeUnit enum.
+ * @param unit string unit
+ * @returns
+ * - `TimeUnit.MILLISECOND` if unit is "ms", "millisecond", or "milliseconds"
+ * - `TimeUnit.SECOND` if unit is "s", "sec", "second", or "seconds"
+ * - `TimeUnit.MINUTE` if unit is "m", "min", "minute", or "minutes"
+ * - `TimeUnit.HOUR` if unit is "h", "hr", "hour", or "hours"
+ * - `TimeUnit.DAY` if unit is "d", "day", or "days"
+ * - `undefined` if unit is not recognized
+ */
+function parseTimeUnit(unit) {
+  for (const [timeUnit, recognizedUnits] of Object.entries(recognizedTimeUnits)) {
+    if (recognizedUnits.has(unit)) {
+      return timeUnit;
+    }
+  }
+}
+
+/***/ }),
+
 /***/ "./src/constants/volumePTshader.ts":
 /*!*****************************************!*\
   !*** ./src/constants/volumePTshader.ts ***!
@@ -10090,11 +10141,19 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   DEFAULT_SIG_FIGS: () => (/* binding */ DEFAULT_SIG_FIGS),
 /* harmony export */   constrainToAxis: () => (/* binding */ constrainToAxis),
-/* harmony export */   formatNumber: () => (/* binding */ formatNumber)
+/* harmony export */   formatNumber: () => (/* binding */ formatNumber),
+/* harmony export */   getTimestamp: () => (/* binding */ getTimestamp),
+/* harmony export */   timeToMilliseconds: () => (/* binding */ timeToMilliseconds)
 /* harmony export */ });
-/* harmony import */ var _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../VolumeRenderSettings.js */ "./src/VolumeRenderSettings.ts");
+/* harmony import */ var _constants_time_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/time.js */ "./src/constants/time.ts");
+/* harmony import */ var _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../VolumeRenderSettings.js */ "./src/VolumeRenderSettings.ts");
+
 
 const DEFAULT_SIG_FIGS = 5;
+const SECONDS_IN_MS = 1000;
+const MINUTES_IN_MS = SECONDS_IN_MS * 60;
+const HOURS_IN_MS = MINUTES_IN_MS * 60;
+const DAYS_IN_MS = HOURS_IN_MS * 24;
 
 // Adapted from https://gist.github.com/ArneS/2ecfbe4a9d7072ac56c0.
 function digitToUnicodeSupercript(n) {
@@ -10173,6 +10232,118 @@ function formatNumber(value, sigFigs = DEFAULT_SIG_FIGS, sciSigFigs = sigFigs - 
     return trimmed.endsWith(".") ? trimmed.slice(0, -1) : trimmed;
   }
 }
+const timeUnitEnumToMilliseconds = {
+  [_constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.MILLISECOND]: 1,
+  [_constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.SECOND]: SECONDS_IN_MS,
+  [_constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.MINUTE]: MINUTES_IN_MS,
+  [_constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.HOUR]: HOURS_IN_MS,
+  [_constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.DAY]: DAYS_IN_MS
+};
+function timeToMilliseconds(time, unit) {
+  const timeUnitMultiplier = timeUnitEnumToMilliseconds[unit];
+  if (timeUnitMultiplier === undefined) {
+    throw new Error("Unrecognized time unit");
+  }
+  return time * timeUnitMultiplier;
+}
+
+/**
+ * Pads the `value` with zeroes to the specified `length` if `shouldPad` is true
+ * and returns the resulting string. Otherwise, returns the string representation of `value`.
+ */
+function padConditionally(value, length, shouldPad) {
+  return shouldPad ? value.toString().padStart(length, "0") : value.toString();
+}
+function formatTimestamp(timeMs, options) {
+  const {
+    useMs,
+    useSec,
+    useMin,
+    useHours,
+    useDays
+  } = options;
+  const digits = [];
+  const units = [];
+  if (useDays) {
+    const days = Math.floor(timeMs / DAYS_IN_MS);
+    digits.push(days.toString());
+    units.push("d");
+  }
+  if (useHours) {
+    const hours = Math.floor(timeMs % DAYS_IN_MS / HOURS_IN_MS);
+    // If the previous unit is included, pad the hours to 2 digits so the
+    // timestamp is consistent.
+    digits.push(padConditionally(hours, 2, useDays));
+    units.push("h");
+  }
+  if (useMin) {
+    const minutes = Math.floor(timeMs % HOURS_IN_MS / MINUTES_IN_MS);
+    digits.push(padConditionally(minutes, 2, useHours));
+    units.push("m");
+  }
+  if (useSec) {
+    const seconds = Math.floor(timeMs % MINUTES_IN_MS / SECONDS_IN_MS);
+    let secondString = padConditionally(seconds, 2, useMin);
+    units.push("s");
+    // If using milliseconds, add as a decimal to the seconds string.
+    if (useMs) {
+      const milliseconds = Math.floor(timeMs % SECONDS_IN_MS);
+      secondString += "." + milliseconds.toString().padStart(3, "0");
+      // Do not add milliseconds to unit label, since they'll be shown as
+      // part of the seconds string.
+    }
+    digits.push(secondString);
+  } else if (useMs) {
+    const milliseconds = Math.floor(timeMs % SECONDS_IN_MS);
+    digits.push(milliseconds.toString());
+    units.push("ms");
+  }
+  return {
+    timestamp: digits.join(":"),
+    units: units.join(":")
+  };
+}
+
+/**
+ * Gets a timestamp formatted as `{time} / {total} {unit}`. If `unit` is a recognized
+ * time unit, the timestamp will be formatted as a `d:hh:mm:ss.ms` string.
+ *
+ * @param time Current time, in specified units.
+ * @param total Total time, in specified units.
+ * @param unit The unit of time.
+ * @returns A formatted timestamp string.
+ * - If `unit` is not recognized, the timestamp will be formatted as `{time} / {total} {unit}`,
+ * where `time` and `total` are formatted with significant digits as needed.
+ * - If `unit` is recognized, the timestamp will be formatted as `d:hh:mm:ss.ms`, specifying
+ * the most significant unit based on the total time, and the least significant unit with
+ * `unit`. See `parseTimeUnit()` for recognized time units.
+ */
+function getTimestamp(time, total, unit) {
+  const timeUnit = (0,_constants_time_js__WEBPACK_IMPORTED_MODULE_0__.parseTimeUnit)(unit);
+  if (timeUnit === undefined) {
+    return `${formatNumber(time)} / ${formatNumber(total)} ${unit}`;
+  }
+  const timeMs = timeToMilliseconds(time, timeUnit);
+  const totalMs = timeToMilliseconds(total, timeUnit);
+
+  // Toggle each unit based on the total time and the provided timeUnit.
+  // Exploit an enum property where TimeUnit.Milliseconds < TimeUnit.Second < TimeUnit.Minute ... etc.
+  const options = {
+    useMs: timeUnit == _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.MILLISECOND,
+    useSec: timeUnit == _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.SECOND || timeUnit <= _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.SECOND && totalMs >= SECONDS_IN_MS,
+    useMin: timeUnit == _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.MINUTE || timeUnit <= _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.MINUTE && totalMs >= MINUTES_IN_MS,
+    useHours: timeUnit == _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.HOUR || timeUnit <= _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.HOUR && totalMs >= HOURS_IN_MS,
+    useDays: timeUnit == _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.DAY || timeUnit <= _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.DAY && totalMs >= DAYS_IN_MS
+  };
+  const {
+    timestamp,
+    units
+  } = formatTimestamp(timeMs, options);
+  const {
+    timestamp: totalTimestamp
+  } = formatTimestamp(totalMs, options);
+  return `${timestamp} / ${totalTimestamp} ${units}`;
+}
 
 /**
  * Constrains the `src` vector relative to the `target` so it only has freedom along the
@@ -10188,11 +10359,11 @@ function formatNumber(value, sigFigs = DEFAULT_SIG_FIGS, sciSigFigs = sigFigs - 
  */
 function constrainToAxis(src, target, axis) {
   switch (axis) {
-    case _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_0__.Axis.X:
+    case _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_1__.Axis.X:
       return [src[0], target[1], target[2]];
-    case _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_0__.Axis.Y:
+    case _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_1__.Axis.Y:
       return [target[0], src[1], target[2]];
-    case _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_0__.Axis.Z:
+    case _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_1__.Axis.Z:
       return [target[0], target[1], src[2]];
     default:
       return [...src];
