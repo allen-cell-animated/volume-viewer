@@ -20,6 +20,7 @@ uniform vec3 AABB_CLIP_MAX;
 uniform float CLIP_FAR;
 uniform sampler2D textureAtlas;
 uniform sampler2D textureAtlasMask;
+uniform sampler2D textureDepth;
 uniform int BREAK_STEPS;
 uniform float SLICES;
 uniform float isOrtho;
@@ -280,11 +281,13 @@ void main() {
   float clipNear = 0.0;//-(dot(eyeRay_o.xyz, eyeNorm) + dNear) / dot(eyeRay_d.xyz, eyeNorm);
   float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);
 
-  vec4 C = integrateVolume(vec4(eyeRay_o,1.0), vec4(eyeRay_d,0.0),
-                           tnear,    tfar, //intersections of box
-                           clipNear, clipFar,
-                           textureAtlas);
-  C = clamp(C, 0.0, 1.0);
+  // vec4 C = integrateVolume(vec4(eyeRay_o,1.0), vec4(eyeRay_d,0.0),
+  //                          tnear,    tfar, //intersections of box
+  //                          clipNear, clipFar,
+  //                          textureAtlas);
+  // vec4 C = texture2D(textureDepth, vUv);
+  vec4 C = vec4(vUv, 0.0, 1.0);
+  // C = clamp(C, 0.0, 1.0);
   gl_FragColor = C;
   return;
 }
