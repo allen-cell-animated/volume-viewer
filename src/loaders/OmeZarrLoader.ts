@@ -536,6 +536,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     onUpdateMetadata: (imageInfo: ImageInfo) => void,
     onData: RawChannelDataCallback
   ): Promise<void> {
+    console.log("we're here!");
     // This seemingly useless line keeps a stable local copy of `syncChannels` which the async closures below capture
     // so that changes to `this.syncChannels` don't affect the behavior of loads in progress.
     const syncChannels = this.syncChannels;
@@ -543,6 +544,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const updatedImageInfo = this.updateImageInfoForLoad(imageInfo, loadSpec);
     onUpdateMetadata(updatedImageInfo);
     const { numChannels, multiscaleLevel } = updatedImageInfo;
+    console.log(multiscaleLevel);
     const channelIndexes = loadSpec.channels ?? Array.from({ length: numChannels }, (_, i) => i);
 
     const subscriber = this.requestQueue.addSubscriber();
@@ -550,6 +552,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     // Prefetch housekeeping: we want to save keys involved in this load to prefetch later
     const keys: ZarrChunkFetchInfo[] = [];
     const reportKeyBase = (sourceIdx: number, key: string, sub: SubscriberId) => {
+      console.log("fetching key", key);
       if (sub === subscriber) {
         keys.push({ sourceIdx, key });
       }
@@ -569,6 +572,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       const level = this.sources[sourceIdx].scaleLevels[multiscaleLevel];
       const sliceSpec = this.orderByDimension(unorderedSpec as TCZYX<number | Slice>, sourceIdx);
       const reportKey = (key: string, sub: SubscriberId) => reportKeyBase(sourceIdx, key, sub);
+      console.log(sliceSpec);
 
       const result = await zarrGet(level, sliceSpec, { opts: { subscriber, reportKey } }).catch(
         wrapVolumeLoadError(
@@ -577,6 +581,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
           CHUNK_REQUEST_CANCEL_REASON
         )
       );
+      console.log("check it out we have a result!");
 
       if (result?.data === undefined) {
         return;
