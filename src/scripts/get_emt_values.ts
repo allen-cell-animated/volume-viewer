@@ -14,7 +14,6 @@ async function loadZarrChannelAtTime(
 
   const loadSpec = new LoadSpec();
   loadSpec.time = time;
-  loadSpec.scaleLevelBias = 2;
   loadSpec.channels = [channel];
 
   const { imageInfo } = await loader.createImageInfo(loadSpec);
@@ -127,12 +126,29 @@ async function addChannelMinMaxToCsv(csvPath: string, outPath: string): Promise<
     row["channel_0_max"] = channelMinMax[i][0][1].toString();
     row["channel_1_min"] = channelMinMax[i][1][0].toString();
     row["channel_1_max"] = channelMinMax[i][1][1].toString();
+
+    // Make new URL
+    const channel0Min = channelMinMax[i][0][0];
+    const channel0Max = channelMinMax[i][0][1];
+    const channel1Min = channelMinMax[i][1][0];
+    const channel1Max = channelMinMax[i][1][1];
+
+    const rowPath = row["ome_zarr_raw_file_path_extra"];
+    if (rowPath !== undefined) {
+      const rowUrlPath =
+        rowPath.replace("/allen/aics/", "https://dev-aics-dtp-001.int.allencell.org/") + "/raw.ome.zarr";
+      const newUrl = `https://volumeviewer.allencell.org/?url=${encodeURIComponent(
+        rowUrlPath
+      )}t=24&c0=lut:${channel0Min}:${channel0Max}%2Cven:1&c1=lut:${channel1Min}:${channel1Max}%2Cven:1&c2=ven:0`;
+      row["new_url"] = newUrl;
+    } else {
+      row["new_url"] = "";
+    }
+
     parsedCsv.data[i] = row;
   }
 
-  // TODO: make new URL
-
-  parsedCsv.meta.fields?.push("channel_0_min", "channel_0_max", "channel_1_min", "channel_1_max");
+  parsedCsv.meta.fields?.push("channel_0_min", "channel_0_max", "channel_1_min", "channel_1_max", "new_url");
 
   const newCsv = Papa.unparse(parsedCsv as unknown as UnparseObject<unknown>);
   fs.writeFileSync(outPath, newCsv);
