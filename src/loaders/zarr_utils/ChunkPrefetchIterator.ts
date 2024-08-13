@@ -122,10 +122,9 @@ export default class ChunkPrefetchIterator {
   private static *iterateDirections(directions: PrefetchDirectionState[]): Generator<TCZYX<number>> {
     let offset = 1;
 
-    let directions2 = directions.slice();
-    while (directions2.length > 0) {
+    while (directions.length > 0) {
       // Remove directions in which we have reached the end (or, if per-channel ends, the end for all channels)
-      directions2 = directions2.filter((dir) => {
+      directions = directions.filter((dir) => {
         const end = Array.isArray(dir.end) ? Math.max(...dir.end) : dir.end;
         if (!Number.isFinite(end) || !Number.isFinite(dir.start)) {
           return false;
@@ -138,7 +137,7 @@ export default class ChunkPrefetchIterator {
       });
 
       // Yield chunks one chunk farther out in every remaining direction
-      for (const dir of directions2) {
+      for (const dir of directions) {
         const offsetDir = offset * (dir.direction & 1 ? 1 : -1);
         for (const chunk of dir.chunks) {
           // Skip this chunk if this channel has a specific per-channel end and we've reached it
