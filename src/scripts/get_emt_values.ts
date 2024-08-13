@@ -1,4 +1,4 @@
-import fs from "fs";
+//import fs from "fs";
 import { OMEZarrLoader } from "../loaders/OmeZarrLoader";
 import { LoadSpec } from "../loaders/IVolumeLoader";
 
