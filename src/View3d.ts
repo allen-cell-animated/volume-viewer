@@ -403,6 +403,7 @@ export class View3d {
       lightSettings.ambientLightSettings.color,
       lightSettings.ambientLightSettings.intensity
     );
+    this.ambientLight.layers.enable(1);
     this.lightContainer.add(this.ambientLight);
 
     // key light
@@ -414,6 +415,7 @@ export class View3d {
     );
     this.spotLight.target = new Object3D(); // this.substrate;
     this.spotLight.angle = lightSettings.spotlightSettings.angle;
+    this.spotLight.layers.enable(1);
 
     this.lightContainer.add(this.spotLight);
 
@@ -426,6 +428,7 @@ export class View3d {
     );
     this.reflectedLight.castShadow = lightSettings.reflectedLightSettings.castShadow;
     this.reflectedLight.intensity = lightSettings.reflectedLightSettings.intensity;
+    this.reflectedLight.layers.enable(1);
     this.lightContainer.add(this.reflectedLight);
 
     // fill light
@@ -437,6 +440,7 @@ export class View3d {
     );
     this.fillLight.castShadow = lightSettings.fillLightSettings.castShadow;
     this.fillLight.intensity = lightSettings.fillLightSettings.intensity;
+    this.fillLight.layers.enable(1);
     this.lightContainer.add(this.fillLight);
 
     this.scene.add(this.lightContainer);
