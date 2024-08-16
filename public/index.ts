@@ -1,5 +1,5 @@
 import { Vector2, Vector3 } from "three";
-import * as dat from "dat.gui";
+import GUI from "lil-gui";
 
 import {
   CreateLoaderOptions,
@@ -248,11 +248,10 @@ function setInitialRenderMode() {
   view3D.setMaxProjectMode(myState.volume, myState.isMP);
 }
 
-let gui: dat.GUI;
+let gui: GUI;
 
 function setupGui() {
-  gui = new dat.GUI();
-  //gui = new dat.GUI({autoPlace:false, width:200});
+  gui = new GUI();
 
   gui
     .add(myState, "density")
@@ -287,7 +286,7 @@ function setupGui() {
       view3D.setRayStepSizes(myState.volume, myState.primaryRay, myState.secondaryRay);
     });
 
-  const cameraGui = gui.addFolder("Camera");
+  const cameraGui = gui.addFolder("Camera").close();
   cameraGui
     .add(myState, "exposure")
     .max(1.0)
@@ -329,7 +328,7 @@ function setupGui() {
       view3D.updatePixelSamplingRate(value);
     });
 
-  const clipping = gui.addFolder("Clipping Box");
+  const clipping = gui.addFolder("Clipping Box").close();
   clipping
     .add(myState, "xmin")
     .max(1.0)
@@ -427,9 +426,9 @@ function setupGui() {
       );
     });
 
-  const lighting = gui.addFolder("Lighting");
+  const lighting = gui.addFolder("Lighting").close();
   lighting
-    .addColor(myState, "skyTopColor")
+    .addColor(myState, "skyTopColor", 255)
     .name("Sky Top")
     .onChange(function () {
       myState.lights[0].mColorTop = new Vector3(
@@ -453,7 +452,7 @@ function setupGui() {
       view3D.updateLights(myState.lights);
     });
   lighting
-    .addColor(myState, "skyMidColor")
+    .addColor(myState, "skyMidColor", 255)
     .name("Sky Mid")
     .onChange(function () {
       myState.lights[0].mColorMiddle = new Vector3(
@@ -477,7 +476,7 @@ function setupGui() {
       view3D.updateLights(myState.lights);
     });
   lighting
-    .addColor(myState, "skyBotColor")
+    .addColor(myState, "skyBotColor", 255)
     .name("Sky Bottom")
     .onChange(function () {
       myState.lights[0].mColorBottom = new Vector3(
@@ -550,7 +549,7 @@ function setupGui() {
       view3D.updateLights(myState.lights);
     });
   lighting
-    .addColor(myState, "lightColor")
+    .addColor(myState, "lightColor", 255)
     .name("lightColor")
     .onChange(function () {
       myState.lights[1].mColor = new Vector3(
@@ -565,16 +564,12 @@ function setupGui() {
 }
 
 function removeFolderByName(name: string) {
-  const folder = gui.__folders[name];
+  const folder = gui.folders.find((f) => f._title === name);
   if (!folder) {
     return;
   }
   folder.close();
-  // @ts-expect-error __ul doesn't exist in the type declaration
-  gui.__ul.removeChild(folder.domElement.parentNode);
-  delete gui.__folders[name];
-  // @ts-expect-error onResize doesn't exist in the type declaration
-  gui.onResize();
+  folder.destroy();
 }
 
 function updateTimeUI() {
@@ -608,8 +603,8 @@ function updateZSliceUI(volume: Volume) {
   const zInput = document.getElementById("zValue") as HTMLInputElement;
 
   const totalZSlices = volume.imageInfo.volumeSize.z;
-  zSlider.max = `${totalZSlices}`;
-  zInput.max = `${totalZSlices}`;
+  zSlider.max = `${totalZSlices - 1}`;
+  zInput.max = `${totalZSlices - 1}`;
 
   zInput.value = `${Math.floor(totalZSlices / 2)}`;
   zSlider.value = `${Math.floor(totalZSlices / 2)}`;
@@ -701,6 +696,9 @@ function showChannelUI(volume: Volume) {
       colorizeAlpha: 0.0,
     });
     const f = gui.addFolder("Channel " + myState.infoObj.channelNames[i]);
+    if (i > 0) {
+      f.close();
+    }
     myState.channelFolderNames.push("Channel " + myState.infoObj.channelNames[i]);
     f.add(myState.channelGui[i], "enabled").onChange(
       (function (j) {
@@ -729,7 +727,7 @@ function showChannelUI(volume: Volume) {
         })(i)
       );
 
-    f.addColor(myState.channelGui[i], "colorD")
+    f.addColor(myState.channelGui[i], "colorD", 255)
       .name("Diffuse")
       .onChange(
         (function (j) {
@@ -746,7 +744,7 @@ function showChannelUI(volume: Volume) {
           };
         })(i)
       );
-    f.addColor(myState.channelGui[i], "colorS")
+    f.addColor(myState.channelGui[i], "colorS", 255)
       .name("Specular")
       .onChange(
         (function (j) {
@@ -763,7 +761,7 @@ function showChannelUI(volume: Volume) {
           };
         })(i)
       );
-    f.addColor(myState.channelGui[i], "colorE")
+    f.addColor(myState.channelGui[i], "colorE", 255)
       .name("Emissive")
       .onChange(
         (function (j) {

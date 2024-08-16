@@ -11,7 +11,7 @@ import {
 } from "three";
 import { Pane } from "tweakpane";
 
-import { ThreeJsPanel } from "./ThreeJsPanel.js";
+import { CameraState, ThreeJsPanel } from "./ThreeJsPanel.js";
 import lightSettings from "./constants/lights.js";
 import VolumeDrawable from "./VolumeDrawable.js";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light.js";
@@ -133,6 +133,15 @@ export class View3d {
     return this.canvas3d.containerdiv;
   }
 
+  getCameraState(): CameraState {
+    return this.canvas3d.getCameraState();
+  }
+
+  setCameraState(transform: Partial<CameraState>) {
+    this.canvas3d.setCameraState(transform);
+    this.redraw();
+  }
+
   /**
    * Force a redraw.
    */
@@ -240,6 +249,14 @@ export class View3d {
     const timeClamped = Math.max(0, Math.min(time, volume.imageInfo.times - 1));
     volume.updateRequiredData({ time: timeClamped }, onChannelLoaded);
     this.updateTimestepIndicator(volume);
+  }
+
+  /**
+   * Nudge the scale level loaded into this volume off the one chosen by the loader.
+   * E.g. a bias of `1` will load 1 scale level lower than "ideal."
+   */
+  setScaleLevelBias(volume: Volume, scaleLevelBias: number): void {
+    volume.updateRequiredData({ scaleLevelBias });
   }
 
   /**
