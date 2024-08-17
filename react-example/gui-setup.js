@@ -1,5 +1,6 @@
 import { Vector3 } from "three";
 import { Light, SKY_LIGHT, AREA_LIGHT } from "../es";
+import GUI from 'lil-gui';
 
 export const myState = {
   file: "",
@@ -61,7 +62,7 @@ export function showChannelUI(volume, view3D, gui) {
   myState.channelFolderNames = [];
   for (let i = 0; i < myState.infoObj.channels; ++i) {
     myState.infoObj.channelGui.push({
-      colorD: volume.channel_colors_default[i],
+      colorD: volume.channelColorsDefault[i],
       colorS: [0, 0, 0],
       colorE: [0, 0, 0],
       window: 1.0,
@@ -74,39 +75,36 @@ export function showChannelUI(volume, view3D, gui) {
       // this doesn't give good results currently but is an example of a per-channel button callback
       autoIJ: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_auto2();
-          // TODO: get a proper transfer function editor
-          // const lut = { lut: makeColorGradient([
-          //     {offset:0, color:"black"},
-          //     {offset:0.2, color:"black"},
-          //     {offset:0.25, color:"red"},
-          //     {offset:0.5, color:"orange"},
-          //     {offset:1.0, color:"yellow"}])
-          // };
-          volume.setLut(j, lut.lut);
+          const [hmin, hmax] = volume.getHistogram(j).findAutoIJBins();
+          const lut = new Lut().createFromMinMax(hmin, hmax);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
       // this doesn't give good results currently but is an example of a per-channel button callback
       auto0: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_auto();
-          volume.setLut(j, lut.lut);
+          const [b, e] = volume.getHistogram(j).findAutoMinMax();
+          const lut = new Lut().createFromMinMax(b, e);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
       // this doesn't give good results currently but is an example of a per-channel button callback
       bestFit: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_bestFit();
-          volume.setLut(j, lut.lut);
+          const [hmin, hmax] = volume.getHistogram(j).findBestFitBins();
+          const lut = new Lut().createFromMinMax(hmin, hmax);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
       pct50_98: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_percentiles(0.5, 0.998);
-          volume.setLut(j, lut.lut);
+          const hmin = volume.getHistogram(j).findBinOfPercentile(0.5);
+          const hmax = volume.getHistogram(j).findBinOfPercentile(0.983);
+          const lut = new Lut().createFromMinMax(hmin, hmax);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
@@ -146,7 +144,7 @@ export function showChannelUI(volume, view3D, gui) {
       );
 
     channelGuiFolder
-      .addColor(myState.infoObj.channelGui[i], "colorD")
+      .addColor(myState.infoObj.channelGui[i], "colorD", 255)
       .name("Diffuse")
       .onChange(
         (function (j) {
@@ -164,7 +162,7 @@ export function showChannelUI(volume, view3D, gui) {
         })(i)
       );
     channelGuiFolder
-      .addColor(myState.infoObj.channelGui[i], "colorS")
+      .addColor(myState.infoObj.channelGui[i], "colorS", 255)
       .name("Specular")
       .onChange(
         (function (j) {
@@ -182,7 +180,7 @@ export function showChannelUI(volume, view3D, gui) {
         })(i)
       );
     channelGuiFolder
-      .addColor(myState.infoObj.channelGui[i], "colorE")
+      .addColor(myState.infoObj.channelGui[i], "colorE", 255)
       .name("Emissive")
       .onChange(
         (function (j) {
@@ -207,7 +205,10 @@ export function showChannelUI(volume, view3D, gui) {
       .onChange(
         (function (j) {
           return function (value) {
-            volume.getChannel(j).lutGenerator_windowLevel(value, myState.infoObj.channelGui[j].level);
+            const hwindow = value;
+            const hlevel = myState.infoObj.channelGui[j].level;
+            const lut = new Lut().createFromWindowLevel(hwindow, hlevel);
+            volume.setLut(j, lut);
             view3D.updateLuts(volume);
           };
         })(i)
@@ -221,7 +222,10 @@ export function showChannelUI(volume, view3D, gui) {
       .onChange(
         (function (j) {
           return function (value) {
-            volume.getChannel(j).lutGenerator_windowLevel(myState.infoObj.channelGui[j].window, value);
+            const hwindow = myState.infoObj.channelGui[j].window;
+            const hlevel = value;
+            const lut = new Lut().createFromWindowLevel(hwindow, hlevel);
+            volume.setLut(j, lut);
             view3D.updateLuts(volume);
           };
         })(i)
@@ -254,7 +258,7 @@ export function showChannelUI(volume, view3D, gui) {
 
 export function setupGui(view3D) {
   // eslint-disable-next-line no-undef
-  let gui = new dat.GUI();
+  let gui = new GUI();
 
   gui
     .add(myState, "density")
@@ -431,7 +435,7 @@ export function setupGui(view3D) {
 
   var lighting = gui.addFolder("Lighting");
   lighting
-    .addColor(myState, "skyTopColor")
+    .addColor(myState, "skyTopColor", 255)
     .name("Sky Top")
     .onChange(function (value) {
       myState.lights[0].mColorTop = new Vector3(
@@ -455,7 +459,7 @@ export function setupGui(view3D) {
       view3D.updateLights(myState.lights);
     });
   lighting
-    .addColor(myState, "skyMidColor")
+    .addColor(myState, "skyMidColor", 255)
     .name("Sky Mid")
     .onChange(function (value) {
       myState.lights[0].mColorMiddle = new Vector3(
@@ -479,7 +483,7 @@ export function setupGui(view3D) {
       view3D.updateLights(myState.lights);
     });
   lighting
-    .addColor(myState, "skyBotColor")
+    .addColor(myState, "skyBotColor", 255)
     .name("Sky Bottom")
     .onChange(function (value) {
       myState.lights[0].mColorBottom = new Vector3(
@@ -552,7 +556,7 @@ export function setupGui(view3D) {
       view3D.updateLights(myState.lights);
     });
   lighting
-    .addColor(myState, "lightColor")
+    .addColor(myState, "lightColor", 255)
     .name("lightcolor")
     .onChange(function (value) {
       myState.lights[1].mColor = new Vector3(

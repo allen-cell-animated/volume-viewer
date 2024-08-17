@@ -1,4 +1,4 @@
-import RequestQueue from "./RequestQueue";
+import RequestQueue from "./RequestQueue.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Resolver = (value?: any) => void;

@@ -36,7 +36,7 @@ function validate(iter: ChunkPrefetchIterator, expected: number[][]) {
 describe("ChunkPrefetchIterator", () => {
   it("iterates outward in TZYX order, negative then positive", () => {
     // 3x3x3x3, with one chunk in the center
-    const iterator = new ChunkPrefetchIterator([[1, 0, 1, 1, 1]], [1, 1, 1, 1], [3, 3, 3, 3]);
+    const iterator = new ChunkPrefetchIterator([[1, 0, 1, 1, 1]], [1, 1, 1, 1], [[3, 1, 3, 3, 3]]);
     validate(iterator, EXPECTED_3X3X3X3);
   });
 
@@ -52,7 +52,7 @@ describe("ChunkPrefetchIterator", () => {
       [1, 0, 2, 2, 1],
       [1, 0, 2, 2, 2],
     ];
-    const iterator = new ChunkPrefetchIterator(fetchedChunks, [1, 1, 1, 1], [3, 4, 4, 4]);
+    const iterator = new ChunkPrefetchIterator(fetchedChunks, [1, 1, 1, 1], [[3, 1, 4, 4, 4]]);
 
     const expected = [
       ...fetchedChunks.map(([_t, c, z, y, x]) => [0, c, z, y, x]), // T-
@@ -69,7 +69,7 @@ describe("ChunkPrefetchIterator", () => {
 
   it("iterates through the same offset in all dimensions before increasing the offset", () => {
     // 5x5x5, with one chunk in the center
-    const iterator = new ChunkPrefetchIterator([[2, 0, 2, 2, 2]], [2, 2, 2, 2], [5, 5, 5, 5]);
+    const iterator = new ChunkPrefetchIterator([[2, 0, 2, 2, 2]], [2, 2, 2, 2], [[5, 1, 5, 5, 5]]);
 
     const expected = [
       // offset = 1
@@ -82,13 +82,13 @@ describe("ChunkPrefetchIterator", () => {
 
   it("stops at the max offset in each dimension", () => {
     // 5x5x5, with one chunk in the center
-    const iterator = new ChunkPrefetchIterator([[2, 0, 2, 2, 2]], [1, 1, 1, 1], [5, 5, 5, 5]);
+    const iterator = new ChunkPrefetchIterator([[2, 0, 2, 2, 2]], [1, 1, 1, 1], [[5, 1, 5, 5, 5]]);
     validate(iterator, EXPECTED_5X5X5X5_1); // never reaches offset = 2, as it does above
   });
 
   it("stops at the borders of the zarr", () => {
     // 3x3x3x3, with one chunk in the center
-    const iterator = new ChunkPrefetchIterator([[1, 0, 1, 1, 1]], [2, 2, 2, 2], [3, 3, 3, 3]);
+    const iterator = new ChunkPrefetchIterator([[1, 0, 1, 1, 1]], [2, 2, 2, 2], [[3, 1, 3, 3, 3]]);
     validate(iterator, EXPECTED_3X3X3X3);
   });
 
@@ -105,7 +105,7 @@ describe("ChunkPrefetchIterator", () => {
       [1, 0, 1, 2, 1], // 2, 1
       [1, 0, 1, 2, 2], // 2, 2
     ];
-    const iterator = new ChunkPrefetchIterator(fetchedChunks, [1, 1, 1, 1], [3, 3, 3, 3]);
+    const iterator = new ChunkPrefetchIterator(fetchedChunks, [1, 1, 1, 1], [[3, 1, 3, 3, 3]]);
 
     const expected = [
       ...fetchedChunks.map(([_t, c, z, y, x]) => [0, c, z, y, x]), // T-
@@ -119,7 +119,7 @@ describe("ChunkPrefetchIterator", () => {
 
   it("does not iterate in dimensions where the max offset is 0", () => {
     // 3x3x3x3, with one chunk in the center
-    const iterator = new ChunkPrefetchIterator([[1, 0, 1, 1, 1]], [1, 0, 1, 0], [3, 3, 3, 3]);
+    const iterator = new ChunkPrefetchIterator([[1, 0, 1, 1, 1]], [1, 0, 1, 0], [[3, 1, 3, 3, 3]]);
 
     const expected = [
       [0, 0, 1, 1, 1], // T-
@@ -137,7 +137,7 @@ describe("ChunkPrefetchIterator", () => {
     const iterator = new ChunkPrefetchIterator(
       [[2, 0, 2, 2, 2]],
       [2, 2, 2, 2],
-      [5, 5, 5, 5],
+      [[5, 1, 5, 5, 5]],
       [PrefetchDirection.T_PLUS, PrefetchDirection.Y_MINUS]
     );
 
@@ -164,7 +164,7 @@ describe("ChunkPrefetchIterator", () => {
       [2, 0, 1, 1, 2],
       [2, 0, 1, 1, 3],
     ];
-    const iterator = new ChunkPrefetchIterator(fetchedChunks, [2, 2, 2, 1], [3, 4, 4, 6]);
+    const iterator = new ChunkPrefetchIterator(fetchedChunks, [2, 2, 2, 1], [[3, 1, 4, 4, 6]]);
 
     // prettier-ignore
     const expected = [
@@ -183,6 +183,31 @@ describe("ChunkPrefetchIterator", () => {
       // skip y-: still already covered by fetched chunks
       [2, 0, 1, 3, 2], [2, 0, 1, 3, 3], // Y+
       // skip x: already at max offset in x
+    ];
+    validate(iterator, expected);
+  });
+
+  it("correctly handles sources with differing chunk dimensions", () => {
+    const allChannels = (x: number, y: number, ch = [0, 1, 2, 3]): TCZYX<number>[] => ch.map((c) => [0, c, 0, y, x]);
+    const iterator = new ChunkPrefetchIterator(
+      allChannels(1, 2),
+      [0, 0, 2, 2],
+      [
+        [0, 1, 0, 4, 3],
+        [0, 2, 0, 5, 2],
+        [0, 1, 0, 3, 4],
+      ]
+    );
+
+    const expected = [
+      ...allChannels(1, 1), // Y-
+      ...allChannels(1, 3, [0, 1, 2]), // Y+: channel 3 is maxed out
+      ...allChannels(0, 2), // X-
+      ...allChannels(2, 2, [0, 3]), // X+: channels 1 and 2 are maxed out
+      ...allChannels(1, 0), // Y--
+      ...allChannels(1, 4, [1, 2]), // Y++: channels 0 and 3 are maxed out
+      // skip X--
+      [0, 3, 0, 2, 3], // X++: all channels but channel 3 are maxed out
     ];
     validate(iterator, expected);
   });

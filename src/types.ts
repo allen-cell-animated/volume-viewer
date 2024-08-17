@@ -99,3 +99,5 @@ export const isTop = (corner: ViewportCorner): boolean =>
   corner === ViewportCorner.TOP_LEFT || corner === ViewportCorner.TOP_RIGHT;
 export const isRight = (corner: ViewportCorner): boolean =>
   corner === ViewportCorner.TOP_RIGHT || corner === ViewportCorner.BOTTOM_RIGHT;
+
+export const DATARANGE_UINT8: [number, number] = [0, 255];

@@ -3,8 +3,9 @@ import { Vector2, Vector3 } from "three";
 
 import Volume, { ImageInfo } from "../Volume";
 import VolumeMaker from "../VolumeMaker";
-import { LUT_ARRAY_LENGTH } from "../Histogram";
+import { LUT_ARRAY_LENGTH } from "../Lut";
 import Channel from "../Channel";
+import { DATARANGE_UINT8 } from "../types";
 
 // PREPARE SOME TEST DATA TO TRY TO DISPLAY A VOLUME.
 const testimgdata: ImageInfo = {
@@ -69,8 +70,8 @@ function checkChannelDataConstruction(c: Channel, index: number, imgdata: ImageI
   expect(c.imgData.height).to.equal(atlasHeight);
   expect(c.imgData.data).to.be.a("Uint8ClampedArray");
   expect(c.imgData.data.length).to.equal(atlasWidth * atlasHeight);
-  expect(c.lut).to.be.a("Uint8Array");
-  expect(c.lut.length).to.equal(LUT_ARRAY_LENGTH);
+  expect(c.lut.lut).to.be.a("Uint8Array");
+  expect(c.lut.lut.length).to.equal(LUT_ARRAY_LENGTH);
 }
 
 describe("test volume", () => {
@@ -86,14 +87,14 @@ describe("test volume", () => {
 
       const conedata = VolumeMaker.createCone(size.x, size.y, size.z, size.x / 8, size.z);
 
-      v.setChannelDataFromVolume(0, conedata);
+      v.setChannelDataFromVolume(0, conedata, DATARANGE_UINT8);
 
       const c0 = v.getChannel(0);
       checkChannelDataConstruction(c0, 0, testimgdata);
 
       const spheredata = VolumeMaker.createSphere(size.x, size.y, size.z, size.z / 4);
 
-      v.setChannelDataFromVolume(1, spheredata);
+      v.setChannelDataFromVolume(1, spheredata, DATARANGE_UINT8);
 
       const c1 = v.getChannel(1);
       checkChannelDataConstruction(c1, 1, testimgdata);

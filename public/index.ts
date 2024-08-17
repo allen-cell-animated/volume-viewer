@@ -1,12 +1,15 @@
-import "regenerator-runtime/runtime";
 import { Vector2, Vector3 } from "three";
-import * as dat from "dat.gui";
+import GUI from "lil-gui";
 
 import {
+  CreateLoaderOptions,
   ImageInfo,
   IVolumeLoader,
   LoadSpec,
+  Lut,
   JsonImageInfoLoader,
+  RawArrayInfo,
+  RawArrayData,
   View3d,
   Volume,
   VolumeMaker,
@@ -21,7 +24,9 @@ import {
 import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
 import { State, TestDataSpec } from "./types";
 import { getDefaultImageInfo } from "../src/Volume";
-import VolumeLoaderContext from "../src/workers/LoadWorkerHandle";
+import VolumeLoaderContext from "../src/workers/VolumeLoaderContext";
+import { DATARANGE_UINT8 } from "../src/types";
+import { RawArrayLoaderOptions } from "../src/loaders/RawArrayLoader";
 
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
@@ -39,6 +44,10 @@ const TEST_DATA: Record<string, TestDataSpec> = {
   omeTiff: {
     type: VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/AICS-12_881.ome.tif",
+  },
+  zarrEMT: {
+    url: "https://dev-aics-dtp-001.int.allencell.org/dan-data/3500005818_20230811__20x_Timelapse-02(P27-E7).ome.zarr",
+    type: VolumeFileFormat.ZARR,
   },
   zarrIDR1: {
     type: VolumeFileFormat.ZARR,
@@ -68,6 +77,10 @@ const TEST_DATA: Record<string, TestDataSpec> = {
     type: VolumeFileFormat.ZARR,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/20200323_F01_001/P8-B4.zarr/",
   },
+  zarrFlyBrain: {
+    type: VolumeFileFormat.ZARR,
+    url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0048A/9846152.zarr/",
+  },
   zarrUK: {
     type: VolumeFileFormat.ZARR,
     url: "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr",
@@ -81,7 +94,7 @@ const TEST_DATA: Record<string, TestDataSpec> = {
     type: VolumeFileFormat.TIFF,
     url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/HAMILTONIAN_TERM_FOV_VSAHJUP_0000_000192.ome.tif",
   },
-  procedural: { type: "procedural", url: "" },
+  procedural: { type: VolumeFileFormat.DATA, url: "" },
 };
 
 let view3D: View3d;
@@ -235,11 +248,10 @@ function setInitialRenderMode() {
   view3D.setMaxProjectMode(myState.volume, myState.isMP);
 }
 
-let gui: dat.GUI;
+let gui: GUI;
 
 function setupGui() {
-  gui = new dat.GUI();
-  //gui = new dat.GUI({autoPlace:false, width:200});
+  gui = new GUI();
 
   gui
     .add(myState, "density")
@@ -274,7 +286,7 @@ function setupGui() {
       view3D.setRayStepSizes(myState.volume, myState.primaryRay, myState.secondaryRay);
     });
 
-  const cameraGui = gui.addFolder("Camera");
+  const cameraGui = gui.addFolder("Camera").close();
   cameraGui
     .add(myState, "exposure")
     .max(1.0)
@@ -316,7 +328,7 @@ function setupGui() {
       view3D.updatePixelSamplingRate(value);
     });
 
-  const clipping = gui.addFolder("Clipping Box");
+  const clipping = gui.addFolder("Clipping Box").close();
   clipping
     .add(myState, "xmin")
     .max(1.0)
@@ -414,9 +426,9 @@ function setupGui() {
       );
     });
 
-  const lighting = gui.addFolder("Lighting");
+  const lighting = gui.addFolder("Lighting").close();
   lighting
-    .addColor(myState, "skyTopColor")
+    .addColor(myState, "skyTopColor", 255)
     .name("Sky Top")
     .onChange(function () {
       myState.lights[0].mColorTop = new Vector3(
@@ -440,7 +452,7 @@ function setupGui() {
       view3D.updateLights(myState.lights);
     });
   lighting
-    .addColor(myState, "skyMidColor")
+    .addColor(myState, "skyMidColor", 255)
     .name("Sky Mid")
     .onChange(function () {
       myState.lights[0].mColorMiddle = new Vector3(
@@ -464,7 +476,7 @@ function setupGui() {
       view3D.updateLights(myState.lights);
     });
   lighting
-    .addColor(myState, "skyBotColor")
+    .addColor(myState, "skyBotColor", 255)
     .name("Sky Bottom")
     .onChange(function () {
       myState.lights[0].mColorBottom = new Vector3(
@@ -537,7 +549,7 @@ function setupGui() {
       view3D.updateLights(myState.lights);
     });
   lighting
-    .addColor(myState, "lightColor")
+    .addColor(myState, "lightColor", 255)
     .name("lightColor")
     .onChange(function () {
       myState.lights[1].mColor = new Vector3(
@@ -552,16 +564,12 @@ function setupGui() {
 }
 
 function removeFolderByName(name: string) {
-  const folder = gui.__folders[name];
+  const folder = gui.folders.find((f) => f._title === name);
   if (!folder) {
     return;
   }
   folder.close();
-  // @ts-expect-error __ul doesn't exist in the type declaration
-  gui.__ul.removeChild(folder.domElement.parentNode);
-  delete gui.__folders[name];
-  // @ts-expect-error onResize doesn't exist in the type declaration
-  gui.onResize();
+  folder.destroy();
 }
 
 function updateTimeUI() {
@@ -595,8 +603,8 @@ function updateZSliceUI(volume: Volume) {
   const zInput = document.getElementById("zValue") as HTMLInputElement;
 
   const totalZSlices = volume.imageInfo.volumeSize.z;
-  zSlider.max = `${totalZSlices}`;
-  zInput.max = `${totalZSlices}`;
+  zSlider.max = `${totalZSlices - 1}`;
+  zInput.max = `${totalZSlices - 1}`;
 
   zInput.value = `${Math.floor(totalZSlices / 2)}`;
   zSlider.value = `${Math.floor(totalZSlices / 2)}`;
@@ -629,47 +637,44 @@ function showChannelUI(volume: Volume) {
       // this doesn't give good results currently but is an example of a per-channel button callback
       autoIJ: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_auto2();
-          // TODO: get a proper transfer function editor
-          // const lut = { lut: makeColorGradient([
-          //     {offset:0, color:"black"},
-          //     {offset:0.2, color:"black"},
-          //     {offset:0.25, color:"red"},
-          //     {offset:0.5, color:"orange"},
-          //     {offset:1.0, color:"yellow"}])
-          // };
-          volume.setLut(j, lut.lut);
+          const [hmin, hmax] = volume.getHistogram(j).findAutoIJBins();
+          const lut = new Lut().createFromMinMax(hmin, hmax);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
       // this doesn't give good results currently but is an example of a per-channel button callback
       auto0: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_auto();
-          volume.setLut(j, lut.lut);
+          const [b, e] = volume.getHistogram(j).findAutoMinMax();
+          const lut = new Lut().createFromMinMax(b, e);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
       // this doesn't give good results currently but is an example of a per-channel button callback
       bestFit: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_bestFit();
-          volume.setLut(j, lut.lut);
+          const [hmin, hmax] = volume.getHistogram(j).findBestFitBins();
+          const lut = new Lut().createFromMinMax(hmin, hmax);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
       // eslint-disable-next-line @typescript-eslint/naming-convention
       pct50_98: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_percentiles(0.5, 0.998);
-          volume.setLut(j, lut.lut);
+          const hmin = volume.getHistogram(j).findBinOfPercentile(0.5);
+          const hmax = volume.getHistogram(j).findBinOfPercentile(0.983);
+          const lut = new Lut().createFromMinMax(hmin, hmax);
+          volume.setLut(j, lut);
           view3D.updateLuts(volume);
         };
       })(i),
       colorizeEnabled: false,
       colorize: (function (j) {
         return function () {
-          const lut = volume.getHistogram(j).lutGenerator_labelColors();
+          const lut = new Lut().createLabelColors(volume.getHistogram(j));
           volume.setColorPalette(j, lut.lut);
           myState.channelGui[j].colorizeEnabled = !myState.channelGui[j].colorizeEnabled;
           if (myState.channelGui[j].colorizeEnabled) {
@@ -684,6 +689,9 @@ function showChannelUI(volume: Volume) {
       colorizeAlpha: 0.0,
     });
     const f = gui.addFolder("Channel " + myState.infoObj.channelNames[i]);
+    if (i > 0) {
+      f.close();
+    }
     myState.channelFolderNames.push("Channel " + myState.infoObj.channelNames[i]);
     f.add(myState.channelGui[i], "enabled").onChange(
       (function (j) {
@@ -696,11 +704,7 @@ function showChannelUI(volume: Volume) {
     f.add(myState.channelGui[i], "isosurface").onChange(
       (function (j) {
         return function (value) {
-          if (value) {
-            view3D.createIsosurface(volume, j, myState.channelGui[j].isovalue, 1.0);
-          } else {
-            view3D.clearIsosurface(volume, j);
-          }
+          view3D.setVolumeChannelOptions(volume, j, { isosurfaceEnabled: value });
         };
       })(i)
     );
@@ -711,12 +715,12 @@ function showChannelUI(volume: Volume) {
       .onChange(
         (function (j) {
           return function (value) {
-            view3D.updateIsosurface(volume, j, value);
+            view3D.setVolumeChannelOptions(volume, j, { isovalue: value });
           };
         })(i)
       );
 
-    f.addColor(myState.channelGui[i], "colorD")
+    f.addColor(myState.channelGui[i], "colorD", 255)
       .name("Diffuse")
       .onChange(
         (function (j) {
@@ -733,7 +737,7 @@ function showChannelUI(volume: Volume) {
           };
         })(i)
       );
-    f.addColor(myState.channelGui[i], "colorS")
+    f.addColor(myState.channelGui[i], "colorS", 255)
       .name("Specular")
       .onChange(
         (function (j) {
@@ -750,7 +754,7 @@ function showChannelUI(volume: Volume) {
           };
         })(i)
       );
-    f.addColor(myState.channelGui[i], "colorE")
+    f.addColor(myState.channelGui[i], "colorE", 255)
       .name("Emissive")
       .onChange(
         (function (j) {
@@ -774,7 +778,10 @@ function showChannelUI(volume: Volume) {
       .onChange(
         (function (j) {
           return function (value) {
-            volume.getChannel(j).lutGenerator_windowLevel(value, myState.channelGui[j].level);
+            const hwindow = value;
+            const hlevel = myState.channelGui[j].level;
+            const lut = new Lut().createFromWindowLevel(hwindow, hlevel);
+            volume.setLut(j, lut);
             view3D.updateLuts(volume);
           };
         })(i)
@@ -787,7 +794,10 @@ function showChannelUI(volume: Volume) {
       .onChange(
         (function (j) {
           return function (value) {
-            volume.getChannel(j).lutGenerator_windowLevel(myState.channelGui[j].window, value);
+            const hwindow = myState.channelGui[j].window;
+            const hlevel = value;
+            const lut = new Lut().createFromWindowLevel(hwindow, hlevel);
+            volume.setLut(j, lut);
             view3D.updateLuts(volume);
           };
         })(i)
@@ -845,7 +855,7 @@ function loadImageData(jsonData: ImageInfo, volumeData: Uint8Array[]) {
     // according to jsonData.tile_width*jsonData.tile_height*jsonData.tiles
     // (first row of first plane is the first data in
     // the layout, then second row of first plane, etc)
-    vol.setChannelDataFromVolume(i, volumeData[i]);
+    vol.setChannelDataFromVolume(i, volumeData[i], DATARANGE_UINT8);
 
     setInitialRenderMode();
 
@@ -872,7 +882,8 @@ function loadImageData(jsonData: ImageInfo, volumeData: Uint8Array[]) {
 function onChannelDataArrived(v: Volume, channelIndex: number) {
   const currentVol = v; // myState.volume;
 
-  currentVol.channels[channelIndex].lutGenerator_percentiles(0.5, 0.998);
+  // optionally can set the LUT here (for example if this is first time loading)
+
   view3D.onVolumeData(currentVol, [channelIndex]);
   view3D.setVolumeChannelEnabled(currentVol, channelIndex, myState.channelGui[channelIndex].enabled);
 
@@ -916,6 +927,7 @@ function onVolumeCreated(volume: Volume) {
 
 function playTimeSeries(onNewFrameCallback: () => void) {
   window.clearTimeout(myState.timerId);
+  myState.loader.syncMultichannelLoading(true);
   myState.isPlaying = true;
 
   const loadNextFrame = () => {
@@ -970,40 +982,49 @@ function goToZSlice(slice: number): boolean {
   // update UI if successful
 }
 
-function createTestVolume() {
-  const imgData: ImageInfo = {
+function concatenateArrays(arrays: Uint8Array[]): Uint8Array {
+  const totalLength = arrays.reduce((acc, arr) => acc + arr.length, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const arr of arrays) {
+    result.set(arr, offset);
+    offset += arr.length;
+  }
+  return result;
+}
+
+function createTestVolume(): RawArrayLoaderOptions {
+  const sizeX = 64;
+  const sizeY = 64;
+  const sizeZ = 64;
+  const imgData: RawArrayInfo = {
     name: "AICS-10_5_5",
-
-    originalSize: new Vector3(64, 64, 64),
-    atlasTileDims: new Vector2(8, 8),
-    volumeSize: new Vector3(64, 64, 64),
-    subregionSize: new Vector3(64, 64, 64),
-    subregionOffset: new Vector3(0, 0, 0),
-    physicalPixelSize: new Vector3(1, 1, 1),
+    sizeX,
+    sizeY,
+    sizeZ,
+    sizeC: 3,
+    physicalPixelSize: [1, 1, 1],
     spatialUnit: "",
-
-    numChannels: 3,
     channelNames: ["DRAQ5", "EGFP", "SEG_Memb"],
-
-    times: 1,
-    timeScale: 1,
-    timeUnit: "",
-
-    numMultiscaleLevels: 1,
-    multiscaleLevel: 0,
-
-    transform: { translation: new Vector3(0, 0, 0), rotation: new Vector3(0, 0, 0) },
   };
 
   // generate some raw volume data
   const channelVolumes = [
-    VolumeMaker.createSphere(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24),
-    VolumeMaker.createTorus(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 8),
-    VolumeMaker.createCone(imgData.subregionSize.x, imgData.subregionSize.y, imgData.subregionSize.z, 24, 24),
+    VolumeMaker.createSphere(sizeX, sizeY, sizeZ, 24),
+    VolumeMaker.createTorus(sizeX, sizeY, sizeZ, 24, 8),
+    VolumeMaker.createCone(sizeX, sizeY, sizeZ, 24, 24),
   ];
+  const alldata = concatenateArrays(channelVolumes);
   return {
-    imgData: imgData,
-    volumeData: channelVolumes,
+    metadata: imgData,
+    data: {
+      // expected to be "uint8" always
+      dtype: "uint8",
+      // [c,z,y,x]
+      shape: [channelVolumes.length, sizeZ, sizeY, sizeX],
+      // the bits (assumed uint8!!)
+      buffer: new DataView(alldata.buffer),
+    },
   };
 }
 
@@ -1014,6 +1035,7 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
 
   await loaderContext.onOpen();
 
+  const options: Partial<CreateLoaderOptions> = {};
   let path: string | string[] = data.url;
   if (data.type === VolumeFileFormat.JSON) {
     path = [];
@@ -1021,9 +1043,14 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
     for (let t = 0; t <= times; t++) {
       path.push(data.url.replace("%%", t.toString()));
     }
+  } else if (data.type === VolumeFileFormat.DATA) {
+    const volumeInfo = createTestVolume();
+    options.fileType = VolumeFileFormat.DATA;
+    options.rawArrayOptions = { data: volumeInfo.data, metadata: volumeInfo.metadata };
   }
 
   return await loaderContext.createLoader(path, {
+    ...options,
     fetchOptions: { maxPrefetchDistance: PREFETCH_DISTANCE, maxPrefetchChunks: MAX_PREFETCH_CHUNKS },
   });
 }
@@ -1038,12 +1065,6 @@ async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<vo
 }
 
 async function loadTestData(testdata: TestDataSpec) {
-  if (testdata.type === "procedural") {
-    const volumeInfo = createTestVolume();
-    loadImageData(volumeInfo.imgData, volumeInfo.volumeData);
-    return;
-  }
-
   myState.loader = await createLoader(testdata);
 
   const loadSpec = new LoadSpec();
@@ -1176,6 +1197,7 @@ function main() {
   pauseBtn?.addEventListener("click", () => {
     window.clearTimeout(myState.timerId);
     myState.isPlaying = false;
+    myState.loader.syncMultichannelLoading(false);
   });
 
   const forwardBtn = document.getElementById("forwardBtn");

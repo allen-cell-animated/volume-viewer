@@ -1,5 +1,5 @@
 import { Texture, Vector2, Vector3, Vector4 } from "three";
-import { Light, AREA_LIGHT, SKY_LIGHT } from "../Light";
+import { Light, AREA_LIGHT, SKY_LIGHT } from "../Light.js";
 import pathTraceVertexShader from "./shaders/pathtrace.vert";
 import pathTraceFragmentShader from "./shaders/pathtrace.frag";
 

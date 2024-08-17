@@ -1,17 +1,14 @@
-import VolumeCache from "../VolumeCache";
-import { VolumeFileFormat, createVolumeLoader, pathToFileType } from "../loaders";
-import { ThreadableVolumeLoader } from "../loaders/IVolumeLoader";
-import RequestQueue from "../utils/RequestQueue";
-import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
-import {
-  WorkerMsgType,
-  WorkerRequest,
-  WorkerRequestPayload,
-  WorkerResponse,
-  WorkerResponseResult,
-  WorkerResponsePayload,
-} from "./types";
-import { rebuildImageInfo, rebuildLoadSpec } from "./util";
+import { serializeError } from "serialize-error";
+
+import VolumeCache from "../VolumeCache.js";
+import { VolumeFileFormat, createVolumeLoader, pathToFileType } from "../loaders/index.js";
+import { ThreadableVolumeLoader } from "../loaders/IVolumeLoader.js";
+import { VolumeLoadError } from "../loaders/VolumeLoadError.js";
+import RequestQueue from "../utils/RequestQueue.js";
+import SubscribableRequestQueue from "../utils/SubscribableRequestQueue.js";
+import type { WorkerRequest, WorkerRequestPayload, WorkerResponse, WorkerResponsePayload } from "./types.js";
+import { WorkerEventType, WorkerMsgType, WorkerResponseResult } from "./types.js";
+import { rebuildImageInfo, rebuildLoadSpec } from "./util.js";
 
 let cache: VolumeCache | undefined = undefined;
 let queue: RequestQueue | undefined = undefined;
@@ -43,7 +40,7 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
 
   [WorkerMsgType.CREATE_VOLUME]: async (loadSpec) => {
     if (loader === undefined) {
-      throw new Error("No loader created");
+      throw new VolumeLoadError("No loader created");
     }
 
     return await loader.createImageInfo(rebuildLoadSpec(loadSpec));
@@ -51,29 +48,42 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
 
   [WorkerMsgType.LOAD_DIMS]: async (loadSpec) => {
     if (loader === undefined) {
-      throw new Error("No loader created");
+      throw new VolumeLoadError("No loader created");
     }
     return await loader.loadDims(rebuildLoadSpec(loadSpec));
   },
 
-  [WorkerMsgType.LOAD_VOLUME_DATA]: async ({ imageInfo, loadSpec, loaderId, loadId }) => {
+  [WorkerMsgType.LOAD_VOLUME_DATA]: ({ imageInfo, loadSpec, loaderId, loadId }) => {
     if (loader === undefined) {
-      throw new Error("No loader created");
+      throw new VolumeLoadError("No loader created");
     }
 
-    return await loader.loadRawChannelData(
+    return loader.loadRawChannelData(
       rebuildImageInfo(imageInfo),
       rebuildLoadSpec(loadSpec),
-      (channelIndex, data, atlasDims) => {
+      (imageInfo, loadSpec) => {
         const message: WorkerResponse<WorkerMsgType> = {
           responseResult: WorkerResponseResult.EVENT,
+          eventType: WorkerEventType.METADATA_UPDATE,
+          loaderId,
+          loadId,
+          imageInfo,
+          loadSpec,
+        };
+        self.postMessage(message);
+      },
+      (channelIndex, data, ranges, atlasDims) => {
+        const message: WorkerResponse<WorkerMsgType> = {
+          responseResult: WorkerResponseResult.EVENT,
+          eventType: WorkerEventType.CHANNEL_LOAD,
           loaderId,
           loadId,
           channelIndex,
           data,
+          ranges,
           atlasDims,
         };
-        (self as unknown as Worker).postMessage(message, copyOnLoad ? [] : [data.buffer]);
+        (self as unknown as Worker).postMessage(message, copyOnLoad ? [] : data.map((d) => d.buffer));
       }
     );
   },
@@ -81,6 +91,11 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
   [WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS]: (directions) => {
     // Silently does nothing if the loader isn't an `OMEZarrLoader`
     loader?.setPrefetchPriority(directions);
+    return Promise.resolve();
+  },
+
+  [WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING]: (syncChannels) => {
+    loader?.syncMultichannelLoading(syncChannels);
     return Promise.resolve();
   },
 };
@@ -93,7 +108,7 @@ self.onmessage = async <T extends WorkerMsgType>({ data }: MessageEvent<WorkerRe
     const response = await messageHandlers[type](payload);
     message = { responseResult: WorkerResponseResult.SUCCESS, msgId, type, payload: response };
   } catch (e) {
-    message = { responseResult: WorkerResponseResult.ERROR, msgId, type, payload: (e as Error).message };
+    message = { responseResult: WorkerResponseResult.ERROR, msgId, type, payload: serializeError(e) };
   }
   self.postMessage(message);
 };

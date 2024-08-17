@@ -1,15 +1,6 @@
-module.exports = {
-  presets: [
-    [
-      "@babel/preset-env",
-      {
-        modules: false,
-      },
-    ],
-    "@babel/preset-typescript",
-  ],
+export default {
+  presets: ["@babel/preset-typescript"],
   plugins: [
-    ["@babel/plugin-transform-runtime"],
     [
       "babel-plugin-inline-import",
       {

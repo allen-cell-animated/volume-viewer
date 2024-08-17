@@ -1,15 +1,22 @@
-import { Vector3 } from "three";
-import { LoadSpec } from "../IVolumeLoader";
-import { estimateLevelForAtlas } from "../VolumeLoaderUtils";
-import {
+import { VolumeLoadErrorType, VolumeLoadError } from "../VolumeLoadError.js";
+import type {
   NumericZarrArray,
   OMEAxis,
   OMECoordinateTransformation,
   OMEDataset,
   OMEMultiscale,
   TCZYX,
-  ZarrSourceMeta,
-} from "./types";
+  ZarrSource,
+} from "./types.js";
+
+/** Extracts channel names from a `ZarrSource`. Handles missing `omeroMetadata`. Does *not* resolve name collisions. */
+export function getSourceChannelNames(src: ZarrSource): string[] {
+  if (src.omeroMetadata?.channels) {
+    return src.omeroMetadata.channels.map(({ label }, idx) => label ?? `Channel ${idx + src.channelOffset}`);
+  }
+  const length = src.scaleLevels[0].shape[src.axesTCZYX[1]];
+  return Array.from({ length }, (_, idx) => `Channel ${idx + src.channelOffset}`);
+}
 
 /** Turns `axesTCZYX` into the number of dimensions in the array */
 export const getDimensionCount = ([t, c, z]: TCZYX<number>) => 2 + Number(t > -1) + Number(c > -1) + Number(z > -1);
@@ -23,33 +30,21 @@ export function remapAxesToTCZYX(axes: OMEAxis[]): TCZYX<number> {
     if (axisIdx > -1) {
       axesTCZYX[axisIdx] = idx;
     } else {
-      console.error("ERROR: UNRECOGNIZED AXIS in zarr: " + axis.name);
+      throw new VolumeLoadError(`Unrecognized axis in zarr: ${axis.name}`, {
+        type: VolumeLoadErrorType.INVALID_METADATA,
+      });
     }
   });
 
   // it is possible that Z might not exist but we require X and Y at least.
-  if (axesTCZYX[3] === -1 || axesTCZYX[4] === -1) {
-    console.error("ERROR: zarr loader expects a y and an x axis.");
+  const noXAxis = axesTCZYX[4] === -1;
+  if (noXAxis || axesTCZYX[3] === -1) {
+    throw new VolumeLoadError(`Did not find ${noXAxis ? "an X" : "a Y"} axis in zarr`, {
+      type: VolumeLoadErrorType.INVALID_METADATA,
+    });
   }
 
   return axesTCZYX;
-}
-
-/**
- * Picks the best scale level to load based on scale level dimensions, a max atlas size, and a `LoadSpec`.
- * This works like `estimateLevelForAtlas` but factors in `LoadSpec`'s `subregion` property (shrinks the size of the
- * data, maybe enough to allow loading a higher level) and its `multiscaleLevel` property (sets a max scale level).
- */
-export function pickLevelToLoad(loadSpec: LoadSpec, spatialDimsZYX: [number, number, number][]): number {
-  const size = loadSpec.subregion.getSize(new Vector3());
-  const dims = spatialDimsZYX.map(([z, y, x]): [number, number, number] => [
-    Math.max(z * size.z, 1),
-    Math.max(y * size.y, 1),
-    Math.max(x * size.x, 1),
-  ]);
-
-  const optimalLevel = estimateLevelForAtlas(dims);
-  return Math.max(optimalLevel, loadSpec.multiscaleLevel ?? 0);
 }
 
 /** Reorder an array of values [T, C, Z, Y, X] to the given dimension order */
@@ -60,7 +55,9 @@ export function orderByDimension<T>(valsTCZYX: TCZYX<T>, orderTCZYX: TCZYX<numbe
   orderTCZYX.forEach((val, idx) => {
     if (val >= 0) {
       if (val >= specLen) {
-        throw new Error("Unexpected axis index");
+        throw new VolumeLoadError(`Unexpected axis index in zarr: ${val}`, {
+          type: VolumeLoadErrorType.INVALID_METADATA,
+        });
       }
       result[val] = valsTCZYX[idx];
     }
@@ -76,7 +73,9 @@ export function orderByTCZYX<T>(valsDimension: T[], orderTCZYX: TCZYX<number>, d
   orderTCZYX.forEach((val, idx) => {
     if (val >= 0) {
       if (val >= valsDimension.length) {
-        throw new Error("Unexpected axis index");
+        throw new VolumeLoadError(`Unexpected axis index in zarr: ${val}`, {
+          type: VolumeLoadErrorType.INVALID_METADATA,
+        });
       }
       result[idx] = valsDimension[val];
     }
@@ -90,7 +89,7 @@ export function getScale(dataset: OMEDataset | OMEMultiscale, orderTCZYX: TCZYX<
   const transforms = dataset.coordinateTransformations;
 
   if (transforms === undefined) {
-    console.error("ERROR: no coordinate transformations for scale level");
+    console.warn("WARNING: OMEZarrLoader: no coordinate transformations for scale level.");
     return [1, 1, 1, 1, 1];
   }
 
@@ -102,7 +101,7 @@ export function getScale(dataset: OMEDataset | OMEMultiscale, orderTCZYX: TCZYX<
   // but there must be only one of type "scale".
   const scaleTransform = transforms.find(isScaleTransform);
   if (!scaleTransform) {
-    console.error(`ERROR: no coordinate transformation of type "scale" for scale level`);
+    console.warn(`WARNING: OMEZarrLoader: no coordinate transformation of type "scale" for scale level.`);
     return [1, 1, 1, 1, 1];
   }
 
@@ -122,11 +121,11 @@ function compareZarrArraySize(
   bArr: NumericZarrArray,
   bTCZYX: TCZYX<number>
 ): number | undefined {
-  const diffZ = aArr.shape[aTCZYX[2]] - bArr.shape[bTCZYX[2]];
+  const aZ = aTCZYX[2] > -1 ? aArr.shape[aTCZYX[2]] : 1;
+  const bZ = bTCZYX[2] > -1 ? bArr.shape[bTCZYX[2]] : 1;
+  const diffZ = aZ - bZ;
   const diffY = aArr.shape[aTCZYX[3]] - bArr.shape[bTCZYX[3]];
-  const aX = aTCZYX[4] > -1 ? aArr.shape[aTCZYX[4]] : 1;
-  const bX = bTCZYX[4] > -1 ? bArr.shape[bTCZYX[4]] : 1;
-  const diffX = aX - bX;
+  const diffX = aArr.shape[aTCZYX[4]] - bArr.shape[bTCZYX[4]];
 
   if (diffZ === 0 && diffY === 0 && diffX === 0) {
     return 0;
@@ -139,10 +138,13 @@ function compareZarrArraySize(
   }
 }
 
-function scaleTransformsAreEqual(aSrc: ZarrSourceMeta, aLevel: number, bSrc: ZarrSourceMeta, bLevel: number): boolean {
+const EPSILON = 0.00001;
+const aboutEquals = (a: number, b: number): boolean => Math.abs(a - b) < EPSILON;
+
+function scaleTransformsAreEqual(aSrc: ZarrSource, aLevel: number, bSrc: ZarrSource, bLevel: number): boolean {
   const aScale = getScale(aSrc.multiscaleMetadata.datasets[aLevel], aSrc.axesTCZYX);
   const bScale = getScale(bSrc.multiscaleMetadata.datasets[bLevel], bSrc.axesTCZYX);
-  return aScale[2] === bScale[2] && aScale[3] === bScale[3] && aScale[4] === bScale[4];
+  return aboutEquals(aScale[2], bScale[2]) && aboutEquals(aScale[3], bScale[3]) && aboutEquals(aScale[4], bScale[4]);
 }
 
 /**
@@ -150,52 +152,67 @@ function scaleTransformsAreEqual(aSrc: ZarrSourceMeta, aLevel: number, bSrc: Zar
  * level `i`, the size of zarr array `s[i]` is equal for every source `s`. We accomplish this by removing any arrays
  * (and their associated OME dataset metadata) which don't match up in all sources.
  *
+ * Note that this function modifies the input `sources` array rather than returning a new value.
+ *
  * Assumes all sources have scale levels ordered by size from largest to smallest. (This should always be true for
  * compliant OME-Zarr data.)
  */
-export function matchSourceScaleLevels(sources: ZarrSourceMeta[]): void {
+export function matchSourceScaleLevels(sources: ZarrSource[]): void {
   if (sources.length < 2) {
     return;
   }
 
   // Save matching scale levels and metadata here
-  const matchedLevels: NumericZarrArray[][] = new Array(sources.length).fill([]);
-  const matchedMetas: OMEDataset[][] = new Array(sources.length).fill([]);
+  const matchedLevels: NumericZarrArray[][] = Array.from({ length: sources.length }, () => []);
+  const matchedMetas: OMEDataset[][] = Array.from({ length: sources.length }, () => []);
 
   // Start as many index counters as we have sources
   const scaleIndexes: number[] = new Array(sources.length).fill(0);
   while (scaleIndexes.every((val, idx) => val < sources[idx].scaleLevels.length)) {
-    // First pass: find the largest source / determine if all sources are equal
+    // First pass: find the smallest source / determine if all sources are equal
     let allEqual = true;
-    const largestSrcIdx = sources.reduce((largestIdx, currentSrc, currentIdx) => {
-      const largestSrc = sources[largestIdx];
-      const largestArr = largestSrc.scaleLevels[scaleIndexes[largestIdx]];
+    let smallestIdx = 0;
+    let smallestSrc = sources[0];
+    let smallestArr = smallestSrc.scaleLevels[scaleIndexes[0]];
+    for (let currentIdx = 1; currentIdx < sources.length; currentIdx++) {
+      const currentSrc = sources[currentIdx];
       const currentArr = currentSrc.scaleLevels[scaleIndexes[currentIdx]];
 
-      const ordering = compareZarrArraySize(largestArr, largestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
+      const ordering = compareZarrArraySize(smallestArr, smallestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
       if (!ordering) {
         // Arrays are equal, or they are uncomparable
         if (ordering === undefined) {
-          throw new Error("Incompatible zarr arrays: pixel dimensions are mismatched");
+          throw new VolumeLoadError("Incompatible zarr arrays: pixel dimensions are mismatched", {
+            type: VolumeLoadErrorType.INVALID_MULTI_SOURCE_ZARR,
+          });
         }
+
         // Now we know the arrays are equal, but they may still be invalid to match up because...
         // ...they have different scale transformations
-        if (!scaleTransformsAreEqual(largestSrc, scaleIndexes[largestIdx], currentSrc, scaleIndexes[currentIdx])) {
-          throw new Error("Incompatible zarr arrays: scale levels of equal size have different scale transformations");
+        if (!scaleTransformsAreEqual(smallestSrc, scaleIndexes[smallestIdx], currentSrc, scaleIndexes[currentIdx])) {
+          // today we are going to treat this as a warning.
+          // For our implementation it is enough that the xyz pixel ranges are the same.
+          // Ideally scale*arraysize=physical size is really the quantity that should be equal, for combining two volume data sets as channels.
+          console.warn("Incompatible zarr arrays: scale levels of equal size have different scale transformations");
         }
-        // ...they have different chunk sizes (TODO update prefetching so this restriction can be removed)
+
         // ...they have different numbers of timesteps
-        const largestT = largestSrc.axesTCZYX[0] > -1 ? largestArr.shape[largestSrc.axesTCZYX[0]] : 1;
+        const largestT = smallestSrc.axesTCZYX[0] > -1 ? smallestArr.shape[smallestSrc.axesTCZYX[0]] : 1;
         const currentT = currentSrc.axesTCZYX[0] > -1 ? currentArr.shape[currentSrc.axesTCZYX[0]] : 1;
         if (largestT !== currentT) {
-          throw new Error("Incompatible zarr arrays: different numbers of timesteps");
+          // we also treat this as a warning.
+          // In OmeZarrLoader we will take the minimum T size of all sources
+          console.warn(`Incompatible zarr arrays: different numbers of timesteps: ${largestT} vs ${currentT}`);
         }
-        return largestIdx;
+      } else {
+        allEqual = false;
+        if (ordering > 0) {
+          smallestIdx = currentIdx;
+          smallestSrc = currentSrc;
+          smallestArr = currentArr;
+        }
       }
-
-      allEqual = false;
-      return ordering < 0 ? currentIdx : largestIdx;
-    }, 0);
+    }
 
     if (allEqual) {
       // We've found a matching set of scale levels! Save it and increment all indexes
@@ -207,13 +224,11 @@ export function matchSourceScaleLevels(sources: ZarrSourceMeta[]): void {
         scaleIndexes[i] += 1;
       }
     } else {
-      // Increment the indexes of the sources which are smaller than the largest
-      const largestSrc = sources[largestSrcIdx];
-      const largestArr = largestSrc.scaleLevels[scaleIndexes[largestSrcIdx]];
-      for (const [srcIdx, idx] of scaleIndexes.entries()) {
+      // Increment the indexes of the sources which are larger than the smallest
+      for (const [idx, srcIdx] of scaleIndexes.entries()) {
         const currentSrc = sources[idx];
         const currentArr = currentSrc.scaleLevels[srcIdx];
-        const ordering = compareZarrArraySize(largestArr, largestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
+        const ordering = compareZarrArraySize(smallestArr, smallestSrc.axesTCZYX, currentArr, currentSrc.axesTCZYX);
         if (ordering !== 0) {
           scaleIndexes[idx] += 1;
         }
@@ -222,7 +237,9 @@ export function matchSourceScaleLevels(sources: ZarrSourceMeta[]): void {
   }
 
   if (sources[0].scaleLevels.length === 0) {
-    throw new Error("Incompatible zarr arrays: no sets of scale levels found that matched in all sources");
+    throw new VolumeLoadError("Incompatible zarr arrays: no sets of scale levels found that matched in all sources", {
+      type: VolumeLoadErrorType.INVALID_MULTI_SOURCE_ZARR,
+    });
   }
 
   for (let i = 0; i < sources.length; i++) {

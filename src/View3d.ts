@@ -11,20 +11,20 @@ import {
 } from "three";
 import { Pane } from "tweakpane";
 
-import { ThreeJsPanel } from "./ThreeJsPanel";
-import lightSettings from "./constants/lights";
-import VolumeDrawable from "./VolumeDrawable";
-import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light";
-import Volume from "./Volume";
+import { CameraState, ThreeJsPanel } from "./ThreeJsPanel.js";
+import lightSettings from "./constants/lights.js";
+import VolumeDrawable from "./VolumeDrawable.js";
+import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light.js";
+import Volume from "./Volume.js";
 import {
-  VolumeChannelDisplayOptions,
-  VolumeDisplayOptions,
+  type VolumeChannelDisplayOptions,
+  type VolumeDisplayOptions,
   isOrthographicCamera,
   ViewportCorner,
   RenderMode,
-} from "./types";
-import { Axis } from "./VolumeRenderSettings";
-import { PerChannelCallback } from "./loaders/IVolumeLoader";
+} from "./types.js";
+import { Axis } from "./VolumeRenderSettings.js";
+import { PerChannelCallback } from "./loaders/IVolumeLoader.js";
 
 // Constants are kept for compatibility reasons.
 export const RENDERMODE_RAYMARCH = RenderMode.RAYMARCH;
@@ -46,6 +46,7 @@ export class View3d {
   private exposure: number;
   private volumeRenderMode: RenderMode.PATHTRACE | RenderMode.RAYMARCH;
   private renderUpdateListener?: (iteration: number) => void;
+  private loadErrorHandler?: (volume: Volume, error: unknown) => void;
   private image?: VolumeDrawable;
 
   private lights: Light[];
@@ -55,8 +56,7 @@ export class View3d {
   private reflectedLight: DirectionalLight;
   private fillLight: DirectionalLight;
 
-  private tweakpane: Pane;
-  private tweakpaneOpen: boolean;
+  private tweakpane: Pane | null;
 
   /**
    * @param {Object} options Optional options.
@@ -86,8 +86,7 @@ export class View3d {
     this.fillLight = new DirectionalLight();
     this.buildScene();
 
-    this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
-    this.tweakpaneOpen = false;
+    this.tweakpane = null;
     window.addEventListener("keydown", this.handleKeydown);
   }
 
@@ -117,7 +116,6 @@ export class View3d {
   }
 
   private updateTimestepIndicator(volume: Volume): void {
-    // convert names to camel case to keep eslint happy
     const { times, timeScale, timeUnit } = volume.imageInfo;
     const currentTime = volume.loadSpec.time;
     this.canvas3d.updateTimestepIndicator(currentTime * timeScale, times * timeScale, timeUnit);
@@ -133,6 +131,15 @@ export class View3d {
 
   getDOMElement(): HTMLDivElement {
     return this.canvas3d.containerdiv;
+  }
+
+  getCameraState(): CameraState {
+    return this.canvas3d.getCameraState();
+  }
+
+  setCameraState(transform: Partial<CameraState>) {
+    this.canvas3d.setCameraState(transform);
+    this.redraw();
   }
 
   /**
@@ -220,8 +227,8 @@ export class View3d {
   onVolumeData(volume: Volume, channels: number[]): void {
     this.image?.updateScale();
     this.image?.onChannelLoaded(channels);
-    if (volume.isLoaded()) {
-      this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
+    if (volume.isLoaded() && this.tweakpane) {
+      this.tweakpane.refresh();
     }
   }
 
@@ -230,10 +237,26 @@ export class View3d {
     this.image?.onChannelAdded(newChannelIndex);
   }
 
+  onVolumeLoadError(volume: Volume, error: unknown): void {
+    this.loadErrorHandler?.(volume, error);
+  }
+
+  setLoadErrorHandler(handler: ((volume: Volume, error: unknown) => void) | undefined): void {
+    this.loadErrorHandler = handler;
+  }
+
   setTime(volume: Volume, time: number, onChannelLoaded?: PerChannelCallback): void {
     const timeClamped = Math.max(0, Math.min(time, volume.imageInfo.times - 1));
     volume.updateRequiredData({ time: timeClamped }, onChannelLoaded);
     this.updateTimestepIndicator(volume);
+  }
+
+  /**
+   * Nudge the scale level loaded into this volume off the one chosen by the loader.
+   * E.g. a bias of `1` will load 1 scale level lower than "ideal."
+   */
+  setScaleLevelBias(volume: Volume, scaleLevelBias: number): void {
+    volume.updateRequiredData({ scaleLevelBias });
   }
 
   /**
@@ -292,25 +315,6 @@ export class View3d {
   }
 
   /**
-   * If an isosurface is not already created, then create one.  Otherwise change the isovalue of the existing isosurface.
-   * @param {Object} volume
-   * @param {number} channel
-   * @param {number} isovalue isovalue
-   * @param {number=} alpha Opacity
-   */
-  createIsosurface(volume: Volume, channel: number, isovalue: number, alpha: number): void {
-    if (!this.image) {
-      return;
-    }
-    if (this.image.hasIsosurface(channel)) {
-      this.image.updateIsovalue(channel, isovalue);
-    } else {
-      this.image.createIsosurface(channel, isovalue, alpha, alpha < 0.95);
-    }
-    this.redraw();
-  }
-
-  /**
    * Is an isosurface already created for this channel?
    * @param {Object} volume
    * @param {number} channel
@@ -318,41 +322,6 @@ export class View3d {
    */
   hasIsosurface(volume: Volume, channel: number): boolean {
     return this.image?.hasIsosurface(channel) || false;
-  }
-
-  /**
-   * If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.
-   * @param {Object} volume
-   * @param {number} channel
-   * @param {number} isovalue
-   */
-  updateIsosurface(volume: Volume, channel: number, isovalue: number): void {
-    if (!this.image || !this.image.hasIsosurface(channel)) {
-      return;
-    }
-    this.image.updateIsovalue(channel, isovalue);
-    this.redraw();
-  }
-
-  /**
-   * Set opacity for isosurface
-   * @param {Object} volume
-   * @param {number} channel
-   * @param {number} opacity Opacity
-   */
-  updateOpacity(volume: Volume, channel: number, opacity: number): void {
-    this.image?.updateOpacity(channel, opacity);
-    this.redraw();
-  }
-
-  /**
-   * If an isosurface exists for this channel, hide it now
-   * @param {Object} volume
-   * @param {number} channel
-   */
-  clearIsosurface(volume: Volume, channel: number): void {
-    this.image?.destroyIsosurface(channel);
-    this.redraw();
   }
 
   /**
@@ -902,8 +871,12 @@ export class View3d {
   handleKeydown = (event: KeyboardEvent): void => {
     // control-option-1 (mac) or ctrl-alt-1 (windows)
     if (event.code === "Digit1" && event.altKey && event.ctrlKey) {
-      this.tweakpaneOpen = !this.tweakpaneOpen;
-      this.tweakpane.element.style.display = this.tweakpaneOpen ? "block" : "none";
+      if (this.tweakpane) {
+        this.tweakpane.dispose();
+        this.tweakpane = null;
+      } else {
+        this.tweakpane = this.setupGui(this.canvas3d.containerdiv);
+      }
     }
   };
 
@@ -912,16 +885,11 @@ export class View3d {
   }
 
   private setupGui(container: HTMLElement): Pane {
-    if (this.tweakpane) {
-      this.canvas3d.containerdiv.removeChild(this.tweakpane.element);
-    }
-
     const pane = new Pane({ title: "Advanced Settings", container });
     const paneStyle: Partial<CSSStyleDeclaration> = {
       position: "absolute",
       top: "0",
       right: "0",
-      display: "none",
     };
     Object.assign(pane.element.style, paneStyle);
 

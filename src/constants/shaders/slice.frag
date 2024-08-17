@@ -13,8 +13,6 @@ uniform float maskAlpha;
 uniform vec2 ATLAS_DIMS;
 uniform vec3 AABB_CLIP_MIN;
 uniform vec3 AABB_CLIP_MAX;
-uniform vec3 SUBSET_SCALE;
-uniform vec3 SUBSET_OFFSET;
 uniform sampler2D textureAtlas;
 uniform sampler2D textureAtlasMask;
 uniform int Z_SLICE;
@@ -36,6 +34,7 @@ vec4 sampleAtlas(sampler2D tex, vec4 pos) {
   float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&
     pos[1] >= 0.0 && pos[1] <= 1.0 &&
     pos[2] >= 0.0 && pos[2] <= 1.0);
+
   float nSlices = float(SLICES);
 
   vec2 loc0 = ((pos.xy - 0.5) * flipVolume.xy + 0.5) / ATLAS_DIMS;
@@ -87,7 +86,6 @@ void main() {
   vec4 pos = vec4(vUv, 
     (SLICES==1.0 && Z_SLICE==0) ? 0.0 : float(Z_SLICE) / (SLICES - 1.0), 
     0.0);
-  pos.xyz = (pos.xyz - SUBSET_OFFSET) / SUBSET_SCALE;
 
   vec4 C;
   C = sampleAtlas(textureAtlas, pos);

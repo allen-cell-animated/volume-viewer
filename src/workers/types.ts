@@ -1,6 +1,8 @@
-import { ImageInfo } from "../Volume";
-import { CreateLoaderOptions, PrefetchDirection } from "../loaders";
-import { LoadSpec, LoadedVolumeInfo, VolumeDims } from "../loaders/IVolumeLoader";
+import type { ErrorObject } from "serialize-error";
+
+import type { ImageInfo } from "../Volume.js";
+import type { CreateLoaderOptions, PrefetchDirection } from "../loaders/index.js";
+import type { LoadSpec, LoadedVolumeInfo, VolumeDims } from "../loaders/IVolumeLoader.js";
 
 /** The types of requests that can be made to the worker. Mostly corresponds to methods on `IVolumeLoader`. */
 export const enum WorkerMsgType {
@@ -10,6 +12,7 @@ export const enum WorkerMsgType {
   LOAD_DIMS,
   LOAD_VOLUME_DATA,
   SET_PREFETCH_PRIORITY_DIRECTIONS,
+  SYNCHRONIZE_MULTICHANNEL_LOADING,
 }
 
 /** The kind of response a worker can return - `SUCCESS`, `ERROR`, or `EVENT`. */
@@ -17,6 +20,14 @@ export const enum WorkerResponseResult {
   SUCCESS,
   ERROR,
   EVENT,
+}
+
+/** The kind of events that can occur when loading */
+export const enum WorkerEventType {
+  /** Fired to update a `Volume`'s `imageInfo` and/or `loadSpec` based on loaded data (time, channels, region, etc.) */
+  METADATA_UPDATE,
+  /** Fired when data for a channel (or batch of channels) is loaded */
+  CHANNEL_LOAD,
 }
 
 /** All messages to/from a worker carry a `msgId`, a `type`, and a `payload` (whose type is determined by `type`). */
@@ -46,6 +57,7 @@ export type WorkerRequestPayload<T extends WorkerMsgType> = {
     loadId: number;
   };
   [WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS]: PrefetchDirection[];
+  [WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING]: boolean;
 }[T];
 
 /** Maps each `WorkerMsgType` to the type of the payload of responses of that type. */
@@ -54,17 +66,29 @@ export type WorkerResponsePayload<T extends WorkerMsgType> = {
   [WorkerMsgType.CREATE_LOADER]: boolean;
   [WorkerMsgType.CREATE_VOLUME]: LoadedVolumeInfo;
   [WorkerMsgType.LOAD_DIMS]: VolumeDims[];
-  [WorkerMsgType.LOAD_VOLUME_DATA]: Partial<LoadedVolumeInfo>;
+  [WorkerMsgType.LOAD_VOLUME_DATA]: void;
   [WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS]: void;
+  [WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING]: void;
 }[T];
 
-/** Currently the only event a loader can produce is a `ChannelLoadEvent` when a single channel loads. */
+/** Event for when a batch of channel data loads. */
 export type ChannelLoadEvent = {
+  eventType: WorkerEventType.CHANNEL_LOAD;
   loaderId: number;
   loadId: number;
-  channelIndex: number;
-  data: Uint8Array;
+  channelIndex: number[];
+  data: Uint8Array[];
+  ranges: [number, number][];
   atlasDims?: [number, number];
+};
+
+/** Event for when metadata updates. */
+export type MetadataUpdateEvent = {
+  eventType: WorkerEventType.METADATA_UPDATE;
+  loaderId: number;
+  loadId: number;
+  imageInfo?: ImageInfo;
+  loadSpec?: LoadSpec;
 };
 
 /** All valid types of worker requests, with some `WorkerMsgType` and a matching payload type. */
@@ -72,5 +96,5 @@ export type WorkerRequest<T extends WorkerMsgType> = WorkerMsgBase<T, WorkerRequ
 /** All valid types of worker responses: `SUCCESS` with a matching payload, `ERROR` with a message, or an `EVENT`. */
 export type WorkerResponse<T extends WorkerMsgType> =
   | ({ responseResult: WorkerResponseResult.SUCCESS } & WorkerMsgBase<T, WorkerResponsePayload<T>>)
-  | ({ responseResult: WorkerResponseResult.ERROR } & WorkerMsgBase<T, string>)
-  | ({ responseResult: WorkerResponseResult.EVENT } & ChannelLoadEvent);
+  | ({ responseResult: WorkerResponseResult.ERROR } & WorkerMsgBase<T, ErrorObject>)
+  | ({ responseResult: WorkerResponseResult.EVENT } & (ChannelLoadEvent | MetadataUpdateEvent));

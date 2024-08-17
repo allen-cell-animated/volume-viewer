@@ -15,12 +15,12 @@ import {
   Vector3,
 } from "three";
 import { Channel, Volume } from ".";
-import { sliceFragmentShaderSrc, sliceShaderUniforms, sliceVertexShaderSrc } from "./constants/volumeSliceShader";
-import { VolumeRenderImpl } from "./VolumeRenderImpl";
-import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings";
-import FusedChannelData from "./FusedChannelData";
-import { FuseChannel } from "./types";
-import { ThreeJsPanel } from "./ThreeJsPanel";
+import { sliceFragmentShaderSrc, sliceShaderUniforms, sliceVertexShaderSrc } from "./constants/volumeSliceShader.js";
+import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
+import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings.js";
+import FusedChannelData from "./FusedChannelData.js";
+import type { FuseChannel } from "./types.js";
+import { ThreeJsPanel } from "./ThreeJsPanel.js";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
@@ -93,6 +93,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
 
   public updateVolumeDimensions(): void {
     const scale = this.volume.normPhysicalSize;
+    this.geometryMesh.position.copy(this.volume.getContentCenter());
     // set scale
     this.geometryMesh.scale.copy(scale);
     this.setUniform("volumeScale", scale);
@@ -105,8 +106,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.setUniform("ATLAS_DIMS", atlasTileDims);
     this.setUniform("textureRes", atlasSize);
     this.setUniform("SLICES", volumeSize.z);
-    this.setUniform("SUBSET_SCALE", this.volume.normRegionSize);
-    this.setUniform("SUBSET_OFFSET", this.volume.normRegionOffset);
     if (this.sliceUpdateWaiting) {
       this.updateSlice();
     }
@@ -172,15 +171,20 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     if (dirtyFlags & SettingsFlags.ROI) {
       // Normalize and set bounds
       const bounds = this.settings.bounds;
+      const { normRegionSize, normRegionOffset } = this.volume;
+      const offsetToCenter = normRegionSize.clone().divideScalar(2).add(normRegionOffset).subScalar(0.5);
+      const bmin = bounds.bmin.clone().sub(offsetToCenter).divide(normRegionSize).clampScalar(-0.5, 0.5);
+      const bmax = bounds.bmax.clone().sub(offsetToCenter).divide(normRegionSize).clampScalar(-0.5, 0.5);
 
-      this.setUniform("AABB_CLIP_MIN", bounds.bmin);
-      this.setUniform("AABB_CLIP_MAX", bounds.bmax);
+      this.setUniform("AABB_CLIP_MIN", bmin);
+      this.setUniform("AABB_CLIP_MAX", bmax);
 
       const sliceInBounds = this.updateSlice();
       if (sliceInBounds) {
-        const sliceRatio = Math.floor(this.settings.zSlice) / this.volume.imageInfo.volumeSize.z;
+        const sliceLowerBound = Math.floor(this.settings.zSlice) / this.volume.imageInfo.volumeSize.z;
+        const sliceUpperBound = (Math.floor(this.settings.zSlice) + 1) / this.volume.imageInfo.volumeSize.z;
         this.volume.updateRequiredData({
-          subregion: new Box3(new Vector3(0, 0, sliceRatio), new Vector3(1, 1, sliceRatio)),
+          subregion: new Box3(new Vector3(0, 0, sliceLowerBound), new Vector3(1, 1, sliceUpperBound)),
         });
       }
     }

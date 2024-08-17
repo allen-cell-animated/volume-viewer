@@ -1,23 +1,26 @@
-import { ImageInfo } from "../Volume";
-import { CreateLoaderOptions, PrefetchDirection, VolumeFileFormat, pathToFileType } from "../loaders";
+import { deserializeError } from "serialize-error";
+
+import { ImageInfo } from "../Volume.js";
+import { CreateLoaderOptions, PrefetchDirection, VolumeFileFormat, pathToFileType } from "../loaders/index.js";
 import {
   ThreadableVolumeLoader,
   LoadSpec,
   RawChannelDataCallback,
   VolumeDims,
   LoadedVolumeInfo,
-} from "../loaders/IVolumeLoader";
-import { TiffLoader } from "../loaders/TiffLoader";
-import {
-  WorkerMsgType,
+} from "../loaders/IVolumeLoader.js";
+import { RawArrayLoader } from "../loaders/RawArrayLoader.js";
+import { TiffLoader } from "../loaders/TiffLoader.js";
+import type {
   WorkerRequest,
   WorkerRequestPayload,
   WorkerResponse,
   WorkerResponsePayload,
   ChannelLoadEvent,
-  WorkerResponseResult,
-} from "./types";
-import { rebuildImageInfo, rebuildLoadSpec } from "./util";
+  MetadataUpdateEvent,
+} from "./types.js";
+import { WorkerMsgType, WorkerResponseResult, WorkerEventType } from "./types.js";
+import { rebuildImageInfo, rebuildLoadSpec } from "./util.js";
 
 type StoredPromise<T extends WorkerMsgType> = {
   type: T;
@@ -42,6 +45,7 @@ class SharedLoadWorkerHandle {
   private workerOpen = true;
 
   public onChannelData: ((e: ChannelLoadEvent) => void) | undefined = undefined;
+  public onUpdateMetadata: ((e: MetadataUpdateEvent) => void) | undefined = undefined;
 
   constructor() {
     this.worker = new Worker(new URL("./VolumeLoadWorker", import.meta.url));
@@ -89,7 +93,11 @@ class SharedLoadWorkerHandle {
   /** Receive a message from the worker. If it's an event, call a callback; otherwise, resolve/reject a promise. */
   private receiveMessage<T extends WorkerMsgType>({ data }: MessageEvent<WorkerResponse<T>>): void {
     if (data.responseResult === WorkerResponseResult.EVENT) {
-      this.onChannelData?.(data);
+      if (data.eventType === WorkerEventType.CHANNEL_LOAD) {
+        this.onChannelData?.(data);
+      } else if (data.eventType === WorkerEventType.METADATA_UPDATE) {
+        this.onUpdateMetadata?.(data);
+      }
     } else {
       const prom = this.pendingRequests[data.msgId];
 
@@ -101,7 +109,7 @@ class SharedLoadWorkerHandle {
       }
 
       if (data.responseResult === WorkerResponseResult.ERROR) {
-        prom.reject(data.payload);
+        prom.reject(deserializeError(data.payload));
       } else {
         prom.resolve(data.payload);
       }
@@ -162,12 +170,17 @@ class VolumeLoaderContext {
   async createLoader(
     path: string | string[],
     options?: Omit<CreateLoaderOptions, "cache" | "queue">
-  ): Promise<WorkerLoader | TiffLoader> {
+  ): Promise<WorkerLoader | TiffLoader | RawArrayLoader> {
     // Special case: TIFF loader doesn't work on a worker, has its own workers anyways, and doesn't use cache or queue.
     const pathString = Array.isArray(path) ? path[0] : path;
     const fileType = options?.fileType || pathToFileType(pathString);
     if (fileType === VolumeFileFormat.TIFF) {
       return new TiffLoader(pathString);
+    } else if (fileType === VolumeFileFormat.DATA) {
+      if (!options?.rawArrayOptions) {
+        throw new Error("Failed to create loader: Must provide RawArrayOptions for RawArrayLoader");
+      }
+      return new RawArrayLoader(options.rawArrayOptions.data, options.rawArrayOptions.metadata);
     }
 
     const success = await this.workerHandle.sendMessage(WorkerMsgType.CREATE_LOADER, { path, options });
@@ -191,10 +204,12 @@ class WorkerLoader extends ThreadableVolumeLoader {
   private isOpen = true;
   private currentLoadId = -1;
   private currentLoadCallback: RawChannelDataCallback | undefined = undefined;
+  private currentMetadataUpdateCallback: ((imageInfo?: ImageInfo, loadSpec?: LoadSpec) => void) | undefined = undefined;
 
   constructor(private loaderId: number, private workerHandle: SharedLoadWorkerHandle) {
     super();
     workerHandle.onChannelData = this.onChannelData.bind(this);
+    workerHandle.onUpdateMetadata = this.onUpdateMetadata.bind(this);
   }
 
   private checkIsOpen(): void {
@@ -212,8 +227,12 @@ class WorkerLoader extends ThreadableVolumeLoader {
    * Change which directions to prioritize when prefetching. All chunks will be prefetched in these directions before
    * any chunks are prefetched in any other directions. Has no effect if this loader doesn't support prefetching.
    */
-  setPrefetchPriorityDirections(directions: PrefetchDirection[]): Promise<void> {
+  setPrefetchPriority(directions: PrefetchDirection[]): Promise<void> {
     return this.workerHandle.sendMessage(WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, directions);
+  }
+
+  syncMultichannelLoading(sync: boolean): Promise<void> {
+    return this.workerHandle.sendMessage(WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, sync);
   }
 
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
@@ -230,30 +249,24 @@ class WorkerLoader extends ThreadableVolumeLoader {
     return { imageInfo: rebuildImageInfo(imageInfo), loadSpec: rebuildLoadSpec(adjustedLoadSpec) };
   }
 
-  async loadRawChannelData(
+  loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
+    onUpdateMetadata: (imageInfo?: ImageInfo, loadSpec?: LoadSpec) => void,
     onData: RawChannelDataCallback
-  ): Promise<Partial<LoadedVolumeInfo>> {
+  ): Promise<void> {
     this.checkIsOpen();
 
     this.currentLoadCallback = onData;
+    this.currentMetadataUpdateCallback = onUpdateMetadata;
     this.currentLoadId += 1;
 
-    const { imageInfo: newImageInfo, loadSpec: newLoadSpec } = await this.workerHandle.sendMessage(
-      WorkerMsgType.LOAD_VOLUME_DATA,
-      {
-        imageInfo,
-        loadSpec,
-        loaderId: this.loaderId,
-        loadId: this.currentLoadId,
-      }
-    );
-
-    return {
-      imageInfo: newImageInfo && rebuildImageInfo(newImageInfo),
-      loadSpec: newLoadSpec && rebuildLoadSpec(newLoadSpec),
-    };
+    return this.workerHandle.sendMessage(WorkerMsgType.LOAD_VOLUME_DATA, {
+      imageInfo,
+      loadSpec,
+      loaderId: this.loaderId,
+      loadId: this.currentLoadId,
+    });
   }
 
   onChannelData(e: ChannelLoadEvent): void {
@@ -261,7 +274,17 @@ class WorkerLoader extends ThreadableVolumeLoader {
       return;
     }
 
-    this.currentLoadCallback?.(e.channelIndex, e.data, e.atlasDims);
+    this.currentLoadCallback?.(e.channelIndex, e.data, e.ranges, e.atlasDims);
+  }
+
+  onUpdateMetadata(e: MetadataUpdateEvent): void {
+    if (e.loaderId !== this.loaderId || e.loadId !== this.currentLoadId) {
+      return;
+    }
+
+    const imageInfo = e.imageInfo && rebuildImageInfo(e.imageInfo);
+    const loadSpec = e.loadSpec && rebuildLoadSpec(e.loadSpec);
+    this.currentMetadataUpdateCallback?.(imageInfo, loadSpec);
   }
 }
 

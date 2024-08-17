@@ -1,6 +1,7 @@
 import { Euler, Vector2, Vector3 } from "three";
-import Volume from "./Volume";
-import { Bounds } from "./types";
+
+import Volume from "./Volume.js";
+import type { Bounds } from "./types.js";
 
 /**
  * Marks groups of related settings that may have changed.

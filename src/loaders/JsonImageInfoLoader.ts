@@ -2,13 +2,14 @@ import { Box3, Vector2, Vector3 } from "three";
 
 import {
   ThreadableVolumeLoader,
-  LoadSpec,
-  RawChannelDataCallback,
+  type LoadSpec,
+  type RawChannelDataCallback,
   VolumeDims,
-  LoadedVolumeInfo,
-} from "./IVolumeLoader";
-import { ImageInfo } from "../Volume";
-import VolumeCache from "../VolumeCache";
+  type LoadedVolumeInfo,
+} from "./IVolumeLoader.js";
+import type { ImageInfo } from "../Volume.js";
+import VolumeCache from "../VolumeCache.js";
+import { DATARANGE_UINT8 } from "../types.js";
 
 interface PackedChannelsImage {
   name: string;
@@ -150,8 +151,9 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
   async loadRawChannelData(
     imageInfo: ImageInfo,
     loadSpec: LoadSpec,
+    onUpdateMetadata: (imageInfo: undefined, loadSpec?: LoadSpec) => void,
     onData: RawChannelDataCallback
-  ): Promise<{ loadSpec?: LoadSpec }> {
+  ): Promise<void> {
     // if you need to adjust image paths prior to download,
     // now is the time to do it.
     // Try to figure out the urlPrefix from the LoadSpec.
@@ -160,7 +162,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
 
     let images = jsonInfo?.images;
     if (!images) {
-      return {};
+      return;
     }
 
     const requestedChannels = loadSpec.channels;
@@ -173,11 +175,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
     const urlPrefix = this.urls[loadSpec.time].replace(/[^/]*$/, "");
     images = images.map((element) => ({ ...element, name: urlPrefix + element.name }));
 
-    const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
-    const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
-    const wrappedOnData = (ch: number, data: Uint8Array) => onData(ch, data, [w, h]);
-    JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
-
+    // Update `image`'s `loadSpec` before loading
     const adjustedLoadSpec = {
       ...loadSpec,
       // `subregion` and `multiscaleLevel` are unused by this loader
@@ -186,7 +184,13 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
       // include all channels in any loaded images
       channels: images.flatMap(({ channels }) => channels),
     };
-    return { loadSpec: adjustedLoadSpec };
+    onUpdateMetadata(undefined, adjustedLoadSpec);
+
+    const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
+    const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
+    const wrappedOnData = (ch: number[], data: Uint8Array[], ranges: [number, number][]) =>
+      onData(ch, data, ranges, [w, h]);
+    await JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
   }
 
   /**
@@ -205,12 +209,12 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
    *     "channels": [6, 7, 8]
    * }], mycallback);
    */
-  static loadVolumeAtlasData(
+  static async loadVolumeAtlasData(
     imageArray: PackedChannelsImage[],
     onData: RawChannelDataCallback,
     cache?: VolumeCache
-  ): void {
-    imageArray.forEach(async (image) => {
+  ): Promise<void> {
+    const imagePromises = imageArray.map(async (image) => {
       // Because the data is fetched such that one fetch returns a whole batch,
       // if any in batch is cached then they all should be. So if any in batch is NOT cached,
       // then we will have to do a batch request. This logic works both ways because it's all or nothing.
@@ -219,7 +223,8 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
         const chindex = image.channels[j];
         const cacheResult = cache?.get(`${image.name}/${chindex}`);
         if (cacheResult) {
-          onData(chindex, new Uint8Array(cacheResult));
+          // all data coming from this loader is natively 8-bit
+          onData([chindex], [new Uint8Array(cacheResult)], [DATARANGE_UINT8]);
         } else {
           cacheHit = false;
           // we can stop checking because we know we are going to have to fetch the whole batch
@@ -269,9 +274,12 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
         const chindex = image.channels[ch];
         cache?.insert(`${image.name}/${chindex}`, channelsBits[ch]);
         // NOTE: the atlas dimensions passed in here are currently unused by `JSONImageInfoLoader`
-        onData(chindex, channelsBits[ch], [bitmap.width, bitmap.height]);
+        // all data coming from this loader is natively 8-bit
+        onData([chindex], [channelsBits[ch]], [DATARANGE_UINT8], [bitmap.width, bitmap.height]);
       }
     });
+
+    await Promise.all(imagePromises);
   }
 }
 

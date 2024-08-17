@@ -1,15 +1,17 @@
 import { fromUrl } from "geotiff";
 import { Vector3 } from "three";
+import { ErrorObject, deserializeError } from "serialize-error";
 
 import {
   ThreadableVolumeLoader,
   LoadSpec,
-  RawChannelDataCallback,
+  type RawChannelDataCallback,
   VolumeDims,
-  LoadedVolumeInfo,
-} from "./IVolumeLoader";
-import { computePackedAtlasDims } from "./VolumeLoaderUtils";
-import { ImageInfo } from "../Volume";
+  type LoadedVolumeInfo,
+} from "./IVolumeLoader.js";
+import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
+import { VolumeLoadError, VolumeLoadErrorType, wrapVolumeLoadError } from "./VolumeLoadError.js";
+import type { ImageInfo } from "../Volume.js";
 
 function prepareXML(xml: string): string {
   // trim trailing unicode zeros?
@@ -20,32 +22,66 @@ function prepareXML(xml: string): string {
 
 function getOME(xml: string): Element {
   const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(xml, "text/xml");
-  const omeEl = xmlDoc.getElementsByTagName("OME")[0];
-  return omeEl;
+  try {
+    const xmlDoc = parser.parseFromString(xml, "text/xml");
+    return xmlDoc.getElementsByTagName("OME")[0];
+  } catch (e) {
+    throw new VolumeLoadError("Could not find OME metadata in TIFF file", {
+      type: VolumeLoadErrorType.INVALID_METADATA,
+      cause: e,
+    });
+  }
 }
 
 class OMEDims {
   sizex = 0;
   sizey = 0;
-  sizez = 0;
-  sizec = 0;
-  sizet = 0;
+  sizez = 1;
+  sizec = 1;
+  sizet = 1;
   unit = "";
   pixeltype = "";
   dimensionorder = "";
-  pixelsizex = 0;
-  pixelsizey = 0;
-  pixelsizez = 0;
+  pixelsizex = 1;
+  pixelsizey = 1;
+  pixelsizez = 1;
   channelnames: string[] = [];
+}
+
+export type TiffWorkerParams = {
+  channel: number;
+  tilesizex: number;
+  tilesizey: number;
+  sizec: number;
+  sizez: number;
+  dimensionOrder: string;
+  bytesPerSample: number;
+  url: string;
+};
+
+export type TiffLoadResult = {
+  isError: false;
+  data: Uint8Array;
+  channel: number;
+  range: [number, number];
+};
+
+function getAttributeOrError(el: Element, attr: string): string {
+  const val = el.getAttribute(attr);
+  if (val === null) {
+    throw new VolumeLoadError(`Missing attribute ${attr} in OME-TIFF metadata`, {
+      type: VolumeLoadErrorType.INVALID_METADATA,
+    });
+  }
+  return val;
 }
 
 function getOMEDims(imageEl: Element): OMEDims {
   const dims = new OMEDims();
 
   const pixelsEl = imageEl.getElementsByTagName("Pixels")[0];
-  dims.sizex = Number(pixelsEl.getAttribute("SizeX"));
-  dims.sizey = Number(pixelsEl.getAttribute("SizeY"));
+  dims.sizex = Number(getAttributeOrError(pixelsEl, "SizeX"));
+  dims.sizey = Number(getAttributeOrError(pixelsEl, "SizeY"));
   dims.sizez = Number(pixelsEl.getAttribute("SizeZ"));
   dims.sizec = Number(pixelsEl.getAttribute("SizeC"));
   dims.sizet = Number(pixelsEl.getAttribute("SizeT"));
@@ -80,11 +116,15 @@ class TiffLoader extends ThreadableVolumeLoader {
 
   private async loadOmeDims(): Promise<OMEDims> {
     if (!this.dims) {
-      const tiff = await fromUrl(this.url, { allowFullFile: true });
+      const tiff = await fromUrl(this.url, { allowFullFile: true }).catch(
+        wrapVolumeLoadError(`Could not open TIFF file at ${this.url}`, VolumeLoadErrorType.NOT_FOUND)
+      );
       // DO NOT DO THIS, ITS SLOW
       // const imagecount = await tiff.getImageCount();
       // read the FIRST image
-      const image = await tiff.getImage();
+      const image = await tiff
+        .getImage()
+        .catch(wrapVolumeLoadError("Failed to open TIFF image", VolumeLoadErrorType.NOT_FOUND));
 
       const tiffimgdesc = prepareXML(image.getFileDirectory().ImageDescription);
       const omeEl = getOME(tiffimgdesc);
@@ -156,38 +196,48 @@ class TiffLoader extends ThreadableVolumeLoader {
   async loadRawChannelData(
     imageInfo: ImageInfo,
     _loadSpec: LoadSpec,
+    _onUpdateMetadata: () => void,
     onData: RawChannelDataCallback
-  ): Promise<Record<string, never>> {
+  ): Promise<void> {
     const dims = await this.loadOmeDims();
 
+    const channelProms: Promise<void>[] = [];
     // do each channel on a worker?
     for (let channel = 0; channel < imageInfo.numChannels; ++channel) {
-      const params = {
-        channel: channel,
-        // these are target xy sizes for the in-memory volume data
-        // they may or may not be the same size as original xy sizes
-        tilesizex: imageInfo.volumeSize.x,
-        tilesizey: imageInfo.volumeSize.y,
-        sizec: imageInfo.numChannels,
-        sizez: imageInfo.volumeSize.z,
-        dimensionOrder: dims.dimensionorder,
-        bytesPerSample: getBytesPerSample(dims.pixeltype),
-        url: this.url,
-      };
-      const worker = new Worker(new URL("../workers/FetchTiffWorker", import.meta.url));
-      worker.onmessage = (e) => {
-        const u8 = e.data.data;
-        const channel = e.data.channel;
-        onData(channel, u8);
-        worker.terminate();
-      };
-      worker.onerror = (e) => {
-        alert("Error: Line " + e.lineno + " in " + e.filename + ": " + e.message);
-      };
-      worker.postMessage(params);
+      const thisChannelProm = new Promise<void>((resolve, reject) => {
+        const params: TiffWorkerParams = {
+          channel: channel,
+          // these are target xy sizes for the in-memory volume data
+          // they may or may not be the same size as original xy sizes
+          tilesizex: imageInfo.volumeSize.x,
+          tilesizey: imageInfo.volumeSize.y,
+          sizec: imageInfo.numChannels,
+          sizez: imageInfo.volumeSize.z,
+          dimensionOrder: dims.dimensionorder,
+          bytesPerSample: getBytesPerSample(dims.pixeltype),
+          url: this.url,
+        };
+
+        const worker = new Worker(new URL("../workers/FetchTiffWorker", import.meta.url));
+        worker.onmessage = (e: MessageEvent<TiffLoadResult | { isError: true; error: ErrorObject }>) => {
+          if (e.data.isError) {
+            reject(deserializeError(e.data.error));
+            return;
+          }
+          const { data, channel, range } = e.data;
+          onData([channel], [data], [range]);
+          worker.terminate();
+          resolve();
+        };
+
+        worker.postMessage(params);
+      });
+
+      channelProms.push(thisChannelProm);
     }
 
-    return {};
+    // waiting for all channels to load allows errors to propagate to the caller via this promise
+    await Promise.all(channelProms);
   }
 }
 

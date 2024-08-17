@@ -1,7 +1,7 @@
 import * as zarr from "@zarrita/core";
 
-import WrappedStore from "./WrappedStore";
-import SubscribableRequestQueue from "../../utils/SubscribableRequestQueue";
+import type WrappedStore from "./WrappedStore.js";
+import type SubscribableRequestQueue from "../../utils/SubscribableRequestQueue.js";
 
 export type TCZYX<T> = [T, T, T, T, T];
 export type SubscriberId = ReturnType<SubscribableRequestQueue["addSubscriber"]>;
@@ -55,7 +55,7 @@ export type OMEDataset = {
   coordinateTransformations?: OMECoordinateTransformation[];
 };
 
-// https://ngff.openmicroscopy.org/latest/#multiscale-md
+/** https://ngff.openmicroscopy.org/latest/#multiscale-md */
 export type OMEMultiscale = {
   version?: string;
   name?: string;
@@ -66,7 +66,7 @@ export type OMEMultiscale = {
   metadata?: Record<string, unknown>;
 };
 
-// https://ngff.openmicroscopy.org/latest/#omero-md
+/** https://ngff.openmicroscopy.org/latest/#omero-md */
 export type OmeroTransitionalMetadata = {
   id: number;
   name: string;
@@ -96,25 +96,17 @@ export type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<Requ
 
 /** A record with everything we need to access and use a single remote source of multiscale OME-Zarr data. */
 export type ZarrSource = {
-  /** Representations of each scale level in this zarr. We pick one and pass it to `zarrGet` to load data. */
+  /** Representations of each scale level in this zarr. We pick one and pass it to zarrita to load data. */
   scaleLevels: NumericZarrArray[];
   /**
    * Zarr dimensions may be ordered in many ways or missing altogether (e.g. TCXYZ, TYX). `axesTCZYX` represents
    * dimension order as a mapping from dimensions to their indices in dimension-ordered arrays for this source.
    */
   axesTCZYX: TCZYX<number>;
-  /** OME-specified "transitional" metadata record which we mostly ignore, but which gives channel & volume names. */
-  omeroMetadata: OmeroTransitionalMetadata;
-  /** Which channels in the volume come out of this source - i.e. source channel 0 is volume channel `channelOffset` */
-  channelOffset: number;
-};
-
-/**
- * A `ZarrSource` with an additional field for `OMEMultiscale` metadata. After `matchSourceScaleLevels` is run on
- * loader creation, we only need one `OMEMultiscale` total (rather than one per source), so this type is used during
- * loader creation, but the resulting loader stores `ZarrSource`s.
- */
-export type ZarrSourceMeta = ZarrSource & {
   /** OME-specified metadata record with most useful info on the current image, e.g. sizes, axis order, etc. */
   multiscaleMetadata: OMEMultiscale;
+  /** OME-specified "transitional" metadata record which we mostly ignore, but which gives channel & volume names. */
+  omeroMetadata?: OmeroTransitionalMetadata;
+  /** Which channels in the volume come out of this source - i.e. source channel 0 is volume channel `channelOffset` */
+  channelOffset: number;
 };

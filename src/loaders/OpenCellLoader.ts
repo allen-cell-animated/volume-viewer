@@ -6,9 +6,10 @@ import {
   RawChannelDataCallback,
   VolumeDims,
   LoadedVolumeInfo,
-} from "./IVolumeLoader";
-import { ImageInfo } from "../Volume";
-import { JsonImageInfoLoader } from "./JsonImageInfoLoader";
+} from "./IVolumeLoader.js";
+import { ImageInfo } from "../Volume.js";
+import { JsonImageInfoLoader } from "./JsonImageInfoLoader.js";
+import { DATARANGE_UINT8 } from "../types.js";
 
 class OpenCellLoader extends ThreadableVolumeLoader {
   async loadDims(_: LoadSpec): Promise<VolumeDims[]> {
@@ -60,8 +61,9 @@ class OpenCellLoader extends ThreadableVolumeLoader {
   loadRawChannelData(
     imageInfo: ImageInfo,
     _loadSpec: LoadSpec,
+    _onUpdateMetadata: () => void,
     onData: RawChannelDataCallback
-  ): Promise<Record<string, never>> {
+  ): Promise<void> {
     // HQTILE or LQTILE
     // make a json metadata dict for the two channels:
     const urls = [
@@ -77,8 +79,8 @@ class OpenCellLoader extends ThreadableVolumeLoader {
 
     const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
     const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
-    JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, data) => onData(ch, data, [w, h]));
-    return Promise.resolve({});
+    // all data coming from this loader is natively 8-bit
+    return JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, data) => onData(ch, data, [DATARANGE_UINT8], [w, h]));
   }
 }
 
