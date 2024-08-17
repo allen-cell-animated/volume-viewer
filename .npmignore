@@ -1,6 +1,5 @@
 .babelrc
-.eslintignore
-.eslintrc
+eslint.config.mjs
 .gitignore
 .idea
 .npmignore
