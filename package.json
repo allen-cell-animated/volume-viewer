@@ -6,7 +6,7 @@
   "type": "module",
   "module": "es/index.js",
   "types": "es/types/index.d.ts",
-    "files": [
+  "files": [
     "es",
     "README.md",
     "package.json"
