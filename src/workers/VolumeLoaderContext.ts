@@ -22,7 +22,6 @@ import type {
 import { WorkerMsgType, WorkerResponseResult, WorkerEventType } from "./types.js";
 import { rebuildImageInfo, rebuildLoadSpec } from "./util.js";
 // Vite import directive for worker files! See https://vitejs.dev/guide/features.html#import-with-query-suffixes.
-// @ts-ignore Ignore missing file warning
 import WorkerUrl from "./VolumeLoadWorker?worker&url";
 
 type StoredPromise<T extends WorkerMsgType> = {
