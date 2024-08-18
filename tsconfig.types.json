@@ -9,6 +9,5 @@
   "exclude": [
     "src/workers/**/*",
     "**/*.test.js",
-    "**/*.test.ts",
   ],
 }

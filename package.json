@@ -22,6 +22,7 @@
     "gh-build": "webpack --config webpack.dev.js",
     "dev": "webpack serve --config webpack.dev.js",
     "start": "webpack serve --config webpack.dev.js",
+    "vstart": "vite ./public/",
     "react-example": "webpack serve --config react-example/webpack.react.js",
     "lint": "eslint --config ./eslint.config.mjs ./src",
     "test": "cross-env TS_NODE_PROJECT='./tsconfig.test.json' NODE_OPTIONS=\"--loader ts-node/esm\" mocha --require ts-node/register --es-module-specifier-resolution=node src/**/test/*.[jt]s",
@@ -82,8 +83,8 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
     "url-loader": "^4.1.1",
-    "vite": "^5.1.4",
-    "vite-plugin-dts": "^3.7.3",
+    "vite": "^5.4.1",
+    "vite-plugin-dts": "^4.0.3",
     "webpack": "^5.69.1",
     "webpack-cli": "^4.9.2",
     "webpack-dev-server": "^4.7.4"
