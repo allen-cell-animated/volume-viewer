@@ -1,34 +1,19 @@
 import { resolve } from "path";
 import { defineConfig } from "vite";
-import dts from "vite-plugin-dts";
 import glob from "glob";
+import { configDefaults } from 'vitest/config'
 
 const tests = glob.sync(resolve(__dirname, "src/**/test/**/*.{js,ts}"));
 
 // https://vitejs.dev/guide/build.html#library-mode
 export default defineConfig({
-  build: {
-    //    outDir: resolve(__dirname, "es"),
-    //    emptyOutDir: true,
-    // lib: {
-    //   entry: resolve(__dirname, "src/index.ts"),
-    //   name: "volume-viewer",
-    //   fileName: "@aics/volume-viewer",
-    //   formats: ["es"],
-    // },
-    // rollupOptions: {
-    //   input: resolve(__dirname, "public/index.ts"),
-    //   //        glob.sync(resolve(__dirname, "src/**/*.{js,ts,jsx,tsx,css}"))
-    //   output: {
-    //     preserveModules: true,
-    //     preserveModulesRoot: "src",
-    //     entryFileNames: "[name].js",
-    //     // entryFileNames: ({ name: fileName }) => {
-    //     //   return `${fileName}.js`;
-    //     // },
-    //     interop: "auto",
-    //   },
-    // },
+  test: {
+    exclude:[
+      ...configDefaults.exclude,
+      'es/test/*',
+    ]
   },
-  //plugins: [dts()],
+  build: {
+
+  },
 });
