@@ -24,8 +24,7 @@
     "start": "vite ./public/",
     "react-example": "webpack serve --config react-example/webpack.react.js",
     "lint": "eslint --config ./eslint.config.mjs ./src",
-    "test": "cross-env TS_NODE_PROJECT='./tsconfig.test.json' NODE_OPTIONS=\"--loader ts-node/esm\" mocha --require ts-node/register --es-module-specifier-resolution=node src/**/test/*.[jt]s",
-    "vtest": "vitest",
+    "test": "vitest",
     "transpileES": "tsc -p tsconfig.json --outDir es",
     "typeCheck": "tsc -p tsconfig.json --noEmit"
   },
