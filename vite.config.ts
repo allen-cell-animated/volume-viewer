@@ -28,7 +28,6 @@ export default defineConfig({
     //     // },
     //     interop: "auto",
     //   },
-    //   external: ["chai", "mocha"],
     // },
   },
   //plugins: [dts()],
