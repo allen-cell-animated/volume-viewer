@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { describe, expect, it } from "vitest";
 import { Axis, VolumeRenderSettings } from "../VolumeRenderSettings";
 import { Vector3 } from "three";
 

@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { describe, expect, it } from "vitest";
 import { Vector3 } from "three";
 import { TypedArray } from "@zarrita/core";
 
@@ -461,6 +461,9 @@ describe("test RequestQueue", () => {
       // Allow some but not all requests to complete
       await sleep(maxDelayMs * 0.5);
       rq.cancelAllRequests();
+      for (const promise of promises) {
+        await expect(promise).rejects.toThrow("request cancelled");
+      }
       await sleep(maxDelayMs); // Wait for all async actions to finish
       expect(workCount).to.be.greaterThan(0);
       expect(workCount).to.be.lessThan(numFrames - 1);

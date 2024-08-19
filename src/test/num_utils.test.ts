@@ -1,5 +1,4 @@
-import { expect } from "chai";
-import { it } from "mocha";
+import { describe, expect, it } from "vitest";
 
 import { constrainToAxis, formatNumber, getTimestamp } from "../utils/num_utils";
 import { Axis } from "../VolumeRenderSettings.js";

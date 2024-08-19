@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { describe, expect, it } from "vitest";
 
 import { TCZYX } from "../loaders/zarr_utils/types";
 import ChunkPrefetchIterator from "../loaders/zarr_utils/ChunkPrefetchIterator";
