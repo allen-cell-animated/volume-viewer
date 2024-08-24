@@ -10,11 +10,14 @@ export default defineConfig({
   test: {
     exclude: [...configDefaults.exclude, "es/test/*"],
   },
+  worker: { format: "es" },
   build: {
-    lib: { entry: resolve(__dirname, "src/index.ts"), formats: ["es"] },
+    lib: { entry: resolve(__dirname, "src/index.ts"), formats: ["es"], name: "@aics/volume-viewer" },
+    sourcemap: true,
     rollupOptions: {
+      // treat all ts files as entry points so that they are translated preserving the directory structure
       input: Object.fromEntries(
-        globSync("src/**/*.js").map((file) => [
+        globSync("src/**/*.ts", { ignore: ["src/test/**/*.ts", "node_modules"] }).map((file) => [
           // This remove `src/` as well as the file extension from each
           // file, so e.g. src/nested/foo.js becomes nested/foo
           path.relative("src", file.slice(0, file.length - path.extname(file).length)),
@@ -25,7 +28,9 @@ export default defineConfig({
       ),
       output: {
         format: "es",
-        dir: "dist",
+        dir: "es",
+        // treat all ts files as entry points so that they are translated preserving the directory structure
+        entryFileNames: "[name].js",
       },
     },
   },
