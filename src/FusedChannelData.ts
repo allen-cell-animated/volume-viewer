@@ -269,6 +269,7 @@ export default class FusedChannelData {
       return false;
     }
     // binarize the data
+    // (TODO consider whether it should be binarized or not?)
     const datacopy = new Uint8ClampedArray(channel.imgData.data.length);
     for (let i = 0; i < channel.imgData.data.length; i++) {
       datacopy[i] = channel.imgData.data[i] > 0 ? 255 : 0;

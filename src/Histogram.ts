@@ -9,7 +9,12 @@ type HistogramData = {
   binSize: number;
 };
 
-function calculateHistogram(arr, numBins = 0): HistogramData {
+// TODO UNIT TEST!!!!
+function calculateHistogram(arr, numBins = 1): HistogramData {
+  if (numBins < 1) {
+    numBins = 1;
+  }
+
   // calculate min and max of arr
   let min = arr[0];
   let max = arr[0];
@@ -103,12 +108,15 @@ export default class Histogram {
     }
     return binIndex;
   }
+
   getDataMin(): number {
     return this.min;
   }
+
   getDataMax(): number {
     return this.max;
   }
+
   /**
    * Return the min data value
    * @return {number}

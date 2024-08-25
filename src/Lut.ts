@@ -64,7 +64,7 @@ export const LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
 /**
  * @typedef {Object} ControlPoint Used for the TF (transfer function) editor GUI.
  * Need to be converted to LUT for rendering.
- * @property {number} x The X Coordinate
+ * @property {number} x The X Coordinate: an intensity value, normalized to the 0-255 range
  * @property {number} opacity The Opacity, from 0 to 1
  * @property {Array.<number>} color The Color, 3 numbers from 0-255 for r,g,b
  */
@@ -78,13 +78,14 @@ function controlPointToRGBA(controlPoint) {
   return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], Math.floor(controlPoint.opacity * 255)];
 }
 
+// this assumes an intensity range from 0-255
 const createFullRangeControlPoints = (opacityMin = 0, opacityMax = 1): [ControlPoint, ControlPoint] => [
   { x: 0, opacity: opacityMin, color: [255, 255, 255] },
   { x: 255, opacity: opacityMax, color: [255, 255, 255] },
 ];
 
 /**
- * @typedef {Object} Lut Used for rendering.
+ * @typedef {Object} Lut Used for rendering. The start and end of the Lut represent the min and max of the data.
  * @property {Array.<number>} lut LUT_ARRAY_LENGTH element lookup table as array
  * (maps scalar intensity to a rgb color plus alpha, with each value from 0-255)
  * @property {Array.<ControlPoint>} controlPoints
@@ -350,6 +351,7 @@ export class Lut {
   /**
    * Generate a lookup table with a different color per intensity value.
    * This translates to a unique color per histogram bin with more than zero pixels.
+   * TODO THIS IS NOT THE EFFECT WE WANT.  Colorize should operate on actual data values, not histogram bins.
    * @return {Lut}
    */
   createLabelColors(histogram: Histogram): Lut {
