@@ -18,7 +18,7 @@ import {
 import TrackballControls from "./TrackballControls.js";
 import Timing from "./Timing.js";
 import scaleBarSVG from "./constants/scaleBarSVG.js";
-import { isOrthographicCamera, ViewportCorner, isTop, isRight } from "./types.js";
+import { isOrthographicCamera, isPerspectiveCamera, ViewportCorner, isTop, isRight } from "./types.js";
 import { constrainToAxis, formatNumber, getTimestamp } from "./utils/num_utils.js";
 import { Axis } from "./VolumeRenderSettings.js";
 
@@ -630,7 +630,7 @@ export class ThreeJsPanel {
       up: this.camera.up.toArray(),
       target: this.controls.target.toArray(),
       orthoScale: isOrthographicCamera(this.camera) ? this.controls.scale : undefined,
-      fov: this.camera.type === "PerspectiveCamera" ? this.camera.fov : undefined,
+      fov: isPerspectiveCamera(this.camera) ? this.camera.fov : undefined,
     };
   }
 

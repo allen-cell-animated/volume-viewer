@@ -1,4 +1,4 @@
-import { Camera, OrthographicCamera, Vector3 } from "three";
+import { Camera, OrthographicCamera, PerspectiveCamera, Vector3 } from "three";
 
 export interface Bounds {
   bmin: Vector3;
@@ -88,6 +88,9 @@ export interface VolumeDisplayOptions {
 
 export const isOrthographicCamera = (def: Camera): def is OrthographicCamera =>
   def && (def as OrthographicCamera).isOrthographicCamera;
+
+export const isPerspectiveCamera = (def: Camera): def is PerspectiveCamera =>
+  def && (def as PerspectiveCamera).isPerspectiveCamera;
 
 export const enum ViewportCorner {
   TOP_LEFT = "top_left",
