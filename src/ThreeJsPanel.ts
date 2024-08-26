@@ -19,7 +19,7 @@ import TrackballControls from "./TrackballControls.js";
 import Timing from "./Timing.js";
 import scaleBarSVG from "./constants/scaleBarSVG.js";
 import { isOrthographicCamera, isPerspectiveCamera, ViewportCorner, isTop, isRight } from "./types.js";
-import { constrainToAxis, formatNumber } from "./utils/num_utils.js";
+import { constrainToAxis, formatNumber, getTimestamp } from "./utils/num_utils.js";
 import { Axis } from "./VolumeRenderSettings.js";
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
@@ -366,7 +366,7 @@ export class ThreeJsPanel {
     const scaleBarContainerStyle: Partial<CSSStyleDeclaration> = {
       fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
       position: "absolute",
-      right: "20px",
+      right: "169px",
       bottom: "20px",
     };
     Object.assign(this.scaleBarContainerElement.style, scaleBarContainerStyle);
@@ -385,6 +385,8 @@ export class ThreeJsPanel {
       lineHeight: "0",
       boxSizing: "border-box",
       paddingRight: "10px",
+      // TODO: Adjust based on width of timestamp
+      marginRight: "40px",
     };
     Object.assign(this.orthoScaleBarElement.style, orthoScaleBarStyle);
     this.scaleBarContainerElement.appendChild(this.orthoScaleBarElement);
@@ -441,7 +443,7 @@ export class ThreeJsPanel {
   }
 
   updateTimestepIndicator(progress: number, total: number, unit: string): void {
-    this.timestepIndicatorElement.innerHTML = `${formatNumber(progress)} / ${formatNumber(total)} ${unit}`;
+    this.timestepIndicatorElement.innerHTML = getTimestamp(progress, total, unit);
   }
 
   setPerspectiveScaleBarColor(color: [number, number, number]): void {
