@@ -16,6 +16,8 @@ function calculateHistogram(arr, numBins = 1): HistogramData {
   }
 
   // calculate min and max of arr
+  // TODO FIXME See convertChannel, which will also compute min and max!
+
   let min = arr[0];
   let max = arr[0];
   for (let i = 1; i < arr.length; i++) {
@@ -136,8 +138,13 @@ export default class Histogram {
   getNumBins(): number {
     return this.bins.length;
   }
+
   getBin(i: number): number {
     return this.bins[i];
+  }
+
+  getBinRange(i: number): [number, number] {
+    return [this.min + i * this.binSize, this.min + (i + 1) * this.binSize];
   }
 
   /**

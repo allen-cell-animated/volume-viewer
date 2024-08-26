@@ -61,6 +61,75 @@ function remapDomainForCP(
 export const LUT_ENTRIES = 256;
 export const LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
 
+// @param {ControlPoint[]} controlPoints - array of {x:number 0..255, opacity:number 0..1, color:array of 3 numbers 0..255}
+// @return {Uint8Array} array of length len*4 representing the rgba values of the gradient
+function arrayFromControlPoints(controlPoints: ControlPoint[]): Uint8Array {
+  // current assumption is that control point X values are in the range 0-255
+  // and they will be used directly as indices into the LUT.
+  // therefore the lut must have 256 entries.  Anything else and we have to remap the control points.
+  // TODO allow luts that have more or less entries.
+  const len = LUT_ENTRIES;
+
+  const lut = new Uint8Array(len * 4).fill(0);
+
+  if (controlPoints.length === 0) {
+    return lut;
+  }
+
+  // ensure they are sorted in ascending order of x
+  controlPoints.sort((a, b) => a.x - b.x);
+
+  // special case only one control point.
+  if (controlPoints.length === 1) {
+    const rgba = controlPointToRGBA(controlPoints[0]);
+    // lut was already filled with zeros
+    // copy val from x to 255.
+    const startx = clamp(controlPoints[0].x, 0, 255);
+    for (let x = startx; x < len; ++x) {
+      lut[x * 4 + 0] = rgba[0];
+      lut[x * 4 + 1] = rgba[1];
+      lut[x * 4 + 2] = rgba[2];
+      lut[x * 4 + 3] = rgba[3];
+    }
+    return lut;
+  }
+
+  let c0 = controlPoints[0];
+  let c1 = controlPoints[1];
+  let color0 = controlPointToRGBA(c0);
+  let color1 = controlPointToRGBA(c1);
+  let lastIndex = 1;
+  let a = 0;
+  for (let i = 0; i < len; ++i) {
+    // find the two control points that i is between
+    while (i > c1.x) {
+      // advance control points
+      c0 = c1;
+      color0 = color1;
+      lastIndex++;
+      if (lastIndex >= controlPoints.length) {
+        // if the last control point is before 255, then we want to continue its value all the way to 255.
+        c1 = { x: 255, color: c1.color, opacity: c1.opacity };
+      } else {
+        c1 = controlPoints[lastIndex];
+      }
+      color1 = controlPointToRGBA(c1);
+    }
+    // find the lerp amount between the two control points
+    if (c1.x === c0.x) {
+      // use c1
+      a = 1.0;
+    } else {
+      a = (i - c0.x) / (c1.x - c0.x);
+    }
+    lut[i * 4 + 0] = clamp(lerp(color0[0], color1[0], a), 0, 255);
+    lut[i * 4 + 1] = clamp(lerp(color0[1], color1[1], a), 0, 255);
+    lut[i * 4 + 2] = clamp(lerp(color0[2], color1[2], a), 0, 255);
+    lut[i * 4 + 3] = clamp(lerp(color0[3], color1[3], a), 0, 255);
+  }
+  return lut;
+}
+
 /**
  * @typedef {Object} ControlPoint Used for the TF (transfer function) editor GUI.
  * Need to be converted to LUT for rendering.
@@ -123,35 +192,15 @@ export class Lut {
       e = b;
       b = tmp;
     }
-    const lut = new Uint8Array(LUT_ARRAY_LENGTH);
-    for (let x = 0; x < lut.length / 4; ++x) {
-      lut[x * 4 + 0] = 255;
-      lut[x * 4 + 1] = 255;
-      lut[x * 4 + 2] = 255;
-      if (x > e) {
-        lut[x * 4 + 3] = 255;
-      } else if (x <= b) {
-        lut[x * 4 + 3] = 0;
-      } else {
-        if (e === b) {
-          lut[x * 4 + 3] = 255;
-        } else {
-          const a = (x - b) / (e - b);
-          lut[x * 4 + 3] = lerp(0, 255, a);
-        }
-      }
-    }
 
     // Edge case: b and e are both out of bounds
     if (b < 0 && e < 0) {
-      this.lut = lut;
       this.controlPoints = createFullRangeControlPoints(1, 1);
-      return this;
+      return this.createFromControlPoints(this.controlPoints);
     }
     if (b >= 255 && e >= 255) {
-      this.lut = lut;
       this.controlPoints = createFullRangeControlPoints(0, 0);
-      return this;
+      return this.createFromControlPoints(this.controlPoints);
     }
 
     // Generate 2 to 4 control points for a minMax LUT, from left to right
@@ -186,26 +235,13 @@ export class Lut {
     }
     controlPoints.push({ x: 255, opacity: endVal, color: [255, 255, 255] });
 
-    this.lut = lut;
-    this.controlPoints = controlPoints;
-    return this;
+    return this.createFromControlPoints(controlPoints);
   }
 
   // basically, the identity LUT with respect to opacity
   createFullRange(): Lut {
-    const lut = new Uint8Array(LUT_ARRAY_LENGTH);
-
-    // simple linear mapping for actual range
-    for (let x = 0; x < lut.length / 4; ++x) {
-      lut[x * 4 + 0] = 255;
-      lut[x * 4 + 1] = 255;
-      lut[x * 4 + 2] = 255;
-      lut[x * 4 + 3] = x;
-    }
-
-    this.lut = lut;
     this.controlPoints = createFullRangeControlPoints();
-    return this;
+    return this.createFromControlPoints(this.controlPoints);
   }
 
   /**
@@ -224,69 +260,7 @@ export class Lut {
   // @param {Object[]} controlPoints - array of {x:number 0..255, opacity:number 0..1, color:array of 3 numbers 0..255}
   // @return {Uint8Array} array of length 256*4 representing the rgba values of the gradient
   createFromControlPoints(controlPoints: ControlPoint[]): Lut {
-    const lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
-
-    if (controlPoints.length === 0) {
-      this.lut = lut;
-      this.controlPoints = controlPoints;
-      return this;
-    }
-
-    // ensure they are sorted in ascending order of x
-    controlPoints.sort((a, b) => a.x - b.x);
-
-    // special case only one control point.
-    if (controlPoints.length === 1) {
-      const rgba = controlPointToRGBA(controlPoints[0]);
-      // lut was already filled with zeros
-      // copy val from x to 255.
-      const startx = clamp(controlPoints[0].x, 0, 255);
-      for (let x = startx; x < 256; ++x) {
-        lut[x * 4 + 0] = rgba[0];
-        lut[x * 4 + 1] = rgba[1];
-        lut[x * 4 + 2] = rgba[2];
-        lut[x * 4 + 3] = rgba[3];
-      }
-      this.lut = lut;
-      this.controlPoints = controlPoints;
-      return this;
-    }
-
-    let c0 = controlPoints[0];
-    let c1 = controlPoints[1];
-    let color0 = controlPointToRGBA(c0);
-    let color1 = controlPointToRGBA(c1);
-    let lastIndex = 1;
-    let a = 0;
-    for (let i = 0; i < 256; ++i) {
-      // find the two control points that i is between
-      while (i > c1.x) {
-        // advance control points
-        c0 = c1;
-        color0 = color1;
-        lastIndex++;
-        if (lastIndex >= controlPoints.length) {
-          // if the last control point is before 255, then we want to continue its value all the way to 255.
-          c1 = { x: 255, color: c1.color, opacity: c1.opacity };
-        } else {
-          c1 = controlPoints[lastIndex];
-        }
-        color1 = controlPointToRGBA(c1);
-      }
-      // find the lerp amount between the two control points
-      if (c1.x === c0.x) {
-        // use c1
-        a = 1.0;
-      } else {
-        a = (i - c0.x) / (c1.x - c0.x);
-      }
-      lut[i * 4 + 0] = clamp(lerp(color0[0], color1[0], a), 0, 255);
-      lut[i * 4 + 1] = clamp(lerp(color0[1], color1[1], a), 0, 255);
-      lut[i * 4 + 2] = clamp(lerp(color0[2], color1[2], a), 0, 255);
-      lut[i * 4 + 3] = clamp(lerp(color0[3], color1[3], a), 0, 255);
-    }
-
-    this.lut = lut;
+    this.lut = arrayFromControlPoints(controlPoints);
     this.controlPoints = controlPoints;
     return this;
   }
@@ -296,6 +270,8 @@ export class Lut {
    * @return {Lut}
    */
   createFromEqHistogram(histogram: Histogram): Lut {
+    // TODO need to reconcile this if number of histogram bins is not equal to LUT_ENTRIES?
+
     const map: number[] = [];
     for (let i = 0; i < histogram.getNumBins(); ++i) {
       map[i] = 0;
@@ -309,25 +285,15 @@ export class Lut {
 
     const div = map[map.length - 1] - map[0];
     if (div > 0) {
-      const lut = new Uint8Array(LUT_ARRAY_LENGTH);
-
       // compute lut and track control points for the piecewise linear sections
       const lutControlPoints: ControlPoint[] = [{ x: 0, opacity: 0, color: [255, 255, 255] }];
-      lut[0] = 255;
-      lut[1] = 255;
-      lut[2] = 255;
-      lut[3] = 0;
       let slope = 0;
       let lastSlope = 0;
       let opacity = 0;
       let lastOpacity = 0;
-      for (let i = 1; i < lut.length / 4; ++i) {
-        lut[i * 4 + 0] = 255;
-        lut[i * 4 + 1] = 255;
-        lut[i * 4 + 2] = 255;
+      for (let i = 1; i < LUT_ENTRIES; ++i) {
         lastOpacity = opacity;
         opacity = clamp(Math.round(255 * (map[i] - map[0])), 0, 255);
-        lut[i * 4 + 3] = opacity;
 
         slope = opacity - lastOpacity;
         // if map[i]-map[i-1] is the same as map[i+1]-map[i] then we are in a linear segment and do not need a new control point
@@ -339,9 +305,7 @@ export class Lut {
 
       lutControlPoints.push({ x: 255, opacity: 1, color: [255, 255, 255] });
 
-      this.lut = lut;
-      this.controlPoints = lutControlPoints;
-      return this;
+      return this.createFromControlPoints(lutControlPoints);
     } else {
       // just reset to whole range in this case...?
       return this.createFullRange();

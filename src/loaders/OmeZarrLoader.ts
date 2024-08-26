@@ -54,6 +54,7 @@ function convertChannel(
   dtype: zarr.NumberDataType
 ): [zarr.TypedArray<zarr.NumberDataType>, zarr.NumberDataType, number, number] {
   // get min and max
+  // TODO FIXME Histogram will also compute min and max!
   let min = channelData[0];
   let max = channelData[0];
   for (let i = 0; i < channelData.length; i++) {
