@@ -239,6 +239,9 @@ export default class FusedChannelData {
     for (let i = 0; i < combination.length; ++i) {
       if (combination[i].rgbColor) {
         const chIndex = combination[i].chIndex;
+        if (!channels[chIndex].loaded) {
+          continue;
+        }
         // add a draw call per channel here.
         // must clone the material to keep a unique set of uniforms
         const mat = this.getShader(channels[chIndex].dtype).clone();

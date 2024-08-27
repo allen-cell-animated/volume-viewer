@@ -46,7 +46,7 @@ export const fuseShaderSrcUI = `
 // //precision lowp uint;
 // precision highp sampler2D;
 // precision mediump isampler2D;
-// precision lowp usampler2D;
+precision lowp usampler2D;
 // precision highp sampler3D;
 
 // the lut texture is a 256x1 rgba texture for each channel

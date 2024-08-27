@@ -147,7 +147,8 @@ function controlPointToRGBA(controlPoint) {
   return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], Math.floor(controlPoint.opacity * 255)];
 }
 
-// this assumes an intensity range from 0-255
+// the intensity range will be 0-255,
+// which currently represents the range of the raw data. (not the dtype range)
 const createFullRangeControlPoints = (opacityMin = 0, opacityMax = 1): [ControlPoint, ControlPoint] => [
   { x: 0, opacity: opacityMin, color: [255, 255, 255] },
   { x: 255, opacity: opacityMax, color: [255, 255, 255] },

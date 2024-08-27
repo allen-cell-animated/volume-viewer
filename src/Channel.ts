@@ -15,6 +15,8 @@ import {
   NearestFilter,
   UVMapping,
   ClampToEdgeWrapping,
+  Vector3,
+  PixelFormatGPU,
 } from "three";
 import Histogram from "./Histogram.js";
 import { Lut, LUT_ARRAY_LENGTH } from "./Lut.js";
@@ -153,34 +155,42 @@ export default class Channel {
     }
     let format = LuminanceFormat;
     let dataType = UnsignedByteType;
+    let internalFormat: PixelFormatGPU = "LUMINANCE";
     switch (this.dtype) {
       case "uint8":
         dataType = UnsignedByteType;
         format = RedIntegerFormat;
+        internalFormat = "R8UI";
         break;
       case "int8":
         dataType = ByteType;
         format = RedIntegerFormat;
+        internalFormat = "R8UI";
         break;
       case "uint16":
         dataType = UnsignedShortType;
         format = RedIntegerFormat;
+        internalFormat = "R16UI";
         break;
       case "int16":
         dataType = ShortType;
         format = RedIntegerFormat;
+        internalFormat = "R16UI";
         break;
       case "uint32":
         dataType = UnsignedIntType;
         format = RedIntegerFormat;
+        internalFormat = "R32UI";
         break;
       case "int32":
         dataType = IntType;
         format = RedIntegerFormat;
+        internalFormat = "R32UI";
         break;
       case "float32":
         dataType = FloatType;
         format = RedFormat;
+        internalFormat = "R32F";
         break;
       default:
         console.log("unsupported dtype for channel data", this.dtype);
@@ -199,23 +209,20 @@ export default class Channel {
       NearestFilter,
       NearestFilter
     );
+    this.dataTexture.internalFormat = internalFormat;
     this.dataTexture.needsUpdate = true;
-    // this.dataTexture.onUpdate = (): void => {
-    //   console.log("data texture updated", this.name, this.dtype, w, h, format, dataType);
-    // };
-
-    // console.log("rebuilding data texture ", this.name, this.dtype, w, h, format, dataType);
   }
 
   // give the channel fresh data and initialize from that data
   // data is formatted as a texture atlas where each tile is a z slice of the volume
-  public setBits(
+  public setFromAtlas(
     bitsArray: TypedArray<NumberType>,
     w: number,
     h: number,
     dtype: NumberType,
     rawMin: number,
-    rawMax: number
+    rawMax: number,
+    subregionSize: Vector3
   ): void {
     this.dtype = dtype;
     this.imgData = { data: bitsArray, width: w, height: h };
@@ -225,15 +232,17 @@ export default class Channel {
     this.loaded = true;
     this.histogram = new Histogram(bitsArray);
 
-    // update from current histogram?
+    // reuse old lut but auto-remap it to new data range
     this.setRawDataRange(rawMin, rawMax);
+
+    this.unpackFromAtlas(subregionSize.x, subregionSize.y, subregionSize.z);
   }
 
   // let's rearrange this.imgData.data into a 3d array.
   // it is assumed to be coming in as a flat Uint8Array of size x*y*z
   // with x*y*z layout (first row of first plane is the first data in the layout,
   // then second row of first plane, etc)
-  public unpackVolumeFromAtlas(x: number, y: number, z: number): void {
+  private unpackFromAtlas(x: number, y: number, z: number): void {
     const volimgdata = this.imgData.data;
 
     this.dims = [x, y, z];
