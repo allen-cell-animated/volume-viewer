@@ -165,7 +165,7 @@ export default class Channel {
       case "int8":
         dataType = ByteType;
         format = RedIntegerFormat;
-        internalFormat = "R8UI";
+        internalFormat = "R8I";
         break;
       case "uint16":
         dataType = UnsignedShortType;
@@ -175,7 +175,7 @@ export default class Channel {
       case "int16":
         dataType = ShortType;
         format = RedIntegerFormat;
-        internalFormat = "R16UI";
+        internalFormat = "R16I";
         break;
       case "uint32":
         dataType = UnsignedIntType;
@@ -185,7 +185,7 @@ export default class Channel {
       case "int32":
         dataType = IntType;
         format = RedIntegerFormat;
-        internalFormat = "R32UI";
+        internalFormat = "R32I";
         break;
       case "float32":
         dataType = FloatType;
