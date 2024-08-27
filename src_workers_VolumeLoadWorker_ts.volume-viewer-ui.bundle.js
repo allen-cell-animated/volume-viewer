@@ -3769,6 +3769,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   RenderMode: () => (/* binding */ RenderMode),
 /* harmony export */   ViewportCorner: () => (/* binding */ ViewportCorner),
 /* harmony export */   isOrthographicCamera: () => (/* binding */ isOrthographicCamera),
+/* harmony export */   isPerspectiveCamera: () => (/* binding */ isPerspectiveCamera),
 /* harmony export */   isRight: () => (/* binding */ isRight),
 /* harmony export */   isTop: () => (/* binding */ isTop)
 /* harmony export */ });
@@ -3821,6 +3822,7 @@ let RenderMode = /*#__PURE__*/function (RenderMode) {
  */
 
 const isOrthographicCamera = def => def && def.isOrthographicCamera;
+const isPerspectiveCamera = def => def && def.isPerspectiveCamera;
 let ViewportCorner = /*#__PURE__*/function (ViewportCorner) {
   ViewportCorner["TOP_LEFT"] = "top_left";
   ViewportCorner["TOP_RIGHT"] = "top_right";

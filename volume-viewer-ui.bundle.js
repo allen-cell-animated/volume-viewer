@@ -3690,7 +3690,7 @@ class ThreeJsPanel {
       up: this.camera.up.toArray(),
       target: this.controls.target.toArray(),
       orthoScale: (0,_types_js__WEBPACK_IMPORTED_MODULE_3__.isOrthographicCamera)(this.camera) ? this.controls.scale : undefined,
-      fov: this.camera.type === "PerspectiveCamera" ? this.camera.fov : undefined
+      fov: (0,_types_js__WEBPACK_IMPORTED_MODULE_3__.isPerspectiveCamera)(this.camera) ? this.camera.fov : undefined
     };
   }
 
@@ -9587,6 +9587,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   RenderMode: () => (/* binding */ RenderMode),
 /* harmony export */   ViewportCorner: () => (/* binding */ ViewportCorner),
 /* harmony export */   isOrthographicCamera: () => (/* binding */ isOrthographicCamera),
+/* harmony export */   isPerspectiveCamera: () => (/* binding */ isPerspectiveCamera),
 /* harmony export */   isRight: () => (/* binding */ isRight),
 /* harmony export */   isTop: () => (/* binding */ isTop)
 /* harmony export */ });
@@ -9639,6 +9640,7 @@ let RenderMode = /*#__PURE__*/function (RenderMode) {
  */
 
 const isOrthographicCamera = def => def && def.isOrthographicCamera;
+const isPerspectiveCamera = def => def && def.isPerspectiveCamera;
 let ViewportCorner = /*#__PURE__*/function (ViewportCorner) {
   ViewportCorner["TOP_LEFT"] = "top_left";
   ViewportCorner["TOP_RIGHT"] = "top_right";
