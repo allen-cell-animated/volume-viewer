@@ -21,6 +21,8 @@ import type {
 } from "./types.js";
 import { WorkerMsgType, WorkerResponseResult, WorkerEventType } from "./types.js";
 import { rebuildImageInfo, rebuildLoadSpec } from "./util.js";
+// Vite import directive for worker files! See https://vitejs.dev/guide/features.html#import-with-query-suffixes.
+import WorkerUrl from "./VolumeLoadWorker?worker&url";
 
 type StoredPromise<T extends WorkerMsgType> = {
   type: T;
@@ -48,7 +50,7 @@ class SharedLoadWorkerHandle {
   public onUpdateMetadata: ((e: MetadataUpdateEvent) => void) | undefined = undefined;
 
   constructor() {
-    this.worker = new Worker(new URL("./VolumeLoadWorker", import.meta.url));
+    this.worker = new Worker(new URL(WorkerUrl, import.meta.url), { type: "module" });
     this.worker.onmessage = this.receiveMessage.bind(this);
   }
 

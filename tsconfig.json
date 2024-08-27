@@ -17,6 +17,7 @@
     "target": "ES6",
     "typeRoots": ["src/types", "node_modules/@types"]
   },
-  "files": ["src/index.ts", "public/index.ts"],
-  "include": ["src/**/*", "public/**/*"]
+  "files": ["src/index.ts"],
+  "include": ["src/**/*"],
+  "exclude": ["src/**/test/*"]
 }

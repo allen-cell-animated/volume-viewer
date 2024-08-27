@@ -27,7 +27,7 @@ import { getDefaultImageInfo } from "../src/Volume";
 import VolumeLoaderContext from "../src/workers/VolumeLoaderContext";
 import { DATARANGE_UINT8 } from "../src/types";
 import { RawArrayLoaderOptions } from "../src/loaders/RawArrayLoader";
-
+import exampleJsonUrl from "../example-data/AICS-12_881_atlas.json?url";
 const CACHE_MAX_SIZE = 1_000_000_000;
 const CONCURRENCY_LIMIT = 8;
 const PREFETCH_CONCURRENCY_LIMIT = 3;
@@ -88,7 +88,7 @@ const TEST_DATA: Record<string, TestDataSpec> = {
   opencell: { type: "opencell", url: "" },
   cfeJson: {
     type: VolumeFileFormat.JSON,
-    url: "AICS-12_881_atlas.json",
+    url: exampleJsonUrl,
   },
   abm: {
     type: VolumeFileFormat.TIFF,

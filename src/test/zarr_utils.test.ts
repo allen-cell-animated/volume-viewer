@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { describe, expect, it } from "vitest";
 
 import { AbsolutePath, SyncReadable } from "@zarrita/storage";
 import * as zarr from "@zarrita/core";

@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { describe, expect, it } from "vitest";
 
 import type { ControlPoint } from "../Lut";
 import { Lut, remapLut, remapControlPoints } from "../Lut";

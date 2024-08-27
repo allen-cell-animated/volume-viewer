@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { describe, expect, it } from "vitest";
 import { Vector2, Vector3 } from "three";
 
 import Volume, { ImageInfo } from "../Volume";
