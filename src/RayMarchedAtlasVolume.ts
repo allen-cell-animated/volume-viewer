@@ -307,13 +307,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       return;
     }
 
-    if (!isOrthographicCamera(canvas.camera)) {
-      // TODO what about ortho??
-      // TODO still needed at all?
-      const { fov, aspect } = canvas.camera;
-      const halfNearPlaneY = Math.tan((Math.PI / 180) * fov);
-      this.setUniform("halfSizeNearPlane", new Vector2(halfNearPlaneY * aspect, halfNearPlaneY));
-    }
     this.setUniform("textureDepth", canvas.getMeshDepthTexture());
     this.setUniform("CLIP_NEAR", canvas.camera.near);
     this.setUniform("CLIP_FAR", canvas.camera.far);
