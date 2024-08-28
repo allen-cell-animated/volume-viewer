@@ -598,6 +598,21 @@ function updateTimeUI() {
   }
 }
 
+function updateChannelUI(vol: Volume, channelIndex: number) {
+  const channel = vol.channels[channelIndex];
+
+  const folder = gui.folders.find((f) => f._title === "Channel " + myState.infoObj.channelNames[channelIndex]);
+  if (!folder) {
+    return;
+  }
+  const isovalueUI = folder.controllers.find((c) => c._name === "isovalue");
+  if (!isovalueUI) {
+    return;
+  }
+  isovalueUI.min(channel.rawMin);
+  isovalueUI.max(channel.rawMax);
+}
+
 function updateZSliceUI(volume: Volume) {
   const zSlider = document.getElementById("zSlider") as HTMLInputElement;
   const zInput = document.getElementById("zValue") as HTMLInputElement;
@@ -901,6 +916,8 @@ function onChannelDataArrived(v: Volume, channelIndex: number) {
   if (currentVol.isLoaded()) {
     console.log("currentVol with name " + currentVol.name + " is loaded");
   }
+  updateChannelUI(currentVol, channelIndex);
+
   view3D.redraw();
 }
 
