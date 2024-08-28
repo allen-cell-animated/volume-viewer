@@ -15,6 +15,10 @@ import {
   Scene,
   DepthTexture,
   WebGLRenderTarget,
+  NearestFilter,
+  RGBAFormat,
+  FloatType,
+  Texture,
 } from "three";
 
 import TrackballControls from "./TrackballControls.js";
@@ -23,9 +27,12 @@ import scaleBarSVG from "./constants/scaleBarSVG.js";
 import { isOrthographicCamera, ViewportCorner, isTop, isRight } from "./types.js";
 import { constrainToAxis, formatNumber } from "./utils/num_utils.js";
 import { Axis } from "./VolumeRenderSettings.js";
+import RenderToBuffer from "./RenderToBuffer.js";
+
+import meshFragmentShaderSrc from "./constants/shaders/post.frag";
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
-const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
+const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.1;
 const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 
 const DEFAULT_ORTHO_SCALE = 0.5;
@@ -46,7 +53,7 @@ export class ThreeJsPanel {
   public scene: Scene;
 
   private meshRenderTarget: WebGLRenderTarget;
-  private meshDepthTexture: DepthTexture;
+  private meshRenderToBuffer: RenderToBuffer;
 
   public animateFuncs: ((panel: ThreeJsPanel) => void)[];
   private inRenderLoop: boolean;
@@ -102,10 +109,21 @@ export class ThreeJsPanel {
     }
 
     this.scene = new Scene();
-    this.meshRenderTarget = new WebGLRenderTarget(this.canvas.width, this.canvas.height);
-    window.setTimeout(() => console.log(this.scene), 1000);
-    this.meshDepthTexture = new DepthTexture(this.canvas.width, this.canvas.height);
-    this.meshRenderTarget.depthTexture = this.meshDepthTexture;
+    this.meshRenderTarget = new WebGLRenderTarget(this.canvas.width, this.canvas.height, {
+      minFilter: NearestFilter,
+      magFilter: NearestFilter,
+      format: RGBAFormat,
+      type: FloatType,
+      depthBuffer: true,
+    });
+    this.meshRenderToBuffer = new RenderToBuffer(meshFragmentShaderSrc, {
+      image: { value: this.meshRenderTarget.texture },
+    });
+    this.meshRenderTarget.depthTexture = new DepthTexture(
+      undefined as unknown as number,
+      undefined as unknown as number,
+      FloatType
+    );
 
     this.scaleBarContainerElement = document.createElement("div");
     this.orthoScaleBarElement = document.createElement("div");
@@ -160,6 +178,7 @@ export class ThreeJsPanel {
 
     if (parentElement) {
       this.renderer.setSize(parentElement.offsetWidth, parentElement.offsetHeight);
+      this.meshRenderTarget.setSize(parentElement.offsetWidth, parentElement.offsetHeight);
     }
 
     this.timer = new Timing();
@@ -571,9 +590,8 @@ export class ThreeJsPanel {
     this.updateScaleBarVisibility();
   }
 
-  getDepthTexture(): DepthTexture {
-    console.log("dogs");
-    return this.meshDepthTexture;
+  getMeshDepthTexture(): DepthTexture {
+    return this.meshRenderTarget.depthTexture;
   }
 
   resize(comp: HTMLElement | null, w?: number, h?: number, _ow?: number, _oh?: number, _eOpts?: unknown): void {
@@ -691,9 +709,14 @@ export class ThreeJsPanel {
     this.renderer.setRenderTarget(this.meshRenderTarget);
     this.renderer.render(this.scene, this.camera);
 
+    this.meshRenderToBuffer.material.uniforms.image.value = this.meshRenderTarget.texture;
+    this.meshRenderToBuffer.render(this.renderer);
+
     this.camera.layers.set(0);
     this.renderer.setRenderTarget(null);
+    this.renderer.autoClear = false;
     this.renderer.render(this.scene, this.camera);
+    this.renderer.autoClear = true;
 
     // overlay
     if (this.showAxis) {
