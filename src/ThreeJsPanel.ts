@@ -121,8 +121,7 @@ export class ThreeJsPanel {
     });
     this.meshRenderTarget.depthTexture = new DepthTexture(
       undefined as unknown as number,
-      undefined as unknown as number,
-      FloatType
+      undefined as unknown as number
     );
 
     this.scaleBarContainerElement = document.createElement("div");
