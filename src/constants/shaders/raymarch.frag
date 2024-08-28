@@ -1,4 +1,6 @@
 
+#include <packing>
+
 #ifdef GL_ES
 precision highp float;
 #endif
@@ -33,6 +35,7 @@ uniform vec3 volumeScale;
 
 // view space to axis-aligned volume box
 uniform mat4 inverseModelViewMatrix;
+uniform mat4 inverseProjMatrix;
 
 varying vec3 pObj;
 
@@ -183,9 +186,6 @@ vec4 integrateVolume(vec4 eye_o,vec4 eye_d,
                      sampler2D textureAtlas
                      ) {
   vec4 C = vec4(0.0);
-  float tend   = tfar;
-  float tbegin = tnear;
-
   // march along ray from front to back, accumulating color
 
   // estimate step length
@@ -200,8 +200,8 @@ vec4 integrateVolume(vec4 eye_o,vec4 eye_d,
   // if ortho and clipped, make step size smaller so we still get same number of steps
   float tstep = invstep*orthoThickness;
   float tfarsurf = r*tstep;
-  float overflow = mod((tfarsurf - tend),tstep); // random dithering offset
-  float t = tbegin + overflow;
+  float overflow = mod((tfarsurf - tfar),tstep); // random dithering offset
+  float t = tnear + overflow;
   t += r*tstep; // random dithering offset
   float tdist = 0.0;
   int numSteps = 0;
@@ -232,7 +232,7 @@ vec4 integrateVolume(vec4 eye_o,vec4 eye_d,
     t += tstep;
     numSteps = i;
 
-    if (t > tend || t > tbegin+clipFar ) break;
+    if (t > tfar || t > tnear+clipFar ) break;
     if (C.w > 1.0 ) break;
   }
 
@@ -281,13 +281,38 @@ void main() {
   float clipNear = 0.0;//-(dot(eyeRay_o.xyz, eyeNorm) + dNear) / dot(eyeRay_d.xyz, eyeNorm);
   float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);
 
-  // vec4 C = integrateVolume(vec4(eyeRay_o,1.0), vec4(eyeRay_d,0.0),
-  //                          tnear,    tfar, //intersections of box
-  //                          clipNear, clipFar,
-  //                          textureAtlas);
-  // vec4 C = texture2D(textureDepth, vUv);
-  vec4 C = vec4(vUv, 0.0, 1.0);
-  // C = clamp(C, 0.0, 1.0);
+  float depth = texture2D(textureDepth, vUv).r;
+  if (depth < 1.0) {
+    vec4 postProj = vec4(vUv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+    vec4 depthPos = inverseProjMatrix * postProj;
+
+    // float viewZ = perspectiveDepthToViewZ(depth, CLIP_NEAR, CLIP_FAR);
+    // vec3 depthPos = vec3(eyeDir, 1.0) * viewZ;
+    vec4 modelDepthPos = inverseModelViewMatrix * vec4(depthPos.xyz / depthPos.w, 1.0);
+    float depthClip = (modelDepthPos.z - eyeRay_o.z) / eyeRay_d.z;
+    if (depthClip < tfar) {
+      gl_FragColor = vec4(0.0, 0.0, depthClip - tnear, 1.0);
+      return;
+      clipFar = depthClip - tnear;
+    } else {
+      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+      return;
+    }
+    gl_FragColor = vec4(modelDepthPos.xyz + 0.5, 1.0);
+    return;
+    // gl_FragColor = vec4(modelDepthPos.xyz, 1.0);
+    // return;
+  } else {
+    gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+    return;
+  }
+
+  vec4 C = integrateVolume(vec4(eyeRay_o,1.0), vec4(eyeRay_d,0.0),
+                          tnear,    tfar, //intersections of box
+                          clipNear, clipFar,
+                          textureAtlas);
+
+  C = clamp(C, 0.0, 1.0);
   gl_FragColor = C;
   return;
 }
