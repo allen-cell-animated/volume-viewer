@@ -279,15 +279,19 @@ void main() {
   float clipNear = 0.0;//-(dot(eyeRay_o.xyz, eyeNorm) + dNear) / dot(eyeRay_d.xyz, eyeNorm);
   float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);
 
+  // Sample the depth texture
   float depth = texture2D(textureDepth, vUv).r;
+  // If there's a depth-contributing mesh at this fragment, we may need to terminate the ray early
   if (depth < 1.0) {
-    vec4 postProj = vec4(vUv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
-    vec4 depthPos = inverseProjMatrix * postProj;
+    // Get a projection space position from depth and uv, and unproject back to object space
+    vec4 meshProj = vec4(vUv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+    vec4 meshView = inverseProjMatrix * meshProj;
+    vec4 meshObj = inverseModelViewMatrix * vec4(meshView.xyz / meshView.w, 1.0);
 
-    vec4 modelDepthPos = inverseModelViewMatrix * vec4(depthPos.xyz / depthPos.w, 1.0);
-    float depthClip = (modelDepthPos.z - eyeRay_o.z) / eyeRay_d.z;
-    if (depthClip < tfar) {
-      clipFar = depthClip - tnear;
+    // Derive a t value for the mesh intersection
+    float tMesh = (meshObj.z - eyeRay_o.z) / eyeRay_d.z;
+    if (tMesh < tfar) {
+      clipFar = tMesh - tnear;
     }
   }
 
