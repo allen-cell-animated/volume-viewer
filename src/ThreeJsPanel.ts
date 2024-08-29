@@ -18,7 +18,6 @@ import {
   NearestFilter,
   RGBAFormat,
   FloatType,
-  Texture,
 } from "three";
 
 import TrackballControls from "./TrackballControls.js";
