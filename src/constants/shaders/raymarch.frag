@@ -1,6 +1,4 @@
 
-#include <packing>
-
 #ifdef GL_ES
 precision highp float;
 #endif
@@ -286,25 +284,11 @@ void main() {
     vec4 postProj = vec4(vUv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
     vec4 depthPos = inverseProjMatrix * postProj;
 
-    // float viewZ = perspectiveDepthToViewZ(depth, CLIP_NEAR, CLIP_FAR);
-    // vec3 depthPos = vec3(eyeDir, 1.0) * viewZ;
     vec4 modelDepthPos = inverseModelViewMatrix * vec4(depthPos.xyz / depthPos.w, 1.0);
     float depthClip = (modelDepthPos.z - eyeRay_o.z) / eyeRay_d.z;
     if (depthClip < tfar) {
-      gl_FragColor = vec4(0.0, 0.0, depthClip - tnear, 1.0);
-      return;
       clipFar = depthClip - tnear;
-    } else {
-      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-      return;
     }
-    gl_FragColor = vec4(modelDepthPos.xyz + 0.5, 1.0);
-    return;
-    // gl_FragColor = vec4(modelDepthPos.xyz, 1.0);
-    // return;
-  } else {
-    gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
-    return;
   }
 
   vec4 C = integrateVolume(vec4(eyeRay_o,1.0), vec4(eyeRay_d,0.0),
