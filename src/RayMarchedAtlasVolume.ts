@@ -28,7 +28,7 @@ import Channel from "./Channel.js";
 import { ThreeJsPanel } from "./ThreeJsPanel.js";
 import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
 
-import { isOrthographicCamera, type FuseChannel } from "./types.js";
+import type { FuseChannel } from "./types.js";
 import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings.js";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
