@@ -28,7 +28,7 @@ import { constrainToAxis, formatNumber } from "./utils/num_utils.js";
 import { Axis } from "./VolumeRenderSettings.js";
 import RenderToBuffer from "./RenderToBuffer.js";
 
-import meshFragmentShaderSrc from "./constants/shaders/post.frag";
+import copyImageShaderSrc from "./constants/shaders/copy_image.frag";
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.1;
@@ -115,7 +115,7 @@ export class ThreeJsPanel {
       type: FloatType,
       depthBuffer: true,
     });
-    this.meshRenderToBuffer = new RenderToBuffer(meshFragmentShaderSrc, {
+    this.meshRenderToBuffer = new RenderToBuffer(copyImageShaderSrc, {
       image: { value: this.meshRenderTarget.texture },
     });
     this.meshRenderTarget.depthTexture = new DepthTexture(
