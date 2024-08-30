@@ -10,8 +10,6 @@ import {
   Quaternion,
   RGBAFormat,
   ShaderMaterial,
-  ShaderMaterialParameters,
-  UniformsUtils,
   UnsignedByteType,
   Vector3,
   WebGLRenderTarget,
@@ -21,7 +19,9 @@ import {
 
 import { renderToBufferVertShader, copyImageFragShader } from "./constants/basicShaders.js";
 import { denoiseFragmentShaderSrc, denoiseShaderUniforms } from "./constants/denoiseShader.js";
+import { pathtraceOutputFragmentShaderSrc, pathtraceOutputShaderUniforms } from "./constants/pathtraceOutputShader.js";
 import { pathTracingFragmentShaderSrc, pathTracingUniforms } from "./constants/volumePTshader.js";
+
 import { LUT_ARRAY_LENGTH } from "./Lut.js";
 import Volume from "./Volume.js";
 import { FUSE_DISABLED_RGB_COLOR, type FuseChannel, isOrthographicCamera } from "./types.js";
@@ -46,21 +46,23 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
   private pathTracingUniforms: ReturnType<typeof pathTracingUniforms>;
   private pathTracingRenderToBuffer: RenderToBuffer;
-  private screenTextureRenderToBuffer: RenderToBuffer;
   private pathTracingRenderTarget: WebGLRenderTarget;
+
+  private screenTextureRenderToBuffer: RenderToBuffer;
   private screenTextureRenderTarget: WebGLRenderTarget;
   // private screenTextureShader: ShaderMaterialParameters;
-  private screenOutputShader: ShaderMaterialParameters;
+  // private screenOutputShader: ShaderMaterialParameters;
   // private pathTracingGeometry: PlaneGeometry;
   // private pathTracingMaterial: ShaderMaterial;
   // private pathTracingMesh: Mesh;
   // private screenTextureGeometry: PlaneGeometry;
   // private screenTextureMaterial: ShaderMaterial;
   // private screenTextureMesh: Mesh;
-  private screenOutputGeometry: PlaneGeometry;
-  private screenOutputMaterial: ShaderMaterial;
   private denoiseShaderUniforms = denoiseShaderUniforms();
+  private screenOutputShaderUniforms = pathtraceOutputShaderUniforms();
+  private screenOutputGeometry: PlaneGeometry;
   private screenOutputDenoiseMaterial: ShaderMaterial;
+  private screenOutputMaterial: ShaderMaterial;
   private screenOutputMesh: Mesh;
   private gradientDelta: number;
   private renderUpdateListener?: (iteration: number) => void;
@@ -118,69 +120,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       generateMipmaps: false,
     });
 
-    this.screenOutputShader = {
-      uniforms: UniformsUtils.merge([
-        {
-          gInvExposure: {
-            type: "f",
-            value: 1.0 / (1.0 - 0.75),
-          },
-          tTexture0: {
-            type: "t",
-            value: null,
-          },
-        },
-      ]),
-
-      vertexShader: [
-        "precision highp float;",
-        "precision highp int;",
-
-        "out vec2 vUv;",
-
-        "void main()",
-        "{",
-        "vUv = uv;",
-        "gl_Position = vec4( position, 1.0 );",
-        "}",
-      ].join("\n"),
-
-      fragmentShader: [
-        "precision highp float;",
-        "precision highp int;",
-        "precision highp sampler2D;",
-
-        "uniform float gInvExposure;",
-        "uniform sampler2D tTexture0;",
-        "in vec2 vUv;",
-
-        // Used to convert from XYZ to linear RGB space
-        "const mat3 XYZ_2_RGB = (mat3(",
-        "  3.2404542, -1.5371385, -0.4985314,",
-        " -0.9692660,  1.8760108,  0.0415560,",
-        "  0.0556434, -0.2040259,  1.0572252",
-        "));",
-
-        "vec3 XYZtoRGB(vec3 xyz) {",
-        "return xyz * XYZ_2_RGB;",
-        "}",
-
-        "void main()",
-        "{",
-        "vec4 pixelColor = texture(tTexture0, vUv);",
-
-        "pixelColor.rgb = XYZtoRGB(pixelColor.rgb);",
-
-        //'pixelColor.rgb = pow(pixelColor.rgb, vec3(1.0/2.2));',
-        "pixelColor.rgb = 1.0-exp(-pixelColor.rgb*gInvExposure);",
-        "pixelColor = clamp(pixelColor, 0.0, 1.0);",
-
-        "pc_fragColor = pixelColor;", // sqrt(pixelColor);',
-        //'out_FragColor = pow(pixelColor, vec4(1.0/2.2));',
-        "}",
-      ].join("\n"),
-    };
-
     // initialize texture.
     this.pathTracingUniforms.volumeTexture.value = this.volumeTexture;
     this.pathTracingUniforms.tPreviousTexture.value = this.screenTextureRenderTarget.texture;
@@ -193,9 +132,9 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.screenOutputGeometry = new PlaneGeometry(2, 2);
 
     this.screenOutputMaterial = new ShaderMaterial({
-      uniforms: this.screenOutputShader.uniforms,
-      vertexShader: this.screenOutputShader.vertexShader,
-      fragmentShader: this.screenOutputShader.fragmentShader,
+      uniforms: this.screenOutputShaderUniforms,
+      vertexShader: renderToBufferVertShader,
+      fragmentShader: pathtraceOutputFragmentShaderSrc,
       depthWrite: false,
       depthTest: false,
       blending: NormalBlending,
