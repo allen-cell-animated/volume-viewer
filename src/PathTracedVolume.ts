@@ -5,26 +5,23 @@ import {
   Matrix4,
   Mesh,
   NormalBlending,
-  OrthographicCamera,
   PerspectiveCamera,
   PlaneGeometry,
   Quaternion,
   RGBAFormat,
-  Scene,
   ShaderMaterial,
   ShaderMaterialParameters,
   UniformsUtils,
   UnsignedByteType,
-  Vector2,
   Vector3,
   WebGLRenderTarget,
   LinearFilter,
   NearestFilter,
 } from "three";
 
-import { denoiseFragmentShaderSrc, denoiseShaderUniforms, denoiseVertexShaderSrc } from "./constants/denoiseShader.js";
+import { renderToBufferVertShader, copyImageFragShader } from "./constants/basicShaders.js";
+import { denoiseFragmentShaderSrc, denoiseShaderUniforms } from "./constants/denoiseShader.js";
 import { pathTracingFragmentShaderSrc, pathTracingUniforms } from "./constants/volumePTshader.js";
-import copyImageShaderSrc from "./constants/shaders/copy_image.frag";
 import { LUT_ARRAY_LENGTH } from "./Lut.js";
 import Volume from "./Volume.js";
 import { FUSE_DISABLED_RGB_COLOR, type FuseChannel, isOrthographicCamera } from "./types.js";
@@ -189,7 +186,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.pathTracingUniforms.tPreviousTexture.value = this.screenTextureRenderTarget.texture;
 
     this.pathTracingRenderToBuffer = new RenderToBuffer(pathTracingFragmentShaderSrc, this.pathTracingUniforms);
-    this.screenTextureRenderToBuffer = new RenderToBuffer(copyImageShaderSrc, {
+    this.screenTextureRenderToBuffer = new RenderToBuffer(copyImageFragShader, {
       image: { value: this.pathTracingRenderTarget.texture },
     });
 
@@ -208,7 +205,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.denoiseShaderUniforms = denoiseShaderUniforms();
     this.screenOutputDenoiseMaterial = new ShaderMaterial({
       uniforms: this.denoiseShaderUniforms,
-      vertexShader: denoiseVertexShaderSrc,
+      vertexShader: renderToBufferVertShader,
       fragmentShader: denoiseFragmentShaderSrc,
       depthWrite: false,
       depthTest: false,

@@ -44,19 +44,6 @@ export function denoiseShaderUniforms(): Record<string, { type: string; value: u
   ]);
 }
 
-export const denoiseVertexShaderSrc = `
-precision highp float;
-precision highp int;
-
-out vec2 vUv;
-
-void main()
-{
-  vUv = uv;
-  gl_Position = vec4( position, 1.0 );
-}
-`;
-
 export const denoiseFragmentShaderSrc = `
 precision highp float;
 precision highp int;
