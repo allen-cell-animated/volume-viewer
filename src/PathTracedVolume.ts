@@ -23,11 +23,8 @@ import {
 } from "three";
 
 import { denoiseFragmentShaderSrc, denoiseShaderUniforms, denoiseVertexShaderSrc } from "./constants/denoiseShader.js";
-import {
-  pathTracingFragmentShaderSrc,
-  pathTracingUniforms,
-  pathTracingVertexShaderSrc,
-} from "./constants/volumePTshader.js";
+import { pathTracingFragmentShaderSrc, pathTracingUniforms } from "./constants/volumePTshader.js";
+import copyImageShaderSrc from "./constants/shaders/copy_image.frag";
 import { LUT_ARRAY_LENGTH } from "./Lut.js";
 import Volume from "./Volume.js";
 import { FUSE_DISABLED_RGB_COLOR, type FuseChannel, isOrthographicCamera } from "./types.js";
@@ -36,6 +33,7 @@ import { Light } from "./Light.js";
 import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
 import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings.js";
 import Channel from "./Channel.js";
+import RenderToBuffer from "./RenderToBuffer.js";
 
 export default class PathTracedVolume implements VolumeRenderImpl {
   private settings: VolumeRenderSettings;
@@ -43,27 +41,25 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   private volume: Volume;
   private viewChannels: number[]; // should have 4 or less elements
 
-  private pathTracingUniforms: ReturnType<typeof pathTracingUniforms>;
   private volumeTexture: Data3DTexture;
 
   private cameraIsMoving: boolean;
   private sampleCounter: number;
   private frameCounter: number;
 
-  private pathTracingScene: Scene;
-  private screenTextureScene: Scene;
-  private quadCamera: OrthographicCamera;
-  private fullTargetResolution: Vector2;
+  private pathTracingUniforms: ReturnType<typeof pathTracingUniforms>;
+  private pathTracingRenderToBuffer: RenderToBuffer;
+  private screenTextureRenderToBuffer: RenderToBuffer;
   private pathTracingRenderTarget: WebGLRenderTarget;
   private screenTextureRenderTarget: WebGLRenderTarget;
-  private screenTextureShader: ShaderMaterialParameters;
+  // private screenTextureShader: ShaderMaterialParameters;
   private screenOutputShader: ShaderMaterialParameters;
-  private pathTracingGeometry: PlaneGeometry;
-  private pathTracingMaterial: ShaderMaterial;
-  private pathTracingMesh: Mesh;
-  private screenTextureGeometry: PlaneGeometry;
-  private screenTextureMaterial: ShaderMaterial;
-  private screenTextureMesh: Mesh;
+  // private pathTracingGeometry: PlaneGeometry;
+  // private pathTracingMaterial: ShaderMaterial;
+  // private pathTracingMesh: Mesh;
+  // private screenTextureGeometry: PlaneGeometry;
+  // private screenTextureMaterial: ShaderMaterial;
+  // private screenTextureMesh: Mesh;
   private screenOutputGeometry: PlaneGeometry;
   private screenOutputMaterial: ShaderMaterial;
   private denoiseShaderUniforms = denoiseShaderUniforms();
@@ -105,16 +101,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.sampleCounter = 0;
     this.frameCounter = 0;
 
-    this.pathTracingScene = new Scene();
-    this.screenTextureScene = new Scene();
-
-    // quadCamera is simply the camera to help render the full screen quad (2 triangles),
-    // hence the name.  It is an Orthographic camera that sits facing the view plane, which serves as
-    // the window into our 3d world. This camera will not move or rotate for the duration of the app.
-    this.quadCamera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
-
-    this.fullTargetResolution = new Vector2(2, 2);
-
     this.pathTracingRenderTarget = new WebGLRenderTarget(2, 2, {
       minFilter: NearestFilter,
       magFilter: NearestFilter,
@@ -122,8 +108,8 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       type: FloatType,
       depthBuffer: false,
       stencilBuffer: false,
+      generateMipmaps: false,
     });
-    this.pathTracingRenderTarget.texture.generateMipmaps = false;
 
     this.screenTextureRenderTarget = new WebGLRenderTarget(2, 2, {
       minFilter: NearestFilter,
@@ -132,46 +118,8 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       type: FloatType,
       depthBuffer: false,
       stencilBuffer: false,
+      generateMipmaps: false,
     });
-    this.screenTextureRenderTarget.texture.generateMipmaps = false;
-
-    this.screenTextureShader = {
-      uniforms: UniformsUtils.merge([
-        {
-          tTexture0: {
-            type: "t",
-            value: null,
-          },
-        },
-      ]),
-
-      vertexShader: [
-        "precision highp float;",
-        "precision highp int;",
-
-        "out vec2 vUv;",
-
-        "void main()",
-        "{",
-        "vUv = uv;",
-        "gl_Position = vec4( position, 1.0 );",
-        "}",
-      ].join("\n"),
-
-      fragmentShader: [
-        "precision highp float;",
-        "precision highp int;",
-        "precision highp sampler2D;",
-
-        "uniform sampler2D tTexture0;",
-        "in vec2 vUv;",
-
-        "void main()",
-        "{",
-        "pc_fragColor = texture(tTexture0, vUv);",
-        "}",
-      ].join("\n"),
-    };
 
     this.screenOutputShader = {
       uniforms: UniformsUtils.merge([
@@ -236,37 +184,14 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       ].join("\n"),
     };
 
-    this.pathTracingGeometry = new PlaneGeometry(2, 2);
-
     // initialize texture.
     this.pathTracingUniforms.volumeTexture.value = this.volumeTexture;
     this.pathTracingUniforms.tPreviousTexture.value = this.screenTextureRenderTarget.texture;
 
-    this.pathTracingMaterial = new ShaderMaterial({
-      uniforms: this.pathTracingUniforms,
-      // defines: pathTracingDefines,
-      vertexShader: pathTracingVertexShaderSrc,
-      fragmentShader: pathTracingFragmentShaderSrc,
-      depthTest: false,
-      depthWrite: false,
+    this.pathTracingRenderToBuffer = new RenderToBuffer(pathTracingFragmentShaderSrc, this.pathTracingUniforms);
+    this.screenTextureRenderToBuffer = new RenderToBuffer(copyImageShaderSrc, {
+      image: { value: this.pathTracingRenderTarget.texture },
     });
-    this.pathTracingMesh = new Mesh(this.pathTracingGeometry, this.pathTracingMaterial);
-    this.pathTracingScene.add(this.pathTracingMesh);
-
-    this.screenTextureGeometry = new PlaneGeometry(2, 2);
-
-    this.screenTextureMaterial = new ShaderMaterial({
-      uniforms: this.screenTextureShader.uniforms,
-      vertexShader: this.screenTextureShader.vertexShader,
-      fragmentShader: this.screenTextureShader.fragmentShader,
-      depthWrite: false,
-      depthTest: false,
-    });
-
-    this.screenTextureMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;
-
-    this.screenTextureMesh = new Mesh(this.screenTextureGeometry, this.screenTextureMaterial);
-    this.screenTextureScene.add(this.screenTextureMesh);
 
     this.screenOutputGeometry = new PlaneGeometry(2, 2);
 
@@ -351,7 +276,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     // Update resolution
     if (dirtyFlags & SettingsFlags.SAMPLING) {
       const resolution = this.settings.resolution.clone();
-      this.fullTargetResolution = resolution;
       const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
       const nx = Math.floor((resolution.x * this.settings.pixelSamplingRate) / dpr);
       const ny = Math.floor((resolution.y * this.settings.pixelSamplingRate) / dpr);
@@ -508,14 +432,12 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     // This is currently rendered as a fullscreen quad with no camera transform in the vertex shader!
     // It is also composited with screenTextureRenderTarget's texture.
     // (Read previous screenTextureRenderTarget to use as a new starting point to blend with)
-    canvas.renderer.setRenderTarget(this.pathTracingRenderTarget);
-    canvas.renderer.render(this.pathTracingScene, this.quadCamera);
+    this.pathTracingRenderToBuffer.render(canvas.renderer, this.pathTracingRenderTarget);
 
     // STEP 2
     // Render(copy) the final pathTracingScene output(above) into screenTextureRenderTarget
     // This will be used as a new starting point for Step 1 above
-    canvas.renderer.setRenderTarget(this.screenTextureRenderTarget);
-    canvas.renderer.render(this.screenTextureScene, this.quadCamera);
+    this.screenTextureRenderToBuffer.render(canvas.renderer, this.screenTextureRenderTarget);
 
     // STEP 3
     // Render full screen quad with generated pathTracingRenderTarget in STEP 1 above.
