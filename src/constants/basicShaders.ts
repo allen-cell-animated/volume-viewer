@@ -2,6 +2,7 @@
 // These are the only shaders defined outside a dedicated GLSL file to make extra sure they appear
 // only once in the built package.
 
+/** Passthrough shader for rendering to a buffer with a fullscreen quad */
 export const renderToBufferVertShader = `
 precision highp float;
 precision highp int;
@@ -13,6 +14,7 @@ void main() {
 }
 `;
 
+/** Basic fragment shader that samples its output directly from a texture */
 export const copyImageFragShader = `
 precision highp float;
 precision highp int;
