@@ -2,7 +2,7 @@
 // These are the only shaders defined outside a dedicated GLSL file to make extra sure they appear
 // only once in the built package.
 
-/** Passthrough shader for rendering to a buffer with a fullscreen quad */
+/** Passthrough vertex shader for rendering to a buffer with a fullscreen quad */
 export const renderToBufferVertShader = `
 precision highp float;
 precision highp int;
