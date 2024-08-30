@@ -44,26 +44,20 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   private sampleCounter: number;
   private frameCounter: number;
 
-  private pathTracingUniforms: ReturnType<typeof pathTracingUniforms>;
+  private pathTracingUniforms = pathTracingUniforms();
   private pathTracingRenderToBuffer: RenderToBuffer;
   private pathTracingRenderTarget: WebGLRenderTarget;
 
   private screenTextureRenderToBuffer: RenderToBuffer;
   private screenTextureRenderTarget: WebGLRenderTarget;
-  // private screenTextureShader: ShaderMaterialParameters;
-  // private screenOutputShader: ShaderMaterialParameters;
-  // private pathTracingGeometry: PlaneGeometry;
-  // private pathTracingMaterial: ShaderMaterial;
-  // private pathTracingMesh: Mesh;
-  // private screenTextureGeometry: PlaneGeometry;
-  // private screenTextureMaterial: ShaderMaterial;
-  // private screenTextureMesh: Mesh;
+
   private denoiseShaderUniforms = denoiseShaderUniforms();
   private screenOutputShaderUniforms = pathtraceOutputShaderUniforms();
-  private screenOutputGeometry: PlaneGeometry;
   private screenOutputDenoiseMaterial: ShaderMaterial;
   private screenOutputMaterial: ShaderMaterial;
+  private screenOutputGeometry: PlaneGeometry;
   private screenOutputMesh: Mesh;
+
   private gradientDelta: number;
   private renderUpdateListener?: (iteration: number) => void;
 
@@ -74,7 +68,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
    * the given settings. Otherwise, uses the default VolumeRenderSettings.
    */
   constructor(volume: Volume, settings: VolumeRenderSettings = new VolumeRenderSettings(volume)) {
-    this.pathTracingUniforms = pathTracingUniforms();
     this.volume = volume;
     this.viewChannels = [-1, -1, -1, -1];
 
