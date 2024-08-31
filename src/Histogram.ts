@@ -163,6 +163,8 @@ export default class Histogram {
 
   // Find min and max bins attempting to replicate ImageJ's "Auto" button
   findAutoIJBins(): [number, number] {
+    // note that consecutive applications of this should modify the auto threshold. see:
+    // https://github.com/imagej/ImageJ/blob/7746fcb0f5744a7a7758244c5dcd2193459e6e0e/ij/plugin/frame/ContrastAdjuster.java#L816
     const AUTO_THRESHOLD = 5000;
     const pixcount = this.pixelCount;
     //  const pixcount = this.imgData.data.length;
