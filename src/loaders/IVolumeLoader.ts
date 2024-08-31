@@ -54,7 +54,7 @@ export type PerChannelCallback = (volume: Volume, channelIndex: number) => void;
  * @callback RawChannelDataCallback - allow lists of channel indices and data arrays to be passed to the callback
  * @param {number[]} channelIndex - The indices of the channels that were loaded
  * @param {NumberType[]} dtype - The data type of the data arrays
- * @param {TypedArray<NumberType>[]} data - The raw data for each channel (renormalized to 0-255 range)
+ * @param {TypedArray<NumberType>[]} data - The raw data for each channel
  * @param {[number, number][]} ranges - The min and max values for each channel in their original range
  * @param {[number, number]} atlasDims - The dimensions of the atlas, if the data is in an atlas format
  */
