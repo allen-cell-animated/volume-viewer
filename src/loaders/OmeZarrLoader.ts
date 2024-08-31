@@ -67,10 +67,6 @@ function convertChannel(
     }
   }
 
-  // if (channelData instanceof Uint8Array) {
-  //   return [channelData as Uint8Array, min, max];
-  // }
-
   if (dtype === "float64") {
     // convert to float32
     const f32 = new Float32Array(channelData.length);
