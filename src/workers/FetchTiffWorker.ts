@@ -145,12 +145,8 @@ async function loadTiffChannel(e: MessageEvent<TiffWorkerParams>): Promise<TiffL
       chmax = val;
     }
   }
-  // const out = new Uint8Array(src.length);
-  // for (let j = 0; j < src.length; ++j) {
-  //   out[j] = ((src[j] - chmin) / (chmax - chmin)) * 255;
-  // }
-  const out = src;
-  return { data: out, channel: channelIndex, range: [chmin, chmax], dtype: dtype, isError: false };
+
+  return { data: src, channel: channelIndex, range: [chmin, chmax], dtype: dtype, isError: false };
 }
 
 self.onmessage = async (e) => {
