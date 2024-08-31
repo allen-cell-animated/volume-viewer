@@ -246,6 +246,7 @@ export default class FusedChannelData {
         // must clone the material to keep a unique set of uniforms
         const mat = this.getShader(channels[chIndex].dtype).clone();
         mat.uniforms.lutSampler.value = channels[chIndex].lutTexture;
+        // the lut texture is spanning only the data range of the channel, not the datatype range
         mat.uniforms.lutMinMax.value = new Vector2(channels[chIndex].rawMin, channels[chIndex].rawMax);
         //mat.uniforms.lutMinMax.value = this.getMinMax(channels[chIndex]);
         mat.uniforms.srcTexture.value = channels[chIndex].dataTexture;

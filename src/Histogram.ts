@@ -9,42 +9,6 @@ type HistogramData = {
   binSize: number;
 };
 
-// TODO UNIT TEST!!!!
-function calculateHistogram(arr, numBins = 1): HistogramData {
-  if (numBins < 1) {
-    numBins = 1;
-  }
-
-  // calculate min and max of arr
-  // TODO FIXME See convertChannel, which will also compute min and max!
-
-  let min = arr[0];
-  let max = arr[0];
-  for (let i = 1; i < arr.length; i++) {
-    if (arr[i] < min) {
-      min = arr[i];
-    } else if (arr[i] > max) {
-      max = arr[i];
-    }
-  }
-  const dataCopy = arr;
-
-  const bins = new Uint32Array(numBins ? numBins : 0).fill(0);
-
-  const binSize = (max - min) / numBins === 0 ? 1 : (max - min) / numBins;
-  for (let i = 0; i < dataCopy.length; i++) {
-    const item = dataCopy[i];
-    let binIndex = Math.floor((item - min) / binSize);
-    // for values that lie exactly on last bin we need to subtract one
-    if (binIndex === numBins) {
-      binIndex--;
-    }
-    bins[binIndex]++;
-  }
-
-  return { bins, min, max, binSize };
-}
-
 /**
  * Builds a histogram with 256 bins from a data array. Assume data is 8 bit single channel grayscale.
  * @class
@@ -68,12 +32,15 @@ export default class Histogram {
     this.bins = new Uint32Array();
     this.min = 0;
     this.max = 0;
+    this.binSize = 0;
+
     // build up the histogram
-    const hinfo = calculateHistogram(data, NBINS);
+    const hinfo = this.calculateHistogram(data, NBINS);
     this.bins = hinfo.bins;
     this.min = hinfo.min;
     this.max = hinfo.max;
     this.binSize = hinfo.binSize;
+
     // track the first and last nonzero bins with at least 1 sample
     for (let i = 1; i < this.bins.length; i++) {
       if (this.bins[i] > 0) {
@@ -247,5 +214,41 @@ export default class Histogram {
       }
     }
     return [b, e];
+  }
+
+  private calculateHistogram(arr: TypedArray<NumberType>, numBins = 1): HistogramData {
+    if (numBins < 1) {
+      numBins = 1;
+    }
+
+    // calculate min and max of arr
+    // TODO FIXME See convertChannel, which will also compute min and max!
+    // We could save a whole extra loop over the data, or have convertChannel compute the whole histogram.
+    // need to be careful about computing over chunks or whole ready-to-display volume
+
+    let min = arr[0];
+    let max = arr[0];
+    for (let i = 1; i < arr.length; i++) {
+      if (arr[i] < min) {
+        min = arr[i];
+      } else if (arr[i] > max) {
+        max = arr[i];
+      }
+    }
+
+    const bins = new Uint32Array(numBins ? numBins : 0).fill(0);
+
+    const binSize = (max - min) / numBins === 0 ? 1 : (max - min) / numBins;
+    for (let i = 0; i < arr.length; i++) {
+      const item = arr[i];
+      let binIndex = Math.floor((item - min) / binSize);
+      // for values that lie exactly on last bin we need to subtract one
+      if (binIndex === numBins) {
+        binIndex--;
+      }
+      bins[binIndex]++;
+    }
+
+    return { bins, min, max, binSize };
   }
 }

@@ -5,6 +5,8 @@ export interface Bounds {
   bmax: Vector3;
 }
 
+// numeric types compatible with zarrita.js.
+// see https://github.com/manzt/zarrita.js/blob/main/packages/core/src/metadata.ts
 export type Int8 = "int8";
 export type Int16 = "int16";
 export type Int32 = "int32";

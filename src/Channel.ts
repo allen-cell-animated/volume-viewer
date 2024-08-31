@@ -280,8 +280,8 @@ export default class Channel {
     vz: number,
     ax: number,
     ay: number,
-    rawMin = 0,
-    rawMax = 255,
+    rawMin: number,
+    rawMax: number,
     dtype: NumberType
   ): void {
     this.dims = [vx, vy, vz];

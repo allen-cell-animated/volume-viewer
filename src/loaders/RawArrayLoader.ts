@@ -9,14 +9,14 @@ import {
 } from "./IVolumeLoader.js";
 import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
 import { ImageInfo } from "../Volume.js";
-import { DATARANGE_UINT8 } from "../types.js";
+import { DATARANGE_UINT8, Uint8 } from "../types.js";
 
 // this is the form in which a 4D numpy array arrives as converted
 // by jupyterlab into a js object.
 // This loader does not yet support multiple time samples.
 export type RawArrayData = {
   // expected to be "uint8" always
-  dtype: "uint8";
+  dtype: Uint8;
   // [c,z,y,x]
   shape: [number, number, number, number];
   // the bits (assumed uint8!!)
