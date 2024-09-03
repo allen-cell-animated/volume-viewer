@@ -289,6 +289,8 @@ void main() {
     vec4 meshObj = inverseModelViewMatrix * vec4(meshView.xyz / meshView.w, 1.0);
 
     // Derive a t value for the mesh intersection
+    // NOTE: divides by 0 when `eyeRay_d.z` is 0. Could be mitigated by picking another component
+    //   to derive with when z is 0, but I found this was rare enough in practice to be acceptable.
     float tMesh = (meshObj.z - eyeRay_o.z) / eyeRay_d.z;
     if (tMesh < tfar) {
       clipFar = tMesh - tnear;
