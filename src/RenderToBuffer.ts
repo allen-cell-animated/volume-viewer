@@ -11,6 +11,10 @@ import {
 
 import bufferVertexShaderSrc from "./constants/shaders/render_to_buffer.vert";
 
+/**
+ * Helper for render passes that just require a fragment shader: accepts a fragment shader and its
+ * uniforms, and handles the ceremony of rendering a fullscreen quad with a simple vertex shader.
+ */
 export default class RenderToBuffer {
   public scene: Scene;
   public geometry: PlaneGeometry;
@@ -37,9 +41,11 @@ export default class RenderToBuffer {
     this.camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
   }
 
+  /** Renders this pass to `target` using `renderer`, or to the canvas if no `target` is given. */
   public render(renderer: WebGLRenderer, target?: WebGLRenderTarget) {
     renderer.setRenderTarget(target ?? null);
     renderer.render(this.scene, this.camera);
+    // Reset the render target to the screen
     renderer.setRenderTarget(null);
   }
 }
