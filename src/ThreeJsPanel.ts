@@ -700,13 +700,18 @@ export class ThreeJsPanel {
       }
     }
 
+    // RENDERING
+    // Step 1: Render meshes, e.g. isosurfaces, separately to a render target. (Meshes are all on
+    //   layer 1.) This is necessary to access the depth buffer.
     this.camera.layers.set(1);
     this.renderer.setRenderTarget(this.meshRenderTarget);
     this.renderer.render(this.scene, this.camera);
 
+    // Step 2: Render the mesh render target out to the screen.
     this.meshRenderToBuffer.material.uniforms.image.value = this.meshRenderTarget.texture;
     this.meshRenderToBuffer.render(this.renderer);
 
+    // Step 3: Render volumes, which can now depth test against the meshes.
     this.camera.layers.set(0);
     this.renderer.setRenderTarget(null);
     this.renderer.autoClear = false;
