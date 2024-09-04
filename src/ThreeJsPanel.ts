@@ -16,8 +16,8 @@ import {
   DepthTexture,
   WebGLRenderTarget,
   NearestFilter,
+  UnsignedByteType,
   RGBAFormat,
-  FloatType,
 } from "three";
 
 import TrackballControls from "./TrackballControls.js";
@@ -112,16 +112,13 @@ export class ThreeJsPanel {
       minFilter: NearestFilter,
       magFilter: NearestFilter,
       format: RGBAFormat,
-      type: FloatType,
+      type: UnsignedByteType,
       depthBuffer: true,
     });
     this.meshRenderToBuffer = new RenderToBuffer(copyImageShaderSrc, {
       image: { value: this.meshRenderTarget.texture },
     });
-    this.meshRenderTarget.depthTexture = new DepthTexture(
-      undefined as unknown as number,
-      undefined as unknown as number
-    );
+    this.meshRenderTarget.depthTexture = new DepthTexture(this.canvas.width, this.canvas.height);
 
     this.scaleBarContainerElement = document.createElement("div");
     this.orthoScaleBarElement = document.createElement("div");
