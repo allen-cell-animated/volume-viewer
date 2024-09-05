@@ -16,19 +16,22 @@ import {
   DepthTexture,
   WebGLRenderTarget,
   NearestFilter,
+  UnsignedByteType,
   RGBAFormat,
-  FloatType,
 } from "three";
 
 import TrackballControls from "./TrackballControls.js";
 import Timing from "./Timing.js";
 import scaleBarSVG from "./constants/scaleBarSVG.js";
-import { isOrthographicCamera, ViewportCorner, isTop, isRight } from "./types.js";
-import { constrainToAxis, formatNumber } from "./utils/num_utils.js";
+import { isOrthographicCamera, isPerspectiveCamera, ViewportCorner, isTop, isRight } from "./types.js";
+import { constrainToAxis, formatNumber, getTimestamp } from "./utils/num_utils.js";
 import { Axis } from "./VolumeRenderSettings.js";
 import RenderToBuffer from "./RenderToBuffer.js";
 
 import { copyImageFragShader } from "./constants/basicShaders.js";
+
+export const VOLUME_LAYER = 0;
+export const MESH_LAYER = 1;
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.1;
@@ -112,16 +115,13 @@ export class ThreeJsPanel {
       minFilter: NearestFilter,
       magFilter: NearestFilter,
       format: RGBAFormat,
-      type: FloatType,
+      type: UnsignedByteType,
       depthBuffer: true,
     });
     this.meshRenderToBuffer = new RenderToBuffer(copyImageFragShader, {
       image: { value: this.meshRenderTarget.texture },
     });
-    this.meshRenderTarget.depthTexture = new DepthTexture(
-      undefined as unknown as number,
-      undefined as unknown as number
-    );
+    this.meshRenderTarget.depthTexture = new DepthTexture(this.canvas.width, this.canvas.height);
 
     this.scaleBarContainerElement = document.createElement("div");
     this.orthoScaleBarElement = document.createElement("div");
@@ -391,7 +391,7 @@ export class ThreeJsPanel {
     const scaleBarContainerStyle: Partial<CSSStyleDeclaration> = {
       fontFamily: "-apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif",
       position: "absolute",
-      right: "20px",
+      right: "169px",
       bottom: "20px",
     };
     Object.assign(this.scaleBarContainerElement.style, scaleBarContainerStyle);
@@ -410,6 +410,8 @@ export class ThreeJsPanel {
       lineHeight: "0",
       boxSizing: "border-box",
       paddingRight: "10px",
+      // TODO: Adjust based on width of timestamp
+      marginRight: "40px",
     };
     Object.assign(this.orthoScaleBarElement.style, orthoScaleBarStyle);
     this.scaleBarContainerElement.appendChild(this.orthoScaleBarElement);
@@ -466,7 +468,7 @@ export class ThreeJsPanel {
   }
 
   updateTimestepIndicator(progress: number, total: number, unit: string): void {
-    this.timestepIndicatorElement.innerHTML = `${formatNumber(progress)} / ${formatNumber(total)} ${unit}`;
+    this.timestepIndicatorElement.innerHTML = getTimestamp(progress, total, unit);
   }
 
   setPerspectiveScaleBarColor(color: [number, number, number]): void {
@@ -654,7 +656,7 @@ export class ThreeJsPanel {
       up: this.camera.up.toArray(),
       target: this.controls.target.toArray(),
       orthoScale: isOrthographicCamera(this.camera) ? this.controls.scale : undefined,
-      fov: this.camera.type === "PerspectiveCamera" ? this.camera.fov : undefined,
+      fov: isPerspectiveCamera(this.camera) ? this.camera.fov : undefined,
     };
   }
 
@@ -703,14 +705,19 @@ export class ThreeJsPanel {
       }
     }
 
-    this.camera.layers.set(1);
+    // RENDERING
+    // Step 1: Render meshes, e.g. isosurfaces, separately to a render target. (Meshes are all on
+    //   layer 1.) This is necessary to access the depth buffer.
+    this.camera.layers.set(MESH_LAYER);
     this.renderer.setRenderTarget(this.meshRenderTarget);
     this.renderer.render(this.scene, this.camera);
 
+    // Step 2: Render the mesh render target out to the screen.
     this.meshRenderToBuffer.material.uniforms.image.value = this.meshRenderTarget.texture;
     this.meshRenderToBuffer.render(this.renderer);
 
-    this.camera.layers.set(0);
+    // Step 3: Render volumes, which can now depth test against the meshes.
+    this.camera.layers.set(VOLUME_LAYER);
     this.renderer.setRenderTarget(null);
     this.renderer.autoClear = false;
     this.renderer.render(this.scene, this.camera);
