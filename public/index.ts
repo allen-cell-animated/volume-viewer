@@ -1,4 +1,4 @@
-import { Vector2, Vector3 } from "three";
+import { Vector3 } from "three";
 import GUI from "lil-gui";
 
 import {
@@ -9,7 +9,6 @@ import {
   Lut,
   JsonImageInfoLoader,
   RawArrayInfo,
-  RawArrayData,
   View3d,
   Volume,
   VolumeMaker,
