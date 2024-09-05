@@ -21,7 +21,7 @@ import NaiveSurfaceNets from "./NaiveSurfaceNets.js";
 import MarchingCubes from "./MarchingCubes.js";
 import Volume from "./Volume.js";
 import type { Bounds } from "./types.js";
-import { ThreeJsPanel } from "./ThreeJsPanel.js";
+import { MESH_LAYER, ThreeJsPanel } from "./ThreeJsPanel.js";
 
 /**
  * this cutoff is chosen to have a small buffer of values before the object is treated
@@ -169,7 +169,7 @@ export default class MeshVolume {
     // proper scaling will be done in parent object
     for (let i = 0; i < geometries.length; ++i) {
       const mesh = new Mesh(geometries[i], material);
-      mesh.layers.set(1);
+      mesh.layers.set(MESH_LAYER);
       theObject.add(mesh);
     }
     return theObject;

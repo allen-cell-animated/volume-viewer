@@ -30,6 +30,9 @@ import RenderToBuffer from "./RenderToBuffer.js";
 
 import copyImageShaderSrc from "./constants/shaders/copy_image.frag";
 
+export const VOLUME_LAYER = 0;
+export const MESH_LAYER = 1;
+
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
 const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.1;
 const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
@@ -703,7 +706,7 @@ export class ThreeJsPanel {
     // RENDERING
     // Step 1: Render meshes, e.g. isosurfaces, separately to a render target. (Meshes are all on
     //   layer 1.) This is necessary to access the depth buffer.
-    this.camera.layers.set(1);
+    this.camera.layers.set(MESH_LAYER);
     this.renderer.setRenderTarget(this.meshRenderTarget);
     this.renderer.render(this.scene, this.camera);
 
@@ -712,7 +715,7 @@ export class ThreeJsPanel {
     this.meshRenderToBuffer.render(this.renderer);
 
     // Step 3: Render volumes, which can now depth test against the meshes.
-    this.camera.layers.set(0);
+    this.camera.layers.set(VOLUME_LAYER);
     this.renderer.setRenderTarget(null);
     this.renderer.autoClear = false;
     this.renderer.render(this.scene, this.camera);
