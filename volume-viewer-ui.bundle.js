@@ -2043,13 +2043,16 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ MeshVolume)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var three_examples_jsm_exporters_STLExporter_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three/examples/jsm/exporters/STLExporter.js */ "./node_modules/three/examples/jsm/exporters/STLExporter.js");
-/* harmony import */ var three_examples_jsm_exporters_GLTFExporter_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three/examples/jsm/exporters/GLTFExporter.js */ "./node_modules/three/examples/jsm/exporters/GLTFExporter.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three_examples_jsm_exporters_STLExporter_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three/examples/jsm/exporters/STLExporter.js */ "./node_modules/three/examples/jsm/exporters/STLExporter.js");
+/* harmony import */ var three_examples_jsm_exporters_GLTFExporter_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three/examples/jsm/exporters/GLTFExporter.js */ "./node_modules/three/examples/jsm/exporters/GLTFExporter.js");
 /* harmony import */ var _constants_materials_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./constants/materials.js */ "./src/constants/materials.ts");
 /* harmony import */ var _FileSaver_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./FileSaver.js */ "./src/FileSaver.ts");
 /* harmony import */ var _NaiveSurfaceNets_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./NaiveSurfaceNets.js */ "./src/NaiveSurfaceNets.js");
 /* harmony import */ var _MarchingCubes_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./MarchingCubes.js */ "./src/MarchingCubes.ts");
+/* harmony import */ var _ThreeJsPanel_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./ThreeJsPanel.js */ "./src/ThreeJsPanel.ts");
+
+
 
 
 
@@ -2066,20 +2069,20 @@ class MeshVolume {
   constructor(volume) {
     // need?
     this.volume = volume;
-    this.meshRoot = new three__WEBPACK_IMPORTED_MODULE_4__.Object3D(); //create an empty container
+    this.meshRoot = new three__WEBPACK_IMPORTED_MODULE_5__.Object3D(); //create an empty container
     this.meshRoot.name = "Mesh Surface Group";
 
     // handle transform ordering for giving the meshroot a rotation about a pivot point
-    this.meshPivot = new three__WEBPACK_IMPORTED_MODULE_4__.Group();
+    this.meshPivot = new three__WEBPACK_IMPORTED_MODULE_5__.Group();
     this.meshPivot.name = "MeshContainerNode";
     this.meshPivot.add(this.meshRoot);
     this.meshrep = [];
     this.channelColors = [];
     this.channelOpacities = [];
-    this.scale = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1);
+    this.scale = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
     this.bounds = {
-      bmin: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(-0.5, -0.5, -0.5),
-      bmax: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0.5, 0.5, 0.5)
+      bmin: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(-0.5, -0.5, -0.5),
+      bmax: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0.5, 0.5, 0.5)
     };
   }
   cleanup() {
@@ -2096,13 +2099,13 @@ class MeshVolume {
   get3dObject() {
     return this.meshPivot;
   }
-  setScale(scale, position = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0)) {
+  setScale(scale, position = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0)) {
     this.scale = scale;
     this.meshRoot.scale.copy(scale).multiplyScalar(0.5);
     this.meshRoot.position.copy(position);
   }
   setFlipAxes(flipX, flipY, flipZ) {
-    this.meshRoot.scale.copy(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0.5 * this.scale.x * flipX, 0.5 * this.scale.y * flipY, 0.5 * this.scale.z * flipZ));
+    this.meshRoot.scale.copy(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0.5 * this.scale.x * flipX, 0.5 * this.scale.y * flipY, 0.5 * this.scale.z * flipZ));
   }
   setTranslation(vec3xyz) {
     this.meshPivot.position.copy(vec3xyz);
@@ -2136,8 +2139,8 @@ class MeshVolume {
         const rgb = channelColors[i];
         const c = rgb[0] << 16 | rgb[1] << 8 | rgb[2];
         meshrep.traverse(function (child) {
-          if (child instanceof three__WEBPACK_IMPORTED_MODULE_4__.Mesh) {
-            child.material.color = new three__WEBPACK_IMPORTED_MODULE_4__.Color(c);
+          if (child instanceof three__WEBPACK_IMPORTED_MODULE_5__.Mesh) {
+            child.material.color = new three__WEBPACK_IMPORTED_MODULE_5__.Color(c);
           }
         });
       }
@@ -2145,13 +2148,13 @@ class MeshVolume {
   }
   createMaterialForChannel(rgb, alpha, _transp) {
     const col = rgb[0] << 16 | rgb[1] << 8 | rgb[2];
-    const material = new three__WEBPACK_IMPORTED_MODULE_4__.MeshPhongMaterial({
-      color: new three__WEBPACK_IMPORTED_MODULE_4__.Color(col),
+    const material = new three__WEBPACK_IMPORTED_MODULE_5__.MeshPhongMaterial({
+      color: new three__WEBPACK_IMPORTED_MODULE_5__.Color(col),
       shininess: _constants_materials_js__WEBPACK_IMPORTED_MODULE_0__.defaultMaterialSettings.shininess,
-      specular: new three__WEBPACK_IMPORTED_MODULE_4__.Color(_constants_materials_js__WEBPACK_IMPORTED_MODULE_0__.defaultMaterialSettings.specularColor),
+      specular: new three__WEBPACK_IMPORTED_MODULE_5__.Color(_constants_materials_js__WEBPACK_IMPORTED_MODULE_0__.defaultMaterialSettings.specularColor),
       opacity: alpha,
       transparent: alpha < ALPHA_THRESHOLD,
-      side: three__WEBPACK_IMPORTED_MODULE_4__.DoubleSide
+      side: three__WEBPACK_IMPORTED_MODULE_5__.DoubleSide
     });
     return material;
   }
@@ -2159,14 +2162,15 @@ class MeshVolume {
     // note that if isovalue out of range, this will return an empty array.
     const geometries = this.generateIsosurfaceGeometry(channelIndex, isovalue);
     const material = this.createMaterialForChannel(colorrgb, alpha, transp);
-    const theObject = new three__WEBPACK_IMPORTED_MODULE_4__.Group();
+    const theObject = new three__WEBPACK_IMPORTED_MODULE_5__.Group();
     theObject.name = "Channel" + channelIndex;
     theObject.userData = {
       isovalue: isovalue
     };
     // proper scaling will be done in parent object
     for (let i = 0; i < geometries.length; ++i) {
-      const mesh = new three__WEBPACK_IMPORTED_MODULE_4__.Mesh(geometries[i], material);
+      const mesh = new three__WEBPACK_IMPORTED_MODULE_5__.Mesh(geometries[i], material);
+      mesh.layers.set(_ThreeJsPanel_js__WEBPACK_IMPORTED_MODULE_4__.MESH_LAYER);
       theObject.add(mesh);
     }
     return theObject;
@@ -2196,7 +2200,7 @@ class MeshVolume {
     const meshrep = this.meshrep[channel];
     let opacity = undefined;
     meshrep?.traverse(obj => {
-      if (obj instanceof three__WEBPACK_IMPORTED_MODULE_4__.Mesh) {
+      if (obj instanceof three__WEBPACK_IMPORTED_MODULE_5__.Mesh) {
         opacity = obj.material.opacity;
       }
     });
@@ -2206,8 +2210,8 @@ class MeshVolume {
     // incoming values expected to be between 0 and 1.
     // I shift them here to be between -0.5 and 0.5
     this.bounds = {
-      bmin: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
-      bmax: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5)
+      bmin: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
+      bmax: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5)
     };
     this.updateClipFromBounds();
   }
@@ -2227,25 +2231,25 @@ class MeshVolume {
       const planes = [];
       // up to 6 planes.
       if (xmin > -0.5) {
-        planes.push(new three__WEBPACK_IMPORTED_MODULE_4__.Plane(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 0, 0).applyEuler(euler), this.meshRoot.position.x + -xmin * this.scale.x));
+        planes.push(new three__WEBPACK_IMPORTED_MODULE_5__.Plane(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 0, 0).applyEuler(euler), this.meshRoot.position.x + -xmin * this.scale.x));
       }
       if (ymin > -0.5) {
-        planes.push(new three__WEBPACK_IMPORTED_MODULE_4__.Plane(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 1, 0).applyEuler(euler), this.meshRoot.position.y + -ymin * this.scale.y));
+        planes.push(new three__WEBPACK_IMPORTED_MODULE_5__.Plane(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 1, 0).applyEuler(euler), this.meshRoot.position.y + -ymin * this.scale.y));
       }
       if (zmin > -0.5) {
-        planes.push(new three__WEBPACK_IMPORTED_MODULE_4__.Plane(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 1).applyEuler(euler), this.meshRoot.position.z + -zmin * this.scale.z));
+        planes.push(new three__WEBPACK_IMPORTED_MODULE_5__.Plane(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 1).applyEuler(euler), this.meshRoot.position.z + -zmin * this.scale.z));
       }
       if (xmax < 0.5) {
-        planes.push(new three__WEBPACK_IMPORTED_MODULE_4__.Plane(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(-1, 0, 0).applyEuler(euler), this.meshRoot.position.x + xmax * this.scale.x));
+        planes.push(new three__WEBPACK_IMPORTED_MODULE_5__.Plane(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(-1, 0, 0).applyEuler(euler), this.meshRoot.position.x + xmax * this.scale.x));
       }
       if (ymax < 0.5) {
-        planes.push(new three__WEBPACK_IMPORTED_MODULE_4__.Plane(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, -1, 0).applyEuler(euler), this.meshRoot.position.y + ymax * this.scale.y));
+        planes.push(new three__WEBPACK_IMPORTED_MODULE_5__.Plane(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, -1, 0).applyEuler(euler), this.meshRoot.position.y + ymax * this.scale.y));
       }
       if (zmax < 0.5) {
-        planes.push(new three__WEBPACK_IMPORTED_MODULE_4__.Plane(new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, -1).applyEuler(euler), this.meshRoot.position.z + zmax * this.scale.z));
+        planes.push(new three__WEBPACK_IMPORTED_MODULE_5__.Plane(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, -1).applyEuler(euler), this.meshRoot.position.z + zmax * this.scale.z));
       }
       meshrep.traverse(function (child) {
-        if (child instanceof three__WEBPACK_IMPORTED_MODULE_4__.Mesh) {
+        if (child instanceof three__WEBPACK_IMPORTED_MODULE_5__.Mesh) {
           child.material.clippingPlanes = planes;
         }
       });
@@ -2258,7 +2262,7 @@ class MeshVolume {
       return;
     }
     meshrep.traverse(function (child) {
-      if (child instanceof three__WEBPACK_IMPORTED_MODULE_4__.Mesh) {
+      if (child instanceof three__WEBPACK_IMPORTED_MODULE_5__.Mesh) {
         child.material.opacity = value;
         child.material.transparent = value < ALPHA_THRESHOLD;
         //child.material.depthWrite = !child.material.transparent;
@@ -2287,7 +2291,7 @@ class MeshVolume {
     if (meshrep) {
       this.meshRoot.remove(meshrep);
       meshrep.traverse(function (child) {
-        if (child instanceof three__WEBPACK_IMPORTED_MODULE_4__.Mesh) {
+        if (child instanceof three__WEBPACK_IMPORTED_MODULE_5__.Mesh) {
           child.material.dispose();
           child.geometry.dispose();
         }
@@ -2322,7 +2326,7 @@ class MeshVolume {
     }
   }
   exportSTL(input, fname) {
-    const ex = new three_examples_jsm_exporters_STLExporter_js__WEBPACK_IMPORTED_MODULE_5__.STLExporter();
+    const ex = new three_examples_jsm_exporters_STLExporter_js__WEBPACK_IMPORTED_MODULE_6__.STLExporter();
     const output = ex.parse(input, {
       binary: true
     });
@@ -2333,7 +2337,7 @@ class MeshVolume {
 
   // takes a scene or object or array of scenes or objects or both!
   exportGLTF(input, fname) {
-    const gltfExporter = new three_examples_jsm_exporters_GLTFExporter_js__WEBPACK_IMPORTED_MODULE_6__.GLTFExporter();
+    const gltfExporter = new three_examples_jsm_exporters_GLTFExporter_js__WEBPACK_IMPORTED_MODULE_7__.GLTFExporter();
     const options = {
       // transforms as translate rotate scale?
       trs: false,
@@ -2362,7 +2366,7 @@ class MeshVolume {
     const marchingcubes = true;
     const regionSizeArr = this.volume.imageInfo.subregionSize.toArray();
     if (marchingcubes) {
-      const effect = new _MarchingCubes_js__WEBPACK_IMPORTED_MODULE_3__["default"](regionSizeArr, new three__WEBPACK_IMPORTED_MODULE_4__.Material(), false, false, true, volumeData);
+      const effect = new _MarchingCubes_js__WEBPACK_IMPORTED_MODULE_3__["default"](regionSizeArr, new three__WEBPACK_IMPORTED_MODULE_5__.Material(), false, false, true, volumeData);
       effect.position.copy(this.meshRoot.position);
       effect.scale.set(0.5 * this.scale.x, 0.5 * this.scale.y, 0.5 * this.scale.z);
       effect.isovalue = isovalue;
@@ -3153,14 +3157,17 @@ class RayMarchedAtlasVolume {
     if (!this.geometryMesh.visible) {
       return;
     }
+    this.setUniform("textureDepth", canvas.getMeshDepthTexture());
+    this.setUniform("CLIP_NEAR", canvas.camera.near);
+    this.setUniform("CLIP_FAR", canvas.camera.far);
     this.channelData.gpuFuse(canvas.renderer);
     this.setUniform("textureAtlas", this.channelData.getFusedTexture());
     this.geometryTransformNode.updateMatrixWorld(true);
     const mvm = new three__WEBPACK_IMPORTED_MODULE_3__.Matrix4();
     mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
-    const mi = new three__WEBPACK_IMPORTED_MODULE_3__.Matrix4();
-    mi.copy(mvm).invert();
-    this.setUniform("inverseModelViewMatrix", mi);
+    mvm.invert();
+    this.setUniform("inverseModelViewMatrix", mvm);
+    this.setUniform("inverseProjMatrix", canvas.camera.projectionMatrixInverse);
   }
   get3dObject() {
     return this.geometryTransformNode;
@@ -3191,6 +3198,52 @@ class RayMarchedAtlasVolume {
 
 /***/ }),
 
+/***/ "./src/RenderToBuffer.ts":
+/*!*******************************!*\
+  !*** ./src/RenderToBuffer.ts ***!
+  \*******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ RenderToBuffer)
+/* harmony export */ });
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+
+/* babel-plugin-inline-import './constants/shaders/render_to_buffer.vert' */
+const bufferVertexShaderSrc = "precision highp float;\nprecision highp int;\nout vec2 vUv;\n\nvoid main() {\n    vUv = uv;\n    gl_Position = vec4(position, 1.0);\n}\n";
+/**
+ * Helper for render passes that just require a fragment shader: accepts a fragment shader and its
+ * uniforms, and handles the ceremony of rendering a fullscreen quad with a simple vertex shader.
+ */
+class RenderToBuffer {
+  constructor(fragmentSrc, uniforms) {
+    this.scene = new three__WEBPACK_IMPORTED_MODULE_0__.Scene();
+    this.geometry = new three__WEBPACK_IMPORTED_MODULE_0__.PlaneGeometry(2, 2);
+    this.material = new three__WEBPACK_IMPORTED_MODULE_0__.ShaderMaterial({
+      vertexShader: bufferVertexShaderSrc,
+      fragmentShader: fragmentSrc,
+      uniforms
+    });
+    this.material.depthWrite = false;
+    this.material.depthTest = false;
+    this.mesh = new three__WEBPACK_IMPORTED_MODULE_0__.Mesh(this.geometry, this.material);
+    this.scene.add(this.mesh);
+    this.camera = new three__WEBPACK_IMPORTED_MODULE_0__.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  }
+
+  /** Renders this pass to `target` using `renderer`, or to the canvas if no `target` is given. */
+  render(renderer, target) {
+    renderer.setRenderTarget(target ?? null);
+    renderer.render(this.scene, this.camera);
+    // Reset the render target to the screen
+    renderer.setRenderTarget(null);
+  }
+}
+
+/***/ }),
+
 /***/ "./src/ThreeJsPanel.ts":
 /*!*****************************!*\
   !*** ./src/ThreeJsPanel.ts ***!
@@ -3200,15 +3253,18 @@ class RayMarchedAtlasVolume {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   ThreeJsPanel: () => (/* binding */ ThreeJsPanel)
+/* harmony export */   MESH_LAYER: () => (/* binding */ MESH_LAYER),
+/* harmony export */   ThreeJsPanel: () => (/* binding */ ThreeJsPanel),
+/* harmony export */   VOLUME_LAYER: () => (/* binding */ VOLUME_LAYER)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _TrackballControls_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./TrackballControls.js */ "./src/TrackballControls.js");
 /* harmony import */ var _Timing_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Timing.js */ "./src/Timing.ts");
 /* harmony import */ var _constants_scaleBarSVG_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants/scaleBarSVG.js */ "./src/constants/scaleBarSVG.ts");
 /* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
 /* harmony import */ var _utils_num_utils_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./utils/num_utils.js */ "./src/utils/num_utils.ts");
 /* harmony import */ var _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VolumeRenderSettings.js */ "./src/VolumeRenderSettings.ts");
+/* harmony import */ var _RenderToBuffer_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./RenderToBuffer.js */ "./src/RenderToBuffer.ts");
 
 
 
@@ -3216,8 +3272,13 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+/* babel-plugin-inline-import './constants/shaders/copy_image.frag' */
+const copyImageShaderSrc = "varying vec2 vUv;\nuniform sampler2D image;\n\nvoid main() {\n    gl_FragColor = texture2D(image, vUv);\n}\n";
+const VOLUME_LAYER = 0;
+const MESH_LAYER = 1;
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
-const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
+const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.1;
 const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 const DEFAULT_ORTHO_SCALE = 0.5;
 class ThreeJsPanel {
@@ -3232,7 +3293,20 @@ class ThreeJsPanel {
       this.canvas.width = parentElement.offsetWidth;
       parentElement.appendChild(this.containerdiv);
     }
-    this.scene = new three__WEBPACK_IMPORTED_MODULE_6__.Scene();
+    this.scene = new three__WEBPACK_IMPORTED_MODULE_7__.Scene();
+    this.meshRenderTarget = new three__WEBPACK_IMPORTED_MODULE_7__.WebGLRenderTarget(this.canvas.width, this.canvas.height, {
+      minFilter: three__WEBPACK_IMPORTED_MODULE_7__.NearestFilter,
+      magFilter: three__WEBPACK_IMPORTED_MODULE_7__.NearestFilter,
+      format: three__WEBPACK_IMPORTED_MODULE_7__.RGBAFormat,
+      type: three__WEBPACK_IMPORTED_MODULE_7__.UnsignedByteType,
+      depthBuffer: true
+    });
+    this.meshRenderToBuffer = new _RenderToBuffer_js__WEBPACK_IMPORTED_MODULE_6__["default"](copyImageShaderSrc, {
+      image: {
+        value: this.meshRenderTarget.texture
+      }
+    });
+    this.meshRenderTarget.depthTexture = new three__WEBPACK_IMPORTED_MODULE_7__.DepthTexture(this.canvas.width, this.canvas.height);
     this.scaleBarContainerElement = document.createElement("div");
     this.orthoScaleBarElement = document.createElement("div");
     this.showOrthoScaleBar = true;
@@ -3240,7 +3314,6 @@ class ThreeJsPanel {
     this.showPerspectiveScaleBar = false;
     this.timestepIndicatorElement = document.createElement("div");
     this.showTimestepIndicator = false;
-    this.zooming = false;
     this.animateFuncs = [];
 
     // are we in a constant render loop or not?
@@ -3254,7 +3327,7 @@ class ThreeJsPanel {
     const context = this.canvas.getContext("webgl2");
     if (context) {
       this.hasWebGL2 = true;
-      this.renderer = new three__WEBPACK_IMPORTED_MODULE_6__.WebGLRenderer({
+      this.renderer = new three__WEBPACK_IMPORTED_MODULE_7__.WebGLRenderer({
         context: context,
         canvas: this.canvas,
         preserveDrawingBuffer: true,
@@ -3264,30 +3337,31 @@ class ThreeJsPanel {
       //this.renderer.autoClear = false;
       // set pixel ratio to 0.25 or 0.5 to render at lower res.
       this.renderer.setPixelRatio(window.devicePixelRatio);
-      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_6__.NormalBlending);
+      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending);
       //required by WebGL 2.0 for rendering to FLOAT textures
       this.renderer.getContext().getExtension("EXT_color_buffer_float");
     } else {
       // TODO Deprecate this code path.
       console.warn("WebGL 2.0 not available. Some functionality may be limited. Please use a browser that supports WebGL 2.0.");
-      this.renderer = new three__WEBPACK_IMPORTED_MODULE_6__.WebGLRenderer({
+      this.renderer = new three__WEBPACK_IMPORTED_MODULE_7__.WebGLRenderer({
         canvas: this.canvas,
         preserveDrawingBuffer: true,
         alpha: true,
         premultipliedAlpha: false
       });
       this.renderer.setPixelRatio(window.devicePixelRatio);
-      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_6__.NormalBlending);
+      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending);
     }
     this.renderer.localClippingEnabled = true;
     if (parentElement) {
       this.renderer.setSize(parentElement.offsetWidth, parentElement.offsetHeight);
+      this.meshRenderTarget.setSize(parentElement.offsetWidth, parentElement.offsetHeight);
     }
     this.timer = new _Timing_js__WEBPACK_IMPORTED_MODULE_1__["default"]();
     const scale = DEFAULT_ORTHO_SCALE;
     const aspect = this.getWidth() / this.getHeight();
     this.fov = 20;
-    this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_6__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
+    this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_7__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
     this.resetPerspectiveCamera();
     this.perspectiveControls = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_0__["default"](this.perspectiveCamera, this.canvas);
     this.perspectiveControls.rotateSpeed = 4.0 / window.devicePixelRatio;
@@ -3296,7 +3370,7 @@ class ThreeJsPanel {
     this.perspectiveControls.length = 10;
     this.perspectiveControls.enabled = true; //turn off mouse moments by setting to false
 
-    this.orthographicCameraX = new three__WEBPACK_IMPORTED_MODULE_6__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
+    this.orthographicCameraX = new three__WEBPACK_IMPORTED_MODULE_7__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraX();
     this.orthoControlsX = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_0__["default"](this.orthographicCameraX, this.canvas);
     this.orthoControlsX.noRotate = true;
@@ -3306,7 +3380,7 @@ class ThreeJsPanel {
     this.orthoControlsX.staticMoving = true;
     this.orthoControlsX.enabled = false;
     this.orthoControlsX.panSpeed = this.canvas.clientWidth * 0.5;
-    this.orthographicCameraY = new three__WEBPACK_IMPORTED_MODULE_6__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
+    this.orthographicCameraY = new three__WEBPACK_IMPORTED_MODULE_7__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraY();
     this.orthoControlsY = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_0__["default"](this.orthographicCameraY, this.canvas);
     this.orthoControlsY.noRotate = true;
@@ -3316,7 +3390,7 @@ class ThreeJsPanel {
     this.orthoControlsY.staticMoving = true;
     this.orthoControlsY.enabled = false;
     this.orthoControlsY.panSpeed = this.canvas.clientWidth * 0.5;
-    this.orthographicCameraZ = new three__WEBPACK_IMPORTED_MODULE_6__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
+    this.orthographicCameraZ = new three__WEBPACK_IMPORTED_MODULE_7__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraZ();
     this.orthoControlsZ = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_0__["default"](this.orthographicCameraZ, this.canvas);
     this.orthoControlsZ.noRotate = true;
@@ -3329,9 +3403,9 @@ class ThreeJsPanel {
     this.camera = this.perspectiveCamera;
     this.controls = this.perspectiveControls;
     this.viewMode = _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.Axis.NONE;
-    this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_6__.OrthographicCamera();
-    this.axisHelperScene = new three__WEBPACK_IMPORTED_MODULE_6__.Scene();
-    this.axisHelperObject = new three__WEBPACK_IMPORTED_MODULE_6__.Object3D();
+    this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_7__.OrthographicCamera();
+    this.axisHelperScene = new three__WEBPACK_IMPORTED_MODULE_7__.Scene();
+    this.axisHelperObject = new three__WEBPACK_IMPORTED_MODULE_7__.Object3D();
     this.axisHelperObject.name = "axisHelperParentObject";
     this.showAxis = false;
     // size of axes in px.
@@ -3361,7 +3435,7 @@ class ThreeJsPanel {
     this.orthographicCameraX.up.x = 0.0;
     this.orthographicCameraX.up.y = 0.0;
     this.orthographicCameraX.up.z = 1.0;
-    this.orthographicCameraX.lookAt(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, 0));
+    this.orthographicCameraX.lookAt(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0));
   }
   resetOrthographicCameraY() {
     this.orthographicCameraY.position.x = 0.0;
@@ -3370,7 +3444,7 @@ class ThreeJsPanel {
     this.orthographicCameraY.up.x = 0.0;
     this.orthographicCameraY.up.y = 0.0;
     this.orthographicCameraY.up.z = 1.0;
-    this.orthographicCameraY.lookAt(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, 0));
+    this.orthographicCameraY.lookAt(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0));
   }
   resetOrthographicCameraZ() {
     this.orthographicCameraZ.position.x = 0.0;
@@ -3379,7 +3453,7 @@ class ThreeJsPanel {
     this.orthographicCameraZ.up.x = 0.0;
     this.orthographicCameraZ.up.y = 1.0;
     this.orthographicCameraZ.up.z = 0.0;
-    this.orthographicCameraZ.lookAt(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, 0));
+    this.orthographicCameraZ.lookAt(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0));
   }
   requestCapture(dataurlcallback) {
     this.dataurlcallback = dataurlcallback;
@@ -3390,7 +3464,7 @@ class ThreeJsPanel {
   }
   resetToPerspectiveCamera() {
     const aspect = this.getWidth() / this.getHeight();
-    this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_6__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
+    this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_7__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
     this.resetPerspectiveCamera();
     this.switchViewMode("3D");
     this.controls.object = this.perspectiveCamera;
@@ -3412,21 +3486,21 @@ class ThreeJsPanel {
   setupAxisHelper() {
     // set up axis widget.
 
-    const axisCubeMaterial = new three__WEBPACK_IMPORTED_MODULE_6__.MeshBasicMaterial({
+    const axisCubeMaterial = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
       color: 0xaeacad
     });
-    const axisCube = new three__WEBPACK_IMPORTED_MODULE_6__.BoxGeometry(this.axisScale / 5, this.axisScale / 5, this.axisScale / 5);
-    const axisCubeMesh = new three__WEBPACK_IMPORTED_MODULE_6__.Mesh(axisCube, axisCubeMaterial);
+    const axisCube = new three__WEBPACK_IMPORTED_MODULE_7__.BoxGeometry(this.axisScale / 5, this.axisScale / 5, this.axisScale / 5);
+    const axisCubeMesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(axisCube, axisCubeMaterial);
     this.axisHelperObject.add(axisCubeMesh);
-    const axisHelper = new three__WEBPACK_IMPORTED_MODULE_6__.AxesHelper(this.axisScale);
+    const axisHelper = new three__WEBPACK_IMPORTED_MODULE_7__.AxesHelper(this.axisScale);
     this.axisHelperObject.add(axisHelper);
     this.axisHelperScene.add(this.axisHelperObject);
-    this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_6__.OrthographicCamera(0, this.getWidth(), this.getHeight(), 0, 0.001, this.axisScale * 4.0);
+    this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_7__.OrthographicCamera(0, this.getWidth(), this.getHeight(), 0, 0.001, this.axisScale * 4.0);
     this.axisCamera.position.z = 1.0;
     this.axisCamera.up.x = 0.0;
     this.axisCamera.up.y = 1.0;
     this.axisCamera.up.z = 0.0;
-    this.axisCamera.lookAt(new three__WEBPACK_IMPORTED_MODULE_6__.Vector3(0, 0, 0));
+    this.axisCamera.lookAt(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0));
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
   setAxisPosition(marginX, marginY, corner) {
@@ -3637,8 +3711,8 @@ class ThreeJsPanel {
     }
     this.updateScaleBarVisibility();
   }
-  getCanvas() {
-    return this.canvas;
+  getMeshDepthTexture() {
+    return this.meshRenderTarget.depthTexture;
   }
   resize(comp, w, h, _ow, _oh, _eOpts) {
     w = w || this.containerdiv.parentElement?.offsetWidth || this.containerdiv.offsetWidth;
@@ -3670,6 +3744,7 @@ class ThreeJsPanel {
       this.renderer.setPixelRatio(window.devicePixelRatio);
     }
     this.renderer.setSize(w, h);
+    this.meshRenderTarget.setSize(w, h);
     this.perspectiveControls.handleResize();
     this.orthoControlsZ.handleResize();
     this.orthoControlsY.handleResize();
@@ -3738,7 +3813,25 @@ class ThreeJsPanel {
         this.animateFuncs[i](this);
       }
     }
+
+    // RENDERING
+    // Step 1: Render meshes, e.g. isosurfaces, separately to a render target. (Meshes are all on
+    //   layer 1.) This is necessary to access the depth buffer.
+    this.camera.layers.set(MESH_LAYER);
+    this.renderer.setRenderTarget(this.meshRenderTarget);
     this.renderer.render(this.scene, this.camera);
+
+    // Step 2: Render the mesh render target out to the screen.
+    this.meshRenderToBuffer.material.uniforms.image.value = this.meshRenderTarget.texture;
+    this.meshRenderToBuffer.render(this.renderer);
+
+    // Step 3: Render volumes, which can now depth test against the meshes.
+    this.camera.layers.set(VOLUME_LAYER);
+    this.renderer.setRenderTarget(null);
+    this.renderer.autoClear = false;
+    this.renderer.render(this.scene, this.camera);
+    this.renderer.autoClear = true;
+
     // overlay
     if (this.showAxis) {
       this.renderer.autoClear = false;
@@ -4202,6 +4295,7 @@ class View3d {
     this.lightContainer = new three__WEBPACK_IMPORTED_MODULE_7__.Object3D();
     this.lightContainer.name = "lightContainer";
     this.ambientLight = new three__WEBPACK_IMPORTED_MODULE_7__.AmbientLight(_constants_lights_js__WEBPACK_IMPORTED_MODULE_2__["default"].ambientLightSettings.color, _constants_lights_js__WEBPACK_IMPORTED_MODULE_2__["default"].ambientLightSettings.intensity);
+    this.ambientLight.layers.enable(_ThreeJsPanel_js__WEBPACK_IMPORTED_MODULE_1__.MESH_LAYER);
     this.lightContainer.add(this.ambientLight);
 
     // key light
@@ -4209,6 +4303,7 @@ class View3d {
     this.spotLight.position.set(_constants_lights_js__WEBPACK_IMPORTED_MODULE_2__["default"].spotlightSettings.position.x, _constants_lights_js__WEBPACK_IMPORTED_MODULE_2__["default"].spotlightSettings.position.y, _constants_lights_js__WEBPACK_IMPORTED_MODULE_2__["default"].spotlightSettings.position.z);
     this.spotLight.target = new three__WEBPACK_IMPORTED_MODULE_7__.Object3D(); // this.substrate;
     this.spotLight.angle = _constants_lights_js__WEBPACK_IMPORTED_MODULE_2__["default"].spotlightSettings.angle;
+    this.spotLight.layers.enable(_ThreeJsPanel_js__WEBPACK_IMPORTED_MODULE_1__.MESH_LAYER);
     this.lightContainer.add(this.spotLight);
 
     // reflect light
@@ -4216,6 +4311,7 @@ class View3d {
     this.reflectedLight.position.set(_constants_lights_js__WEBPACK_IMPORTED_MODULE_2__["default"].reflectedLightSettings.position.x, _constants_lights_js__WEBPACK_IMPORTED_MODULE_2__["default"].reflectedLightSettings.position.y, _constants_lights_js__WEBPACK_IMPORTED_MODULE_2__["default"].reflectedLightSettings.position.z);
     this.reflectedLight.castShadow = _constants_lights_js__WEBPACK_IMPORTED_MODULE_2__["default"].reflectedLightSettings.castShadow;
     this.reflectedLight.intensity = _constants_lights_js__WEBPACK_IMPORTED_MODULE_2__["default"].reflectedLightSettings.intensity;
+    this.reflectedLight.layers.enable(_ThreeJsPanel_js__WEBPACK_IMPORTED_MODULE_1__.MESH_LAYER);
     this.lightContainer.add(this.reflectedLight);
 
     // fill light
@@ -4223,6 +4319,7 @@ class View3d {
     this.fillLight.position.set(_constants_lights_js__WEBPACK_IMPORTED_MODULE_2__["default"].fillLightSettings.position.x, _constants_lights_js__WEBPACK_IMPORTED_MODULE_2__["default"].fillLightSettings.position.y, _constants_lights_js__WEBPACK_IMPORTED_MODULE_2__["default"].fillLightSettings.position.z);
     this.fillLight.castShadow = _constants_lights_js__WEBPACK_IMPORTED_MODULE_2__["default"].fillLightSettings.castShadow;
     this.fillLight.intensity = _constants_lights_js__WEBPACK_IMPORTED_MODULE_2__["default"].fillLightSettings.intensity;
+    this.fillLight.layers.enable(_ThreeJsPanel_js__WEBPACK_IMPORTED_MODULE_1__.MESH_LAYER);
     this.lightContainer.add(this.fillLight);
     this.scene.add(this.lightContainer);
   }
@@ -6632,7 +6729,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
 const spotlightSettings = Object.freeze({
-  angle: 6 * three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.DEG2RAD,
+  angle: 36 * three__WEBPACK_IMPORTED_MODULE_0__.MathUtils.DEG2RAD,
   castShadow: false,
   color: 0xffffff,
   intensity: 0.4,
@@ -7052,9 +7149,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
 /* babel-plugin-inline-import './shaders/raymarch.vert' */
-const rayMarchVertexShader = "// switch on high precision floats\n#ifdef GL_ES\nprecision highp float;\n#endif\nvarying vec3 pObj;\nvoid main() {\n  pObj = position;\n  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n}\n";
+const rayMarchVertexShader = "// switch on high precision floats\n#ifdef GL_ES\nprecision highp float;\n#endif\n\nvarying vec3 pObj;\n\nvoid main() {\n  pObj = position;\n  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n}\n";
 /* babel-plugin-inline-import './shaders/raymarch.frag' */
-const rayMarchFragmentShader = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\n#define M_PI 3.14159265358979323846\n\nuniform vec2 iResolution;\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform vec2 ATLAS_DIMS;\nuniform vec3 AABB_CLIP_MIN;\nuniform float CLIP_NEAR;\nuniform vec3 AABB_CLIP_MAX;\nuniform float CLIP_FAR;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform int BREAK_STEPS;\nuniform float SLICES;\nuniform float isOrtho;\nuniform float orthoThickness;\nuniform float orthoScale;\nuniform int maxProject;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\nuniform vec3 volumeScale;\n\n// view space to axis-aligned volume box\nuniform mat4 inverseModelViewMatrix;\n\nvarying vec3 pObj;\n\nfloat powf(float a, float b) {\n  return pow(a,b);\n}\n\nfloat rand(vec2 co) {\n  float threadId = gl_FragCoord.x/(gl_FragCoord.y + 1.0);\n  float bigVal = threadId*1299721.0/911.0;\n  vec2 smallVal = vec2(threadId*7927.0/577.0, threadId*104743.0/1039.0);\n  return fract(sin(dot(co, smallVal)) * bigVal);\n}\n\nvec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {\n  float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));\n  // float x = max(color[2], max(color[0],color[1]));\n  float xi = (x-vmin)/(vmax-vmin);\n  xi = clamp(xi,0.0,1.0);\n  float y = pow(xi,C);\n  y = clamp(y,0.0,1.0);\n  color[3] = y;\n  return color;\n}\n\nvec2 offsetFrontBack(float t) {\n  int a = int(t);\n  int ax = int(ATLAS_DIMS.x);\n  vec2 os = vec2(float(a - (a / ax) * ax), float(a / ax)) / ATLAS_DIMS;\n  return clamp(os, vec2(0.0), vec2(1.0) - vec2(1.0) / ATLAS_DIMS);\n}\n\nvec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n  // get location within atlas tile\n  // TODO: get loc1 which follows ray to next slice along ray direction\n  // when flipvolume = 1:  pos\n  // when flipvolume = -1: 1-pos\n  vec2 loc0 = ((pos.xy - 0.5) * flipVolume.xy + 0.5) / ATLAS_DIMS;\n\n  // loc ranges from 0 to 1/ATLAS_DIMS\n  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n  loc0 = vec2(0.5) / textureRes + loc0 * (vec2(1.0) - ATLAS_DIMS / textureRes);\n  \n  // interpolate between two slices\n  float z = (pos.z)*(nSlices-1.0);\n  float z0 = floor(z);\n  float t = z-z0; //mod(z, 1.0);\n  float z1 = min(z0+1.0, nSlices-1.0);\n\n  // flipped:\n  if (flipVolume.z == -1.0) {\n    z0 = nSlices - z0 - 1.0;\n    z1 = nSlices - z1 - 1.0;\n    t = 1.0 - t;\n  }\n\n  // get slice offsets in texture atlas\n  vec2 o0 = offsetFrontBack(z0) + loc0;\n  vec2 o1 = offsetFrontBack(z1) + loc0;\n\n  vec4 slice0Color = texture2D(tex, o0);\n  vec4 slice1Color = texture2D(tex, o1);\n  // NOTE we could premultiply the mask in the fuse function,\n  // but that is slower to update the maskAlpha value than here in the shader.\n  // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?\n  float slice0Mask = texture2D(textureAtlasMask, o0).x;\n  float slice1Mask = texture2D(textureAtlasMask, o1).x;\n  // or use max for conservative 0 or 1 masking?\n  float maskVal = mix(slice0Mask, slice1Mask, t);\n  // take mask from 0..1 to alpha..1\n  maskVal = mix(maskVal, 1.0, maskAlpha);\n  vec4 retval = mix(slice0Color, slice1Color, t);\n  // only mask the rgb, not the alpha(?)\n  retval.rgb *= maskVal;\n  return bounds*retval;\n}\n\nvec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n\n  vec2 loc0 = ((pos.xy - 0.5) * flipVolume.xy + 0.5) / ATLAS_DIMS;\n\n  // No interpolation - sample just one slice at a pixel center.\n  // Ideally this would be accomplished in part by switching this texture to linear\n  //   filtering, but three makes this difficult to do through a WebGLRenderTarget.\n  loc0 = floor(loc0 * textureRes) / textureRes;\n  loc0 += vec2(0.5) / textureRes;\n\n  float z = min(floor(pos.z * nSlices), nSlices-1.0);\n  \n  if (flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds*voxelColor;\n}\n\nbool intersectBox(in vec3 r_o, in vec3 r_d, in vec3 boxMin, in vec3 boxMax,\n                  out float tnear, out float tfar) {\n  // compute intersection of ray with all six bbox planes\n  vec3 invR = vec3(1.0,1.0,1.0) / r_d;\n  vec3 tbot = invR * (boxMin - r_o);\n  vec3 ttop = invR * (boxMax - r_o);\n\n  // re-order intersections to find smallest and largest on each axis\n  vec3 tmin = min(ttop, tbot);\n  vec3 tmax = max(ttop, tbot);\n\n  // find the largest tmin and the smallest tmax\n  float largest_tmin  = max(max(tmin.x, tmin.y), max(tmin.x, tmin.z));\n  float smallest_tmax = min(min(tmax.x, tmax.y), min(tmax.x, tmax.z));\n\n  tnear = largest_tmin;\n  tfar = smallest_tmax;\n\n  // use >= here?\n  return(smallest_tmax > largest_tmin);\n}\n\nvec4 accumulate(vec4 col, float s, vec4 C) {\n  float stepScale = (1.0 - powf((1.0-col.w),s));\n  col.w = stepScale;\n  col.xyz *= col.w;\n  col = clamp(col,0.0,1.0);\n\n  C = (1.0-C.w)*col + C;\n  return C;\n}\n\nvec4 integrateVolume(vec4 eye_o,vec4 eye_d,\n                     float tnear,   float tfar,\n                     float clipNear, float clipFar,\n                     sampler2D textureAtlas\n                     ) {\n  vec4 C = vec4(0.0);\n  float tend   = tfar;\n  float tbegin = tnear;\n\n  // march along ray from front to back, accumulating color\n\n  // estimate step length\n  const int maxSteps = 512;\n  // modify the 3 components of eye_d by volume scale\n  float scaledSteps = float(BREAK_STEPS) * length((eye_d.xyz/volumeScale));\n  float csteps = clamp(float(scaledSteps), 1.0, float(maxSteps));\n  float invstep = (tfar-tnear)/csteps;\n  // special-casing the single slice to remove the random ray dither.\n  // this removes a Moire pattern visible in single slice images, which we want to view as 2D images as best we can.\n  float r = (SLICES==1.0) ? 0.0 : rand(eye_d.xy);\n  // if ortho and clipped, make step size smaller so we still get same number of steps\n  float tstep = invstep*orthoThickness;\n  float tfarsurf = r*tstep;\n  float overflow = mod((tfarsurf - tend),tstep); // random dithering offset\n  float t = tbegin + overflow;\n  t += r*tstep; // random dithering offset\n  float tdist = 0.0;\n  int numSteps = 0;\n  vec4 pos, col;\n  // We need to be able to scale the alpha contrib with number of ray steps,\n  // in order to make the final color invariant to the step size(?)\n  // use maxSteps (a constant) as the numerator... Not sure if this is sound.\n  float s = 0.5 * float(maxSteps) / csteps;\n  for (int i = 0; i < maxSteps; i++) {\n    pos = eye_o + eye_d*t;\n    // !!! assume box bounds are -0.5 .. 0.5.  pos = (pos-min)/(max-min)\n    // scaling is handled by model transform and already accounted for before we get here.\n    // AABB clip is independent of this and is only used to determine tnear and tfar.\n    pos.xyz = (pos.xyz-(-0.5))/((0.5)-(-0.5)); //0.5 * (pos + 1.0); // map position from [boxMin, boxMax] to [0, 1] coordinates\n\n    vec4 col = interpolationEnabled ? sampleAtlasLinear(textureAtlas, pos) : sampleAtlasNearest(textureAtlas, pos);\n\n    if (maxProject != 0) {\n      col.xyz *= BRIGHTNESS;\n      C = max(col, C);\n    } else {\n      col = luma2Alpha(col, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);\n      col.xyz *= BRIGHTNESS;\n      // for practical use the density only matters for regular volume integration\n      col.w *= DENSITY;\n      C = accumulate(col, s, C);\n    }\n    t += tstep;\n    numSteps = i;\n\n    if (t > tend || t > tbegin+clipFar ) break;\n    if (C.w > 1.0 ) break;\n  }\n\n  return C;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n  vec2 vUv = gl_FragCoord.xy/iResolution.xy;\n\n  vec3 eyeRay_o, eyeRay_d;\n\n  if (isOrtho == 0.0) {\n    // for perspective rays:\n    // world space camera coordinates\n    // transform to object space\n    eyeRay_o = (inverseModelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;\n    eyeRay_d = normalize(pObj - eyeRay_o);\n  } else {\n    // for ortho rays:\n    float zDist = 2.0;\n    eyeRay_d = (inverseModelViewMatrix*vec4(0.0, 0.0, -zDist, 0.0)).xyz;\n    vec4 ray_o = vec4(2.0*vUv - 1.0, 1.0, 1.0);\n    ray_o.xy *= orthoScale;\n    ray_o.x *= iResolution.x/iResolution.y;\n    eyeRay_o = (inverseModelViewMatrix*ray_o).xyz;\n  }\n\n  // -0.5..0.5 is full box. AABB_CLIP lets us clip to a box shaped ROI to look at\n  // I am applying it here at the earliest point so that the ray march does\n  // not waste steps.  For general shaped ROI, this has to be handled more\n  // generally (obviously)\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n\n  float tnear, tfar;\n  bool hit = intersectBox(eyeRay_o, eyeRay_d, boxMin, boxMax, tnear, tfar);\n\n  if (!hit) {\n    // return background color if ray misses the cube\n    // is this safe to do when there is other geometry / gObjects drawn?\n    gl_FragColor = vec4(0.0); //C1;//vec4(0.0);\n    return;\n  }\n\n  float clipNear = 0.0;//-(dot(eyeRay_o.xyz, eyeNorm) + dNear) / dot(eyeRay_d.xyz, eyeNorm);\n  float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);\n\n  vec4 C = integrateVolume(vec4(eyeRay_o,1.0), vec4(eyeRay_d,0.0),\n                           tnear,    tfar, //intersections of box\n                           clipNear, clipFar,\n                           textureAtlas);\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}\n";
+const rayMarchFragmentShader = "\n#ifdef GL_ES\nprecision highp float;\n#endif\n\n#define M_PI 3.14159265358979323846\n\nuniform vec2 iResolution;\nuniform vec2 textureRes;\nuniform float GAMMA_MIN;\nuniform float GAMMA_MAX;\nuniform float GAMMA_SCALE;\nuniform float BRIGHTNESS;\nuniform float DENSITY;\nuniform float maskAlpha;\nuniform vec2 ATLAS_DIMS;\nuniform vec3 AABB_CLIP_MIN;\nuniform float CLIP_NEAR;\nuniform vec3 AABB_CLIP_MAX;\nuniform float CLIP_FAR;\nuniform sampler2D textureAtlas;\nuniform sampler2D textureAtlasMask;\nuniform sampler2D textureDepth;\nuniform int BREAK_STEPS;\nuniform float SLICES;\nuniform float isOrtho;\nuniform float orthoThickness;\nuniform float orthoScale;\nuniform int maxProject;\nuniform bool interpolationEnabled;\nuniform vec3 flipVolume;\nuniform vec3 volumeScale;\n\n// view space to axis-aligned volume box\nuniform mat4 inverseModelViewMatrix;\nuniform mat4 inverseProjMatrix;\n\nvarying vec3 pObj;\n\nfloat powf(float a, float b) {\n  return pow(a,b);\n}\n\nfloat rand(vec2 co) {\n  float threadId = gl_FragCoord.x/(gl_FragCoord.y + 1.0);\n  float bigVal = threadId*1299721.0/911.0;\n  vec2 smallVal = vec2(threadId*7927.0/577.0, threadId*104743.0/1039.0);\n  return fract(sin(dot(co, smallVal)) * bigVal);\n}\n\nvec4 luma2Alpha(vec4 color, float vmin, float vmax, float C) {\n  float x = dot(color.rgb, vec3(0.2125, 0.7154, 0.0721));\n  // float x = max(color[2], max(color[0],color[1]));\n  float xi = (x-vmin)/(vmax-vmin);\n  xi = clamp(xi,0.0,1.0);\n  float y = pow(xi,C);\n  y = clamp(y,0.0,1.0);\n  color[3] = y;\n  return color;\n}\n\nvec2 offsetFrontBack(float t) {\n  int a = int(t);\n  int ax = int(ATLAS_DIMS.x);\n  vec2 os = vec2(float(a - (a / ax) * ax), float(a / ax)) / ATLAS_DIMS;\n  return clamp(os, vec2(0.0), vec2(1.0) - vec2(1.0) / ATLAS_DIMS);\n}\n\nvec4 sampleAtlasLinear(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n  // get location within atlas tile\n  // TODO: get loc1 which follows ray to next slice along ray direction\n  // when flipvolume = 1:  pos\n  // when flipvolume = -1: 1-pos\n  vec2 loc0 = ((pos.xy - 0.5) * flipVolume.xy + 0.5) / ATLAS_DIMS;\n\n  // loc ranges from 0 to 1/ATLAS_DIMS\n  // shrink loc0 to within one half edge texel - so as not to sample across edges of tiles.\n  loc0 = vec2(0.5) / textureRes + loc0 * (vec2(1.0) - ATLAS_DIMS / textureRes);\n  \n  // interpolate between two slices\n  float z = (pos.z)*(nSlices-1.0);\n  float z0 = floor(z);\n  float t = z-z0; //mod(z, 1.0);\n  float z1 = min(z0+1.0, nSlices-1.0);\n\n  // flipped:\n  if (flipVolume.z == -1.0) {\n    z0 = nSlices - z0 - 1.0;\n    z1 = nSlices - z1 - 1.0;\n    t = 1.0 - t;\n  }\n\n  // get slice offsets in texture atlas\n  vec2 o0 = offsetFrontBack(z0) + loc0;\n  vec2 o1 = offsetFrontBack(z1) + loc0;\n\n  vec4 slice0Color = texture2D(tex, o0);\n  vec4 slice1Color = texture2D(tex, o1);\n  // NOTE we could premultiply the mask in the fuse function,\n  // but that is slower to update the maskAlpha value than here in the shader.\n  // it is a memory vs perf tradeoff.  Do users really need to update the maskAlpha at realtime speed?\n  float slice0Mask = texture2D(textureAtlasMask, o0).x;\n  float slice1Mask = texture2D(textureAtlasMask, o1).x;\n  // or use max for conservative 0 or 1 masking?\n  float maskVal = mix(slice0Mask, slice1Mask, t);\n  // take mask from 0..1 to alpha..1\n  maskVal = mix(maskVal, 1.0, maskAlpha);\n  vec4 retval = mix(slice0Color, slice1Color, t);\n  // only mask the rgb, not the alpha(?)\n  retval.rgb *= maskVal;\n  return bounds*retval;\n}\n\nvec4 sampleAtlasNearest(sampler2D tex, vec4 pos) {\n  float bounds = float(pos[0] >= 0.0 && pos[0] <= 1.0 &&\n                       pos[1] >= 0.0 && pos[1] <= 1.0 &&\n                       pos[2] >= 0.0 && pos[2] <= 1.0 );\n  float nSlices = float(SLICES);\n\n  vec2 loc0 = ((pos.xy - 0.5) * flipVolume.xy + 0.5) / ATLAS_DIMS;\n\n  // No interpolation - sample just one slice at a pixel center.\n  // Ideally this would be accomplished in part by switching this texture to linear\n  //   filtering, but three makes this difficult to do through a WebGLRenderTarget.\n  loc0 = floor(loc0 * textureRes) / textureRes;\n  loc0 += vec2(0.5) / textureRes;\n\n  float z = min(floor(pos.z * nSlices), nSlices-1.0);\n  \n  if (flipVolume.z == -1.0) {\n    z = nSlices - z - 1.0;\n  }\n\n  vec2 o = offsetFrontBack(z) + loc0;\n  vec4 voxelColor = texture2D(tex, o);\n\n  // Apply mask\n  float voxelMask = texture2D(textureAtlasMask, o).x;\n  voxelMask = mix(voxelMask, 1.0, maskAlpha);\n  voxelColor.rgb *= voxelMask;\n\n  return bounds*voxelColor;\n}\n\nbool intersectBox(in vec3 r_o, in vec3 r_d, in vec3 boxMin, in vec3 boxMax,\n                  out float tnear, out float tfar) {\n  // compute intersection of ray with all six bbox planes\n  vec3 invR = vec3(1.0,1.0,1.0) / r_d;\n  vec3 tbot = invR * (boxMin - r_o);\n  vec3 ttop = invR * (boxMax - r_o);\n\n  // re-order intersections to find smallest and largest on each axis\n  vec3 tmin = min(ttop, tbot);\n  vec3 tmax = max(ttop, tbot);\n\n  // find the largest tmin and the smallest tmax\n  float largest_tmin  = max(max(tmin.x, tmin.y), max(tmin.x, tmin.z));\n  float smallest_tmax = min(min(tmax.x, tmax.y), min(tmax.x, tmax.z));\n\n  tnear = largest_tmin;\n  tfar = smallest_tmax;\n\n  // use >= here?\n  return(smallest_tmax > largest_tmin);\n}\n\nvec4 accumulate(vec4 col, float s, vec4 C) {\n  float stepScale = (1.0 - powf((1.0-col.w),s));\n  col.w = stepScale;\n  col.xyz *= col.w;\n  col = clamp(col,0.0,1.0);\n\n  C = (1.0-C.w)*col + C;\n  return C;\n}\n\nvec4 integrateVolume(vec4 eye_o,vec4 eye_d,\n                     float tnear,   float tfar,\n                     float clipNear, float clipFar,\n                     sampler2D textureAtlas\n                     ) {\n  vec4 C = vec4(0.0);\n  // march along ray from front to back, accumulating color\n\n  // estimate step length\n  const int maxSteps = 512;\n  // modify the 3 components of eye_d by volume scale\n  float scaledSteps = float(BREAK_STEPS) * length((eye_d.xyz/volumeScale));\n  float csteps = clamp(float(scaledSteps), 1.0, float(maxSteps));\n  float invstep = (tfar-tnear)/csteps;\n  // special-casing the single slice to remove the random ray dither.\n  // this removes a Moire pattern visible in single slice images, which we want to view as 2D images as best we can.\n  float r = (SLICES==1.0) ? 0.0 : rand(eye_d.xy);\n  // if ortho and clipped, make step size smaller so we still get same number of steps\n  float tstep = invstep*orthoThickness;\n  float tfarsurf = r*tstep;\n  float overflow = mod((tfarsurf - tfar),tstep); // random dithering offset\n  float t = tnear + overflow;\n  t += r*tstep; // random dithering offset\n  float tdist = 0.0;\n  int numSteps = 0;\n  vec4 pos, col;\n  // We need to be able to scale the alpha contrib with number of ray steps,\n  // in order to make the final color invariant to the step size(?)\n  // use maxSteps (a constant) as the numerator... Not sure if this is sound.\n  float s = 0.5 * float(maxSteps) / csteps;\n  for (int i = 0; i < maxSteps; i++) {\n    pos = eye_o + eye_d*t;\n    // !!! assume box bounds are -0.5 .. 0.5.  pos = (pos-min)/(max-min)\n    // scaling is handled by model transform and already accounted for before we get here.\n    // AABB clip is independent of this and is only used to determine tnear and tfar.\n    pos.xyz = (pos.xyz-(-0.5))/((0.5)-(-0.5)); //0.5 * (pos + 1.0); // map position from [boxMin, boxMax] to [0, 1] coordinates\n\n    vec4 col = interpolationEnabled ? sampleAtlasLinear(textureAtlas, pos) : sampleAtlasNearest(textureAtlas, pos);\n\n    if (maxProject != 0) {\n      col.xyz *= BRIGHTNESS;\n      C = max(col, C);\n    } else {\n      col = luma2Alpha(col, GAMMA_MIN, GAMMA_MAX, GAMMA_SCALE);\n      col.xyz *= BRIGHTNESS;\n      // for practical use the density only matters for regular volume integration\n      col.w *= DENSITY;\n      C = accumulate(col, s, C);\n    }\n    t += tstep;\n    numSteps = i;\n\n    if (t > tfar || t > tnear+clipFar ) break;\n    if (C.w > 1.0 ) break;\n  }\n\n  return C;\n}\n\nvoid main() {\n  gl_FragColor = vec4(0.0);\n  vec2 vUv = gl_FragCoord.xy/iResolution.xy;\n\n  vec3 eyeRay_o, eyeRay_d;\n\n  if (isOrtho == 0.0) {\n    // for perspective rays:\n    // world space camera coordinates\n    // transform to object space\n    eyeRay_o = (inverseModelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;\n    eyeRay_d = normalize(pObj - eyeRay_o);\n  } else {\n    // for ortho rays:\n    float zDist = 2.0;\n    eyeRay_d = (inverseModelViewMatrix*vec4(0.0, 0.0, -zDist, 0.0)).xyz;\n    vec4 ray_o = vec4(2.0*vUv - 1.0, 1.0, 1.0);\n    ray_o.xy *= orthoScale;\n    ray_o.x *= iResolution.x/iResolution.y;\n    eyeRay_o = (inverseModelViewMatrix*ray_o).xyz;\n  }\n\n  // -0.5..0.5 is full box. AABB_CLIP lets us clip to a box shaped ROI to look at\n  // I am applying it here at the earliest point so that the ray march does\n  // not waste steps.  For general shaped ROI, this has to be handled more\n  // generally (obviously)\n  vec3 boxMin = AABB_CLIP_MIN;\n  vec3 boxMax = AABB_CLIP_MAX;\n\n  float tnear, tfar;\n  bool hit = intersectBox(eyeRay_o, eyeRay_d, boxMin, boxMax, tnear, tfar);\n\n  if (!hit) {\n    // return background color if ray misses the cube\n    // is this safe to do when there is other geometry / gObjects drawn?\n    gl_FragColor = vec4(0.0); //C1;//vec4(0.0);\n    return;\n  }\n\n  float clipNear = 0.0;//-(dot(eyeRay_o.xyz, eyeNorm) + dNear) / dot(eyeRay_d.xyz, eyeNorm);\n  float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);\n\n  // Sample the depth texture\n  float depth = texture2D(textureDepth, vUv).r;\n  // If there's a depth-contributing mesh at this fragment, we may need to terminate the ray early\n  if (depth < 1.0) {\n    // Get a projection space position from depth and uv, and unproject back to object space\n    vec4 meshProj = vec4(vUv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);\n    vec4 meshView = inverseProjMatrix * meshProj;\n    vec4 meshObj = inverseModelViewMatrix * vec4(meshView.xyz / meshView.w, 1.0);\n\n    // Derive a t value for the mesh intersection\n    // NOTE: divides by 0 when `eyeRay_d.z` is 0. Could be mitigated by picking another component\n    //   to derive with when z is 0, but I found this was rare enough in practice to be acceptable.\n    float tMesh = (meshObj.z - eyeRay_o.z) / eyeRay_d.z;\n    if (tMesh < tfar) {\n      clipFar = tMesh - tnear;\n    }\n  }\n\n  vec4 C = integrateVolume(vec4(eyeRay_o,1.0), vec4(eyeRay_d,0.0),\n                          tnear,    tfar, //intersections of box\n                          clipNear, clipFar,\n                          textureAtlas);\n\n  C = clamp(C, 0.0, 1.0);\n  gl_FragColor = C;\n  return;\n}\n";
 const rayMarchingVertexShaderSrc = rayMarchVertexShader;
 const rayMarchingFragmentShaderSrc = rayMarchFragmentShader;
 const rayMarchingShaderUniforms = () => {
@@ -7065,11 +7162,11 @@ const rayMarchingShaderUniforms = () => {
     },
     CLIP_NEAR: {
       type: "f",
-      value: 0.0
+      value: 0.1
     },
     CLIP_FAR: {
       type: "f",
-      value: 10000.0
+      value: 20.0
     },
     maskAlpha: {
       type: "f",
@@ -7131,11 +7228,19 @@ const rayMarchingShaderUniforms = () => {
       type: "m4",
       value: new three__WEBPACK_IMPORTED_MODULE_0__.Matrix4()
     },
+    inverseProjMatrix: {
+      type: "m4",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Matrix4()
+    },
     textureAtlas: {
       type: "t",
       value: new three__WEBPACK_IMPORTED_MODULE_0__.Texture()
     },
     textureAtlasMask: {
+      type: "t",
+      value: new three__WEBPACK_IMPORTED_MODULE_0__.Texture()
+    },
+    textureDepth: {
       type: "t",
       value: new three__WEBPACK_IMPORTED_MODULE_0__.Texture()
     },
