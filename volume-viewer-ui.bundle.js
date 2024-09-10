@@ -7621,8 +7621,8 @@ class ThreadableVolumeLoader {
       }
     };
     const spec = {
-      ...loadSpecOverride,
-      ...volume.loadSpec
+      ...volume.loadSpec,
+      ...loadSpecOverride
     };
     return this.loadRawChannelData(volume.imageInfo, spec, onUpdateMetadata, onChannelData);
   }
