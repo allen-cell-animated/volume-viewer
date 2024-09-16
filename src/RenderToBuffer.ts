@@ -9,7 +9,7 @@ import {
   WebGLRenderTarget,
 } from "three";
 
-import { renderToBufferVertShader } from "./constants/basicShaders";
+import { renderToBufferVertShader } from "./constants/basicShaders.js";
 
 /**
  * Helper for render passes that just require a fragment shader: accepts a fragment shader and its
