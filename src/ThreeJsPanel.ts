@@ -28,7 +28,7 @@ import { constrainToAxis, formatNumber, getTimestamp } from "./utils/num_utils.j
 import { Axis } from "./VolumeRenderSettings.js";
 import RenderToBuffer from "./RenderToBuffer.js";
 
-import copyImageShaderSrc from "./constants/shaders/copy_image.frag";
+import { copyImageFragShader } from "./constants/basicShaders.js";
 
 export const VOLUME_LAYER = 0;
 export const MESH_LAYER = 1;
@@ -118,7 +118,7 @@ export class ThreeJsPanel {
       type: UnsignedByteType,
       depthBuffer: true,
     });
-    this.meshRenderToBuffer = new RenderToBuffer(copyImageShaderSrc, {
+    this.meshRenderToBuffer = new RenderToBuffer(copyImageFragShader, {
       image: { value: this.meshRenderTarget.texture },
     });
     this.meshRenderTarget.depthTexture = new DepthTexture(this.canvas.width, this.canvas.height);

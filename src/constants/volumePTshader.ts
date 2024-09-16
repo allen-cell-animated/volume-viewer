@@ -1,10 +1,7 @@
 import { Texture, Vector2, Vector3, Vector4 } from "three";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "../Light.js";
-import pathTraceVertexShader from "./shaders/pathtrace.vert";
 import pathTraceFragmentShader from "./shaders/pathtrace.frag";
 
-// threejs passthrough vertex shader for fullscreen quad
-export const pathTracingVertexShaderSrc = pathTraceVertexShader;
 export const pathTracingFragmentShaderSrc = pathTraceFragmentShader;
 
 // Must match values in shader code above.

@@ -9,7 +9,7 @@ import {
   WebGLRenderTarget,
 } from "three";
 
-import bufferVertexShaderSrc from "./constants/shaders/render_to_buffer.vert";
+import { renderToBufferVertShader } from "./constants/basicShaders";
 
 /**
  * Helper for render passes that just require a fragment shader: accepts a fragment shader and its
@@ -27,7 +27,7 @@ export default class RenderToBuffer {
     this.geometry = new PlaneGeometry(2, 2);
 
     this.material = new ShaderMaterial({
-      vertexShader: bufferVertexShaderSrc,
+      vertexShader: renderToBufferVertShader,
       fragmentShader: fragmentSrc,
       uniforms,
     });

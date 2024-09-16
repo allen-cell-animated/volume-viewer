@@ -1,16 +1,3 @@
-// threejs passthrough vertex shader for fullscreen quad
-export const fuseVertexShaderSrc = `
-precision highp float;
-precision highp int;
-out vec2 vUv;
-void main()
-{
-  vUv = uv;
-  gl_Position = vec4( position, 1.0 );
-}
-`;
-
-export const fuseShaderSrc = `
 precision highp float;
 precision highp int;
 precision highp sampler2D;
@@ -32,4 +19,3 @@ void main()
     vec4 pix = texture(lutSampler, vec2(intensity, 0.5));
     gl_FragColor = vec4(pix.xyz*pix.w, pix.w);
 }
-`;
