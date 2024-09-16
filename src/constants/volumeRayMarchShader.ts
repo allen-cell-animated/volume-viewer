@@ -13,11 +13,11 @@ export const rayMarchingShaderUniforms = () => {
     },
     CLIP_NEAR: {
       type: "f",
-      value: 0.0,
+      value: 0.1,
     },
     CLIP_FAR: {
       type: "f",
-      value: 10000.0,
+      value: 20.0,
     },
     maskAlpha: {
       type: "f",
@@ -79,11 +79,19 @@ export const rayMarchingShaderUniforms = () => {
       type: "m4",
       value: new Matrix4(),
     },
+    inverseProjMatrix: {
+      type: "m4",
+      value: new Matrix4(),
+    },
     textureAtlas: {
       type: "t",
       value: new Texture(),
     },
     textureAtlasMask: {
+      type: "t",
+      value: new Texture(),
+    },
+    textureDepth: {
       type: "t",
       value: new Texture(),
     },

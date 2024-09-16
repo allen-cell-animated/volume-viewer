@@ -13,6 +13,11 @@ import {
   NormalBlending,
   WebGLRenderer,
   Scene,
+  DepthTexture,
+  WebGLRenderTarget,
+  NearestFilter,
+  UnsignedByteType,
+  RGBAFormat,
 } from "three";
 
 import TrackballControls from "./TrackballControls.js";
@@ -21,9 +26,15 @@ import scaleBarSVG from "./constants/scaleBarSVG.js";
 import { isOrthographicCamera, isPerspectiveCamera, ViewportCorner, isTop, isRight } from "./types.js";
 import { constrainToAxis, formatNumber, getTimestamp } from "./utils/num_utils.js";
 import { Axis } from "./VolumeRenderSettings.js";
+import RenderToBuffer from "./RenderToBuffer.js";
+
+import { copyImageFragShader } from "./constants/basicShaders.js";
+
+export const VOLUME_LAYER = 0;
+export const MESH_LAYER = 1;
 
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
-const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.001;
+const DEFAULT_PERSPECTIVE_CAMERA_NEAR = 0.1;
 const DEFAULT_PERSPECTIVE_CAMERA_FAR = 20.0;
 
 const DEFAULT_ORTHO_SCALE = 0.5;
@@ -42,7 +53,10 @@ export class ThreeJsPanel {
   public containerdiv: HTMLDivElement;
   private canvas: HTMLCanvasElement;
   public scene: Scene;
-  private zooming: boolean;
+
+  private meshRenderTarget: WebGLRenderTarget;
+  private meshRenderToBuffer: RenderToBuffer;
+
   public animateFuncs: ((panel: ThreeJsPanel) => void)[];
   private inRenderLoop: boolean;
   private requestedRender: number;
@@ -97,6 +111,17 @@ export class ThreeJsPanel {
     }
 
     this.scene = new Scene();
+    this.meshRenderTarget = new WebGLRenderTarget(this.canvas.width, this.canvas.height, {
+      minFilter: NearestFilter,
+      magFilter: NearestFilter,
+      format: RGBAFormat,
+      type: UnsignedByteType,
+      depthBuffer: true,
+    });
+    this.meshRenderToBuffer = new RenderToBuffer(copyImageFragShader, {
+      image: { value: this.meshRenderTarget.texture },
+    });
+    this.meshRenderTarget.depthTexture = new DepthTexture(this.canvas.width, this.canvas.height);
 
     this.scaleBarContainerElement = document.createElement("div");
     this.orthoScaleBarElement = document.createElement("div");
@@ -106,7 +131,6 @@ export class ThreeJsPanel {
     this.timestepIndicatorElement = document.createElement("div");
     this.showTimestepIndicator = false;
 
-    this.zooming = false;
     this.animateFuncs = [];
 
     // are we in a constant render loop or not?
@@ -152,6 +176,7 @@ export class ThreeJsPanel {
 
     if (parentElement) {
       this.renderer.setSize(parentElement.offsetWidth, parentElement.offsetHeight);
+      this.meshRenderTarget.setSize(parentElement.offsetWidth, parentElement.offsetHeight);
     }
 
     this.timer = new Timing();
@@ -565,8 +590,8 @@ export class ThreeJsPanel {
     this.updateScaleBarVisibility();
   }
 
-  getCanvas(): HTMLCanvasElement {
-    return this.canvas;
+  getMeshDepthTexture(): DepthTexture {
+    return this.meshRenderTarget.depthTexture;
   }
 
   resize(comp: HTMLElement | null, w?: number, h?: number, _ow?: number, _oh?: number, _eOpts?: unknown): void {
@@ -605,6 +630,7 @@ export class ThreeJsPanel {
     }
 
     this.renderer.setSize(w, h);
+    this.meshRenderTarget.setSize(w, h);
 
     this.perspectiveControls.handleResize();
     this.orthoControlsZ.handleResize();
@@ -679,7 +705,24 @@ export class ThreeJsPanel {
       }
     }
 
+    // RENDERING
+    // Step 1: Render meshes, e.g. isosurfaces, separately to a render target. (Meshes are all on
+    //   layer 1.) This is necessary to access the depth buffer.
+    this.camera.layers.set(MESH_LAYER);
+    this.renderer.setRenderTarget(this.meshRenderTarget);
     this.renderer.render(this.scene, this.camera);
+
+    // Step 2: Render the mesh render target out to the screen.
+    this.meshRenderToBuffer.material.uniforms.image.value = this.meshRenderTarget.texture;
+    this.meshRenderToBuffer.render(this.renderer);
+
+    // Step 3: Render volumes, which can now depth test against the meshes.
+    this.camera.layers.set(VOLUME_LAYER);
+    this.renderer.setRenderTarget(null);
+    this.renderer.autoClear = false;
+    this.renderer.render(this.scene, this.camera);
+    this.renderer.autoClear = true;
+
     // overlay
     if (this.showAxis) {
       this.renderer.autoClear = false;

@@ -5,29 +5,23 @@ import {
   Matrix4,
   Mesh,
   NormalBlending,
-  OrthographicCamera,
   PerspectiveCamera,
   PlaneGeometry,
   Quaternion,
   RGBAFormat,
-  Scene,
   ShaderMaterial,
-  ShaderMaterialParameters,
-  UniformsUtils,
   UnsignedByteType,
-  Vector2,
   Vector3,
   WebGLRenderTarget,
   LinearFilter,
   NearestFilter,
 } from "three";
 
-import { denoiseFragmentShaderSrc, denoiseShaderUniforms, denoiseVertexShaderSrc } from "./constants/denoiseShader.js";
-import {
-  pathTracingFragmentShaderSrc,
-  pathTracingUniforms,
-  pathTracingVertexShaderSrc,
-} from "./constants/volumePTshader.js";
+import { renderToBufferVertShader, copyImageFragShader } from "./constants/basicShaders.js";
+import { denoiseFragmentShaderSrc, denoiseShaderUniforms } from "./constants/denoiseShader.js";
+import { pathtraceOutputFragmentShaderSrc, pathtraceOutputShaderUniforms } from "./constants/pathtraceOutputShader.js";
+import { pathTracingFragmentShaderSrc, pathTracingUniforms } from "./constants/volumePTshader.js";
+
 import { LUT_ARRAY_LENGTH } from "./Lut.js";
 import Volume from "./Volume.js";
 import { FUSE_DISABLED_RGB_COLOR, type FuseChannel, isOrthographicCamera } from "./types.js";
@@ -36,6 +30,7 @@ import { Light } from "./Light.js";
 import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
 import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings.js";
 import Channel from "./Channel.js";
+import RenderToBuffer from "./RenderToBuffer.js";
 
 export default class PathTracedVolume implements VolumeRenderImpl {
   private settings: VolumeRenderSettings;
@@ -43,32 +38,26 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   private volume: Volume;
   private viewChannels: number[]; // should have 4 or less elements
 
-  private pathTracingUniforms: ReturnType<typeof pathTracingUniforms>;
   private volumeTexture: Data3DTexture;
 
   private cameraIsMoving: boolean;
   private sampleCounter: number;
   private frameCounter: number;
 
-  private pathTracingScene: Scene;
-  private screenTextureScene: Scene;
-  private quadCamera: OrthographicCamera;
-  private fullTargetResolution: Vector2;
+  private pathTracingUniforms = pathTracingUniforms();
+  private pathTracingRenderToBuffer: RenderToBuffer;
   private pathTracingRenderTarget: WebGLRenderTarget;
+
+  private screenTextureRenderToBuffer: RenderToBuffer;
   private screenTextureRenderTarget: WebGLRenderTarget;
-  private screenTextureShader: ShaderMaterialParameters;
-  private screenOutputShader: ShaderMaterialParameters;
-  private pathTracingGeometry: PlaneGeometry;
-  private pathTracingMaterial: ShaderMaterial;
-  private pathTracingMesh: Mesh;
-  private screenTextureGeometry: PlaneGeometry;
-  private screenTextureMaterial: ShaderMaterial;
-  private screenTextureMesh: Mesh;
-  private screenOutputGeometry: PlaneGeometry;
-  private screenOutputMaterial: ShaderMaterial;
+
   private denoiseShaderUniforms = denoiseShaderUniforms();
+  private screenOutputShaderUniforms = pathtraceOutputShaderUniforms();
   private screenOutputDenoiseMaterial: ShaderMaterial;
+  private screenOutputMaterial: ShaderMaterial;
+  private screenOutputGeometry: PlaneGeometry;
   private screenOutputMesh: Mesh;
+
   private gradientDelta: number;
   private renderUpdateListener?: (iteration: number) => void;
 
@@ -79,7 +68,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
    * the given settings. Otherwise, uses the default VolumeRenderSettings.
    */
   constructor(volume: Volume, settings: VolumeRenderSettings = new VolumeRenderSettings(volume)) {
-    this.pathTracingUniforms = pathTracingUniforms();
     this.volume = volume;
     this.viewChannels = [-1, -1, -1, -1];
 
@@ -105,16 +93,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.sampleCounter = 0;
     this.frameCounter = 0;
 
-    this.pathTracingScene = new Scene();
-    this.screenTextureScene = new Scene();
-
-    // quadCamera is simply the camera to help render the full screen quad (2 triangles),
-    // hence the name.  It is an Orthographic camera that sits facing the view plane, which serves as
-    // the window into our 3d world. This camera will not move or rotate for the duration of the app.
-    this.quadCamera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
-
-    this.fullTargetResolution = new Vector2(2, 2);
-
     this.pathTracingRenderTarget = new WebGLRenderTarget(2, 2, {
       minFilter: NearestFilter,
       magFilter: NearestFilter,
@@ -122,8 +100,8 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       type: FloatType,
       depthBuffer: false,
       stencilBuffer: false,
+      generateMipmaps: false,
     });
-    this.pathTracingRenderTarget.texture.generateMipmaps = false;
 
     this.screenTextureRenderTarget = new WebGLRenderTarget(2, 2, {
       minFilter: NearestFilter,
@@ -132,148 +110,24 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       type: FloatType,
       depthBuffer: false,
       stencilBuffer: false,
+      generateMipmaps: false,
     });
-    this.screenTextureRenderTarget.texture.generateMipmaps = false;
-
-    this.screenTextureShader = {
-      uniforms: UniformsUtils.merge([
-        {
-          tTexture0: {
-            type: "t",
-            value: null,
-          },
-        },
-      ]),
-
-      vertexShader: [
-        "precision highp float;",
-        "precision highp int;",
-
-        "out vec2 vUv;",
-
-        "void main()",
-        "{",
-        "vUv = uv;",
-        "gl_Position = vec4( position, 1.0 );",
-        "}",
-      ].join("\n"),
-
-      fragmentShader: [
-        "precision highp float;",
-        "precision highp int;",
-        "precision highp sampler2D;",
-
-        "uniform sampler2D tTexture0;",
-        "in vec2 vUv;",
-
-        "void main()",
-        "{",
-        "pc_fragColor = texture(tTexture0, vUv);",
-        "}",
-      ].join("\n"),
-    };
-
-    this.screenOutputShader = {
-      uniforms: UniformsUtils.merge([
-        {
-          gInvExposure: {
-            type: "f",
-            value: 1.0 / (1.0 - 0.75),
-          },
-          tTexture0: {
-            type: "t",
-            value: null,
-          },
-        },
-      ]),
-
-      vertexShader: [
-        "precision highp float;",
-        "precision highp int;",
-
-        "out vec2 vUv;",
-
-        "void main()",
-        "{",
-        "vUv = uv;",
-        "gl_Position = vec4( position, 1.0 );",
-        "}",
-      ].join("\n"),
-
-      fragmentShader: [
-        "precision highp float;",
-        "precision highp int;",
-        "precision highp sampler2D;",
-
-        "uniform float gInvExposure;",
-        "uniform sampler2D tTexture0;",
-        "in vec2 vUv;",
-
-        // Used to convert from XYZ to linear RGB space
-        "const mat3 XYZ_2_RGB = (mat3(",
-        "  3.2404542, -1.5371385, -0.4985314,",
-        " -0.9692660,  1.8760108,  0.0415560,",
-        "  0.0556434, -0.2040259,  1.0572252",
-        "));",
-
-        "vec3 XYZtoRGB(vec3 xyz) {",
-        "return xyz * XYZ_2_RGB;",
-        "}",
-
-        "void main()",
-        "{",
-        "vec4 pixelColor = texture(tTexture0, vUv);",
-
-        "pixelColor.rgb = XYZtoRGB(pixelColor.rgb);",
-
-        //'pixelColor.rgb = pow(pixelColor.rgb, vec3(1.0/2.2));',
-        "pixelColor.rgb = 1.0-exp(-pixelColor.rgb*gInvExposure);",
-        "pixelColor = clamp(pixelColor, 0.0, 1.0);",
-
-        "pc_fragColor = pixelColor;", // sqrt(pixelColor);',
-        //'out_FragColor = pow(pixelColor, vec4(1.0/2.2));',
-        "}",
-      ].join("\n"),
-    };
-
-    this.pathTracingGeometry = new PlaneGeometry(2, 2);
 
     // initialize texture.
     this.pathTracingUniforms.volumeTexture.value = this.volumeTexture;
     this.pathTracingUniforms.tPreviousTexture.value = this.screenTextureRenderTarget.texture;
 
-    this.pathTracingMaterial = new ShaderMaterial({
-      uniforms: this.pathTracingUniforms,
-      // defines: pathTracingDefines,
-      vertexShader: pathTracingVertexShaderSrc,
-      fragmentShader: pathTracingFragmentShaderSrc,
-      depthTest: false,
-      depthWrite: false,
+    this.pathTracingRenderToBuffer = new RenderToBuffer(pathTracingFragmentShaderSrc, this.pathTracingUniforms);
+    this.screenTextureRenderToBuffer = new RenderToBuffer(copyImageFragShader, {
+      image: { value: this.pathTracingRenderTarget.texture },
     });
-    this.pathTracingMesh = new Mesh(this.pathTracingGeometry, this.pathTracingMaterial);
-    this.pathTracingScene.add(this.pathTracingMesh);
-
-    this.screenTextureGeometry = new PlaneGeometry(2, 2);
-
-    this.screenTextureMaterial = new ShaderMaterial({
-      uniforms: this.screenTextureShader.uniforms,
-      vertexShader: this.screenTextureShader.vertexShader,
-      fragmentShader: this.screenTextureShader.fragmentShader,
-      depthWrite: false,
-      depthTest: false,
-    });
-
-    this.screenTextureMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;
-
-    this.screenTextureMesh = new Mesh(this.screenTextureGeometry, this.screenTextureMaterial);
-    this.screenTextureScene.add(this.screenTextureMesh);
 
     this.screenOutputGeometry = new PlaneGeometry(2, 2);
 
     this.screenOutputMaterial = new ShaderMaterial({
-      uniforms: this.screenOutputShader.uniforms,
-      vertexShader: this.screenOutputShader.vertexShader,
-      fragmentShader: this.screenOutputShader.fragmentShader,
+      uniforms: this.screenOutputShaderUniforms,
+      vertexShader: renderToBufferVertShader,
+      fragmentShader: pathtraceOutputFragmentShaderSrc,
       depthWrite: false,
       depthTest: false,
       blending: NormalBlending,
@@ -283,7 +137,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.denoiseShaderUniforms = denoiseShaderUniforms();
     this.screenOutputDenoiseMaterial = new ShaderMaterial({
       uniforms: this.denoiseShaderUniforms,
-      vertexShader: denoiseVertexShaderSrc,
+      vertexShader: renderToBufferVertShader,
       fragmentShader: denoiseFragmentShaderSrc,
       depthWrite: false,
       depthTest: false,
@@ -351,7 +205,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     // Update resolution
     if (dirtyFlags & SettingsFlags.SAMPLING) {
       const resolution = this.settings.resolution.clone();
-      this.fullTargetResolution = resolution;
       const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
       const nx = Math.floor((resolution.x * this.settings.pixelSamplingRate) / dpr);
       const ny = Math.floor((resolution.y * this.settings.pixelSamplingRate) / dpr);
@@ -508,14 +361,12 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     // This is currently rendered as a fullscreen quad with no camera transform in the vertex shader!
     // It is also composited with screenTextureRenderTarget's texture.
     // (Read previous screenTextureRenderTarget to use as a new starting point to blend with)
-    canvas.renderer.setRenderTarget(this.pathTracingRenderTarget);
-    canvas.renderer.render(this.pathTracingScene, this.quadCamera);
+    this.pathTracingRenderToBuffer.render(canvas.renderer, this.pathTracingRenderTarget);
 
     // STEP 2
     // Render(copy) the final pathTracingScene output(above) into screenTextureRenderTarget
     // This will be used as a new starting point for Step 1 above
-    canvas.renderer.setRenderTarget(this.screenTextureRenderTarget);
-    canvas.renderer.render(this.screenTextureScene, this.quadCamera);
+    this.screenTextureRenderToBuffer.render(canvas.renderer, this.screenTextureRenderTarget);
 
     // STEP 3
     // Render full screen quad with generated pathTracingRenderTarget in STEP 1 above.

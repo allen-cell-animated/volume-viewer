@@ -187,7 +187,7 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
       }
     };
 
-    const spec = { ...loadSpecOverride, ...volume.loadSpec };
+    const spec = { ...volume.loadSpec, ...loadSpecOverride };
     return this.loadRawChannelData(volume.imageInfo, spec, onUpdateMetadata, onChannelData);
   }
 }

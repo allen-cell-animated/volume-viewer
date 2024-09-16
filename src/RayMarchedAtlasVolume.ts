@@ -307,6 +307,10 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       return;
     }
 
+    this.setUniform("textureDepth", canvas.getMeshDepthTexture());
+    this.setUniform("CLIP_NEAR", canvas.camera.near);
+    this.setUniform("CLIP_FAR", canvas.camera.far);
+
     this.channelData.gpuFuse(canvas.renderer);
     this.setUniform("textureAtlas", this.channelData.getFusedTexture());
 
@@ -314,10 +318,10 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
     const mvm = new Matrix4();
     mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
-    const mi = new Matrix4();
-    mi.copy(mvm).invert();
+    mvm.invert();
 
-    this.setUniform("inverseModelViewMatrix", mi);
+    this.setUniform("inverseModelViewMatrix", mvm);
+    this.setUniform("inverseProjMatrix", canvas.camera.projectionMatrixInverse);
   }
 
   public get3dObject(): Group {
