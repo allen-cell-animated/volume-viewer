@@ -23,8 +23,10 @@ import {
 
 import Channel from "./Channel.js";
 import { renderToBufferVertShader } from "./constants/basicShaders.js";
-import fuseShaderSrc from "./constants/shaders/fuse.frag";
-import type { FuseChannel } from "./types.js";
+import fuseShaderSrcUI from "./constants/shaders/fuseUI.frag";
+import fuseShaderSrcF from "./constants/shaders/fuseF.frag";
+import fuseShaderSrcI from "./constants/shaders/fuseI.frag";
+import type { FuseChannel, NumberType } from "./types.js";
 
 // This is the owner of the fused RGBA volume texture atlas, and the mask texture atlas.
 // This module is responsible for updating the fused texture, given the read-only volume channel data.
@@ -83,7 +85,6 @@ export default class FusedChannelData {
 
     this.fuseMaterialProps = {
       vertexShader: renderToBufferVertShader,
-      fragmentShader: fuseShaderSrc,
       depthTest: false,
       depthWrite: false,
       blending: CustomBlending,
