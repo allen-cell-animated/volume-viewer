@@ -6,7 +6,7 @@ import VolumeCache from "./VolumeCache.js";
 import RequestQueue from "./utils/RequestQueue.js";
 import SubscribableRequestQueue from "./utils/SubscribableRequestQueue.js";
 import Histogram from "./Histogram.js";
-import { Lut } from "./Lut.js";
+import { Lut, remapControlPoints } from "./Lut.js";
 import { ViewportCorner } from "./types.js";
 import { VolumeFileFormat, createVolumeLoader, PrefetchDirection } from "./loaders/index.js";
 import { LoadSpec } from "./loaders/IVolumeLoader.js";
@@ -21,7 +21,7 @@ import {
 import { TiffLoader } from "./loaders/TiffLoader.js";
 import VolumeLoaderContext from "./workers/VolumeLoaderContext.js";
 import { VolumeLoadError, VolumeLoadErrorType } from "./loaders/VolumeLoadError.js";
-
+import { type CameraState } from "./ThreeJsPanel.js";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light.js";
 
 export type { ImageInfo } from "./Volume.js";
@@ -33,6 +33,7 @@ export type { WorkerLoader } from "./workers/VolumeLoaderContext.js";
 export {
   Histogram,
   Lut,
+  remapControlPoints,
   View3d,
   Volume,
   LoadSpec,
@@ -60,4 +61,5 @@ export {
   RENDERMODE_PATHTRACE,
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
+  type CameraState,
 };

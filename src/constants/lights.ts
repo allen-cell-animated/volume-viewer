@@ -1,7 +1,7 @@
 import { MathUtils } from "three";
 
 const spotlightSettings = Object.freeze({
-  angle: 6 * MathUtils.DEG2RAD,
+  angle: 36 * MathUtils.DEG2RAD,
   castShadow: false,
   color: 0xffffff,
   intensity: 0.4,
