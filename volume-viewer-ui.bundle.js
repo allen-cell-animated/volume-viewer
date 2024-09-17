@@ -530,9 +530,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (/* binding */ FusedChannelData)
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _constants_fuseShader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./constants/fuseShader.js */ "./src/constants/fuseShader.ts");
+/* harmony import */ var _constants_basicShaders_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./constants/basicShaders.js */ "./src/constants/basicShaders.ts");
 
 
+/* babel-plugin-inline-import './constants/shaders/fuse.frag' */
+const fuseShaderSrc = "precision highp float;\nprecision highp int;\nprecision highp sampler2D;\nprecision highp sampler3D;\n\n// the lut texture is a 256x1 rgba texture for each channel\nuniform sampler2D lutSampler;\n// src texture is the raw volume intensity data\nuniform sampler2D srcTexture;\n\nvoid main()\n{\n    ivec2 vUv = ivec2(int(gl_FragCoord.x), int(gl_FragCoord.y));\n\n    // load from channel\n    float intensity = texelFetch(srcTexture, vUv, 0).r;\n\n    // apply lut to intensity:\n    vec4 pix = texture(lutSampler, vec2(intensity, 0.5));\n    gl_FragColor = vec4(pix.xyz*pix.w, pix.w);\n}\n";
 // This is the owner of the fused RGBA volume texture atlas, and the mask texture atlas.
 // This module is responsible for updating the fused texture, given the read-only volume channel data.
 class FusedChannelData {
@@ -565,8 +567,8 @@ class FusedChannelData {
       wrapT: three__WEBPACK_IMPORTED_MODULE_1__.ClampToEdgeWrapping
     });
     this.fuseMaterialProps = {
-      vertexShader: _constants_fuseShader_js__WEBPACK_IMPORTED_MODULE_0__.fuseVertexShaderSrc,
-      fragmentShader: _constants_fuseShader_js__WEBPACK_IMPORTED_MODULE_0__.fuseShaderSrc,
+      vertexShader: _constants_basicShaders_js__WEBPACK_IMPORTED_MODULE_0__.renderToBufferVertShader,
+      fragmentShader: fuseShaderSrc,
       depthTest: false,
       depthWrite: false,
       blending: three__WEBPACK_IMPORTED_MODULE_1__.CustomBlending,
@@ -2399,12 +2401,18 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ PathTracedVolume)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _constants_denoiseShader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./constants/denoiseShader.js */ "./src/constants/denoiseShader.ts");
-/* harmony import */ var _constants_volumePTshader_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./constants/volumePTshader.js */ "./src/constants/volumePTshader.ts");
-/* harmony import */ var _Lut_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Lut.js */ "./src/Lut.ts");
-/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
-/* harmony import */ var _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./VolumeRenderSettings.js */ "./src/VolumeRenderSettings.ts");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _constants_basicShaders_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./constants/basicShaders.js */ "./src/constants/basicShaders.ts");
+/* harmony import */ var _constants_denoiseShader_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./constants/denoiseShader.js */ "./src/constants/denoiseShader.ts");
+/* harmony import */ var _constants_pathtraceOutputShader_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants/pathtraceOutputShader.js */ "./src/constants/pathtraceOutputShader.ts");
+/* harmony import */ var _constants_volumePTshader_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./constants/volumePTshader.js */ "./src/constants/volumePTshader.ts");
+/* harmony import */ var _Lut_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Lut.js */ "./src/Lut.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
+/* harmony import */ var _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./VolumeRenderSettings.js */ "./src/VolumeRenderSettings.ts");
+/* harmony import */ var _RenderToBuffer_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./RenderToBuffer.js */ "./src/RenderToBuffer.ts");
+
+
+
 
 
 
@@ -2414,15 +2422,16 @@ __webpack_require__.r(__webpack_exports__);
 class PathTracedVolume {
   // should have 4 or less elements
 
-  denoiseShaderUniforms = (0,_constants_denoiseShader_js__WEBPACK_IMPORTED_MODULE_0__.denoiseShaderUniforms)();
+  pathTracingUniforms = (0,_constants_volumePTshader_js__WEBPACK_IMPORTED_MODULE_3__.pathTracingUniforms)();
+  denoiseShaderUniforms = (0,_constants_denoiseShader_js__WEBPACK_IMPORTED_MODULE_1__.denoiseShaderUniforms)();
+  screenOutputShaderUniforms = (0,_constants_pathtraceOutputShader_js__WEBPACK_IMPORTED_MODULE_2__.pathtraceOutputShaderUniforms)();
   /**
    * Creates a new PathTracedVolume.
    * @param volume The volume that this renderer should render data from.
    * @param settings Optional settings object. If set, updates the renderer with
    * the given settings. Otherwise, uses the default VolumeRenderSettings.
    */
-  constructor(volume, settings = new _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_4__.VolumeRenderSettings(volume)) {
-    this.pathTracingUniforms = (0,_constants_volumePTshader_js__WEBPACK_IMPORTED_MODULE_1__.pathTracingUniforms)();
+  constructor(volume, settings = new _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.VolumeRenderSettings(volume)) {
     this.volume = volume;
     this.viewChannels = [-1, -1, -1, -1];
 
@@ -2434,140 +2443,85 @@ class PathTracedVolume {
     } = volume.imageInfo.subregionSize;
     const data = new Uint8Array(sx * sy * sz * 4).fill(0);
     // defaults to rgba and unsignedbytetype so dont need to supply format this time.
-    this.volumeTexture = new three__WEBPACK_IMPORTED_MODULE_5__.Data3DTexture(data, sx, sy, sz);
-    this.volumeTexture.minFilter = this.volumeTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_5__.LinearFilter;
+    this.volumeTexture = new three__WEBPACK_IMPORTED_MODULE_8__.Data3DTexture(data, sx, sy, sz);
+    this.volumeTexture.minFilter = this.volumeTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_8__.LinearFilter;
     this.volumeTexture.generateMipmaps = false;
     this.volumeTexture.needsUpdate = true;
 
     // create Lut textures
     // empty array
-    const lutData = new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH * 4).fill(1);
-    const lut0 = new three__WEBPACK_IMPORTED_MODULE_5__.DataTexture(lutData, 256, 4, three__WEBPACK_IMPORTED_MODULE_5__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_5__.UnsignedByteType);
-    lut0.minFilter = lut0.magFilter = three__WEBPACK_IMPORTED_MODULE_5__.LinearFilter;
+    const lutData = new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH * 4).fill(1);
+    const lut0 = new three__WEBPACK_IMPORTED_MODULE_8__.DataTexture(lutData, 256, 4, three__WEBPACK_IMPORTED_MODULE_8__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_8__.UnsignedByteType);
+    lut0.minFilter = lut0.magFilter = three__WEBPACK_IMPORTED_MODULE_8__.LinearFilter;
     lut0.needsUpdate = true;
     this.pathTracingUniforms.gLutTexture.value = lut0;
     this.cameraIsMoving = false;
     this.sampleCounter = 0;
     this.frameCounter = 0;
-    this.pathTracingScene = new three__WEBPACK_IMPORTED_MODULE_5__.Scene();
-    this.screenTextureScene = new three__WEBPACK_IMPORTED_MODULE_5__.Scene();
-
-    // quadCamera is simply the camera to help render the full screen quad (2 triangles),
-    // hence the name.  It is an Orthographic camera that sits facing the view plane, which serves as
-    // the window into our 3d world. This camera will not move or rotate for the duration of the app.
-    this.quadCamera = new three__WEBPACK_IMPORTED_MODULE_5__.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    this.fullTargetResolution = new three__WEBPACK_IMPORTED_MODULE_5__.Vector2(2, 2);
-    this.pathTracingRenderTarget = new three__WEBPACK_IMPORTED_MODULE_5__.WebGLRenderTarget(2, 2, {
-      minFilter: three__WEBPACK_IMPORTED_MODULE_5__.NearestFilter,
-      magFilter: three__WEBPACK_IMPORTED_MODULE_5__.NearestFilter,
-      format: three__WEBPACK_IMPORTED_MODULE_5__.RGBAFormat,
-      type: three__WEBPACK_IMPORTED_MODULE_5__.FloatType,
+    this.pathTracingRenderTarget = new three__WEBPACK_IMPORTED_MODULE_8__.WebGLRenderTarget(2, 2, {
+      minFilter: three__WEBPACK_IMPORTED_MODULE_8__.NearestFilter,
+      magFilter: three__WEBPACK_IMPORTED_MODULE_8__.NearestFilter,
+      format: three__WEBPACK_IMPORTED_MODULE_8__.RGBAFormat,
+      type: three__WEBPACK_IMPORTED_MODULE_8__.FloatType,
       depthBuffer: false,
-      stencilBuffer: false
+      stencilBuffer: false,
+      generateMipmaps: false
     });
-    this.pathTracingRenderTarget.texture.generateMipmaps = false;
-    this.screenTextureRenderTarget = new three__WEBPACK_IMPORTED_MODULE_5__.WebGLRenderTarget(2, 2, {
-      minFilter: three__WEBPACK_IMPORTED_MODULE_5__.NearestFilter,
-      magFilter: three__WEBPACK_IMPORTED_MODULE_5__.NearestFilter,
-      format: three__WEBPACK_IMPORTED_MODULE_5__.RGBAFormat,
-      type: three__WEBPACK_IMPORTED_MODULE_5__.FloatType,
+    this.screenTextureRenderTarget = new three__WEBPACK_IMPORTED_MODULE_8__.WebGLRenderTarget(2, 2, {
+      minFilter: three__WEBPACK_IMPORTED_MODULE_8__.NearestFilter,
+      magFilter: three__WEBPACK_IMPORTED_MODULE_8__.NearestFilter,
+      format: three__WEBPACK_IMPORTED_MODULE_8__.RGBAFormat,
+      type: three__WEBPACK_IMPORTED_MODULE_8__.FloatType,
       depthBuffer: false,
-      stencilBuffer: false
+      stencilBuffer: false,
+      generateMipmaps: false
     });
-    this.screenTextureRenderTarget.texture.generateMipmaps = false;
-    this.screenTextureShader = {
-      uniforms: three__WEBPACK_IMPORTED_MODULE_5__.UniformsUtils.merge([{
-        tTexture0: {
-          type: "t",
-          value: null
-        }
-      }]),
-      vertexShader: ["precision highp float;", "precision highp int;", "out vec2 vUv;", "void main()", "{", "vUv = uv;", "gl_Position = vec4( position, 1.0 );", "}"].join("\n"),
-      fragmentShader: ["precision highp float;", "precision highp int;", "precision highp sampler2D;", "uniform sampler2D tTexture0;", "in vec2 vUv;", "void main()", "{", "pc_fragColor = texture(tTexture0, vUv);", "}"].join("\n")
-    };
-    this.screenOutputShader = {
-      uniforms: three__WEBPACK_IMPORTED_MODULE_5__.UniformsUtils.merge([{
-        gInvExposure: {
-          type: "f",
-          value: 1.0 / (1.0 - 0.75)
-        },
-        tTexture0: {
-          type: "t",
-          value: null
-        }
-      }]),
-      vertexShader: ["precision highp float;", "precision highp int;", "out vec2 vUv;", "void main()", "{", "vUv = uv;", "gl_Position = vec4( position, 1.0 );", "}"].join("\n"),
-      fragmentShader: ["precision highp float;", "precision highp int;", "precision highp sampler2D;", "uniform float gInvExposure;", "uniform sampler2D tTexture0;", "in vec2 vUv;",
-      // Used to convert from XYZ to linear RGB space
-      "const mat3 XYZ_2_RGB = (mat3(", "  3.2404542, -1.5371385, -0.4985314,", " -0.9692660,  1.8760108,  0.0415560,", "  0.0556434, -0.2040259,  1.0572252", "));", "vec3 XYZtoRGB(vec3 xyz) {", "return xyz * XYZ_2_RGB;", "}", "void main()", "{", "vec4 pixelColor = texture(tTexture0, vUv);", "pixelColor.rgb = XYZtoRGB(pixelColor.rgb);",
-      //'pixelColor.rgb = pow(pixelColor.rgb, vec3(1.0/2.2));',
-      "pixelColor.rgb = 1.0-exp(-pixelColor.rgb*gInvExposure);", "pixelColor = clamp(pixelColor, 0.0, 1.0);", "pc_fragColor = pixelColor;",
-      // sqrt(pixelColor);',
-      //'out_FragColor = pow(pixelColor, vec4(1.0/2.2));',
-      "}"].join("\n")
-    };
-    this.pathTracingGeometry = new three__WEBPACK_IMPORTED_MODULE_5__.PlaneGeometry(2, 2);
 
     // initialize texture.
     this.pathTracingUniforms.volumeTexture.value = this.volumeTexture;
     this.pathTracingUniforms.tPreviousTexture.value = this.screenTextureRenderTarget.texture;
-    this.pathTracingMaterial = new three__WEBPACK_IMPORTED_MODULE_5__.ShaderMaterial({
-      uniforms: this.pathTracingUniforms,
-      // defines: pathTracingDefines,
-      vertexShader: _constants_volumePTshader_js__WEBPACK_IMPORTED_MODULE_1__.pathTracingVertexShaderSrc,
-      fragmentShader: _constants_volumePTshader_js__WEBPACK_IMPORTED_MODULE_1__.pathTracingFragmentShaderSrc,
-      depthTest: false,
-      depthWrite: false
+    this.pathTracingRenderToBuffer = new _RenderToBuffer_js__WEBPACK_IMPORTED_MODULE_7__["default"](_constants_volumePTshader_js__WEBPACK_IMPORTED_MODULE_3__.pathTracingFragmentShaderSrc, this.pathTracingUniforms);
+    this.screenTextureRenderToBuffer = new _RenderToBuffer_js__WEBPACK_IMPORTED_MODULE_7__["default"](_constants_basicShaders_js__WEBPACK_IMPORTED_MODULE_0__.copyImageFragShader, {
+      image: {
+        value: this.pathTracingRenderTarget.texture
+      }
     });
-    this.pathTracingMesh = new three__WEBPACK_IMPORTED_MODULE_5__.Mesh(this.pathTracingGeometry, this.pathTracingMaterial);
-    this.pathTracingScene.add(this.pathTracingMesh);
-    this.screenTextureGeometry = new three__WEBPACK_IMPORTED_MODULE_5__.PlaneGeometry(2, 2);
-    this.screenTextureMaterial = new three__WEBPACK_IMPORTED_MODULE_5__.ShaderMaterial({
-      uniforms: this.screenTextureShader.uniforms,
-      vertexShader: this.screenTextureShader.vertexShader,
-      fragmentShader: this.screenTextureShader.fragmentShader,
-      depthWrite: false,
-      depthTest: false
-    });
-    this.screenTextureMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;
-    this.screenTextureMesh = new three__WEBPACK_IMPORTED_MODULE_5__.Mesh(this.screenTextureGeometry, this.screenTextureMaterial);
-    this.screenTextureScene.add(this.screenTextureMesh);
-    this.screenOutputGeometry = new three__WEBPACK_IMPORTED_MODULE_5__.PlaneGeometry(2, 2);
-    this.screenOutputMaterial = new three__WEBPACK_IMPORTED_MODULE_5__.ShaderMaterial({
-      uniforms: this.screenOutputShader.uniforms,
-      vertexShader: this.screenOutputShader.vertexShader,
-      fragmentShader: this.screenOutputShader.fragmentShader,
+    this.screenOutputGeometry = new three__WEBPACK_IMPORTED_MODULE_8__.PlaneGeometry(2, 2);
+    this.screenOutputMaterial = new three__WEBPACK_IMPORTED_MODULE_8__.ShaderMaterial({
+      uniforms: this.screenOutputShaderUniforms,
+      vertexShader: _constants_basicShaders_js__WEBPACK_IMPORTED_MODULE_0__.renderToBufferVertShader,
+      fragmentShader: _constants_pathtraceOutputShader_js__WEBPACK_IMPORTED_MODULE_2__.pathtraceOutputFragmentShaderSrc,
       depthWrite: false,
       depthTest: false,
-      blending: three__WEBPACK_IMPORTED_MODULE_5__.NormalBlending,
+      blending: three__WEBPACK_IMPORTED_MODULE_8__.NormalBlending,
       transparent: true
     });
-    this.denoiseShaderUniforms = (0,_constants_denoiseShader_js__WEBPACK_IMPORTED_MODULE_0__.denoiseShaderUniforms)();
-    this.screenOutputDenoiseMaterial = new three__WEBPACK_IMPORTED_MODULE_5__.ShaderMaterial({
+    this.denoiseShaderUniforms = (0,_constants_denoiseShader_js__WEBPACK_IMPORTED_MODULE_1__.denoiseShaderUniforms)();
+    this.screenOutputDenoiseMaterial = new three__WEBPACK_IMPORTED_MODULE_8__.ShaderMaterial({
       uniforms: this.denoiseShaderUniforms,
-      vertexShader: _constants_denoiseShader_js__WEBPACK_IMPORTED_MODULE_0__.denoiseVertexShaderSrc,
-      fragmentShader: _constants_denoiseShader_js__WEBPACK_IMPORTED_MODULE_0__.denoiseFragmentShaderSrc,
+      vertexShader: _constants_basicShaders_js__WEBPACK_IMPORTED_MODULE_0__.renderToBufferVertShader,
+      fragmentShader: _constants_denoiseShader_js__WEBPACK_IMPORTED_MODULE_1__.denoiseFragmentShaderSrc,
       depthWrite: false,
       depthTest: false,
-      blending: three__WEBPACK_IMPORTED_MODULE_5__.NormalBlending,
+      blending: three__WEBPACK_IMPORTED_MODULE_8__.NormalBlending,
       transparent: true
     });
     this.screenOutputMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;
     this.screenOutputDenoiseMaterial.uniforms.tTexture0.value = this.pathTracingRenderTarget.texture;
-    this.screenOutputMesh = new three__WEBPACK_IMPORTED_MODULE_5__.Mesh(this.screenOutputGeometry, this.screenOutputMaterial);
+    this.screenOutputMesh = new three__WEBPACK_IMPORTED_MODULE_8__.Mesh(this.screenOutputGeometry, this.screenOutputMaterial);
     this.gradientDelta = 1.0 / Math.max(sx, Math.max(sy, sz));
     const invGradientDelta = 1.0 / this.gradientDelta; // a voxel count...
 
-    this.pathTracingUniforms.gGradientDeltaX.value = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(this.gradientDelta, 0, 0);
-    this.pathTracingUniforms.gGradientDeltaY.value = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, this.gradientDelta, 0);
-    this.pathTracingUniforms.gGradientDeltaZ.value = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, this.gradientDelta);
+    this.pathTracingUniforms.gGradientDeltaX.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(this.gradientDelta, 0, 0);
+    this.pathTracingUniforms.gGradientDeltaY.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, this.gradientDelta, 0);
+    this.pathTracingUniforms.gGradientDeltaZ.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, this.gradientDelta);
     // can this be a per-x,y,z value?
     this.pathTracingUniforms.gInvGradientDelta.value = invGradientDelta; // a voxel count
     this.pathTracingUniforms.gGradientFactor.value = 50.0; // related to voxel counts also
 
     // bounds will go from 0 to physicalSize
     const physicalSize = volume.normPhysicalSize;
-    this.pathTracingUniforms.gInvAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1.0 / physicalSize.x, 1.0 / physicalSize.y, 1.0 / physicalSize.z).divide(volume.normRegionSize);
+    this.pathTracingUniforms.gInvAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1.0 / physicalSize.x, 1.0 / physicalSize.y, 1.0 / physicalSize.z).divide(volume.normRegionSize);
     this.updateLightsSecondary();
 
     // Update settings
@@ -2595,14 +2549,13 @@ class PathTracedVolume {
    */
   updateSettings(newSettings, dirtyFlags) {
     if (dirtyFlags === undefined) {
-      dirtyFlags = _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.ALL;
+      dirtyFlags = _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.ALL;
     }
     this.settings = newSettings;
 
     // Update resolution
-    if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.SAMPLING) {
+    if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.SAMPLING) {
       const resolution = this.settings.resolution.clone();
-      this.fullTargetResolution = resolution;
       const dpr = window.devicePixelRatio ? window.devicePixelRatio : 1.0;
       const nx = Math.floor(resolution.x * this.settings.pixelSamplingRate / dpr);
       const ny = Math.floor(resolution.y * this.settings.pixelSamplingRate / dpr);
@@ -2615,16 +2568,16 @@ class PathTracedVolume {
       this.pathTracingUniforms.gStepSize.value = this.settings.primaryRayStepSize * this.gradientDelta;
       this.pathTracingUniforms.gStepSizeShadow.value = this.settings.secondaryRayStepSize * this.gradientDelta;
     }
-    if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.TRANSFORM) {
+    if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.TRANSFORM) {
       this.pathTracingUniforms.flipVolume.value = this.settings.flipAxes;
     }
-    if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.MATERIAL) {
+    if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.MATERIAL) {
       this.pathTracingUniforms.gDensityScale.value = this.settings.density * 150.0;
       this.updateMaterial();
     }
 
     // update bounds
-    if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.ROI) {
+    if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.ROI) {
       const {
         normPhysicalSize,
         normRegionSize,
@@ -2642,24 +2595,24 @@ class PathTracedVolume {
       this.pathTracingUniforms.gClippedAaBbMax.value = clipMax.clamp(sizeMin, sizeMax);
       this.pathTracingUniforms.gVolCenter.value = this.volume.getContentCenter();
     }
-    if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.CAMERA) {
+    if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.CAMERA) {
       this.updateExposure(this.settings.brightness);
     }
-    if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.MASK_ALPHA) {
+    if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.MASK_ALPHA) {
       // Update channel and alpha mask if they have changed
       this.updateVolumeData4();
     }
-    if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.VIEW) {
+    if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.VIEW) {
       this.pathTracingUniforms.gCamera.value.mIsOrtho = this.settings.isOrtho ? 1 : 0;
     }
-    if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.SAMPLING) {
-      this.volumeTexture.minFilter = this.volumeTexture.magFilter = newSettings.useInterpolation ? three__WEBPACK_IMPORTED_MODULE_5__.LinearFilter : three__WEBPACK_IMPORTED_MODULE_5__.NearestFilter;
+    if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.SAMPLING) {
+      this.volumeTexture.minFilter = this.volumeTexture.magFilter = newSettings.useInterpolation ? three__WEBPACK_IMPORTED_MODULE_8__.LinearFilter : three__WEBPACK_IMPORTED_MODULE_8__.NearestFilter;
       this.volumeTexture.needsUpdate = true;
     }
     this.resetProgress();
   }
   updateVolumeDimensions() {
-    this.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_4__.SettingsFlags.ROI);
+    this.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.ROI);
   }
   doRender(canvas) {
     if (!this.volumeTexture) {
@@ -2687,29 +2640,29 @@ class PathTracedVolume {
     // this code is analogous to this threejs code from View3d.preRender:
     // this.scene.getObjectByName('lightContainer').rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
     const mycamxform = cam.matrixWorld.clone();
-    mycamxform.setPosition(new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0));
+    mycamxform.setPosition(new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0));
     this.updateLightsSecondary(mycamxform);
-    let mydir = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3();
+    let mydir = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3();
     mydir = cam.getWorldDirection(mydir);
-    const myup = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3().copy(cam.up);
+    const myup = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().copy(cam.up);
     // don't rotate this vector.  we are using translation as the pivot point of the object, and THEN rotating.
-    const mypos = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3().copy(cam.position);
+    const mypos = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().copy(cam.position);
 
     // apply volume translation and rotation:
     // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
-    const m = new three__WEBPACK_IMPORTED_MODULE_5__.Matrix4().makeRotationFromQuaternion(new three__WEBPACK_IMPORTED_MODULE_5__.Quaternion().setFromEuler(this.settings.rotation).invert());
+    const m = new three__WEBPACK_IMPORTED_MODULE_8__.Matrix4().makeRotationFromQuaternion(new three__WEBPACK_IMPORTED_MODULE_8__.Quaternion().setFromEuler(this.settings.rotation).invert());
     mypos.sub(this.settings.translation);
     mypos.applyMatrix4(m);
     myup.applyMatrix4(m);
     mydir.applyMatrix4(m);
-    this.pathTracingUniforms.gCamera.value.mIsOrtho = (0,_types_js__WEBPACK_IMPORTED_MODULE_3__.isOrthographicCamera)(cam) ? 1 : 0;
+    this.pathTracingUniforms.gCamera.value.mIsOrtho = (0,_types_js__WEBPACK_IMPORTED_MODULE_5__.isOrthographicCamera)(cam) ? 1 : 0;
     this.pathTracingUniforms.gCamera.value.mFrom.copy(mypos);
     this.pathTracingUniforms.gCamera.value.mN.copy(mydir);
     this.pathTracingUniforms.gCamera.value.mU.crossVectors(this.pathTracingUniforms.gCamera.value.mN, myup).normalize();
     this.pathTracingUniforms.gCamera.value.mV.crossVectors(this.pathTracingUniforms.gCamera.value.mU, this.pathTracingUniforms.gCamera.value.mN).normalize();
 
     // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
-    const fScale = (0,_types_js__WEBPACK_IMPORTED_MODULE_3__.isOrthographicCamera)(cam) ? canvas.getOrthoScale() : Math.tan(0.5 * cam.fov * Math.PI / 180.0);
+    const fScale = (0,_types_js__WEBPACK_IMPORTED_MODULE_5__.isOrthographicCamera)(cam) ? canvas.getOrthoScale() : Math.tan(0.5 * cam.fov * Math.PI / 180.0);
     const aspect = this.pathTracingUniforms.uResolution.value.x / this.pathTracingUniforms.uResolution.value.y;
     this.pathTracingUniforms.gCamera.value.mScreen.set(-fScale * aspect, fScale * aspect,
     // the "0" Y pixel will be at +Scale.
@@ -2736,14 +2689,12 @@ class PathTracedVolume {
     // This is currently rendered as a fullscreen quad with no camera transform in the vertex shader!
     // It is also composited with screenTextureRenderTarget's texture.
     // (Read previous screenTextureRenderTarget to use as a new starting point to blend with)
-    canvas.renderer.setRenderTarget(this.pathTracingRenderTarget);
-    canvas.renderer.render(this.pathTracingScene, this.quadCamera);
+    this.pathTracingRenderToBuffer.render(canvas.renderer, this.pathTracingRenderTarget);
 
     // STEP 2
     // Render(copy) the final pathTracingScene output(above) into screenTextureRenderTarget
     // This will be used as a new starting point for Step 1 above
-    canvas.renderer.setRenderTarget(this.screenTextureRenderTarget);
-    canvas.renderer.render(this.screenTextureScene, this.quadCamera);
+    this.screenTextureRenderToBuffer.render(canvas.renderer, this.screenTextureRenderTarget);
 
     // STEP 3
     // Render full screen quad with generated pathTracingRenderTarget in STEP 1 above.
@@ -2781,7 +2732,7 @@ class PathTracedVolume {
     const maxch = 4;
     for (let i = 0; i < NC && activeChannel < maxch; ++i) {
       // check that channel is not disabled and is loaded
-      if (channelColors[i].rgbColor !== _types_js__WEBPACK_IMPORTED_MODULE_3__.FUSE_DISABLED_RGB_COLOR && channelData[i].loaded) {
+      if (channelColors[i].rgbColor !== _types_js__WEBPACK_IMPORTED_MODULE_5__.FUSE_DISABLED_RGB_COLOR && channelData[i].loaded) {
         ch[activeChannel] = i;
         activeChannel++;
       }
@@ -2845,7 +2796,7 @@ class PathTracedVolume {
     for (let i = 0; i < this.pathTracingUniforms.gNChannels.value; ++i) {
       const channel = this.viewChannels[i];
       const combinedLut = channelData[channel].combineLuts(channelColors[channel].rgbColor);
-      this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, i * _Lut_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH);
+      this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, i * _Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH);
       this.pathTracingUniforms.gIntensityMax.value.setComponent(i, this.volume.channels[channel].histogram.getMax() / 255.0);
       this.pathTracingUniforms.gIntensityMin.value.setComponent(i, this.volume.channels[channel].histogram.getMin() / 255.0);
     }
@@ -2862,11 +2813,11 @@ class PathTracedVolume {
         // diffuse color is actually blended into the LUT now.
         const channelData = this.volume.getChannel(i);
         const combinedLut = channelData.combineLuts(this.settings.diffuse[i]);
-        this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, c * _Lut_js__WEBPACK_IMPORTED_MODULE_2__.LUT_ARRAY_LENGTH);
+        this.pathTracingUniforms.gLutTexture.value.image.data.set(combinedLut, c * _Lut_js__WEBPACK_IMPORTED_MODULE_4__.LUT_ARRAY_LENGTH);
         this.pathTracingUniforms.gLutTexture.value.needsUpdate = true;
-        this.pathTracingUniforms.gDiffuse.value[c] = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1.0, 1.0, 1.0);
-        this.pathTracingUniforms.gSpecular.value[c] = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3().fromArray(this.settings.specular[i]).multiplyScalar(1.0 / 255.0);
-        this.pathTracingUniforms.gEmissive.value[c] = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3().fromArray(this.settings.emissive[i]).multiplyScalar(1.0 / 255.0);
+        this.pathTracingUniforms.gDiffuse.value[c] = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1.0, 1.0, 1.0);
+        this.pathTracingUniforms.gSpecular.value[c] = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().fromArray(this.settings.specular[i]).multiplyScalar(1.0 / 255.0);
+        this.pathTracingUniforms.gEmissive.value[c] = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().fromArray(this.settings.emissive[i]).multiplyScalar(1.0 / 255.0);
         this.pathTracingUniforms.gGlossiness.value[c] = this.settings.glossiness[i];
       }
     }
@@ -2896,12 +2847,12 @@ class PathTracedVolume {
   }
   updateLights(state) {
     // 0th light in state array is sphere light
-    this.pathTracingUniforms.gLights.value[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3().copy(state[0].mColorTop);
-    this.pathTracingUniforms.gLights.value[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3().copy(state[0].mColorMiddle);
-    this.pathTracingUniforms.gLights.value[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3().copy(state[0].mColorBottom);
+    this.pathTracingUniforms.gLights.value[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().copy(state[0].mColorTop);
+    this.pathTracingUniforms.gLights.value[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().copy(state[0].mColorMiddle);
+    this.pathTracingUniforms.gLights.value[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().copy(state[0].mColorBottom);
 
     // 1st light in state array is area light
-    this.pathTracingUniforms.gLights.value[1].mColor = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3().copy(state[1].mColor);
+    this.pathTracingUniforms.gLights.value[1].mColor = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().copy(state[1].mColor);
     this.pathTracingUniforms.gLights.value[1].mTheta = state[1].mTheta;
     this.pathTracingUniforms.gLights.value[1].mPhi = state[1].mPhi;
     this.pathTracingUniforms.gLights.value[1].mDistance = state[1].mDistance;
@@ -2912,7 +2863,7 @@ class PathTracedVolume {
   }
   updateLightsSecondary(cameraMatrix) {
     const physicalSize = this.volume.normPhysicalSize;
-    const bbctr = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(physicalSize.x * 0.5, physicalSize.y * 0.5, physicalSize.z * 0.5);
+    const bbctr = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(physicalSize.x * 0.5, physicalSize.y * 0.5, physicalSize.z * 0.5);
     for (let i = 0; i < 2; ++i) {
       const lt = this.pathTracingUniforms.gLights.value[i];
       lt.update(bbctr, cameraMatrix);
@@ -2922,12 +2873,12 @@ class PathTracedVolume {
   // 0..1 ranges as input
   updateClipRegion(xmin, xmax, ymin, ymax, zmin, zmax) {
     this.settings.bounds = {
-      bmin: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
-      bmax: new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5)
+      bmin: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
+      bmax: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5)
     };
     const physicalSize = this.volume.normPhysicalSize;
-    this.pathTracingUniforms.gClippedAaBbMin.value = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(xmin * physicalSize.x - 0.5 * physicalSize.x, ymin * physicalSize.y - 0.5 * physicalSize.y, zmin * physicalSize.z - 0.5 * physicalSize.z);
-    this.pathTracingUniforms.gClippedAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(xmax * physicalSize.x - 0.5 * physicalSize.x, ymax * physicalSize.y - 0.5 * physicalSize.y, zmax * physicalSize.z - 0.5 * physicalSize.z);
+    this.pathTracingUniforms.gClippedAaBbMin.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmin * physicalSize.x - 0.5 * physicalSize.x, ymin * physicalSize.y - 0.5 * physicalSize.y, zmin * physicalSize.z - 0.5 * physicalSize.z);
+    this.pathTracingUniforms.gClippedAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmax * physicalSize.x - 0.5 * physicalSize.x, ymax * physicalSize.y - 0.5 * physicalSize.y, zmax * physicalSize.z - 0.5 * physicalSize.z);
     this.resetProgress();
   }
   setZSlice(_slice) {
@@ -3209,28 +3160,29 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ RenderToBuffer)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _constants_basicShaders__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./constants/basicShaders */ "./src/constants/basicShaders.ts");
 
-/* babel-plugin-inline-import './constants/shaders/render_to_buffer.vert' */
-const bufferVertexShaderSrc = "precision highp float;\nprecision highp int;\nout vec2 vUv;\n\nvoid main() {\n    vUv = uv;\n    gl_Position = vec4(position, 1.0);\n}\n";
+
+
 /**
  * Helper for render passes that just require a fragment shader: accepts a fragment shader and its
  * uniforms, and handles the ceremony of rendering a fullscreen quad with a simple vertex shader.
  */
 class RenderToBuffer {
   constructor(fragmentSrc, uniforms) {
-    this.scene = new three__WEBPACK_IMPORTED_MODULE_0__.Scene();
-    this.geometry = new three__WEBPACK_IMPORTED_MODULE_0__.PlaneGeometry(2, 2);
-    this.material = new three__WEBPACK_IMPORTED_MODULE_0__.ShaderMaterial({
-      vertexShader: bufferVertexShaderSrc,
+    this.scene = new three__WEBPACK_IMPORTED_MODULE_1__.Scene();
+    this.geometry = new three__WEBPACK_IMPORTED_MODULE_1__.PlaneGeometry(2, 2);
+    this.material = new three__WEBPACK_IMPORTED_MODULE_1__.ShaderMaterial({
+      vertexShader: _constants_basicShaders__WEBPACK_IMPORTED_MODULE_0__.renderToBufferVertShader,
       fragmentShader: fragmentSrc,
       uniforms
     });
     this.material.depthWrite = false;
     this.material.depthTest = false;
-    this.mesh = new three__WEBPACK_IMPORTED_MODULE_0__.Mesh(this.geometry, this.material);
+    this.mesh = new three__WEBPACK_IMPORTED_MODULE_1__.Mesh(this.geometry, this.material);
     this.scene.add(this.mesh);
-    this.camera = new three__WEBPACK_IMPORTED_MODULE_0__.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    this.camera = new three__WEBPACK_IMPORTED_MODULE_1__.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   }
 
   /** Renders this pass to `target` using `renderer`, or to the canvas if no `target` is given. */
@@ -3257,7 +3209,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   ThreeJsPanel: () => (/* binding */ ThreeJsPanel),
 /* harmony export */   VOLUME_LAYER: () => (/* binding */ VOLUME_LAYER)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _TrackballControls_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./TrackballControls.js */ "./src/TrackballControls.js");
 /* harmony import */ var _Timing_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Timing.js */ "./src/Timing.ts");
 /* harmony import */ var _constants_scaleBarSVG_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants/scaleBarSVG.js */ "./src/constants/scaleBarSVG.ts");
@@ -3265,6 +3217,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _utils_num_utils_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./utils/num_utils.js */ "./src/utils/num_utils.ts");
 /* harmony import */ var _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VolumeRenderSettings.js */ "./src/VolumeRenderSettings.ts");
 /* harmony import */ var _RenderToBuffer_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./RenderToBuffer.js */ "./src/RenderToBuffer.ts");
+/* harmony import */ var _constants_basicShaders_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./constants/basicShaders.js */ "./src/constants/basicShaders.ts");
 
 
 
@@ -3273,8 +3226,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-/* babel-plugin-inline-import './constants/shaders/copy_image.frag' */
-const copyImageShaderSrc = "varying vec2 vUv;\nuniform sampler2D image;\n\nvoid main() {\n    gl_FragColor = texture2D(image, vUv);\n}\n";
+
 const VOLUME_LAYER = 0;
 const MESH_LAYER = 1;
 const DEFAULT_PERSPECTIVE_CAMERA_DISTANCE = 5.0;
@@ -3293,20 +3245,20 @@ class ThreeJsPanel {
       this.canvas.width = parentElement.offsetWidth;
       parentElement.appendChild(this.containerdiv);
     }
-    this.scene = new three__WEBPACK_IMPORTED_MODULE_7__.Scene();
-    this.meshRenderTarget = new three__WEBPACK_IMPORTED_MODULE_7__.WebGLRenderTarget(this.canvas.width, this.canvas.height, {
-      minFilter: three__WEBPACK_IMPORTED_MODULE_7__.NearestFilter,
-      magFilter: three__WEBPACK_IMPORTED_MODULE_7__.NearestFilter,
-      format: three__WEBPACK_IMPORTED_MODULE_7__.RGBAFormat,
-      type: three__WEBPACK_IMPORTED_MODULE_7__.UnsignedByteType,
+    this.scene = new three__WEBPACK_IMPORTED_MODULE_8__.Scene();
+    this.meshRenderTarget = new three__WEBPACK_IMPORTED_MODULE_8__.WebGLRenderTarget(this.canvas.width, this.canvas.height, {
+      minFilter: three__WEBPACK_IMPORTED_MODULE_8__.NearestFilter,
+      magFilter: three__WEBPACK_IMPORTED_MODULE_8__.NearestFilter,
+      format: three__WEBPACK_IMPORTED_MODULE_8__.RGBAFormat,
+      type: three__WEBPACK_IMPORTED_MODULE_8__.UnsignedByteType,
       depthBuffer: true
     });
-    this.meshRenderToBuffer = new _RenderToBuffer_js__WEBPACK_IMPORTED_MODULE_6__["default"](copyImageShaderSrc, {
+    this.meshRenderToBuffer = new _RenderToBuffer_js__WEBPACK_IMPORTED_MODULE_6__["default"](_constants_basicShaders_js__WEBPACK_IMPORTED_MODULE_7__.copyImageFragShader, {
       image: {
         value: this.meshRenderTarget.texture
       }
     });
-    this.meshRenderTarget.depthTexture = new three__WEBPACK_IMPORTED_MODULE_7__.DepthTexture(this.canvas.width, this.canvas.height);
+    this.meshRenderTarget.depthTexture = new three__WEBPACK_IMPORTED_MODULE_8__.DepthTexture(this.canvas.width, this.canvas.height);
     this.scaleBarContainerElement = document.createElement("div");
     this.orthoScaleBarElement = document.createElement("div");
     this.showOrthoScaleBar = true;
@@ -3327,7 +3279,7 @@ class ThreeJsPanel {
     const context = this.canvas.getContext("webgl2");
     if (context) {
       this.hasWebGL2 = true;
-      this.renderer = new three__WEBPACK_IMPORTED_MODULE_7__.WebGLRenderer({
+      this.renderer = new three__WEBPACK_IMPORTED_MODULE_8__.WebGLRenderer({
         context: context,
         canvas: this.canvas,
         preserveDrawingBuffer: true,
@@ -3337,20 +3289,20 @@ class ThreeJsPanel {
       //this.renderer.autoClear = false;
       // set pixel ratio to 0.25 or 0.5 to render at lower res.
       this.renderer.setPixelRatio(window.devicePixelRatio);
-      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending);
+      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_8__.NormalBlending);
       //required by WebGL 2.0 for rendering to FLOAT textures
       this.renderer.getContext().getExtension("EXT_color_buffer_float");
     } else {
       // TODO Deprecate this code path.
       console.warn("WebGL 2.0 not available. Some functionality may be limited. Please use a browser that supports WebGL 2.0.");
-      this.renderer = new three__WEBPACK_IMPORTED_MODULE_7__.WebGLRenderer({
+      this.renderer = new three__WEBPACK_IMPORTED_MODULE_8__.WebGLRenderer({
         canvas: this.canvas,
         preserveDrawingBuffer: true,
         alpha: true,
         premultipliedAlpha: false
       });
       this.renderer.setPixelRatio(window.devicePixelRatio);
-      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_7__.NormalBlending);
+      this.renderer.state.setBlending(three__WEBPACK_IMPORTED_MODULE_8__.NormalBlending);
     }
     this.renderer.localClippingEnabled = true;
     if (parentElement) {
@@ -3361,7 +3313,7 @@ class ThreeJsPanel {
     const scale = DEFAULT_ORTHO_SCALE;
     const aspect = this.getWidth() / this.getHeight();
     this.fov = 20;
-    this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_7__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
+    this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_8__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
     this.resetPerspectiveCamera();
     this.perspectiveControls = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_0__["default"](this.perspectiveCamera, this.canvas);
     this.perspectiveControls.rotateSpeed = 4.0 / window.devicePixelRatio;
@@ -3370,7 +3322,7 @@ class ThreeJsPanel {
     this.perspectiveControls.length = 10;
     this.perspectiveControls.enabled = true; //turn off mouse moments by setting to false
 
-    this.orthographicCameraX = new three__WEBPACK_IMPORTED_MODULE_7__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
+    this.orthographicCameraX = new three__WEBPACK_IMPORTED_MODULE_8__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraX();
     this.orthoControlsX = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_0__["default"](this.orthographicCameraX, this.canvas);
     this.orthoControlsX.noRotate = true;
@@ -3380,7 +3332,7 @@ class ThreeJsPanel {
     this.orthoControlsX.staticMoving = true;
     this.orthoControlsX.enabled = false;
     this.orthoControlsX.panSpeed = this.canvas.clientWidth * 0.5;
-    this.orthographicCameraY = new three__WEBPACK_IMPORTED_MODULE_7__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
+    this.orthographicCameraY = new three__WEBPACK_IMPORTED_MODULE_8__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraY();
     this.orthoControlsY = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_0__["default"](this.orthographicCameraY, this.canvas);
     this.orthoControlsY.noRotate = true;
@@ -3390,7 +3342,7 @@ class ThreeJsPanel {
     this.orthoControlsY.staticMoving = true;
     this.orthoControlsY.enabled = false;
     this.orthoControlsY.panSpeed = this.canvas.clientWidth * 0.5;
-    this.orthographicCameraZ = new three__WEBPACK_IMPORTED_MODULE_7__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
+    this.orthographicCameraZ = new three__WEBPACK_IMPORTED_MODULE_8__.OrthographicCamera(-scale * aspect, scale * aspect, scale, -scale, 0.001, 20);
     this.resetOrthographicCameraZ();
     this.orthoControlsZ = new _TrackballControls_js__WEBPACK_IMPORTED_MODULE_0__["default"](this.orthographicCameraZ, this.canvas);
     this.orthoControlsZ.noRotate = true;
@@ -3403,9 +3355,9 @@ class ThreeJsPanel {
     this.camera = this.perspectiveCamera;
     this.controls = this.perspectiveControls;
     this.viewMode = _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_5__.Axis.NONE;
-    this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_7__.OrthographicCamera();
-    this.axisHelperScene = new three__WEBPACK_IMPORTED_MODULE_7__.Scene();
-    this.axisHelperObject = new three__WEBPACK_IMPORTED_MODULE_7__.Object3D();
+    this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_8__.OrthographicCamera();
+    this.axisHelperScene = new three__WEBPACK_IMPORTED_MODULE_8__.Scene();
+    this.axisHelperObject = new three__WEBPACK_IMPORTED_MODULE_8__.Object3D();
     this.axisHelperObject.name = "axisHelperParentObject";
     this.showAxis = false;
     // size of axes in px.
@@ -3435,7 +3387,7 @@ class ThreeJsPanel {
     this.orthographicCameraX.up.x = 0.0;
     this.orthographicCameraX.up.y = 0.0;
     this.orthographicCameraX.up.z = 1.0;
-    this.orthographicCameraX.lookAt(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0));
+    this.orthographicCameraX.lookAt(new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0));
   }
   resetOrthographicCameraY() {
     this.orthographicCameraY.position.x = 0.0;
@@ -3444,7 +3396,7 @@ class ThreeJsPanel {
     this.orthographicCameraY.up.x = 0.0;
     this.orthographicCameraY.up.y = 0.0;
     this.orthographicCameraY.up.z = 1.0;
-    this.orthographicCameraY.lookAt(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0));
+    this.orthographicCameraY.lookAt(new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0));
   }
   resetOrthographicCameraZ() {
     this.orthographicCameraZ.position.x = 0.0;
@@ -3453,7 +3405,7 @@ class ThreeJsPanel {
     this.orthographicCameraZ.up.x = 0.0;
     this.orthographicCameraZ.up.y = 1.0;
     this.orthographicCameraZ.up.z = 0.0;
-    this.orthographicCameraZ.lookAt(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0));
+    this.orthographicCameraZ.lookAt(new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0));
   }
   requestCapture(dataurlcallback) {
     this.dataurlcallback = dataurlcallback;
@@ -3464,7 +3416,7 @@ class ThreeJsPanel {
   }
   resetToPerspectiveCamera() {
     const aspect = this.getWidth() / this.getHeight();
-    this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_7__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
+    this.perspectiveCamera = new three__WEBPACK_IMPORTED_MODULE_8__.PerspectiveCamera(this.fov, aspect, DEFAULT_PERSPECTIVE_CAMERA_NEAR, DEFAULT_PERSPECTIVE_CAMERA_FAR);
     this.resetPerspectiveCamera();
     this.switchViewMode("3D");
     this.controls.object = this.perspectiveCamera;
@@ -3486,21 +3438,21 @@ class ThreeJsPanel {
   setupAxisHelper() {
     // set up axis widget.
 
-    const axisCubeMaterial = new three__WEBPACK_IMPORTED_MODULE_7__.MeshBasicMaterial({
+    const axisCubeMaterial = new three__WEBPACK_IMPORTED_MODULE_8__.MeshBasicMaterial({
       color: 0xaeacad
     });
-    const axisCube = new three__WEBPACK_IMPORTED_MODULE_7__.BoxGeometry(this.axisScale / 5, this.axisScale / 5, this.axisScale / 5);
-    const axisCubeMesh = new three__WEBPACK_IMPORTED_MODULE_7__.Mesh(axisCube, axisCubeMaterial);
+    const axisCube = new three__WEBPACK_IMPORTED_MODULE_8__.BoxGeometry(this.axisScale / 5, this.axisScale / 5, this.axisScale / 5);
+    const axisCubeMesh = new three__WEBPACK_IMPORTED_MODULE_8__.Mesh(axisCube, axisCubeMaterial);
     this.axisHelperObject.add(axisCubeMesh);
-    const axisHelper = new three__WEBPACK_IMPORTED_MODULE_7__.AxesHelper(this.axisScale);
+    const axisHelper = new three__WEBPACK_IMPORTED_MODULE_8__.AxesHelper(this.axisScale);
     this.axisHelperObject.add(axisHelper);
     this.axisHelperScene.add(this.axisHelperObject);
-    this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_7__.OrthographicCamera(0, this.getWidth(), this.getHeight(), 0, 0.001, this.axisScale * 4.0);
+    this.axisCamera = new three__WEBPACK_IMPORTED_MODULE_8__.OrthographicCamera(0, this.getWidth(), this.getHeight(), 0, 0.001, this.axisScale * 4.0);
     this.axisCamera.position.z = 1.0;
     this.axisCamera.up.x = 0.0;
     this.axisCamera.up.y = 1.0;
     this.axisCamera.up.z = 0.0;
-    this.axisCamera.lookAt(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3(0, 0, 0));
+    this.axisCamera.lookAt(new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0));
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
   setAxisPosition(marginX, marginY, corner) {
@@ -6428,6 +6380,50 @@ class VolumeRenderSettings {
 
 /***/ }),
 
+/***/ "./src/constants/basicShaders.ts":
+/*!***************************************!*\
+  !*** ./src/constants/basicShaders.ts ***!
+  \***************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   copyImageFragShader: () => (/* binding */ copyImageFragShader),
+/* harmony export */   renderToBufferVertShader: () => (/* binding */ renderToBufferVertShader)
+/* harmony export */ });
+// "basic" shaders which perform simple functions and appear multiple times in the codebase.
+// These are the only shaders defined outside a dedicated GLSL file to make extra sure they appear
+// only once in the built package.
+
+/** Passthrough vertex shader for rendering to a buffer with a fullscreen quad */
+const renderToBufferVertShader = `
+precision highp float;
+precision highp int;
+out vec2 vUv;
+
+void main() {
+  vUv = uv;
+  gl_Position = vec4(position, 1.0);
+}
+`;
+
+/** Basic fragment shader that samples its output directly from a texture */
+const copyImageFragShader = `
+precision highp float;
+precision highp int;
+precision highp sampler2D;
+
+in vec2 vUv;
+uniform sampler2D image;
+
+void main() {
+  gl_FragColor = texture2D(image, vUv);
+}
+`;
+
+/***/ }),
+
 /***/ "./src/constants/colors.ts":
 /*!*********************************!*\
   !*** ./src/constants/colors.ts ***!
@@ -6512,206 +6508,52 @@ const getColorByChannelIndex = index => {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   denoiseFragmentShaderSrc: () => (/* binding */ denoiseFragmentShaderSrc),
-/* harmony export */   denoiseShaderUniforms: () => (/* binding */ denoiseShaderUniforms),
-/* harmony export */   denoiseVertexShaderSrc: () => (/* binding */ denoiseVertexShaderSrc)
+/* harmony export */   denoiseShaderUniforms: () => (/* binding */ denoiseShaderUniforms)
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
+/* babel-plugin-inline-import './shaders/pathtrace_denoise.frag' */
+const denoiseFragmentShader = "precision highp float;\nprecision highp int;\nprecision highp sampler2D;\n\nuniform float gInvExposure;\nuniform int gDenoiseWindowRadius;\nuniform float gDenoiseNoise;\nuniform float gDenoiseInvWindowArea;\nuniform float gDenoiseWeightThreshold;\nuniform float gDenoiseLerpThreshold;\nuniform float gDenoiseLerpC;\nuniform vec2 gDenoisePixelSize;\n\nuniform sampler2D tTexture0;\nin vec2 vUv;\n\n// Used to convert from XYZ to linear RGB space\nconst mat3 XYZ_2_RGB = (mat3(\n 3.2404542, -1.5371385, -0.4985314,\n -0.9692660,  1.8760108,  0.0415560,\n  0.0556434, -0.2040259,  1.0572252\n));\n\nvec3 XYZtoRGB(vec3 xyz) {\n  return xyz * XYZ_2_RGB;\n}\n\nvoid main()\n{\n  vec4 pixelColor = texture(tTexture0, vUv);\n  // TODO TONE MAP!!!!!!\n  pixelColor.rgb = XYZtoRGB(pixelColor.rgb);\n\n  pixelColor.rgb = 1.0-exp(-pixelColor.rgb*gInvExposure);\n  pixelColor = clamp(pixelColor, 0.0, 1.0);\n\n  /////////////////////\n  /////////////////////\n  /////////////////////\n  /////////////////////\n  //// DENOISING FILTER\n  /////////////////////\n  // see https://developer.download.nvidia.com/compute/cuda/1.1-Beta/x86_website/projects/imageDenoising/doc/imageDenoising.pdf\n  /////////////////////\n  vec4 clr00 = pixelColor;\n\n  float fCount = 0.0;\n  float SumWeights = 0.0;\n  vec3 clr = vec3(0.0, 0.0, 0.0);\n\n  vec2 uvsample = vUv;\n  vec3 rgbsample;\n  for (int i = -gDenoiseWindowRadius; i <= gDenoiseWindowRadius; i++) {\n    for (int j = -gDenoiseWindowRadius; j <= gDenoiseWindowRadius; j++) {\n\n      // boundary checking?\n      vec3 clrIJ = texture(tTexture0, vUv + vec2(float(i)/gDenoisePixelSize.x, float(j)/gDenoisePixelSize.y)).rgb;\n      //vec3 clrIJ = texelFetch(tTexture0, ivec2(gl_FragCoord.xy) + ivec2(i,j), 0).rgb;\n\n      rgbsample = XYZtoRGB(clrIJ);\n      // tone map!\n      rgbsample = 1.0 - exp(-rgbsample * gInvExposure);\n      rgbsample = clamp(rgbsample, 0.0, 1.0);\n\n      clrIJ = rgbsample;\n\n      float distanceIJ = (clr00.x-clrIJ.x)*(clr00.x-clrIJ.x) + (clr00.y-clrIJ.y)*(clr00.y-clrIJ.y) + (clr00.z-clrIJ.z)*(clr00.z-clrIJ.z);\n\n      // gDenoiseNoise = 1/h^2\n      //\n      float weightIJ = exp(-(distanceIJ * gDenoiseNoise + float(i * i + j * j) * gDenoiseInvWindowArea));\n\n      clr += (clrIJ * weightIJ);\n\n      SumWeights += weightIJ;\n\n      fCount += (weightIJ > gDenoiseWeightThreshold) ? gDenoiseInvWindowArea : 0.0;\n    }\n  }\n\n  SumWeights = 1.0 / SumWeights;\n\n  clr.rgb *= SumWeights;\n\n  float LerpQ = (fCount > gDenoiseLerpThreshold) ? gDenoiseLerpC : 1.0f - gDenoiseLerpC;\n\n  clr.rgb = mix(clr.rgb, clr00.rgb, LerpQ);\n  clr.rgb = clamp(clr.rgb, 0.0, 1.0);\n\n  pc_fragColor = vec4(clr.rgb, clr00.a);\n}\n";
+const denoiseFragmentShaderSrc = denoiseFragmentShader;
 const DENOISE_WINDOW_RADIUS = 3;
-function denoiseShaderUniforms() {
-  return three__WEBPACK_IMPORTED_MODULE_0__.UniformsUtils.merge([{
-    gInvExposure: {
-      type: "f",
-      value: 1.0 / (1.0 - 0.75)
-    },
-    gDenoiseWindowRadius: {
-      type: "i",
-      value: DENOISE_WINDOW_RADIUS
-    },
-    gDenoiseNoise: {
-      type: "f",
-      value: 0.05
-    },
-    gDenoiseInvWindowArea: {
-      type: "f",
-      value: 1.0 / ((2.0 * DENOISE_WINDOW_RADIUS + 1.0) * (2.0 * DENOISE_WINDOW_RADIUS + 1.0))
-    },
-    gDenoiseWeightThreshold: {
-      type: "f",
-      value: 0.1
-    },
-    gDenoiseLerpThreshold: {
-      type: "f",
-      value: 0.0
-    },
-    gDenoiseLerpC: {
-      type: "f",
-      value: 0.01
-    },
-    gDenoisePixelSize: {
-      type: "v2",
-      value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector2(1, 1)
-    },
-    tTexture0: {
-      type: "t",
-      value: null
-    }
-  }]);
-}
-const denoiseVertexShaderSrc = `
-precision highp float;
-precision highp int;
-
-out vec2 vUv;
-
-void main()
-{
-  vUv = uv;
-  gl_Position = vec4( position, 1.0 );
-}
-`;
-const denoiseFragmentShaderSrc = `
-precision highp float;
-precision highp int;
-precision highp sampler2D;
-
-uniform float gInvExposure;
-uniform int gDenoiseWindowRadius;
-uniform float gDenoiseNoise;
-uniform float gDenoiseInvWindowArea;
-uniform float gDenoiseWeightThreshold;
-uniform float gDenoiseLerpThreshold;
-uniform float gDenoiseLerpC;
-uniform vec2 gDenoisePixelSize;
-
-uniform sampler2D tTexture0;
-in vec2 vUv;
-
-// Used to convert from XYZ to linear RGB space
-const mat3 XYZ_2_RGB = (mat3(
- 3.2404542, -1.5371385, -0.4985314,
- -0.9692660,  1.8760108,  0.0415560,
-  0.0556434, -0.2040259,  1.0572252
-));
-
-vec3 XYZtoRGB(vec3 xyz) {
-  return xyz * XYZ_2_RGB;
-}
-
-void main()
-{
-  vec4 pixelColor = texture(tTexture0, vUv);
-  // TODO TONE MAP!!!!!!
-  pixelColor.rgb = XYZtoRGB(pixelColor.rgb);
-
-  pixelColor.rgb = 1.0-exp(-pixelColor.rgb*gInvExposure);
-  pixelColor = clamp(pixelColor, 0.0, 1.0);
-
-  /////////////////////
-  /////////////////////
-  /////////////////////
-  /////////////////////
-  //// DENOISING FILTER
-  /////////////////////
-  // see https://developer.download.nvidia.com/compute/cuda/1.1-Beta/x86_website/projects/imageDenoising/doc/imageDenoising.pdf
-  /////////////////////
-  vec4 clr00 = pixelColor;
-
-  float fCount = 0.0;
-  float SumWeights = 0.0;
-  vec3 clr = vec3(0.0, 0.0, 0.0);
-
-  vec2 uvsample = vUv;
-  vec3 rgbsample;
-  for (int i = -gDenoiseWindowRadius; i <= gDenoiseWindowRadius; i++) {
-    for (int j = -gDenoiseWindowRadius; j <= gDenoiseWindowRadius; j++) {
-
-      // boundary checking?
-      vec3 clrIJ = texture(tTexture0, vUv + vec2(float(i)/gDenoisePixelSize.x, float(j)/gDenoisePixelSize.y)).rgb;
-      //vec3 clrIJ = texelFetch(tTexture0, ivec2(gl_FragCoord.xy) + ivec2(i,j), 0).rgb;
-
-      rgbsample = XYZtoRGB(clrIJ);
-      // tone map!
-      rgbsample = 1.0 - exp(-rgbsample * gInvExposure);
-      rgbsample = clamp(rgbsample, 0.0, 1.0);
-
-      clrIJ = rgbsample;
-
-      float distanceIJ = (clr00.x-clrIJ.x)*(clr00.x-clrIJ.x) + (clr00.y-clrIJ.y)*(clr00.y-clrIJ.y) + (clr00.z-clrIJ.z)*(clr00.z-clrIJ.z);
-
-      // gDenoiseNoise = 1/h^2
-      //
-      float weightIJ = exp(-(distanceIJ * gDenoiseNoise + float(i * i + j * j) * gDenoiseInvWindowArea));
-
-      clr += (clrIJ * weightIJ);
-
-      SumWeights += weightIJ;
-
-      fCount += (weightIJ > gDenoiseWeightThreshold) ? gDenoiseInvWindowArea : 0.0;
-    }
+const denoiseShaderUniforms = () => ({
+  gInvExposure: {
+    type: "f",
+    value: 1.0 / (1.0 - 0.75)
+  },
+  gDenoiseWindowRadius: {
+    type: "i",
+    value: DENOISE_WINDOW_RADIUS
+  },
+  gDenoiseNoise: {
+    type: "f",
+    value: 0.05
+  },
+  gDenoiseInvWindowArea: {
+    type: "f",
+    value: 1.0 / ((2.0 * DENOISE_WINDOW_RADIUS + 1.0) * (2.0 * DENOISE_WINDOW_RADIUS + 1.0))
+  },
+  gDenoiseWeightThreshold: {
+    type: "f",
+    value: 0.1
+  },
+  gDenoiseLerpThreshold: {
+    type: "f",
+    value: 0.0
+  },
+  gDenoiseLerpC: {
+    type: "f",
+    value: 0.01
+  },
+  gDenoisePixelSize: {
+    type: "v2",
+    value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector2(1, 1)
+  },
+  tTexture0: {
+    type: "t",
+    value: null
   }
-
-  SumWeights = 1.0 / SumWeights;
-
-  clr.rgb *= SumWeights;
-
-  float LerpQ = (fCount > gDenoiseLerpThreshold) ? gDenoiseLerpC : 1.0f - gDenoiseLerpC;
-
-  clr.rgb = mix(clr.rgb, clr00.rgb, LerpQ);
-  clr.rgb = clamp(clr.rgb, 0.0, 1.0);
-
-  pc_fragColor = vec4(clr.rgb, clr00.a);
-}
-`;
-
-/***/ }),
-
-/***/ "./src/constants/fuseShader.ts":
-/*!*************************************!*\
-  !*** ./src/constants/fuseShader.ts ***!
-  \*************************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   fuseShaderSrc: () => (/* binding */ fuseShaderSrc),
-/* harmony export */   fuseVertexShaderSrc: () => (/* binding */ fuseVertexShaderSrc)
-/* harmony export */ });
-// threejs passthrough vertex shader for fullscreen quad
-const fuseVertexShaderSrc = `
-precision highp float;
-precision highp int;
-out vec2 vUv;
-void main()
-{
-  vUv = uv;
-  gl_Position = vec4( position, 1.0 );
-}
-`;
-const fuseShaderSrc = `
-precision highp float;
-precision highp int;
-precision highp sampler2D;
-precision highp sampler3D;
-
-// the lut texture is a 256x1 rgba texture for each channel
-uniform sampler2D lutSampler;
-// src texture is the raw volume intensity data
-uniform sampler2D srcTexture;
-
-void main()
-{
-    ivec2 vUv = ivec2(int(gl_FragCoord.x), int(gl_FragCoord.y));
-
-    // load from channel
-    float intensity = texelFetch(srcTexture, vUv, 0).r;
-
-    // apply lut to intensity:
-    vec4 pix = texture(lutSampler, vec2(intensity, 0.5));
-    gl_FragColor = vec4(pix.xyz*pix.w, pix.w);
-}
-`;
+});
 
 /***/ }),
 
@@ -6875,6 +6717,34 @@ function createShaderMaterial(id) {
 
 /***/ }),
 
+/***/ "./src/constants/pathtraceOutputShader.ts":
+/*!************************************************!*\
+  !*** ./src/constants/pathtraceOutputShader.ts ***!
+  \************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   pathtraceOutputFragmentShaderSrc: () => (/* binding */ pathtraceOutputFragmentShaderSrc),
+/* harmony export */   pathtraceOutputShaderUniforms: () => (/* binding */ pathtraceOutputShaderUniforms)
+/* harmony export */ });
+/* babel-plugin-inline-import './shaders/pathtrace_output.frag' */
+const pathtraceOutputFragmentShader = "precision highp float;\nprecision highp int;\nprecision highp sampler2D;\n\nuniform float gInvExposure;\nuniform sampler2D tTexture0;\nin vec2 vUv;\n\n// Used to convert from XYZ to linear RGB space\nconst mat3 XYZ_2_RGB = (mat3(\n  3.2404542, -1.5371385, -0.4985314,\n -0.9692660,  1.8760108,  0.0415560,\n  0.0556434, -0.2040259,  1.0572252\n));\n\nvec3 XYZtoRGB(vec3 xyz) {\n  return xyz * XYZ_2_RGB;\n}\n\nvoid main() {\n  vec4 pixelColor = texture(tTexture0, vUv);\n\n  pixelColor.rgb = XYZtoRGB(pixelColor.rgb);\n\n  // pixelColor.rgb = pow(pixelColor.rgb, vec3(1.0/2.2));\n  pixelColor.rgb = 1.0-exp(-pixelColor.rgb*gInvExposure);\n  pixelColor = clamp(pixelColor, 0.0, 1.0);\n\n  pc_fragColor = pixelColor; // sqrt(pixelColor);\n  // out_FragColor = pow(pixelColor, vec4(1.0/2.2));\n}\n";
+const pathtraceOutputFragmentShaderSrc = pathtraceOutputFragmentShader;
+const pathtraceOutputShaderUniforms = () => ({
+  gInvExposure: {
+    type: "f",
+    value: 1.0 / (1.0 - 0.75)
+  },
+  tTexture0: {
+    type: "t",
+    value: null
+  }
+});
+
+/***/ }),
+
 /***/ "./src/constants/scaleBarSVG.ts":
 /*!**************************************!*\
   !*** ./src/constants/scaleBarSVG.ts ***!
@@ -6969,18 +6839,14 @@ function parseTimeUnit(unit) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   pathTracingFragmentShaderSrc: () => (/* binding */ pathTracingFragmentShaderSrc),
-/* harmony export */   pathTracingUniforms: () => (/* binding */ pathTracingUniforms),
-/* harmony export */   pathTracingVertexShaderSrc: () => (/* binding */ pathTracingVertexShaderSrc)
+/* harmony export */   pathTracingUniforms: () => (/* binding */ pathTracingUniforms)
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _Light_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../Light.js */ "./src/Light.ts");
 
 
-/* babel-plugin-inline-import './shaders/pathtrace.vert' */
-const pathTraceVertexShader = "precision highp float;\nprecision highp int;\nout vec2 vUv;\nvoid main()\n{\n  vUv = uv;\n  gl_Position = vec4( position, 1.0 );\n}\n";
 /* babel-plugin-inline-import './shaders/pathtrace.frag' */
-const pathTraceFragmentShader = "precision highp float;\nprecision highp int;\nprecision highp sampler2D;\nprecision highp sampler3D;\n\n#define PI (3.1415926535897932384626433832795)\n#define PI_OVER_2 (1.57079632679489661923)\n#define PI_OVER_4 (0.785398163397448309616)\n#define INV_PI (1.0/PI)\n#define INV_2_PI (0.5/PI)\n#define INV_4_PI (0.25/PI)\n\nconst vec3 BLACK = vec3(0,0,0);\nconst vec3 WHITE = vec3(1.0,1.0,1.0);\nconst int ShaderType_Brdf = 0;\nconst int ShaderType_Phase = 1;\nconst int ShaderType_Mixed = 2;\nconst float MAX_RAY_LEN = 1500000.0f;\n\nin vec2 vUv;\n\nstruct Camera {\n  vec3 mFrom;\n  vec3 mU, mV, mN;\n  vec4 mScreen;  // left, right, bottom, top\n  vec2 mInvScreen;  // 1/w, 1/h\n  float mFocalDistance;\n  float mApertureSize;\n  float mIsOrtho; // 1 or 0\n};\n\nuniform Camera gCamera;\n\nstruct Light {\n  float   mTheta;\n  float   mPhi;\n  float   mWidth;\n  float   mHalfWidth;\n  float   mHeight;\n  float   mHalfHeight;\n  float   mDistance;\n  float   mSkyRadius;\n  vec3    mP;\n  vec3    mTarget;\n  vec3    mN;\n  vec3    mU;\n  vec3    mV;\n  float   mArea;\n  float   mAreaPdf;\n  vec3    mColor;\n  vec3    mColorTop;\n  vec3    mColorMiddle;\n  vec3    mColorBottom;\n  int     mT;\n};\nconst int NUM_LIGHTS = 2;\nuniform Light gLights[2];\n\nuniform vec3 gClippedAaBbMin;\nuniform vec3 gClippedAaBbMax;\nuniform vec3 gVolCenter;\nuniform float gDensityScale;\nuniform float gStepSize;\nuniform float gStepSizeShadow;\nuniform sampler3D volumeTexture;\nuniform vec3 gInvAaBbMax;\nuniform int gNChannels;\nuniform int gShadingType;\nuniform vec3 gGradientDeltaX;\nuniform vec3 gGradientDeltaY;\nuniform vec3 gGradientDeltaZ;\nuniform float gInvGradientDelta;\nuniform float gGradientFactor;\nuniform float uShowLights;\nuniform vec3 flipVolume;\n\n// per channel\n// the luttexture is a 256x4 rgba texture\n// each row is a 256 element lookup table.\nuniform sampler2D gLutTexture;\nuniform vec4 gIntensityMax;\nuniform vec4 gIntensityMin;\nuniform float gOpacity[4];\nuniform vec3 gEmissive[4];\nuniform vec3 gDiffuse[4];\nuniform vec3 gSpecular[4];\nuniform float gGlossiness[4];\n\n// compositing / progressive render\nuniform float uFrameCounter;\nuniform float uSampleCounter;\nuniform vec2 uResolution;\nuniform sampler2D tPreviousTexture;\n\n// from iq https://www.shadertoy.com/view/4tXyWN\nfloat rand( inout uvec2 seed )\n{\n  seed += uvec2(1);\n  uvec2 q = 1103515245U * ( (seed >> 1U) ^ (seed.yx) );\n  uint  n = 1103515245U * ( (q.x) ^ (q.y >> 3U) );\n  return float(n) * (1.0 / float(0xffffffffU));\n}\n\nvec3 XYZtoRGB(vec3 xyz) {\n  return vec3(\n    3.240479f*xyz[0] - 1.537150f*xyz[1] - 0.498535f*xyz[2],\n    -0.969256f*xyz[0] + 1.875991f*xyz[1] + 0.041556f*xyz[2],\n    0.055648f*xyz[0] - 0.204043f*xyz[1] + 1.057311f*xyz[2]\n  );\n}\n\n// Used to convert from linear RGB to XYZ space\nconst mat3 RGB_2_XYZ = (mat3(\n  0.4124564, 0.3575761, 0.1804375,\n  0.2126729, 0.7151522, 0.0721750,\n  0.0193339, 0.1191920, 0.9503041\n));\nvec3 RGBtoXYZ(vec3 rgb) {\n  return rgb * RGB_2_XYZ;\n}\n\nvec3 getUniformSphereSample(in vec2 U)\n{\n  float z = 1.f - 2.f * U.x;\n  float r = sqrt(max(0.f, 1.f - z*z));\n  float phi = 2.f * PI * U.y;\n  float x = r * cos(phi);\n  float y = r * sin(phi);\n  return vec3(x, y, z);\n}\n\nfloat SphericalPhi(in vec3 Wl)\n{\n  float p = atan(Wl.z, Wl.x);\n  return (p < 0.f) ? p + 2.f * PI : p;\n}\n\nfloat SphericalTheta(in vec3 Wl)\n{\n  return acos(clamp(Wl.y, -1.f, 1.f));\n}\n\nbool SameHemisphere(in vec3 Ww1, in vec3 Ww2)\n{\n   return (Ww1.z * Ww2.z) > 0.0f;\n}\n\nvec2 getConcentricDiskSample(in vec2 U)\n{\n  float r, theta;\n  // Map 0..1 to -1..1\n  float sx = 2.0 * U.x - 1.0;\n  float sy = 2.0 * U.y - 1.0;\n\n  // Map square to (r,theta)\n\n  // Handle degeneracy at the origin\n  if (sx == 0.0 && sy == 0.0)\n  {\n    return vec2(0.0f, 0.0f);\n  }\n\n  // quadrants of disk\n  if (sx >= -sy)\n  {\n    if (sx > sy)\n    {\n      r = sx;\n      if (sy > 0.0)\n        theta = sy/r;\n      else\n        theta = 8.0f + sy/r;\n    }\n    else\n    {\n      r = sy;\n      theta = 2.0f - sx/r;\n    }\n  }\n  else\n  {\n    if (sx <= sy)\n    {\n      r = -sx;\n      theta = 4.0f - sy/r;\n    }\n    else\n    {\n      r = -sy;\n      theta = 6.0f + sx/r;\n    }\n  }\n\n  theta *= PI_OVER_4;\n\n  return vec2(r*cos(theta), r*sin(theta));\n}\n\nvec3 getCosineWeightedHemisphereSample(in vec2 U)\n{\n  vec2 ret = getConcentricDiskSample(U);\n  return vec3(ret.x, ret.y, sqrt(max(0.f, 1.f - ret.x * ret.x - ret.y * ret.y)));\n}\n\nstruct Ray {\n  vec3 m_O;\n  vec3 m_D;\n  float m_MinT, m_MaxT;\n};\n\nvec3 rayAt(Ray r, float t) {\n  return r.m_O + t*r.m_D;\n}\n\nRay GenerateCameraRay(in Camera cam, in vec2 Pixel, in vec2 ApertureRnd)\n{\n  // negating ScreenPoint.y flips the up/down direction. depends on whether you want pixel 0 at top or bottom\n  // we could also have flipped mScreen and mInvScreen, or cam.mV?\n  vec2 ScreenPoint = vec2(\n    cam.mScreen.x + (cam.mInvScreen.x * Pixel.x),\n    cam.mScreen.z + (cam.mInvScreen.y * Pixel.y)\n  );\n  vec3 dxy = (ScreenPoint.x * cam.mU) + (-ScreenPoint.y * cam.mV);\n\n  // orthographic camera ray: start at (camera pos + screen point), go in direction N\n  // perspective camera ray: start at camera pos, go in direction (N + screen point)\n  vec3 RayO = cam.mFrom + cam.mIsOrtho * dxy;\n  vec3 RayD = normalize(cam.mN + (1.0 - cam.mIsOrtho) * dxy);\n\n  if (cam.mApertureSize != 0.0f)\n  {\n    vec2 LensUV = cam.mApertureSize * getConcentricDiskSample(ApertureRnd);\n\n    vec3 LI = cam.mU * LensUV.x + cam.mV * LensUV.y;\n    RayO += LI;\n    RayD = normalize((RayD * cam.mFocalDistance) - LI);\n  }\n\n  return Ray(RayO, RayD, 0.0, MAX_RAY_LEN);\n}\n\nbool IntersectBox(in Ray R, out float pNearT, out float pFarT)\n{\n  vec3 invR\t\t= vec3(1.0f, 1.0f, 1.0f) / R.m_D;\n  vec3 bottomT\t\t= invR * (vec3(gClippedAaBbMin.x, gClippedAaBbMin.y, gClippedAaBbMin.z) - R.m_O);\n  vec3 topT\t\t= invR * (vec3(gClippedAaBbMax.x, gClippedAaBbMax.y, gClippedAaBbMax.z) - R.m_O);\n  vec3 minT\t\t= min(topT, bottomT);\n  vec3 maxT\t\t= max(topT, bottomT);\n  float largestMinT = max(max(minT.x, minT.y), max(minT.x, minT.z));\n  float smallestMaxT = min(min(maxT.x, maxT.y), min(maxT.x, maxT.z));\n\n  pNearT = largestMinT;\n  pFarT\t= smallestMaxT;\n\n  return smallestMaxT > largestMinT;\n}\n\n// assume volume is centered at 0,0,0 so p spans -bounds to + bounds\n// transform p to range from 0,0,0 to 1,1,1 for volume texture sampling.\n// optionally invert axes\nvec3 PtoVolumeTex(vec3 p) {\n  vec3 uvw = (p - gVolCenter) * gInvAaBbMax + vec3(0.5, 0.5, 0.5);\n  // if flipVolume = 1, uvw is unchanged.\n  // if flipVolume = -1, uvw = 1 - uvw\n  uvw = (flipVolume*(uvw - 0.5) + 0.5);\n  return uvw;\n}\n\nconst float UINT8_MAX = 1.0;//255.0;\n\n// strategy: sample up to 4 channels, and take the post-LUT maximum intensity as the channel that wins\n// we will return the unmapped raw intensity value from the volume so that other luts can be applied again later.\nfloat GetNormalizedIntensityMax4ch(in vec3 P, out int ch)\n{\n  vec4 intensity = UINT8_MAX * texture(volumeTexture, PtoVolumeTex(P));\n\n  //intensity = (intensity - gIntensityMin) / (gIntensityMax - gIntensityMin);\n  vec4 ilut = vec4(0.0, 0.0, 0.0, 0.0);\n  // w in the lut texture is \"opacity\"\n  ilut.x = texture(gLutTexture, vec2(intensity.x, 0.5/4.0)).w / 255.0;\n  ilut.y = texture(gLutTexture, vec2(intensity.y, 1.5/4.0)).w / 255.0;\n  ilut.z = texture(gLutTexture, vec2(intensity.z, 2.5/4.0)).w / 255.0;\n  ilut.w = texture(gLutTexture, vec2(intensity.w, 3.5/4.0)).w / 255.0;\n\n  float maxIn = 0.0;\n  float iOut = 0.0;\n  ch = 0;\n  for (int i = 0; i < min(gNChannels, 4); ++i) {\n    if (ilut[i] > maxIn) {\n      maxIn = ilut[i];\n      ch = i;\n      iOut = intensity[i];\n    }\n  }\n\n  //return maxIn;\n  return iOut;\n}\n\nfloat GetNormalizedIntensity4ch(vec3 P, int ch)\n{\n  vec4 intensity = UINT8_MAX * texture(volumeTexture, PtoVolumeTex(P));\n  // select channel\n  float intensityf = intensity[ch];\n  //intensityf = (intensityf - gIntensityMin[ch]) / (gIntensityMax[ch] - gIntensityMin[ch]);\n  //intensityf = texture(gLutTexture, vec2(intensityf, (0.5+float(ch))/4.0)).x;\n\n  return intensityf;\n}\n\n// note that gInvGradientDelta is maxpixeldim of volume\n// gGradientDeltaX,Y,Z is 1/X,Y,Z of volume\nvec3 Gradient4ch(vec3 P, int ch)\n{\n  vec3 Gradient;\n\n  Gradient.x = (GetNormalizedIntensity4ch(P + (gGradientDeltaX), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaX), ch)) * gInvGradientDelta;\n  Gradient.y = (GetNormalizedIntensity4ch(P + (gGradientDeltaY), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaY), ch)) * gInvGradientDelta;\n  Gradient.z = (GetNormalizedIntensity4ch(P + (gGradientDeltaZ), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaZ), ch)) * gInvGradientDelta;\n\n  return Gradient;\n}\n\nfloat GetOpacity(float NormalizedIntensity, int ch)\n{\n  // apply lut\n  float o = texture(gLutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0)).w / 255.0;\n  float Intensity = o * gOpacity[ch];\n  return Intensity;\n}\n\nvec3 GetEmissionN(float NormalizedIntensity, int ch)\n{\n  return gEmissive[ch];\n}\n\nvec3 GetDiffuseN(float NormalizedIntensity, int ch)\n{\n  vec4 col = texture(gLutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0));\n  //vec3 col = vec3(1.0, 1.0, 1.0);\n  return col.xyz * gDiffuse[ch];\n}\n\nvec3 GetSpecularN(float NormalizedIntensity, int ch)\n{\n  return gSpecular[ch];\n}\n\nfloat GetGlossinessN(float NormalizedIntensity, int ch)\n{\n  return gGlossiness[ch];\n}\n\n// a bsdf sample, a sample on a light source, and a randomly chosen light index\nstruct LightingSample {\n  float m_bsdfComponent;\n  vec2  m_bsdfDir;\n  vec2  m_lightPos;\n  float m_lightComponent;\n  float m_LightNum;\n};\n\nLightingSample LightingSample_LargeStep(inout uvec2 seed) {\n  return LightingSample(\n    rand(seed),\n    vec2(rand(seed), rand(seed)),\n    vec2(rand(seed), rand(seed)),\n    rand(seed),\n    rand(seed)\n    );\n}\n\n// return a color xyz\nvec3 Light_Le(in Light light, in vec2 UV)\n{\n  if (light.mT == 0)\n    return RGBtoXYZ(light.mColor) / light.mArea;\n\n  if (light.mT == 1)\n  {\n    if (UV.y > 0.0f)\n      return RGBtoXYZ(mix(light.mColorMiddle, light.mColorTop, abs(UV.y)));\n    else\n      return RGBtoXYZ(mix(light.mColorMiddle, light.mColorBottom, abs(UV.y)));\n  }\n\n  return BLACK;\n}\n\n// return a color xyz\nvec3 Light_SampleL(in Light light, in vec3 P, out Ray Rl, out float Pdf, in LightingSample LS)\n{\n  vec3 L = BLACK;\n  Pdf = 0.0;\n  vec3 Ro = vec3(0,0,0), Rd = vec3(0,0,1);\n  if (light.mT == 0)\n  {\n    Ro = (light.mP + ((-0.5f + LS.m_lightPos.x) * light.mWidth * light.mU) + ((-0.5f + LS.m_lightPos.y) * light.mHeight * light.mV));\n    Rd = normalize(P - Ro);\n    L = dot(Rd, light.mN) > 0.0f ? Light_Le(light, vec2(0.0f)) : BLACK;\n    Pdf = abs(dot(Rd, light.mN)) > 0.0f ? dot(P-Ro, P-Ro) / (abs(dot(Rd, light.mN)) * light.mArea) : 0.0f;\n  }\n  else if (light.mT == 1)\n  {\n    Ro = light.mP + light.mSkyRadius * getUniformSphereSample(LS.m_lightPos);\n    Rd = normalize(P - Ro);\n    L = Light_Le(light, vec2(1.0f) - 2.0f * LS.m_lightPos);\n    Pdf = pow(light.mSkyRadius, 2.0f) / light.mArea;\n  }\n\n  Rl = Ray(Ro, Rd, 0.0f, length(P - Ro));\n\n  return L;\n}\n\n// Intersect ray with light\nbool Light_Intersect(Light light, inout Ray R, out float T, out vec3 L, out float pPdf)\n{\n  if (light.mT == 0)\n  {\n    // Compute projection\n    float DotN = dot(R.m_D, light.mN);\n\n    // Ray is coplanar with light surface\n    if (DotN >= 0.0f)\n      return false;\n\n    // Compute hit distance\n    T = (-light.mDistance - dot(R.m_O, light.mN)) / DotN;\n\n    // Intersection is in ray's negative direction\n    if (T < R.m_MinT || T > R.m_MaxT)\n      return false;\n\n    // Determine position on light\n    vec3 Pl = rayAt(R, T);\n\n    // Vector from point on area light to center of area light\n    vec3 Wl = Pl - light.mP;\n\n    // Compute texture coordinates\n    vec2 UV = vec2(dot(Wl, light.mU), dot(Wl, light.mV));\n\n    // Check if within bounds of light surface\n    if (UV.x > light.mHalfWidth || UV.x < -light.mHalfWidth || UV.y > light.mHalfHeight || UV.y < -light.mHalfHeight)\n      return false;\n\n    R.m_MaxT = T;\n\n    //pUV = UV;\n\n    if (DotN < 0.0f)\n      L = RGBtoXYZ(light.mColor) / light.mArea;\n    else\n      L = BLACK;\n\n    pPdf = dot(R.m_O-Pl, R.m_O-Pl) / (DotN * light.mArea);\n\n    return true;\n  }\n\n  else if (light.mT == 1)\n  {\n    T = light.mSkyRadius;\n\n    // Intersection is in ray's negative direction\n    if (T < R.m_MinT || T > R.m_MaxT)\n      return false;\n\n    R.m_MaxT = T;\n\n    vec2 UV = vec2(SphericalPhi(R.m_D) * INV_2_PI, SphericalTheta(R.m_D) * INV_PI);\n\n    L = Light_Le(light, vec2(1.0f,1.0f) - 2.0f * UV);\n\n    pPdf = pow(light.mSkyRadius, 2.0f) / light.mArea;\n    //pUV = UV;\n\n    return true;\n  }\n\n  return false;\n}\n\nfloat Light_Pdf(in Light light, in vec3 P, in vec3 Wi)\n{\n  vec3 L;\n  vec2 UV;\n  float Pdf = 1.0f;\n\n  Ray Rl = Ray(P, Wi, 0.0f, 100000.0f);\n\n  if (light.mT == 0)\n  {\n    float T = 0.0f;\n\n    if (!Light_Intersect(light, Rl, T, L, Pdf))\n      return 0.0f;\n\n    return pow(T, 2.0f) / (abs(dot(light.mN, -Wi)) * light.mArea);\n  }\n\n  else if (light.mT == 1)\n  {\n    return pow(light.mSkyRadius, 2.0f) / light.mArea;\n  }\n\n  return 0.0f;\n}\n\nstruct VolumeShader {\n  int m_Type; // 0 = bsdf, 1 = phase\n\n  vec3 m_Kd; // isotropic phase // xyz color\n  vec3 m_R; // specular reflectance\n  float m_Ior;\n  float m_Exponent;\n  vec3 m_Nn;\n  vec3 m_Nu;\n  vec3 m_Nv;\n};\n\n// return a xyz color\nvec3 ShaderPhase_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return shader.m_Kd * INV_PI;\n}\n\nfloat ShaderPhase_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return INV_4_PI;\n}\n\nvec3 ShaderPhase_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  Wi\t= getUniformSphereSample(U);\n  Pdf\t= ShaderPhase_Pdf(shader, Wo, Wi);\n\n  return ShaderPhase_F(shader, Wo, Wi);\n}\n\n// return a xyz color\nvec3 Lambertian_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return shader.m_Kd * INV_PI;\n}\n\nfloat Lambertian_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  //return abs(Wi.z)*INV_PI;\n  return SameHemisphere(Wo, Wi) ? abs(Wi.z) * INV_PI : 0.0f;\n}\n\n// return a xyz color\nvec3 Lambertian_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  Wi = getCosineWeightedHemisphereSample(U);\n\n  if (Wo.z < 0.0f)\n    Wi.z *= -1.0f;\n\n  Pdf = Lambertian_Pdf(shader, Wo, Wi);\n\n  return Lambertian_F(shader, Wo, Wi);\n}\n\nvec3 SphericalDirection(in float SinTheta, in float CosTheta, in float Phi)\n{\n  return vec3(SinTheta * cos(Phi), SinTheta * sin(Phi), CosTheta);\n}\n\nvoid Blinn_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  // Compute sampled half-angle vector wh for Blinn distribution\n  float costheta = pow(U.x, 1.f / (shader.m_Exponent+1.0));\n  float sintheta = sqrt(max(0.f, 1.f - costheta*costheta));\n  float phi = U.y * 2.f * PI;\n\n  vec3 wh = SphericalDirection(sintheta, costheta, phi);\n\n  if (!SameHemisphere(Wo, wh))\n    wh = -wh;\n\n  // Compute incident direction by reflecting about wh\n  Wi = -Wo + 2.f * dot(Wo, wh) * wh;\n\n  // Compute PDF for wi from Blinn distribution\n  float blinn_pdf = ((shader.m_Exponent + 1.f) * pow(costheta, shader.m_Exponent)) / (2.f * PI * 4.f * dot(Wo, wh));\n\n  if (dot(Wo, wh) <= 0.f)\n    blinn_pdf = 0.f;\n\n  Pdf = blinn_pdf;\n}\n\nfloat Blinn_D(in VolumeShader shader, in vec3 wh)\n{\n  float costhetah = abs(wh.z);//AbsCosTheta(wh);\n  return (shader.m_Exponent+2.0) * INV_2_PI * pow(costhetah, shader.m_Exponent);\n}\nfloat Microfacet_G(in VolumeShader shader, in vec3 wo, in vec3 wi, in vec3 wh)\n{\n  float NdotWh = abs(wh.z);//AbsCosTheta(wh);\n  float NdotWo = abs(wo.z);//AbsCosTheta(wo);\n  float NdotWi = abs(wi.z);//AbsCosTheta(wi);\n  float WOdotWh = abs(dot(wo, wh));\n\n  return min(1.f, min((2.f * NdotWh * NdotWo / WOdotWh), (2.f * NdotWh * NdotWi / WOdotWh)));\n}\n\nvec3 Microfacet_F(in VolumeShader shader, in vec3 wo, in vec3 wi)\n{\n  float cosThetaO = abs(wo.z);//AbsCosTheta(wo);\n  float cosThetaI = abs(wi.z);//AbsCosTheta(wi);\n\n  if (cosThetaI == 0.f || cosThetaO == 0.f)\n    return BLACK;\n\n  vec3 wh = wi + wo;\n\n  if (wh.x == 0. && wh.y == 0. && wh.z == 0.)\n    return BLACK;\n\n  wh = normalize(wh);\n  float cosThetaH = dot(wi, wh);\n\n  vec3 F = WHITE;//m_Fresnel.Evaluate(cosThetaH);\n\n  return shader.m_R * Blinn_D(shader, wh) * Microfacet_G(shader, wo, wi, wh) * F / (4.f * cosThetaI * cosThetaO);\n}\n\nvec3 ShaderBsdf_WorldToLocal(in VolumeShader shader, in vec3 W)\n{\n  return vec3(dot(W, shader.m_Nu), dot(W, shader.m_Nv), dot(W, shader.m_Nn));\n}\n\nvec3 ShaderBsdf_LocalToWorld(in VolumeShader shader, in vec3 W)\n{\n  return vec3(\tshader.m_Nu.x * W.x + shader.m_Nv.x * W.y + shader.m_Nn.x * W.z,\n    shader.m_Nu.y * W.x + shader.m_Nv.y * W.y + shader.m_Nn.y * W.z,\n    shader.m_Nu.z * W.x + shader.m_Nv.z * W.y + shader.m_Nn.z * W.z);\n}\n\nfloat Blinn_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 wh = normalize(Wo + Wi);\n\n  float costheta = abs(wh.z);//AbsCosTheta(wh);\n  // Compute PDF for wi from Blinn distribution\n  float blinn_pdf = ((shader.m_Exponent + 1.f) * pow(costheta, shader.m_Exponent)) / (2.f * PI * 4.f * dot(Wo, wh));\n\n  if (dot(Wo, wh) <= 0.0f)\n    blinn_pdf = 0.0f;\n\n  return blinn_pdf;\n}\n\nvec3 Microfacet_SampleF(in VolumeShader shader, in vec3 wo, out vec3 wi, out float Pdf, in vec2 U)\n{\n  Blinn_SampleF(shader, wo, wi, Pdf, U);\n\n  if (!SameHemisphere(wo, wi))\n    return BLACK;\n\n  return Microfacet_F(shader, wo, wi);\n}\n\nfloat Microfacet_Pdf(in VolumeShader shader, in vec3 wo, in vec3 wi)\n{\n  if (!SameHemisphere(wo, wi))\n    return 0.0f;\n\n  return Blinn_Pdf(shader, wo, wi);\n}\n\n// return a xyz color\nvec3 ShaderBsdf_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = ShaderBsdf_WorldToLocal(shader, Wi);\n\n  vec3 R = vec3(0,0,0);\n\n  R += Lambertian_F(shader, Wol, Wil);\n  R += Microfacet_F(shader, Wol, Wil);\n\n  return R;\n}\n\nfloat ShaderBsdf_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = ShaderBsdf_WorldToLocal(shader, Wi);\n\n  float Pdf = 0.0f;\n\n  Pdf += Lambertian_Pdf(shader, Wol, Wil);\n  Pdf += Microfacet_Pdf(shader, Wol, Wil);\n\n  return Pdf;\n}\n\n\nvec3 ShaderBsdf_SampleF(in VolumeShader shader, in LightingSample S, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = vec3(0,0,0);\n\n  vec3 R = vec3(0,0,0);\n\n  if (S.m_bsdfComponent <= 0.5f)\n  {\n    Lambertian_SampleF(shader, Wol, Wil, Pdf, S.m_bsdfDir);\n  }\n  else\n  {\n    Microfacet_SampleF(shader, Wol, Wil, Pdf, S.m_bsdfDir);\n  }\n\n  Pdf += Lambertian_Pdf(shader, Wol, Wil);\n  Pdf += Microfacet_Pdf(shader, Wol, Wil);\n\n  R += Lambertian_F(shader, Wol, Wil);\n  R += Microfacet_F(shader, Wol, Wil);\n\n  Wi = ShaderBsdf_LocalToWorld(shader, Wil);\n\n  //return vec3(1,1,1);\n  return R;\n}\n\n// return a xyz color\nvec3 Shader_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_F(shader, Wo, Wi);\n  }\n  else {\n    return ShaderPhase_F(shader, Wo, Wi);\n  }\n}\n\nfloat Shader_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_Pdf(shader, Wo, Wi);\n  }\n  else {\n    return ShaderPhase_Pdf(shader, Wo, Wi);\n  }\n}\n\nvec3 Shader_SampleF(in VolumeShader shader, in LightingSample S, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  //return vec3(1,0,0);\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_SampleF(shader, S, Wo, Wi, Pdf, U);\n  }\n  else {\n    return ShaderPhase_SampleF(shader, Wo, Wi, Pdf, U);\n  }\n}\n\n\nbool IsBlack(in vec3 v) {\n  return (v.x==0.0 && v.y == 0.0 && v.z == 0.0);\n}\n\nfloat PowerHeuristic(float nf, float fPdf, float ng, float gPdf)\n{\n  float f = nf * fPdf;\n  float g = ng * gPdf;\n  // The power heuristic is Veach's MIS balance heuristic except each component is being squared\n  // balance heuristic would be f/(f+g) ...?\n  return (f * f) / (f * f + g * g);\n}\n\nfloat MISContribution(float pdf1, float pdf2)\n{\n  return PowerHeuristic(1.0f, pdf1, 1.0f, pdf2);\n}\n\n// \"shadow ray\" using gStepSizeShadow, test whether it can exit the volume or not\nbool DoesSecondaryRayScatterInVolume(inout Ray R, inout uvec2 seed)\n{\n  float MinT;\n  float MaxT;\n  vec3 Ps;\n\n  if (!IntersectBox(R, MinT, MaxT))\n    return false;\n\n  MinT = max(MinT, R.m_MinT);\n  MaxT = min(MaxT, R.m_MaxT);\n\n  // delta (Woodcock) tracking\n  float S\t= -log(rand(seed)) / gDensityScale;\n  float Sum = 0.0f;\n  float SigmaT = 0.0f;\n\n  MinT += rand(seed) * gStepSizeShadow;\n  int ch = 0;\n  float intensity = 0.0;\n  while (Sum < S)\n  {\n    Ps = rayAt(R, MinT);  // R.m_O + MinT * R.m_D;\n\n    if (MinT > MaxT)\n      return false;\n\n    intensity = GetNormalizedIntensityMax4ch(Ps, ch);\n    SigmaT = gDensityScale * GetOpacity(intensity, ch);\n\n    Sum += SigmaT * gStepSizeShadow;\n    MinT += gStepSizeShadow;\n  }\n\n  return true;\n}\n\nint GetNearestLight(Ray R, out vec3 oLightColor, out vec3 Pl, out float oPdf)\n{\n  int hit = -1;\n  float T = 0.0f;\n  Ray rayCopy = R;\n  float pdf = 0.0f;\n\n  for (int i = 0; i < 2; i++)\n  {\n    if (Light_Intersect(gLights[i], rayCopy, T, oLightColor, pdf))\n    {\n      Pl = rayAt(R, T);\n      hit = i;\n    }\n  }\n  oPdf = pdf;\n\n  return hit;\n}\n\n// return a XYZ color\n// Wo is direction from scatter point out toward incident ray direction\n\n// Wi goes toward light sample and is not necessarily perfect reflection of Wo\n// ^Wi   ^N    ^Wo\n//  \\\\    |    //\n//   \\\\   |   //\n//    \\\\  |  //\n//     \\\\ | //\n//      \\\\|// Pe = volume sample where scattering occurs\n//   ---------\nvec3 EstimateDirectLight(int shaderType, float Density, int ch, in Light light, in LightingSample LS, in vec3 Wo, in vec3 Pe, in vec3 N, inout uvec2 seed)\n{\n  vec3 Ld = BLACK, Li = BLACK, F = BLACK;\n\n  vec3 diffuse = GetDiffuseN(Density, ch);\n  vec3 specular = GetSpecularN(Density, ch);\n  float glossiness = GetGlossinessN(Density, ch);\n\n  // can N and Wo be coincident????\n  vec3 nu = normalize(cross(N, Wo));\n  vec3 nv = normalize(cross(N, nu));\n\n  // the IoR here is hard coded... and unused!!!!\n  VolumeShader Shader = VolumeShader(shaderType, RGBtoXYZ(diffuse), RGBtoXYZ(specular), 2.5f, glossiness, N, nu, nv);\n\n  float LightPdf = 1.0f, ShaderPdf = 1.0f;\n\n  Ray Rl = Ray(vec3(0,0,0), vec3(0,0,1.0), 0.0, MAX_RAY_LEN);\n  // Rl is ray from light toward Pe in volume, with a max traversal of the distance from Pe to Light sample pos.\n  Li = Light_SampleL(light, Pe, Rl, LightPdf, LS);\n\n  // Wi: negate ray direction: from volume scatter point toward light...?\n  vec3 Wi = -Rl.m_D, P = vec3(0,0,0);\n\n  // we will calculate two lighting contributions and combine them by MIS.\n\n  F = Shader_F(Shader,Wo, Wi);\n\n  ShaderPdf = Shader_Pdf(Shader, Wo, Wi);\n\n  // get a lighting contribution along Rl;  see if Rl would scatter in the volume or not\n  if (!IsBlack(Li) && (ShaderPdf > 0.0f) && (LightPdf > 0.0f) && !DoesSecondaryRayScatterInVolume(Rl, seed))\n  {\n    // ray from light can see through volume to Pe!\n\n    float dotProd = 1.0;\n    if (shaderType == ShaderType_Brdf){\n\n      // (use abs or clamp here?)\n      dotProd = abs(dot(Wi, N));\n    }\n    Ld += F * Li * dotProd * MISContribution(LightPdf, ShaderPdf) / LightPdf;\n\n  }\n\n  // get a lighting contribution by sampling nearest light from the scattering point\n  F = Shader_SampleF(Shader, LS, Wo, Wi, ShaderPdf, LS.m_bsdfDir);\n  if (!IsBlack(F) && (ShaderPdf > 0.0f))\n  {\n    vec3 Pl = vec3(0,0,0);\n    int n = GetNearestLight(Ray(Pe, Wi, 0.0f, 1000000.0f), Li, Pl, LightPdf);\n    if (n > -1)\n    {\n      Light pLight = gLights[n];\n      LightPdf = Light_Pdf(pLight, Pe, Wi);\n\n      if ((LightPdf > 0.0f) && !IsBlack(Li)) {\n        Ray rr = Ray(Pl, normalize(Pe - Pl), 0.0f, length(Pe - Pl));\n        if (!DoesSecondaryRayScatterInVolume(rr, seed))\n        {\n          float dotProd = 1.0;\n          if (shaderType == ShaderType_Brdf){\n\n            // (use abs or clamp here?)\n            dotProd = abs(dot(Wi, N));\n          }\n          // note order of MIS params is swapped\n          Ld += F * Li * dotProd * MISContribution(ShaderPdf, LightPdf) / ShaderPdf;\n        }\n\n      }\n    }\n  }\n\n  return Ld;\n\n}\n\n// return a linear xyz color\nvec3 UniformSampleOneLight(int shaderType, float Density, int ch, in vec3 Wo, in vec3 Pe, in vec3 N, inout uvec2 seed)\n{\n  //if (NUM_LIGHTS == 0)\n  //  return BLACK;\n\n  // select a random light, a random 2d sample on light, and a random 2d sample on brdf\n  LightingSample LS = LightingSample_LargeStep(seed);\n\n  int WhichLight = int(floor(LS.m_LightNum * float(NUM_LIGHTS)));\n\n  Light light = gLights[WhichLight];\n\n  return float(NUM_LIGHTS) * EstimateDirectLight(shaderType, Density, ch, light, LS, Wo, Pe, N, seed);\n\n}\n\nbool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)\n{\n  float MinT;\n  float MaxT;\n\n  if (!IntersectBox(R, MinT, MaxT))\n    return false;\n\n  MinT = max(MinT, R.m_MinT);\n  MaxT = min(MaxT, R.m_MaxT);\n\n  // delta (Woodcock) tracking\n\n  // notes, not necessarily coherent:\n  // ray march along the ray's projected path and keep an average sigmaT value.\n  // The distance is weighted by the intensity at each ray step sample. High intensity increases the apparent distance.\n  // When the distance has become greater than the average sigmaT value given by -log(RandomFloat[0, 1]) / averageSigmaT\n  // then that would be considered the interaction position.\n\n  // sigmaT = sigmaA + sigmaS = absorption coeff + scattering coeff = extinction coeff\n\n  // Beer-Lambert law: transmittance T(t) = exp(-sigmaT*t)  where t is a distance!\n\n  // importance sampling the exponential function to produce a free path distance S\n  // the PDF is p(t) = sigmaT * exp(-sigmaT * t)\n  // In a homogeneous volume,\n  // S is the free-path distance = -ln(1-zeta)/sigmaT where zeta is a random variable\n  // density scale = 0   => S --> 0..inf.  Low density means randomly sized ray paths\n  // density scale = inf => S --> 0.       High density means short ray paths!\n\n  // note that ln(x:0..1) is negative\n\n  // here gDensityScale represents sigmaMax, a majorant of sigmaT\n  // it is a parameter that should be set as close to the max extinction coefficient as possible.\n  float S\t= -log(rand(seed)) / gDensityScale;\n\n  float Sum\t\t= 0.0f;\n  float SigmaT\t= 0.0f; // accumulated extinction along ray march\n\n  // start: take one step now.\n  MinT += rand(seed) * gStepSize;\n\n  int ch = 0;\n  float intensity = 0.0;\n\n  // ray march until we have traveled S (or hit the maxT of the ray)\n  while (Sum < S)\n  {\n    Ps = rayAt(R, MinT);  // R.m_O + MinT * R.m_D;\n\n    // if we exit the volume with no scattering\n    if (MinT > MaxT)\n      return false;\n\n    intensity = GetNormalizedIntensityMax4ch(Ps, ch);\n    SigmaT = gDensityScale * GetOpacity(intensity, ch);\n\n    Sum += SigmaT * gStepSize;\n    MinT += gStepSize;\n  }\n\n  // at this time, MinT - original MinT is the T transmission distance before a scatter event.\n  // Ps is the point\n\n  return true;\n}\n\n\nvec4 CalculateRadiance(inout uvec2 seed) {\n  float r = rand(seed);\n  //return vec4(r,0,0,1);\n\n  vec3 Lv = BLACK, Li = BLACK;\n\n  //Ray Re = Ray(vec3(0,0,0), vec3(0,0,1), 0.0, MAX_RAY_LEN);\n\n  vec2 UV = vUv*uResolution + vec2(rand(seed), rand(seed));\n\n  Ray Re = GenerateCameraRay(gCamera, UV, vec2(rand(seed), rand(seed)));\n\n  //return vec4(vUv, 0.0, 1.0);\n  //return vec4(0.5*(Re.m_D + 1.0), 1.0);\n  //return vec4(Re.m_D, 1.0);\n\n  //Re.m_MinT = 0.0f;\n  //Re.m_MaxT = MAX_RAY_LEN;\n\n  vec3 Pe = vec3(0,0,0), Pl = vec3(0,0,0);\n  float lpdf = 0.0;\n\n  float alpha = 0.0;\n  // find point Pe along ray Re\n  if (SampleScatteringEvent(Re, seed, Pe))\n  {\n    alpha = 1.0;\n    // is there a light between Re.m_O and Pe? (ray's maxT is distance to Pe)\n    // (test to see if area light was hit before volume.)\n    int i = GetNearestLight(Ray(Re.m_O, Re.m_D, 0.0f, length(Pe - Re.m_O)), Li, Pl, lpdf);\n    if (i > -1)\n    {\n      // set sample pixel value in frame estimate (prior to accumulation)\n      return vec4(Li, 1.0);\n    }\n\n    int ch = 0;\n    float D = GetNormalizedIntensityMax4ch(Pe, ch);\n\n    // emission from volume\n    Lv += RGBtoXYZ(GetEmissionN(D, ch));\n\n    vec3 gradient = Gradient4ch(Pe, ch);\n    // send ray out from Pe toward light\n    switch (gShadingType)\n    {\n      case ShaderType_Brdf:\n      {\n        Lv += UniformSampleOneLight(ShaderType_Brdf, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        break;\n      }\n\n      case ShaderType_Phase:\n      {\n        Lv += 0.5f * UniformSampleOneLight(ShaderType_Phase, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        break;\n      }\n\n      case ShaderType_Mixed:\n      {\n        //const float GradMag = GradientMagnitude(Pe, volumedata.gradientVolumeTexture[ch]) * (1.0/volumedata.intensityMax[ch]);\n        float GradMag = length(gradient);\n        float PdfBrdf = (1.0f - exp(-gGradientFactor * GradMag));\n\n        vec3 cls; // xyz color\n        if (rand(seed) < PdfBrdf) {\n          cls = UniformSampleOneLight(ShaderType_Brdf, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        }\n        else {\n          cls = 0.5f * UniformSampleOneLight(ShaderType_Phase, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        }\n\n        Lv += cls;\n\n        break;\n      }\n    }\n  }\n  else\n  {\n    // background color:\n    // set Lv to a selected color based on environment light source?\n    // if (uShowLights > 0.0) {\n    //   int n = GetNearestLight(Ray(Re.m_O, Re.m_D, 0.0f, 1000000.0f), Li, Pl, lpdf);\n    //   if (n > -1)\n    //     Lv = Li;\n    // }\n    //Lv = vec3(r,0,0);\n  }\n\n  // set sample pixel value in frame estimate (prior to accumulation)\n\n  return vec4(Lv, alpha);\n}\n\nvec4 CumulativeMovingAverage(vec4 A, vec4 Ax, float N)\n{\n   return A + ((Ax - A) / max((N), 1.0f));\n}\n\nvoid main()\n{\n  // seed for rand(seed) function\n  uvec2 seed = uvec2(uFrameCounter, uFrameCounter + 1.0) * uvec2(gl_FragCoord);\n\n  // perform path tracing and get resulting pixel color\n  vec4 pixelColor = CalculateRadiance( seed );\n\n  vec4 previousColor = texture(tPreviousTexture, vUv);\n  if (uSampleCounter < 1.0) {\n    previousColor = vec4(0,0,0,0);\n  }\n\n  pc_fragColor = CumulativeMovingAverage(previousColor, pixelColor, uSampleCounter);\n}\n"; // threejs passthrough vertex shader for fullscreen quad
-const pathTracingVertexShaderSrc = pathTraceVertexShader;
+const pathTraceFragmentShader = "precision highp float;\nprecision highp int;\nprecision highp sampler2D;\nprecision highp sampler3D;\n\n#define PI (3.1415926535897932384626433832795)\n#define PI_OVER_2 (1.57079632679489661923)\n#define PI_OVER_4 (0.785398163397448309616)\n#define INV_PI (1.0/PI)\n#define INV_2_PI (0.5/PI)\n#define INV_4_PI (0.25/PI)\n\nconst vec3 BLACK = vec3(0,0,0);\nconst vec3 WHITE = vec3(1.0,1.0,1.0);\nconst int ShaderType_Brdf = 0;\nconst int ShaderType_Phase = 1;\nconst int ShaderType_Mixed = 2;\nconst float MAX_RAY_LEN = 1500000.0f;\n\nin vec2 vUv;\n\nstruct Camera {\n  vec3 mFrom;\n  vec3 mU, mV, mN;\n  vec4 mScreen;  // left, right, bottom, top\n  vec2 mInvScreen;  // 1/w, 1/h\n  float mFocalDistance;\n  float mApertureSize;\n  float mIsOrtho; // 1 or 0\n};\n\nuniform Camera gCamera;\n\nstruct Light {\n  float   mTheta;\n  float   mPhi;\n  float   mWidth;\n  float   mHalfWidth;\n  float   mHeight;\n  float   mHalfHeight;\n  float   mDistance;\n  float   mSkyRadius;\n  vec3    mP;\n  vec3    mTarget;\n  vec3    mN;\n  vec3    mU;\n  vec3    mV;\n  float   mArea;\n  float   mAreaPdf;\n  vec3    mColor;\n  vec3    mColorTop;\n  vec3    mColorMiddle;\n  vec3    mColorBottom;\n  int     mT;\n};\nconst int NUM_LIGHTS = 2;\nuniform Light gLights[2];\n\nuniform vec3 gClippedAaBbMin;\nuniform vec3 gClippedAaBbMax;\nuniform vec3 gVolCenter;\nuniform float gDensityScale;\nuniform float gStepSize;\nuniform float gStepSizeShadow;\nuniform sampler3D volumeTexture;\nuniform vec3 gInvAaBbMax;\nuniform int gNChannels;\nuniform int gShadingType;\nuniform vec3 gGradientDeltaX;\nuniform vec3 gGradientDeltaY;\nuniform vec3 gGradientDeltaZ;\nuniform float gInvGradientDelta;\nuniform float gGradientFactor;\nuniform float uShowLights;\nuniform vec3 flipVolume;\n\n// per channel\n// the luttexture is a 256x4 rgba texture\n// each row is a 256 element lookup table.\nuniform sampler2D gLutTexture;\nuniform vec4 gIntensityMax;\nuniform vec4 gIntensityMin;\nuniform float gOpacity[4];\nuniform vec3 gEmissive[4];\nuniform vec3 gDiffuse[4];\nuniform vec3 gSpecular[4];\nuniform float gGlossiness[4];\n\n// compositing / progressive render\nuniform float uFrameCounter;\nuniform float uSampleCounter;\nuniform vec2 uResolution;\nuniform sampler2D tPreviousTexture;\n\n// from iq https://www.shadertoy.com/view/4tXyWN\nfloat rand( inout uvec2 seed )\n{\n  seed += uvec2(1);\n  uvec2 q = 1103515245U * ( (seed >> 1U) ^ (seed.yx) );\n  uint  n = 1103515245U * ( (q.x) ^ (q.y >> 3U) );\n  return float(n) * (1.0 / float(0xffffffffU));\n}\n\nvec3 XYZtoRGB(vec3 xyz) {\n  return vec3(\n    3.240479f*xyz[0] - 1.537150f*xyz[1] - 0.498535f*xyz[2],\n    -0.969256f*xyz[0] + 1.875991f*xyz[1] + 0.041556f*xyz[2],\n    0.055648f*xyz[0] - 0.204043f*xyz[1] + 1.057311f*xyz[2]\n  );\n}\n\n// Used to convert from linear RGB to XYZ space\nconst mat3 RGB_2_XYZ = (mat3(\n  0.4124564, 0.3575761, 0.1804375,\n  0.2126729, 0.7151522, 0.0721750,\n  0.0193339, 0.1191920, 0.9503041\n));\nvec3 RGBtoXYZ(vec3 rgb) {\n  return rgb * RGB_2_XYZ;\n}\n\nvec3 getUniformSphereSample(in vec2 U)\n{\n  float z = 1.f - 2.f * U.x;\n  float r = sqrt(max(0.f, 1.f - z*z));\n  float phi = 2.f * PI * U.y;\n  float x = r * cos(phi);\n  float y = r * sin(phi);\n  return vec3(x, y, z);\n}\n\nfloat SphericalPhi(in vec3 Wl)\n{\n  float p = atan(Wl.z, Wl.x);\n  return (p < 0.f) ? p + 2.f * PI : p;\n}\n\nfloat SphericalTheta(in vec3 Wl)\n{\n  return acos(clamp(Wl.y, -1.f, 1.f));\n}\n\nbool SameHemisphere(in vec3 Ww1, in vec3 Ww2)\n{\n   return (Ww1.z * Ww2.z) > 0.0f;\n}\n\nvec2 getConcentricDiskSample(in vec2 U)\n{\n  float r, theta;\n  // Map 0..1 to -1..1\n  float sx = 2.0 * U.x - 1.0;\n  float sy = 2.0 * U.y - 1.0;\n\n  // Map square to (r,theta)\n\n  // Handle degeneracy at the origin\n  if (sx == 0.0 && sy == 0.0)\n  {\n    return vec2(0.0f, 0.0f);\n  }\n\n  // quadrants of disk\n  if (sx >= -sy)\n  {\n    if (sx > sy)\n    {\n      r = sx;\n      if (sy > 0.0)\n        theta = sy/r;\n      else\n        theta = 8.0f + sy/r;\n    }\n    else\n    {\n      r = sy;\n      theta = 2.0f - sx/r;\n    }\n  }\n  else\n  {\n    if (sx <= sy)\n    {\n      r = -sx;\n      theta = 4.0f - sy/r;\n    }\n    else\n    {\n      r = -sy;\n      theta = 6.0f + sx/r;\n    }\n  }\n\n  theta *= PI_OVER_4;\n\n  return vec2(r*cos(theta), r*sin(theta));\n}\n\nvec3 getCosineWeightedHemisphereSample(in vec2 U)\n{\n  vec2 ret = getConcentricDiskSample(U);\n  return vec3(ret.x, ret.y, sqrt(max(0.f, 1.f - ret.x * ret.x - ret.y * ret.y)));\n}\n\nstruct Ray {\n  vec3 m_O;\n  vec3 m_D;\n  float m_MinT, m_MaxT;\n};\n\nvec3 rayAt(Ray r, float t) {\n  return r.m_O + t*r.m_D;\n}\n\nRay GenerateCameraRay(in Camera cam, in vec2 Pixel, in vec2 ApertureRnd)\n{\n  // negating ScreenPoint.y flips the up/down direction. depends on whether you want pixel 0 at top or bottom\n  // we could also have flipped mScreen and mInvScreen, or cam.mV?\n  vec2 ScreenPoint = vec2(\n    cam.mScreen.x + (cam.mInvScreen.x * Pixel.x),\n    cam.mScreen.z + (cam.mInvScreen.y * Pixel.y)\n  );\n  vec3 dxy = (ScreenPoint.x * cam.mU) + (-ScreenPoint.y * cam.mV);\n\n  // orthographic camera ray: start at (camera pos + screen point), go in direction N\n  // perspective camera ray: start at camera pos, go in direction (N + screen point)\n  vec3 RayO = cam.mFrom + cam.mIsOrtho * dxy;\n  vec3 RayD = normalize(cam.mN + (1.0 - cam.mIsOrtho) * dxy);\n\n  if (cam.mApertureSize != 0.0f)\n  {\n    vec2 LensUV = cam.mApertureSize * getConcentricDiskSample(ApertureRnd);\n\n    vec3 LI = cam.mU * LensUV.x + cam.mV * LensUV.y;\n    RayO += LI;\n    RayD = normalize((RayD * cam.mFocalDistance) - LI);\n  }\n\n  return Ray(RayO, RayD, 0.0, MAX_RAY_LEN);\n}\n\nbool IntersectBox(in Ray R, out float pNearT, out float pFarT)\n{\n  vec3 invR\t\t= vec3(1.0f, 1.0f, 1.0f) / R.m_D;\n  vec3 bottomT\t\t= invR * (vec3(gClippedAaBbMin.x, gClippedAaBbMin.y, gClippedAaBbMin.z) - R.m_O);\n  vec3 topT\t\t= invR * (vec3(gClippedAaBbMax.x, gClippedAaBbMax.y, gClippedAaBbMax.z) - R.m_O);\n  vec3 minT\t\t= min(topT, bottomT);\n  vec3 maxT\t\t= max(topT, bottomT);\n  float largestMinT = max(max(minT.x, minT.y), max(minT.x, minT.z));\n  float smallestMaxT = min(min(maxT.x, maxT.y), min(maxT.x, maxT.z));\n\n  pNearT = largestMinT;\n  pFarT\t= smallestMaxT;\n\n  return smallestMaxT > largestMinT;\n}\n\n// assume volume is centered at 0,0,0 so p spans -bounds to + bounds\n// transform p to range from 0,0,0 to 1,1,1 for volume texture sampling.\n// optionally invert axes\nvec3 PtoVolumeTex(vec3 p) {\n  vec3 uvw = (p - gVolCenter) * gInvAaBbMax + vec3(0.5, 0.5, 0.5);\n  // if flipVolume = 1, uvw is unchanged.\n  // if flipVolume = -1, uvw = 1 - uvw\n  uvw = (flipVolume*(uvw - 0.5) + 0.5);\n  return uvw;\n}\n\nconst float UINT8_MAX = 1.0;//255.0;\n\n// strategy: sample up to 4 channels, and take the post-LUT maximum intensity as the channel that wins\n// we will return the unmapped raw intensity value from the volume so that other luts can be applied again later.\nfloat GetNormalizedIntensityMax4ch(in vec3 P, out int ch)\n{\n  vec4 intensity = UINT8_MAX * texture(volumeTexture, PtoVolumeTex(P));\n\n  //intensity = (intensity - gIntensityMin) / (gIntensityMax - gIntensityMin);\n  vec4 ilut = vec4(0.0, 0.0, 0.0, 0.0);\n  // w in the lut texture is \"opacity\"\n  ilut.x = texture(gLutTexture, vec2(intensity.x, 0.5/4.0)).w / 255.0;\n  ilut.y = texture(gLutTexture, vec2(intensity.y, 1.5/4.0)).w / 255.0;\n  ilut.z = texture(gLutTexture, vec2(intensity.z, 2.5/4.0)).w / 255.0;\n  ilut.w = texture(gLutTexture, vec2(intensity.w, 3.5/4.0)).w / 255.0;\n\n  float maxIn = 0.0;\n  float iOut = 0.0;\n  ch = 0;\n  for (int i = 0; i < min(gNChannels, 4); ++i) {\n    if (ilut[i] > maxIn) {\n      maxIn = ilut[i];\n      ch = i;\n      iOut = intensity[i];\n    }\n  }\n\n  //return maxIn;\n  return iOut;\n}\n\nfloat GetNormalizedIntensity4ch(vec3 P, int ch)\n{\n  vec4 intensity = UINT8_MAX * texture(volumeTexture, PtoVolumeTex(P));\n  // select channel\n  float intensityf = intensity[ch];\n  //intensityf = (intensityf - gIntensityMin[ch]) / (gIntensityMax[ch] - gIntensityMin[ch]);\n  //intensityf = texture(gLutTexture, vec2(intensityf, (0.5+float(ch))/4.0)).x;\n\n  return intensityf;\n}\n\n// note that gInvGradientDelta is maxpixeldim of volume\n// gGradientDeltaX,Y,Z is 1/X,Y,Z of volume\nvec3 Gradient4ch(vec3 P, int ch)\n{\n  vec3 Gradient;\n\n  Gradient.x = (GetNormalizedIntensity4ch(P + (gGradientDeltaX), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaX), ch)) * gInvGradientDelta;\n  Gradient.y = (GetNormalizedIntensity4ch(P + (gGradientDeltaY), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaY), ch)) * gInvGradientDelta;\n  Gradient.z = (GetNormalizedIntensity4ch(P + (gGradientDeltaZ), ch) - GetNormalizedIntensity4ch(P - (gGradientDeltaZ), ch)) * gInvGradientDelta;\n\n  return Gradient;\n}\n\nfloat GetOpacity(float NormalizedIntensity, int ch)\n{\n  // apply lut\n  float o = texture(gLutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0)).w / 255.0;\n  float Intensity = o * gOpacity[ch];\n  return Intensity;\n}\n\nvec3 GetEmissionN(float NormalizedIntensity, int ch)\n{\n  return gEmissive[ch];\n}\n\nvec3 GetDiffuseN(float NormalizedIntensity, int ch)\n{\n  vec4 col = texture(gLutTexture, vec2(NormalizedIntensity, (0.5+float(ch))/4.0));\n  //vec3 col = vec3(1.0, 1.0, 1.0);\n  return col.xyz * gDiffuse[ch];\n}\n\nvec3 GetSpecularN(float NormalizedIntensity, int ch)\n{\n  return gSpecular[ch];\n}\n\nfloat GetGlossinessN(float NormalizedIntensity, int ch)\n{\n  return gGlossiness[ch];\n}\n\n// a bsdf sample, a sample on a light source, and a randomly chosen light index\nstruct LightingSample {\n  float m_bsdfComponent;\n  vec2  m_bsdfDir;\n  vec2  m_lightPos;\n  float m_lightComponent;\n  float m_LightNum;\n};\n\nLightingSample LightingSample_LargeStep(inout uvec2 seed) {\n  return LightingSample(\n    rand(seed),\n    vec2(rand(seed), rand(seed)),\n    vec2(rand(seed), rand(seed)),\n    rand(seed),\n    rand(seed)\n    );\n}\n\n// return a color xyz\nvec3 Light_Le(in Light light, in vec2 UV)\n{\n  if (light.mT == 0)\n    return RGBtoXYZ(light.mColor) / light.mArea;\n\n  if (light.mT == 1)\n  {\n    if (UV.y > 0.0f)\n      return RGBtoXYZ(mix(light.mColorMiddle, light.mColorTop, abs(UV.y)));\n    else\n      return RGBtoXYZ(mix(light.mColorMiddle, light.mColorBottom, abs(UV.y)));\n  }\n\n  return BLACK;\n}\n\n// return a color xyz\nvec3 Light_SampleL(in Light light, in vec3 P, out Ray Rl, out float Pdf, in LightingSample LS)\n{\n  vec3 L = BLACK;\n  Pdf = 0.0;\n  vec3 Ro = vec3(0,0,0), Rd = vec3(0,0,1);\n  if (light.mT == 0)\n  {\n    Ro = (light.mP + ((-0.5f + LS.m_lightPos.x) * light.mWidth * light.mU) + ((-0.5f + LS.m_lightPos.y) * light.mHeight * light.mV));\n    Rd = normalize(P - Ro);\n    L = dot(Rd, light.mN) > 0.0f ? Light_Le(light, vec2(0.0f)) : BLACK;\n    Pdf = abs(dot(Rd, light.mN)) > 0.0f ? dot(P-Ro, P-Ro) / (abs(dot(Rd, light.mN)) * light.mArea) : 0.0f;\n  }\n  else if (light.mT == 1)\n  {\n    Ro = light.mP + light.mSkyRadius * getUniformSphereSample(LS.m_lightPos);\n    Rd = normalize(P - Ro);\n    L = Light_Le(light, vec2(1.0f) - 2.0f * LS.m_lightPos);\n    Pdf = pow(light.mSkyRadius, 2.0f) / light.mArea;\n  }\n\n  Rl = Ray(Ro, Rd, 0.0f, length(P - Ro));\n\n  return L;\n}\n\n// Intersect ray with light\nbool Light_Intersect(Light light, inout Ray R, out float T, out vec3 L, out float pPdf)\n{\n  if (light.mT == 0)\n  {\n    // Compute projection\n    float DotN = dot(R.m_D, light.mN);\n\n    // Ray is coplanar with light surface\n    if (DotN >= 0.0f)\n      return false;\n\n    // Compute hit distance\n    T = (-light.mDistance - dot(R.m_O, light.mN)) / DotN;\n\n    // Intersection is in ray's negative direction\n    if (T < R.m_MinT || T > R.m_MaxT)\n      return false;\n\n    // Determine position on light\n    vec3 Pl = rayAt(R, T);\n\n    // Vector from point on area light to center of area light\n    vec3 Wl = Pl - light.mP;\n\n    // Compute texture coordinates\n    vec2 UV = vec2(dot(Wl, light.mU), dot(Wl, light.mV));\n\n    // Check if within bounds of light surface\n    if (UV.x > light.mHalfWidth || UV.x < -light.mHalfWidth || UV.y > light.mHalfHeight || UV.y < -light.mHalfHeight)\n      return false;\n\n    R.m_MaxT = T;\n\n    //pUV = UV;\n\n    if (DotN < 0.0f)\n      L = RGBtoXYZ(light.mColor) / light.mArea;\n    else\n      L = BLACK;\n\n    pPdf = dot(R.m_O-Pl, R.m_O-Pl) / (DotN * light.mArea);\n\n    return true;\n  }\n\n  else if (light.mT == 1)\n  {\n    T = light.mSkyRadius;\n\n    // Intersection is in ray's negative direction\n    if (T < R.m_MinT || T > R.m_MaxT)\n      return false;\n\n    R.m_MaxT = T;\n\n    vec2 UV = vec2(SphericalPhi(R.m_D) * INV_2_PI, SphericalTheta(R.m_D) * INV_PI);\n\n    L = Light_Le(light, vec2(1.0f,1.0f) - 2.0f * UV);\n\n    pPdf = pow(light.mSkyRadius, 2.0f) / light.mArea;\n    //pUV = UV;\n\n    return true;\n  }\n\n  return false;\n}\n\nfloat Light_Pdf(in Light light, in vec3 P, in vec3 Wi)\n{\n  vec3 L;\n  vec2 UV;\n  float Pdf = 1.0f;\n\n  Ray Rl = Ray(P, Wi, 0.0f, 100000.0f);\n\n  if (light.mT == 0)\n  {\n    float T = 0.0f;\n\n    if (!Light_Intersect(light, Rl, T, L, Pdf))\n      return 0.0f;\n\n    return pow(T, 2.0f) / (abs(dot(light.mN, -Wi)) * light.mArea);\n  }\n\n  else if (light.mT == 1)\n  {\n    return pow(light.mSkyRadius, 2.0f) / light.mArea;\n  }\n\n  return 0.0f;\n}\n\nstruct VolumeShader {\n  int m_Type; // 0 = bsdf, 1 = phase\n\n  vec3 m_Kd; // isotropic phase // xyz color\n  vec3 m_R; // specular reflectance\n  float m_Ior;\n  float m_Exponent;\n  vec3 m_Nn;\n  vec3 m_Nu;\n  vec3 m_Nv;\n};\n\n// return a xyz color\nvec3 ShaderPhase_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return shader.m_Kd * INV_PI;\n}\n\nfloat ShaderPhase_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return INV_4_PI;\n}\n\nvec3 ShaderPhase_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  Wi\t= getUniformSphereSample(U);\n  Pdf\t= ShaderPhase_Pdf(shader, Wo, Wi);\n\n  return ShaderPhase_F(shader, Wo, Wi);\n}\n\n// return a xyz color\nvec3 Lambertian_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  return shader.m_Kd * INV_PI;\n}\n\nfloat Lambertian_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  //return abs(Wi.z)*INV_PI;\n  return SameHemisphere(Wo, Wi) ? abs(Wi.z) * INV_PI : 0.0f;\n}\n\n// return a xyz color\nvec3 Lambertian_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  Wi = getCosineWeightedHemisphereSample(U);\n\n  if (Wo.z < 0.0f)\n    Wi.z *= -1.0f;\n\n  Pdf = Lambertian_Pdf(shader, Wo, Wi);\n\n  return Lambertian_F(shader, Wo, Wi);\n}\n\nvec3 SphericalDirection(in float SinTheta, in float CosTheta, in float Phi)\n{\n  return vec3(SinTheta * cos(Phi), SinTheta * sin(Phi), CosTheta);\n}\n\nvoid Blinn_SampleF(in VolumeShader shader, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  // Compute sampled half-angle vector wh for Blinn distribution\n  float costheta = pow(U.x, 1.f / (shader.m_Exponent+1.0));\n  float sintheta = sqrt(max(0.f, 1.f - costheta*costheta));\n  float phi = U.y * 2.f * PI;\n\n  vec3 wh = SphericalDirection(sintheta, costheta, phi);\n\n  if (!SameHemisphere(Wo, wh))\n    wh = -wh;\n\n  // Compute incident direction by reflecting about wh\n  Wi = -Wo + 2.f * dot(Wo, wh) * wh;\n\n  // Compute PDF for wi from Blinn distribution\n  float blinn_pdf = ((shader.m_Exponent + 1.f) * pow(costheta, shader.m_Exponent)) / (2.f * PI * 4.f * dot(Wo, wh));\n\n  if (dot(Wo, wh) <= 0.f)\n    blinn_pdf = 0.f;\n\n  Pdf = blinn_pdf;\n}\n\nfloat Blinn_D(in VolumeShader shader, in vec3 wh)\n{\n  float costhetah = abs(wh.z);//AbsCosTheta(wh);\n  return (shader.m_Exponent+2.0) * INV_2_PI * pow(costhetah, shader.m_Exponent);\n}\nfloat Microfacet_G(in VolumeShader shader, in vec3 wo, in vec3 wi, in vec3 wh)\n{\n  float NdotWh = abs(wh.z);//AbsCosTheta(wh);\n  float NdotWo = abs(wo.z);//AbsCosTheta(wo);\n  float NdotWi = abs(wi.z);//AbsCosTheta(wi);\n  float WOdotWh = abs(dot(wo, wh));\n\n  return min(1.f, min((2.f * NdotWh * NdotWo / WOdotWh), (2.f * NdotWh * NdotWi / WOdotWh)));\n}\n\nvec3 Microfacet_F(in VolumeShader shader, in vec3 wo, in vec3 wi)\n{\n  float cosThetaO = abs(wo.z);//AbsCosTheta(wo);\n  float cosThetaI = abs(wi.z);//AbsCosTheta(wi);\n\n  if (cosThetaI == 0.f || cosThetaO == 0.f)\n    return BLACK;\n\n  vec3 wh = wi + wo;\n\n  if (wh.x == 0. && wh.y == 0. && wh.z == 0.)\n    return BLACK;\n\n  wh = normalize(wh);\n  float cosThetaH = dot(wi, wh);\n\n  vec3 F = WHITE;//m_Fresnel.Evaluate(cosThetaH);\n\n  return shader.m_R * Blinn_D(shader, wh) * Microfacet_G(shader, wo, wi, wh) * F / (4.f * cosThetaI * cosThetaO);\n}\n\nvec3 ShaderBsdf_WorldToLocal(in VolumeShader shader, in vec3 W)\n{\n  return vec3(dot(W, shader.m_Nu), dot(W, shader.m_Nv), dot(W, shader.m_Nn));\n}\n\nvec3 ShaderBsdf_LocalToWorld(in VolumeShader shader, in vec3 W)\n{\n  return vec3(\tshader.m_Nu.x * W.x + shader.m_Nv.x * W.y + shader.m_Nn.x * W.z,\n    shader.m_Nu.y * W.x + shader.m_Nv.y * W.y + shader.m_Nn.y * W.z,\n    shader.m_Nu.z * W.x + shader.m_Nv.z * W.y + shader.m_Nn.z * W.z);\n}\n\nfloat Blinn_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 wh = normalize(Wo + Wi);\n\n  float costheta = abs(wh.z);//AbsCosTheta(wh);\n  // Compute PDF for wi from Blinn distribution\n  float blinn_pdf = ((shader.m_Exponent + 1.f) * pow(costheta, shader.m_Exponent)) / (2.f * PI * 4.f * dot(Wo, wh));\n\n  if (dot(Wo, wh) <= 0.0f)\n    blinn_pdf = 0.0f;\n\n  return blinn_pdf;\n}\n\nvec3 Microfacet_SampleF(in VolumeShader shader, in vec3 wo, out vec3 wi, out float Pdf, in vec2 U)\n{\n  Blinn_SampleF(shader, wo, wi, Pdf, U);\n\n  if (!SameHemisphere(wo, wi))\n    return BLACK;\n\n  return Microfacet_F(shader, wo, wi);\n}\n\nfloat Microfacet_Pdf(in VolumeShader shader, in vec3 wo, in vec3 wi)\n{\n  if (!SameHemisphere(wo, wi))\n    return 0.0f;\n\n  return Blinn_Pdf(shader, wo, wi);\n}\n\n// return a xyz color\nvec3 ShaderBsdf_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = ShaderBsdf_WorldToLocal(shader, Wi);\n\n  vec3 R = vec3(0,0,0);\n\n  R += Lambertian_F(shader, Wol, Wil);\n  R += Microfacet_F(shader, Wol, Wil);\n\n  return R;\n}\n\nfloat ShaderBsdf_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = ShaderBsdf_WorldToLocal(shader, Wi);\n\n  float Pdf = 0.0f;\n\n  Pdf += Lambertian_Pdf(shader, Wol, Wil);\n  Pdf += Microfacet_Pdf(shader, Wol, Wil);\n\n  return Pdf;\n}\n\n\nvec3 ShaderBsdf_SampleF(in VolumeShader shader, in LightingSample S, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  vec3 Wol = ShaderBsdf_WorldToLocal(shader, Wo);\n  vec3 Wil = vec3(0,0,0);\n\n  vec3 R = vec3(0,0,0);\n\n  if (S.m_bsdfComponent <= 0.5f)\n  {\n    Lambertian_SampleF(shader, Wol, Wil, Pdf, S.m_bsdfDir);\n  }\n  else\n  {\n    Microfacet_SampleF(shader, Wol, Wil, Pdf, S.m_bsdfDir);\n  }\n\n  Pdf += Lambertian_Pdf(shader, Wol, Wil);\n  Pdf += Microfacet_Pdf(shader, Wol, Wil);\n\n  R += Lambertian_F(shader, Wol, Wil);\n  R += Microfacet_F(shader, Wol, Wil);\n\n  Wi = ShaderBsdf_LocalToWorld(shader, Wil);\n\n  //return vec3(1,1,1);\n  return R;\n}\n\n// return a xyz color\nvec3 Shader_F(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_F(shader, Wo, Wi);\n  }\n  else {\n    return ShaderPhase_F(shader, Wo, Wi);\n  }\n}\n\nfloat Shader_Pdf(in VolumeShader shader, in vec3 Wo, in vec3 Wi)\n{\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_Pdf(shader, Wo, Wi);\n  }\n  else {\n    return ShaderPhase_Pdf(shader, Wo, Wi);\n  }\n}\n\nvec3 Shader_SampleF(in VolumeShader shader, in LightingSample S, in vec3 Wo, out vec3 Wi, out float Pdf, in vec2 U)\n{\n  //return vec3(1,0,0);\n  if (shader.m_Type == 0) {\n    return ShaderBsdf_SampleF(shader, S, Wo, Wi, Pdf, U);\n  }\n  else {\n    return ShaderPhase_SampleF(shader, Wo, Wi, Pdf, U);\n  }\n}\n\n\nbool IsBlack(in vec3 v) {\n  return (v.x==0.0 && v.y == 0.0 && v.z == 0.0);\n}\n\nfloat PowerHeuristic(float nf, float fPdf, float ng, float gPdf)\n{\n  float f = nf * fPdf;\n  float g = ng * gPdf;\n  // The power heuristic is Veach's MIS balance heuristic except each component is being squared\n  // balance heuristic would be f/(f+g) ...?\n  return (f * f) / (f * f + g * g);\n}\n\nfloat MISContribution(float pdf1, float pdf2)\n{\n  return PowerHeuristic(1.0f, pdf1, 1.0f, pdf2);\n}\n\n// \"shadow ray\" using gStepSizeShadow, test whether it can exit the volume or not\nbool DoesSecondaryRayScatterInVolume(inout Ray R, inout uvec2 seed)\n{\n  float MinT;\n  float MaxT;\n  vec3 Ps;\n\n  if (!IntersectBox(R, MinT, MaxT))\n    return false;\n\n  MinT = max(MinT, R.m_MinT);\n  MaxT = min(MaxT, R.m_MaxT);\n\n  // delta (Woodcock) tracking\n  float S\t= -log(rand(seed)) / gDensityScale;\n  float Sum = 0.0f;\n  float SigmaT = 0.0f;\n\n  MinT += rand(seed) * gStepSizeShadow;\n  int ch = 0;\n  float intensity = 0.0;\n  while (Sum < S)\n  {\n    Ps = rayAt(R, MinT);  // R.m_O + MinT * R.m_D;\n\n    if (MinT > MaxT)\n      return false;\n\n    intensity = GetNormalizedIntensityMax4ch(Ps, ch);\n    SigmaT = gDensityScale * GetOpacity(intensity, ch);\n\n    Sum += SigmaT * gStepSizeShadow;\n    MinT += gStepSizeShadow;\n  }\n\n  return true;\n}\n\nint GetNearestLight(Ray R, out vec3 oLightColor, out vec3 Pl, out float oPdf)\n{\n  int hit = -1;\n  float T = 0.0f;\n  Ray rayCopy = R;\n  float pdf = 0.0f;\n\n  for (int i = 0; i < 2; i++)\n  {\n    if (Light_Intersect(gLights[i], rayCopy, T, oLightColor, pdf))\n    {\n      Pl = rayAt(R, T);\n      hit = i;\n    }\n  }\n  oPdf = pdf;\n\n  return hit;\n}\n\n// return a XYZ color\n// Wo is direction from scatter point out toward incident ray direction\n\n// Wi goes toward light sample and is not necessarily perfect reflection of Wo\n// ^Wi   ^N    ^Wo\n//  \\\\    |    //\n//   \\\\   |   //\n//    \\\\  |  //\n//     \\\\ | //\n//      \\\\|// Pe = volume sample where scattering occurs\n//   ---------\nvec3 EstimateDirectLight(int shaderType, float Density, int ch, in Light light, in LightingSample LS, in vec3 Wo, in vec3 Pe, in vec3 N, inout uvec2 seed)\n{\n  vec3 Ld = BLACK, Li = BLACK, F = BLACK;\n\n  vec3 diffuse = GetDiffuseN(Density, ch);\n  vec3 specular = GetSpecularN(Density, ch);\n  float glossiness = GetGlossinessN(Density, ch);\n\n  // can N and Wo be coincident????\n  vec3 nu = normalize(cross(N, Wo));\n  vec3 nv = normalize(cross(N, nu));\n\n  // the IoR here is hard coded... and unused!!!!\n  VolumeShader Shader = VolumeShader(shaderType, RGBtoXYZ(diffuse), RGBtoXYZ(specular), 2.5f, glossiness, N, nu, nv);\n\n  float LightPdf = 1.0f, ShaderPdf = 1.0f;\n\n  Ray Rl = Ray(vec3(0,0,0), vec3(0,0,1.0), 0.0, MAX_RAY_LEN);\n  // Rl is ray from light toward Pe in volume, with a max traversal of the distance from Pe to Light sample pos.\n  Li = Light_SampleL(light, Pe, Rl, LightPdf, LS);\n\n  // Wi: negate ray direction: from volume scatter point toward light...?\n  vec3 Wi = -Rl.m_D, P = vec3(0,0,0);\n\n  // we will calculate two lighting contributions and combine them by MIS.\n\n  F = Shader_F(Shader,Wo, Wi);\n\n  ShaderPdf = Shader_Pdf(Shader, Wo, Wi);\n\n  // get a lighting contribution along Rl;  see if Rl would scatter in the volume or not\n  if (!IsBlack(Li) && (ShaderPdf > 0.0f) && (LightPdf > 0.0f) && !DoesSecondaryRayScatterInVolume(Rl, seed))\n  {\n    // ray from light can see through volume to Pe!\n\n    float dotProd = 1.0;\n    if (shaderType == ShaderType_Brdf){\n\n      // (use abs or clamp here?)\n      dotProd = abs(dot(Wi, N));\n    }\n    Ld += F * Li * dotProd * MISContribution(LightPdf, ShaderPdf) / LightPdf;\n\n  }\n\n  // get a lighting contribution by sampling nearest light from the scattering point\n  F = Shader_SampleF(Shader, LS, Wo, Wi, ShaderPdf, LS.m_bsdfDir);\n  if (!IsBlack(F) && (ShaderPdf > 0.0f))\n  {\n    vec3 Pl = vec3(0,0,0);\n    int n = GetNearestLight(Ray(Pe, Wi, 0.0f, 1000000.0f), Li, Pl, LightPdf);\n    if (n > -1)\n    {\n      Light pLight = gLights[n];\n      LightPdf = Light_Pdf(pLight, Pe, Wi);\n\n      if ((LightPdf > 0.0f) && !IsBlack(Li)) {\n        Ray rr = Ray(Pl, normalize(Pe - Pl), 0.0f, length(Pe - Pl));\n        if (!DoesSecondaryRayScatterInVolume(rr, seed))\n        {\n          float dotProd = 1.0;\n          if (shaderType == ShaderType_Brdf){\n\n            // (use abs or clamp here?)\n            dotProd = abs(dot(Wi, N));\n          }\n          // note order of MIS params is swapped\n          Ld += F * Li * dotProd * MISContribution(ShaderPdf, LightPdf) / ShaderPdf;\n        }\n\n      }\n    }\n  }\n\n  return Ld;\n\n}\n\n// return a linear xyz color\nvec3 UniformSampleOneLight(int shaderType, float Density, int ch, in vec3 Wo, in vec3 Pe, in vec3 N, inout uvec2 seed)\n{\n  //if (NUM_LIGHTS == 0)\n  //  return BLACK;\n\n  // select a random light, a random 2d sample on light, and a random 2d sample on brdf\n  LightingSample LS = LightingSample_LargeStep(seed);\n\n  int WhichLight = int(floor(LS.m_LightNum * float(NUM_LIGHTS)));\n\n  Light light = gLights[WhichLight];\n\n  return float(NUM_LIGHTS) * EstimateDirectLight(shaderType, Density, ch, light, LS, Wo, Pe, N, seed);\n\n}\n\nbool SampleScatteringEvent(inout Ray R, inout uvec2 seed, out vec3 Ps)\n{\n  float MinT;\n  float MaxT;\n\n  if (!IntersectBox(R, MinT, MaxT))\n    return false;\n\n  MinT = max(MinT, R.m_MinT);\n  MaxT = min(MaxT, R.m_MaxT);\n\n  // delta (Woodcock) tracking\n\n  // notes, not necessarily coherent:\n  // ray march along the ray's projected path and keep an average sigmaT value.\n  // The distance is weighted by the intensity at each ray step sample. High intensity increases the apparent distance.\n  // When the distance has become greater than the average sigmaT value given by -log(RandomFloat[0, 1]) / averageSigmaT\n  // then that would be considered the interaction position.\n\n  // sigmaT = sigmaA + sigmaS = absorption coeff + scattering coeff = extinction coeff\n\n  // Beer-Lambert law: transmittance T(t) = exp(-sigmaT*t)  where t is a distance!\n\n  // importance sampling the exponential function to produce a free path distance S\n  // the PDF is p(t) = sigmaT * exp(-sigmaT * t)\n  // In a homogeneous volume,\n  // S is the free-path distance = -ln(1-zeta)/sigmaT where zeta is a random variable\n  // density scale = 0   => S --> 0..inf.  Low density means randomly sized ray paths\n  // density scale = inf => S --> 0.       High density means short ray paths!\n\n  // note that ln(x:0..1) is negative\n\n  // here gDensityScale represents sigmaMax, a majorant of sigmaT\n  // it is a parameter that should be set as close to the max extinction coefficient as possible.\n  float S\t= -log(rand(seed)) / gDensityScale;\n\n  float Sum\t\t= 0.0f;\n  float SigmaT\t= 0.0f; // accumulated extinction along ray march\n\n  // start: take one step now.\n  MinT += rand(seed) * gStepSize;\n\n  int ch = 0;\n  float intensity = 0.0;\n\n  // ray march until we have traveled S (or hit the maxT of the ray)\n  while (Sum < S)\n  {\n    Ps = rayAt(R, MinT);  // R.m_O + MinT * R.m_D;\n\n    // if we exit the volume with no scattering\n    if (MinT > MaxT)\n      return false;\n\n    intensity = GetNormalizedIntensityMax4ch(Ps, ch);\n    SigmaT = gDensityScale * GetOpacity(intensity, ch);\n\n    Sum += SigmaT * gStepSize;\n    MinT += gStepSize;\n  }\n\n  // at this time, MinT - original MinT is the T transmission distance before a scatter event.\n  // Ps is the point\n\n  return true;\n}\n\n\nvec4 CalculateRadiance(inout uvec2 seed) {\n  float r = rand(seed);\n  //return vec4(r,0,0,1);\n\n  vec3 Lv = BLACK, Li = BLACK;\n\n  //Ray Re = Ray(vec3(0,0,0), vec3(0,0,1), 0.0, MAX_RAY_LEN);\n\n  vec2 UV = vUv*uResolution + vec2(rand(seed), rand(seed));\n\n  Ray Re = GenerateCameraRay(gCamera, UV, vec2(rand(seed), rand(seed)));\n\n  //return vec4(vUv, 0.0, 1.0);\n  //return vec4(0.5*(Re.m_D + 1.0), 1.0);\n  //return vec4(Re.m_D, 1.0);\n\n  //Re.m_MinT = 0.0f;\n  //Re.m_MaxT = MAX_RAY_LEN;\n\n  vec3 Pe = vec3(0,0,0), Pl = vec3(0,0,0);\n  float lpdf = 0.0;\n\n  float alpha = 0.0;\n  // find point Pe along ray Re\n  if (SampleScatteringEvent(Re, seed, Pe))\n  {\n    alpha = 1.0;\n    // is there a light between Re.m_O and Pe? (ray's maxT is distance to Pe)\n    // (test to see if area light was hit before volume.)\n    int i = GetNearestLight(Ray(Re.m_O, Re.m_D, 0.0f, length(Pe - Re.m_O)), Li, Pl, lpdf);\n    if (i > -1)\n    {\n      // set sample pixel value in frame estimate (prior to accumulation)\n      return vec4(Li, 1.0);\n    }\n\n    int ch = 0;\n    float D = GetNormalizedIntensityMax4ch(Pe, ch);\n\n    // emission from volume\n    Lv += RGBtoXYZ(GetEmissionN(D, ch));\n\n    vec3 gradient = Gradient4ch(Pe, ch);\n    // send ray out from Pe toward light\n    switch (gShadingType)\n    {\n      case ShaderType_Brdf:\n      {\n        Lv += UniformSampleOneLight(ShaderType_Brdf, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        break;\n      }\n\n      case ShaderType_Phase:\n      {\n        Lv += 0.5f * UniformSampleOneLight(ShaderType_Phase, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        break;\n      }\n\n      case ShaderType_Mixed:\n      {\n        //const float GradMag = GradientMagnitude(Pe, volumedata.gradientVolumeTexture[ch]) * (1.0/volumedata.intensityMax[ch]);\n        float GradMag = length(gradient);\n        float PdfBrdf = (1.0f - exp(-gGradientFactor * GradMag));\n\n        vec3 cls; // xyz color\n        if (rand(seed) < PdfBrdf) {\n          cls = UniformSampleOneLight(ShaderType_Brdf, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        }\n        else {\n          cls = 0.5f * UniformSampleOneLight(ShaderType_Phase, D, ch, normalize(-Re.m_D), Pe, normalize(gradient), seed);\n        }\n\n        Lv += cls;\n\n        break;\n      }\n    }\n  }\n  else\n  {\n    // background color:\n    // set Lv to a selected color based on environment light source?\n    // if (uShowLights > 0.0) {\n    //   int n = GetNearestLight(Ray(Re.m_O, Re.m_D, 0.0f, 1000000.0f), Li, Pl, lpdf);\n    //   if (n > -1)\n    //     Lv = Li;\n    // }\n    //Lv = vec3(r,0,0);\n  }\n\n  // set sample pixel value in frame estimate (prior to accumulation)\n\n  return vec4(Lv, alpha);\n}\n\nvec4 CumulativeMovingAverage(vec4 A, vec4 Ax, float N)\n{\n   return A + ((Ax - A) / max((N), 1.0f));\n}\n\nvoid main()\n{\n  // seed for rand(seed) function\n  uvec2 seed = uvec2(uFrameCounter, uFrameCounter + 1.0) * uvec2(gl_FragCoord);\n\n  // perform path tracing and get resulting pixel color\n  vec4 pixelColor = CalculateRadiance( seed );\n\n  vec4 previousColor = texture(tPreviousTexture, vUv);\n  if (uSampleCounter < 1.0) {\n    previousColor = vec4(0,0,0,0);\n  }\n\n  pc_fragColor = CumulativeMovingAverage(previousColor, pixelColor, uSampleCounter);\n}\n";
 const pathTracingFragmentShaderSrc = pathTraceFragmentShader;
 
 // Must match values in shader code above.
