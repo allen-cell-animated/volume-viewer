@@ -3161,7 +3161,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (/* binding */ RenderToBuffer)
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _constants_basicShaders__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./constants/basicShaders */ "./src/constants/basicShaders.ts");
+/* harmony import */ var _constants_basicShaders_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./constants/basicShaders.js */ "./src/constants/basicShaders.ts");
 
 
 
@@ -3174,7 +3174,7 @@ class RenderToBuffer {
     this.scene = new three__WEBPACK_IMPORTED_MODULE_1__.Scene();
     this.geometry = new three__WEBPACK_IMPORTED_MODULE_1__.PlaneGeometry(2, 2);
     this.material = new three__WEBPACK_IMPORTED_MODULE_1__.ShaderMaterial({
-      vertexShader: _constants_basicShaders__WEBPACK_IMPORTED_MODULE_0__.renderToBufferVertShader,
+      vertexShader: _constants_basicShaders_js__WEBPACK_IMPORTED_MODULE_0__.renderToBufferVertShader,
       fragmentShader: fragmentSrc,
       uniforms
     });
