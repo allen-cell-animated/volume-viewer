@@ -389,9 +389,9 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     });
 
     // for physicalPixelSize, we use the scale of the first level
-    const scale5d = this.getScale(0);
+    const scale5d: TCZYX<number> = this.getScale(0);
     // assume that ImageInfo wants the timeScale of level 0
-    const timeScale = hasT ? scale5d[t] : 1;
+    const timeScale = hasT ? scale5d[0] : 1;
 
     const imgdata: ImageInfo = {
       name: source0.omeroMetadata?.name || "Volume",
@@ -401,7 +401,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       volumeSize: pxSizeLv,
       subregionSize: pxSizeLv.clone(),
       subregionOffset: new Vector3(0, 0, 0),
-      physicalPixelSize: new Vector3(scale5d[x], scale5d[y], hasZ ? scale5d[z] : Math.min(scale5d[x], scale5d[y])),
+      physicalPixelSize: new Vector3(scale5d[4], scale5d[3], hasZ ? scale5d[2] : Math.min(scale5d[4], scale5d[3])),
       spatialUnit,
 
       numChannels,
