@@ -41,6 +41,7 @@ export function wrapVolumeLoadError<T>(
     if (e instanceof VolumeLoadError) {
       throw e;
     }
+    console.log(`Error loading volume data: ${e}`);
     throw new VolumeLoadError(message, { type, cause: e });
   };
 }
