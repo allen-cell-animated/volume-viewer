@@ -106,7 +106,7 @@ describe("SubscribableRequestQueue", () => {
       expect(result2).to.equal("bar");
     });
 
-    it("alows a subscriber to queue the same key twice", async () => {
+    it("allows a subscriber to queue the same key twice", async () => {
       const queue = new SubscribableRequestQueue();
       const id = queue.addSubscriber();
 
