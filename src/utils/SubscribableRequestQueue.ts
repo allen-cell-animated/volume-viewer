@@ -106,10 +106,6 @@ export default class SubscribableRequestQueue {
     if (!subscriber) {
       throw new Error(`SubscribableRequestQueue: subscriber id ${subscriberId} has been removed`);
     }
-    const existingRequest = subscriber.get(key);
-    if (existingRequest) {
-      this.rejectSubscription(key, existingRequest, "SubscribableRequestQueue: request re-queued while running");
-    }
 
     // Create promise and add to list of requests
     return new Promise<T>((resolve, reject) => {
