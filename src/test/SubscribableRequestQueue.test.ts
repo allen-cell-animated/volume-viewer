@@ -106,17 +106,18 @@ describe("SubscribableRequestQueue", () => {
       expect(result2).to.equal("bar");
     });
 
-    it("rejects and reissues a request when one subscriber queues the same key twice", async () => {
+    it("alows a subscriber to queue the same key twice", async () => {
       const queue = new SubscribableRequestQueue();
       const id = queue.addSubscriber();
 
       const promise1 = queue.addRequest("test", id, () => delay(TIMEOUT, "foo"));
       const promise2 = queue.addRequest("test", id, () => delay(TIMEOUT, "bar"));
       expect(queue.hasRequest("test")).to.be.true;
-      expect(await isRejected(promise1)).to.be.true;
-
+      expect(promise1).to.not.equal(promise2);
       const result2 = await promise2;
       expect(result2).to.equal("foo");
+      const result1 = await promise1;
+      expect(result1).to.equal("foo");
     });
 
     it("passes request rejections to all subscribers", async () => {
