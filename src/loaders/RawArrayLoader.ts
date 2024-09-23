@@ -64,6 +64,15 @@ const convertImageInfo = (json: RawArrayInfo): ImageInfo => ({
 
   numMultiscaleLevels: 1,
   multiscaleLevel: 0,
+  multiscaleLevelDims: [
+    {
+      shape: [1, json.sizeC, json.sizeZ, json.sizeY, json.sizeX],
+      spacing: [1, 1, json.physicalPixelSize[2], json.physicalPixelSize[1], json.physicalPixelSize[0]],
+      spaceUnit: json.spatialUnit || "μm",
+      timeUnit: "s",
+      dataType: "uint8",
+    },
+  ],
 
   transform: {
     translation: new Vector3(0, 0, 0),

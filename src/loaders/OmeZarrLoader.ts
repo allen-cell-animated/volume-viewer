@@ -311,6 +311,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       dims.timeUnit = timeUnit;
       dims.shape = this.orderByTCZYX(level.shape, 1).map((val, idx) => Math.max(Math.ceil(val * regionArr[idx]), 1));
       dims.spacing = this.orderByTCZYX(scale, 1);
+      dims.dataType = level.dtype;
 
       return dims;
     });
@@ -388,6 +389,18 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       });
     });
 
+    const alldims: VolumeDims[] = [];
+    source0.scaleLevels.map((level, i) => {
+      const dims = new VolumeDims();
+
+      dims.spaceUnit = spatialUnit;
+      dims.timeUnit = timeUnit;
+      dims.shape = this.orderByTCZYX(level.shape, 1);
+      dims.spacing = this.getScale(i);
+      dims.dataType = level.dtype;
+
+      alldims.push(dims);
+    });
     // for physicalPixelSize, we use the scale of the first level
     const scale5d: TCZYX<number> = this.getScale(0);
     // assume that ImageInfo wants the timeScale of level 0
@@ -411,6 +424,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       timeUnit,
       numMultiscaleLevels: source0.scaleLevels.length,
       multiscaleLevel: levelToLoad,
+      multiscaleLevelDims: alldims,
 
       transform: {
         translation: new Vector3(0, 0, 0),

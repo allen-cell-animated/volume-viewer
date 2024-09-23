@@ -87,6 +87,15 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
 
   numMultiscaleLevels: 1,
   multiscaleLevel: 0,
+  multiscaleLevelDims: [
+    {
+      shape: [json.times || 1, json.channels, json.tiles, json.tile_height, json.tile_width],
+      spacing: [json.time_scale || 1, 1, json.pixel_size_z, json.pixel_size_y, json.pixel_size_x],
+      spaceUnit: json.pixel_size_unit || "μm",
+      timeUnit: json.time_unit || "s",
+      dataType: "uint8",
+    },
+  ],
 
   transform: {
     translation: json.transform?.translation

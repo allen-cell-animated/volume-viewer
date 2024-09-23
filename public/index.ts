@@ -1055,6 +1055,9 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
 }
 
 async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<void> {
+  const fullDims = await loader.loadDims(loadSpec);
+  console.log(fullDims);
+
   const volume = await loader.createVolume(loadSpec, onChannelDataArrived);
   onVolumeCreated(volume);
   loader.loadVolumeData(volume);

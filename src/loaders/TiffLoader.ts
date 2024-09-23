@@ -182,6 +182,15 @@ class TiffLoader extends ThreadableVolumeLoader {
 
       numMultiscaleLevels: 1,
       multiscaleLevel: 0,
+      multiscaleLevelDims: [
+        {
+          shape: [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex],
+          spacing: [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex],
+          spaceUnit: dims.unit || "",
+          timeUnit: "",
+          dataType: dims.pixeltype || "uint8",
+        },
+      ],
 
       transform: {
         translation: new Vector3(0, 0, 0),

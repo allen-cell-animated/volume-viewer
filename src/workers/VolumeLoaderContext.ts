@@ -30,7 +30,7 @@ type StoredPromise<T extends WorkerMsgType> = {
   reject: (reason?: unknown) => void;
 };
 
-const throttle = throttledQueue(1, 1);
+const throttle = throttledQueue(1, 16);
 /**
  * A handle that holds the worker and manages requests and messages to/from it.
  *

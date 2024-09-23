@@ -38,6 +38,15 @@ const testimgdata: ImageInfo = {
 
   numMultiscaleLevels: 1,
   multiscaleLevel: 0,
+  multiscaleLevelDims: [
+    {
+      shape: [1, 1, 65, 494, 306],
+      spacing: [1, 1, 0.29, 0.065, 0.065],
+      spaceUnit: "",
+      timeUnit: "",
+      dataType: "uint8",
+    },
+  ],
 
   transform: {
     translation: new Vector3(0, 0, 0),

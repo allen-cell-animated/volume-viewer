@@ -59,6 +59,7 @@ export type ImageInfo = Readonly<{
 
   /** Number of scale levels available for this volume */
   numMultiscaleLevels: number;
+  multiscaleLevelDims: VolumeDims[];
   /** The scale level from which this image was loaded, between `0` and `numMultiscaleLevels-1` */
   multiscaleLevel: number;
 
@@ -90,6 +91,15 @@ export const getDefaultImageInfo = (): ImageInfo => ({
   timeUnit: "",
   numMultiscaleLevels: 1,
   multiscaleLevel: 0,
+  multiscaleLevelDims: [
+    {
+      shape: [1, 1, 1, 1, 1],
+      spacing: [1, 1, 1, 1, 1],
+      spaceUnit: "",
+      timeUnit: "",
+      dataType: "uint8",
+    },
+  ],
   transform: {
     translation: new Vector3(0, 0, 0),
     rotation: new Vector3(0, 0, 0),
