@@ -34,6 +34,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@babel/runtime": "^7.25.6",
     "geotiff": "^2.0.5",
     "serialize-error": "^11.0.3",
     "three": "^0.144.0",
@@ -41,11 +42,12 @@
     "zarrita": "^0.3.2"
   },
   "devDependencies": {
-    "@babel/cli": "^7.14.8",
-    "@babel/core": "^7.14.8",
-    "@babel/preset-react": "^7.14.5",
-    "@babel/preset-typescript": "^7.14.5",
-    "@babel/register": "^7.14.5",
+    "@babel/cli": "^7.25.6",
+    "@babel/core": "^7.25.2",
+    "@babel/plugin-transform-runtime": "^7.25.4",
+    "@babel/preset-react": "^7.24.7",
+    "@babel/preset-typescript": "^7.24.7",
+    "@babel/register": "^7.24.6",
     "@tweakpane/core": "^1.1.9",
     "@types/chai": "^4.3.12",
     "@types/mocha": "^9.1.1",
