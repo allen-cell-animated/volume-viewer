@@ -137,6 +137,11 @@ export function scaleMultipleDimsToSubregion(subregion: Box3, dims: ZYX[]): ZYX[
  *  This function assumes that `spatialDimsZYX` has already been appropriately scaled to match `loadSpec`'s `subregion`.
  */
 export function pickLevelToLoadUnscaled(loadSpec: LoadSpec, spatialDimsZYX: ZYX[]): number {
+  if (loadSpec.useExplicitLevel && loadSpec.multiscaleLevel !== undefined) {
+    // clamp to actual allowed level range
+    return Math.max(0, Math.min(spatialDimsZYX.length - 1, loadSpec.multiscaleLevel));
+  }
+
   let levelToLoad = estimateLevelForAtlas(spatialDimsZYX, loadSpec.maxAtlasEdge);
   // Check here for whether levelToLoad is within max atlas size?
   if (levelToLoad !== undefined) {
@@ -233,6 +238,7 @@ export function buildDefaultMetadata(imageInfo: ImageInfo): Record<string, unkno
     y: imageInfo.physicalPixelSize.y + imageInfo.spatialUnit,
     z: imageInfo.physicalPixelSize.z + imageInfo.spatialUnit,
   };
+  metadata["Multiresolution levels"] = imageInfo.multiscaleLevelDims;
   metadata["Channels"] = imageInfo.numChannels;
   metadata["Time series frames"] = imageInfo.times || 1;
   // don't add User data if it's empty

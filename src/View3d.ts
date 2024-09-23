@@ -46,6 +46,8 @@ const allGlobalLoadingOptions = {
  * @class
  */
 export class View3d {
+  // TODO because View3d is basically a top level entrypoint for volume-viewer,
+  // maybe it should create the VolumeLoaderContext with options passed in.
   public loaderContext?: VolumeLoaderContext;
 
   private canvas3d: ThreeJsPanel;

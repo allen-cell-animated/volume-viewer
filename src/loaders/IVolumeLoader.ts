@@ -19,6 +19,7 @@ export class LoadSpec {
   /** Subregion of volume to load. If not specified, the entire volume is loaded. Specify as floats between 0-1. */
   subregion = new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
   channels?: number[];
+  useExplicitLevel = false;
 }
 
 export function loadSpecToString(spec: LoadSpec): string {
