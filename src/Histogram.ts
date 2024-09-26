@@ -238,7 +238,7 @@ export default class Histogram {
       }
     }
 
-    const bins = new Uint32Array(numBins ? numBins : 0).fill(0);
+    const bins = new Uint32Array(numBins).fill(0);
 
     const binSize = (max - min) / numBins === 0 ? 1 : (max - min) / numBins;
     for (let i = 0; i < arr.length; i++) {
