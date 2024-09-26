@@ -40,7 +40,10 @@ export default class FusedChannelData {
   private channelsDataToFuse: Channel[];
 
   private fuseGeometry: PlaneGeometry;
-  private fuseMaterial: ShaderMaterial[];
+  private fuseMaterialF: ShaderMaterial;
+  private fuseMaterialUI: ShaderMaterial;
+  private fuseMaterialI: ShaderMaterial;
+
   private fuseMaterialProps: Partial<ShaderMaterialParameters>;
   private fuseScene: Scene;
   private quadCamera: OrthographicCamera;
@@ -95,51 +98,29 @@ export default class FusedChannelData {
     // this exists to keep one reference alive
     // to make sure we do not fully delete and re-create
     // a shader every time.
-    this.fuseMaterial = [
-      new ShaderMaterial({
-        uniforms: {
-          lutSampler: {
-            value: null,
-          },
-          lutMinMax: { value: new Vector2(0, 255) },
-          srcTexture: {
-            value: null,
-          },
-        },
-        fragmentShader: fuseShaderSrcF,
-        ...this.fuseMaterialProps,
-      }),
-      new ShaderMaterial({
-        uniforms: {
-          lutSampler: {
-            value: null,
-          },
-          lutMinMax: { value: new Vector2(0, 255) },
-          srcTexture: {
-            value: null,
-          },
-        },
-        fragmentShader: fuseShaderSrcUI,
-        ...this.fuseMaterialProps,
-      }),
-      new ShaderMaterial({
-        uniforms: {
-          lutSampler: {
-            value: null,
-          },
-          lutMinMax: { value: new Vector2(0, 255) },
-          srcTexture: {
-            value: null,
-          },
-        },
-        fragmentShader: fuseShaderSrcI,
-        ...this.fuseMaterialProps,
-      }),
-    ];
-    this.fuseMaterial[0].needsUpdate = true;
-    this.fuseMaterial[1].needsUpdate = true;
-    this.fuseMaterial[2].needsUpdate = true;
+    this.fuseMaterialF = this.setupFuseMaterial(fuseShaderSrcF);
+    this.fuseMaterialUI = this.setupFuseMaterial(fuseShaderSrcUI);
+    this.fuseMaterialI = this.setupFuseMaterial(fuseShaderSrcI);
+    this.fuseMaterialF.needsUpdate = true;
+    this.fuseMaterialUI.needsUpdate = true;
+    this.fuseMaterialI.needsUpdate = true;
     this.fuseGeometry = new PlaneGeometry(2, 2);
+  }
+
+  private setupFuseMaterial(fragShaderSrc: string) {
+    return new ShaderMaterial({
+      uniforms: {
+        lutSampler: {
+          value: null,
+        },
+        lutMinMax: { value: new Vector2(0, 255) },
+        srcTexture: {
+          value: null,
+        },
+      },
+      fragmentShader: fragShaderSrc,
+      ...this.fuseMaterialProps,
+    });
   }
 
   getFusedTexture(): Texture {
@@ -154,15 +135,15 @@ export default class FusedChannelData {
   private getShader(dtype: NumberType): ShaderMaterial {
     switch (dtype) {
       case "float32":
-        return this.fuseMaterial[0];
+        return this.fuseMaterialF;
       case "uint8":
       case "uint16":
       case "uint32":
-        return this.fuseMaterial[1];
+        return this.fuseMaterialUI;
       case "int8":
       case "int16":
       case "int32":
-        return this.fuseMaterial[2];
+        return this.fuseMaterialI;
       default:
         throw new Error("Unsupported data type for fuse shader");
     }
