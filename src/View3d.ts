@@ -37,7 +37,7 @@ export interface View3dOptions {
 }
 
 const allGlobalLoadingOptions = {
-  numChunksToPrefetchAhead: 10,
+  numChunksToPrefetchAhead: 5,
   prefetchAlongNonPlayingAxis: false,
   throttleArrivingChannelData: true,
 };
@@ -48,6 +48,7 @@ const allGlobalLoadingOptions = {
 export class View3d {
   // TODO because View3d is basically a top level entrypoint for volume-viewer,
   // maybe it should create the VolumeLoaderContext with options passed in.
+  // (instead of having the loaderContext created externally)
   public loaderContext?: VolumeLoaderContext;
 
   private canvas3d: ThreeJsPanel;
@@ -928,15 +929,18 @@ export class View3d {
     this.image?.setupGui(pane);
 
     const prefetch = pane.addFolder({ title: "Prefetch" });
+    // one number will be used for all axis directions
     prefetch.addInput(allGlobalLoadingOptions, "numChunksToPrefetchAhead").on("change", (event) => {
       this.loaderContext?.getActiveLoader()?.updateFetchOptions({
         maxPrefetchDistance: [event.value, event.value, event.value, event.value],
       });
       this.image?.volume.updateRequiredData({});
     });
+    // should we try to prefetch along Z even if we are only playing along T?
     prefetch.addInput(allGlobalLoadingOptions, "prefetchAlongNonPlayingAxis").on("change", (event) => {
       this.loaderContext?.getActiveLoader()?.updateFetchOptions({ onlyPriorityDirections: !event.value });
     });
+    // when multiple prefetch frames arrive at once, should we slow down how quickly we load them?
     prefetch.addInput(allGlobalLoadingOptions, "throttleArrivingChannelData").on("change", (event) => {
       this.loaderContext?.setThrottleChannelData(event.value);
     });

@@ -2,9 +2,8 @@ import { Box3, Vector2, Vector3 } from "three";
 
 import { ImageInfo } from "../Volume.js";
 import { LoadSpec } from "./IVolumeLoader.js";
-import { VolumeLoadError, VolumeLoadErrorType } from "./VolumeLoadError.js";
 
-export const MAX_ATLAS_EDGE = 2048;
+export const MAX_ATLAS_EDGE = 4096;
 
 // Map from units to their symbols
 const UNIT_SYMBOLS = {
@@ -165,9 +164,7 @@ export function pickLevelToLoadUnscaled(loadSpec: LoadSpec, spatialDimsZYX: ZYX[
     `. Max atlas edge allowed is ${loadSpec.maxAtlasEdge}.`
   );
   console.log("All available levels: ", spatialDimsZYX);
-  // throw new VolumeLoadError(`Volume is too large; multiscale level does not fit in preferred memory footprint.`, {
-  //   type: VolumeLoadErrorType.TOO_LARGE,
-  // });
+
   return levelToLoad;
 }
 

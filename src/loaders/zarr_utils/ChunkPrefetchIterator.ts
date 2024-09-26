@@ -104,7 +104,7 @@ export default class ChunkPrefetchIterator {
       if (priorityDirections && priorityDirections.includes(direction)) {
         this.priorityDirectionStates.push(directionState);
       } else {
-        // we have an option settingthat can let us ignore non-priority directions
+        // we have an option setting that can let us ignore non-priority directions
         if (!onlyPriorityDirections) {
           this.directionStates.push(directionState);
         }
