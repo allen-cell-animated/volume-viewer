@@ -155,21 +155,16 @@ export default class FusedChannelData {
     switch (dtype) {
       case "float32":
         return this.fuseMaterial[0];
-        break;
       case "uint8":
       case "uint16":
       case "uint32":
         return this.fuseMaterial[1];
-        break;
       case "int8":
       case "int16":
       case "int32":
         return this.fuseMaterial[2];
-        break;
       default:
         throw new Error("Unsupported data type for fuse shader");
-        return this.fuseMaterial[0];
-        break;
     }
   }
 
@@ -191,9 +186,7 @@ export default class FusedChannelData {
       case "int32":
         return new Vector2(-2147483648, 2147483647);
       default:
-        throw new Error("Unsupported data type for fuse shader");
-        return new Vector2(0, 1);
-        break;
+        throw new Error("Unsupported data type for fuse shader: " + c.dtype);
     }
   }
 
