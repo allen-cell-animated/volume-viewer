@@ -193,7 +193,7 @@ export default class Channel {
         internalFormat = "R32F";
         break;
       default:
-        console.log("unsupported dtype for channel data", this.dtype);
+        console.warning("unsupported dtype for channel data", this.dtype);
         break;
     }
 
