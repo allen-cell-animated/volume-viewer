@@ -39,7 +39,8 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
   private geometry: ShapeGeometry;
   private geometryMesh: Mesh<BufferGeometry, Material>;
-  private boxHelper: Box3Helper;
+  // TODO RE-PRIVATIZE. if you discover this in a PR, I have failed!
+  public boxHelper: Box3Helper;
   private tickMarksMesh: LineSegments;
   private geometryTransformNode: Group;
   private uniforms: ReturnType<typeof rayMarchingShaderUniforms>;

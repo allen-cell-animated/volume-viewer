@@ -37,7 +37,8 @@ export default class VolumeDrawable {
   public sceneRoot: Object3D;
   private meshVolume: MeshVolume;
 
-  private volumeRendering: VolumeRenderImpl;
+  // TODO RE-PRIVATIZE. if you discover this in a PR, I have failed!
+  public volumeRendering: VolumeRenderImpl;
   private renderMode: RenderMode;
 
   private renderUpdateListener?: (iteration: number) => void;
