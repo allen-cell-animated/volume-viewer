@@ -84,10 +84,11 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     // Set offset
     this.geometryMesh.position.copy(this.volume.getContentCenter());
     // Set scale
-    this.geometryMesh.scale.copy(normRegionSize).multiply(normPhysicalSize);
+    const fullRegionScale = normPhysicalSize.clone().multiply(this.settings.scale);
+    this.geometryMesh.scale.copy(fullRegionScale).multiply(normRegionSize);
     this.setUniform("volumeScale", normPhysicalSize);
-    this.boxHelper.box.set(normPhysicalSize.clone().multiplyScalar(-0.5), normPhysicalSize.clone().multiplyScalar(0.5));
-    this.tickMarksMesh.scale.copy(normPhysicalSize);
+    this.boxHelper.box.set(fullRegionScale.clone().multiplyScalar(-0.5), fullRegionScale.clone().multiplyScalar(0.5));
+    this.tickMarksMesh.scale.copy(fullRegionScale);
     this.settings && this.updateSettings(this.settings, SettingsFlags.ROI);
 
     // Set atlas dimension uniforms
@@ -154,6 +155,8 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       // Set rotation and translation
       this.geometryTransformNode.position.copy(this.settings.translation);
       this.geometryTransformNode.rotation.copy(this.settings.rotation);
+      // TODO this does some redundant work. Fix?
+      this.updateVolumeDimensions();
       this.setUniform("flipVolume", this.settings.flipAxes);
     }
 

@@ -230,8 +230,10 @@ export default class VolumeDrawable {
 
   updateScale(): void {
     const { normPhysicalSize, normRegionSize } = this.volume;
-    this.meshVolume.setScale(normPhysicalSize.clone().multiply(normRegionSize), this.volume.getContentCenter());
-    this.volumeRendering.updateVolumeDimensions();
+    console.log(this.settings.scale);
+    const scale = normPhysicalSize.clone().multiply(normRegionSize).multiply(this.settings.scale);
+    this.meshVolume.setScale(scale, this.volume.getContentCenter());
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.TRANSFORM);
   }
 
   setOrthoScale(value: number): void {
@@ -708,6 +710,11 @@ export default class VolumeDrawable {
     this.settings.rotation.copy(eulerXYZ);
     this.meshVolume.setRotation(this.settings.rotation);
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.TRANSFORM);
+  }
+
+  setScale(xyz: Vector3): void {
+    this.settings.scale.copy(xyz);
+    this.updateScale();
   }
 
   setupGui(pane: Pane): void {
