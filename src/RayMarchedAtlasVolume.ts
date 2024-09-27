@@ -74,9 +74,10 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
 
-    this.updateVolumeDimensions();
     this.settings = settings;
     this.updateSettings(settings, SettingsFlags.ALL);
+    // TODO this is doing *more* redundant work! Fix?
+    this.updateVolumeDimensions();
   }
 
   public updateVolumeDimensions(): void {
@@ -155,7 +156,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       // Set rotation and translation
       this.geometryTransformNode.position.copy(this.settings.translation);
       this.geometryTransformNode.rotation.copy(this.settings.rotation);
-      // TODO this does some redundant work. Fix?
+      // TODO this does some redundant work. Including a new call to this very function! Fix?
       this.updateVolumeDimensions();
       this.setUniform("flipVolume", this.settings.flipAxes);
     }
