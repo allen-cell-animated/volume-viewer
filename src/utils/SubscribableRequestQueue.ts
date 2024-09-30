@@ -23,7 +23,7 @@ export default class SubscribableRequestQueue {
    * Map of subscribers keyed by ID. Subscribers store a map to all their subscriptions by request key.
    * Subscribers are only useful as handles to cancel subscriptions early, so we only need to store rejecters here.
    */
-  private subscribers: Map<number, Map<string, Rejecter>>;
+  private subscribers: Map<number, Map<string, Rejecter[]>>;
   /** Map from "inner" request (managed by `queue`) to "outer" promises generated per-subscriber. */
   private requests: Map<string, RequestSubscription[]>;
 
@@ -110,7 +110,13 @@ export default class SubscribableRequestQueue {
     // Create promise and add to list of requests
     return new Promise<T>((resolve, reject) => {
       this.requests.get(key)?.push({ resolve, reject, subscriberId });
-      this.subscribers.get(subscriberId)?.set(key, reject);
+      const subscriber = this.subscribers.get(subscriberId);
+      const existingRequest = subscriber?.get(key);
+      if (existingRequest) {
+        existingRequest.push(reject);
+      } else {
+        subscriber?.set(key, [reject]);
+      }
     });
   }
 
@@ -148,12 +154,14 @@ export default class SubscribableRequestQueue {
       return false;
     }
 
-    const reject = subscriber.get(key);
-    if (!reject) {
+    const rejecters = subscriber.get(key);
+    if (!rejecters || !rejecters.length) {
       return false;
     }
 
-    this.rejectSubscription(key, reject, cancelReason);
+    for (const reject of rejecters) {
+      this.rejectSubscription(key, reject, cancelReason);
+    }
     subscriber.delete(key);
     return true;
   }
@@ -162,8 +170,10 @@ export default class SubscribableRequestQueue {
   removeSubscriber(subscriberId: number, cancelReason?: unknown): void {
     const subscriptions = this.subscribers.get(subscriberId);
     if (subscriptions) {
-      for (const [key, reject] of subscriptions.entries()) {
-        this.rejectSubscription(key, reject, cancelReason);
+      for (const [key, rejecters] of subscriptions.entries()) {
+        for (const reject of rejecters) {
+          this.rejectSubscription(key, reject, cancelReason);
+        }
       }
       this.subscribers.delete(subscriberId);
     }
