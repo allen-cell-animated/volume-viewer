@@ -149,28 +149,6 @@ export default class FusedChannelData {
     }
   }
 
-  private getMinMax(c: Channel): Vector2 {
-    // return min and max of data range types
-    switch (c.dtype) {
-      case "float32":
-        return new Vector2(0, 1);
-      case "uint8":
-        return new Vector2(0, 255);
-      case "uint16":
-        return new Vector2(0, 65535);
-      case "uint32":
-        return new Vector2(0, 4294967295);
-      case "int8":
-        return new Vector2(-128, 127);
-      case "int16":
-        return new Vector2(-32768, 32767);
-      case "int32":
-        return new Vector2(-2147483648, 2147483647);
-      default:
-        throw new Error("Unsupported data type for fuse shader: " + c.dtype);
-    }
-  }
-
   fuse(combination: FuseChannel[], channels: Channel[]): void {
     // we can fuse if we have any loaded channels that are showing.
     // actually, we can fuse if no channels are showing (but they are loaded), too.
@@ -225,7 +203,6 @@ export default class FusedChannelData {
         mat.uniforms.lutSampler.value = channels[chIndex].lutTexture;
         // the lut texture is spanning only the data range of the channel, not the datatype range
         mat.uniforms.lutMinMax.value = new Vector2(channels[chIndex].rawMin, channels[chIndex].rawMax);
-        //mat.uniforms.lutMinMax.value = this.getMinMax(channels[chIndex]);
         mat.uniforms.srcTexture.value = channels[chIndex].dataTexture;
         this.fuseScene.add(new Mesh(this.fuseGeometry, mat));
       }
