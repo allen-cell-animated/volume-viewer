@@ -1,6 +1,6 @@
 precision highp float;
 precision highp int;
-precision lowp usampler2D;
+precision highp usampler2D;
 precision highp sampler3D;
 
 // the lut texture is a 256x1 rgba texture for each channel
