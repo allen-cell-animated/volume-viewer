@@ -35,7 +35,7 @@ export default class Histogram {
     this.binSize = 0;
 
     // build up the histogram
-    const hinfo = this.calculateHistogram(data, NBINS);
+    const hinfo = Histogram.calculateHistogram(data, NBINS);
     this.bins = hinfo.bins;
     this.min = hinfo.min;
     this.max = hinfo.max;
@@ -69,13 +69,18 @@ export default class Histogram {
   }
 
   // return the bin index of the given data value
-  public findBinOfValue(value: number): number {
-    let binIndex = Math.floor((value - this.min) / this.binSize);
+  public static findBin(dataValue: number, dataMin: number, binSize: number, numBins: number): number {
+    let binIndex = Math.floor((dataValue - dataMin) / binSize);
     // for values that lie exactly on last bin we need to subtract one
-    if (binIndex === NBINS) {
+    if (binIndex === numBins) {
       binIndex--;
     }
     return binIndex;
+  }
+
+  // return the bin index of the given data value
+  public findBinOfValue(value: number): number {
+    return Histogram.findBin(value, this.min, this.binSize, NBINS);
   }
 
   getDataMin(): number {
@@ -218,13 +223,13 @@ export default class Histogram {
     return [b, e];
   }
 
-  private calculateHistogram(arr: TypedArray<NumberType>, numBins = 1): HistogramData {
+  private static calculateHistogram(arr: TypedArray<NumberType>, numBins = 1): HistogramData {
     if (numBins < 1) {
       numBins = 1;
     }
 
     // calculate min and max of arr
-    // TODO FIXME See convertChannel, which will also compute min and max!
+    // TODO See convertChannel, which will also compute min and max!
     // We could save a whole extra loop over the data, or have convertChannel compute the whole histogram.
     // need to be careful about computing over chunks or whole ready-to-display volume
 
@@ -243,11 +248,8 @@ export default class Histogram {
     const binSize = (max - min) / numBins === 0 ? 1 : (max - min) / numBins;
     for (let i = 0; i < arr.length; i++) {
       const item = arr[i];
-      let binIndex = Math.floor((item - min) / binSize);
-      // for values that lie exactly on last bin we need to subtract one
-      if (binIndex === numBins) {
-        binIndex--;
-      }
+
+      const binIndex = Histogram.findBin(item, min, binSize, numBins);
       bins[binIndex]++;
     }
 
