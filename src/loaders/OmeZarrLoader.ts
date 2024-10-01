@@ -52,7 +52,7 @@ const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 function convertChannel(
   channelData: zarr.TypedArray<zarr.NumberDataType>,
   dtype: zarr.NumberDataType
-): [zarr.TypedArray<zarr.NumberDataType>, zarr.NumberDataType, number, number] {
+): { data: zarr.TypedArray<zarr.NumberDataType>; dtype: zarr.NumberDataType; min: number; max: number } {
   // get min and max
   // TODO FIXME Histogram will also compute min and max!
   let min = channelData[0];
@@ -77,7 +77,7 @@ function convertChannel(
     channelData = f32;
   }
 
-  return [channelData, dtype, min, max];
+  return { data: channelData, dtype, min, max };
 }
 
 export type ZarrLoaderFetchOptions = {
@@ -588,12 +588,12 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
       const converted = convertChannel(result.data, level.dtype);
       if (syncChannels) {
-        resultChannelDtype.push(converted[1]);
-        resultChannelData.push(converted[0]);
+        resultChannelDtype.push(converted.dtype);
+        resultChannelData.push(converted.data);
         resultChannelIndices.push(ch);
-        resultChannelRanges.push([converted[2], converted[3]]);
+        resultChannelRanges.push([converted.min, converted.max]);
       } else {
-        onData([ch], [converted[1]], [converted[0]], [[converted[2], converted[3]]]);
+        onData([ch], [converted.dtype], [converted.data], [[converted.min, converted.max]]);
       }
     });
 
