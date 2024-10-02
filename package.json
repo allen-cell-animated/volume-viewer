@@ -35,6 +35,9 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.25.6",
+    "@zarrita/core": "^0.0.3",
+    "@zarrita/indexing": "^0.0.3",
+    "@zarrita/storage": "^0.0.2",
     "geotiff": "^2.0.5",
     "serialize-error": "^11.0.3",
     "three": "^0.144.0",
