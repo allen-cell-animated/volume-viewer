@@ -120,6 +120,24 @@ describe("SubscribableRequestQueue", () => {
       expect(result1).to.equal("foo");
     });
 
+    it("allows multiple rejections when the same key is queued multiple times by the same subscriber", async () => {
+      const queue = new SubscribableRequestQueue();
+      const id = queue.addSubscriber();
+
+      const promise1 = queue.addRequest("test", id, () => delayReject(TIMEOUT, "foo"));
+      const promise2 = queue.addRequest("test", id, () => delayReject(TIMEOUT, "bar"));
+      expect(queue.hasRequest("test")).to.be.true;
+      expect(promise1).to.not.equal(promise2);
+      let promise1RejectReason = "",
+        promise2RejectReason = "";
+      promise1.catch((reason) => (promise1RejectReason = reason));
+      promise2.catch((reason) => (promise2RejectReason = reason));
+
+      await Promise.allSettled([promise1, promise2]);
+      expect(promise1RejectReason).to.equal("foo");
+      expect(promise2RejectReason).to.equal("foo");
+    });
+
     it("passes request rejections to all subscribers", async () => {
       const queue = new SubscribableRequestQueue();
       const id1 = queue.addSubscriber();
