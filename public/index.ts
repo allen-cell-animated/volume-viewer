@@ -889,9 +889,6 @@ function onChannelDataArrived(v: Volume, channelIndex: number) {
   view3D.updateActiveChannels(currentVol);
   view3D.updateLuts(currentVol);
 
-  // if (currentVol.isLoaded()) {
-  //   console.log("currentVol with name " + currentVol.name + " is loaded");
-  // }
   view3D.redraw();
 }
 
