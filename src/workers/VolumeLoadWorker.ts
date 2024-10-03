@@ -72,13 +72,14 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
         };
         self.postMessage(message);
       },
-      (channelIndex, data, ranges, atlasDims) => {
+      (channelIndex, dtype, data, ranges, atlasDims) => {
         const message: WorkerResponse<WorkerMsgType> = {
           responseResult: WorkerResponseResult.EVENT,
           eventType: WorkerEventType.CHANNEL_LOAD,
           loaderId,
           loadId,
           channelIndex,
+          dtype,
           data,
           ranges,
           atlasDims,
