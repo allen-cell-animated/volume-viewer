@@ -6,6 +6,7 @@ import { Lut } from "./Lut.js";
 import { getColorByChannelIndex } from "./constants/colors.js";
 import { type IVolumeLoader, LoadSpec, type PerChannelCallback, VolumeDims } from "./loaders/IVolumeLoader.js";
 import { MAX_ATLAS_EDGE, pickLevelToLoadUnscaled } from "./loaders/VolumeLoaderUtils.js";
+import type { NumberType, TypedArray } from "./types.js";
 
 export type ImageInfo = Readonly<{
   name: string;
@@ -392,10 +393,23 @@ export default class Volume {
    * @param {number} atlaswidth
    * @param {number} atlasheight
    */
-  setChannelDataFromAtlas(channelIndex: number, atlasdata: Uint8Array, atlaswidth: number, atlasheight: number): void {
-    this.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight);
-    const { x, y, z } = this.imageInfo.subregionSize;
-    this.channels[channelIndex].unpackVolumeFromAtlas(x, y, z);
+  setChannelDataFromAtlas(
+    channelIndex: number,
+    atlasdata: TypedArray<NumberType>,
+    atlaswidth: number,
+    atlasheight: number,
+    range: [number, number],
+    dtype: NumberType = "uint8"
+  ): void {
+    this.channels[channelIndex].setFromAtlas(
+      atlasdata,
+      atlaswidth,
+      atlasheight,
+      dtype,
+      range[0],
+      range[1],
+      this.imageInfo.subregionSize
+    );
     this.onChannelLoaded([channelIndex]);
   }
 
@@ -405,7 +419,12 @@ export default class Volume {
    * @param {number} channelIndex
    * @param {Uint8Array} volumeData
    */
-  setChannelDataFromVolume(channelIndex: number, volumeData: Uint8Array, range: [number, number]): void {
+  setChannelDataFromVolume(
+    channelIndex: number,
+    volumeData: TypedArray<NumberType>,
+    range: [number, number],
+    dtype: NumberType = "uint8"
+  ): void {
     const { subregionSize, atlasTileDims } = this.imageInfo;
     this.channels[channelIndex].setFromVolumeData(
       volumeData,
@@ -415,7 +434,8 @@ export default class Volume {
       atlasTileDims.x * subregionSize.x,
       atlasTileDims.y * subregionSize.y,
       range[0],
-      range[1]
+      range[1],
+      dtype
     );
     this.onChannelLoaded([channelIndex]);
   }

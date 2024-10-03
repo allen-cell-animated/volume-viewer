@@ -3,6 +3,7 @@ import { serializeError } from "serialize-error";
 
 import type { TiffLoadResult, TiffWorkerParams } from "../loaders/TiffLoader.js";
 import { VolumeLoadError, VolumeLoadErrorType } from "../loaders/VolumeLoadError.js";
+import { NumberType } from "../types.js";
 
 type TypedArray =
   | Uint8Array
@@ -19,6 +20,31 @@ const SAMPLEFORMAT_UINT = 1;
 const SAMPLEFORMAT_INT = 2;
 const SAMPLEFORMAT_IEEEFP = 3;
 
+function getDtype(sampleFormat: number, bytesPerPixel: number): NumberType {
+  if (sampleFormat === SAMPLEFORMAT_IEEEFP) {
+    if (bytesPerPixel === 4) {
+      return "float32";
+    }
+  } else if (sampleFormat === SAMPLEFORMAT_INT) {
+    if (bytesPerPixel === 1) {
+      return "int8";
+    } else if (bytesPerPixel === 2) {
+      return "int16";
+    } else if (bytesPerPixel === 4) {
+      return "int32";
+    }
+  } else if (sampleFormat === SAMPLEFORMAT_UINT) {
+    if (bytesPerPixel === 1) {
+      return "uint8";
+    } else if (bytesPerPixel === 2) {
+      return "uint16";
+    } else if (bytesPerPixel === 4) {
+      return "uint32";
+    }
+  }
+  console.error(`TIFF Worker: unsupported sample format ${sampleFormat} and bytes per pixel ${bytesPerPixel}`);
+  return "uint8";
+}
 function castToArray(buf: ArrayBuffer, bytesPerPixel: number, sampleFormat: number): TypedArray {
   if (sampleFormat === SAMPLEFORMAT_IEEEFP) {
     if (bytesPerPixel === 4) {
@@ -107,6 +133,7 @@ async function loadTiffChannel(e: MessageEvent<TiffWorkerParams>): Promise<TiffL
   }
   // all slices collected, now resample to 8 bits full data range
   const src = castToArray(buffer, bytesPerPixel, sampleFormat);
+  const dtype = getDtype(sampleFormat, bytesPerPixel);
   let chmin = src[0];
   let chmax = src[0];
   for (let j = 0; j < src.length; ++j) {
@@ -118,11 +145,8 @@ async function loadTiffChannel(e: MessageEvent<TiffWorkerParams>): Promise<TiffL
       chmax = val;
     }
   }
-  const out = new Uint8Array(src.length);
-  for (let j = 0; j < src.length; ++j) {
-    out[j] = ((src[j] - chmin) / (chmax - chmin)) * 255;
-  }
-  return { data: out, channel: channelIndex, range: [chmin, chmax], isError: false };
+
+  return { data: src, channel: channelIndex, range: [chmin, chmax], dtype: dtype, isError: false };
 }
 
 self.onmessage = async (e) => {

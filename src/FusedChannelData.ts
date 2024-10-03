@@ -18,12 +18,15 @@ import {
   MaxEquation,
   Texture,
   LinearFilter,
+  Vector2,
 } from "three";
 
 import Channel from "./Channel.js";
 import { renderToBufferVertShader } from "./constants/basicShaders.js";
-import fuseShaderSrc from "./constants/shaders/fuse.frag";
-import type { FuseChannel } from "./types.js";
+import fuseShaderSrcUI from "./constants/shaders/fuseUI.frag";
+import fuseShaderSrcF from "./constants/shaders/fuseF.frag";
+import fuseShaderSrcI from "./constants/shaders/fuseI.frag";
+import type { FuseChannel, NumberType } from "./types.js";
 
 // This is the owner of the fused RGBA volume texture atlas, and the mask texture atlas.
 // This module is responsible for updating the fused texture, given the read-only volume channel data.
@@ -37,7 +40,10 @@ export default class FusedChannelData {
   private channelsDataToFuse: Channel[];
 
   private fuseGeometry: PlaneGeometry;
-  private fuseMaterial: ShaderMaterial;
+  private fuseMaterialF: ShaderMaterial;
+  private fuseMaterialUI: ShaderMaterial;
+  private fuseMaterialI: ShaderMaterial;
+
   private fuseMaterialProps: Partial<ShaderMaterialParameters>;
   private fuseScene: Scene;
   private quadCamera: OrthographicCamera;
@@ -82,7 +88,6 @@ export default class FusedChannelData {
 
     this.fuseMaterialProps = {
       vertexShader: renderToBufferVertShader,
-      fragmentShader: fuseShaderSrc,
       depthTest: false,
       depthWrite: false,
       blending: CustomBlending,
@@ -93,18 +98,29 @@ export default class FusedChannelData {
     // this exists to keep one reference alive
     // to make sure we do not fully delete and re-create
     // a shader every time.
-    this.fuseMaterial = new ShaderMaterial({
+    this.fuseMaterialF = this.setupFuseMaterial(fuseShaderSrcF);
+    this.fuseMaterialUI = this.setupFuseMaterial(fuseShaderSrcUI);
+    this.fuseMaterialI = this.setupFuseMaterial(fuseShaderSrcI);
+    this.fuseMaterialF.needsUpdate = true;
+    this.fuseMaterialUI.needsUpdate = true;
+    this.fuseMaterialI.needsUpdate = true;
+    this.fuseGeometry = new PlaneGeometry(2, 2);
+  }
+
+  private setupFuseMaterial(fragShaderSrc: string) {
+    return new ShaderMaterial({
       uniforms: {
         lutSampler: {
           value: null,
         },
+        lutMinMax: { value: new Vector2(0, 255) },
         srcTexture: {
           value: null,
         },
       },
+      fragmentShader: fragShaderSrc,
       ...this.fuseMaterialProps,
     });
-    this.fuseGeometry = new PlaneGeometry(2, 2);
   }
 
   getFusedTexture(): Texture {
@@ -114,6 +130,23 @@ export default class FusedChannelData {
   public cleanup(): void {
     this.fuseScene.clear();
     this.maskTexture.dispose();
+  }
+
+  private getShader(dtype: NumberType): ShaderMaterial {
+    switch (dtype) {
+      case "float32":
+        return this.fuseMaterialF;
+      case "uint8":
+      case "uint16":
+      case "uint32":
+        return this.fuseMaterialUI;
+      case "int8":
+      case "int16":
+      case "int32":
+        return this.fuseMaterialI;
+      default:
+        throw new Error("Unsupported data type for fuse shader");
+    }
   }
 
   fuse(combination: FuseChannel[], channels: Channel[]): void {
@@ -161,20 +194,16 @@ export default class FusedChannelData {
     for (let i = 0; i < combination.length; ++i) {
       if (combination[i].rgbColor) {
         const chIndex = combination[i].chIndex;
+        if (!channels[chIndex].loaded) {
+          continue;
+        }
         // add a draw call per channel here.
-        // TODO create these at channel creation time!
-        const mat = new ShaderMaterial({
-          uniforms: {
-            lutSampler: {
-              value: channels[chIndex].lutTexture,
-            },
-            srcTexture: {
-              value: channels[chIndex].dataTexture,
-            },
-          },
-          ...this.fuseMaterialProps,
-        });
-
+        // must clone the material to keep a unique set of uniforms
+        const mat = this.getShader(channels[chIndex].dtype).clone();
+        mat.uniforms.lutSampler.value = channels[chIndex].lutTexture;
+        // the lut texture is spanning only the data range of the channel, not the datatype range
+        mat.uniforms.lutMinMax.value = new Vector2(channels[chIndex].rawMin, channels[chIndex].rawMax);
+        mat.uniforms.srcTexture.value = channels[chIndex].dataTexture;
         this.fuseScene.add(new Mesh(this.fuseGeometry, mat));
       }
     }
@@ -196,9 +225,14 @@ export default class FusedChannelData {
     if (!channel || !channel.loaded) {
       return false;
     }
-    const datacopy = channel.imgData.data.buffer.slice(0);
+    // binarize the data
+    // (TODO consider whether it should be binarized or not?)
+    const datacopy = new Uint8ClampedArray(channel.imgData.data.length);
+    for (let i = 0; i < channel.imgData.data.length; i++) {
+      datacopy[i] = channel.imgData.data[i] > 0 ? 255 : 0;
+    }
     const maskData = {
-      data: new Uint8ClampedArray(datacopy),
+      data: datacopy,
       width: this.width,
       height: this.height,
       colorSpace: "srgb" as PredefinedColorSpace,
