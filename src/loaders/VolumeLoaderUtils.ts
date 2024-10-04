@@ -2,7 +2,6 @@ import { Box3, Vector2, Vector3 } from "three";
 
 import { ImageInfo } from "../Volume.js";
 import { LoadSpec } from "./IVolumeLoader.js";
-import { VolumeLoadError, VolumeLoadErrorType } from "./VolumeLoadError.js";
 
 export const MAX_ATLAS_EDGE = 4096;
 
@@ -137,6 +136,11 @@ export function scaleMultipleDimsToSubregion(subregion: Box3, dims: ZYX[]): ZYX[
  *  This function assumes that `spatialDimsZYX` has already been appropriately scaled to match `loadSpec`'s `subregion`.
  */
 export function pickLevelToLoadUnscaled(loadSpec: LoadSpec, spatialDimsZYX: ZYX[]): number {
+  if (loadSpec.useExplicitLevel && loadSpec.multiscaleLevel !== undefined) {
+    // clamp to actual allowed level range
+    return Math.max(0, Math.min(spatialDimsZYX.length - 1, loadSpec.multiscaleLevel));
+  }
+
   let levelToLoad = estimateLevelForAtlas(spatialDimsZYX, loadSpec.maxAtlasEdge);
   // Check here for whether levelToLoad is within max atlas size?
   if (levelToLoad !== undefined) {
@@ -160,9 +164,8 @@ export function pickLevelToLoadUnscaled(loadSpec: LoadSpec, spatialDimsZYX: ZYX[
     `. Max atlas edge allowed is ${loadSpec.maxAtlasEdge}.`
   );
   console.log("All available levels: ", spatialDimsZYX);
-  throw new VolumeLoadError(`Volume is too large; multiscale level does not fit in preferred memory footprint.`, {
-    type: VolumeLoadErrorType.TOO_LARGE,
-  });
+
+  return levelToLoad;
 }
 
 /**
@@ -232,6 +235,7 @@ export function buildDefaultMetadata(imageInfo: ImageInfo): Record<string, unkno
     y: imageInfo.physicalPixelSize.y + imageInfo.spatialUnit,
     z: imageInfo.physicalPixelSize.z + imageInfo.spatialUnit,
   };
+  metadata["Multiresolution levels"] = imageInfo.multiscaleLevelDims;
   metadata["Channels"] = imageInfo.numChannels;
   metadata["Time series frames"] = imageInfo.times || 1;
   // don't add User data if it's empty

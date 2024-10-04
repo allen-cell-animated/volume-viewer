@@ -11,7 +11,7 @@ import type { NumberType, TypedArray } from "./types.js";
 export type ImageInfo = Readonly<{
   name: string;
 
-  /** XY size of the *original* (not downsampled) volume, in pixels */
+  /** XYZ size of the *original* (not downsampled) volume, in pixels */
   originalSize: Vector3;
   /**
    * XY dimensions of the texture atlas used by `RayMarchedAtlasVolume` and `Atlas2DSlice`, in number of z-slice
@@ -60,6 +60,9 @@ export type ImageInfo = Readonly<{
 
   /** Number of scale levels available for this volume */
   numMultiscaleLevels: number;
+  /** Dimensions of each scale level, at original size, from the first data source */
+  // TODO THIS DATA IS SOMEWHAT REDUNDANT WITH SOME OF THE OTHER FIELDS IN HERE
+  multiscaleLevelDims: VolumeDims[];
   /** The scale level from which this image was loaded, between `0` and `numMultiscaleLevels-1` */
   multiscaleLevel: number;
 
@@ -91,6 +94,15 @@ export const getDefaultImageInfo = (): ImageInfo => ({
   timeUnit: "",
   numMultiscaleLevels: 1,
   multiscaleLevel: 0,
+  multiscaleLevelDims: [
+    {
+      shape: [1, 1, 1, 1, 1],
+      spacing: [1, 1, 1, 1, 1],
+      spaceUnit: "",
+      timeUnit: "",
+      dataType: "uint8",
+    },
+  ],
   transform: {
     translation: new Vector3(0, 0, 0),
     rotation: new Vector3(0, 0, 0),
@@ -261,6 +273,7 @@ export default class Volume {
   /** Returns `true` iff differences between `loadSpec` and `loadSpecRequired` indicate new data *must* be loaded. */
   private mustLoadNewData(): boolean {
     return (
+      this.loadSpec.useExplicitLevel !== this.loadSpecRequired.useExplicitLevel || // explicit vs automatic level changed
       this.loadSpec.time !== this.loadSpecRequired.time || // time point changed
       !this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion) || // new subregion not contained in old
       this.loadSpecRequired.channels.some((channel) => !this.loadSpec.channels.includes(channel)) // new channel(s)

@@ -1,4 +1,5 @@
 import { deserializeError } from "serialize-error";
+import throttledQueue from "throttled-queue";
 
 import { ImageInfo } from "../Volume.js";
 import { CreateLoaderOptions, PrefetchDirection, VolumeFileFormat, pathToFileType } from "../loaders/index.js";
@@ -19,6 +20,7 @@ import type {
   ChannelLoadEvent,
   MetadataUpdateEvent,
 } from "./types.js";
+import type { ZarrLoaderFetchOptions } from "../loaders/OmeZarrLoader.js";
 import { WorkerMsgType, WorkerResponseResult, WorkerEventType } from "./types.js";
 import { rebuildImageInfo, rebuildLoadSpec } from "./util.js";
 
@@ -28,6 +30,7 @@ type StoredPromise<T extends WorkerMsgType> = {
   reject: (reason?: unknown) => void;
 };
 
+const throttle = throttledQueue(1, 16);
 /**
  * A handle that holds the worker and manages requests and messages to/from it.
  *
@@ -43,6 +46,7 @@ class SharedLoadWorkerHandle {
   private worker: Worker;
   private pendingRequests: (StoredPromise<WorkerMsgType> | undefined)[] = [];
   private workerOpen = true;
+  private throttleChannelData = false;
 
   public onChannelData: ((e: ChannelLoadEvent) => void) | undefined = undefined;
   public onUpdateMetadata: ((e: MetadataUpdateEvent) => void) | undefined = undefined;
@@ -94,7 +98,13 @@ class SharedLoadWorkerHandle {
   private receiveMessage<T extends WorkerMsgType>({ data }: MessageEvent<WorkerResponse<T>>): void {
     if (data.responseResult === WorkerResponseResult.EVENT) {
       if (data.eventType === WorkerEventType.CHANNEL_LOAD) {
-        this.onChannelData?.(data);
+        if (this.onChannelData) {
+          if (this.throttleChannelData) {
+            throttle(() => (this.onChannelData ? this.onChannelData(data) : {}));
+          } else {
+            this.onChannelData ? this.onChannelData(data) : {};
+          }
+        }
       } else if (data.eventType === WorkerEventType.METADATA_UPDATE) {
         this.onUpdateMetadata?.(data);
       }
@@ -115,6 +125,10 @@ class SharedLoadWorkerHandle {
       }
       this.pendingRequests[data.msgId] = undefined;
     }
+  }
+
+  setThrottleChannelData(throttle: boolean): void {
+    this.throttleChannelData = throttle;
   }
 }
 
@@ -193,6 +207,14 @@ class VolumeLoaderContext {
     this.activeLoader = new WorkerLoader(this.activeLoaderId, this.workerHandle);
     return this.activeLoader;
   }
+
+  setThrottleChannelData(throttle: boolean): void {
+    this.workerHandle.setThrottleChannelData(throttle);
+  }
+
+  getActiveLoader(): WorkerLoader | undefined {
+    return this.activeLoader;
+  }
 }
 
 /**
@@ -229,6 +251,10 @@ class WorkerLoader extends ThreadableVolumeLoader {
    */
   setPrefetchPriority(directions: PrefetchDirection[]): Promise<void> {
     return this.workerHandle.sendMessage(WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, directions);
+  }
+
+  updateFetchOptions(fetchOptions: Partial<ZarrLoaderFetchOptions>): Promise<void> {
+    return this.workerHandle.sendMessage(WorkerMsgType.UPDATE_FETCH_OPTIONS, fetchOptions);
   }
 
   syncMultichannelLoading(sync: boolean): Promise<void> {

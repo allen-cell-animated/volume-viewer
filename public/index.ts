@@ -1080,6 +1080,9 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
 }
 
 async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<void> {
+  const fullDims = await loader.loadDims(loadSpec);
+  console.log(fullDims);
+
   const volume = await loader.createVolume(loadSpec, onChannelDataArrived);
   onVolumeCreated(volume);
   loader.loadVolumeData(volume);
@@ -1123,6 +1126,7 @@ function main() {
     return;
   }
   view3D = new View3d({ parentElement: el });
+  view3D.loaderContext = loaderContext;
 
   const testDataSelect = document.getElementById("testData");
   testDataSelect?.addEventListener("change", ({ currentTarget }) => {

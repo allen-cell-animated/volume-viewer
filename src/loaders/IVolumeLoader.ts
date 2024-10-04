@@ -4,6 +4,7 @@ import Volume, { ImageInfo } from "../Volume.js";
 import { TypedArray, NumberType } from "../types.js";
 import { buildDefaultMetadata } from "./VolumeLoaderUtils.js";
 import { PrefetchDirection } from "./zarr_utils/types.js";
+import { ZarrLoaderFetchOptions } from "./OmeZarrLoader.js";
 
 export class LoadSpec {
   time = 0;
@@ -19,6 +20,11 @@ export class LoadSpec {
   /** Subregion of volume to load. If not specified, the entire volume is loaded. Specify as floats between 0-1. */
   subregion = new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
   channels?: number[];
+  /** Treat multiscaleLevel literally and don't use other constraints to change it.
+   * By default we will try to load the best level based on the maxAtlasEdge and scaleLevelBias,
+   * so this is false.
+   */
+  useExplicitLevel = false;
 }
 
 export function loadSpecToString(spec: LoadSpec): string {
@@ -149,6 +155,10 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
   syncMultichannelLoading(_sync: boolean): void {
     // default behavior is async, to update channels as they arrive, depending on each
     // loader's implementation details.
+  }
+
+  updateFetchOptions(_options: Partial<ZarrLoaderFetchOptions>): void {
+    // no-op by default
   }
 
   async createVolume(loadSpec: LoadSpec, onChannelLoaded?: PerChannelCallback): Promise<Volume> {

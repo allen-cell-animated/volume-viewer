@@ -47,6 +47,15 @@ class OpenCellLoader extends ThreadableVolumeLoader {
 
       numMultiscaleLevels: 1,
       multiscaleLevel: 0,
+      multiscaleLevelDims: [
+        {
+          shape: [1, numChannels, 27, 600, 600],
+          spacing: [1, 1, 2, 1, 1],
+          spaceUnit: "µm",
+          timeUnit: "",
+          dataType: "uint8",
+        },
+      ],
 
       transform: {
         translation: new Vector3(0, 0, 0),
