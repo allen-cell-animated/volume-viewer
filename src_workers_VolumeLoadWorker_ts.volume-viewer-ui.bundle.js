@@ -12,9 +12,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ Channel)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
 /* harmony import */ var _Lut_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Lut.js */ "./src/Lut.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
+
 
 
 
@@ -22,8 +24,9 @@ __webpack_require__.r(__webpack_exports__);
 class Channel {
   constructor(name) {
     this.loaded = false;
+    this.dtype = "uint8";
     this.imgData = {
-      data: new Uint8ClampedArray(),
+      data: new Uint8Array(),
       width: 0,
       height: 0
     };
@@ -31,9 +34,9 @@ class Channel {
     this.rawMax = 255;
 
     // on gpu
-    this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_2__.DataTexture(new Uint8Array(), 0, 0);
-    this.lutTexture = new three__WEBPACK_IMPORTED_MODULE_2__.DataTexture(new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_1__.LUT_ARRAY_LENGTH), 256, 1, three__WEBPACK_IMPORTED_MODULE_2__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_2__.UnsignedByteType);
-    this.lutTexture.minFilter = this.lutTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_2__.LinearFilter;
+    this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(new Uint8Array(), 0, 0);
+    this.lutTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(new Uint8Array(_Lut_js__WEBPACK_IMPORTED_MODULE_1__.LUT_ARRAY_LENGTH), 256, 1, three__WEBPACK_IMPORTED_MODULE_3__.RGBAFormat, three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType);
+    this.lutTexture.minFilter = this.lutTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_3__.LinearFilter;
     this.lutTexture.generateMipmaps = false;
     this.volumeData = new Uint8Array();
     this.name = name;
@@ -96,6 +99,9 @@ class Channel {
   getIntensity(x, y, z) {
     return this.volumeData[x + y * this.dims[0] + z * (this.dims[0] * this.dims[1])];
   }
+  normalizeRaw(val) {
+    return (val - this.rawMin) / (this.rawMax - this.rawMin);
+  }
 
   // how to index into tiled texture atlas
   getIntensityFromAtlas(x, y, z) {
@@ -109,39 +115,81 @@ class Channel {
     if (this.dataTexture) {
       this.dataTexture.dispose();
     }
-    this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_2__.DataTexture(data, w, h);
-    this.dataTexture.format = three__WEBPACK_IMPORTED_MODULE_2__.RedFormat;
-    this.dataTexture.type = three__WEBPACK_IMPORTED_MODULE_2__.UnsignedByteType;
-    this.dataTexture.magFilter = three__WEBPACK_IMPORTED_MODULE_2__.NearestFilter;
-    this.dataTexture.minFilter = three__WEBPACK_IMPORTED_MODULE_2__.NearestFilter;
-    this.dataTexture.generateMipmaps = false;
+    let format = three__WEBPACK_IMPORTED_MODULE_3__.LuminanceFormat;
+    let dataType = three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType;
+    let internalFormat = "LUMINANCE";
+    switch (this.dtype) {
+      case "uint8":
+        dataType = three__WEBPACK_IMPORTED_MODULE_3__.UnsignedByteType;
+        format = three__WEBPACK_IMPORTED_MODULE_3__.RedIntegerFormat;
+        internalFormat = "R8UI";
+        break;
+      case "int8":
+        dataType = three__WEBPACK_IMPORTED_MODULE_3__.ByteType;
+        format = three__WEBPACK_IMPORTED_MODULE_3__.RedIntegerFormat;
+        internalFormat = "R8I";
+        break;
+      case "uint16":
+        dataType = three__WEBPACK_IMPORTED_MODULE_3__.UnsignedShortType;
+        format = three__WEBPACK_IMPORTED_MODULE_3__.RedIntegerFormat;
+        internalFormat = "R16UI";
+        break;
+      case "int16":
+        dataType = three__WEBPACK_IMPORTED_MODULE_3__.ShortType;
+        format = three__WEBPACK_IMPORTED_MODULE_3__.RedIntegerFormat;
+        internalFormat = "R16I";
+        break;
+      case "uint32":
+        dataType = three__WEBPACK_IMPORTED_MODULE_3__.UnsignedIntType;
+        format = three__WEBPACK_IMPORTED_MODULE_3__.RedIntegerFormat;
+        internalFormat = "R32UI";
+        break;
+      case "int32":
+        dataType = three__WEBPACK_IMPORTED_MODULE_3__.IntType;
+        format = three__WEBPACK_IMPORTED_MODULE_3__.RedIntegerFormat;
+        internalFormat = "R32I";
+        break;
+      case "float32":
+        dataType = three__WEBPACK_IMPORTED_MODULE_3__.FloatType;
+        format = three__WEBPACK_IMPORTED_MODULE_3__.RedFormat;
+        internalFormat = "R32F";
+        break;
+      default:
+        console.warn("unsupported dtype for channel data", this.dtype);
+        break;
+    }
+    this.dataTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(data, w, h, format, dataType, three__WEBPACK_IMPORTED_MODULE_3__.UVMapping, three__WEBPACK_IMPORTED_MODULE_3__.ClampToEdgeWrapping, three__WEBPACK_IMPORTED_MODULE_3__.ClampToEdgeWrapping, three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter, three__WEBPACK_IMPORTED_MODULE_3__.NearestFilter);
+    this.dataTexture.internalFormat = internalFormat;
     this.dataTexture.needsUpdate = true;
   }
 
   // give the channel fresh data and initialize from that data
   // data is formatted as a texture atlas where each tile is a z slice of the volume
-  setBits(bitsArray, w, h) {
+  setFromAtlas(bitsArray, w, h, dtype, rawMin, rawMax, subregionSize) {
+    this.dtype = dtype;
     this.imgData = {
-      data: new Uint8ClampedArray(bitsArray.buffer),
+      data: bitsArray,
       width: w,
       height: h
     };
     this.rebuildDataTexture(this.imgData.data, w, h);
     this.loaded = true;
     this.histogram = new _Histogram_js__WEBPACK_IMPORTED_MODULE_0__["default"](bitsArray);
-    const [hmin, hmax] = this.histogram.findAutoIJBins();
-    const lut = new _Lut_js__WEBPACK_IMPORTED_MODULE_1__.Lut().createFromMinMax(hmin, hmax);
-    this.setLut(lut);
+
+    // reuse old lut but auto-remap it to new data range
+    this.setRawDataRange(rawMin, rawMax);
+    this.unpackFromAtlas(subregionSize.x, subregionSize.y, subregionSize.z);
   }
 
   // let's rearrange this.imgData.data into a 3d array.
   // it is assumed to be coming in as a flat Uint8Array of size x*y*z
   // with x*y*z layout (first row of first plane is the first data in the layout,
   // then second row of first plane, etc)
-  unpackVolumeFromAtlas(x, y, z) {
+  unpackFromAtlas(x, y, z) {
     const volimgdata = this.imgData.data;
     this.dims = [x, y, z];
-    this.volumeData = new Uint8Array(x * y * z);
+    const ctor = _types_js__WEBPACK_IMPORTED_MODULE_2__.ARRAY_CONSTRUCTORS[this.dtype];
+    this.volumeData = new ctor(x * y * z);
     const numXtiles = this.imgData.width / x;
     const atlasrow = this.imgData.width;
     let tilex = 0,
@@ -163,9 +211,10 @@ class Channel {
   }
 
   // give the channel fresh volume data and initialize from that data
-  setFromVolumeData(bitsArray, vx, vy, vz, ax, ay, rawMin = 0, rawMax = 255) {
+  setFromVolumeData(bitsArray, vx, vy, vz, ax, ay, rawMin, rawMax, dtype) {
     this.dims = [vx, vy, vz];
     this.volumeData = bitsArray;
+    this.dtype = dtype;
     // TODO FIXME performance hit for shuffling the data and storing 2 versions of it (could do this in worker at least?)
     this.packToAtlas(vx, vy, vz, ax, ay);
     this.loaded = true;
@@ -186,10 +235,11 @@ class Channel {
       console.log("ERROR - atlas and volume dims are inconsistent");
       console.log(ax, ay, vx, vy, vz);
     }
+    const ctor = _types_js__WEBPACK_IMPORTED_MODULE_2__.ARRAY_CONSTRUCTORS[this.dtype];
     this.imgData = {
       width: ax,
       height: ay,
-      data: new Uint8ClampedArray(ax * ay)
+      data: new ctor(ax * ay)
     };
     this.imgData.data.fill(0);
 
@@ -244,40 +294,45 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ Histogram)
 /* harmony export */ });
+const NBINS = 256;
 /**
  * Builds a histogram with 256 bins from a data array. Assume data is 8 bit single channel grayscale.
  * @class
  * @param {Array.<number>} data
  */
 class Histogram {
+  // no more than 2^32 pixels of any one intensity in the data!?!?!
+
   constructor(data) {
-    // no more than 2^32 pixels of any one intensity in the data!?!?!
-    this.bins = new Uint32Array(256);
-    this.bins.fill(0);
-    this.dataMin = 255;
-    this.dataMax = 0;
+    this.dataMinBin = 0;
+    this.dataMaxBin = 0;
     this.maxBin = 0;
+    this.bins = new Uint32Array();
+    this.min = 0;
+    this.max = 0;
+    this.binSize = 0;
 
     // build up the histogram
-    for (let i = 0; i < data.length; ++i) {
-      this.bins[data[i]]++;
-    }
+    const hinfo = Histogram.calculateHistogram(data, NBINS);
+    this.bins = hinfo.bins;
+    this.min = hinfo.min;
+    this.max = hinfo.max;
+    this.binSize = hinfo.binSize;
+
     // track the first and last nonzero bins with at least 1 sample
     for (let i = 1; i < this.bins.length; i++) {
       if (this.bins[i] > 0) {
-        this.dataMin = i;
+        this.dataMinBin = i;
         break;
       }
     }
     for (let i = this.bins.length - 1; i >= 1; i--) {
       if (this.bins[i] > 0) {
-        this.dataMax = i;
+        this.dataMaxBin = i;
         break;
       }
     }
-
-    // total number of pixels minus the number of zero pixels
-    this.nonzeroPixelCount = data.length - this.bins[0];
+    this.pixelCount = data.length;
 
     // get the bin with the most frequently occurring NONZERO value
     this.maxBin = 1;
@@ -290,12 +345,33 @@ class Histogram {
     }
   }
 
+  // return the bin index of the given data value
+  static findBin(dataValue, dataMin, binSize, numBins) {
+    let binIndex = Math.floor((dataValue - dataMin) / binSize);
+    // for values that lie exactly on last bin we need to subtract one
+    if (binIndex === numBins) {
+      binIndex--;
+    }
+    return binIndex;
+  }
+
+  // return the bin index of the given data value
+  findBinOfValue(value) {
+    return Histogram.findBin(value, this.min, this.binSize, NBINS);
+  }
+  getDataMin() {
+    return this.min;
+  }
+  getDataMax() {
+    return this.max;
+  }
+
   /**
    * Return the min data value
    * @return {number}
    */
   getMin() {
-    return this.dataMin;
+    return this.dataMinBin;
   }
 
   /**
@@ -303,13 +379,16 @@ class Histogram {
    * @return {number}
    */
   getMax() {
-    return this.dataMax;
+    return this.dataMaxBin;
   }
   getNumBins() {
     return this.bins.length;
   }
   getBin(i) {
     return this.bins[i];
+  }
+  getBinRange(i) {
+    return [this.min + i * this.binSize, this.min + (i + 1) * this.binSize];
   }
 
   /**
@@ -318,8 +397,7 @@ class Histogram {
    * @param {number} pct
    */
   findBinOfPercentile(pct) {
-    const pixcount = this.nonzeroPixelCount + this.bins[0];
-    const limit = pixcount * pct;
+    const limit = this.pixelCount * pct;
     let i = 0;
     let count = 0;
     for (i = 0; i < this.bins.length; ++i) {
@@ -333,7 +411,7 @@ class Histogram {
 
   // Find bins at 10th / 90th percentile
   findBestFitBins() {
-    const pixcount = this.nonzeroPixelCount;
+    const pixcount = this.pixelCount;
     //const pixcount = this.imgData.data.length;
     const limit = pixcount / 10;
     let i = 0;
@@ -358,8 +436,10 @@ class Histogram {
 
   // Find min and max bins attempting to replicate ImageJ's "Auto" button
   findAutoIJBins() {
+    // note that consecutive applications of this should modify the auto threshold. see:
+    // https://github.com/imagej/ImageJ/blob/7746fcb0f5744a7a7758244c5dcd2193459e6e0e/ij/plugin/frame/ContrastAdjuster.java#L816
     const AUTO_THRESHOLD = 5000;
-    const pixcount = this.nonzeroPixelCount;
+    const pixcount = this.pixelCount;
     //  const pixcount = this.imgData.data.length;
     const limit = pixcount / 10;
     const threshold = pixcount / AUTO_THRESHOLD;
@@ -407,6 +487,39 @@ class Histogram {
       }
     }
     return [b, e];
+  }
+  static calculateHistogram(arr, numBins = 1) {
+    if (numBins < 1) {
+      numBins = 1;
+    }
+
+    // calculate min and max of arr
+    // TODO See convertChannel, which will also compute min and max!
+    // We could save a whole extra loop over the data, or have convertChannel compute the whole histogram.
+    // need to be careful about computing over chunks or whole ready-to-display volume
+
+    let min = arr[0];
+    let max = arr[0];
+    for (let i = 1; i < arr.length; i++) {
+      if (arr[i] < min) {
+        min = arr[i];
+      } else if (arr[i] > max) {
+        max = arr[i];
+      }
+    }
+    const bins = new Uint32Array(numBins).fill(0);
+    const binSize = (max - min) / numBins === 0 ? 1 : (max - min) / numBins;
+    for (let i = 0; i < arr.length; i++) {
+      const item = arr[i];
+      const binIndex = Histogram.findBin(item, min, binSize, numBins);
+      bins[binIndex]++;
+    }
+    return {
+      bins,
+      min,
+      max,
+      binSize
+    };
   }
 }
 
@@ -471,10 +584,80 @@ function remapDomainForCP(value, valueMin, valueMax, oldMin, oldMax, newMin, new
 const LUT_ENTRIES = 256;
 const LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
 
+// @param {ControlPoint[]} controlPoints - array of {x:number 0..255, opacity:number 0..1, color:array of 3 numbers 0..255}
+// @return {Uint8Array} array of length len*4 representing the rgba values of the gradient
+function arrayFromControlPoints(controlPoints) {
+  // current assumption is that control point X values are in the range 0-255
+  // and they will be used directly as indices into the LUT.
+  // therefore the lut must have 256 entries.  Anything else and we have to remap the control points.
+  // TODO allow luts that have more or less entries.
+  const len = LUT_ENTRIES;
+  const lut = new Uint8Array(len * 4).fill(0);
+  if (controlPoints.length === 0) {
+    return lut;
+  }
+
+  // ensure they are sorted in ascending order of x
+  controlPoints.sort((a, b) => a.x - b.x);
+
+  // special case only one control point.
+  if (controlPoints.length === 1) {
+    const rgba = controlPointToRGBA(controlPoints[0]);
+    // lut was already filled with zeros
+    // copy val from x to 255.
+    const startx = clamp(controlPoints[0].x, 0, 255);
+    for (let x = startx; x < len; ++x) {
+      lut[x * 4 + 0] = rgba[0];
+      lut[x * 4 + 1] = rgba[1];
+      lut[x * 4 + 2] = rgba[2];
+      lut[x * 4 + 3] = rgba[3];
+    }
+    return lut;
+  }
+  let c0 = controlPoints[0];
+  let c1 = controlPoints[1];
+  let color0 = controlPointToRGBA(c0);
+  let color1 = controlPointToRGBA(c1);
+  let lastIndex = 1;
+  let a = 0;
+  for (let i = 0; i < len; ++i) {
+    // find the two control points that i is between
+    while (i > c1.x) {
+      // advance control points
+      c0 = c1;
+      color0 = color1;
+      lastIndex++;
+      if (lastIndex >= controlPoints.length) {
+        // if the last control point is before 255, then we want to continue its value all the way to 255.
+        c1 = {
+          x: 255,
+          color: c1.color,
+          opacity: c1.opacity
+        };
+      } else {
+        c1 = controlPoints[lastIndex];
+      }
+      color1 = controlPointToRGBA(c1);
+    }
+    // find the lerp amount between the two control points
+    if (c1.x === c0.x) {
+      // use c1
+      a = 1.0;
+    } else {
+      a = (i - c0.x) / (c1.x - c0.x);
+    }
+    lut[i * 4 + 0] = clamp(lerp(color0[0], color1[0], a), 0, 255);
+    lut[i * 4 + 1] = clamp(lerp(color0[1], color1[1], a), 0, 255);
+    lut[i * 4 + 2] = clamp(lerp(color0[2], color1[2], a), 0, 255);
+    lut[i * 4 + 3] = clamp(lerp(color0[3], color1[3], a), 0, 255);
+  }
+  return lut;
+}
+
 /**
  * @typedef {Object} ControlPoint Used for the TF (transfer function) editor GUI.
  * Need to be converted to LUT for rendering.
- * @property {number} x The X Coordinate
+ * @property {number} x The X Coordinate: an intensity value, normalized to the 0-255 range
  * @property {number} opacity The Opacity, from 0 to 1
  * @property {Array.<number>} color The Color, 3 numbers from 0-255 for r,g,b
  */
@@ -482,6 +665,9 @@ const LUT_ARRAY_LENGTH = LUT_ENTRIES * 4;
 function controlPointToRGBA(controlPoint) {
   return [controlPoint.color[0], controlPoint.color[1], controlPoint.color[2], Math.floor(controlPoint.opacity * 255)];
 }
+
+// the intensity range will be 0-255,
+// which currently represents the range of the raw data. (not the dtype range)
 const createFullRangeControlPoints = (opacityMin = 0, opacityMax = 1) => [{
   x: 0,
   opacity: opacityMin,
@@ -493,7 +679,7 @@ const createFullRangeControlPoints = (opacityMin = 0, opacityMax = 1) => [{
 }];
 
 /**
- * @typedef {Object} Lut Used for rendering.
+ * @typedef {Object} Lut Used for rendering. The start and end of the Lut represent the min and max of the data.
  * @property {Array.<number>} lut LUT_ARRAY_LENGTH element lookup table as array
  * (maps scalar intensity to a rgb color plus alpha, with each value from 0-255)
  * @property {Array.<ControlPoint>} controlPoints
@@ -528,35 +714,15 @@ class Lut {
       e = b;
       b = tmp;
     }
-    const lut = new Uint8Array(LUT_ARRAY_LENGTH);
-    for (let x = 0; x < lut.length / 4; ++x) {
-      lut[x * 4 + 0] = 255;
-      lut[x * 4 + 1] = 255;
-      lut[x * 4 + 2] = 255;
-      if (x > e) {
-        lut[x * 4 + 3] = 255;
-      } else if (x <= b) {
-        lut[x * 4 + 3] = 0;
-      } else {
-        if (e === b) {
-          lut[x * 4 + 3] = 255;
-        } else {
-          const a = (x - b) / (e - b);
-          lut[x * 4 + 3] = lerp(0, 255, a);
-        }
-      }
-    }
 
     // Edge case: b and e are both out of bounds
     if (b < 0 && e < 0) {
-      this.lut = lut;
       this.controlPoints = createFullRangeControlPoints(1, 1);
-      return this;
+      return this.createFromControlPoints(this.controlPoints);
     }
     if (b >= 255 && e >= 255) {
-      this.lut = lut;
       this.controlPoints = createFullRangeControlPoints(0, 0);
-      return this;
+      return this.createFromControlPoints(this.controlPoints);
     }
 
     // Generate 2 to 4 control points for a minMax LUT, from left to right
@@ -610,25 +776,13 @@ class Lut {
       opacity: endVal,
       color: [255, 255, 255]
     });
-    this.lut = lut;
-    this.controlPoints = controlPoints;
-    return this;
+    return this.createFromControlPoints(controlPoints);
   }
 
   // basically, the identity LUT with respect to opacity
   createFullRange() {
-    const lut = new Uint8Array(LUT_ARRAY_LENGTH);
-
-    // simple linear mapping for actual range
-    for (let x = 0; x < lut.length / 4; ++x) {
-      lut[x * 4 + 0] = 255;
-      lut[x * 4 + 1] = 255;
-      lut[x * 4 + 2] = 255;
-      lut[x * 4 + 3] = x;
-    }
-    this.lut = lut;
     this.controlPoints = createFullRangeControlPoints();
-    return this;
+    return this.createFromControlPoints(this.controlPoints);
   }
 
   /**
@@ -647,70 +801,7 @@ class Lut {
   // @param {Object[]} controlPoints - array of {x:number 0..255, opacity:number 0..1, color:array of 3 numbers 0..255}
   // @return {Uint8Array} array of length 256*4 representing the rgba values of the gradient
   createFromControlPoints(controlPoints) {
-    const lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
-    if (controlPoints.length === 0) {
-      this.lut = lut;
-      this.controlPoints = controlPoints;
-      return this;
-    }
-
-    // ensure they are sorted in ascending order of x
-    controlPoints.sort((a, b) => a.x - b.x);
-
-    // special case only one control point.
-    if (controlPoints.length === 1) {
-      const rgba = controlPointToRGBA(controlPoints[0]);
-      // lut was already filled with zeros
-      // copy val from x to 255.
-      const startx = clamp(controlPoints[0].x, 0, 255);
-      for (let x = startx; x < 256; ++x) {
-        lut[x * 4 + 0] = rgba[0];
-        lut[x * 4 + 1] = rgba[1];
-        lut[x * 4 + 2] = rgba[2];
-        lut[x * 4 + 3] = rgba[3];
-      }
-      this.lut = lut;
-      this.controlPoints = controlPoints;
-      return this;
-    }
-    let c0 = controlPoints[0];
-    let c1 = controlPoints[1];
-    let color0 = controlPointToRGBA(c0);
-    let color1 = controlPointToRGBA(c1);
-    let lastIndex = 1;
-    let a = 0;
-    for (let i = 0; i < 256; ++i) {
-      // find the two control points that i is between
-      while (i > c1.x) {
-        // advance control points
-        c0 = c1;
-        color0 = color1;
-        lastIndex++;
-        if (lastIndex >= controlPoints.length) {
-          // if the last control point is before 255, then we want to continue its value all the way to 255.
-          c1 = {
-            x: 255,
-            color: c1.color,
-            opacity: c1.opacity
-          };
-        } else {
-          c1 = controlPoints[lastIndex];
-        }
-        color1 = controlPointToRGBA(c1);
-      }
-      // find the lerp amount between the two control points
-      if (c1.x === c0.x) {
-        // use c1
-        a = 1.0;
-      } else {
-        a = (i - c0.x) / (c1.x - c0.x);
-      }
-      lut[i * 4 + 0] = clamp(lerp(color0[0], color1[0], a), 0, 255);
-      lut[i * 4 + 1] = clamp(lerp(color0[1], color1[1], a), 0, 255);
-      lut[i * 4 + 2] = clamp(lerp(color0[2], color1[2], a), 0, 255);
-      lut[i * 4 + 3] = clamp(lerp(color0[3], color1[3], a), 0, 255);
-    }
-    this.lut = lut;
+    this.lut = arrayFromControlPoints(controlPoints);
     this.controlPoints = controlPoints;
     return this;
   }
@@ -720,6 +811,8 @@ class Lut {
    * @return {Lut}
    */
   createFromEqHistogram(histogram) {
+    // TODO need to reconcile this if number of histogram bins is not equal to LUT_ENTRIES?
+
     const map = [];
     for (let i = 0; i < histogram.getNumBins(); ++i) {
       map[i] = 0;
@@ -732,29 +825,19 @@ class Lut {
     }
     const div = map[map.length - 1] - map[0];
     if (div > 0) {
-      const lut = new Uint8Array(LUT_ARRAY_LENGTH);
-
       // compute lut and track control points for the piecewise linear sections
       const lutControlPoints = [{
         x: 0,
         opacity: 0,
         color: [255, 255, 255]
       }];
-      lut[0] = 255;
-      lut[1] = 255;
-      lut[2] = 255;
-      lut[3] = 0;
       let slope = 0;
       let lastSlope = 0;
       let opacity = 0;
       let lastOpacity = 0;
-      for (let i = 1; i < lut.length / 4; ++i) {
-        lut[i * 4 + 0] = 255;
-        lut[i * 4 + 1] = 255;
-        lut[i * 4 + 2] = 255;
+      for (let i = 1; i < LUT_ENTRIES; ++i) {
         lastOpacity = opacity;
         opacity = clamp(Math.round(255 * (map[i] - map[0])), 0, 255);
-        lut[i * 4 + 3] = opacity;
         slope = opacity - lastOpacity;
         // if map[i]-map[i-1] is the same as map[i+1]-map[i] then we are in a linear segment and do not need a new control point
         if (slope != lastSlope) {
@@ -771,9 +854,7 @@ class Lut {
         opacity: 1,
         color: [255, 255, 255]
       });
-      this.lut = lut;
-      this.controlPoints = lutControlPoints;
-      return this;
+      return this.createFromControlPoints(lutControlPoints);
     } else {
       // just reset to whole range in this case...?
       return this.createFullRange();
@@ -783,11 +864,13 @@ class Lut {
   /**
    * Generate a lookup table with a different color per intensity value.
    * This translates to a unique color per histogram bin with more than zero pixels.
+   * TODO THIS IS NOT THE EFFECT WE WANT.  Colorize should operate on actual data values, not histogram bins.
    * @return {Lut}
    */
   createLabelColors(histogram) {
     const lut = new Uint8Array(LUT_ARRAY_LENGTH).fill(0);
     const controlPoints = [];
+    // assume zero is No Label
     controlPoints.push({
       x: 0,
       opacity: 0,
@@ -802,11 +885,11 @@ class Lut {
     let b = 0;
     let a = 0;
 
-    // assumes exactly one bin per intensity value?
-    // skip zero!!!
-    for (let i = 1; i < histogram.getNumBins(); ++i) {
-      if (histogram.getBin(i) > 0) {
-        const rgb = (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_0__.getColorByChannelIndex)(i);
+    // assumes exactly one color per bin
+    for (let i = 1; i < LUT_ENTRIES; ++i) {
+      const ibin = Math.floor(i / (LUT_ENTRIES - 1) * (histogram.getNumBins() - 1));
+      if (histogram.getBin(ibin) > 0) {
+        const rgb = (0,_constants_colors_js__WEBPACK_IMPORTED_MODULE_0__.getColorByChannelIndex)(ibin);
         lut[i * 4 + 0] = rgb[0];
         lut[i * 4 + 1] = rgb[1];
         lut[i * 4 + 2] = rgb[2];
@@ -821,6 +904,7 @@ class Lut {
         g = 0;
         b = 0;
         a = 0;
+        // lut was initialized to 0 so no need to set it here.
       }
       // if current control point is same as last one don't add it
       if (r !== lastr || g !== lastg || b !== lastb || a !== lasta) {
@@ -1248,14 +1332,8 @@ class Volume {
    * @param {number} atlaswidth
    * @param {number} atlasheight
    */
-  setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight) {
-    this.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight);
-    const {
-      x,
-      y,
-      z
-    } = this.imageInfo.subregionSize;
-    this.channels[channelIndex].unpackVolumeFromAtlas(x, y, z);
+  setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight, range, dtype = "uint8") {
+    this.channels[channelIndex].setFromAtlas(atlasdata, atlaswidth, atlasheight, dtype, range[0], range[1], this.imageInfo.subregionSize);
     this.onChannelLoaded([channelIndex]);
   }
 
@@ -1265,12 +1343,12 @@ class Volume {
    * @param {number} channelIndex
    * @param {Uint8Array} volumeData
    */
-  setChannelDataFromVolume(channelIndex, volumeData, range) {
+  setChannelDataFromVolume(channelIndex, volumeData, range, dtype = "uint8") {
     const {
       subregionSize,
       atlasTileDims
     } = this.imageInfo;
-    this.channels[channelIndex].setFromVolumeData(volumeData, subregionSize.x, subregionSize.y, subregionSize.z, atlasTileDims.x * subregionSize.x, atlasTileDims.y * subregionSize.y, range[0], range[1]);
+    this.channels[channelIndex].setFromVolumeData(volumeData, subregionSize.x, subregionSize.y, subregionSize.z, atlasTileDims.x * subregionSize.x, atlasTileDims.y * subregionSize.y, range[0], range[1], dtype);
     this.onChannelLoaded([channelIndex]);
   }
 
@@ -1700,7 +1778,8 @@ class VolumeDims {
 /**
  * @callback RawChannelDataCallback - allow lists of channel indices and data arrays to be passed to the callback
  * @param {number[]} channelIndex - The indices of the channels that were loaded
- * @param {Uint8Array[]} data - The raw data for each channel (renormalized to 0-255 range)
+ * @param {NumberType[]} dtype - The data type of the data arrays
+ * @param {TypedArray<NumberType>[]} data - The raw data for each channel
  * @param {[number, number][]} ranges - The min and max values for each channel in their original range
  * @param {[number, number]} atlasDims - The dimensions of the atlas, if the data is in an atlas format
  */
@@ -1765,15 +1844,16 @@ class ThreadableVolumeLoader {
         ...spec
       };
     };
-    const onChannelData = (channelIndices, dataArrays, ranges, atlasDims) => {
+    const onChannelData = (channelIndices, dtypes, dataArrays, ranges, atlasDims) => {
       for (let i = 0; i < channelIndices.length; i++) {
         const channelIndex = channelIndices[i];
+        const dtype = dtypes[i];
         const data = dataArrays[i];
         const range = ranges[i];
         if (atlasDims) {
-          volume.setChannelDataFromAtlas(channelIndex, data, atlasDims[0], atlasDims[1]);
+          volume.setChannelDataFromAtlas(channelIndex, data, atlasDims[0], atlasDims[1], range, dtype);
         } else {
-          volume.setChannelDataFromVolume(channelIndex, data, range);
+          volume.setChannelDataFromVolume(channelIndex, data, range, dtype);
         }
         onChannelLoaded?.(volume, channelIndex);
       }
@@ -1911,7 +1991,7 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
     onUpdateMetadata(undefined, adjustedLoadSpec);
     const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
     const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
-    const wrappedOnData = (ch, data, ranges) => onData(ch, data, ranges, [w, h]);
+    const wrappedOnData = (ch, dtype, data, ranges) => onData(ch, dtype, data, ranges, [w, h]);
     await JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
   }
 
@@ -1942,7 +2022,7 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
         const cacheResult = cache?.get(`${image.name}/${chindex}`);
         if (cacheResult) {
           // all data coming from this loader is natively 8-bit
-          onData([chindex], [new Uint8Array(cacheResult)], [_types_js__WEBPACK_IMPORTED_MODULE_1__.DATARANGE_UINT8]);
+          onData([chindex], ["uint8"], [new Uint8Array(cacheResult)], [_types_js__WEBPACK_IMPORTED_MODULE_1__.DATARANGE_UINT8]);
         } else {
           cacheHit = false;
           // we can stop checking because we know we are going to have to fetch the whole batch
@@ -1992,7 +2072,7 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
         cache?.insert(`${image.name}/${chindex}`, channelsBits[ch]);
         // NOTE: the atlas dimensions passed in here are currently unused by `JSONImageInfoLoader`
         // all data coming from this loader is natively 8-bit
-        onData([chindex], [channelsBits[ch]], [_types_js__WEBPACK_IMPORTED_MODULE_1__.DATARANGE_UINT8], [bitmap.width, bitmap.height]);
+        onData([chindex], ["uint8"], [channelsBits[ch]], [_types_js__WEBPACK_IMPORTED_MODULE_1__.DATARANGE_UINT8], [bitmap.width, bitmap.height]);
       }
     });
     await Promise.all(imagePromises);
@@ -2043,9 +2123,10 @@ __webpack_require__.r(__webpack_exports__);
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
-// returns the converted data and the original min and max values (which have been remapped to 0 and 255)
-function convertChannel(channelData) {
+// returns the converted data and the original min and max values
+function convertChannel(channelData, dtype) {
   // get min and max
+  // TODO FIXME Histogram will also compute min and max!
   let min = channelData[0];
   let max = channelData[0];
   for (let i = 0; i < channelData.length; i++) {
@@ -2057,17 +2138,21 @@ function convertChannel(channelData) {
       max = val;
     }
   }
-  if (channelData instanceof Uint8Array) {
-    return [channelData, min, max];
+  if (dtype === "float64") {
+    // convert to float32
+    const f32 = new Float32Array(channelData.length);
+    for (let i = 0; i < channelData.length; i++) {
+      f32[i] = channelData[i];
+    }
+    dtype = "float32";
+    channelData = f32;
   }
-
-  // normalize and convert to u8
-  const u8 = new Uint8Array(channelData.length);
-  const range = max - min;
-  for (let i = 0; i < channelData.length; i++) {
-    u8[i] = (channelData[i] - min) / range * 255;
-  }
-  return [u8, min, max];
+  return {
+    data: channelData,
+    dtype,
+    min,
+    max
+  };
 }
 const DEFAULT_FETCH_OPTIONS = {
   maxPrefetchDistance: [5, 5, 5, 5],
@@ -2314,7 +2399,7 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
     // for physicalPixelSize, we use the scale of the first level
     const scale5d = this.getScale(0);
     // assume that ImageInfo wants the timeScale of level 0
-    const timeScale = hasT ? scale5d[t] : 1;
+    const timeScale = hasT ? scale5d[0] : 1;
     const imgdata = {
       name: source0.omeroMetadata?.name || "Volume",
       originalSize: pxSize0,
@@ -2322,7 +2407,7 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
       volumeSize: pxSizeLv,
       subregionSize: pxSizeLv.clone(),
       subregionOffset: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0),
-      physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(scale5d[x], scale5d[y], hasZ ? scale5d[z] : Math.min(scale5d[x], scale5d[y])),
+      physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(scale5d[4], scale5d[3], hasZ ? scale5d[2] : Math.min(scale5d[4], scale5d[3])),
       spatialUnit,
       numChannels,
       channelNames,
@@ -2466,6 +2551,7 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
     };
     const resultChannelIndices = [];
     const resultChannelData = [];
+    const resultChannelDtype = [];
     const resultChannelRanges = [];
     const channelPromises = channelIndexes.map(async ch => {
       // Build slice spec
@@ -2488,13 +2574,14 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
       if (result?.data === undefined) {
         return;
       }
-      const converted = convertChannel(result.data);
+      const converted = convertChannel(result.data, level.dtype);
       if (syncChannels) {
-        resultChannelData.push(converted[0]);
+        resultChannelDtype.push(converted.dtype);
+        resultChannelData.push(converted.data);
         resultChannelIndices.push(ch);
-        resultChannelRanges.push([converted[1], converted[2]]);
+        resultChannelRanges.push([converted.min, converted.max]);
       } else {
-        onData([ch], [converted[0]], [[converted[1], converted[2]]]);
+        onData([ch], [converted.dtype], [converted.data], [[converted.min, converted.max]]);
       }
     });
 
@@ -2506,7 +2593,7 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
     this.beginPrefetch(keys, multiscaleLevel);
     await Promise.all(channelPromises);
     if (syncChannels) {
-      onData(resultChannelIndices, resultChannelData, resultChannelRanges);
+      onData(resultChannelIndices, resultChannelDtype, resultChannelData, resultChannelRanges);
     }
     this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
   }
@@ -2609,7 +2696,7 @@ class RawArrayLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Thre
       const volSizeBytes = this.data.shape[3] * this.data.shape[2] * this.data.shape[1]; // x*y*z pixels * 1 byte/pixel
       const channelData = new Uint8Array(this.data.buffer.buffer, chindex * volSizeBytes, volSizeBytes);
       // all data coming from this loader is natively 8-bit
-      onData([chindex], [channelData], [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8]);
+      onData([chindex], ["uint8"], [channelData], [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8]);
     }
     return Promise.resolve();
   }
@@ -2808,10 +2895,11 @@ class TiffLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Threadab
           }
           const {
             data,
+            dtype,
             channel,
             range
           } = e.data;
-          onData([channel], [data], [range]);
+          onData([channel], [dtype], [data], [range]);
           worker.terminate();
           resolve();
         };
@@ -2880,6 +2968,7 @@ function wrapVolumeLoadError(message = "Unknown error occurred while loading vol
     if (e instanceof VolumeLoadError) {
       throw e;
     }
+    console.log(`Error loading volume data: ${e}`);
     throw new VolumeLoadError(message, {
       type,
       cause: e
@@ -3764,6 +3853,7 @@ function validateOMEZarrMetadata(data, multiscaleIdx = 0, name = "zarr") {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   ARRAY_CONSTRUCTORS: () => (/* binding */ ARRAY_CONSTRUCTORS),
 /* harmony export */   DATARANGE_UINT8: () => (/* binding */ DATARANGE_UINT8),
 /* harmony export */   FUSE_DISABLED_RGB_COLOR: () => (/* binding */ FUSE_DISABLED_RGB_COLOR),
 /* harmony export */   RenderMode: () => (/* binding */ RenderMode),
@@ -3773,6 +3863,21 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   isRight: () => (/* binding */ isRight),
 /* harmony export */   isTop: () => (/* binding */ isTop)
 /* harmony export */ });
+// numeric types compatible with zarrita.js.
+// see https://github.com/manzt/zarrita.js/blob/main/packages/core/src/metadata.ts
+
+const ARRAY_CONSTRUCTORS = {
+  int8: Int8Array,
+  int16: Int16Array,
+  int32: Int32Array,
+  int64: globalThis.BigInt64Array,
+  uint8: Uint8Array,
+  uint16: Uint16Array,
+  uint32: Uint32Array,
+  uint64: globalThis.BigUint64Array,
+  float32: Float32Array,
+  float64: Float64Array
+};
 /** If `FuseChannel.rgbColor` is this value, it is disabled from fusion. */
 const FUSE_DISABLED_RGB_COLOR = 0;
 
@@ -4222,10 +4327,6 @@ class SubscribableRequestQueue {
     if (!subscriber) {
       throw new Error(`SubscribableRequestQueue: subscriber id ${subscriberId} has been removed`);
     }
-    const existingRequest = subscriber.get(key);
-    if (existingRequest) {
-      this.rejectSubscription(key, existingRequest, "SubscribableRequestQueue: request re-queued while running");
-    }
 
     // Create promise and add to list of requests
     return new Promise((resolve, reject) => {
@@ -4234,7 +4335,13 @@ class SubscribableRequestQueue {
         reject,
         subscriberId
       });
-      this.subscribers.get(subscriberId)?.set(key, reject);
+      const subscriber = this.subscribers.get(subscriberId);
+      const existingRequest = subscriber?.get(key);
+      if (existingRequest) {
+        existingRequest.push(reject);
+      } else {
+        subscriber?.set(key, [reject]);
+      }
     });
   }
 
@@ -4271,11 +4378,13 @@ class SubscribableRequestQueue {
     if (!subscriber) {
       return false;
     }
-    const reject = subscriber.get(key);
-    if (!reject) {
+    const rejecters = subscriber.get(key);
+    if (!rejecters || !rejecters.length) {
       return false;
     }
-    this.rejectSubscription(key, reject, cancelReason);
+    for (const reject of rejecters) {
+      this.rejectSubscription(key, reject, cancelReason);
+    }
     subscriber.delete(key);
     return true;
   }
@@ -4284,8 +4393,10 @@ class SubscribableRequestQueue {
   removeSubscriber(subscriberId, cancelReason) {
     const subscriptions = this.subscribers.get(subscriberId);
     if (subscriptions) {
-      for (const [key, reject] of subscriptions.entries()) {
-        this.rejectSubscription(key, reject, cancelReason);
+      for (const [key, rejecters] of subscriptions.entries()) {
+        for (const reject of rejecters) {
+          this.rejectSubscription(key, reject, cancelReason);
+        }
       }
       this.subscribers.delete(subscriberId);
     }
@@ -4403,13 +4514,14 @@ const messageHandlers = {
         loadSpec
       };
       self.postMessage(message);
-    }, (channelIndex, data, ranges, atlasDims) => {
+    }, (channelIndex, dtype, data, ranges, atlasDims) => {
       const message = {
         responseResult: _types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerResponseResult.EVENT,
         eventType: _types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerEventType.CHANNEL_LOAD,
         loaderId,
         loadId,
         channelIndex,
+        dtype,
         data,
         ranges,
         atlasDims
