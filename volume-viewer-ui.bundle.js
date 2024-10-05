@@ -4054,10 +4054,20 @@ __webpack_require__.r(__webpack_exports__);
 // Constants are kept for compatibility reasons.
 const RENDERMODE_RAYMARCH = _types_js__WEBPACK_IMPORTED_MODULE_5__.RenderMode.RAYMARCH;
 const RENDERMODE_PATHTRACE = _types_js__WEBPACK_IMPORTED_MODULE_5__.RenderMode.PATHTRACE;
+const allGlobalLoadingOptions = {
+  numChunksToPrefetchAhead: 5,
+  prefetchAlongNonPlayingAxis: false,
+  throttleArrivingChannelData: true
+};
+
 /**
  * @class
  */
 class View3d {
+  // TODO because View3d is basically a top level entrypoint for volume-viewer,
+  // maybe it should create the VolumeLoaderContext with options passed in.
+  // (instead of having the loaderContext created externally)
+
   /**
    * @param {Object} options Optional options.
    * @param {boolean} options.useWebGL2 Default true
@@ -4849,6 +4859,26 @@ class View3d {
     addFolderForLight(this.reflectedLight, "reflected light");
     addFolderForLight(this.fillLight, "fill light");
     this.image?.setupGui(pane);
+    const prefetch = pane.addFolder({
+      title: "Prefetch"
+    });
+    // one number will be used for all axis directions
+    prefetch.addInput(allGlobalLoadingOptions, "numChunksToPrefetchAhead").on("change", event => {
+      this.loaderContext?.getActiveLoader()?.updateFetchOptions({
+        maxPrefetchDistance: [event.value, event.value, event.value, event.value]
+      });
+      this.image?.volume.updateRequiredData({});
+    });
+    // should we try to prefetch along Z even if we are only playing along T?
+    prefetch.addInput(allGlobalLoadingOptions, "prefetchAlongNonPlayingAxis").on("change", event => {
+      this.loaderContext?.getActiveLoader()?.updateFetchOptions({
+        onlyPriorityDirections: !event.value
+      });
+    });
+    // when multiple prefetch frames arrive at once, should we slow down how quickly we load them?
+    prefetch.addInput(allGlobalLoadingOptions, "throttleArrivingChannelData").on("change", event => {
+      this.loaderContext?.setThrottleChannelData(event.value);
+    });
     return pane;
   }
 }
@@ -4894,6 +4924,13 @@ const getDefaultImageInfo = () => ({
   timeUnit: "",
   numMultiscaleLevels: 1,
   multiscaleLevel: 0,
+  multiscaleLevelDims: [{
+    shape: [1, 1, 1, 1, 1],
+    spacing: [1, 1, 1, 1, 1],
+    spaceUnit: "",
+    timeUnit: "",
+    dataType: "uint8"
+  }],
   transform: {
     translation: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0),
     rotation: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0)
@@ -5022,7 +5059,9 @@ class Volume {
 
   /** Returns `true` iff differences between `loadSpec` and `loadSpecRequired` indicate new data *must* be loaded. */
   mustLoadNewData() {
-    return this.loadSpec.time !== this.loadSpecRequired.time ||
+    return this.loadSpec.useExplicitLevel !== this.loadSpecRequired.useExplicitLevel ||
+    // explicit vs automatic level changed
+    this.loadSpec.time !== this.loadSpecRequired.time ||
     // time point changed
     !this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion) ||
     // new subregion not contained in old
@@ -6115,16 +6154,25 @@ class VolumeDrawable {
     const scaleFolder = pane.addFolder({
       title: "Multiscale loading"
     });
+    // global setting to define texture size (aka gpu memory footprint per-channel)
     scaleFolder.addInput(this.volume.loadSpecRequired, "maxAtlasEdge").on("change", ({
       value
     }) => this.volume.updateRequiredData({
       maxAtlasEdge: value
     }));
+    // explicit or automatic???
+    scaleFolder.addInput(this.volume.loadSpecRequired, "useExplicitLevel").on("change", ({
+      value
+    }) => this.volume.updateRequiredData({
+      useExplicitLevel: value
+    }));
+    // only relevant when not using explicit level
     scaleFolder.addInput(this.volume.loadSpecRequired, "scaleLevelBias").on("change", ({
       value
     }) => this.volume.updateRequiredData({
       scaleLevelBias: value
     }));
+    // which level to load
     scaleFolder.addInput(this.volume.loadSpecRequired, "multiscaleLevel").on("change", ({
       value
     }) => this.volume.updateRequiredData({
@@ -7494,6 +7542,11 @@ class LoadSpec {
 
   /** Subregion of volume to load. If not specified, the entire volume is loaded. Specify as floats between 0-1. */
   subregion = new three__WEBPACK_IMPORTED_MODULE_2__.Box3(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(1, 1, 1));
+  /** Treat multiscaleLevel literally and don't use other constraints to change it.
+   * By default we will try to load the best level based on the maxAtlasEdge and scaleLevelBias,
+   * so this is false.
+   */
+  useExplicitLevel = false;
 }
 function loadSpecToString(spec) {
   const {
@@ -7567,6 +7620,9 @@ class ThreadableVolumeLoader {
   syncMultichannelLoading(_sync) {
     // default behavior is async, to update channels as they arrive, depending on each
     // loader's implementation details.
+  }
+  updateFetchOptions(_options) {
+    // no-op by default
   }
   async createVolume(loadSpec, onChannelLoaded) {
     const {
@@ -7652,6 +7708,13 @@ const convertImageInfo = json => ({
   timeUnit: json.time_unit || "s",
   numMultiscaleLevels: 1,
   multiscaleLevel: 0,
+  multiscaleLevelDims: [{
+    shape: [json.times || 1, json.channels, json.tiles, json.tile_height, json.tile_width],
+    spacing: [json.time_scale || 1, 1, json.pixel_size_z, json.pixel_size_y, json.pixel_size_x],
+    spaceUnit: json.pixel_size_unit || "μm",
+    timeUnit: json.time_unit || "s",
+    dataType: "uint8"
+  }],
   transform: {
     translation: json.transform?.translation ? new three__WEBPACK_IMPORTED_MODULE_2__.Vector3().fromArray(json.transform.translation) : new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0),
     rotation: json.transform?.rotation ? new three__WEBPACK_IMPORTED_MODULE_2__.Vector3().fromArray(json.transform.rotation) : new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0)
@@ -8064,6 +8127,12 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
   syncMultichannelLoading(sync) {
     this.syncChannels = sync;
   }
+  updateFetchOptions(options) {
+    this.fetchOptions = {
+      ...this.fetchOptions,
+      ...options
+    };
+  }
   loadDims(loadSpec) {
     const [spaceUnit, timeUnit] = this.getUnitSymbols();
     // Compute subregion size so we can factor that in
@@ -8078,6 +8147,7 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
       dims.timeUnit = timeUnit;
       dims.shape = this.orderByTCZYX(level.shape, 1).map((val, idx) => Math.max(Math.ceil(val * regionArr[idx]), 1));
       dims.spacing = this.orderByTCZYX(scale, 1);
+      dims.dataType = level.dtype;
       return dims;
     });
     return Promise.resolve(result);
@@ -8140,7 +8210,16 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
         }
       });
     });
-
+    const alldims = [];
+    source0.scaleLevels.map((level, i) => {
+      const dims = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.VolumeDims();
+      dims.spaceUnit = spatialUnit;
+      dims.timeUnit = timeUnit;
+      dims.shape = this.orderByTCZYX(level.shape, 1);
+      dims.spacing = this.getScale(i);
+      dims.dataType = level.dtype;
+      alldims.push(dims);
+    });
     // for physicalPixelSize, we use the scale of the first level
     const scale5d = this.getScale(0);
     // assume that ImageInfo wants the timeScale of level 0
@@ -8161,6 +8240,7 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
       timeUnit,
       numMultiscaleLevels: source0.scaleLevels.length,
       multiscaleLevel: levelToLoad,
+      multiscaleLevelDims: alldims,
       transform: {
         translation: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0),
         rotation: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0)
@@ -8215,7 +8295,7 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
       return this.orderByTCZYX(chunkDimsUnordered, 1);
     });
     // `ChunkPrefetchIterator` yields chunk coordinates in order of roughly how likely they are to be loaded next
-    const prefetchIterator = new _zarr_utils_ChunkPrefetchIterator_js__WEBPACK_IMPORTED_MODULE_3__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTCZYX, this.priorityDirections);
+    const prefetchIterator = new _zarr_utils_ChunkPrefetchIterator_js__WEBPACK_IMPORTED_MODULE_3__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTCZYX, this.priorityDirections, this.fetchOptions.onlyPriorityDirections);
     const subscriber = this.requestQueue.addSubscriber();
     let prefetchCount = 0;
     for (const chunk of prefetchIterator) {
@@ -8396,6 +8476,13 @@ class OpenCellLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Thre
       timeUnit: "",
       numMultiscaleLevels: 1,
       multiscaleLevel: 0,
+      multiscaleLevelDims: [{
+        shape: [1, numChannels, 27, 600, 600],
+        spacing: [1, 1, 2, 1, 1],
+        spaceUnit: "µm",
+        timeUnit: "",
+        dataType: "uint8"
+      }],
       transform: {
         translation: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0),
         rotation: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0)
@@ -8475,6 +8562,13 @@ const convertImageInfo = json => ({
   timeUnit: "s",
   numMultiscaleLevels: 1,
   multiscaleLevel: 0,
+  multiscaleLevelDims: [{
+    shape: [1, json.sizeC, json.sizeZ, json.sizeY, json.sizeX],
+    spacing: [1, 1, json.physicalPixelSize[2], json.physicalPixelSize[1], json.physicalPixelSize[0]],
+    spaceUnit: json.spatialUnit || "μm",
+    timeUnit: "s",
+    dataType: "uint8"
+  }],
   transform: {
     translation: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0),
     rotation: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0)
@@ -8683,6 +8777,13 @@ class TiffLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Threadab
       timeUnit: "",
       numMultiscaleLevels: 1,
       multiscaleLevel: 0,
+      multiscaleLevelDims: [{
+        shape: [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex],
+        spacing: [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex],
+        spaceUnit: dims.unit || "",
+        timeUnit: "",
+        dataType: dims.pixeltype || "uint8"
+      }],
       transform: {
         translation: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0),
         rotation: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0)
@@ -8825,9 +8926,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   scaleMultipleDimsToSubregion: () => (/* binding */ scaleMultipleDimsToSubregion),
 /* harmony export */   unitNameToSymbol: () => (/* binding */ unitNameToSymbol)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./VolumeLoadError.js */ "./src/loaders/VolumeLoadError.ts");
-
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
 const MAX_ATLAS_EDGE = 4096;
 
@@ -8896,7 +8995,7 @@ function computePackedAtlasDims(z, tw, th) {
     nextrows = Math.ceil(z / nextcols);
     ratio = nextcols * tw / (nextrows * th);
   }
-  return new three__WEBPACK_IMPORTED_MODULE_1__.Vector2(nrows, ncols);
+  return new three__WEBPACK_IMPORTED_MODULE_0__.Vector2(nrows, ncols);
 }
 function doesSpatialDimensionFitInAtlas(spatialDimZYX, maxAtlasEdge = MAX_ATLAS_EDGE) {
   // Estimate atlas size
@@ -8924,11 +9023,11 @@ function estimateLevelForAtlas(spatialDimsZYX, maxAtlasEdge = MAX_ATLAS_EDGE) {
 const maxCeil = val => Math.max(Math.ceil(val), 1);
 const scaleDims = (size, [z, y, x]) => [maxCeil(z * size.z), maxCeil(y * size.y), maxCeil(x * size.x)];
 function scaleDimsToSubregion(subregion, dims) {
-  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3());
+  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3());
   return scaleDims(size, dims);
 }
 function scaleMultipleDimsToSubregion(subregion, dims) {
-  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3());
+  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3());
   return dims.map(dim => scaleDims(size, dim));
 }
 
@@ -8942,6 +9041,10 @@ function scaleMultipleDimsToSubregion(subregion, dims) {
  *  This function assumes that `spatialDimsZYX` has already been appropriately scaled to match `loadSpec`'s `subregion`.
  */
 function pickLevelToLoadUnscaled(loadSpec, spatialDimsZYX) {
+  if (loadSpec.useExplicitLevel && loadSpec.multiscaleLevel !== undefined) {
+    // clamp to actual allowed level range
+    return Math.max(0, Math.min(spatialDimsZYX.length - 1, loadSpec.multiscaleLevel));
+  }
   let levelToLoad = estimateLevelForAtlas(spatialDimsZYX, loadSpec.maxAtlasEdge);
   // Check here for whether levelToLoad is within max atlas size?
   if (levelToLoad !== undefined) {
@@ -8960,9 +9063,7 @@ function pickLevelToLoadUnscaled(loadSpec, spatialDimsZYX) {
   const smallestDims = spatialDimsZYX[levelToLoad];
   console.error(`Volume is too large; no multiscale level found that fits in preferred memory footprint. Selected level ${levelToLoad}  has dimensions `, smallestDims, `. Max atlas edge allowed is ${loadSpec.maxAtlasEdge}.`);
   console.log("All available levels: ", spatialDimsZYX);
-  throw new _VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_0__.VolumeLoadError(`Volume is too large; multiscale level does not fit in preferred memory footprint.`, {
-    type: _VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_0__.VolumeLoadErrorType.TOO_LARGE
-  });
+  return levelToLoad;
 }
 
 /**
@@ -8991,7 +9092,7 @@ function convertSubregionToPixels(region, size) {
   if (min.z === max.z && min.z < size.z) {
     max.z += 1;
   }
-  return new three__WEBPACK_IMPORTED_MODULE_1__.Box3(min, max);
+  return new three__WEBPACK_IMPORTED_MODULE_0__.Box3(min, max);
 }
 
 /**
@@ -8999,10 +9100,10 @@ function convertSubregionToPixels(region, size) {
  * and 1). i.e. if `container`'s range on the X axis is 0-4 and `region`'s is 0.25-0.5, the result will have range 1-2.
  */
 function composeSubregion(region, container) {
-  const size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3());
+  const size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3());
   const min = region.min.clone().multiply(size).add(container.min);
   const max = region.max.clone().multiply(size).add(container.min);
-  return new three__WEBPACK_IMPORTED_MODULE_1__.Box3(min, max);
+  return new three__WEBPACK_IMPORTED_MODULE_0__.Box3(min, max);
 }
 function isEmpty(obj) {
   for (const key in obj) {
@@ -9034,6 +9135,7 @@ function buildDefaultMetadata(imageInfo) {
     y: imageInfo.physicalPixelSize.y + imageInfo.spatialUnit,
     z: imageInfo.physicalPixelSize.z + imageInfo.spatialUnit
   };
+  metadata["Multiresolution levels"] = imageInfo.multiscaleLevelDims;
   metadata["Channels"] = imageInfo.numChannels;
   metadata["Time series frames"] = imageInfo.times || 1;
   // don't add User data if it's empty
@@ -9144,7 +9246,7 @@ function updateMinMax(val, minmax) {
  */
 // NOTE: Assumes `chunks` form a rectangular prism! Will create gaps otherwise! (in practice they always should)
 class ChunkPrefetchIterator {
-  constructor(chunks, tzyxMaxPrefetchOffset, tczyxChunksPerSource, priorityDirections) {
+  constructor(chunks, tzyxMaxPrefetchOffset, tczyxChunksPerSource, priorityDirections, onlyPriorityDirections = false) {
     // Get min and max chunk coordinates for T/Z/Y/X
     const extrema = [[Infinity, -Infinity], [Infinity, -Infinity], [Infinity, -Infinity], [Infinity, -Infinity]];
     for (const chunk of chunks) {
@@ -9157,6 +9259,10 @@ class ChunkPrefetchIterator {
     // Create `PrefetchDirectionState`s for each direction
     this.directionStates = [];
     this.priorityDirectionStates = [];
+
+    // iterating like this: direction is the index in the flattened entries
+    // and corresponds to our +T, -T, +Z, -Z, +Y, -Y, +X, -X directions in order
+    // because extrema is in TZYX order.
     for (const [direction, start] of extrema.flat().entries()) {
       const dimension = direction >> 1; // shave off sign bit to get index in TZYX
       const tczyxIndex = dimension + Number(dimension !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
@@ -9193,7 +9299,10 @@ class ChunkPrefetchIterator {
       if (priorityDirections && priorityDirections.includes(direction)) {
         this.priorityDirectionStates.push(directionState);
       } else {
-        this.directionStates.push(directionState);
+        // we have an option setting that can let us ignore non-priority directions
+        if (!onlyPriorityDirections) {
+          this.directionStates.push(directionState);
+        }
       }
     }
 
@@ -10504,13 +10613,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var serialize_error__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! serialize-error */ "./node_modules/serialize-error/index.js");
-/* harmony import */ var _loaders_index_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../loaders/index.js */ "./src/loaders/index.ts");
-/* harmony import */ var _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../loaders/IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _loaders_RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../loaders/RawArrayLoader.js */ "./src/loaders/RawArrayLoader.ts");
-/* harmony import */ var _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../loaders/TiffLoader.js */ "./src/loaders/TiffLoader.ts");
-/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./types.js */ "./src/workers/types.ts");
-/* harmony import */ var _util_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./util.js */ "./src/workers/util.ts");
+/* harmony import */ var serialize_error__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! serialize-error */ "./node_modules/serialize-error/index.js");
+/* harmony import */ var throttled_queue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! throttled-queue */ "./node_modules/throttled-queue/dist/throttledQueue.js");
+/* harmony import */ var throttled_queue__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(throttled_queue__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _loaders_index_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../loaders/index.js */ "./src/loaders/index.ts");
+/* harmony import */ var _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../loaders/IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _loaders_RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../loaders/RawArrayLoader.js */ "./src/loaders/RawArrayLoader.ts");
+/* harmony import */ var _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../loaders/TiffLoader.js */ "./src/loaders/TiffLoader.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./types.js */ "./src/workers/types.ts");
+/* harmony import */ var _util_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./util.js */ "./src/workers/util.ts");
 
 
 
@@ -10518,6 +10629,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+const throttle = throttled_queue__WEBPACK_IMPORTED_MODULE_0___default()(1, 16);
 /**
  * A handle that holds the worker and manages requests and messages to/from it.
  *
@@ -10532,6 +10645,7 @@ __webpack_require__.r(__webpack_exports__);
 class SharedLoadWorkerHandle {
   pendingRequests = [];
   workerOpen = true;
+  throttleChannelData = false;
   onChannelData = undefined;
   onUpdateMetadata = undefined;
   constructor() {
@@ -10585,10 +10699,16 @@ class SharedLoadWorkerHandle {
   receiveMessage({
     data
   }) {
-    if (data.responseResult === _types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerResponseResult.EVENT) {
-      if (data.eventType === _types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerEventType.CHANNEL_LOAD) {
-        this.onChannelData?.(data);
-      } else if (data.eventType === _types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerEventType.METADATA_UPDATE) {
+    if (data.responseResult === _types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerResponseResult.EVENT) {
+      if (data.eventType === _types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerEventType.CHANNEL_LOAD) {
+        if (this.onChannelData) {
+          if (this.throttleChannelData) {
+            throttle(() => this.onChannelData ? this.onChannelData(data) : {});
+          } else {
+            this.onChannelData ? this.onChannelData(data) : {};
+          }
+        }
+      } else if (data.eventType === _types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerEventType.METADATA_UPDATE) {
         this.onUpdateMetadata?.(data);
       }
     } else {
@@ -10599,13 +10719,16 @@ class SharedLoadWorkerHandle {
       if (prom.type !== data.type) {
         throw new Error(`Received response of type ${data.type} for message of type ${prom.type}`);
       }
-      if (data.responseResult === _types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerResponseResult.ERROR) {
-        prom.reject((0,serialize_error__WEBPACK_IMPORTED_MODULE_6__.deserializeError)(data.payload));
+      if (data.responseResult === _types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerResponseResult.ERROR) {
+        prom.reject((0,serialize_error__WEBPACK_IMPORTED_MODULE_7__.deserializeError)(data.payload));
       } else {
         prom.resolve(data.payload);
       }
       this.pendingRequests[data.msgId] = undefined;
     }
+  }
+  setThrottleChannelData(throttle) {
+    this.throttleChannelData = throttle;
   }
 }
 
@@ -10628,7 +10751,7 @@ class VolumeLoaderContext {
   activeLoaderId = -1;
   constructor(maxCacheSize, maxActiveRequests, maxLowPriorityRequests) {
     this.workerHandle = new SharedLoadWorkerHandle();
-    this.openPromise = this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerMsgType.INIT, {
+    this.openPromise = this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerMsgType.INIT, {
       maxCacheSize,
       maxActiveRequests,
       maxLowPriorityRequests
@@ -10657,16 +10780,16 @@ class VolumeLoaderContext {
   async createLoader(path, options) {
     // Special case: TIFF loader doesn't work on a worker, has its own workers anyways, and doesn't use cache or queue.
     const pathString = Array.isArray(path) ? path[0] : path;
-    const fileType = options?.fileType || (0,_loaders_index_js__WEBPACK_IMPORTED_MODULE_0__.pathToFileType)(pathString);
-    if (fileType === _loaders_index_js__WEBPACK_IMPORTED_MODULE_0__.VolumeFileFormat.TIFF) {
-      return new _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_3__.TiffLoader(pathString);
-    } else if (fileType === _loaders_index_js__WEBPACK_IMPORTED_MODULE_0__.VolumeFileFormat.DATA) {
+    const fileType = options?.fileType || (0,_loaders_index_js__WEBPACK_IMPORTED_MODULE_1__.pathToFileType)(pathString);
+    if (fileType === _loaders_index_js__WEBPACK_IMPORTED_MODULE_1__.VolumeFileFormat.TIFF) {
+      return new _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_4__.TiffLoader(pathString);
+    } else if (fileType === _loaders_index_js__WEBPACK_IMPORTED_MODULE_1__.VolumeFileFormat.DATA) {
       if (!options?.rawArrayOptions) {
         throw new Error("Failed to create loader: Must provide RawArrayOptions for RawArrayLoader");
       }
-      return new _loaders_RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_2__.RawArrayLoader(options.rawArrayOptions.data, options.rawArrayOptions.metadata);
+      return new _loaders_RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_3__.RawArrayLoader(options.rawArrayOptions.data, options.rawArrayOptions.metadata);
     }
-    const success = await this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerMsgType.CREATE_LOADER, {
+    const success = await this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerMsgType.CREATE_LOADER, {
       path,
       options
     });
@@ -10678,6 +10801,12 @@ class VolumeLoaderContext {
     this.activeLoader = new WorkerLoader(this.activeLoaderId, this.workerHandle);
     return this.activeLoader;
   }
+  setThrottleChannelData(throttle) {
+    this.workerHandle.setThrottleChannelData(throttle);
+  }
+  getActiveLoader() {
+    return this.activeLoader;
+  }
 }
 
 /**
@@ -10685,7 +10814,7 @@ class VolumeLoaderContext {
  *
  * Created with `VolumeLoaderContext.createLoader`. See its documentation for more.
  */
-class WorkerLoader extends _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.ThreadableVolumeLoader {
+class WorkerLoader extends _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_2__.ThreadableVolumeLoader {
   isOpen = true;
   currentLoadId = -1;
   currentLoadCallback = undefined;
@@ -10713,24 +10842,27 @@ class WorkerLoader extends _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1_
    * any chunks are prefetched in any other directions. Has no effect if this loader doesn't support prefetching.
    */
   setPrefetchPriority(directions) {
-    return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, directions);
+    return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, directions);
+  }
+  updateFetchOptions(fetchOptions) {
+    return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerMsgType.UPDATE_FETCH_OPTIONS, fetchOptions);
   }
   syncMultichannelLoading(sync) {
-    return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, sync);
+    return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, sync);
   }
   loadDims(loadSpec) {
     this.checkIsOpen();
-    return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerMsgType.LOAD_DIMS, loadSpec);
+    return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerMsgType.LOAD_DIMS, loadSpec);
   }
   async createImageInfo(loadSpec) {
     this.checkIsOpen();
     const {
       imageInfo,
       loadSpec: adjustedLoadSpec
-    } = await this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerMsgType.CREATE_VOLUME, loadSpec);
+    } = await this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerMsgType.CREATE_VOLUME, loadSpec);
     return {
-      imageInfo: (0,_util_js__WEBPACK_IMPORTED_MODULE_5__.rebuildImageInfo)(imageInfo),
-      loadSpec: (0,_util_js__WEBPACK_IMPORTED_MODULE_5__.rebuildLoadSpec)(adjustedLoadSpec)
+      imageInfo: (0,_util_js__WEBPACK_IMPORTED_MODULE_6__.rebuildImageInfo)(imageInfo),
+      loadSpec: (0,_util_js__WEBPACK_IMPORTED_MODULE_6__.rebuildLoadSpec)(adjustedLoadSpec)
     };
   }
   loadRawChannelData(imageInfo, loadSpec, onUpdateMetadata, onData) {
@@ -10738,7 +10870,7 @@ class WorkerLoader extends _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1_
     this.currentLoadCallback = onData;
     this.currentMetadataUpdateCallback = onUpdateMetadata;
     this.currentLoadId += 1;
-    return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_4__.WorkerMsgType.LOAD_VOLUME_DATA, {
+    return this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerMsgType.LOAD_VOLUME_DATA, {
       imageInfo,
       loadSpec,
       loaderId: this.loaderId,
@@ -10755,8 +10887,8 @@ class WorkerLoader extends _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1_
     if (e.loaderId !== this.loaderId || e.loadId !== this.currentLoadId) {
       return;
     }
-    const imageInfo = e.imageInfo && (0,_util_js__WEBPACK_IMPORTED_MODULE_5__.rebuildImageInfo)(e.imageInfo);
-    const loadSpec = e.loadSpec && (0,_util_js__WEBPACK_IMPORTED_MODULE_5__.rebuildLoadSpec)(e.loadSpec);
+    const imageInfo = e.imageInfo && (0,_util_js__WEBPACK_IMPORTED_MODULE_6__.rebuildImageInfo)(e.imageInfo);
+    const loadSpec = e.loadSpec && (0,_util_js__WEBPACK_IMPORTED_MODULE_6__.rebuildLoadSpec)(e.loadSpec);
     this.currentMetadataUpdateCallback?.(imageInfo, loadSpec);
   }
 }
@@ -10786,6 +10918,7 @@ let WorkerMsgType = /*#__PURE__*/function (WorkerMsgType) {
   WorkerMsgType[WorkerMsgType["LOAD_VOLUME_DATA"] = 4] = "LOAD_VOLUME_DATA";
   WorkerMsgType[WorkerMsgType["SET_PREFETCH_PRIORITY_DIRECTIONS"] = 5] = "SET_PREFETCH_PRIORITY_DIRECTIONS";
   WorkerMsgType[WorkerMsgType["SYNCHRONIZE_MULTICHANNEL_LOADING"] = 6] = "SYNCHRONIZE_MULTICHANNEL_LOADING";
+  WorkerMsgType[WorkerMsgType["UPDATE_FETCH_OPTIONS"] = 7] = "UPDATE_FETCH_OPTIONS";
   return WorkerMsgType;
 }({});
 
@@ -10858,6 +10991,82 @@ function rebuildImageInfo(imageInfo) {
     }
   };
 }
+
+/***/ }),
+
+/***/ "./node_modules/throttled-queue/dist/throttledQueue.js":
+/*!*************************************************************!*\
+  !*** ./node_modules/throttled-queue/dist/throttledQueue.js ***!
+  \*************************************************************/
+/***/ ((module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+function throttledQueue(maxRequestsPerInterval, interval, evenlySpaced) {
+    if (evenlySpaced === void 0) { evenlySpaced = false; }
+    /**
+     * If all requests should be evenly spaced, adjust to suit.
+     */
+    if (evenlySpaced) {
+        interval = interval / maxRequestsPerInterval;
+        maxRequestsPerInterval = 1;
+    }
+    var queue = [];
+    var lastIntervalStart = 0;
+    var numRequestsPerInterval = 0;
+    var timeout;
+    /**
+     * Gets called at a set interval to remove items from the queue.
+     * This is a self-adjusting timer, since the browser's setTimeout is highly inaccurate.
+     */
+    var dequeue = function () {
+        var intervalEnd = lastIntervalStart + interval;
+        var now = Date.now();
+        /**
+         * Adjust the timer if it was called too early.
+         */
+        if (now < intervalEnd) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            timeout !== undefined && clearTimeout(timeout);
+            timeout = setTimeout(dequeue, intervalEnd - now);
+            return;
+        }
+        lastIntervalStart = now;
+        numRequestsPerInterval = 0;
+        for (var _i = 0, _a = queue.splice(0, maxRequestsPerInterval); _i < _a.length; _i++) {
+            var callback = _a[_i];
+            numRequestsPerInterval++;
+            void callback();
+        }
+        if (queue.length) {
+            timeout = setTimeout(dequeue, interval);
+        }
+        else {
+            timeout = undefined;
+        }
+    };
+    return function (fn) { return new Promise(function (resolve, reject) {
+        var callback = function () { return Promise.resolve().then(fn).then(resolve).catch(reject); };
+        var now = Date.now();
+        if (timeout === undefined && (now - lastIntervalStart) > interval) {
+            lastIntervalStart = now;
+            numRequestsPerInterval = 0;
+        }
+        if (numRequestsPerInterval++ < maxRequestsPerInterval) {
+            void callback();
+        }
+        else {
+            queue.push(callback);
+            if (timeout === undefined) {
+                timeout = setTimeout(dequeue, lastIntervalStart + interval - now);
+            }
+        }
+    }); };
+}
+module.exports = throttledQueue;
+exports["default"] = throttledQueue;
+//# sourceMappingURL=throttledQueue.js.map
 
 /***/ }),
 
@@ -88833,6 +89042,8 @@ async function createLoader(data) {
   });
 }
 async function loadVolume(loadSpec, loader) {
+  const fullDims = await loader.loadDims(loadSpec);
+  console.log(fullDims);
   const volume = await loader.createVolume(loadSpec, onChannelDataArrived);
   onVolumeCreated(volume);
   loader.loadVolumeData(volume);
@@ -88873,6 +89084,7 @@ function main() {
   view3D = new _src__WEBPACK_IMPORTED_MODULE_0__.View3d({
     parentElement: el
   });
+  view3D.loaderContext = loaderContext;
   const testDataSelect = document.getElementById("testData");
   testDataSelect?.addEventListener("change", ({
     currentTarget

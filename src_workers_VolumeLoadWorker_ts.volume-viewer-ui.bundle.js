@@ -1083,6 +1083,13 @@ const getDefaultImageInfo = () => ({
   timeUnit: "",
   numMultiscaleLevels: 1,
   multiscaleLevel: 0,
+  multiscaleLevelDims: [{
+    shape: [1, 1, 1, 1, 1],
+    spacing: [1, 1, 1, 1, 1],
+    spaceUnit: "",
+    timeUnit: "",
+    dataType: "uint8"
+  }],
   transform: {
     translation: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0),
     rotation: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0)
@@ -1211,7 +1218,9 @@ class Volume {
 
   /** Returns `true` iff differences between `loadSpec` and `loadSpecRequired` indicate new data *must* be loaded. */
   mustLoadNewData() {
-    return this.loadSpec.time !== this.loadSpecRequired.time ||
+    return this.loadSpec.useExplicitLevel !== this.loadSpecRequired.useExplicitLevel ||
+    // explicit vs automatic level changed
+    this.loadSpec.time !== this.loadSpecRequired.time ||
     // time point changed
     !this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion) ||
     // new subregion not contained in old
@@ -1749,6 +1758,11 @@ class LoadSpec {
 
   /** Subregion of volume to load. If not specified, the entire volume is loaded. Specify as floats between 0-1. */
   subregion = new three__WEBPACK_IMPORTED_MODULE_2__.Box3(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(1, 1, 1));
+  /** Treat multiscaleLevel literally and don't use other constraints to change it.
+   * By default we will try to load the best level based on the maxAtlasEdge and scaleLevelBias,
+   * so this is false.
+   */
+  useExplicitLevel = false;
 }
 function loadSpecToString(spec) {
   const {
@@ -1822,6 +1836,9 @@ class ThreadableVolumeLoader {
   syncMultichannelLoading(_sync) {
     // default behavior is async, to update channels as they arrive, depending on each
     // loader's implementation details.
+  }
+  updateFetchOptions(_options) {
+    // no-op by default
   }
   async createVolume(loadSpec, onChannelLoaded) {
     const {
@@ -1907,6 +1924,13 @@ const convertImageInfo = json => ({
   timeUnit: json.time_unit || "s",
   numMultiscaleLevels: 1,
   multiscaleLevel: 0,
+  multiscaleLevelDims: [{
+    shape: [json.times || 1, json.channels, json.tiles, json.tile_height, json.tile_width],
+    spacing: [json.time_scale || 1, 1, json.pixel_size_z, json.pixel_size_y, json.pixel_size_x],
+    spaceUnit: json.pixel_size_unit || "μm",
+    timeUnit: json.time_unit || "s",
+    dataType: "uint8"
+  }],
   transform: {
     translation: json.transform?.translation ? new three__WEBPACK_IMPORTED_MODULE_2__.Vector3().fromArray(json.transform.translation) : new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0),
     rotation: json.transform?.rotation ? new three__WEBPACK_IMPORTED_MODULE_2__.Vector3().fromArray(json.transform.rotation) : new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0)
@@ -2319,6 +2343,12 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
   syncMultichannelLoading(sync) {
     this.syncChannels = sync;
   }
+  updateFetchOptions(options) {
+    this.fetchOptions = {
+      ...this.fetchOptions,
+      ...options
+    };
+  }
   loadDims(loadSpec) {
     const [spaceUnit, timeUnit] = this.getUnitSymbols();
     // Compute subregion size so we can factor that in
@@ -2333,6 +2363,7 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
       dims.timeUnit = timeUnit;
       dims.shape = this.orderByTCZYX(level.shape, 1).map((val, idx) => Math.max(Math.ceil(val * regionArr[idx]), 1));
       dims.spacing = this.orderByTCZYX(scale, 1);
+      dims.dataType = level.dtype;
       return dims;
     });
     return Promise.resolve(result);
@@ -2395,7 +2426,16 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
         }
       });
     });
-
+    const alldims = [];
+    source0.scaleLevels.map((level, i) => {
+      const dims = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.VolumeDims();
+      dims.spaceUnit = spatialUnit;
+      dims.timeUnit = timeUnit;
+      dims.shape = this.orderByTCZYX(level.shape, 1);
+      dims.spacing = this.getScale(i);
+      dims.dataType = level.dtype;
+      alldims.push(dims);
+    });
     // for physicalPixelSize, we use the scale of the first level
     const scale5d = this.getScale(0);
     // assume that ImageInfo wants the timeScale of level 0
@@ -2416,6 +2456,7 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
       timeUnit,
       numMultiscaleLevels: source0.scaleLevels.length,
       multiscaleLevel: levelToLoad,
+      multiscaleLevelDims: alldims,
       transform: {
         translation: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0),
         rotation: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0)
@@ -2470,7 +2511,7 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
       return this.orderByTCZYX(chunkDimsUnordered, 1);
     });
     // `ChunkPrefetchIterator` yields chunk coordinates in order of roughly how likely they are to be loaded next
-    const prefetchIterator = new _zarr_utils_ChunkPrefetchIterator_js__WEBPACK_IMPORTED_MODULE_3__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTCZYX, this.priorityDirections);
+    const prefetchIterator = new _zarr_utils_ChunkPrefetchIterator_js__WEBPACK_IMPORTED_MODULE_3__["default"](chunkCoords, this.fetchOptions.maxPrefetchDistance, chunkDimsTCZYX, this.priorityDirections, this.fetchOptions.onlyPriorityDirections);
     const subscriber = this.requestQueue.addSubscriber();
     let prefetchCount = 0;
     for (const chunk of prefetchIterator) {
@@ -2649,6 +2690,13 @@ const convertImageInfo = json => ({
   timeUnit: "s",
   numMultiscaleLevels: 1,
   multiscaleLevel: 0,
+  multiscaleLevelDims: [{
+    shape: [1, json.sizeC, json.sizeZ, json.sizeY, json.sizeX],
+    spacing: [1, 1, json.physicalPixelSize[2], json.physicalPixelSize[1], json.physicalPixelSize[0]],
+    spaceUnit: json.spatialUnit || "μm",
+    timeUnit: "s",
+    dataType: "uint8"
+  }],
   transform: {
     translation: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0),
     rotation: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0)
@@ -2857,6 +2905,13 @@ class TiffLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Threadab
       timeUnit: "",
       numMultiscaleLevels: 1,
       multiscaleLevel: 0,
+      multiscaleLevelDims: [{
+        shape: [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex],
+        spacing: [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex],
+        spaceUnit: dims.unit || "",
+        timeUnit: "",
+        dataType: dims.pixeltype || "uint8"
+      }],
       transform: {
         translation: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0),
         rotation: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0)
@@ -2999,9 +3054,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   scaleMultipleDimsToSubregion: () => (/* binding */ scaleMultipleDimsToSubregion),
 /* harmony export */   unitNameToSymbol: () => (/* binding */ unitNameToSymbol)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var _VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./VolumeLoadError.js */ "./src/loaders/VolumeLoadError.ts");
-
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 
 const MAX_ATLAS_EDGE = 4096;
 
@@ -3070,7 +3123,7 @@ function computePackedAtlasDims(z, tw, th) {
     nextrows = Math.ceil(z / nextcols);
     ratio = nextcols * tw / (nextrows * th);
   }
-  return new three__WEBPACK_IMPORTED_MODULE_1__.Vector2(nrows, ncols);
+  return new three__WEBPACK_IMPORTED_MODULE_0__.Vector2(nrows, ncols);
 }
 function doesSpatialDimensionFitInAtlas(spatialDimZYX, maxAtlasEdge = MAX_ATLAS_EDGE) {
   // Estimate atlas size
@@ -3098,11 +3151,11 @@ function estimateLevelForAtlas(spatialDimsZYX, maxAtlasEdge = MAX_ATLAS_EDGE) {
 const maxCeil = val => Math.max(Math.ceil(val), 1);
 const scaleDims = (size, [z, y, x]) => [maxCeil(z * size.z), maxCeil(y * size.y), maxCeil(x * size.x)];
 function scaleDimsToSubregion(subregion, dims) {
-  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3());
+  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3());
   return scaleDims(size, dims);
 }
 function scaleMultipleDimsToSubregion(subregion, dims) {
-  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3());
+  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3());
   return dims.map(dim => scaleDims(size, dim));
 }
 
@@ -3116,6 +3169,10 @@ function scaleMultipleDimsToSubregion(subregion, dims) {
  *  This function assumes that `spatialDimsZYX` has already been appropriately scaled to match `loadSpec`'s `subregion`.
  */
 function pickLevelToLoadUnscaled(loadSpec, spatialDimsZYX) {
+  if (loadSpec.useExplicitLevel && loadSpec.multiscaleLevel !== undefined) {
+    // clamp to actual allowed level range
+    return Math.max(0, Math.min(spatialDimsZYX.length - 1, loadSpec.multiscaleLevel));
+  }
   let levelToLoad = estimateLevelForAtlas(spatialDimsZYX, loadSpec.maxAtlasEdge);
   // Check here for whether levelToLoad is within max atlas size?
   if (levelToLoad !== undefined) {
@@ -3134,9 +3191,7 @@ function pickLevelToLoadUnscaled(loadSpec, spatialDimsZYX) {
   const smallestDims = spatialDimsZYX[levelToLoad];
   console.error(`Volume is too large; no multiscale level found that fits in preferred memory footprint. Selected level ${levelToLoad}  has dimensions `, smallestDims, `. Max atlas edge allowed is ${loadSpec.maxAtlasEdge}.`);
   console.log("All available levels: ", spatialDimsZYX);
-  throw new _VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_0__.VolumeLoadError(`Volume is too large; multiscale level does not fit in preferred memory footprint.`, {
-    type: _VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_0__.VolumeLoadErrorType.TOO_LARGE
-  });
+  return levelToLoad;
 }
 
 /**
@@ -3165,7 +3220,7 @@ function convertSubregionToPixels(region, size) {
   if (min.z === max.z && min.z < size.z) {
     max.z += 1;
   }
-  return new three__WEBPACK_IMPORTED_MODULE_1__.Box3(min, max);
+  return new three__WEBPACK_IMPORTED_MODULE_0__.Box3(min, max);
 }
 
 /**
@@ -3173,10 +3228,10 @@ function convertSubregionToPixels(region, size) {
  * and 1). i.e. if `container`'s range on the X axis is 0-4 and `region`'s is 0.25-0.5, the result will have range 1-2.
  */
 function composeSubregion(region, container) {
-  const size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3());
+  const size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3());
   const min = region.min.clone().multiply(size).add(container.min);
   const max = region.max.clone().multiply(size).add(container.min);
-  return new three__WEBPACK_IMPORTED_MODULE_1__.Box3(min, max);
+  return new three__WEBPACK_IMPORTED_MODULE_0__.Box3(min, max);
 }
 function isEmpty(obj) {
   for (const key in obj) {
@@ -3208,6 +3263,7 @@ function buildDefaultMetadata(imageInfo) {
     y: imageInfo.physicalPixelSize.y + imageInfo.spatialUnit,
     z: imageInfo.physicalPixelSize.z + imageInfo.spatialUnit
   };
+  metadata["Multiresolution levels"] = imageInfo.multiscaleLevelDims;
   metadata["Channels"] = imageInfo.numChannels;
   metadata["Time series frames"] = imageInfo.times || 1;
   // don't add User data if it's empty
@@ -3318,7 +3374,7 @@ function updateMinMax(val, minmax) {
  */
 // NOTE: Assumes `chunks` form a rectangular prism! Will create gaps otherwise! (in practice they always should)
 class ChunkPrefetchIterator {
-  constructor(chunks, tzyxMaxPrefetchOffset, tczyxChunksPerSource, priorityDirections) {
+  constructor(chunks, tzyxMaxPrefetchOffset, tczyxChunksPerSource, priorityDirections, onlyPriorityDirections = false) {
     // Get min and max chunk coordinates for T/Z/Y/X
     const extrema = [[Infinity, -Infinity], [Infinity, -Infinity], [Infinity, -Infinity], [Infinity, -Infinity]];
     for (const chunk of chunks) {
@@ -3331,6 +3387,10 @@ class ChunkPrefetchIterator {
     // Create `PrefetchDirectionState`s for each direction
     this.directionStates = [];
     this.priorityDirectionStates = [];
+
+    // iterating like this: direction is the index in the flattened entries
+    // and corresponds to our +T, -T, +Z, -Z, +Y, -Y, +X, -X directions in order
+    // because extrema is in TZYX order.
     for (const [direction, start] of extrema.flat().entries()) {
       const dimension = direction >> 1; // shave off sign bit to get index in TZYX
       const tczyxIndex = dimension + Number(dimension !== 0); // convert TZYX -> TCZYX by skipping c (index 1)
@@ -3367,7 +3427,10 @@ class ChunkPrefetchIterator {
       if (priorityDirections && priorityDirections.includes(direction)) {
         this.priorityDirectionStates.push(directionState);
       } else {
-        this.directionStates.push(directionState);
+        // we have an option setting that can let us ignore non-priority directions
+        if (!onlyPriorityDirections) {
+          this.directionStates.push(directionState);
+        }
       }
     }
 
@@ -4537,6 +4600,10 @@ const messageHandlers = {
   [_types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING]: syncChannels => {
     loader?.syncMultichannelLoading(syncChannels);
     return Promise.resolve();
+  },
+  [_types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerMsgType.UPDATE_FETCH_OPTIONS]: fetchOptions => {
+    loader?.updateFetchOptions(fetchOptions);
+    return Promise.resolve();
   }
 };
 self.onmessage = async ({
@@ -4591,6 +4658,7 @@ let WorkerMsgType = /*#__PURE__*/function (WorkerMsgType) {
   WorkerMsgType[WorkerMsgType["LOAD_VOLUME_DATA"] = 4] = "LOAD_VOLUME_DATA";
   WorkerMsgType[WorkerMsgType["SET_PREFETCH_PRIORITY_DIRECTIONS"] = 5] = "SET_PREFETCH_PRIORITY_DIRECTIONS";
   WorkerMsgType[WorkerMsgType["SYNCHRONIZE_MULTICHANNEL_LOADING"] = 6] = "SYNCHRONIZE_MULTICHANNEL_LOADING";
+  WorkerMsgType[WorkerMsgType["UPDATE_FETCH_OPTIONS"] = 7] = "UPDATE_FETCH_OPTIONS";
   return WorkerMsgType;
 }({});
 
