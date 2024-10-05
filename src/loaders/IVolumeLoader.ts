@@ -41,6 +41,33 @@ export class VolumeDims {
   timeUnit = "s";
   // TODO make this an enum?
   dataType = "uint8";
+
+  get sizeC(): number {
+    return this.shape[1];
+  }
+  get sizeT(): number {
+    return this.shape[0];
+  }
+  get sizeZ(): number {
+    return this.shape[2];
+  }
+  get sizeY(): number {
+    return this.shape[3];
+  }
+  get sizeX(): number {
+    return this.shape[4];
+  }
+  // returns XYZ order
+  get physicalPixelSize(): Vector3 {
+    return new Vector3(this.spacing[4], this.spacing[3], this.spacing[2]);
+  }
+  get timeScale(): number {
+    return this.spacing[0];
+  }
+  // returns XYZ order
+  get volumeSize(): Vector3 {
+    return new Vector3(this.sizeX, this.sizeY, this.sizeZ);
+  }
 }
 
 export type LoadedVolumeInfo = {

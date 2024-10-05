@@ -6,9 +6,10 @@ import VolumeMaker from "../VolumeMaker";
 import { LUT_ARRAY_LENGTH } from "../Lut";
 import Channel from "../Channel";
 import { DATARANGE_UINT8 } from "../types";
+import { VolumeDims } from "../loaders/IVolumeLoader";
 
 // PREPARE SOME TEST DATA TO TRY TO DISPLAY A VOLUME.
-const testimgdata: ImageInfo = {
+const testimgdata: ImageInfo = <ImageInfo>{
   name: "AICS-10_5_5",
 
   originalSize: new Vector3(306, 494, 65),
@@ -39,7 +40,7 @@ const testimgdata: ImageInfo = {
   numMultiscaleLevels: 1,
   multiscaleLevel: 0,
   multiscaleLevelDims: [
-    {
+    <VolumeDims>{
       shape: [1, 1, 65, 494, 306],
       spacing: [1, 1, 0.29, 0.065, 0.065],
       spaceUnit: "",

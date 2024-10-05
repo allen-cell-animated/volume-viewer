@@ -41,46 +41,47 @@ export interface RawArrayLoaderOptions {
   metadata: RawArrayInfo;
 }
 
-const convertImageInfo = (json: RawArrayInfo): ImageInfo => ({
-  name: json.name,
+const convertImageInfo = (json: RawArrayInfo): ImageInfo =>
+  <ImageInfo>{
+    name: json.name,
 
-  // assumption: the data is already sized to fit in our viewer's preferred
-  // memory footprint (a tiled atlas texture as of this writing)
-  originalSize: new Vector3(json.sizeX, json.sizeY, json.sizeZ),
-  atlasTileDims: computePackedAtlasDims(json.sizeZ, json.sizeX, json.sizeY),
-  volumeSize: new Vector3(json.sizeX, json.sizeY, json.sizeZ),
-  subregionSize: new Vector3(json.sizeX, json.sizeY, json.sizeZ),
-  subregionOffset: new Vector3(0, 0, 0),
-  physicalPixelSize: new Vector3(json.physicalPixelSize[0], json.physicalPixelSize[1], json.physicalPixelSize[2]),
-  spatialUnit: json.spatialUnit || "μm",
+    // assumption: the data is already sized to fit in our viewer's preferred
+    // memory footprint (a tiled atlas texture as of this writing)
+    originalSize: new Vector3(json.sizeX, json.sizeY, json.sizeZ),
+    atlasTileDims: computePackedAtlasDims(json.sizeZ, json.sizeX, json.sizeY),
+    volumeSize: new Vector3(json.sizeX, json.sizeY, json.sizeZ),
+    subregionSize: new Vector3(json.sizeX, json.sizeY, json.sizeZ),
+    subregionOffset: new Vector3(0, 0, 0),
+    physicalPixelSize: new Vector3(json.physicalPixelSize[0], json.physicalPixelSize[1], json.physicalPixelSize[2]),
+    spatialUnit: json.spatialUnit || "μm",
 
-  numChannels: json.sizeC,
-  channelNames: json.channelNames,
-  channelColors: undefined, //json.channelColors,
+    numChannels: json.sizeC,
+    channelNames: json.channelNames,
+    channelColors: undefined, //json.channelColors,
 
-  times: 1,
-  timeScale: 1,
-  timeUnit: "s",
+    times: 1,
+    timeScale: 1,
+    timeUnit: "s",
 
-  numMultiscaleLevels: 1,
-  multiscaleLevel: 0,
-  multiscaleLevelDims: [
-    {
-      shape: [1, json.sizeC, json.sizeZ, json.sizeY, json.sizeX],
-      spacing: [1, 1, json.physicalPixelSize[2], json.physicalPixelSize[1], json.physicalPixelSize[0]],
-      spaceUnit: json.spatialUnit || "μm",
-      timeUnit: "s",
-      dataType: "uint8",
+    numMultiscaleLevels: 1,
+    multiscaleLevel: 0,
+    multiscaleLevelDims: [
+      <VolumeDims>{
+        shape: [1, json.sizeC, json.sizeZ, json.sizeY, json.sizeX],
+        spacing: [1, 1, json.physicalPixelSize[2], json.physicalPixelSize[1], json.physicalPixelSize[0]],
+        spaceUnit: json.spatialUnit || "μm",
+        timeUnit: "s",
+        dataType: "uint8",
+      },
+    ],
+
+    transform: {
+      translation: new Vector3(0, 0, 0),
+      rotation: new Vector3(0, 0, 0),
     },
-  ],
 
-  transform: {
-    translation: new Vector3(0, 0, 0),
-    rotation: new Vector3(0, 0, 0),
-  },
-
-  userData: json.userData,
-});
+    userData: json.userData,
+  };
 
 class RawArrayLoader extends ThreadableVolumeLoader {
   data: RawArrayData;

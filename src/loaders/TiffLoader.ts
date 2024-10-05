@@ -164,7 +164,7 @@ class TiffLoader extends ThreadableVolumeLoader {
 
     // load tiff and check metadata
 
-    const imgdata: ImageInfo = {
+    const imgdata: ImageInfo = <ImageInfo>{
       name: "TEST",
 
       originalSize: new Vector3(dims.sizex, dims.sizey, dims.sizez),
@@ -185,7 +185,7 @@ class TiffLoader extends ThreadableVolumeLoader {
       numMultiscaleLevels: 1,
       multiscaleLevel: 0,
       multiscaleLevelDims: [
-        {
+        <VolumeDims>{
           shape: [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex],
           spacing: [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex],
           spaceUnit: dims.unit || "",
