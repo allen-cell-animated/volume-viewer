@@ -1,4 +1,5 @@
-import type { VolumeDims } from "./VolumeDims";
+import { type VolumeDims2, volumeSize, physicalPixelSize } from "./VolumeDims";
+import { Vector3 } from "three";
 
 export type ImageInfo2 = Readonly<{
   name: string;
@@ -54,7 +55,7 @@ export type ImageInfo2 = Readonly<{
   //numMultiscaleLevels: number;
   /** Dimensions of each scale level, at original size, from the first data source */
   // TODO THIS DATA IS SOMEWHAT REDUNDANT WITH SOME OF THE OTHER FIELDS IN HERE
-  multiscaleLevelDims: VolumeDims[];
+  multiscaleLevelDims: VolumeDims2[];
 
   /** The scale level from which this image was loaded, between `0` and `numMultiscaleLevels-1` */
   multiscaleLevel: number;
@@ -100,5 +101,36 @@ export class CImageInfo {
   imageInfo: ImageInfo2;
   constructor(imageInfo?: ImageInfo2) {
     this.imageInfo = imageInfo || defaultImageInfo();
+  }
+
+  get currentLevelDims(): VolumeDims2 {
+    return this.imageInfo.multiscaleLevelDims[this.imageInfo.multiscaleLevel];
+  }
+  get numChannels(): number {
+    return this.currentLevelDims.sizeC;
+  }
+  get originalSize(): Vector3 {
+    return volumeSize(this.imageInfo.multiscaleLevelDims[0]);
+  }
+  get volumeSize(): Vector3 {
+    return volumeSize(this.currentLevelDims);
+  }
+  get physicalPixelSize(): Vector3 {
+    return physicalPixelSize(this.currentLevelDims);
+  }
+  get spatialUnit(): string {
+    return this.currentLevelDims.spaceUnit;
+  }
+  get times(): number {
+    return this.currentLevelDims.sizeT;
+  }
+  get timeScale(): number {
+    return this.currentLevelDims.timeScale;
+  }
+  get timeUnit(): string {
+    return this.currentLevelDims.timeUnit;
+  }
+  get numMultiscaleLevels(): number {
+    return this.imageInfo.multiscaleLevelDims.length;
   }
 }
