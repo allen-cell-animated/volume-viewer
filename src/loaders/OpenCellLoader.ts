@@ -27,7 +27,7 @@ class OpenCellLoader extends ThreadableVolumeLoader {
     // we know these are standardized to 600x600, two channels, one channel per jpg.
     const chnames: string[] = ["DNA", "Structure"];
 
-    const imgdata: ImageInfo = <ImageInfo>{
+    const imgdata: ImageInfo = {
       name: "TEST",
 
       originalSize: new Vector3(600, 600, 27),
@@ -48,7 +48,7 @@ class OpenCellLoader extends ThreadableVolumeLoader {
       numMultiscaleLevels: 1,
       multiscaleLevel: 0,
       multiscaleLevelDims: [
-        <VolumeDims>{
+        {
           shape: [1, numChannels, 27, 600, 600],
           spacing: [1, 1, 2, 1, 1],
           spaceUnit: "µm",

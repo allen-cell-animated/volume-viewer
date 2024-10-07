@@ -67,47 +67,46 @@ type JsonImageInfo = {
 };
 /* eslint-enable @typescript-eslint/naming-convention */
 
-const convertImageInfo = (json: JsonImageInfo): ImageInfo =>
-  <ImageInfo>{
-    name: json.name,
+const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
+  name: json.name,
 
-    originalSize: new Vector3(json.width, json.height, json.tiles),
-    atlasTileDims: new Vector2(json.cols, json.rows),
-    volumeSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
-    subregionSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
-    subregionOffset: new Vector3(0, 0, 0),
-    physicalPixelSize: new Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
-    spatialUnit: json.pixel_size_unit || "μm",
+  originalSize: new Vector3(json.width, json.height, json.tiles),
+  atlasTileDims: new Vector2(json.cols, json.rows),
+  volumeSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
+  subregionSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
+  subregionOffset: new Vector3(0, 0, 0),
+  physicalPixelSize: new Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
+  spatialUnit: json.pixel_size_unit || "μm",
 
-    numChannels: json.channels,
-    channelNames: json.channel_names,
-    channelColors: json.channel_colors,
+  numChannels: json.channels,
+  channelNames: json.channel_names,
+  channelColors: json.channel_colors,
 
-    times: json.times || 1,
-    timeScale: json.time_scale || 1,
-    timeUnit: json.time_unit || "s",
+  times: json.times || 1,
+  timeScale: json.time_scale || 1,
+  timeUnit: json.time_unit || "s",
 
-    numMultiscaleLevels: 1,
-    multiscaleLevel: 0,
-    multiscaleLevelDims: [
-      <VolumeDims>{
-        shape: [json.times || 1, json.channels, json.tiles, json.tile_height, json.tile_width],
-        spacing: [json.time_scale || 1, 1, json.pixel_size_z, json.pixel_size_y, json.pixel_size_x],
-        spaceUnit: json.pixel_size_unit || "μm",
-        timeUnit: json.time_unit || "s",
-        dataType: "uint8",
-      },
-    ],
-
-    transform: {
-      translation: json.transform?.translation
-        ? new Vector3().fromArray(json.transform.translation)
-        : new Vector3(0, 0, 0),
-      rotation: json.transform?.rotation ? new Vector3().fromArray(json.transform.rotation) : new Vector3(0, 0, 0),
+  numMultiscaleLevels: 1,
+  multiscaleLevel: 0,
+  multiscaleLevelDims: [
+    {
+      shape: [json.times || 1, json.channels, json.tiles, json.tile_height, json.tile_width],
+      spacing: [json.time_scale || 1, 1, json.pixel_size_z, json.pixel_size_y, json.pixel_size_x],
+      spaceUnit: json.pixel_size_unit || "μm",
+      timeUnit: json.time_unit || "s",
+      dataType: "uint8",
     },
+  ],
 
-    userData: json.userData,
-  };
+  transform: {
+    translation: json.transform?.translation
+      ? new Vector3().fromArray(json.transform.translation)
+      : new Vector3(0, 0, 0),
+    rotation: json.transform?.rotation ? new Vector3().fromArray(json.transform.rotation) : new Vector3(0, 0, 0),
+  },
+
+  userData: json.userData,
+});
 
 class JsonImageInfoLoader extends ThreadableVolumeLoader {
   urls: string[];

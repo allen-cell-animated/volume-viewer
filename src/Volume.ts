@@ -8,38 +8,38 @@ import { type IVolumeLoader, LoadSpec, type PerChannelCallback, VolumeDims } fro
 import { MAX_ATLAS_EDGE, pickLevelToLoadUnscaled } from "./loaders/VolumeLoaderUtils.js";
 import type { NumberType, TypedArray } from "./types.js";
 
-export class ImageInfo {
-  readonly name: string = "";
+export type ImageInfo = Readonly<{
+  name: string;
 
-  /** XYZ size of the *original* (level 0) volume, in pixels */
-  //originalSize: Vector3;
+  /** XYZ size of the *original* (not downsampled) volume, in pixels */
+  originalSize: Vector3;
   /**
    * XY dimensions of the texture atlas used by `RayMarchedAtlasVolume` and `Atlas2DSlice`, in number of z-slice
    * tiles (not pixels). Chosen by the loader to lay out the 3D volume in the squarest possible 2D texture atlas.
    */
-  readonly atlasTileDims: Vector2 = new Vector2(1, 1);
-  /** Size of the volume (current level), in pixels */
-  //volumeSize: Vector3;
+  atlasTileDims: Vector2;
+  /** Size of the volume, in pixels */
+  volumeSize: Vector3;
   /** Size of the currently loaded subregion, in pixels */
-  readonly subregionSize: Vector3 = new Vector3(1, 1, 1);
+  subregionSize: Vector3;
   /** Offset of the loaded subregion into the total volume, in pixels */
-  readonly subregionOffset: Vector3 = new Vector3(0, 0, 0);
+  subregionOffset: Vector3;
   /** Size of a single *original* (not downsampled) pixel, in spatial units */
-  //physicalPixelSize: Vector3;
+  physicalPixelSize: Vector3;
   /** Symbol of physical spatial unit used by `pixelSize` */
-  //spatialUnit: string;
+  spatialUnit: string;
 
   /** Number of channels in the image */
-  //numChannels: number;
+  numChannels: number;
   /** The names of each channel */
-  readonly channelNames: string[] = [];
+  channelNames: string[];
   /** Optional overrides to default channel colors, in 0-255 range */
-  readonly channelColors?: [number, number, number][] = [];
+  channelColors?: [number, number, number][];
 
   /** Number of timesteps in the time series, or 1 if the image is not a time series */
-  //times: number;
+  times: number;
   /** Size of each timestep in temporal units */
-  //timeScale: number;
+  timeScale: number;
   /**
    * Symbol of temporal unit used by `timeScale`, e.g. "hr".
    *
@@ -56,68 +56,58 @@ export class ImageInfo {
    * For example, if the time unit is in seconds, and the maximum time is 90 seconds, the timestamp
    * will be formatted as "{m:ss} (m:s)", and the day and hour segments will be omitted.
    */
-  //timeUnit: string;
+  timeUnit: string;
 
   /** Number of scale levels available for this volume */
-  //numMultiscaleLevels: number;
+  numMultiscaleLevels: number;
   /** Dimensions of each scale level, at original size, from the first data source */
   // TODO THIS DATA IS SOMEWHAT REDUNDANT WITH SOME OF THE OTHER FIELDS IN HERE
-  readonly multiscaleLevelDims: VolumeDims[] = [
-    new VolumeDims({
+  multiscaleLevelDims: VolumeDims[];
+  /** The scale level from which this image was loaded, between `0` and `numMultiscaleLevels-1` */
+  multiscaleLevel: number;
+
+  transform: {
+    /** Translation of the volume from the center of space, in volume voxels */
+    translation: Vector3;
+    /** Rotation of the volume in Euler angles, applied in XYZ order */
+    rotation: Vector3;
+  };
+
+  /** Arbitrary additional metadata not captured by other `ImageInfo` properties */
+  userData?: Record<string, unknown>;
+}>;
+
+export const getDefaultImageInfo = (): ImageInfo => ({
+  name: "",
+  originalSize: new Vector3(1, 1, 1),
+  atlasTileDims: new Vector2(1, 1),
+  volumeSize: new Vector3(1, 1, 1),
+  subregionSize: new Vector3(1, 1, 1),
+  subregionOffset: new Vector3(0, 0, 0),
+  physicalPixelSize: new Vector3(1, 1, 1),
+  spatialUnit: "",
+  numChannels: 0,
+  channelNames: [],
+  channelColors: [],
+  times: 1,
+  timeScale: 1,
+  timeUnit: "",
+  numMultiscaleLevels: 1,
+  multiscaleLevel: 0,
+  multiscaleLevelDims: [
+    {
       shape: [1, 1, 1, 1, 1],
       spacing: [1, 1, 1, 1, 1],
       spaceUnit: "",
       timeUnit: "",
       dataType: "uint8",
-    }),
-  ];
-
-  /** The scale level from which this image was loaded, between `0` and `numMultiscaleLevels-1` */
-  readonly multiscaleLevel: number = 0;
-
-  readonly transform: {
-    /** Translation of the volume from the center of space, in volume voxels */
-    translation: Vector3;
-    /** Rotation of the volume in Euler angles, applied in XYZ order */
-    rotation: Vector3;
-  } = { translation: new Vector3(0, 0, 0), rotation: new Vector3(0, 0, 0) };
-
-  /** Arbitrary additional metadata not captured by other `ImageInfo` properties */
-  readonly userData?: Record<string, unknown>;
-
-  get currentLevelDims(): VolumeDims {
-    return this.multiscaleLevelDims[this.multiscaleLevel];
-  }
-  get numChannels(): number {
-    return this.currentLevelDims.sizeC;
-  }
-  get originalSize(): Vector3 {
-    return this.multiscaleLevelDims[0].volumeSize;
-  }
-  get volumeSize(): Vector3 {
-    return this.currentLevelDims.volumeSize;
-  }
-  get physicalPixelSize(): Vector3 {
-    return this.currentLevelDims.physicalPixelSize;
-  }
-  get spatialUnit(): string {
-    return this.currentLevelDims.spaceUnit;
-  }
-  get times(): number {
-    return this.currentLevelDims.sizeT;
-  }
-  get timeScale(): number {
-    return this.currentLevelDims.timeScale;
-  }
-  get timeUnit(): string {
-    return this.currentLevelDims.timeUnit;
-  }
-  get numMultiscaleLevels(): number {
-    return this.multiscaleLevelDims.length;
-  }
-}
-
-export const getDefaultImageInfo = (): ImageInfo => new ImageInfo();
+    },
+  ],
+  transform: {
+    translation: new Vector3(0, 0, 0),
+    rotation: new Vector3(0, 0, 0),
+  },
+});
 
 interface VolumeDataObserver {
   onVolumeData: (vol: Volume, batch: number[]) => void;

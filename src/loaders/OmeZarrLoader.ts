@@ -392,7 +392,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       });
     });
 
-    const alldims: VolumeDims[] = source0.scaleLevels.map((level, i) => {
+    const alldims: VolumeDims[] = [];
+    source0.scaleLevels.map((level, i) => {
       const dims = new VolumeDims();
 
       dims.spaceUnit = spatialUnit;
@@ -401,14 +402,14 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       dims.spacing = this.getScale(i);
       dims.dataType = level.dtype;
 
-      return dims;
+      alldims.push(dims);
     });
     // for physicalPixelSize, we use the scale of the first level
     const scale5d: TCZYX<number> = this.getScale(0);
     // assume that ImageInfo wants the timeScale of level 0
     const timeScale = hasT ? scale5d[0] : 1;
 
-    const imgdata: ImageInfo = <ImageInfo>{
+    const imgdata: ImageInfo = {
       name: source0.omeroMetadata?.name || "Volume",
 
       originalSize: pxSize0,
@@ -543,7 +544,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     );
     const volumeSize = volumeExtent.getSize(new Vector3());
 
-    return <ImageInfo>{
+    return {
       ...imageInfo,
       atlasTileDims,
       volumeSize,
