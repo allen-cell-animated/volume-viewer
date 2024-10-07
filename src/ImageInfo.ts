@@ -107,55 +107,103 @@ export class CImageInfo {
   get currentLevelDims(): VolumeDims2 {
     return this.imageInfo.multiscaleLevelDims[this.imageInfo.multiscaleLevel];
   }
+
+  /** Number of channels in the image */
+  // TODO FIXME use combinedNumChannels?????
   get numChannels(): number {
     // 1 is C
     return this.currentLevelDims.shape[1];
   }
+
+  /** XYZ size of the *original* (not downsampled) volume, in pixels */
   get originalSize(): Vector3 {
     return volumeSize(this.imageInfo.multiscaleLevelDims[0]);
   }
+
+  /** Size of the volume, in pixels */
   get volumeSize(): Vector3 {
     return volumeSize(this.currentLevelDims);
   }
+
+  /** Size of a single *original* (not downsampled) pixel, in spatial units */
   get physicalPixelSize(): Vector3 {
-    return physicalPixelSize(this.currentLevelDims);
+    return physicalPixelSize(this.imageInfo.multiscaleLevelDims[0]);
   }
+
+  /** Symbol of physical spatial unit used by `physicalPixelSize` */
   get spatialUnit(): string {
-    return this.currentLevelDims.spaceUnit;
+    return this.imageInfo.multiscaleLevelDims[0].spaceUnit;
   }
+
+  /** Number of timesteps in the time series, or 1 if the image is not a time series */
   get times(): number {
     // 0 is T
     return this.currentLevelDims.shape[0];
   }
+
+  /** Size of each timestep in temporal units */
   get timeScale(): number {
     // 0 is T
     return this.currentLevelDims.spacing[0];
   }
+
+  /**
+   * Symbol of temporal unit used by `timeScale`, e.g. "hr".
+   *
+   * If units match one of the following, the viewer will automatically format
+   * timestamps to a d:hh:mm:ss.sss format, truncated as an integer of the unit specified.
+   * See https://ngff.openmicroscopy.org/latest/index.html#axes-md for a list of valid time units.
+   * - "ms", "millisecond" for milliseconds: `d:hh:mm:ss.sss`
+   * - "s", "sec", "second", or "seconds" for seconds: `d:hh:mm:ss`
+   * - "m", "min", "minute", or "minutes" for minutes: `d:hh:mm`
+   * - "h", "hr", "hour", or "hours" for hours: `d:hh`
+   * - "d", "day", or "days" for days: `d`
+   *
+   * The maximum timestamp value is used to determine the maximum unit shown.
+   * For example, if the time unit is in seconds, and the maximum time is 90 seconds, the timestamp
+   * will be formatted as "{m:ss} (m:s)", and the day and hour segments will be omitted.
+   */
   get timeUnit(): string {
     return this.currentLevelDims.timeUnit;
   }
+
+  /** Number of scale levels available for this volume */
   get numMultiscaleLevels(): number {
     return this.imageInfo.multiscaleLevelDims.length;
   }
 
+  /** The names of each channel */
   get channelNames(): string[] {
     return this.imageInfo.channelNames;
   }
+
+  /** Optional overrides to default channel colors, in 0-255 range */
   get channelColors(): [number, number, number][] | undefined {
     return this.imageInfo.channelColors;
   }
+
+  /** Size of the currently loaded subregion, in pixels */
   get subregionSize(): Vector3 {
     return new Vector3(...this.imageInfo.subregionSize);
   }
+
+  /** Offset of the loaded subregion into the total volume, in pixels */
   get subregionOffset(): Vector3 {
     return new Vector3(...this.imageInfo.subregionOffset);
   }
+
   get multiscaleLevel(): number {
     return this.imageInfo.multiscaleLevel;
   }
+
+  /**
+   * XY dimensions of the texture atlas used by `RayMarchedAtlasVolume` and `Atlas2DSlice`, in number of z-slice
+   * tiles (not pixels). Chosen by the loader to lay out the 3D volume in the squarest possible 2D texture atlas.
+   */
   get atlasTileDims(): Vector2 {
     return new Vector2(...this.imageInfo.atlasTileDims);
   }
+
   get transform(): { translation: Vector3; rotation: Vector3 } {
     return {
       translation: new Vector3(...this.imageInfo.transform.translation),
@@ -168,5 +216,5 @@ export function computeAtlasSize(imageInfo: ImageInfo2): [number, number] {
   const { atlasTileDims } = imageInfo;
   const volDims = imageInfo.multiscaleLevelDims[imageInfo.multiscaleLevel];
   // TCZYX: 4 = x, 3 = y
-  return [atlasTileDims[0] * volDims[4], atlasTileDims[1] * volDims[3]];
+  return [atlasTileDims[0] * volDims.shape[4], atlasTileDims[1] * volDims.shape[3]];
 }
