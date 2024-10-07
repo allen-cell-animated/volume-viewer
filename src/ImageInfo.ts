@@ -107,7 +107,8 @@ export class CImageInfo {
     return this.imageInfo.multiscaleLevelDims[this.imageInfo.multiscaleLevel];
   }
   get numChannels(): number {
-    return this.currentLevelDims.sizeC;
+    // 1 is C
+    return this.currentLevelDims.shape[1];
   }
   get originalSize(): Vector3 {
     return volumeSize(this.imageInfo.multiscaleLevelDims[0]);
@@ -122,10 +123,12 @@ export class CImageInfo {
     return this.currentLevelDims.spaceUnit;
   }
   get times(): number {
-    return this.currentLevelDims.sizeT;
+    // 0 is T
+    return this.currentLevelDims.shape[0];
   }
   get timeScale(): number {
-    return this.currentLevelDims.timeScale;
+    // 0 is T
+    return this.currentLevelDims.spacing[0];
   }
   get timeUnit(): string {
     return this.currentLevelDims.timeUnit;
