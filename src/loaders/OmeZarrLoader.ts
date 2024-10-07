@@ -8,6 +8,8 @@ import { AbsolutePath } from "@zarrita/storage";
 import { FetchStore } from "zarrita";
 
 import { ImageInfo } from "../Volume.js";
+import { ImageInfo2 } from "../ImageInfo.js";
+import { VolumeDims2 } from "../VolumeDims.js";
 import VolumeCache from "../VolumeCache.js";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue.js";
 import {
@@ -392,46 +394,44 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       });
     });
 
-    const alldims: VolumeDims[] = [];
-    source0.scaleLevels.map((level, i) => {
-      const dims = new VolumeDims();
-
-      dims.spaceUnit = spatialUnit;
-      dims.timeUnit = timeUnit;
-      dims.shape = this.orderByTCZYX(level.shape, 1);
-      dims.spacing = this.getScale(i);
-      dims.dataType = level.dtype;
-
-      alldims.push(dims);
+    const alldims: VolumeDims2[] = source0.scaleLevels.map((level, i) => {
+      const dims = {
+        spaceUnit: spatialUnit,
+        timeUnit: timeUnit,
+        shape: this.orderByTCZYX(level.shape, 1),
+        spacing: this.getScale(i),
+        dataType: level.dtype,
+      };
+      return dims;
     });
     // for physicalPixelSize, we use the scale of the first level
     const scale5d: TCZYX<number> = this.getScale(0);
     // assume that ImageInfo wants the timeScale of level 0
     const timeScale = hasT ? scale5d[0] : 1;
 
-    const imgdata: ImageInfo = {
+    const imgdata: ImageInfo2 = {
       name: source0.omeroMetadata?.name || "Volume",
 
-      originalSize: pxSize0,
-      atlasTileDims,
-      volumeSize: pxSizeLv,
-      subregionSize: pxSizeLv.clone(),
-      subregionOffset: new Vector3(0, 0, 0),
-      physicalPixelSize: new Vector3(scale5d[4], scale5d[3], hasZ ? scale5d[2] : Math.min(scale5d[4], scale5d[3])),
-      spatialUnit,
+      //originalSize: pxSize0,
+      atlasTileDims: [atlasTileDims.x, atlasTileDims.y],
+      //volumeSize: pxSizeLv,
+      subregionSize: [pxSizeLv.x, pxSizeLv.y, pxSizeLv.z], //pxSizeLv.clone(),
+      subregionOffset: [0, 0, 0],
+      //physicalPixelSize: new Vector3(scale5d[4], scale5d[3], hasZ ? scale5d[2] : Math.min(scale5d[4], scale5d[3])),
+      //spatialUnit,
 
-      numChannels,
+      combinedNumChannels: numChannels,
       channelNames,
-      times,
-      timeScale,
-      timeUnit,
-      numMultiscaleLevels: source0.scaleLevels.length,
+      //times,
+      //timeScale,
+      //timeUnit,
+      //numMultiscaleLevels: source0.scaleLevels.length,
       multiscaleLevel: levelToLoad,
       multiscaleLevelDims: alldims,
 
       transform: {
-        translation: new Vector3(0, 0, 0),
-        rotation: new Vector3(0, 0, 0),
+        translation: [0, 0, 0],
+        rotation: [0, 0, 0],
       },
     };
 
@@ -519,7 +519,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     this.prefetchSubscriber = subscriber;
   }
 
-  private updateImageInfoForLoad(imageInfo: ImageInfo, loadSpec: LoadSpec): ImageInfo {
+  private updateImageInfoForLoad(imageInfo: ImageInfo2, loadSpec: LoadSpec): ImageInfo2 {
     // Apply `this.maxExtent` to subregion, if it exists
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     const subregion = composeSubregion(loadSpec.subregion, maxExtent);
@@ -546,18 +546,18 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     return {
       ...imageInfo,
-      atlasTileDims,
-      volumeSize,
-      subregionSize,
-      subregionOffset: regionPx.min,
+      atlasTileDims: [atlasTileDims.x, atlasTileDims.y],
+      //volumeSize,
+      subregionSize: [subregionSize.x, subregionSize.y, subregionSize.z],
+      subregionOffset: [regionPx.min.x, regionPx.min.y, regionPx.min.z],
       multiscaleLevel,
     };
   }
 
   async loadRawChannelData(
-    imageInfo: ImageInfo,
+    imageInfo: ImageInfo2,
     loadSpec: LoadSpec,
-    onUpdateMetadata: (imageInfo: ImageInfo) => void,
+    onUpdateMetadata: (imageInfo: ImageInfo2) => void,
     onData: RawChannelDataCallback
   ): Promise<void> {
     // This seemingly useless line keeps a stable local copy of `syncChannels` which the async closures below capture
@@ -566,8 +566,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     const updatedImageInfo = this.updateImageInfoForLoad(imageInfo, loadSpec);
     onUpdateMetadata(updatedImageInfo);
-    const { numChannels, multiscaleLevel } = updatedImageInfo;
-    const channelIndexes = loadSpec.channels ?? Array.from({ length: numChannels }, (_, i) => i);
+    const { combinedNumChannels, multiscaleLevel } = updatedImageInfo;
+    const channelIndexes = loadSpec.channels ?? Array.from({ length: combinedNumChannels }, (_, i) => i);
 
     const subscriber = this.requestQueue.addSubscriber();
 
@@ -586,8 +586,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     const channelPromises = channelIndexes.map(async (ch) => {
       // Build slice spec
-      const min = updatedImageInfo.subregionOffset;
-      const max = min.clone().add(updatedImageInfo.subregionSize);
+      const min = new Vector3(...updatedImageInfo.subregionOffset);
+      const max = min.clone().add(new Vector3(...updatedImageInfo.subregionSize));
       const { sourceIndex: sourceIdx, channelIndexInSource: sourceCh } = this.matchChannelToSource(ch);
       const unorderedSpec = [loadSpec.time, sourceCh, slice(min.z, max.z), slice(min.y, max.y), slice(min.x, max.x)];
 

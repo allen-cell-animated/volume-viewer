@@ -8,6 +8,7 @@ import {
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
 import type { ImageInfo } from "../Volume.js";
+import { computeAtlasSize, type ImageInfo2 } from "../ImageInfo.js";
 import VolumeCache from "../VolumeCache.js";
 import type { TypedArray, NumberType } from "../types.js";
 import { DATARANGE_UINT8 } from "../types.js";
@@ -67,26 +68,26 @@ type JsonImageInfo = {
 };
 /* eslint-enable @typescript-eslint/naming-convention */
 
-const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
+const convertImageInfo = (json: JsonImageInfo): ImageInfo2 => ({
   name: json.name,
 
-  originalSize: new Vector3(json.width, json.height, json.tiles),
-  atlasTileDims: new Vector2(json.cols, json.rows),
-  volumeSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
-  subregionSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
-  subregionOffset: new Vector3(0, 0, 0),
-  physicalPixelSize: new Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
-  spatialUnit: json.pixel_size_unit || "μm",
+  //originalSize: new Vector3(json.width, json.height, json.tiles),
+  atlasTileDims: [json.cols, json.rows],
+  //volumeSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
+  subregionSize: [json.tile_width, json.tile_height, json.tiles],
+  subregionOffset: [0, 0, 0],
+  //physicalPixelSize: new Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
+  //spatialUnit: json.pixel_size_unit || "μm",
 
-  numChannels: json.channels,
+  combinedNumChannels: json.channels,
   channelNames: json.channel_names,
   channelColors: json.channel_colors,
 
-  times: json.times || 1,
-  timeScale: json.time_scale || 1,
-  timeUnit: json.time_unit || "s",
+  //times: json.times || 1,
+  //timeScale: json.time_scale || 1,
+  //timeUnit: json.time_unit || "s",
 
-  numMultiscaleLevels: 1,
+  //numMultiscaleLevels: 1,
   multiscaleLevel: 0,
   multiscaleLevelDims: [
     {
@@ -99,10 +100,8 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
   ],
 
   transform: {
-    translation: json.transform?.translation
-      ? new Vector3().fromArray(json.transform.translation)
-      : new Vector3(0, 0, 0),
-    rotation: json.transform?.rotation ? new Vector3().fromArray(json.transform.rotation) : new Vector3(0, 0, 0),
+    translation: json.transform?.translation ? json.transform.translation : [0, 0, 0],
+    rotation: json.transform?.rotation ? json.transform.rotation : [0, 0, 0],
   },
 
   userData: json.userData,
@@ -159,7 +158,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
   }
 
   async loadRawChannelData(
-    imageInfo: ImageInfo,
+    imageInfo: ImageInfo2,
     loadSpec: LoadSpec,
     onUpdateMetadata: (imageInfo: undefined, loadSpec?: LoadSpec) => void,
     onData: RawChannelDataCallback
@@ -196,8 +195,9 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
     };
     onUpdateMetadata(undefined, adjustedLoadSpec);
 
-    const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
-    const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
+    //const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
+    //const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
+    const [w, h] = computeAtlasSize(imageInfo);
     const wrappedOnData = (
       ch: number[],
       dtype: NumberType[],

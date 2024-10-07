@@ -7,6 +7,7 @@ import { getColorByChannelIndex } from "./constants/colors.js";
 import { type IVolumeLoader, LoadSpec, type PerChannelCallback, VolumeDims } from "./loaders/IVolumeLoader.js";
 import { MAX_ATLAS_EDGE, pickLevelToLoadUnscaled } from "./loaders/VolumeLoaderUtils.js";
 import type { NumberType, TypedArray } from "./types.js";
+import { type ImageInfo2, CImageInfo, defaultImageInfo } from "./ImageInfo.js";
 
 export type ImageInfo = Readonly<{
   name: string;
@@ -164,7 +165,7 @@ interface VolumeDataObserver {
  * @param {ImageInfo} imageInfo
  */
 export default class Volume {
-  public imageInfo: ImageInfo;
+  public imageInfo: CImageInfo;
   public loadSpec: Required<LoadSpec>;
   public loader?: IVolumeLoader;
   // `LoadSpec` representing the minimum data required to display what's in the viewer (subregion, channels, etc.).
@@ -191,14 +192,11 @@ export default class Volume {
   private volumeDataObservers: VolumeDataObserver[];
   private loaded: boolean;
 
-  constructor(
-    imageInfo: ImageInfo = getDefaultImageInfo(),
-    loadSpec: LoadSpec = new LoadSpec(),
-    loader?: IVolumeLoader
-  ) {
+  constructor(imageInfo: ImageInfo2 = defaultImageInfo(), loadSpec: LoadSpec = new LoadSpec(), loader?: IVolumeLoader) {
     this.loaded = false;
-    this.imageInfo = imageInfo;
-    this.name = this.imageInfo.name;
+    this.imageInfo = new CImageInfo(imageInfo);
+    // TODO: use getter?
+    this.name = imageInfo.name;
     this.loadSpec = {
       // Fill in defaults for optional properties
       multiscaleLevel: 0,

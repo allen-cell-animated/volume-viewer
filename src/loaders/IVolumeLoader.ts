@@ -1,6 +1,7 @@
 import { Box3, Vector3 } from "three";
 
 import Volume, { ImageInfo } from "../Volume.js";
+import { CImageInfo, ImageInfo2 } from "../ImageInfo.js";
 import { TypedArray, NumberType } from "../types.js";
 import { buildDefaultMetadata } from "./VolumeLoaderUtils.js";
 import { PrefetchDirection } from "./zarr_utils/types.js";
@@ -44,7 +45,7 @@ export class VolumeDims {
 }
 
 export type LoadedVolumeInfo = {
-  imageInfo: ImageInfo;
+  imageInfo: ImageInfo2;
   loadSpec: LoadSpec;
 };
 
@@ -142,9 +143,9 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
    * The returned promise should resolve when all data has been loaded, or reject if any error occurs while loading.
    */
   abstract loadRawChannelData(
-    imageInfo: ImageInfo,
+    imageInfo: ImageInfo2,
     loadSpec: LoadSpec,
-    onUpdateVolumeMetadata: (imageInfo?: ImageInfo, loadSpec?: LoadSpec) => void,
+    onUpdateVolumeMetadata: (imageInfo?: ImageInfo2, loadSpec?: LoadSpec) => void,
     onData: RawChannelDataCallback
   ): Promise<void>;
 
@@ -174,9 +175,9 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
     loadSpecOverride?: LoadSpec,
     onChannelLoaded?: PerChannelCallback
   ): Promise<void> {
-    const onUpdateMetadata = (imageInfo?: ImageInfo, loadSpec?: LoadSpec): void => {
+    const onUpdateMetadata = (imageInfo?: ImageInfo2, loadSpec?: LoadSpec): void => {
       if (imageInfo) {
-        volume.imageInfo = imageInfo;
+        volume.imageInfo = new CImageInfo(imageInfo);
         volume.updateDimensions();
       }
       volume.loadSpec = { ...loadSpec, ...spec };
@@ -198,6 +199,6 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
     };
 
     const spec = { ...volume.loadSpec, ...loadSpecOverride };
-    return this.loadRawChannelData(volume.imageInfo, spec, onUpdateMetadata, onChannelData);
+    return this.loadRawChannelData(volume.imageInfo.imageInfo, spec, onUpdateMetadata, onChannelData);
   }
 }

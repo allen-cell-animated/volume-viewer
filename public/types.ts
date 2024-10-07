@@ -73,7 +73,7 @@ export interface State {
   flipZ: -1 | 1;
 
   channelFolderNames: string[];
-  infoObj: ImageInfo;
+  //infoObj: ImageInfo;
   channelGui: ChannelGuiOptions[];
 
   currentImageStore: string;

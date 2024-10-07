@@ -1,5 +1,5 @@
 import { type VolumeDims2, volumeSize, physicalPixelSize } from "./VolumeDims";
-import { Vector3 } from "three";
+import { Vector3, Vector2 } from "three";
 
 export type ImageInfo2 = Readonly<{
   name: string;
@@ -13,9 +13,9 @@ export type ImageInfo2 = Readonly<{
   atlasTileDims: [number, number];
   /** Size of the volume (current level), in pixels */
   //volumeSize: Vector3;
-  /** Size of the currently loaded subregion, in pixels */
+  /** Size of the currently loaded subregion, in pixels, in XYZ order */
   subregionSize: [number, number, number];
-  /** Offset of the loaded subregion into the total volume, in pixels */
+  /** Offset of the loaded subregion into the total volume, in pixels, in XYZ order */
   subregionOffset: [number, number, number];
   /** Size of a single *original* (not downsampled) pixel, in spatial units */
   //physicalPixelSize: Vector3;
@@ -26,7 +26,7 @@ export type ImageInfo2 = Readonly<{
   combinedNumChannels: number;
   /** The names of each channel */
   channelNames: string[];
-  /** Optional overrides to default channel colors, in 0-255 range */
+  /** Optional overrides to default channel colors, in 0-255 range, RGB order */
   channelColors?: [number, number, number][];
 
   /** Number of timesteps in the time series, or 1 if the image is not a time series */
@@ -61,7 +61,7 @@ export type ImageInfo2 = Readonly<{
   multiscaleLevel: number;
 
   transform: {
-    /** Translation of the volume from the center of space, in volume voxels */
+    /** Translation of the volume from the center of space, in volume voxels in XYZ order */
     translation: [number, number, number];
     /** Rotation of the volume in Euler angles, applied in XYZ order */
     rotation: [number, number, number];
@@ -99,6 +99,7 @@ export function defaultImageInfo(): ImageInfo2 {
 
 export class CImageInfo {
   imageInfo: ImageInfo2;
+
   constructor(imageInfo?: ImageInfo2) {
     this.imageInfo = imageInfo || defaultImageInfo();
   }
@@ -136,4 +137,36 @@ export class CImageInfo {
   get numMultiscaleLevels(): number {
     return this.imageInfo.multiscaleLevelDims.length;
   }
+
+  get channelNames(): string[] {
+    return this.imageInfo.channelNames;
+  }
+  get channelColors(): [number, number, number][] | undefined {
+    return this.imageInfo.channelColors;
+  }
+  get subregionSize(): Vector3 {
+    return new Vector3(...this.imageInfo.subregionSize);
+  }
+  get subregionOffset(): Vector3 {
+    return new Vector3(...this.imageInfo.subregionOffset);
+  }
+  get multiscaleLevel(): number {
+    return this.imageInfo.multiscaleLevel;
+  }
+  get atlasTileDims(): Vector2 {
+    return new Vector2(...this.imageInfo.atlasTileDims);
+  }
+  get transform(): { translation: Vector3; rotation: Vector3 } {
+    return {
+      translation: new Vector3(...this.imageInfo.transform.translation),
+      rotation: new Vector3(...this.imageInfo.transform.rotation),
+    };
+  }
+}
+
+export function computeAtlasSize(imageInfo: ImageInfo2): [number, number] {
+  const { atlasTileDims } = imageInfo;
+  const volDims = imageInfo.multiscaleLevelDims[imageInfo.multiscaleLevel];
+  // TCZYX: 4 = x, 3 = y
+  return [atlasTileDims[0] * volDims[4], atlasTileDims[1] * volDims[3]];
 }

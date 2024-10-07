@@ -8,6 +8,7 @@ import {
   LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
 import { ImageInfo } from "../Volume.js";
+import { computeAtlasSize, ImageInfo2 } from "../ImageInfo.js";
 import { JsonImageInfoLoader } from "./JsonImageInfoLoader.js";
 import { DATARANGE_UINT8 } from "../types.js";
 
@@ -27,25 +28,25 @@ class OpenCellLoader extends ThreadableVolumeLoader {
     // we know these are standardized to 600x600, two channels, one channel per jpg.
     const chnames: string[] = ["DNA", "Structure"];
 
-    const imgdata: ImageInfo = {
+    const imgdata: ImageInfo2 = {
       name: "TEST",
 
-      originalSize: new Vector3(600, 600, 27),
-      atlasTileDims: new Vector2(27, 1),
-      volumeSize: new Vector3(600, 600, 27),
-      subregionSize: new Vector3(600, 600, 27),
-      subregionOffset: new Vector3(0, 0, 0),
-      physicalPixelSize: new Vector3(1, 1, 2),
-      spatialUnit: "µm",
+      //originalSize: new Vector3(600, 600, 27),
+      atlasTileDims: [27, 1],
+      //volumeSize: new Vector3(600, 600, 27),
+      subregionSize: [600, 600, 27],
+      subregionOffset: [0, 0, 0],
+      //physicalPixelSize: new Vector3(1, 1, 2),
+      //spatialUnit: "µm",
 
-      numChannels: numChannels,
+      combinedNumChannels: numChannels,
       channelNames: chnames,
 
-      times: 1,
-      timeScale: 1,
-      timeUnit: "",
+      //times: 1,
+      //timeScale: 1,
+      //timeUnit: "",
 
-      numMultiscaleLevels: 1,
+      //numMultiscaleLevels: 1,
       multiscaleLevel: 0,
       multiscaleLevelDims: [
         {
@@ -58,8 +59,8 @@ class OpenCellLoader extends ThreadableVolumeLoader {
       ],
 
       transform: {
-        translation: new Vector3(0, 0, 0),
-        rotation: new Vector3(0, 0, 0),
+        translation: [0, 0, 0],
+        rotation: [0, 0, 0],
       },
     };
 
@@ -68,7 +69,7 @@ class OpenCellLoader extends ThreadableVolumeLoader {
   }
 
   loadRawChannelData(
-    imageInfo: ImageInfo,
+    imageInfo: ImageInfo2,
     _loadSpec: LoadSpec,
     _onUpdateMetadata: () => void,
     onData: RawChannelDataCallback
@@ -86,8 +87,9 @@ class OpenCellLoader extends ThreadableVolumeLoader {
       },
     ];
 
-    const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
-    const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
+    //const w = imageInfo.atlasTileDims[0] * imageInfo.volumeSize.x;
+    //const h = imageInfo.atlasTileDims[1] * imageInfo.volumeSize.y;
+    const [w, h] = computeAtlasSize(imageInfo);
     // all data coming from this loader is natively 8-bit
     return JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, dtype, data) =>
       onData(ch, dtype, data, [DATARANGE_UINT8], [w, h])

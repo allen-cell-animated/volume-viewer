@@ -3,7 +3,7 @@ import GUI from "lil-gui";
 
 import {
   CreateLoaderOptions,
-  ImageInfo,
+  ImageInfo2,
   IVolumeLoader,
   LoadSpec,
   Lut,
@@ -162,7 +162,7 @@ const myState: State = {
   flipZ: 1,
 
   channelFolderNames: [],
-  infoObj: getDefaultImageInfo(),
+  //infoObj: getDefaultImageInfo(),
   channelGui: [],
 
   currentImageStore: "",
@@ -600,7 +600,8 @@ function updateTimeUI() {
 function updateChannelUI(vol: Volume, channelIndex: number) {
   const channel = vol.channels[channelIndex];
 
-  const folder = gui.folders.find((f) => f._title === "Channel " + myState.infoObj.channelNames[channelIndex]);
+  const channelNames = vol.imageInfo.channelNames;
+  const folder = gui.folders.find((f) => f._title === "Channel " + channelNames[channelIndex]);
   if (!folder) {
     return;
   }
@@ -631,12 +632,14 @@ function showChannelUI(volume: Volume) {
     }
   }
 
-  myState.infoObj = volume.imageInfo;
+  //myState.infoObj = volume.imageInfo;
+  const nChannels = volume.imageInfo.numChannels;
+  const channelNames = volume.imageInfo.channelNames;
 
   myState.channelGui = [];
 
   myState.channelFolderNames = [];
-  for (let i = 0; i < myState.infoObj.numChannels; ++i) {
+  for (let i = 0; i < nChannels; ++i) {
     myState.channelGui.push({
       colorD: volume.channelColorsDefault[i],
       colorS: [0, 0, 0],
@@ -709,11 +712,11 @@ function showChannelUI(volume: Volume) {
       })(i),
       colorizeAlpha: 0.0,
     });
-    const f = gui.addFolder("Channel " + myState.infoObj.channelNames[i]);
+    const f = gui.addFolder("Channel " + channelNames[i]);
     if (i > 0) {
       f.close();
     }
-    myState.channelFolderNames.push("Channel " + myState.infoObj.channelNames[i]);
+    myState.channelFolderNames.push("Channel " + channelNames[i]);
     f.add(myState.channelGui[i], "enabled").onChange(
       (function (j) {
         return function (value) {
@@ -863,7 +866,7 @@ function showChannelUI(volume: Volume) {
   }
 }
 
-function loadImageData(jsonData: ImageInfo, volumeData: Uint8Array[]) {
+function loadImageData(jsonData: ImageInfo2, volumeData: Uint8Array[]) {
   const vol = new Volume(jsonData);
   myState.volume = vol;
 

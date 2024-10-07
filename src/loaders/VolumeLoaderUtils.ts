@@ -1,6 +1,7 @@
 import { Box3, Vector2, Vector3 } from "three";
 
 import { ImageInfo } from "../Volume.js";
+import { CImageInfo, ImageInfo2 } from "../ImageInfo.js";
 import { LoadSpec } from "./IVolumeLoader.js";
 
 export const MAX_ATLAS_EDGE = 4096;
@@ -220,7 +221,9 @@ function isEmpty(obj) {
 
 // currently everything needed can come from the imageInfo
 // but in the future each IVolumeLoader could have a completely separate implementation.
-export function buildDefaultMetadata(imageInfo: ImageInfo): Record<string, unknown> {
+export function buildDefaultMetadata(rawImageInfo: ImageInfo2): Record<string, unknown> {
+  // wrap
+  const imageInfo = new CImageInfo(rawImageInfo);
   const physicalSize = imageInfo.volumeSize.clone().multiply(imageInfo.physicalPixelSize);
   const metadata = {};
   metadata["Dimensions"] = { ...imageInfo.subregionSize };
@@ -235,12 +238,13 @@ export function buildDefaultMetadata(imageInfo: ImageInfo): Record<string, unkno
     y: imageInfo.physicalPixelSize.y + imageInfo.spatialUnit,
     z: imageInfo.physicalPixelSize.z + imageInfo.spatialUnit,
   };
-  metadata["Multiresolution levels"] = imageInfo.multiscaleLevelDims;
-  metadata["Channels"] = imageInfo.numChannels;
+  metadata["Multiresolution levels"] = rawImageInfo.multiscaleLevelDims;
+  // TODO decide???? combined or not?
+  metadata["Channels"] = rawImageInfo.combinedNumChannels; //imageInfo.numChannels;
   metadata["Time series frames"] = imageInfo.times || 1;
   // don't add User data if it's empty
-  if (imageInfo.userData && !isEmpty(imageInfo.userData)) {
-    metadata["User data"] = imageInfo.userData;
+  if (rawImageInfo.userData && !isEmpty(rawImageInfo.userData)) {
+    metadata["User data"] = rawImageInfo.userData;
   }
   return metadata;
 }
