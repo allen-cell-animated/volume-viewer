@@ -48,6 +48,24 @@ class OMEDims {
   channelnames: string[] = [];
 }
 
+function getDtype(omepixeltype: string): NumberType {
+  const mapping: Record<string, NumberType> = {
+    uint8: "uint8",
+    uint16: "uint16",
+    uint32: "uint32",
+    int8: "int8",
+    int16: "int16",
+    int32: "int32",
+    float: "float32",
+  };
+  const dtype = mapping[omepixeltype];
+  if (dtype === undefined) {
+    // TODO consider throwing an error?
+    return "uint8";
+  }
+  return dtype;
+}
+
 export type TiffWorkerParams = {
   channel: number;
   tilesizex: number;
@@ -143,8 +161,7 @@ class TiffLoader extends ThreadableVolumeLoader {
       shape: [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex],
       spacing: [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex],
       spaceUnit: dims.unit ? dims.unit : "micron",
-      // TODO reconcile OMEDims pixel type with NumberType
-      dataType: dims.pixeltype ? (dims.pixeltype as NumberType) : "uint8",
+      dataType: getDtype(dims.pixeltype),
       timeUnit: "s",
     };
     return [d];
@@ -192,8 +209,7 @@ class TiffLoader extends ThreadableVolumeLoader {
           spacing: [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex],
           spaceUnit: dims.unit || "",
           timeUnit: "",
-          // TODO reconcile NumberType with OMEDims pixel type
-          dataType: (dims.pixeltype as NumberType) || "uint8",
+          dataType: getDtype(dims.pixeltype),
         },
       ],
 
