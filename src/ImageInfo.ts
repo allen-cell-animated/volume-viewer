@@ -1,4 +1,4 @@
-import { type VolumeDims2, volumeSize, physicalPixelSize } from "./VolumeDims";
+import { type VolumeDims2, volumeSize, physicalPixelSize } from "./VolumeDims.js";
 import { Vector3, Vector2 } from "three";
 
 export type ImageInfo2 = Readonly<{
