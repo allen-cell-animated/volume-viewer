@@ -1,6 +1,5 @@
 import type { ErrorObject } from "serialize-error";
 
-import type { ImageInfo } from "../Volume.js";
 import type { ImageInfo2 } from "../ImageInfo.js";
 import type { CreateLoaderOptions, PrefetchDirection } from "../loaders/index.js";
 import type { LoadSpec, LoadedVolumeInfo, VolumeDims } from "../loaders/IVolumeLoader.js";

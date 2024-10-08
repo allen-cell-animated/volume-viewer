@@ -1,5 +1,3 @@
-import { Vector2, Vector3 } from "three";
-
 import {
   ThreadableVolumeLoader,
   LoadSpec,
@@ -7,7 +5,6 @@ import {
   VolumeDims,
   LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
-import { ImageInfo } from "../Volume.js";
 import { computeAtlasSize, ImageInfo2 } from "../ImageInfo.js";
 import { JsonImageInfoLoader } from "./JsonImageInfoLoader.js";
 import { DATARANGE_UINT8 } from "../types.js";

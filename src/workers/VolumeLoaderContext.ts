@@ -1,7 +1,6 @@
 import { deserializeError } from "serialize-error";
 import throttledQueue from "throttled-queue";
 
-import { ImageInfo } from "../Volume.js";
 import { ImageInfo2 } from "../ImageInfo.js";
 import { CreateLoaderOptions, PrefetchDirection, VolumeFileFormat, pathToFileType } from "../loaders/index.js";
 import {

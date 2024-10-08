@@ -1,6 +1,5 @@
-import { Box3, Vector2, Vector3 } from "three";
+import { Box3, Vector3 } from "three";
 import { LoadSpec } from "../loaders/IVolumeLoader";
-import { ImageInfo } from "../Volume";
 import { ImageInfo2 } from "../ImageInfo";
 
 /** Recreates a `LoadSpec` that has just been sent to/from a worker to restore three.js object prototypes */

@@ -8,7 +8,6 @@ import {
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
 import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
-import { ImageInfo } from "../Volume.js";
 import { ImageInfo2 } from "../ImageInfo.js";
 import { DATARANGE_UINT8, Uint8 } from "../types.js";
 

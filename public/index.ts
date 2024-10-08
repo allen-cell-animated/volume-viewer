@@ -22,7 +22,6 @@ import {
 // special loader really just for this demo app but lives with the other loaders
 import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
 import { State, TestDataSpec } from "./types";
-import { getDefaultImageInfo } from "../src/Volume";
 import VolumeLoaderContext from "../src/workers/VolumeLoaderContext";
 import { DATARANGE_UINT8 } from "../src/types";
 import { RawArrayLoaderOptions } from "../src/loaders/RawArrayLoader";

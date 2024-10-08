@@ -1,6 +1,5 @@
 import { Box3, Vector2, Vector3 } from "three";
 
-import { ImageInfo } from "../Volume.js";
 import { CImageInfo, ImageInfo2 } from "../ImageInfo.js";
 import { LoadSpec } from "./IVolumeLoader.js";
 

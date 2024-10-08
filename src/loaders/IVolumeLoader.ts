@@ -1,6 +1,6 @@
 import { Box3, Vector3 } from "three";
 
-import Volume, { ImageInfo } from "../Volume.js";
+import Volume from "../Volume.js";
 import { CImageInfo, ImageInfo2 } from "../ImageInfo.js";
 import { TypedArray, NumberType } from "../types.js";
 import { buildDefaultMetadata } from "./VolumeLoaderUtils.js";

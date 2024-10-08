@@ -24,7 +24,6 @@ import { VolumeLoadError, VolumeLoadErrorType } from "./loaders/VolumeLoadError.
 import { type CameraState } from "./ThreeJsPanel.js";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light.js";
 
-export type { ImageInfo } from "./Volume.js";
 export type { ImageInfo2 } from "./ImageInfo.js";
 export type { ControlPoint } from "./Lut.js";
 export type { CreateLoaderOptions } from "./loaders/index.js";

@@ -1,4 +1,4 @@
-import { Box3, Vector2, Vector3 } from "three";
+import { Box3, Vector3 } from "three";
 
 import {
   ThreadableVolumeLoader,
@@ -7,7 +7,6 @@ import {
   VolumeDims,
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
-import type { ImageInfo } from "../Volume.js";
 import { computeAtlasSize, type ImageInfo2 } from "../ImageInfo.js";
 import VolumeCache from "../VolumeCache.js";
 import type { TypedArray, NumberType } from "../types.js";
