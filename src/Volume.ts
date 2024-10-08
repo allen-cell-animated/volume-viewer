@@ -182,8 +182,11 @@ export default class Volume {
 
   // The maximum of the measurements of 3 axes in physical units (pixels*physicalSize)
   public physicalScale: number;
+  // The physical size of a voxel in the original level 0 volume
   public physicalPixelSize: Vector3;
+  // The physical dims of the whole volume (not accounting for subregion)
   public physicalSize: Vector3;
+  // Normalized physical size of the whole volume (not accounting for subregion)
   public normPhysicalSize: Vector3;
   public normRegionSize: Vector3;
   public normRegionOffset: Vector3;
@@ -548,7 +551,7 @@ export default class Volume {
    * @return {Array.<number>} the xyz translation in normalized volume units
    */
   voxelsToWorldSpace(xyz: [number, number, number]): [number, number, number] {
-    // ASSUME: xyz is in original image voxels, compatible with physicalPixelSize.
+    // ASSUME: xyz is in original (level 0) image voxels, compatible with physicalPixelSize.
     // account for pixel_size and normalized scaling in the threejs volume representation we're using
     const m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
     return new Vector3().fromArray(xyz).multiply(this.physicalPixelSize).multiplyScalar(m).toArray();
