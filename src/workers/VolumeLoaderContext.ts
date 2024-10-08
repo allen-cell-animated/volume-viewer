@@ -22,7 +22,7 @@ import type {
 } from "./types.js";
 import type { ZarrLoaderFetchOptions } from "../loaders/OmeZarrLoader.js";
 import { WorkerMsgType, WorkerResponseResult, WorkerEventType } from "./types.js";
-import { rebuildImageInfo, rebuildLoadSpec } from "./util.js";
+import { rebuildLoadSpec } from "./util.js";
 
 type StoredPromise<T extends WorkerMsgType> = {
   type: T;
@@ -272,7 +272,7 @@ class WorkerLoader extends ThreadableVolumeLoader {
       WorkerMsgType.CREATE_VOLUME,
       loadSpec
     );
-    return { imageInfo: rebuildImageInfo(imageInfo), loadSpec: rebuildLoadSpec(adjustedLoadSpec) };
+    return { imageInfo: imageInfo, loadSpec: rebuildLoadSpec(adjustedLoadSpec) };
   }
 
   loadRawChannelData(
@@ -308,7 +308,7 @@ class WorkerLoader extends ThreadableVolumeLoader {
       return;
     }
 
-    const imageInfo = e.imageInfo && rebuildImageInfo(e.imageInfo);
+    const imageInfo = e.imageInfo;
     const loadSpec = e.loadSpec && rebuildLoadSpec(e.loadSpec);
     this.currentMetadataUpdateCallback?.(imageInfo, loadSpec);
   }
