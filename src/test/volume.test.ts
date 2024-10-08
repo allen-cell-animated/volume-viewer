@@ -41,8 +41,9 @@ const testimgdata: ImageInfo = {
   multiscaleLevel: 0,
   multiscaleLevelDims: [
     {
-      shape: [1, 9, 65, 494, 306],
-      spacing: [1, 1, 0.29, 0.065, 0.065],
+      shape: [1, 9, 65, 292, 204],
+      // original volume had 0.065 um pixels in x and y, 0.29 um pixels in z, and 65x494x306 voxels
+      spacing: [1, 1, 0.29, (0.065 * 494) / 292, (0.065 * 306) / 204],
       spaceUnit: "",
       timeUnit: "",
       dataType: "uint8",
@@ -120,13 +121,15 @@ describe("test volume", () => {
       // on `scale` and `normPhysicalSize` being equal. With `scale` gone, this test ensures the equality stays.
       const v = new Volume(testimgdata);
       const { originalSize, physicalPixelSize } = v.imageInfo;
-      const sizemax = Math.max(originalSize.x, originalSize.y, originalSize.z);
+      const sizemax = Math.max(
+        originalSize.x * physicalPixelSize.x,
+        originalSize.y * physicalPixelSize.y,
+        originalSize.z * physicalPixelSize.z
+      );
 
-      const pxmin = Math.min(physicalPixelSize.x, physicalPixelSize.y, physicalPixelSize.z);
-
-      const sx = ((physicalPixelSize.x / pxmin) * originalSize.x) / sizemax;
-      const sy = ((physicalPixelSize.y / pxmin) * originalSize.y) / sizemax;
-      const sz = ((physicalPixelSize.z / pxmin) * originalSize.z) / sizemax;
+      const sx = (physicalPixelSize.x * originalSize.x) / sizemax;
+      const sy = (physicalPixelSize.y * originalSize.y) / sizemax;
+      const sz = (physicalPixelSize.z * originalSize.z) / sizemax;
 
       const EPSILON = 0.000000001;
       expect(v.normPhysicalSize.x).to.be.closeTo(sx, EPSILON);
