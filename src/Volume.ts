@@ -19,7 +19,7 @@ interface VolumeDataObserver {
 /**
  * A renderable multichannel volume image with 8-bits per channel intensity values.
  * @class
- * @param {ImageInfo2} imageInfo
+ * @param {ImageInfo} imageInfo
  */
 export default class Volume {
   public imageInfo: CImageInfo;
