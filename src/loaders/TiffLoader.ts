@@ -5,12 +5,12 @@ import {
   ThreadableVolumeLoader,
   LoadSpec,
   type RawChannelDataCallback,
-  VolumeDims,
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
 import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
 import { VolumeLoadError, VolumeLoadErrorType, wrapVolumeLoadError } from "./VolumeLoadError.js";
 import { type ImageInfo, CImageInfo } from "../ImageInfo.js";
+import { VolumeDims } from "../VolumeDims.js";
 import { TypedArray, NumberType } from "../types.js";
 
 function prepareXML(xml: string): string {
@@ -139,11 +139,14 @@ class TiffLoader extends ThreadableVolumeLoader {
   async loadDims(_loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const dims = await this.loadOmeDims();
 
-    const d = new VolumeDims();
-    d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
-    d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
-    d.spaceUnit = dims.unit ? dims.unit : "micron";
-    d.dataType = dims.pixeltype ? dims.pixeltype : "uint8";
+    const d: VolumeDims = {
+      shape: [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex],
+      spacing: [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex],
+      spaceUnit: dims.unit ? dims.unit : "micron",
+      // TODO reconcile OMEDims pixel type with NumberType
+      dataType: dims.pixeltype ? (dims.pixeltype as NumberType) : "uint8",
+      timeUnit: "s",
+    };
     return [d];
   }
 

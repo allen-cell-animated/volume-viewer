@@ -1,7 +1,7 @@
 import { type NumberType } from "./types.js";
 import { Vector3 } from "three";
 
-export type VolumeDims2 = {
+export type VolumeDims = {
   // shape: [t, c, z, y, x]
   shape: [number, number, number, number, number];
   // spacing: [t, c, z, y, x]; generally expect 1 for non-spatial dimensions
@@ -27,7 +27,7 @@ export type VolumeDims2 = {
   dataType: NumberType;
 };
 
-export function defaultVolumeDims(): VolumeDims2 {
+export function defaultVolumeDims(): VolumeDims {
   return {
     shape: [0, 0, 0, 0, 0],
     spacing: [1, 1, 1, 1, 1],
@@ -37,17 +37,17 @@ export function defaultVolumeDims(): VolumeDims2 {
   };
 }
 
-export function volumeSize(volumeDims: VolumeDims2): Vector3 {
+export function volumeSize(volumeDims: VolumeDims): Vector3 {
   return new Vector3(volumeDims.shape[4], volumeDims.shape[3], volumeDims.shape[2]);
 }
 
-export function physicalPixelSize(volumeDims: VolumeDims2): Vector3 {
+export function physicalPixelSize(volumeDims: VolumeDims): Vector3 {
   return new Vector3(volumeDims.spacing[4], volumeDims.spacing[3], volumeDims.spacing[2]);
 }
 
 export class CVolumeDims {
-  volumeDims: VolumeDims2;
-  constructor(volumeDims?: VolumeDims2) {
+  volumeDims: VolumeDims;
+  constructor(volumeDims?: VolumeDims) {
     this.volumeDims = volumeDims || defaultVolumeDims();
   }
 

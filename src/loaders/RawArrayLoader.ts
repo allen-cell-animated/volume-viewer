@@ -4,11 +4,11 @@ import {
   ThreadableVolumeLoader,
   type LoadSpec,
   type RawChannelDataCallback,
-  VolumeDims,
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
 import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
 import { ImageInfo } from "../ImageInfo.js";
+import { VolumeDims } from "../VolumeDims.js";
 import { DATARANGE_UINT8, Uint8 } from "../types.js";
 
 // this is the form in which a 4D numpy array arrives as converted
@@ -107,11 +107,13 @@ class RawArrayLoader extends ThreadableVolumeLoader {
   async loadDims(_loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const jsonInfo = this.jsonInfo;
 
-    const d = new VolumeDims();
-    d.shape = [1, jsonInfo.sizeC, jsonInfo.sizeZ, jsonInfo.sizeY, jsonInfo.sizeX];
-    d.spacing = [1, 1, jsonInfo.physicalPixelSize[2], jsonInfo.physicalPixelSize[1], jsonInfo.physicalPixelSize[0]];
-    d.spaceUnit = jsonInfo.spatialUnit || "μm";
-    d.dataType = "uint8";
+    const d: VolumeDims = {
+      shape: [1, jsonInfo.sizeC, jsonInfo.sizeZ, jsonInfo.sizeY, jsonInfo.sizeX],
+      spacing: [1, 1, jsonInfo.physicalPixelSize[2], jsonInfo.physicalPixelSize[1], jsonInfo.physicalPixelSize[0]],
+      spaceUnit: jsonInfo.spatialUnit || "μm",
+      dataType: "uint8",
+      timeUnit: "s", // time unit not specified
+    };
     return [d];
   }
 

@@ -4,10 +4,11 @@ import Channel from "./Channel.js";
 import Histogram from "./Histogram.js";
 import { Lut } from "./Lut.js";
 import { getColorByChannelIndex } from "./constants/colors.js";
-import { type IVolumeLoader, LoadSpec, type PerChannelCallback, VolumeDims } from "./loaders/IVolumeLoader.js";
+import { type IVolumeLoader, LoadSpec, type PerChannelCallback } from "./loaders/IVolumeLoader.js";
 import { MAX_ATLAS_EDGE, pickLevelToLoadUnscaled } from "./loaders/VolumeLoaderUtils.js";
 import type { NumberType, TypedArray } from "./types.js";
 import { type ImageInfo, CImageInfo, defaultImageInfo } from "./ImageInfo.js";
+import { VolumeDims } from "./VolumeDims.js";
 
 interface VolumeDataObserver {
   onVolumeData: (vol: Volume, batch: number[]) => void;

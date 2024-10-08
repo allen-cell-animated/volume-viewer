@@ -2,12 +2,12 @@ import { deserializeError } from "serialize-error";
 import throttledQueue from "throttled-queue";
 
 import { ImageInfo } from "../ImageInfo.js";
+import { VolumeDims } from "../VolumeDims.js";
 import { CreateLoaderOptions, PrefetchDirection, VolumeFileFormat, pathToFileType } from "../loaders/index.js";
 import {
   ThreadableVolumeLoader,
   LoadSpec,
   RawChannelDataCallback,
-  VolumeDims,
   LoadedVolumeInfo,
 } from "../loaders/IVolumeLoader.js";
 import { RawArrayLoader } from "../loaders/RawArrayLoader.js";

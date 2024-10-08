@@ -8,14 +8,13 @@ import { AbsolutePath } from "@zarrita/storage";
 import { FetchStore } from "zarrita";
 
 import { ImageInfo } from "../ImageInfo.js";
-import { VolumeDims2 } from "../VolumeDims.js";
+import { VolumeDims } from "../VolumeDims.js";
 import VolumeCache from "../VolumeCache.js";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue.js";
 import {
   ThreadableVolumeLoader,
   LoadSpec,
   type RawChannelDataCallback,
-  VolumeDims,
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
 import {
@@ -309,14 +308,15 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     const result = this.sources[0].scaleLevels.map((level, i) => {
       const scale = this.getScale(i);
-      const dims = new VolumeDims();
-
-      dims.spaceUnit = spaceUnit;
-      dims.timeUnit = timeUnit;
-      dims.shape = this.orderByTCZYX(level.shape, 1).map((val, idx) => Math.max(Math.ceil(val * regionArr[idx]), 1));
-      dims.spacing = this.orderByTCZYX(scale, 1);
-      dims.dataType = level.dtype;
-
+      const dims: VolumeDims = {
+        spaceUnit: spaceUnit,
+        timeUnit: timeUnit,
+        shape: this.orderByTCZYX(level.shape, 1).map((val, idx) =>
+          Math.max(Math.ceil(val * regionArr[idx]), 1)
+        ) as TCZYX<number>,
+        spacing: this.orderByTCZYX(scale, 1),
+        dataType: level.dtype,
+      };
       return dims;
     });
 
@@ -396,7 +396,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       });
     });
 
-    const alldims: VolumeDims2[] = source0.scaleLevels.map((level, i) => {
+    const alldims: VolumeDims[] = source0.scaleLevels.map((level, i) => {
       const dims = {
         spaceUnit: spatialUnit,
         timeUnit: timeUnit,

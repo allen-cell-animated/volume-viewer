@@ -1,6 +1,7 @@
 import { Box3, Vector3 } from "three";
 
 import Volume from "../Volume.js";
+import { VolumeDims } from "../VolumeDims.js";
 import { CImageInfo, ImageInfo } from "../ImageInfo.js";
 import { TypedArray, NumberType } from "../types.js";
 import { buildDefaultMetadata } from "./VolumeLoaderUtils.js";
@@ -31,17 +32,6 @@ export class LoadSpec {
 export function loadSpecToString(spec: LoadSpec): string {
   const { min, max } = spec.subregion;
   return `${spec.multiscaleLevel}:${spec.time}:x(${min.x},${max.x}):y(${min.y},${max.y}):z(${min.z},${max.z})`;
-}
-
-export class VolumeDims {
-  // shape: [t, c, z, y, x]
-  shape: number[] = [0, 0, 0, 0, 0];
-  // spacing: [t, c, z, y, x]; generally expect 1 for non-spatial dimensions
-  spacing: number[] = [1, 1, 1, 1, 1];
-  spaceUnit = "μm";
-  timeUnit = "s";
-  // TODO make this an enum?
-  dataType = "uint8";
 }
 
 export type LoadedVolumeInfo = {

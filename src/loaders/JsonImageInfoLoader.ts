@@ -4,10 +4,10 @@ import {
   ThreadableVolumeLoader,
   type LoadSpec,
   type RawChannelDataCallback,
-  VolumeDims,
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
 import { computeAtlasSize, type ImageInfo } from "../ImageInfo.js";
+import { VolumeDims } from "../VolumeDims.js";
 import VolumeCache from "../VolumeCache.js";
 import type { TypedArray, NumberType } from "../types.js";
 import { DATARANGE_UINT8 } from "../types.js";
@@ -158,11 +158,13 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const jsonInfo = await this.getJsonImageInfo(loadSpec.time);
 
-    const d = new VolumeDims();
-    d.shape = [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tile_height, jsonInfo.tile_width];
-    d.spacing = [1, 1, jsonInfo.pixel_size_z, jsonInfo.pixel_size_y, jsonInfo.pixel_size_x];
-    d.spaceUnit = jsonInfo.pixel_size_unit || "μm";
-    d.dataType = "uint8";
+    const d: VolumeDims = {
+      shape: [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tile_height, jsonInfo.tile_width],
+      spacing: [1, 1, jsonInfo.pixel_size_z, jsonInfo.pixel_size_y, jsonInfo.pixel_size_x],
+      spaceUnit: jsonInfo.pixel_size_unit || "μm",
+      dataType: "uint8",
+      timeUnit: jsonInfo.time_unit || "s",
+    };
     return [d];
   }
 
