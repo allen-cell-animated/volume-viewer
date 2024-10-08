@@ -25,6 +25,7 @@ export type ImageInfo2 = Readonly<{
   /** Number of channels in the image, accounting for convergence of multiple sources.
    * Because of multiple sources, which is not accounted for in ImageInfo2,
    * that this could be different than the number of channels in the multiscaleLevelDims.
+   * NOTE Currently there is one ImageInfo2 per Volume, not per source.
    */
   combinedNumChannels: number;
   /** The names of each channel */
@@ -111,10 +112,10 @@ export class CImageInfo {
   }
 
   /** Number of channels in the image */
-  // TODO FIXME use combinedNumChannels?????
   get numChannels(): number {
-    // 1 is C
-    return this.currentLevelDims.shape[1];
+    return this.imageInfo.combinedNumChannels;
+    // // 1 is C
+    // return this.currentLevelDims.shape[1];
   }
 
   /** XYZ size of the *original* (not downsampled) volume, in pixels */
