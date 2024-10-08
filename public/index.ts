@@ -161,7 +161,6 @@ const myState: State = {
   flipZ: 1,
 
   channelFolderNames: [],
-  //infoObj: getDefaultImageInfo(),
   channelGui: [],
 
   currentImageStore: "",
@@ -631,7 +630,6 @@ function showChannelUI(volume: Volume) {
     }
   }
 
-  //myState.infoObj = volume.imageInfo;
   const nChannels = volume.imageInfo.numChannels;
   const channelNames = volume.imageInfo.channelNames;
 
