@@ -25,7 +25,7 @@ export type ImageInfo = Readonly<{
   /** Number of channels in the image, accounting for convergence of multiple sources.
    * Because of multiple sources, which is not accounted for in ImageInfo,
    * that this could be different than the number of channels in the multiscaleLevelDims.
-   * NOTE Currently there is one ImageInfo2 per Volume, not per source.
+   * NOTE Currently there is one ImageInfo per Volume, not per source.
    */
   combinedNumChannels: number;
   /** The names of each channel */
