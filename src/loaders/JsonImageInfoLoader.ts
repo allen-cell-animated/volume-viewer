@@ -67,12 +67,17 @@ type JsonImageInfo = {
 };
 /* eslint-enable @typescript-eslint/naming-convention */
 
-const convertImageInfo = (json: JsonImageInfo): ImageInfo => {
-  // original XY pixels are stored in json.width and height.
-  // this is also the coordinates of the translation so we have to scale that too.
+const rescalePixelSize = (json: JsonImageInfo): [number, number, number] => {
   const px = (json.pixel_size_x * json.width) / json.tile_width;
   const py = (json.pixel_size_y * json.height) / json.tile_height;
   const pz = json.pixel_size_z;
+  return [px, py, pz];
+};
+
+const convertImageInfo = (json: JsonImageInfo): ImageInfo => {
+  // original XY pixels are stored in json.width and height.
+  // this is also the coordinates of the translation so we have to scale that too.
+  const [px, py, pz] = rescalePixelSize(json);
   // convert translation to
   const tr: [number, number, number] = json.transform?.translation ? json.transform.translation : [0, 0, 0];
   tr[0] = (tr[0] * json.tile_width) / json.width;
@@ -117,6 +122,7 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => {
       ...json.userData,
       // for metadata display reasons
       originalVolumeSize: [json.width, json.height, json.tiles],
+      originalPhysicalPixelSize: [json.pixel_size_x, json.pixel_size_y, json.pixel_size_z],
     },
   };
 };
@@ -158,9 +164,11 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const jsonInfo = await this.getJsonImageInfo(loadSpec.time);
 
+    const [px, py, pz] = rescalePixelSize(jsonInfo);
+
     const d: VolumeDims = {
       shape: [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tile_height, jsonInfo.tile_width],
-      spacing: [1, 1, jsonInfo.pixel_size_z, jsonInfo.pixel_size_y, jsonInfo.pixel_size_x],
+      spacing: [1, 1, pz, py, px],
       spaceUnit: jsonInfo.pixel_size_unit || "μm",
       dataType: "uint8",
       timeUnit: jsonInfo.time_unit || "s",
