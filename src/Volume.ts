@@ -7,7 +7,7 @@ import { getColorByChannelIndex } from "./constants/colors.js";
 import { type IVolumeLoader, LoadSpec, type PerChannelCallback, VolumeDims } from "./loaders/IVolumeLoader.js";
 import { MAX_ATLAS_EDGE, pickLevelToLoadUnscaled } from "./loaders/VolumeLoaderUtils.js";
 import type { NumberType, TypedArray } from "./types.js";
-import { type ImageInfo2, CImageInfo, defaultImageInfo } from "./ImageInfo.js";
+import { type ImageInfo, CImageInfo, defaultImageInfo } from "./ImageInfo.js";
 
 interface VolumeDataObserver {
   onVolumeData: (vol: Volume, batch: number[]) => void;
@@ -52,7 +52,7 @@ export default class Volume {
   private volumeDataObservers: VolumeDataObserver[];
   private loaded: boolean;
 
-  constructor(imageInfo: ImageInfo2 = defaultImageInfo(), loadSpec: LoadSpec = new LoadSpec(), loader?: IVolumeLoader) {
+  constructor(imageInfo: ImageInfo = defaultImageInfo(), loadSpec: LoadSpec = new LoadSpec(), loader?: IVolumeLoader) {
     this.loaded = false;
     this.imageInfo = new CImageInfo(imageInfo);
     // TODO: use getter?

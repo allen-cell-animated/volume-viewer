@@ -8,7 +8,7 @@ import {
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
 import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
-import { ImageInfo2 } from "../ImageInfo.js";
+import { ImageInfo } from "../ImageInfo.js";
 import { DATARANGE_UINT8, Uint8 } from "../types.js";
 
 // this is the form in which a 4D numpy array arrives as converted
@@ -41,7 +41,7 @@ export interface RawArrayLoaderOptions {
   metadata: RawArrayInfo;
 }
 
-const convertImageInfo = (json: RawArrayInfo): ImageInfo2 => {
+const convertImageInfo = (json: RawArrayInfo): ImageInfo => {
   const atlasTileDims = computePackedAtlasDims(json.sizeZ, json.sizeX, json.sizeY);
   return {
     name: json.name,
@@ -120,7 +120,7 @@ class RawArrayLoader extends ThreadableVolumeLoader {
   }
 
   loadRawChannelData(
-    imageInfo: ImageInfo2,
+    imageInfo: ImageInfo,
     loadSpec: LoadSpec,
     onUpdateMetadata: (imageInfo: undefined, loadSpec: LoadSpec) => void,
     onData: RawChannelDataCallback

@@ -10,7 +10,7 @@ import {
 } from "./IVolumeLoader.js";
 import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
 import { VolumeLoadError, VolumeLoadErrorType, wrapVolumeLoadError } from "./VolumeLoadError.js";
-import { type ImageInfo2, CImageInfo } from "../ImageInfo.js";
+import { type ImageInfo, CImageInfo } from "../ImageInfo.js";
 import { TypedArray, NumberType } from "../types.js";
 
 function prepareXML(xml: string): string {
@@ -163,7 +163,7 @@ class TiffLoader extends ThreadableVolumeLoader {
 
     // load tiff and check metadata
 
-    const imgdata: ImageInfo2 = {
+    const imgdata: ImageInfo = {
       name: "TEST",
 
       //originalSize: new Vector3(dims.sizex, dims.sizey, dims.sizez),
@@ -205,7 +205,7 @@ class TiffLoader extends ThreadableVolumeLoader {
   }
 
   async loadRawChannelData(
-    imageInfo: ImageInfo2,
+    imageInfo: ImageInfo,
     _loadSpec: LoadSpec,
     _onUpdateMetadata: () => void,
     onData: RawChannelDataCallback

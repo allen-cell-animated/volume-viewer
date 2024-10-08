@@ -7,7 +7,7 @@ import { AbsolutePath } from "@zarrita/storage";
 // Getting it from the top-level package means we don't get its type. This is also a bug, but it's more acceptable.
 import { FetchStore } from "zarrita";
 
-import { ImageInfo2 } from "../ImageInfo.js";
+import { ImageInfo } from "../ImageInfo.js";
 import { VolumeDims2 } from "../VolumeDims.js";
 import VolumeCache from "../VolumeCache.js";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue.js";
@@ -359,11 +359,14 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     if (!this.maxExtent) {
       this.maxExtent = loadSpec.subregion.clone();
     }
+    // TODO IS IT SAFE TO IGNORE THIS SUBREGION STUFF?
     // const pxDims0 = convertSubregionToPixels(
     //   loadSpec.subregion,
     //   new Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1)
     // );
     //const pxSize0 = pxDims0.getSize(new Vector3());
+
+    // from source 0:
     const pxDimsLv = convertSubregionToPixels(
       loadSpec.subregion,
       new Vector3(shapeLv[x], shapeLv[y], hasZ ? shapeLv[z] : 1)
@@ -408,7 +411,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     // assume that ImageInfo wants the timeScale of level 0
     //const timeScale = hasT ? scale5d[0] : 1;
 
-    const imgdata: ImageInfo2 = {
+    const imgdata: ImageInfo = {
       name: source0.omeroMetadata?.name || "Volume",
 
       //originalSize: pxSize0,
@@ -518,7 +521,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     this.prefetchSubscriber = subscriber;
   }
 
-  private updateImageInfoForLoad(imageInfo: ImageInfo2, loadSpec: LoadSpec): ImageInfo2 {
+  private updateImageInfoForLoad(imageInfo: ImageInfo, loadSpec: LoadSpec): ImageInfo {
     // Apply `this.maxExtent` to subregion, if it exists
     const maxExtent = this.maxExtent ?? new Box3(new Vector3(0, 0, 0), new Vector3(1, 1, 1));
     const subregion = composeSubregion(loadSpec.subregion, maxExtent);
@@ -554,9 +557,9 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
   }
 
   async loadRawChannelData(
-    imageInfo: ImageInfo2,
+    imageInfo: ImageInfo,
     loadSpec: LoadSpec,
-    onUpdateMetadata: (imageInfo: ImageInfo2) => void,
+    onUpdateMetadata: (imageInfo: ImageInfo) => void,
     onData: RawChannelDataCallback
   ): Promise<void> {
     // This seemingly useless line keeps a stable local copy of `syncChannels` which the async closures below capture

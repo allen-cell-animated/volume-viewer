@@ -3,7 +3,7 @@ import GUI from "lil-gui";
 
 import {
   CreateLoaderOptions,
-  ImageInfo2,
+  ImageInfo,
   IVolumeLoader,
   LoadSpec,
   Lut,
@@ -865,7 +865,7 @@ function showChannelUI(volume: Volume) {
   }
 }
 
-function loadImageData(jsonData: ImageInfo2, volumeData: Uint8Array[]) {
+function loadImageData(jsonData: ImageInfo, volumeData: Uint8Array[]) {
   const vol = new Volume(jsonData);
   myState.volume = vol;
 

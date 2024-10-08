@@ -1,6 +1,6 @@
 import type { ErrorObject } from "serialize-error";
 
-import type { ImageInfo2 } from "../ImageInfo.js";
+import type { ImageInfo } from "../ImageInfo.js";
 import type { CreateLoaderOptions, PrefetchDirection } from "../loaders/index.js";
 import type { LoadSpec, LoadedVolumeInfo, VolumeDims } from "../loaders/IVolumeLoader.js";
 import type { TypedArray, NumberType } from "../types.js";
@@ -54,7 +54,7 @@ export type WorkerRequestPayload<T extends WorkerMsgType> = {
   [WorkerMsgType.CREATE_VOLUME]: LoadSpec;
   [WorkerMsgType.LOAD_DIMS]: LoadSpec;
   [WorkerMsgType.LOAD_VOLUME_DATA]: {
-    imageInfo: ImageInfo2;
+    imageInfo: ImageInfo;
     loadSpec: LoadSpec;
     loaderId: number;
     loadId: number;
@@ -93,7 +93,7 @@ export type MetadataUpdateEvent = {
   eventType: WorkerEventType.METADATA_UPDATE;
   loaderId: number;
   loadId: number;
-  imageInfo?: ImageInfo2;
+  imageInfo?: ImageInfo;
   loadSpec?: LoadSpec;
 };
 

@@ -1,7 +1,7 @@
 import { deserializeError } from "serialize-error";
 import throttledQueue from "throttled-queue";
 
-import { ImageInfo2 } from "../ImageInfo.js";
+import { ImageInfo } from "../ImageInfo.js";
 import { CreateLoaderOptions, PrefetchDirection, VolumeFileFormat, pathToFileType } from "../loaders/index.js";
 import {
   ThreadableVolumeLoader,
@@ -226,8 +226,7 @@ class WorkerLoader extends ThreadableVolumeLoader {
   private isOpen = true;
   private currentLoadId = -1;
   private currentLoadCallback: RawChannelDataCallback | undefined = undefined;
-  private currentMetadataUpdateCallback: ((imageInfo?: ImageInfo2, loadSpec?: LoadSpec) => void) | undefined =
-    undefined;
+  private currentMetadataUpdateCallback: ((imageInfo?: ImageInfo, loadSpec?: LoadSpec) => void) | undefined = undefined;
 
   constructor(private loaderId: number, private workerHandle: SharedLoadWorkerHandle) {
     super();
@@ -277,9 +276,9 @@ class WorkerLoader extends ThreadableVolumeLoader {
   }
 
   loadRawChannelData(
-    imageInfo: ImageInfo2,
+    imageInfo: ImageInfo,
     loadSpec: LoadSpec,
-    onUpdateMetadata: (imageInfo?: ImageInfo2, loadSpec?: LoadSpec) => void,
+    onUpdateMetadata: (imageInfo?: ImageInfo, loadSpec?: LoadSpec) => void,
     onData: RawChannelDataCallback
   ): Promise<void> {
     this.checkIsOpen();

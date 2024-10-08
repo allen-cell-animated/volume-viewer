@@ -1,7 +1,7 @@
 import { type VolumeDims2, volumeSize, physicalPixelSize } from "./VolumeDims.js";
 import { Vector3, Vector2 } from "three";
 
-export type ImageInfo2 = Readonly<{
+export type ImageInfo = Readonly<{
   name: string;
 
   /** XYZ size of the *original* (level 0) volume, in pixels */
@@ -74,7 +74,7 @@ export type ImageInfo2 = Readonly<{
   userData?: Record<string, unknown>;
 }>;
 
-export function defaultImageInfo(): ImageInfo2 {
+export function defaultImageInfo(): ImageInfo {
   return {
     name: "",
     atlasTileDims: [1, 1],
@@ -101,9 +101,9 @@ export function defaultImageInfo(): ImageInfo2 {
 }
 
 export class CImageInfo {
-  imageInfo: ImageInfo2;
+  imageInfo: ImageInfo;
 
-  constructor(imageInfo?: ImageInfo2) {
+  constructor(imageInfo?: ImageInfo) {
     this.imageInfo = imageInfo || defaultImageInfo();
   }
 
@@ -215,7 +215,7 @@ export class CImageInfo {
   }
 }
 
-export function computeAtlasSize(imageInfo: ImageInfo2): [number, number] {
+export function computeAtlasSize(imageInfo: ImageInfo): [number, number] {
   const { atlasTileDims } = imageInfo;
   const volDims = imageInfo.multiscaleLevelDims[imageInfo.multiscaleLevel];
   // TCZYX: 4 = x, 3 = y

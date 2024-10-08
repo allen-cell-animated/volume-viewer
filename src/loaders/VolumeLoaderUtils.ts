@@ -1,6 +1,6 @@
 import { Box3, Vector2, Vector3 } from "three";
 
-import { CImageInfo, ImageInfo2 } from "../ImageInfo.js";
+import { CImageInfo, ImageInfo } from "../ImageInfo.js";
 import { LoadSpec } from "./IVolumeLoader.js";
 
 export const MAX_ATLAS_EDGE = 4096;
@@ -220,7 +220,7 @@ function isEmpty(obj) {
 
 // currently everything needed can come from the imageInfo
 // but in the future each IVolumeLoader could have a completely separate implementation.
-export function buildDefaultMetadata(rawImageInfo: ImageInfo2): Record<string, unknown> {
+export function buildDefaultMetadata(rawImageInfo: ImageInfo): Record<string, unknown> {
   // wrap
   const imageInfo = new CImageInfo(rawImageInfo);
   const physicalSize = imageInfo.volumeSize.clone().multiply(imageInfo.physicalPixelSize);

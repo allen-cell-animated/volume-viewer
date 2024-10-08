@@ -5,10 +5,10 @@ import VolumeMaker from "../VolumeMaker";
 import { LUT_ARRAY_LENGTH } from "../Lut";
 import Channel from "../Channel";
 import { DATARANGE_UINT8 } from "../types";
-import { CImageInfo, ImageInfo2 } from "../ImageInfo";
+import { CImageInfo, ImageInfo } from "../ImageInfo";
 
 // PREPARE SOME TEST DATA TO TRY TO DISPLAY A VOLUME.
-const testimgdata: ImageInfo2 = {
+const testimgdata: ImageInfo = {
   name: "AICS-10_5_5",
 
   //originalSize: new Vector3(306, 494, 65),
@@ -55,7 +55,7 @@ const testimgdata: ImageInfo2 = {
   },
 };
 
-function checkVolumeConstruction(v: Volume, imgdata: ImageInfo2) {
+function checkVolumeConstruction(v: Volume, imgdata: ImageInfo) {
   expect(v).to.be.a("Object");
   expect(v.isLoaded()).to.not.be.ok;
 
@@ -71,7 +71,7 @@ function checkVolumeConstruction(v: Volume, imgdata: ImageInfo2) {
   expect(mx).to.equal(1.0);
 }
 
-function checkChannelDataConstruction(c: Channel, index: number, imgdata: ImageInfo2) {
+function checkChannelDataConstruction(c: Channel, index: number, imgdata: ImageInfo) {
   expect(c.loaded).to.be.true;
   expect(c.name).to.equal(imgdata.channelNames[index]);
   const atlasWidth = imgdata.atlasTileDims[0] * imgdata.subregionSize[0];

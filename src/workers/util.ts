@@ -1,6 +1,6 @@
 import { Box3, Vector3 } from "three";
 import { LoadSpec } from "../loaders/IVolumeLoader";
-import { ImageInfo2 } from "../ImageInfo";
+import { ImageInfo } from "../ImageInfo";
 
 /** Recreates a `LoadSpec` that has just been sent to/from a worker to restore three.js object prototypes */
 export function rebuildLoadSpec(spec: LoadSpec): LoadSpec {
@@ -11,7 +11,7 @@ export function rebuildLoadSpec(spec: LoadSpec): LoadSpec {
 }
 
 /** Recreates an `ImageInfo` that has just been sent to/from a worker to restore three.js object prototypes */
-export function rebuildImageInfo(imageInfo: ImageInfo2): ImageInfo2 {
+export function rebuildImageInfo(imageInfo: ImageInfo): ImageInfo {
   return {
     ...imageInfo,
     //originalSize: new Vector3().copy(imageInfo.originalSize),

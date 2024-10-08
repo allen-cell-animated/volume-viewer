@@ -5,7 +5,7 @@ import {
   VolumeDims,
   LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
-import { computeAtlasSize, ImageInfo2 } from "../ImageInfo.js";
+import { computeAtlasSize, ImageInfo } from "../ImageInfo.js";
 import { JsonImageInfoLoader } from "./JsonImageInfoLoader.js";
 import { DATARANGE_UINT8 } from "../types.js";
 
@@ -25,7 +25,7 @@ class OpenCellLoader extends ThreadableVolumeLoader {
     // we know these are standardized to 600x600, two channels, one channel per jpg.
     const chnames: string[] = ["DNA", "Structure"];
 
-    const imgdata: ImageInfo2 = {
+    const imgdata: ImageInfo = {
       name: "TEST",
 
       //originalSize: new Vector3(600, 600, 27),
@@ -66,7 +66,7 @@ class OpenCellLoader extends ThreadableVolumeLoader {
   }
 
   loadRawChannelData(
-    imageInfo: ImageInfo2,
+    imageInfo: ImageInfo,
     _loadSpec: LoadSpec,
     _onUpdateMetadata: () => void,
     onData: RawChannelDataCallback

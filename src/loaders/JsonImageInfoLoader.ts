@@ -7,7 +7,7 @@ import {
   VolumeDims,
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
-import { computeAtlasSize, type ImageInfo2 } from "../ImageInfo.js";
+import { computeAtlasSize, type ImageInfo } from "../ImageInfo.js";
 import VolumeCache from "../VolumeCache.js";
 import type { TypedArray, NumberType } from "../types.js";
 import { DATARANGE_UINT8 } from "../types.js";
@@ -67,7 +67,7 @@ type JsonImageInfo = {
 };
 /* eslint-enable @typescript-eslint/naming-convention */
 
-const convertImageInfo = (json: JsonImageInfo): ImageInfo2 => {
+const convertImageInfo = (json: JsonImageInfo): ImageInfo => {
   // original XY pixels are stored in json.width and height.
   // this is also the coordinates of the translation so we have to scale that too.
   const px = (json.pixel_size_x * json.width) / json.tile_width;
@@ -172,7 +172,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
   }
 
   async loadRawChannelData(
-    imageInfo: ImageInfo2,
+    imageInfo: ImageInfo,
     loadSpec: LoadSpec,
     onUpdateMetadata: (imageInfo: undefined, loadSpec?: LoadSpec) => void,
     onData: RawChannelDataCallback
