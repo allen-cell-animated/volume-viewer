@@ -104,7 +104,11 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo2 => ({
     rotation: json.transform?.rotation ? json.transform.rotation : [0, 0, 0],
   },
 
-  userData: json.userData,
+  userData: {
+    ...json.userData,
+    // for metadata display reasons
+    originalVolumeSize: new Vector3(json.width, json.height, json.tiles),
+  },
 });
 
 class JsonImageInfoLoader extends ThreadableVolumeLoader {

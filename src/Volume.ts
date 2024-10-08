@@ -180,6 +180,7 @@ export default class Volume {
   public channelNames: string[];
   public channelColorsDefault: [number, number, number][];
 
+  // The maximum of the measurements of 3 axes in physical units (pixels*physicalSize)
   public physicalScale: number;
   public physicalPixelSize: Vector3;
   public physicalSize: Vector3;
@@ -547,7 +548,7 @@ export default class Volume {
    * @return {Array.<number>} the xyz translation in normalized volume units
    */
   voxelsToWorldSpace(xyz: [number, number, number]): [number, number, number] {
-    // ASSUME: translation is in original image voxels.
+    // ASSUME: xyz is in original image voxels, compatible with physicalPixelSize.
     // account for pixel_size and normalized scaling in the threejs volume representation we're using
     const m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
     return new Vector3().fromArray(xyz).multiply(this.physicalPixelSize).multiplyScalar(m).toArray();

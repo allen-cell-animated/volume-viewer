@@ -22,7 +22,10 @@ export type ImageInfo2 = Readonly<{
   /** Symbol of physical spatial unit used by `pixelSize` */
   //spatialUnit: string;
 
-  /** Number of channels in the image, accounting for convergence of multiple sources */
+  /** Number of channels in the image, accounting for convergence of multiple sources.
+   * Because of multiple sources, which is not accounted for in ImageInfo2,
+   * that this could be different than the number of channels in the multiscaleLevelDims.
+   */
   combinedNumChannels: number;
   /** The names of each channel */
   channelNames: string[];
@@ -54,7 +57,6 @@ export type ImageInfo2 = Readonly<{
   /** Number of scale levels available for this volume */
   //numMultiscaleLevels: number;
   /** Dimensions of each scale level, at original size, from the first data source */
-  // TODO THIS DATA IS SOMEWHAT REDUNDANT WITH SOME OF THE OTHER FIELDS IN HERE
   multiscaleLevelDims: VolumeDims2[];
 
   /** The scale level from which this image was loaded, between `0` and `numMultiscaleLevels-1` */
