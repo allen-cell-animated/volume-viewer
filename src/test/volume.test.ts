@@ -11,15 +11,9 @@ import { CImageInfo, ImageInfo } from "../ImageInfo";
 const testimgdata: ImageInfo = {
   name: "AICS-10_5_5",
 
-  //originalSize: new Vector3(306, 494, 65),
   atlasTileDims: [7, 10],
-  //volumeSize: new Vector3(204, 292, 65),
   subregionSize: [204, 292, 65],
   subregionOffset: [0, 0, 0],
-  //physicalPixelSize: new Vector3(0.065, 0.065, 0.29),
-  //spatialUnit: "",
-
-  //numChannels: 9
   combinedNumChannels: 9,
   channelNames: [
     "DRAQ5",
@@ -32,12 +26,6 @@ const testimgdata: ImageInfo = {
     "CON_Memb",
     "CON_DNA",
   ],
-
-  //times: 1,
-  //timeScale: 1,
-  //timeUnit: "",
-
-  //numMultiscaleLevels: 1,
   multiscaleLevel: 0,
   multiscaleLevelDims: [
     {
