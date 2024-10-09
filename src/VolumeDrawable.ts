@@ -11,7 +11,7 @@ import { RenderMode } from "./types.js";
 import { ThreeJsPanel } from "./ThreeJsPanel.js";
 import { Light } from "./Light.js";
 import Channel from "./Channel.js";
-import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
+import type { HasThreeJsContext, VolumeRenderImpl } from "./VolumeRenderImpl.js";
 import Atlas2DSlice from "./Atlas2DSlice.js";
 import { VolumeRenderSettings, SettingsFlags, Axis } from "./VolumeRenderSettings.js";
 
@@ -376,7 +376,7 @@ export default class VolumeDrawable {
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
   }
 
-  onAnimate(canvas: ThreeJsPanel): void {
+  onAnimate(canvas: HasThreeJsContext): void {
     // TODO: this is inefficient, as this work is duplicated by threejs.
     // we need camera matrix up to date before giving the 3d objects a chance to use it.
     canvas.camera.updateMatrixWorld(true);
