@@ -16,11 +16,10 @@ import {
 } from "three";
 import { Channel, Volume } from ".";
 import { sliceFragmentShaderSrc, sliceShaderUniforms, sliceVertexShaderSrc } from "./constants/volumeSliceShader.js";
-import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
+import type { HasThreeJsContext, VolumeRenderImpl } from "./VolumeRenderImpl.js";
 import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings.js";
 import FusedChannelData from "./FusedChannelData.js";
 import type { FuseChannel } from "./types.js";
-import { ThreeJsPanel } from "./ThreeJsPanel.js";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
@@ -240,7 +239,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     return;
   }
 
-  public doRender(canvas: ThreeJsPanel): void {
+  public doRender(canvas: HasThreeJsContext): void {
     if (!this.geometryMesh.visible) {
       return;
     }

@@ -25,9 +25,8 @@ import { pathTracingFragmentShaderSrc, pathTracingUniforms } from "./constants/v
 import { LUT_ARRAY_LENGTH } from "./Lut.js";
 import Volume from "./Volume.js";
 import { FUSE_DISABLED_RGB_COLOR, type FuseChannel, isOrthographicCamera } from "./types.js";
-import { ThreeJsPanel } from "./ThreeJsPanel.js";
 import { Light } from "./Light.js";
-import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
+import type { HasThreeJsContext, VolumeRenderImpl } from "./VolumeRenderImpl.js";
 import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings.js";
 import Channel from "./Channel.js";
 import RenderToBuffer from "./RenderToBuffer.js";
@@ -270,7 +269,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.updateSettings(this.settings, SettingsFlags.ROI);
   }
 
-  public doRender(canvas: ThreeJsPanel): void {
+  public doRender(canvas: HasThreeJsContext): void {
     if (!this.volumeTexture) {
       return;
     }

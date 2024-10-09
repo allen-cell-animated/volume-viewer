@@ -1,9 +1,15 @@
-import { Object3D } from "three";
+import { DepthTexture, Object3D, OrthographicCamera, PerspectiveCamera, WebGLRenderer } from "three";
 
-import { ThreeJsPanel } from "./ThreeJsPanel.js";
 import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings.js";
 import type { FuseChannel } from "./types.js";
 import Channel from "./Channel.js";
+
+export interface HasThreeJsContext {
+  renderer: WebGLRenderer;
+  camera: PerspectiveCamera | OrthographicCamera;
+  getMeshDepthTexture: () => DepthTexture;
+  getOrthoScale: () => number;
+}
 
 export interface VolumeRenderImpl {
   /**
@@ -17,7 +23,7 @@ export interface VolumeRenderImpl {
   updateSettings: (settings: VolumeRenderSettings, dirtyFlags?: number | SettingsFlags) => void;
 
   get3dObject: () => Object3D;
-  doRender: (_canvas: ThreeJsPanel) => void;
+  doRender: (canvas: HasThreeJsContext) => void;
   updateVolumeDimensions: () => void;
   cleanup: () => void;
   viewpointMoved: () => void;

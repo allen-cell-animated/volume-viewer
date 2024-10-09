@@ -25,8 +25,7 @@ import {
 } from "./constants/volumeRayMarchShader.js";
 import { Volume } from "./index.js";
 import Channel from "./Channel.js";
-import { ThreeJsPanel } from "./ThreeJsPanel.js";
-import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
+import type { HasThreeJsContext, VolumeRenderImpl } from "./VolumeRenderImpl.js";
 
 import type { FuseChannel } from "./types.js";
 import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings.js";
@@ -307,7 +306,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.channelData.cleanup();
   }
 
-  public doRender(canvas: ThreeJsPanel): void {
+  public doRender(canvas: HasThreeJsContext): void {
     if (!this.geometryMesh.visible) {
       return;
     }
