@@ -84,24 +84,12 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => {
   tr[1] = (tr[1] * json.tile_height) / json.height;
   return {
     name: json.name,
-
-    //originalSize: new Vector3(json.width, json.height, json.tiles),
     atlasTileDims: [json.cols, json.rows],
-    //volumeSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
     subregionSize: [json.tile_width, json.tile_height, json.tiles],
     subregionOffset: [0, 0, 0],
-    //physicalPixelSize: new Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
-    //spatialUnit: json.pixel_size_unit || "μm",
-
     combinedNumChannels: json.channels,
     channelNames: json.channel_names,
     channelColors: json.channel_colors,
-
-    //times: json.times || 1,
-    //timeScale: json.time_scale || 1,
-    //timeUnit: json.time_unit || "s",
-
-    //numMultiscaleLevels: 1,
     multiscaleLevel: 0,
     multiscaleLevelDims: [
       {
@@ -219,8 +207,6 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
     };
     onUpdateMetadata(undefined, adjustedLoadSpec);
 
-    //const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
-    //const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
     const [w, h] = computeAtlasSize(imageInfo);
     const wrappedOnData = (
       ch: number[],

@@ -414,20 +414,12 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const imgdata: ImageInfo = {
       name: source0.omeroMetadata?.name || "Volume",
 
-      //originalSize: pxSize0,
       atlasTileDims: [atlasTileDims.x, atlasTileDims.y],
-      //volumeSize: pxSizeLv,
       subregionSize: [pxSizeLv.x, pxSizeLv.y, pxSizeLv.z], //pxSizeLv.clone(),
       subregionOffset: [0, 0, 0],
-      //physicalPixelSize: new Vector3(scale5d[4], scale5d[3], hasZ ? scale5d[2] : Math.min(scale5d[4], scale5d[3])),
-      //spatialUnit,
 
       combinedNumChannels: numChannels,
       channelNames,
-      //times,
-      //timeScale,
-      //timeUnit,
-      //numMultiscaleLevels: source0.scaleLevels.length,
       multiscaleLevel: levelToLoad,
       multiscaleLevelDims: alldims,
 
@@ -549,7 +541,6 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     return {
       ...imageInfo,
       atlasTileDims: [atlasTileDims.x, atlasTileDims.y],
-      //volumeSize,
       subregionSize: [subregionSize.x, subregionSize.y, subregionSize.z],
       subregionOffset: [regionPx.min.x, regionPx.min.y, regionPx.min.z],
       multiscaleLevel,

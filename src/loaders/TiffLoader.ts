@@ -7,7 +7,7 @@ import {
   type RawChannelDataCallback,
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
-import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
+import { computePackedAtlasDims, MAX_ATLAS_EDGE } from "./VolumeLoaderUtils.js";
 import { VolumeLoadError, VolumeLoadErrorType, wrapVolumeLoadError } from "./VolumeLoadError.js";
 import { type ImageInfo, CImageInfo } from "../ImageInfo.js";
 import { VolumeDims } from "../VolumeDims.js";
@@ -157,9 +157,21 @@ class TiffLoader extends ThreadableVolumeLoader {
   async loadDims(_loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const dims = await this.loadOmeDims();
 
+    const atlasDims = computePackedAtlasDims(dims.sizez, dims.sizex, dims.sizey);
+    // fit tiles to max of 2048x2048?
+    const targetSize = MAX_ATLAS_EDGE;
+    const tilesizex = Math.floor(targetSize / atlasDims.x);
+    const tilesizey = Math.floor(targetSize / atlasDims.y);
+
     const d: VolumeDims = {
-      shape: [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex],
-      spacing: [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex],
+      shape: [dims.sizet, dims.sizec, dims.sizez, tilesizey, tilesizex],
+      spacing: [
+        1,
+        1,
+        dims.pixelsizez,
+        (dims.pixelsizey * dims.sizey) / tilesizey,
+        (dims.pixelsizex * dims.sizex) / tilesizex,
+      ],
       spaceUnit: dims.unit ? dims.unit : "micron",
       dataType: getDtype(dims.pixeltype),
       timeUnit: "s",
@@ -177,7 +189,7 @@ class TiffLoader extends ThreadableVolumeLoader {
     // TODO allow ROI selection: range of x,y,z,c for a given t
     const atlasDims = computePackedAtlasDims(dims.sizez, dims.sizex, dims.sizey);
     // fit tiles to max of 2048x2048?
-    const targetSize = 2048;
+    const targetSize = MAX_ATLAS_EDGE;
     const tilesizex = Math.floor(targetSize / atlasDims.x);
     const tilesizey = Math.floor(targetSize / atlasDims.y);
 
@@ -186,27 +198,22 @@ class TiffLoader extends ThreadableVolumeLoader {
     const imgdata: ImageInfo = {
       name: "TEST",
 
-      //originalSize: new Vector3(dims.sizex, dims.sizey, dims.sizez),
       atlasTileDims: [atlasDims.x, atlasDims.y],
-      //volumeSize: new Vector3(tilesizex, tilesizey, dims.sizez),
       subregionSize: [tilesizex, tilesizey, dims.sizez],
       subregionOffset: [0, 0, 0],
-      //physicalPixelSize: new Vector3(dims.pixelsizex, dims.pixelsizey, dims.pixelsizez),
-      //spatialUnit: dims.unit || "",
-
       combinedNumChannels: dims.sizec,
       channelNames: dims.channelnames,
-
-      //times: dims.sizet,
-      //timeScale: 1,
-      //timeUnit: "",
-
-      //numMultiscaleLevels: 1,
       multiscaleLevel: 0,
       multiscaleLevelDims: [
         {
-          shape: [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex],
-          spacing: [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex],
+          shape: [dims.sizet, dims.sizec, dims.sizez, tilesizey, tilesizex],
+          spacing: [
+            1,
+            1,
+            dims.pixelsizez,
+            (dims.pixelsizey * dims.sizey) / tilesizey,
+            (dims.pixelsizex * dims.sizex) / tilesizex,
+          ],
           spaceUnit: dims.unit || "",
           timeUnit: "",
           dataType: getDtype(dims.pixeltype),

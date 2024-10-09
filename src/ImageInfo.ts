@@ -4,23 +4,15 @@ import { Vector3, Vector2 } from "three";
 export type ImageInfo = Readonly<{
   name: string;
 
-  /** XYZ size of the *original* (level 0) volume, in pixels */
-  //originalSize: Vector3;
   /**
    * XY dimensions of the texture atlas used by `RayMarchedAtlasVolume` and `Atlas2DSlice`, in number of z-slice
    * tiles (not pixels). Chosen by the loader to lay out the 3D volume in the squarest possible 2D texture atlas.
    */
   atlasTileDims: [number, number];
-  /** Size of the volume (current level), in pixels */
-  //volumeSize: Vector3;
   /** Size of the currently loaded subregion, in pixels, in XYZ order */
   subregionSize: [number, number, number];
   /** Offset of the loaded subregion into the total volume, in pixels, in XYZ order */
   subregionOffset: [number, number, number];
-  /** Size of a single *original* (not downsampled) pixel, in spatial units */
-  //physicalPixelSize: Vector3;
-  /** Symbol of physical spatial unit used by `pixelSize` */
-  //spatialUnit: string;
 
   /** Number of channels in the image, accounting for convergence of multiple sources.
    * Because of multiple sources, which is not accounted for in ImageInfo,
@@ -33,30 +25,6 @@ export type ImageInfo = Readonly<{
   /** Optional overrides to default channel colors, in 0-255 range, RGB order */
   channelColors?: [number, number, number][];
 
-  /** Number of timesteps in the time series, or 1 if the image is not a time series */
-  //times: number;
-  /** Size of each timestep in temporal units */
-  //timeScale: number;
-  /**
-   * Symbol of temporal unit used by `timeScale`, e.g. "hr".
-   *
-   * If units match one of the following, the viewer will automatically format
-   * timestamps to a d:hh:mm:ss.sss format, truncated as an integer of the unit specified.
-   * See https://ngff.openmicroscopy.org/latest/index.html#axes-md for a list of valid time units.
-   * - "ms", "millisecond" for milliseconds: `d:hh:mm:ss.sss`
-   * - "s", "sec", "second", or "seconds" for seconds: `d:hh:mm:ss`
-   * - "m", "min", "minute", or "minutes" for minutes: `d:hh:mm`
-   * - "h", "hr", "hour", or "hours" for hours: `d:hh`
-   * - "d", "day", or "days" for days: `d`
-   *
-   * The maximum timestamp value is used to determine the maximum unit shown.
-   * For example, if the time unit is in seconds, and the maximum time is 90 seconds, the timestamp
-   * will be formatted as "{m:ss} (m:s)", and the day and hour segments will be omitted.
-   */
-  //timeUnit: string;
-
-  /** Number of scale levels available for this volume */
-  //numMultiscaleLevels: number;
   /** Dimensions of each scale level, at original size, from the first data source */
   multiscaleLevelDims: VolumeDims[];
 
@@ -114,8 +82,6 @@ export class CImageInfo {
   /** Number of channels in the image */
   get numChannels(): number {
     return this.imageInfo.combinedNumChannels;
-    // // 1 is C
-    // return this.currentLevelDims.shape[1];
   }
 
   /** XYZ size of the *original* (not downsampled) volume, in pixels */
@@ -150,22 +116,7 @@ export class CImageInfo {
     return this.currentLevelDims.spacing[0];
   }
 
-  /**
-   * Symbol of temporal unit used by `timeScale`, e.g. "hr".
-   *
-   * If units match one of the following, the viewer will automatically format
-   * timestamps to a d:hh:mm:ss.sss format, truncated as an integer of the unit specified.
-   * See https://ngff.openmicroscopy.org/latest/index.html#axes-md for a list of valid time units.
-   * - "ms", "millisecond" for milliseconds: `d:hh:mm:ss.sss`
-   * - "s", "sec", "second", or "seconds" for seconds: `d:hh:mm:ss`
-   * - "m", "min", "minute", or "minutes" for minutes: `d:hh:mm`
-   * - "h", "hr", "hour", or "hours" for hours: `d:hh`
-   * - "d", "day", or "days" for days: `d`
-   *
-   * The maximum timestamp value is used to determine the maximum unit shown.
-   * For example, if the time unit is in seconds, and the maximum time is 90 seconds, the timestamp
-   * will be formatted as "{m:ss} (m:s)", and the day and hour segments will be omitted.
-   */
+  /** Symbol of physical time unit used by `timeScale` */
   get timeUnit(): string {
     return this.currentLevelDims.timeUnit;
   }

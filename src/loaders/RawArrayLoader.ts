@@ -48,23 +48,14 @@ const convertImageInfo = (json: RawArrayInfo): ImageInfo => {
 
     // assumption: the data is already sized to fit in our viewer's preferred
     // memory footprint (a tiled atlas texture as of this writing)
-    //originalSize: new Vector3(json.sizeX, json.sizeY, json.sizeZ),
     atlasTileDims: [atlasTileDims.x, atlasTileDims.y],
-    //volumeSize: new Vector3(json.sizeX, json.sizeY, json.sizeZ),
     subregionSize: [json.sizeX, json.sizeY, json.sizeZ],
     subregionOffset: [0, 0, 0],
-    //physicalPixelSize: new Vector3(json.physicalPixelSize[0], json.physicalPixelSize[1], json.physicalPixelSize[2]),
-    //spatialUnit: json.spatialUnit || "μm",
 
     combinedNumChannels: json.sizeC,
     channelNames: json.channelNames,
-    channelColors: undefined, //json.channelColors,
+    channelColors: undefined,
 
-    //times: 1,
-    //timeScale: 1,
-    //timeUnit: "s",
-
-    //numMultiscaleLevels: 1,
     multiscaleLevel: 0,
     multiscaleLevelDims: [
       {
