@@ -244,9 +244,7 @@ export default class VolumeDrawable {
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
   }
 
-  setResolution(viewObj: ThreeJsPanel): void {
-    const x = viewObj.getWidth();
-    const y = viewObj.getHeight();
+  setResolution(x: number, y: number): void {
     const resolution = new Vector2(x, y);
     if (!this.settings.resolution.equals(resolution)) {
       this.meshVolume.setResolution(x, y);
