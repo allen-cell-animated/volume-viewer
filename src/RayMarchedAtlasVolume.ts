@@ -5,6 +5,7 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
+  DepthTexture,
   Group,
   LineBasicMaterial,
   LineSegments,
@@ -44,6 +45,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   private geometryTransformNode: Group;
   private uniforms: ReturnType<typeof rayMarchingShaderUniforms>;
   private channelData!: FusedChannelData;
+  private dummyTex: DepthTexture;
 
   /**
    * Creates a new RayMarchedAtlasVolume.
@@ -73,6 +75,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
 
+    this.dummyTex = new DepthTexture(1, 1);
     this.settings = settings;
     this.updateSettings(settings, SettingsFlags.ALL);
     // TODO this is doing *more* redundant work! Fix?
@@ -311,7 +314,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       return;
     }
 
-    this.setUniform("textureDepth", canvas.getMeshDepthTexture());
+    this.setUniform("textureDepth", canvas.getMeshDepthTexture?.() ?? this.dummyTex);
     this.setUniform("CLIP_NEAR", canvas.camera.near);
     this.setUniform("CLIP_FAR", canvas.camera.far);
 

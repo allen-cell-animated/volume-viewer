@@ -7,8 +7,8 @@ import Channel from "./Channel.js";
 export interface HasThreeJsContext {
   renderer: WebGLRenderer;
   camera: PerspectiveCamera | OrthographicCamera;
-  getMeshDepthTexture: () => DepthTexture;
-  getOrthoScale: () => number;
+  orthoScale: number;
+  getMeshDepthTexture?: () => DepthTexture;
 }
 
 export interface VolumeRenderImpl {
