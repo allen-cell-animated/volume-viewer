@@ -330,7 +330,6 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const hasT = t > -1;
     const hasZ = z > -1;
 
-    //const shape0 = source0.scaleLevels[0].shape;
     const levelToLoad = pickLevelToLoad(loadSpec, this.getLevelShapesZYX());
     const shapeLv = source0.scaleLevels[levelToLoad].shape;
 
@@ -359,12 +358,6 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     if (!this.maxExtent) {
       this.maxExtent = loadSpec.subregion.clone();
     }
-    // TODO IS IT SAFE TO IGNORE THIS SUBREGION STUFF?
-    // const pxDims0 = convertSubregionToPixels(
-    //   loadSpec.subregion,
-    //   new Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1)
-    // );
-    //const pxSize0 = pxDims0.getSize(new Vector3());
 
     // from source 0:
     const pxDimsLv = convertSubregionToPixels(
@@ -406,16 +399,12 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       };
       return dims;
     });
-    // for physicalPixelSize, we use the scale of the first level
-    //const scale5d: TCZYX<number> = this.getScale(0);
-    // assume that ImageInfo wants the timeScale of level 0
-    //const timeScale = hasT ? scale5d[0] : 1;
 
     const imgdata: ImageInfo = {
       name: source0.omeroMetadata?.name || "Volume",
 
       atlasTileDims: [atlasTileDims.x, atlasTileDims.y],
-      subregionSize: [pxSizeLv.x, pxSizeLv.y, pxSizeLv.z], //pxSizeLv.clone(),
+      subregionSize: [pxSizeLv.x, pxSizeLv.y, pxSizeLv.z],
       subregionOffset: [0, 0, 0],
 
       combinedNumChannels: numChannels,
@@ -532,11 +521,6 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     // Derive other image info properties from subregion and level to load
     const subregionSize = regionPx.getSize(new Vector3());
     const atlasTileDims = computePackedAtlasDims(subregionSize.z, subregionSize.x, subregionSize.y);
-    // const volumeExtent = convertSubregionToPixels(
-    //   maxExtent,
-    //   new Vector3(array0Shape[x], array0Shape[y], z === -1 ? 1 : array0Shape[z])
-    // );
-    //const volumeSize = volumeExtent.getSize(new Vector3());
 
     return {
       ...imageInfo,

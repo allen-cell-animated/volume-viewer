@@ -68,6 +68,9 @@ type JsonImageInfo = {
 /* eslint-enable @typescript-eslint/naming-convention */
 
 const rescalePixelSize = (json: JsonImageInfo): [number, number, number] => {
+  // the pixel_size_x/y/z are the physical size of the original pixels represented by
+  // width and height.  We need to get a physical pixel size that is consistent
+  // with the tile_width and tile_height.
   const px = (json.pixel_size_x * json.width) / json.tile_width;
   const py = (json.pixel_size_y * json.height) / json.tile_height;
   const pz = json.pixel_size_z;
@@ -75,10 +78,9 @@ const rescalePixelSize = (json: JsonImageInfo): [number, number, number] => {
 };
 
 const convertImageInfo = (json: JsonImageInfo): ImageInfo => {
-  // original XY pixels are stored in json.width and height.
-  // this is also the coordinates of the translation so we have to scale that too.
   const [px, py, pz] = rescalePixelSize(json);
-  // convert translation to
+  // translation is in pixels that are in the space of json.width, json.height.
+  // We need to convert this to the space of the tile_width and tile_height.
   const tr: [number, number, number] = json.transform?.translation ? json.transform.translation : [0, 0, 0];
   tr[0] = (tr[0] * json.tile_width) / json.width;
   tr[1] = (tr[1] * json.tile_height) / json.height;
