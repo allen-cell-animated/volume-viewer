@@ -8,7 +8,7 @@ import RequestQueue from "./utils/RequestQueue.js";
 import SubscribableRequestQueue from "./utils/SubscribableRequestQueue.js";
 import Histogram from "./Histogram.js";
 import { Lut, remapControlPoints } from "./Lut.js";
-import { ViewportCorner } from "./types.js";
+import { ViewportCorner, type VolumeDisplayOptions } from "./types.js";
 import { VolumeFileFormat, createVolumeLoader, PrefetchDirection } from "./loaders/index.js";
 import { LoadSpec } from "./loaders/IVolumeLoader.js";
 import { OMEZarrLoader } from "./loaders/OmeZarrLoader.js";
@@ -39,6 +39,7 @@ export {
   View3d,
   Volume,
   VolumeDrawable,
+  type VolumeDisplayOptions,
   LoadSpec,
   VolumeMaker,
   VolumeCache,
