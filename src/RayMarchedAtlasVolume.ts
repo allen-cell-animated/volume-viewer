@@ -5,20 +5,19 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
-  DataTexture,
-  DepthFormat,
+  DepthTexture,
   Group,
   LineBasicMaterial,
   LineSegments,
   Material,
   Matrix4,
   Mesh,
-  NearestFilter,
   ShaderMaterial,
   ShapeGeometry,
-  UnsignedIntType,
   Vector2,
   Vector3,
+  WebGLRenderer,
+  WebGLRenderTarget,
 } from "three";
 
 import FusedChannelData from "./FusedChannelData.js";
@@ -36,8 +35,15 @@ import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings.js";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
-let flag = false;
-window.setTimeout(() => (flag = true), 1000);
+function createEmptyDepthTexture(renderer: WebGLRenderer): DepthTexture {
+  const depthTexture = new DepthTexture(2, 2);
+  const target = new WebGLRenderTarget(2, 2);
+  target.depthTexture = depthTexture;
+  renderer.setRenderTarget(target);
+  renderer.clear(false, true, false);
+  renderer.setRenderTarget(null);
+  return depthTexture;
+}
 
 export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   private settings: VolumeRenderSettings;
@@ -51,7 +57,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   private geometryTransformNode: Group;
   private uniforms: ReturnType<typeof rayMarchingShaderUniforms>;
   private channelData!: FusedChannelData;
-  private dummyTex: DataTexture;
+  private emptyDepthTex?: DepthTexture;
 
   /**
    * Creates a new RayMarchedAtlasVolume.
@@ -80,15 +86,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.geometryTransformNode.name = "VolumeContainerNode";
 
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
-
-    const depthData = new Array(4).fill(Math.pow(2, 32) - 1);
-    this.dummyTex = new DataTexture(new Uint32Array(depthData), 2, 2);
-    this.dummyTex.format = DepthFormat;
-    this.dummyTex.type = UnsignedIntType;
-    this.dummyTex.minFilter = NearestFilter;
-    this.dummyTex.magFilter = NearestFilter;
-    this.dummyTex.flipY = false;
-    this.dummyTex.generateMipmaps = false;
 
     this.settings = settings;
     this.updateSettings(settings, SettingsFlags.ALL);
@@ -328,7 +325,11 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       return;
     }
 
-    this.setUniform("textureDepth", canvas.getMeshDepthTexture?.() ?? this.dummyTex);
+    if (!this.emptyDepthTex) {
+      this.emptyDepthTex = createEmptyDepthTexture(canvas.renderer);
+    }
+
+    this.setUniform("textureDepth", canvas.getMeshDepthTexture?.() ?? this.emptyDepthTex);
     this.setUniform("CLIP_NEAR", canvas.camera.near);
     this.setUniform("CLIP_FAR", canvas.camera.far);
 
@@ -343,10 +344,6 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
     this.setUniform("inverseModelViewMatrix", mvm);
     this.setUniform("inverseProjMatrix", canvas.camera.projectionMatrixInverse);
-    if (flag) {
-      console.log(this.uniforms);
-      flag = false;
-    }
   }
 
   public get3dObject(): Group {
