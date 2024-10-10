@@ -5,15 +5,18 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
-  DepthTexture,
+  DataTexture,
+  DepthFormat,
   Group,
   LineBasicMaterial,
   LineSegments,
   Material,
   Matrix4,
   Mesh,
+  NearestFilter,
   ShaderMaterial,
   ShapeGeometry,
+  UnsignedIntType,
   Vector2,
   Vector3,
 } from "three";
@@ -33,6 +36,9 @@ import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings.js";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
+let flag = false;
+window.setTimeout(() => (flag = true), 1000);
+
 export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   private settings: VolumeRenderSettings;
   public volume: Volume;
@@ -45,7 +51,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   private geometryTransformNode: Group;
   private uniforms: ReturnType<typeof rayMarchingShaderUniforms>;
   private channelData!: FusedChannelData;
-  private dummyTex: DepthTexture;
+  private dummyTex: DataTexture;
 
   /**
    * Creates a new RayMarchedAtlasVolume.
@@ -75,7 +81,15 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
 
-    this.dummyTex = new DepthTexture(1, 1);
+    const depthData = new Array(4).fill(Math.pow(2, 32) - 1);
+    this.dummyTex = new DataTexture(new Uint32Array(depthData), 2, 2);
+    this.dummyTex.format = DepthFormat;
+    this.dummyTex.type = UnsignedIntType;
+    this.dummyTex.minFilter = NearestFilter;
+    this.dummyTex.magFilter = NearestFilter;
+    this.dummyTex.flipY = false;
+    this.dummyTex.generateMipmaps = false;
+
     this.settings = settings;
     this.updateSettings(settings, SettingsFlags.ALL);
     // TODO this is doing *more* redundant work! Fix?
@@ -329,6 +343,10 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
     this.setUniform("inverseModelViewMatrix", mvm);
     this.setUniform("inverseProjMatrix", canvas.camera.projectionMatrixInverse);
+    if (flag) {
+      console.log(this.uniforms);
+      flag = false;
+    }
   }
 
   public get3dObject(): Group {
