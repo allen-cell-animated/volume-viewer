@@ -375,10 +375,6 @@ export class ThreeJsPanel {
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
 
-  get orthoScale(): number {
-    return this.controls.scale;
-  }
-
   orthoScreenPixelsToPhysicalUnits(pixels: number, physicalUnitsPerWorldUnit: number): number {
     // At orthoScale = 0.5, the viewport is 1 world unit tall
     const worldUnitsPerPixel = (this.controls.scale * 2) / this.getHeight();
