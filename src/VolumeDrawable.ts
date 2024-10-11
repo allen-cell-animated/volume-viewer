@@ -8,7 +8,6 @@ import { LUT_ARRAY_LENGTH } from "./Lut.js";
 import Volume from "./Volume.js";
 import type { VolumeDisplayOptions, VolumeChannelDisplayOptions, FuseChannel } from "./types.js";
 import { RenderMode } from "./types.js";
-import { ThreeJsPanel } from "./ThreeJsPanel.js";
 import { Light } from "./Light.js";
 import Channel from "./Channel.js";
 import type { HasThreeJsContext, VolumeRenderImpl } from "./VolumeRenderImpl.js";
