@@ -324,7 +324,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
     // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
     const fScale = isOrthographicCamera(cam)
-      ? canvas.orthoScale
+      ? 1 / cam.zoom
       : Math.tan((0.5 * (cam as PerspectiveCamera).fov * Math.PI) / 180.0);
 
     const aspect = this.pathTracingUniforms.uResolution.value.x / this.pathTracingUniforms.uResolution.value.y;
