@@ -8,7 +8,7 @@ import RequestQueue from "../utils/RequestQueue.js";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue.js";
 import type { WorkerRequest, WorkerRequestPayload, WorkerResponse, WorkerResponsePayload } from "./types.js";
 import { WorkerEventType, WorkerMsgType, WorkerResponseResult } from "./types.js";
-import { rebuildImageInfo, rebuildLoadSpec } from "./util.js";
+import { rebuildLoadSpec } from "./util.js";
 
 let cache: VolumeCache | undefined = undefined;
 let queue: RequestQueue | undefined = undefined;
@@ -59,7 +59,7 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
     }
 
     return loader.loadRawChannelData(
-      rebuildImageInfo(imageInfo),
+      imageInfo,
       rebuildLoadSpec(loadSpec),
       (imageInfo, loadSpec) => {
         const message: WorkerResponse<WorkerMsgType> = {
