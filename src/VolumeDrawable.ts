@@ -719,12 +719,19 @@ export default class VolumeDrawable {
     pane.addInput(this.settings, "rotation").on("change", ({ value }) => this.setRotation(value));
 
     const scaleFolder = pane.addFolder({ title: "Multiscale loading" });
+    // global setting to define texture size (aka gpu memory footprint per-channel)
     scaleFolder
       .addInput(this.volume.loadSpecRequired, "maxAtlasEdge")
       .on("change", ({ value }) => this.volume.updateRequiredData({ maxAtlasEdge: value }));
+    // explicit or automatic???
+    scaleFolder
+      .addInput(this.volume.loadSpecRequired, "useExplicitLevel")
+      .on("change", ({ value }) => this.volume.updateRequiredData({ useExplicitLevel: value }));
+    // only relevant when not using explicit level
     scaleFolder
       .addInput(this.volume.loadSpecRequired, "scaleLevelBias")
       .on("change", ({ value }) => this.volume.updateRequiredData({ scaleLevelBias: value }));
+    // which level to load
     scaleFolder
       .addInput(this.volume.loadSpecRequired, "multiscaleLevel")
       .on("change", ({ value }) => this.volume.updateRequiredData({ multiscaleLevel: value }));

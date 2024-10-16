@@ -48,9 +48,13 @@ import { validateOMEZarrMetadata } from "./zarr_utils/validation.js";
 
 const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
-// returns the converted data and the original min and max values (which have been remapped to 0 and 255)
-function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): [Uint8Array, number, number] {
+// returns the converted data and the original min and max values
+function convertChannel(
+  channelData: zarr.TypedArray<zarr.NumberDataType>,
+  dtype: zarr.NumberDataType
+): { data: zarr.TypedArray<zarr.NumberDataType>; dtype: zarr.NumberDataType; min: number; max: number } {
   // get min and max
+  // TODO FIXME Histogram will also compute min and max!
   let min = channelData[0];
   let max = channelData[0];
   for (let i = 0; i < channelData.length; i++) {
@@ -63,18 +67,17 @@ function convertChannel(channelData: zarr.TypedArray<zarr.NumberDataType>): [Uin
     }
   }
 
-  if (channelData instanceof Uint8Array) {
-    return [channelData as Uint8Array, min, max];
+  if (dtype === "float64") {
+    // convert to float32
+    const f32 = new Float32Array(channelData.length);
+    for (let i = 0; i < channelData.length; i++) {
+      f32[i] = channelData[i];
+    }
+    dtype = "float32";
+    channelData = f32;
   }
 
-  // normalize and convert to u8
-  const u8 = new Uint8Array(channelData.length);
-  const range = max - min;
-  for (let i = 0; i < channelData.length; i++) {
-    u8[i] = ((channelData[i] - min) / range) * 255;
-  }
-
-  return [u8, min, max];
+  return { data: channelData, dtype, min, max };
 }
 
 export type ZarrLoaderFetchOptions = {
@@ -95,6 +98,8 @@ export type ZarrLoaderFetchOptions = {
   maxPrefetchChunks: number;
   /** The initial directions to prioritize when prefetching */
   priorityDirections?: PrefetchDirection[];
+  /** only use priority directions */
+  onlyPriorityDirections?: boolean;
 };
 
 type ZarrChunkFetchInfo = {
@@ -289,6 +294,10 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     this.syncChannels = sync;
   }
 
+  updateFetchOptions(options: Partial<ZarrLoaderFetchOptions>): void {
+    this.fetchOptions = { ...this.fetchOptions, ...options };
+  }
+
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const [spaceUnit, timeUnit] = this.getUnitSymbols();
     // Compute subregion size so we can factor that in
@@ -305,6 +314,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       dims.timeUnit = timeUnit;
       dims.shape = this.orderByTCZYX(level.shape, 1).map((val, idx) => Math.max(Math.ceil(val * regionArr[idx]), 1));
       dims.spacing = this.orderByTCZYX(scale, 1);
+      dims.dataType = level.dtype;
 
       return dims;
     });
@@ -382,10 +392,22 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       });
     });
 
+    const alldims: VolumeDims[] = [];
+    source0.scaleLevels.map((level, i) => {
+      const dims = new VolumeDims();
+
+      dims.spaceUnit = spatialUnit;
+      dims.timeUnit = timeUnit;
+      dims.shape = this.orderByTCZYX(level.shape, 1);
+      dims.spacing = this.getScale(i);
+      dims.dataType = level.dtype;
+
+      alldims.push(dims);
+    });
     // for physicalPixelSize, we use the scale of the first level
-    const scale5d = this.getScale(0);
+    const scale5d: TCZYX<number> = this.getScale(0);
     // assume that ImageInfo wants the timeScale of level 0
-    const timeScale = hasT ? scale5d[t] : 1;
+    const timeScale = hasT ? scale5d[0] : 1;
 
     const imgdata: ImageInfo = {
       name: source0.omeroMetadata?.name || "Volume",
@@ -395,7 +417,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       volumeSize: pxSizeLv,
       subregionSize: pxSizeLv.clone(),
       subregionOffset: new Vector3(0, 0, 0),
-      physicalPixelSize: new Vector3(scale5d[x], scale5d[y], hasZ ? scale5d[z] : Math.min(scale5d[x], scale5d[y])),
+      physicalPixelSize: new Vector3(scale5d[4], scale5d[3], hasZ ? scale5d[2] : Math.min(scale5d[4], scale5d[3])),
       spatialUnit,
 
       numChannels,
@@ -405,6 +427,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       timeUnit,
       numMultiscaleLevels: source0.scaleLevels.length,
       multiscaleLevel: levelToLoad,
+      multiscaleLevelDims: alldims,
 
       transform: {
         translation: new Vector3(0, 0, 0),
@@ -471,7 +494,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       chunkCoords,
       this.fetchOptions.maxPrefetchDistance,
       chunkDimsTCZYX,
-      this.priorityDirections
+      this.priorityDirections,
+      this.fetchOptions.onlyPriorityDirections
     );
 
     const subscriber = this.requestQueue.addSubscriber();
@@ -556,7 +580,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     };
 
     const resultChannelIndices: number[] = [];
-    const resultChannelData: Uint8Array[] = [];
+    const resultChannelData: zarr.TypedArray<zarr.NumberDataType>[] = [];
+    const resultChannelDtype: zarr.NumberDataType[] = [];
     const resultChannelRanges: [number, number][] = [];
 
     const channelPromises = channelIndexes.map(async (ch) => {
@@ -582,13 +607,14 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
         return;
       }
 
-      const converted = convertChannel(result.data);
+      const converted = convertChannel(result.data, level.dtype);
       if (syncChannels) {
-        resultChannelData.push(converted[0]);
+        resultChannelDtype.push(converted.dtype);
+        resultChannelData.push(converted.data);
         resultChannelIndices.push(ch);
-        resultChannelRanges.push([converted[1], converted[2]]);
+        resultChannelRanges.push([converted.min, converted.max]);
       } else {
-        onData([ch], [converted[0]], [[converted[1], converted[2]]]);
+        onData([ch], [converted.dtype], [converted.data], [[converted.min, converted.max]]);
       }
     });
 
@@ -603,7 +629,7 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     await Promise.all(channelPromises);
 
     if (syncChannels) {
-      onData(resultChannelIndices, resultChannelData, resultChannelRanges);
+      onData(resultChannelIndices, resultChannelDtype, resultChannelData, resultChannelRanges);
     }
     this.requestQueue.removeSubscriber(subscriber, CHUNK_REQUEST_CANCEL_REASON);
   }

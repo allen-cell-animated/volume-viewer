@@ -1,6 +1,6 @@
 {
   "name": "@aics/volume-viewer",
-  "version": "3.11.1",
+  "version": "3.11.2",
   "description": "volume renderer for multichannel 8-bit intensity data stored as 3D arrays",
   "main": "es/index.js",
   "type": "module",
@@ -40,7 +40,8 @@
     "@zarrita/storage": "^0.0.2",
     "geotiff": "^2.0.5",
     "serialize-error": "^11.0.3",
-    "three": "^0.144.0",
+    "three": "^0.162.0",
+    "throttled-queue": "^2.1.4",
     "tweakpane": "^3.1.9",
     "zarrita": "^0.3.2"
   },

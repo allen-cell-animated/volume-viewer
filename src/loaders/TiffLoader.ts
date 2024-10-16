@@ -12,6 +12,7 @@ import {
 import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
 import { VolumeLoadError, VolumeLoadErrorType, wrapVolumeLoadError } from "./VolumeLoadError.js";
 import type { ImageInfo } from "../Volume.js";
+import { TypedArray, NumberType } from "../types.js";
 
 function prepareXML(xml: string): string {
   // trim trailing unicode zeros?
@@ -61,7 +62,8 @@ export type TiffWorkerParams = {
 
 export type TiffLoadResult = {
   isError: false;
-  data: Uint8Array;
+  data: TypedArray<NumberType>;
+  dtype: NumberType;
   channel: number;
   range: [number, number];
 };
@@ -182,6 +184,15 @@ class TiffLoader extends ThreadableVolumeLoader {
 
       numMultiscaleLevels: 1,
       multiscaleLevel: 0,
+      multiscaleLevelDims: [
+        {
+          shape: [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex],
+          spacing: [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex],
+          spaceUnit: dims.unit || "",
+          timeUnit: "",
+          dataType: dims.pixeltype || "uint8",
+        },
+      ],
 
       transform: {
         translation: new Vector3(0, 0, 0),
@@ -224,8 +235,8 @@ class TiffLoader extends ThreadableVolumeLoader {
             reject(deserializeError(e.data.error));
             return;
           }
-          const { data, channel, range } = e.data;
-          onData([channel], [data], [range]);
+          const { data, dtype, channel, range } = e.data;
+          onData([channel], [dtype], [data], [range]);
           worker.terminate();
           resolve();
         };

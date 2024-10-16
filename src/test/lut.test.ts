@@ -94,21 +94,21 @@ describe("test histogram", () => {
   });
 
   describe("generate lut for segmentation data labels", () => {
-    // make some data with 3 label values
-    const labeldata = new Uint8Array([1, 1, 1, 2, 2, 2, 4, 4, 4, 12, 12, 12]);
+    // make some data with label values
+    const labeldata = new Uint8Array([0, 1, 1, 1, 2, 2, 2, 4, 4, 4, 12, 12, 12]);
     const labelHistogram = new Histogram(labeldata);
-
     const lutObj = new Lut().createLabelColors(labelHistogram);
+
     it("has nonzero opacity values where expected", () => {
-      expect(lutObj.lut[0 * 4 + 3]).to.equal(0);
-      expect(lutObj.lut[1 * 4 + 3]).to.equal(255);
-      expect(lutObj.lut[2 * 4 + 3]).to.equal(255);
-      expect(lutObj.lut[3 * 4 + 3]).to.equal(0);
-      expect(lutObj.lut[4 * 4 + 3]).to.equal(255);
-      expect(lutObj.lut[5 * 4 + 3]).to.equal(0);
-      expect(lutObj.lut[11 * 4 + 3]).to.equal(0);
-      expect(lutObj.lut[12 * 4 + 3]).to.equal(255);
-      expect(lutObj.lut[13 * 4 + 3]).to.equal(0);
+      expect(lutObj.lut[labelHistogram.findBinOfValue(0) * 4 + 3]).to.equal(0);
+      expect(lutObj.lut[labelHistogram.findBinOfValue(1) * 4 + 3]).to.equal(255);
+      expect(lutObj.lut[labelHistogram.findBinOfValue(2) * 4 + 3]).to.equal(255);
+      expect(lutObj.lut[labelHistogram.findBinOfValue(4) * 4 + 3]).to.equal(255);
+      expect(lutObj.lut[labelHistogram.findBinOfValue(12) * 4 + 3]).to.equal(255);
+
+      // test some values expected to be zero
+      expect(lutObj.lut[labelHistogram.findBinOfValue(3) * 4 + 3]).to.equal(0);
+      expect(lutObj.lut[labelHistogram.findBinOfValue(11) * 4 + 3]).to.equal(0);
     });
 
     // reconcile lut with control points

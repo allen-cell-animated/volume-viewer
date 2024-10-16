@@ -6,6 +6,8 @@
 
 import { BufferAttribute, BufferGeometry, Material, Mesh } from "three";
 
+import type { TypedArray, NumberType } from "./types.js";
+
 class MarchingCubes extends Mesh {
   public isovalue: number;
   public enableUvs: boolean;
@@ -30,7 +32,7 @@ class MarchingCubes extends Mesh {
   public deltaZ: number;
   public yd: number;
   public zd: number;
-  public field: Uint8Array | Float32Array;
+  public field: TypedArray<NumberType>;
   public normal_cache: Float32Array;
   public maxCount: number; //4096; // TODO: find the fastest size for this buffer
   public count: number;
@@ -43,7 +45,7 @@ class MarchingCubes extends Mesh {
   public uvArray: Float32Array;
   public colorArray: Float32Array;
 
-  private init: (res: [number, number, number], vol: Uint8Array) => void;
+  private init: (res: [number, number, number], vol: TypedArray<NumberType>) => void;
   private begin: () => void;
   private end: (renderCallback: (mc: MarchingCubes) => void) => void;
   private reset: () => void;
@@ -56,7 +58,7 @@ class MarchingCubes extends Mesh {
     enableUvs: boolean,
     enableColors: boolean,
     enableNormals: boolean,
-    volumeFieldRef: Uint8Array
+    volumeFieldRef: TypedArray<NumberType>
   ) {
     const geometry = new BufferGeometry();
     super(geometry, material);
@@ -113,7 +115,7 @@ class MarchingCubes extends Mesh {
     // prototype functions kill performance
     // (tested and it was 4x slower !!!)
 
-    this.init = function (resolution: [number, number, number], volumeFieldRef: Uint8Array) {
+    this.init = function (resolution: [number, number, number], volumeFieldRef: TypedArray<NumberType>) {
       this.dirty = true;
 
       this.resolution = resolution;

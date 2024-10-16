@@ -5,6 +5,54 @@ export interface Bounds {
   bmax: Vector3;
 }
 
+// numeric types compatible with zarrita.js.
+// see https://github.com/manzt/zarrita.js/blob/main/packages/core/src/metadata.ts
+export type Int8 = "int8";
+export type Int16 = "int16";
+export type Int32 = "int32";
+export type Int64 = "int64";
+export type Uint8 = "uint8";
+export type Uint16 = "uint16";
+export type Uint32 = "uint32";
+export type Uint64 = "uint64";
+export type Float32 = "float32";
+export type Float64 = "float64";
+export type NumberType = Int8 | Int16 | Int32 | Uint8 | Uint16 | Uint32 | Float32 | Float64;
+export type TypedArray<D> = D extends Int8
+  ? Int8Array
+  : D extends Int16
+  ? Int16Array
+  : D extends Int32
+  ? Int32Array
+  : D extends Int64
+  ? BigInt64Array
+  : D extends Uint8
+  ? Uint8Array
+  : D extends Uint16
+  ? Uint16Array
+  : D extends Uint32
+  ? Uint32Array
+  : D extends Uint64
+  ? BigUint64Array
+  : D extends Float32
+  ? Float32Array
+  : D extends Float64
+  ? Float64Array
+  : never;
+
+export const ARRAY_CONSTRUCTORS = {
+  int8: Int8Array,
+  int16: Int16Array,
+  int32: Int32Array,
+  int64: globalThis.BigInt64Array,
+  uint8: Uint8Array,
+  uint16: Uint16Array,
+  uint32: Uint32Array,
+  uint64: globalThis.BigUint64Array,
+  float32: Float32Array,
+  float64: Float64Array,
+};
+
 export interface FuseChannel {
   chIndex: number;
   lut: Uint8Array;

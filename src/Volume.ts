@@ -6,11 +6,12 @@ import { Lut } from "./Lut.js";
 import { getColorByChannelIndex } from "./constants/colors.js";
 import { type IVolumeLoader, LoadSpec, type PerChannelCallback, VolumeDims } from "./loaders/IVolumeLoader.js";
 import { MAX_ATLAS_EDGE, pickLevelToLoadUnscaled } from "./loaders/VolumeLoaderUtils.js";
+import type { NumberType, TypedArray } from "./types.js";
 
 export type ImageInfo = Readonly<{
   name: string;
 
-  /** XY size of the *original* (not downsampled) volume, in pixels */
+  /** XYZ size of the *original* (not downsampled) volume, in pixels */
   originalSize: Vector3;
   /**
    * XY dimensions of the texture atlas used by `RayMarchedAtlasVolume` and `Atlas2DSlice`, in number of z-slice
@@ -59,6 +60,9 @@ export type ImageInfo = Readonly<{
 
   /** Number of scale levels available for this volume */
   numMultiscaleLevels: number;
+  /** Dimensions of each scale level, at original size, from the first data source */
+  // TODO THIS DATA IS SOMEWHAT REDUNDANT WITH SOME OF THE OTHER FIELDS IN HERE
+  multiscaleLevelDims: VolumeDims[];
   /** The scale level from which this image was loaded, between `0` and `numMultiscaleLevels-1` */
   multiscaleLevel: number;
 
@@ -90,6 +94,15 @@ export const getDefaultImageInfo = (): ImageInfo => ({
   timeUnit: "",
   numMultiscaleLevels: 1,
   multiscaleLevel: 0,
+  multiscaleLevelDims: [
+    {
+      shape: [1, 1, 1, 1, 1],
+      spacing: [1, 1, 1, 1, 1],
+      spaceUnit: "",
+      timeUnit: "",
+      dataType: "uint8",
+    },
+  ],
   transform: {
     translation: new Vector3(0, 0, 0),
     rotation: new Vector3(0, 0, 0),
@@ -260,6 +273,7 @@ export default class Volume {
   /** Returns `true` iff differences between `loadSpec` and `loadSpecRequired` indicate new data *must* be loaded. */
   private mustLoadNewData(): boolean {
     return (
+      this.loadSpec.useExplicitLevel !== this.loadSpecRequired.useExplicitLevel || // explicit vs automatic level changed
       this.loadSpec.time !== this.loadSpecRequired.time || // time point changed
       !this.loadSpec.subregion.containsBox(this.loadSpecRequired.subregion) || // new subregion not contained in old
       this.loadSpecRequired.channels.some((channel) => !this.loadSpec.channels.includes(channel)) // new channel(s)
@@ -392,10 +406,23 @@ export default class Volume {
    * @param {number} atlaswidth
    * @param {number} atlasheight
    */
-  setChannelDataFromAtlas(channelIndex: number, atlasdata: Uint8Array, atlaswidth: number, atlasheight: number): void {
-    this.channels[channelIndex].setBits(atlasdata, atlaswidth, atlasheight);
-    const { x, y, z } = this.imageInfo.subregionSize;
-    this.channels[channelIndex].unpackVolumeFromAtlas(x, y, z);
+  setChannelDataFromAtlas(
+    channelIndex: number,
+    atlasdata: TypedArray<NumberType>,
+    atlaswidth: number,
+    atlasheight: number,
+    range: [number, number],
+    dtype: NumberType = "uint8"
+  ): void {
+    this.channels[channelIndex].setFromAtlas(
+      atlasdata,
+      atlaswidth,
+      atlasheight,
+      dtype,
+      range[0],
+      range[1],
+      this.imageInfo.subregionSize
+    );
     this.onChannelLoaded([channelIndex]);
   }
 
@@ -405,7 +432,12 @@ export default class Volume {
    * @param {number} channelIndex
    * @param {Uint8Array} volumeData
    */
-  setChannelDataFromVolume(channelIndex: number, volumeData: Uint8Array, range: [number, number]): void {
+  setChannelDataFromVolume(
+    channelIndex: number,
+    volumeData: TypedArray<NumberType>,
+    range: [number, number],
+    dtype: NumberType = "uint8"
+  ): void {
     const { subregionSize, atlasTileDims } = this.imageInfo;
     this.channels[channelIndex].setFromVolumeData(
       volumeData,
@@ -415,7 +447,8 @@ export default class Volume {
       atlasTileDims.x * subregionSize.x,
       atlasTileDims.y * subregionSize.y,
       range[0],
-      range[1]
+      range[1],
+      dtype
     );
     this.onChannelLoaded([channelIndex]);
   }
