@@ -376,8 +376,7 @@ export class ThreeJsPanel {
   }
 
   orthoScreenPixelsToPhysicalUnits(pixels: number, physicalUnitsPerWorldUnit: number): number {
-    // At orthoScale = 0.5, the viewport is 1 world unit tall
-    const worldUnitsPerPixel = (this.controls.scale * 2) / this.getHeight();
+    const worldUnitsPerPixel = 1 / (this.camera.zoom * this.getHeight());
     // Multiply by devicePixelRatio to convert from scaled CSS pixels to physical pixels
     // (to account for high dpi monitors, e.g.). We didn't do this to height above because
     // that value comes from three, which works in physical pixels.
