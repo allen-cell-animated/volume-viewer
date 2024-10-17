@@ -15,6 +15,8 @@ import {
   WebGLRenderTarget,
   LinearFilter,
   NearestFilter,
+  OrthographicCamera,
+  WebGLRenderer,
 } from "three";
 
 import { renderToBufferVertShader, copyImageFragShader } from "./constants/basicShaders.js";
@@ -26,7 +28,7 @@ import { LUT_ARRAY_LENGTH } from "./Lut.js";
 import Volume from "./Volume.js";
 import { FUSE_DISABLED_RGB_COLOR, type FuseChannel, isOrthographicCamera } from "./types.js";
 import { Light } from "./Light.js";
-import type { HasThreeJsContext, VolumeRenderImpl } from "./VolumeRenderImpl.js";
+import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
 import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings.js";
 import Channel from "./Channel.js";
 import RenderToBuffer from "./RenderToBuffer.js";
@@ -269,7 +271,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.updateSettings(this.settings, SettingsFlags.ROI);
   }
 
-  public doRender(canvas: HasThreeJsContext): void {
+  public doRender(renderer: WebGLRenderer, camera: PerspectiveCamera | OrthographicCamera): void {
     if (!this.volumeTexture) {
       return;
     }
@@ -290,21 +292,20 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
     // CAMERA
     // force the camera to update its world matrix.
-    canvas.camera.updateMatrixWorld(true);
-    const cam = canvas.camera;
+    camera.updateMatrixWorld(true);
 
     // rotate lights with camera, as if we are tumbling the volume with a fixed camera and world lighting.
     // this code is analogous to this threejs code from View3d.preRender:
     // this.scene.getObjectByName('lightContainer').rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
-    const mycamxform = cam.matrixWorld.clone();
+    const mycamxform = camera.matrixWorld.clone();
     mycamxform.setPosition(new Vector3(0, 0, 0));
     this.updateLightsSecondary(mycamxform);
 
     let mydir = new Vector3();
-    mydir = cam.getWorldDirection(mydir);
-    const myup = new Vector3().copy(cam.up);
+    mydir = camera.getWorldDirection(mydir);
+    const myup = new Vector3().copy(camera.up);
     // don't rotate this vector.  we are using translation as the pivot point of the object, and THEN rotating.
-    const mypos = new Vector3().copy(cam.position);
+    const mypos = new Vector3().copy(camera.position);
 
     // apply volume translation and rotation:
     // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
@@ -314,7 +315,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     myup.applyMatrix4(m);
     mydir.applyMatrix4(m);
 
-    this.pathTracingUniforms.gCamera.value.mIsOrtho = isOrthographicCamera(cam) ? 1 : 0;
+    this.pathTracingUniforms.gCamera.value.mIsOrtho = isOrthographicCamera(camera) ? 1 : 0;
     this.pathTracingUniforms.gCamera.value.mFrom.copy(mypos);
     this.pathTracingUniforms.gCamera.value.mN.copy(mydir);
     this.pathTracingUniforms.gCamera.value.mU.crossVectors(this.pathTracingUniforms.gCamera.value.mN, myup).normalize();
@@ -323,9 +324,9 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       .normalize();
 
     // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
-    const fScale = isOrthographicCamera(cam)
-      ? 0.5 / cam.zoom
-      : Math.tan((0.5 * (cam as PerspectiveCamera).fov * Math.PI) / 180.0);
+    const fScale = isOrthographicCamera(camera)
+      ? 0.5 / camera.zoom
+      : Math.tan((0.5 * (camera as PerspectiveCamera).fov * Math.PI) / 180.0);
 
     const aspect = this.pathTracingUniforms.uResolution.value.x / this.pathTracingUniforms.uResolution.value.y;
     this.pathTracingUniforms.gCamera.value.mScreen.set(
@@ -360,12 +361,12 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     // This is currently rendered as a fullscreen quad with no camera transform in the vertex shader!
     // It is also composited with screenTextureRenderTarget's texture.
     // (Read previous screenTextureRenderTarget to use as a new starting point to blend with)
-    this.pathTracingRenderToBuffer.render(canvas.renderer, this.pathTracingRenderTarget);
+    this.pathTracingRenderToBuffer.render(renderer, this.pathTracingRenderTarget);
 
     // STEP 2
     // Render(copy) the final pathTracingScene output(above) into screenTextureRenderTarget
     // This will be used as a new starting point for Step 1 above
-    this.screenTextureRenderToBuffer.render(canvas.renderer, this.screenTextureRenderTarget);
+    this.screenTextureRenderToBuffer.render(renderer, this.screenTextureRenderTarget);
 
     // STEP 3
     // Render full screen quad with generated pathTracingRenderTarget in STEP 1 above.
@@ -374,7 +375,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     // tell the threejs panel to use the quadCamera to render this scene.
 
     // renderer.render( this.screenOutputScene, this.quadCamera );
-    canvas.renderer.setRenderTarget(null);
+    renderer.setRenderTarget(null);
   }
 
   public get3dObject(): Mesh {

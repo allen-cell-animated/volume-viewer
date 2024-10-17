@@ -12,6 +12,8 @@ import {
   Material,
   Matrix4,
   Mesh,
+  OrthographicCamera,
+  PerspectiveCamera,
   ShaderMaterial,
   ShapeGeometry,
   Vector2,
@@ -28,7 +30,7 @@ import {
 } from "./constants/volumeRayMarchShader.js";
 import { Volume } from "./index.js";
 import Channel from "./Channel.js";
-import type { HasThreeJsContext, VolumeRenderImpl } from "./VolumeRenderImpl.js";
+import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
 
 import type { FuseChannel } from "./types.js";
 import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings.js";
@@ -320,30 +322,34 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.channelData.cleanup();
   }
 
-  public doRender(canvas: HasThreeJsContext): void {
+  public doRender(
+    renderer: WebGLRenderer,
+    camera: PerspectiveCamera | OrthographicCamera,
+    depthTexture?: DepthTexture
+  ): void {
     if (!this.geometryMesh.visible) {
       return;
     }
 
     if (!this.emptyDepthTex) {
-      this.emptyDepthTex = createEmptyDepthTexture(canvas.renderer);
+      this.emptyDepthTex = createEmptyDepthTexture(renderer);
     }
 
-    this.setUniform("textureDepth", canvas.getMeshDepthTexture?.() ?? this.emptyDepthTex);
-    this.setUniform("CLIP_NEAR", canvas.camera.near);
-    this.setUniform("CLIP_FAR", canvas.camera.far);
+    this.setUniform("textureDepth", depthTexture ?? this.emptyDepthTex);
+    this.setUniform("CLIP_NEAR", camera.near);
+    this.setUniform("CLIP_FAR", camera.far);
 
-    this.channelData.gpuFuse(canvas.renderer);
+    this.channelData.gpuFuse(renderer);
     this.setUniform("textureAtlas", this.channelData.getFusedTexture());
 
     this.geometryTransformNode.updateMatrixWorld(true);
 
     const mvm = new Matrix4();
-    mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
+    mvm.multiplyMatrices(camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
     mvm.invert();
 
     this.setUniform("inverseModelViewMatrix", mvm);
-    this.setUniform("inverseProjMatrix", canvas.camera.projectionMatrixInverse);
+    this.setUniform("inverseProjMatrix", camera.projectionMatrixInverse);
   }
 
   public get3dObject(): Group {

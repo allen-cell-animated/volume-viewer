@@ -24,7 +24,6 @@ import VolumeLoaderContext from "./workers/VolumeLoaderContext.js";
 import { VolumeLoadError, VolumeLoadErrorType } from "./loaders/VolumeLoadError.js";
 import { type CameraState } from "./ThreeJsPanel.js";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light.js";
-import type { HasThreeJsContext } from "./VolumeRenderImpl.js";
 
 export type { ImageInfo } from "./Volume.js";
 export type { ControlPoint } from "./Lut.js";
@@ -66,5 +65,4 @@ export {
   RENDERMODE_RAYMARCH,
   SKY_LIGHT,
   type CameraState,
-  type HasThreeJsContext,
 };

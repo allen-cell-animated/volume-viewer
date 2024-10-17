@@ -22,7 +22,6 @@ import MarchingCubes from "./MarchingCubes.js";
 import Volume from "./Volume.js";
 import type { Bounds } from "./types.js";
 import { MESH_LAYER } from "./ThreeJsPanel.js";
-import { HasThreeJsContext } from "./VolumeRenderImpl.js";
 
 /**
  * this cutoff is chosen to have a small buffer of values before the object is treated
@@ -74,7 +73,7 @@ export default class MeshVolume {
     this.meshRoot.visible = isVisible;
   }
 
-  doRender(_canvas: HasThreeJsContext): void {
+  doRender(): void {
     // no op
   }
 
