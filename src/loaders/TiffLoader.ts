@@ -60,7 +60,7 @@ function getDtype(omepixeltype: string): NumberType {
   };
   const dtype = mapping[omepixeltype];
   if (dtype === undefined) {
-    // TODO consider throwing an error?
+    console.warn(`Unsupported OME pixel type ${omepixeltype}; defaulting to uint8`);
     return "uint8";
   }
   return dtype;
