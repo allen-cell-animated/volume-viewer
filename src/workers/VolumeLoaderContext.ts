@@ -272,7 +272,7 @@ class WorkerLoader extends ThreadableVolumeLoader {
       WorkerMsgType.CREATE_VOLUME,
       loadSpec
     );
-    return { imageInfo: imageInfo, loadSpec: rebuildLoadSpec(adjustedLoadSpec) };
+    return { imageInfo, loadSpec: rebuildLoadSpec(adjustedLoadSpec) };
   }
 
   loadRawChannelData(
