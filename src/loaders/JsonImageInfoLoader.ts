@@ -81,7 +81,7 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => {
   const [px, py, pz] = rescalePixelSize(json);
   // translation is in pixels that are in the space of json.width, json.height.
   // We need to convert this to the space of the tile_width and tile_height.
-  const tr: [number, number, number] = json.transform?.translation ? json.transform.translation : [0, 0, 0];
+  const tr: [number, number, number] = json.transform?.translation ?? [0, 0, 0];
   tr[0] = (tr[0] * json.tile_width) / json.width;
   tr[1] = (tr[1] * json.tile_height) / json.height;
   return {
