@@ -159,9 +159,9 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
     const d: VolumeDims = {
       shape: [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tile_height, jsonInfo.tile_width],
       spacing: [1, 1, pz, py, px],
-      spaceUnit: jsonInfo.pixel_size_unit || "μm",
+      spaceUnit: jsonInfo.pixel_size_unit ?? "μm",
       dataType: "uint8",
-      timeUnit: jsonInfo.time_unit || "s",
+      timeUnit: jsonInfo.time_unit ?? "s",
     };
     return [d];
   }
