@@ -9,14 +9,14 @@ import {
 } from "./IVolumeLoader.js";
 import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
 import { ImageInfo } from "../Volume.js";
-import { DATARANGE_UINT8 } from "../types.js";
+import { DATARANGE_UINT8, Uint8 } from "../types.js";
 
 // this is the form in which a 4D numpy array arrives as converted
 // by jupyterlab into a js object.
 // This loader does not yet support multiple time samples.
 export type RawArrayData = {
   // expected to be "uint8" always
-  dtype: "uint8";
+  dtype: Uint8;
   // [c,z,y,x]
   shape: [number, number, number, number];
   // the bits (assumed uint8!!)
@@ -64,6 +64,15 @@ const convertImageInfo = (json: RawArrayInfo): ImageInfo => ({
 
   numMultiscaleLevels: 1,
   multiscaleLevel: 0,
+  multiscaleLevelDims: [
+    {
+      shape: [1, json.sizeC, json.sizeZ, json.sizeY, json.sizeX],
+      spacing: [1, 1, json.physicalPixelSize[2], json.physicalPixelSize[1], json.physicalPixelSize[0]],
+      spaceUnit: json.spatialUnit || "μm",
+      timeUnit: "s",
+      dataType: "uint8",
+    },
+  ],
 
   transform: {
     translation: new Vector3(0, 0, 0),
@@ -130,7 +139,7 @@ class RawArrayLoader extends ThreadableVolumeLoader {
       const volSizeBytes = this.data.shape[3] * this.data.shape[2] * this.data.shape[1]; // x*y*z pixels * 1 byte/pixel
       const channelData = new Uint8Array(this.data.buffer.buffer, chindex * volSizeBytes, volSizeBytes);
       // all data coming from this loader is natively 8-bit
-      onData([chindex], [channelData], [DATARANGE_UINT8]);
+      onData([chindex], ["uint8"], [channelData], [DATARANGE_UINT8]);
     }
 
     return Promise.resolve();

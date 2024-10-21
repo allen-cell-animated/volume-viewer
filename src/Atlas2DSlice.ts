@@ -8,15 +8,18 @@ import {
   Material,
   Matrix4,
   Mesh,
+  OrthographicCamera,
+  PerspectiveCamera,
   PlaneGeometry,
   ShaderMaterial,
   ShapeGeometry,
   Vector2,
   Vector3,
+  WebGLRenderer,
 } from "three";
 import { Channel, Volume } from ".";
 import { sliceFragmentShaderSrc, sliceShaderUniforms, sliceVertexShaderSrc } from "./constants/volumeSliceShader.js";
-import type { HasThreeJsContext, VolumeRenderImpl } from "./VolumeRenderImpl.js";
+import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
 import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings.js";
 import FusedChannelData from "./FusedChannelData.js";
 import type { FuseChannel } from "./types.js";
@@ -239,19 +242,19 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     return;
   }
 
-  public doRender(canvas: HasThreeJsContext): void {
+  public doRender(renderer: WebGLRenderer, camera: PerspectiveCamera | OrthographicCamera): void {
     if (!this.geometryMesh.visible) {
       return;
     }
 
-    this.channelData.gpuFuse(canvas.renderer);
+    this.channelData.gpuFuse(renderer);
     this.setUniform("textureAtlas", this.channelData.getFusedTexture());
     this.setUniform("textureAtlasMask", this.channelData.maskTexture);
 
     this.geometryTransformNode.updateMatrixWorld(true);
 
     const mvm = new Matrix4();
-    mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
+    mvm.multiplyMatrices(camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
     const mi = new Matrix4();
     mi.copy(mvm).invert();
 

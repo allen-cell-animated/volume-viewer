@@ -597,6 +597,21 @@ function updateTimeUI() {
   }
 }
 
+function updateChannelUI(vol: Volume, channelIndex: number) {
+  const channel = vol.channels[channelIndex];
+
+  const folder = gui.folders.find((f) => f._title === "Channel " + myState.infoObj.channelNames[channelIndex]);
+  if (!folder) {
+    return;
+  }
+  const isovalueUI = folder.controllers.find((c) => c._name === "isovalue");
+  if (!isovalueUI) {
+    return;
+  }
+  isovalueUI.min(channel.rawMin);
+  isovalueUI.max(channel.rawMax);
+}
+
 function updateZSliceUI(volume: Volume) {
   const zSlider = document.getElementById("zSlider") as HTMLInputElement;
   const zInput = document.getElementById("zValue") as HTMLInputElement;
@@ -633,6 +648,13 @@ function showChannelUI(volume: Volume) {
       isosurface: false,
       // first 3 channels for starters
       enabled: i < 3,
+      reset: (function (j) {
+        return function () {
+          const lut = new Lut().createFullRange();
+          volume.setLut(j, lut);
+          view3D.updateLuts(volume);
+        };
+      })(i),
       // this doesn't give good results currently but is an example of a per-channel button callback
       autoIJ: (function (j) {
         return function () {
@@ -801,6 +823,7 @@ function showChannelUI(volume: Volume) {
           };
         })(i)
       );
+    f.add(myState.channelGui[i], "reset");
     f.add(myState.channelGui[i], "autoIJ");
     f.add(myState.channelGui[i], "auto0");
     f.add(myState.channelGui[i], "bestFit");
@@ -892,6 +915,8 @@ function onChannelDataArrived(v: Volume, channelIndex: number) {
   if (currentVol.isLoaded()) {
     console.log("currentVol with name " + currentVol.name + " is loaded");
   }
+  updateChannelUI(currentVol, channelIndex);
+
   view3D.redraw();
 }
 
@@ -1055,6 +1080,9 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
 }
 
 async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<void> {
+  const fullDims = await loader.loadDims(loadSpec);
+  console.log(fullDims);
+
   const volume = await loader.createVolume(loadSpec, onChannelDataArrived);
   onVolumeCreated(volume);
   loader.loadVolumeData(volume);
@@ -1098,6 +1126,7 @@ function main() {
     return;
   }
   view3D = new View3d({ parentElement: el });
+  view3D.loaderContext = loaderContext;
 
   const testDataSelect = document.getElementById("testData");
   testDataSelect?.addEventListener("change", ({ currentTarget }) => {

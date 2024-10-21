@@ -25,6 +25,7 @@ import {
 } from "./types.js";
 import { Axis } from "./VolumeRenderSettings.js";
 import { PerChannelCallback } from "./loaders/IVolumeLoader.js";
+import VolumeLoaderContext from "./workers/VolumeLoaderContext.js";
 
 // Constants are kept for compatibility reasons.
 export const RENDERMODE_RAYMARCH = RenderMode.RAYMARCH;
@@ -35,10 +36,21 @@ export interface View3dOptions {
   useWebGL2?: boolean;
 }
 
+const allGlobalLoadingOptions = {
+  numChunksToPrefetchAhead: 5,
+  prefetchAlongNonPlayingAxis: false,
+  throttleArrivingChannelData: true,
+};
+
 /**
  * @class
  */
 export class View3d {
+  // TODO because View3d is basically a top level entrypoint for volume-viewer,
+  // maybe it should create the VolumeLoaderContext with options passed in.
+  // (instead of having the loaderContext created externally)
+  public loaderContext?: VolumeLoaderContext;
+
   private canvas3d: ThreeJsPanel;
   private scene: Scene;
   private backgroundColor: Color;
@@ -915,6 +927,23 @@ export class View3d {
     addFolderForLight(this.fillLight, "fill light");
 
     this.image?.setupGui(pane);
+
+    const prefetch = pane.addFolder({ title: "Prefetch" });
+    // one number will be used for all axis directions
+    prefetch.addInput(allGlobalLoadingOptions, "numChunksToPrefetchAhead").on("change", (event) => {
+      this.loaderContext?.getActiveLoader()?.updateFetchOptions({
+        maxPrefetchDistance: [event.value, event.value, event.value, event.value],
+      });
+      this.image?.volume.updateRequiredData({});
+    });
+    // should we try to prefetch along Z even if we are only playing along T?
+    prefetch.addInput(allGlobalLoadingOptions, "prefetchAlongNonPlayingAxis").on("change", (event) => {
+      this.loaderContext?.getActiveLoader()?.updateFetchOptions({ onlyPriorityDirections: !event.value });
+    });
+    // when multiple prefetch frames arrive at once, should we slow down how quickly we load them?
+    prefetch.addInput(allGlobalLoadingOptions, "throttleArrivingChannelData").on("change", (event) => {
+      this.loaderContext?.setThrottleChannelData(event.value);
+    });
 
     return pane;
   }

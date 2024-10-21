@@ -38,6 +38,15 @@ const testimgdata: ImageInfo = {
 
   numMultiscaleLevels: 1,
   multiscaleLevel: 0,
+  multiscaleLevelDims: [
+    {
+      shape: [1, 1, 65, 494, 306],
+      spacing: [1, 1, 0.29, 0.065, 0.065],
+      spaceUnit: "",
+      timeUnit: "",
+      dataType: "uint8",
+    },
+  ],
 
   transform: {
     translation: new Vector3(0, 0, 0),
@@ -68,7 +77,7 @@ function checkChannelDataConstruction(c: Channel, index: number, imgdata: ImageI
   const atlasHeight = imgdata.atlasTileDims.y * imgdata.subregionSize.y;
   expect(c.imgData.width).to.equal(atlasWidth);
   expect(c.imgData.height).to.equal(atlasHeight);
-  expect(c.imgData.data).to.be.a("Uint8ClampedArray");
+  expect(c.imgData.data).to.be.a("Uint8Array");
   expect(c.imgData.data.length).to.equal(atlasWidth * atlasHeight);
   expect(c.lut.lut).to.be.a("Uint8Array");
   expect(c.lut.lut.length).to.equal(LUT_ARRAY_LENGTH);

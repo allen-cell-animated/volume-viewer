@@ -106,17 +106,36 @@ describe("SubscribableRequestQueue", () => {
       expect(result2).to.equal("bar");
     });
 
-    it("rejects and reissues a request when one subscriber queues the same key twice", async () => {
+    it("allows a subscriber to queue the same key twice", async () => {
       const queue = new SubscribableRequestQueue();
       const id = queue.addSubscriber();
 
       const promise1 = queue.addRequest("test", id, () => delay(TIMEOUT, "foo"));
       const promise2 = queue.addRequest("test", id, () => delay(TIMEOUT, "bar"));
       expect(queue.hasRequest("test")).to.be.true;
-      expect(await isRejected(promise1)).to.be.true;
-
+      expect(promise1).to.not.equal(promise2);
       const result2 = await promise2;
       expect(result2).to.equal("foo");
+      const result1 = await promise1;
+      expect(result1).to.equal("foo");
+    });
+
+    it("allows multiple rejections when the same key is queued multiple times by the same subscriber", async () => {
+      const queue = new SubscribableRequestQueue();
+      const id = queue.addSubscriber();
+
+      const promise1 = queue.addRequest("test", id, () => delayReject(TIMEOUT, "foo"));
+      const promise2 = queue.addRequest("test", id, () => delayReject(TIMEOUT, "bar"));
+      expect(queue.hasRequest("test")).to.be.true;
+      expect(promise1).to.not.equal(promise2);
+      let promise1RejectReason = "",
+        promise2RejectReason = "";
+      promise1.catch((reason) => (promise1RejectReason = reason));
+      promise2.catch((reason) => (promise2RejectReason = reason));
+
+      await Promise.allSettled([promise1, promise2]);
+      expect(promise1RejectReason).to.equal("foo");
+      expect(promise2RejectReason).to.equal("foo");
     });
 
     it("passes request rejections to all subscribers", async () => {

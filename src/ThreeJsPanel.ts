@@ -26,7 +26,6 @@ import scaleBarSVG from "./constants/scaleBarSVG.js";
 import { isOrthographicCamera, isPerspectiveCamera, ViewportCorner, isTop, isRight } from "./types.js";
 import { constrainToAxis, formatNumber, getTimestamp } from "./utils/num_utils.js";
 import { Axis } from "./VolumeRenderSettings.js";
-import { HasThreeJsContext } from "./VolumeRenderImpl.js";
 import RenderToBuffer from "./RenderToBuffer.js";
 
 import { copyImageFragShader } from "./constants/basicShaders.js";
@@ -58,7 +57,11 @@ export class ThreeJsPanel {
   private meshRenderTarget: WebGLRenderTarget;
   private meshRenderToBuffer: RenderToBuffer;
 
-  public animateFuncs: ((panel: HasThreeJsContext) => void)[];
+  public animateFuncs: ((
+    renderer: WebGLRenderer,
+    camera: PerspectiveCamera | OrthographicCamera,
+    depthTexture?: DepthTexture
+  ) => void)[];
   private inRenderLoop: boolean;
   private requestedRender: number;
   public hasWebGL2: boolean;
@@ -376,8 +379,7 @@ export class ThreeJsPanel {
   }
 
   orthoScreenPixelsToPhysicalUnits(pixels: number, physicalUnitsPerWorldUnit: number): number {
-    // At orthoScale = 0.5, the viewport is 1 world unit tall
-    const worldUnitsPerPixel = (this.controls.scale * 2) / this.getHeight();
+    const worldUnitsPerPixel = 1 / (this.camera.zoom * this.getHeight());
     // Multiply by devicePixelRatio to convert from scaled CSS pixels to physical pixels
     // (to account for high dpi monitors, e.g.). We didn't do this to height above because
     // that value comes from three, which works in physical pixels.
@@ -698,7 +700,7 @@ export class ThreeJsPanel {
     // do whatever we have to do before the main render of this.scene
     for (let i = 0; i < this.animateFuncs.length; i++) {
       if (this.animateFuncs[i]) {
-        this.animateFuncs[i](this);
+        this.animateFuncs[i](this.renderer, this.camera, this.meshRenderTarget.depthTexture);
       }
     }
 

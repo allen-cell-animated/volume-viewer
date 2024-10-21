@@ -72,13 +72,14 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
         };
         self.postMessage(message);
       },
-      (channelIndex, data, ranges, atlasDims) => {
+      (channelIndex, dtype, data, ranges, atlasDims) => {
         const message: WorkerResponse<WorkerMsgType> = {
           responseResult: WorkerResponseResult.EVENT,
           eventType: WorkerEventType.CHANNEL_LOAD,
           loaderId,
           loadId,
           channelIndex,
+          dtype,
           data,
           ranges,
           atlasDims,
@@ -96,6 +97,11 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
 
   [WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING]: (syncChannels) => {
     loader?.syncMultichannelLoading(syncChannels);
+    return Promise.resolve();
+  },
+
+  [WorkerMsgType.UPDATE_FETCH_OPTIONS]: (fetchOptions) => {
+    loader?.updateFetchOptions(fetchOptions);
     return Promise.resolve();
   },
 };

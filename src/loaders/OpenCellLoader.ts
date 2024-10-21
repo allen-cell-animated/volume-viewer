@@ -47,6 +47,15 @@ class OpenCellLoader extends ThreadableVolumeLoader {
 
       numMultiscaleLevels: 1,
       multiscaleLevel: 0,
+      multiscaleLevelDims: [
+        {
+          shape: [1, numChannels, 27, 600, 600],
+          spacing: [1, 1, 2, 1, 1],
+          spaceUnit: "µm",
+          timeUnit: "",
+          dataType: "uint8",
+        },
+      ],
 
       transform: {
         translation: new Vector3(0, 0, 0),
@@ -80,7 +89,9 @@ class OpenCellLoader extends ThreadableVolumeLoader {
     const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
     const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
     // all data coming from this loader is natively 8-bit
-    return JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, data) => onData(ch, data, [DATARANGE_UINT8], [w, h]));
+    return JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, dtype, data) =>
+      onData(ch, dtype, data, [DATARANGE_UINT8], [w, h])
+    );
   }
 }
 

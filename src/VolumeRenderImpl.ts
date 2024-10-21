@@ -4,12 +4,6 @@ import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings.js";
 import type { FuseChannel } from "./types.js";
 import Channel from "./Channel.js";
 
-export interface HasThreeJsContext {
-  renderer: WebGLRenderer;
-  camera: PerspectiveCamera | OrthographicCamera;
-  getMeshDepthTexture?: () => DepthTexture;
-}
-
 export interface VolumeRenderImpl {
   /**
    * Applies the given VolumeRenderSettings to this volume renderer.
@@ -22,7 +16,11 @@ export interface VolumeRenderImpl {
   updateSettings: (settings: VolumeRenderSettings, dirtyFlags?: number | SettingsFlags) => void;
 
   get3dObject: () => Object3D;
-  doRender: (canvas: HasThreeJsContext) => void;
+  doRender: (
+    renderer: WebGLRenderer,
+    camera: PerspectiveCamera | OrthographicCamera,
+    depthTexture?: DepthTexture
+  ) => void;
   updateVolumeDimensions: () => void;
   cleanup: () => void;
   viewpointMoved: () => void;
