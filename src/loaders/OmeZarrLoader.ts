@@ -7,8 +7,8 @@ import { AbsolutePath } from "@zarrita/storage";
 // Getting it from the top-level package means we don't get its type. This is also a bug, but it's more acceptable.
 import { FetchStore } from "zarrita";
 
-import { ImageInfo } from "../ImageInfo.js";
-import { VolumeDims } from "../VolumeDims.js";
+import type { ImageInfo } from "../ImageInfo.js";
+import type { VolumeDims } from "../VolumeDims.js";
 import VolumeCache from "../VolumeCache.js";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue.js";
 import {
