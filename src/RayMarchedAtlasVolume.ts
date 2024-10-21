@@ -140,7 +140,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       this.setUniform("isOrtho", this.settings.isOrtho ? 1.0 : 0.0);
       // Ortho line thickness
       const axis = this.settings.viewAxis;
-      if (this.settings.isOrtho && axis !== null) {
+      if (this.settings.isOrtho && axis) {
         // TODO: Does this code do any relevant changes?
         const maxVal = this.settings.bounds.bmax[axis];
         const minVal = this.settings.bounds.bmin[axis];
