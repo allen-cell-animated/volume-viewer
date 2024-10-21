@@ -7,7 +7,7 @@ import {
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
 import { computeAtlasSize, type ImageInfo } from "../ImageInfo.js";
-import { VolumeDims } from "../VolumeDims.js";
+import type { VolumeDims } from "../VolumeDims.js";
 import VolumeCache from "../VolumeCache.js";
 import type { TypedArray, NumberType } from "../types.js";
 import { DATARANGE_UINT8 } from "../types.js";
