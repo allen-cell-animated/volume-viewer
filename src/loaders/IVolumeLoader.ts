@@ -1,8 +1,8 @@
 import { Box3, Vector3 } from "three";
 
 import Volume from "../Volume.js";
-import { VolumeDims } from "../VolumeDims.js";
-import { CImageInfo, ImageInfo } from "../ImageInfo.js";
+import type { VolumeDims } from "../VolumeDims.js";
+import { CImageInfo, type ImageInfo } from "../ImageInfo.js";
 import { TypedArray, NumberType } from "../types.js";
 import { buildDefaultMetadata } from "./VolumeLoaderUtils.js";
 import { PrefetchDirection } from "./zarr_utils/types.js";
