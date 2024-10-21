@@ -1,6 +1,6 @@
 import { Box3, Vector2, Vector3 } from "three";
 
-import { CImageInfo, ImageInfo } from "../ImageInfo.js";
+import { CImageInfo, type ImageInfo } from "../ImageInfo.js";
 import { LoadSpec } from "./IVolumeLoader.js";
 
 export const MAX_ATLAS_EDGE = 4096;
