@@ -25,8 +25,9 @@ export default class Volume {
   public imageInfo: CImageInfo;
   public loadSpec: Required<LoadSpec>;
   public loader?: IVolumeLoader;
-  // `LoadSpec` representing the minimum data required to display what's in the viewer (subregion, channels, etc.).
-  // Used to intelligently issue load requests whenever required by a state change. Modify with `updateRequiredData`.
+  /** `LoadSpec` representing the minimum data required to display what's in the viewer (subregion, channels, etc.).
+   * Used to intelligently issue load requests whenever required by a state change. Modify with `updateRequiredData`.
+   */
   public loadSpecRequired: Required<LoadSpec>;
   public channelLoadCallback?: PerChannelCallback;
   public imageMetadata: Record<string, unknown>;
@@ -37,13 +38,13 @@ export default class Volume {
   public channelNames: string[];
   public channelColorsDefault: [number, number, number][];
 
-  // The maximum of the measurements of 3 axes in physical units (pixels*physicalSize)
+  /** The maximum of the measurements of 3 axes in physical units (pixels*physicalSize) */
   public physicalScale: number;
-  // The physical size of a voxel in the original level 0 volume
+  /** The physical size of a voxel in the original level 0 volume */
   public physicalPixelSize: Vector3;
-  // The physical dims of the whole volume (not accounting for subregion)
+  /** The physical dims of the whole volume (not accounting for subregion) */
   public physicalSize: Vector3;
-  // Normalized physical size of the whole volume (not accounting for subregion)
+  /** Normalized physical size of the whole volume (not accounting for subregion) */
   public normPhysicalSize: Vector3;
   public normRegionSize: Vector3;
   public normRegionOffset: Vector3;
