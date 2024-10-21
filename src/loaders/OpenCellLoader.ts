@@ -1,6 +1,6 @@
 import { ThreadableVolumeLoader, LoadSpec, RawChannelDataCallback, LoadedVolumeInfo } from "./IVolumeLoader.js";
-import { computeAtlasSize, ImageInfo } from "../ImageInfo.js";
-import { VolumeDims } from "../VolumeDims.js";
+import { computeAtlasSize, type ImageInfo } from "../ImageInfo.js";
+import type { VolumeDims } from "../VolumeDims.js";
 import { JsonImageInfoLoader } from "./JsonImageInfoLoader.js";
 import { DATARANGE_UINT8 } from "../types.js";
 
