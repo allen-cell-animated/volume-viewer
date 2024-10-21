@@ -1,113 +1,14 @@
-import { Vector2, Vector3 } from "three";
+import { Vector3 } from "three";
 
 import Channel from "./Channel.js";
 import Histogram from "./Histogram.js";
 import { Lut } from "./Lut.js";
 import { getColorByChannelIndex } from "./constants/colors.js";
-import { type IVolumeLoader, LoadSpec, type PerChannelCallback, VolumeDims } from "./loaders/IVolumeLoader.js";
+import { type IVolumeLoader, LoadSpec, type PerChannelCallback } from "./loaders/IVolumeLoader.js";
 import { MAX_ATLAS_EDGE, pickLevelToLoadUnscaled } from "./loaders/VolumeLoaderUtils.js";
 import type { NumberType, TypedArray } from "./types.js";
-
-export type ImageInfo = Readonly<{
-  name: string;
-
-  /** XYZ size of the *original* (not downsampled) volume, in pixels */
-  originalSize: Vector3;
-  /**
-   * XY dimensions of the texture atlas used by `RayMarchedAtlasVolume` and `Atlas2DSlice`, in number of z-slice
-   * tiles (not pixels). Chosen by the loader to lay out the 3D volume in the squarest possible 2D texture atlas.
-   */
-  atlasTileDims: Vector2;
-  /** Size of the volume, in pixels */
-  volumeSize: Vector3;
-  /** Size of the currently loaded subregion, in pixels */
-  subregionSize: Vector3;
-  /** Offset of the loaded subregion into the total volume, in pixels */
-  subregionOffset: Vector3;
-  /** Size of a single *original* (not downsampled) pixel, in spatial units */
-  physicalPixelSize: Vector3;
-  /** Symbol of physical spatial unit used by `pixelSize` */
-  spatialUnit: string;
-
-  /** Number of channels in the image */
-  numChannels: number;
-  /** The names of each channel */
-  channelNames: string[];
-  /** Optional overrides to default channel colors, in 0-255 range */
-  channelColors?: [number, number, number][];
-
-  /** Number of timesteps in the time series, or 1 if the image is not a time series */
-  times: number;
-  /** Size of each timestep in temporal units */
-  timeScale: number;
-  /**
-   * Symbol of temporal unit used by `timeScale`, e.g. "hr".
-   *
-   * If units match one of the following, the viewer will automatically format
-   * timestamps to a d:hh:mm:ss.sss format, truncated as an integer of the unit specified.
-   * See https://ngff.openmicroscopy.org/latest/index.html#axes-md for a list of valid time units.
-   * - "ms", "millisecond" for milliseconds: `d:hh:mm:ss.sss`
-   * - "s", "sec", "second", or "seconds" for seconds: `d:hh:mm:ss`
-   * - "m", "min", "minute", or "minutes" for minutes: `d:hh:mm`
-   * - "h", "hr", "hour", or "hours" for hours: `d:hh`
-   * - "d", "day", or "days" for days: `d`
-   *
-   * The maximum timestamp value is used to determine the maximum unit shown.
-   * For example, if the time unit is in seconds, and the maximum time is 90 seconds, the timestamp
-   * will be formatted as "{m:ss} (m:s)", and the day and hour segments will be omitted.
-   */
-  timeUnit: string;
-
-  /** Number of scale levels available for this volume */
-  numMultiscaleLevels: number;
-  /** Dimensions of each scale level, at original size, from the first data source */
-  // TODO THIS DATA IS SOMEWHAT REDUNDANT WITH SOME OF THE OTHER FIELDS IN HERE
-  multiscaleLevelDims: VolumeDims[];
-  /** The scale level from which this image was loaded, between `0` and `numMultiscaleLevels-1` */
-  multiscaleLevel: number;
-
-  transform: {
-    /** Translation of the volume from the center of space, in volume voxels */
-    translation: Vector3;
-    /** Rotation of the volume in Euler angles, applied in XYZ order */
-    rotation: Vector3;
-  };
-
-  /** Arbitrary additional metadata not captured by other `ImageInfo` properties */
-  userData?: Record<string, unknown>;
-}>;
-
-export const getDefaultImageInfo = (): ImageInfo => ({
-  name: "",
-  originalSize: new Vector3(1, 1, 1),
-  atlasTileDims: new Vector2(1, 1),
-  volumeSize: new Vector3(1, 1, 1),
-  subregionSize: new Vector3(1, 1, 1),
-  subregionOffset: new Vector3(0, 0, 0),
-  physicalPixelSize: new Vector3(1, 1, 1),
-  spatialUnit: "",
-  numChannels: 0,
-  channelNames: [],
-  channelColors: [],
-  times: 1,
-  timeScale: 1,
-  timeUnit: "",
-  numMultiscaleLevels: 1,
-  multiscaleLevel: 0,
-  multiscaleLevelDims: [
-    {
-      shape: [1, 1, 1, 1, 1],
-      spacing: [1, 1, 1, 1, 1],
-      spaceUnit: "",
-      timeUnit: "",
-      dataType: "uint8",
-    },
-  ],
-  transform: {
-    translation: new Vector3(0, 0, 0),
-    rotation: new Vector3(0, 0, 0),
-  },
-});
+import { type ImageInfo, CImageInfo, defaultImageInfo } from "./ImageInfo.js";
+import type { VolumeDims } from "./VolumeDims.js";
 
 interface VolumeDataObserver {
   onVolumeData: (vol: Volume, batch: number[]) => void;
@@ -116,59 +17,17 @@ interface VolumeDataObserver {
 }
 
 /**
- * Provide dimensions of the volume data, including dimensions for texture atlas data in which the volume z slices
- * are tiled across a single large 2d image plane.
- * @typedef {Object} ImageInfo
- * @property {string} name Base name of image
- * @property {string} [version] Schema version preferably in semver format.
- * @property {Vector2} originalSize XY size of the *original* (not downsampled) volume, in pixels
- * @property {Vector2} atlasDims Number of rows and columns of z-slice tiles (not pixels) in the texture atlas
- * @property {Vector3} volumeSize Size of the volume, in pixels
- * @property {Vector3} regionSize Size of the currently loaded subregion, in pixels
- * @property {Vector3} regionOffset Offset of the loaded subregion into the total volume, in pixels
- * @property {Vector3} pixelSize Size of a single *original* (not downsampled) pixel, in spatial units
- * @property {string} spatialUnit Symbol of physical spatial unit used by `pixelSize`
- * @property {number} numChannels Number of channels
- * @property {Array.<string>} channelNames Names of each of the channels to be rendered, in order. Unique identifier expected
- * @property {Array.<Array.<number>>} [channelColors] Colors of each of the channels to be rendered, as an ordered list of [r, g, b] arrays
- * @property {number} times Number of times (default = 1)
- * @property {number} timeScale Size of each time step in `timeUnit` units
- * @property {number} timeUnit Unit symbol for `timeScale` (e.g. min)
- * @property {Object} transform translation and rotation as arrays of 3 numbers. Translation is in voxels (to be multiplied by pixel_size values). Rotation is Euler angles in radians, appled in XYZ order.
- * @property {Object} userData Arbitrary metadata not covered by above properties
- * @example const imgdata = {
-  "name": "AICS-10_5_5",
-  "version": "0.0.0",
-  originalSize: new Vector2(306, 494),
-  atlasDims: new Vector2(10, 7),
-  volumeSize: new Vector3(204, 292, 65),
-  regionSize: new Vector3(204, 292, 65),
-  regionOffset: new Vector3(0, 0, 0),
-  pixelSize: new Vector3(0.065, 0.065, 0.29),
-  spatialUnit: "μm",
-  "numChannels": 9,
-  "channelNames": ["DRAQ5", "EGFP", "Hoechst 33258", "TL Brightfield", "SEG_STRUCT", "SEG_Memb", "SEG_DNA", "CON_Memb", "CON_DNA"],
-  "times": 5,
-  "timeScale": 1,
-  "timeUnit": "hr",
-  "transform": {
-    "translation": new Vector3(5, 5, 1),
-    "rotation": new Vector3(0, 3.14159, 1.57),
-  },
-  };
- */
-
-/**
  * A renderable multichannel volume image with 8-bits per channel intensity values.
  * @class
  * @param {ImageInfo} imageInfo
  */
 export default class Volume {
-  public imageInfo: ImageInfo;
+  public imageInfo: CImageInfo;
   public loadSpec: Required<LoadSpec>;
   public loader?: IVolumeLoader;
-  // `LoadSpec` representing the minimum data required to display what's in the viewer (subregion, channels, etc.).
-  // Used to intelligently issue load requests whenever required by a state change. Modify with `updateRequiredData`.
+  /** `LoadSpec` representing the minimum data required to display what's in the viewer (subregion, channels, etc.).
+   * Used to intelligently issue load requests whenever required by a state change. Modify with `updateRequiredData`.
+   */
   public loadSpecRequired: Required<LoadSpec>;
   public channelLoadCallback?: PerChannelCallback;
   public imageMetadata: Record<string, unknown>;
@@ -179,9 +38,13 @@ export default class Volume {
   public channelNames: string[];
   public channelColorsDefault: [number, number, number][];
 
+  /** The maximum of the measurements of 3 axes in physical units (pixels*physicalSize) */
   public physicalScale: number;
+  /** The physical size of a voxel in the original level 0 volume */
   public physicalPixelSize: Vector3;
+  /** The physical dims of the whole volume (not accounting for subregion) */
   public physicalSize: Vector3;
+  /** Normalized physical size of the whole volume (not accounting for subregion) */
   public normPhysicalSize: Vector3;
   public normRegionSize: Vector3;
   public normRegionOffset: Vector3;
@@ -191,14 +54,11 @@ export default class Volume {
   private volumeDataObservers: VolumeDataObserver[];
   private loaded: boolean;
 
-  constructor(
-    imageInfo: ImageInfo = getDefaultImageInfo(),
-    loadSpec: LoadSpec = new LoadSpec(),
-    loader?: IVolumeLoader
-  ) {
+  constructor(imageInfo: ImageInfo = defaultImageInfo(), loadSpec: LoadSpec = new LoadSpec(), loader?: IVolumeLoader) {
     this.loaded = false;
-    this.imageInfo = imageInfo;
-    this.name = this.imageInfo.name;
+    this.imageInfo = new CImageInfo(imageInfo);
+    // TODO: use getter?
+    this.name = imageInfo.name;
     this.loadSpec = {
       // Fill in defaults for optional properties
       multiscaleLevel: 0,
@@ -350,6 +210,7 @@ export default class Volume {
 
   // we calculate the physical size of the volume (voxels*pixel_size)
   // and then normalize to the max physical dimension
+  // NOTE: This function MUST be called to set up some important dimensional info
   setVoxelSize(size: Vector3): void {
     // only set the data if it is > 0.  zero is not an allowed value.
     size.x = size.x > 0 ? size.x : 1.0;
@@ -548,7 +409,7 @@ export default class Volume {
    * @return {Array.<number>} the xyz translation in normalized volume units
    */
   voxelsToWorldSpace(xyz: [number, number, number]): [number, number, number] {
-    // ASSUME: translation is in original image voxels.
+    // ASSUME: xyz is in original (level 0) image voxels, compatible with physicalPixelSize.
     // account for pixel_size and normalized scaling in the threejs volume representation we're using
     const m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
     return new Vector3().fromArray(xyz).multiply(this.physicalPixelSize).multiplyScalar(m).toArray();

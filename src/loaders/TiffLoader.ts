@@ -1,17 +1,16 @@
 import { fromUrl } from "geotiff";
-import { Vector3 } from "three";
 import { ErrorObject, deserializeError } from "serialize-error";
 
 import {
   ThreadableVolumeLoader,
   LoadSpec,
   type RawChannelDataCallback,
-  VolumeDims,
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
-import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
+import { computePackedAtlasDims, MAX_ATLAS_EDGE } from "./VolumeLoaderUtils.js";
 import { VolumeLoadError, VolumeLoadErrorType, wrapVolumeLoadError } from "./VolumeLoadError.js";
-import type { ImageInfo } from "../Volume.js";
+import { type ImageInfo, CImageInfo } from "../ImageInfo.js";
+import type { VolumeDims } from "../VolumeDims.js";
 import { TypedArray, NumberType } from "../types.js";
 
 function prepareXML(xml: string): string {
@@ -47,6 +46,24 @@ class OMEDims {
   pixelsizey = 1;
   pixelsizez = 1;
   channelnames: string[] = [];
+}
+
+function getDtype(omepixeltype: string): NumberType {
+  const mapping: Record<string, NumberType> = {
+    uint8: "uint8",
+    uint16: "uint16",
+    uint32: "uint32",
+    int8: "int8",
+    int16: "int16",
+    int32: "int32",
+    float: "float32",
+  };
+  const dtype = mapping[omepixeltype];
+  if (dtype === undefined) {
+    console.warn(`Unsupported OME pixel type ${omepixeltype}; defaulting to uint8`);
+    return "uint8";
+  }
+  return dtype;
 }
 
 export type TiffWorkerParams = {
@@ -140,11 +157,25 @@ class TiffLoader extends ThreadableVolumeLoader {
   async loadDims(_loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const dims = await this.loadOmeDims();
 
-    const d = new VolumeDims();
-    d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
-    d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
-    d.spaceUnit = dims.unit ? dims.unit : "micron";
-    d.dataType = dims.pixeltype ? dims.pixeltype : "uint8";
+    const atlasDims = computePackedAtlasDims(dims.sizez, dims.sizex, dims.sizey);
+    // fit tiles to max of 2048x2048?
+    const targetSize = MAX_ATLAS_EDGE;
+    const tilesizex = Math.floor(targetSize / atlasDims.x);
+    const tilesizey = Math.floor(targetSize / atlasDims.y);
+
+    const d: VolumeDims = {
+      shape: [dims.sizet, dims.sizec, dims.sizez, tilesizey, tilesizex],
+      spacing: [
+        1,
+        1,
+        dims.pixelsizez,
+        (dims.pixelsizey * dims.sizey) / tilesizey,
+        (dims.pixelsizex * dims.sizex) / tilesizex,
+      ],
+      spaceUnit: dims.unit ? dims.unit : "micron",
+      dataType: getDtype(dims.pixeltype),
+      timeUnit: "s",
+    };
     return [d];
   }
 
@@ -158,7 +189,7 @@ class TiffLoader extends ThreadableVolumeLoader {
     // TODO allow ROI selection: range of x,y,z,c for a given t
     const atlasDims = computePackedAtlasDims(dims.sizez, dims.sizex, dims.sizey);
     // fit tiles to max of 2048x2048?
-    const targetSize = 2048;
+    const targetSize = MAX_ATLAS_EDGE;
     const tilesizex = Math.floor(targetSize / atlasDims.x);
     const tilesizey = Math.floor(targetSize / atlasDims.y);
 
@@ -167,36 +198,31 @@ class TiffLoader extends ThreadableVolumeLoader {
     const imgdata: ImageInfo = {
       name: "TEST",
 
-      originalSize: new Vector3(dims.sizex, dims.sizey, dims.sizez),
-      atlasTileDims: atlasDims,
-      volumeSize: new Vector3(tilesizex, tilesizey, dims.sizez),
-      subregionSize: new Vector3(tilesizex, tilesizey, dims.sizez),
-      subregionOffset: new Vector3(0, 0, 0),
-      physicalPixelSize: new Vector3(dims.pixelsizex, dims.pixelsizey, dims.pixelsizez),
-      spatialUnit: dims.unit || "",
-
-      numChannels: dims.sizec,
+      atlasTileDims: [atlasDims.x, atlasDims.y],
+      subregionSize: [tilesizex, tilesizey, dims.sizez],
+      subregionOffset: [0, 0, 0],
+      combinedNumChannels: dims.sizec,
       channelNames: dims.channelnames,
-
-      times: dims.sizet,
-      timeScale: 1,
-      timeUnit: "",
-
-      numMultiscaleLevels: 1,
       multiscaleLevel: 0,
       multiscaleLevelDims: [
         {
-          shape: [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex],
-          spacing: [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex],
+          shape: [dims.sizet, dims.sizec, dims.sizez, tilesizey, tilesizex],
+          spacing: [
+            1,
+            1,
+            dims.pixelsizez,
+            (dims.pixelsizey * dims.sizey) / tilesizey,
+            (dims.pixelsizex * dims.sizex) / tilesizex,
+          ],
           spaceUnit: dims.unit || "",
           timeUnit: "",
-          dataType: dims.pixeltype || "uint8",
+          dataType: getDtype(dims.pixeltype),
         },
       ],
 
       transform: {
-        translation: new Vector3(0, 0, 0),
-        rotation: new Vector3(0, 0, 0),
+        translation: [0, 0, 0],
+        rotation: [0, 0, 0],
       },
     };
 
@@ -212,18 +238,22 @@ class TiffLoader extends ThreadableVolumeLoader {
   ): Promise<void> {
     const dims = await this.loadOmeDims();
 
+    // get some size info.
+    const cimageinfo = new CImageInfo(imageInfo);
+    const volumeSize = cimageinfo.volumeSize;
+
     const channelProms: Promise<void>[] = [];
     // do each channel on a worker?
-    for (let channel = 0; channel < imageInfo.numChannels; ++channel) {
+    for (let channel = 0; channel < imageInfo.combinedNumChannels; ++channel) {
       const thisChannelProm = new Promise<void>((resolve, reject) => {
         const params: TiffWorkerParams = {
           channel: channel,
           // these are target xy sizes for the in-memory volume data
           // they may or may not be the same size as original xy sizes
-          tilesizex: imageInfo.volumeSize.x,
-          tilesizey: imageInfo.volumeSize.y,
-          sizec: imageInfo.numChannels,
-          sizez: imageInfo.volumeSize.z,
+          tilesizex: volumeSize.x,
+          tilesizey: volumeSize.y,
+          sizec: imageInfo.combinedNumChannels,
+          sizez: volumeSize.z,
           dimensionOrder: dims.dimensionorder,
           bytesPerSample: getBytesPerSample(dims.pixeltype),
           url: this.url,

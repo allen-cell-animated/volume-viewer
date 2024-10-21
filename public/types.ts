@@ -1,7 +1,6 @@
 import { Volume, Light } from "../src";
 import { VolumeFileFormat } from "../src/loaders";
 import { IVolumeLoader } from "../src/loaders/IVolumeLoader";
-import { ImageInfo } from "../src/Volume";
 
 export interface TestDataSpec {
   type: VolumeFileFormat | "opencell" | "procedural";
@@ -73,7 +72,6 @@ export interface State {
   flipZ: -1 | 1;
 
   channelFolderNames: string[];
-  infoObj: ImageInfo;
   channelGui: ChannelGuiOptions[];
 
   currentImageStore: string;

@@ -1,8 +1,9 @@
 import type { ErrorObject } from "serialize-error";
 
-import type { ImageInfo } from "../Volume.js";
+import type { ImageInfo } from "../ImageInfo.js";
+import type { VolumeDims } from "../VolumeDims.js";
 import type { CreateLoaderOptions, PrefetchDirection } from "../loaders/index.js";
-import type { LoadSpec, LoadedVolumeInfo, VolumeDims } from "../loaders/IVolumeLoader.js";
+import type { LoadSpec, LoadedVolumeInfo } from "../loaders/IVolumeLoader.js";
 import type { TypedArray, NumberType } from "../types.js";
 import type { ZarrLoaderFetchOptions } from "../loaders/OmeZarrLoader.js";
 

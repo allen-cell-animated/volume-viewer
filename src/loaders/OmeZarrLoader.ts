@@ -7,14 +7,14 @@ import { AbsolutePath } from "@zarrita/storage";
 // Getting it from the top-level package means we don't get its type. This is also a bug, but it's more acceptable.
 import { FetchStore } from "zarrita";
 
-import { ImageInfo } from "../Volume.js";
+import type { ImageInfo } from "../ImageInfo.js";
+import type { VolumeDims } from "../VolumeDims.js";
 import VolumeCache from "../VolumeCache.js";
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue.js";
 import {
   ThreadableVolumeLoader,
   LoadSpec,
   type RawChannelDataCallback,
-  VolumeDims,
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
 import {
@@ -308,14 +308,15 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     const result = this.sources[0].scaleLevels.map((level, i) => {
       const scale = this.getScale(i);
-      const dims = new VolumeDims();
-
-      dims.spaceUnit = spaceUnit;
-      dims.timeUnit = timeUnit;
-      dims.shape = this.orderByTCZYX(level.shape, 1).map((val, idx) => Math.max(Math.ceil(val * regionArr[idx]), 1));
-      dims.spacing = this.orderByTCZYX(scale, 1);
-      dims.dataType = level.dtype;
-
+      const dims: VolumeDims = {
+        spaceUnit: spaceUnit,
+        timeUnit: timeUnit,
+        shape: this.orderByTCZYX(level.shape, 1).map((val, idx) =>
+          Math.max(Math.ceil(val * regionArr[idx]), 1)
+        ) as TCZYX<number>,
+        spacing: this.orderByTCZYX(scale, 1),
+        dataType: level.dtype,
+      };
       return dims;
     });
 
@@ -329,7 +330,6 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     const hasT = t > -1;
     const hasZ = z > -1;
 
-    const shape0 = source0.scaleLevels[0].shape;
     const levelToLoad = pickLevelToLoad(loadSpec, this.getLevelShapesZYX());
     const shapeLv = source0.scaleLevels[levelToLoad].shape;
 
@@ -358,11 +358,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     if (!this.maxExtent) {
       this.maxExtent = loadSpec.subregion.clone();
     }
-    const pxDims0 = convertSubregionToPixels(
-      loadSpec.subregion,
-      new Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1)
-    );
-    const pxSize0 = pxDims0.getSize(new Vector3());
+
+    // from source 0:
     const pxDimsLv = convertSubregionToPixels(
       loadSpec.subregion,
       new Vector3(shapeLv[x], shapeLv[y], hasZ ? shapeLv[z] : 1)
@@ -392,46 +389,32 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
       });
     });
 
-    const alldims: VolumeDims[] = [];
-    source0.scaleLevels.map((level, i) => {
-      const dims = new VolumeDims();
-
-      dims.spaceUnit = spatialUnit;
-      dims.timeUnit = timeUnit;
-      dims.shape = this.orderByTCZYX(level.shape, 1);
-      dims.spacing = this.getScale(i);
-      dims.dataType = level.dtype;
-
-      alldims.push(dims);
+    const alldims: VolumeDims[] = source0.scaleLevels.map((level, i) => {
+      const dims = {
+        spaceUnit: spatialUnit,
+        timeUnit: timeUnit,
+        shape: this.orderByTCZYX(level.shape, 1),
+        spacing: this.getScale(i),
+        dataType: level.dtype,
+      };
+      return dims;
     });
-    // for physicalPixelSize, we use the scale of the first level
-    const scale5d: TCZYX<number> = this.getScale(0);
-    // assume that ImageInfo wants the timeScale of level 0
-    const timeScale = hasT ? scale5d[0] : 1;
 
     const imgdata: ImageInfo = {
       name: source0.omeroMetadata?.name || "Volume",
 
-      originalSize: pxSize0,
-      atlasTileDims,
-      volumeSize: pxSizeLv,
-      subregionSize: pxSizeLv.clone(),
-      subregionOffset: new Vector3(0, 0, 0),
-      physicalPixelSize: new Vector3(scale5d[4], scale5d[3], hasZ ? scale5d[2] : Math.min(scale5d[4], scale5d[3])),
-      spatialUnit,
+      atlasTileDims: [atlasTileDims.x, atlasTileDims.y],
+      subregionSize: [pxSizeLv.x, pxSizeLv.y, pxSizeLv.z],
+      subregionOffset: [0, 0, 0],
 
-      numChannels,
+      combinedNumChannels: numChannels,
       channelNames,
-      times,
-      timeScale,
-      timeUnit,
-      numMultiscaleLevels: source0.scaleLevels.length,
       multiscaleLevel: levelToLoad,
       multiscaleLevelDims: alldims,
 
       transform: {
-        translation: new Vector3(0, 0, 0),
-        rotation: new Vector3(0, 0, 0),
+        translation: [0, 0, 0],
+        rotation: [0, 0, 0],
       },
     };
 
@@ -538,18 +521,12 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     // Derive other image info properties from subregion and level to load
     const subregionSize = regionPx.getSize(new Vector3());
     const atlasTileDims = computePackedAtlasDims(subregionSize.z, subregionSize.x, subregionSize.y);
-    const volumeExtent = convertSubregionToPixels(
-      maxExtent,
-      new Vector3(array0Shape[x], array0Shape[y], z === -1 ? 1 : array0Shape[z])
-    );
-    const volumeSize = volumeExtent.getSize(new Vector3());
 
     return {
       ...imageInfo,
-      atlasTileDims,
-      volumeSize,
-      subregionSize,
-      subregionOffset: regionPx.min,
+      atlasTileDims: [atlasTileDims.x, atlasTileDims.y],
+      subregionSize: [subregionSize.x, subregionSize.y, subregionSize.z],
+      subregionOffset: [regionPx.min.x, regionPx.min.y, regionPx.min.z],
       multiscaleLevel,
     };
   }
@@ -566,8 +543,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     const updatedImageInfo = this.updateImageInfoForLoad(imageInfo, loadSpec);
     onUpdateMetadata(updatedImageInfo);
-    const { numChannels, multiscaleLevel } = updatedImageInfo;
-    const channelIndexes = loadSpec.channels ?? Array.from({ length: numChannels }, (_, i) => i);
+    const { combinedNumChannels, multiscaleLevel } = updatedImageInfo;
+    const channelIndexes = loadSpec.channels ?? Array.from({ length: combinedNumChannels }, (_, i) => i);
 
     const subscriber = this.requestQueue.addSubscriber();
 
@@ -586,8 +563,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
     const channelPromises = channelIndexes.map(async (ch) => {
       // Build slice spec
-      const min = updatedImageInfo.subregionOffset;
-      const max = min.clone().add(updatedImageInfo.subregionSize);
+      const min = new Vector3(...updatedImageInfo.subregionOffset);
+      const max = min.clone().add(new Vector3(...updatedImageInfo.subregionSize));
       const { sourceIndex: sourceIdx, channelIndexInSource: sourceCh } = this.matchChannelToSource(ch);
       const unorderedSpec = [loadSpec.time, sourceCh, slice(min.z, max.z), slice(min.y, max.y), slice(min.x, max.x)];
 
