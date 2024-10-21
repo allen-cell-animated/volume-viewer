@@ -8,7 +8,7 @@ import { type IVolumeLoader, LoadSpec, type PerChannelCallback } from "./loaders
 import { MAX_ATLAS_EDGE, pickLevelToLoadUnscaled } from "./loaders/VolumeLoaderUtils.js";
 import type { NumberType, TypedArray } from "./types.js";
 import { type ImageInfo, CImageInfo, defaultImageInfo } from "./ImageInfo.js";
-import { VolumeDims } from "./VolumeDims.js";
+import type { VolumeDims } from "./VolumeDims.js";
 
 interface VolumeDataObserver {
   onVolumeData: (vol: Volume, batch: number[]) => void;
