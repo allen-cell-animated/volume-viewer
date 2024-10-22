@@ -1016,6 +1016,149 @@ class Histogram {
 
 /***/ }),
 
+/***/ "./src/ImageInfo.ts":
+/*!**************************!*\
+  !*** ./src/ImageInfo.ts ***!
+  \**************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   CImageInfo: () => (/* binding */ CImageInfo),
+/* harmony export */   computeAtlasSize: () => (/* binding */ computeAtlasSize),
+/* harmony export */   defaultImageInfo: () => (/* binding */ defaultImageInfo)
+/* harmony export */ });
+/* harmony import */ var _VolumeDims_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./VolumeDims.js */ "./src/VolumeDims.ts");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+
+
+function defaultImageInfo() {
+  return {
+    name: "",
+    atlasTileDims: [1, 1],
+    subregionSize: [1, 1, 1],
+    subregionOffset: [0, 0, 0],
+    combinedNumChannels: 1,
+    channelNames: ["0"],
+    channelColors: [[255, 255, 255]],
+    multiscaleLevel: 0,
+    multiscaleLevelDims: [{
+      shape: [1, 1, 1, 1, 1],
+      spacing: [1, 1, 1, 1, 1],
+      spaceUnit: "",
+      timeUnit: "",
+      dataType: "uint8"
+    }],
+    transform: {
+      translation: [0, 0, 0],
+      rotation: [0, 0, 0]
+    }
+  };
+}
+class CImageInfo {
+  constructor(imageInfo) {
+    this.imageInfo = imageInfo || defaultImageInfo();
+  }
+  get currentLevelDims() {
+    return this.imageInfo.multiscaleLevelDims[this.imageInfo.multiscaleLevel];
+  }
+
+  /** Number of channels in the image */
+  get numChannels() {
+    return this.imageInfo.combinedNumChannels;
+  }
+
+  /** XYZ size of the *original* (not downsampled) volume, in pixels */
+  get originalSize() {
+    return (0,_VolumeDims_js__WEBPACK_IMPORTED_MODULE_0__.volumeSize)(this.imageInfo.multiscaleLevelDims[0]);
+  }
+
+  /** Size of the volume, in pixels */
+  get volumeSize() {
+    return (0,_VolumeDims_js__WEBPACK_IMPORTED_MODULE_0__.volumeSize)(this.currentLevelDims);
+  }
+
+  /** Size of a single *original* (not downsampled) pixel, in spatial units */
+  get physicalPixelSize() {
+    return (0,_VolumeDims_js__WEBPACK_IMPORTED_MODULE_0__.physicalPixelSize)(this.imageInfo.multiscaleLevelDims[0]);
+  }
+
+  /** Symbol of physical spatial unit used by `physicalPixelSize` */
+  get spatialUnit() {
+    return this.imageInfo.multiscaleLevelDims[0].spaceUnit;
+  }
+
+  /** Number of timesteps in the time series, or 1 if the image is not a time series */
+  get times() {
+    // 0 is T
+    return this.currentLevelDims.shape[0];
+  }
+
+  /** Size of each timestep in temporal units */
+  get timeScale() {
+    // 0 is T
+    return this.currentLevelDims.spacing[0];
+  }
+
+  /** Symbol of physical time unit used by `timeScale` */
+  get timeUnit() {
+    return this.currentLevelDims.timeUnit;
+  }
+
+  /** Number of scale levels available for this volume */
+  get numMultiscaleLevels() {
+    return this.imageInfo.multiscaleLevelDims.length;
+  }
+
+  /** The names of each channel */
+  get channelNames() {
+    return this.imageInfo.channelNames;
+  }
+
+  /** Optional overrides to default channel colors, in 0-255 range */
+  get channelColors() {
+    return this.imageInfo.channelColors;
+  }
+
+  /** Size of the currently loaded subregion, in pixels */
+  get subregionSize() {
+    return new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(...this.imageInfo.subregionSize);
+  }
+
+  /** Offset of the loaded subregion into the total volume, in pixels */
+  get subregionOffset() {
+    return new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(...this.imageInfo.subregionOffset);
+  }
+  get multiscaleLevel() {
+    return this.imageInfo.multiscaleLevel;
+  }
+
+  /**
+   * XY dimensions of the texture atlas used by `RayMarchedAtlasVolume` and `Atlas2DSlice`, in number of z-slice
+   * tiles (not pixels). Chosen by the loader to lay out the 3D volume in the squarest possible 2D texture atlas.
+   */
+  get atlasTileDims() {
+    return new three__WEBPACK_IMPORTED_MODULE_1__.Vector2(...this.imageInfo.atlasTileDims);
+  }
+  get transform() {
+    return {
+      translation: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(...this.imageInfo.transform.translation),
+      rotation: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(...this.imageInfo.transform.rotation)
+    };
+  }
+}
+function computeAtlasSize(imageInfo) {
+  const {
+    atlasTileDims
+  } = imageInfo;
+  const volDims = imageInfo.multiscaleLevelDims[imageInfo.multiscaleLevel];
+  // TCZYX: 4 = x, 3 = y
+  return [atlasTileDims[0] * volDims.shape[4], atlasTileDims[1] * volDims.shape[3]];
+}
+
+/***/ }),
+
 /***/ "./src/Light.ts":
 /*!**********************!*\
   !*** ./src/Light.ts ***!
@@ -4894,90 +5037,19 @@ class View3d {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (/* binding */ Volume),
-/* harmony export */   getDefaultImageInfo: () => (/* binding */ getDefaultImageInfo)
+/* harmony export */   "default": () => (/* binding */ Volume)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _Channel_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Channel.js */ "./src/Channel.ts");
 /* harmony import */ var _constants_colors_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./constants/colors.js */ "./src/constants/colors.ts");
 /* harmony import */ var _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./loaders/IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _loaders_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./loaders/VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _ImageInfo_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./ImageInfo.js */ "./src/ImageInfo.ts");
 
 
 
 
 
-const getDefaultImageInfo = () => ({
-  name: "",
-  originalSize: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1),
-  atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_4__.Vector2(1, 1),
-  volumeSize: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1),
-  subregionSize: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1),
-  subregionOffset: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0),
-  physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1),
-  spatialUnit: "",
-  numChannels: 0,
-  channelNames: [],
-  channelColors: [],
-  times: 1,
-  timeScale: 1,
-  timeUnit: "",
-  numMultiscaleLevels: 1,
-  multiscaleLevel: 0,
-  multiscaleLevelDims: [{
-    shape: [1, 1, 1, 1, 1],
-    spacing: [1, 1, 1, 1, 1],
-    spaceUnit: "",
-    timeUnit: "",
-    dataType: "uint8"
-  }],
-  transform: {
-    translation: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0),
-    rotation: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0)
-  }
-});
-/**
- * Provide dimensions of the volume data, including dimensions for texture atlas data in which the volume z slices
- * are tiled across a single large 2d image plane.
- * @typedef {Object} ImageInfo
- * @property {string} name Base name of image
- * @property {string} [version] Schema version preferably in semver format.
- * @property {Vector2} originalSize XY size of the *original* (not downsampled) volume, in pixels
- * @property {Vector2} atlasDims Number of rows and columns of z-slice tiles (not pixels) in the texture atlas
- * @property {Vector3} volumeSize Size of the volume, in pixels
- * @property {Vector3} regionSize Size of the currently loaded subregion, in pixels
- * @property {Vector3} regionOffset Offset of the loaded subregion into the total volume, in pixels
- * @property {Vector3} pixelSize Size of a single *original* (not downsampled) pixel, in spatial units
- * @property {string} spatialUnit Symbol of physical spatial unit used by `pixelSize`
- * @property {number} numChannels Number of channels
- * @property {Array.<string>} channelNames Names of each of the channels to be rendered, in order. Unique identifier expected
- * @property {Array.<Array.<number>>} [channelColors] Colors of each of the channels to be rendered, as an ordered list of [r, g, b] arrays
- * @property {number} times Number of times (default = 1)
- * @property {number} timeScale Size of each time step in `timeUnit` units
- * @property {number} timeUnit Unit symbol for `timeScale` (e.g. min)
- * @property {Object} transform translation and rotation as arrays of 3 numbers. Translation is in voxels (to be multiplied by pixel_size values). Rotation is Euler angles in radians, appled in XYZ order.
- * @property {Object} userData Arbitrary metadata not covered by above properties
- * @example const imgdata = {
-  "name": "AICS-10_5_5",
-  "version": "0.0.0",
-  originalSize: new Vector2(306, 494),
-  atlasDims: new Vector2(10, 7),
-  volumeSize: new Vector3(204, 292, 65),
-  regionSize: new Vector3(204, 292, 65),
-  regionOffset: new Vector3(0, 0, 0),
-  pixelSize: new Vector3(0.065, 0.065, 0.29),
-  spatialUnit: "μm",
-  "numChannels": 9,
-  "channelNames": ["DRAQ5", "EGFP", "Hoechst 33258", "TL Brightfield", "SEG_STRUCT", "SEG_Memb", "SEG_DNA", "CON_Memb", "CON_DNA"],
-  "times": 5,
-  "timeScale": 1,
-  "timeUnit": "hr",
-  "transform": {
-    "translation": new Vector3(5, 5, 1),
-    "rotation": new Vector3(0, 3.14159, 1.57),
-  },
-  };
- */
 
 /**
  * A renderable multichannel volume image with 8-bits per channel intensity values.
@@ -4985,13 +5057,23 @@ const getDefaultImageInfo = () => ({
  * @param {ImageInfo} imageInfo
  */
 class Volume {
-  // `LoadSpec` representing the minimum data required to display what's in the viewer (subregion, channels, etc.).
-  // Used to intelligently issue load requests whenever required by a state change. Modify with `updateRequiredData`.
+  /** `LoadSpec` representing the minimum data required to display what's in the viewer (subregion, channels, etc.).
+   * Used to intelligently issue load requests whenever required by a state change. Modify with `updateRequiredData`.
+   */
 
-  constructor(imageInfo = getDefaultImageInfo(), loadSpec = new _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_2__.LoadSpec(), loader) {
+  /** The maximum of the measurements of 3 axes in physical units (pixels*physicalSize) */
+
+  /** The physical size of a voxel in the original level 0 volume */
+
+  /** The physical dims of the whole volume (not accounting for subregion) */
+
+  /** Normalized physical size of the whole volume (not accounting for subregion) */
+
+  constructor(imageInfo = (0,_ImageInfo_js__WEBPACK_IMPORTED_MODULE_4__.defaultImageInfo)(), loadSpec = new _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_2__.LoadSpec(), loader) {
     this.loaded = false;
-    this.imageInfo = imageInfo;
-    this.name = this.imageInfo.name;
+    this.imageInfo = new _ImageInfo_js__WEBPACK_IMPORTED_MODULE_4__.CImageInfo(imageInfo);
+    // TODO: use getter?
+    this.name = imageInfo.name;
     this.loadSpec = {
       // Fill in defaults for optional properties
       multiscaleLevel: 0,
@@ -5010,11 +5092,11 @@ class Volume {
     this.loader = loader;
     // imageMetadata to be filled in by Volume Loaders
     this.imageMetadata = {};
-    this.normRegionSize = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1);
-    this.normRegionOffset = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0);
-    this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1);
+    this.normRegionSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
+    this.normRegionOffset = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(0, 0, 0);
+    this.physicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
     this.physicalScale = 1;
-    this.normPhysicalSize = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(1, 1, 1);
+    this.normPhysicalSize = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(1, 1, 1);
     this.physicalPixelSize = this.imageInfo.physicalPixelSize;
     this.tickMarkPhysicalLength = 1;
     this.setVoxelSize(this.physicalPixelSize);
@@ -5136,6 +5218,7 @@ class Volume {
 
   // we calculate the physical size of the volume (voxels*pixel_size)
   // and then normalize to the max physical dimension
+  // NOTE: This function MUST be called to set up some important dimensional info
   setVoxelSize(size) {
     // only set the data if it is > 0.  zero is not an allowed value.
     size.x = size.x > 0 ? size.x : 1.0;
@@ -5294,10 +5377,10 @@ class Volume {
    * @return {Array.<number>} the xyz translation in normalized volume units
    */
   voxelsToWorldSpace(xyz) {
-    // ASSUME: translation is in original image voxels.
+    // ASSUME: xyz is in original (level 0) image voxels, compatible with physicalPixelSize.
     // account for pixel_size and normalized scaling in the threejs volume representation we're using
     const m = 1.0 / Math.max(this.physicalSize.x, Math.max(this.physicalSize.y, this.physicalSize.z));
-    return new three__WEBPACK_IMPORTED_MODULE_4__.Vector3().fromArray(xyz).multiply(this.physicalPixelSize).multiplyScalar(m).toArray();
+    return new three__WEBPACK_IMPORTED_MODULE_5__.Vector3().fromArray(xyz).multiply(this.physicalPixelSize).multiplyScalar(m).toArray();
   }
   addVolumeDataObserver(o) {
     this.volumeDataObservers.push(o);
@@ -5488,6 +5571,39 @@ class VolumeCache {
       this.evictLast();
     }
   }
+}
+
+/***/ }),
+
+/***/ "./src/VolumeDims.ts":
+/*!***************************!*\
+  !*** ./src/VolumeDims.ts ***!
+  \***************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   defaultVolumeDims: () => (/* binding */ defaultVolumeDims),
+/* harmony export */   physicalPixelSize: () => (/* binding */ physicalPixelSize),
+/* harmony export */   volumeSize: () => (/* binding */ volumeSize)
+/* harmony export */ });
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+
+function defaultVolumeDims() {
+  return {
+    shape: [0, 0, 0, 0, 0],
+    spacing: [1, 1, 1, 1, 1],
+    spaceUnit: "μm",
+    timeUnit: "s",
+    dataType: "uint8"
+  };
+}
+function volumeSize(volumeDims) {
+  return new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(volumeDims.shape[4], volumeDims.shape[3], volumeDims.shape[2]);
+}
+function physicalPixelSize(volumeDims) {
+  return new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(volumeDims.spacing[4], volumeDims.spacing[3], volumeDims.spacing[2]);
 }
 
 /***/ }),
@@ -7520,12 +7636,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   LoadSpec: () => (/* binding */ LoadSpec),
 /* harmony export */   ThreadableVolumeLoader: () => (/* binding */ ThreadableVolumeLoader),
-/* harmony export */   VolumeDims: () => (/* binding */ VolumeDims),
 /* harmony export */   loadSpecToString: () => (/* binding */ loadSpecToString)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _Volume_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../Volume.js */ "./src/Volume.ts");
-/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
+/* harmony import */ var _ImageInfo_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ImageInfo.js */ "./src/ImageInfo.ts");
+/* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
+
 
 
 
@@ -7541,7 +7658,7 @@ class LoadSpec {
    */
 
   /** Subregion of volume to load. If not specified, the entire volume is loaded. Specify as floats between 0-1. */
-  subregion = new three__WEBPACK_IMPORTED_MODULE_2__.Box3(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(1, 1, 1));
+  subregion = new three__WEBPACK_IMPORTED_MODULE_3__.Box3(new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(1, 1, 1));
   /** Treat multiscaleLevel literally and don't use other constraints to change it.
    * By default we will try to load the best level based on the maxAtlasEdge and scaleLevelBias,
    * so this is false.
@@ -7554,16 +7671,6 @@ function loadSpecToString(spec) {
     max
   } = spec.subregion;
   return `${spec.multiscaleLevel}:${spec.time}:x(${min.x},${max.x}):y(${min.y},${max.y}):z(${min.z},${max.z})`;
-}
-class VolumeDims {
-  // shape: [t, c, z, y, x]
-  shape = [0, 0, 0, 0, 0];
-  // spacing: [t, c, z, y, x]; generally expect 1 for non-spatial dimensions
-  spacing = [1, 1, 1, 1, 1];
-  spaceUnit = "μm";
-  timeUnit = "s";
-  // TODO make this an enum?
-  dataType = "uint8";
 }
 
 /**
@@ -7631,13 +7738,13 @@ class ThreadableVolumeLoader {
     } = await this.createImageInfo(loadSpec);
     const vol = new _Volume_js__WEBPACK_IMPORTED_MODULE_0__["default"](imageInfo, adjustedLoadSpec, this);
     vol.channelLoadCallback = onChannelLoaded;
-    vol.imageMetadata = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__.buildDefaultMetadata)(imageInfo);
+    vol.imageMetadata = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.buildDefaultMetadata)(imageInfo);
     return vol;
   }
   async loadVolumeData(volume, loadSpecOverride, onChannelLoaded) {
     const onUpdateMetadata = (imageInfo, loadSpec) => {
       if (imageInfo) {
-        volume.imageInfo = imageInfo;
+        volume.imageInfo = new _ImageInfo_js__WEBPACK_IMPORTED_MODULE_1__.CImageInfo(imageInfo);
         volume.updateDimensions();
       }
       volume.loadSpec = {
@@ -7663,7 +7770,7 @@ class ThreadableVolumeLoader {
       ...volume.loadSpec,
       ...loadSpecOverride
     };
-    return this.loadRawChannelData(volume.imageInfo, spec, onUpdateMetadata, onChannelData);
+    return this.loadRawChannelData(volume.imageInfo.imageInfo, spec, onUpdateMetadata, onChannelData);
   }
 }
 
@@ -7680,9 +7787,11 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   JsonImageInfoLoader: () => (/* binding */ JsonImageInfoLoader)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
+/* harmony import */ var _ImageInfo_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ImageInfo.js */ "./src/ImageInfo.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
+
 
 
 
@@ -7691,36 +7800,50 @@ __webpack_require__.r(__webpack_exports__);
 
 /* eslint-enable @typescript-eslint/naming-convention */
 
-const convertImageInfo = json => ({
-  name: json.name,
-  originalSize: new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(json.width, json.height, json.tiles),
-  atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_2__.Vector2(json.cols, json.rows),
-  volumeSize: new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(json.tile_width, json.tile_height, json.tiles),
-  subregionSize: new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(json.tile_width, json.tile_height, json.tiles),
-  subregionOffset: new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0),
-  physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
-  spatialUnit: json.pixel_size_unit || "μm",
-  numChannels: json.channels,
-  channelNames: json.channel_names,
-  channelColors: json.channel_colors,
-  times: json.times || 1,
-  timeScale: json.time_scale || 1,
-  timeUnit: json.time_unit || "s",
-  numMultiscaleLevels: 1,
-  multiscaleLevel: 0,
-  multiscaleLevelDims: [{
-    shape: [json.times || 1, json.channels, json.tiles, json.tile_height, json.tile_width],
-    spacing: [json.time_scale || 1, 1, json.pixel_size_z, json.pixel_size_y, json.pixel_size_x],
-    spaceUnit: json.pixel_size_unit || "μm",
-    timeUnit: json.time_unit || "s",
-    dataType: "uint8"
-  }],
-  transform: {
-    translation: json.transform?.translation ? new three__WEBPACK_IMPORTED_MODULE_2__.Vector3().fromArray(json.transform.translation) : new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0),
-    rotation: json.transform?.rotation ? new three__WEBPACK_IMPORTED_MODULE_2__.Vector3().fromArray(json.transform.rotation) : new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0)
-  },
-  userData: json.userData
-});
+const rescalePixelSize = json => {
+  // the pixel_size_x/y/z are the physical size of the original pixels represented by
+  // width and height.  We need to get a physical pixel size that is consistent
+  // with the tile_width and tile_height.
+  const px = json.pixel_size_x * json.width / json.tile_width;
+  const py = json.pixel_size_y * json.height / json.tile_height;
+  const pz = json.pixel_size_z;
+  return [px, py, pz];
+};
+const convertImageInfo = json => {
+  const [px, py, pz] = rescalePixelSize(json);
+  // translation is in pixels that are in the space of json.width, json.height.
+  // We need to convert this to the space of the tile_width and tile_height.
+  const tr = json.transform?.translation ?? [0, 0, 0];
+  tr[0] = tr[0] * json.tile_width / json.width;
+  tr[1] = tr[1] * json.tile_height / json.height;
+  return {
+    name: json.name,
+    atlasTileDims: [json.cols, json.rows],
+    subregionSize: [json.tile_width, json.tile_height, json.tiles],
+    subregionOffset: [0, 0, 0],
+    combinedNumChannels: json.channels,
+    channelNames: json.channel_names,
+    channelColors: json.channel_colors,
+    multiscaleLevel: 0,
+    multiscaleLevelDims: [{
+      shape: [json.times || 1, json.channels, json.tiles, json.tile_height, json.tile_width],
+      spacing: [json.time_scale || 1, 1, pz, py, px],
+      spaceUnit: json.pixel_size_unit || "μm",
+      timeUnit: json.time_unit || "s",
+      dataType: "uint8"
+    }],
+    transform: {
+      translation: tr,
+      rotation: json.transform?.rotation ? json.transform.rotation : [0, 0, 0]
+    },
+    userData: {
+      ...json.userData,
+      // for metadata display reasons
+      originalVolumeSize: [json.width, json.height, json.tiles],
+      originalPhysicalPixelSize: [json.pixel_size_x, json.pixel_size_y, json.pixel_size_z]
+    }
+  };
+};
 class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.ThreadableVolumeLoader {
   constructor(urls, cache) {
     super();
@@ -7746,11 +7869,14 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
   }
   async loadDims(loadSpec) {
     const jsonInfo = await this.getJsonImageInfo(loadSpec.time);
-    const d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.VolumeDims();
-    d.shape = [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tile_height, jsonInfo.tile_width];
-    d.spacing = [1, 1, jsonInfo.pixel_size_z, jsonInfo.pixel_size_y, jsonInfo.pixel_size_x];
-    d.spaceUnit = jsonInfo.pixel_size_unit || "μm";
-    d.dataType = "uint8";
+    const [px, py, pz] = rescalePixelSize(jsonInfo);
+    const d = {
+      shape: [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tile_height, jsonInfo.tile_width],
+      spacing: [1, 1, pz, py, px],
+      spaceUnit: jsonInfo.pixel_size_unit ?? "μm",
+      dataType: "uint8",
+      timeUnit: jsonInfo.time_unit ?? "s"
+    };
     return [d];
   }
   async createImageInfo(loadSpec) {
@@ -7789,7 +7915,7 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
     const adjustedLoadSpec = {
       ...loadSpec,
       // `subregion` and `multiscaleLevel` are unused by this loader
-      subregion: new three__WEBPACK_IMPORTED_MODULE_2__.Box3(new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_2__.Vector3(1, 1, 1)),
+      subregion: new three__WEBPACK_IMPORTED_MODULE_3__.Box3(new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0), new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(1, 1, 1)),
       multiscaleLevel: 0,
       // include all channels in any loaded images
       channels: images.flatMap(({
@@ -7797,8 +7923,7 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
       }) => channels)
     };
     onUpdateMetadata(undefined, adjustedLoadSpec);
-    const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
-    const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
+    const [w, h] = (0,_ImageInfo_js__WEBPACK_IMPORTED_MODULE_1__.computeAtlasSize)(imageInfo);
     const wrappedOnData = (ch, dtype, data, ranges) => onData(ch, dtype, data, ranges, [w, h]);
     await JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
   }
@@ -7830,7 +7955,7 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
         const cacheResult = cache?.get(`${image.name}/${chindex}`);
         if (cacheResult) {
           // all data coming from this loader is natively 8-bit
-          onData([chindex], ["uint8"], [new Uint8Array(cacheResult)], [_types_js__WEBPACK_IMPORTED_MODULE_1__.DATARANGE_UINT8]);
+          onData([chindex], ["uint8"], [new Uint8Array(cacheResult)], [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8]);
         } else {
           cacheHit = false;
           // we can stop checking because we know we are going to have to fetch the whole batch
@@ -7880,7 +8005,7 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
         cache?.insert(`${image.name}/${chindex}`, channelsBits[ch]);
         // NOTE: the atlas dimensions passed in here are currently unused by `JSONImageInfoLoader`
         // all data coming from this loader is natively 8-bit
-        onData([chindex], ["uint8"], [channelsBits[ch]], [_types_js__WEBPACK_IMPORTED_MODULE_1__.DATARANGE_UINT8], [bitmap.width, bitmap.height]);
+        onData([chindex], ["uint8"], [channelsBits[ch]], [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8], [bitmap.width, bitmap.height]);
       }
     });
     await Promise.all(imagePromises);
@@ -8142,12 +8267,13 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
     const regionArr = [1, 1, regionSize.z, regionSize.y, regionSize.x];
     const result = this.sources[0].scaleLevels.map((level, i) => {
       const scale = this.getScale(i);
-      const dims = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.VolumeDims();
-      dims.spaceUnit = spaceUnit;
-      dims.timeUnit = timeUnit;
-      dims.shape = this.orderByTCZYX(level.shape, 1).map((val, idx) => Math.max(Math.ceil(val * regionArr[idx]), 1));
-      dims.spacing = this.orderByTCZYX(scale, 1);
-      dims.dataType = level.dtype;
+      const dims = {
+        spaceUnit: spaceUnit,
+        timeUnit: timeUnit,
+        shape: this.orderByTCZYX(level.shape, 1).map((val, idx) => Math.max(Math.ceil(val * regionArr[idx]), 1)),
+        spacing: this.orderByTCZYX(scale, 1),
+        dataType: level.dtype
+      };
       return dims;
     });
     return Promise.resolve(result);
@@ -8158,7 +8284,6 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
     const [t,, z, y, x] = source0.axesTCZYX;
     const hasT = t > -1;
     const hasZ = z > -1;
-    const shape0 = source0.scaleLevels[0].shape;
     const levelToLoad = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.pickLevelToLoad)(loadSpec, this.getLevelShapesZYX());
     const shapeLv = source0.scaleLevels[levelToLoad].shape;
     const [spatialUnit, timeUnit] = this.getUnitSymbols();
@@ -8185,8 +8310,8 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
     if (!this.maxExtent) {
       this.maxExtent = loadSpec.subregion.clone();
     }
-    const pxDims0 = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(shape0[x], shape0[y], hasZ ? shape0[z] : 1));
-    const pxSize0 = pxDims0.getSize(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3());
+
+    // from source 0:
     const pxDimsLv = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.convertSubregionToPixels)(loadSpec.subregion, new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(shapeLv[x], shapeLv[y], hasZ ? shapeLv[z] : 1));
     const pxSizeLv = pxDimsLv.getSize(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3());
     const atlasTileDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.computePackedAtlasDims)(pxSizeLv.z, pxSizeLv.x, pxSizeLv.y);
@@ -8210,40 +8335,28 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
         }
       });
     });
-    const alldims = [];
-    source0.scaleLevels.map((level, i) => {
-      const dims = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.VolumeDims();
-      dims.spaceUnit = spatialUnit;
-      dims.timeUnit = timeUnit;
-      dims.shape = this.orderByTCZYX(level.shape, 1);
-      dims.spacing = this.getScale(i);
-      dims.dataType = level.dtype;
-      alldims.push(dims);
+    const alldims = source0.scaleLevels.map((level, i) => {
+      const dims = {
+        spaceUnit: spatialUnit,
+        timeUnit: timeUnit,
+        shape: this.orderByTCZYX(level.shape, 1),
+        spacing: this.getScale(i),
+        dataType: level.dtype
+      };
+      return dims;
     });
-    // for physicalPixelSize, we use the scale of the first level
-    const scale5d = this.getScale(0);
-    // assume that ImageInfo wants the timeScale of level 0
-    const timeScale = hasT ? scale5d[0] : 1;
     const imgdata = {
       name: source0.omeroMetadata?.name || "Volume",
-      originalSize: pxSize0,
-      atlasTileDims,
-      volumeSize: pxSizeLv,
-      subregionSize: pxSizeLv.clone(),
-      subregionOffset: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0),
-      physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(scale5d[4], scale5d[3], hasZ ? scale5d[2] : Math.min(scale5d[4], scale5d[3])),
-      spatialUnit,
-      numChannels,
+      atlasTileDims: [atlasTileDims.x, atlasTileDims.y],
+      subregionSize: [pxSizeLv.x, pxSizeLv.y, pxSizeLv.z],
+      subregionOffset: [0, 0, 0],
+      combinedNumChannels: numChannels,
       channelNames,
-      times,
-      timeScale,
-      timeUnit,
-      numMultiscaleLevels: source0.scaleLevels.length,
       multiscaleLevel: levelToLoad,
       multiscaleLevelDims: alldims,
       transform: {
-        translation: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0),
-        rotation: new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(0, 0, 0)
+        translation: [0, 0, 0],
+        rotation: [0, 0, 0]
       }
     };
 
@@ -8338,14 +8451,11 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
     // Derive other image info properties from subregion and level to load
     const subregionSize = regionPx.getSize(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3());
     const atlasTileDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.computePackedAtlasDims)(subregionSize.z, subregionSize.x, subregionSize.y);
-    const volumeExtent = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__.convertSubregionToPixels)(maxExtent, new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(array0Shape[x], array0Shape[y], z === -1 ? 1 : array0Shape[z]));
-    const volumeSize = volumeExtent.getSize(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3());
     return {
       ...imageInfo,
-      atlasTileDims,
-      volumeSize,
-      subregionSize,
-      subregionOffset: regionPx.min,
+      atlasTileDims: [atlasTileDims.x, atlasTileDims.y],
+      subregionSize: [subregionSize.x, subregionSize.y, subregionSize.z],
+      subregionOffset: [regionPx.min.x, regionPx.min.y, regionPx.min.z],
       multiscaleLevel
     };
   }
@@ -8356,11 +8466,11 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
     const updatedImageInfo = this.updateImageInfoForLoad(imageInfo, loadSpec);
     onUpdateMetadata(updatedImageInfo);
     const {
-      numChannels,
+      combinedNumChannels,
       multiscaleLevel
     } = updatedImageInfo;
     const channelIndexes = loadSpec.channels ?? Array.from({
-      length: numChannels
+      length: combinedNumChannels
     }, (_, i) => i);
     const subscriber = this.requestQueue.addSubscriber();
 
@@ -8380,8 +8490,8 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
     const resultChannelRanges = [];
     const channelPromises = channelIndexes.map(async ch => {
       // Build slice spec
-      const min = updatedImageInfo.subregionOffset;
-      const max = min.clone().add(updatedImageInfo.subregionSize);
+      const min = new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(...updatedImageInfo.subregionOffset);
+      const max = min.clone().add(new three__WEBPACK_IMPORTED_MODULE_11__.Vector3(...updatedImageInfo.subregionSize));
       const {
         sourceIndex: sourceIdx,
         channelIndexInSource: sourceCh
@@ -8438,21 +8548,24 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   OpenCellLoader: () => (/* binding */ OpenCellLoader)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
-/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
+/* harmony import */ var _ImageInfo_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ImageInfo.js */ "./src/ImageInfo.ts");
+/* harmony import */ var _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
 
 
 
 
 class OpenCellLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.ThreadableVolumeLoader {
   async loadDims(_) {
-    const d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.VolumeDims();
-    d.shape = [1, 2, 27, 600, 600];
-    d.spacing = [1, 1, 2, 1, 1];
-    d.spaceUnit = ""; // unknown unit.
-    d.dataType = "uint8";
+    const d = {
+      shape: [1, 2, 27, 600, 600],
+      spacing: [1, 1, 2, 1, 1],
+      spaceUnit: "",
+      // unknown unit.
+      dataType: "uint8",
+      timeUnit: ""
+    };
     return [d];
   }
   async createImageInfo(_loadSpec) {
@@ -8462,19 +8575,11 @@ class OpenCellLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Thre
     const chnames = ["DNA", "Structure"];
     const imgdata = {
       name: "TEST",
-      originalSize: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(600, 600, 27),
-      atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_3__.Vector2(27, 1),
-      volumeSize: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(600, 600, 27),
-      subregionSize: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(600, 600, 27),
-      subregionOffset: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0),
-      physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(1, 1, 2),
-      spatialUnit: "µm",
-      numChannels: numChannels,
+      atlasTileDims: [27, 1],
+      subregionSize: [600, 600, 27],
+      subregionOffset: [0, 0, 0],
+      combinedNumChannels: numChannels,
       channelNames: chnames,
-      times: 1,
-      timeScale: 1,
-      timeUnit: "",
-      numMultiscaleLevels: 1,
       multiscaleLevel: 0,
       multiscaleLevelDims: [{
         shape: [1, numChannels, 27, 600, 600],
@@ -8484,8 +8589,8 @@ class OpenCellLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Thre
         dataType: "uint8"
       }],
       transform: {
-        translation: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0),
-        rotation: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0)
+        translation: [0, 0, 0],
+        rotation: [0, 0, 0]
       }
     };
 
@@ -8505,10 +8610,9 @@ class OpenCellLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Thre
       name: "https://opencell.czbiohub.org/data/opencell-microscopy/roi/czML0383-P0007/czML0383-P0007-A02-PML0308-S13_ROI-0424-0025-0600-0600-LQTILE-CH488.jpg",
       channels: [1]
     }];
-    const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
-    const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
+    const [w, h] = (0,_ImageInfo_js__WEBPACK_IMPORTED_MODULE_1__.computeAtlasSize)(imageInfo);
     // all data coming from this loader is natively 8-bit
-    return _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_1__.JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, dtype, data) => onData(ch, dtype, data, [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8], [w, h]));
+    return _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_2__.JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, dtype, data) => onData(ch, dtype, data, [_types_js__WEBPACK_IMPORTED_MODULE_3__.DATARANGE_UINT8], [w, h]));
   }
 }
 
@@ -8541,40 +8645,33 @@ __webpack_require__.r(__webpack_exports__);
 
 // minimal metadata for visualization
 
-const convertImageInfo = json => ({
-  name: json.name,
-  // assumption: the data is already sized to fit in our viewer's preferred
-  // memory footprint (a tiled atlas texture as of this writing)
-  originalSize: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(json.sizeX, json.sizeY, json.sizeZ),
-  atlasTileDims: (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__.computePackedAtlasDims)(json.sizeZ, json.sizeX, json.sizeY),
-  volumeSize: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(json.sizeX, json.sizeY, json.sizeZ),
-  subregionSize: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(json.sizeX, json.sizeY, json.sizeZ),
-  subregionOffset: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0),
-  physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(json.physicalPixelSize[0], json.physicalPixelSize[1], json.physicalPixelSize[2]),
-  spatialUnit: json.spatialUnit || "μm",
-  numChannels: json.sizeC,
-  channelNames: json.channelNames,
-  channelColors: undefined,
-  //json.channelColors,
-
-  times: 1,
-  timeScale: 1,
-  timeUnit: "s",
-  numMultiscaleLevels: 1,
-  multiscaleLevel: 0,
-  multiscaleLevelDims: [{
-    shape: [1, json.sizeC, json.sizeZ, json.sizeY, json.sizeX],
-    spacing: [1, 1, json.physicalPixelSize[2], json.physicalPixelSize[1], json.physicalPixelSize[0]],
-    spaceUnit: json.spatialUnit || "μm",
-    timeUnit: "s",
-    dataType: "uint8"
-  }],
-  transform: {
-    translation: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0),
-    rotation: new three__WEBPACK_IMPORTED_MODULE_3__.Vector3(0, 0, 0)
-  },
-  userData: json.userData
-});
+const convertImageInfo = json => {
+  const atlasTileDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__.computePackedAtlasDims)(json.sizeZ, json.sizeX, json.sizeY);
+  return {
+    name: json.name,
+    // assumption: the data is already sized to fit in our viewer's preferred
+    // memory footprint (a tiled atlas texture as of this writing)
+    atlasTileDims: [atlasTileDims.x, atlasTileDims.y],
+    subregionSize: [json.sizeX, json.sizeY, json.sizeZ],
+    subregionOffset: [0, 0, 0],
+    combinedNumChannels: json.sizeC,
+    channelNames: json.channelNames,
+    channelColors: undefined,
+    multiscaleLevel: 0,
+    multiscaleLevelDims: [{
+      shape: [1, json.sizeC, json.sizeZ, json.sizeY, json.sizeX],
+      spacing: [1, 1, json.physicalPixelSize[2], json.physicalPixelSize[1], json.physicalPixelSize[0]],
+      spaceUnit: json.spatialUnit || "μm",
+      timeUnit: "s",
+      dataType: "uint8"
+    }],
+    transform: {
+      translation: [0, 0, 0],
+      rotation: [0, 0, 0]
+    },
+    userData: json.userData
+  };
+};
 class RawArrayLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.ThreadableVolumeLoader {
   constructor(rawData, rawDataInfo) {
     super();
@@ -8587,11 +8684,13 @@ class RawArrayLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Thre
   }
   async loadDims(_loadSpec) {
     const jsonInfo = this.jsonInfo;
-    const d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.VolumeDims();
-    d.shape = [1, jsonInfo.sizeC, jsonInfo.sizeZ, jsonInfo.sizeY, jsonInfo.sizeX];
-    d.spacing = [1, 1, jsonInfo.physicalPixelSize[2], jsonInfo.physicalPixelSize[1], jsonInfo.physicalPixelSize[0]];
-    d.spaceUnit = jsonInfo.spatialUnit || "μm";
-    d.dataType = "uint8";
+    const d = {
+      shape: [1, jsonInfo.sizeC, jsonInfo.sizeZ, jsonInfo.sizeY, jsonInfo.sizeX],
+      spacing: [1, 1, jsonInfo.physicalPixelSize[2], jsonInfo.physicalPixelSize[1], jsonInfo.physicalPixelSize[0]],
+      spaceUnit: jsonInfo.spatialUnit || "μm",
+      dataType: "uint8",
+      timeUnit: "s" // time unit not specified
+    };
     return [d];
   }
   async createImageInfo(loadSpec) {
@@ -8609,7 +8708,7 @@ class RawArrayLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Thre
       multiscaleLevel: 0
     };
     onUpdateMetadata(undefined, adjustedLoadSpec);
-    for (let chindex = 0; chindex < imageInfo.numChannels; ++chindex) {
+    for (let chindex = 0; chindex < imageInfo.combinedNumChannels; ++chindex) {
       if (requestedChannels && requestedChannels.length > 0 && !requestedChannels.includes(chindex)) {
         continue;
       }
@@ -8636,12 +8735,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   TiffLoader: () => (/* binding */ TiffLoader)
 /* harmony export */ });
-/* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var geotiff__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! geotiff */ "./node_modules/geotiff/dist-module/geotiff.js");
 /* harmony import */ var serialize_error__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! serialize-error */ "./node_modules/serialize-error/index.js");
 /* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
 /* harmony import */ var _VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./VolumeLoadError.js */ "./src/loaders/VolumeLoadError.ts");
+/* harmony import */ var _ImageInfo_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../ImageInfo.js */ "./src/ImageInfo.ts");
 
 
 
@@ -8679,6 +8778,23 @@ class OMEDims {
   pixelsizey = 1;
   pixelsizez = 1;
   channelnames = [];
+}
+function getDtype(omepixeltype) {
+  const mapping = {
+    uint8: "uint8",
+    uint16: "uint16",
+    uint32: "uint32",
+    int8: "int8",
+    int16: "int16",
+    int32: "int32",
+    float: "float32"
+  };
+  const dtype = mapping[omepixeltype];
+  if (dtype === undefined) {
+    console.warn(`Unsupported OME pixel type ${omepixeltype}; defaulting to uint8`);
+    return "uint8";
+  }
+  return dtype;
 }
 function getAttributeOrError(el, attr) {
   const val = el.getAttribute(attr);
@@ -8722,7 +8838,7 @@ class TiffLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Threadab
   }
   async loadOmeDims() {
     if (!this.dims) {
-      const tiff = await (0,geotiff__WEBPACK_IMPORTED_MODULE_3__.fromUrl)(this.url, {
+      const tiff = await (0,geotiff__WEBPACK_IMPORTED_MODULE_4__.fromUrl)(this.url, {
         allowFullFile: true
       }).catch((0,_VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_2__.wrapVolumeLoadError)(`Could not open TIFF file at ${this.url}`, _VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_2__.VolumeLoadErrorType.NOT_FOUND));
       // DO NOT DO THIS, ITS SLOW
@@ -8738,11 +8854,18 @@ class TiffLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Threadab
   }
   async loadDims(_loadSpec) {
     const dims = await this.loadOmeDims();
-    const d = new _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.VolumeDims();
-    d.shape = [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex];
-    d.spacing = [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex];
-    d.spaceUnit = dims.unit ? dims.unit : "micron";
-    d.dataType = dims.pixeltype ? dims.pixeltype : "uint8";
+    const atlasDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__.computePackedAtlasDims)(dims.sizez, dims.sizex, dims.sizey);
+    // fit tiles to max of 2048x2048?
+    const targetSize = _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__.MAX_ATLAS_EDGE;
+    const tilesizex = Math.floor(targetSize / atlasDims.x);
+    const tilesizey = Math.floor(targetSize / atlasDims.y);
+    const d = {
+      shape: [dims.sizet, dims.sizec, dims.sizez, tilesizey, tilesizex],
+      spacing: [1, 1, dims.pixelsizez, dims.pixelsizey * dims.sizey / tilesizey, dims.pixelsizex * dims.sizex / tilesizex],
+      spaceUnit: dims.unit ? dims.unit : "micron",
+      dataType: getDtype(dims.pixeltype),
+      timeUnit: "s"
+    };
     return [d];
   }
   async createImageInfo(_loadSpec) {
@@ -8755,7 +8878,7 @@ class TiffLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Threadab
     // TODO allow ROI selection: range of x,y,z,c for a given t
     const atlasDims = (0,_VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__.computePackedAtlasDims)(dims.sizez, dims.sizex, dims.sizey);
     // fit tiles to max of 2048x2048?
-    const targetSize = 2048;
+    const targetSize = _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__.MAX_ATLAS_EDGE;
     const tilesizex = Math.floor(targetSize / atlasDims.x);
     const tilesizey = Math.floor(targetSize / atlasDims.y);
 
@@ -8763,30 +8886,22 @@ class TiffLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Threadab
 
     const imgdata = {
       name: "TEST",
-      originalSize: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(dims.sizex, dims.sizey, dims.sizez),
-      atlasTileDims: atlasDims,
-      volumeSize: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(tilesizex, tilesizey, dims.sizez),
-      subregionSize: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(tilesizex, tilesizey, dims.sizez),
-      subregionOffset: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0),
-      physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(dims.pixelsizex, dims.pixelsizey, dims.pixelsizez),
-      spatialUnit: dims.unit || "",
-      numChannels: dims.sizec,
+      atlasTileDims: [atlasDims.x, atlasDims.y],
+      subregionSize: [tilesizex, tilesizey, dims.sizez],
+      subregionOffset: [0, 0, 0],
+      combinedNumChannels: dims.sizec,
       channelNames: dims.channelnames,
-      times: dims.sizet,
-      timeScale: 1,
-      timeUnit: "",
-      numMultiscaleLevels: 1,
       multiscaleLevel: 0,
       multiscaleLevelDims: [{
-        shape: [dims.sizet, dims.sizec, dims.sizez, dims.sizey, dims.sizex],
-        spacing: [1, 1, dims.pixelsizez, dims.pixelsizey, dims.pixelsizex],
+        shape: [dims.sizet, dims.sizec, dims.sizez, tilesizey, tilesizex],
+        spacing: [1, 1, dims.pixelsizez, dims.pixelsizey * dims.sizey / tilesizey, dims.pixelsizex * dims.sizex / tilesizex],
         spaceUnit: dims.unit || "",
         timeUnit: "",
-        dataType: dims.pixeltype || "uint8"
+        dataType: getDtype(dims.pixeltype)
       }],
       transform: {
-        translation: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0),
-        rotation: new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(0, 0, 0)
+        translation: [0, 0, 0],
+        rotation: [0, 0, 0]
       }
     };
 
@@ -8798,18 +8913,22 @@ class TiffLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Threadab
   }
   async loadRawChannelData(imageInfo, _loadSpec, _onUpdateMetadata, onData) {
     const dims = await this.loadOmeDims();
+
+    // get some size info.
+    const cimageinfo = new _ImageInfo_js__WEBPACK_IMPORTED_MODULE_3__.CImageInfo(imageInfo);
+    const volumeSize = cimageinfo.volumeSize;
     const channelProms = [];
     // do each channel on a worker?
-    for (let channel = 0; channel < imageInfo.numChannels; ++channel) {
+    for (let channel = 0; channel < imageInfo.combinedNumChannels; ++channel) {
       const thisChannelProm = new Promise((resolve, reject) => {
         const params = {
           channel: channel,
           // these are target xy sizes for the in-memory volume data
           // they may or may not be the same size as original xy sizes
-          tilesizex: imageInfo.volumeSize.x,
-          tilesizey: imageInfo.volumeSize.y,
-          sizec: imageInfo.numChannels,
-          sizez: imageInfo.volumeSize.z,
+          tilesizex: volumeSize.x,
+          tilesizey: volumeSize.y,
+          sizec: imageInfo.combinedNumChannels,
+          sizez: volumeSize.z,
           dimensionOrder: dims.dimensionorder,
           bytesPerSample: getBytesPerSample(dims.pixeltype),
           url: this.url
@@ -8926,7 +9045,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   scaleMultipleDimsToSubregion: () => (/* binding */ scaleMultipleDimsToSubregion),
 /* harmony export */   unitNameToSymbol: () => (/* binding */ unitNameToSymbol)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _ImageInfo_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ImageInfo.js */ "./src/ImageInfo.ts");
+
 
 const MAX_ATLAS_EDGE = 4096;
 
@@ -8995,7 +9116,7 @@ function computePackedAtlasDims(z, tw, th) {
     nextrows = Math.ceil(z / nextcols);
     ratio = nextcols * tw / (nextrows * th);
   }
-  return new three__WEBPACK_IMPORTED_MODULE_0__.Vector2(nrows, ncols);
+  return new three__WEBPACK_IMPORTED_MODULE_1__.Vector2(nrows, ncols);
 }
 function doesSpatialDimensionFitInAtlas(spatialDimZYX, maxAtlasEdge = MAX_ATLAS_EDGE) {
   // Estimate atlas size
@@ -9023,11 +9144,11 @@ function estimateLevelForAtlas(spatialDimsZYX, maxAtlasEdge = MAX_ATLAS_EDGE) {
 const maxCeil = val => Math.max(Math.ceil(val), 1);
 const scaleDims = (size, [z, y, x]) => [maxCeil(z * size.z), maxCeil(y * size.y), maxCeil(x * size.x)];
 function scaleDimsToSubregion(subregion, dims) {
-  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3());
+  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3());
   return scaleDims(size, dims);
 }
 function scaleMultipleDimsToSubregion(subregion, dims) {
-  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3());
+  const size = subregion.getSize(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3());
   return dims.map(dim => scaleDims(size, dim));
 }
 
@@ -9092,7 +9213,7 @@ function convertSubregionToPixels(region, size) {
   if (min.z === max.z && min.z < size.z) {
     max.z += 1;
   }
-  return new three__WEBPACK_IMPORTED_MODULE_0__.Box3(min, max);
+  return new three__WEBPACK_IMPORTED_MODULE_1__.Box3(min, max);
 }
 
 /**
@@ -9100,10 +9221,10 @@ function convertSubregionToPixels(region, size) {
  * and 1). i.e. if `container`'s range on the X axis is 0-4 and `region`'s is 0.25-0.5, the result will have range 1-2.
  */
 function composeSubregion(region, container) {
-  const size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3());
+  const size = container.getSize(new three__WEBPACK_IMPORTED_MODULE_1__.Vector3());
   const min = region.min.clone().multiply(size).add(container.min);
   const max = region.max.clone().multiply(size).add(container.min);
-  return new three__WEBPACK_IMPORTED_MODULE_0__.Box3(min, max);
+  return new three__WEBPACK_IMPORTED_MODULE_1__.Box3(min, max);
 }
 function isEmpty(obj) {
   for (const key in obj) {
@@ -9116,7 +9237,9 @@ function isEmpty(obj) {
 
 // currently everything needed can come from the imageInfo
 // but in the future each IVolumeLoader could have a completely separate implementation.
-function buildDefaultMetadata(imageInfo) {
+function buildDefaultMetadata(rawImageInfo) {
+  // wrap
+  const imageInfo = new _ImageInfo_js__WEBPACK_IMPORTED_MODULE_0__.CImageInfo(rawImageInfo);
   const physicalSize = imageInfo.volumeSize.clone().multiply(imageInfo.physicalPixelSize);
   const metadata = {};
   metadata["Dimensions"] = {
@@ -9135,12 +9258,13 @@ function buildDefaultMetadata(imageInfo) {
     y: imageInfo.physicalPixelSize.y + imageInfo.spatialUnit,
     z: imageInfo.physicalPixelSize.z + imageInfo.spatialUnit
   };
-  metadata["Multiresolution levels"] = imageInfo.multiscaleLevelDims;
-  metadata["Channels"] = imageInfo.numChannels;
+  metadata["Multiresolution levels"] = rawImageInfo.multiscaleLevelDims;
+  // TODO decide???? combined or not?
+  metadata["Channels"] = rawImageInfo.combinedNumChannels; //imageInfo.numChannels;
   metadata["Time series frames"] = imageInfo.times || 1;
   // don't add User data if it's empty
-  if (imageInfo.userData && !isEmpty(imageInfo.userData)) {
-    metadata["User data"] = imageInfo.userData;
+  if (rawImageInfo.userData && !isEmpty(rawImageInfo.userData)) {
+    metadata["User data"] = rawImageInfo.userData;
   }
   return metadata;
 }
@@ -10861,7 +10985,7 @@ class WorkerLoader extends _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_2_
       loadSpec: adjustedLoadSpec
     } = await this.workerHandle.sendMessage(_types_js__WEBPACK_IMPORTED_MODULE_5__.WorkerMsgType.CREATE_VOLUME, loadSpec);
     return {
-      imageInfo: (0,_util_js__WEBPACK_IMPORTED_MODULE_6__.rebuildImageInfo)(imageInfo),
+      imageInfo,
       loadSpec: (0,_util_js__WEBPACK_IMPORTED_MODULE_6__.rebuildLoadSpec)(adjustedLoadSpec)
     };
   }
@@ -10887,7 +11011,7 @@ class WorkerLoader extends _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_2_
     if (e.loaderId !== this.loaderId || e.loadId !== this.currentLoadId) {
       return;
     }
-    const imageInfo = e.imageInfo && (0,_util_js__WEBPACK_IMPORTED_MODULE_6__.rebuildImageInfo)(e.imageInfo);
+    const imageInfo = e.imageInfo;
     const loadSpec = e.loadSpec && (0,_util_js__WEBPACK_IMPORTED_MODULE_6__.rebuildLoadSpec)(e.loadSpec);
     this.currentMetadataUpdateCallback?.(imageInfo, loadSpec);
   }
@@ -10962,7 +11086,6 @@ let WorkerEventType = /*#__PURE__*/function (WorkerEventType) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   rebuildImageInfo: () => (/* binding */ rebuildImageInfo),
 /* harmony export */   rebuildLoadSpec: () => (/* binding */ rebuildLoadSpec)
 /* harmony export */ });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
@@ -10972,23 +11095,6 @@ function rebuildLoadSpec(spec) {
   return {
     ...spec,
     subregion: new three__WEBPACK_IMPORTED_MODULE_0__.Box3(new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(spec.subregion.min), new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(spec.subregion.max))
-  };
-}
-
-/** Recreates an `ImageInfo` that has just been sent to/from a worker to restore three.js object prototypes */
-function rebuildImageInfo(imageInfo) {
-  return {
-    ...imageInfo,
-    originalSize: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(imageInfo.originalSize),
-    atlasTileDims: new three__WEBPACK_IMPORTED_MODULE_0__.Vector2().copy(imageInfo.atlasTileDims),
-    volumeSize: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(imageInfo.volumeSize),
-    subregionSize: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(imageInfo.subregionSize),
-    subregionOffset: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(imageInfo.subregionOffset),
-    physicalPixelSize: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(imageInfo.physicalPixelSize),
-    transform: {
-      translation: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(imageInfo.transform.translation),
-      rotation: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3().copy(imageInfo.transform.rotation)
-    }
   };
 }
 
@@ -88330,18 +88436,16 @@ var __webpack_exports__ = {};
   !*** ./public/index.ts ***!
   \*************************/
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
-/* harmony import */ var lil_gui__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! lil-gui */ "./node_modules/lil-gui/dist/lil-gui.esm.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var lil_gui__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! lil-gui */ "./node_modules/lil-gui/dist/lil-gui.esm.js");
 /* harmony import */ var _src__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../src */ "./src/index.ts");
 /* harmony import */ var _src_loaders_OpenCellLoader__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../src/loaders/OpenCellLoader */ "./src/loaders/OpenCellLoader.ts");
-/* harmony import */ var _src_Volume__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../src/Volume */ "./src/Volume.ts");
-/* harmony import */ var _src_workers_VolumeLoaderContext__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../src/workers/VolumeLoaderContext */ "./src/workers/VolumeLoaderContext.ts");
-/* harmony import */ var _src_types__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../src/types */ "./src/types.ts");
+/* harmony import */ var _src_workers_VolumeLoaderContext__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../src/workers/VolumeLoaderContext */ "./src/workers/VolumeLoaderContext.ts");
+/* harmony import */ var _src_types__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../src/types */ "./src/types.ts");
 
 
 
 // special loader really just for this demo app but lives with the other loaders
-
 
 
 
@@ -88419,7 +88523,7 @@ const TEST_DATA = {
   }
 };
 let view3D;
-const loaderContext = new _src_workers_VolumeLoaderContext__WEBPACK_IMPORTED_MODULE_3__["default"](CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
+const loaderContext = new _src_workers_VolumeLoaderContext__WEBPACK_IMPORTED_MODULE_2__["default"](CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 const myState = {
   file: "",
   volume: new _src__WEBPACK_IMPORTED_MODULE_0__.Volume(),
@@ -88471,7 +88575,6 @@ const myState = {
   flipY: 1,
   flipZ: 1,
   channelFolderNames: [],
-  infoObj: (0,_src_Volume__WEBPACK_IMPORTED_MODULE_2__.getDefaultImageInfo)(),
   channelGui: [],
   currentImageStore: "",
   currentImageName: ""
@@ -88520,12 +88623,12 @@ function makeColorGradient(controlPoints) {
 }
 */
 function initLights() {
-  myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
-  myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
-  myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+  myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+  myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+  myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
   myState.lights[1].mTheta = myState.lightTheta * Math.PI / 180.0;
   myState.lights[1].mPhi = myState.lightPhi * Math.PI / 180.0;
-  myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+  myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
   view3D.updateLights(myState.lights);
 }
 function setInitialRenderMode() {
@@ -88537,7 +88640,7 @@ function setInitialRenderMode() {
 }
 let gui;
 function setupGui() {
-  gui = new lil_gui__WEBPACK_IMPORTED_MODULE_6__["default"]();
+  gui = new lil_gui__WEBPACK_IMPORTED_MODULE_5__["default"]();
   gui.add(myState, "density").max(100.0).min(0.0).step(0.001).onChange(function (value) {
     view3D.updateDensity(myState.volume, densitySliderToView3D(value));
   });
@@ -88587,27 +88690,27 @@ function setupGui() {
   });
   const lighting = gui.addFolder("Lighting").close();
   lighting.addColor(myState, "skyTopColor", 255).name("Sky Top").onChange(function () {
-    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyTopIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
+    myState.lights[0].mColorTop = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyTopColor[0] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[1] / 255.0 * myState.skyTopIntensity, myState.skyTopColor[2] / 255.0 * myState.skyTopIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "skyMidColor", 255).name("Sky Mid").onChange(function () {
-    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyMidIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
+    myState.lights[0].mColorMiddle = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyMidColor[0] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[1] / 255.0 * myState.skyMidIntensity, myState.skyMidColor[2] / 255.0 * myState.skyMidIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "skyBotColor", 255).name("Sky Bottom").onChange(function () {
-    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "skyBotIntensity").max(100.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
+    myState.lights[0].mColorBottom = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.skyBotColor[0] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[1] / 255.0 * myState.skyBotIntensity, myState.skyBotColor[2] / 255.0 * myState.skyBotIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState.lights[1], "mDistance").max(10.0).min(0.0).step(0.1).onChange(function () {
@@ -88627,11 +88730,11 @@ function setupGui() {
     view3D.updateLights(myState.lights);
   });
   lighting.add(myState, "lightIntensity").max(1000.0).min(0.01).step(0.1).onChange(function () {
-    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
     view3D.updateLights(myState.lights);
   });
   lighting.addColor(myState, "lightColor", 255).name("lightColor").onChange(function () {
-    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_5__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
+    myState.lights[1].mColor = new three__WEBPACK_IMPORTED_MODULE_4__.Vector3(myState.lightColor[0] / 255.0 * myState.lightIntensity, myState.lightColor[1] / 255.0 * myState.lightIntensity, myState.lightColor[2] / 255.0 * myState.lightIntensity);
     view3D.updateLights(myState.lights);
   });
   initLights();
@@ -88669,7 +88772,8 @@ function updateTimeUI() {
 }
 function updateChannelUI(vol, channelIndex) {
   const channel = vol.channels[channelIndex];
-  const folder = gui.folders.find(f => f._title === "Channel " + myState.infoObj.channelNames[channelIndex]);
+  const channelNames = vol.imageInfo.channelNames;
+  const folder = gui.folders.find(f => f._title === "Channel " + channelNames[channelIndex]);
   if (!folder) {
     return;
   }
@@ -88695,10 +88799,11 @@ function showChannelUI(volume) {
       removeFolderByName(myState.channelFolderNames[i]);
     }
   }
-  myState.infoObj = volume.imageInfo;
+  const nChannels = volume.imageInfo.numChannels;
+  const channelNames = volume.imageInfo.channelNames;
   myState.channelGui = [];
   myState.channelFolderNames = [];
-  for (let i = 0; i < myState.infoObj.numChannels; ++i) {
+  for (let i = 0; i < nChannels; ++i) {
     myState.channelGui.push({
       colorD: volume.channelColorsDefault[i],
       colorS: [0, 0, 0],
@@ -88771,11 +88876,11 @@ function showChannelUI(volume) {
       }(i),
       colorizeAlpha: 0.0
     });
-    const f = gui.addFolder("Channel " + myState.infoObj.channelNames[i]);
+    const f = gui.addFolder("Channel " + channelNames[i]);
     if (i > 0) {
       f.close();
     }
-    myState.channelFolderNames.push("Channel " + myState.infoObj.channelNames[i]);
+    myState.channelFolderNames.push("Channel " + channelNames[i]);
     f.add(myState.channelGui[i], "enabled").onChange(function (j) {
       return function (value) {
         view3D.setVolumeChannelEnabled(volume, j, value ? true : false);
@@ -88868,7 +88973,7 @@ function loadImageData(jsonData, volumeData) {
     // according to jsonData.tile_width*jsonData.tile_height*jsonData.tiles
     // (first row of first plane is the first data in
     // the layout, then second row of first plane, etc)
-    vol.setChannelDataFromVolume(i, volumeData[i], _src_types__WEBPACK_IMPORTED_MODULE_4__.DATARANGE_UINT8);
+    vol.setChannelDataFromVolume(i, volumeData[i], _src_types__WEBPACK_IMPORTED_MODULE_3__.DATARANGE_UINT8);
     setInitialRenderMode();
     view3D.removeAllVolumes();
     view3D.addVolume(vol);
