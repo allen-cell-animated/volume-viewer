@@ -1,6 +1,8 @@
 import { Box3, Vector3 } from "three";
 
-import Volume, { ImageInfo } from "../Volume.js";
+import Volume from "../Volume.js";
+import type { VolumeDims } from "../VolumeDims.js";
+import { CImageInfo, type ImageInfo } from "../ImageInfo.js";
 import { TypedArray, NumberType } from "../types.js";
 import { buildDefaultMetadata } from "./VolumeLoaderUtils.js";
 import { PrefetchDirection } from "./zarr_utils/types.js";
@@ -30,17 +32,6 @@ export class LoadSpec {
 export function loadSpecToString(spec: LoadSpec): string {
   const { min, max } = spec.subregion;
   return `${spec.multiscaleLevel}:${spec.time}:x(${min.x},${max.x}):y(${min.y},${max.y}):z(${min.z},${max.z})`;
-}
-
-export class VolumeDims {
-  // shape: [t, c, z, y, x]
-  shape: number[] = [0, 0, 0, 0, 0];
-  // spacing: [t, c, z, y, x]; generally expect 1 for non-spatial dimensions
-  spacing: number[] = [1, 1, 1, 1, 1];
-  spaceUnit = "μm";
-  timeUnit = "s";
-  // TODO make this an enum?
-  dataType = "uint8";
 }
 
 export type LoadedVolumeInfo = {
@@ -176,7 +167,7 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
   ): Promise<void> {
     const onUpdateMetadata = (imageInfo?: ImageInfo, loadSpec?: LoadSpec): void => {
       if (imageInfo) {
-        volume.imageInfo = imageInfo;
+        volume.imageInfo = new CImageInfo(imageInfo);
         volume.updateDimensions();
       }
       volume.loadSpec = { ...loadSpec, ...spec };
@@ -198,6 +189,6 @@ export abstract class ThreadableVolumeLoader implements IVolumeLoader {
     };
 
     const spec = { ...volume.loadSpec, ...loadSpecOverride };
-    return this.loadRawChannelData(volume.imageInfo, spec, onUpdateMetadata, onChannelData);
+    return this.loadRawChannelData(volume.imageInfo.imageInfo, spec, onUpdateMetadata, onChannelData);
   }
 }

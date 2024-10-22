@@ -22,7 +22,6 @@ import {
 // special loader really just for this demo app but lives with the other loaders
 import { OpenCellLoader } from "../src/loaders/OpenCellLoader";
 import { State, TestDataSpec } from "./types";
-import { getDefaultImageInfo } from "../src/Volume";
 import VolumeLoaderContext from "../src/workers/VolumeLoaderContext";
 import { DATARANGE_UINT8 } from "../src/types";
 import { RawArrayLoaderOptions } from "../src/loaders/RawArrayLoader";
@@ -162,7 +161,6 @@ const myState: State = {
   flipZ: 1,
 
   channelFolderNames: [],
-  infoObj: getDefaultImageInfo(),
   channelGui: [],
 
   currentImageStore: "",
@@ -600,7 +598,8 @@ function updateTimeUI() {
 function updateChannelUI(vol: Volume, channelIndex: number) {
   const channel = vol.channels[channelIndex];
 
-  const folder = gui.folders.find((f) => f._title === "Channel " + myState.infoObj.channelNames[channelIndex]);
+  const channelNames = vol.imageInfo.channelNames;
+  const folder = gui.folders.find((f) => f._title === "Channel " + channelNames[channelIndex]);
   if (!folder) {
     return;
   }
@@ -631,12 +630,13 @@ function showChannelUI(volume: Volume) {
     }
   }
 
-  myState.infoObj = volume.imageInfo;
+  const nChannels = volume.imageInfo.numChannels;
+  const channelNames = volume.imageInfo.channelNames;
 
   myState.channelGui = [];
 
   myState.channelFolderNames = [];
-  for (let i = 0; i < myState.infoObj.numChannels; ++i) {
+  for (let i = 0; i < nChannels; ++i) {
     myState.channelGui.push({
       colorD: volume.channelColorsDefault[i],
       colorS: [0, 0, 0],
@@ -709,11 +709,11 @@ function showChannelUI(volume: Volume) {
       })(i),
       colorizeAlpha: 0.0,
     });
-    const f = gui.addFolder("Channel " + myState.infoObj.channelNames[i]);
+    const f = gui.addFolder("Channel " + channelNames[i]);
     if (i > 0) {
       f.close();
     }
-    myState.channelFolderNames.push("Channel " + myState.infoObj.channelNames[i]);
+    myState.channelFolderNames.push("Channel " + channelNames[i]);
     f.add(myState.channelGui[i], "enabled").onChange(
       (function (j) {
         return function (value) {

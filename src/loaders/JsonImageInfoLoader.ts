@@ -1,13 +1,13 @@
-import { Box3, Vector2, Vector3 } from "three";
+import { Box3, Vector3 } from "three";
 
 import {
   ThreadableVolumeLoader,
   type LoadSpec,
   type RawChannelDataCallback,
-  VolumeDims,
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
-import type { ImageInfo } from "../Volume.js";
+import { computeAtlasSize, type ImageInfo } from "../ImageInfo.js";
+import type { VolumeDims } from "../VolumeDims.js";
 import VolumeCache from "../VolumeCache.js";
 import type { TypedArray, NumberType } from "../types.js";
 import { DATARANGE_UINT8 } from "../types.js";
@@ -67,46 +67,55 @@ type JsonImageInfo = {
 };
 /* eslint-enable @typescript-eslint/naming-convention */
 
-const convertImageInfo = (json: JsonImageInfo): ImageInfo => ({
-  name: json.name,
+const rescalePixelSize = (json: JsonImageInfo): [number, number, number] => {
+  // the pixel_size_x/y/z are the physical size of the original pixels represented by
+  // width and height.  We need to get a physical pixel size that is consistent
+  // with the tile_width and tile_height.
+  const px = (json.pixel_size_x * json.width) / json.tile_width;
+  const py = (json.pixel_size_y * json.height) / json.tile_height;
+  const pz = json.pixel_size_z;
+  return [px, py, pz];
+};
 
-  originalSize: new Vector3(json.width, json.height, json.tiles),
-  atlasTileDims: new Vector2(json.cols, json.rows),
-  volumeSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
-  subregionSize: new Vector3(json.tile_width, json.tile_height, json.tiles),
-  subregionOffset: new Vector3(0, 0, 0),
-  physicalPixelSize: new Vector3(json.pixel_size_x, json.pixel_size_y, json.pixel_size_z),
-  spatialUnit: json.pixel_size_unit || "μm",
+const convertImageInfo = (json: JsonImageInfo): ImageInfo => {
+  const [px, py, pz] = rescalePixelSize(json);
+  // translation is in pixels that are in the space of json.width, json.height.
+  // We need to convert this to the space of the tile_width and tile_height.
+  const tr: [number, number, number] = json.transform?.translation ?? [0, 0, 0];
+  tr[0] = (tr[0] * json.tile_width) / json.width;
+  tr[1] = (tr[1] * json.tile_height) / json.height;
+  return {
+    name: json.name,
+    atlasTileDims: [json.cols, json.rows],
+    subregionSize: [json.tile_width, json.tile_height, json.tiles],
+    subregionOffset: [0, 0, 0],
+    combinedNumChannels: json.channels,
+    channelNames: json.channel_names,
+    channelColors: json.channel_colors,
+    multiscaleLevel: 0,
+    multiscaleLevelDims: [
+      {
+        shape: [json.times || 1, json.channels, json.tiles, json.tile_height, json.tile_width],
+        spacing: [json.time_scale || 1, 1, pz, py, px],
+        spaceUnit: json.pixel_size_unit || "μm",
+        timeUnit: json.time_unit || "s",
+        dataType: "uint8",
+      },
+    ],
 
-  numChannels: json.channels,
-  channelNames: json.channel_names,
-  channelColors: json.channel_colors,
-
-  times: json.times || 1,
-  timeScale: json.time_scale || 1,
-  timeUnit: json.time_unit || "s",
-
-  numMultiscaleLevels: 1,
-  multiscaleLevel: 0,
-  multiscaleLevelDims: [
-    {
-      shape: [json.times || 1, json.channels, json.tiles, json.tile_height, json.tile_width],
-      spacing: [json.time_scale || 1, 1, json.pixel_size_z, json.pixel_size_y, json.pixel_size_x],
-      spaceUnit: json.pixel_size_unit || "μm",
-      timeUnit: json.time_unit || "s",
-      dataType: "uint8",
+    transform: {
+      translation: tr,
+      rotation: json.transform?.rotation ? json.transform.rotation : [0, 0, 0],
     },
-  ],
 
-  transform: {
-    translation: json.transform?.translation
-      ? new Vector3().fromArray(json.transform.translation)
-      : new Vector3(0, 0, 0),
-    rotation: json.transform?.rotation ? new Vector3().fromArray(json.transform.rotation) : new Vector3(0, 0, 0),
-  },
-
-  userData: json.userData,
-});
+    userData: {
+      ...json.userData,
+      // for metadata display reasons
+      originalVolumeSize: [json.width, json.height, json.tiles],
+      originalPhysicalPixelSize: [json.pixel_size_x, json.pixel_size_y, json.pixel_size_z],
+    },
+  };
+};
 
 class JsonImageInfoLoader extends ThreadableVolumeLoader {
   urls: string[];
@@ -145,11 +154,15 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const jsonInfo = await this.getJsonImageInfo(loadSpec.time);
 
-    const d = new VolumeDims();
-    d.shape = [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tile_height, jsonInfo.tile_width];
-    d.spacing = [1, 1, jsonInfo.pixel_size_z, jsonInfo.pixel_size_y, jsonInfo.pixel_size_x];
-    d.spaceUnit = jsonInfo.pixel_size_unit || "μm";
-    d.dataType = "uint8";
+    const [px, py, pz] = rescalePixelSize(jsonInfo);
+
+    const d: VolumeDims = {
+      shape: [jsonInfo.times || 1, jsonInfo.channels, jsonInfo.tiles, jsonInfo.tile_height, jsonInfo.tile_width],
+      spacing: [1, 1, pz, py, px],
+      spaceUnit: jsonInfo.pixel_size_unit ?? "μm",
+      dataType: "uint8",
+      timeUnit: jsonInfo.time_unit ?? "s",
+    };
     return [d];
   }
 
@@ -196,8 +209,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
     };
     onUpdateMetadata(undefined, adjustedLoadSpec);
 
-    const w = imageInfo.atlasTileDims.x * imageInfo.volumeSize.x;
-    const h = imageInfo.atlasTileDims.y * imageInfo.volumeSize.y;
+    const [w, h] = computeAtlasSize(imageInfo);
     const wrappedOnData = (
       ch: number[],
       dtype: NumberType[],

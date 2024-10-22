@@ -4,11 +4,11 @@ import {
   ThreadableVolumeLoader,
   type LoadSpec,
   type RawChannelDataCallback,
-  VolumeDims,
   type LoadedVolumeInfo,
 } from "./IVolumeLoader.js";
 import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
-import { ImageInfo } from "../Volume.js";
+import type { ImageInfo } from "../ImageInfo.js";
+import type { VolumeDims } from "../VolumeDims.js";
 import { DATARANGE_UINT8, Uint8 } from "../types.js";
 
 // this is the form in which a 4D numpy array arrives as converted
@@ -41,46 +41,40 @@ export interface RawArrayLoaderOptions {
   metadata: RawArrayInfo;
 }
 
-const convertImageInfo = (json: RawArrayInfo): ImageInfo => ({
-  name: json.name,
+const convertImageInfo = (json: RawArrayInfo): ImageInfo => {
+  const atlasTileDims = computePackedAtlasDims(json.sizeZ, json.sizeX, json.sizeY);
+  return {
+    name: json.name,
 
-  // assumption: the data is already sized to fit in our viewer's preferred
-  // memory footprint (a tiled atlas texture as of this writing)
-  originalSize: new Vector3(json.sizeX, json.sizeY, json.sizeZ),
-  atlasTileDims: computePackedAtlasDims(json.sizeZ, json.sizeX, json.sizeY),
-  volumeSize: new Vector3(json.sizeX, json.sizeY, json.sizeZ),
-  subregionSize: new Vector3(json.sizeX, json.sizeY, json.sizeZ),
-  subregionOffset: new Vector3(0, 0, 0),
-  physicalPixelSize: new Vector3(json.physicalPixelSize[0], json.physicalPixelSize[1], json.physicalPixelSize[2]),
-  spatialUnit: json.spatialUnit || "μm",
+    // assumption: the data is already sized to fit in our viewer's preferred
+    // memory footprint (a tiled atlas texture as of this writing)
+    atlasTileDims: [atlasTileDims.x, atlasTileDims.y],
+    subregionSize: [json.sizeX, json.sizeY, json.sizeZ],
+    subregionOffset: [0, 0, 0],
 
-  numChannels: json.sizeC,
-  channelNames: json.channelNames,
-  channelColors: undefined, //json.channelColors,
+    combinedNumChannels: json.sizeC,
+    channelNames: json.channelNames,
+    channelColors: undefined,
 
-  times: 1,
-  timeScale: 1,
-  timeUnit: "s",
+    multiscaleLevel: 0,
+    multiscaleLevelDims: [
+      {
+        shape: [1, json.sizeC, json.sizeZ, json.sizeY, json.sizeX],
+        spacing: [1, 1, json.physicalPixelSize[2], json.physicalPixelSize[1], json.physicalPixelSize[0]],
+        spaceUnit: json.spatialUnit || "μm",
+        timeUnit: "s",
+        dataType: "uint8",
+      },
+    ],
 
-  numMultiscaleLevels: 1,
-  multiscaleLevel: 0,
-  multiscaleLevelDims: [
-    {
-      shape: [1, json.sizeC, json.sizeZ, json.sizeY, json.sizeX],
-      spacing: [1, 1, json.physicalPixelSize[2], json.physicalPixelSize[1], json.physicalPixelSize[0]],
-      spaceUnit: json.spatialUnit || "μm",
-      timeUnit: "s",
-      dataType: "uint8",
+    transform: {
+      translation: [0, 0, 0],
+      rotation: [0, 0, 0],
     },
-  ],
 
-  transform: {
-    translation: new Vector3(0, 0, 0),
-    rotation: new Vector3(0, 0, 0),
-  },
-
-  userData: json.userData,
-});
+    userData: json.userData,
+  };
+};
 
 class RawArrayLoader extends ThreadableVolumeLoader {
   data: RawArrayData;
@@ -104,11 +98,13 @@ class RawArrayLoader extends ThreadableVolumeLoader {
   async loadDims(_loadSpec: LoadSpec): Promise<VolumeDims[]> {
     const jsonInfo = this.jsonInfo;
 
-    const d = new VolumeDims();
-    d.shape = [1, jsonInfo.sizeC, jsonInfo.sizeZ, jsonInfo.sizeY, jsonInfo.sizeX];
-    d.spacing = [1, 1, jsonInfo.physicalPixelSize[2], jsonInfo.physicalPixelSize[1], jsonInfo.physicalPixelSize[0]];
-    d.spaceUnit = jsonInfo.spatialUnit || "μm";
-    d.dataType = "uint8";
+    const d: VolumeDims = {
+      shape: [1, jsonInfo.sizeC, jsonInfo.sizeZ, jsonInfo.sizeY, jsonInfo.sizeX],
+      spacing: [1, 1, jsonInfo.physicalPixelSize[2], jsonInfo.physicalPixelSize[1], jsonInfo.physicalPixelSize[0]],
+      spaceUnit: jsonInfo.spatialUnit || "μm",
+      dataType: "uint8",
+      timeUnit: "s", // time unit not specified
+    };
     return [d];
   }
 
@@ -132,7 +128,7 @@ class RawArrayLoader extends ThreadableVolumeLoader {
     };
     onUpdateMetadata(undefined, adjustedLoadSpec);
 
-    for (let chindex = 0; chindex < imageInfo.numChannels; ++chindex) {
+    for (let chindex = 0; chindex < imageInfo.combinedNumChannels; ++chindex) {
       if (requestedChannels && requestedChannels.length > 0 && !requestedChannels.includes(chindex)) {
         continue;
       }
