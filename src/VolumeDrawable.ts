@@ -20,7 +20,7 @@ import type { VolumeDisplayOptions, VolumeChannelDisplayOptions, FuseChannel } f
 import { RenderMode } from "./types.js";
 import { Light } from "./Light.js";
 import Channel from "./Channel.js";
-import { VolumeRenderImpl } from "./VolumeRenderImpl.js";
+import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
 import Atlas2DSlice from "./Atlas2DSlice.js";
 import { VolumeRenderSettings, SettingsFlags, Axis } from "./VolumeRenderSettings.js";
 
@@ -46,8 +46,7 @@ export default class VolumeDrawable {
   public sceneRoot: Object3D;
   private meshVolume: MeshVolume;
 
-  // TODO RE-PRIVATIZE. if you discover this in a PR, I have failed!
-  public volumeRendering: VolumeRenderImpl;
+  private volumeRendering: VolumeRenderImpl;
   private renderMode: RenderMode;
 
   private renderUpdateListener?: (iteration: number) => void;
