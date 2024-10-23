@@ -1,5 +1,6 @@
 import { RENDERMODE_PATHTRACE, RENDERMODE_RAYMARCH, View3d } from "./View3d.js";
 import Volume from "./Volume.js";
+import VolumeDrawable from "./VolumeDrawable.js";
 import Channel from "./Channel.js";
 import VolumeMaker from "./VolumeMaker.js";
 import VolumeCache from "./VolumeCache.js";
@@ -36,6 +37,7 @@ export {
   remapControlPoints,
   View3d,
   Volume,
+  VolumeDrawable,
   LoadSpec,
   VolumeMaker,
   VolumeCache,

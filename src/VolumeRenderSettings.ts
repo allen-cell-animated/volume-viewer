@@ -7,7 +7,7 @@ import type { Bounds } from "./types.js";
  * Marks groups of related settings that may have changed.
  */
 export enum SettingsFlags {
-  /** parameters: translation, rotation, flipAxes */
+  /** parameters: translation, rotation, scale, flipAxes */
   TRANSFORM = 0b000000001,
   /** parameters: gammaMin, gammaLevel, gammaMax, brightness*/
   CAMERA = 0b000000010,
@@ -45,6 +45,8 @@ export class VolumeRenderSettings {
   // TRANSFORM
   public translation: Vector3;
   public rotation: Euler;
+  public scale: Vector3;
+  // TODO made redundant by `scale`?
   public flipAxes: Vector3;
 
   // VIEW
@@ -92,6 +94,7 @@ export class VolumeRenderSettings {
   constructor(volume?: Volume) {
     this.translation = new Vector3(0, 0, 0);
     this.rotation = new Euler();
+    this.scale = new Vector3(1, 1, 1);
     this.isOrtho = false;
     this.viewAxis = Axis.NONE;
     this.orthoScale = 1.0;

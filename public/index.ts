@@ -936,12 +936,10 @@ function onVolumeCreated(volume: Volume) {
 
   // apply a volume transform from an external source:
   if (myJson.transform) {
-    const alignTransform = myJson.transform;
-    view3D.setVolumeTranslation(
-      myState.volume,
-      myState.volume.voxelsToWorldSpace(alignTransform.translation.toArray())
-    );
-    view3D.setVolumeRotation(myState.volume, alignTransform.rotation.toArray());
+    const alignTransform = myJson.imageInfo.transform;
+    view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(alignTransform.translation));
+    view3D.setVolumeRotation(myState.volume, alignTransform.rotation);
+    view3D.setVolumeScale(myState.volume, alignTransform.scale);
   }
 
   updateTimeUI();
