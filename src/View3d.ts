@@ -871,6 +871,11 @@ export class View3d {
     this.redraw();
   }
 
+  setVolumeScale(volume: Volume, xyz: [number, number, number]): void {
+    this.image?.setScale(new Vector3().fromArray(xyz));
+    this.redraw();
+  }
+
   /**
    * Reset the camera to its default position
    */

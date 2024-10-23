@@ -106,6 +106,7 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => {
     transform: {
       translation: tr,
       rotation: json.transform?.rotation ? json.transform.rotation : [0, 0, 0],
+      scale: [1, 1, 1],
     },
 
     userData: {
