@@ -167,7 +167,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
     // bounds will go from 0 to physicalSize
     const physicalSize = this.getNormVolumeSize();
-    // const physicalSize = volume.normPhysicalSize;
 
     this.pathTracingUniforms.gInvAaBbMax.value = new Vector3(
       1.0 / physicalSize.x,
@@ -248,7 +247,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       const clipMax = bmax.clone().multiply(scaledSize);
       this.pathTracingUniforms.gClippedAaBbMax.value = clipMax.clamp(sizeMin, sizeMax);
 
-      this.pathTracingUniforms.gVolCenter.value = this.volume.getContentCenter();
+      this.pathTracingUniforms.gVolCenter.value = this.volume.getContentCenter().multiply(this.settings.scale);
     }
 
     if (dirtyFlags & SettingsFlags.CAMERA) {
