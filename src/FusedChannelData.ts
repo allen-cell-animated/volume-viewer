@@ -207,15 +207,17 @@ export default class FusedChannelData {
         this.fuseScene.add(new Mesh(this.fuseGeometry, mat));
       }
     }
-    renderer.setRenderTarget(this.fuseRenderTarget);
-    renderer.autoClearColor = true;
-    const prevClearColor = new Color();
-    renderer.getClearColor(prevClearColor);
-    const prevClearAlpha = renderer.getClearAlpha();
-    renderer.setClearColor(0x000000, 0);
-    renderer.render(this.fuseScene, this.quadCamera);
-    renderer.setRenderTarget(null);
-    renderer.setClearColor(prevClearColor, prevClearAlpha);
+    if (this.fuseScene.children.length > 0) {
+      renderer.setRenderTarget(this.fuseRenderTarget);
+      renderer.autoClearColor = true;
+      const prevClearColor = new Color();
+      renderer.getClearColor(prevClearColor);
+      const prevClearAlpha = renderer.getClearAlpha();
+      renderer.setClearColor(0x000000, 0);
+      renderer.render(this.fuseScene, this.quadCamera);
+      renderer.setRenderTarget(null);
+      renderer.setClearColor(prevClearColor, prevClearAlpha);
+    }
     // "dirty flag"
     this.fuseRequested = null;
   }
