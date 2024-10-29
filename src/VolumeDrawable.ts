@@ -239,7 +239,7 @@ export default class VolumeDrawable {
   updateScale(): void {
     const { normPhysicalSize, normRegionSize } = this.volume;
     const scale = normPhysicalSize.clone().multiply(normRegionSize).multiply(this.settings.scale);
-    this.meshVolume.setScale(scale, this.volume.getContentCenter());
+    this.meshVolume.setScale(scale, this.volume.getContentCenter().multiply(this.settings.scale));
     // TODO only `RayMarchedAtlasVolume` handles scale properly. Get the others on board too!
     this.volumeRendering.updateVolumeDimensions();
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.TRANSFORM);

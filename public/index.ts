@@ -1,4 +1,4 @@
-import { Box3, Vector3 } from "three";
+import { Vector3 } from "three";
 import GUI from "lil-gui";
 
 import {
@@ -937,8 +937,6 @@ function onVolumeCreated(volume: Volume) {
   // apply a volume transform from an external source:
   if (myJson.transform) {
     const alignTransform = myJson.imageInfo.transform;
-    alignTransform.scale = [1, 1.5, 1];
-    window.setTimeout(() => view3D.setVolumeScale(myState.volume, [1, 1, 1]), 20000);
     view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(alignTransform.translation));
     view3D.setVolumeRotation(myState.volume, alignTransform.rotation);
     view3D.setVolumeScale(myState.volume, alignTransform.scale);
@@ -1095,7 +1093,6 @@ async function loadTestData(testdata: TestDataSpec) {
   myState.loader = await createLoader(testdata);
 
   const loadSpec = new LoadSpec();
-  loadSpec.subregion = new Box3(new Vector3(0, 0.5, 0), new Vector3(1, 1, 1));
   myState.totalFrames = testdata.times;
   loadVolume(loadSpec, myState.loader);
 }

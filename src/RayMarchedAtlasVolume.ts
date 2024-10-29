@@ -97,7 +97,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   public updateVolumeDimensions(): void {
     const { normPhysicalSize, normRegionSize } = this.volume;
     // Set offset
-    this.geometryMesh.position.copy(this.volume.getContentCenter());
+    this.geometryMesh.position.copy(this.volume.getContentCenter().multiply(this.settings.scale));
     // Set scale
     const fullRegionScale = normPhysicalSize.clone().multiply(this.settings.scale);
     this.geometryMesh.scale.copy(fullRegionScale).multiply(normRegionSize);
