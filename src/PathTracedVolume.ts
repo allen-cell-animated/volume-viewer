@@ -330,8 +330,8 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
     // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
     const fScale = isOrthographicCamera(camera)
-      ? 0.5 / camera.zoom
-      : Math.tan((0.5 * (camera as PerspectiveCamera).fov * Math.PI) / 180.0);
+      ? Math.abs(camera.top) / camera.zoom
+      : Math.tan((0.5 * camera.fov * Math.PI) / 180.0);
 
     const aspect = this.pathTracingUniforms.uResolution.value.x / this.pathTracingUniforms.uResolution.value.y;
     this.pathTracingUniforms.gCamera.value.mScreen.set(
@@ -588,7 +588,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
   // 0..1 ranges as input
   updateClipRegion(xmin: number, xmax: number, ymin: number, ymax: number, zmin: number, zmax: number): void {
-    console.log("clip region");
     this.settings.bounds = {
       bmin: new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
       bmax: new Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5),
