@@ -42,6 +42,7 @@ function createEmptyDepthTexture(renderer: WebGLRenderer): DepthTexture {
   const target = new WebGLRenderTarget(2, 2);
   target.depthTexture = depthTexture;
   renderer.setRenderTarget(target);
+  // Don't clear color, do clear depth, don't clear stencil
   renderer.clear(false, true, false);
   renderer.setRenderTarget(null);
   return depthTexture;
