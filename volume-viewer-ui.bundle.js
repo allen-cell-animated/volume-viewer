@@ -736,15 +736,17 @@ class FusedChannelData {
         this.fuseScene.add(new three__WEBPACK_IMPORTED_MODULE_1__.Mesh(this.fuseGeometry, mat));
       }
     }
-    renderer.setRenderTarget(this.fuseRenderTarget);
-    renderer.autoClearColor = true;
-    const prevClearColor = new three__WEBPACK_IMPORTED_MODULE_1__.Color();
-    renderer.getClearColor(prevClearColor);
-    const prevClearAlpha = renderer.getClearAlpha();
-    renderer.setClearColor(0x000000, 0);
-    renderer.render(this.fuseScene, this.quadCamera);
-    renderer.setRenderTarget(null);
-    renderer.setClearColor(prevClearColor, prevClearAlpha);
+    if (this.fuseScene.children.length > 0) {
+      renderer.setRenderTarget(this.fuseRenderTarget);
+      renderer.autoClearColor = true;
+      const prevClearColor = new three__WEBPACK_IMPORTED_MODULE_1__.Color();
+      renderer.getClearColor(prevClearColor);
+      const prevClearAlpha = renderer.getClearAlpha();
+      renderer.setClearColor(0x000000, 0);
+      renderer.render(this.fuseScene, this.quadCamera);
+      renderer.setRenderTarget(null);
+      renderer.setClearColor(prevClearColor, prevClearAlpha);
+    }
     // "dirty flag"
     this.fuseRequested = null;
   }
