@@ -1,6 +1,6 @@
 {
   "name": "@aics/volume-viewer",
-  "version": "3.11.2",
+  "version": "3.12.0",
   "description": "volume renderer for multichannel 8-bit intensity data stored as 3D arrays",
   "main": "es/index.js",
   "type": "module",
