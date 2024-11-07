@@ -114,7 +114,8 @@ export class View3d {
     }
     // keep the ortho scale up to date.
     if (this.image && isOrthographicCamera(this.canvas3d.camera)) {
-      this.image.setOrthoScale(this.canvas3d.controls.scale);
+      const { top, zoom } = this.canvas3d.camera;
+      this.image.setOrthoScale(Math.abs(top) / zoom);
       this.updateOrthoScaleBar(this.image.volume);
     }
   }
@@ -355,7 +356,7 @@ export class View3d {
     this.scene.add(img.sceneRoot);
 
     // new image picks up current settings
-    this.image.setResolution(this.canvas3d);
+    this.image.setResolution(this.canvas3d.getWidth(), this.canvas3d.getHeight());
     this.image.setIsOrtho(isOrthographicCamera(this.canvas3d.camera));
     this.image.setBrightness(this.exposure);
 
@@ -606,7 +607,7 @@ export class View3d {
    */
   resize(comp: HTMLElement | null, w?: number, h?: number, ow?: number, oh?: number, eOpts?: unknown): void {
     this.canvas3d.resize(comp, w, h, ow, oh, eOpts);
-    this.image?.setResolution(this.canvas3d);
+    this.image?.setResolution(this.canvas3d.getWidth(), this.canvas3d.getHeight());
     this.redraw();
   }
 
@@ -839,7 +840,7 @@ export class View3d {
       }
       this.updatePixelSamplingRate(this.pixelSamplingRate);
       this.image.setIsOrtho(isOrthographicCamera(this.canvas3d.camera));
-      this.image.setResolution(this.canvas3d);
+      this.image.setResolution(this.canvas3d.getWidth(), this.canvas3d.getHeight());
       this.setAutoRotate(this.canvas3d.controls.autoRotate);
 
       this.image.setRenderUpdateListener(this.renderUpdateListener);
@@ -868,6 +869,11 @@ export class View3d {
    */
   setVolumeRotation(volume: Volume, eulerXYZ: [number, number, number]): void {
     this.image?.setRotation(new Euler().fromArray(eulerXYZ));
+    this.redraw();
+  }
+
+  setVolumeScale(volume: Volume, xyz: [number, number, number]): void {
+    this.image?.setScale(new Vector3().fromArray(xyz));
     this.redraw();
   }
 

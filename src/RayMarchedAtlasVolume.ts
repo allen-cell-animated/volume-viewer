@@ -5,16 +5,21 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
+  DepthTexture,
   Group,
   LineBasicMaterial,
   LineSegments,
   Material,
   Matrix4,
   Mesh,
+  OrthographicCamera,
+  PerspectiveCamera,
   ShaderMaterial,
   ShapeGeometry,
   Vector2,
   Vector3,
+  WebGLRenderer,
+  WebGLRenderTarget,
 } from "three";
 
 import FusedChannelData from "./FusedChannelData.js";
@@ -25,13 +30,23 @@ import {
 } from "./constants/volumeRayMarchShader.js";
 import { Volume } from "./index.js";
 import Channel from "./Channel.js";
-import { ThreeJsPanel } from "./ThreeJsPanel.js";
 import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
 
 import type { FuseChannel } from "./types.js";
 import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings.js";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
+
+function createEmptyDepthTexture(renderer: WebGLRenderer): DepthTexture {
+  const depthTexture = new DepthTexture(2, 2);
+  const target = new WebGLRenderTarget(2, 2);
+  target.depthTexture = depthTexture;
+  renderer.setRenderTarget(target);
+  // Don't clear color, do clear depth, don't clear stencil
+  renderer.clear(false, true, false);
+  renderer.setRenderTarget(null);
+  return depthTexture;
+}
 
 export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   private settings: VolumeRenderSettings;
@@ -44,6 +59,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   private geometryTransformNode: Group;
   private uniforms: ReturnType<typeof rayMarchingShaderUniforms>;
   private channelData!: FusedChannelData;
+  private emptyDepthTex?: DepthTexture;
 
   /**
    * Creates a new RayMarchedAtlasVolume.
@@ -73,20 +89,22 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
 
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
 
-    this.updateVolumeDimensions();
     this.settings = settings;
     this.updateSettings(settings, SettingsFlags.ALL);
+    // TODO this is doing *more* redundant work! Fix?
+    this.updateVolumeDimensions();
   }
 
   public updateVolumeDimensions(): void {
     const { normPhysicalSize, normRegionSize } = this.volume;
     // Set offset
-    this.geometryMesh.position.copy(this.volume.getContentCenter());
+    this.geometryMesh.position.copy(this.volume.getContentCenter().multiply(this.settings.scale));
     // Set scale
-    this.geometryMesh.scale.copy(normRegionSize).multiply(normPhysicalSize);
+    const fullRegionScale = normPhysicalSize.clone().multiply(this.settings.scale);
+    this.geometryMesh.scale.copy(fullRegionScale).multiply(normRegionSize);
     this.setUniform("volumeScale", normPhysicalSize);
-    this.boxHelper.box.set(normPhysicalSize.clone().multiplyScalar(-0.5), normPhysicalSize.clone().multiplyScalar(0.5));
-    this.tickMarksMesh.scale.copy(normPhysicalSize);
+    this.boxHelper.box.set(fullRegionScale.clone().multiplyScalar(-0.5), fullRegionScale.clone().multiplyScalar(0.5));
+    this.tickMarksMesh.scale.copy(fullRegionScale);
     this.settings && this.updateSettings(this.settings, SettingsFlags.ROI);
 
     // Set atlas dimension uniforms
@@ -123,7 +141,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       this.setUniform("isOrtho", this.settings.isOrtho ? 1.0 : 0.0);
       // Ortho line thickness
       const axis = this.settings.viewAxis;
-      if (this.settings.isOrtho && axis !== null) {
+      if (this.settings.isOrtho && axis) {
         // TODO: Does this code do any relevant changes?
         const maxVal = this.settings.bounds.bmax[axis];
         const minVal = this.settings.bounds.bmin[axis];
@@ -153,6 +171,8 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       // Set rotation and translation
       this.geometryTransformNode.position.copy(this.settings.translation);
       this.geometryTransformNode.rotation.copy(this.settings.rotation);
+      // TODO this does some redundant work. Including a new call to this very function! Fix?
+      this.updateVolumeDimensions();
       this.setUniform("flipVolume", this.settings.flipAxes);
     }
 
@@ -302,26 +322,34 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.channelData.cleanup();
   }
 
-  public doRender(canvas: ThreeJsPanel): void {
+  public doRender(
+    renderer: WebGLRenderer,
+    camera: PerspectiveCamera | OrthographicCamera,
+    depthTexture?: DepthTexture
+  ): void {
     if (!this.geometryMesh.visible) {
       return;
     }
 
-    this.setUniform("textureDepth", canvas.getMeshDepthTexture());
-    this.setUniform("CLIP_NEAR", canvas.camera.near);
-    this.setUniform("CLIP_FAR", canvas.camera.far);
+    if (!this.emptyDepthTex) {
+      this.emptyDepthTex = createEmptyDepthTexture(renderer);
+    }
 
-    this.channelData.gpuFuse(canvas.renderer);
+    this.setUniform("textureDepth", depthTexture ?? this.emptyDepthTex);
+    this.setUniform("CLIP_NEAR", camera.near);
+    this.setUniform("CLIP_FAR", camera.far);
+
+    this.channelData.gpuFuse(renderer);
     this.setUniform("textureAtlas", this.channelData.getFusedTexture());
 
     this.geometryTransformNode.updateMatrixWorld(true);
 
     const mvm = new Matrix4();
-    mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
+    mvm.multiplyMatrices(camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
     mvm.invert();
 
     this.setUniform("inverseModelViewMatrix", mvm);
-    this.setUniform("inverseProjMatrix", canvas.camera.projectionMatrixInverse);
+    this.setUniform("inverseProjMatrix", camera.projectionMatrixInverse);
   }
 
   public get3dObject(): Group {

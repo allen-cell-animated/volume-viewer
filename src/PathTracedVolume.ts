@@ -15,6 +15,8 @@ import {
   WebGLRenderTarget,
   LinearFilter,
   NearestFilter,
+  OrthographicCamera,
+  WebGLRenderer,
 } from "three";
 
 import { renderToBufferVertShader, copyImageFragShader } from "./constants/basicShaders.js";
@@ -25,7 +27,6 @@ import { pathTracingFragmentShaderSrc, pathTracingUniforms } from "./constants/v
 import { LUT_ARRAY_LENGTH } from "./Lut.js";
 import Volume from "./Volume.js";
 import { FUSE_DISABLED_RGB_COLOR, type FuseChannel, isOrthographicCamera } from "./types.js";
-import { ThreeJsPanel } from "./ThreeJsPanel.js";
 import { Light } from "./Light.js";
 import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
 import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings.js";
@@ -160,8 +161,12 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.pathTracingUniforms.gInvGradientDelta.value = invGradientDelta; // a voxel count
     this.pathTracingUniforms.gGradientFactor.value = 50.0; // related to voxel counts also
 
+    // Update settings
+    this.updateSettings(settings);
+    this.settings = settings; // turns off ts initialization warning
+
     // bounds will go from 0 to physicalSize
-    const physicalSize = volume.normPhysicalSize;
+    const physicalSize = this.getNormVolumeSize();
 
     this.pathTracingUniforms.gInvAaBbMax.value = new Vector3(
       1.0 / physicalSize.x,
@@ -169,10 +174,6 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       1.0 / physicalSize.z
     ).divide(volume.normRegionSize);
     this.updateLightsSecondary();
-
-    // Update settings
-    this.updateSettings(settings);
-    this.settings = settings; // turns off ts initialization warning
   }
 
   public cleanup(): void {
@@ -189,6 +190,10 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       this.renderUpdateListener(0);
     }
     this.sampleCounter = 0;
+  }
+
+  private getNormVolumeSize(): Vector3 {
+    return this.volume.normPhysicalSize.clone().multiply(this.settings.scale);
   }
 
   /**
@@ -229,19 +234,20 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
     // update bounds
     if (dirtyFlags & SettingsFlags.ROI) {
-      const { normPhysicalSize, normRegionSize, normRegionOffset } = this.volume;
+      const { normRegionSize, normRegionOffset } = this.volume;
       const { bmin, bmax } = this.settings.bounds;
+      const scaledSize = this.getNormVolumeSize();
 
-      const sizeMin = normRegionOffset.clone().subScalar(0.5).multiply(normPhysicalSize);
-      const sizeMax = normRegionOffset.clone().add(normRegionSize).subScalar(0.5).multiply(normPhysicalSize);
+      const sizeMin = normRegionOffset.clone().subScalar(0.5).multiply(scaledSize);
+      const sizeMax = normRegionOffset.clone().add(normRegionSize).subScalar(0.5).multiply(scaledSize);
 
-      const clipMin = bmin.clone().multiply(normPhysicalSize);
+      const clipMin = bmin.clone().multiply(scaledSize);
       this.pathTracingUniforms.gClippedAaBbMin.value = clipMin.clamp(sizeMin, sizeMax);
 
-      const clipMax = bmax.clone().multiply(normPhysicalSize);
+      const clipMax = bmax.clone().multiply(scaledSize);
       this.pathTracingUniforms.gClippedAaBbMax.value = clipMax.clamp(sizeMin, sizeMax);
 
-      this.pathTracingUniforms.gVolCenter.value = this.volume.getContentCenter();
+      this.pathTracingUniforms.gVolCenter.value = this.volume.getContentCenter().multiply(this.settings.scale);
     }
 
     if (dirtyFlags & SettingsFlags.CAMERA) {
@@ -270,7 +276,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     this.updateSettings(this.settings, SettingsFlags.ROI);
   }
 
-  public doRender(canvas: ThreeJsPanel): void {
+  public doRender(renderer: WebGLRenderer, camera: PerspectiveCamera | OrthographicCamera): void {
     if (!this.volumeTexture) {
       return;
     }
@@ -291,21 +297,20 @@ export default class PathTracedVolume implements VolumeRenderImpl {
 
     // CAMERA
     // force the camera to update its world matrix.
-    canvas.camera.updateMatrixWorld(true);
-    const cam = canvas.camera;
+    camera.updateMatrixWorld(true);
 
     // rotate lights with camera, as if we are tumbling the volume with a fixed camera and world lighting.
     // this code is analogous to this threejs code from View3d.preRender:
     // this.scene.getObjectByName('lightContainer').rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
-    const mycamxform = cam.matrixWorld.clone();
+    const mycamxform = camera.matrixWorld.clone();
     mycamxform.setPosition(new Vector3(0, 0, 0));
     this.updateLightsSecondary(mycamxform);
 
     let mydir = new Vector3();
-    mydir = cam.getWorldDirection(mydir);
-    const myup = new Vector3().copy(cam.up);
+    mydir = camera.getWorldDirection(mydir);
+    const myup = new Vector3().copy(camera.up);
     // don't rotate this vector.  we are using translation as the pivot point of the object, and THEN rotating.
-    const mypos = new Vector3().copy(cam.position);
+    const mypos = new Vector3().copy(camera.position);
 
     // apply volume translation and rotation:
     // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
@@ -315,7 +320,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     myup.applyMatrix4(m);
     mydir.applyMatrix4(m);
 
-    this.pathTracingUniforms.gCamera.value.mIsOrtho = isOrthographicCamera(cam) ? 1 : 0;
+    this.pathTracingUniforms.gCamera.value.mIsOrtho = isOrthographicCamera(camera) ? 1 : 0;
     this.pathTracingUniforms.gCamera.value.mFrom.copy(mypos);
     this.pathTracingUniforms.gCamera.value.mN.copy(mydir);
     this.pathTracingUniforms.gCamera.value.mU.crossVectors(this.pathTracingUniforms.gCamera.value.mN, myup).normalize();
@@ -324,9 +329,9 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       .normalize();
 
     // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
-    const fScale = isOrthographicCamera(cam)
-      ? canvas.getOrthoScale()
-      : Math.tan((0.5 * (cam as PerspectiveCamera).fov * Math.PI) / 180.0);
+    const fScale = isOrthographicCamera(camera)
+      ? Math.abs(camera.top) / camera.zoom
+      : Math.tan((0.5 * camera.fov * Math.PI) / 180.0);
 
     const aspect = this.pathTracingUniforms.uResolution.value.x / this.pathTracingUniforms.uResolution.value.y;
     this.pathTracingUniforms.gCamera.value.mScreen.set(
@@ -361,12 +366,12 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     // This is currently rendered as a fullscreen quad with no camera transform in the vertex shader!
     // It is also composited with screenTextureRenderTarget's texture.
     // (Read previous screenTextureRenderTarget to use as a new starting point to blend with)
-    this.pathTracingRenderToBuffer.render(canvas.renderer, this.pathTracingRenderTarget);
+    this.pathTracingRenderToBuffer.render(renderer, this.pathTracingRenderTarget);
 
     // STEP 2
     // Render(copy) the final pathTracingScene output(above) into screenTextureRenderTarget
     // This will be used as a new starting point for Step 1 above
-    this.screenTextureRenderToBuffer.render(canvas.renderer, this.screenTextureRenderTarget);
+    this.screenTextureRenderToBuffer.render(renderer, this.screenTextureRenderTarget);
 
     // STEP 3
     // Render full screen quad with generated pathTracingRenderTarget in STEP 1 above.
@@ -375,7 +380,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
     // tell the threejs panel to use the quadCamera to render this scene.
 
     // renderer.render( this.screenOutputScene, this.quadCamera );
-    canvas.renderer.setRenderTarget(null);
+    renderer.setRenderTarget(null);
   }
 
   public get3dObject(): Mesh {
@@ -571,7 +576,8 @@ export default class PathTracedVolume implements VolumeRenderImpl {
   }
 
   updateLightsSecondary(cameraMatrix?: Matrix4): void {
-    const physicalSize = this.volume.normPhysicalSize;
+    console.log("lights secondary");
+    const physicalSize = this.getNormVolumeSize();
     const bbctr = new Vector3(physicalSize.x * 0.5, physicalSize.y * 0.5, physicalSize.z * 0.5);
 
     for (let i = 0; i < 2; ++i) {
@@ -586,7 +592,7 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       bmin: new Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
       bmax: new Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5),
     };
-    const physicalSize = this.volume.normPhysicalSize;
+    const physicalSize = this.getNormVolumeSize();
     this.pathTracingUniforms.gClippedAaBbMin.value = new Vector3(
       xmin * physicalSize.x - 0.5 * physicalSize.x,
       ymin * physicalSize.y - 0.5 * physicalSize.y,

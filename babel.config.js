@@ -13,5 +13,6 @@ export default {
         extensions: [".png"],
       },
     ],
+    "@babel/plugin-transform-runtime",
   ],
 };

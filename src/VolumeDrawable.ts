@@ -1,4 +1,14 @@
-import { Vector3, Object3D, Euler, Vector2, Box3 } from "three";
+import {
+  Vector3,
+  Object3D,
+  Euler,
+  Vector2,
+  Box3,
+  DepthTexture,
+  OrthographicCamera,
+  PerspectiveCamera,
+  WebGLRenderer,
+} from "three";
 import { Pane } from "tweakpane";
 
 import MeshVolume from "./MeshVolume.js";
@@ -8,7 +18,6 @@ import { LUT_ARRAY_LENGTH } from "./Lut.js";
 import Volume from "./Volume.js";
 import type { VolumeDisplayOptions, VolumeChannelDisplayOptions, FuseChannel } from "./types.js";
 import { RenderMode } from "./types.js";
-import { ThreeJsPanel } from "./ThreeJsPanel.js";
 import { Light } from "./Light.js";
 import Channel from "./Channel.js";
 import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
@@ -229,8 +238,11 @@ export default class VolumeDrawable {
 
   updateScale(): void {
     const { normPhysicalSize, normRegionSize } = this.volume;
-    this.meshVolume.setScale(normPhysicalSize.clone().multiply(normRegionSize), this.volume.getContentCenter());
+    const scale = normPhysicalSize.clone().multiply(normRegionSize).multiply(this.settings.scale);
+    this.meshVolume.setScale(scale, this.volume.getContentCenter().multiply(this.settings.scale));
+    // TODO only `RayMarchedAtlasVolume` handles scale properly. Get the others on board too!
     this.volumeRendering.updateVolumeDimensions();
+    this.volumeRendering.updateSettings(this.settings, SettingsFlags.TRANSFORM);
   }
 
   setOrthoScale(value: number): void {
@@ -241,9 +253,7 @@ export default class VolumeDrawable {
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
   }
 
-  setResolution(viewObj: ThreeJsPanel): void {
-    const x = viewObj.getWidth();
-    const y = viewObj.getHeight();
+  setResolution(x: number, y: number): void {
     const resolution = new Vector2(x, y);
     if (!this.settings.resolution.equals(resolution)) {
       this.meshVolume.setResolution(x, y);
@@ -373,17 +383,21 @@ export default class VolumeDrawable {
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.VIEW);
   }
 
-  onAnimate(canvas: ThreeJsPanel): void {
+  onAnimate(
+    renderer: WebGLRenderer,
+    camera: PerspectiveCamera | OrthographicCamera,
+    depthTexture?: DepthTexture
+  ): void {
     // TODO: this is inefficient, as this work is duplicated by threejs.
     // we need camera matrix up to date before giving the 3d objects a chance to use it.
-    canvas.camera.updateMatrixWorld(true);
+    camera.updateMatrixWorld(true);
 
-    canvas.camera.matrixWorldInverse.copy(canvas.camera.matrixWorld).invert();
+    camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
 
     // TODO confirm sequence
-    this.volumeRendering.doRender(canvas);
+    this.volumeRendering.doRender(renderer, camera, depthTexture);
     if (this.renderMode !== RenderMode.PATHTRACE) {
-      this.meshVolume.doRender(canvas);
+      this.meshVolume.doRender();
     }
   }
 
@@ -707,6 +721,11 @@ export default class VolumeDrawable {
     this.settings.rotation.copy(eulerXYZ);
     this.meshVolume.setRotation(this.settings.rotation);
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.TRANSFORM);
+  }
+
+  setScale(xyz: Vector3): void {
+    this.settings.scale.copy(xyz);
+    this.updateScale();
   }
 
   setupGui(pane: Pane): void {

@@ -31,11 +31,18 @@ export type ImageInfo = Readonly<{
   /** The scale level from which this image was loaded, between `0` and `numMultiscaleLevels-1` */
   multiscaleLevel: number;
 
+  /**
+   * An *optional* transform which may be supplied by image metadata. It is *not* applied by
+   * default, but may be read and fed to `View3d` methods: `setVolumeTransform`,
+   * `setVolumeRotation`, `setVolumeScale`.
+   */
   transform: {
     /** Translation of the volume from the center of space, in volume voxels in XYZ order */
     translation: [number, number, number];
     /** Rotation of the volume in Euler angles, applied in XYZ order */
     rotation: [number, number, number];
+    /** Scale of the volume relative to its size as derived from `multiscaleLevelDims`, in XYZ order */
+    scale: [number, number, number];
   };
 
   /** Arbitrary additional metadata not captured by other `ImageInfo` properties */
@@ -64,6 +71,7 @@ export function defaultImageInfo(): ImageInfo {
     transform: {
       translation: [0, 0, 0],
       rotation: [0, 0, 0],
+      scale: [1, 1, 1],
     },
   };
 }
@@ -158,10 +166,11 @@ export class CImageInfo {
     return new Vector2(...this.imageInfo.atlasTileDims);
   }
 
-  get transform(): { translation: Vector3; rotation: Vector3 } {
+  get transform(): { translation: Vector3; rotation: Vector3; scale: Vector3 } {
     return {
       translation: new Vector3(...this.imageInfo.transform.translation),
       rotation: new Vector3(...this.imageInfo.transform.rotation),
+      scale: new Vector3(...this.imageInfo.transform.scale),
     };
   }
 }

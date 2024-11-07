@@ -8,11 +8,14 @@ import {
   Material,
   Matrix4,
   Mesh,
+  OrthographicCamera,
+  PerspectiveCamera,
   PlaneGeometry,
   ShaderMaterial,
   ShapeGeometry,
   Vector2,
   Vector3,
+  WebGLRenderer,
 } from "three";
 import { Channel, Volume } from ".";
 import { sliceFragmentShaderSrc, sliceShaderUniforms, sliceVertexShaderSrc } from "./constants/volumeSliceShader.js";
@@ -20,7 +23,6 @@ import type { VolumeRenderImpl } from "./VolumeRenderImpl.js";
 import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings.js";
 import FusedChannelData from "./FusedChannelData.js";
 import type { FuseChannel } from "./types.js";
-import { ThreeJsPanel } from "./ThreeJsPanel.js";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
@@ -62,8 +64,8 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     this.geometryTransformNode.add(this.boxHelper, this.geometryMesh);
 
     this.setUniform("Z_SLICE", Math.floor(volume.imageInfo.volumeSize.z / 2));
-    this.updateVolumeDimensions();
     this.settings = settings;
+    this.updateVolumeDimensions();
     this.updateSettings(settings, SettingsFlags.ALL);
   }
 
@@ -92,12 +94,15 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
   }
 
   public updateVolumeDimensions(): void {
-    const scale = this.volume.normPhysicalSize;
-    this.geometryMesh.position.copy(this.volume.getContentCenter());
+    const volumeScale = this.volume.normPhysicalSize.clone().multiply(this.settings.scale);
+    const regionScale = volumeScale.clone().multiply(this.volume.normRegionSize);
+    console.log(regionScale);
+    const volumeOffset = this.volume.getContentCenter().clone().multiply(this.settings.scale);
+    this.geometryMesh.position.copy(volumeOffset);
     // set scale
-    this.geometryMesh.scale.copy(scale);
-    this.setUniform("volumeScale", scale);
-    this.boxHelper.box.set(scale.clone().multiplyScalar(-0.5), scale.clone().multiplyScalar(0.5));
+    this.geometryMesh.scale.copy(regionScale);
+    this.setUniform("volumeScale", regionScale);
+    this.boxHelper.box.set(volumeScale.clone().multiplyScalar(-0.5), volumeScale.clone().multiplyScalar(0.5));
 
     const { atlasTileDims, subregionSize, volumeSize } = this.volume.imageInfo;
     const atlasSize = new Vector2(subregionSize.x, subregionSize.y).multiply(atlasTileDims);
@@ -240,19 +245,19 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
     return;
   }
 
-  public doRender(canvas: ThreeJsPanel): void {
+  public doRender(renderer: WebGLRenderer, camera: PerspectiveCamera | OrthographicCamera): void {
     if (!this.geometryMesh.visible) {
       return;
     }
 
-    this.channelData.gpuFuse(canvas.renderer);
+    this.channelData.gpuFuse(renderer);
     this.setUniform("textureAtlas", this.channelData.getFusedTexture());
     this.setUniform("textureAtlasMask", this.channelData.maskTexture);
 
     this.geometryTransformNode.updateMatrixWorld(true);
 
     const mvm = new Matrix4();
-    mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
+    mvm.multiplyMatrices(camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
     const mi = new Matrix4();
     mi.copy(mvm).invert();
 
