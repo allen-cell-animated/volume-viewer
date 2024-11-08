@@ -561,7 +561,8 @@ function defaultImageInfo() {
     }],
     transform: {
       translation: [0, 0, 0],
-      rotation: [0, 0, 0]
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1]
     }
   };
 }
@@ -653,7 +654,8 @@ class CImageInfo {
   get transform() {
     return {
       translation: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(...this.imageInfo.transform.translation),
-      rotation: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(...this.imageInfo.transform.rotation)
+      rotation: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(...this.imageInfo.transform.rotation),
+      scale: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(...this.imageInfo.transform.scale)
     };
   }
 }
@@ -2050,7 +2052,8 @@ const convertImageInfo = json => {
     }],
     transform: {
       translation: tr,
-      rotation: json.transform?.rotation ? json.transform.rotation : [0, 0, 0]
+      rotation: json.transform?.rotation ? json.transform.rotation : [0, 0, 0],
+      scale: [1, 1, 1]
     },
     userData: {
       ...json.userData,
@@ -2572,7 +2575,8 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
       multiscaleLevelDims: alldims,
       transform: {
         translation: [0, 0, 0],
-        rotation: [0, 0, 0]
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1]
       }
     };
 
@@ -2801,7 +2805,8 @@ const convertImageInfo = json => {
     }],
     transform: {
       translation: [0, 0, 0],
-      rotation: [0, 0, 0]
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1]
     },
     userData: json.userData
   };
@@ -3035,7 +3040,8 @@ class TiffLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Threadab
       }],
       transform: {
         translation: [0, 0, 0],
-        rotation: [0, 0, 0]
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1]
       }
     };
 

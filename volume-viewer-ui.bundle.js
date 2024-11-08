@@ -45,8 +45,8 @@ class Atlas2DSlice {
     this.geometryTransformNode.name = "VolumeContainerNode";
     this.geometryTransformNode.add(this.boxHelper, this.geometryMesh);
     this.setUniform("Z_SLICE", Math.floor(volume.imageInfo.volumeSize.z / 2));
-    this.updateVolumeDimensions();
     this.settings = settings;
+    this.updateVolumeDimensions();
     this.updateSettings(settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_1__.SettingsFlags.ALL);
   }
 
@@ -72,12 +72,15 @@ class Atlas2DSlice {
     return true;
   }
   updateVolumeDimensions() {
-    const scale = this.volume.normPhysicalSize;
-    this.geometryMesh.position.copy(this.volume.getContentCenter());
+    const volumeScale = this.volume.normPhysicalSize.clone().multiply(this.settings.scale);
+    const regionScale = volumeScale.clone().multiply(this.volume.normRegionSize);
+    console.log(regionScale);
+    const volumeOffset = this.volume.getContentCenter().clone().multiply(this.settings.scale);
+    this.geometryMesh.position.copy(volumeOffset);
     // set scale
-    this.geometryMesh.scale.copy(scale);
-    this.setUniform("volumeScale", scale);
-    this.boxHelper.box.set(scale.clone().multiplyScalar(-0.5), scale.clone().multiplyScalar(0.5));
+    this.geometryMesh.scale.copy(regionScale);
+    this.setUniform("volumeScale", regionScale);
+    this.boxHelper.box.set(volumeScale.clone().multiplyScalar(-0.5), volumeScale.clone().multiplyScalar(0.5));
     const {
       atlasTileDims,
       subregionSize,
@@ -202,16 +205,16 @@ class Atlas2DSlice {
   viewpointMoved() {
     return;
   }
-  doRender(canvas) {
+  doRender(renderer, camera) {
     if (!this.geometryMesh.visible) {
       return;
     }
-    this.channelData.gpuFuse(canvas.renderer);
+    this.channelData.gpuFuse(renderer);
     this.setUniform("textureAtlas", this.channelData.getFusedTexture());
     this.setUniform("textureAtlasMask", this.channelData.maskTexture);
     this.geometryTransformNode.updateMatrixWorld(true);
     const mvm = new three__WEBPACK_IMPORTED_MODULE_3__.Matrix4();
-    mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
+    mvm.multiplyMatrices(camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
     const mi = new three__WEBPACK_IMPORTED_MODULE_3__.Matrix4();
     mi.copy(mvm).invert();
     this.setUniform("inverseModelViewMatrix", mi);
@@ -1054,7 +1057,8 @@ function defaultImageInfo() {
     }],
     transform: {
       translation: [0, 0, 0],
-      rotation: [0, 0, 0]
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1]
     }
   };
 }
@@ -1146,7 +1150,8 @@ class CImageInfo {
   get transform() {
     return {
       translation: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(...this.imageInfo.transform.translation),
-      rotation: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(...this.imageInfo.transform.rotation)
+      rotation: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(...this.imageInfo.transform.rotation),
+      scale: new three__WEBPACK_IMPORTED_MODULE_1__.Vector3(...this.imageInfo.transform.scale)
     };
   }
 }
@@ -2357,7 +2362,7 @@ class MeshVolume {
   setVisible(isVisible) {
     this.meshRoot.visible = isVisible;
   }
-  doRender(_canvas) {
+  doRender() {
     // no op
   }
   get3dObject() {
@@ -2781,14 +2786,14 @@ class PathTracedVolume {
     this.pathTracingUniforms.gInvGradientDelta.value = invGradientDelta; // a voxel count
     this.pathTracingUniforms.gGradientFactor.value = 50.0; // related to voxel counts also
 
-    // bounds will go from 0 to physicalSize
-    const physicalSize = volume.normPhysicalSize;
-    this.pathTracingUniforms.gInvAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1.0 / physicalSize.x, 1.0 / physicalSize.y, 1.0 / physicalSize.z).divide(volume.normRegionSize);
-    this.updateLightsSecondary();
-
     // Update settings
     this.updateSettings(settings);
     this.settings = settings; // turns off ts initialization warning
+
+    // bounds will go from 0 to physicalSize
+    const physicalSize = this.getNormVolumeSize();
+    this.pathTracingUniforms.gInvAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(1.0 / physicalSize.x, 1.0 / physicalSize.y, 1.0 / physicalSize.z).divide(volume.normRegionSize);
+    this.updateLightsSecondary();
   }
   cleanup() {
     // warning do not use after cleanup is called!
@@ -2802,6 +2807,9 @@ class PathTracedVolume {
       this.renderUpdateListener(0);
     }
     this.sampleCounter = 0;
+  }
+  getNormVolumeSize() {
+    return this.volume.normPhysicalSize.clone().multiply(this.settings.scale);
   }
 
   /**
@@ -2841,7 +2849,6 @@ class PathTracedVolume {
     // update bounds
     if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.ROI) {
       const {
-        normPhysicalSize,
         normRegionSize,
         normRegionOffset
       } = this.volume;
@@ -2849,13 +2856,14 @@ class PathTracedVolume {
         bmin,
         bmax
       } = this.settings.bounds;
-      const sizeMin = normRegionOffset.clone().subScalar(0.5).multiply(normPhysicalSize);
-      const sizeMax = normRegionOffset.clone().add(normRegionSize).subScalar(0.5).multiply(normPhysicalSize);
-      const clipMin = bmin.clone().multiply(normPhysicalSize);
+      const scaledSize = this.getNormVolumeSize();
+      const sizeMin = normRegionOffset.clone().subScalar(0.5).multiply(scaledSize);
+      const sizeMax = normRegionOffset.clone().add(normRegionSize).subScalar(0.5).multiply(scaledSize);
+      const clipMin = bmin.clone().multiply(scaledSize);
       this.pathTracingUniforms.gClippedAaBbMin.value = clipMin.clamp(sizeMin, sizeMax);
-      const clipMax = bmax.clone().multiply(normPhysicalSize);
+      const clipMax = bmax.clone().multiply(scaledSize);
       this.pathTracingUniforms.gClippedAaBbMax.value = clipMax.clamp(sizeMin, sizeMax);
-      this.pathTracingUniforms.gVolCenter.value = this.volume.getContentCenter();
+      this.pathTracingUniforms.gVolCenter.value = this.volume.getContentCenter().multiply(this.settings.scale);
     }
     if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.CAMERA) {
       this.updateExposure(this.settings.brightness);
@@ -2876,7 +2884,7 @@ class PathTracedVolume {
   updateVolumeDimensions() {
     this.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.ROI);
   }
-  doRender(canvas) {
+  doRender(renderer, camera) {
     if (!this.volumeTexture) {
       return;
     }
@@ -2895,20 +2903,19 @@ class PathTracedVolume {
 
     // CAMERA
     // force the camera to update its world matrix.
-    canvas.camera.updateMatrixWorld(true);
-    const cam = canvas.camera;
+    camera.updateMatrixWorld(true);
 
     // rotate lights with camera, as if we are tumbling the volume with a fixed camera and world lighting.
     // this code is analogous to this threejs code from View3d.preRender:
     // this.scene.getObjectByName('lightContainer').rotation.setFromRotationMatrix(this.canvas3d.camera.matrixWorld);
-    const mycamxform = cam.matrixWorld.clone();
+    const mycamxform = camera.matrixWorld.clone();
     mycamxform.setPosition(new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(0, 0, 0));
     this.updateLightsSecondary(mycamxform);
     let mydir = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3();
-    mydir = cam.getWorldDirection(mydir);
-    const myup = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().copy(cam.up);
+    mydir = camera.getWorldDirection(mydir);
+    const myup = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().copy(camera.up);
     // don't rotate this vector.  we are using translation as the pivot point of the object, and THEN rotating.
-    const mypos = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().copy(cam.position);
+    const mypos = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3().copy(camera.position);
 
     // apply volume translation and rotation:
     // rotate camera.up, camera.direction, and camera position by inverse of volume's modelview
@@ -2917,14 +2924,14 @@ class PathTracedVolume {
     mypos.applyMatrix4(m);
     myup.applyMatrix4(m);
     mydir.applyMatrix4(m);
-    this.pathTracingUniforms.gCamera.value.mIsOrtho = (0,_types_js__WEBPACK_IMPORTED_MODULE_5__.isOrthographicCamera)(cam) ? 1 : 0;
+    this.pathTracingUniforms.gCamera.value.mIsOrtho = (0,_types_js__WEBPACK_IMPORTED_MODULE_5__.isOrthographicCamera)(camera) ? 1 : 0;
     this.pathTracingUniforms.gCamera.value.mFrom.copy(mypos);
     this.pathTracingUniforms.gCamera.value.mN.copy(mydir);
     this.pathTracingUniforms.gCamera.value.mU.crossVectors(this.pathTracingUniforms.gCamera.value.mN, myup).normalize();
     this.pathTracingUniforms.gCamera.value.mV.crossVectors(this.pathTracingUniforms.gCamera.value.mU, this.pathTracingUniforms.gCamera.value.mN).normalize();
 
     // the choice of y = scale/aspect or x = scale*aspect is made here to match up with the other raymarch volume
-    const fScale = (0,_types_js__WEBPACK_IMPORTED_MODULE_5__.isOrthographicCamera)(cam) ? canvas.getOrthoScale() : Math.tan(0.5 * cam.fov * Math.PI / 180.0);
+    const fScale = (0,_types_js__WEBPACK_IMPORTED_MODULE_5__.isOrthographicCamera)(camera) ? Math.abs(camera.top) / camera.zoom : Math.tan(0.5 * camera.fov * Math.PI / 180.0);
     const aspect = this.pathTracingUniforms.uResolution.value.x / this.pathTracingUniforms.uResolution.value.y;
     this.pathTracingUniforms.gCamera.value.mScreen.set(-fScale * aspect, fScale * aspect,
     // the "0" Y pixel will be at +Scale.
@@ -2951,12 +2958,12 @@ class PathTracedVolume {
     // This is currently rendered as a fullscreen quad with no camera transform in the vertex shader!
     // It is also composited with screenTextureRenderTarget's texture.
     // (Read previous screenTextureRenderTarget to use as a new starting point to blend with)
-    this.pathTracingRenderToBuffer.render(canvas.renderer, this.pathTracingRenderTarget);
+    this.pathTracingRenderToBuffer.render(renderer, this.pathTracingRenderTarget);
 
     // STEP 2
     // Render(copy) the final pathTracingScene output(above) into screenTextureRenderTarget
     // This will be used as a new starting point for Step 1 above
-    this.screenTextureRenderToBuffer.render(canvas.renderer, this.screenTextureRenderTarget);
+    this.screenTextureRenderToBuffer.render(renderer, this.screenTextureRenderTarget);
 
     // STEP 3
     // Render full screen quad with generated pathTracingRenderTarget in STEP 1 above.
@@ -2965,7 +2972,7 @@ class PathTracedVolume {
     // tell the threejs panel to use the quadCamera to render this scene.
 
     // renderer.render( this.screenOutputScene, this.quadCamera );
-    canvas.renderer.setRenderTarget(null);
+    renderer.setRenderTarget(null);
   }
   get3dObject() {
     return this.screenOutputMesh;
@@ -3128,7 +3135,8 @@ class PathTracedVolume {
     this.resetProgress();
   }
   updateLightsSecondary(cameraMatrix) {
-    const physicalSize = this.volume.normPhysicalSize;
+    console.log("lights secondary");
+    const physicalSize = this.getNormVolumeSize();
     const bbctr = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(physicalSize.x * 0.5, physicalSize.y * 0.5, physicalSize.z * 0.5);
     for (let i = 0; i < 2; ++i) {
       const lt = this.pathTracingUniforms.gLights.value[i];
@@ -3142,7 +3150,7 @@ class PathTracedVolume {
       bmin: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmin - 0.5, ymin - 0.5, zmin - 0.5),
       bmax: new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmax - 0.5, ymax - 0.5, zmax - 0.5)
     };
-    const physicalSize = this.volume.normPhysicalSize;
+    const physicalSize = this.getNormVolumeSize();
     this.pathTracingUniforms.gClippedAaBbMin.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmin * physicalSize.x - 0.5 * physicalSize.x, ymin * physicalSize.y - 0.5 * physicalSize.y, zmin * physicalSize.z - 0.5 * physicalSize.z);
     this.pathTracingUniforms.gClippedAaBbMax.value = new three__WEBPACK_IMPORTED_MODULE_8__.Vector3(xmax * physicalSize.x - 0.5 * physicalSize.x, ymax * physicalSize.y - 0.5 * physicalSize.y, zmax * physicalSize.z - 0.5 * physicalSize.z);
     this.resetProgress();
@@ -3174,6 +3182,16 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const BOUNDING_BOX_DEFAULT_COLOR = new three__WEBPACK_IMPORTED_MODULE_3__.Color(0xffff00);
+function createEmptyDepthTexture(renderer) {
+  const depthTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DepthTexture(2, 2);
+  const target = new three__WEBPACK_IMPORTED_MODULE_3__.WebGLRenderTarget(2, 2);
+  target.depthTexture = depthTexture;
+  renderer.setRenderTarget(target);
+  // Don't clear color, do clear depth, don't clear stencil
+  renderer.clear(false, true, false);
+  renderer.setRenderTarget(null);
+  return depthTexture;
+}
 class RayMarchedAtlasVolume {
   /**
    * Creates a new RayMarchedAtlasVolume.
@@ -3194,9 +3212,10 @@ class RayMarchedAtlasVolume {
     this.geometryTransformNode = new three__WEBPACK_IMPORTED_MODULE_3__.Group();
     this.geometryTransformNode.name = "VolumeContainerNode";
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
-    this.updateVolumeDimensions();
     this.settings = settings;
     this.updateSettings(settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_2__.SettingsFlags.ALL);
+    // TODO this is doing *more* redundant work! Fix?
+    this.updateVolumeDimensions();
   }
   updateVolumeDimensions() {
     const {
@@ -3204,12 +3223,13 @@ class RayMarchedAtlasVolume {
       normRegionSize
     } = this.volume;
     // Set offset
-    this.geometryMesh.position.copy(this.volume.getContentCenter());
+    this.geometryMesh.position.copy(this.volume.getContentCenter().multiply(this.settings.scale));
     // Set scale
-    this.geometryMesh.scale.copy(normRegionSize).multiply(normPhysicalSize);
+    const fullRegionScale = normPhysicalSize.clone().multiply(this.settings.scale);
+    this.geometryMesh.scale.copy(fullRegionScale).multiply(normRegionSize);
     this.setUniform("volumeScale", normPhysicalSize);
-    this.boxHelper.box.set(normPhysicalSize.clone().multiplyScalar(-0.5), normPhysicalSize.clone().multiplyScalar(0.5));
-    this.tickMarksMesh.scale.copy(normPhysicalSize);
+    this.boxHelper.box.set(fullRegionScale.clone().multiplyScalar(-0.5), fullRegionScale.clone().multiplyScalar(0.5));
+    this.tickMarksMesh.scale.copy(fullRegionScale);
     this.settings && this.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_2__.SettingsFlags.ROI);
 
     // Set atlas dimension uniforms
@@ -3243,7 +3263,7 @@ class RayMarchedAtlasVolume {
       this.setUniform("isOrtho", this.settings.isOrtho ? 1.0 : 0.0);
       // Ortho line thickness
       const axis = this.settings.viewAxis;
-      if (this.settings.isOrtho && axis !== null) {
+      if (this.settings.isOrtho && axis) {
         // TODO: Does this code do any relevant changes?
         const maxVal = this.settings.bounds.bmax[axis];
         const minVal = this.settings.bounds.bmin[axis];
@@ -3270,6 +3290,8 @@ class RayMarchedAtlasVolume {
       // Set rotation and translation
       this.geometryTransformNode.position.copy(this.settings.translation);
       this.geometryTransformNode.rotation.copy(this.settings.rotation);
+      // TODO this does some redundant work. Including a new call to this very function! Fix?
+      this.updateVolumeDimensions();
       this.setUniform("flipVolume", this.settings.flipAxes);
     }
     if (dirtyFlags & _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_2__.SettingsFlags.MATERIAL) {
@@ -3370,21 +3392,24 @@ class RayMarchedAtlasVolume {
     this.geometryMesh.material.dispose();
     this.channelData.cleanup();
   }
-  doRender(canvas) {
+  doRender(renderer, camera, depthTexture) {
     if (!this.geometryMesh.visible) {
       return;
     }
-    this.setUniform("textureDepth", canvas.getMeshDepthTexture());
-    this.setUniform("CLIP_NEAR", canvas.camera.near);
-    this.setUniform("CLIP_FAR", canvas.camera.far);
-    this.channelData.gpuFuse(canvas.renderer);
+    if (!this.emptyDepthTex) {
+      this.emptyDepthTex = createEmptyDepthTexture(renderer);
+    }
+    this.setUniform("textureDepth", depthTexture ?? this.emptyDepthTex);
+    this.setUniform("CLIP_NEAR", camera.near);
+    this.setUniform("CLIP_FAR", camera.far);
+    this.channelData.gpuFuse(renderer);
     this.setUniform("textureAtlas", this.channelData.getFusedTexture());
     this.geometryTransformNode.updateMatrixWorld(true);
     const mvm = new three__WEBPACK_IMPORTED_MODULE_3__.Matrix4();
-    mvm.multiplyMatrices(canvas.camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
+    mvm.multiplyMatrices(camera.matrixWorldInverse, this.geometryMesh.matrixWorld);
     mvm.invert();
     this.setUniform("inverseModelViewMatrix", mvm);
-    this.setUniform("inverseProjMatrix", canvas.camera.projectionMatrixInverse);
+    this.setUniform("inverseProjMatrix", camera.projectionMatrixInverse);
   }
   get3dObject() {
     return this.geometryTransformNode;
@@ -3734,12 +3759,8 @@ class ThreeJsPanel {
     }
     this.axisCamera.position.set(-this.axisOffset[0], -this.axisOffset[1], this.axisScale * 2.0);
   }
-  getOrthoScale() {
-    return this.controls.scale;
-  }
   orthoScreenPixelsToPhysicalUnits(pixels, physicalUnitsPerWorldUnit) {
-    // At orthoScale = 0.5, the viewport is 1 world unit tall
-    const worldUnitsPerPixel = this.getOrthoScale() * 2 / this.getHeight();
+    const worldUnitsPerPixel = 1 / (this.camera.zoom * this.getHeight());
     // Multiply by devicePixelRatio to convert from scaled CSS pixels to physical pixels
     // (to account for high dpi monitors, e.g.). We didn't do this to height above because
     // that value comes from three, which works in physical pixels.
@@ -4028,7 +4049,7 @@ class ThreeJsPanel {
     // do whatever we have to do before the main render of this.scene
     for (let i = 0; i < this.animateFuncs.length; i++) {
       if (this.animateFuncs[i]) {
-        this.animateFuncs[i](this);
+        this.animateFuncs[i](this.renderer, this.camera, this.meshRenderTarget.depthTexture);
       }
     }
 
@@ -4252,7 +4273,11 @@ class View3d {
     }
     // keep the ortho scale up to date.
     if (this.image && (0,_types_js__WEBPACK_IMPORTED_MODULE_5__.isOrthographicCamera)(this.canvas3d.camera)) {
-      this.image.setOrthoScale(this.canvas3d.controls.scale);
+      const {
+        top,
+        zoom
+      } = this.canvas3d.camera;
+      this.image.setOrthoScale(Math.abs(top) / zoom);
       this.updateOrthoScaleBar(this.image.volume);
     }
   }
@@ -4481,7 +4506,7 @@ class View3d {
     this.scene.add(img.sceneRoot);
 
     // new image picks up current settings
-    this.image.setResolution(this.canvas3d);
+    this.image.setResolution(this.canvas3d.getWidth(), this.canvas3d.getHeight());
     this.image.setIsOrtho((0,_types_js__WEBPACK_IMPORTED_MODULE_5__.isOrthographicCamera)(this.canvas3d.camera));
     this.image.setBrightness(this.exposure);
     this.canvas3d.setControlHandlers(this.onStartControls.bind(this), this.onChangeControls.bind(this), this.onEndControls.bind(this));
@@ -4695,7 +4720,7 @@ class View3d {
    */
   resize(comp, w, h, ow, oh, eOpts) {
     this.canvas3d.resize(comp, w, h, ow, oh, eOpts);
-    this.image?.setResolution(this.canvas3d);
+    this.image?.setResolution(this.canvas3d.getWidth(), this.canvas3d.getHeight());
     this.redraw();
   }
 
@@ -4912,7 +4937,7 @@ class View3d {
       }
       this.updatePixelSamplingRate(this.pixelSamplingRate);
       this.image.setIsOrtho((0,_types_js__WEBPACK_IMPORTED_MODULE_5__.isOrthographicCamera)(this.canvas3d.camera));
-      this.image.setResolution(this.canvas3d);
+      this.image.setResolution(this.canvas3d.getWidth(), this.canvas3d.getHeight());
       this.setAutoRotate(this.canvas3d.controls.autoRotate);
       this.image.setRenderUpdateListener(this.renderUpdateListener);
     }
@@ -4938,6 +4963,10 @@ class View3d {
    */
   setVolumeRotation(volume, eulerXYZ) {
     this.image?.setRotation(new three__WEBPACK_IMPORTED_MODULE_7__.Euler().fromArray(eulerXYZ));
+    this.redraw();
+  }
+  setVolumeScale(volume, xyz) {
+    this.image?.setScale(new three__WEBPACK_IMPORTED_MODULE_7__.Vector3().fromArray(xyz));
     this.redraw();
   }
 
@@ -5839,8 +5868,11 @@ class VolumeDrawable {
       normPhysicalSize,
       normRegionSize
     } = this.volume;
-    this.meshVolume.setScale(normPhysicalSize.clone().multiply(normRegionSize), this.volume.getContentCenter());
+    const scale = normPhysicalSize.clone().multiply(normRegionSize).multiply(this.settings.scale);
+    this.meshVolume.setScale(scale, this.volume.getContentCenter().multiply(this.settings.scale));
+    // TODO only `RayMarchedAtlasVolume` handles scale properly. Get the others on board too!
     this.volumeRendering.updateVolumeDimensions();
+    this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.TRANSFORM);
   }
   setOrthoScale(value) {
     if (this.settings.orthoScale === value) {
@@ -5849,9 +5881,7 @@ class VolumeDrawable {
     this.settings.orthoScale = value;
     this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.VIEW);
   }
-  setResolution(viewObj) {
-    const x = viewObj.getWidth();
-    const y = viewObj.getHeight();
+  setResolution(x, y) {
     const resolution = new three__WEBPACK_IMPORTED_MODULE_7__.Vector2(x, y);
     if (!this.settings.resolution.equals(resolution)) {
       this.meshVolume.setResolution(x, y);
@@ -5970,16 +6000,16 @@ class VolumeDrawable {
     this.settings.maxProjectMode = isMaxProject;
     this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.VIEW);
   }
-  onAnimate(canvas) {
+  onAnimate(renderer, camera, depthTexture) {
     // TODO: this is inefficient, as this work is duplicated by threejs.
     // we need camera matrix up to date before giving the 3d objects a chance to use it.
-    canvas.camera.updateMatrixWorld(true);
-    canvas.camera.matrixWorldInverse.copy(canvas.camera.matrixWorld).invert();
+    camera.updateMatrixWorld(true);
+    camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
 
     // TODO confirm sequence
-    this.volumeRendering.doRender(canvas);
+    this.volumeRendering.doRender(renderer, camera, depthTexture);
     if (this.renderMode !== _types_js__WEBPACK_IMPORTED_MODULE_4__.RenderMode.PATHTRACE) {
-      this.meshVolume.doRender(canvas);
+      this.meshVolume.doRender();
     }
   }
   getViewMode() {
@@ -6262,6 +6292,10 @@ class VolumeDrawable {
     this.meshVolume.setRotation(this.settings.rotation);
     this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.TRANSFORM);
   }
+  setScale(xyz) {
+    this.settings.scale.copy(xyz);
+    this.updateScale();
+  }
   setupGui(pane) {
     pane.addInput(this.settings, "translation").on("change", ({
       value
@@ -6490,6 +6524,8 @@ let Axis = /*#__PURE__*/function (Axis) {
 class VolumeRenderSettings {
   // TRANSFORM
 
+  // TODO made redundant by `scale`?
+
   // VIEW
 
   // CAMERA
@@ -6511,6 +6547,7 @@ class VolumeRenderSettings {
   constructor(volume) {
     this.translation = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0, 0, 0);
     this.rotation = new three__WEBPACK_IMPORTED_MODULE_0__.Euler();
+    this.scale = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(1, 1, 1);
     this.isOrtho = false;
     this.viewAxis = Axis.NONE;
     this.orthoScale = 1.0;
@@ -7557,53 +7594,56 @@ const sliceShaderUniforms = () => {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   AREA_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_18__.AREA_LIGHT),
-/* harmony export */   Channel: () => (/* reexport safe */ _Channel_js__WEBPACK_IMPORTED_MODULE_2__["default"]),
-/* harmony export */   Histogram: () => (/* reexport safe */ _Histogram_js__WEBPACK_IMPORTED_MODULE_7__["default"]),
-/* harmony export */   JsonImageInfoLoader: () => (/* reexport safe */ _loaders_JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_13__.JsonImageInfoLoader),
-/* harmony export */   Light: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_18__.Light),
-/* harmony export */   LoadSpec: () => (/* reexport safe */ _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__.LoadSpec),
-/* harmony export */   Lut: () => (/* reexport safe */ _Lut_js__WEBPACK_IMPORTED_MODULE_8__.Lut),
-/* harmony export */   OMEZarrLoader: () => (/* reexport safe */ _loaders_OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_12__.OMEZarrLoader),
-/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__.PrefetchDirection),
+/* harmony export */   AREA_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_19__.AREA_LIGHT),
+/* harmony export */   Channel: () => (/* reexport safe */ _Channel_js__WEBPACK_IMPORTED_MODULE_3__["default"]),
+/* harmony export */   Histogram: () => (/* reexport safe */ _Histogram_js__WEBPACK_IMPORTED_MODULE_8__["default"]),
+/* harmony export */   JsonImageInfoLoader: () => (/* reexport safe */ _loaders_JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_14__.JsonImageInfoLoader),
+/* harmony export */   Light: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_19__.Light),
+/* harmony export */   LoadSpec: () => (/* reexport safe */ _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_12__.LoadSpec),
+/* harmony export */   Lut: () => (/* reexport safe */ _Lut_js__WEBPACK_IMPORTED_MODULE_9__.Lut),
+/* harmony export */   OMEZarrLoader: () => (/* reexport safe */ _loaders_OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_13__.OMEZarrLoader),
+/* harmony export */   PrefetchDirection: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_11__.PrefetchDirection),
 /* harmony export */   RENDERMODE_PATHTRACE: () => (/* reexport safe */ _View3d_js__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_PATHTRACE),
 /* harmony export */   RENDERMODE_RAYMARCH: () => (/* reexport safe */ _View3d_js__WEBPACK_IMPORTED_MODULE_0__.RENDERMODE_RAYMARCH),
-/* harmony export */   RawArrayLoader: () => (/* reexport safe */ _loaders_RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_14__.RawArrayLoader),
-/* harmony export */   RequestQueue: () => (/* reexport safe */ _utils_RequestQueue_js__WEBPACK_IMPORTED_MODULE_5__["default"]),
-/* harmony export */   SKY_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_18__.SKY_LIGHT),
-/* harmony export */   SubscribableRequestQueue: () => (/* reexport safe */ _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_6__["default"]),
-/* harmony export */   TiffLoader: () => (/* reexport safe */ _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_15__.TiffLoader),
+/* harmony export */   RawArrayLoader: () => (/* reexport safe */ _loaders_RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_15__.RawArrayLoader),
+/* harmony export */   RequestQueue: () => (/* reexport safe */ _utils_RequestQueue_js__WEBPACK_IMPORTED_MODULE_6__["default"]),
+/* harmony export */   SKY_LIGHT: () => (/* reexport safe */ _Light_js__WEBPACK_IMPORTED_MODULE_19__.SKY_LIGHT),
+/* harmony export */   SubscribableRequestQueue: () => (/* reexport safe */ _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_7__["default"]),
+/* harmony export */   TiffLoader: () => (/* reexport safe */ _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_16__.TiffLoader),
 /* harmony export */   View3d: () => (/* reexport safe */ _View3d_js__WEBPACK_IMPORTED_MODULE_0__.View3d),
-/* harmony export */   ViewportCorner: () => (/* reexport safe */ _types_js__WEBPACK_IMPORTED_MODULE_9__.ViewportCorner),
+/* harmony export */   ViewportCorner: () => (/* reexport safe */ _types_js__WEBPACK_IMPORTED_MODULE_10__.ViewportCorner),
 /* harmony export */   Volume: () => (/* reexport safe */ _Volume_js__WEBPACK_IMPORTED_MODULE_1__["default"]),
-/* harmony export */   VolumeCache: () => (/* reexport safe */ _VolumeCache_js__WEBPACK_IMPORTED_MODULE_4__["default"]),
-/* harmony export */   VolumeFileFormat: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__.VolumeFileFormat),
-/* harmony export */   VolumeLoadError: () => (/* reexport safe */ _loaders_VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_17__.VolumeLoadError),
-/* harmony export */   VolumeLoadErrorType: () => (/* reexport safe */ _loaders_VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_17__.VolumeLoadErrorType),
-/* harmony export */   VolumeLoaderContext: () => (/* reexport safe */ _workers_VolumeLoaderContext_js__WEBPACK_IMPORTED_MODULE_16__["default"]),
-/* harmony export */   VolumeMaker: () => (/* reexport safe */ _VolumeMaker_js__WEBPACK_IMPORTED_MODULE_3__["default"]),
-/* harmony export */   createVolumeLoader: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__.createVolumeLoader),
-/* harmony export */   remapControlPoints: () => (/* reexport safe */ _Lut_js__WEBPACK_IMPORTED_MODULE_8__.remapControlPoints)
+/* harmony export */   VolumeCache: () => (/* reexport safe */ _VolumeCache_js__WEBPACK_IMPORTED_MODULE_5__["default"]),
+/* harmony export */   VolumeDrawable: () => (/* reexport safe */ _VolumeDrawable_js__WEBPACK_IMPORTED_MODULE_2__["default"]),
+/* harmony export */   VolumeFileFormat: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_11__.VolumeFileFormat),
+/* harmony export */   VolumeLoadError: () => (/* reexport safe */ _loaders_VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_18__.VolumeLoadError),
+/* harmony export */   VolumeLoadErrorType: () => (/* reexport safe */ _loaders_VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_18__.VolumeLoadErrorType),
+/* harmony export */   VolumeLoaderContext: () => (/* reexport safe */ _workers_VolumeLoaderContext_js__WEBPACK_IMPORTED_MODULE_17__["default"]),
+/* harmony export */   VolumeMaker: () => (/* reexport safe */ _VolumeMaker_js__WEBPACK_IMPORTED_MODULE_4__["default"]),
+/* harmony export */   createVolumeLoader: () => (/* reexport safe */ _loaders_index_js__WEBPACK_IMPORTED_MODULE_11__.createVolumeLoader),
+/* harmony export */   remapControlPoints: () => (/* reexport safe */ _Lut_js__WEBPACK_IMPORTED_MODULE_9__.remapControlPoints)
 /* harmony export */ });
 /* harmony import */ var _View3d_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./View3d.js */ "./src/View3d.ts");
 /* harmony import */ var _Volume_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Volume.js */ "./src/Volume.ts");
-/* harmony import */ var _Channel_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Channel.js */ "./src/Channel.ts");
-/* harmony import */ var _VolumeMaker_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./VolumeMaker.js */ "./src/VolumeMaker.ts");
-/* harmony import */ var _VolumeCache_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./VolumeCache.js */ "./src/VolumeCache.ts");
-/* harmony import */ var _utils_RequestQueue_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./utils/RequestQueue.js */ "./src/utils/RequestQueue.ts");
-/* harmony import */ var _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./utils/SubscribableRequestQueue.js */ "./src/utils/SubscribableRequestQueue.ts");
-/* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
-/* harmony import */ var _Lut_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./Lut.js */ "./src/Lut.ts");
-/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
-/* harmony import */ var _loaders_index_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./loaders/index.js */ "./src/loaders/index.ts");
-/* harmony import */ var _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./loaders/IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
-/* harmony import */ var _loaders_OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./loaders/OmeZarrLoader.js */ "./src/loaders/OmeZarrLoader.ts");
-/* harmony import */ var _loaders_JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./loaders/JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
-/* harmony import */ var _loaders_RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./loaders/RawArrayLoader.js */ "./src/loaders/RawArrayLoader.ts");
-/* harmony import */ var _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./loaders/TiffLoader.js */ "./src/loaders/TiffLoader.ts");
-/* harmony import */ var _workers_VolumeLoaderContext_js__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ./workers/VolumeLoaderContext.js */ "./src/workers/VolumeLoaderContext.ts");
-/* harmony import */ var _loaders_VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ./loaders/VolumeLoadError.js */ "./src/loaders/VolumeLoadError.ts");
-/* harmony import */ var _Light_js__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ./Light.js */ "./src/Light.ts");
+/* harmony import */ var _VolumeDrawable_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./VolumeDrawable.js */ "./src/VolumeDrawable.ts");
+/* harmony import */ var _Channel_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Channel.js */ "./src/Channel.ts");
+/* harmony import */ var _VolumeMaker_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./VolumeMaker.js */ "./src/VolumeMaker.ts");
+/* harmony import */ var _VolumeCache_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./VolumeCache.js */ "./src/VolumeCache.ts");
+/* harmony import */ var _utils_RequestQueue_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./utils/RequestQueue.js */ "./src/utils/RequestQueue.ts");
+/* harmony import */ var _utils_SubscribableRequestQueue_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./utils/SubscribableRequestQueue.js */ "./src/utils/SubscribableRequestQueue.ts");
+/* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
+/* harmony import */ var _Lut_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./Lut.js */ "./src/Lut.ts");
+/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
+/* harmony import */ var _loaders_index_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./loaders/index.js */ "./src/loaders/index.ts");
+/* harmony import */ var _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./loaders/IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
+/* harmony import */ var _loaders_OmeZarrLoader_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./loaders/OmeZarrLoader.js */ "./src/loaders/OmeZarrLoader.ts");
+/* harmony import */ var _loaders_JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./loaders/JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
+/* harmony import */ var _loaders_RawArrayLoader_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./loaders/RawArrayLoader.js */ "./src/loaders/RawArrayLoader.ts");
+/* harmony import */ var _loaders_TiffLoader_js__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ./loaders/TiffLoader.js */ "./src/loaders/TiffLoader.ts");
+/* harmony import */ var _workers_VolumeLoaderContext_js__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ./workers/VolumeLoaderContext.js */ "./src/workers/VolumeLoaderContext.ts");
+/* harmony import */ var _loaders_VolumeLoadError_js__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ./loaders/VolumeLoadError.js */ "./src/loaders/VolumeLoadError.ts");
+/* harmony import */ var _Light_js__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ./Light.js */ "./src/Light.ts");
+
 
 
 
@@ -7836,7 +7876,8 @@ const convertImageInfo = json => {
     }],
     transform: {
       translation: tr,
-      rotation: json.transform?.rotation ? json.transform.rotation : [0, 0, 0]
+      rotation: json.transform?.rotation ? json.transform.rotation : [0, 0, 0],
+      scale: [1, 1, 1]
     },
     userData: {
       ...json.userData,
@@ -8358,7 +8399,8 @@ class OMEZarrLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_1__.Threa
       multiscaleLevelDims: alldims,
       transform: {
         translation: [0, 0, 0],
-        rotation: [0, 0, 0]
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1]
       }
     };
 
@@ -8592,7 +8634,8 @@ class OpenCellLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Thre
       }],
       transform: {
         translation: [0, 0, 0],
-        rotation: [0, 0, 0]
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1]
       }
     };
 
@@ -8669,7 +8712,8 @@ const convertImageInfo = json => {
     }],
     transform: {
       translation: [0, 0, 0],
-      rotation: [0, 0, 0]
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1]
     },
     userData: json.userData
   };
@@ -8903,7 +8947,8 @@ class TiffLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Threadab
       }],
       transform: {
         translation: [0, 0, 0],
-        rotation: [0, 0, 0]
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1]
       }
     };
 
@@ -89022,9 +89067,10 @@ function onVolumeCreated(volume) {
 
   // apply a volume transform from an external source:
   if (myJson.transform) {
-    const alignTransform = myJson.transform;
-    view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(alignTransform.translation.toArray()));
-    view3D.setVolumeRotation(myState.volume, alignTransform.rotation.toArray());
+    const alignTransform = myJson.imageInfo.transform;
+    view3D.setVolumeTranslation(myState.volume, myState.volume.voxelsToWorldSpace(alignTransform.translation));
+    view3D.setVolumeRotation(myState.volume, alignTransform.rotation);
+    view3D.setVolumeScale(myState.volume, alignTransform.scale);
   }
   updateTimeUI();
   updateZSliceUI(myState.volume);
