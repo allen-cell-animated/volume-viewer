@@ -16,6 +16,7 @@ import {
   PerspectiveCamera,
   ShaderMaterial,
   ShapeGeometry,
+  Texture,
   Vector2,
   Vector3,
   WebGLRenderer,
@@ -325,7 +326,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   public doRender(
     renderer: WebGLRenderer,
     camera: PerspectiveCamera | OrthographicCamera,
-    depthTexture?: DepthTexture
+    depthTexture?: DepthTexture | Texture
   ): void {
     if (!this.geometryMesh.visible) {
       return;
@@ -336,6 +337,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     }
 
     this.setUniform("textureDepth", depthTexture ?? this.emptyDepthTex);
+    this.setUniform("usingPositionTexture", (depthTexture as DepthTexture)?.isDepthTexture ? 0 : 1);
     this.setUniform("CLIP_NEAR", camera.near);
     this.setUniform("CLIP_FAR", camera.far);
 

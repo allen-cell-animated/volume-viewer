@@ -95,6 +95,10 @@ export const rayMarchingShaderUniforms = () => {
       type: "t",
       value: new Texture(),
     },
+    usingPositionTexture: {
+      type: "i",
+      value: 0,
+    },
     maxProject: {
       type: "i",
       value: 0,

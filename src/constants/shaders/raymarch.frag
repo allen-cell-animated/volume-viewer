@@ -21,6 +21,7 @@ uniform float CLIP_FAR;
 uniform sampler2D textureAtlas;
 uniform sampler2D textureAtlasMask;
 uniform sampler2D textureDepth;
+uniform int usingPositionTexture;
 uniform int BREAK_STEPS;
 uniform float SLICES;
 uniform float isOrtho;
