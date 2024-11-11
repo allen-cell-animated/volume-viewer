@@ -281,20 +281,27 @@ void main() {
   float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);
 
   // Sample the depth texture
-  float depth = texture2D(textureDepth, vUv).r;
+  vec4 depthSample = texture2D(textureDepth, vUv);
   // If there's a depth-contributing mesh at this fragment, we may need to terminate the ray early
-  if (depth < 1.0) {
-    // Get a projection space position from depth and uv, and unproject back to object space
-    vec4 meshProj = vec4(vUv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
-    vec4 meshView = inverseProjMatrix * meshProj;
-    vec4 meshObj = inverseModelViewMatrix * vec4(meshView.xyz / meshView.w, 1.0);
+  if (usingPositionTexture == 1) {
+    if (depthSample.a > 0.0) {
+      gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+      return;
+    }
+  } else {
+    if (depthSample.r < 1.0) {
+      // Get a projection space position from depth and uv, and unproject back to object space
+      vec4 meshProj = vec4(vUv * 2.0 - 1.0, depthSample.r * 2.0 - 1.0, 1.0);
+      vec4 meshView = inverseProjMatrix * meshProj;
+      vec4 meshObj = inverseModelViewMatrix * vec4(meshView.xyz / meshView.w, 1.0);
 
-    // Derive a t value for the mesh intersection
-    // NOTE: divides by 0 when `eyeRay_d.z` is 0. Could be mitigated by picking another component
-    //   to derive with when z is 0, but I found this was rare enough in practice to be acceptable.
-    float tMesh = (meshObj.z - eyeRay_o.z) / eyeRay_d.z;
-    if (tMesh < tfar) {
-      clipFar = tMesh - tnear;
+      // Derive a t value for the mesh intersection
+      // NOTE: divides by 0 when `eyeRay_d.z` is 0. Could be mitigated by picking another component
+      //   to derive with when z is 0, but I found this was rare enough in practice to be acceptable.
+      float tMesh = (meshObj.z - eyeRay_o.z) / eyeRay_d.z;
+      if (tMesh < tfar) {
+        clipFar = tMesh - tnear;
+      }
     }
   }
 
