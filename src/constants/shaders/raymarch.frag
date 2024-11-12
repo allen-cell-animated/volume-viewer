@@ -281,13 +281,14 @@ void main() {
   float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);
 
   // Sample the depth/position texture
+  // This is EITHER a view space position or a depth value we'll convert to a view space position
   vec4 meshViewPos = texture2D(textureDepth, vUv);
   bool hasDepthValue = usingPositionTexture == 0 && meshViewPos.r < 1.0;
 
   // If there's a depth-contributing mesh at this fragment, we may need to terminate the ray early
   if (hasDepthValue || (usingPositionTexture == 1 && meshViewPos.a > 0.0)) {
     if (hasDepthValue) {
-      // Working from just a depth value requires a bit of extra work
+      // We're working with a depth value, so we need to convert back to view space position
       // Get a projection space position from depth and uv, and unproject back to view space
       vec4 meshProj = vec4(vUv * 2.0 - 1.0, meshViewPos.r * 2.0 - 1.0, 1.0);
       vec4 meshView = inverseProjMatrix * meshProj;
