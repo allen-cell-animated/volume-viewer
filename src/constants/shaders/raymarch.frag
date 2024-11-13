@@ -281,8 +281,11 @@ void main() {
   float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);
 
   // Sample the depth/position texture
-  // This is EITHER a view space position or a depth value we'll convert to a view space position
+  // If this is a depth texture, the r component is a depth value. If this is a position texture,
+  // the xyz components are a view space position and w is 1.0 iff there's a mesh at this fragment.
   vec4 meshViewPos = texture2D(textureDepth, vUv);
+  // Note: we make a different check for whether a mesh is present with depth vs. position textures.
+  // Here's the check for depth textures:
   bool hasDepthValue = usingPositionTexture == 0 && meshViewPos.r < 1.0;
 
   // If there's a depth-contributing mesh at this fragment, we may need to terminate the ray early
