@@ -1,4 +1,4 @@
-import { FetchStore } from "zarrita";
+import { FetchStore } from "@zarrita/storage";
 import { AbsolutePath, AsyncMutable, Readable } from "@zarrita/storage";
 
 import SubscribableRequestQueue from "../../utils/SubscribableRequestQueue";

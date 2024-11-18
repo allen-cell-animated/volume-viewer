@@ -5,7 +5,7 @@ import { get as zarrGet, slice, Slice } from "@zarrita/indexing";
 import { AbsolutePath } from "@zarrita/storage";
 // Importing `FetchStore` from its home subpackage (@zarrita/storage) causes errors.
 // Getting it from the top-level package means we don't get its type. This is also a bug, but it's more acceptable.
-import { FetchStore } from "zarrita";
+import { FetchStore } from "@zarrita/storage";
 
 import type { ImageInfo } from "../ImageInfo.js";
 import type { VolumeDims } from "../VolumeDims.js";
