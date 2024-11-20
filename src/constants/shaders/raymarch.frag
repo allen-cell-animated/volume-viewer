@@ -21,6 +21,7 @@ uniform float CLIP_FAR;
 uniform sampler2D textureAtlas;
 uniform sampler2D textureAtlasMask;
 uniform sampler2D textureDepth;
+uniform int usingPositionTexture;
 uniform int BREAK_STEPS;
 uniform float SLICES;
 uniform float isOrtho;
@@ -279,14 +280,25 @@ void main() {
   float clipNear = 0.0;//-(dot(eyeRay_o.xyz, eyeNorm) + dNear) / dot(eyeRay_d.xyz, eyeNorm);
   float clipFar  = 10000.0;//-(dot(eyeRay_o.xyz,-eyeNorm) + dFar ) / dot(eyeRay_d.xyz,-eyeNorm);
 
-  // Sample the depth texture
-  float depth = texture2D(textureDepth, vUv).r;
+  // Sample the depth/position texture
+  // If this is a depth texture, the r component is a depth value. If this is a position texture,
+  // the xyz components are a view space position and w is 1.0 iff there's a mesh at this fragment.
+  vec4 meshPosSample = texture2D(textureDepth, vUv);
+  // Note: we make a different check for whether a mesh is present with depth vs. position textures.
+  // Here's the check for depth textures:
+  bool hasDepthValue = usingPositionTexture == 0 && meshPosSample.r < 1.0;
+
   // If there's a depth-contributing mesh at this fragment, we may need to terminate the ray early
-  if (depth < 1.0) {
-    // Get a projection space position from depth and uv, and unproject back to object space
-    vec4 meshProj = vec4(vUv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
-    vec4 meshView = inverseProjMatrix * meshProj;
-    vec4 meshObj = inverseModelViewMatrix * vec4(meshView.xyz / meshView.w, 1.0);
+  if (hasDepthValue || (usingPositionTexture == 1 && meshPosSample.a > 0.0)) {
+    if (hasDepthValue) {
+      // We're working with a depth value, so we need to convert back to view space position
+      // Get a projection space position from depth and uv, and unproject back to view space
+      vec4 meshProj = vec4(vUv * 2.0 - 1.0, meshPosSample.r * 2.0 - 1.0, 1.0);
+      vec4 meshView = inverseProjMatrix * meshProj;
+      meshPosSample = vec4(meshView.xyz / meshView.w, 1.0);
+    }
+    // Transform the mesh position to object space
+    vec4 meshObj = inverseModelViewMatrix * meshPosSample;
 
     // Derive a t value for the mesh intersection
     // NOTE: divides by 0 when `eyeRay_d.z` is 0. Could be mitigated by picking another component
