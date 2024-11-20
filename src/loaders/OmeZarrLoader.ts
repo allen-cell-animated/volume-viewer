@@ -1,6 +1,6 @@
 import { Box3, Vector3 } from "three";
 
-import * as zarr from "@zarrita/core";
+import { type NumberDataType, TypedArray, root, open } from "@zarrita/core";
 import { get as zarrGet, slice, Slice } from "@zarrita/indexing";
 import { AbsolutePath } from "@zarrita/storage";
 // Importing `FetchStore` from its home subpackage (@zarrita/storage) causes errors.
@@ -50,9 +50,9 @@ const CHUNK_REQUEST_CANCEL_REASON = "chunk request cancelled";
 
 // returns the converted data and the original min and max values
 function convertChannel(
-  channelData: zarr.TypedArray<zarr.NumberDataType>,
-  dtype: zarr.NumberDataType
-): { data: zarr.TypedArray<zarr.NumberDataType>; dtype: zarr.NumberDataType; min: number; max: number } {
+  channelData: TypedArray<NumberDataType>,
+  dtype: NumberDataType
+): { data: TypedArray<NumberDataType>; dtype: NumberDataType; min: number; max: number } {
   // get min and max
   // TODO FIXME Histogram will also compute min and max!
   let min = channelData[0];
@@ -170,11 +170,11 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     // Create one `ZarrSource` per URL
     const sourceProms = urlsArr.map(async (url, i) => {
       const store = new WrappedStore<RequestInit>(new FetchStore(url), cache, queue);
-      const root = zarr.root(store);
+      const zroot = root(store);
 
-      const group = await zarr
-        .open(root, { kind: "group" })
-        .catch(wrapVolumeLoadError(`Failed to open OME-Zarr data at ${url}`, VolumeLoadErrorType.NOT_FOUND));
+      const group = await open(zroot, { kind: "group" }).catch(
+        wrapVolumeLoadError(`Failed to open OME-Zarr data at ${url}`, VolumeLoadErrorType.NOT_FOUND)
+      );
 
       // Pick scene (multiscale)
       let scene = scenesArr[Math.min(i, scenesArr.length - 1)];
@@ -189,14 +189,12 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
 
       // Open all scale levels of multiscale
       const lvlProms = multiscaleMetadata.datasets.map(({ path }) =>
-        zarr
-          .open(root.resolve(path), { kind: "array" })
-          .catch(
-            wrapVolumeLoadError(
-              `Failed to open scale level ${path} of OME-Zarr data at ${url}`,
-              VolumeLoadErrorType.NOT_FOUND
-            )
+        open(zroot.resolve(path), { kind: "array" }).catch(
+          wrapVolumeLoadError(
+            `Failed to open scale level ${path} of OME-Zarr data at ${url}`,
+            VolumeLoadErrorType.NOT_FOUND
           )
+        )
       );
       const scaleLevels = (await Promise.all(lvlProms)) as NumericZarrArray[];
       const axesTCZYX = remapAxesToTCZYX(multiscaleMetadata.axes);
@@ -558,8 +556,8 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
     };
 
     const resultChannelIndices: number[] = [];
-    const resultChannelData: zarr.TypedArray<zarr.NumberDataType>[] = [];
-    const resultChannelDtype: zarr.NumberDataType[] = [];
+    const resultChannelData: TypedArray<NumberDataType>[] = [];
+    const resultChannelDtype: NumberDataType[] = [];
     const resultChannelRanges: [number, number][] = [];
 
     const channelPromises = channelIndexes.map(async (ch) => {

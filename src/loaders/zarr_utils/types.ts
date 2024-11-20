@@ -1,4 +1,4 @@
-import * as zarr from "@zarrita/core";
+import { Array, NumberDataType } from "@zarrita/core";
 
 import type WrappedStore from "./WrappedStore.js";
 import type SubscribableRequestQueue from "../../utils/SubscribableRequestQueue.js";
@@ -92,7 +92,7 @@ export type OMEZarrMetadata = {
   omero: OmeroTransitionalMetadata;
 };
 
-export type NumericZarrArray = zarr.Array<zarr.NumberDataType, WrappedStore<RequestInit>>;
+export type NumericZarrArray = Array<NumberDataType, WrappedStore<RequestInit>>;
 
 /** A record with everything we need to access and use a single remote source of multiscale OME-Zarr data. */
 export type ZarrSource = {
