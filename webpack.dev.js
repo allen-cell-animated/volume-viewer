@@ -14,7 +14,7 @@ export default {
   entry: ["./public/index.ts"],
   output: {
     path: path.resolve(__dirname, "volumeviewer"),
-    filename: "volume-viewer-ui.bundle.js",
+    filename: "vol-e-ui.bundle.js",
   },
   devtool: "source-map",
   devServer: {
