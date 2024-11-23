@@ -61,7 +61,7 @@ loader.loadVolumeData(volume);
 
 # React example
 
-See vole-app for a complete application that wraps View3D in a React component.
+See [vole-app](https://github.com/allen-cell-animated/website-3d-cell-viewer) for a complete application that wraps View3D in a React component.
 
 # Acknowledgements
 
