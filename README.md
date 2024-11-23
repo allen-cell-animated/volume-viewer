@@ -18,7 +18,7 @@ There are several ways to deliver volume data to the viewer:
 
 # Example
 
-See public/index.ts for a working example. (`npm install; npm run dev` will run that code)
+See [`public/index.ts`](./public/index.ts) for a working example. (`npm install; npm run dev` will run that code)
 
 The basic code to get the volume viewer up and running is as follows:
 
