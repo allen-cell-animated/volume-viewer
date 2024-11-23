@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset='utf-8'>
-  <title>@aics/volume-viewer 2.2.2 | Documentation</title>
-  <meta name='description' content='volume renderer for multichannel 8-bit intensity data stored as 3D arrays'>
+  <title>@aics/vole-core 3.12.0 | Documentation</title>
+  <meta name='description' content='volume renderer for 3d, 4d, 5d imaging data with OME-Zarr support'>
   <meta name='viewport' content='width=device-width,initial-scale=1'>
   <link href='assets/bass.css' rel='stylesheet'>
   <link href='assets/style.css' rel='stylesheet'>
@@ -14,8 +14,8 @@
     <div class='flex'>
       <div id='split-left' class='overflow-auto fs0 height-viewport-100'>
         <div class='py1 px2'>
-          <h3 class='mb0 no-anchor'>@aics/volume-viewer</h3>
-          <div class='mb1'><code>2.2.2</code></div>
+          <h3 class='mb0 no-anchor'>@aics/vole-core</h3>
+          <div class='mb1'><code>3.12.0</code></div>
           <input
             placeholder='Filter'
             id='filter-input'
@@ -81,35 +81,167 @@
               
                 
                 <li><a
-                  href='#perchannelcallback'
-                  class="">
-                  PerChannelCallback
-                  
-                </a>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#volumeloader'
+                  href='#histogram'
                   class=" toggle-sibling">
-                  VolumeLoader
+                  Histogram
                   <span class='icon'>▸</span>
                 </a>
                 
                 <div class='toggle-target display-none'>
                   
-                  <ul class='list-reset py1-ul pl1'>
-                    <li class='h5'><span>Static members</span></li>
-                    
+                  
+                    <ul class='list-reset py1-ul pl1'>
+                      <li class='h5'><span>Instance members</span></li>
+                      
                       <li><a
-                        href='#volumeloaderloadvolumeatlasdata'
+                        href='#histogramgetmin'
                         class='regular pre-open'>
-                        .loadVolumeAtlasData
+                        #getMin
                       </a></li>
-                    
+                      
+                      <li><a
+                        href='#histogramgetmax'
+                        class='regular pre-open'>
+                        #getMax
+                      </a></li>
+                      
+                      <li><a
+                        href='#histogramfindbinofpercentile'
+                        class='regular pre-open'>
+                        #findBinOfPercentile
+                      </a></li>
+                      
                     </ul>
                   
+                  
+                  
+                </div>
+                
+                </li>
+              
+                
+                <li><a
+                  href='#volume'
+                  class=" toggle-sibling">
+                  Volume
+                  <span class='icon'>▸</span>
+                </a>
+                
+                <div class='toggle-target display-none'>
+                  
+                  
+                    <ul class='list-reset py1-ul pl1'>
+                      <li class='h5'><span>Instance members</span></li>
+                      
+                      <li><a
+                        href='#volumeloadspecrequired'
+                        class='regular pre-open'>
+                        #loadSpecRequired
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumephysicalscale'
+                        class='regular pre-open'>
+                        #physicalScale
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumephysicalpixelsize'
+                        class='regular pre-open'>
+                        #physicalPixelSize
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumephysicalsize'
+                        class='regular pre-open'>
+                        #physicalSize
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumenormphysicalsize'
+                        class='regular pre-open'>
+                        #normPhysicalSize
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumeupdaterequireddata'
+                        class='regular pre-open'>
+                        #updateRequiredData
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumegetcontentcenter'
+                        class='regular pre-open'>
+                        #getContentCenter
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumesetchanneldatafromatlas'
+                        class='regular pre-open'>
+                        #setChannelDataFromAtlas
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumesetchanneldatafromvolume'
+                        class='regular pre-open'>
+                        #setChannelDataFromVolume
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumeappendemptychannel'
+                        class='regular pre-open'>
+                        #appendEmptyChannel
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumegetintensity'
+                        class='regular pre-open'>
+                        #getIntensity
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumegethistogram'
+                        class='regular pre-open'>
+                        #getHistogram
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumesetlut'
+                        class='regular pre-open'>
+                        #setLut
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumesetcolorpalette'
+                        class='regular pre-open'>
+                        #setColorPalette
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumesetcolorpalettealpha'
+                        class='regular pre-open'>
+                        #setColorPaletteAlpha
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumegetrotation'
+                        class='regular pre-open'>
+                        #getRotation
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumegettranslation'
+                        class='regular pre-open'>
+                        #getTranslation
+                      </a></li>
+                      
+                      <li><a
+                        href='#volumevoxelstoworldspace'
+                        class='regular pre-open'>
+                        #voxelsToWorldSpace
+                      </a></li>
+                      
+                    </ul>
                   
                   
                   
@@ -180,6 +312,12 @@
                       </a></li>
                       
                       <li><a
+                        href='#view3dsetscalelevelbias'
+                        class='regular pre-open'>
+                        #setScaleLevelBias
+                      </a></li>
+                      
+                      <li><a
                         href='#view3dsetvolumechannelasmask'
                         class='regular pre-open'>
                         #setVolumeChannelAsMask
@@ -192,33 +330,9 @@
                       </a></li>
                       
                       <li><a
-                        href='#view3dcreateisosurface'
-                        class='regular pre-open'>
-                        #createIsosurface
-                      </a></li>
-                      
-                      <li><a
                         href='#view3dhasisosurface'
                         class='regular pre-open'>
                         #hasIsosurface
-                      </a></li>
-                      
-                      <li><a
-                        href='#view3dupdateisosurface'
-                        class='regular pre-open'>
-                        #updateIsosurface
-                      </a></li>
-                      
-                      <li><a
-                        href='#view3dupdateopacity'
-                        class='regular pre-open'>
-                        #updateOpacity
-                      </a></li>
-                      
-                      <li><a
-                        href='#view3dclearisosurface'
-                        class='regular pre-open'>
-                        #clearIsosurface
                       </a></li>
                       
                       <li><a
@@ -240,9 +354,45 @@
                       </a></li>
                       
                       <li><a
+                        href='#view3dsetshowscalebar'
+                        class='regular pre-open'>
+                        #setShowScaleBar
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dsetshowtimestepindicator'
+                        class='regular pre-open'>
+                        #setShowTimestepIndicator
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dsetaxisposition'
+                        class='regular pre-open'>
+                        #setAxisPosition
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dsetscalebarposition'
+                        class='regular pre-open'>
+                        #setScaleBarPosition
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dsettimestepindicatorposition'
+                        class='regular pre-open'>
+                        #setTimestepIndicatorPosition
+                      </a></li>
+                      
+                      <li><a
                         href='#view3dsetautorotate'
                         class='regular pre-open'>
                         #setAutoRotate
+                      </a></li>
+                      
+                      <li><a
+                        href='#view3dsetscaleunit'
+                        class='regular pre-open'>
+                        #setScaleUnit
                       </a></li>
                       
                       <li><a
@@ -381,230 +531,6 @@
                         href='#view3dresetcamera'
                         class='regular pre-open'>
                         #resetCamera
-                      </a></li>
-                      
-                    </ul>
-                  
-                  
-                  
-                </div>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#controlpoint'
-                  class="">
-                  ControlPoint
-                  
-                </a>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#lut'
-                  class="">
-                  Lut
-                  
-                </a>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#histogram'
-                  class=" toggle-sibling">
-                  Histogram
-                  <span class='icon'>▸</span>
-                </a>
-                
-                <div class='toggle-target display-none'>
-                  
-                  
-                    <ul class='list-reset py1-ul pl1'>
-                      <li class='h5'><span>Instance members</span></li>
-                      
-                      <li><a
-                        href='#histogramgetmin'
-                        class='regular pre-open'>
-                        #getMin
-                      </a></li>
-                      
-                      <li><a
-                        href='#histogramgetmax'
-                        class='regular pre-open'>
-                        #getMax
-                      </a></li>
-                      
-                      <li><a
-                        href='#histogramlutgenerator_windowlevel'
-                        class='regular pre-open'>
-                        #lutGenerator_windowLevel
-                      </a></li>
-                      
-                      <li><a
-                        href='#histogramlutgenerator_minmax'
-                        class='regular pre-open'>
-                        #lutGenerator_minMax
-                      </a></li>
-                      
-                      <li><a
-                        href='#histogramlutgenerator_fullrange'
-                        class='regular pre-open'>
-                        #lutGenerator_fullRange
-                      </a></li>
-                      
-                      <li><a
-                        href='#histogramlutgenerator_datarange'
-                        class='regular pre-open'>
-                        #lutGenerator_dataRange
-                      </a></li>
-                      
-                      <li><a
-                        href='#histogramlutgenerator_labelcolors'
-                        class='regular pre-open'>
-                        #lutGenerator_labelColors
-                      </a></li>
-                      
-                      <li><a
-                        href='#histogramfindbinofpercentile'
-                        class='regular pre-open'>
-                        #findBinOfPercentile
-                      </a></li>
-                      
-                      <li><a
-                        href='#histogramlutgenerator_percentiles'
-                        class='regular pre-open'>
-                        #lutGenerator_percentiles
-                      </a></li>
-                      
-                      <li><a
-                        href='#histogramlutgenerator_bestfit'
-                        class='regular pre-open'>
-                        #lutGenerator_bestFit
-                      </a></li>
-                      
-                      <li><a
-                        href='#histogramlutgenerator_auto2'
-                        class='regular pre-open'>
-                        #lutGenerator_auto2
-                      </a></li>
-                      
-                      <li><a
-                        href='#histogramlutgenerator_auto'
-                        class='regular pre-open'>
-                        #lutGenerator_auto
-                      </a></li>
-                      
-                      <li><a
-                        href='#histogramlutgenerator_equalize'
-                        class='regular pre-open'>
-                        #lutGenerator_equalize
-                      </a></li>
-                      
-                    </ul>
-                  
-                  
-                  
-                </div>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#imageinfo'
-                  class="">
-                  ImageInfo
-                  
-                </a>
-                
-                </li>
-              
-                
-                <li><a
-                  href='#volume'
-                  class=" toggle-sibling">
-                  Volume
-                  <span class='icon'>▸</span>
-                </a>
-                
-                <div class='toggle-target display-none'>
-                  
-                  
-                    <ul class='list-reset py1-ul pl1'>
-                      <li class='h5'><span>Instance members</span></li>
-                      
-                      <li><a
-                        href='#volumechannelnames'
-                        class='regular pre-open'>
-                        #channelNames
-                      </a></li>
-                      
-                      <li><a
-                        href='#volumesetchanneldatafromatlas'
-                        class='regular pre-open'>
-                        #setChannelDataFromAtlas
-                      </a></li>
-                      
-                      <li><a
-                        href='#volumesetchanneldatafromvolume'
-                        class='regular pre-open'>
-                        #setChannelDataFromVolume
-                      </a></li>
-                      
-                      <li><a
-                        href='#volumeappendemptychannel'
-                        class='regular pre-open'>
-                        #appendEmptyChannel
-                      </a></li>
-                      
-                      <li><a
-                        href='#volumegetintensity'
-                        class='regular pre-open'>
-                        #getIntensity
-                      </a></li>
-                      
-                      <li><a
-                        href='#volumegethistogram'
-                        class='regular pre-open'>
-                        #getHistogram
-                      </a></li>
-                      
-                      <li><a
-                        href='#volumesetlut'
-                        class='regular pre-open'>
-                        #setLut
-                      </a></li>
-                      
-                      <li><a
-                        href='#volumesetcolorpalette'
-                        class='regular pre-open'>
-                        #setColorPalette
-                      </a></li>
-                      
-                      <li><a
-                        href='#volumesetcolorpalettealpha'
-                        class='regular pre-open'>
-                        #setColorPaletteAlpha
-                      </a></li>
-                      
-                      <li><a
-                        href='#volumegetrotation'
-                        class='regular pre-open'>
-                        #getRotation
-                      </a></li>
-                      
-                      <li><a
-                        href='#volumegettranslation'
-                        class='regular pre-open'>
-                        #getTranslation
-                      </a></li>
-                      
-                      <li><a
-                        href='#volumevoxelstoworldspace'
-                        class='regular pre-open'>
-                        #voxelsToWorldSpace
                       </a></li>
                       
                     </ul>
@@ -1172,21 +1098,17 @@
   
   <div class='clearfix'>
     
-    <h3 class='fl m0' id='perchannelcallback'>
-      PerChannelCallback
+    <h3 class='fl m0' id='histogram'>
+      Histogram
     </h3>
     
     
   </div>
   
 
-  
-    <div class='pre p1 fill-light mt0'>PerChannelCallback(imageurl: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, channelindex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</div>
-  
-    <p>
-      Type:
-      <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Statements/function">Function</a>
-    </p>
+  <p>Builds a histogram with 256 bins from a data array. Assume data is 8 bit single channel grayscale.</p>
+
+    <div class='pre p1 fill-light mt0'>new Histogram(data: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</div>
   
   
 
@@ -1203,15 +1125,7 @@
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>imageurl</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channelindex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+            <span class='code bold'>data</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</code>
 	    
           </div>
           
@@ -1222,6 +1136,56 @@
 
   
 
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Instance Members</div>
+    <div class="clearfix">
+  
+    <div class='border-bottom' id='histogramgetmin'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>getMin()</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Return the min data value</p>
+
+    <div class='pre p1 fill-light mt0'>getMin(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>:
+        
+      
+    
   
 
   
@@ -1239,55 +1203,14 @@
   
 </section>
 
-          
-        
-          
-          <section class='p2 mb2 clearfix bg-white minishadow'>
-
+      </div>
+    </div>
   
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='volumeloader'>
-      VolumeLoader
-    </h3>
-    
-    
-  </div>
-  
-
-  
-    <div class='pre p1 fill-light mt0'>new VolumeLoader()</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Static Members</div>
-    <div class="clearfix">
-  
-    <div class='border-bottom' id='volumeloaderloadvolumeatlasdata'>
+    <div class='border-bottom' id='histogramgetmax'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>loadVolumeAtlasData(volume, imageArray, callback)</span>
+            <span class='code strong strong truncate'>getMax()</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -1295,9 +1218,65 @@
 
   
 
-  <p>load per-channel volume data from a batch of image files containing the volume slices tiled across the images</p>
+  <p>Return the max data value</p>
 
-    <div class='pre p1 fill-light mt0'>loadVolumeAtlasData(volume: <a href="#volume">Volume</a>, imageArray: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;{name: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, channels: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>}>, callback: <a href="#perchannelcallback">PerChannelCallback</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, <a href="https://developer.mozilla.org/docs/Web/API/HTMLImageElement/Image">Image</a>></div>
+    <div class='pre p1 fill-light mt0'>getMax(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>:
+        
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='histogramfindbinofpercentile'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>findBinOfPercentile(pct)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Find the bin that contains the percentage of pixels below it</p>
+
+    <div class='pre p1 fill-light mt0'>findBinOfPercentile(pct: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></div>
   
   
 
@@ -1314,25 +1293,8 @@
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>volume</span> <code class='quiet'>(<a href="#volume">Volume</a>)</code>
+            <span class='code bold'>pct</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
 	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>imageArray</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;{name: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, channels: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>}>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>callback</span> <code class='quiet'>(<a href="#perchannelcallback">PerChannelCallback</a>)</code>
-	    Per-channel callback.  Called when each channel's atlased volume data is loaded
-
           </div>
           
         </div>
@@ -1345,11 +1307,8 @@
   
     
       <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, <a href="https://developer.mozilla.org/docs/Web/API/HTMLImageElement/Image">Image</a>></code>:
-        a map(imageurl : Image object) that should be used to cancel the download requests,
-for example if you need to destroy the image before all data has arrived.
-as requests arrive, the callback will be called per image, not per channel
-
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>:
+        
       
     
   
@@ -1358,21 +1317,6 @@ as requests arrive, the callback will be called per image, not per channel
 
   
 
-  
-    <div class='py1 quiet mt1 prose-big'>Example</div>
-    
-      
-      <pre class='p1 overflow-auto round fill-light'>loadVolumeAtlasData([{
-    <span class="hljs-string">&quot;name&quot;</span>: <span class="hljs-string">&quot;AICS-10_5_5.ome.tif_atlas_0.png&quot;</span>,
-    <span class="hljs-string">&quot;channels&quot;</span>: [<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>]
-}, {
-    <span class="hljs-string">&quot;name&quot;</span>: <span class="hljs-string">&quot;AICS-10_5_5.ome.tif_atlas_1.png&quot;</span>,
-    <span class="hljs-string">&quot;channels&quot;</span>: [<span class="hljs-number">3</span>, <span class="hljs-number">4</span>, <span class="hljs-number">5</span>]
-}, {
-    <span class="hljs-string">&quot;name&quot;</span>: <span class="hljs-string">&quot;AICS-10_5_5.ome.tif_atlas_2.png&quot;</span>,
-    <span class="hljs-string">&quot;channels&quot;</span>: [<span class="hljs-number">6</span>, <span class="hljs-number">7</span>, <span class="hljs-number">8</span>]
-}], mycallback);</pre>
-    
   
 
   
@@ -1390,6 +1334,1350 @@ as requests arrive, the callback will be called per image, not per channel
 </div>
 
   
+
+  
+
+  
+</section>
+
+          
+        
+          
+          <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+  <div class='clearfix'>
+    
+    <h3 class='fl m0' id='volume'>
+      Volume
+    </h3>
+    
+    
+  </div>
+  
+
+  <p>A renderable multichannel volume image with 8-bits per channel intensity values.</p>
+
+    <div class='pre p1 fill-light mt0'>new Volume(imageInfo: ImageInfo, loadSpec: LoadSpec, loader: IVolumeLoader?)</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>imageInfo</span> <code class='quiet'>(ImageInfo
+            = <code>defaultImageInfo()</code>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>loadSpec</span> <code class='quiet'>(LoadSpec
+            = <code>new LoadSpec()</code>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>loader</span> <code class='quiet'>(IVolumeLoader?)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Instance Members</div>
+    <div class="clearfix">
+  
+    <div class='border-bottom' id='volumeloadspecrequired'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>loadSpecRequired</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p><code>LoadSpec</code> representing the minimum data required to display what's in the viewer (subregion, channels, etc.).
+Used to intelligently issue load requests whenever required by a state change. Modify with <code>updateRequiredData</code>.</p>
+
+    <div class='pre p1 fill-light mt0'>loadSpecRequired</div>
+  
+    <p>
+      Type:
+      Required&#x3C;LoadSpec>
+    </p>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumephysicalscale'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>physicalScale</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>The maximum of the measurements of 3 axes in physical units (pixels*physicalSize)</p>
+
+    <div class='pre p1 fill-light mt0'>physicalScale</div>
+  
+    <p>
+      Type:
+      <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>
+    </p>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumephysicalpixelsize'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>physicalPixelSize</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>The physical size of a voxel in the original level 0 volume</p>
+
+    <div class='pre p1 fill-light mt0'>physicalPixelSize</div>
+  
+    <p>
+      Type:
+      Vector3
+    </p>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumephysicalsize'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>physicalSize</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>The physical dims of the whole volume (not accounting for subregion)</p>
+
+    <div class='pre p1 fill-light mt0'>physicalSize</div>
+  
+    <p>
+      Type:
+      Vector3
+    </p>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumenormphysicalsize'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>normPhysicalSize</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Normalized physical size of the whole volume (not accounting for subregion)</p>
+
+    <div class='pre p1 fill-light mt0'>normPhysicalSize</div>
+  
+    <p>
+      Type:
+      Vector3
+    </p>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumeupdaterequireddata'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>updateRequiredData(required, onChannelLoaded?)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Call on any state update that may require new data to be loaded (subregion, enabled channels, time, etc.)</p>
+
+    <div class='pre p1 fill-light mt0'>updateRequiredData(required: Partial&#x3C;LoadSpec>, onChannelLoaded: PerChannelCallback?): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;void></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>required</span> <code class='quiet'>(Partial&#x3C;LoadSpec>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>onChannelLoaded</span> <code class='quiet'>(PerChannelCallback?)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a>&#x3C;void></code>
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumegetcontentcenter'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>getContentCenter()</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Computes the center of the volume subset</p>
+
+    <div class='pre p1 fill-light mt0'>getContentCenter(): Vector3</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>Vector3</code>
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumesetchanneldatafromatlas'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight, range, dtype)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Assign volume data via a 2d array containing the z slices as tiles across it.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.</p>
+
+    <div class='pre p1 fill-light mt0'>setChannelDataFromAtlas(channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, atlasdata: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>, atlaswidth: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, atlasheight: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, range: [<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>], dtype: NumberType): void</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>channelIndex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>atlasdata</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>atlaswidth</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>atlasheight</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>range</span> <code class='quiet'>([<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>])</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>dtype</span> <code class='quiet'>(NumberType
+            = <code>&quot;uint8&quot;</code>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>void</code>
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumesetchanneldatafromvolume'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setChannelDataFromVolume(channelIndex, volumeData, range, dtype)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Assign volume data as a 3d array ordered x,y,z. The xy size must be equal to tilewidth*tileheight from the imageInfo used to construct this Volume.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.</p>
+
+    <div class='pre p1 fill-light mt0'>setChannelDataFromVolume(channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, volumeData: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>, range: [<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>], dtype: NumberType): void</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>channelIndex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volumeData</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>range</span> <code class='quiet'>([<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>])</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>dtype</span> <code class='quiet'>(NumberType
+            = <code>&quot;uint8&quot;</code>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>void</code>
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumeappendemptychannel'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>appendEmptyChannel(name, color)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Add a new channel ready to receive data from one of the setChannelDataFrom* calls.
+Name and color will be defaulted if not provided. For now, leave imageInfo alone as the "original" data</p>
+
+    <div class='pre p1 fill-light mt0'>appendEmptyChannel(name: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, color: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>name</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>color</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</code>
+	    [r,g,b]
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumegetintensity'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>getIntensity(c, x, y, z)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Get a value from the volume data</p>
+
+    <div class='pre p1 fill-light mt0'>getIntensity(c: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, x: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, y: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, z: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>c</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    The channel index
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>x</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>y</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>z</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>:
+        the intensity value from the given channel at the given xyz location
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumegethistogram'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>getHistogram(c)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Get the 256-bin histogram for the given channel</p>
+
+    <div class='pre p1 fill-light mt0'>getHistogram(c: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="#histogram">Histogram</a></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>c</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    The channel index
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="#histogram">Histogram</a></code>:
+        the histogram
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumesetlut'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setLut(c, lut)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Set the lut for the given channel</p>
+
+    <div class='pre p1 fill-light mt0'>setLut(c: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, lut: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>): void</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>c</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    The channel index
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>lut</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</code>
+	    The lut as a 256 element array
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>void</code>
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumesetcolorpalette'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setColorPalette(c, palette)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Set the color palette for the given channel</p>
+
+    <div class='pre p1 fill-light mt0'>setColorPalette(c: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, palette: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>): void</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>c</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    The channel index
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>palette</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</code>
+	    The colors as a 256 element array * RGBA
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>void</code>
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumesetcolorpalettealpha'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setColorPaletteAlpha(c, alpha)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Set the color palette alpha multiplier for the given channel.
+This will blend between the ordinary color lut and this colorPalette lut.</p>
+
+    <div class='pre p1 fill-light mt0'>setColorPaletteAlpha(c: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, alpha: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): void</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>c</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    The channel index
+
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>alpha</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    The alpha value as a number from 0 to 1
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>void</code>
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumegetrotation'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>getRotation()</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Return the intrinsic rotation associated with this volume (radians)</p>
+
+    <div class='pre p1 fill-light mt0'>getRotation(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></code>:
+        the xyz Euler angles (radians)
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumegettranslation'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>getTranslation()</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Return the intrinsic translation (pivot center delta) associated with this volume, in normalized volume units</p>
+
+    <div class='pre p1 fill-light mt0'>getTranslation(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></code>:
+        the xyz translation in normalized volume units
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='volumevoxelstoworldspace'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>voxelsToWorldSpace(xyz)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Return a translation in normalized volume units, given a translation in image voxels</p>
+
+    <div class='pre p1 fill-light mt0'>voxelsToWorldSpace(xyz: [<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>]): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>xyz</span> <code class='quiet'>([<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>])</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></code>:
+        the xyz translation in normalized volume units
+
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+</div>
 
   
 
@@ -1415,7 +2703,7 @@ as requests arrive, the callback will be called per image, not per channel
   
 
   
-    <div class='pre p1 fill-light mt0'>new View3d(parentElement: <a href="https://developer.mozilla.org/docs/Web/HTML/Element">HTMLElement</a>, options: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</div>
+    <div class='pre p1 fill-light mt0'>new View3d(options: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</div>
   
   
 
@@ -1432,17 +2720,8 @@ as requests arrive, the callback will be called per image, not per channel
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>parentElement</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/HTML/Element">HTMLElement</a>)</code>
-	    the 3d display will try to fill the parent element.
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
             <span class='code bold'>options</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
-	    This is an optional param. The only option is currently boolean {useWebGL2:true} which defaults to true.
+	    Optional options.
 
           </div>
           
@@ -2011,6 +3290,82 @@ as requests arrive, the callback will be called per image, not per channel
       </div>
     </div>
   
+    <div class='border-bottom' id='view3dsetscalelevelbias'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setScaleLevelBias(volume, scaleLevelBias)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Nudge the scale level loaded into this volume off the one chosen by the loader.
+E.g. a bias of <code>1</code> will load 1 scale level lower than "ideal."</p>
+
+    <div class='pre p1 fill-light mt0'>setScaleLevelBias(volume: <a href="#volume">Volume</a>, scaleLevelBias: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): void</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>volume</span> <code class='quiet'>(<a href="#volume">Volume</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>scaleLevelBias</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>void</code>
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
     <div class='border-bottom' id='view3dsetvolumechannelasmask'>
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
@@ -2090,7 +3445,7 @@ as requests arrive, the callback will be called per image, not per channel
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setVoxelSize(volume, values)</span>
+            <span class='code strong strong truncate'>setVoxelSize(volume, values, unit)</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -2100,7 +3455,7 @@ as requests arrive, the callback will be called per image, not per channel
 
   <p>Set voxel dimensions - controls volume scaling. For example, the physical measurements of the voxels from a biological data set</p>
 
-    <div class='pre p1 fill-light mt0'>setVoxelSize(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, values: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): void</div>
+    <div class='pre p1 fill-light mt0'>setVoxelSize(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, values: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, unit: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>): void</div>
   
   
 
@@ -2132,94 +3487,12 @@ as requests arrive, the callback will be called per image, not per channel
           
         </div>
       
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code>void</code>
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='view3dcreateisosurface'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>createIsosurface(volume, channel, isovalue, alpha?)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>If an isosurface is not already created, then create one.  Otherwise change the isovalue of the existing isosurface.</p>
-
-    <div class='pre p1 fill-light mt0'>createIsosurface(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, channel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, isovalue: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, alpha: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?): void</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>isovalue</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    isovalue
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>alpha</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>?)</code>
-	    Opacity
+            <span class='code bold'>unit</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+	    The unit of 
+<code>values</code>
+, if different than previous
 
           </div>
           
@@ -2312,248 +3585,6 @@ as requests arrive, the callback will be called per image, not per channel
         true if there is currently a mesh isosurface for this channel
 
       
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='view3dupdateisosurface'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>updateIsosurface(volume, channel, isovalue)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>If an isosurface exists, update its isovalue and regenerate the surface. Otherwise do nothing.</p>
-
-    <div class='pre p1 fill-light mt0'>updateIsosurface(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, channel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, isovalue: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): void</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>isovalue</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code>void</code>
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='view3dupdateopacity'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>updateOpacity(volume, channel, opacity)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Set opacity for isosurface</p>
-
-    <div class='pre p1 fill-light mt0'>updateOpacity(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, channel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, opacity: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): void</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>opacity</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    Opacity
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code>void</code>
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='view3dclearisosurface'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>clearIsosurface(volume, channel)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>If an isosurface exists for this channel, hide it now</p>
-
-    <div class='pre p1 fill-light mt0'>clearIsosurface(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, channel: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): void</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>volume</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channel</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code>void</code>
     
   
 
@@ -2731,7 +3762,7 @@ as requests arrive, the callback will be called per image, not per channel
       <div class="clearfix small pointer toggle-sibling">
         <div class="py1 contain">
             <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setShowAxis(showAxis, autorotate)</span>
+            <span class='code strong strong truncate'>setShowAxis(showAxis)</span>
         </div>
       </div>
       <div class="clearfix display-none toggle-target">
@@ -2741,7 +3772,7 @@ as requests arrive, the callback will be called per image, not per channel
 
   <p>Enable or disable 3d axis display at lower left.</p>
 
-    <div class='pre p1 fill-light mt0'>setShowAxis(showAxis: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>, autorotate: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>): void</div>
+    <div class='pre p1 fill-light mt0'>setShowAxis(showAxis: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>): void</div>
   
   
 
@@ -2764,10 +3795,444 @@ as requests arrive, the callback will be called per image, not per channel
           
         </div>
       
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>void</code>
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dsetshowscalebar'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setShowScaleBar(showScaleBar)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Enable or disable scale indicators.</p>
+
+    <div class='pre p1 fill-light mt0'>setShowScaleBar(showScaleBar: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>): void</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>autorotate</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</code>
+            <span class='code bold'>showScaleBar</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</code>
 	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>void</code>
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dsetshowtimestepindicator'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setShowTimestepIndicator(showIndicator, showTimestepIndicator)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Enable or disable time indicator.</p>
+
+    <div class='pre p1 fill-light mt0'>setShowTimestepIndicator(showIndicator: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>, showTimestepIndicator: any): void</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>showIndicator</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>showTimestepIndicator</span> <code class='quiet'>(any)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>void</code>
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dsetaxisposition'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setAxisPosition(marginX, marginY, corner = ViewportCorner.BOTTOM_LEFT)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Set the position of the axis indicator, as a corner of the viewport and horizontal and vertical margins from the
+edge of the viewport.</p>
+
+    <div class='pre p1 fill-light mt0'>setAxisPosition(marginX: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, marginY: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, corner: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?): void</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>marginX</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>marginY</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>corner</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?
+            = <code>ViewportCorner.BOTTOM_LEFT</code>)</code>
+	    The corner of the viewport in which the axis appears. Default: 
+<code>"bottom_left"</code>
+.
+TypeScript users should use the 
+<code>ViewportCorner</code>
+ enum. Otherwise, corner is one of: 
+<code>"top_left"</code>
+, 
+<code>"top_right"</code>
+,
+
+<code>"bottom_left"</code>
+, 
+<code>"bottom_right"</code>
+.
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>void</code>
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dsetscalebarposition'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setScaleBarPosition(marginX, marginY, corner = ViewportCorner.BOTTOM_RIGHT)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Set the position of the scale bar, as a corner of the viewport and horizontal and vertical margins from the edge
+of the viewport.</p>
+
+    <div class='pre p1 fill-light mt0'>setScaleBarPosition(marginX: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, marginY: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, corner: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?): void</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>marginX</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>marginY</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>corner</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?
+            = <code>ViewportCorner.BOTTOM_RIGHT</code>)</code>
+	    The corner of the viewport in which the scale bar appears. Default: 
+<code>"bottom_right"</code>
+.
+TypeScript users should use the 
+<code>ViewportCorner</code>
+ enum. Otherwise, corner is one of: 
+<code>"top_left"</code>
+, 
+<code>"top_right"</code>
+,
+
+<code>"bottom_left"</code>
+, 
+<code>"bottom_right"</code>
+.
+
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>void</code>
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dsettimestepindicatorposition'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setTimestepIndicatorPosition(marginX, marginY, corner = ViewportCorner.BOTTOM_RIGHT)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Set the position of the time step indicator, as a corner of the viewport and horizontal and vertical margins from
+the edge of the viewport.</p>
+
+    <div class='pre p1 fill-light mt0'>setTimestepIndicatorPosition(marginX: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, marginY: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, corner: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?): void</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>marginX</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>marginY</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>corner</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>?
+            = <code>ViewportCorner.BOTTOM_RIGHT</code>)</code>
+	    The corner of the viewport in which the scale bar appears. Default: 
+<code>"bottom_right"</code>
+.
+TypeScript users should use the 
+<code>ViewportCorner</code>
+ enum. Otherwise, corner is one of: 
+<code>"top_left"</code>
+, 
+<code>"top_right"</code>
+,
+
+<code>"bottom_left"</code>
+, 
+<code>"bottom_right"</code>
+.
+
           </div>
           
         </div>
@@ -2834,6 +4299,73 @@ as requests arrive, the callback will be called per image, not per channel
         <div class='space-bottom0'>
           <div>
             <span class='code bold'>autorotate</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>)</code>
+	    
+          </div>
+          
+        </div>
+      
+    </div>
+  
+
+  
+
+  
+    
+      <div class='py1 quiet mt1 prose-big'>Returns</div>
+      <code>void</code>
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+</section>
+
+      </div>
+    </div>
+  
+    <div class='border-bottom' id='view3dsetscaleunit'>
+      <div class="clearfix small pointer toggle-sibling">
+        <div class="py1 contain">
+            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
+            <span class='code strong strong truncate'>setScaleUnit(unit)</span>
+        </div>
+      </div>
+      <div class="clearfix display-none toggle-target">
+        <section class='p2 mb2 clearfix bg-white minishadow'>
+
+  
+
+  <p>Set the unit symbol for the scale bar (e.g. µm)</p>
+
+    <div class='pre p1 fill-light mt0'>setScaleUnit(unit: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>): void</div>
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+    <div class='py1 quiet mt1 prose-big'>Parameters</div>
+    <div class='prose'>
+      
+        <div class='space-bottom0'>
+          <div>
+            <span class='code bold'>unit</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
 	    
           </div>
           
@@ -3910,7 +5442,7 @@ as requests arrive, the callback will be called per image, not per channel
   <p>Set clipping range (between 0 and 1) for a given axis.
 Calling this allows the rendering to compensate for changes in thickness in orthographic views that affect how bright the volume is.</p>
 
-    <div class='pre p1 fill-light mt0'>setAxisClip(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, axis: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, minval: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, maxval: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, isOrthoAxis: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>): void</div>
+    <div class='pre p1 fill-light mt0'>setAxisClip(volume: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>, axis: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, minval: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, maxval: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, isOrthoAxis: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean">boolean</a>): void</div>
   
   
 
@@ -3935,8 +5467,8 @@ Calling this allows the rendering to compensate for changes in thickness in orth
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>axis</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    0, 1, or 2 for x, y, or z axis
+            <span class='code bold'>axis</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
+	    x, y, or z axis
 
           </div>
           
@@ -4502,7 +6034,7 @@ Calling this allows the rendering to compensate for changes in thickness in orth
 
   <p>Switch between single pass ray-marched volume rendering and progressive path traced rendering.</p>
 
-    <div class='pre p1 fill-light mt0'>setVolumeRenderMode(mode: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): void</div>
+    <div class='pre p1 fill-light mt0'>setVolumeRenderMode(mode: RenderMode): void</div>
   
   
 
@@ -4519,8 +6051,8 @@ Calling this allows the rendering to compensate for changes in thickness in orth
       
         <div class='space-bottom0'>
           <div>
-            <span class='code bold'>mode</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    0 for single pass ray march, 1 for progressive path trace
+            <span class='code bold'>mode</span> <code class='quiet'>(RenderMode)</code>
+	    RAYMARCH for single pass ray march, PATHTRACE for progressive path trace
 
           </div>
           
@@ -4737,2205 +6269,6 @@ Calling this allows the rendering to compensate for changes in thickness in orth
     
       <div class='py1 quiet mt1 prose-big'>Returns</div>
       <code>void</code>
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-</div>
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
-          <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='controlpoint'>
-      ControlPoint
-    </h3>
-    
-    
-  </div>
-  
-
-  
-    <div class='pre p1 fill-light mt0'>ControlPoint</div>
-  
-    <p>
-      Type:
-      <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>
-    </p>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Properties</div>
-    <div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>x</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-          : The X Coordinate
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>opacity</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-          : The Opacity, from 0 to 1
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>color</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</code>
-          : The Color, 3 numbers from 0-255 for r,g,b
-
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
-          <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='lut'>
-      Lut
-    </h3>
-    
-    
-  </div>
-  
-
-  
-    <div class='pre p1 fill-light mt0'>Lut</div>
-  
-    <p>
-      Type:
-      <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>
-    </p>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Properties</div>
-    <div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>lut</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</code>
-          : LUT_ARRAY_LENGTH element lookup table as array
-(maps scalar intensity to a rgb color plus alpha, with each value from 0-255)
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>controlPoints</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="#controlpoint">ControlPoint</a>>)</code>
-          
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
-          <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='histogram'>
-      Histogram
-    </h3>
-    
-    
-  </div>
-  
-
-  <p>Builds a histogram with 256 bins from a data array. Assume data is 8 bit single channel grayscale.</p>
-
-    <div class='pre p1 fill-light mt0'>new Histogram(data: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>data</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Instance Members</div>
-    <div class="clearfix">
-  
-    <div class='border-bottom' id='histogramgetmin'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>getMin()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Return the min data value</p>
-
-    <div class='pre p1 fill-light mt0'>getMin(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>:
-        
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='histogramgetmax'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>getMax()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Return the max data value</p>
-
-    <div class='pre p1 fill-light mt0'>getMax(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>:
-        
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='histogramlutgenerator_windowlevel'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>lutGenerator_windowLevel(wnd, lvl)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Generate a Window/level lookup table</p>
-
-    <div class='pre p1 fill-light mt0'>lutGenerator_windowLevel(wnd: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, lvl: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="#lut">Lut</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>wnd</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    in 0..1 range
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>lvl</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    in 0..1 range
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="#lut">Lut</a></code>:
-        
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='histogramlutgenerator_minmax'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>lutGenerator_minMax(b, e)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Generate a piecewise linear lookup table that ramps up from 0 to 1 over the b to e domain.
-If e === b, then we use a step function with f(b) = 0 and f(b + 1) = 1
-|
-1|               +---------+-----
-|              /
-|             /
-|            /
-|           /
-|          /
-0+=========+---------------+-----
-0         b    e         255</p>
-
-    <div class='pre p1 fill-light mt0'>lutGenerator_minMax(b: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, e: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="#lut">Lut</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>b</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>e</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="#lut">Lut</a></code>:
-        
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='histogramlutgenerator_fullrange'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>lutGenerator_fullRange()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Generate a straight 0-1 linear identity lookup table</p>
-
-    <div class='pre p1 fill-light mt0'>lutGenerator_fullRange(): <a href="#lut">Lut</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="#lut">Lut</a></code>:
-        
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='histogramlutgenerator_datarange'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>lutGenerator_dataRange()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Generate a lookup table over the min to max range of the data values</p>
-
-    <div class='pre p1 fill-light mt0'>lutGenerator_dataRange(): <a href="#lut">Lut</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="#lut">Lut</a></code>:
-        
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='histogramlutgenerator_labelcolors'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>lutGenerator_labelColors()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Generate a lookup table with a different color per intensity value</p>
-
-    <div class='pre p1 fill-light mt0'>lutGenerator_labelColors(): <a href="#lut">Lut</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="#lut">Lut</a></code>:
-        
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='histogramfindbinofpercentile'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>findBinOfPercentile(pct)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Find the bin that contains the percentage of pixels below it</p>
-
-    <div class='pre p1 fill-light mt0'>findBinOfPercentile(pct: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>pct</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>:
-        
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='histogramlutgenerator_percentiles'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>lutGenerator_percentiles(pmin, pmax)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Generate a lookup table based on histogram percentiles</p>
-
-    <div class='pre p1 fill-light mt0'>lutGenerator_percentiles(pmin: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, pmax: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="#lut">Lut</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>pmin</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>pmax</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="#lut">Lut</a></code>:
-        
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='histogramlutgenerator_bestfit'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>lutGenerator_bestFit()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Generate a 10% / 90% lookup table</p>
-
-    <div class='pre p1 fill-light mt0'>lutGenerator_bestFit(): <a href="#lut">Lut</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="#lut">Lut</a></code>:
-        
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='histogramlutgenerator_auto2'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>lutGenerator_auto2()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Generate a lookup table attempting to replicate ImageJ's "Auto" button</p>
-
-    <div class='pre p1 fill-light mt0'>lutGenerator_auto2(): <a href="#lut">Lut</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="#lut">Lut</a></code>:
-        
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='histogramlutgenerator_auto'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>lutGenerator_auto()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Generate a lookup table using a percentile of the most commonly occurring value</p>
-
-    <div class='pre p1 fill-light mt0'>lutGenerator_auto(): <a href="#lut">Lut</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="#lut">Lut</a></code>:
-        
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='histogramlutgenerator_equalize'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>lutGenerator_equalize()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Generate an "equalized" lookup table</p>
-
-    <div class='pre p1 fill-light mt0'>lutGenerator_equalize(): <a href="#lut">Lut</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="#lut">Lut</a></code>:
-        
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-</div>
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
-          <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='imageinfo'>
-      ImageInfo
-    </h3>
-    
-    
-  </div>
-  
-
-  <p>Provide dimensions of the volume data, including dimensions for texture atlas data in which the volume z slices
-are tiled across a single large 2d image plane.</p>
-
-    <div class='pre p1 fill-light mt0'>ImageInfo</div>
-  
-    <p>
-      Type:
-      <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>
-    </p>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Properties</div>
-    <div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>name</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
-          : Base name of image
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>version</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
-          : schema version preferably in semver format.
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>width</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-          : Width of original volumetric data prior to downsampling
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>height</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-          : Height of original volumetric data prior to downsampling
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>channels</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-          : Number of channels
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>tiles</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-          : Number of tiles, which must be equal to the number of z-slices in original volumetric data
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>pixel_size_x</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-          : Size of pixel in volumetric data to be rendered, in x-dimension, unitless
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>pixel_size_y</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-          : Size of pixel in volumetric data to be rendered, in y-dimension, unitless
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>pixel_size_z</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-          : Size of pixel in volumetric data to be rendered, in z-dimension, unitless
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>channel_names</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>>)</code>
-          : Names of each of the channels to be rendered, in order. Unique identifier expected
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>rows</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-          : Number of rows in tile array in each image.  Note tiles &#x3C;= rows*cols
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>cols</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-          : Number of columns in tile array in each image.  Note tiles &#x3C;= rows*cols
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>tile_width</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-          : Width of each tile in volumetric dataset to be rendered, in pixels
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>tile_height</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-          : Height of each tile in volumetric dataset to be rendered, in pixels
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>atlas_width</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-          : Total width of image containing all the tiles, in pixels.  Note atlas_width === cols*tile_width
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>atlas_height</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-          : Total height of image containing all the tiles, in pixels. Note atlas_height === rows*tile_height
-
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <span class='code bold'>transform</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object">Object</a>)</code>
-          : translation and rotation as arrays of 3 numbers. Translation is in voxels (to be multiplied by pixel_size values). Rotation is Euler angles in radians, appled in XYZ order.
-
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Example</div>
-    
-      
-      <pre class='p1 overflow-auto round fill-light'><span class="hljs-keyword">let</span> imgdata = {
-<span class="hljs-string">&quot;width&quot;</span>: <span class="hljs-number">306</span>,
-<span class="hljs-string">&quot;height&quot;</span>: <span class="hljs-number">494</span>,
-<span class="hljs-string">&quot;channels&quot;</span>: <span class="hljs-number">9</span>,
-<span class="hljs-string">&quot;channel_names&quot;</span>: [<span class="hljs-string">&quot;DRAQ5&quot;</span>, <span class="hljs-string">&quot;EGFP&quot;</span>, <span class="hljs-string">&quot;Hoechst 33258&quot;</span>, <span class="hljs-string">&quot;TL Brightfield&quot;</span>, <span class="hljs-string">&quot;SEG_STRUCT&quot;</span>, <span class="hljs-string">&quot;SEG_Memb&quot;</span>, <span class="hljs-string">&quot;SEG_DNA&quot;</span>, <span class="hljs-string">&quot;CON_Memb&quot;</span>, <span class="hljs-string">&quot;CON_DNA&quot;</span>],
-<span class="hljs-string">&quot;rows&quot;</span>: <span class="hljs-number">7</span>,
-<span class="hljs-string">&quot;cols&quot;</span>: <span class="hljs-number">10</span>,
-<span class="hljs-string">&quot;tiles&quot;</span>: <span class="hljs-number">65</span>,
-<span class="hljs-string">&quot;tile_width&quot;</span>: <span class="hljs-number">204</span>,
-<span class="hljs-string">&quot;tile_height&quot;</span>: <span class="hljs-number">292</span>,
-<span class="hljs-comment">// for webgl reasons, it is best for atlas_width and atlas_height to be &lt;= 2048</span>
-<span class="hljs-comment">// and ideally a power of 2.  This generally implies downsampling the original volume data for display in this viewer.</span>
-<span class="hljs-string">&quot;atlas_width&quot;</span>: <span class="hljs-number">2040</span>,
-<span class="hljs-string">&quot;atlas_height&quot;</span>: <span class="hljs-number">2044</span>,
-<span class="hljs-string">&quot;pixel_size_x&quot;</span>: <span class="hljs-number">0.065</span>,
-<span class="hljs-string">&quot;pixel_size_y&quot;</span>: <span class="hljs-number">0.065</span>,
-<span class="hljs-string">&quot;pixel_size_z&quot;</span>: <span class="hljs-number">0.29</span>,
-<span class="hljs-string">&quot;name&quot;</span>: <span class="hljs-string">&quot;AICS-10_5_5&quot;</span>,
-<span class="hljs-string">&quot;status&quot;</span>: <span class="hljs-string">&quot;OK&quot;</span>,
-<span class="hljs-string">&quot;version&quot;</span>: <span class="hljs-string">&quot;0.0.0&quot;</span>,
-<span class="hljs-string">&quot;aicsImageVersion&quot;</span>: <span class="hljs-string">&quot;0.3.0&quot;</span>,
-<span class="hljs-string">&quot;transform&quot;</span>: {
-<span class="hljs-string">&quot;translation&quot;</span>: [<span class="hljs-number">5</span>, <span class="hljs-number">5</span>, <span class="hljs-number">1</span>],
-<span class="hljs-string">&quot;rotation&quot;</span>: [<span class="hljs-number">0</span>, <span class="hljs-number">3.14159</span>, <span class="hljs-number">1.57</span>]
-}
-};</pre>
-    
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-          
-        
-          
-          <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-  <div class='clearfix'>
-    
-    <h3 class='fl m0' id='volume'>
-      Volume
-    </h3>
-    
-    
-  </div>
-  
-
-  <p>A renderable multichannel volume image with 8-bits per channel intensity values.</p>
-
-    <div class='pre p1 fill-light mt0'>new Volume(imageInfo: <a href="#imageinfo">ImageInfo</a>)</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>imageInfo</span> <code class='quiet'>(<a href="#imageinfo">ImageInfo</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Instance Members</div>
-    <div class="clearfix">
-  
-    <div class='border-bottom' id='volumechannelnames'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>channelNames()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  
-    <div class='pre p1 fill-light mt0'>channelNames(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>></code>:
-        a reference to the list of channel names
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='volumesetchanneldatafromatlas'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setChannelDataFromAtlas(channelIndex, atlasdata, atlaswidth, atlasheight)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Assign volume data via a 2d array containing the z slices as tiles across it.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.</p>
-
-    <div class='pre p1 fill-light mt0'>setChannelDataFromAtlas(channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, atlasdata: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>, atlaswidth: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, atlasheight: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): void</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channelIndex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>atlasdata</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>atlaswidth</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>atlasheight</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code>void</code>
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='volumesetchanneldatafromvolume'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setChannelDataFromVolume(channelIndex, volumeData)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Assign volume data as a 3d array ordered x,y,z. The xy size must be equal to tilewidth*tileheight from the imageInfo used to construct this Volume.  Assumes that the incoming data is consistent with the image's pre-existing imageInfo tile metadata.</p>
-
-    <div class='pre p1 fill-light mt0'>setChannelDataFromVolume(channelIndex: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, volumeData: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>): void</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>channelIndex</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>volumeData</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code>void</code>
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='volumeappendemptychannel'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>appendEmptyChannel(name, color)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Add a new channel ready to receive data from one of the setChannelDataFrom* calls.
-Name and color will be defaulted if not provided. For now, leave imageInfo alone as the "original" data</p>
-
-    <div class='pre p1 fill-light mt0'>appendEmptyChannel(name: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>, color: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>name</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String">string</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>color</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</code>
-	    [r,g,b]
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='volumegetintensity'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>getIntensity(c, x, y, z)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Get a value from the volume data</p>
-
-    <div class='pre p1 fill-light mt0'>getIntensity(c: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, x: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, y: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, z: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>c</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    The channel index
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>x</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>y</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>z</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a></code>:
-        the intensity value from the given channel at the given xyz location
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='volumegethistogram'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>getHistogram(c)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Get the 256-bin histogram for the given channel</p>
-
-    <div class='pre p1 fill-light mt0'>getHistogram(c: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): <a href="#histogram">Histogram</a></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>c</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    The channel index
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="#histogram">Histogram</a></code>:
-        the histogram
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='volumesetlut'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setLut(c, lut)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Set the lut for the given channel</p>
-
-    <div class='pre p1 fill-light mt0'>setLut(c: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, lut: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>): void</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>c</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    The channel index
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>lut</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</code>
-	    The lut as a 256 element array
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code>void</code>
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='volumesetcolorpalette'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setColorPalette(c, palette)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Set the color palette for the given channel</p>
-
-    <div class='pre p1 fill-light mt0'>setColorPalette(c: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, palette: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>): void</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>c</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    The channel index
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>palette</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>>)</code>
-	    The colors as a 256 element array * RGBA
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code>void</code>
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='volumesetcolorpalettealpha'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>setColorPaletteAlpha(c, alpha)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Set the color palette alpha multiplier for the given channel.
-This will blend between the ordinary color lut and this colorPalette lut.</p>
-
-    <div class='pre p1 fill-light mt0'>setColorPaletteAlpha(c: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, alpha: <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>): void</div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>c</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    The channel index
-
-          </div>
-          
-        </div>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>alpha</span> <code class='quiet'>(<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>)</code>
-	    The alpha value as a number from 0 to 1
-
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code>void</code>
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='volumegetrotation'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>getRotation()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Return the intrinsic rotation associated with this volume (radians)</p>
-
-    <div class='pre p1 fill-light mt0'>getRotation(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></code>:
-        the xyz Euler angles (radians)
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='volumegettranslation'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>getTranslation()</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Return the intrinsic translation (pivot center delta) associated with this volume, in normalized volume units</p>
-
-    <div class='pre p1 fill-light mt0'>getTranslation(): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></code>:
-        the xyz translation in normalized volume units
-
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-</section>
-
-      </div>
-    </div>
-  
-    <div class='border-bottom' id='volumevoxelstoworldspace'>
-      <div class="clearfix small pointer toggle-sibling">
-        <div class="py1 contain">
-            <a class='icon pin-right py1 dark-link caret-right'>▸</a>
-            <span class='code strong strong truncate'>voxelsToWorldSpace(xyz)</span>
-        </div>
-      </div>
-      <div class="clearfix display-none toggle-target">
-        <section class='p2 mb2 clearfix bg-white minishadow'>
-
-  
-
-  <p>Return a translation in normalized volume units, given a translation in image voxels</p>
-
-    <div class='pre p1 fill-light mt0'>voxelsToWorldSpace(xyz: [<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>]): <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></div>
-  
-  
-
-  
-  
-  
-  
-  
-  
-
-  
-    <div class='py1 quiet mt1 prose-big'>Parameters</div>
-    <div class='prose'>
-      
-        <div class='space-bottom0'>
-          <div>
-            <span class='code bold'>xyz</span> <code class='quiet'>([<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>, <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>])</code>
-	    
-          </div>
-          
-        </div>
-      
-    </div>
-  
-
-  
-
-  
-    
-      <div class='py1 quiet mt1 prose-big'>Returns</div>
-      <code><a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array">Array</a>&#x3C;<a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number">number</a>></code>:
-        the xyz translation in normalized volume units
-
-      
     
   
 

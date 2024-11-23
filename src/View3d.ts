@@ -46,7 +46,7 @@ const allGlobalLoadingOptions = {
  * @class
  */
 export class View3d {
-  // TODO because View3d is basically a top level entrypoint for volume-viewer,
+  // TODO because View3d is basically a top level entrypoint for Vol-E,
   // maybe it should create the VolumeLoaderContext with options passed in.
   // (instead of having the loaderContext created externally)
   public loaderContext?: VolumeLoaderContext;
