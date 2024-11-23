@@ -20,7 +20,7 @@ There are several ways to deliver volume data to the viewer:
 
 See [`public/index.ts`](./public/index.ts) for a working example. (`npm install; npm run dev` will run that code)
 
-The basic code to get the volume viewer up and running is as follows:
+The basic code to get the viewer up and running is as follows:
 
 ```javascript
 // find a div that will hold the viewer
@@ -43,7 +43,7 @@ const loadSpec = new LoadSpec();
 const volume = await loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
   const currentVol = v;
 
-  // currently, this must be called!
+  // currently, this must be called when channel data arrives (here in this callback)
   view3D.onVolumeData(currentVol, [channelIndex]);
 
   view3D.setVolumeChannelEnabled(currentVol, channelIndex, true);
