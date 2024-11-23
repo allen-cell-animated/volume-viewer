@@ -6,7 +6,7 @@ The Vol-E core package exposes several key modules:
 
 - `View3d` is the viewing component that contains a canvas and supports zoom/pan/rotate interaction with the volume via `VolumeDrawable`.
 - `Volume` is the class that holds the volume dimensions and a collection of `Channel`s that contain the volume pixel data. After initialization, this is generally a read-only holder for raw data.
-- `VolumeLoaderContext` is an interface that lets you initialize asynchronous data loading of different formats via its `createLoader` method
+- `VolumeLoaderContext` is an interface that lets you initialize asynchronous data loading of different formats via its `createLoader` method.
 - `IVolumeLoader` is an interface for requesting volume dimensions and data.
 - `LoadSpec` is a small bundle of information to guide the IVolumeLoader on exactly what to load.
 
