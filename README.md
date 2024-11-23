@@ -12,9 +12,9 @@ The Vol-E core package exposes several key modules:
 
 There are several ways to deliver volume data to the viewer:
 
-- load OME-Zarr as publicly accessible web links. Authentication is not explicitly supported in Vol-E.
-- raw TypedArrays of 3d volume data ( see `RawArrayLoader` and `Volume.setChannelDataFromVolume` )
-- (legacy) texture atlases as png files or Uint8Arrays containing volume slices tiled across a 2d image ( see `JsonImageInfoLoader` and `Volume.setChannelDataFromAtlas` )
+- Load OME-Zarr from publicly accessible web links. Authentication is not explicitly supported in Vol-E.
+- Load raw TypedArrays of 3d volume data ( see `RawArrayLoader` and `Volume.setChannelDataFromVolume` ).
+- (legacy) Load texture atlases as .png files or Uint8Arrays containing volume slices tiled across a 2d image ( see `JsonImageInfoLoader` and `Volume.setChannelDataFromAtlas` ).
 
 # Example
 
