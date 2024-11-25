@@ -123,7 +123,7 @@ export default class VolumeDrawable {
    */
   private updateChannelDataRequired(channelIndex: number): void {
     const { enabled, isosurfaceEnabled } = this.channelOptions[channelIndex];
-    const channelIsRequired = enabled || isosurfaceEnabled;
+    const channelIsRequired = enabled || isosurfaceEnabled || channelIndex === this.settings.maskChannelIndex;
     const requiredChannels = this.volume.loadSpecRequired.channels;
 
     if (requiredChannels.includes(channelIndex)) {
@@ -597,6 +597,7 @@ export default class VolumeDrawable {
       return;
     }
     this.settings.maskChannelIndex = channelIndex;
+    this.updateChannelDataRequired(channelIndex);
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.MASK_DATA);
   }
 
