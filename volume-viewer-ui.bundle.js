@@ -5751,7 +5751,7 @@ class VolumeDrawable {
       enabled,
       isosurfaceEnabled
     } = this.channelOptions[channelIndex];
-    const channelIsRequired = enabled || isosurfaceEnabled;
+    const channelIsRequired = enabled || isosurfaceEnabled || channelIndex === this.settings.maskChannelIndex;
     const requiredChannels = this.volume.loadSpecRequired.channels;
     if (requiredChannels.includes(channelIndex)) {
       if (!channelIsRequired) {
@@ -6178,6 +6178,7 @@ class VolumeDrawable {
       return;
     }
     this.settings.maskChannelIndex = channelIndex;
+    this.updateChannelDataRequired(channelIndex);
     this.volumeRendering.updateSettings(this.settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_6__.SettingsFlags.MASK_DATA);
   }
   setMaskAlpha(maskAlpha) {
