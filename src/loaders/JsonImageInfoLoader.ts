@@ -192,7 +192,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
     const requestedChannels = loadSpec.channels;
     if (requestedChannels) {
       // If only some channels are requested, load only images which contain at least one requested channel
-      images = images.filter(({ channels }) => channels.some((ch) => ch in requestedChannels));
+      images = images.filter(({ channels }) => channels.some((ch) => requestedChannels.includes(ch)));
     }
 
     // This regex removes everything after the last slash, so the url had better be simple.

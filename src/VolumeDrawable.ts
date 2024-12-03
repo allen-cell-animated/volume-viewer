@@ -118,7 +118,8 @@ export default class VolumeDrawable {
   }
 
   /**
-   * Updates whether a channel's data must be loaded for rendering, based on if its volume or isosurface is enabled.
+   * Updates whether a channel's data must be loaded for rendering,
+   * based on if its volume or isosurface is enabled, or whether it is needed for masking.
    * Calls `Volume.updateRequiredData` to update the list of required channels if necessary.
    */
   private updateChannelDataRequired(channelIndex: number): void {
@@ -128,12 +129,12 @@ export default class VolumeDrawable {
 
     if (requiredChannels.includes(channelIndex)) {
       if (!channelIsRequired) {
-        // This channel is currently marked required, but both its volume and isosurface are off. Remove it!
+        // This channel is currently marked required, but both its volume and isosurface are off, and it's not a mask. Remove it!
         this.volume.updateRequiredData({ channels: requiredChannels.filter((i) => i !== channelIndex) });
       }
     } else {
       if (channelIsRequired) {
-        // This channel is not marked required, but either its volume or isosurface is on. Add it!
+        // This channel is not marked required, but either its volume or isosurface is on, or it is a mask. Add it!
         this.volume.updateRequiredData({ channels: [...requiredChannels, channelIndex] });
       }
     }
