@@ -226,6 +226,7 @@ export class View3d {
     if (this.image) {
       this.removeVolume(this.image.volume);
     }
+    this.image = undefined;
   }
 
   /**
