@@ -96,7 +96,6 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
   public updateVolumeDimensions(): void {
     const volumeScale = this.volume.normPhysicalSize.clone().multiply(this.settings.scale);
     const regionScale = volumeScale.clone().multiply(this.volume.normRegionSize);
-    console.log(regionScale);
     const volumeOffset = this.volume.getContentCenter().clone().multiply(this.settings.scale);
     this.geometryMesh.position.copy(volumeOffset);
     // set scale

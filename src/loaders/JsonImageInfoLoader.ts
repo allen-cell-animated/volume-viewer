@@ -121,6 +121,7 @@ const convertImageInfo = (json: JsonImageInfo): ImageInfo => {
 class JsonImageInfoLoader extends ThreadableVolumeLoader {
   urls: string[];
   jsonInfo: (JsonImageInfo | undefined)[];
+  syncChannels = false;
 
   cache?: VolumeCache;
 
@@ -150,6 +151,10 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
     imageInfo.times = imageInfo.times || this.urls.length;
     this.jsonInfo[time] = imageInfo;
     return imageInfo;
+  }
+
+  syncMultichannelLoading(sync: boolean): void {
+    this.syncChannels = sync;
   }
 
   async loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
@@ -192,7 +197,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
     const requestedChannels = loadSpec.channels;
     if (requestedChannels) {
       // If only some channels are requested, load only images which contain at least one requested channel
-      images = images.filter(({ channels }) => channels.some((ch) => ch in requestedChannels));
+      images = images.filter(({ channels }) => channels.some((ch) => requestedChannels.includes(ch)));
     }
 
     // This regex removes everything after the last slash, so the url had better be simple.
@@ -217,7 +222,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
       data: TypedArray<NumberType>[],
       ranges: [number, number][]
     ) => onData(ch, dtype, data, ranges, [w, h]);
-    await JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
+    await JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache, this.syncChannels);
   }
 
   /**
@@ -239,8 +244,14 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
   static async loadVolumeAtlasData(
     imageArray: PackedChannelsImage[],
     onData: RawChannelDataCallback,
-    cache?: VolumeCache
+    cache?: VolumeCache,
+    syncChannels = false
   ): Promise<void> {
+    const resultChannelIndices: number[] = [];
+    const resultChannelDtype: NumberType[] = [];
+    const resultChannelData: TypedArray<NumberType>[] = [];
+    const resultChannelRanges: [number, number][] = [];
+
     const imagePromises = imageArray.map(async (image) => {
       // Because the data is fetched such that one fetch returns a whole batch,
       // if any in batch is cached then they all should be. So if any in batch is NOT cached,
@@ -251,7 +262,15 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
         const cacheResult = cache?.get(`${image.name}/${chindex}`);
         if (cacheResult) {
           // all data coming from this loader is natively 8-bit
-          onData([chindex], ["uint8"], [new Uint8Array(cacheResult)], [DATARANGE_UINT8]);
+          if (syncChannels) {
+            // if we are synchronizing channels, we need to keep track of the data
+            resultChannelIndices.push(chindex);
+            resultChannelDtype.push("uint8");
+            resultChannelData.push(new Uint8Array(cacheResult));
+            resultChannelRanges.push(DATARANGE_UINT8);
+          } else {
+            onData([chindex], ["uint8"], [new Uint8Array(cacheResult)], [DATARANGE_UINT8]);
+          }
         } else {
           cacheHit = false;
           // we can stop checking because we know we are going to have to fetch the whole batch
@@ -302,11 +321,21 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
         cache?.insert(`${image.name}/${chindex}`, channelsBits[ch]);
         // NOTE: the atlas dimensions passed in here are currently unused by `JSONImageInfoLoader`
         // all data coming from this loader is natively 8-bit
-        onData([chindex], ["uint8"], [channelsBits[ch]], [DATARANGE_UINT8], [bitmap.width, bitmap.height]);
+        if (syncChannels) {
+          resultChannelIndices.push(chindex);
+          resultChannelDtype.push("uint8");
+          resultChannelData.push(channelsBits[ch]);
+          resultChannelRanges.push(DATARANGE_UINT8);
+        } else {
+          onData([chindex], ["uint8"], [channelsBits[ch]], [DATARANGE_UINT8], [bitmap.width, bitmap.height]);
+        }
       }
     });
 
     await Promise.all(imagePromises);
+    if (syncChannels) {
+      onData(resultChannelIndices, resultChannelDtype, resultChannelData, resultChannelRanges);
+    }
   }
 }
 
