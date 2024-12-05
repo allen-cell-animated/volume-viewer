@@ -5,6 +5,7 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
+  DataTexture,
   DepthTexture,
   Group,
   LineBasicMaterial,
@@ -20,7 +21,6 @@ import {
   Vector2,
   Vector3,
   WebGLRenderer,
-  WebGLRenderTarget,
 } from "three";
 
 import FusedChannelData from "./FusedChannelData.js";
@@ -38,17 +38,6 @@ import { VolumeRenderSettings, SettingsFlags } from "./VolumeRenderSettings.js";
 
 const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 
-function createEmptyDepthTexture(renderer: WebGLRenderer): DepthTexture {
-  const depthTexture = new DepthTexture(2, 2);
-  const target = new WebGLRenderTarget(2, 2);
-  target.depthTexture = depthTexture;
-  renderer.setRenderTarget(target);
-  // Don't clear color, do clear depth, don't clear stencil
-  renderer.clear(false, true, false);
-  renderer.setRenderTarget(null);
-  return depthTexture;
-}
-
 export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   private settings: VolumeRenderSettings;
   public volume: Volume;
@@ -60,7 +49,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   private geometryTransformNode: Group;
   private uniforms: ReturnType<typeof rayMarchingShaderUniforms>;
   private channelData!: FusedChannelData;
-  private emptyDepthTex?: DepthTexture;
+  private emptyPositionTex: DataTexture;
 
   /**
    * Creates a new RayMarchedAtlasVolume.
@@ -89,6 +78,8 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
     this.geometryTransformNode.name = "VolumeContainerNode";
 
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
+
+    this.emptyPositionTex = new DataTexture(new Uint8Array(Array(16).fill(0)), 2, 2);
 
     this.settings = settings;
     this.updateSettings(settings, SettingsFlags.ALL);
@@ -332,12 +323,9 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
       return;
     }
 
-    if (!this.emptyDepthTex) {
-      this.emptyDepthTex = createEmptyDepthTexture(renderer);
-    }
-
-    this.setUniform("textureDepth", depthTexture ?? this.emptyDepthTex);
-    this.setUniform("usingPositionTexture", (depthTexture as DepthTexture)?.isDepthTexture ? 0 : 1);
+    const depthTex = depthTexture ?? this.emptyPositionTex;
+    this.setUniform("textureDepth", depthTex);
+    this.setUniform("usingPositionTexture", (depthTex as DepthTexture).isDepthTexture ? 0 : 1);
     this.setUniform("CLIP_NEAR", camera.near);
     this.setUniform("CLIP_FAR", camera.far);
 
