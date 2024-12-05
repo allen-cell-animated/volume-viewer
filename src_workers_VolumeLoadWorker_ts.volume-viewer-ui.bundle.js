@@ -2064,6 +2064,7 @@ const convertImageInfo = json => {
   };
 };
 class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.ThreadableVolumeLoader {
+  syncChannels = false;
   constructor(urls, cache) {
     super();
     if (Array.isArray(urls)) {
@@ -2085,6 +2086,9 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
     imageInfo.times = imageInfo.times || this.urls.length;
     this.jsonInfo[time] = imageInfo;
     return imageInfo;
+  }
+  syncMultichannelLoading(sync) {
+    this.syncChannels = sync;
   }
   async loadDims(loadSpec) {
     const jsonInfo = await this.getJsonImageInfo(loadSpec.time);
@@ -2120,7 +2124,7 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
       // If only some channels are requested, load only images which contain at least one requested channel
       images = images.filter(({
         channels
-      }) => channels.some(ch => ch in requestedChannels));
+      }) => channels.some(ch => requestedChannels.includes(ch)));
     }
 
     // This regex removes everything after the last slash, so the url had better be simple.
@@ -2144,7 +2148,7 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
     onUpdateMetadata(undefined, adjustedLoadSpec);
     const [w, h] = (0,_ImageInfo_js__WEBPACK_IMPORTED_MODULE_1__.computeAtlasSize)(imageInfo);
     const wrappedOnData = (ch, dtype, data, ranges) => onData(ch, dtype, data, ranges, [w, h]);
-    await JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache);
+    await JsonImageInfoLoader.loadVolumeAtlasData(images, wrappedOnData, this.cache, this.syncChannels);
   }
 
   /**
@@ -2163,7 +2167,11 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
    *     "channels": [6, 7, 8]
    * }], mycallback);
    */
-  static async loadVolumeAtlasData(imageArray, onData, cache) {
+  static async loadVolumeAtlasData(imageArray, onData, cache, syncChannels = false) {
+    const resultChannelIndices = [];
+    const resultChannelDtype = [];
+    const resultChannelData = [];
+    const resultChannelRanges = [];
     const imagePromises = imageArray.map(async image => {
       // Because the data is fetched such that one fetch returns a whole batch,
       // if any in batch is cached then they all should be. So if any in batch is NOT cached,
@@ -2174,7 +2182,15 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
         const cacheResult = cache?.get(`${image.name}/${chindex}`);
         if (cacheResult) {
           // all data coming from this loader is natively 8-bit
-          onData([chindex], ["uint8"], [new Uint8Array(cacheResult)], [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8]);
+          if (syncChannels) {
+            // if we are synchronizing channels, we need to keep track of the data
+            resultChannelIndices.push(chindex);
+            resultChannelDtype.push("uint8");
+            resultChannelData.push(new Uint8Array(cacheResult));
+            resultChannelRanges.push(_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8);
+          } else {
+            onData([chindex], ["uint8"], [new Uint8Array(cacheResult)], [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8]);
+          }
         } else {
           cacheHit = false;
           // we can stop checking because we know we are going to have to fetch the whole batch
@@ -2224,10 +2240,20 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
         cache?.insert(`${image.name}/${chindex}`, channelsBits[ch]);
         // NOTE: the atlas dimensions passed in here are currently unused by `JSONImageInfoLoader`
         // all data coming from this loader is natively 8-bit
-        onData([chindex], ["uint8"], [channelsBits[ch]], [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8], [bitmap.width, bitmap.height]);
+        if (syncChannels) {
+          resultChannelIndices.push(chindex);
+          resultChannelDtype.push("uint8");
+          resultChannelData.push(channelsBits[ch]);
+          resultChannelRanges.push(_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8);
+        } else {
+          onData([chindex], ["uint8"], [channelsBits[ch]], [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8], [bitmap.width, bitmap.height]);
+        }
       }
     });
     await Promise.all(imagePromises);
+    if (syncChannels) {
+      onData(resultChannelIndices, resultChannelDtype, resultChannelData, resultChannelRanges);
+    }
   }
 }
 
