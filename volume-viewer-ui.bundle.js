@@ -3181,16 +3181,6 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const BOUNDING_BOX_DEFAULT_COLOR = new three__WEBPACK_IMPORTED_MODULE_3__.Color(0xffff00);
-function createEmptyDepthTexture(renderer) {
-  const depthTexture = new three__WEBPACK_IMPORTED_MODULE_3__.DepthTexture(2, 2);
-  const target = new three__WEBPACK_IMPORTED_MODULE_3__.WebGLRenderTarget(2, 2);
-  target.depthTexture = depthTexture;
-  renderer.setRenderTarget(target);
-  // Don't clear color, do clear depth, don't clear stencil
-  renderer.clear(false, true, false);
-  renderer.setRenderTarget(null);
-  return depthTexture;
-}
 class RayMarchedAtlasVolume {
   /**
    * Creates a new RayMarchedAtlasVolume.
@@ -3211,6 +3201,7 @@ class RayMarchedAtlasVolume {
     this.geometryTransformNode = new three__WEBPACK_IMPORTED_MODULE_3__.Group();
     this.geometryTransformNode.name = "VolumeContainerNode";
     this.geometryTransformNode.add(this.boxHelper, this.tickMarksMesh, this.geometryMesh);
+    this.emptyPositionTex = new three__WEBPACK_IMPORTED_MODULE_3__.DataTexture(new Uint8Array(Array(16).fill(0)), 2, 2);
     this.settings = settings;
     this.updateSettings(settings, _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_2__.SettingsFlags.ALL);
     // TODO this is doing *more* redundant work! Fix?
@@ -3395,11 +3386,9 @@ class RayMarchedAtlasVolume {
     if (!this.geometryMesh.visible) {
       return;
     }
-    if (!this.emptyDepthTex) {
-      this.emptyDepthTex = createEmptyDepthTexture(renderer);
-    }
-    this.setUniform("textureDepth", depthTexture ?? this.emptyDepthTex);
-    this.setUniform("usingPositionTexture", depthTexture?.isDepthTexture ? 0 : 1);
+    const depthTex = depthTexture ?? this.emptyPositionTex;
+    this.setUniform("textureDepth", depthTex);
+    this.setUniform("usingPositionTexture", depthTex.isDepthTexture ? 0 : 1);
     this.setUniform("CLIP_NEAR", camera.near);
     this.setUniform("CLIP_FAR", camera.far);
     this.channelData.gpuFuse(renderer);
