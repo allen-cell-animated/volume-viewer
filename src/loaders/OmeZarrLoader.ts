@@ -5,7 +5,7 @@ import { get as zarrGet, slice, Slice } from "@zarrita/indexing";
 import { AbsolutePath } from "@zarrita/storage";
 // Importing `FetchStore` from its home subpackage (@zarrita/storage) causes errors.
 // Getting it from the top-level package means we don't get its type. This is also a bug, but it's more acceptable.
-import { FetchStore } from "zarrita";
+import { FetchStore, Store } from "zarrita";
 
 import type { ImageInfo } from "../ImageInfo.js";
 import type { VolumeDims } from "../VolumeDims.js";
@@ -42,6 +42,8 @@ import type {
   TCZYX,
   ZarrSource,
   NumericZarrArray,
+  OMEMultiscale,
+  OmeroTransitionalMetadata,
 } from "./zarr_utils/types.js";
 import { VolumeLoadError, VolumeLoadErrorType, wrapVolumeLoadError } from "./VolumeLoadError.js";
 import { validateOMEZarrMetadata } from "./zarr_utils/validation.js";
@@ -112,6 +114,35 @@ const DEFAULT_FETCH_OPTIONS = {
   maxPrefetchChunks: 30,
 };
 
+function getOMEMetadata(group: zarr.Group<Store>): OMEZarrMetadata {
+  const attrs = group.attrs;
+  if (!attrs.multiscales) {
+    // try for another field
+    if (attrs.ome) {
+      const ome = attrs.ome as any;
+      if (ome.version) {
+        if (ome.version !== "0.5") {
+          throw new VolumeLoadError(`OME-Zarr metadata version ${ome.version} not supported`, {
+            type: VolumeLoadErrorType.INVALID_METADATA,
+          });
+        }
+      }
+      if (ome.multiscales) {
+        return { multiscales: ome.multiscales as OMEMultiscale[], omero: ome.omero as OmeroTransitionalMetadata };
+      } else {
+        throw new VolumeLoadError("OME-Zarr metadata missing 'multiscales' field", {
+          type: VolumeLoadErrorType.INVALID_METADATA,
+        });
+      }
+    } else {
+      throw new VolumeLoadError("OME-Zarr metadata missing 'multiscales' or 'ome' field", {
+        type: VolumeLoadErrorType.INVALID_METADATA,
+      });
+    }
+  }
+  return { multiscales: attrs.multiscales as OMEMultiscale[], omero: attrs.omero as OmeroTransitionalMetadata };
+}
+
 class OMEZarrLoader extends ThreadableVolumeLoader {
   /** The ID of the subscriber responsible for "actual loads" (non-prefetch requests) */
   private loadSubscriber: SubscriberId | undefined;
@@ -176,15 +207,18 @@ class OMEZarrLoader extends ThreadableVolumeLoader {
         .open(root, { kind: "group" })
         .catch(wrapVolumeLoadError(`Failed to open OME-Zarr data at ${url}`, VolumeLoadErrorType.NOT_FOUND));
 
+      //get metadata
+      const metadata = getOMEMetadata(group);
+
       // Pick scene (multiscale)
       let scene = scenesArr[Math.min(i, scenesArr.length - 1)];
-      if (scene > group.attrs.multiscales?.length) {
+      if (scene > metadata.multiscales?.length) {
         console.warn(`WARNING: OMEZarrLoader: scene ${scene} is invalid. Using scene 0.`);
         scene = 0;
       }
 
-      validateOMEZarrMetadata(group.attrs, scene, urlsArr.length > 1 ? `Zarr source ${i}` : "Zarr");
-      const { multiscales, omero } = group.attrs as OMEZarrMetadata;
+      validateOMEZarrMetadata(metadata, scene, urlsArr.length > 1 ? `Zarr source ${i}` : "Zarr");
+      const { multiscales, omero } = metadata;
       const multiscaleMetadata = multiscales[scene];
 
       // Open all scale levels of multiscale
