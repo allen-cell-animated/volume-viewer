@@ -12,7 +12,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ Channel)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
 /* harmony import */ var _Histogram_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Histogram.js */ "./src/Histogram.ts");
 /* harmony import */ var _Lut_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Lut.js */ "./src/Lut.ts");
 /* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./types.js */ "./src/types.ts");
@@ -539,7 +539,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   defaultImageInfo: () => (/* binding */ defaultImageInfo)
 /* harmony export */ });
 /* harmony import */ var _VolumeDims_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./VolumeDims.js */ "./src/VolumeDims.ts");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
 
 
 function defaultImageInfo() {
@@ -1200,7 +1200,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ Volume)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
 /* harmony import */ var _Channel_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Channel.js */ "./src/Channel.ts");
 /* harmony import */ var _constants_colors_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./constants/colors.js */ "./src/constants/colors.ts");
 /* harmony import */ var _loaders_IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./loaders/IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
@@ -1749,7 +1749,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   physicalPixelSize: () => (/* binding */ physicalPixelSize),
 /* harmony export */   volumeSize: () => (/* binding */ volumeSize)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
 
 function defaultVolumeDims() {
   return {
@@ -1856,7 +1856,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   ThreadableVolumeLoader: () => (/* binding */ ThreadableVolumeLoader),
 /* harmony export */   loadSpecToString: () => (/* binding */ loadSpecToString)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
 /* harmony import */ var _Volume_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../Volume.js */ "./src/Volume.ts");
 /* harmony import */ var _ImageInfo_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ImageInfo.js */ "./src/ImageInfo.ts");
 /* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
@@ -2005,7 +2005,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   JsonImageInfoLoader: () => (/* binding */ JsonImageInfoLoader)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
 /* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _ImageInfo_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ImageInfo.js */ "./src/ImageInfo.ts");
 /* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
@@ -2271,7 +2271,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   OMEZarrLoader: () => (/* binding */ OMEZarrLoader)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
 /* harmony import */ var _zarrita_core__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! @zarrita/core */ "./node_modules/@zarrita/core/dist/src/hierarchy.js");
 /* harmony import */ var _zarrita_core__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! @zarrita/core */ "./node_modules/@zarrita/core/dist/src/open.js");
 /* harmony import */ var _zarrita_indexing__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! @zarrita/indexing */ "./node_modules/@zarrita/indexing/dist/src/util.js");
@@ -2794,7 +2794,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   RawArrayLoader: () => (/* binding */ RawArrayLoader)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
 /* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
 /* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
@@ -3211,7 +3211,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   scaleMultipleDimsToSubregion: () => (/* binding */ scaleMultipleDimsToSubregion),
 /* harmony export */   unitNameToSymbol: () => (/* binding */ unitNameToSymbol)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
 /* harmony import */ var _ImageInfo_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ImageInfo.js */ "./src/ImageInfo.ts");
 
 
@@ -4866,7 +4866,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   rebuildLoadSpec: () => (/* binding */ rebuildLoadSpec)
 /* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
 
 /** Recreates a `LoadSpec` that has just been sent to/from a worker to restore three.js object prototypes */
 function rebuildLoadSpec(spec) {
@@ -4951,7 +4951,7 @@ function rebuildLoadSpec(spec) {
 /******/ 	__webpack_require__.x = () => {
 /******/ 		// Load entry module and return exports
 /******/ 		// This entry module depends on other loaded chunks and execution need to be delayed
-/******/ 		var __webpack_exports__ = __webpack_require__.O(undefined, ["vendors-node_modules_zarrita_core_dist_src_errors_js-node_modules_geotiff_dist-module_geotiff-5b1ba2","vendors-node_modules_zarrita_core_dist_src_open_js-node_modules_zarrita_indexing_dist_src_ops-e78182"], () => (__webpack_require__("./src/workers/VolumeLoadWorker.ts")))
+/******/ 		var __webpack_exports__ = __webpack_require__.O(undefined, ["vendors-node_modules_zarrita_core_dist_src_errors_js-node_modules_geotiff_dist-module_geotiff-5b1ba2","vendors-node_modules_zarrita_core_dist_src_open_js-node_modules_zarrita_indexing_dist_src_ops-b97c78"], () => (__webpack_require__("./src/workers/VolumeLoadWorker.ts")))
 /******/ 		__webpack_exports__ = __webpack_require__.O(__webpack_exports__);
 /******/ 		return __webpack_exports__;
 /******/ 	};
@@ -5121,7 +5121,7 @@ function rebuildLoadSpec(spec) {
 /******/ 		__webpack_require__.x = () => {
 /******/ 			return Promise.all([
 /******/ 				__webpack_require__.e("vendors-node_modules_zarrita_core_dist_src_errors_js-node_modules_geotiff_dist-module_geotiff-5b1ba2"),
-/******/ 				__webpack_require__.e("vendors-node_modules_zarrita_core_dist_src_open_js-node_modules_zarrita_indexing_dist_src_ops-e78182")
+/******/ 				__webpack_require__.e("vendors-node_modules_zarrita_core_dist_src_open_js-node_modules_zarrita_indexing_dist_src_ops-b97c78")
 /******/ 			]).then(next);
 /******/ 		};
 /******/ 	})();
