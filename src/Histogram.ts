@@ -17,10 +17,15 @@ type HistogramData = {
 export default class Histogram {
   // no more than 2^32 pixels of any one intensity in the data!?!?!
   private bins: Uint32Array;
+  /** Min value in the original raw data. */
   private min: number;
+  /** Max value in the original raw data. */
   private max: number;
+  /** Size of each histogram bin in the scale of the original raw data. */
   private binSize: number;
+  /** Index of the first nonzero bin with at least 1 sample */
   private dataMinBin: number;
+  /** Index of the last nonzero bin with at least 1 sample */
   private dataMaxBin: number;
   private pixelCount: number;
   public maxBin: number;
@@ -83,27 +88,37 @@ export default class Histogram {
     return Histogram.findBin(value, this.min, this.binSize, NBINS);
   }
 
-  getDataMin(): number {
-    return this.min;
-  }
-
-  getDataMax(): number {
-    return this.max;
-  }
-
   /**
    * Return the min data value
    * @return {number}
    */
-  getMin(): number {
-    return this.dataMinBin;
+  getDataMin(): number {
+    return this.min;
   }
 
   /**
    * Return the max data value
    * @return {number}
    */
+  getDataMax(): number {
+    return this.max;
+  }
+
+  /**
+   * Returns the minimum bin index with a non-zero value.
+   * @return {number}
+   */
+  getMin(): number {
+    // Note that this will currently always return 0, unless NBINS changes.
+    return this.dataMinBin;
+  }
+
+  /**
+   * Returns the maximum bin index with a non-zero value.
+   * @return {number}
+   */
   getMax(): number {
+    // Note that this will always return 255, unless NBINS changes.
     return this.dataMaxBin;
   }
 
