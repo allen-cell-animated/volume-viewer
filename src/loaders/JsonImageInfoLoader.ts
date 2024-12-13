@@ -270,7 +270,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
             resultChannelData.push(channelData);
             resultChannelRanges.push(getDataRange(channelData));
           } else {
-            onData([chindex], ["uint8"], [new Uint8Array(cacheResult)], [getDataRange(channelData)]);
+            onData([chindex], ["uint8"], [channelData], [getDataRange(channelData)]);
           }
         } else {
           cacheHit = false;
