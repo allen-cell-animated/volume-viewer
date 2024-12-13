@@ -309,7 +309,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
       }
 
       // extract the data
-      let rawRange: [number, number][] = [];
+      const rawRange: [number, number][] = [];
       for (let j = 0; j < Math.min(image.channels.length, 4); ++j) {
         let rawMin = Infinity;
         let rawMax = -Infinity;
