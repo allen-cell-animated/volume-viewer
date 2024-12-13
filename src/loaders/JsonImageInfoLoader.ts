@@ -10,7 +10,7 @@ import { computeAtlasSize, type ImageInfo } from "../ImageInfo.js";
 import type { VolumeDims } from "../VolumeDims.js";
 import VolumeCache from "../VolumeCache.js";
 import type { TypedArray, NumberType } from "../types.js";
-import { DATARANGE_UINT8 } from "../types.js";
+import { getDataRange } from "../utils/num_utils.js";
 
 interface PackedChannelsImage {
   name: string;
@@ -262,14 +262,15 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
         const cacheResult = cache?.get(`${image.name}/${chindex}`);
         if (cacheResult) {
           // all data coming from this loader is natively 8-bit
+          const channelData = new Uint8Array(cacheResult);
           if (syncChannels) {
             // if we are synchronizing channels, we need to keep track of the data
             resultChannelIndices.push(chindex);
             resultChannelDtype.push("uint8");
-            resultChannelData.push(new Uint8Array(cacheResult));
-            resultChannelRanges.push(DATARANGE_UINT8);
+            resultChannelData.push(channelData);
+            resultChannelRanges.push(getDataRange(channelData));
           } else {
-            onData([chindex], ["uint8"], [new Uint8Array(cacheResult)], [DATARANGE_UINT8]);
+            onData([chindex], ["uint8"], [new Uint8Array(cacheResult)], [getDataRange(channelData)]);
           }
         } else {
           cacheHit = false;
@@ -308,10 +309,16 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
       }
 
       // extract the data
+      let rawRange: [number, number][] = [];
       for (let j = 0; j < Math.min(image.channels.length, 4); ++j) {
+        let rawMin = Infinity;
+        let rawMax = -Infinity;
         for (let px = 0; px < length; px++) {
           channelsBits[j][px] = iData.data[px * 4 + j];
+          rawMin = Math.min(rawMin, channelsBits[j][px]);
+          rawMax = Math.max(rawMax, channelsBits[j][px]);
         }
+        rawRange[j] = [rawMin, rawMax];
       }
 
       // done with `iData` and `canvas` now.
@@ -325,9 +332,9 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
           resultChannelIndices.push(chindex);
           resultChannelDtype.push("uint8");
           resultChannelData.push(channelsBits[ch]);
-          resultChannelRanges.push(DATARANGE_UINT8);
+          resultChannelRanges.push(rawRange[ch]);
         } else {
-          onData([chindex], ["uint8"], [channelsBits[ch]], [DATARANGE_UINT8], [bitmap.width, bitmap.height]);
+          onData([chindex], ["uint8"], [channelsBits[ch]], [rawRange[ch]], [bitmap.width, bitmap.height]);
         }
       }
     });

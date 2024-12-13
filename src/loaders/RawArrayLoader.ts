@@ -9,7 +9,8 @@ import {
 import { computePackedAtlasDims } from "./VolumeLoaderUtils.js";
 import type { ImageInfo } from "../ImageInfo.js";
 import type { VolumeDims } from "../VolumeDims.js";
-import { DATARANGE_UINT8, Uint8 } from "../types.js";
+import { Uint8 } from "../types.js";
+import { getDataRange } from "../utils/num_utils.js";
 
 // this is the form in which a 4D numpy array arrives as converted
 // by jupyterlab into a js object.
@@ -135,8 +136,9 @@ class RawArrayLoader extends ThreadableVolumeLoader {
       }
       const volSizeBytes = this.data.shape[3] * this.data.shape[2] * this.data.shape[1]; // x*y*z pixels * 1 byte/pixel
       const channelData = new Uint8Array(this.data.buffer.buffer, chindex * volSizeBytes, volSizeBytes);
+      const range = getDataRange(channelData);
       // all data coming from this loader is natively 8-bit
-      onData([chindex], ["uint8"], [channelData], [DATARANGE_UINT8]);
+      onData([chindex], ["uint8"], [channelData], [range]);
     }
 
     return Promise.resolve();

@@ -230,3 +230,13 @@ export function constrainToAxis(
       return [...src];
   }
 }
+
+export function getDataRange(data: ArrayLike<number>): [number, number] {
+  let min = Infinity;
+  let max = -Infinity;
+  for (let i = 0; i < data.length; i++) {
+    min = Math.min(min, data[i]);
+    max = Math.max(max, data[i]);
+  }
+  return [min, max];
+}
