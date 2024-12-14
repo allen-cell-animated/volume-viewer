@@ -232,9 +232,9 @@ export function constrainToAxis(
 }
 
 export function getDataRange(data: ArrayLike<number>): [number, number] {
-  let min = Infinity;
-  let max = -Infinity;
-  for (let i = 0; i < data.length; i++) {
+  let min = data[0];
+  let max = data[0];
+  for (let i = 1; i < data.length; i++) {
     min = Math.min(min, data[i]);
     max = Math.max(max, data[i]);
   }

@@ -309,7 +309,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
       }
 
       // extract the data
-      const rawRange: [number, number][] = [];
+      const channelRange: [number, number][] = [];
       for (let j = 0; j < Math.min(image.channels.length, 4); ++j) {
         let rawMin = Infinity;
         let rawMax = -Infinity;
@@ -318,7 +318,7 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
           rawMin = Math.min(rawMin, channelsBits[j][px]);
           rawMax = Math.max(rawMax, channelsBits[j][px]);
         }
-        rawRange[j] = [rawMin, rawMax];
+        channelRange[j] = [rawMin, rawMax];
       }
 
       // done with `iData` and `canvas` now.
@@ -332,9 +332,9 @@ class JsonImageInfoLoader extends ThreadableVolumeLoader {
           resultChannelIndices.push(chindex);
           resultChannelDtype.push("uint8");
           resultChannelData.push(channelsBits[ch]);
-          resultChannelRanges.push(rawRange[ch]);
+          resultChannelRanges.push(channelRange[ch]);
         } else {
-          onData([chindex], ["uint8"], [channelsBits[ch]], [rawRange[ch]], [bitmap.width, bitmap.height]);
+          onData([chindex], ["uint8"], [channelsBits[ch]], [channelRange[ch]], [bitmap.width, bitmap.height]);
         }
       }
     });
