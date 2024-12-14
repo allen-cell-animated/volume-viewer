@@ -21,18 +21,12 @@ export default class Histogram {
   private min: number;
   /** Max value in the original raw data. */
   private max: number;
-  /** Size of each histogram bin in the scale of the original raw data. */
+  /** Size of each histogram bin in the scale of the original data. */
   private binSize: number;
-  /** Index of the first nonzero bin with at least 1 sample */
-  private dataMinBin: number;
-  /** Index of the last nonzero bin with at least 1 sample */
-  private dataMaxBin: number;
   private pixelCount: number;
   public maxBin: number;
 
   constructor(data: TypedArray<NumberType>) {
-    this.dataMinBin = 0;
-    this.dataMaxBin = 0;
     this.maxBin = 0;
     this.bins = new Uint32Array();
     this.min = 0;
@@ -45,20 +39,6 @@ export default class Histogram {
     this.min = hinfo.min;
     this.max = hinfo.max;
     this.binSize = hinfo.binSize;
-
-    // track the first and last nonzero bins with at least 1 sample
-    for (let i = 1; i < this.bins.length; i++) {
-      if (this.bins[i] > 0) {
-        this.dataMinBin = i;
-        break;
-      }
-    }
-    for (let i = this.bins.length - 1; i >= 1; i--) {
-      if (this.bins[i] > 0) {
-        this.dataMaxBin = i;
-        break;
-      }
-    }
 
     this.pixelCount = data.length;
 
@@ -105,21 +85,19 @@ export default class Histogram {
   }
 
   /**
-   * Returns the minimum bin index with a non-zero value.
+   * Returns the minimum bin index.
    * @return {number}
    */
   getMin(): number {
-    // Note that this will currently always return 0, unless NBINS changes.
-    return this.dataMinBin;
+    return 0;
   }
 
   /**
-   * Returns the maximum bin index with a non-zero value.
+   * Returns the maximum bin index.
    * @return {number}
    */
   getMax(): number {
-    // Note that this will always return 255, unless NBINS changes.
-    return this.dataMaxBin;
+    return NBINS - 1;
   }
 
   getNumBins(): number {
