@@ -492,11 +492,11 @@ export default class PathTracedVolume implements VolumeRenderImpl {
       // TODO expand to 16-bpp raw intensities?
       this.pathTracingUniforms.gIntensityMax.value.setComponent(
         i,
-        this.volume.channels[channel].histogram.getDataMax() / 255.0
+        this.volume.channels[channel].histogram.getMax() / 255.0
       );
       this.pathTracingUniforms.gIntensityMin.value.setComponent(
         i,
-        this.volume.channels[channel].histogram.getDataMin() / 255.0
+        this.volume.channels[channel].histogram.getMin() / 255.0
       );
     }
     this.pathTracingUniforms.gLutTexture.value.needsUpdate = true;
