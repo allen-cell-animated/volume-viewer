@@ -74,13 +74,7 @@ class OpenCellLoader extends ThreadableVolumeLoader {
     const [w, h] = computeAtlasSize(imageInfo);
     // all data coming from this loader is natively 8-bit
     return JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, dtype, data) =>
-      onData(
-        ch,
-        dtype,
-        data,
-        data.map((arr) => getDataRange(arr)),
-        [w, h]
-      )
+      onData(ch, dtype, data, data.map(getDataRange), [w, h])
     );
   }
 }
