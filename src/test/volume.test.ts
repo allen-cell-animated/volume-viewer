@@ -4,8 +4,8 @@ import Volume from "../Volume";
 import VolumeMaker from "../VolumeMaker";
 import { LUT_ARRAY_LENGTH } from "../Lut";
 import Channel from "../Channel";
-import { DATARANGE_UINT8 } from "../types";
 import { CImageInfo, ImageInfo } from "../ImageInfo";
+import { getDataRange } from "../utils/num_utils";
 
 // PREPARE SOME TEST DATA TO TRY TO DISPLAY A VOLUME.
 const testimgdata: ImageInfo = {
@@ -87,14 +87,14 @@ describe("test volume", () => {
 
       const conedata = VolumeMaker.createCone(size.x, size.y, size.z, size.x / 8, size.z);
 
-      v.setChannelDataFromVolume(0, conedata, DATARANGE_UINT8);
+      v.setChannelDataFromVolume(0, conedata, getDataRange(conedata));
 
       const c0 = v.getChannel(0);
       checkChannelDataConstruction(c0, 0, testimgdata);
 
       const spheredata = VolumeMaker.createSphere(size.x, size.y, size.z, size.z / 4);
 
-      v.setChannelDataFromVolume(1, spheredata, DATARANGE_UINT8);
+      v.setChannelDataFromVolume(1, spheredata, getDataRange(spheredata));
 
       const c1 = v.getChannel(1);
       checkChannelDataConstruction(c1, 1, testimgdata);
