@@ -46,16 +46,15 @@ export default class Histogram {
     this.max = hinfo.max;
     this.binSize = hinfo.binSize;
 
-    // track the first and last nonzero bins with at least 1 sample
-    // TODO: If `this.min` is not 0, should `this.dataMinBin` be `0` (instead of starting at 1)
-    // since the first bin doesn't represent zero values?
-    for (let i = 1; i < this.bins.length; i++) {
+    // TODO: These should always return 0 and NBINS - 1, respectively. Test if these
+    // can be removed.
+    for (let i = 0; i < this.bins.length; i++) {
       if (this.bins[i] > 0) {
         this.dataMinBin = i;
         break;
       }
     }
-    for (let i = this.bins.length - 1; i >= 1; i--) {
+    for (let i = this.bins.length - 1; i >= 0; i--) {
       if (this.bins[i] > 0) {
         this.dataMaxBin = i;
         break;

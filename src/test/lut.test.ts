@@ -14,9 +14,8 @@ describe("test histogram", () => {
   const histogram = new Histogram(conedata);
 
   describe("binary volume data", () => {
-    it("has a min of 255", () => {
-      // histogram dataMin is the min nonzero value
-      expect(histogram.getMin()).to.equal(255);
+    it("has a min of 0", () => {
+      expect(histogram.getMin()).to.equal(0);
     });
     it("has a max of 255", () => {
       expect(histogram.getMax()).to.equal(255);
