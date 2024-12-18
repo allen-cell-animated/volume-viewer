@@ -303,6 +303,16 @@ const NBINS = 256;
 class Histogram {
   // no more than 2^32 pixels of any one intensity in the data!?!?!
 
+  /** Min value in the original raw data. */
+
+  /** Max value in the original raw data. */
+
+  /** Size of each histogram bin in the scale of the original data. */
+
+  /** Index of the first bin (other than 0) with at least 1 value. */
+
+  /** Index of the last bin (other than 0) with at least 1 value. */
+
   constructor(data) {
     this.dataMinBin = 0;
     this.dataMaxBin = 0;
@@ -319,14 +329,15 @@ class Histogram {
     this.max = hinfo.max;
     this.binSize = hinfo.binSize;
 
-    // track the first and last nonzero bins with at least 1 sample
-    for (let i = 1; i < this.bins.length; i++) {
+    // TODO: These should always return 0 and NBINS - 1, respectively. Test if these
+    // can be removed.
+    for (let i = 0; i < this.bins.length; i++) {
       if (this.bins[i] > 0) {
         this.dataMinBin = i;
         break;
       }
     }
-    for (let i = this.bins.length - 1; i >= 1; i--) {
+    for (let i = this.bins.length - 1; i >= 0; i--) {
       if (this.bins[i] > 0) {
         this.dataMaxBin = i;
         break;
@@ -359,15 +370,25 @@ class Histogram {
   findBinOfValue(value) {
     return Histogram.findBin(value, this.min, this.binSize, NBINS);
   }
+
+  /**
+   * Return the min data value
+   * @return {number}
+   */
   getDataMin() {
     return this.min;
   }
+
+  /**
+   * Return the max data value
+   * @return {number}
+   */
   getDataMax() {
     return this.max;
   }
 
   /**
-   * Return the min data value
+   * Returns the first bin index with at least 1 value, other than the 0th bin.
    * @return {number}
    */
   getMin() {
@@ -375,10 +396,11 @@ class Histogram {
   }
 
   /**
-   * Return the max data value
+   * Returns the last bin index with at least 1 value, other than the 0th bin.
    * @return {number}
    */
   getMax() {
+    // Note that this will always return `NBINS - 1`.
     return this.dataMaxBin;
   }
   getNumBins() {
@@ -1769,6 +1791,226 @@ function physicalPixelSize(volumeDims) {
 
 /***/ }),
 
+/***/ "./src/VolumeRenderSettings.ts":
+/*!*************************************!*\
+  !*** ./src/VolumeRenderSettings.ts ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Axis: () => (/* binding */ Axis),
+/* harmony export */   SettingsFlags: () => (/* binding */ SettingsFlags),
+/* harmony export */   VolumeRenderSettings: () => (/* binding */ VolumeRenderSettings)
+/* harmony export */ });
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
+
+/**
+ * Marks groups of related settings that may have changed.
+ */
+let SettingsFlags = /*#__PURE__*/function (SettingsFlags) {
+  SettingsFlags[SettingsFlags["TRANSFORM"] = 1] = "TRANSFORM";
+  SettingsFlags[SettingsFlags["CAMERA"] = 2] = "CAMERA";
+  SettingsFlags[SettingsFlags["BOUNDING_BOX"] = 4] = "BOUNDING_BOX";
+  SettingsFlags[SettingsFlags["ROI"] = 8] = "ROI";
+  SettingsFlags[SettingsFlags["MASK_ALPHA"] = 16] = "MASK_ALPHA";
+  SettingsFlags[SettingsFlags["MATERIAL"] = 32] = "MATERIAL";
+  SettingsFlags[SettingsFlags["SAMPLING"] = 64] = "SAMPLING";
+  SettingsFlags[SettingsFlags["VIEW"] = 128] = "VIEW";
+  SettingsFlags[SettingsFlags["MASK_DATA"] = 256] = "MASK_DATA";
+  SettingsFlags[SettingsFlags["ALL"] = 1023] = "ALL";
+  return SettingsFlags;
+}({});
+let Axis = /*#__PURE__*/function (Axis) {
+  Axis["X"] = "x";
+  Axis["Y"] = "y";
+  Axis["Z"] = "z";
+  Axis["XYZ"] = "";
+  Axis["NONE"] = "";
+  return Axis;
+}({});
+
+/**
+ * Holds shared settings for configuring `VolumeRenderImpl` instances.
+ */
+class VolumeRenderSettings {
+  // TRANSFORM
+
+  // TODO made redundant by `scale`?
+
+  // VIEW
+
+  // CAMERA
+
+  // MASK
+
+  // MATERIAL
+
+  // ROI
+
+  // BOUNDING_BOX
+
+  // SAMPLING
+
+  /**
+   * Creates a new VolumeRenderSettings object with default fields.
+   * @param volume Optional volume data parameter used to initialize size-dependent settings.
+   */
+  constructor(volume) {
+    this.translation = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0, 0, 0);
+    this.rotation = new three__WEBPACK_IMPORTED_MODULE_0__.Euler();
+    this.scale = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(1, 1, 1);
+    this.isOrtho = false;
+    this.viewAxis = Axis.NONE;
+    this.orthoScale = 1.0;
+    this.flipAxes = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(1, 1, 1);
+    this.maskChannelIndex = -1;
+    this.maskAlpha = 1.0;
+    this.gammaMin = 0.0;
+    this.gammaLevel = 1.0;
+    this.gammaMax = 1.0;
+    this.density = 0;
+    this.brightness = 0;
+    this.showBoundingBox = false;
+    this.bounds = {
+      bmin: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(-0.5, -0.5, -0.5),
+      bmax: new three__WEBPACK_IMPORTED_MODULE_0__.Vector3(0.5, 0.5, 0.5)
+    };
+    this.boundingBoxColor = [1.0, 1.0, 0.0];
+    this.primaryRayStepSize = 1.0;
+    this.secondaryRayStepSize = 1.0;
+    this.useInterpolation = true;
+    this.visible = true;
+    this.maxProjectMode = false;
+    // volume-dependent properties
+    if (volume) {
+      this.zSlice = Math.floor(volume.imageInfo.subregionSize.z / 2);
+      this.diffuse = new Array(volume.imageInfo.numChannels).fill([255, 255, 255]);
+      this.specular = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
+      this.emissive = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
+      this.glossiness = new Array(volume.imageInfo.numChannels).fill(0);
+    } else {
+      this.zSlice = 0;
+      this.diffuse = [[255, 255, 255]];
+      this.specular = [[0, 0, 0]];
+      this.emissive = [[0, 0, 0]];
+      this.glossiness = [0];
+    }
+    this.pixelSamplingRate = 0.75;
+    this.resolution = new three__WEBPACK_IMPORTED_MODULE_0__.Vector2(1, 1);
+  }
+  resizeWithVolume(volume) {
+    this.zSlice = Math.floor(volume.imageInfo.subregionSize.z / 2);
+    this.diffuse = new Array(volume.imageInfo.numChannels).fill([255, 255, 255]);
+    this.specular = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
+    this.emissive = new Array(volume.imageInfo.numChannels).fill([0, 0, 0]);
+    this.glossiness = new Array(volume.imageInfo.numChannels).fill(0);
+  }
+
+  /**
+   * Recursively compares two arrays.
+   * Non-array elements are compared using strict equality comparison.
+   */
+  static compareArray(a1, a2) {
+    if (a1.length !== a2.length) {
+      return false;
+    }
+    for (let i = 0; i < a1.length; i++) {
+      const elem1 = a1[i];
+      const elem2 = a2[i];
+      if (elem1 instanceof Array && elem2 instanceof Array) {
+        if (!this.compareArray(elem1, elem2)) {
+          return false;
+        }
+      } else if (elem1 !== elem2) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Compares two VolumeRenderSettings objects.
+   * @returns true if both objects have identical settings.
+   */
+  isEqual(o2) {
+    for (const key of Object.keys(this)) {
+      const v1 = this[key];
+      const v2 = o2[key];
+      if (v1 instanceof Array) {
+        if (!VolumeRenderSettings.compareArray(v1, v2)) {
+          return false;
+        }
+      } else if (v1 && v1.bmin !== undefined) {
+        // Bounds object
+        const bounds1 = v1;
+        const bounds2 = v2;
+        if (!bounds1.bmin.equals(bounds2.bmin) || !bounds1.bmax.equals(bounds2.bmax)) {
+          return false;
+        }
+      } else if (v1 instanceof three__WEBPACK_IMPORTED_MODULE_0__.Vector3 || v1 instanceof three__WEBPACK_IMPORTED_MODULE_0__.Vector2 || v1 instanceof three__WEBPACK_IMPORTED_MODULE_0__.Euler) {
+        if (!v1.equals(v2)) {
+          return false;
+        }
+      } else {
+        // number, boolean, string
+        if (v1 !== v2) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Recursively creates and returns a deep copy of an array.
+   * Note: assumes values in the array are either primitives (numbers) or arrays of primitives.
+   */
+  static deepCopyArray(a) {
+    const b = new Array(a.length);
+    for (let i = 0; i < a.length; i++) {
+      const val = a[i];
+      if (val instanceof Array) {
+        b[i] = this.deepCopyArray(val);
+      } else {
+        b[i] = val;
+      }
+    }
+    return b;
+  }
+
+  /**
+   * Creates a deep copy of this VolumeRenderSettings object.
+   * @param src The object to create a clone of.
+   * @returns a new VolumeRenderSettings object with identical fields that do not
+   * share references with the original settings object.
+   */
+  clone() {
+    const dst = new VolumeRenderSettings(); // initialize with empty volume
+    for (const key of Object.keys(this)) {
+      const val = this[key];
+      if (val instanceof Array) {
+        dst[key] = VolumeRenderSettings.deepCopyArray(val);
+      } else if (key === "bounds") {
+        // must use key string here because Bounds is a type alias and not a class
+        dst.bounds.bmax = this.bounds.bmax.clone();
+        dst.bounds.bmin = this.bounds.bmin.clone();
+      } else if (val instanceof three__WEBPACK_IMPORTED_MODULE_0__.Vector3 || val instanceof three__WEBPACK_IMPORTED_MODULE_0__.Vector2 || val instanceof three__WEBPACK_IMPORTED_MODULE_0__.Euler) {
+        dst[key] = val.clone();
+      } else if (val instanceof String) {
+        dst[key] = "" + val;
+      } else {
+        // boolean, number, other primitives
+        dst[key] = val;
+      }
+    }
+    return dst;
+  }
+}
+
+/***/ }),
+
 /***/ "./src/constants/colors.ts":
 /*!*********************************!*\
   !*** ./src/constants/colors.ts ***!
@@ -1840,6 +2082,55 @@ const getColorByChannelIndex = index => {
   }
   return defaultColors[index];
 };
+
+/***/ }),
+
+/***/ "./src/constants/time.ts":
+/*!*******************************!*\
+  !*** ./src/constants/time.ts ***!
+  \*******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TimeUnit: () => (/* binding */ TimeUnit),
+/* harmony export */   parseTimeUnit: () => (/* binding */ parseTimeUnit)
+/* harmony export */ });
+let TimeUnit = /*#__PURE__*/function (TimeUnit) {
+  TimeUnit[TimeUnit["MILLISECOND"] = 0] = "MILLISECOND";
+  TimeUnit[TimeUnit["SECOND"] = 1] = "SECOND";
+  TimeUnit[TimeUnit["MINUTE"] = 2] = "MINUTE";
+  TimeUnit[TimeUnit["HOUR"] = 3] = "HOUR";
+  TimeUnit[TimeUnit["DAY"] = 4] = "DAY";
+  return TimeUnit;
+}({});
+const recognizedTimeUnits = {
+  [TimeUnit.MILLISECOND]: new Set(["ms", "millisecond", "milliseconds"]),
+  [TimeUnit.SECOND]: new Set(["s", "sec", "second", "seconds"]),
+  [TimeUnit.MINUTE]: new Set(["m", "min", "minute", "minutes"]),
+  [TimeUnit.HOUR]: new Set(["h", "hr", "hour", "hours"]),
+  [TimeUnit.DAY]: new Set(["d", "day", "days"])
+};
+
+/**
+ * Parses an OME-compatible time unit into a TimeUnit enum.
+ * @param unit string unit
+ * @returns
+ * - `TimeUnit.MILLISECOND` if unit is "ms", "millisecond", or "milliseconds"
+ * - `TimeUnit.SECOND` if unit is "s", "sec", "second", or "seconds"
+ * - `TimeUnit.MINUTE` if unit is "m", "min", "minute", or "minutes"
+ * - `TimeUnit.HOUR` if unit is "h", "hr", "hour", or "hours"
+ * - `TimeUnit.DAY` if unit is "d", "day", or "days"
+ * - `undefined` if unit is not recognized
+ */
+function parseTimeUnit(unit) {
+  for (const [timeUnit, recognizedUnits] of Object.entries(recognizedTimeUnits)) {
+    if (recognizedUnits.has(unit)) {
+      return timeUnit;
+    }
+  }
+}
 
 /***/ }),
 
@@ -2008,7 +2299,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
 /* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _ImageInfo_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ImageInfo.js */ "./src/ImageInfo.ts");
-/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
+/* harmony import */ var _utils_num_utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/num_utils.js */ "./src/utils/num_utils.ts");
 
 
 
@@ -2182,14 +2473,15 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
         const cacheResult = cache?.get(`${image.name}/${chindex}`);
         if (cacheResult) {
           // all data coming from this loader is natively 8-bit
+          const channelData = new Uint8Array(cacheResult);
           if (syncChannels) {
             // if we are synchronizing channels, we need to keep track of the data
             resultChannelIndices.push(chindex);
             resultChannelDtype.push("uint8");
-            resultChannelData.push(new Uint8Array(cacheResult));
-            resultChannelRanges.push(_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8);
+            resultChannelData.push(channelData);
+            resultChannelRanges.push((0,_utils_num_utils_js__WEBPACK_IMPORTED_MODULE_2__.getDataRange)(channelData));
           } else {
-            onData([chindex], ["uint8"], [new Uint8Array(cacheResult)], [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8]);
+            onData([chindex], ["uint8"], [channelData], [(0,_utils_num_utils_js__WEBPACK_IMPORTED_MODULE_2__.getDataRange)(channelData)]);
           }
         } else {
           cacheHit = false;
@@ -2227,10 +2519,16 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
       }
 
       // extract the data
+      const channelRange = [];
       for (let j = 0; j < Math.min(image.channels.length, 4); ++j) {
+        let rawMin = Infinity;
+        let rawMax = -Infinity;
         for (let px = 0; px < length; px++) {
           channelsBits[j][px] = iData.data[px * 4 + j];
+          rawMin = Math.min(rawMin, channelsBits[j][px]);
+          rawMax = Math.max(rawMax, channelsBits[j][px]);
         }
+        channelRange[j] = [rawMin, rawMax];
       }
 
       // done with `iData` and `canvas` now.
@@ -2244,9 +2542,9 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
           resultChannelIndices.push(chindex);
           resultChannelDtype.push("uint8");
           resultChannelData.push(channelsBits[ch]);
-          resultChannelRanges.push(_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8);
+          resultChannelRanges.push(channelRange[ch]);
         } else {
-          onData([chindex], ["uint8"], [channelsBits[ch]], [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8], [bitmap.width, bitmap.height]);
+          onData([chindex], ["uint8"], [channelsBits[ch]], [channelRange[ch]], [bitmap.width, bitmap.height]);
         }
       }
     });
@@ -2797,7 +3095,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
 /* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
-/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
+/* harmony import */ var _utils_num_utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/num_utils.js */ "./src/utils/num_utils.ts");
 
 
 
@@ -2879,8 +3177,9 @@ class RawArrayLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Thre
       }
       const volSizeBytes = this.data.shape[3] * this.data.shape[2] * this.data.shape[1]; // x*y*z pixels * 1 byte/pixel
       const channelData = new Uint8Array(this.data.buffer.buffer, chindex * volSizeBytes, volSizeBytes);
+      const range = (0,_utils_num_utils_js__WEBPACK_IMPORTED_MODULE_2__.getDataRange)(channelData);
       // all data coming from this loader is natively 8-bit
-      onData([chindex], ["uint8"], [channelData], [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8]);
+      onData([chindex], ["uint8"], [channelData], [range]);
     }
     return Promise.resolve();
   }
@@ -4646,6 +4945,258 @@ class SubscribableRequestQueue {
   isSubscribed(subscriberId, key) {
     return this.subscribers.get(subscriberId)?.has(key) ?? false;
   }
+}
+
+/***/ }),
+
+/***/ "./src/utils/num_utils.ts":
+/*!********************************!*\
+  !*** ./src/utils/num_utils.ts ***!
+  \********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   DEFAULT_SIG_FIGS: () => (/* binding */ DEFAULT_SIG_FIGS),
+/* harmony export */   constrainToAxis: () => (/* binding */ constrainToAxis),
+/* harmony export */   formatNumber: () => (/* binding */ formatNumber),
+/* harmony export */   getDataRange: () => (/* binding */ getDataRange),
+/* harmony export */   getTimestamp: () => (/* binding */ getTimestamp),
+/* harmony export */   timeToMilliseconds: () => (/* binding */ timeToMilliseconds)
+/* harmony export */ });
+/* harmony import */ var _constants_time_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants/time.js */ "./src/constants/time.ts");
+/* harmony import */ var _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../VolumeRenderSettings.js */ "./src/VolumeRenderSettings.ts");
+
+
+const DEFAULT_SIG_FIGS = 5;
+const SECONDS_IN_MS = 1000;
+const MINUTES_IN_MS = SECONDS_IN_MS * 60;
+const HOURS_IN_MS = MINUTES_IN_MS * 60;
+const DAYS_IN_MS = HOURS_IN_MS * 24;
+
+// Adapted from https://gist.github.com/ArneS/2ecfbe4a9d7072ac56c0.
+function digitToUnicodeSupercript(n) {
+  const subst = [0x2070, 185, 178, 179, 0x2074, 0x2075, 0x2076, 0x2077, 0x2078, 0x2079];
+  return String.fromCharCode(subst[n]);
+}
+
+/**
+ * Converts a number to scientific notation with the specified number of significant
+ * figures, handling negative numbers and rounding.
+ * @param input The number to convert.
+ * @param significantFigures the number of signficant figures/digits. Must be >= 1.
+ * @returns a string, formatted as a number in scientific notation.
+ * @example
+ * ```
+ * numberToSciNotation(1, 3) // "1.00×10⁰"
+ * numberToSciNotation(0.99, 2) // "9.9×10⁻¹"
+ * numberToSciNotation(0.999, 2) // "1.0×10⁰"
+ * numberToSciNotation(-0.05, 1) // "-5×10⁻²"
+ * numberToSciNotation(1400, 3) // "1.40×10³"
+ * ```
+ */
+function numberToSciNotation(input, sigFigs = DEFAULT_SIG_FIGS) {
+  const nativeExpForm = input.toExponential(sigFigs - 1);
+  const [significand, exponent] = nativeExpForm.split("e");
+  const expSign = exponent[0] === "-" ? "⁻" : "";
+  const expDigits = exponent.slice(1).split("");
+  const expSuperscript = expDigits.map(digit => digitToUnicodeSupercript(Number(digit))).join("");
+  return `${significand}×10${expSign}${expSuperscript}`;
+}
+
+/**
+ * Returns a string-encoded number rounded to a specified decimal precision, without ever formatting in scientific
+ * notation like `Number.toPrecision` might do.
+ */
+function toSigFigs(value, sigFigs) {
+  const exponent = Math.floor(Math.log10(Math.abs(value)));
+  return value.toFixed(Math.max(sigFigs - exponent - 1, 0));
+}
+
+/** Trims trailing instances of `char` off the end of `str`. */
+// This is not technically a number utility, but it's useful to `formatNumber` below.
+function trimTrailing(str, char) {
+  let i = str.length - 1;
+  while (str[i] === char) {
+    i--;
+  }
+  return str.slice(0, i + 1);
+}
+
+/**
+ * Formats numbers for display as a string with a (hopefully) limited length.
+ *
+ * - If the number is an integer with 4 or fewer digits, it is returned as a string.
+ * - If the number is a decimal, it is rounded to `sigFigs` significant figures. (default 5)
+ * - If the number's absolute value is over 10,000 or less than 0.01, it is formatted in scientific notation to
+ *   `sciSigFigs` significant figures. (Default `sigFigs - 2`, so 3 if neither are specified. The `- 2` leaves space
+ *   for the exponential part. Remember: the purpose of this function is keeping number strings *consistently* short!)
+ */
+function formatNumber(value, sigFigs = DEFAULT_SIG_FIGS, sciSigFigs = sigFigs - 2) {
+  const valueAbs = Math.abs(value);
+  if (Number.isInteger(value)) {
+    // Format integers with 5+ digits in scientific notation
+    if (valueAbs >= 10_000) {
+      return numberToSciNotation(value, sciSigFigs);
+    }
+    // Just stringify other integers
+    return value.toString();
+  } else {
+    const numStr = toSigFigs(value, sigFigs);
+    const numRounded = Math.abs(Number(numStr));
+    if (numRounded >= 10_000 || numRounded < 0.01) {
+      return numberToSciNotation(value, sciSigFigs);
+    }
+    const trimmed = trimTrailing(numStr, "0");
+    return trimmed.endsWith(".") ? trimmed.slice(0, -1) : trimmed;
+  }
+}
+const timeUnitEnumToMilliseconds = {
+  [_constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.MILLISECOND]: 1,
+  [_constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.SECOND]: SECONDS_IN_MS,
+  [_constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.MINUTE]: MINUTES_IN_MS,
+  [_constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.HOUR]: HOURS_IN_MS,
+  [_constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.DAY]: DAYS_IN_MS
+};
+function timeToMilliseconds(time, unit) {
+  const timeUnitMultiplier = timeUnitEnumToMilliseconds[unit];
+  if (timeUnitMultiplier === undefined) {
+    throw new Error("Unrecognized time unit");
+  }
+  return time * timeUnitMultiplier;
+}
+
+/**
+ * Pads the `value` with zeroes to the specified `length` if `shouldPad` is true
+ * and returns the resulting string. Otherwise, returns the string representation of `value`.
+ */
+function padConditionally(value, length, shouldPad) {
+  return shouldPad ? value.toString().padStart(length, "0") : value.toString();
+}
+function formatTimestamp(timeMs, options) {
+  const {
+    useMs,
+    useSec,
+    useMin,
+    useHours,
+    useDays
+  } = options;
+  const digits = [];
+  const units = [];
+  if (useDays) {
+    const days = Math.floor(timeMs / DAYS_IN_MS);
+    digits.push(days.toString());
+    units.push("d");
+  }
+  if (useHours) {
+    const hours = Math.floor(timeMs % DAYS_IN_MS / HOURS_IN_MS);
+    // If the previous unit is included, pad the hours to 2 digits so the
+    // timestamp is consistent.
+    digits.push(padConditionally(hours, 2, useDays));
+    units.push("h");
+  }
+  if (useMin) {
+    const minutes = Math.floor(timeMs % HOURS_IN_MS / MINUTES_IN_MS);
+    digits.push(padConditionally(minutes, 2, useHours));
+    units.push("m");
+  }
+  if (useSec) {
+    const seconds = Math.floor(timeMs % MINUTES_IN_MS / SECONDS_IN_MS);
+    let secondString = padConditionally(seconds, 2, useMin);
+    units.push("s");
+    // If using milliseconds, add as a decimal to the seconds string.
+    if (useMs) {
+      const milliseconds = Math.floor(timeMs % SECONDS_IN_MS);
+      secondString += "." + milliseconds.toString().padStart(3, "0");
+      // Do not add milliseconds to unit label, since they'll be shown as
+      // part of the seconds string.
+    }
+    digits.push(secondString);
+  } else if (useMs) {
+    const milliseconds = Math.floor(timeMs % SECONDS_IN_MS);
+    digits.push(milliseconds.toString());
+    units.push("ms");
+  }
+  return {
+    timestamp: digits.join(":"),
+    units: units.join(":")
+  };
+}
+
+/**
+ * Gets a timestamp formatted as `{time} / {total} {unit}`. If `unit` is a recognized
+ * time unit, the timestamp will be formatted as a `d:hh:mm:ss.ms` string.
+ *
+ * @param time Current time, in specified units.
+ * @param total Total time, in specified units.
+ * @param unit The unit of time.
+ * @returns A formatted timestamp string.
+ * - If `unit` is not recognized, the timestamp will be formatted as `{time} / {total} {unit}`,
+ * where `time` and `total` are formatted with significant digits as needed.
+ * - If `unit` is recognized, the timestamp will be formatted as `d:hh:mm:ss.ms`, specifying
+ * the most significant unit based on the total time, and the least significant unit with
+ * `unit`. See `parseTimeUnit()` for recognized time units.
+ */
+function getTimestamp(time, total, unit) {
+  const timeUnit = (0,_constants_time_js__WEBPACK_IMPORTED_MODULE_0__.parseTimeUnit)(unit);
+  if (timeUnit === undefined) {
+    return `${formatNumber(time)} / ${formatNumber(total)} ${unit}`;
+  }
+  const timeMs = timeToMilliseconds(time, timeUnit);
+  const totalMs = timeToMilliseconds(total, timeUnit);
+
+  // Toggle each unit based on the total time and the provided timeUnit.
+  // Exploit an enum property where TimeUnit.Milliseconds < TimeUnit.Second < TimeUnit.Minute ... etc.
+  const options = {
+    useMs: timeUnit == _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.MILLISECOND,
+    useSec: timeUnit == _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.SECOND || timeUnit <= _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.SECOND && totalMs >= SECONDS_IN_MS,
+    useMin: timeUnit == _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.MINUTE || timeUnit <= _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.MINUTE && totalMs >= MINUTES_IN_MS,
+    useHours: timeUnit == _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.HOUR || timeUnit <= _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.HOUR && totalMs >= HOURS_IN_MS,
+    useDays: timeUnit == _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.DAY || timeUnit <= _constants_time_js__WEBPACK_IMPORTED_MODULE_0__.TimeUnit.DAY && totalMs >= DAYS_IN_MS
+  };
+  const {
+    timestamp,
+    units
+  } = formatTimestamp(timeMs, options);
+  const {
+    timestamp: totalTimestamp
+  } = formatTimestamp(totalMs, options);
+  return `${timestamp} / ${totalTimestamp} ${units}`;
+}
+
+/**
+ * Constrains the `src` vector relative to the `target` so it only has freedom along the
+ * specified `axis`. Does nothing if `axis = Axis.NONE`.
+ *
+ * @example
+ * ```
+ *   const src = [1, 2, 3];
+ *   const target = [4, 5, 6];
+ *   const constrained = constrainToAxis(src, target, Axis.X);
+ *   console.log(constrained); // [1, 5, 6]
+ * ```
+ */
+function constrainToAxis(src, target, axis) {
+  switch (axis) {
+    case _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_1__.Axis.X:
+      return [src[0], target[1], target[2]];
+    case _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_1__.Axis.Y:
+      return [target[0], src[1], target[2]];
+    case _VolumeRenderSettings_js__WEBPACK_IMPORTED_MODULE_1__.Axis.Z:
+      return [target[0], target[1], src[2]];
+    default:
+      return [...src];
+  }
+}
+function getDataRange(data) {
+  let min = data[0];
+  let max = data[0];
+  for (let i = 1; i < data.length; i++) {
+    min = Math.min(min, data[i]);
+    max = Math.max(max, data[i]);
+  }
+  return [min, max];
 }
 
 /***/ }),

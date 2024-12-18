@@ -798,6 +798,16 @@ const NBINS = 256;
 class Histogram {
   // no more than 2^32 pixels of any one intensity in the data!?!?!
 
+  /** Min value in the original raw data. */
+
+  /** Max value in the original raw data. */
+
+  /** Size of each histogram bin in the scale of the original data. */
+
+  /** Index of the first bin (other than 0) with at least 1 value. */
+
+  /** Index of the last bin (other than 0) with at least 1 value. */
+
   constructor(data) {
     this.dataMinBin = 0;
     this.dataMaxBin = 0;
@@ -814,14 +824,15 @@ class Histogram {
     this.max = hinfo.max;
     this.binSize = hinfo.binSize;
 
-    // track the first and last nonzero bins with at least 1 sample
-    for (let i = 1; i < this.bins.length; i++) {
+    // TODO: These should always return 0 and NBINS - 1, respectively. Test if these
+    // can be removed.
+    for (let i = 0; i < this.bins.length; i++) {
       if (this.bins[i] > 0) {
         this.dataMinBin = i;
         break;
       }
     }
-    for (let i = this.bins.length - 1; i >= 1; i--) {
+    for (let i = this.bins.length - 1; i >= 0; i--) {
       if (this.bins[i] > 0) {
         this.dataMaxBin = i;
         break;
@@ -854,15 +865,25 @@ class Histogram {
   findBinOfValue(value) {
     return Histogram.findBin(value, this.min, this.binSize, NBINS);
   }
+
+  /**
+   * Return the min data value
+   * @return {number}
+   */
   getDataMin() {
     return this.min;
   }
+
+  /**
+   * Return the max data value
+   * @return {number}
+   */
   getDataMax() {
     return this.max;
   }
 
   /**
-   * Return the min data value
+   * Returns the first bin index with at least 1 value, other than the 0th bin.
    * @return {number}
    */
   getMin() {
@@ -870,10 +891,11 @@ class Histogram {
   }
 
   /**
-   * Return the max data value
+   * Returns the last bin index with at least 1 value, other than the 0th bin.
    * @return {number}
    */
   getMax() {
+    // Note that this will always return `NBINS - 1`.
     return this.dataMaxBin;
   }
   getNumBins() {
@@ -7829,7 +7851,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
 /* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _ImageInfo_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ImageInfo.js */ "./src/ImageInfo.ts");
-/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
+/* harmony import */ var _utils_num_utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/num_utils.js */ "./src/utils/num_utils.ts");
 
 
 
@@ -8003,14 +8025,15 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
         const cacheResult = cache?.get(`${image.name}/${chindex}`);
         if (cacheResult) {
           // all data coming from this loader is natively 8-bit
+          const channelData = new Uint8Array(cacheResult);
           if (syncChannels) {
             // if we are synchronizing channels, we need to keep track of the data
             resultChannelIndices.push(chindex);
             resultChannelDtype.push("uint8");
-            resultChannelData.push(new Uint8Array(cacheResult));
-            resultChannelRanges.push(_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8);
+            resultChannelData.push(channelData);
+            resultChannelRanges.push((0,_utils_num_utils_js__WEBPACK_IMPORTED_MODULE_2__.getDataRange)(channelData));
           } else {
-            onData([chindex], ["uint8"], [new Uint8Array(cacheResult)], [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8]);
+            onData([chindex], ["uint8"], [channelData], [(0,_utils_num_utils_js__WEBPACK_IMPORTED_MODULE_2__.getDataRange)(channelData)]);
           }
         } else {
           cacheHit = false;
@@ -8048,10 +8071,16 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
       }
 
       // extract the data
+      const channelRange = [];
       for (let j = 0; j < Math.min(image.channels.length, 4); ++j) {
+        let rawMin = Infinity;
+        let rawMax = -Infinity;
         for (let px = 0; px < length; px++) {
           channelsBits[j][px] = iData.data[px * 4 + j];
+          rawMin = Math.min(rawMin, channelsBits[j][px]);
+          rawMax = Math.max(rawMax, channelsBits[j][px]);
         }
+        channelRange[j] = [rawMin, rawMax];
       }
 
       // done with `iData` and `canvas` now.
@@ -8065,9 +8094,9 @@ class JsonImageInfoLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__
           resultChannelIndices.push(chindex);
           resultChannelDtype.push("uint8");
           resultChannelData.push(channelsBits[ch]);
-          resultChannelRanges.push(_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8);
+          resultChannelRanges.push(channelRange[ch]);
         } else {
-          onData([chindex], ["uint8"], [channelsBits[ch]], [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8], [bitmap.width, bitmap.height]);
+          onData([chindex], ["uint8"], [channelsBits[ch]], [channelRange[ch]], [bitmap.width, bitmap.height]);
         }
       }
     });
@@ -8618,7 +8647,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _ImageInfo_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../ImageInfo.js */ "./src/ImageInfo.ts");
 /* harmony import */ var _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./JsonImageInfoLoader.js */ "./src/loaders/JsonImageInfoLoader.ts");
-/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
+/* harmony import */ var _utils_num_utils_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../utils/num_utils.js */ "./src/utils/num_utils.ts");
 
 
 
@@ -8680,7 +8709,7 @@ class OpenCellLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Thre
     }];
     const [w, h] = (0,_ImageInfo_js__WEBPACK_IMPORTED_MODULE_1__.computeAtlasSize)(imageInfo);
     // all data coming from this loader is natively 8-bit
-    return _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_2__.JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, dtype, data) => onData(ch, dtype, data, [_types_js__WEBPACK_IMPORTED_MODULE_3__.DATARANGE_UINT8], [w, h]));
+    return _JsonImageInfoLoader_js__WEBPACK_IMPORTED_MODULE_2__.JsonImageInfoLoader.loadVolumeAtlasData(urls, (ch, dtype, data) => onData(ch, dtype, data, data.map(_utils_num_utils_js__WEBPACK_IMPORTED_MODULE_3__.getDataRange), [w, h]));
   }
 }
 
@@ -8701,7 +8730,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.core.js");
 /* harmony import */ var _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./IVolumeLoader.js */ "./src/loaders/IVolumeLoader.ts");
 /* harmony import */ var _VolumeLoaderUtils_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./VolumeLoaderUtils.js */ "./src/loaders/VolumeLoaderUtils.ts");
-/* harmony import */ var _types_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../types.js */ "./src/types.ts");
+/* harmony import */ var _utils_num_utils_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/num_utils.js */ "./src/utils/num_utils.ts");
 
 
 
@@ -8783,8 +8812,9 @@ class RawArrayLoader extends _IVolumeLoader_js__WEBPACK_IMPORTED_MODULE_0__.Thre
       }
       const volSizeBytes = this.data.shape[3] * this.data.shape[2] * this.data.shape[1]; // x*y*z pixels * 1 byte/pixel
       const channelData = new Uint8Array(this.data.buffer.buffer, chindex * volSizeBytes, volSizeBytes);
+      const range = (0,_utils_num_utils_js__WEBPACK_IMPORTED_MODULE_2__.getDataRange)(channelData);
       // all data coming from this loader is natively 8-bit
-      onData([chindex], ["uint8"], [channelData], [_types_js__WEBPACK_IMPORTED_MODULE_2__.DATARANGE_UINT8]);
+      onData([chindex], ["uint8"], [channelData], [range]);
     }
     return Promise.resolve();
   }
@@ -10566,6 +10596,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   DEFAULT_SIG_FIGS: () => (/* binding */ DEFAULT_SIG_FIGS),
 /* harmony export */   constrainToAxis: () => (/* binding */ constrainToAxis),
 /* harmony export */   formatNumber: () => (/* binding */ formatNumber),
+/* harmony export */   getDataRange: () => (/* binding */ getDataRange),
 /* harmony export */   getTimestamp: () => (/* binding */ getTimestamp),
 /* harmony export */   timeToMilliseconds: () => (/* binding */ timeToMilliseconds)
 /* harmony export */ });
@@ -10792,6 +10823,15 @@ function constrainToAxis(src, target, axis) {
     default:
       return [...src];
   }
+}
+function getDataRange(data) {
+  let min = data[0];
+  let max = data[0];
+  for (let i = 1; i < data.length; i++) {
+    min = Math.min(min, data[i]);
+    max = Math.max(max, data[i]);
+  }
+  return [min, max];
 }
 
 /***/ }),
