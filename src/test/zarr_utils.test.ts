@@ -123,31 +123,31 @@ const expectSourcesEqual = (aArr: ZarrSource[], bArr: ZarrSource[]) => {
 
 describe("zarr_utils", () => {
   describe("getSourceChannelNames", () => {
-    it("extracts a list of channel labels from the given source", async () => {
+    test("extracts a list of channel labels from the given source", async () => {
       const names = ["foo", "bar", "baz"];
       const source = await createOneMockSource([[1, 3, 1, 1, 1]], [[1, 1, 1, 1, 1]], 0, ["1", "2", "3"], names);
       expect(getSourceChannelNames(source)).to.deep.equal(names);
     });
 
-    it("does not resolve channel name collisions", async () => {
+    test("does not resolve channel name collisions", async () => {
       const names = ["foo", "bar", "foo"];
       const source = await createOneMockSource([[1, 3, 1, 1, 1]], [[1, 1, 1, 1, 1]], 0, ["1", "2", "3"], names);
       expect(getSourceChannelNames(source)).to.deep.equal(names);
     });
 
-    it('applies default names of the form "Channel N" for missing labels', async () => {
+    test('applies default names of the form "Channel N" for missing labels', async () => {
       const names = ["foo", "bar", undefined] as string[];
       const source = await createOneMockSource([[1, 3, 1, 1, 1]], [[1, 1, 1, 1, 1]], 0, ["1", "2", "3"], names);
       expect(getSourceChannelNames(source)).to.deep.equal(["foo", "bar", "Channel 2"]);
     });
 
-    it("applies default names when `omeroMetadata` is missing entirely", async () => {
+    test("applies default names when `omeroMetadata` is missing entirely", async () => {
       const source = await createOneMockSource([[1, 3, 1, 1, 1]], [[1, 1, 1, 1, 1]], 0);
       delete source.omeroMetadata;
       expect(getSourceChannelNames(source)).to.deep.equal(["Channel 0", "Channel 1", "Channel 2"]);
     });
 
-    it("applies `channelOffset` to default names", async () => {
+    test("applies `channelOffset` to default names", async () => {
       const source = await createOneMockSource([[1, 3, 1, 1, 1]], [[1, 1, 1, 1, 1]], 3);
       delete source.omeroMetadata;
       expect(getSourceChannelNames(source)).to.deep.equal(["Channel 3", "Channel 4", "Channel 5"]);
@@ -155,11 +155,11 @@ describe("zarr_utils", () => {
   });
 
   describe("getDimensionCount", () => {
-    it("returns 5 when all 5 dimension indices are positive", () => {
+    test("returns 5 when all 5 dimension indices are positive", () => {
       expect(getDimensionCount([1, 1, 1, 1, 1])).to.equal(5);
     });
 
-    it("recognizes when T, C, or Z is missing", () => {
+    test("recognizes when T, C, or Z is missing", () => {
       for (let dim = 0; dim < 3; dim++) {
         const tczyx: TCZYX<number> = [1, 1, 1, 1, 1];
         tczyx[dim] = -1;
@@ -167,23 +167,23 @@ describe("zarr_utils", () => {
       }
     });
 
-    it("returns 2 when all of T, C, and Z are missing", () => {
+    test("returns 2 when all of T, C, and Z are missing", () => {
       expect(getDimensionCount([-1, -1, -1, 1, 1])).to.equal(2);
     });
   });
 
   describe("remapAxesToTCZYX", () => {
-    it("produces an array of indices in T, C, Z, Y, X order", () => {
+    test("produces an array of indices in T, C, Z, Y, X order", () => {
       const axes = [{ name: "t" }, { name: "c" }, { name: "x" }, { name: "y" }, { name: "z" }];
       expect(remapAxesToTCZYX(axes)).to.deep.equal([0, 1, 4, 3, 2]);
     });
 
-    it("defaults to -1 for missing T, C, or Z axes", () => {
+    test("defaults to -1 for missing T, C, or Z axes", () => {
       const axes = [{ name: "x" }, { name: "y" }];
       expect(remapAxesToTCZYX(axes)).to.deep.equal([-1, -1, -1, 1, 0]);
     });
 
-    it("throws an error if it encounters an unrecognized (not t, c, z, y, or x) axis name", () => {
+    test("throws an error if it encounters an unrecognized (not t, c, z, y, or x) axis name", () => {
       const axes = [{ name: "t" }, { name: "c" }, { name: "x" }, { name: "y" }, { name: "foo" }];
       expect(() => remapAxesToTCZYX(axes)).to.throw("Unrecognized axis");
     });
@@ -192,18 +192,18 @@ describe("zarr_utils", () => {
 
   const VALS_TCZYX: TCZYX<number> = [1, 2, 3, 4, 5];
   describe("orderByDimension", () => {
-    it("orders an array in dimension order based on the given indices", () => {
+    test("orders an array in dimension order based on the given indices", () => {
       const order: TCZYX<number> = [3, 1, 4, 0, 2];
       expect(orderByDimension(VALS_TCZYX, order)).to.deep.equal([4, 2, 5, 1, 3]);
     });
 
-    it("excludes the T, C, or Z dimension if its index is negative", () => {
+    test("excludes the T, C, or Z dimension if its index is negative", () => {
       expect(orderByDimension(VALS_TCZYX, [-1, 0, 1, 3, 2])).to.deep.equal([2, 3, 5, 4]);
       expect(orderByDimension(VALS_TCZYX, [0, -1, 1, 3, 2])).to.deep.equal([1, 3, 5, 4]);
       expect(orderByDimension(VALS_TCZYX, [0, 1, -1, 3, 2])).to.deep.equal([1, 2, 5, 4]);
     });
 
-    it("throws an error if an axis index is out of bounds", () => {
+    test("throws an error if an axis index is out of bounds", () => {
       // Out of bounds for full-size array
       expect(() => orderByDimension(VALS_TCZYX, [0, 1, 2, 3, 5])).to.throw("Unexpected axis index");
       // Out of bounds for smaller array
@@ -213,17 +213,17 @@ describe("zarr_utils", () => {
 
   const VALS_DIM: TCZYX<number> = [16, 8, 4, 2, 1];
   describe("orderByTCZYX", () => {
-    it("orders an array TCZYX based on the given indices", () => {
+    test("orders an array TCZYX based on the given indices", () => {
       const order: TCZYX<number> = [3, 1, 4, 0, 2];
       expect(orderByTCZYX(VALS_DIM, order, 0)).to.deep.equal([2, 8, 1, 16, 4]);
     });
 
-    it("fills in missing dimensions with a default value", () => {
+    test("fills in missing dimensions with a default value", () => {
       const order: TCZYX<number> = [3, 1, 4, -1, 2];
       expect(orderByTCZYX(VALS_DIM, order, 3)).to.deep.equal([2, 8, 1, 3, 4]);
     });
 
-    it("throws an error if an axis index is out of bounds", () => {
+    test("throws an error if an axis index is out of bounds", () => {
       // Out of bounds for full-size array
       expect(() => orderByTCZYX(VALS_DIM, [0, 1, 2, 5, 3], 0)).to.throw("Unexpected axis index");
       // Out of bounds for smaller array
@@ -240,15 +240,15 @@ describe("zarr_utils", () => {
     ],
   };
   describe("getScale", () => {
-    it("returns the scale transformation for a given dataset", () => {
+    test("returns the scale transformation for a given dataset", () => {
       expect(getScale(MOCK_DATASET, [0, 1, 2, 3, 4])).to.deep.equal([1, 2, 3, 4, 5]);
     });
 
-    it("orders the scale transformation in TCZYX order", () => {
+    test("orders the scale transformation in TCZYX order", () => {
       expect(getScale(MOCK_DATASET, [3, 1, 4, 0, 2])).to.deep.equal([4, 2, 5, 1, 3]);
     });
 
-    it('defaults to `[1, 1, 1, 1, 1]` if no coordinate transformation of type "scale" is found', () => {
+    test('defaults to `[1, 1, 1, 1, 1]` if no coordinate transformation of type "scale" is found', () => {
       const dataset = {
         ...MOCK_DATASET,
         coordinateTransformations: MOCK_DATASET.coordinateTransformations.slice(0, 1),
@@ -256,19 +256,19 @@ describe("zarr_utils", () => {
       expect(getScale(dataset, [0, 1, 2, 3, 4])).to.deep.equal([1, 1, 1, 1, 1]);
     });
 
-    it("defaults to `[1, 1, 1, 1, 1]` if no coordinate transformations are present at all", () => {
+    test("defaults to `[1, 1, 1, 1, 1]` if no coordinate transformations are present at all", () => {
       expect(getScale({ path: "0" }, [0, 1, 2, 3, 4])).to.deep.equal([1, 1, 1, 1, 1]);
     });
   });
 
   describe("matchSourceScaleLevels", () => {
-    it("does nothing if passed only one source scale level", async () => {
+    test("does nothing if passed only one source scale level", async () => {
       const [testSource, refSource] = await createTwoMockSourceArrs([{ shapes: [[5, 5, 5, 5, 5]] }]);
       matchSourceScaleLevels(testSource);
       expectSourcesEqual(testSource, refSource);
     });
 
-    it("does nothing if all source scale levels are the same", async () => {
+    test("does nothing if all source scale levels are the same", async () => {
       const spec: ZarrSourceMockSpec = {
         shapes: [
           [1, 1, 10, 10, 10],
@@ -280,7 +280,7 @@ describe("zarr_utils", () => {
       expectSourcesEqual(testSource, refSource);
     });
 
-    it("trims source scale levels which are outside the range of any other sources", async () => {
+    test("trims source scale levels which are outside the range of any other sources", async () => {
       const baseSpec: ZarrSourceMockSpec = {
         shapes: [
           [1, 1, 10, 10, 10],
@@ -306,7 +306,7 @@ describe("zarr_utils", () => {
       expectSourcesEqual(testSourceLarger, refSourceLarger);
     });
 
-    it("handles unmatched scale levels within the range of other sources", async () => {
+    test("handles unmatched scale levels within the range of other sources", async () => {
       // The only level shapes that all three of these sources have in common are [1, 1, 6, 6, 6] and [1, 1, 2, 2, 2]
       const shapes1: TCZYX<number>[] = [
         [1, 1, 6, 6, 6],
@@ -343,14 +343,14 @@ describe("zarr_utils", () => {
       expectSourcesEqual(testSources, refSources);
     });
 
-    it("throws an error if the size of two scale levels are mismatched", async () => {
+    test("throws an error if the size of two scale levels are mismatched", async () => {
       const sources = await createMockSources([{ shapes: [[1, 1, 2, 1, 1]] }, { shapes: [[1, 1, 1, 2, 1]] }]);
       expect(() => matchSourceScaleLevels(sources)).to.throw(
         "Incompatible zarr arrays: pixel dimensions are mismatched"
       );
     });
 
-    it("Does not throw an error if two scale levels of the same size have different scale transformations", async () => {
+    test("Does not throw an error if two scale levels of the same size have different scale transformations", async () => {
       const sources = await createMockSources([
         { shapes: [[1, 1, 1, 1, 1]], scales: [[1, 1, 2, 2, 2]] },
         { shapes: [[1, 1, 1, 1, 1]], scales: [[1, 1, 1, 1, 1]] },
@@ -360,7 +360,7 @@ describe("zarr_utils", () => {
       );
     });
 
-    it("Does not throw an error if two scale levels of the same size have a different number of timesteps", async () => {
+    test("Does not throw an error if two scale levels of the same size have a different number of timesteps", async () => {
       const sources = await createMockSources([{ shapes: [[1, 1, 1, 1, 1]] }, { shapes: [[2, 1, 1, 1, 1]] }]);
       expect(() => matchSourceScaleLevels(sources)).to.not.throw(
         "Incompatible zarr arrays: different numbers of timesteps"

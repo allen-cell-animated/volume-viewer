@@ -24,7 +24,7 @@
     "start": "vite serve",
     "react-example": "webpack serve --config react-example/webpack.react.js",
     "lint": "eslint --config ./.eslintrc.json --ignore-path ./.eslintignore --ext .jsx --ext .js --ext .ts ./src",
-    "test": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" mocha --require ts-node/register --es-module-specifier-resolution=node src/**/test/*.[jt]s",
+    "test": "vitest run",
     "transpileES": "babel src --out-dir es --extensions .js,.ts --ignore **/*.test.js",
     "typeCheck": "tsc -p tsconfig.json --noEmit"
   },
@@ -70,6 +70,7 @@
     "file-loader": "^6.2.0",
     "html-webpack-plugin": "^5.3.2",
     "husky": "^7.0.1",
+    "jsdom": "^25.0.1",
     "lil-gui": "^0.19.2",
     "lint-staged": "^13.2.1",
     "mocha": "^10.3.0",
@@ -82,6 +83,7 @@
     "typescript": "^4.3.5",
     "url-loader": "^4.1.1",
     "vite": "^6.0.6",
+    "vitest": "^2.1.8",
     "webpack": "^5.69.1",
     "webpack-cli": "^4.9.2",
     "webpack-dev-server": "^4.7.4"

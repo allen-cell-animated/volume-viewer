@@ -3,7 +3,7 @@ import { Axis, VolumeRenderSettings } from "../VolumeRenderSettings";
 import { Vector3 } from "three";
 
 describe("VolumeRenderSettingUtils", () => {
-  it("deeply-copies bounds", () => {
+  test("deeply-copies bounds", () => {
     const s1 = new VolumeRenderSettings();
     const s1BMax = new Vector3(9.0, 9.0, 9.0);
     s1.bounds.bmax = s1BMax;
@@ -21,7 +21,7 @@ describe("VolumeRenderSettingUtils", () => {
     expect(s1.bounds.bmax.equals(s2BMax)).to.be.false;
   });
 
-  it("deeply-copies arrays", () => {
+  test("deeply-copies arrays", () => {
     const s1 = new VolumeRenderSettings();
     const glossiness = [4.0, 3.0, 1.0];
     s1.glossiness = glossiness;
@@ -38,12 +38,12 @@ describe("VolumeRenderSettingUtils", () => {
     expect(s1.glossiness).to.not.deep.equal(s2.glossiness);
   });
 
-  it("can compare against itself", () => {
+  test("can compare against itself", () => {
     const s1 = new VolumeRenderSettings();
     expect(s1.isEqual(s1)).to.be.true;
   });
 
-  it("can compare settings objects", () => {
+  test("can compare settings objects", () => {
     const s1 = new VolumeRenderSettings();
     const s2 = new VolumeRenderSettings();
 
@@ -71,7 +71,7 @@ describe("VolumeRenderSettingUtils", () => {
     expect(s1.isEqual(s4)).to.be.true;
   });
 
-  it("flags string changes", () => {
+  test("flags string changes", () => {
     const s1 = new VolumeRenderSettings();
     const s2 = new VolumeRenderSettings();
 

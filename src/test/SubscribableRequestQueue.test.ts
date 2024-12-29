@@ -29,20 +29,20 @@ function isRejected(promise: Promise<unknown>): Promise<boolean> {
 
 describe("SubscribableRequestQueue", () => {
   describe("addSubscriber", () => {
-    it("adds a subscriber", () => {
+    test("adds a subscriber", () => {
       const queue = new SubscribableRequestQueue();
       const id = queue.addSubscriber();
       expect(queue.hasSubscriber(id)).to.be.true;
     });
 
-    it("returns unique ids", () => {
+    test("returns unique ids", () => {
       const queue = new SubscribableRequestQueue();
       const id1 = queue.addSubscriber();
       const id2 = queue.addSubscriber();
       expect(id1).to.not.equal(id2);
     });
 
-    it("never reuses ids of removed subscribers", () => {
+    test("never reuses ids of removed subscribers", () => {
       const queue = new SubscribableRequestQueue();
       const id1 = queue.addSubscriber();
       const id2 = queue.addSubscriber();
@@ -54,7 +54,7 @@ describe("SubscribableRequestQueue", () => {
   });
 
   describe("addRequestToQueue", () => {
-    it("queues a request", async () => {
+    test("queues a request", async () => {
       const queue = new SubscribableRequestQueue();
       const id = queue.addSubscriber();
       const promise = queue.addRequest("test", id, () => delay(TIMEOUT, "foo"));
@@ -63,20 +63,20 @@ describe("SubscribableRequestQueue", () => {
       expect(result).to.equal("foo");
     });
 
-    it("does not queue a request if the subscriber id is invalid", () => {
+    test("does not queue a request if the subscriber id is invalid", () => {
       const queue = new SubscribableRequestQueue();
       expect(() => queue.addRequest("test", -1, () => delay(TIMEOUT, "foo"))).to.throw();
       expect(() => queue.addRequest("test", 0, () => delay(TIMEOUT, "foo"))).to.throw();
     });
 
-    it("does not queue a request if the subscriber has been deleted", () => {
+    test("does not queue a request if the subscriber has been deleted", () => {
       const queue = new SubscribableRequestQueue();
       const id = queue.addSubscriber();
       queue.removeSubscriber(id);
       expect(() => queue.addRequest("test", id, () => delay(TIMEOUT, "foo"))).to.throw();
     });
 
-    it("creates unique promises without duplicating work when two subscribers queue the same key", async () => {
+    test("creates unique promises without duplicating work when two subscribers queue the same key", async () => {
       const queue = new SubscribableRequestQueue();
       const id1 = queue.addSubscriber();
       const id2 = queue.addSubscriber();
@@ -91,7 +91,7 @@ describe("SubscribableRequestQueue", () => {
       expect(result2).to.equal("foo");
     });
 
-    it("creates different requests when one subscriber queues two keys", async () => {
+    test("creates different requests when one subscriber queues two keys", async () => {
       const queue = new SubscribableRequestQueue();
       const id = queue.addSubscriber();
 
@@ -106,7 +106,7 @@ describe("SubscribableRequestQueue", () => {
       expect(result2).to.equal("bar");
     });
 
-    it("allows a subscriber to queue the same key twice", async () => {
+    test("allows a subscriber to queue the same key twice", async () => {
       const queue = new SubscribableRequestQueue();
       const id = queue.addSubscriber();
 
@@ -120,7 +120,7 @@ describe("SubscribableRequestQueue", () => {
       expect(result1).to.equal("foo");
     });
 
-    it("allows multiple rejections when the same key is queued multiple times by the same subscriber", async () => {
+    test("allows multiple rejections when the same key is queued multiple times by the same subscriber", async () => {
       const queue = new SubscribableRequestQueue();
       const id = queue.addSubscriber();
 
@@ -138,7 +138,7 @@ describe("SubscribableRequestQueue", () => {
       expect(promise2RejectReason).to.equal("foo");
     });
 
-    it("passes request rejections to all subscribers", async () => {
+    test("passes request rejections to all subscribers", async () => {
       const queue = new SubscribableRequestQueue();
       const id1 = queue.addSubscriber();
       const id2 = queue.addSubscriber();
@@ -156,7 +156,7 @@ describe("SubscribableRequestQueue", () => {
       expect(promise2RejectReason).to.equal("foo");
     });
 
-    it("completes requests in order when max requests is set", async () => {
+    test("completes requests in order when max requests is set", async () => {
       const queue = new SubscribableRequestQueue(1);
       const id = queue.addSubscriber();
 
@@ -180,7 +180,7 @@ describe("SubscribableRequestQueue", () => {
   });
 
   describe("cancelRequest", () => {
-    it("cancels a request subscription", async () => {
+    test("cancels a request subscription", async () => {
       const queue = new SubscribableRequestQueue();
       const id = queue.addSubscriber();
       const promise = queue.addRequest("test", id, () => delay(TIMEOUT, "foo"));
@@ -194,7 +194,7 @@ describe("SubscribableRequestQueue", () => {
       expect(queue.cancelRequest("test", id)).to.be.false;
     });
 
-    it("does not cancel an underlying request if it is running", async () => {
+    test("does not cancel an underlying request if it is running", async () => {
       const queue = new SubscribableRequestQueue();
       const id1 = queue.addSubscriber();
       const id2 = queue.addSubscriber();
@@ -216,7 +216,7 @@ describe("SubscribableRequestQueue", () => {
       expect(result).to.equal("foo");
     });
 
-    it("does not cancel an underlying request if it has another subscription", async () => {
+    test("does not cancel an underlying request if it has another subscription", async () => {
       const queue = new SubscribableRequestQueue(1);
       const id1 = queue.addSubscriber();
       const id2 = queue.addSubscriber();
@@ -242,7 +242,7 @@ describe("SubscribableRequestQueue", () => {
       expect(result).to.equal("foo");
     });
 
-    it("cancels an underlying request if it is waiting and has no other subscriptions", async () => {
+    test("cancels an underlying request if it is waiting and has no other subscriptions", async () => {
       const queue = new SubscribableRequestQueue(1);
       const id = queue.addSubscriber();
       // `block` keeps the queue full, to keep `test` from running
@@ -261,7 +261,7 @@ describe("SubscribableRequestQueue", () => {
   });
 
   describe("removeSubscriber", () => {
-    it("removes a subscriber", async () => {
+    test("removes a subscriber", async () => {
       const queue = new SubscribableRequestQueue();
       const id = queue.addSubscriber();
       expect(queue.hasSubscriber(id)).to.be.true;
@@ -269,7 +269,7 @@ describe("SubscribableRequestQueue", () => {
       expect(queue.hasSubscriber(id)).to.be.false;
     });
 
-    it("cancels all subscriptions from a removed subscriber", async () => {
+    test("cancels all subscriptions from a removed subscriber", async () => {
       const queue = new SubscribableRequestQueue();
       const id1 = queue.addSubscriber();
       const id2 = queue.addSubscriber();

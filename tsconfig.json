@@ -15,7 +15,8 @@
     "sourceMap": true,
     "strict": true,
     "target": "ES6",
-    "typeRoots": ["src/types", "node_modules/@types"]
+    "typeRoots": ["src/types", "node_modules/@types"],
+    "types": ["vitest/globals"]
   },
   "files": ["src/index.ts", "public/index.ts"],
   "include": ["src/**/*", "public/**/*"]
