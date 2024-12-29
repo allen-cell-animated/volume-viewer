@@ -25,7 +25,7 @@
     "react-example": "webpack serve --config react-example/webpack.react.js",
     "lint": "eslint --config ./.eslintrc.json --ignore-path ./.eslintignore --ext .jsx --ext .js --ext .ts ./src",
     "test": "vitest run",
-    "transpileES": "babel src --out-dir es --extensions .js,.ts --ignore **/*.test.js",
+    "transpileES": "babel src --out-dir es --extensions .js,.ts --ignore **/*.test.ts",
     "typeCheck": "tsc -p tsconfig.json --noEmit"
   },
   "author": "Daniel Toloudis",
