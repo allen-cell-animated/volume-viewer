@@ -1,5 +1,3 @@
-import { expect } from "chai";
-
 import type { ControlPoint } from "../Lut";
 import { Lut, remapLut, remapControlPoints } from "../Lut";
 import Histogram from "../Histogram";

@@ -1,5 +1,3 @@
-import { expect } from "chai";
-
 import { TCZYX } from "../loaders/zarr_utils/types";
 import ChunkPrefetchIterator from "../loaders/zarr_utils/ChunkPrefetchIterator";
 import { PrefetchDirection } from "../loaders/zarr_utils/types";

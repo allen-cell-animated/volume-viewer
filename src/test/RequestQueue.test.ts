@@ -1,4 +1,3 @@
-import { expect } from "chai";
 import { Vector3 } from "three";
 import { TypedArray } from "@zarrita/core";
 

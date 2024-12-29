@@ -1,5 +1,3 @@
-import { expect } from "chai";
-
 import SubscribableRequestQueue from "../utils/SubscribableRequestQueue";
 
 const TIMEOUT = 10;

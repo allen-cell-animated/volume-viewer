@@ -1,4 +1,3 @@
-import { expect } from "chai";
 import { Axis, VolumeRenderSettings } from "../VolumeRenderSettings";
 import { Vector3 } from "three";
 
