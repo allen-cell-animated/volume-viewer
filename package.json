@@ -21,7 +21,7 @@
     "format": "prettier --write src/**/*.js",
     "gh-build": "webpack --config webpack.dev.js",
     "dev": "webpack serve --config webpack.dev.js",
-    "start": "webpack serve --config webpack.dev.js",
+    "start": "vite serve",
     "react-example": "webpack serve --config react-example/webpack.react.js",
     "lint": "eslint --config ./.eslintrc.json --ignore-path ./.eslintignore --ext .jsx --ext .js --ext .ts ./src",
     "test": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" mocha --require ts-node/register --es-module-specifier-resolution=node src/**/test/*.[jt]s",
@@ -81,6 +81,7 @@
     "ts-node": "^10.9.2",
     "typescript": "^4.3.5",
     "url-loader": "^4.1.1",
+    "vite": "^6.0.6",
     "webpack": "^5.69.1",
     "webpack-cli": "^4.9.2",
     "webpack-dev-server": "^4.7.4"

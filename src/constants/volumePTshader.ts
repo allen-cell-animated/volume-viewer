@@ -1,6 +1,6 @@
 import { Texture, Vector2, Vector3, Vector4 } from "three";
 import { Light, AREA_LIGHT, SKY_LIGHT } from "../Light.js";
-import pathTraceFragmentShader from "./shaders/pathtrace.frag";
+import pathTraceFragmentShader from "./shaders/pathtrace.frag?raw";
 
 export const pathTracingFragmentShaderSrc = pathTraceFragmentShader;
 
