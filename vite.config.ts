@@ -8,4 +8,7 @@ export default {
     server: {
         open: "public/index.html",
     },
+    worker: {
+        format: "es",
+    },
 } satisfies UserConfig;

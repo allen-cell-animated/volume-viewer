@@ -260,7 +260,7 @@ class TiffLoader extends ThreadableVolumeLoader {
           url: this.url,
         };
 
-        const worker = new Worker(new URL("../workers/FetchTiffWorker", import.meta.url));
+        const worker = new Worker(new URL("../workers/FetchTiffWorker", import.meta.url), {type: "module"});
         worker.onmessage = (e: MessageEvent<TiffLoadResult | { isError: true; error: ErrorObject }>) => {
           if (e.data.isError) {
             reject(deserializeError(e.data.error));
