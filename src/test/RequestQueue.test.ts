@@ -500,7 +500,7 @@ describe("test RequestQueue", () => {
         .and.greaterThanOrEqual(numFrames);
 
       await unhandledpromise;
-      expect(fn).toHaveBeenCalledTimes(numFrames-1);
+      expect(fn).toHaveBeenCalledTimes(numFrames);
     });
   });
 });
