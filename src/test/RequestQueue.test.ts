@@ -1,3 +1,5 @@
+import {vi} from "vitest";
+
 import { Vector3 } from "three";
 import { TypedArray } from "@zarrita/core";
 
@@ -438,6 +440,14 @@ describe("test RequestQueue", () => {
     }
 
     test("can issue and cancel mock loadspec requests", async () => {
+      const fn = vi.fn();
+      const unhandledpromise = new Promise<void>((resolve) => {
+        process.on("unhandledRejection", () => {
+          fn();
+          resolve();
+        });
+      });
+
       const rq = new RequestQueue(10);
       const xDim = 400;
       const yDim = 600;
@@ -488,6 +498,9 @@ describe("test RequestQueue", () => {
       expect(workCount)
         .to.be.lessThan(2 * numFrames)
         .and.greaterThanOrEqual(numFrames);
+
+      await unhandledpromise;
+      expect(fn).toHaveBeenCalledTimes(numFrames-1);
     });
   });
 });
