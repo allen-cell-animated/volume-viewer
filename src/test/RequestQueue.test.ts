@@ -502,8 +502,8 @@ describe("test RequestQueue", () => {
         .and.greaterThanOrEqual(numFrames);
 
       await unhandledpromise;
-      expect([numFrames, numFrames - 1]).to.include(count);
       // This seems to be randomized. Expect some number of times either numFrames or numFrames-1.
+      expect([numFrames, numFrames - 1]).to.include(count);
       //expect(fn).toHaveBeenCalledTimes(numFrames).or.toHaveBeenCalledTimes(numFrames - 1);
     });
   });
