@@ -76,11 +76,11 @@ describe("test volume", () => {
   describe("creation", () => {
     const v = new Volume(testimgdata);
 
-    test("is created", () => {
+    it("is created", () => {
       checkVolumeConstruction(v, testimgdata);
     });
 
-    test("loaded channel data", () => {
+    it("loaded channel data", () => {
       const size = v.imageInfo.subregionSize;
 
       const conedata = VolumeMaker.createCone(size.x, size.y, size.z, size.x / 8, size.z);
@@ -103,7 +103,7 @@ describe("test volume", () => {
   });
 
   describe("property validation", () => {
-    test("has a correct value for normalizedPhysicalSize", () => {
+    it("has a correct value for normalizedPhysicalSize", () => {
       // `Volume` formerly derived a `scale` property by a different means than `normPhysicalSize`, but depended
       // on `scale` and `normPhysicalSize` being equal. With `scale` gone, this test ensures the equality stays.
       const v = new Volume(testimgdata);

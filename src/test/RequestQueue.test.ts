@@ -1,4 +1,4 @@
-import {vi} from "vitest";
+import { vi } from "vitest";
 
 import { Vector3 } from "three";
 import { TypedArray } from "@zarrita/core";
@@ -15,7 +15,7 @@ async function sleep(timeoutMs: number): Promise<void> {
 
 describe("test RequestQueue", () => {
   describe("adding requests", () => {
-    test("can issue one request", async () => {
+    it("can issue one request", async () => {
       const rq = new RequestQueue();
       const loadSpec = new LoadSpec();
       let actionIsRun = false;
@@ -31,7 +31,7 @@ describe("test RequestQueue", () => {
       expect(rq.hasRequest(loadSpecToString(loadSpec))).to.be.false;
     });
 
-    test("only runs request once", async () => {
+    it("only runs request once", async () => {
       const rq = new RequestQueue();
       const loadSpec = new LoadSpec();
       let count = 0;
@@ -46,7 +46,7 @@ describe("test RequestQueue", () => {
       expect(count).to.equal(1);
     });
 
-    test("can issue delayed requests", async () => {
+    it("can issue delayed requests", async () => {
       const rq = new RequestQueue();
       const startTime = Date.now();
       const delayMs = 15;
@@ -70,7 +70,7 @@ describe("test RequestQueue", () => {
 
     // Test that same promise is returned
 
-    test("ignores duplicate requests", async () => {
+    it("ignores duplicate requests", async () => {
       const rq = new RequestQueue();
       const loadSpec1 = new LoadSpec();
       const loadSpec2 = new LoadSpec();
@@ -91,7 +91,7 @@ describe("test RequestQueue", () => {
       expect(count).to.equal(1);
     });
 
-    test("handles multiple concurrent requests", async () => {
+    it("handles multiple concurrent requests", async () => {
       const rq = new RequestQueue();
       const array = [false, false, false, false, false];
       const promises: Promise<unknown>[] = [];
@@ -108,7 +108,7 @@ describe("test RequestQueue", () => {
       }
     });
 
-    test("completes all tasks sequentially when max requests is set", async () => {
+    it("completes all tasks sequentially when max requests is set", async () => {
       const rq = new RequestQueue(1);
       const startTime = Date.now();
       const iterations = 10;
@@ -153,7 +153,7 @@ describe("test RequestQueue", () => {
       }
     });
 
-    test("handles failing request actions", async () => {
+    it("handles failing request actions", async () => {
       const maxActiveRequests = 10;
       const rq = new RequestQueue(maxActiveRequests);
       const iterations = maxActiveRequests * 10;
@@ -172,7 +172,7 @@ describe("test RequestQueue", () => {
       });
     });
 
-    test("handles sequential requests", async () => {
+    it("handles sequential requests", async () => {
       const rq = new RequestQueue();
       let count = 0;
       const work = async () => {
@@ -185,7 +185,7 @@ describe("test RequestQueue", () => {
       expect(count).to.equal(2);
     });
 
-    test("ignores different promise return types.", async () => {
+    it("ignores different promise return types.", async () => {
       const rq = new RequestQueue();
       const promise1 = rq.addRequest("a", async () => {
         await sleep(10);
@@ -205,7 +205,7 @@ describe("test RequestQueue", () => {
       });
     });
 
-    test("immediately queues delayed requests when re-requesting", async () => {
+    it("immediately queues delayed requests when re-requesting", async () => {
       const rq = new RequestQueue();
       let count = 0;
       const work = async () => {
@@ -226,7 +226,7 @@ describe("test RequestQueue", () => {
       expect(count).to.equal(2);
     });
 
-    test("queues all regular requests before any low-priority requests", async () => {
+    it("queues all regular requests before any low-priority requests", async () => {
       let regular = 0;
       let lowPriority = 0;
       const regularWork = async () => {
@@ -255,7 +255,7 @@ describe("test RequestQueue", () => {
       expect(lowPriority).to.equal(1);
     });
 
-    test("maintains a separate and lower concurrent task limit for low-priority requests", async () => {
+    it("maintains a separate and lower concurrent task limit for low-priority requests", async () => {
       let count = 0;
       const work = async () => {
         await sleep(5);
@@ -274,7 +274,7 @@ describe("test RequestQueue", () => {
       expect(count).to.equal(3);
     });
 
-    test("can promote a low-priority task to high priority", async () => {
+    it("can promote a low-priority task to high priority", async () => {
       let count = 0;
       const work = async () => {
         await sleep(5);
@@ -295,7 +295,7 @@ describe("test RequestQueue", () => {
   });
 
   describe("cancelling requests", () => {
-    test("can cancel a request", async () => {
+    it("can cancel a request", async () => {
       const rq = new RequestQueue();
       let count = 0;
       const work = async (key) => {
@@ -322,7 +322,7 @@ describe("test RequestQueue", () => {
       expect(rq.hasRequest("a")).to.be.false;
     });
 
-    test("does not resolve cancelled requests", async () => {
+    it("does not resolve cancelled requests", async () => {
       const rq = new RequestQueue();
       const work = async () => {
         await sleep(10);
@@ -344,7 +344,7 @@ describe("test RequestQueue", () => {
       });
     });
 
-    test("can cancel delayed requests", async () => {
+    it("can cancel delayed requests", async () => {
       const rq = new RequestQueue(1);
       let workCount = 0;
       const delayMs = 10;
@@ -359,7 +359,7 @@ describe("test RequestQueue", () => {
       expect(workCount).to.equal(0);
     });
 
-    test("is not blocked by cancelled requests", async () => {
+    it("is not blocked by cancelled requests", async () => {
       const rq = new RequestQueue(1);
       const work = async () => {
         await sleep(5);
@@ -373,7 +373,7 @@ describe("test RequestQueue", () => {
       await Promise.allSettled(promises);
     });
 
-    test("can cancel all requests", async () => {
+    it("can cancel all requests", async () => {
       const rq = new RequestQueue(1);
       const iterations = 10;
       let count = 0;
@@ -439,10 +439,10 @@ describe("test RequestQueue", () => {
       return requests;
     }
 
-    test("can issue and cancel mock loadspec requests", async () => {
+    it("can issue and cancel mock loadspec requests", async () => {
       const fn = vi.fn();
       let count = 0;
-      const unhandledpromise = new Promise<void>((resolve) => {
+      const unhandledPromise = new Promise<void>((resolve) => {
         process.on("unhandledRejection", () => {
           fn();
           count++;
@@ -501,7 +501,7 @@ describe("test RequestQueue", () => {
         .to.be.lessThan(2 * numFrames)
         .and.greaterThanOrEqual(numFrames);
 
-      await unhandledpromise;
+      await unhandledPromise;
       // This seems to be randomized. Expect some number of times either numFrames or numFrames-1.
       expect([numFrames, numFrames - 1]).to.include(count);
       //expect(fn).toHaveBeenCalledTimes(numFrames).or.toHaveBeenCalledTimes(numFrames - 1);

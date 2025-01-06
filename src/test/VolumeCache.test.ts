@@ -1,14 +1,14 @@
 import VolumeCache from "../VolumeCache";
 
 describe("VolumeCache", () => {
-  test("creates an empty cache with the specified max size", () => {
+  it("creates an empty cache with the specified max size", () => {
     const cache = new VolumeCache(10);
     expect(cache.size).to.equal(0);
     expect(cache.maxSize).to.equal(10);
   });
 
   describe("insert", () => {
-    test("adds a new entry to the cache", () => {
+    it("adds a new entry to the cache", () => {
       const cache = new VolumeCache();
       expect(cache.get("1")).to.be.undefined;
 
@@ -17,14 +17,14 @@ describe("VolumeCache", () => {
       expect(cache.get("1")).to.deep.equal(new Uint8Array(4));
     });
 
-    test("does not insert an entry if it is too big for the cache", () => {
+    it("does not insert an entry if it is too big for the cache", () => {
       const cache = new VolumeCache(6);
       const insertionResult = cache.insert("1", new Uint8Array(8));
       expect(insertionResult).to.be.false;
       expect(cache.get("1")).to.be.undefined;
     });
 
-    test("evicts the least recently used entry when above its size limit", () => {
+    it("evicts the least recently used entry when above its size limit", () => {
       const cache = new VolumeCache(12); // max: 12
 
       cache.insert("0", new Uint8Array(8)); // 8 < 12
@@ -39,7 +39,7 @@ describe("VolumeCache", () => {
       expect(cache.get("2")).to.deep.equal(new Uint8Array(8));
     });
 
-    test("evicts as many entries as it takes to get below max size", () => {
+    it("evicts as many entries as it takes to get below max size", () => {
       const cache = new VolumeCache(12);
 
       cache.insert("0", new Uint8Array(6)); // 6
@@ -54,7 +54,7 @@ describe("VolumeCache", () => {
       expect(cache.get("2")).to.deep.equal(new Uint8Array(8));
     });
 
-    test("reuses any entries that match the provided key", () => {
+    it("reuses any entries that match the provided key", () => {
       const cache = new VolumeCache(12);
 
       cache.insert("0", new Uint8Array([1, 2, 3, 4])); // 4
@@ -82,13 +82,13 @@ describe("VolumeCache", () => {
   }
 
   describe("get", () => {
-    test("gets an entry when provided a key", () => {
+    it("gets an entry when provided a key", () => {
       const cache = setupGetTest();
       const result = cache.get("1");
       expect(result).to.deep.equal(new Uint8Array(SLICE_1));
     });
 
-    test("moves returned entries to the front of the LRU queue", () => {
+    it("moves returned entries to the front of the LRU queue", () => {
       const cache = setupGetTest(); // size: 12; max: 12
 
       cache.get("0"); // SLICE_0 moves from last to first; SLICE_1 is now last
@@ -112,7 +112,7 @@ describe("VolumeCache", () => {
   }
 
   describe("clearWithPrefix", () => {
-    test("clears all entries from the cache whose keys have the specified prefix", () => {
+    it("clears all entries from the cache whose keys have the specified prefix", () => {
       const cache = setupClearTest();
       cache.clearWithPrefix("0/");
 
@@ -126,7 +126,7 @@ describe("VolumeCache", () => {
   });
 
   describe("clear", () => {
-    test("clears all entries from the cache", () => {
+    it("clears all entries from the cache", () => {
       const cache = setupClearTest();
 
       cache.clear();

@@ -12,13 +12,13 @@ describe("test histogram", () => {
   const histogram = new Histogram(conedata);
 
   describe("binary volume data", () => {
-    test("has a min of 0", () => {
+    it("has a min of 0", () => {
       expect(histogram.getMin()).to.equal(0);
     });
-    test("has a max of 255", () => {
+    it("has a max of 255", () => {
       expect(histogram.getMax()).to.equal(255);
     });
-    test("is created", () => {
+    it("is created", () => {
       expect(histogram.maxBin).to.equal(255);
       expect(histogram["bins"][255]).to.be.greaterThan(0);
       expect(histogram["bins"][128]).to.equal(0);
@@ -34,12 +34,12 @@ describe("test histogram", () => {
       { x: 255, color: [255, 255, 255], opacity: 1.0 },
     ];
     const lut = new Lut().createFromControlPoints(controlPoints);
-    test("has interpolated opacity correctly", () => {
+    it("has interpolated opacity correctly", () => {
       expect(lut.lut[126 * 4 + 3]).to.equal(0);
       expect(lut.lut[127 * 4 + 3]).to.equal(127);
       expect(lut.lut[128 * 4 + 3]).to.equal(255);
     });
-    test("has interpolated color correctly", () => {
+    it("has interpolated color correctly", () => {
       expect(lut.lut[126 * 4]).to.equal(255);
       expect(lut.lut[127 * 4]).to.equal(255);
       expect(lut.lut[128 * 4]).to.equal(255);
@@ -47,7 +47,7 @@ describe("test histogram", () => {
   });
 
   describe("interpolates opacity across consecutive control points", () => {
-    test("has interpolated opacity correctly", () => {
+    it("has interpolated opacity correctly", () => {
       const controlPoints: ControlPoint[] = [
         { x: 0, color: [255, 255, 255], opacity: 0 },
         { x: 1, color: [255, 255, 255], opacity: 1.0 },
@@ -58,7 +58,7 @@ describe("test histogram", () => {
       expect(lut.lut[1 * 4 + 3]).to.equal(255);
       expect(lut.lut[2 * 4 + 3]).to.equal(255);
     });
-    test("has interpolated opacity correctly with fractional control point positions", () => {
+    it("has interpolated opacity correctly with fractional control point positions", () => {
       const controlPoints: ControlPoint[] = [
         { x: 0, color: [255, 255, 255], opacity: 0 },
         { x: 0.1, color: [255, 255, 255], opacity: 0 },
@@ -76,13 +76,13 @@ describe("test histogram", () => {
   describe("generated lut single control point", () => {
     const controlPoints: ControlPoint[] = [{ x: 127, color: [255, 255, 255], opacity: 1.0 }];
     const lut = new Lut().createFromControlPoints(controlPoints);
-    test("has interpolated opacity correctly", () => {
+    it("has interpolated opacity correctly", () => {
       expect(lut.lut[0 * 4 + 3]).to.equal(0);
       expect(lut.lut[126 * 4 + 3]).to.equal(0);
       expect(lut.lut[128 * 4 + 3]).to.equal(255);
       expect(lut.lut[255 * 4 + 3]).to.equal(255);
     });
-    test("has interpolated color correctly", () => {
+    it("has interpolated color correctly", () => {
       expect(lut.lut[0 * 4]).to.equal(0);
       expect(lut.lut[126 * 4]).to.equal(0);
       expect(lut.lut[128 * 4]).to.equal(255);
@@ -96,7 +96,7 @@ describe("test histogram", () => {
     const labelHistogram = new Histogram(labeldata);
     const lutObj = new Lut().createLabelColors(labelHistogram);
 
-    test("has nonzero opacity values where expected", () => {
+    it("has nonzero opacity values where expected", () => {
       expect(lutObj.lut[labelHistogram.findBinOfValue(0) * 4 + 3]).to.equal(0);
       expect(lutObj.lut[labelHistogram.findBinOfValue(1) * 4 + 3]).to.equal(255);
       expect(lutObj.lut[labelHistogram.findBinOfValue(2) * 4 + 3]).to.equal(255);
@@ -110,7 +110,7 @@ describe("test histogram", () => {
 
     // reconcile lut with control points
     const secondlut = new Lut().createFromControlPoints(lutObj.controlPoints);
-    test("generates consistent lut from control points", () => {
+    it("generates consistent lut from control points", () => {
       expect(secondlut.lut).to.eql(lutObj.lut);
     });
   });
@@ -123,17 +123,17 @@ describe("test histogram", () => {
     }
     const histogram = new Histogram(data);
     describe("lutGenerator_minMax", () => {
-      test("is consistent for minMax (typical case)", () => {
+      it("is consistent for minMax (typical case)", () => {
         const lut = new Lut().createFromMinMax(64, 192);
         const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
         expect(lut.lut).to.eql(secondlut.lut);
       });
-      test("is consistent for minMax full range", () => {
+      it("is consistent for minMax full range", () => {
         const lut = new Lut().createFromMinMax(0, 255);
         const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
         expect(lut.lut).to.eql(secondlut.lut);
       });
-      test("is consistent when min and max are both 0", () => {
+      it("is consistent when min and max are both 0", () => {
         const lut = new Lut().createFromMinMax(0, 0);
         const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
         expect(lut.lut).to.eql(secondlut.lut);
@@ -148,7 +148,7 @@ describe("test histogram", () => {
           expect(controlPoint.opacity).to.be.finite;
         });
       });
-      test("is consistent when min and max are the same positive number less than 255", () => {
+      it("is consistent when min and max are the same positive number less than 255", () => {
         const lut = new Lut().createFromMinMax(120, 120);
         const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
         expect(lut.lut).to.eql(secondlut.lut);
@@ -165,7 +165,7 @@ describe("test histogram", () => {
           expect(controlPoint.opacity).to.be.finite;
         });
       });
-      test("is consistent when min and max are both negative", () => {
+      it("is consistent when min and max are both negative", () => {
         const lut = new Lut().createFromMinMax(-10, -5);
         const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
         expect(lut.lut).to.eql(secondlut.lut);
@@ -180,7 +180,7 @@ describe("test histogram", () => {
           expect(controlPoint.opacity).to.eql(1);
         });
       });
-      test("is consistent when min is 0 and max is 1", () => {
+      it("is consistent when min is 0 and max is 1", () => {
         const lut = new Lut().createFromMinMax(0, 1);
         const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
         expect(lut.lut).to.eql(secondlut.lut);
@@ -195,7 +195,7 @@ describe("test histogram", () => {
           expect(controlPoint.opacity).to.be.finite;
         });
       });
-      test("is consistent when min is 244 and max is 255", () => {
+      it("is consistent when min is 244 and max is 255", () => {
         const lut = new Lut().createFromMinMax(254, 255);
         const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
         expect(lut.lut).to.eql(secondlut.lut);
@@ -210,7 +210,7 @@ describe("test histogram", () => {
           expect(controlPoint.opacity).to.be.finite;
         });
       });
-      test("is consistent when min and max are both 255", () => {
+      it("is consistent when min and max are both 255", () => {
         const lut = new Lut().createFromMinMax(255, 255);
         const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
         expect(lut.lut).to.eql(secondlut.lut);
@@ -222,7 +222,7 @@ describe("test histogram", () => {
           expect(controlPoint.opacity).to.eql(0);
         });
       });
-      test("is consistent when min and max are both greater than 255", () => {
+      it("is consistent when min and max are both greater than 255", () => {
         const lut = new Lut().createFromMinMax(300, 400);
         const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
         expect(lut.lut).to.eql(secondlut.lut);
@@ -240,24 +240,24 @@ describe("test histogram", () => {
     });
 
     describe("lutGenerator_windowLevel", () => {
-      test("is consistent for windowLevel", () => {
+      it("is consistent for windowLevel", () => {
         const lut = new Lut().createFromWindowLevel(0.25, 0.333);
         const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
         expect(lut.lut).to.eql(secondlut.lut);
       });
-      test("is consistent for windowLevel extending below bounds", () => {
+      it("is consistent for windowLevel extending below bounds", () => {
         const lut = new Lut().createFromWindowLevel(0.5, 0.25);
         const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
         expect(lut.lut).to.eql(secondlut.lut);
       });
-      test("is consistent for windowLevel extending above bounds", () => {
+      it("is consistent for windowLevel extending above bounds", () => {
         const lut = new Lut().createFromWindowLevel(0.5, 0.75);
         const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
         expect(lut.lut).to.eql(secondlut.lut);
       });
       // TODO this test almost works but there are some very slight rounding errors
       // keeping things from being perfectly equal. Need to work out the precision issue.
-      test("is consistent for windowLevel extending beyond bounds", () => {
+      it("is consistent for windowLevel extending beyond bounds", () => {
         const lut = new Lut().createFromWindowLevel(1.5, 0.5);
         const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
         for (let i = 0; i < 256 * 4; ++i) {
@@ -266,47 +266,47 @@ describe("test histogram", () => {
       });
     });
 
-    test("is consistent for fullRange", () => {
+    it("is consistent for fullRange", () => {
       const lut = new Lut().createFullRange();
       const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
       expect(lut.lut).to.eql(secondlut.lut);
     });
-    test("is consistent for dataRange", () => {
+    it("is consistent for dataRange", () => {
       const lut = new Lut().createFromMinMax(histogram.getMin(), histogram.getMax());
       const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
       expect(lut.lut).to.eql(secondlut.lut);
     });
-    test("is consistent for percentiles", () => {
+    it("is consistent for percentiles", () => {
       const hmin = histogram.findBinOfPercentile(0.5);
       const hmax = histogram.findBinOfPercentile(0.983);
       const lut = new Lut().createFromMinMax(hmin, hmax);
       const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
       expect(lut.lut).to.eql(secondlut.lut);
     });
-    test("is consistent for bestFit", () => {
+    it("is consistent for bestFit", () => {
       const [hmin, hmax] = histogram.findBestFitBins();
       const lut = new Lut().createFromMinMax(hmin, hmax);
       const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
       expect(lut.lut).to.eql(secondlut.lut);
     });
-    test("is consistent for auto2", () => {
+    it("is consistent for auto2", () => {
       const [hmin, hmax] = histogram.findAutoIJBins();
       const lut = new Lut().createFromMinMax(hmin, hmax);
       const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
       expect(lut.lut).to.eql(secondlut.lut);
     });
-    test("is consistent for auto", () => {
+    it("is consistent for auto", () => {
       const [b, e] = histogram.findAutoMinMax();
       const lut = new Lut().createFromMinMax(b, e);
       const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
       expect(lut.lut).to.eql(secondlut.lut);
     });
-    test("is consistent for equalize", () => {
+    it("is consistent for equalize", () => {
       const lut = new Lut().createFromEqHistogram(histogram);
       const secondlut = new Lut().createFromControlPoints(lut.controlPoints);
       expect(lut.lut).to.eql(secondlut.lut);
     });
-    test("is consistent for a degenerate set of white,0 control points", () => {
+    it("is consistent for a degenerate set of white,0 control points", () => {
       const lutArr = new Uint8Array(1024);
       for (let i = 0; i < 1024 / 4; ++i) {
         lutArr[i * 4 + 0] = 255;
@@ -330,7 +330,7 @@ describe("test histogram", () => {
 });
 
 describe("test remapping lut when raw data range is updated", () => {
-  test("remaps the lut when the new data range is completely contained", () => {
+  it("remaps the lut when the new data range is completely contained", () => {
     // the full 0-255 domain of this lut is representing the raw intensity range 50-100
     // we will choose a min/max range within the 0-255 domain of the lut.
     const lut = new Lut().createFromMinMax(64, 192);
@@ -411,7 +411,7 @@ describe("test remapping lut when raw data range is updated", () => {
       expect(thirdLut[i]).to.be.closeTo(lut.lut[i], 1);
     }
   });
-  test("remaps the lut when the new data range is identical to previous", () => {
+  it("remaps the lut when the new data range is identical to previous", () => {
     const lut = new Lut().createFromMinMax(0, 255);
 
     // artificial min and max:
@@ -425,7 +425,7 @@ describe("test remapping lut when raw data range is updated", () => {
     }
   });
 
-  test("remaps the lut when the new data range is completely overlapped", () => {
+  it("remaps the lut when the new data range is completely overlapped", () => {
     // artificial data min and max absolute intensities:
     const oldMin = 50;
     const oldMax = 100;
@@ -520,7 +520,7 @@ describe("test remapping control points when raw data range is updated", () => {
     { x: 255, color: [255, 255, 255], opacity: 1.0 },
   ];
 
-  test("remaps the control points correctly when new intensity range contracted", () => {
+  it("remaps the control points correctly when new intensity range contracted", () => {
     const cp = createMockCPs();
     /**
      * Old CPs:
@@ -552,7 +552,7 @@ describe("test remapping control points when raw data range is updated", () => {
     const positions = cp2.map((cp) => Math.round(cp.x));
     expect(positions).to.include.members([-127, 0, 255, 381]);
   });
-  test("remaps the control points correctly when new intensity range expanded", () => {
+  it("remaps the control points correctly when new intensity range expanded", () => {
     const cp = createMockCPs();
     /**
      * Old CPs:
@@ -581,7 +581,7 @@ describe("test remapping control points when raw data range is updated", () => {
     const positions = cp2.map((cp) => Math.round(cp.x));
     expect(positions).to.include.members([43, 85, 170, 212]);
   });
-  test("keeps ending points on the edge of the data range when new intensity range contracted and nudge is enabled", () => {
+  it("keeps ending points on the edge of the data range when new intensity range contracted and nudge is enabled", () => {
     const cp = createMockCPs();
     // NOTE: this range is not contracted as much as the previous test above. That range pushes the inner points to the
     // edge as well, which would cause different behavior. That behavior is checked two tests down.
@@ -589,13 +589,13 @@ describe("test remapping control points when raw data range is updated", () => {
     const positions = cp2.map((cp) => Math.round(cp.x));
     expect(positions).to.include.members([0, 43, 213, 255]);
   });
-  test("keeps ending points on the edge of the data range when new intensity range expanded and nudge is enabled", () => {
+  it("keeps ending points on the edge of the data range when new intensity range expanded and nudge is enabled", () => {
     const cp = createMockCPs();
     const cp2 = remapControlPoints(cp, 0, 255, -64, 320, true);
     const positions = cp2.map((cp) => Math.round(cp.x));
     expect(positions).to.include.members([0, 85, 170, 255]);
   });
-  test("avoids nudging ending points into an out-of-order position when the next points in are also mapped outside the range", () => {
+  it("avoids nudging ending points into an out-of-order position when the next points in are also mapped outside the range", () => {
     const cp = createMockCPs();
     const cp2 = remapControlPoints(cp, 0, 255, 96, 160, true);
     const [first, second, secondLast, last] = cp2.map((cp) => Math.round(cp.x));
@@ -605,7 +605,7 @@ describe("test remapping control points when raw data range is updated", () => {
     expect(first).to.be.lessThanOrEqual(second - 1);
     expect(last).to.be.greaterThanOrEqual(secondLast + 1);
   });
-  test("does not try to keep ending points in range when they define a line with nonzero slope", () => {
+  it("does not try to keep ending points in range when they define a line with nonzero slope", () => {
     const cp = createMockCPs();
     cp[1].opacity = 0.2;
     cp[2].opacity = 0.8;
@@ -614,7 +614,7 @@ describe("test remapping control points when raw data range is updated", () => {
     const positions = cp2.map((cp) => Math.round(cp.x));
     expect(positions).to.include.members([-127, 0, 255, 381]);
   });
-  test("does not snap outer control points to the edge if they did not start on the edge", () => {
+  it("does not snap outer control points to the edge if they did not start on the edge", () => {
     const cp = createMockCPs();
     cp[0].x = 24;
     cp[3].x = 231;

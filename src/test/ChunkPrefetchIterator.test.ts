@@ -32,13 +32,13 @@ function validate(iter: ChunkPrefetchIterator, expected: number[][]) {
 }
 
 describe("ChunkPrefetchIterator", () => {
-  test("iterates outward in TZYX order, negative then positive", () => {
+  it("iterates outward in TZYX order, negative then positive", () => {
     // 3x3x3x3, with one chunk in the center
     const iterator = new ChunkPrefetchIterator([[1, 0, 1, 1, 1]], [1, 1, 1, 1], [[3, 1, 3, 3, 3]]);
     validate(iterator, EXPECTED_3X3X3X3);
   });
 
-  test("finds the borders of a set of multiple chunks and iterates outward from them", () => {
+  it("finds the borders of a set of multiple chunks and iterates outward from them", () => {
     // 4x4x4, with a 2x2x2 set of chunks in the center
     const fetchedChunks: TCZYX<number>[] = [
       [1, 0, 1, 1, 1],
@@ -65,7 +65,7 @@ describe("ChunkPrefetchIterator", () => {
     validate(iterator, expected);
   });
 
-  test("iterates through the same offset in all dimensions before increasing the offset", () => {
+  it("iterates through the same offset in all dimensions before increasing the offset", () => {
     // 5x5x5, with one chunk in the center
     const iterator = new ChunkPrefetchIterator([[2, 0, 2, 2, 2]], [2, 2, 2, 2], [[5, 1, 5, 5, 5]]);
 
@@ -78,19 +78,19 @@ describe("ChunkPrefetchIterator", () => {
     validate(iterator, expected);
   });
 
-  test("stops at the max offset in each dimension", () => {
+  it("stops at the max offset in each dimension", () => {
     // 5x5x5, with one chunk in the center
     const iterator = new ChunkPrefetchIterator([[2, 0, 2, 2, 2]], [1, 1, 1, 1], [[5, 1, 5, 5, 5]]);
     validate(iterator, EXPECTED_5X5X5X5_1); // never reaches offset = 2, as it does above
   });
 
-  test("stops at the borders of the zarr", () => {
+  it("stops at the borders of the zarr", () => {
     // 3x3x3x3, with one chunk in the center
     const iterator = new ChunkPrefetchIterator([[1, 0, 1, 1, 1]], [2, 2, 2, 2], [[3, 1, 3, 3, 3]]);
     validate(iterator, EXPECTED_3X3X3X3);
   });
 
-  test("does not iterate in dimensions which are entirely covered by the fetched set", () => {
+  it("does not iterate in dimensions which are entirely covered by the fetched set", () => {
     // 3x3x3x3, with a 1x1x3x3 slice covering all of x and y
     const fetchedChunks: TCZYX<number>[] = [
       [1, 0, 1, 0, 0], // 0, 0
@@ -115,7 +115,7 @@ describe("ChunkPrefetchIterator", () => {
     validate(iterator, expected);
   });
 
-  test("does not iterate in dimensions where the max offset is 0", () => {
+  it("does not iterate in dimensions where the max offset is 0", () => {
     // 3x3x3x3, with one chunk in the center
     const iterator = new ChunkPrefetchIterator([[1, 0, 1, 1, 1]], [1, 0, 1, 0], [[3, 1, 3, 3, 3]]);
 
@@ -130,7 +130,7 @@ describe("ChunkPrefetchIterator", () => {
     validate(iterator, expected);
   });
 
-  test("yields chunks in all prioritized directions first", () => {
+  it("yields chunks in all prioritized directions first", () => {
     // 5x5x5, with one chunk in the center
     const iterator = new ChunkPrefetchIterator(
       [[2, 0, 2, 2, 2]],
@@ -150,7 +150,7 @@ describe("ChunkPrefetchIterator", () => {
     validate(iterator, expected);
   });
 
-  test("continues iterating in other dimensions when some reach their limits", () => {
+  it("continues iterating in other dimensions when some reach their limits", () => {
     // final boss: 4x4x6 volume with off-center fetched set
     // t has a max offset of 2, but is already at its maximum of 2 and never iterates in positive direction
     // z has a max offset of 2, but stops early in negative direction at 0
@@ -185,7 +185,7 @@ describe("ChunkPrefetchIterator", () => {
     validate(iterator, expected);
   });
 
-  test("correctly handles sources with differing chunk dimensions", () => {
+  it("correctly handles sources with differing chunk dimensions", () => {
     const allChannels = (x: number, y: number, ch = [0, 1, 2, 3]): TCZYX<number>[] => ch.map((c) => [0, c, 0, y, x]);
     const iterator = new ChunkPrefetchIterator(
       allChannels(1, 2),
