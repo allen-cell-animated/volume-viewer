@@ -133,7 +133,7 @@ describe("zarr_utils", () => {
       expect(getSourceChannelNames(source)).to.deep.equal(names);
     });
 
-    test('applies default names of the form "Channel N" for missing labels', async () => {
+    it('applies default names of the form "Channel N" for missing labels', async () => {
       const names = ["foo", "bar", undefined] as string[];
       const source = await createOneMockSource([[1, 3, 1, 1, 1]], [[1, 1, 1, 1, 1]], 0, ["1", "2", "3"], names);
       expect(getSourceChannelNames(source)).to.deep.equal(["foo", "bar", "Channel 2"]);
@@ -246,7 +246,7 @@ describe("zarr_utils", () => {
       expect(getScale(MOCK_DATASET, [3, 1, 4, 0, 2])).to.deep.equal([4, 2, 5, 1, 3]);
     });
 
-    test('defaults to `[1, 1, 1, 1, 1]` if no coordinate transformation of type "scale" is found', () => {
+    it('defaults to `[1, 1, 1, 1, 1]` if no coordinate transformation of type "scale" is found', () => {
       const dataset = {
         ...MOCK_DATASET,
         coordinateTransformations: MOCK_DATASET.coordinateTransformations.slice(0, 1),
