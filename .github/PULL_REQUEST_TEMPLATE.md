@@ -19,12 +19,6 @@ Please delete options that are not relevant.
 - This change requires a documentation update
 - This change requires updated or new tests
 
-## Change summary:
-
-- Tidy, well formulated commit message
-- Another great commit message
-- Something else I/we did
-
 ## Steps to Verify:
 
 1. A setup step / beginning state
