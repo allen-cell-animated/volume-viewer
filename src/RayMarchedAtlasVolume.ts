@@ -316,7 +316,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   public doRender(
     renderer: WebGLRenderer,
     camera: PerspectiveCamera | OrthographicCamera,
-    depthTexture?: DepthTexture | Texture
+    depthTexture?: DepthTexture | Texture | null
   ): void {
     if (!this.geometryMesh.visible) {
       return;
