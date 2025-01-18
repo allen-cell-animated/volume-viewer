@@ -52,7 +52,7 @@
     "@tweakpane/core": "^1.1.9",
     "@types/chai": "^4.3.12",
     "@types/mocha": "^9.1.1",
-    "@types/three": "^0.144.0",
+    "@types/three": "^0.171.0",
     "@typescript-eslint/eslint-plugin": "^5.30.5",
     "@typescript-eslint/parser": "^5.30.5",
     "acorn": "^8.7.0",
