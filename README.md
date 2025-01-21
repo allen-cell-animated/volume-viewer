@@ -1,135 +1,67 @@
-# AICS Volume Viewer
+# Vol-E core
 
-This is a WebGL canvas-based volume viewer. It can display multichannel volume data of 8-bit intensity values.
-Volume data is provided to the core 3d viewer in two parts. The first part is via a json object containing dimensions and other metadata. The second part is the volume data itself.
+This is a WebGL canvas-based volume viewer. It can display multichannel volume data with high channel counts, and is optimized for OME-Zarr files. With OME-Zarr, the viewer can prefetch and cache Zarr chunks in browser memory for optimized performance.
 
-The volume-viewer package exposes two key modules:
+The Vol-E core package exposes several key modules:
 
-- `View3d` is the viewing component that contains a canvas and supports zoom/pan/rotate interaction with the volume.
-- `Volume` is the class that holds the volume data. After initialization, this is generally a read-only holder for raw data.
+- `View3d` is the viewing component that contains a canvas and supports zoom/pan/rotate interaction with the volume via `VolumeDrawable`.
+- `Volume` is the class that holds the volume dimensions and a collection of `Channel`s that contain the volume pixel data. After initialization, this is generally a read-only holder for raw data.
+- `VolumeLoaderContext` is an interface that lets you initialize asynchronous data loading of different formats via its `createLoader` method.
+- `IVolumeLoader` is an interface for requesting volume dimensions and data.
+- `LoadSpec` is a small bundle of information to guide the IVolumeLoader on exactly what to load.
 
-It also provides the following two utility modules:
+There are several ways to deliver volume data to the viewer:
 
-- `VolumeLoader` is a convenience class for downloading and unpacking texture atlases from .png files (up to 3 channels per png) into a Volume.
-- `VolumeMaker` is a convenience module for creating simple test volume data
-
-There are two ways to deliver volume data to the viewer:
-
-- raw Uint8Arrays of 3d volume data (one Uint8Array per channel). ( `Volume.setChannelDataFromVolume` )
-- texture atlases (png files or Uint8Arrays containing volume slices tiled across a 2d image) ( `Volume.setChannelDataFromAtlas` )
+- Load OME-Zarr from publicly accessible web links. Authentication is not explicitly supported in Vol-E.
+- Load raw TypedArrays of 3d volume data ( see `RawArrayLoader` and `Volume.setChannelDataFromVolume` ).
+- (legacy) Load texture atlases as .png files or Uint8Arrays containing volume slices tiled across a 2d image ( see `JsonImageInfoLoader` and `Volume.setChannelDataFromAtlas` ).
 
 # Example
 
-See public/index.ts for a working example. (`npm install; npm run dev` will run that code) The basic code to get the volume viewer up and running is as follows:
+See [`public/index.ts`](./public/index.ts) for a working example. (`npm install; npm run dev` will run that code)
+
+The basic code to get the viewer up and running is as follows:
 
 ```javascript
-import { View3d, Volume, VolumeLoader, VolumeMaker } from "volume-viewer";
-
 // find a div that will hold the viewer
-const el = document.getElementById("volume-viewer");
+const el = document.getElementById("vol-e");
+
+// create the loaderContext
+const loaderContext = new VolumeLoaderContext(CACHE_MAX_SIZE, CONCURRENCY_LIMIT, PREFETCH_CONCURRENCY_LIMIT);
 
 // create the viewer.  it will try to fill the parent element.
 const view3D = new View3d(el);
+view3D.loaderContext = loaderContext;
 
-// create a volume image with dimensions passed in via jsondata
-// this json format is documented in Volume.ts as ImageInfo
-const aimg = new Volume(jsondata);
+// ensure the loader worker is ready
+await loaderContext.onOpen();
+// get the actual loader.  In most cases this will create a WorkerLoader that uses a OmeZarrLoader internally.
+const loader = await loaderContext.createLoader(path);
 
+const loadSpec = new LoadSpec();
+// give the loader a callback to call when it receives channel data asynchronously
+const volume = await loader.createVolume(loadSpec, (v: Volume, channelIndex: number) => {
+  const currentVol = v;
+
+  // currently, this must be called when channel data arrives (here in this callback)
+  view3D.onVolumeData(currentVol, [channelIndex]);
+
+  view3D.setVolumeChannelEnabled(currentVol, channelIndex, true);
+
+  // these calls tell the viewer that things are out of date
+  view3D.updateActiveChannels(currentVol);
+  view3D.updateLuts(currentVol);
+  view3D.redraw();
+});
 // tell the viewer about the image
-view3D.addVolume(aimg);
-
-// load volume data into the image.  volumeData here is an array of Uint8Arrays.
-// each element in volumeData is a flattened 3d volume stored in xyz order in a Uint8Array.
-// Intensities must have been be scaled to fit in uint8.
-for (let i = 0; i < volumeData.length; ++i) {
-  aimg.setChannelDataFromVolume(i, volumeData[i], [0, 255]);
-  // optional: initialize with a lookup table suitable for visualizing noisy biological data
-  const hmin = aimg.getHistogram(i).findBinOfPercentile(0.5);
-  const hmax = aimg.getHistogram(i).findBinOfPercentile(0.983);
-  const lut = new Lut().createFromMinMax(hmin, hmax);
-  aimg.setLut(i, lut);
-}
-
-// enable only the first 3 channels
-for (var ch = 0; ch < aimg.num_channels; ++ch) {
-  view3D.setVolumeChannelEnabled(aimg, ch, ch < 3);
-}
-
-// set some viewing parameters
-view3D.updateDensity(aimg, 0.05);
-view3D.updateExposure(0.75);
-// tell the viewer to update because new data has been added.
-view3D.updateActiveChannels(aimg);
-view3D.updateLuts(aimg);
+view3D.addVolume(volume);
+// start requesting volume data
+loader.loadVolumeData(volume);
 ```
 
 # React example
 
-- in `VolumeViewer.jsx`
-
-```JavaScript
-import * as React from "react";
-
-import { View3d, Volume, VolumeLoader, VolumeMaker } from 'volume-viewer';
-
-
-const url = 'https://s3-us-west-2.amazonaws.com/bisque.allencell.org/v1.4.0/Cell-Viewer_Thumbnails/AICS-11/';
-const volumeToLoad = 'AICS-11_3136_atlas.json';
-export class VolumeViewer extends React.Component {
-    constructor(props) {
-        super(props);
-        this.volumeViewer = React.createRef();
-    }
-
-    componentDidMount() {
-        const ref = this.volumeViewer;
-        if (!ref.current) {
-            return;
-        }
-        const el = ref.current;
-        this.view3D = new View3d(el);
-        // to download a volume encoded as a json plus tiled png images:
-        // this format is documented in Volume.ts as ImageInfo
-        return fetch(`${url}/${volumeToLoad}`)
-            .then((response) => {
-                return response.json();
-            })
-            .then(jsondata => {
-                // when json file is received, create Volume object
-                const aimg = new Volume(jsondata);
-                // tell the 3d view about it.
-                this.view3D.addVolume(aimg);
-
-                jsondata.images = jsondata.images.map(img => ({ ...img, name: `${url$}${img.name}` }));
-                // download the volume data itself in the form of tiled png files
-                VolumeLoader.loadVolumeAtlasData(aimg, jsondata.images, (url, channelIndex) => {
-                    // initialize each channel as it arrives and tell the view to update.
-                    const hmin = aimg.getHistogram(channelIndex).findBinOfPercentile(0.5);
-                    const hmax = aimg.getHistogram(channelIndex).findBinOfPercentile(0.983);
-                    const lut = new Lut().createFromMinMax(hmin, hmax);
-                    aimg.setLut(i, lut);
-
-                    this.view3D.setVolumeChannelEnabled(aimg, channelIndex, channelIndex < 3);
-                    this.view3D.updateActiveChannels(aimg);
-
-                    this.view3D.updateLuts(aimg);
-                });
-                // set some initial viewing parameters
-                this.view3D.setCameraMode('3D');
-                this.view3D.updateDensity(aimg, 0.05);
-                this.view3D.updateExposure(0.75);
-            });
-    }
-
-    render() {
-        return (
-            <div
-                style={{height: 1000, width: '100%'}}
-                ref={this.volumeViewer}
-            />
-        )
-    }
-```
+See [vole-app](https://github.com/allen-cell-animated/website-3d-cell-viewer) for a complete application that wraps View3D in a React component.
 
 # Acknowledgements
 
