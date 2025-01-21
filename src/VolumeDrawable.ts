@@ -8,6 +8,7 @@ import {
   OrthographicCamera,
   PerspectiveCamera,
   WebGLRenderer,
+  Texture,
 } from "three";
 import { Pane } from "tweakpane";
 
@@ -117,22 +118,23 @@ export default class VolumeDrawable {
   }
 
   /**
-   * Updates whether a channel's data must be loaded for rendering, based on if its volume or isosurface is enabled.
+   * Updates whether a channel's data must be loaded for rendering,
+   * based on if its volume or isosurface is enabled, or whether it is needed for masking.
    * Calls `Volume.updateRequiredData` to update the list of required channels if necessary.
    */
   private updateChannelDataRequired(channelIndex: number): void {
     const { enabled, isosurfaceEnabled } = this.channelOptions[channelIndex];
-    const channelIsRequired = enabled || isosurfaceEnabled;
+    const channelIsRequired = enabled || isosurfaceEnabled || channelIndex === this.settings.maskChannelIndex;
     const requiredChannels = this.volume.loadSpecRequired.channels;
 
     if (requiredChannels.includes(channelIndex)) {
       if (!channelIsRequired) {
-        // This channel is currently marked required, but both its volume and isosurface are off. Remove it!
+        // This channel is currently marked required, but both its volume and isosurface are off, and it's not a mask. Remove it!
         this.volume.updateRequiredData({ channels: requiredChannels.filter((i) => i !== channelIndex) });
       }
     } else {
       if (channelIsRequired) {
-        // This channel is not marked required, but either its volume or isosurface is on. Add it!
+        // This channel is not marked required, but either its volume or isosurface is on, or it is a mask. Add it!
         this.volume.updateRequiredData({ channels: [...requiredChannels, channelIndex] });
       }
     }
@@ -386,7 +388,7 @@ export default class VolumeDrawable {
   onAnimate(
     renderer: WebGLRenderer,
     camera: PerspectiveCamera | OrthographicCamera,
-    depthTexture?: DepthTexture
+    depthTexture?: DepthTexture | Texture
   ): void {
     // TODO: this is inefficient, as this work is duplicated by threejs.
     // we need camera matrix up to date before giving the 3d objects a chance to use it.
@@ -596,6 +598,7 @@ export default class VolumeDrawable {
       return;
     }
     this.settings.maskChannelIndex = channelIndex;
+    this.updateChannelDataRequired(channelIndex);
     this.volumeRendering.updateSettings(this.settings, SettingsFlags.MASK_DATA);
   }
 

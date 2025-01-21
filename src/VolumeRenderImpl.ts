@@ -1,4 +1,4 @@
-import { DepthTexture, Object3D, OrthographicCamera, PerspectiveCamera, WebGLRenderer } from "three";
+import { DepthTexture, Object3D, OrthographicCamera, PerspectiveCamera, Texture, WebGLRenderer } from "three";
 
 import { SettingsFlags, VolumeRenderSettings } from "./VolumeRenderSettings.js";
 import type { FuseChannel } from "./types.js";
@@ -19,7 +19,7 @@ export interface VolumeRenderImpl {
   doRender: (
     renderer: WebGLRenderer,
     camera: PerspectiveCamera | OrthographicCamera,
-    depthTexture?: DepthTexture
+    depthTexture?: DepthTexture | Texture
   ) => void;
   updateVolumeDimensions: () => void;
   cleanup: () => void;

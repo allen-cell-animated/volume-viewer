@@ -17,10 +17,15 @@ type HistogramData = {
 export default class Histogram {
   // no more than 2^32 pixels of any one intensity in the data!?!?!
   private bins: Uint32Array;
+  /** Min value in the original raw data. */
   private min: number;
+  /** Max value in the original raw data. */
   private max: number;
+  /** Size of each histogram bin in the scale of the original data. */
   private binSize: number;
+  /** Index of the first bin (other than 0) with at least 1 value. */
   private dataMinBin: number;
+  /** Index of the last bin (other than 0) with at least 1 value. */
   private dataMaxBin: number;
   private pixelCount: number;
   public maxBin: number;
@@ -41,14 +46,15 @@ export default class Histogram {
     this.max = hinfo.max;
     this.binSize = hinfo.binSize;
 
-    // track the first and last nonzero bins with at least 1 sample
-    for (let i = 1; i < this.bins.length; i++) {
+    // TODO: These should always return 0 and NBINS - 1, respectively. Test if these
+    // can be removed.
+    for (let i = 0; i < this.bins.length; i++) {
       if (this.bins[i] > 0) {
         this.dataMinBin = i;
         break;
       }
     }
-    for (let i = this.bins.length - 1; i >= 1; i--) {
+    for (let i = this.bins.length - 1; i >= 0; i--) {
       if (this.bins[i] > 0) {
         this.dataMaxBin = i;
         break;
@@ -83,16 +89,24 @@ export default class Histogram {
     return Histogram.findBin(value, this.min, this.binSize, NBINS);
   }
 
+  /**
+   * Return the min data value
+   * @return {number}
+   */
   getDataMin(): number {
     return this.min;
   }
 
+  /**
+   * Return the max data value
+   * @return {number}
+   */
   getDataMax(): number {
     return this.max;
   }
 
   /**
-   * Return the min data value
+   * Returns the first bin index with at least 1 value, other than the 0th bin.
    * @return {number}
    */
   getMin(): number {
@@ -100,10 +114,11 @@ export default class Histogram {
   }
 
   /**
-   * Return the max data value
+   * Returns the last bin index with at least 1 value, other than the 0th bin.
    * @return {number}
    */
   getMax(): number {
+    // Note that this will always return `NBINS - 1`.
     return this.dataMaxBin;
   }
 
