@@ -22,7 +22,7 @@
     "gh-build": "vite build public/ --config vite.config.ts --outDir ./volumeviewer",
     "dev": "vite serve",
     "start": "vite serve",
-    "lint": "eslint --config ./.eslintrc.json --ignore-path ./.eslintignore --ext .jsx --ext .js --ext .ts ./src",
+    "lint": "eslint --config ./.eslintrc.json --ignore-path ./.eslintignore --ext .js --ext .ts ./src",
     "test": "vitest run",
     "transpileES": "babel src --out-dir es --extensions .js,.ts --ignore **/*.test.ts",
     "typeCheck": "tsc -p tsconfig.json --noEmit"
