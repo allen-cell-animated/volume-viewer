@@ -4,4 +4,7 @@ lib
 es
 build
 demo
+public/dist
+public/demo
+public/volumeviewer
 

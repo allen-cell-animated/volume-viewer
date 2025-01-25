@@ -1,6 +1,6 @@
 import { Vector2 } from "three";
 
-import denoiseFragmentShader from "./shaders/pathtrace_denoise.frag";
+import denoiseFragmentShader from "./shaders/pathtrace_denoise.frag?raw";
 export const denoiseFragmentShaderSrc = denoiseFragmentShader;
 
 const DENOISE_WINDOW_RADIUS = 3;

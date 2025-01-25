@@ -2,8 +2,7 @@
   "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"],
   "env": {
     "browser": true,
-    "es6": true,
-    "mocha": true
+    "es6": true
   },
   "plugins": ["@typescript-eslint"],
   "rules": {

@@ -1,5 +1,3 @@
-import { expect } from "chai";
-
 import Volume from "../Volume";
 import VolumeMaker from "../VolumeMaker";
 import { LUT_ARRAY_LENGTH } from "../Lut";
