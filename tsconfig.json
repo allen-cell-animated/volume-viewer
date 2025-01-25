@@ -5,7 +5,6 @@
     "declaration": true,
     "declarationDir": "es/types",
     "downlevelIteration": true,
-    "jsx": "preserve",
     "lib": ["DOM", "ES2022", "ES6", "DOM.Iterable", "ScriptHost", "ES2016.Array.Include"],
     "module": "ES2020",
     "moduleResolution": "node",

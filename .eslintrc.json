@@ -1,10 +1,10 @@
 {
-  "extends": ["eslint:recommended", "plugin:react/recommended", "plugin:@typescript-eslint/recommended", "prettier"],
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"],
   "env": {
     "browser": true,
     "es6": true
   },
-  "plugins": ["@typescript-eslint", "react"],
+  "plugins": ["@typescript-eslint"],
   "rules": {
     "@typescript-eslint/ban-types": ["warn"],
     "@typescript-eslint/naming-convention": [
