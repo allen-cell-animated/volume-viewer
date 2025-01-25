@@ -441,11 +441,9 @@ describe("test RequestQueue", () => {
 
     it("can issue and cancel mock loadspec requests", async () => {
       const fn = vi.fn();
-      let count = 0;
       const unhandledPromise = new Promise<void>((resolve) => {
         process.on("unhandledRejection", () => {
           fn();
-          count++;
           resolve();
         });
       });
@@ -503,8 +501,7 @@ describe("test RequestQueue", () => {
 
       await unhandledPromise;
       // This seems to be randomized. Expect some number of times either numFrames or numFrames-1.
-      expect([numFrames, numFrames - 1]).to.include(count);
-      //expect(fn).toHaveBeenCalledTimes(numFrames).or.toHaveBeenCalledTimes(numFrames - 1);
+      expect([numFrames, numFrames - 1]).to.include(fn.mock.calls.length);
     });
   });
 });
