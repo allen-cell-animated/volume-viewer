@@ -13,12 +13,13 @@ import {
 import { RawArrayLoader } from "../loaders/RawArrayLoader.js";
 import { TiffLoader } from "../loaders/TiffLoader.js";
 import type {
-  WorkerRequest,
+  ChannelLoadEvent,
+  MetadataUpdateEvent,
+  WorkerMsgTypeGlobal,
+  WorkerMsgTypeWithLoader,
   WorkerRequestPayload,
   WorkerResponse,
   WorkerResponsePayload,
-  ChannelLoadEvent,
-  MetadataUpdateEvent,
 } from "./types.js";
 import type { ZarrLoaderFetchOptions } from "../loaders/OmeZarrLoader.js";
 import { WorkerMsgType, WorkerResponseResult, WorkerEventType } from "./types.js";
@@ -52,7 +53,7 @@ class SharedLoadWorkerHandle {
   public onUpdateMetadata: ((e: MetadataUpdateEvent) => void) | undefined = undefined;
 
   constructor() {
-    this.worker = new Worker(new URL("./VolumeLoadWorker", import.meta.url), {type:"module"});
+    this.worker = new Worker(new URL("./VolumeLoadWorker", import.meta.url), { type: "module" });
     this.worker.onmessage = this.receiveMessage.bind(this);
   }
 
@@ -82,13 +83,28 @@ class SharedLoadWorkerHandle {
    * Send a message of type `T` to the worker.
    * Returns a `Promise` that resolves with the worker's response, or rejects with an error message.
    */
-  sendMessage<T extends WorkerMsgType>(type: T, payload: WorkerRequestPayload<T>): Promise<WorkerResponsePayload<T>> {
+  // overload 1: message is a global action and does not require a loader ID
+  sendMessage<T extends WorkerMsgTypeGlobal>(
+    type: T,
+    payload: WorkerRequestPayload<T>
+  ): Promise<WorkerResponsePayload<T>>;
+  // overload 2: message is a loader-specific action and requires a loader ID
+  sendMessage<T extends WorkerMsgTypeWithLoader>(
+    type: T,
+    payload: WorkerRequestPayload<T>,
+    loaderId: number
+  ): Promise<WorkerResponsePayload<T>>;
+  sendMessage<T extends WorkerMsgType>(
+    type: T,
+    payload: WorkerRequestPayload<T>,
+    loaderId: T extends WorkerMsgTypeWithLoader ? number : void
+  ): Promise<WorkerResponsePayload<T>> {
     let msgId = -1;
     const promise = new Promise<WorkerResponsePayload<T>>((resolve, reject) => {
       msgId = this.registerMessagePromise({ type, resolve, reject } as StoredPromise<WorkerMsgType>);
     });
 
-    const msg: WorkerRequest<T> = { msgId, type, payload };
+    const msg = { msgId, type, payload, loaderId };
     this.worker.postMessage(msg);
 
     return promise;
@@ -250,27 +266,28 @@ class WorkerLoader extends ThreadableVolumeLoader {
    * any chunks are prefetched in any other directions. Has no effect if this loader doesn't support prefetching.
    */
   setPrefetchPriority(directions: PrefetchDirection[]): Promise<void> {
-    return this.workerHandle.sendMessage(WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, directions);
+    return this.workerHandle.sendMessage(WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, directions, this.loaderId);
   }
 
   updateFetchOptions(fetchOptions: Partial<ZarrLoaderFetchOptions>): Promise<void> {
-    return this.workerHandle.sendMessage(WorkerMsgType.UPDATE_FETCH_OPTIONS, fetchOptions);
+    return this.workerHandle.sendMessage(WorkerMsgType.UPDATE_FETCH_OPTIONS, fetchOptions, this.loaderId);
   }
 
   syncMultichannelLoading(sync: boolean): Promise<void> {
-    return this.workerHandle.sendMessage(WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, sync);
+    return this.workerHandle.sendMessage(WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, sync, this.loaderId);
   }
 
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
     this.checkIsOpen();
-    return this.workerHandle.sendMessage(WorkerMsgType.LOAD_DIMS, loadSpec);
+    return this.workerHandle.sendMessage(WorkerMsgType.LOAD_DIMS, loadSpec, this.loaderId);
   }
 
   async createImageInfo(loadSpec: LoadSpec): Promise<LoadedVolumeInfo> {
     this.checkIsOpen();
     const { imageInfo, loadSpec: adjustedLoadSpec } = await this.workerHandle.sendMessage(
       WorkerMsgType.CREATE_VOLUME,
-      loadSpec
+      loadSpec,
+      this.loaderId
     );
     return { imageInfo, loadSpec: rebuildLoadSpec(adjustedLoadSpec) };
   }
@@ -287,12 +304,13 @@ class WorkerLoader extends ThreadableVolumeLoader {
     this.currentMetadataUpdateCallback = onUpdateMetadata;
     this.currentLoadId += 1;
 
-    return this.workerHandle.sendMessage(WorkerMsgType.LOAD_VOLUME_DATA, {
+    const message = {
       imageInfo,
       loadSpec,
       loaderId: this.loaderId,
       loadId: this.currentLoadId,
-    });
+    };
+    return this.workerHandle.sendMessage(WorkerMsgType.LOAD_VOLUME_DATA, message, this.loaderId);
   }
 
   onChannelData(e: ChannelLoadEvent): void {

@@ -19,6 +19,11 @@ export const enum WorkerMsgType {
   UPDATE_FETCH_OPTIONS,
 }
 
+/** The variants of `WorkerMessageType` which represent "global" actions that don't require a specific loader */
+export type WorkerMsgTypeGlobal = WorkerMsgType.INIT | WorkerMsgType.CREATE_LOADER;
+/** The variants of `WorkerMessageType` which represent actions on a specific loader */
+export type WorkerMsgTypeWithLoader = Exclude<WorkerMsgType, WorkerMsgTypeGlobal>;
+
 /** The kind of response a worker can return - `SUCCESS`, `ERROR`, or `EVENT`. */
 export const enum WorkerResponseResult {
   SUCCESS,
@@ -34,9 +39,13 @@ export const enum WorkerEventType {
   CHANNEL_LOAD,
 }
 
-/** All messages to/from a worker carry a `msgId`, a `type`, and a `payload` (whose type is determined by `type`). */
+/**
+ * All messages to/from a worker carry a `msgId`, a `type`, and a `payload` (whose type is determined by `type`).
+ * Messages which operate on a specific loader also require a `loaderId`.
+ */
 type WorkerMsgBase<T extends WorkerMsgType, P> = {
   msgId: number;
+  loaderId: T extends WorkerMsgTypeWithLoader ? number : undefined;
   type: T;
   payload: P;
 };

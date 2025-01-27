@@ -107,14 +107,26 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
 };
 
 self.onmessage = async <T extends WorkerMsgType>({ data }: MessageEvent<WorkerRequest<T>>) => {
-  const { msgId, type, payload } = data;
+  const { msgId, type, payload, loaderId } = data;
   let message: WorkerResponse<T>;
 
   try {
     const response = await messageHandlers[type](payload);
-    message = { responseResult: WorkerResponseResult.SUCCESS, msgId, type, payload: response };
+    message = {
+      responseResult: WorkerResponseResult.SUCCESS,
+      payload: response,
+      msgId,
+      loaderId,
+      type,
+    };
   } catch (e) {
-    message = { responseResult: WorkerResponseResult.ERROR, msgId, type, payload: serializeError(e) };
+    message = {
+      responseResult: WorkerResponseResult.ERROR,
+      payload: serializeError(e),
+      msgId,
+      loaderId,
+      type,
+    };
   }
   self.postMessage(message);
 };
