@@ -47,10 +47,8 @@ class SharedLoadWorkerHandle {
   private worker: Worker;
   private pendingRequests: (StoredPromise<WorkerMsgType> | undefined)[] = [];
   private workerOpen = true;
-  private throttleChannelData = false;
 
-  public onChannelData: ((e: ChannelLoadEvent) => void) | undefined = undefined;
-  public onUpdateMetadata: ((e: MetadataUpdateEvent) => void) | undefined = undefined;
+  public onEvent: ((e: ChannelLoadEvent | MetadataUpdateEvent) => void) | undefined = undefined;
 
   constructor() {
     this.worker = new Worker(new URL("./VolumeLoadWorker", import.meta.url), { type: "module" });
@@ -113,17 +111,7 @@ class SharedLoadWorkerHandle {
   /** Receive a message from the worker. If it's an event, call a callback; otherwise, resolve/reject a promise. */
   private receiveMessage<T extends WorkerMsgType>({ data }: MessageEvent<WorkerResponse<T>>): void {
     if (data.responseResult === WorkerResponseResult.EVENT) {
-      if (data.eventType === WorkerEventType.CHANNEL_LOAD) {
-        if (this.onChannelData) {
-          if (this.throttleChannelData) {
-            throttle(() => (this.onChannelData ? this.onChannelData(data) : {}));
-          } else {
-            this.onChannelData ? this.onChannelData(data) : {};
-          }
-        }
-      } else if (data.eventType === WorkerEventType.METADATA_UPDATE) {
-        this.onUpdateMetadata?.(data);
-      }
+      this.onEvent?.(data);
     } else {
       const prom = this.pendingRequests[data.msgId];
 
@@ -141,10 +129,6 @@ class SharedLoadWorkerHandle {
       }
       this.pendingRequests[data.msgId] = undefined;
     }
-  }
-
-  setThrottleChannelData(throttle: boolean): void {
-    this.throttleChannelData = throttle;
   }
 }
 
@@ -164,10 +148,14 @@ class SharedLoadWorkerHandle {
  */
 class VolumeLoaderContext {
   private workerHandle: SharedLoadWorkerHandle;
+  private loaders: Map<number, WorkerLoader>;
   private openPromise: Promise<void>;
+  private throttleChannelData = false;
 
   constructor(maxCacheSize?: number, maxActiveRequests?: number, maxLowPriorityRequests?: number) {
     this.workerHandle = new SharedLoadWorkerHandle();
+    this.workerHandle.onEvent = this.handleEvent.bind(this);
+    this.loaders = new Map();
     this.openPromise = this.workerHandle.sendMessage(WorkerMsgType.INIT, {
       maxCacheSize,
       maxActiveRequests,
@@ -187,6 +175,23 @@ class VolumeLoaderContext {
   close(): void {
     this.workerHandle.close();
   }
+
+  private handleEvent(e: ChannelLoadEvent | MetadataUpdateEvent): void {
+    const loader = this.loaders.get(e.loaderId);
+    if (loader) {
+      if (e.eventType === WorkerEventType.CHANNEL_LOAD) {
+        if (this.throttleChannelData) {
+          throttle(() => loader.onChannelData(e));
+        } else {
+          loader.onChannelData(e);
+        }
+      } else if (e.eventType === WorkerEventType.METADATA_UPDATE) {
+        loader.onUpdateMetadata(e);
+      }
+    }
+  }
+
+  private;
 
   /**
    * Create a new loader within this context. This loader will share the context's `VolumeCache` and `RequestQueue`.
@@ -214,11 +219,13 @@ class VolumeLoaderContext {
       throw new Error("Failed to create loader");
     }
 
-    return new WorkerLoader(loaderId, this.workerHandle);
+    const loader = new WorkerLoader(loaderId, this.workerHandle);
+    this.loaders.set(loaderId, loader);
+    return loader;
   }
 
   setThrottleChannelData(throttle: boolean): void {
-    this.workerHandle.setThrottleChannelData(throttle);
+    this.throttleChannelData = throttle;
   }
 }
 
@@ -236,8 +243,6 @@ class WorkerLoader extends ThreadableVolumeLoader {
   constructor(loaderId: number, private workerHandle: SharedLoadWorkerHandle) {
     super();
     this.loaderId = loaderId;
-    workerHandle.onChannelData = this.onChannelData.bind(this);
-    workerHandle.onUpdateMetadata = this.onUpdateMetadata.bind(this);
   }
 
   private getLoaderId(): number {
