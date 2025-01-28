@@ -19,7 +19,10 @@ import { rebuildLoadSpec } from "./util.js";
 let cache: VolumeCache | undefined = undefined;
 let queue: RequestQueue | undefined = undefined;
 let subscribableQueue: SubscribableRequestQueue | undefined = undefined;
+
+let loaderCount = 0;
 const loaders: Map<number, ThreadableVolumeLoader> = new Map();
+
 let initialized = false;
 let copyOnLoad = false;
 
@@ -43,10 +46,16 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
     const pathString = Array.isArray(path) ? path[0] : path;
     const fileType = options?.fileType || pathToFileType(pathString);
     copyOnLoad = fileType === VolumeFileFormat.JSON;
+
     const loader = await createVolumeLoader(path, { ...options, cache, queue: subscribableQueue });
-    // TODO make an actual loader id rather than this hardcode!
-    loaders.set(0, loader);
-    return loader !== undefined;
+    if (loader === undefined) {
+      return undefined;
+    }
+
+    const loaderId = loaderCount;
+    loaderCount += 1;
+    loaders.set(loaderId, loader);
+    return loaderId;
   },
 
   [WorkerMsgType.CREATE_VOLUME]: async (loadSpec, loaderId) => {

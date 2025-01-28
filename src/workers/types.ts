@@ -76,7 +76,7 @@ export type WorkerRequestPayload<T extends WorkerMsgType> = {
 /** Maps each `WorkerMsgType` to the type of the payload of responses of that type. */
 export type WorkerResponsePayload<T extends WorkerMsgType> = {
   [WorkerMsgType.INIT]: void;
-  [WorkerMsgType.CREATE_LOADER]: boolean;
+  [WorkerMsgType.CREATE_LOADER]: number | undefined;
   [WorkerMsgType.CREATE_VOLUME]: LoadedVolumeInfo;
   [WorkerMsgType.LOAD_DIMS]: VolumeDims[];
   [WorkerMsgType.LOAD_VOLUME_DATA]: void;

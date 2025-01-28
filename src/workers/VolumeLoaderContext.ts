@@ -152,7 +152,7 @@ class SharedLoadWorkerHandle {
  * A context in which volume loaders can be run, which allows loading to run on a WebWorker (where it won't block
  * rendering or UI updates) and loaders to share a single `VolumeCache` and `RequestQueue`.
  *
- * ### To use:
+ * # To use:
  * 1. Create a `VolumeLoaderContext` with the desired cache and queue configuration.
  * 2. Before creating a loader, await `onOpen` to ensure the worker is ready.
  * 3. Create a loader with `createLoader`. This accepts nearly the same arguments as `createVolumeLoader`, but without
@@ -165,9 +165,6 @@ class SharedLoadWorkerHandle {
 class VolumeLoaderContext {
   private workerHandle: SharedLoadWorkerHandle;
   private openPromise: Promise<void>;
-
-  private activeLoader: WorkerLoader | undefined = undefined;
-  private activeLoaderId = -1;
 
   constructor(maxCacheSize?: number, maxActiveRequests?: number, maxLowPriorityRequests?: number) {
     this.workerHandle = new SharedLoadWorkerHandle();
@@ -189,7 +186,6 @@ class VolumeLoaderContext {
   /** Close this context, its worker, and any active loaders. */
   close(): void {
     this.workerHandle.close();
-    this.activeLoader?.close();
   }
 
   /**
@@ -213,23 +209,16 @@ class VolumeLoaderContext {
       return new RawArrayLoader(options.rawArrayOptions.data, options.rawArrayOptions.metadata);
     }
 
-    const success = await this.workerHandle.sendMessage(WorkerMsgType.CREATE_LOADER, { path, options });
-    if (!success) {
+    const loaderId = await this.workerHandle.sendMessage(WorkerMsgType.CREATE_LOADER, { path, options });
+    if (loaderId === undefined) {
       throw new Error("Failed to create loader");
     }
 
-    this.activeLoader?.close();
-    this.activeLoaderId += 1;
-    this.activeLoader = new WorkerLoader(this.activeLoaderId, this.workerHandle);
-    return this.activeLoader;
+    return new WorkerLoader(loaderId, this.workerHandle);
   }
 
   setThrottleChannelData(throttle: boolean): void {
     this.workerHandle.setThrottleChannelData(throttle);
-  }
-
-  getActiveLoader(): WorkerLoader | undefined {
-    return this.activeLoader;
   }
 }
 

@@ -25,7 +25,7 @@ import {
 } from "./types.js";
 import { Axis } from "./VolumeRenderSettings.js";
 import { PerChannelCallback } from "./loaders/IVolumeLoader.js";
-import VolumeLoaderContext from "./workers/VolumeLoaderContext.js";
+import VolumeLoaderContext, { WorkerLoader } from "./workers/VolumeLoaderContext.js";
 
 // Constants are kept for compatibility reasons.
 export const RENDERMODE_RAYMARCH = RenderMode.RAYMARCH;
@@ -936,16 +936,21 @@ export class View3d {
     this.image?.setupGui(pane);
 
     const prefetch = pane.addFolder({ title: "Prefetch" });
+    // Not all `IVolumeLoader`s implement `updateFetchOptions`. This cast makes it sound to try to call it, but we
+    //   still have to be careful to null-check it!
+    // TODO depending on how the relationship between loaders and images pans out, it's not impossible that the loader
+    //   for an image will be changeable and this variable will capture a stale reference to old loaders. Careful!
+    const loader = this.image?.volume.loader as WorkerLoader | undefined;
     // one number will be used for all axis directions
     prefetch.addInput(allGlobalLoadingOptions, "numChunksToPrefetchAhead").on("change", (event) => {
-      this.loaderContext?.getActiveLoader()?.updateFetchOptions({
+      loader?.updateFetchOptions?.({
         maxPrefetchDistance: [event.value, event.value, event.value, event.value],
       });
       this.image?.volume.updateRequiredData({});
     });
     // should we try to prefetch along Z even if we are only playing along T?
     prefetch.addInput(allGlobalLoadingOptions, "prefetchAlongNonPlayingAxis").on("change", (event) => {
-      this.loaderContext?.getActiveLoader()?.updateFetchOptions({ onlyPriorityDirections: !event.value });
+      loader?.updateFetchOptions?.({ onlyPriorityDirections: !event.value });
     });
     // when multiple prefetch frames arrive at once, should we slow down how quickly we load them?
     prefetch.addInput(allGlobalLoadingOptions, "throttleArrivingChannelData").on("change", (event) => {
