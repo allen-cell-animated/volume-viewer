@@ -85,11 +85,14 @@ export type WorkerResponsePayload<T extends WorkerMsgType> = {
   [WorkerMsgType.UPDATE_FETCH_OPTIONS]: void;
 }[T];
 
-/** Event for when a batch of channel data loads. */
-export type ChannelLoadEvent = {
-  eventType: WorkerEventType.CHANNEL_LOAD;
+type WorkerEventBase<T extends WorkerEventType> = {
+  eventType: T;
   loaderId: number;
   loadId: number;
+};
+
+/** Event for when a batch of channel data loads. */
+export type ChannelLoadEvent = WorkerEventBase<WorkerEventType.CHANNEL_LOAD> & {
   channelIndex: number[];
   dtype: NumberType[];
   data: TypedArray<NumberType>[];
@@ -98,10 +101,7 @@ export type ChannelLoadEvent = {
 };
 
 /** Event for when metadata updates. */
-export type MetadataUpdateEvent = {
-  eventType: WorkerEventType.METADATA_UPDATE;
-  loaderId: number;
-  loadId: number;
+export type MetadataUpdateEvent = WorkerEventBase<WorkerEventType.METADATA_UPDATE> & {
   imageInfo?: ImageInfo;
   loadSpec?: LoadSpec;
 };
