@@ -16,15 +16,23 @@ import type {
 import { WorkerEventType, WorkerMsgType, WorkerResponseResult } from "./types.js";
 import { rebuildLoadSpec } from "./util.js";
 
+type LoaderEntry = { loader: ThreadableVolumeLoader; copyOnLoad: boolean };
+
 let cache: VolumeCache | undefined = undefined;
 let queue: RequestQueue | undefined = undefined;
 let subscribableQueue: SubscribableRequestQueue | undefined = undefined;
 
 let loaderCount = 0;
-const loaders: Map<number, ThreadableVolumeLoader> = new Map();
+const loaders: Map<number, LoaderEntry> = new Map();
+const getLoader = (loaderId: number): LoaderEntry => {
+  const loader = loaders.get(loaderId);
+  if (loader === undefined) {
+    throw new VolumeLoadError(`Loader with ID ${loaderId} does not exist`);
+  }
+  return loader;
+};
 
 let initialized = false;
-let copyOnLoad = false;
 
 type MessageHandler<T extends WorkerMsgType> = (
   payload: WorkerRequestPayload<T>,
@@ -43,43 +51,39 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
   },
 
   [WorkerMsgType.CREATE_LOADER]: async ({ path, options }) => {
-    const pathString = Array.isArray(path) ? path[0] : path;
-    const fileType = options?.fileType || pathToFileType(pathString);
-    copyOnLoad = fileType === VolumeFileFormat.JSON;
-
     const loader = await createVolumeLoader(path, { ...options, cache, queue: subscribableQueue });
     if (loader === undefined) {
       return undefined;
     }
 
+    const pathString = Array.isArray(path) ? path[0] : path;
+    const fileType = options?.fileType || pathToFileType(pathString);
+    const copyOnLoad = fileType === VolumeFileFormat.JSON;
+
     const loaderId = loaderCount;
     loaderCount += 1;
-    loaders.set(loaderId, loader);
+    loaders.set(loaderId, { loader, copyOnLoad });
     return loaderId;
   },
 
+  [WorkerMsgType.CLOSE_LOADER]: (_, loaderId) => {
+    loaders.delete(loaderId);
+    return Promise.resolve();
+  },
+
   [WorkerMsgType.CREATE_VOLUME]: async (loadSpec, loaderId) => {
-    const loader = loaders.get(loaderId);
-    if (loader === undefined) {
-      throw new VolumeLoadError("No loader created");
-    }
+    const { loader } = getLoader(loaderId);
 
     return await loader.createImageInfo(rebuildLoadSpec(loadSpec));
   },
 
   [WorkerMsgType.LOAD_DIMS]: async (loadSpec, loaderId) => {
-    const loader = loaders.get(loaderId);
-    if (loader === undefined) {
-      throw new VolumeLoadError("No loader created");
-    }
+    const { loader } = getLoader(loaderId);
     return await loader.loadDims(rebuildLoadSpec(loadSpec));
   },
 
   [WorkerMsgType.LOAD_VOLUME_DATA]: ({ imageInfo, loadSpec, loadId }, loaderId) => {
-    const loader = loaders.get(loaderId);
-    if (loader === undefined) {
-      throw new VolumeLoadError("No loader created");
-    }
+    const { loader, copyOnLoad } = getLoader(loaderId);
 
     return loader.loadRawChannelData(
       imageInfo,
@@ -113,20 +117,20 @@ const messageHandlers: { [T in WorkerMsgType]: MessageHandler<T> } = {
   },
 
   [WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS]: (directions, loaderId) => {
-    const loader = loaders.get(loaderId);
+    const { loader } = getLoader(loaderId);
     // Silently does nothing if the loader isn't an `OMEZarrLoader`
     loader?.setPrefetchPriority(directions);
     return Promise.resolve();
   },
 
   [WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING]: (syncChannels, loaderId) => {
-    const loader = loaders.get(loaderId);
+    const { loader } = getLoader(loaderId);
     loader?.syncMultichannelLoading(syncChannels);
     return Promise.resolve();
   },
 
   [WorkerMsgType.UPDATE_FETCH_OPTIONS]: (fetchOptions, loaderId) => {
-    const loader = loaders.get(loaderId);
+    const { loader } = getLoader(loaderId);
     loader?.updateFetchOptions(fetchOptions);
     return Promise.resolve();
   },

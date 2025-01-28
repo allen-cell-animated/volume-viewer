@@ -11,6 +11,7 @@ import type { ZarrLoaderFetchOptions } from "../loaders/OmeZarrLoader.js";
 export const enum WorkerMsgType {
   INIT,
   CREATE_LOADER,
+  CLOSE_LOADER,
   CREATE_VOLUME,
   LOAD_DIMS,
   LOAD_VOLUME_DATA,
@@ -61,6 +62,7 @@ export type WorkerRequestPayload<T extends WorkerMsgType> = {
     path: string | string[];
     options?: CreateLoaderOptions;
   };
+  [WorkerMsgType.CLOSE_LOADER]: void;
   [WorkerMsgType.CREATE_VOLUME]: LoadSpec;
   [WorkerMsgType.LOAD_DIMS]: LoadSpec;
   [WorkerMsgType.LOAD_VOLUME_DATA]: {
@@ -77,6 +79,7 @@ export type WorkerRequestPayload<T extends WorkerMsgType> = {
 export type WorkerResponsePayload<T extends WorkerMsgType> = {
   [WorkerMsgType.INIT]: void;
   [WorkerMsgType.CREATE_LOADER]: number | undefined;
+  [WorkerMsgType.CLOSE_LOADER]: void;
   [WorkerMsgType.CREATE_VOLUME]: LoadedVolumeInfo;
   [WorkerMsgType.LOAD_DIMS]: VolumeDims[];
   [WorkerMsgType.LOAD_VOLUME_DATA]: void;

@@ -228,26 +228,32 @@ class VolumeLoaderContext {
  * Created with `VolumeLoaderContext.createLoader`. See its documentation for more.
  */
 class WorkerLoader extends ThreadableVolumeLoader {
-  private isOpen = true;
+  private loaderId: number | undefined;
   private currentLoadId = -1;
   private currentLoadCallback: RawChannelDataCallback | undefined = undefined;
   private currentMetadataUpdateCallback: ((imageInfo?: ImageInfo, loadSpec?: LoadSpec) => void) | undefined = undefined;
 
-  constructor(private loaderId: number, private workerHandle: SharedLoadWorkerHandle) {
+  constructor(loaderId: number, private workerHandle: SharedLoadWorkerHandle) {
     super();
+    this.loaderId = loaderId;
     workerHandle.onChannelData = this.onChannelData.bind(this);
     workerHandle.onUpdateMetadata = this.onUpdateMetadata.bind(this);
   }
 
-  private checkIsOpen(): void {
-    if (!this.isOpen || !this.workerHandle.isOpen) {
+  private getLoaderId(): number {
+    if (this.loaderId === undefined || !this.workerHandle.isOpen) {
       throw new Error("Tried to use a closed loader");
     }
+    return this.loaderId;
   }
 
   /** Close and permanently invalidate this loader. */
   close(): void {
-    this.isOpen = false;
+    if (this.loaderId === undefined) {
+      return;
+    }
+    this.workerHandle.sendMessage(WorkerMsgType.CLOSE_LOADER, undefined, this.loaderId);
+    this.loaderId = undefined;
   }
 
   /**
@@ -255,28 +261,30 @@ class WorkerLoader extends ThreadableVolumeLoader {
    * any chunks are prefetched in any other directions. Has no effect if this loader doesn't support prefetching.
    */
   setPrefetchPriority(directions: PrefetchDirection[]): Promise<void> {
-    return this.workerHandle.sendMessage(WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, directions, this.loaderId);
+    return this.workerHandle.sendMessage(
+      WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS,
+      directions,
+      this.getLoaderId()
+    );
   }
 
   updateFetchOptions(fetchOptions: Partial<ZarrLoaderFetchOptions>): Promise<void> {
-    return this.workerHandle.sendMessage(WorkerMsgType.UPDATE_FETCH_OPTIONS, fetchOptions, this.loaderId);
+    return this.workerHandle.sendMessage(WorkerMsgType.UPDATE_FETCH_OPTIONS, fetchOptions, this.getLoaderId());
   }
 
   syncMultichannelLoading(sync: boolean): Promise<void> {
-    return this.workerHandle.sendMessage(WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, sync, this.loaderId);
+    return this.workerHandle.sendMessage(WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, sync, this.getLoaderId());
   }
 
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
-    this.checkIsOpen();
-    return this.workerHandle.sendMessage(WorkerMsgType.LOAD_DIMS, loadSpec, this.loaderId);
+    return this.workerHandle.sendMessage(WorkerMsgType.LOAD_DIMS, loadSpec, this.getLoaderId());
   }
 
   async createImageInfo(loadSpec: LoadSpec): Promise<LoadedVolumeInfo> {
-    this.checkIsOpen();
     const { imageInfo, loadSpec: adjustedLoadSpec } = await this.workerHandle.sendMessage(
       WorkerMsgType.CREATE_VOLUME,
       loadSpec,
-      this.loaderId
+      this.getLoaderId()
     );
     return { imageInfo, loadSpec: rebuildLoadSpec(adjustedLoadSpec) };
   }
@@ -287,8 +295,6 @@ class WorkerLoader extends ThreadableVolumeLoader {
     onUpdateMetadata: (imageInfo?: ImageInfo, loadSpec?: LoadSpec) => void,
     onData: RawChannelDataCallback
   ): Promise<void> {
-    this.checkIsOpen();
-
     this.currentLoadCallback = onData;
     this.currentMetadataUpdateCallback = onUpdateMetadata;
     this.currentLoadId += 1;
@@ -298,7 +304,7 @@ class WorkerLoader extends ThreadableVolumeLoader {
       loadSpec,
       loadId: this.currentLoadId,
     };
-    return this.workerHandle.sendMessage(WorkerMsgType.LOAD_VOLUME_DATA, message, this.loaderId);
+    return this.workerHandle.sendMessage(WorkerMsgType.LOAD_VOLUME_DATA, message, this.getLoaderId());
   }
 
   onChannelData(e: ChannelLoadEvent): void {
