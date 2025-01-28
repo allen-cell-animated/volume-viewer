@@ -304,10 +304,9 @@ class WorkerLoader extends ThreadableVolumeLoader {
     this.currentMetadataUpdateCallback = onUpdateMetadata;
     this.currentLoadId += 1;
 
-    const message = {
+    const message: WorkerRequestPayload<WorkerMsgType.LOAD_VOLUME_DATA> = {
       imageInfo,
       loadSpec,
-      loaderId: this.loaderId,
       loadId: this.currentLoadId,
     };
     return this.workerHandle.sendMessage(WorkerMsgType.LOAD_VOLUME_DATA, message, this.loaderId);

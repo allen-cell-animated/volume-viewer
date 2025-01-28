@@ -66,7 +66,6 @@ export type WorkerRequestPayload<T extends WorkerMsgType> = {
   [WorkerMsgType.LOAD_VOLUME_DATA]: {
     imageInfo: ImageInfo;
     loadSpec: LoadSpec;
-    loaderId: number;
     loadId: number;
   };
   [WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS]: PrefetchDirection[];
