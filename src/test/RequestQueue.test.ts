@@ -1,4 +1,5 @@
-import { expect } from "chai";
+import { vi } from "vitest";
+
 import { Vector3 } from "three";
 import { TypedArray } from "@zarrita/core";
 
@@ -439,6 +440,14 @@ describe("test RequestQueue", () => {
     }
 
     it("can issue and cancel mock loadspec requests", async () => {
+      const fn = vi.fn();
+      const unhandledPromise = new Promise<void>((resolve) => {
+        process.on("unhandledRejection", () => {
+          fn();
+          resolve();
+        });
+      });
+
       const rq = new RequestQueue(10);
       const xDim = 400;
       const yDim = 600;
@@ -489,6 +498,10 @@ describe("test RequestQueue", () => {
       expect(workCount)
         .to.be.lessThan(2 * numFrames)
         .and.greaterThanOrEqual(numFrames);
+
+      await unhandledPromise;
+      // This seems to be randomized. Expect some number of times either numFrames or numFrames-1.
+      expect([numFrames, numFrames - 1]).to.include(fn.mock.calls.length);
     });
   });
 });

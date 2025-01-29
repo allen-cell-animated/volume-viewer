@@ -52,7 +52,7 @@ class SharedLoadWorkerHandle {
   public onUpdateMetadata: ((e: MetadataUpdateEvent) => void) | undefined = undefined;
 
   constructor() {
-    this.worker = new Worker(new URL("./VolumeLoadWorker", import.meta.url));
+    this.worker = new Worker(new URL("./VolumeLoadWorker", import.meta.url), {type:"module"});
     this.worker.onmessage = this.receiveMessage.bind(this);
   }
 

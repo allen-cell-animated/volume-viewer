@@ -39,6 +39,6 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./volumeviewer
+          publish_dir: ./public/volumeviewer
           tag_name: ${{ steps.prepare_tag.outputs.deploy_tag_name }}
           tag_message: "Deployment to gh-pages to test new viewer ${{ steps.prepare_tag.outputs.tag_name }}"

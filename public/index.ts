@@ -1119,7 +1119,7 @@ function gammaSliderToImageValues(sliderValues: [number, number, number]): [numb
 }
 
 function main() {
-  const el = document.getElementById("volume-viewer");
+  const el = document.getElementById("vol-e");
   if (!el) {
     return;
   }

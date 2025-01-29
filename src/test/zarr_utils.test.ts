@@ -1,5 +1,3 @@
-import { expect } from "chai";
-
 import { AbsolutePath, SyncReadable } from "@zarrita/storage";
 import * as zarr from "@zarrita/core";
 
