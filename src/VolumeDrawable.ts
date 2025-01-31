@@ -388,7 +388,7 @@ export default class VolumeDrawable {
   onAnimate(
     renderer: WebGLRenderer,
     camera: PerspectiveCamera | OrthographicCamera,
-    depthTexture?: DepthTexture | Texture
+    depthTexture?: DepthTexture | Texture | null
   ): void {
     // TODO: this is inefficient, as this work is duplicated by threejs.
     // we need camera matrix up to date before giving the 3d objects a chance to use it.

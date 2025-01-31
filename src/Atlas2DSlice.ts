@@ -12,7 +12,6 @@ import {
   PerspectiveCamera,
   PlaneGeometry,
   ShaderMaterial,
-  ShapeGeometry,
   Vector2,
   Vector3,
   WebGLRenderer,
@@ -32,7 +31,7 @@ const BOUNDING_BOX_DEFAULT_COLOR = new Color(0xffff00);
 export default class Atlas2DSlice implements VolumeRenderImpl {
   private settings: VolumeRenderSettings;
   public volume: Volume;
-  private geometry: ShapeGeometry;
+  private geometry: PlaneGeometry;
   protected geometryMesh: Mesh<BufferGeometry, Material>;
   private geometryTransformNode: Group;
   private boxHelper: Box3Helper;
@@ -211,7 +210,7 @@ export default class Atlas2DSlice implements VolumeRenderImpl {
 
   private createGeometry(
     uniforms: ReturnType<typeof sliceShaderUniforms>
-  ): [ShapeGeometry, Mesh<BufferGeometry, Material>] {
+  ): [PlaneGeometry, Mesh<BufferGeometry, Material>] {
     const geom = new PlaneGeometry(1.0, 1.0);
     const mesh: Mesh<BufferGeometry, Material> = new Mesh(geom);
     mesh.name = "Plane";

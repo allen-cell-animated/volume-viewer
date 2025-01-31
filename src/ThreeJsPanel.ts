@@ -60,7 +60,7 @@ export class ThreeJsPanel {
   public animateFuncs: ((
     renderer: WebGLRenderer,
     camera: PerspectiveCamera | OrthographicCamera,
-    depthTexture?: DepthTexture
+    depthTexture?: DepthTexture | null
   ) => void)[];
   private inRenderLoop: boolean;
   private requestedRender: number;
@@ -589,7 +589,7 @@ export class ThreeJsPanel {
     this.updateScaleBarVisibility();
   }
 
-  getMeshDepthTexture(): DepthTexture {
+  getMeshDepthTexture(): DepthTexture | null {
     return this.meshRenderTarget.depthTexture;
   }
 

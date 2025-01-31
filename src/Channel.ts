@@ -17,6 +17,8 @@ import {
   ClampToEdgeWrapping,
   Vector3,
   PixelFormatGPU,
+  PixelFormat,
+  TextureDataType,
 } from "three";
 import Histogram from "./Histogram.js";
 import { Lut, LUT_ARRAY_LENGTH } from "./Lut.js";
@@ -153,8 +155,8 @@ export default class Channel {
     if (this.dataTexture) {
       this.dataTexture.dispose();
     }
-    let format = LuminanceFormat;
-    let dataType = UnsignedByteType;
+    let format: PixelFormat = LuminanceFormat;
+    let dataType: TextureDataType = UnsignedByteType;
     let internalFormat: PixelFormatGPU = "LUMINANCE";
     switch (this.dtype) {
       case "uint8":

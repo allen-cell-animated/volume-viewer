@@ -16,7 +16,6 @@ import {
   OrthographicCamera,
   PerspectiveCamera,
   ShaderMaterial,
-  ShapeGeometry,
   Texture,
   Vector2,
   Vector3,
@@ -42,7 +41,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   private settings: VolumeRenderSettings;
   public volume: Volume;
 
-  private geometry: ShapeGeometry;
+  private geometry: BoxGeometry;
   private geometryMesh: Mesh<BufferGeometry, Material>;
   private boxHelper: Box3Helper;
   private tickMarksMesh: LineSegments;
@@ -216,7 +215,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
    */
   private createGeometry(
     uniforms: ReturnType<typeof rayMarchingShaderUniforms>
-  ): [ShapeGeometry, Mesh<BufferGeometry, Material>] {
+  ): [BoxGeometry, Mesh<BufferGeometry, Material>] {
     const geom = new BoxGeometry(1.0, 1.0, 1.0);
     const mesh: Mesh<BufferGeometry, Material> = new Mesh(geom);
     mesh.name = "Volume";
@@ -317,7 +316,7 @@ export default class RayMarchedAtlasVolume implements VolumeRenderImpl {
   public doRender(
     renderer: WebGLRenderer,
     camera: PerspectiveCamera | OrthographicCamera,
-    depthTexture?: DepthTexture | Texture
+    depthTexture?: DepthTexture | Texture | null
   ): void {
     if (!this.geometryMesh.visible) {
       return;

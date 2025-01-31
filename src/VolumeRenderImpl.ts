@@ -19,7 +19,7 @@ export interface VolumeRenderImpl {
   doRender: (
     renderer: WebGLRenderer,
     camera: PerspectiveCamera | OrthographicCamera,
-    depthTexture?: DepthTexture | Texture
+    depthTexture?: DepthTexture | Texture | null
   ) => void;
   updateVolumeDimensions: () => void;
   cleanup: () => void;
