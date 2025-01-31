@@ -19,7 +19,7 @@
     "build-demo": "vite build public/ --config vite.config.ts --outDir ./demo",
     "clean": "rimraf es/",
     "format": "prettier --write src/**/*.ts",
-    "gh-build": "vite build public/ --config vite.config.ts --outDir ./volumeviewer",
+    "gh-build": "vite build public/ --config vite.config.ts --outDir ./vole-core",
     "dev": "vite serve",
     "start": "vite serve",
     "lint": "eslint --config ./.eslintrc.json --ignore-path ./.eslintignore --ext .js --ext .ts ./src",
