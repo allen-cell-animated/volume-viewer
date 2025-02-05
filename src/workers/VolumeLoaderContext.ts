@@ -234,13 +234,15 @@ class VolumeLoaderContext {
  */
 class WorkerLoader extends ThreadableVolumeLoader {
   private loaderId: number | undefined;
+  private workerHandle: SharedLoadWorkerHandle;
   private currentLoadId = -1;
   private currentLoadCallback: RawChannelDataCallback | undefined = undefined;
   private currentMetadataUpdateCallback: ((imageInfo?: ImageInfo, loadSpec?: LoadSpec) => void) | undefined = undefined;
 
-  constructor(loaderId: number, private workerHandle: SharedLoadWorkerHandle) {
+  constructor(loaderId: number, workerHandle: SharedLoadWorkerHandle) {
     super();
     this.loaderId = loaderId;
+    this.workerHandle = workerHandle;
   }
 
   private getLoaderId(): number {
