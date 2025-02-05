@@ -191,8 +191,6 @@ class VolumeLoaderContext {
     }
   }
 
-  private;
-
   /**
    * Create a new loader within this context. This loader will share the context's `VolumeCache` and `RequestQueue`.
    *
