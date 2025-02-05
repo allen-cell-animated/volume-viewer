@@ -20,7 +20,7 @@ export interface State {
   timerId: number;
   scene: number;
 
-  loader: IVolumeLoader | IVolumeLoader[];
+  loader: IVolumeLoader[];
 
   density: number;
   maskAlpha: number;

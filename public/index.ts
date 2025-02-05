@@ -111,9 +111,11 @@ const myState: State = {
   timerId: 0,
   scene: 0,
 
-  loader: new JsonImageInfoLoader(
-    "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json"
-  ),
+  loader: [
+    new JsonImageInfoLoader(
+      "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json"
+    ),
+  ],
 
   density: 12.5,
   maskAlpha: 1.0,
@@ -600,7 +602,7 @@ function updateTimeUI() {
 }
 
 function updateScenesUI() {
-  const maxScenes = Array.isArray(myState.loader) ? myState.loader.length - 1 : 0;
+  const maxScenes = myState.loader.length - 1;
   const sceneInput = document.getElementById("sceneValue") as HTMLInputElement;
   sceneInput.max = `${maxScenes}`;
   sceneInput.value = `${Math.min(myState.scene, maxScenes)}`;
@@ -960,11 +962,7 @@ function onVolumeCreated(volume: Volume) {
 }
 
 function setSyncMultichannelLoading(sync: boolean) {
-  if (Array.isArray(myState.loader)) {
-    myState.loader.forEach((loader) => loader.syncMultichannelLoading(sync));
-  } else {
-    myState.loader.syncMultichannelLoading(sync);
-  }
+  myState.loader.forEach((loader) => loader.syncMultichannelLoading(sync));
 }
 
 function playTimeSeries(onNewFrameCallback: () => void) {
@@ -1070,9 +1068,9 @@ function createTestVolume(): RawArrayLoaderOptions {
   };
 }
 
-async function createLoader(data: TestDataSpec): Promise<IVolumeLoader | IVolumeLoader[]> {
+async function createLoader(data: TestDataSpec): Promise<IVolumeLoader[]> {
   if (data.type === "opencell") {
-    return new OpenCellLoader();
+    return [new OpenCellLoader()];
   }
 
   await loaderContext.onOpen();
@@ -1098,10 +1096,11 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader | IVolume
     options.rawArrayOptions = { data: volumeInfo.data, metadata: volumeInfo.metadata };
   }
 
-  return await loaderContext.createLoader(path, {
+  const result = await loaderContext.createLoader(path, {
     ...options,
     fetchOptions: { maxPrefetchDistance: PREFETCH_DISTANCE, maxPrefetchChunks: MAX_PREFETCH_CHUNKS },
   });
+  return [result];
 }
 
 async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<void> {
@@ -1121,7 +1120,7 @@ async function loadTestData(testdata: TestDataSpec) {
 
   const loadSpec = new LoadSpec();
   myState.totalFrames = testdata.times;
-  const loader = Array.isArray(myState.loader) ? myState.loader[myState.scene] : myState.loader;
+  const loader = myState.loader[Math.max(myState.scene, myState.loader.length - 1)];
   loadVolume(loadSpec, loader);
 }
 
@@ -1298,7 +1297,7 @@ function main() {
     }
   });
   sceneInput?.addEventListener("change", () => {
-    if (Array.isArray(myState.loader) && myState.scene !== sceneInput.valueAsNumber) {
+    if (myState.loader.length > 1 && myState.scene !== sceneInput.valueAsNumber) {
       myState.scene = sceneInput.valueAsNumber;
       loadVolume(new LoadSpec(), myState.loader[myState.scene]);
     }
