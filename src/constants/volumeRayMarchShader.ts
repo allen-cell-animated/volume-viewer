@@ -1,6 +1,6 @@
 import { Vector2, Vector3, Matrix4, Texture } from "three";
-import rayMarchVertexShader from "./shaders/raymarch.vert?raw";
-import rayMarchFragmentShader from "./shaders/raymarch.frag?raw";
+import rayMarchVertexShader from "./shaders/raymarch.vert";
+import rayMarchFragmentShader from "./shaders/raymarch.frag";
 
 export const rayMarchingVertexShaderSrc = rayMarchVertexShader;
 export const rayMarchingFragmentShaderSrc = rayMarchFragmentShader;
