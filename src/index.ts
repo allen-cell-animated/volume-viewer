@@ -28,7 +28,7 @@ import { Light, AREA_LIGHT, SKY_LIGHT } from "./Light.js";
 export type { ImageInfo } from "./ImageInfo.js";
 export type { ControlPoint } from "./Lut.js";
 export type { CreateLoaderOptions } from "./loaders/index.js";
-export type { IVolumeLoader, PerChannelCallback } from "./loaders/IVolumeLoader.js";
+export type { IVolumeLoader, PerChannelCallback, ThreadableVolumeLoader } from "./loaders/IVolumeLoader.js";
 export type { ZarrLoaderFetchOptions } from "./loaders/OmeZarrLoader.js";
 export type { WorkerLoader } from "./workers/VolumeLoaderContext.js";
 export {
