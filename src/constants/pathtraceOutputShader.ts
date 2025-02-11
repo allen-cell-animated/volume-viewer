@@ -1,4 +1,4 @@
-import pathtraceOutputFragmentShader from "./shaders/pathtrace_output.frag?raw";
+import pathtraceOutputFragmentShader from "./shaders/pathtrace_output.frag";
 export const pathtraceOutputFragmentShaderSrc = pathtraceOutputFragmentShader;
 
 export const pathtraceOutputShaderUniforms = () => ({
