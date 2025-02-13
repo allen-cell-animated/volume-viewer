@@ -4,7 +4,8 @@ import { IVolumeLoader } from "../src/loaders/IVolumeLoader";
 
 export interface TestDataSpec {
   type: VolumeFileFormat | "opencell" | "procedural";
-  url: string;
+  // TODO: replace array here with multi-scene handling at the loader level
+  url: string | string[];
   /** Optional fallback for JSON volumes which don't specify a value for `times` */
   times?: number;
 }
@@ -17,8 +18,9 @@ export interface State {
   lastFrameTime: number;
   isPlaying: boolean;
   timerId: number;
+  scene: number;
 
-  loader: IVolumeLoader;
+  loader: IVolumeLoader[];
 
   density: number;
   maskAlpha: number;

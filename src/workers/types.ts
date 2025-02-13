@@ -11,6 +11,7 @@ import type { ZarrLoaderFetchOptions } from "../loaders/OmeZarrLoader.js";
 export const enum WorkerMsgType {
   INIT,
   CREATE_LOADER,
+  CLOSE_LOADER,
   CREATE_VOLUME,
   LOAD_DIMS,
   LOAD_VOLUME_DATA,
@@ -18,6 +19,11 @@ export const enum WorkerMsgType {
   SYNCHRONIZE_MULTICHANNEL_LOADING,
   UPDATE_FETCH_OPTIONS,
 }
+
+/** The variants of `WorkerMessageType` which represent "global" actions that don't require a specific loader */
+export type WorkerMsgTypeGlobal = WorkerMsgType.INIT | WorkerMsgType.CREATE_LOADER;
+/** The variants of `WorkerMessageType` which represent actions on a specific loader */
+export type WorkerMsgTypeWithLoader = Exclude<WorkerMsgType, WorkerMsgTypeGlobal>;
 
 /** The kind of response a worker can return - `SUCCESS`, `ERROR`, or `EVENT`. */
 export const enum WorkerResponseResult {
@@ -34,9 +40,13 @@ export const enum WorkerEventType {
   CHANNEL_LOAD,
 }
 
-/** All messages to/from a worker carry a `msgId`, a `type`, and a `payload` (whose type is determined by `type`). */
+/**
+ * All messages to/from a worker carry a `msgId`, a `type`, and a `payload` (whose type is determined by `type`).
+ * Messages which operate on a specific loader also require a `loaderId`.
+ */
 type WorkerMsgBase<T extends WorkerMsgType, P> = {
   msgId: number;
+  loaderId: T extends WorkerMsgTypeWithLoader ? number : undefined;
   type: T;
   payload: P;
 };
@@ -52,12 +62,12 @@ export type WorkerRequestPayload<T extends WorkerMsgType> = {
     path: string | string[];
     options?: CreateLoaderOptions;
   };
+  [WorkerMsgType.CLOSE_LOADER]: void;
   [WorkerMsgType.CREATE_VOLUME]: LoadSpec;
   [WorkerMsgType.LOAD_DIMS]: LoadSpec;
   [WorkerMsgType.LOAD_VOLUME_DATA]: {
     imageInfo: ImageInfo;
     loadSpec: LoadSpec;
-    loaderId: number;
     loadId: number;
   };
   [WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS]: PrefetchDirection[];
@@ -68,7 +78,8 @@ export type WorkerRequestPayload<T extends WorkerMsgType> = {
 /** Maps each `WorkerMsgType` to the type of the payload of responses of that type. */
 export type WorkerResponsePayload<T extends WorkerMsgType> = {
   [WorkerMsgType.INIT]: void;
-  [WorkerMsgType.CREATE_LOADER]: boolean;
+  [WorkerMsgType.CREATE_LOADER]: number | undefined;
+  [WorkerMsgType.CLOSE_LOADER]: void;
   [WorkerMsgType.CREATE_VOLUME]: LoadedVolumeInfo;
   [WorkerMsgType.LOAD_DIMS]: VolumeDims[];
   [WorkerMsgType.LOAD_VOLUME_DATA]: void;
@@ -77,11 +88,14 @@ export type WorkerResponsePayload<T extends WorkerMsgType> = {
   [WorkerMsgType.UPDATE_FETCH_OPTIONS]: void;
 }[T];
 
-/** Event for when a batch of channel data loads. */
-export type ChannelLoadEvent = {
-  eventType: WorkerEventType.CHANNEL_LOAD;
+type WorkerEventBase<T extends WorkerEventType> = {
+  eventType: T;
   loaderId: number;
   loadId: number;
+};
+
+/** Event for when a batch of channel data loads. */
+export type ChannelLoadEvent = WorkerEventBase<WorkerEventType.CHANNEL_LOAD> & {
   channelIndex: number[];
   dtype: NumberType[];
   data: TypedArray<NumberType>[];
@@ -90,10 +104,7 @@ export type ChannelLoadEvent = {
 };
 
 /** Event for when metadata updates. */
-export type MetadataUpdateEvent = {
-  eventType: WorkerEventType.METADATA_UPDATE;
-  loaderId: number;
-  loadId: number;
+export type MetadataUpdateEvent = WorkerEventBase<WorkerEventType.METADATA_UPDATE> & {
   imageInfo?: ImageInfo;
   loadSpec?: LoadSpec;
 };

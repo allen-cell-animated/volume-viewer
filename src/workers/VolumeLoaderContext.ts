@@ -13,12 +13,13 @@ import {
 import { RawArrayLoader } from "../loaders/RawArrayLoader.js";
 import { TiffLoader } from "../loaders/TiffLoader.js";
 import type {
-  WorkerRequest,
+  ChannelLoadEvent,
+  MetadataUpdateEvent,
+  WorkerMsgTypeGlobal,
+  WorkerMsgTypeWithLoader,
   WorkerRequestPayload,
   WorkerResponse,
   WorkerResponsePayload,
-  ChannelLoadEvent,
-  MetadataUpdateEvent,
 } from "./types.js";
 import type { ZarrLoaderFetchOptions } from "../loaders/OmeZarrLoader.js";
 import { WorkerMsgType, WorkerResponseResult, WorkerEventType } from "./types.js";
@@ -46,13 +47,11 @@ class SharedLoadWorkerHandle {
   private worker: Worker;
   private pendingRequests: (StoredPromise<WorkerMsgType> | undefined)[] = [];
   private workerOpen = true;
-  private throttleChannelData = false;
 
-  public onChannelData: ((e: ChannelLoadEvent) => void) | undefined = undefined;
-  public onUpdateMetadata: ((e: MetadataUpdateEvent) => void) | undefined = undefined;
+  public onEvent: ((e: ChannelLoadEvent | MetadataUpdateEvent) => void) | undefined = undefined;
 
   constructor() {
-    this.worker = new Worker(new URL("./VolumeLoadWorker", import.meta.url), {type:"module"});
+    this.worker = new Worker(new URL("./VolumeLoadWorker", import.meta.url), { type: "module" });
     this.worker.onmessage = this.receiveMessage.bind(this);
   }
 
@@ -82,13 +81,28 @@ class SharedLoadWorkerHandle {
    * Send a message of type `T` to the worker.
    * Returns a `Promise` that resolves with the worker's response, or rejects with an error message.
    */
-  sendMessage<T extends WorkerMsgType>(type: T, payload: WorkerRequestPayload<T>): Promise<WorkerResponsePayload<T>> {
+  // overload 1: message is a global action and does not require a loader ID
+  sendMessage<T extends WorkerMsgTypeGlobal>(
+    type: T,
+    payload: WorkerRequestPayload<T>
+  ): Promise<WorkerResponsePayload<T>>;
+  // overload 2: message is a loader-specific action and requires a loader ID
+  sendMessage<T extends WorkerMsgTypeWithLoader>(
+    type: T,
+    payload: WorkerRequestPayload<T>,
+    loaderId: number
+  ): Promise<WorkerResponsePayload<T>>;
+  sendMessage<T extends WorkerMsgType>(
+    type: T,
+    payload: WorkerRequestPayload<T>,
+    loaderId: T extends WorkerMsgTypeWithLoader ? number : void
+  ): Promise<WorkerResponsePayload<T>> {
     let msgId = -1;
     const promise = new Promise<WorkerResponsePayload<T>>((resolve, reject) => {
       msgId = this.registerMessagePromise({ type, resolve, reject } as StoredPromise<WorkerMsgType>);
     });
 
-    const msg: WorkerRequest<T> = { msgId, type, payload };
+    const msg = { msgId, type, payload, loaderId };
     this.worker.postMessage(msg);
 
     return promise;
@@ -97,17 +111,7 @@ class SharedLoadWorkerHandle {
   /** Receive a message from the worker. If it's an event, call a callback; otherwise, resolve/reject a promise. */
   private receiveMessage<T extends WorkerMsgType>({ data }: MessageEvent<WorkerResponse<T>>): void {
     if (data.responseResult === WorkerResponseResult.EVENT) {
-      if (data.eventType === WorkerEventType.CHANNEL_LOAD) {
-        if (this.onChannelData) {
-          if (this.throttleChannelData) {
-            throttle(() => (this.onChannelData ? this.onChannelData(data) : {}));
-          } else {
-            this.onChannelData ? this.onChannelData(data) : {};
-          }
-        }
-      } else if (data.eventType === WorkerEventType.METADATA_UPDATE) {
-        this.onUpdateMetadata?.(data);
-      }
+      this.onEvent?.(data);
     } else {
       const prom = this.pendingRequests[data.msgId];
 
@@ -126,17 +130,13 @@ class SharedLoadWorkerHandle {
       this.pendingRequests[data.msgId] = undefined;
     }
   }
-
-  setThrottleChannelData(throttle: boolean): void {
-    this.throttleChannelData = throttle;
-  }
 }
 
 /**
  * A context in which volume loaders can be run, which allows loading to run on a WebWorker (where it won't block
  * rendering or UI updates) and loaders to share a single `VolumeCache` and `RequestQueue`.
  *
- * ### To use:
+ * # To use:
  * 1. Create a `VolumeLoaderContext` with the desired cache and queue configuration.
  * 2. Before creating a loader, await `onOpen` to ensure the worker is ready.
  * 3. Create a loader with `createLoader`. This accepts nearly the same arguments as `createVolumeLoader`, but without
@@ -148,13 +148,14 @@ class SharedLoadWorkerHandle {
  */
 class VolumeLoaderContext {
   private workerHandle: SharedLoadWorkerHandle;
+  private loaders: Map<number, WorkerLoader>;
   private openPromise: Promise<void>;
-
-  private activeLoader: WorkerLoader | undefined = undefined;
-  private activeLoaderId = -1;
+  private throttleChannelData = false;
 
   constructor(maxCacheSize?: number, maxActiveRequests?: number, maxLowPriorityRequests?: number) {
     this.workerHandle = new SharedLoadWorkerHandle();
+    this.workerHandle.onEvent = this.handleEvent.bind(this);
+    this.loaders = new Map();
     this.openPromise = this.workerHandle.sendMessage(WorkerMsgType.INIT, {
       maxCacheSize,
       maxActiveRequests,
@@ -173,7 +174,21 @@ class VolumeLoaderContext {
   /** Close this context, its worker, and any active loaders. */
   close(): void {
     this.workerHandle.close();
-    this.activeLoader?.close();
+  }
+
+  private handleEvent(e: ChannelLoadEvent | MetadataUpdateEvent): void {
+    const loader = this.loaders.get(e.loaderId);
+    if (loader) {
+      if (e.eventType === WorkerEventType.CHANNEL_LOAD) {
+        if (this.throttleChannelData) {
+          throttle(() => loader.onChannelData(e));
+        } else {
+          loader.onChannelData(e);
+        }
+      } else if (e.eventType === WorkerEventType.METADATA_UPDATE) {
+        loader.onUpdateMetadata(e);
+      }
+    }
   }
 
   /**
@@ -197,23 +212,18 @@ class VolumeLoaderContext {
       return new RawArrayLoader(options.rawArrayOptions.data, options.rawArrayOptions.metadata);
     }
 
-    const success = await this.workerHandle.sendMessage(WorkerMsgType.CREATE_LOADER, { path, options });
-    if (!success) {
+    const loaderId = await this.workerHandle.sendMessage(WorkerMsgType.CREATE_LOADER, { path, options });
+    if (loaderId === undefined) {
       throw new Error("Failed to create loader");
     }
 
-    this.activeLoader?.close();
-    this.activeLoaderId += 1;
-    this.activeLoader = new WorkerLoader(this.activeLoaderId, this.workerHandle);
-    return this.activeLoader;
+    const loader = new WorkerLoader(loaderId, this.workerHandle);
+    this.loaders.set(loaderId, loader);
+    return loader;
   }
 
   setThrottleChannelData(throttle: boolean): void {
-    this.workerHandle.setThrottleChannelData(throttle);
-  }
-
-  getActiveLoader(): WorkerLoader | undefined {
-    return this.activeLoader;
+    this.throttleChannelData = throttle;
   }
 }
 
@@ -223,26 +233,32 @@ class VolumeLoaderContext {
  * Created with `VolumeLoaderContext.createLoader`. See its documentation for more.
  */
 class WorkerLoader extends ThreadableVolumeLoader {
-  private isOpen = true;
+  private loaderId: number | undefined;
+  private workerHandle: SharedLoadWorkerHandle;
   private currentLoadId = -1;
   private currentLoadCallback: RawChannelDataCallback | undefined = undefined;
   private currentMetadataUpdateCallback: ((imageInfo?: ImageInfo, loadSpec?: LoadSpec) => void) | undefined = undefined;
 
-  constructor(private loaderId: number, private workerHandle: SharedLoadWorkerHandle) {
+  constructor(loaderId: number, workerHandle: SharedLoadWorkerHandle) {
     super();
-    workerHandle.onChannelData = this.onChannelData.bind(this);
-    workerHandle.onUpdateMetadata = this.onUpdateMetadata.bind(this);
+    this.loaderId = loaderId;
+    this.workerHandle = workerHandle;
   }
 
-  private checkIsOpen(): void {
-    if (!this.isOpen || !this.workerHandle.isOpen) {
+  private getLoaderId(): number {
+    if (this.loaderId === undefined || !this.workerHandle.isOpen) {
       throw new Error("Tried to use a closed loader");
     }
+    return this.loaderId;
   }
 
   /** Close and permanently invalidate this loader. */
   close(): void {
-    this.isOpen = false;
+    if (this.loaderId === undefined) {
+      return;
+    }
+    this.workerHandle.sendMessage(WorkerMsgType.CLOSE_LOADER, undefined, this.loaderId);
+    this.loaderId = undefined;
   }
 
   /**
@@ -250,27 +266,30 @@ class WorkerLoader extends ThreadableVolumeLoader {
    * any chunks are prefetched in any other directions. Has no effect if this loader doesn't support prefetching.
    */
   setPrefetchPriority(directions: PrefetchDirection[]): Promise<void> {
-    return this.workerHandle.sendMessage(WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS, directions);
+    return this.workerHandle.sendMessage(
+      WorkerMsgType.SET_PREFETCH_PRIORITY_DIRECTIONS,
+      directions,
+      this.getLoaderId()
+    );
   }
 
   updateFetchOptions(fetchOptions: Partial<ZarrLoaderFetchOptions>): Promise<void> {
-    return this.workerHandle.sendMessage(WorkerMsgType.UPDATE_FETCH_OPTIONS, fetchOptions);
+    return this.workerHandle.sendMessage(WorkerMsgType.UPDATE_FETCH_OPTIONS, fetchOptions, this.getLoaderId());
   }
 
   syncMultichannelLoading(sync: boolean): Promise<void> {
-    return this.workerHandle.sendMessage(WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, sync);
+    return this.workerHandle.sendMessage(WorkerMsgType.SYNCHRONIZE_MULTICHANNEL_LOADING, sync, this.getLoaderId());
   }
 
   loadDims(loadSpec: LoadSpec): Promise<VolumeDims[]> {
-    this.checkIsOpen();
-    return this.workerHandle.sendMessage(WorkerMsgType.LOAD_DIMS, loadSpec);
+    return this.workerHandle.sendMessage(WorkerMsgType.LOAD_DIMS, loadSpec, this.getLoaderId());
   }
 
   async createImageInfo(loadSpec: LoadSpec): Promise<LoadedVolumeInfo> {
-    this.checkIsOpen();
     const { imageInfo, loadSpec: adjustedLoadSpec } = await this.workerHandle.sendMessage(
       WorkerMsgType.CREATE_VOLUME,
-      loadSpec
+      loadSpec,
+      this.getLoaderId()
     );
     return { imageInfo, loadSpec: rebuildLoadSpec(adjustedLoadSpec) };
   }
@@ -281,18 +300,16 @@ class WorkerLoader extends ThreadableVolumeLoader {
     onUpdateMetadata: (imageInfo?: ImageInfo, loadSpec?: LoadSpec) => void,
     onData: RawChannelDataCallback
   ): Promise<void> {
-    this.checkIsOpen();
-
     this.currentLoadCallback = onData;
     this.currentMetadataUpdateCallback = onUpdateMetadata;
     this.currentLoadId += 1;
 
-    return this.workerHandle.sendMessage(WorkerMsgType.LOAD_VOLUME_DATA, {
+    const message: WorkerRequestPayload<WorkerMsgType.LOAD_VOLUME_DATA> = {
       imageInfo,
       loadSpec,
-      loaderId: this.loaderId,
       loadId: this.currentLoadId,
-    });
+    };
+    return this.workerHandle.sendMessage(WorkerMsgType.LOAD_VOLUME_DATA, message, this.getLoaderId());
   }
 
   onChannelData(e: ChannelLoadEvent): void {

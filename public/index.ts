@@ -57,7 +57,10 @@ const TEST_DATA: Record<string, TestDataSpec> = {
   },
   zarrVariance: {
     type: VolumeFileFormat.ZARR,
-    url: "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr",
+    url: [
+      "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/1.zarr",
+      "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/variance/2.zarr",
+    ],
   },
   zarrNucmorph0: {
     type: VolumeFileFormat.ZARR,
@@ -106,10 +109,13 @@ const myState: State = {
   lastFrameTime: 0,
   isPlaying: false,
   timerId: 0,
+  scene: 0,
 
-  loader: new JsonImageInfoLoader(
-    "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json"
-  ),
+  loader: [
+    new JsonImageInfoLoader(
+      "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json"
+    ),
+  ],
 
   density: 12.5,
   maskAlpha: 1.0,
@@ -595,6 +601,13 @@ function updateTimeUI() {
   }
 }
 
+function updateScenesUI() {
+  const maxSceneIndex = myState.loader.length - 1;
+  const sceneInput = document.getElementById("sceneValue") as HTMLInputElement;
+  sceneInput.max = `${maxSceneIndex}`;
+  sceneInput.value = `${Math.min(myState.scene, maxSceneIndex)}`;
+}
+
 function updateChannelUI(vol: Volume, channelIndex: number) {
   const channel = vol.channels[channelIndex];
 
@@ -943,13 +956,18 @@ function onVolumeCreated(volume: Volume) {
   }
 
   updateTimeUI();
+  updateScenesUI();
   updateZSliceUI(myState.volume);
   showChannelUI(myState.volume);
 }
 
+function setSyncMultichannelLoading(sync: boolean) {
+  myState.loader.forEach((loader) => loader.syncMultichannelLoading(sync));
+}
+
 function playTimeSeries(onNewFrameCallback: () => void) {
   window.clearTimeout(myState.timerId);
-  myState.loader.syncMultichannelLoading(true);
+  setSyncMultichannelLoading(true);
   myState.isPlaying = true;
 
   const loadNextFrame = () => {
@@ -1050,16 +1068,23 @@ function createTestVolume(): RawArrayLoaderOptions {
   };
 }
 
-async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
+async function createLoader(data: TestDataSpec): Promise<IVolumeLoader[]> {
   if (data.type === "opencell") {
-    return new OpenCellLoader();
+    return [new OpenCellLoader()];
   }
 
   await loaderContext.onOpen();
 
   const options: Partial<CreateLoaderOptions> = {};
   let path: string | string[] = data.url;
-  if (data.type === VolumeFileFormat.JSON) {
+  if (Array.isArray(data.url)) {
+    // fake multiscene loading. TODO revert and replace with the real thing!
+    const options = {
+      fetchOptions: { maxPrefetchDistance: PREFETCH_DISTANCE, maxPrefetchChunks: MAX_PREFETCH_CHUNKS },
+    };
+    const promises = data.url.map((url) => loaderContext.createLoader(url, options));
+    return Promise.all(promises);
+  } else if (data.type === VolumeFileFormat.JSON) {
     path = [];
     const times = data.times || 0;
     for (let t = 0; t <= times; t++) {
@@ -1071,10 +1096,11 @@ async function createLoader(data: TestDataSpec): Promise<IVolumeLoader> {
     options.rawArrayOptions = { data: volumeInfo.data, metadata: volumeInfo.metadata };
   }
 
-  return await loaderContext.createLoader(path, {
+  const result = await loaderContext.createLoader(path, {
     ...options,
     fetchOptions: { maxPrefetchDistance: PREFETCH_DISTANCE, maxPrefetchChunks: MAX_PREFETCH_CHUNKS },
   });
+  return [result];
 }
 
 async function loadVolume(loadSpec: LoadSpec, loader: IVolumeLoader): Promise<void> {
@@ -1094,7 +1120,8 @@ async function loadTestData(testdata: TestDataSpec) {
 
   const loadSpec = new LoadSpec();
   myState.totalFrames = testdata.times;
-  loadVolume(loadSpec, myState.loader);
+  const loader = myState.loader[Math.max(myState.scene, myState.loader.length - 1)];
+  loadVolume(loadSpec, loader);
 }
 
 function gammaSliderToImageValues(sliderValues: [number, number, number]): [number, number, number] {
@@ -1223,13 +1250,14 @@ function main() {
   pauseBtn?.addEventListener("click", () => {
     window.clearTimeout(myState.timerId);
     myState.isPlaying = false;
-    myState.loader.syncMultichannelLoading(false);
+    setSyncMultichannelLoading(false);
   });
 
   const forwardBtn = document.getElementById("forwardBtn");
   const backBtn = document.getElementById("backBtn");
   const timeSlider = document.getElementById("timeSlider") as HTMLInputElement;
   const timeInput = document.getElementById("timeValue") as HTMLInputElement;
+  const sceneInput = document.getElementById("sceneValue") as HTMLInputElement;
   forwardBtn?.addEventListener("click", () => {
     if (goToFrame(getCurrentFrame() + 1)) {
       if (timeInput) {
@@ -1266,6 +1294,12 @@ function main() {
       if (timeSlider) {
         timeSlider.value = timeInput.value;
       }
+    }
+  });
+  sceneInput?.addEventListener("change", () => {
+    if (myState.loader.length > 1 && myState.scene !== sceneInput.valueAsNumber) {
+      myState.scene = sceneInput.valueAsNumber;
+      loadVolume(new LoadSpec(), myState.loader[myState.scene]);
     }
   });
 
