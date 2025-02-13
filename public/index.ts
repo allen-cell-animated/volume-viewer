@@ -602,10 +602,10 @@ function updateTimeUI() {
 }
 
 function updateScenesUI() {
-  const maxScenes = myState.loader.length - 1;
+  const maxSceneIndex = myState.loader.length - 1;
   const sceneInput = document.getElementById("sceneValue") as HTMLInputElement;
-  sceneInput.max = `${maxScenes}`;
-  sceneInput.value = `${Math.min(myState.scene, maxScenes)}`;
+  sceneInput.max = `${maxSceneIndex}`;
+  sceneInput.value = `${Math.min(myState.scene, maxSceneIndex)}`;
 }
 
 function updateChannelUI(vol: Volume, channelIndex: number) {
