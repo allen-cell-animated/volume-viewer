@@ -1,5 +1,5 @@
-import sliceVertexShader from "./shaders/slice.vert?raw";
-import sliceFragShader from "./shaders/slice.frag?raw";
+import sliceVertexShader from "./shaders/slice.vert";
+import sliceFragShader from "./shaders/slice.frag";
 import { Vector2, Vector3, Matrix4, Texture } from "three";
 
 export const sliceVertexShaderSrc = sliceVertexShader;

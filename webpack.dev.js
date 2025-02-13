@@ -13,7 +13,7 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 export default {
   entry: ["./public/index.ts"],
   output: {
-    path: path.resolve(__dirname, "volumeviewer"),
+    path: path.resolve(__dirname, "vole-core"),
     filename: "vol-e-ui.bundle.js",
   },
   devtool: "source-map",

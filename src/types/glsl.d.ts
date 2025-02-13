@@ -5,12 +5,12 @@ declare module "*.glsl" {
   export default value;
 }
 
-declare module "*.frag?raw" {
+declare module "*.frag" {
   const value: string;
   export default value;
 }
 
-declare module "*.vert?raw" {
+declare module "*.vert" {
   const value: string;
   export default value;
 }
