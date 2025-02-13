@@ -1,6 +1,9 @@
 # Vol-E core
 
-This is a WebGL canvas-based volume viewer. It can display multichannel volume data with high channel counts, and is optimized for OME-Zarr files. With OME-Zarr, the viewer can prefetch and cache Zarr chunks in browser memory for optimized performance.
+![NPM Version](https://img.shields.io/npm/v/%40aics%2Fvole-core)
+![NPM Last Update](https://img.shields.io/npm/last-update/%40aics%2Fvole-core)
+
+**Vol-E core** is a WebGL canvas-based volume viewer. It can display multichannel volume data with high channel counts. The viewer is optimized for OME-Zarr files, and can prefetch and cache Zarr chunks in browser memory for performance.
 
 The Vol-E core package exposes several key modules:
 
@@ -61,7 +64,7 @@ loader.loadVolumeData(volume);
 
 ## React example
 
-See [vole-app](https://github.com/allen-cell-animated/vole-app) for a complete application that wraps View3D in a React component.
+See [vole-app](https://github.com/allen-cell-animated/vole-app) for a complete application that wraps Vol-E core in a React component.
 
 ## Acknowledgements
 

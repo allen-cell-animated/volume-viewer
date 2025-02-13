@@ -13,8 +13,9 @@
 
 - Requires that you are listed as a maintainer for this npm module
 
-* Commit and push changes
-* Login: `npm login`
 * Make sure you can run build successfully: `npm run build`
 * Update version: `npm version patch`
-* Publish: `npm publish`
+* Push to main: `git push origin main`
+* Push tags: `git push origin --tags vX.X.X`
+
+You do not need to run `npm publish` as the CI/CD pipeline will automatically publish the package to npm.
